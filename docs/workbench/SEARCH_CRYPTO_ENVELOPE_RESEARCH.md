@@ -1,4 +1,4 @@
-# Search/cache crypto-envelope and inbound decryption research
+# Search/cache crypto-envelope and decryption research
 
 Status: source-backed capture/protocol research on `feature/capture-protocol-research-next`.
 
@@ -26,19 +26,7 @@ words -= words % 2
 encrypted bytes = words * 4
 ```
 
-After decryption, `SearchHandler::validatePacket()` calculates MD5 over:
-
-```text
-frame[0x08 : length - 0x14]
-```
-
-and compares it to the 16 bytes at:
-
-```text
-frame[length - 0x14 : length - 0x04]
-```
-
-Only after that validation succeeds does LSB read the request type at offset `0x0B`.
+After decryption, `SearchHandler::validatePacket()` calculates MD5 over `frame[0x08 : length - 0x14]` and compares it with the 16 bytes at `frame[length - 0x14 : length - 0x04]`. Only after that validation succeeds does LSB read the request type at offset `0x0B`.
 
 ## FFXI Blowfish compatibility
 
@@ -56,24 +44,24 @@ ciphertext = 00D103BFB60109A0
 
 Decrypting that ciphertext with the same key returns the original block.
 
-## Direction boundary
+## Direction and state boundary
 
-Inbound and outbound search crypto are not symmetric from capture evidence alone.
+Inbound and outbound search crypto are not independently symmetric.
 
-After an inbound decrypt, LSB copies four decrypted bytes from `length - 0x18` into key bytes `20..23`. Server-side encryption subsequently hashes the full 24-byte rolling key state. Therefore server -> client traffic is **not independently decryptable from an outbound frame alone** unless the preceding validated inbound state is available.
+After a validated inbound decrypt, LSB copies four decrypted bytes from `length - 0x18` into key bytes `20..23`. Combined with the inbound wire seed in key bytes `16..19`, this produces the 24-byte rolling state used by server-side encryption.
 
-The toolkit consequently requires independent endpoint-role evidence before automatic decryption:
+The toolkit therefore separates the two operations:
 
-```text
-direction_scope = client_to_search_server_only
-applicability_requires_endpoint_role = true
-```
+- `search_framing.resolve_crypto_direction()` automatically decrypts only frames proven client -> verified search endpoint;
+- server -> client decryption is **not auto-paired by timestamp or flow ordering**;
+- `derive_outbound_state(inbound_wire, inbound_decrypted)` requires the exact matching validated inbound observation and returns the explicit 24-byte state;
+- `decrypt_outbound_frame(outbound_wire, state)` requires that explicit predecessor state.
 
-`search_framing.resolve_crypto_direction()` derives the client-to-server direction from the verified lobby `cache_ip/cache_port` endpoint. Only that direction invokes inbound decryption. The reverse direction remains framed/opaque and carries an explicit direction-mismatch diagnostic.
+This avoids silently pairing an outbound frame with the wrong request when multiple frames/ranges are interleaved.
 
-## Toolkit implementation
+## Inbound implementation
 
-`search_crypto_envelope.inspect_frame()` records the source-backed crypto envelope:
+`search_crypto_envelope.inspect_frame()` records:
 
 - clear header range;
 - final 4-byte inbound seed;
@@ -83,81 +71,83 @@ applicability_requires_endpoint_role = true
 - packet-type offset `0x0B` with its value withheld until validation;
 - outbound rolling-state dependency.
 
-`search_crypto_envelope.decrypt_inbound_frame()` performs the source-backed inbound operation:
+`search_crypto_envelope.decrypt_inbound_frame()`:
 
-1. inspect the envelope;
-2. derive the per-frame key;
-3. decrypt only the aligned encrypted span with `ffxi_blowfish`;
-4. preserve the clear header and trailing seed bytes;
-5. validate declared length and `IXFF`;
-6. validate the post-decrypt MD5;
-7. expose request type only if every gate succeeds.
+1. inspects the envelope;
+2. derives the per-frame key;
+3. decrypts only the aligned encrypted span;
+4. preserves the clear header and trailing seed;
+5. validates declared length and `IXFF`;
+6. validates post-decrypt MD5;
+7. exposes request type only if every gate succeeds.
 
-Failed decrypt/validation attempts remain evidence with diagnostics and decrypted-candidate bytes, but they do not expose trusted request semantics.
+Failed candidates remain evidence but do not expose trusted request semantics. The top-level framing status remains `encrypted_or_opaque` for metadata compatibility; stronger results live under `inbound_decryption` / `decryption_validated`.
 
-The top-level framing status remains:
+## Validated inbound request fields
+
+After framing + direction + decryption + MD5 succeed, request types are named from the maintained `TCPREQUESTTYPE` values. Unknown validated values remain numeric and `UNKNOWN`.
+
+The fixed-offset non-AH subset currently decoded is:
+
+- `ID_LIST (0x01)`: requested count at `0x10`, `uint32` character IDs from `0x12`, capped to 20 and available complete entries;
+- `GROUP_LIST (0x02)`: party/alliance/linkshell IDs at `0x10`, `0x14`, `0x18`, `0x1C`;
+- `SEARCH_COMMENT (0x08)`: player ID at `0x10`.
+
+`SEARCH`/`SEARCH_ALL` remain body-opaque because their bit-packed filter grammar is a larger parser. All Auction House request/history bodies remain deliberately opaque in this branch.
+
+## Explicit outbound state handoff
+
+For one exact validated inbound pair, `derive_outbound_state()` constructs:
 
 ```text
-decoder_status = encrypted_or_opaque
+key[0:16]  = fixed SearchHandler prefix
+key[16:20] = inbound wire frame final 4 bytes
+key[20:24] = inbound decrypted bytes[length-0x18 : length-0x14]
 ```
 
-for metadata compatibility. Successful inbound frames carry their stronger result under `inbound_decryption` and set `decryption_validated=true`.
+The helper refuses mismatched wire/decrypted lengths or an inbound candidate that does not pass the complete validation gate.
 
-## Validated request types and fields
+`decrypt_outbound_frame()` then:
 
-After framing + direction + decryption + MD5 succeed, the maintained request type table is used:
+1. requires a validated 24-byte predecessor state;
+2. requires clear length/`IXFF` framing;
+3. requires the outbound final 4 bytes to equal state `key[16:20]`, matching the server write path;
+4. derives the outbound cipher key as `MD5(state[0:24])`;
+5. decrypts the same aligned packet region;
+6. validates the post-decrypt MD5.
 
-| Value | Name |
-|---:|---|
-| `0x00` | `SEARCH_ALL` |
-| `0x01` | `ID_LIST` |
-| `0x02` | `GROUP_LIST` |
-| `0x03` | `SEARCH` |
-| `0x05` | `AH_HISTORY_SINGLE` |
-| `0x06` | `AH_HISTORY_STACK` |
-| `0x08` | `SEARCH_COMMENT` |
-| `0x10` | `AH_REQUEST_MORE` |
-| `0x15` | `AH_REQUEST` |
-
-Unknown validated values remain numeric and `UNKNOWN`; no speculative name is assigned.
-
-`search_request_decode.decode_validated_request()` currently decodes only the fixed-offset non-AH subset:
-
-- `ID_LIST`: requested count at `0x10`, `uint32` character IDs from `0x12`, capped to 20 and available complete entries;
-- `GROUP_LIST`: party/alliance/linkshell IDs at `0x10`, `0x14`, `0x18`, `0x1C`;
-- `SEARCH_COMMENT`: player ID at `0x10`.
-
-Each field carries source-backed offset/length evidence. `search_framing.resolve_crypto_direction()` automatically attaches this as `validated_request` after successful inbound decryption.
-
-`SEARCH`/`SEARCH_ALL` remain body-opaque because their bit-packed filter grammar is a larger parser. All Auction House request/history bodies remain deliberately opaque in this branch to avoid collision with the parallel Auction House work.
+A successful result is cryptographically verified, but **response payload semantics remain `unknown_opaque`**. This branch does not assign party/search/AH response schemas merely because the ciphertext can be validated.
 
 ## Regression coverage
 
-Synthetic coverage now includes:
+Synthetic coverage includes:
 
-- deterministic FFXI-cipher block compatibility;
-- encrypt/decrypt round trip;
+- deterministic FFXI-cipher block compatibility and round trip;
 - aligned-block rejection;
 - exact inbound key derivation and encrypted span;
 - endpoint-role direction gating;
-- encrypted inbound `SEARCH_COMMENT` -> decrypt -> framing validation -> MD5 validation -> request type -> player ID;
-- corrupted ciphertext failing closed before trusted request semantics;
-- reverse-direction frame remaining undecrypted;
+- encrypted inbound `SEARCH_COMMENT` -> decrypt -> framing + MD5 -> player ID;
+- corrupted inbound ciphertext failing closed;
+- reverse-direction frame remaining untouched by automatic inbound logic;
+- exact 24-byte outbound state extraction from a validated inbound request;
+- synthetic server response encrypted with that state -> decrypt -> framing + MD5 validation;
+- wrong predecessor state rejected before outbound decryption;
 - existing ID-list/group-list/search-comment fixed-field validation.
 
-The normal CI-enumerated lobby/capture regression also exercises the integrated search classification/decryption code path, while the focused positive cipher fixture remains a dedicated regression artifact.
+The CI-enumerated lobby/capture regression exercises the integrated search classification/decryption imports and normal flow path. Focused crypto fixtures retain the positive cipher/state vectors.
 
 ## Current non-goals
 
 This slice does not:
 
-- decrypt server -> client traffic without prior validated inbound rolling state;
-- infer or guess missing session state;
-- decode `SEARCH`/`SEARCH_ALL` bit-packed filter grammar;
-- decode Auction House search/history request bodies;
-- promote a request type or fields when endpoint direction, framing, decryption, or MD5 validation fails;
+- auto-pair outbound frames with predecessor requests by timestamps or heuristics;
+- infer or guess missing rolling state;
+- decode server response payload semantics;
+- decode `SEARCH`/`SEARCH_ALL` bit-packed request grammar;
+- decode Auction House search/history request or response bodies;
+- promote request/response semantics when endpoint direction, framing, decryption, state, or MD5 validation fails;
 - classify a search flow from framing alone without the independent verified lobby `cache_ip/cache_port` handoff.
 
 ## Next safe step
 
-The highest-value validation target is now a **real search/cache capture tied to a verified lobby handoff**. Inbound frames can be tested directly against this implementation. Server -> client decryption should remain a separate stateful slice: it must carry forward the four decrypted key-continuation bytes from a previously validated inbound packet before any outbound semantics are trusted.
+The highest-value next input is a **real search/cache capture tied to a verified lobby handoff**. The toolkit can now validate inbound frames directly and can validate outbound encryption when the exact predecessor state is known. Automated session sequencing should wait for real capture evidence with frame-level ordering strong enough to associate responses with the correct inbound state without heuristics.
