@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .admin_buy import execute_legacy_test_admin_buy
-from .legacy_test_executor import LegacyTestExecutionBlocked
+from .legacy_test_executor import LegacyTestExecutionBlocked, evaluate_legacy_test_write_gate
 from .safe_return import execute_legacy_test_safe_return
 
 _MAX_BATCH = 100
@@ -26,13 +26,15 @@ def _normalize_targets(values: list[dict[str, Any]]) -> list[BatchTarget]:
     seen: set[int] = set()
     targets: list[BatchTarget] = []
     for raw in values:
-        auction_id = int((raw or {}).get("auction_id") or 0)
+        if not isinstance(raw, dict):
+            raise LegacyTestExecutionBlocked("Every batch target must be an object")
+        auction_id = int(raw.get("auction_id") or 0)
         if auction_id <= 0:
             raise LegacyTestExecutionBlocked("Every batch target requires a positive auction_id")
         if auction_id in seen:
             raise LegacyTestExecutionBlocked(f"Duplicate auction_id in batch: {auction_id}")
         seen.add(auction_id)
-        expected = (raw or {}).get("expected_price")
+        expected = raw.get("expected_price")
         targets.append(BatchTarget(
             auction_id=auction_id,
             expected_price=None if expected in (None, "") else int(expected),
@@ -58,6 +60,16 @@ def execute_legacy_test_batch(
     if action not in _SUPPORTED_ACTIONS:
         raise LegacyTestExecutionBlocked(f"Unsupported batch action: {action or 'unknown'}")
     normalized = _normalize_targets(targets)
+
+    gate = evaluate_legacy_test_write_gate(
+        environment=environment,
+        schema_family_hint=service.schema.family_hint,
+        confirmation=confirmation,
+        feature_enabled=feature_enabled,
+    )
+    if not gate.ready:
+        codes = ", ".join(issue.code for issue in gate.issues if issue.blocking)
+        raise LegacyTestExecutionBlocked(f"Auction House legacy TEST execution blocked: {codes}")
 
     results: list[dict[str, Any]] = []
     committed = 0
