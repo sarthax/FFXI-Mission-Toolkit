@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Auction House Presets{% endblock %}
+{% block content %}
+<main class="ah-presets" id="ahPresets">
+  <div class="page-head">
+    <div><h1>Auction House Presets</h1><p class="muted">Save reusable cleanup and synthetic seeding configuration. Presets never store execution confirmation or preview authorization.</p></div>
+    <div><a href="/auction-house">Auction House</a> · <a href="/auction-house/cleanup">Cleanup</a> · <a href="/auction-house/seeder">Seeder</a></div>
+  </div>
+
+  <section class="panel">
+    <h2>Save preset</h2>
+    <div class="form-grid">
+      <label>Name <input id="apName" type="text" maxlength="120" placeholder="90-day stale return"></label>
+      <label>Type <select id="apKind"><option value="cleanup">Cleanup rule</option><option value="synthetic_seed">Synthetic category seed</option></select></label>
+    </div>
+    <div id="apCleanupFields" class="form-grid">
+      <label>Seller ID <input id="apSellerId" type="number" min="1"></label>
+      <label>Seller name <input id="apSellerName" type="text"></label>
+      <label>Category ID <input id="apCategoryId" type="number" min="1"></label>
+      <label>Item ID <input id="apItemId" type="number" min="1"></label>
+      <label>Min price <input id="apMinPrice" type="number" min="0"></label>
+      <label>Max price <input id="apMaxPrice" type="number" min="0"></label>
+      <label>Minimum age days <input id="apAgeDays" type="number" min="0" step="0.1"></label>
+      <label>Limit <input id="apLimit" type="number" min="1" max="100" value="100"></label>
+      <label>Default action <select id="apAction"><option value="return_to_seller">Return to seller</option><option value="admin_buy">Admin Buy</option></select></label>
+    </div>
+    <div id="apSeedFields" class="form-grid" hidden>
+      <label>Seller ID <input id="apSeedSeller" type="number" min="1"></label>
+      <label>Category ID <input id="apSeedCategory" type="number" min="1"></label>
+      <label>Price <input id="apSeedPrice" type="number" min="1"></label>
+      <label>Stack mode <select id="apSeedStack"><option value="single">Single</option><option value="stack">Stack</option><option value="auto">Auto</option></select></label>
+      <label>Copies/item <input id="apSeedCopies" type="number" min="1" max="5" value="1"></label>
+      <label>Item limit <input id="apSeedLimit" type="number" min="1" max="250" value="100"></label>
+    </div>
+    <div class="actions"><button id="apSave" type="button">Save preset</button></div>
+  </section>
+
+  <section class="panel"><h2>Saved presets</h2><div id="apList" class="results"><p class="muted">Loading…</p></div></section>
+  <section class="panel"><h2>Live preview</h2><div id="apPreview"><p class="muted">Choose Preview on a saved preset.</p></div></section>
+</main>
+<style>
+.ah-presets{padding:10px 14px 24px}.page-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.muted{opacity:.72}.panel{border:1px solid var(--border-color,#5555);border-radius:8px;padding:12px;margin:10px 0}.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:10px 0}.form-grid label{display:grid;gap:4px;font-size:12px}.actions{display:flex;gap:8px}.preset-table{width:100%;border-collapse:collapse;font-size:13px}.preset-table th,.preset-table td{padding:6px;border-bottom:1px solid var(--border-color,#5554);text-align:left}.row-actions{display:flex;gap:5px;flex-wrap:wrap}.row-actions button{font-size:12px}.preview-json{white-space:pre-wrap;max-height:420px;overflow:auto;font-size:12px}@media(max-width:800px){.page-head{flex-direction:column}}
+</style>
+<script src="/static/auction_house_presets.js"></script>
+{% endblock %}
