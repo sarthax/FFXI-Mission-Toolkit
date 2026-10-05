@@ -1,8 +1,8 @@
-"""Toolkit-local append-only audit and replay ledger for Auction House previews.
+"""Toolkit-local append-only audit, execution, and replay ledger for Auction House administration.
 
-This module records validation evidence only. It never connects to or mutates an FFXI server
-database. Replay consumption is represented by an insert-only unique claim so a future executor
-can atomically claim one replay ID at most once before any server-side mutation is attempted.
+This module never connects to or mutates an FFXI server database.  It records immutable toolkit
+observations about previews, replay claims, and executor outcomes so administrators can reconstruct
+what the toolkit attempted and what it reported.
 """
 from __future__ import annotations
 
@@ -12,11 +12,12 @@ import json
 from pathlib import Path
 import sqlite3
 from typing import Any
+from uuid import uuid4
 
 from workbench.runtime.paths import DATA_ROOT
 
 DEFAULT_LEDGER_PATH = DATA_ROOT / "auction_house_audit.db"
-LEDGER_SCHEMA_VERSION = 1
+LEDGER_SCHEMA_VERSION = 2
 
 
 class AuditLedgerError(RuntimeError):
@@ -92,10 +93,30 @@ def _init_schema(con: sqlite3.Connection) -> None:
             preview_id TEXT NOT NULL,
             executor_ref TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS ah_execution_events (
+            execution_seq INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_id TEXT NOT NULL UNIQUE,
+            occurred_at_utc TEXT NOT NULL,
+            environment_family TEXT,
+            environment_name TEXT,
+            operation TEXT NOT NULL,
+            status TEXT NOT NULL,
+            auction_id INTEGER,
+            character_id INTEGER,
+            item_id INTEGER,
+            preview_id TEXT,
+            replay_id TEXT,
+            payload_json TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_ah_execution_time ON ah_execution_events(occurred_at_utc, execution_seq);
+        CREATE INDEX IF NOT EXISTS idx_ah_execution_operation ON ah_execution_events(operation, execution_seq);
+        CREATE INDEX IF NOT EXISTS idx_ah_execution_env ON ah_execution_events(environment_name, execution_seq);
+        CREATE INDEX IF NOT EXISTS idx_ah_execution_character ON ah_execution_events(character_id, execution_seq);
+        CREATE INDEX IF NOT EXISTS idx_ah_execution_item ON ah_execution_events(item_id, execution_seq);
         """
     )
     con.execute(
-        "INSERT OR IGNORE INTO ah_audit_meta(key,value) VALUES('schema_version',?)",
+        "INSERT OR REPLACE INTO ah_audit_meta(key,value) VALUES('schema_version',?)",
         (str(LEDGER_SCHEMA_VERSION),),
     )
     con.commit()
@@ -151,6 +172,112 @@ def append_validation_event(
         con.close()
 
 
+def append_execution_event(
+    *,
+    operation: str,
+    status: str,
+    environment: dict[str, Any] | None,
+    payload: dict[str, Any],
+    auction_id: int | None = None,
+    character_id: int | None = None,
+    item_id: int | None = None,
+    preview_id: str | None = None,
+    replay_id: str | None = None,
+    event_id: str | None = None,
+    occurred_at_utc: str | None = None,
+    path: Path | str = DEFAULT_LEDGER_PATH,
+) -> int:
+    """Append one immutable executor outcome to toolkit-local storage.
+
+    This helper is intentionally called only after an executor returns an outcome.  It does not
+    participate in the server transaction and an audit-write failure must never be reported as a
+    rollback of an already committed FFXI database mutation.
+    """
+    op = str(operation or "").strip()
+    state = str(status or "").strip()
+    if not op or not state:
+        raise AuditLedgerError("operation and status are required for execution audit events")
+    env = dict(environment or {})
+    con = _connect(path)
+    try:
+        cur = con.execute(
+            """INSERT INTO ah_execution_events(
+                   event_id,occurred_at_utc,environment_family,environment_name,operation,status,
+                   auction_id,character_id,item_id,preview_id,replay_id,payload_json
+               ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                str(event_id or f"execution:{uuid4()}"),
+                occurred_at_utc or _utc_now(),
+                env.get("family") or env.get("server_family"),
+                env.get("name") or env.get("profile_name"),
+                op,
+                state,
+                None if auction_id is None else int(auction_id),
+                None if character_id is None else int(character_id),
+                None if item_id is None else int(item_id),
+                None if not preview_id else str(preview_id),
+                None if not replay_id else str(replay_id),
+                json.dumps(dict(payload or {}), sort_keys=True, separators=(",", ":"), default=str),
+            ),
+        )
+        con.commit()
+        return int(cur.lastrowid)
+    finally:
+        con.close()
+
+
+def list_execution_events(
+    *,
+    path: Path | str = DEFAULT_LEDGER_PATH,
+    environment_name: str | None = None,
+    operation: str | None = None,
+    status: str | None = None,
+    character_id: int | None = None,
+    item_id: int | None = None,
+    since_utc: str | None = None,
+    until_utc: str | None = None,
+    limit: int = 200,
+) -> list[dict[str, Any]]:
+    """Read executor outcomes newest-first with bounded indexed filters."""
+    clauses: list[str] = []
+    params: list[Any] = []
+    for column, value in (("environment_name", environment_name), ("operation", operation), ("status", status)):
+        if value:
+            clauses.append(f"{column}=?")
+            params.append(str(value))
+    if character_id is not None:
+        clauses.append("character_id=?")
+        params.append(int(character_id))
+    if item_id is not None:
+        clauses.append("item_id=?")
+        params.append(int(item_id))
+    if since_utc:
+        clauses.append("occurred_at_utc>=?")
+        params.append(str(since_utc))
+    if until_utc:
+        clauses.append("occurred_at_utc<=?")
+        params.append(str(until_utc))
+    where = " WHERE " + " AND ".join(clauses) if clauses else ""
+    params.append(max(1, min(int(limit), 2000)))
+    con = _connect(path)
+    try:
+        rows = con.execute(
+            "SELECT * FROM ah_execution_events" + where + " ORDER BY occurred_at_utc DESC, execution_seq DESC LIMIT ?",
+            tuple(params),
+        ).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            try:
+                item["payload"] = json.loads(str(item.pop("payload_json")))
+            except (TypeError, ValueError, json.JSONDecodeError):
+                item["payload"] = {}
+            result.append(item)
+        return result
+    finally:
+        con.close()
+
+
 def replay_status(replay_id: str, *, path: Path | str = DEFAULT_LEDGER_PATH) -> ReplayStatus:
     con = _connect(path)
     try:
@@ -179,7 +306,7 @@ def list_events(
     replay_id: str | None = None,
     limit: int = 100,
 ) -> list[dict[str, Any]]:
-    """Read ledger events newest-first. This function never modifies existing event rows."""
+    """Read preview/replay ledger events newest-first without modifying existing rows."""
     clauses: list[str] = []
     params: list[Any] = []
     for column, value in (("preview_id", preview_id), ("audit_id", audit_id), ("replay_id", replay_id)):
@@ -208,11 +335,7 @@ def claim_replay_once(
     path: Path | str = DEFAULT_LEDGER_PATH,
     consumed_at_utc: str | None = None,
 ) -> ReplayStatus:
-    """Atomically claim one replay ID exactly once in toolkit-local storage.
-
-    This does not enable or perform Auction House execution. A future executor may call this only
-    immediately before its server transaction and must abort when ReplayAlreadyConsumed is raised.
-    """
+    """Atomically claim one replay ID exactly once in toolkit-local storage."""
     if not all(str(value or "").strip() for value in (replay_id, audit_id, preview_id, executor_ref)):
         raise AuditLedgerError("replay_id, audit_id, preview_id, and executor_ref are required")
     con = _connect(path)
