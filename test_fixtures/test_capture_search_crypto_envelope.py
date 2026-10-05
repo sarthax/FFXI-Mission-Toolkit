@@ -36,6 +36,8 @@ def main():
     envelope = frame["crypto_envelope"]
     assert envelope["valid_envelope"] is True, envelope
     assert envelope["decoder_status"] == "crypto_envelope_only_not_decrypted", envelope
+    assert envelope["direction_scope"] == "client_to_search_server_only", envelope
+    assert envelope["applicability_requires_endpoint_role"] is True, envelope
     assert envelope["frame_seed"]["offset"] == 28, envelope
     assert envelope["frame_seed"]["raw_hex"] == "01020304", envelope
     assert envelope["key_derivation"]["input_length"] == 20, envelope
@@ -46,17 +48,19 @@ def main():
         "length": 16,
         "block_size": 8,
         "raw_hex": wire[8:24].hex().upper(),
-        "certainty": "verified_from_source",
+        "certainty": "verified_from_source_for_inbound_client_frame",
     }, envelope
     assert envelope["post_decrypt_hash_contract"]["hash_input_offset_start"] == 8, envelope
     assert envelope["post_decrypt_hash_contract"]["hash_input_offset_end"] == 12, envelope
     assert envelope["post_decrypt_hash_contract"]["expected_md5_offset"] == 12, envelope
     assert envelope["packet_type_contract"]["offset"] == 0x0B, envelope
     assert envelope["packet_type_contract"]["value"] is None, envelope
+    assert envelope["outbound_warning"]["independently_derivable_from_outbound_frame"] is False, envelope
 
     decrypted = validated_decrypted_candidate(0x03)
     validated = search_crypto_envelope.validate_decrypted_frame(decrypted)
     assert validated["validated"] is True, validated
+    assert validated["direction_scope"] == "client_to_search_server_only", validated
     assert validated["post_decrypt_md5"]["valid"] is True, validated
     assert validated["packet_type"] == 0x03, validated
     assert validated["packet_type_evidence"]["certainty"] == "verified_after_post_decrypt_md5", validated
