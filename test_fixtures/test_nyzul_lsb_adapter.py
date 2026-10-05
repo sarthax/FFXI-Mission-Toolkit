@@ -16,6 +16,28 @@ def _write(root: Path, rel: str, text: str = "") -> Path:
     return path
 
 
+def _mob_spawns() -> str:
+    rows: list[tuple[int, str]] = [
+        (100, "Adamantoise"),
+        (101, "Behemoth"),
+        (102, "Fafnir"),
+        (103, "Khimaira"),
+        (104, "Hydra"),
+        (105, "Cerberus"),
+        (106, "Archaic_Rampart"),
+        (107, "Dahak"),
+        (108, "Archaic_Gear"),
+    ]
+    rows.extend((200 + i, f"Leader_{i}") for i in range(25))
+    rows.extend((300 + i, "Heraldic_Imp") for i in range(5))
+    rows.extend((400 + i, f"NM_{i}") for i in range(18))
+    rows.extend((500 + i, "Greatclaw" if i < 4 else "Scorpion" if i < 8 else "Pugil") for i in range(12))
+    body = ["spawns:"]
+    for entity_id, name in rows:
+        body.extend([f"  {entity_id}:", f"    template: {name}", "    at: [1, 1, 1]"])
+    return "\n".join(body) + "\n"
+
+
 def _lsb_fixture(root: Path) -> Path:
     _write(
         root,
@@ -42,6 +64,7 @@ local pTableEnemyLeaders =
 {
     [1] = { ID.mob.LEADER_OFFSET, ID.mob.LEADER_OFFSET + 24 }, -- regular leaders
     [40] = { ID.mob.BOSS_OFFSET, ID.mob.BOSS_OFFSET + 2 }, -- early bosses
+    [100] = { ID.mob.BOSS_OFFSET + 3, ID.mob.BOSS_OFFSET + 5 }, -- later bosses
 }
 
 local pTableSpecifiedMobs =
@@ -90,9 +113,14 @@ zones[xi.zone.NYZUL_ISLE] =
 {
     mob =
     {
+        ARCHAIC_RAMPART_OFFSET = GetFirstID('Archaic_Rampart'),
         BOSS_OFFSET = GetFirstID('Adamantoise'),
-        LEADER_OFFSET = GetFirstID('Mokke'),
-        NM_OFFSET = GetFirstID('Bat_Eye'),
+        DAHAK = GetFirstID('Dahak'),
+        GEAR_OFFSET = GetFirstID('Archaic_Gear'),
+        LEADER_OFFSET = GetFirstID('Leader_0'),
+        MOB_OFFSET = GetFirstID('Greatclaw'),
+        NM_OFFSET = GetFirstID('NM_0'),
+        SPECIFIED_OFFSET = GetFirstID('Heraldic_Imp'),
     },
     npc =
     {
@@ -100,6 +128,22 @@ zones[xi.zone.NYZUL_ISLE] =
         ALEXANDER_IMAGE = GetTableOfIDs('Alexander_Image'),
     },
 }
+""",
+    )
+    _write(root, "data/zones/nyzul_isle/mobs.yaml", _mob_spawns())
+    _write(
+        root,
+        "data/zones/nyzul_isle/npcs.yaml",
+        """npcs:
+  700:
+    script: Rune_of_Transfer
+    at: [1, 1, 1]
+  710:
+    script: Alexander_Image
+    at: [1, 1, 1]
+  711:
+    script: Alexander_Image
+    at: [1, 1, 1]
 """,
     )
     nav = root / "navmeshes/Nyzul_Isle.nav"
@@ -117,7 +161,7 @@ def test_modern_lsb_fixture_is_classified_native(tmp_path):
     assert source.adapter == "modern-lsb"
 
 
-def test_modern_lsb_spatial_and_objective_data_are_normalized(tmp_path):
+def test_modern_lsb_spatial_objective_and_entity_data_are_normalized(tmp_path):
     root = _lsb_fixture(tmp_path / "lsb")
     data = load_lsb_data(root)
 
@@ -125,19 +169,45 @@ def test_modern_lsb_spatial_and_objective_data_are_normalized(tmp_path):
     assert data["points"][1] == [[10.5, 0.0, -11.5], [12.0, -0.5, 13.0]]
     assert data["entrances"] == {0: [-20.0, -0.5, -380.0], 1: [380.0, -0.5, -500.0]}
     assert data["objectives"] == {"ELIMINATE_ENEMY_LEADER": 1, "ELIMINATE_ALL_ENEMIES": 5}
-    assert data["adapter"]["capabilities"]["numeric_entity_ids"] is False
+    assert data["adapter"]["capabilities"]["numeric_entity_ids"] is True
+    assert data["adapter"]["capabilities"]["entity_id_source"] == "zone-yaml"
+
+    assert data["leaders"][0] == {"id": 200, "name": "Leader_0"}
+    assert data["leaders"][-1] == {"id": 224, "name": "Leader_24"}
+    assert data["groups"] == [{"id": 300, "count": 5, "name": "Heraldic_Imp"}]
+    assert data["nm"] == {"NM_EVEN": [400], "NM_ODD": [409]}
+    assert data["bosses"]["ADAMANTOISE"] == 100
+    assert data["bosses"]["CERBERUS"] == 105
+    assert data["bosses"]["ARCHAIC_RAMPART"] == 106
+    assert data["families"][1]["label"] == "Aquans"
+    assert data["families"][1]["groups"] == [
+        {"id": 500, "count": 4, "name": "Greatclaw"},
+        {"id": 504, "count": 4, "name": "Scorpion"},
+        {"id": 508, "count": 4, "name": "Pugil"},
+    ]
 
 
-def test_modern_lsb_preserves_runtime_id_lineage_without_inventing_numbers(tmp_path):
+def test_modern_lsb_preserves_runtime_id_lineage_and_resolved_ids(tmp_path):
     root = _lsb_fixture(tmp_path / "lsb")
     data = load_lsb_data(root)
 
-    assert data["leaders"] == []
-    assert data["bosses"] == {}
-    assert data["lineage"]["runtime_ids"]["mob"]["LEADER_OFFSET"] == "GetFirstID('Mokke')"
+    assert data["lineage"]["runtime_ids"]["mob"]["LEADER_OFFSET"] == "GetFirstID('Leader_0')"
     assert data["lineage"]["runtime_ids"]["npc"]["RUNE_OF_TRANSFER_OFFSET"] == "GetFirstID('Rune_of_Transfer')"
+    assert data["lineage"]["resolved_runtime_ids"]["mob"]["LEADER_OFFSET"] == 200
+    assert data["lineage"]["resolved_runtime_ids"]["npc"]["ALEXANDER_IMAGE"] == [710, 711]
     assert data["lineage"]["enemy_leaders"][1]["first"] == "ID.mob.LEADER_OFFSET"
     assert data["lineage"]["enemy_leaders"][1]["last"] == "ID.mob.LEADER_OFFSET + 24"
+    assert data["lineage"]["enemy_leaders"][1]["first_id"] == 200
+    assert data["lineage"]["enemy_leaders"][1]["last_id"] == 224
+
+
+def test_missing_zone_entity_mapping_fails_closed(tmp_path):
+    root = _lsb_fixture(tmp_path / "lsb")
+    mobs = root / "data/zones/nyzul_isle/mobs.yaml"
+    mobs.write_text(mobs.read_text(encoding="utf-8").replace("template: Heraldic_Imp", "template: Other_Imp"), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="SPECIFIED_OFFSET"):
+        load_lsb_data(root)
 
 
 def test_partial_modern_layout_fails_closed(tmp_path):
