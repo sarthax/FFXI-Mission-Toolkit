@@ -187,7 +187,7 @@
     'item_weapon.dmg': ['Damage', 'Base weapon damage (DMG).'],
     'item_weapon.delay': ['Delay', 'Weapon delay between attacks. Lower is faster.'],
     'item_weapon.dmgType': ['Damage type', 'Slashing, piercing, blunt or H2H.'],
-    'item_weapon.hit': ['Hits per attack', 'Number of hits per attack round.'],
+    'item_weapon.hit': ['Max hits per attack ("occasionally attacks twice")', 'Not a fixed count. 1 = always one hit. 2 = "occasionally attacks twice" (about 55% one hit, 45% two hits). 3 = one to three hits, 4+ = more. Weapons like Joyeuse get their multi-hit text from this field, not from an effect.'],
     'item_weapon.ilvl_skill': ['Item-level skill bonus', 'Skill bonus granted by item level.'],
     'item_weapon.ilvl_parry': ['Item-level parry bonus', 'Parry bonus granted by item level.'],
     'item_weapon.ilvl_macc': ['Item-level magic accuracy bonus', 'Magic accuracy bonus granted by item level.'],
