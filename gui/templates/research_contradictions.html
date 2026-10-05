@@ -6,6 +6,7 @@
 <style>
 main.research-contradictions-page{padding:8px 10px 24px}.contradiction-card{border:1px solid var(--border);border-radius:7px;padding:8px;margin:7px 0;background:var(--surface)}
 .contradiction-sides{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:7px;margin:7px 0}.contradiction-side{border:1px solid var(--border);border-radius:6px;padding:7px;background:var(--bg)}.contradiction-side p{margin:4px 0}.evidence-link{display:block;margin:3px 0}
+.reference-pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:7px;margin:6px 0}.reference-claim-side{border:1px solid var(--border);border-radius:6px;padding:7px;background:var(--surface)}.reference-claim-side p{margin:4px 0}
 </style>
 <div class="dense-toolbar"><strong>Research Contradictions</strong><span class="sp"></span><a class="chip" href="/research">Sessions</a><a class="chip" href="/researchgaps">Gaps</a><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:700px">Read-only contradictions/conflicting canonical observations. Sides group existing evidence; this view never chooses a winner or changes confidence.</div></details></div>
 
@@ -51,7 +52,22 @@ main.research-contradictions-page{padding:8px 10px 24px}.contradiction-card{bord
     {% for side in item.sides %}
     <div class="contradiction-side">
       <div class="dense-toolbar"><strong>{{ side.label }}</strong>{% for status in side.statuses %}<span class="chip">{{ status }}</span>{% endfor %}</div>
-      {% if side.value is not none %}<p><strong>Value:</strong> <code>{{ side.value|tojson }}</code></p>{% endif %}
+      {% if item.field == "reference_claim_alignment" and side.value is mapping and side.value.bg_claim_id is defined and side.value.ffxiclopedia_claim_id is defined %}
+      <div class="reference-pair">
+        <div class="reference-claim-side">
+          <div class="dense-toolbar"><strong>BG Wiki</strong><span class="sp"></span><a class="chip" href="/features/trace?q={{ side.value.bg_claim_id|urlencode }}">Trace claim</a></div>
+          <p><code>{{ side.value.bg_claim_id }}</code></p>
+          <p>{{ side.value.bg_excerpt or "-" }}</p>
+        </div>
+        <div class="reference-claim-side">
+          <div class="dense-toolbar"><strong>FFXIclopedia</strong><span class="sp"></span><a class="chip" href="/features/trace?q={{ side.value.ffxiclopedia_claim_id|urlencode }}">Trace claim</a></div>
+          <p><code>{{ side.value.ffxiclopedia_claim_id }}</code></p>
+          <p>{{ side.value.ffxiclopedia_excerpt or "-" }}</p>
+        </div>
+      </div>
+      <p class="muted"><strong>Alignment:</strong> {{ side.value.alignment_type or "-" }} · <strong>Conflict:</strong> {{ side.value.conflict_kind or "-" }}{% if side.value.similarity is not none %} · <strong>Similarity:</strong> {{ side.value.similarity }}{% endif %} · <strong>Authority:</strong> {{ side.value.authority or "REFERENCE_ONLY" }}</p>
+      <p class="muted">Reference comparison only; neither source is selected as authoritative.</p>
+      {% elif side.value is not none %}<p><strong>Value:</strong> <code>{{ side.value|tojson }}</code></p>{% endif %}
       {% if side.source_snapshots %}<p class="muted"><strong>Record snapshots:</strong> {{ side.source_snapshots|join(", ") }}</p>{% endif %}
       {% if side.confidence %}<p class="muted"><strong>Confidence:</strong> {{ side.confidence|join(", ") }}</p>{% endif %}
       {% if side.evidence_types %}<p class="muted"><strong>Evidence types:</strong> {{ side.evidence_types|join(", ") }}</p>{% endif %}
