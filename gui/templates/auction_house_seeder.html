@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Auction House Seeder{% endblock %}
+{% block content %}
+<main class="ah-seeder" id="ahSeeder">
+  <div class="page-head">
+    <div>
+      <h1>Auction House Seeder</h1>
+      <p class="muted">Create real player-backed listings where rollback-safe, or inject explicit synthetic Test supply by Auction House category.</p>
+    </div>
+    <div class="links"><a href="/auction-house">Auction House</a><a href="/auction-house/listing-manager">Listing Manager</a></div>
+  </div>
+
+  <section class="panel">
+    <div class="page-head">
+      <div><h2>Player-backed listing</h2><p class="muted">Uses one exact offline character Inventory slot, charges the active AH fee, enforces the listing limit, and removes the exact single/full stack.</p></div>
+      <span class="badge">TEST ONLY</span>
+    </div>
+    <div class="form-grid">
+      <label>Seller ID <input id="seedPlayerSeller" type="number" min="1"></label>
+      <label>Inventory slot <input id="seedPlayerSlot" type="number" min="1"></label>
+      <label>Item ID <input id="seedPlayerItem" type="number" min="1"></label>
+      <label>Price <input id="seedPlayerPrice" type="number" min="1"></label>
+      <label class="check"><input id="seedPlayerStack" type="checkbox"> Full stack</label>
+    </div>
+    <div class="actions">
+      <button id="seedPlayerReadiness" type="button">Check readiness</button>
+      <button id="seedPlayerPost" type="button">Post from player Inventory</button>
+    </div>
+    <div id="seedPlayerResult" class="result muted">Readiness not checked.</div>
+  </section>
+
+  <section class="panel">
+    <div class="page-head">
+      <div><h2>Synthetic category seeding</h2><p class="muted">Administrative supply injection. No player Inventory is removed and no listing fee is charged.</p></div>
+      <span class="badge">TEST ONLY</span>
+    </div>
+    <div class="form-grid">
+      <label>Seller ID <input id="seedSyntheticSeller" type="number" min="1"></label>
+      <label>Category <select id="seedSyntheticCategory"><option value="">Choose category</option></select></label>
+      <label>Price per listing <input id="seedSyntheticPrice" type="number" min="1"></label>
+      <label>Stack mode <select id="seedSyntheticStackMode"><option value="single">Singles</option><option value="stack">Stacks only</option><option value="auto">Auto</option></select></label>
+      <label>Copies / item <input id="seedSyntheticCopies" type="number" min="1" max="5" value="1"></label>
+      <label>Item limit <input id="seedSyntheticLimit" type="number" min="1" max="250" value="100"></label>
+    </div>
+    <div class="actions">
+      <button id="seedSyntheticPreview" type="button">Preview category seed</button>
+      <button id="seedSyntheticExecute" type="button" disabled>Execute previewed seed</button>
+    </div>
+    <div id="seedSyntheticResult" class="result muted">No category seed previewed.</div>
+  </section>
+</main>
+<style>
+.ah-seeder{padding:10px 14px 24px}.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.page-head h1,.page-head h2{margin-bottom:2px}.links{display:flex;gap:10px;flex-wrap:wrap}.muted{opacity:.72}.badge{font-size:12px;font-weight:700;border:1px solid currentColor;border-radius:999px;padding:4px 9px}.panel{border:1px solid var(--border-color,#5555);border-radius:8px;padding:12px;margin:10px 0}.form-grid{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:10px;margin:12px 0}.form-grid label{display:grid;gap:4px;font-size:12px}.form-grid .check{display:flex;align-items:center;gap:7px}.actions{display:flex;gap:8px;flex-wrap:wrap}.result{margin-top:10px}.result pre{white-space:pre-wrap;max-height:360px;overflow:auto;font-size:12px}.seed-preview-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}.seed-preview-table th,.seed-preview-table td{padding:5px;border-bottom:1px solid var(--border-color,#5554);text-align:left}@media(max-width:900px){.page-head{flex-direction:column}.form-grid{grid-template-columns:1fr}}
+</style>
+<script src="/static/auction_house_seeder.js"></script>
+{% endblock %}
