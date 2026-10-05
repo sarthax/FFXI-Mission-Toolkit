@@ -5,13 +5,16 @@ LandSandBoat's search server leaves the packet length at offset 0 and the IXFF m
 when the observed TCP read length differs from the little-endian uint16 at offset 0 or is shorter
 than 28 bytes before decryption/validation.
 
-This module therefore recognizes *frame candidates* only. It does not decrypt, validate the post-
-decryption MD5, or assign packet-type/gameplay semantics. Search-family attribution belongs to the
-higher-level classifier and must be backed by independent endpoint evidence.
+This module therefore recognizes *frame candidates* only. It does not decrypt or assign packet-type/
+gameplay semantics. Search-family attribution belongs to the higher-level classifier and must be
+backed by independent endpoint evidence. For accepted candidates, source-backed crypto-envelope
+metadata is attached without exposing a packet type before decryption and hash validation.
 """
 from __future__ import annotations
 
 import struct
+
+from workbench.captures import search_crypto_envelope
 
 SEARCH_MIN_FRAME_SIZE = 28
 SEARCH_MARKER = b"IXFF"
@@ -93,7 +96,8 @@ def scan_range(payload: bytes, seq_start: int = 0) -> dict:
             "opaque_payload_hex": raw[8:].hex().upper(),
             "framing_certainty": "structurally_inferred",
             "framing_provenance": "LandSandBoat SearchHandler read_func/encrypt clear length+IXFF",
-            "decoder_status": "encrypted_or_opaque",
+            "decoder_status": "crypto_envelope_only_not_decrypted",
+            "crypto_envelope": search_crypto_envelope.inspect_frame(raw),
         })
         pos = end
 
