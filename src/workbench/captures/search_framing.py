@@ -1,14 +1,9 @@
 """Source-backed framing observations for FFXI search/cache TCP streams.
 
-LandSandBoat's search server leaves the packet length at offset 0 and the IXFF marker at offsets
-4..7 clear on writes, then encrypts the payload beginning at offset 8. Incoming packets are rejected
-when the observed TCP read length differs from the little-endian uint16 at offset 0 or is shorter
-than 28 bytes before decryption/validation.
-
-This module therefore recognizes *frame candidates* only. It does not decrypt or assign packet-type/
-gameplay semantics. Search-family attribution belongs to the higher-level classifier and must be
-backed by independent endpoint evidence. For accepted candidates, source-backed crypto-envelope
-metadata is attached without exposing a packet type before decryption and hash validation.
+LandSandBoat's search server leaves packet length at offset 0 and IXFF at offsets 4..7 clear. The
+payload from offset 8 is encrypted on the wire. Framing candidates are recognized conservatively;
+actual inbound decryption is attempted only after a higher layer proves which endpoint is the search
+server from a verified lobby handoff.
 """
 from __future__ import annotations
 
@@ -22,16 +17,7 @@ SEARCH_MAX_FRAME_SIZE = 0xFFFF
 
 
 def scan_range(payload: bytes, seq_start: int = 0) -> dict:
-    """Recover source-backed search frame candidates from one contiguous TCP byte range.
-
-    The scanner may resynchronize after opaque bytes, but every accepted candidate requires:
-    - little-endian uint16 declared size at offset 0;
-    - declared size >= 28;
-    - literal IXFF at offsets 4..7;
-    - the complete declared frame to be present in this observed contiguous range.
-
-    Returned payload bytes remain opaque/encrypted from offset 8 onward.
-    """
+    """Recover source-backed search frame candidates from one contiguous TCP byte range."""
     frames: list[dict] = []
     diagnostics: list[dict] = []
     pos = 0
@@ -130,10 +116,11 @@ def scan_directions(directions: dict[str, dict]) -> dict:
 
 
 def resolve_crypto_direction(scanned: dict, server_role: str) -> dict:
-    """Resolve the inbound-only crypto contract after the verified search endpoint role is known.
+    """Resolve and, for proven inbound frames only, execute the search crypto contract.
 
     `server_role` is `a` or `b` from the reconstructed flow. The operation mutates the supplied
-    scan result in-place so callers retain the same framing evidence object.
+    scan result in-place. Outbound frames are never decrypted here because LSB server encryption
+    depends on rolling key state from a previously decrypted inbound request.
     """
     if server_role not in {"a", "b"}:
         return scanned
@@ -157,4 +144,14 @@ def resolve_crypto_direction(scanned: dict, server_role: str) -> dict:
                 "required_direction": client_to_server,
                 "certainty": "verified_endpoint_role_mismatch",
             })
+            continue
+
+        raw_hex = frame.get("raw_hex") or ""
+        raw = bytes.fromhex(raw_hex) if raw_hex else b""
+        decryption = search_crypto_envelope.decrypt_inbound_frame(raw)
+        frame["inbound_decryption"] = decryption
+        frame["decryption_validated"] = bool(decryption.get("validated"))
+        if decryption.get("validated"):
+            frame["validated_packet_type"] = decryption.get("packet_type")
+            frame["validated_packet_type_name"] = decryption.get("packet_type_name")
     return scanned
