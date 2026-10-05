@@ -79,7 +79,7 @@
   async function previewPreset(row) {
     try {
       const data = await request('/auction-house/presets/preview.json', {method: 'POST', body: JSON.stringify({preset_id: row.preset_id})});
-      previews.set(row.preset_id, data.preview);
+      previews.set(row.preset_id, {preview: data.preview, token: data.preset_preview_token});
       $('apPreview').innerHTML = `<h3>${esc(row.name)}</h3><pre class="preview-json">${esc(JSON.stringify(data.preview, null, 2))}</pre>`;
       render();
     } catch (error) {
@@ -90,26 +90,17 @@
   }
 
   async function executePreset(row) {
-    const preview = previews.get(row.preset_id);
-    if (!preview) return;
+    const state = previews.get(row.preset_id);
+    if (!state) return;
     const confirmation = window.prompt('Type the active Test profile name exactly to continue:');
     if (!confirmation) return;
     try {
-      let result;
-      if (row.kind === 'cleanup') {
-        const action = row.config.default_action || 'return_to_seller';
-        result = await request('/auction-house/test-write/cleanup.json', {
-          method: 'POST',
-          body: JSON.stringify({criteria: preview.criteria, preview_token: preview.preview_token, action, confirmation}),
-        });
-      } else {
-        result = await request('/auction-house/test-write/synthetic-category-seed.json', {
-          method: 'POST',
-          body: JSON.stringify({...row.config, confirmation}),
-        });
-      }
+      const data = await request('/auction-house/presets/execute.json', {
+        method: 'POST',
+        body: JSON.stringify({preset_id: row.preset_id, preset_preview_token: state.token, confirmation}),
+      });
       previews.delete(row.preset_id);
-      $('apPreview').innerHTML = `<h3>${esc(row.name)} — completed</h3><pre class="preview-json">${esc(JSON.stringify(result, null, 2))}</pre>`;
+      $('apPreview').innerHTML = `<h3>${esc(row.name)} — completed</h3><pre class="preview-json">${esc(JSON.stringify(data.result, null, 2))}</pre>`;
       render();
     } catch (error) {
       previews.delete(row.preset_id);
