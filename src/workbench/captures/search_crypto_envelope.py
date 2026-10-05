@@ -1,15 +1,20 @@
 """Source-backed cryptographic envelope metadata for FFXI search/cache TCP frames.
 
-This module deliberately does not implement Blowfish.  It records the exact clear/encrypted/hash/key
-regions and per-frame key derivation used by LandSandBoat's inbound SearchHandler so a later decoder
-can prove decryption before exposing packet type or semantic fields.
+This module deliberately does not implement Blowfish. It records the exact clear/encrypted/hash/key
+regions and per-frame key derivation used by LandSandBoat's *inbound client-to-search-server*
+SearchHandler path so a later decoder can prove decryption before exposing packet type or semantic
+fields.
+
+Server-to-client encryption is different: it uses additional rolling key state populated only after a
+previous inbound packet has been decrypted. Therefore an outbound frame cannot be independently
+derived from its own bytes with this helper.
 """
 from __future__ import annotations
 
 import hashlib
 
 
-# LandSandBoat SearchHandler::key[0:16].  Inbound decrypt copies the frame's final uint32 into
+# LandSandBoat SearchHandler::key[0:16]. Inbound decrypt copies the frame's final uint32 into
 # key[16:20], hashes exactly those first 20 bytes with MD5, and uses the resulting 16-byte digest
 # to initialize Blowfish for that one frame.
 _SEARCH_BASE_KEY = bytes.fromhex("30733D6D3C31495A327A424363387B7E")
@@ -23,14 +28,17 @@ SEARCH_MIN_FRAME_SIZE = 28
 def inspect_frame(raw: bytes) -> dict:
     """Describe LSB's inbound search crypto envelope without decrypting it.
 
-    The caller is expected to have already established the clear search framing.  This function
-    remains fail-closed for short frames and never interprets the encrypted packet-type byte.
+    The caller is expected to have already established the clear search framing. Direction is not
+    known at this layer, so the returned derivation is explicitly marked client-to-server-only and
+    unresolved until endpoint roles are available. Packet type is never interpreted here.
     """
     result = {
         "valid_envelope": False,
         "certainty": "unknown_opaque",
         "raw_length": len(raw),
         "decoder_status": "crypto_envelope_only_not_decrypted",
+        "direction_scope": "client_to_search_server_only",
+        "applicability_requires_endpoint_role": True,
         "diagnostics": [],
     }
     if len(raw) < SEARCH_MIN_FRAME_SIZE:
@@ -60,7 +68,7 @@ def inspect_frame(raw: bytes) -> dict:
 
     result.update({
         "valid_envelope": True,
-        "certainty": "verified_structure",
+        "certainty": "verified_structure_for_inbound_contract",
         "clear_header": {
             "offset": 0,
             "length": SEARCH_HEADER_SIZE,
@@ -79,7 +87,7 @@ def inspect_frame(raw: bytes) -> dict:
             "fixed_prefix_length": 16,
             "frame_seed_length": 4,
             "derived_blowfish_key_hex": derived_key.hex().upper(),
-            "certainty": "verified_from_source",
+            "certainty": "verified_from_source_for_inbound_client_frame",
         },
         "encrypted_region": {
             "offset_start": encrypted_start,
@@ -87,7 +95,7 @@ def inspect_frame(raw: bytes) -> dict:
             "length": encrypted_length,
             "block_size": 8,
             "raw_hex": raw[encrypted_start:encrypted_end].hex().upper(),
-            "certainty": "verified_from_source",
+            "certainty": "verified_from_source_for_inbound_client_frame",
         },
         "post_decrypt_hash_contract": {
             "hash_input_offset_start": hashed_plaintext_start,
@@ -98,7 +106,7 @@ def inspect_frame(raw: bytes) -> dict:
             "expected_md5_raw_hex_pre_decrypt": raw[hash_offset:seed_offset].hex().upper(),
             "algorithm": "MD5",
             "validation_available_only_after_decryption": True,
-            "certainty": "verified_from_source",
+            "certainty": "verified_from_source_for_inbound_client_frame",
         },
         "packet_type_contract": {
             "offset": 0x0B,
@@ -113,20 +121,25 @@ def inspect_frame(raw: bytes) -> dict:
             "value": None,
             "certainty": "not_decoded",
         },
+        "outbound_warning": {
+            "independently_derivable_from_outbound_frame": False,
+            "reason": "server encryption hashes 24-byte rolling key state; key[20:24] comes from a previously decrypted inbound frame",
+        },
     })
     return result
 
 
 def validate_decrypted_frame(decrypted: bytes) -> dict:
-    """Validate an externally decrypted candidate using LSB's post-decrypt MD5 contract.
+    """Validate an externally decrypted *inbound* candidate using LSB's post-decrypt MD5 contract.
 
-    This helper does not perform or trust decryption itself.  It only promotes packet-type evidence
-    if the supplied bytes have a valid length and post-decrypt MD5.  The first 8 clear bytes and
-    final 4-byte seed are expected to remain in their wire positions.
+    This helper does not perform or trust decryption itself. It only promotes packet-type evidence if
+    the supplied bytes have a valid length and post-decrypt MD5. The first 8 clear bytes and final
+    4-byte seed are expected to remain in their wire positions.
     """
     result = {
         "validated": False,
         "certainty": "unknown_opaque",
+        "direction_scope": "client_to_search_server_only",
         "diagnostics": [],
         "packet_type": None,
     }
