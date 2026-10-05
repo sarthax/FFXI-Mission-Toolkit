@@ -48,12 +48,28 @@ def _live_preview(service, preset: dict) -> dict:
 
 
 def _preset_preview_token(preset: dict, preview: dict) -> str:
+    if preset["kind"] == "cleanup":
+        binding = {
+            "criteria": preview.get("criteria"),
+            "cleanup_preview_token": preview.get("preview_token"),
+        }
+    elif preset["kind"] == "synthetic_seed":
+        binding = {
+            "category_id": preview.get("category_id"),
+            "price": preview.get("price"),
+            "stack_mode": preview.get("stack_mode"),
+            "copies_per_item": preview.get("copies_per_item"),
+            "limit_items": preview.get("limit_items"),
+            "items": preview.get("items"),
+        }
+    else:
+        raise PresetError("Unsupported Auction House preset kind")
     material = {
         "preset_id": preset["preset_id"],
         "updated_at_utc": preset["updated_at_utc"],
         "kind": preset["kind"],
         "config": preset["config"],
-        "preview": preview,
+        "binding": binding,
     }
     canonical = json.dumps(material, sort_keys=True, separators=(",", ":"), default=str)
     return sha256(canonical.encode("utf-8")).hexdigest()
@@ -139,13 +155,12 @@ def presets_execute(payload: dict = Body(...)):
             if live_token != expected_token:
                 raise LegacyTestExecutionBlocked("Saved preset preview is stale; preview the live target set again")
             if preset["kind"] == "cleanup":
-                action = str(config.get("default_action") or "return_to_seller")
                 result = execute_cleanup(
                     service=ctx.service,
                     environment=environment,
                     criteria=criteria_from_payload(preview["criteria"]),
                     preview_token=str(preview.get("preview_token") or ""),
-                    action=action,
+                    action=str(config.get("default_action") or "return_to_seller"),
                     confirmation=confirmation,
                 )
             elif preset["kind"] == "synthetic_seed":
