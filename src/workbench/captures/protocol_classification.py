@@ -18,7 +18,7 @@ closed and retain their raw reconstructed ranges in the caller.
 """
 from __future__ import annotations
 
-from workbench.captures import lobby_ingest, search_framing
+from workbench.captures import lobby_ingest, search_framing, search_session_sequence
 
 
 def _endpoint_tuple(endpoint: dict | None) -> tuple[str, int] | None:
@@ -90,9 +90,11 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
     """Classify reconstructed TCP flows conservatively and correlate exact lobby handoffs.
 
     Only transport-compatible handoff evidence can classify a reconstructed flow. Search TCP flows
-    may gain source-backed framing and crypto-envelope evidence from their clear length/IXFF header
-    while the encrypted payload remains undecoded. A map/game handoff learned from modern LSB is UDP
-    evidence and therefore cannot promote a TCP flow even when IP/port happen to match.
+    may gain source-backed framing and crypto-envelope evidence from their clear length/IXFF header.
+    Stateful server responses are sequenced only when range-level capture-frame provenance proves a
+    strict predecessor order; timestamps and cross-direction TCP sequence comparisons are not used.
+    A map/game handoff learned from modern LSB is UDP evidence and therefore cannot promote a TCP flow
+    even when IP/port happen to match.
     """
     lobby_results = []
     for flow in flows:
@@ -147,21 +149,27 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
             matched = [m for m in compatible if m["protocol_family"] == family]
             diagnostics = list(lobby.get("diagnostics") or []) + transport_diagnostics
             framing_evidence = None
+            session_sequence = None
             classification_scope = "exact_transport_compatible_endpoint_association_only_payload_opaque"
             decoder_status = "unknown_opaque"
 
             if family == "ffxi_search_endpoint":
-                scanned = search_framing.scan_directions(flow.get("directions") or {})
-                scanned = search_framing.resolve_crypto_direction(scanned, matched[0]["matched_endpoint_role"])
-                diagnostics.extend(scanned["diagnostics"])
-                if scanned["frames"]:
+                directions = flow.get("directions") or {}
+                scanned = search_framing.scan_directions(directions)
+                server_role = matched[0]["matched_endpoint_role"]
+                scanned = search_framing.resolve_crypto_direction(scanned, server_role)
+                sequenced = search_session_sequence.sequence_validated_session(scanned, directions, server_role)
+                diagnostics.extend(sequenced["diagnostics"])
+                session_sequence = sequenced.get("session_sequence")
+                diagnostics.extend((session_sequence or {}).get("diagnostics") or [])
+                if sequenced["frames"]:
                     framing_evidence = {
                         "family": "ffxi_search",
-                        "frame_count": len(scanned["frames"]),
-                        "frames": scanned["frames"],
+                        "frame_count": len(sequenced["frames"]),
+                        "frames": sequenced["frames"],
                         "certainty": "structurally_inferred",
                         "provenance": "LandSandBoat SearchHandler clear framing plus source-backed crypto envelope",
-                        "payload_semantics": "unknown_opaque",
+                        "payload_semantics": "validated_per_frame_only_when_crypto/evidence gates succeed",
                     }
                     classification_scope = "verified_search_handoff_plus_source_backed_search_framing"
                     decoder_status = "encrypted_or_opaque"
@@ -185,6 +193,7 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
                 "session_phase_evidence": [],
                 "decoder_status": decoder_status,
                 "framing_evidence": framing_evidence,
+                "session_sequence": session_sequence,
                 "tcp_lifecycle": lifecycle,
             })
         elif len(families) > 1:
@@ -207,6 +216,7 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
                 "session_phase_evidence": [],
                 "decoder_status": "unknown_opaque",
                 "framing_evidence": None,
+                "session_sequence": None,
                 "tcp_lifecycle": lifecycle,
             })
         elif incompatible:
@@ -226,6 +236,7 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
                 "session_phase_evidence": [],
                 "decoder_status": "unknown_opaque",
                 "framing_evidence": None,
+                "session_sequence": None,
                 "tcp_lifecycle": lifecycle,
             })
         else:
@@ -237,6 +248,7 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
                 "classification_scope": "insufficient_evidence",
                 "protocol_candidates": [],
                 "framing_evidence": None,
+                "session_sequence": None,
                 "tcp_lifecycle": lifecycle,
             })
     return out
