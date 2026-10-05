@@ -8,12 +8,16 @@ This layer intentionally separates three claims:
 3. that endpoint association alone does *not* prove framing or message semantics for the later
    protocol family.
 
+Search/cache framing candidates may additionally be recognized from source-backed clear-header
+structure, but only an exact verified lobby handoff is allowed to attribute those candidates to the
+search family. Payload bytes after the clear header remain encrypted/opaque here.
+
 No default retail/private-server port numbers are used as proof. Unknown and ambiguous flows fail
 closed and retain their raw reconstructed ranges in the caller.
 """
 from __future__ import annotations
 
-from workbench.captures import lobby_ingest
+from workbench.captures import lobby_ingest, search_framing
 
 
 def _endpoint_tuple(endpoint: dict | None) -> tuple[str, int] | None:
@@ -83,9 +87,10 @@ def _handoff_hints(lobby_results: list[dict]) -> list[dict]:
 def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
     """Classify reconstructed TCP flows conservatively and correlate exact lobby handoffs.
 
-    Search/world endpoint matches are useful classification evidence, but their payload remains
-    opaque until independent framing evidence exists. If an endpoint is claimed by more than one
-    family, the flow remains unknown and the candidates are reported explicitly.
+    Search/world endpoint matches are useful classification evidence, but endpoint association alone
+    does not validate payload semantics. Search flows may gain source-backed framing evidence from
+    their clear length/IXFF header while their encrypted payload remains opaque. If an endpoint is
+    claimed by more than one family, the flow remains unknown and candidates are reported explicitly.
     """
     lobby_results = []
     for flow in flows:
@@ -124,13 +129,33 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
         if len(families) == 1:
             family = families[0]
             matched = [m for m in matches if m["protocol_family"] == family]
+            diagnostics = list(lobby.get("diagnostics") or [])
+            framing_evidence = None
+            classification_scope = "exact_endpoint_association_only_payload_opaque"
+            decoder_status = "unknown_opaque"
+
+            if family == "ffxi_search_endpoint":
+                scanned = search_framing.scan_directions(flow.get("directions") or {})
+                diagnostics.extend(scanned["diagnostics"])
+                if scanned["frames"]:
+                    framing_evidence = {
+                        "family": "ffxi_search",
+                        "frame_count": len(scanned["frames"]),
+                        "frames": scanned["frames"],
+                        "certainty": "structurally_inferred",
+                        "provenance": "LandSandBoat SearchHandler clear uint16 length + IXFF before encrypted payload",
+                        "payload_semantics": "unknown_opaque",
+                    }
+                    classification_scope = "verified_handoff_endpoint_plus_source_backed_search_framing"
+                    decoder_status = "encrypted_or_opaque"
+
             out.append({
                 "flow_id": flow.get("flow_id"),
                 "transport": flow.get("transport") or "tcp",
                 "protocol_family": family,
                 "classification_validated": False,
                 "classification_certainty": "structurally_inferred",
-                "classification_scope": "exact_endpoint_association_only_payload_opaque",
+                "classification_scope": classification_scope,
                 "validation_basis": "exact_endpoint_from_verified_lobby_ResponseNextLogin",
                 "protocol_candidates": matched,
                 "endpoint_roles": {
@@ -139,9 +164,10 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
                 },
                 "role_status": "inferred_from_verified_handoff_endpoint",
                 "messages": [],
-                "diagnostics": lobby.get("diagnostics") or [],
+                "diagnostics": diagnostics,
                 "session_phase_evidence": [],
-                "decoder_status": "unknown_opaque",
+                "decoder_status": decoder_status,
+                "framing_evidence": framing_evidence,
                 "tcp_lifecycle": lifecycle,
             })
         elif len(families) > 1:
@@ -163,6 +189,7 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
                 }],
                 "session_phase_evidence": [],
                 "decoder_status": "unknown_opaque",
+                "framing_evidence": None,
                 "tcp_lifecycle": lifecycle,
             })
         else:
@@ -173,6 +200,7 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
                 "classification_certainty": lobby.get("classification_certainty", "unknown_opaque"),
                 "classification_scope": "insufficient_evidence",
                 "protocol_candidates": [],
+                "framing_evidence": None,
                 "tcp_lifecycle": lifecycle,
             })
     return out
