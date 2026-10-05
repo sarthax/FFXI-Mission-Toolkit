@@ -127,3 +127,34 @@ def scan_directions(directions: dict[str, dict]) -> dict:
                     **diagnostic,
                 })
     return {"frames": frames, "diagnostics": diagnostics}
+
+
+def resolve_crypto_direction(scanned: dict, server_role: str) -> dict:
+    """Resolve the inbound-only crypto contract after the verified search endpoint role is known.
+
+    `server_role` is `a` or `b` from the reconstructed flow. The operation mutates the supplied
+    scan result in-place so callers retain the same framing evidence object.
+    """
+    if server_role not in {"a", "b"}:
+        return scanned
+    client_to_server = "b_to_a" if server_role == "a" else "a_to_b"
+    for frame in scanned.get("frames") or []:
+        envelope = frame.get("crypto_envelope")
+        if not envelope:
+            continue
+        observed = frame.get("direction")
+        applicable = observed == client_to_server
+        envelope["applicability_resolved"] = True
+        envelope["observed_direction"] = observed
+        envelope["client_to_server_direction"] = client_to_server
+        envelope["applicable_to_observed_direction"] = applicable
+        if envelope.get("key_derivation"):
+            envelope["key_derivation"]["applicable_to_observed_direction"] = applicable
+        if not applicable:
+            envelope.setdefault("diagnostics", []).append({
+                "kind": "search_inbound_crypto_contract_direction_mismatch",
+                "observed_direction": observed,
+                "required_direction": client_to_server,
+                "certainty": "verified_endpoint_role_mismatch",
+            })
+    return scanned
