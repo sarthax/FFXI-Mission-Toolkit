@@ -13,7 +13,8 @@ from workbench.runtime.paths import GUI_ROOT
 
 from .factory import open_auction_house
 from .legacy_test_executor import LegacyTestExecutionBlocked
-from .listing_management import ListingFilter, browse_active_listings, execute_legacy_test_return_to_seller
+from .listing_management import ListingFilter, browse_active_listings
+from .safe_return import execute_legacy_test_safe_return
 
 router = APIRouter(tags=["Auction House Listing Management"])
 templates = Jinja2Templates(directory=str(GUI_ROOT / "templates"))
@@ -88,13 +89,13 @@ def active_listing_browser(
 
 @router.post("/auction-house/test-write/return-to-seller.json")
 def return_listing_to_seller(payload: dict = Body(...)):
-    """Cancel one DSP/Topaz Test listing and atomically return its item to seller Inventory."""
+    """Cancel one DSP/Topaz Test listing using the safest verified return strategy."""
     try:
         auction_id = int(payload.get("auction_id") or 0)
         confirmation = str(payload.get("confirmation") or "")
         environment = get_active_server_identity()
         with _context() as ctx:
-            result = execute_legacy_test_return_to_seller(
+            result = execute_legacy_test_safe_return(
                 service=ctx.service,
                 environment=environment,
                 auction_id=auction_id,
