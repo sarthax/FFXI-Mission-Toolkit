@@ -2,8 +2,8 @@
 
 The legacy DSP/Topaz parser remains owned by :mod:`nyzul_plot`; this module only
 recognizes source layouts and implements the modern LandSandBoat representation.
-Modern LSB deliberately keeps runtime-ID expressions as provenance instead of
-pretending they are legacy numeric entity IDs.
+Modern LSB keeps its runtime-ID expressions as provenance and resolves them only
+through the checkout's own zone entity data.
 """
 from __future__ import annotations
 
@@ -11,6 +11,16 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from workbench.devtools.domains.nyzul_lsb_entities import (
+    MOBS_YAML,
+    NPCS_YAML,
+    legacy_numeric_view,
+    load_entity_index,
+    parse_runtime_id_defs,
+    resolve_ranges,
+    resolve_runtime_ids,
+)
 
 NUM = r"(-?\d+(?:\.\d+)?)"
 NAVMESH_FILE = "navmeshes/Nyzul_Isle.nav"
@@ -160,24 +170,18 @@ def _parse_objectives(text: str) -> dict[str, int]:
     }
 
 
-def _parse_runtime_id_provenance(ids_text: str) -> dict[str, dict[str, str]]:
-    """Preserve modern LSB GetFirstID/GetTableOfIDs expressions without resolving them."""
+def _runtime_id_provenance(defs: dict[str, dict[str, dict[str, Any]]]) -> dict[str, dict[str, str]]:
     out: dict[str, dict[str, str]] = {"mob": {}, "npc": {}}
     for section in ("mob", "npc"):
-        try:
-            body = _block(ids_text, rf"(?m)^\s*{section}\s*=")
-        except ValueError:
-            continue
-        for key, fn, name in re.findall(
-            r"(?m)^\s*([A-Z][A-Z0-9_]*)\s*=\s*(GetFirstID|GetTableOfIDs)\(\s*['\"]([^'\"]+)['\"]\s*\)",
-            body,
-        ):
-            out[section][key] = f"{fn}('{name}')"
+        for key, definition in defs.get(section, {}).items():
+            count = definition.get("count")
+            suffix = f", {count}" if count is not None else ""
+            out[section][key] = f"{definition['function']}('{definition['name']}'{suffix})"
     return out
 
 
 def _parse_range_table(text: str, name: str) -> dict[int, dict[str, str]]:
-    """Capture LSB runtime-ID ranges as expressions, never as invented numeric IDs."""
+    """Capture LSB runtime-ID ranges as expressions before deterministic resolution."""
     try:
         block = _block(text, rf"(?m)^local\s+{re.escape(name)}\s*=")
     except ValueError:
@@ -195,9 +199,9 @@ def _parse_range_table(text: str, name: str) -> dict[int, dict[str, str]]:
 def load_lsb_data(root: Path) -> dict[str, Any]:
     """Normalize deterministic modern-LSB Nyzul data into the editor view model.
 
-    Spatial/layout semantics map directly. Entity IDs do not: current LSB obtains
-    them at runtime with GetFirstID/GetTableOfIDs, so legacy numeric collections
-    remain empty and the original expressions are exposed under ``lineage``.
+    Spatial/layout semantics map directly. Runtime IDs are resolved only from the
+    current checkout's Nyzul zone-data YAML, matching LSB's name-based lookup
+    contract. Original expressions remain available under ``lineage``.
     """
     root = Path(root)
     if not has_lsb_layout(root):
@@ -220,18 +224,25 @@ def load_lsb_data(root: Path) -> dict[str, Any]:
     if not lamps or not points:
         raise ValueError("modern LSB Nyzul spatial tables were recognized but contained no deterministic data")
 
+    runtime_defs = parse_runtime_id_defs(ids_text)
+    entity_index = load_entity_index(root)
+    resolved_ids = resolve_runtime_ids(runtime_defs, entity_index)
+    raw_ranges = {
+        "enemy_leaders": _parse_range_table(floor_text, "pTableEnemyLeaders"),
+        "specified_mobs": _parse_range_table(floor_text, "pTableSpecifiedMobs"),
+        "nm_even": _parse_range_table(floor_text, "pTableEvenFloorRandomNMs"),
+        "nm_odd": _parse_range_table(floor_text, "pTableOddFloorRandomNMs"),
+        "floor_entities": _parse_range_table(floor_text, "pTableFloorRandomEntities"),
+    }
+    resolved_ranges = {name: resolve_ranges(table, resolved_ids) for name, table in raw_ranges.items()}
+    numeric = legacy_numeric_view(resolved_ranges, resolved_ids, entity_index)
+
     has_nav = navmesh_available(root)
     return {
         "lamps": lamps,
         "points": points,
         "entrances": entrances,
-        # The legacy editor expects these numeric collections. LSB runtime IDs
-        # are intentionally not coerced into them.
-        "families": {},
-        "leaders": [],
-        "groups": [],
-        "nm": {"NM_EVEN": [], "NM_ODD": []},
-        "bosses": {},
+        **numeric,
         "adapter": {
             "lineage": "lsb",
             "name": "modern-lsb",
@@ -240,23 +251,23 @@ def load_lsb_data(root: Path) -> dict[str, Any]:
                 "lamp_spawn_points": True,
                 "floor_entrances": True,
                 "objectives": True,
-                "numeric_entity_ids": False,
+                "numeric_entity_ids": True,
+                "entity_id_source": "zone-yaml",
                 "navmesh_reachability": has_nav,
             },
             "provenance": {
                 "floor_generation": str(floor_path.relative_to(root)),
                 "floor_layout": str(nyzul_path.relative_to(root)),
                 "ids": str(ids_path.relative_to(root)),
+                "mobs": MOBS_YAML,
+                "npcs": NPCS_YAML,
                 "navmesh": NAVMESH_FILE if has_nav else None,
             },
         },
         "objectives": _parse_objectives(nyzul_text),
         "lineage": {
-            "runtime_ids": _parse_runtime_id_provenance(ids_text),
-            "enemy_leaders": _parse_range_table(floor_text, "pTableEnemyLeaders"),
-            "specified_mobs": _parse_range_table(floor_text, "pTableSpecifiedMobs"),
-            "nm_even": _parse_range_table(floor_text, "pTableEvenFloorRandomNMs"),
-            "nm_odd": _parse_range_table(floor_text, "pTableOddFloorRandomNMs"),
-            "floor_entities": _parse_range_table(floor_text, "pTableFloorRandomEntities"),
+            "runtime_ids": _runtime_id_provenance(runtime_defs),
+            "resolved_runtime_ids": resolved_ids,
+            **resolved_ranges,
         },
     }
