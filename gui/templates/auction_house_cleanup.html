@@ -2,7 +2,8 @@
 {% block title %}Auction House Cleanup{% endblock %}
 {% block content %}
 <main class="ah-cleanup" id="ahCleanup">
-  <div class="page-head"><div><h1>Auction House Cleanup</h1><p class="muted">Preview exact stale or targeted listings, then Admin Buy or Return only that bound target set.</p></div><div><a href="/auction-house">Auction House</a> · <a href="/auction-house/listing-manager">Listing Manager</a></div></div>
+  <div class="page-head"><div><h1>Auction House Cleanup</h1><p class="muted">Preview exact stale or targeted listings, then Admin Buy or Return only that bound target set.</p></div></div>
+  {% include "_auction_house_nav.html" %}
   <section class="panel">
     <h2>Target rules</h2>
     <div class="filters">
