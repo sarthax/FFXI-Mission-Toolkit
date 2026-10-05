@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 
 from workbench.runtime.legacy_settings import get_active_server_identity, get_active_server_root
 
+from .activity import record_executor_result
 from .admin_buy import execute_legacy_test_admin_buy
 from .factory import open_auction_house
 from .legacy_test_executor import LegacyTestExecutionBlocked
@@ -39,7 +40,11 @@ def admin_buy_listing(payload: dict = Body(...)):
                 expected_price=int(payload.get("expected_price") or 0),
                 confirmation=str(payload.get("confirmation") or ""),
             )
-            return JSONResponse(result)
+        try:
+            record_executor_result(environment=environment, result=result, request_payload=payload, operation="admin_buy")
+        except Exception:
+            pass
+        return JSONResponse(result)
     except LegacyTestExecutionBlocked as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     except (TypeError, ValueError) as exc:
