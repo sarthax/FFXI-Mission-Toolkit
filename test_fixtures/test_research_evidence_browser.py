@@ -183,6 +183,7 @@ def main() -> int:
         assert "Supporting evidence" in contradictions_html
         assert "Contradicting evidence" in contradictions_html
         assert "evidence%3Aclient" in contradictions_html
+        assert "/features/trace?q=feature%3Atest" in contradictions_html
 
         limited_html=render(
             "research_contradictions.html","/research/contradictions",
@@ -201,6 +202,8 @@ def main() -> int:
         assert "client:test" in evidence_html
         assert "CONTRADICTING" in evidence_html
         assert "graph.search" in evidence_html
+        assert "/features/trace?q=feature%3Atest" in evidence_html
+        assert "/research/research%3Aevidence" in evidence_html
 
         session_data=store.get("research:evidence")
         session_html=render(
