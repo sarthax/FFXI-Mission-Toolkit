@@ -3,7 +3,7 @@
 {% block shell_mode %}dense{% endblock %}
 {% block main_class %}research-evidence-page{% endblock %}
 {% block content %}
-<style>main.research-evidence-page{padding:8px 10px 24px}.evidence-context{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0}</style>
+<style>main.research-evidence-page{padding:8px 10px 24px}.evidence-context{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0}.reference-claim-card{border:1px solid var(--border);border-radius:7px;padding:8px;margin:8px 0;background:var(--surface)}</style>
 <div class="dense-toolbar"><a class="chip" href="/research/contradictions">← Contradictions</a><strong>Evidence Detail</strong><span class="chip mono">{{ evidence.evidence_id }}</span><span class="sp"></span><span class="chip">{{ evidence.evidence_type }}</span></div>
 
 <div class="table-wrap"><table>
@@ -15,6 +15,32 @@
   <tr><th>Notes</th><td>{{ evidence.notes or "-" }}</td></tr>
   <tr><th>References</th><td>{{ evidence.reference_count }}</td></tr>
 </table></div>
+
+{% if evidence.evidence_type == "REFERENCE" and evidence.evidence_id[:9] == "evidence:" %}
+<section class="reference-claim-card">
+  <div class="dense-toolbar">
+    <strong>Reference Claim Provenance</strong>
+    <span class="chip mono">{{ evidence.source }}</span>
+    <span class="sp"></span>
+    <a class="chip" href="/features/trace?q={{ evidence.evidence_id[9:]|urlencode }}">Trace claim</a>
+  </div>
+  <p><strong>Claim ID:</strong> <code>{{ evidence.evidence_id[9:] }}</code></p>
+  <p><strong>Page / section:</strong> <code>{{ evidence.location or "-" }}</code> · <strong>Revision:</strong> <code>{{ evidence.snapshot or "-" }}</code></p>
+  <p><strong>Excerpt:</strong> {{ evidence.notes or "-" }}</p>
+  {% for r in evidence.references %}
+    {% if r.kind == "entity_relationships" and r.record_id[:15] == "wiki-reference:" %}
+    <div class="dense-toolbar" style="margin-top:6px">
+      <span class="chip">Imported wiki mapping</span>
+      <code>{{ r.record_id[15:] }}</code>
+      <span class="muted">{{ r.status or "-" }}</span>
+      <span class="sp"></span>
+      <a class="chip" href="/features/trace?q={{ r.record_id[15:]|urlencode }}">Trace mapping</a>
+    </div>
+    {% endif %}
+  {% endfor %}
+  <p class="muted" style="margin-bottom:0">Mapping IDs are navigation evidence only. Feature Trace remains authoritative for unique mapped-target closure and fail-closed handling.</p>
+</section>
+{% endif %}
 
 {% if evidence.reference_kinds or evidence.referenced_subjects or evidence.referenced_snapshots %}
 <div class="evidence-context">
