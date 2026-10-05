@@ -7,11 +7,15 @@ import struct
 from workbench.captures import ffxi_blowfish, search_crypto_envelope, search_framing
 
 
-def decrypted_search_frame(packet_type: int = 0x03, seed: bytes = b"\x01\x02\x03\x04") -> bytes:
-    packet = bytearray(32)
+def decrypted_search_comment(
+    player_id: int = 0x11223344,
+    seed: bytes = b"\x01\x02\x03\x04",
+) -> bytes:
+    packet = bytearray(40)
     struct.pack_into("<H", packet, 0, len(packet))
     packet[4:8] = b"IXFF"
-    packet[8:12] = b"\x11\x22\x33" + bytes([packet_type])
+    packet[8:12] = b"\x11\x22\x33\x08"  # request type 0x08 at offset 0x0B
+    struct.pack_into("<I", packet, 0x10, player_id)
     packet[-4:] = seed
     hash_offset = len(packet) - search_crypto_envelope.SEARCH_TRAILER_SIZE
     packet[hash_offset:-4] = hashlib.md5(packet[8:hash_offset]).digest()
@@ -52,21 +56,25 @@ def main():
     assert ciphertext.hex().upper() == "00D103BFB60109A0", ciphertext.hex()
     assert ffxi_blowfish.decrypt_blocks(ciphertext, key) == plaintext
 
-    decrypted = decrypted_search_frame(0x03)
+    decrypted = decrypted_search_comment()
     wire = encrypt_inbound_frame(decrypted)
+    envelope = search_crypto_envelope.inspect_frame(wire)
+    start = envelope["encrypted_region"]["offset_start"]
+    end = envelope["encrypted_region"]["offset_end"]
     assert wire[:8] == decrypted[:8]
     assert wire[-4:] == decrypted[-4:]
-    assert wire[8:24] != decrypted[8:24]
+    assert wire[start:end] != decrypted[start:end]
 
     decoded = search_crypto_envelope.decrypt_inbound_frame(wire)
     assert decoded["decryption_performed"] is True, decoded
     assert decoded["validated"] is True, decoded
     assert decoded["decoder_status"] == "decrypted_and_validated", decoded
-    assert decoded["packet_type"] == 0x03, decoded
-    assert decoded["packet_type_name"] == "SEARCH", decoded
+    assert decoded["packet_type"] == 0x08, decoded
+    assert decoded["packet_type_name"] == "SEARCH_COMMENT", decoded
     assert bytes.fromhex(decoded["decrypted_hex"]) == decrypted, decoded
 
-    # Direction resolution is the higher-level gate: only client -> verified search endpoint decrypts.
+    # Direction resolution is the higher-level gate: only client -> verified search endpoint decrypts
+    # and only the validated inbound packet reaches request-field decoding.
     scan = search_framing.scan_directions({
         "a_to_b": one_range(wire),
         "b_to_a": one_range(wire),
@@ -75,9 +83,13 @@ def main():
     inbound = next(f for f in scan["frames"] if f["direction"] == "a_to_b")
     outbound = next(f for f in scan["frames"] if f["direction"] == "b_to_a")
     assert inbound["decryption_validated"] is True, inbound
-    assert inbound["validated_packet_type_name"] == "SEARCH", inbound
+    assert inbound["validated_packet_type_name"] == "SEARCH_COMMENT", inbound
     assert inbound["inbound_decryption"]["validated"] is True, inbound
+    assert inbound["validated_request"]["decoder_status"] == "validated_basic_request_fields_decoded", inbound
+    assert inbound["validated_request"]["fields"]["player_id"] == 0x11223344, inbound
+    assert inbound["validated_request"]["field_evidence"]["player_id"]["offset"] == 0x10, inbound
     assert "inbound_decryption" not in outbound, outbound
+    assert "validated_request" not in outbound, outbound
     assert outbound["crypto_envelope"]["applicable_to_observed_direction"] is False, outbound
 
     corrupted = bytearray(wire)
