@@ -58,6 +58,10 @@ def main() -> int:
             "evidence:wiki-claim:test","REFERENCE","bg-wiki","Test Page#Walkthrough","revision:42",
             "Reference-only claim excerpt",
         ))
+        graph.insert_record(con,Evidence(
+            "evidence:wiki-pair:test","REFERENCE","BGWiki+FFXIclopedia","wiki-alignment:Dual Test:pair:test",None,
+            "Dual-wiki reference comparison; neither source is authoritative.",
+        ))
         graph.insert_record(con,Finding(
             "finding:a","analysis:a","feature:test","implementation_state","IMPLEMENTED",
             "VERIFIED","HIGH","evidence:server","lsb:test"
@@ -69,6 +73,23 @@ def main() -> int:
         graph.insert_record(con,Finding(
             "finding:explicit","analysis:c","feature:other","notes","conflict",
             "CONTRADICTED","HIGH","evidence:capture","runtime:test"
+        ))
+        graph.insert_record(con,Finding(
+            "finding:wiki-conflict","analysis:wiki-align:test","reference-alignment:pair:test","reference_claim_alignment",
+            {
+                "alignment_id":"wiki-page-align:test",
+                "alignment_type":"SECTION_STATEMENT",
+                "reference_status":"REFERENCE_CONFLICT",
+                "conflict_kind":"NUMERIC_DISAGREEMENT",
+                "similarity":0.84,
+                "bg_claim_id":"bg-claim:test",
+                "ffxiclopedia_claim_id":"fx-claim:test",
+                "bg_excerpt":"Defeat 5 enemies before opening the chest.",
+                "ffxiclopedia_excerpt":"Defeat 6 enemies before opening the chest.",
+                "details":{"bg_numbers":["5"],"ffxiclopedia_numbers":["6"]},
+                "authority":"REFERENCE_ONLY",
+            },
+            "CONTRADICTED","INFERRED","evidence:wiki-pair:test",None,
         ))
         graph.insert_record(con,Finding(
             "finding:unrelated-a","analysis:u1","feature:unrelated","implementation_state","IMPLEMENTED",
@@ -137,9 +158,17 @@ def main() -> int:
         assert {snapshot for side in finding_conflict["sides"] for snapshot in side["source_snapshots"]}=={"lsb:test","client:test"},finding_conflict
         assert all(side["evidence"] for side in finding_conflict["sides"]),finding_conflict
 
-        explicit=next(item for item in report["items"] if item["kind"]=="EXPLICIT_FINDING_CONTRADICTION")
+        explicit=next(item for item in report["items"] if item["kind"]=="EXPLICIT_FINDING_CONTRADICTION" and item["subject_id"]=="feature:other")
         assert explicit["comparison_state"]=="FLAGGED_ONLY",explicit
         assert len(explicit["sides"])==1,explicit
+
+        wiki_conflict=next(item for item in report["items"] if item["subject_id"]=="reference-alignment:pair:test")
+        assert wiki_conflict["kind"]=="EXPLICIT_FINDING_CONTRADICTION",wiki_conflict
+        assert wiki_conflict["field"]=="reference_claim_alignment",wiki_conflict
+        assert wiki_conflict["comparison_state"]=="FLAGGED_ONLY",wiki_conflict
+        assert wiki_conflict["sides"][0]["value"]["bg_claim_id"]=="bg-claim:test",wiki_conflict
+        assert wiki_conflict["sides"][0]["value"]["ffxiclopedia_claim_id"]=="fx-claim:test",wiki_conflict
+        assert wiki_conflict["sides"][0]["value"]["authority"]=="REFERENCE_ONLY",wiki_conflict
 
         proposal=next(item for item in report["items"] if item["kind"]=="RESEARCH_PROPOSAL_CONTRADICTION")
         assert proposal["comparison_state"]=="EVIDENCE_BACKED_SIDES",proposal
@@ -152,6 +181,7 @@ def main() -> int:
         assert any(item["kind"]=="RESEARCH_PROPOSAL_CONTRADICTION" for item in session_report["items"]),session_report
         assert any(item["kind"]=="FINDING_VALUE_CONFLICT" for item in session_report["items"]),session_report
         assert all(item["subject_id"]!="feature:unrelated" for item in session_report["items"]),session_report
+        assert all(item["subject_id"]!="reference-alignment:pair:test" for item in session_report["items"]),session_report
 
         client_only=list_contradictions(db,evidence_type="CLIENT")
         assert client_only["items"],client_only
@@ -203,6 +233,18 @@ def main() -> int:
         assert "evidence%3Aclient" in contradictions_html
         # Canonical subjects use the existing exact Feature Trace query route.
         assert "/features/trace?q=feature%3Atest" in contradictions_html
+        # Dual-reference conflicts use importer-preserved claim identities; no source is promoted.
+        assert "BG Wiki" in contradictions_html
+        assert "FFXIclopedia" in contradictions_html
+        assert "bg-claim:test" in contradictions_html
+        assert "fx-claim:test" in contradictions_html
+        assert "Defeat 5 enemies before opening the chest." in contradictions_html
+        assert "Defeat 6 enemies before opening the chest." in contradictions_html
+        assert "NUMERIC_DISAGREEMENT" in contradictions_html
+        assert "REFERENCE_ONLY" in contradictions_html
+        assert "/features/trace?q=bg-claim%3Atest" in contradictions_html
+        assert "/features/trace?q=fx-claim%3Atest" in contradictions_html
+        assert "neither source is selected as authoritative" in contradictions_html
 
         limited_html=render(
             "research_contradictions.html","/research/contradictions",
