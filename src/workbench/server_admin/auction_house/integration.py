@@ -15,12 +15,13 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
 
     from .gui import router as auction_house_router
     from .legacy_test_api import router as auction_house_test_write_router
+    from .listing_api import router as auction_house_listing_router
 
     existing_routes = {
         (getattr(route, "path", None), tuple(sorted(getattr(route, "methods", ()) or ())))
         for route in root_router.routes
     }
-    for carrier in (auction_house_router, auction_house_test_write_router):
+    for carrier in (auction_house_router, auction_house_test_write_router, auction_house_listing_router):
         for route in carrier.routes:
             key = (getattr(route, "path", None), tuple(sorted(getattr(route, "methods", ()) or ())))
             if key not in existing_routes:
