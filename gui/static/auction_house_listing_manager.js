@@ -89,6 +89,28 @@
     }
   }
 
+  async function playerPurchase(row) {
+    const buyerId = window.prompt(`Character ID that should receive auction #${row.auction_id}:`);
+    if (!buyerId) return;
+    const confirmation = window.prompt(`Purchase auction #${row.auction_id} for character #${buyerId} at ${gil(row.asking_price)}?\nBuyer must be offline and have enough gil plus a free Inventory slot.\nType the active Test profile name exactly to continue:`);
+    if (!confirmation) return;
+    try {
+      const data = await request('/auction-house/test-write/player-purchase.json', {
+        method: 'POST',
+        body: JSON.stringify({
+          auction_id: row.auction_id,
+          expected_price: row.asking_price,
+          buyer_id: Number(buyerId),
+          confirmation,
+        }),
+      });
+      showAction('Player purchase committed', data);
+      await loadListings();
+    } catch (error) {
+      showAction('Player purchase blocked', error.message, true);
+    }
+  }
+
   function render(rows) {
     if (!rows.length) {
       $('lmResults').innerHTML = '<p class="muted">No active listings matched.</p>';
@@ -105,7 +127,8 @@
         <td class="price">${gil(row.asking_price)}</td>
         <td><div class="lm-actions">
           <button type="button" data-action="admin" data-index="${index}">Admin Buy</button>
-          <button type="button" data-action="player" data-index="${index}">Player Buy Preview</button>
+          <button type="button" data-action="player-preview" data-index="${index}">Player Preview</button>
+          <button type="button" data-action="player-buy" data-index="${index}">Player Buy</button>
           <button type="button" data-action="return" data-index="${index}">Return</button>
         </div></td>
       </tr>`).join('')}</tbody></table>`;
@@ -115,6 +138,7 @@
         const row = rows[Number(button.dataset.index)];
         if (button.dataset.action === 'admin') adminClose(row);
         else if (button.dataset.action === 'return') returnListing(row);
+        else if (button.dataset.action === 'player-buy') playerPurchase(row);
         else playerPreview(row);
       });
     });
