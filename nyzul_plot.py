@@ -12,11 +12,13 @@ from pathlib import Path
 
 from workbench.devtools.domains import nyzul_plot as _canonical
 from workbench.devtools.domains.nyzul_adapters import (
+    NAVMESH_FILE,
     NyzulSource,
     classify_root,
     has_legacy_layout,
     has_lsb_layout,
     load_lsb_data,
+    navmesh_available,
 )
 from workbench.runtime.legacy_settings import (
     get_active_server_profile,
@@ -30,43 +32,73 @@ def _has_nyzul_layout(root: Path) -> bool:
     return classify_root(Path(root)) is not None
 
 
-def _candidate_roots() -> list[Path]:
-    candidates: list[Path] = []
+def _markers(root: Path) -> list[str]:
+    found = []
+    if (root / "scripts/globals/nyzul/floor_generation.lua").is_file():
+        found.append("floor_generation.lua")
+    if (root / "scripts/globals/nyzul/floor_layouts.lua").is_file():
+        found.append("floor_layouts.lua")
+    if (root / "scripts/globals/nyzul.lua").is_file():
+        found.append("nyzul.lua")
+    return found
+
+
+def _profile_family(profile) -> str:
+    return str(getattr(profile, "family", "auto") or "auto").strip().lower()
+
+
+def _configured_server_source() -> NyzulSource:
+    """Resolve the active/profile source without guessing across lineages.
+
+    An explicitly configured active DSP/Topaz/LSB profile must match that family's
+    concrete source shape. A partial or contradictory active profile fails closed
+    instead of silently selecting another parser. ``auto`` profiles with no Nyzul
+    material may fall through to another configured environment.
+    """
+    diagnostics: list[str] = []
     active = get_active_server_profile()
+    seen: set[Path] = set()
+
     if active is not None and active.enabled:
-        candidates.append(Path(active.root_path))
+        root = Path(active.root_path)
+        family = _profile_family(active)
+        seen.add(root)
+        source = classify_root(root, family)
+        if source is not None:
+            return source
+        markers = _markers(root)
+        if family in {"dsp", "topaz", "lsb"} or markers:
+            marker_text = f"; found {', '.join(markers)}" if markers else ""
+            raise ValueError(
+                f"Active server profile declares family {family!r}, but {root} does not contain "
+                f"the supported {family.upper() if family != 'auto' else 'Nyzul'} source layout{marker_text}. "
+                "Nyzul will not fall through to a different lineage parser."
+            )
+        diagnostics.append(f"active {root}: no Nyzul source markers")
 
     for profile in get_server_profiles(include_disabled=False):
         root = Path(profile.root_path)
-        if root not in candidates:
-            candidates.append(root)
+        if root in seen:
+            continue
+        seen.add(root)
+        family = _profile_family(profile)
+        source = classify_root(root, family)
+        if source is not None:
+            return source
+        markers = _markers(root)
+        diagnostics.append(
+            f"{root} [{family}]: unsupported Nyzul layout"
+            + (f" ({', '.join(markers)})" if markers else "")
+        )
 
     legacy_dsp = get_dsp_root()
     if legacy_dsp is not None:
         root = Path(legacy_dsp)
-        if root not in candidates:
-            candidates.append(root)
-    return candidates
-
-
-def _configured_server_source() -> NyzulSource:
-    """Prefer the active supported environment, then another configured profile.
-
-    Detection is by concrete source shape rather than a guessed parser. Unsupported
-    or partial custom layouts fail closed with a diagnostic listing what was seen.
-    """
-    candidates = _candidate_roots()
-    diagnostics: list[str] = []
-    for root in candidates:
-        source = classify_root(root)
-        if source is not None:
-            return source
-        markers = []
-        if (root / "scripts/globals/nyzul/floor_generation.lua").is_file():
-            markers.append("floor_generation.lua")
-        if (root / "scripts/globals/nyzul/floor_layouts.lua").is_file():
-            markers.append("floor_layouts.lua")
-        diagnostics.append(f"{root}: unsupported Nyzul layout" + (f" ({', '.join(markers)})" if markers else ""))
+        if root not in seen:
+            source = classify_root(root, "dsp")
+            if source is not None:
+                return source
+            diagnostics.append(f"{root} [legacy dsp setting]: unsupported Nyzul layout")
 
     detail = "; ".join(diagnostics) if diagnostics else "no enabled server roots are configured"
     raise ValueError(
@@ -81,30 +113,52 @@ def _configured_server_root() -> Path:
 
 
 _legacy_load_data = _canonical.load_data
+_legacy_reachability = _canonical.reachability
+_legacy_nav_triangles_bytes = _canonical.nav_triangles_bytes
 
 
 def _load_data():
     source = _configured_server_source()
     if source.adapter == "modern-lsb":
         return load_lsb_data(source.root)
+    has_nav = navmesh_available(source.root)
     data = _legacy_load_data()
     data.setdefault("adapter", {
-        "lineage": "legacy",
-        "name": "legacy-dsp-topaz",
+        "lineage": source.lineage,
+        "name": source.adapter,
         "capabilities": {
             "layout_spawn_points": True,
             "lamp_spawn_points": True,
             "floor_entrances": True,
             "objectives": False,
             "numeric_entity_ids": True,
+            "navmesh_reachability": has_nav,
         },
         "provenance": {
             "floor_layouts": "scripts/globals/nyzul/floor_layouts.lua",
             "floor_layout": "scripts/globals/nyzul.lua",
             "ids": "scripts/zones/Nyzul_Isle/IDs.lua",
+            "navmesh": NAVMESH_FILE if has_nav else None,
         },
     })
     return data
+
+
+def _reachability():
+    """Reachability is optional evidence, not a prerequisite for opening the editor."""
+    source = _configured_server_source()
+    if not navmesh_available(source.root):
+        return {}
+    return _legacy_reachability()
+
+
+def _nav_triangles_bytes(path=None):
+    """Return an empty overlay when the selected checkout lacks the navmesh submodule."""
+    if path is None:
+        source = _configured_server_source()
+        if not navmesh_available(source.root):
+            return b""
+    return _legacy_nav_triangles_bytes(path)
 
 
 # The packaged backend still names the root resolver ``_dsp_root`` because its
@@ -117,5 +171,7 @@ _canonical._configured_server_source = _configured_server_source
 _canonical._configured_server_root = _configured_server_root
 _canonical._dsp_root = _configured_server_root
 _canonical.load_data = _load_data
+_canonical.reachability = _reachability
+_canonical.nav_triangles_bytes = _nav_triangles_bytes
 
 sys.modules[__name__] = _canonical
