@@ -9416,6 +9416,18 @@ def itemedit_latentmeta():
     return JSONResponse(item_edit.latent_metadata())
 
 
+@app.get("/itemedit/special-cases.json")
+def itemedit_special_cases(item_id: int = 0, name: str = ""):
+    """Gear sets, food/use bonuses and server-code mentions for one item (read-only, parsed from the server tree)."""
+    import zone_plot
+    from workbench.editors.items import _special_cases
+    try:
+        root = zone_plot._server_root()
+    except Exception:
+        return JSONResponse({"item_id": item_id, "gear_sets": [], "effect_gain_mods": [], "code_references": []})
+    return JSONResponse(_special_cases.special_cases(root, item_id, name))
+
+
 @app.get("/itemedit/proc-script.json")
 def itemedit_proc_script(item_id: int = 0, name: str = ""):
     """Where does this item's scripted proc live in the active server tree, and does the file exist?"""

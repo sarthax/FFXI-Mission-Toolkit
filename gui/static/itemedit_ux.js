@@ -496,6 +496,27 @@
       <div class="ie-fx"><div class="tx"><div class="nm">${flag ? 'Effect 431 switches on a scripted proc.' : 'This item has a server script.'}</div>
       <div class="sub">File: <code>${esc(c ? c.path : 'scripts/.../items/' + (nm || '&lt;item&gt;') + '.lua')}</code>. Chance, damage, duration and food/use bonuses live there, so the fields here cannot edit them. ${state}</div>${hooks ? `<ul class="sub" style="margin:4px 0 0 16px">${hooks}</ul>` : ''}${src}</div></div></div>`;
   };
+  let special = null, specialKey = '';
+  const specialBanner = () => {
+    const nm = (typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_basic && loadedServerState.item_basic.name) || '';
+    if (!special || specialKey !== (currentItemId + '|' + nm)) return '';
+    const nice = m => esc(String(m).replace(/^(xi\.mod\.|tpz\.mod\.|MOD_)/, ''));
+    let html = '';
+    if ((special.gear_sets || []).length) html += special.gear_sets.map(g => {
+      const mods = g.mods.map(m => `${nice(m.mod)} ${m.value > 0 ? '+' : ''}${m.value}${m.per_extra_match ? ` (+${m.per_extra_match} per extra piece)` : ''}${m.full_set_bonus ? ` (+${m.full_set_bonus} full set)` : ''}`).join(', ');
+      return `<div class="ie-fx"><div class="tx"><div class="nm">Set bonus: ${esc(g.comment || 'set #' + g.set_id)}</div><div class="sub">Needs ${g.matches_required} of ${g.items.length} pieces (${g.items.map(i => '#' + i).join(', ')}). Gives ${esc(mods || 'unparsed mods')}. Defined in scripts/globals/gear_sets.lua, not on the item.</div></div></div>`;
+    }).join('');
+    if ((special.effect_gain_mods || []).length) html += `<div class="ie-fx"><div class="tx"><div class="nm">Bonuses granted while its effect is active (food / use effect)</div><div class="sub">${special.effect_gain_mods.map(m => nice(m.mod) + ' ' + (m.value > 0 ? '+' : '') + m.value).join(', ')}. Read from the script's onEffectGain, so edit the script to change them.</div></div></div>`;
+    if ((special.code_references || []).length) html += `<div class="ie-fx"><div class="tx"><div class="nm">Special-cased in server code (${special.code_references.length})</div><div class="sub">The server has rules for this exact item id that no table here can show. Check them before trusting the stats:</div><ul class="sub" style="margin:4px 0 0 16px">${special.code_references.map(r => `<li><code>${esc(r.file)}:${r.line}</code> ${esc(r.text)}</li>`).join('')}</ul></div></div>`;
+    return html ? `<div class="ie-fxgroup"><h4>Beyond the item's own data <small>behavior defined in server scripts/code</small></h4>${html}</div>` : '';
+  };
+  const loadSpecial = () => {
+    const nm = (typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_basic && loadedServerState.item_basic.name) || '';
+    const k = currentItemId + '|' + nm;
+    if (!nm || specialKey === k) return;
+    specialKey = k; special = null;
+    fetch('/itemedit/special-cases.json?item_id=' + (currentItemId || 0) + '&name=' + encodeURIComponent(nm)).then(r => r.json()).then(j => { special = j; rerenderEffects(); }).catch(() => {});
+  };
   const loadProcScript = () => {
     const nm = (typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_basic && loadedServerState.item_basic.name) || '';
     if (!nm || procScriptKey === nm) return;
@@ -522,13 +543,13 @@
       ['latents', 'Conditional bonuses', 'only while the condition is met', stagedEffects.latents, r => fxRow('latents', r, mName(r.modId), 'When: ' + (LATENT_NAMES[r.latentId] || 'condition ' + r.latentId) + (r.latentParam ? ' (' + r.latentParam + ')' : ''))],
     ];
     fxList.innerHTML = '';
-    loadProcScript();
+    loadProcScript(); loadSpecial();
     { const w = (typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_weapon) || null, h = w ? Number(w.hit) : 0;
       if (h > 1) {
         const dist = { 2: '1 hit 55%, 2 hits 45%', 3: '1 hit 30%, 2 hits 50%, 3 hits 20%', 4: '1 hit 20%, 2 hits 30%, 3 hits 30%, 4 hits 20%' }[h] || ('up to ' + h + ' hits per attack');
         fxList.insertAdjacentHTML('beforeend', `<div class="ie-fxgroup"><h4>Multi-hit <small>built into the weapon, not an effect row</small></h4><div class="ie-fx"><div class="tx"><div class="nm">${h === 2 ? 'Occasionally attacks twice' : 'Occasionally attacks up to ' + h + ' times'}</div><div class="sub">Weapon stat Max hits = ${h} (${esc(dist)}). Change it under Weapon combat → Max hits per attack.</div></div></div></div>`);
       } }
-    { const sb = scriptBanner(); if (sb) fxList.insertAdjacentHTML('beforeend', sb); }
+    { const sb = scriptBanner() + specialBanner(); if (sb) fxList.insertAdjacentHTML('beforeend', sb); }
     for (const [kind, title, hint, rows, render] of sections) {
       const g = mk('div', null, 'ie-fxgroup');
       g.innerHTML = `<h4>${title} (${rows.length}) <small>${hint}</small></h4>` + (rows.length ? rows.map(render).join('') : '<div class="ie-none">None.</div>');
