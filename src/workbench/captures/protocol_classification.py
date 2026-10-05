@@ -163,7 +163,7 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
                         "payload_semantics": "unknown_opaque",
                     }
                     classification_scope = "verified_search_handoff_plus_source_backed_search_framing"
-                    decoder_status = "crypto_envelope_only_not_decrypted"
+                    decoder_status = "encrypted_or_opaque"
 
             out.append({
                 "flow_id": flow.get("flow_id"),
