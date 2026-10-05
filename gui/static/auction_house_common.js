@@ -2,7 +2,7 @@
   const boxes = Array.from(document.querySelectorAll('[data-ah-shared-status]'));
   if (!boxes.length) return;
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  fetch('/auction-house/status.json', {headers:{Accept:'application/json'}})
+  fetch('/auction-house/capability-status.json', {headers:{Accept:'application/json'}})
     .then(async response => {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok && !payload) throw new Error(`${response.status} ${response.statusText}`);
@@ -12,7 +12,7 @@
       const env = data.environment || {};
       const name = env.name || 'unconfigured';
       const family = env.family || data.schema_family || 'unknown';
-      const kind = env.environment || env.kind || 'unknown';
+      const kind = env.environment || env.environment_kind || env.kind || 'unknown';
       let state = 'READ ONLY';
       let detail = data.capability_note || '';
       if (!data.configured) {
