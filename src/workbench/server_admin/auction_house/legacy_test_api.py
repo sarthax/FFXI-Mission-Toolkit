@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 
 from workbench.runtime.legacy_settings import get_active_server_identity, get_active_server_root
 
+from .activity import record_executor_result
 from .factory import open_auction_house
 from .legacy_test_executor import (
     LegacyTestExecutionBlocked,
@@ -35,9 +36,17 @@ def _context():
         ctx.close()
 
 
+def _audit(environment: dict, result: dict, payload: dict, operation: str) -> None:
+    try:
+        record_executor_result(environment=environment, result=result, request_payload=payload, operation=operation)
+    except Exception:
+        # The server executor has already committed.  Audit persistence failure must never be
+        # represented as a rollback of that server mutation.
+        pass
+
+
 @router.post("/readiness.json")
 def legacy_test_write_readiness(payload: dict = Body(default={})):
-    """Evaluate write gates without mutating the server database."""
     try:
         environment = get_active_server_identity()
         confirmation = str(payload.get("confirmation") or "")
@@ -54,7 +63,6 @@ def legacy_test_write_readiness(payload: dict = Body(default={})):
 
 @router.post("/price-change.json")
 def legacy_test_price_change(payload: dict = Body(...)):
-    """Change one active DSP/Topaz Test listing price through the guarded executor."""
     try:
         auction_id = int(payload.get("auction_id") or 0)
         expected_price = int(payload.get("expected_price") or 0)
@@ -70,7 +78,8 @@ def legacy_test_price_change(payload: dict = Body(...)):
                 new_price=new_price,
                 confirmation=confirmation,
             )
-            return JSONResponse(result)
+        _audit(environment, result, payload, "price_change")
+        return JSONResponse(result)
     except LegacyTestExecutionBlocked as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     except (TypeError, ValueError) as exc:
@@ -81,11 +90,6 @@ def legacy_test_price_change(payload: dict = Body(...)):
 
 @router.post("/synthetic-listing.json")
 def legacy_test_synthetic_listing(payload: dict = Body(...)):
-    """Insert one explicit admin-created DSP/Topaz Test listing.
-
-    This is deliberately not a player listing: it does not remove seller inventory or charge the
-    normal listing fee. The response reports the synthetic supply injection explicitly.
-    """
     try:
         item_id = int(payload.get("item_id") or 0)
         seller_id = int(payload.get("seller_id") or 0)
@@ -103,7 +107,8 @@ def legacy_test_synthetic_listing(payload: dict = Body(...)):
                 stack=stack,
                 confirmation=confirmation,
             )
-            return JSONResponse(result)
+        _audit(environment, result, payload, "synthetic_listing")
+        return JSONResponse(result)
     except LegacyTestExecutionBlocked as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     except (TypeError, ValueError) as exc:
