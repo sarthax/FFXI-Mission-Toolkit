@@ -477,20 +477,29 @@
   const isScriptFlag = id => Number(id) === 431 && /^ADDITIONAL_EFFECT/.test(MOD_NAMES[431] || '');
   const mName = id => isScriptFlag(id) ? 'Runs an item script (additional effect)' : (MOD_NAMES[id] || `Effect #${id}`);
   let procScript = null, procScriptKey = '';
+  const HOOK_TEXT = { onAdditionalEffect: 'extra effect when it hits (proc)', onItemUse: 'what happens when the item is used', onItemCheck: 'extra rules for using/equipping it', onEffectGain: 'applies bonuses while the effect it grants is active (food, medicine, buffs)', onEffectLose: 'removes those bonuses when the effect ends', onEffectTick: 'repeating effect while active' };
   const scriptBanner = () => {
-    const has = (stagedEffects.mods || []).some(r => isScriptFlag(r.modId) && Number(r.value) > 0);
+    const flag = (stagedEffects.mods || []).some(r => isScriptFlag(r.modId) && Number(r.value) > 0);
     const nm = (typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_basic && loadedServerState.item_basic.name) || '';
-    if (!has) return '';
     const c = procScript && procScriptKey === nm && procScript.candidates && procScript.candidates[0];
-    let state = '<span class="muted">checking server for the script...</span>';
-    if (c) state = c.exists ? (c.has_additional_effect ? '<b>Script found</b> - it defines onAdditionalEffect.' : '<b>Script file exists but has no onAdditionalEffect</b> - the proc will do nothing.') : '<b>No script found</b> - the proc does nothing until this file is created.';
-    return `<div class="ie-fxgroup"><h4>Script-driven effect <small>not stored as numbers on the item</small></h4>
-      <div class="ie-fx"><div class="tx"><div class="nm">This item has an on/off switch (effect 431) for a scripted proc.</div>
-      <div class="sub">Chance, damage, element, status and the combat message are written in <code>${esc(c ? c.path : 'scripts/.../items/' + (nm || '&lt;item&gt;') + '.lua')}</code> (onAdditionalEffect), so you cannot edit them with the fields here. ${state}</div></div></div></div>`;
+    if (!flag && !(c && c.exists)) return '';
+    let state = '<span class="muted">checking server for the script...</span>', hooks = '';
+    if (c) {
+      if (c.exists) {
+        state = '<b>Script found.</b>';
+        hooks = (c.hooks || []).map(h => `<li><code>${esc(h)}</code> - ${esc(HOOK_TEXT[h] || 'custom hook')}</li>`).join('');
+        if (flag && !c.has_additional_effect) state += ' <b>But it has no onAdditionalEffect, so the proc switch does nothing.</b>';
+      } else state = '<b>No script found</b> - the proc switch does nothing until this file is created.';
+    }
+    const src = c && c.exists ? `<details><summary>View script source${c.truncated ? ' (first 6000 characters)' : ''}</summary><pre class="mono" style="max-height:260px;overflow:auto;font-size:11px;white-space:pre-wrap">${esc(c.source || '')}</pre></details>` : '';
+    return `<div class="ie-fxgroup"><h4>Item script <small>effects written in Lua, not stored as numbers on the item</small></h4>
+      <div class="ie-fx"><div class="tx"><div class="nm">${flag ? 'Effect 431 switches on a scripted proc.' : 'This item has a server script.'}</div>
+      <div class="sub">File: <code>${esc(c ? c.path : 'scripts/.../items/' + (nm || '&lt;item&gt;') + '.lua')}</code>. Chance, damage, duration and food/use bonuses live there, so the fields here cannot edit them. ${state}</div>${hooks ? `<ul class="sub" style="margin:4px 0 0 16px">${hooks}</ul>` : ''}${src}</div></div></div>`;
   };
   const loadProcScript = () => {
     const nm = (typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_basic && loadedServerState.item_basic.name) || '';
     if (!nm || procScriptKey === nm) return;
+    procScript = null;
     procScriptKey = nm;
     fetch('/itemedit/proc-script.json?item_id=' + (currentItemId || 0) + '&name=' + encodeURIComponent(nm)).then(r => r.json()).then(j => { procScript = j; rerenderEffects(); }).catch(() => {});
   };

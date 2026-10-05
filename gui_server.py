@@ -9437,7 +9437,9 @@ def itemedit_proc_script(item_id: int = 0, name: str = ""):
                 txt = p.read_text(encoding="utf-8", errors="ignore")
             except Exception:
                 txt = ""
-            out["candidates"].append({"path": rel, "exists": True, "has_additional_effect": "onAdditionalEffect" in txt})
+            hooks = sorted(set(_re.findall(r"function\s+(?:\w+[.:])?(on[A-Za-z]+)", txt)))
+            out["candidates"].append({"path": rel, "exists": True, "has_additional_effect": "onAdditionalEffect" in txt,
+                                      "hooks": hooks, "source": txt[:6000], "truncated": len(txt) > 6000})
     if not out["candidates"]:
         base = "scripts/items" if (root / "scripts/items").is_dir() and not (root / "scripts/globals/items").is_dir() else "scripts/globals/items"
         out["candidates"].append({"path": f"{base}/{internal}.lua", "exists": False, "has_additional_effect": False})
