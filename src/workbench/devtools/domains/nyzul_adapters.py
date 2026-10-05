@@ -44,7 +44,6 @@ class NyzulSource:
 
 
 def navmesh_available(root: Path) -> bool:
-    """Return whether the optional xiNavmeshes checkout is initialized for Nyzul."""
     return (Path(root) / NAVMESH_FILE).is_file()
 
 
@@ -98,7 +97,6 @@ def _block(text: str, start_pat: str) -> str:
 
 
 def _indexed_subtables(block: str) -> dict[int, str]:
-    """Return only direct ``[n] = { ... }`` children of an outer Lua table."""
     out: dict[int, str] = {}
     pattern = re.compile(
         r"(?m)^[ \t]*\[\s*(\d+)\s*\][ \t]*=[ \t]*(?:--[^\n]*)?(?:\r?\n[ \t]*)?\{"
@@ -169,7 +167,6 @@ def _runtime_id_provenance(defs: dict[str, dict[str, dict[str, Any]]]) -> dict[s
 
 
 def _parse_range_table(text: str, name: str) -> dict[int, dict[str, str]]:
-    """Capture LSB runtime-ID ranges as expressions before deterministic resolution."""
     try:
         block = _block(text, rf"(?m)^local\s+{re.escape(name)}\s*=")
     except ValueError:
@@ -187,8 +184,35 @@ def _parse_range_table(text: str, name: str) -> dict[int, dict[str, str]]:
     return out
 
 
+def _required_runtime_defs(
+    ranges: dict[str, dict[int, dict[str, str]]],
+    defs: dict[str, dict[str, dict[str, Any]]],
+) -> dict[str, dict[str, dict[str, Any]]]:
+    """Select only IDs.lua symbols needed by Nyzul Investigation generation.
+
+    Nyzul Isle hosts other instances whose IDs.lua symbols are unrelated to floor
+    generation. A mismatch in those definitions must not make this adapter reject
+    otherwise-valid Nyzul Investigation data.
+    """
+    required: dict[str, set[str]] = {"mob": {"ARCHAIC_RAMPART_OFFSET", "DAHAK", "GEAR_OFFSET"}, "npc": set()}
+    symbol_re = re.compile(r"ID\.(mob|npc)\.([A-Z][A-Z0-9_]*)")
+    for table in ranges.values():
+        for row in table.values():
+            for expression in (row["first"], row["last"]):
+                for section, key in symbol_re.findall(expression):
+                    required[section].add(key)
+
+    selected: dict[str, dict[str, dict[str, Any]]] = {"mob": {}, "npc": {}}
+    for section in ("mob", "npc"):
+        for key in sorted(required[section]):
+            definition = defs.get(section, {}).get(key)
+            if definition is None:
+                raise ValueError(f"modern LSB Nyzul floor generation references undefined ID.{section}.{key}")
+            selected[section][key] = definition
+    return selected
+
+
 def load_lsb_data(root: Path) -> dict[str, Any]:
-    """Normalize deterministic modern-LSB Nyzul data into the editor view model."""
     root = Path(root)
     if not has_lsb_layout(root):
         raise ValueError(
@@ -210,9 +234,6 @@ def load_lsb_data(root: Path) -> dict[str, Any]:
     if not lamps or not points:
         raise ValueError("modern LSB Nyzul spatial tables were recognized but contained no deterministic data")
 
-    runtime_defs = parse_runtime_id_defs(ids_text)
-    entity_index = load_entity_index(root)
-    resolved_ids = resolve_runtime_ids(runtime_defs, entity_index)
     raw_ranges = {
         "enemy_leaders": _parse_range_table(floor_text, "pTableEnemyLeaders"),
         "specified_mobs": _parse_range_table(floor_text, "pTableSpecifiedMobs"),
@@ -220,6 +241,10 @@ def load_lsb_data(root: Path) -> dict[str, Any]:
         "nm_odd": _parse_range_table(floor_text, "pTableOddFloorRandomNMs"),
         "floor_entities": _parse_range_table(floor_text, "pTableFloorRandomEntities"),
     }
+    runtime_defs = parse_runtime_id_defs(ids_text)
+    required_defs = _required_runtime_defs(raw_ranges, runtime_defs)
+    entity_index = load_entity_index(root)
+    resolved_ids = resolve_runtime_ids(required_defs, entity_index)
     resolved_ranges = {name: resolve_ranges(table, resolved_ids) for name, table in raw_ranges.items()}
     numeric = legacy_numeric_view(resolved_ranges, resolved_ids, entity_index)
 
