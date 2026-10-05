@@ -10,6 +10,7 @@ from workbench.runtime.legacy_settings import get_active_server_identity, get_ac
 
 from .factory import open_auction_house
 from .legacy_test_executor import LegacyTestExecutionBlocked
+from .reward_campaigns import record_campaign
 from .reward_delivery import execute_reward_delivery, preview_reward_delivery
 from .reward_templates import (
     RewardTemplateError,
@@ -105,19 +106,33 @@ def reward_execute(payload: dict = Body(...)):
     try:
         items, template = _items(payload)
         environment = get_active_server_identity()
+        recipient_mode = str(payload.get("recipient_mode") or "selected")
+        character_ids = [int(value) for value in (payload.get("character_ids") or [])]
+        preview_id = str(payload.get("preview_id") or "")
+        replay_id = str(payload.get("replay_id") or "")
         with _context() as ctx:
             result = execute_reward_delivery(
                 service=ctx.service,
                 environment=environment,
-                mode=str(payload.get("recipient_mode") or "selected"),
-                character_ids=[int(value) for value in (payload.get("character_ids") or [])],
+                mode=recipient_mode,
+                character_ids=character_ids,
                 items=items,
                 preview_token=str(payload.get("preview_token") or ""),
-                preview_id=str(payload.get("preview_id") or ""),
-                replay_id=str(payload.get("replay_id") or ""),
+                preview_id=preview_id,
+                replay_id=replay_id,
                 confirmation=str(payload.get("confirmation") or ""),
             )
-        return JSONResponse({"template": template, "result": result})
+        campaign = record_campaign(
+            environment=environment,
+            template=template,
+            items=items,
+            recipient_mode=recipient_mode,
+            recipient_count=int(result.get("recipient_count") or 0),
+            preview_id=preview_id,
+            replay_id=replay_id,
+            result=result,
+        )
+        return JSONResponse({"template": template, "result": result, "campaign": campaign})
     except (RewardTemplateError, LegacyTestExecutionBlocked) as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     except (TypeError, ValueError) as exc:
