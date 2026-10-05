@@ -33,6 +33,28 @@ def encrypt_inbound_frame(decrypted: bytes) -> bytes:
     return bytes(encrypted)
 
 
+def decrypted_server_response(state: bytes) -> bytes:
+    packet = bytearray(40)
+    struct.pack_into("<H", packet, 0, len(packet))
+    packet[4:8] = b"IXFF"
+    # Deliberately opaque response bytes: this fixture proves crypto/state only, not response schema.
+    packet[8:20] = bytes.fromhex("A1A2A3A4A5A6A7A8A9AAABAC")
+    packet[-4:] = state[16:20]
+    hash_offset = len(packet) - search_crypto_envelope.SEARCH_TRAILER_SIZE
+    packet[hash_offset:-4] = hashlib.md5(packet[8:hash_offset]).digest()
+    return bytes(packet)
+
+
+def encrypt_outbound_frame(decrypted: bytes, state: bytes) -> bytes:
+    envelope = search_crypto_envelope.inspect_frame(decrypted)
+    start = envelope["encrypted_region"]["offset_start"]
+    end = envelope["encrypted_region"]["offset_end"]
+    key = hashlib.md5(state).digest()
+    encrypted = bytearray(decrypted)
+    encrypted[start:end] = ffxi_blowfish.encrypt_blocks(decrypted[start:end], key)
+    return bytes(encrypted)
+
+
 def one_range(payload: bytes) -> dict:
     return {
         "ranges": [{
@@ -91,6 +113,33 @@ def main():
     assert "inbound_decryption" not in outbound, outbound
     assert "validated_request" not in outbound, outbound
     assert outbound["crypto_envelope"]["applicable_to_observed_direction"] is False, outbound
+
+    # A validated inbound observation yields the exact 24-byte state needed by server encryption.
+    state_evidence = search_crypto_envelope.derive_outbound_state(wire, decrypted)
+    assert state_evidence["validated"] is True, state_evidence
+    assert state_evidence["state_length"] == 24, state_evidence
+    assert state_evidence["inbound_seed_hex"] == "01020304", state_evidence
+    assert state_evidence["continuation_offset"] == 0x10, state_evidence
+    assert state_evidence["continuation_hex"] == "44332211", state_evidence
+    state = bytes.fromhex(state_evidence["state_hex"])
+
+    # Server response crypto can now be validated with explicit predecessor state while response
+    # payload semantics remain intentionally opaque.
+    server_plain = decrypted_server_response(state)
+    server_wire = encrypt_outbound_frame(server_plain, state)
+    server_decoded = search_crypto_envelope.decrypt_outbound_frame(server_wire, state_evidence)
+    assert server_decoded["decryption_performed"] is True, server_decoded
+    assert server_decoded["validated"] is True, server_decoded
+    assert server_decoded["decoder_status"] == "outbound_decrypted_and_validated", server_decoded
+    assert server_decoded["payload_semantics"] == "unknown_opaque", server_decoded
+    assert bytes.fromhex(server_decoded["decrypted_hex"]) == server_plain, server_decoded
+
+    wrong_state = bytearray(state)
+    wrong_state[16] ^= 0xFF
+    rejected_state = search_crypto_envelope.decrypt_outbound_frame(server_wire, bytes(wrong_state))
+    assert rejected_state["validated"] is False, rejected_state
+    assert rejected_state["decryption_performed"] is False, rejected_state
+    assert any(d["kind"] == "search_outbound_state_seed_mismatch" for d in rejected_state["diagnostics"]), rejected_state
 
     corrupted = bytearray(wire)
     corrupted[8] ^= 0x80
