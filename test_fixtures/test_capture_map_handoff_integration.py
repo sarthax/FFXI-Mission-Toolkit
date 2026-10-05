@@ -53,13 +53,13 @@ def map_login_datagram() -> bytes:
     header = map_framing.LOGIN_OPCODE | ((map_framing.LOGIN_PACKET_SIZE // 4) << 9)
     struct.pack_into("<H", inner, 0, header)
     struct.pack_into("<H", inner, 2, 0x1234)
-    for i in range(map_framing.LOGIN_PACKET_CHECK_SUM_START, map_framing.LOGIN_BODY_SIZE):
+    for i in range(map_framing.LOGIN_PACKET_CHECK_SUM_START, map_framing.LOGIN_PACKET_SIZE):
         inner[i] = (i * 13 + 9) & 0xFF
     inner[map_framing.LOGIN_PACKET_CHECK_OFFSET] = (
-        sum(inner[map_framing.LOGIN_PACKET_CHECK_SUM_START:map_framing.LOGIN_BODY_SIZE]) & 0xFF
+        sum(inner[map_framing.LOGIN_PACKET_CHECK_SUM_START:map_framing.LOGIN_PACKET_SIZE]) & 0xFF
     )
-    inner[map_framing.LOGIN_BODY_SIZE:] = hashlib.md5(inner[:map_framing.LOGIN_BODY_SIZE]).digest()
-    return bytes(bytearray(map_framing.FFXI_HEADER_SIZE) + inner)
+    trailer = hashlib.md5(inner).digest()
+    return bytes(bytearray(map_framing.FFXI_HEADER_SIZE) + inner + trailer)
 
 
 def ipv4_tcp_frame(payload: bytes, *, sport: int, dport: int, seq: int, src, dst) -> bytes:
@@ -111,6 +111,7 @@ def main():
 
     handoff = response_next_login()
     map_login = map_login_datagram()
+    assert len(map_login) == map_framing.MIN_DATAGRAM_SIZE
     frames = [
         (1_700_000_000, 100_000, ipv4_tcp_frame(
             handoff,
@@ -159,6 +160,8 @@ def main():
     assert forward["framing_evidence"]["message_type"] == "client_zone_login_0x000A", forward
     assert forward["framing_evidence"]["direction"] == "client_to_map", forward
     assert forward["map_handshake_probe"]["recognized"] is True, forward
+    assert forward["map_handshake_probe"]["field_evidence"]["outer_md5"]["valid"] is True, forward
+    assert forward["map_handshake_probe"]["field_evidence"]["LoginPacketCheck"]["valid"] is True, forward
     assert forward["transport_payload_hex"] == map_login.hex().upper(), forward
     assert forward["cross_source_merge_performed"] is False, forward
 
