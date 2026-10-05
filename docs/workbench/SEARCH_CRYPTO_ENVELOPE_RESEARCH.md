@@ -1,4 +1,4 @@
-# Search/cache crypto-envelope research
+# Search/cache crypto-envelope and inbound decryption research
 
 Status: source-backed capture/protocol research on `feature/capture-protocol-research-next`.
 
@@ -10,12 +10,12 @@ Modern LandSandBoat `SearchHandler` accepts search/cache traffic over TCP. Clear
 - literal `IXFF` at offsets `0x04..0x07`;
 - minimum observed packet length of 28 bytes.
 
-For **client -> search server** traffic, `SearchHandler::decrypt()` then performs a source-defined per-frame derivation:
+For **client -> search server** traffic, `SearchHandler::decrypt()` performs a source-defined per-frame derivation:
 
-1. start with the handler's fixed 16-byte base prefix;
+1. start with the fixed 16-byte base prefix;
 2. copy the frame's final 4 bytes into key bytes `16..19`;
 3. calculate MD5 over those 20 key bytes;
-4. use the resulting 16-byte digest to initialize Blowfish;
+4. use the resulting 16-byte digest to initialize the FFXI Blowfish variant;
 5. decrypt aligned 8-byte blocks beginning at frame offset `0x08`.
 
 The encrypted word count mirrors LSB exactly:
@@ -40,7 +40,72 @@ frame[length - 0x14 : length - 0x04]
 
 Only after that validation succeeds does LSB read the request type at offset `0x0B`.
 
-The source-defined request type names currently exposed by LSB are:
+## FFXI Blowfish compatibility
+
+The FFXI/LandSandBoat packet cipher is **not wire-compatible with a generic textbook Blowfish library**. The key schedule uses the standard Blowfish P/S seed constants, but the packet primitive uses the FFXI-specific round function represented by the maintained server implementation.
+
+`workbench.captures.ffxi_blowfish` is an independent, dependency-free implementation of that behavior. It uses standard Blowfish pi constants as data, the FFXI round behavior, and little-endian `uint32` packet words matching the server wire path. No GPL implementation code is copied into the MIT toolkit.
+
+A deterministic compatibility vector is retained in the focused regression fixture:
+
+```text
+key        = 6A15DA0320124399517BDF754E670064
+plaintext  = 0001020304050607
+ciphertext = 00D103BFB60109A0
+```
+
+Decrypting that ciphertext with the same key returns the original block.
+
+## Direction boundary
+
+Inbound and outbound search crypto are not symmetric from capture evidence alone.
+
+After an inbound decrypt, LSB copies four decrypted bytes from `length - 0x18` into key bytes `20..23`. Server-side encryption subsequently hashes the full 24-byte rolling key state. Therefore server -> client traffic is **not independently decryptable from an outbound frame alone** unless the preceding validated inbound state is available.
+
+The toolkit consequently requires independent endpoint-role evidence before automatic decryption:
+
+```text
+direction_scope = client_to_search_server_only
+applicability_requires_endpoint_role = true
+```
+
+`search_framing.resolve_crypto_direction()` derives the client-to-server direction from the verified lobby `cache_ip/cache_port` endpoint. Only that direction invokes inbound decryption. The reverse direction remains framed/opaque and carries an explicit direction-mismatch diagnostic.
+
+## Toolkit implementation
+
+`search_crypto_envelope.inspect_frame()` records the source-backed crypto envelope:
+
+- clear header range;
+- final 4-byte inbound seed;
+- deterministic `MD5(fixed16 || seed4)` derived cipher key;
+- exact encrypted byte span;
+- exact post-decrypt MD5 input/hash offsets;
+- packet-type offset `0x0B` with its value withheld until validation;
+- outbound rolling-state dependency.
+
+`search_crypto_envelope.decrypt_inbound_frame()` now performs the source-backed inbound operation:
+
+1. inspect the envelope;
+2. derive the per-frame key;
+3. decrypt only the aligned encrypted span with `ffxi_blowfish`;
+4. preserve the clear header and trailing seed bytes;
+5. validate declared length and `IXFF`;
+6. validate the post-decrypt MD5;
+7. expose request type only if every gate succeeds.
+
+Failed decrypt/validation attempts remain evidence with diagnostics and decrypted-candidate bytes, but they do not expose trusted request semantics.
+
+The top-level framing status remains:
+
+```text
+decoder_status = encrypted_or_opaque
+```
+
+for metadata compatibility. Successful inbound frames carry their stronger result under `inbound_decryption` and set `decryption_validated=true`.
+
+## Validated request types and fields
+
+After framing + direction + decryption + MD5 succeed, the maintained request type table is used:
 
 | Value | Name |
 |---:|---|
@@ -54,84 +119,45 @@ The source-defined request type names currently exposed by LSB are:
 | `0x10` | `AH_REQUEST_MORE` |
 | `0x15` | `AH_REQUEST` |
 
-Unknown validated request bytes remain numeric and are reported as `UNKNOWN`; no speculative name is assigned.
+Unknown validated values remain numeric and `UNKNOWN`; no speculative name is assigned.
 
-## Direction boundary
+`search_request_decode.decode_validated_request()` currently decodes only the fixed-offset non-AH subset:
 
-This derivation must not be applied blindly to server -> client traffic.
+- `ID_LIST`: requested count at `0x10`, `uint32` character IDs from `0x12`, capped to 20 and available complete entries;
+- `GROUP_LIST`: party/alliance/linkshell IDs at `0x10`, `0x14`, `0x18`, `0x1C`;
+- `SEARCH_COMMENT`: player ID at `0x10`.
 
-After an inbound decrypt, LSB also copies four decrypted bytes from `length - 0x18` into key bytes `20..23`. Server-side `encrypt()` subsequently hashes the full 24-byte rolling key state. Therefore the outbound key is **not independently reconstructable from the outbound frame alone** unless the preceding inbound state is known and successfully decrypted.
+Each field carries source-backed offset/length evidence. `search_framing.resolve_crypto_direction()` automatically attaches this as `validated_request` after successful inbound decryption.
 
-The toolkit consequently marks this contract:
+`SEARCH`/`SEARCH_ALL` remain body-opaque because their bit-packed filter grammar is a larger parser. All Auction House request/history bodies remain deliberately opaque in this branch to avoid collision with the parallel Auction House work.
 
-```text
-direction_scope = client_to_search_server_only
-applicability_requires_endpoint_role = true
-```
+## Regression coverage
 
-Once the verified cache-server endpoint role is known, `search_framing.resolve_crypto_direction()` marks each framed observation with the resolved client-to-server direction and whether the inbound derivation is applicable. Server-to-client frames receive an explicit direction-mismatch diagnostic rather than a usable inbound-key claim.
+Synthetic coverage now includes:
 
-## Toolkit implementation
+- deterministic FFXI-cipher block compatibility;
+- encrypt/decrypt round trip;
+- aligned-block rejection;
+- exact inbound key derivation and encrypted span;
+- endpoint-role direction gating;
+- encrypted inbound `SEARCH_COMMENT` -> decrypt -> framing validation -> MD5 validation -> request type -> player ID;
+- corrupted ciphertext failing closed before trusted request semantics;
+- reverse-direction frame remaining undecrypted;
+- existing ID-list/group-list/search-comment fixed-field validation.
 
-`workbench.captures.search_crypto_envelope.inspect_frame()` records, without decrypting:
-
-- clear header range;
-- final 4-byte per-frame inbound seed;
-- deterministic MD5-derived Blowfish key for the inbound contract;
-- exact encrypted byte span;
-- exact post-decrypt MD5 input and expected-hash offsets;
-- packet-type offset `0x0B`, with value intentionally withheld;
-- the rolling-state dependency required for server -> client encryption.
-
-`search_framing.scan_range()` attaches this information under `crypto_envelope` to accepted clear-framing candidates while retaining the existing top-level:
-
-```text
-decoder_status = encrypted_or_opaque
-```
-
-for metadata compatibility. The presence of envelope metadata does not mean decryption succeeded.
-
-`search_crypto_envelope.validate_decrypted_frame()` accepts already-decrypted inbound candidate bytes and repeats the full source-backed gate: declared length, `IXFF`, then post-decrypt MD5. A packet type and source-defined request name are returned only after all checks pass. A known value is marked `known_request_type=true`; an unlisted value remains `UNKNOWN` with the validated numeric byte preserved.
-
-## Validated basic request fields
-
-`workbench.captures.search_request_decode.decode_validated_request()` layers a deliberately small request-body decoder on top of that validator. It currently exposes only fields that current LSB reads directly at fixed offsets:
-
-### `ID_LIST` (`0x01`)
-
-- requested count: `uint16` at `0x10`;
-- character IDs: `uint32[]` from `0x12`;
-- count is capped exactly as LSB does: requested count, maximum 20, and the number of complete IDs available before the 20-byte search trailer.
-
-### `GROUP_LIST` (`0x02`)
-
-- party ID: `uint32` at `0x10`;
-- alliance ID: `uint32` at `0x14`;
-- linkshell ID 1: `uint32` at `0x18`;
-- linkshell ID 2: `uint32` at `0x1C`.
-
-### `SEARCH_COMMENT` (`0x08`)
-
-- player ID: `uint32` at `0x10`.
-
-Every decoded field carries offset/length certainty metadata. Truncated bodies remain validated at the frame level but are not decoded past the available bytes.
-
-Known request types not covered above remain body-opaque. In particular, this slice does **not** decode `SEARCH`/`SEARCH_ALL` bit-packed filters or any Auction House request/history body, even after type validation.
+The normal CI-enumerated lobby/capture regression also exercises the integrated search classification/decryption code path, while the focused positive cipher fixture remains a dedicated regression artifact.
 
 ## Current non-goals
 
 This slice does not:
 
-- introduce a Blowfish dependency;
-- vendor a Blowfish implementation;
-- guess session state;
-- decrypt server -> client traffic without prior inbound state;
-- assign request semantics from encrypted bytes;
+- decrypt server -> client traffic without prior validated inbound rolling state;
+- infer or guess missing session state;
 - decode `SEARCH`/`SEARCH_ALL` bit-packed filter grammar;
 - decode Auction House search/history request bodies;
-- promote a packet type when framing or post-decrypt MD5 fails;
+- promote a request type or fields when endpoint direction, framing, decryption, or MD5 validation fails;
 - classify a search flow from framing alone without the independent verified lobby `cache_ip/cache_port` handoff.
 
 ## Next safe step
 
-A later decoder slice can add an isolated Blowfish implementation or optional dependency only after a fixture proves byte-for-byte compatibility with LSB. The first target should be a synthetic inbound frame generated from the same source contract, followed by a real capture tied to a verified lobby search/cache handoff. Server -> client decryption should remain a separate stateful step because it depends on key continuation extracted from a successfully decrypted inbound packet.
+The highest-value validation target is now a **real search/cache capture tied to a verified lobby handoff**. Inbound frames can be tested directly against this implementation. Server -> client decryption should remain a separate stateful slice: it must carry forward the four decrypted key-continuation bytes from a previously validated inbound packet before any outbound semantics are trusted.
