@@ -1,12 +1,8 @@
-"""Source-backed cryptographic envelope metadata and inbound decode for FFXI search/cache TCP.
+"""Source-backed search/cache cryptographic envelope and validated transform helpers.
 
-The client-to-search-server path uses a source-defined per-frame key derivation plus the FFXI
-Blowfish variant implemented in :mod:`workbench.captures.ffxi_blowfish`. Packet type and semantic
-fields remain gated behind the same clear framing and post-decrypt MD5 checks used by LandSandBoat.
-
-Server-to-client encryption is different: it uses additional rolling key state populated only after a
-previous inbound packet has been decrypted. Therefore outbound decryption remains intentionally out
-of scope for this stateless helper.
+Inbound client-to-search-server frames are independently decryptable from their own final 4-byte
+seed. Server-to-client frames require rolling 24-byte state established by a previously validated
+inbound frame, so outbound decryption is exposed only through an explicit state handoff helper.
 """
 from __future__ import annotations
 
@@ -15,9 +11,6 @@ import hashlib
 from workbench.captures import ffxi_blowfish
 
 
-# LandSandBoat SearchHandler::key[0:16]. Inbound decrypt copies the frame's final uint32 into
-# key[16:20], hashes exactly those first 20 bytes with MD5, and uses the resulting 16-byte digest
-# to initialize the FFXI Blowfish variant for that one frame.
 _SEARCH_BASE_KEY = bytes.fromhex("30733D6D3C31495A327A424363387B7E")
 SEARCH_HEADER_SIZE = 8
 SEARCH_HASH_SIZE = 16
@@ -26,8 +19,6 @@ SEARCH_TRAILER_SIZE = SEARCH_HASH_SIZE + SEARCH_SEED_SIZE
 SEARCH_MIN_FRAME_SIZE = 28
 SEARCH_MARKER = b"IXFF"
 
-# LandSandBoat SearchHandler::TCPREQUESTTYPE. These names are exposed only after decrypted bytes
-# pass the exact framing + post-decrypt MD5 validation contract.
 SEARCH_REQUEST_TYPES = {
     0x00: "SEARCH_ALL",
     0x01: "ID_LIST",
@@ -41,12 +32,14 @@ SEARCH_REQUEST_TYPES = {
 }
 
 
-def inspect_frame(raw: bytes) -> dict:
-    """Describe LSB's inbound search crypto envelope without decrypting it.
+def _encrypted_region(length: int) -> tuple[int, int]:
+    encrypted_word_count = (length - 12) // 4
+    encrypted_word_count -= encrypted_word_count % 2
+    return SEARCH_HEADER_SIZE, SEARCH_HEADER_SIZE + encrypted_word_count * 4
 
-    Direction is not known at this layer, so the returned derivation is explicitly marked
-    client-to-server-only and unresolved until endpoint roles are available.
-    """
+
+def inspect_frame(raw: bytes) -> dict:
+    """Describe the source-backed inbound crypto envelope without decrypting it."""
     result = {
         "valid_envelope": False,
         "certainty": "unknown_opaque",
@@ -67,19 +60,9 @@ def inspect_frame(raw: bytes) -> dict:
     length = len(raw)
     seed_offset = length - SEARCH_SEED_SIZE
     hash_offset = length - SEARCH_TRAILER_SIZE
-    hashed_plaintext_start = SEARCH_HEADER_SIZE
-    hashed_plaintext_end = hash_offset
-
-    # Mirrors: tmp = (length - 12) / 4; tmp -= tmp % 2; each pair is one 8-byte block.
-    encrypted_word_count = (length - 12) // 4
-    encrypted_word_count -= encrypted_word_count % 2
-    encrypted_length = encrypted_word_count * 4
-    encrypted_start = SEARCH_HEADER_SIZE
-    encrypted_end = encrypted_start + encrypted_length
-
+    encrypted_start, encrypted_end = _encrypted_region(length)
     seed = raw[seed_offset:length]
-    key_input = _SEARCH_BASE_KEY + seed
-    derived_key = hashlib.md5(key_input).digest()
+    derived_key = hashlib.md5(_SEARCH_BASE_KEY + seed).digest()
 
     result.update({
         "valid_envelope": True,
@@ -107,15 +90,15 @@ def inspect_frame(raw: bytes) -> dict:
         "encrypted_region": {
             "offset_start": encrypted_start,
             "offset_end": encrypted_end,
-            "length": encrypted_length,
+            "length": encrypted_end - encrypted_start,
             "block_size": 8,
             "raw_hex": raw[encrypted_start:encrypted_end].hex().upper(),
             "certainty": "verified_from_source_for_inbound_client_frame",
         },
         "post_decrypt_hash_contract": {
-            "hash_input_offset_start": hashed_plaintext_start,
-            "hash_input_offset_end": hashed_plaintext_end,
-            "hash_input_length": hashed_plaintext_end - hashed_plaintext_start,
+            "hash_input_offset_start": SEARCH_HEADER_SIZE,
+            "hash_input_offset_end": hash_offset,
+            "hash_input_length": hash_offset - SEARCH_HEADER_SIZE,
             "expected_md5_offset": hash_offset,
             "expected_md5_length": SEARCH_HASH_SIZE,
             "expected_md5_raw_hex_pre_decrypt": raw[hash_offset:seed_offset].hex().upper(),
@@ -145,15 +128,12 @@ def inspect_frame(raw: bytes) -> dict:
     return result
 
 
-def validate_decrypted_frame(decrypted: bytes) -> dict:
-    """Validate a decrypted *inbound* candidate against the complete LSB gate."""
+def _validate_decrypted_structure(decrypted: bytes) -> dict:
+    """Validate the clear framing and post-transform MD5 without assigning direction semantics."""
     result = {
         "validated": False,
         "certainty": "unknown_opaque",
-        "direction_scope": "client_to_search_server_only",
         "diagnostics": [],
-        "packet_type": None,
-        "packet_type_name": None,
     }
     if len(decrypted) < SEARCH_MIN_FRAME_SIZE:
         result["diagnostics"].append({
@@ -179,6 +159,10 @@ def validate_decrypted_frame(decrypted: bytes) -> dict:
         })
         return result
 
+    hash_offset = len(decrypted) - SEARCH_TRAILER_SIZE
+    seed_offset = len(decrypted) - SEARCH_SEED_SIZE
+    computed = hashlib.md5(decrypted[SEARCH_HEADER_SIZE:hash_offset]).digest()
+    observed = decrypted[hash_offset:seed_offset]
     result["framing_validation"] = {
         "declared_length": declared,
         "observed_length": len(decrypted),
@@ -186,11 +170,6 @@ def validate_decrypted_frame(decrypted: bytes) -> dict:
         "valid": True,
         "certainty": "verified",
     }
-
-    hash_offset = len(decrypted) - SEARCH_TRAILER_SIZE
-    seed_offset = len(decrypted) - SEARCH_SEED_SIZE
-    computed = hashlib.md5(decrypted[SEARCH_HEADER_SIZE:hash_offset]).digest()
-    observed = decrypted[hash_offset:seed_offset]
     result["post_decrypt_md5"] = {
         "computed_hex": computed.hex().upper(),
         "observed_hex": observed.hex().upper(),
@@ -202,10 +181,24 @@ def validate_decrypted_frame(decrypted: bytes) -> dict:
         result["diagnostics"].append({"kind": "search_post_decrypt_md5_mismatch"})
         return result
 
-    packet_type = decrypted[0x0B]
-    packet_type_name = SEARCH_REQUEST_TYPES.get(packet_type)
     result["validated"] = True
     result["certainty"] = "verified"
+    return result
+
+
+def validate_decrypted_frame(decrypted: bytes) -> dict:
+    """Validate a decrypted inbound request, then expose its request type."""
+    result = {
+        **_validate_decrypted_structure(decrypted),
+        "direction_scope": "client_to_search_server_only",
+        "packet_type": None,
+        "packet_type_name": None,
+    }
+    if not result["validated"]:
+        return result
+
+    packet_type = decrypted[0x0B]
+    packet_type_name = SEARCH_REQUEST_TYPES.get(packet_type)
     result["packet_type"] = packet_type
     result["packet_type_name"] = packet_type_name or "UNKNOWN"
     result["packet_type_evidence"] = {
@@ -220,12 +213,7 @@ def validate_decrypted_frame(decrypted: bytes) -> dict:
 
 
 def decrypt_inbound_frame(raw: bytes) -> dict:
-    """Decrypt one client->search-server frame and validate it fail-closed.
-
-    Callers must establish client/server direction from independent endpoint evidence before using
-    this helper. A decrypted candidate is always retained for diagnostics, but request type becomes
-    trusted only when :func:`validate_decrypted_frame` succeeds.
-    """
+    """Decrypt one independently proven client->search-server frame and validate it fail-closed."""
     envelope = inspect_frame(raw)
     result = {
         "decryption_performed": False,
@@ -260,4 +248,116 @@ def decrypt_inbound_frame(raw: bytes) -> dict:
     if validation.get("validated"):
         result["packet_type"] = validation.get("packet_type")
         result["packet_type_name"] = validation.get("packet_type_name")
+    return result
+
+
+def derive_outbound_state(inbound_wire: bytes, inbound_decrypted: bytes) -> dict:
+    """Derive the exact 24-byte SearchHandler state produced by one validated inbound request.
+
+    This does not search for or guess a predecessor. The caller must provide the wire frame and its
+    corresponding validated decrypted bytes from the same observation.
+    """
+    validation = validate_decrypted_frame(inbound_decrypted)
+    result = {
+        "validated": False,
+        "certainty": "unknown_opaque",
+        "diagnostics": list(validation.get("diagnostics") or []),
+        "source_inbound_validation": validation,
+    }
+    if len(inbound_wire) != len(inbound_decrypted):
+        result["diagnostics"].append({
+            "kind": "search_state_source_length_mismatch",
+            "wire_length": len(inbound_wire),
+            "decrypted_length": len(inbound_decrypted),
+        })
+        return result
+    if not validation.get("validated"):
+        return result
+
+    seed = inbound_wire[-SEARCH_SEED_SIZE:]
+    continuation_offset = len(inbound_decrypted) - 0x18
+    continuation = inbound_decrypted[continuation_offset:continuation_offset + 4]
+    state = _SEARCH_BASE_KEY + seed + continuation
+    result.update({
+        "validated": True,
+        "certainty": "verified",
+        "state_hex": state.hex().upper(),
+        "state_length": len(state),
+        "base_prefix_hex": _SEARCH_BASE_KEY.hex().upper(),
+        "inbound_seed_hex": seed.hex().upper(),
+        "continuation_hex": continuation.hex().upper(),
+        "continuation_offset": continuation_offset,
+        "provenance": "SearchHandler decrypt: key[16:20]=wire[-4:], key[20:24]=decrypted[length-0x18:length-0x14]",
+    })
+    return result
+
+
+def decrypt_outbound_frame(raw: bytes, outbound_state: dict | bytes) -> dict:
+    """Decrypt one server->client frame using explicit state from a validated inbound predecessor.
+
+    The helper validates the clear framing, requires the outbound frame's final 4 bytes to equal the
+    state's key[16:20] value written by SearchHandler::encrypt(), decrypts the aligned region using
+    MD5 over all 24 state bytes, then validates the post-decrypt MD5. Response payload semantics are
+    intentionally left opaque.
+    """
+    if isinstance(outbound_state, dict):
+        state_hex = outbound_state.get("state_hex") if outbound_state.get("validated") else None
+        state = bytes.fromhex(state_hex) if state_hex else b""
+    else:
+        state = bytes(outbound_state)
+
+    result = {
+        "decryption_performed": False,
+        "validated": False,
+        "certainty": "unknown_opaque",
+        "direction_scope": "search_server_to_client_with_explicit_predecessor_state",
+        "decoder_status": "rejected_before_decryption",
+        "diagnostics": [],
+        "decrypted_hex": None,
+        "payload_semantics": "unknown_opaque",
+    }
+    if len(state) != 24:
+        result["diagnostics"].append({
+            "kind": "invalid_search_outbound_state",
+            "expected_length": 24,
+            "observed_length": len(state),
+        })
+        return result
+    if len(raw) < SEARCH_MIN_FRAME_SIZE:
+        result["diagnostics"].append({
+            "kind": "truncated_search_outbound_candidate",
+            "minimum_length": SEARCH_MIN_FRAME_SIZE,
+            "observed_length": len(raw),
+        })
+        return result
+    if int.from_bytes(raw[0:2], "little") != len(raw) or raw[4:8] != SEARCH_MARKER:
+        result["diagnostics"].append({"kind": "search_outbound_clear_framing_mismatch"})
+        return result
+
+    expected_seed = state[16:20]
+    observed_seed = raw[-SEARCH_SEED_SIZE:]
+    if observed_seed != expected_seed:
+        result["diagnostics"].append({
+            "kind": "search_outbound_state_seed_mismatch",
+            "expected_hex": expected_seed.hex().upper(),
+            "observed_hex": observed_seed.hex().upper(),
+        })
+        return result
+
+    start, end = _encrypted_region(len(raw))
+    key = hashlib.md5(state).digest()
+    decrypted = bytearray(raw)
+    decrypted[start:end] = ffxi_blowfish.decrypt_blocks(raw[start:end], key)
+    validation = _validate_decrypted_structure(bytes(decrypted))
+    result.update({
+        "decryption_performed": True,
+        "validated": bool(validation.get("validated")),
+        "certainty": "verified" if validation.get("validated") else "decrypted_candidate_unverified",
+        "decoder_status": "outbound_decrypted_and_validated" if validation.get("validated") else "outbound_decrypted_candidate_rejected",
+        "validation": validation,
+        "derived_blowfish_key_hex": key.hex().upper(),
+        "decrypted_hex": bytes(decrypted).hex().upper(),
+        "diagnostics": list(validation.get("diagnostics") or []),
+        "payload_semantics": "unknown_opaque",
+    })
     return result
