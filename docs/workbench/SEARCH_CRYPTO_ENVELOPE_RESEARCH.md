@@ -91,7 +91,32 @@ decoder_status = encrypted_or_opaque
 
 for metadata compatibility. The presence of envelope metadata does not mean decryption succeeded.
 
-`search_crypto_envelope.validate_decrypted_frame()` accepts already-decrypted inbound candidate bytes and performs only the post-decrypt MD5 gate. A packet type and source-defined request name are returned only when that MD5 matches. A known value is marked `known_request_type=true`; an unlisted value remains `UNKNOWN` with the validated numeric byte preserved.
+`search_crypto_envelope.validate_decrypted_frame()` accepts already-decrypted inbound candidate bytes and repeats the full source-backed gate: declared length, `IXFF`, then post-decrypt MD5. A packet type and source-defined request name are returned only after all checks pass. A known value is marked `known_request_type=true`; an unlisted value remains `UNKNOWN` with the validated numeric byte preserved.
+
+## Validated basic request fields
+
+`workbench.captures.search_request_decode.decode_validated_request()` layers a deliberately small request-body decoder on top of that validator. It currently exposes only fields that current LSB reads directly at fixed offsets:
+
+### `ID_LIST` (`0x01`)
+
+- requested count: `uint16` at `0x10`;
+- character IDs: `uint32[]` from `0x12`;
+- count is capped exactly as LSB does: requested count, maximum 20, and the number of complete IDs available before the 20-byte search trailer.
+
+### `GROUP_LIST` (`0x02`)
+
+- party ID: `uint32` at `0x10`;
+- alliance ID: `uint32` at `0x14`;
+- linkshell ID 1: `uint32` at `0x18`;
+- linkshell ID 2: `uint32` at `0x1C`.
+
+### `SEARCH_COMMENT` (`0x08`)
+
+- player ID: `uint32` at `0x10`.
+
+Every decoded field carries offset/length certainty metadata. Truncated bodies remain validated at the frame level but are not decoded past the available bytes.
+
+Known request types not covered above remain body-opaque. In particular, this slice does **not** decode `SEARCH`/`SEARCH_ALL` bit-packed filters or any Auction House request/history body, even after type validation.
 
 ## Current non-goals
 
@@ -102,8 +127,9 @@ This slice does not:
 - guess session state;
 - decrypt server -> client traffic without prior inbound state;
 - assign request semantics from encrypted bytes;
-- decode the request-specific payload fields even after a request type is identified;
-- promote a packet type when the post-decrypt MD5 fails;
+- decode `SEARCH`/`SEARCH_ALL` bit-packed filter grammar;
+- decode Auction House search/history request bodies;
+- promote a packet type when framing or post-decrypt MD5 fails;
 - classify a search flow from framing alone without the independent verified lobby `cache_ip/cache_port` handoff.
 
 ## Next safe step
