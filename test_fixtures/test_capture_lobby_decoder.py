@@ -7,7 +7,7 @@ import sqlite3
 import struct
 
 import build_capture_index
-from workbench.captures import lobby_ingest, protocol_classification, search_framing
+from workbench.captures import lobby_ingest, map_framing, protocol_classification, search_framing
 
 
 CLIENT_IP = (10, 0, 0, 2)
@@ -32,6 +32,19 @@ def search_frame(size: int = 32) -> bytes:
     packet[2:4] = b"\x00\x00"
     packet[4:8] = b"IXFF"
     return bytes(packet)
+
+
+def map_login_datagram() -> bytes:
+    inner = bytearray(map_framing.LOGIN_PACKET_SIZE)
+    header = map_framing.LOGIN_OPCODE | ((map_framing.LOGIN_PACKET_SIZE // 4) << 9)
+    struct.pack_into("<H", inner, 0, header)
+    struct.pack_into("<H", inner, 2, 0x1234)
+    for i in range(map_framing.LOGIN_PACKET_CHECK_SUM_START, map_framing.LOGIN_PACKET_SIZE):
+        inner[i] = (i * 19 + 5) & 0xFF
+    inner[map_framing.LOGIN_PACKET_CHECK_OFFSET] = (
+        sum(inner[map_framing.LOGIN_PACKET_CHECK_SUM_START:map_framing.LOGIN_PACKET_SIZE]) & 0xFF
+    )
+    return bytes(bytearray(map_framing.FFXI_HEADER_SIZE) + inner + hashlib.md5(inner).digest())
 
 
 def ipv4_tcp_frame(payload: bytes, *, sport: int, dport: int, seq: int, src, dst, flags: int = 0x18) -> bytes:
@@ -131,7 +144,8 @@ def main():
     false_packet = bytearray(req_worlds)
     false_packet[12] ^= 0xFF
     sf = search_frame()
-    map_udp_payload = b"\xDE\xAD\xBE\xEFmap-opaque"
+    map_udp_payload = map_login_datagram()
+    assert len(map_udp_payload) == map_framing.MIN_DATAGRAM_SIZE
 
     frames = [
         (1_700_000_000, 100_000, ipv4_tcp_frame(
@@ -163,8 +177,8 @@ def main():
             sf, sport=42000, dport=54002, seq=12000,
             src=CLIENT_IP, dst=(55, 66, 77, 88),
         )),
-        # Exact zone/map endpoint learned from ResponseNextLogin, observed on the source-backed UDP
-        # transport. Payload stays opaque and is not assigned gameplay semantics.
+        # Exact zone/map endpoint learned from ResponseNextLogin plus a source-backed client 0x000A
+        # UDP login datagram. Semantic fields remain intentionally opaque.
         (1_700_000_001, 300_000, ipv4_udp_frame(
             map_udp_payload, sport=43000, dport=54230,
             src=CLIENT_IP, dst=(11, 22, 33, 44),
@@ -216,11 +230,16 @@ def main():
     assert len(udp_rows) == 1, udp_rows
     udp_meta = json.loads(udp_rows[0][0])
     assert udp_meta["protocol_family"] == "ffxi_map_endpoint", udp_meta
-    assert udp_meta["classification_validated"] is False, udp_meta
-    assert udp_meta["classification_scope"] == "exact_udp_endpoint_from_verified_lobby_ResponseNextLogin", udp_meta
-    assert udp_meta["classification_certainty"] == "structurally_inferred", udp_meta
+    assert udp_meta["classification_validated"] is True, udp_meta
+    assert udp_meta["classification_scope"] == "verified_lobby_handoff_plus_verified_map_0x000A_udp_handshake", udp_meta
+    assert udp_meta["classification_certainty"] == "verified", udp_meta
     assert udp_meta["transport_payload_hex"] == map_udp_payload.hex().upper(), udp_meta
-    assert udp_meta["decoder_status"] == "raw_udp_payload_preserved", udp_meta
+    assert udp_meta["decoder_status"] == "verified_handshake_structure_payload_fields_opaque", udp_meta
+    assert udp_meta["map_handshake_probe"]["recognized"] is True, udp_meta
+    assert udp_meta["framing_evidence"]["message_type"] == "client_zone_login_0x000A", udp_meta
+    assert udp_meta["framing_evidence"]["direction"] == "client_to_map", udp_meta
+    assert udp_meta["normalized_packet_correlation"]["status"] == "unmatched", udp_meta
+    assert udp_meta["normalized_packet_correlation"]["automatic_merge_performed"] is False, udp_meta
     assert udp_meta["cross_source_merge_performed"] is False, udp_meta
 
     messages = con.execute(
