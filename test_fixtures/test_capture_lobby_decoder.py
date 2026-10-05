@@ -7,7 +7,7 @@ import sqlite3
 import struct
 
 import build_capture_index
-from workbench.captures import lobby_ingest, protocol_classification
+from workbench.captures import lobby_ingest, protocol_classification, search_framing
 
 
 CLIENT_IP = (10, 0, 0, 2)
@@ -23,6 +23,14 @@ def lobby_packet(command: int, body: bytes) -> bytes:
     packet[28:] = body
     packet[12:28] = b"\x00" * 16
     packet[12:28] = hashlib.md5(packet).digest()
+    return bytes(packet)
+
+
+def search_frame(size: int = 32) -> bytes:
+    packet = bytearray([0xA5] * size)
+    struct.pack_into("<H", packet, 0, size)
+    packet[2:4] = b"\x00\x00"
+    packet[4:8] = b"IXFF"
     return bytes(packet)
 
 
@@ -210,6 +218,16 @@ def main():
     assert truncated["messages"] == [], truncated
     assert any(d["kind"] == "truncated_frame_candidate" for d in truncated["diagnostics"]), truncated
 
+    # Search framing can be structurally recovered while encrypted payload bytes remain opaque.
+    sf = search_frame()
+    search_scan = search_framing.scan_range(b"\xFE" + sf, 8500)
+    assert len(search_scan["frames"]) == 1, search_scan
+    assert search_scan["frames"][0]["seq_start"] == 8501, search_scan
+    assert search_scan["frames"][0]["decoder_status"] == "encrypted_or_opaque", search_scan
+    search_truncated = search_framing.scan_range(sf[:-2], 8600)
+    assert search_truncated["frames"] == [], search_truncated
+    assert any(d["kind"] == "truncated_frame_candidate" for d in search_truncated["diagnostics"]), search_truncated
+
     # Exact handoff endpoints can classify later flows without decoding their opaque payloads.
     research_lobby_flow = {
         "flow_id": "research-lobby",
@@ -240,19 +258,34 @@ def main():
         "transport": "tcp",
         "frames": [],
         "directions": {
-            "a_to_b": _single_range_direction(b"opaque-search", 11000),
+            "a_to_b": _single_range_direction(sf, 11000),
+            "b_to_a": _empty_direction(),
+        },
+    }
+    signature_only_flow = {
+        "flow_id": "signature-only",
+        "endpoint_a": {"ip": "10.0.0.2", "port": 42001},
+        "endpoint_b": {"ip": "192.0.2.77", "port": 54002},
+        "transport": "tcp",
+        "frames": [],
+        "directions": {
+            "a_to_b": _single_range_direction(sf, 12000),
             "b_to_a": _empty_direction(),
         },
     }
     classified = {row["flow_id"]: row for row in protocol_classification.classify_reconstructed_flows(
-        [research_lobby_flow, world_flow, search_flow]
+        [research_lobby_flow, world_flow, search_flow, signature_only_flow]
     )}
     assert classified["research-lobby"]["protocol_family"] == "ffxi_lobby", classified
     assert classified["world-handoff"]["protocol_family"] == "ffxi_world_endpoint", classified
     assert classified["world-handoff"]["classification_validated"] is False, classified
     assert classified["world-handoff"]["decoder_status"] == "unknown_opaque", classified
     assert classified["search-handoff"]["protocol_family"] == "ffxi_search_endpoint", classified
-    assert classified["search-handoff"]["classification_scope"] == "exact_endpoint_association_only_payload_opaque", classified
+    assert classified["search-handoff"]["classification_scope"] == "verified_handoff_endpoint_plus_source_backed_search_framing", classified
+    assert classified["search-handoff"]["framing_evidence"]["frame_count"] == 1, classified
+    assert classified["search-handoff"]["decoder_status"] == "encrypted_or_opaque", classified
+    assert classified["signature-only"]["protocol_family"] == "unknown_tcp", classified
+    assert classified["signature-only"]["classification_scope"] == "insufficient_evidence", classified
 
     req_msg = next(row for row in messages if row[1] == 0x0024)
     assert req_msg[0] == "a_to_b", req_msg
@@ -291,7 +324,7 @@ def main():
     ).fetchone()[0] == 3
 
     con.close()
-    print("Validated lobby TCP classifier/decoder regression: PASS")
+    print("Validated lobby/search TCP classifier regression: PASS")
     return 0
 
 
