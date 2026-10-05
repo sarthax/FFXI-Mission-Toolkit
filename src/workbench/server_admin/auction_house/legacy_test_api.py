@@ -17,6 +17,7 @@ from .legacy_test_executor import (
     LegacyTestExecutionBlocked,
     evaluate_legacy_test_write_gate,
     execute_legacy_test_price_change,
+    execute_legacy_test_synthetic_listing,
 )
 
 router = APIRouter(prefix="/auction-house/test-write", tags=["Auction House Test Writes"])
@@ -67,6 +68,39 @@ def legacy_test_price_change(payload: dict = Body(...)):
                 auction_id=auction_id,
                 expected_price=expected_price,
                 new_price=new_price,
+                confirmation=confirmation,
+            )
+            return JSONResponse(result)
+    except LegacyTestExecutionBlocked as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@router.post("/synthetic-listing.json")
+def legacy_test_synthetic_listing(payload: dict = Body(...)):
+    """Insert one explicit admin-created DSP/Topaz Test listing.
+
+    This is deliberately not a player listing: it does not remove seller inventory or charge the
+    normal listing fee. The response reports the synthetic supply injection explicitly.
+    """
+    try:
+        item_id = int(payload.get("item_id") or 0)
+        seller_id = int(payload.get("seller_id") or 0)
+        price = int(payload.get("price") or 0)
+        stack = bool(payload.get("stack", False))
+        confirmation = str(payload.get("confirmation") or "")
+        environment = get_active_server_identity()
+        with _context() as ctx:
+            result = execute_legacy_test_synthetic_listing(
+                service=ctx.service,
+                environment=environment,
+                item_id=item_id,
+                seller_id=seller_id,
+                price=price,
+                stack=stack,
                 confirmation=confirmation,
             )
             return JSONResponse(result)
