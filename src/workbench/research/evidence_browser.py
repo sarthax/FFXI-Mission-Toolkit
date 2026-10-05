@@ -31,8 +31,7 @@ def _uniq(values) -> list[Any]:
 def _display_value(raw: str | None):
     if raw is None:
         return None
-    parsed=_json(raw, raw)
-    return parsed
+    return _json(raw, raw)
 
 
 def _side(
@@ -67,6 +66,27 @@ def _comparison_state(sides: list[dict[str,Any]], *, flagged_only: bool = False)
     if all(side.get("evidence_ids") for side in sides):
         return "EVIDENCE_BACKED_SIDES"
     return "INCOMPLETE_EVIDENCE"
+
+
+def _session_evidence_ids(con: sqlite3.Connection, tables: set[str], research_session_id: str | None) -> set[str]:
+    if not research_session_id:
+        return set()
+    ids: set[str]=set()
+    if "research_tool_calls" in tables:
+        for row in con.execute(
+            "SELECT evidence_ids_json FROM research_tool_calls WHERE research_session_id=?",
+            (research_session_id,),
+        ).fetchall():
+            ids.update(str(value) for value in _json(row["evidence_ids_json"],[]) if value)
+    if "research_proposals" in tables:
+        for row in con.execute(
+            "SELECT supporting_evidence_ids_json,contradicting_evidence_ids_json "
+            "FROM research_proposals WHERE research_session_id=?",
+            (research_session_id,),
+        ).fetchall():
+            ids.update(str(value) for value in _json(row["supporting_evidence_ids_json"],[]) if value)
+            ids.update(str(value) for value in _json(row["contradicting_evidence_ids_json"],[]) if value)
+    return ids
 
 
 def evidence_record(db_path: Path, evidence_id: str) -> dict[str, Any] | None:
@@ -207,6 +227,7 @@ def list_contradictions(
     con=_connect(db_path)
     try:
         tables=_tables(con)
+        session_evidence_ids=_session_evidence_ids(con,tables,research_session_id)
         items: list[dict[str,Any]]=[]
 
         if "findings" in tables:
@@ -348,6 +369,12 @@ def list_contradictions(
 
         if subject_id:
             items=[item for item in items if item.get("subject_id")==subject_id]
+        if research_session_id:
+            items=[
+                item for item in items
+                if item.get("research_session_id")==research_session_id
+                or bool(session_evidence_ids.intersection(item.get("evidence_ids",[])))
+            ]
 
         all_ids={eid for item in items for eid in item.get("evidence_ids",[]) if eid}
         evidence=_evidence_lookup(con,all_ids)
@@ -372,13 +399,15 @@ def list_contradictions(
             wanted=evidence_type.strip().upper()
             items=[item for item in items if wanted in {x.upper() for x in item.get("evidence_types",[])}]
 
-        items=items[:max(0,int(limit))]
         type_counts: dict[str,int]={}
         state_counts: dict[str,int]={}
         for item in items:
             type_counts[item["kind"]]=type_counts.get(item["kind"],0)+1
             state=item.get("comparison_state") or "UNKNOWN"
             state_counts[state]=state_counts.get(state,0)+1
+        matched_total=len(items)
+        bounded_limit=max(0,int(limit))
+        items=items[:bounded_limit]
         available_evidence_types=sorted({
             str(row["evidence_type"])
             for row in con.execute("SELECT DISTINCT evidence_type FROM evidence ORDER BY evidence_type").fetchall()
@@ -388,6 +417,9 @@ def list_contradictions(
             "subject_id":subject_id,
             "evidence_type":evidence_type,
             "total":len(items),
+            "matched_total":matched_total,
+            "limit":bounded_limit,
+            "truncated":matched_total>len(items),
             "type_counts":type_counts,
             "state_counts":state_counts,
             "available_evidence_types":available_evidence_types,
