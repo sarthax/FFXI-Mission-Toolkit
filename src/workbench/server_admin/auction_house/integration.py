@@ -24,6 +24,8 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
     from .player_purchase_api import router as auction_house_player_purchase_router
     from .preset_api import router as auction_house_preset_api_router
     from .preset_ui import router as auction_house_preset_ui_router
+    from .reward_api import router as auction_house_reward_api_router
+    from .reward_ui import router as auction_house_reward_ui_router
     from .seeder_ui import router as auction_house_seeder_ui_router
     from .synthetic_seed_api import router as auction_house_synthetic_seed_router
 
@@ -45,6 +47,8 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
         auction_house_preset_api_router,
         auction_house_preset_ui_router,
         auction_house_economy_router,
+        auction_house_reward_api_router,
+        auction_house_reward_ui_router,
     ):
         for route in carrier.routes:
             key = (getattr(route, "path", None), tuple(sorted(getattr(route, "methods", ()) or ())))
@@ -94,6 +98,12 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
                 len(sections),
             )
             sections.insert(insert_at, {"label": "AH Economy", "href": "/auction-house/economy"})
+        if not any(section.get("href") == "/auction-house/rewards" for section in sections):
+            insert_at = next(
+                (index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house/economy"),
+                len(sections),
+            )
+            sections.insert(insert_at, {"label": "AH Rewards", "href": "/auction-house/rewards"})
         updated = dict(workspace)
         updated["sections"] = tuple(sections)
         workspaces.append(updated)
