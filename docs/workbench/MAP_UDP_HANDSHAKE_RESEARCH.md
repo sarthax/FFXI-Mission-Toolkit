@@ -8,13 +8,22 @@ Modern LandSandBoat assigns `ResponseNextLogin.server_ip/server_port` from the s
 
 Before a map session is established, `MapNetworking::recv_parse()` accepts a non-encrypted client login only after structural validation:
 
-1. the common world header is `0x1C` bytes;
-2. the final 16-byte checksum matches MD5 over the inner packet body;
-3. the first inner packet id, masked with `0x01FF`, is `0x000A`;
-4. the client login packet is large enough for the documented login structure;
+1. the common world transport header is `0x1C` bytes;
+2. the first inner packet id, masked with `0x01FF`, is `0x000A`;
+3. XiPackets documents that inner `GP_CLI_COMMAND_LOGIN` packet as `0x005C` bytes;
+4. the separate final 16-byte transport checksum matches MD5 over the complete inner packet;
 5. `LoginPacketCheck` matches the byte-sum validation used by the server.
 
-XiPackets documents `GP_CLI_COMMAND_LOGIN` as C -> S, opcode `0x000A`, declared size `0x005C`. The `0x005C` wire size includes the 16-byte checksum trailer; the pre-trailer login body is therefore `0x004C` bytes.
+The minimum structurally complete datagram for this handshake is therefore:
+
+```text
+0x1C common transport header
++ 0x5C inner GP_CLI_COMMAND_LOGIN packet
++ 0x10 transport MD5 trailer
+= 0x88 bytes
+```
+
+XiPackets documents `GP_CLI_COMMAND_LOGIN` as C -> S, opcode `0x000A`, declared inner size `0x005C`.
 
 ## Toolkit behavior
 
@@ -22,10 +31,10 @@ XiPackets documents `GP_CLI_COMMAND_LOGIN` as C -> S, opcode `0x000A`, declared 
 
 - opcode `0x000A`;
 - declared inner size `0x005C`;
-- outer MD5 trailer;
+- transport MD5 trailer over the complete inner packet;
 - `LoginPacketCheck` byte-sum.
 
-It intentionally does **not** decode character id, account/ticket material, platform, language, or unknown fields. The complete raw datagram and opaque inner bytes remain available.
+It intentionally does **not** decode character id, account/ticket material, platform, language, or unknown fields. The complete raw datagram and opaque inner packet remain available.
 
 `protocol_metadata` combines this structural proof with the exact `ResponseNextLogin.server_ip/server_port` handoff and transport direction. A frame becomes verified map-handshake evidence only when:
 
@@ -52,7 +61,7 @@ Endpoint-only UDP traffic remains only `structurally_inferred` and keeps `raw_ud
 Small synthetic fixtures cover:
 
 - valid `0x000A` handshake;
-- bad MD5;
+- bad transport MD5;
 - bad `LoginPacketCheck`;
 - wrong opcode;
 - truncation;
