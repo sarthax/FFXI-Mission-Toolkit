@@ -24,6 +24,51 @@ def _json(raw: str | None, default):
         return default
 
 
+def _uniq(values) -> list[Any]:
+    return sorted({value for value in values if value not in (None, "")}, key=lambda value: str(value))
+
+
+def _display_value(raw: str | None):
+    if raw is None:
+        return None
+    parsed=_json(raw, raw)
+    return parsed
+
+
+def _side(
+    *,
+    label: str,
+    records: list[dict[str,Any]],
+    evidence_ids: list[str] | None = None,
+    value: Any = None,
+    statuses: list[str] | None = None,
+) -> dict[str,Any]:
+    ids=_uniq(evidence_ids if evidence_ids is not None else [row.get("evidence_id") for row in records])
+    snapshots=_uniq(row.get("source_snapshot_id") for row in records)
+    status_values=_uniq(statuses if statuses is not None else [row.get("status") for row in records])
+    confidence=_uniq(row.get("confidence") for row in records)
+    return {
+        "label":label,
+        "value":value,
+        "statuses":status_values,
+        "confidence":confidence,
+        "source_snapshots":snapshots,
+        "evidence_ids":ids,
+        "records":records,
+        "evidence":[],
+    }
+
+
+def _comparison_state(sides: list[dict[str,Any]], *, flagged_only: bool = False) -> str:
+    if flagged_only:
+        return "FLAGGED_ONLY"
+    if len(sides) < 2:
+        return "INCOMPLETE"
+    if all(side.get("evidence_ids") for side in sides):
+        return "EVIDENCE_BACKED_SIDES"
+    return "INCOMPLETE_EVIDENCE"
+
+
 def evidence_record(db_path: Path, evidence_id: str) -> dict[str, Any] | None:
     """Return one canonical Evidence row plus every known table/session reference."""
     con=_connect(db_path)
@@ -57,12 +102,36 @@ def evidence_record(db_path: Path, evidence_id: str) -> dict[str, Any] | None:
                 cols.append(status_col)
             sql=f"SELECT {','.join(cols)} FROM {table} WHERE evidence_id=?"
             for item in con.execute(sql,(evidence_id,)).fetchall():
-                refs.append({
+                ref={
                     "kind":table,
                     "record_id":item[id_col],
                     "subject_id":item[subject_col],
                     "status":item[status_col] if status_col else None,
-                })
+                }
+                if table == "findings":
+                    detail=con.execute(
+                        "SELECT field,value_json,confidence,source_snapshot_id FROM findings WHERE finding_id=?",
+                        (item[id_col],),
+                    ).fetchone()
+                    if detail:
+                        ref.update({
+                            "field":detail["field"],
+                            "value":_display_value(detail["value_json"]),
+                            "confidence":detail["confidence"],
+                            "source_snapshot_id":detail["source_snapshot_id"],
+                        })
+                elif table == "capability_observations":
+                    detail=con.execute(
+                        "SELECT value_json,source_snapshot_id FROM capability_observations WHERE observation_id=?",
+                        (item[id_col],),
+                    ).fetchone()
+                    if detail:
+                        ref.update({
+                            "field":"capability_observation",
+                            "value":_display_value(detail["value_json"]),
+                            "source_snapshot_id":detail["source_snapshot_id"],
+                        })
+                refs.append(ref)
 
         if "research_tool_calls" in tables:
             for call in con.execute(
@@ -105,6 +174,9 @@ def evidence_record(db_path: Path, evidence_id: str) -> dict[str, Any] | None:
 
         evidence["references"]=refs
         evidence["reference_count"]=len(refs)
+        evidence["reference_kinds"]=_uniq(ref.get("kind") for ref in refs)
+        evidence["referenced_subjects"]=_uniq(ref.get("subject_id") for ref in refs)
+        evidence["referenced_snapshots"]=_uniq(ref.get("source_snapshot_id") for ref in refs)
         return evidence
     finally:
         con.close()
@@ -143,6 +215,11 @@ def list_contradictions(
             ).fetchall()]
             for row in findings:
                 if str(row.get("status") or "").upper()=="CONTRADICTED":
+                    sides=[_side(
+                        label="Explicit contradicted finding",
+                        records=[row],
+                        value=_display_value(row.get("value_json")),
+                    )]
                     items.append({
                         "kind":"EXPLICIT_FINDING_CONTRADICTION",
                         "subject_id":row["subject_id"],
@@ -150,7 +227,9 @@ def list_contradictions(
                         "status":row["status"],
                         "evidence_ids":[row["evidence_id"]] if row.get("evidence_id") else [],
                         "records":[row],
-                        "summary":"Finding is explicitly marked CONTRADICTED.",
+                        "sides":sides,
+                        "comparison_state":_comparison_state(sides, flagged_only=True),
+                        "summary":"Finding is explicitly marked CONTRADICTED; no opposing canonical side is implied.",
                     })
             groups: dict[tuple[str,str],list[dict[str,Any]]]={}
             for row in findings:
@@ -161,13 +240,26 @@ def list_contradictions(
                 values={str(row.get("value_json") or "null") for row in rows}
                 sources={str(row.get("source_snapshot_id") or "") for row in rows}
                 if len(values)>1 and len(rows)>1 and (len(sources)>1 or len({r.get("evidence_id") for r in rows})>1):
+                    side_groups: dict[str,list[dict[str,Any]]]={}
+                    for row in rows:
+                        side_groups.setdefault(str(row.get("value_json") or "null"),[]).append(row)
+                    sides=[
+                        _side(
+                            label=f"Recorded value {index}",
+                            records=group,
+                            value=_display_value(group[0].get("value_json")),
+                        )
+                        for index,group in enumerate(side_groups.values(), start=1)
+                    ]
                     items.append({
                         "kind":"FINDING_VALUE_CONFLICT",
                         "subject_id":subject,
                         "field":field,
                         "status":"CONTRADICTED",
-                        "evidence_ids":[r["evidence_id"] for r in rows if r.get("evidence_id")],
+                        "evidence_ids":_uniq(r.get("evidence_id") for r in rows),
                         "records":rows,
+                        "sides":sides,
+                        "comparison_state":_comparison_state(sides),
                         "summary":f"{len(values)} distinct values are recorded for the same subject/field.",
                     })
 
@@ -181,13 +273,28 @@ def list_contradictions(
             for capability,group in groups.items():
                 signals={(str(r.get("status") or ""),str(r.get("value_json") or "null")) for r in group}
                 if len(signals)>1 and len({r["source_snapshot_id"] for r in group})>1:
+                    side_groups: dict[tuple[str,str],list[dict[str,Any]]]={}
+                    for row in group:
+                        side_groups.setdefault(
+                            (str(row.get("status") or ""),str(row.get("value_json") or "null")),[]
+                        ).append(row)
+                    sides=[
+                        _side(
+                            label=f"Observation {index}",
+                            records=side_rows,
+                            value=_display_value(side_rows[0].get("value_json")),
+                        )
+                        for index,side_rows in enumerate(side_groups.values(), start=1)
+                    ]
                     items.append({
                         "kind":"CAPABILITY_OBSERVATION_CONFLICT",
                         "subject_id":capability,
                         "field":"capability_observation",
                         "status":"CONTRADICTED",
-                        "evidence_ids":[r["evidence_id"] for r in group if r.get("evidence_id")],
+                        "evidence_ids":_uniq(r.get("evidence_id") for r in group),
                         "records":group,
+                        "sides":sides,
+                        "comparison_state":_comparison_state(sides),
                         "summary":f"Capability observations disagree across {len({r['source_snapshot_id'] for r in group})} snapshots.",
                     })
 
@@ -203,22 +310,39 @@ def list_contradictions(
                 params.append(research_session_id)
             sql += " ORDER BY created_at,proposal_id"
             for row in con.execute(sql,params).fetchall():
+                support=_json(row["supporting_evidence_ids_json"],[])
                 contradict=_json(row["contradicting_evidence_ids_json"],[])
                 if not contradict and str(row["status"]).upper()!="CONTRADICTED":
                     continue
+                proposal_record={
+                    "proposal_id":row["proposal_id"],
+                    "research_session_id":row["research_session_id"],
+                    "proposal_type":row["proposal_type"],
+                    "verification_requirement":row["verification_requirement"],
+                }
+                sides=[]
+                if support:
+                    sides.append(_side(
+                        label="Supporting evidence",
+                        records=[proposal_record],
+                        evidence_ids=list(support),
+                    ))
+                if contradict:
+                    sides.append(_side(
+                        label="Contradicting evidence",
+                        records=[proposal_record],
+                        evidence_ids=list(contradict),
+                    ))
                 items.append({
                     "kind":"RESEARCH_PROPOSAL_CONTRADICTION",
                     "subject_id":row["subject_id"] or row["research_session_id"],
                     "field":row["proposal_type"],
                     "status":row["status"],
-                    "evidence_ids":list(contradict),
-                    "records":[{
-                        "proposal_id":row["proposal_id"],
-                        "research_session_id":row["research_session_id"],
-                        "proposal_type":row["proposal_type"],
-                        "verification_requirement":row["verification_requirement"],
-                    }],
-                    "summary":"Research proposal has contradicting evidence.",
+                    "evidence_ids":_uniq([*support,*contradict]),
+                    "records":[proposal_record],
+                    "sides":sides,
+                    "comparison_state":_comparison_state(sides),
+                    "summary":"Research proposal has evidence recorded on opposing roles.",
                     "research_session_id":row["research_session_id"],
                 })
 
@@ -229,7 +353,20 @@ def list_contradictions(
         evidence=_evidence_lookup(con,all_ids)
         for item in items:
             item["evidence"]=[evidence[eid] for eid in item.get("evidence_ids",[]) if eid in evidence]
-            item["evidence_types"]=sorted({str(e.get("evidence_type") or "") for e in item["evidence"] if e.get("evidence_type")})
+            item["missing_evidence_ids"]=[eid for eid in item.get("evidence_ids",[]) if eid not in evidence]
+            item["evidence_types"]=_uniq(e.get("evidence_type") for e in item["evidence"])
+            item["sources"]=_uniq(e.get("source") for e in item["evidence"])
+            item["snapshots"]=_uniq([
+                *(e.get("snapshot") for e in item["evidence"]),
+                *(snapshot for side in item.get("sides",[]) for snapshot in side.get("source_snapshots",[])),
+            ])
+            for side in item.get("sides",[]):
+                side["evidence"]=[evidence[eid] for eid in side.get("evidence_ids",[]) if eid in evidence]
+                side["missing_evidence_ids"]=[eid for eid in side.get("evidence_ids",[]) if eid not in evidence]
+                side["evidence_types"]=_uniq(e.get("evidence_type") for e in side["evidence"])
+                side["sources"]=_uniq(e.get("source") for e in side["evidence"])
+            if item.get("missing_evidence_ids") and item.get("comparison_state")=="EVIDENCE_BACKED_SIDES":
+                item["comparison_state"]="INCOMPLETE_EVIDENCE"
 
         if evidence_type:
             wanted=evidence_type.strip().upper()
@@ -237,8 +374,11 @@ def list_contradictions(
 
         items=items[:max(0,int(limit))]
         type_counts: dict[str,int]={}
+        state_counts: dict[str,int]={}
         for item in items:
             type_counts[item["kind"]]=type_counts.get(item["kind"],0)+1
+            state=item.get("comparison_state") or "UNKNOWN"
+            state_counts[state]=state_counts.get(state,0)+1
         available_evidence_types=sorted({
             str(row["evidence_type"])
             for row in con.execute("SELECT DISTINCT evidence_type FROM evidence ORDER BY evidence_type").fetchall()
@@ -249,6 +389,7 @@ def list_contradictions(
             "evidence_type":evidence_type,
             "total":len(items),
             "type_counts":type_counts,
+            "state_counts":state_counts,
             "available_evidence_types":available_evidence_types,
             "items":items,
         }
