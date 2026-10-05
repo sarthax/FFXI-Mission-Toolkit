@@ -40,6 +40,22 @@ frame[length - 0x14 : length - 0x04]
 
 Only after that validation succeeds does LSB read the request type at offset `0x0B`.
 
+The source-defined request type names currently exposed by LSB are:
+
+| Value | Name |
+|---:|---|
+| `0x00` | `SEARCH_ALL` |
+| `0x01` | `ID_LIST` |
+| `0x02` | `GROUP_LIST` |
+| `0x03` | `SEARCH` |
+| `0x05` | `AH_HISTORY_SINGLE` |
+| `0x06` | `AH_HISTORY_STACK` |
+| `0x08` | `SEARCH_COMMENT` |
+| `0x10` | `AH_REQUEST_MORE` |
+| `0x15` | `AH_REQUEST` |
+
+Unknown validated request bytes remain numeric and are reported as `UNKNOWN`; no speculative name is assigned.
+
 ## Direction boundary
 
 This derivation must not be applied blindly to server -> client traffic.
@@ -53,7 +69,7 @@ direction_scope = client_to_search_server_only
 applicability_requires_endpoint_role = true
 ```
 
-and does not claim outbound decryption.
+Once the verified cache-server endpoint role is known, `search_framing.resolve_crypto_direction()` marks each framed observation with the resolved client-to-server direction and whether the inbound derivation is applicable. Server-to-client frames receive an explicit direction-mismatch diagnostic rather than a usable inbound-key claim.
 
 ## Toolkit implementation
 
@@ -75,7 +91,7 @@ decoder_status = encrypted_or_opaque
 
 for metadata compatibility. The presence of envelope metadata does not mean decryption succeeded.
 
-`search_crypto_envelope.validate_decrypted_frame()` accepts already-decrypted candidate bytes and performs only the post-decrypt MD5 gate. A packet type is returned only when that MD5 matches.
+`search_crypto_envelope.validate_decrypted_frame()` accepts already-decrypted inbound candidate bytes and performs only the post-decrypt MD5 gate. A packet type and source-defined request name are returned only when that MD5 matches. A known value is marked `known_request_type=true`; an unlisted value remains `UNKNOWN` with the validated numeric byte preserved.
 
 ## Current non-goals
 
@@ -85,7 +101,8 @@ This slice does not:
 - vendor a Blowfish implementation;
 - guess session state;
 - decrypt server -> client traffic without prior inbound state;
-- assign search, party, auction-house, linkshell, or comment semantics from encrypted bytes;
+- assign request semantics from encrypted bytes;
+- decode the request-specific payload fields even after a request type is identified;
 - promote a packet type when the post-decrypt MD5 fails;
 - classify a search flow from framing alone without the independent verified lobby `cache_ip/cache_port` handoff.
 
