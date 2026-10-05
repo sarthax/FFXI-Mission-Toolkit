@@ -7,6 +7,43 @@ import struct
 from workbench.captures import search_request_decode
 
 
+def _pack_bits_be(target: bytearray, value: int, bit_offset: int, length: int) -> None:
+    byte_offset = bit_offset >> 3
+    inner_offset = bit_offset & 7
+    actual_bytes = (inner_offset + length + 7) // 8
+    data = int.from_bytes(target[byte_offset:byte_offset + actual_bytes], "little")
+    mask = ((1 << length) - 1) << inner_offset
+    data = (data & ~mask) | ((value << inner_offset) & mask)
+    target[byte_offset:byte_offset + actual_bytes] = data.to_bytes(actual_bytes, "little")
+
+
+def _pack_bits_le(target: bytearray, value: int, bit_offset: int, length: int) -> int:
+    """Independent test writer matching LSB common::packBitsLE()."""
+    byte_offset = bit_offset >> 3
+    inner_offset = bit_offset & 7
+    span = inner_offset + length
+    if span <= 8:
+        bytes_needed = 1
+    elif span <= 16:
+        bytes_needed = 2
+    elif span <= 32:
+        bytes_needed = 4
+    elif span <= 64:
+        bytes_needed = 8
+    else:
+        raise ValueError("packed test field exceeds 64-bit source helper")
+
+    actual_bytes = (span + 7) // 8
+    modified = bytearray(bytes_needed)
+    for cur_byte in range(actual_bytes):
+        modified[bytes_needed - 1 - cur_byte] = target[byte_offset + cur_byte]
+    new_bit_offset = bytes_needed * 8 - (inner_offset + length)
+    _pack_bits_be(modified, value, new_bit_offset, length)
+    for cur_byte in range(actual_bytes):
+        target[byte_offset + cur_byte] = modified[bytes_needed - 1 - cur_byte]
+    return bit_offset + length
+
+
 def decrypted_request(packet_type: int, writer=None, length: int = 64) -> bytes:
     packet = bytearray(length)
     struct.pack_into("<H", packet, 0, length)
@@ -15,6 +52,60 @@ def decrypted_request(packet_type: int, writer=None, length: int = 64) -> bytes:
     packet[-4:] = bytes.fromhex("01020304")
     if writer:
         writer(packet)
+    hash_offset = length - 0x14
+    packet[hash_offset:length - 4] = hashlib.md5(packet[8:hash_offset]).digest()
+    return bytes(packet)
+
+
+def packed_search_request(packet_type: int = 0x03) -> bytes:
+    packed = bytearray(29)
+    bit = 0
+
+    def ordinary(entry_type: int, width: int, value: int, *, sort: int = 0, present: int = 1) -> None:
+        nonlocal bit
+        bit = _pack_bits_le(packed, entry_type, bit, 5)
+        bit = _pack_bits_le(packed, sort, bit, 1)
+        bit = _pack_bits_le(packed, present, bit, 1)
+        if present and width:
+            bit = _pack_bits_le(packed, value, bit, width)
+
+    # Name: ordinary header + raw length + 7-bit characters.
+    bit = _pack_bits_le(packed, 0x00, bit, 5)
+    bit = _pack_bits_le(packed, 0, bit, 1)
+    bit = _pack_bits_le(packed, 1, bit, 1)
+    bit = _pack_bits_le(packed, 3, bit, 5)
+    for char in b"Bob":
+        bit = _pack_bits_le(packed, char, bit, 7)
+
+    ordinary(0x01, 10, 230)       # Area
+    ordinary(0x02, 2, 1)          # Nation
+    ordinary(0x03, 5, 12)         # Job
+    ordinary(0x04, 16, (75 << 8) | 50)  # two sequential uint8 bit fields: min=50, max=75
+    ordinary(0x05, 4, 3)          # Race
+    ordinary(0x06, 16, 0x1234)    # Flags1
+    ordinary(0x10, 16, (10 << 8) | 2)   # Rank min=2 max=10
+
+    # Comment and Flags2 do not carry sort/present bits in LSB.
+    bit = _pack_bits_le(packed, 0x11, bit, 5)
+    bit = _pack_bits_le(packed, 0xAABBCCDD, bit, 32)
+    bit = _pack_bits_le(packed, 0x16, bit, 5)
+    bit = _pack_bits_le(packed, 0x55667788, bit, 32)
+
+    # Friend is a zero-width special entry. It also makes the following count/ID tail meaningful.
+    bit = _pack_bits_le(packed, 0x0C, bit, 5)
+    assert bit == 230
+
+    data_end = 0x11 + len(packed) + 2 + 8
+    length = data_end + 0x14
+    packet = bytearray(length)
+    struct.pack_into("<H", packet, 0, length)
+    packet[4:8] = b"IXFF"
+    packet[0x0B] = packet_type
+    packet[0x10] = len(packed)
+    packet[0x11:0x11 + len(packed)] = packed
+    tail = 0x11 + len(packed)
+    struct.pack_into("<HII", packet, tail, 2, 0x11111111, 0x22222222)
+    packet[-4:] = bytes.fromhex("01020304")
     hash_offset = length - 0x14
     packet[hash_offset:length - 4] = hashlib.md5(packet[8:hash_offset]).digest()
     return bytes(packet)
@@ -68,6 +159,59 @@ def main():
     assert comment["packet_type_name"] == "SEARCH_COMMENT", comment
     assert comment["fields"] == {"player_id": 0x01020304}, comment
 
+    search = search_request_decode.decode_validated_request(packed_search_request(0x03))
+    assert search["validated"] is True, search
+    assert search["packet_type_name"] == "SEARCH", search
+    assert search["decoder_status"] == "validated_search_filter_fields_decoded", search
+    fields = search["fields"]
+    assert fields["query_size_bytes"] == 29, fields
+    assert fields["name"] == "Bob", fields
+    assert fields["areas"] == [230], fields
+    assert fields["nation"] == 1, fields
+    assert fields["job"] == 12, fields
+    assert (fields["min_level"], fields["max_level"]) == (50, 75), fields
+    assert fields["race"] == 3, fields
+    assert (fields["min_rank"], fields["max_rank"]) == (2, 10), fields
+    # Flags2 is later than Flags1 and therefore becomes LSB's final sr.flags value.
+    assert fields["flags"] == 0x55667788, fields
+    assert fields["comment_type"] == 0xAABBCCDD, fields
+    assert fields["friends_only"] is True, fields
+    assert fields["friend_requested_count"] == 2, fields
+    assert fields["friend_character_ids"] == [0x11111111, 0x22222222], fields
+    assert search["entries"][0]["type_name"] == "Name", search
+    assert search["entries"][-1]["type_name"] == "Friend", search
+    assert search["field_evidence"]["packed_query"]["bit_order"] == "LandSandBoat unpackBitsLE", search
+
+    search_all = search_request_decode.decode_validated_request(packed_search_request(0x00))
+    assert search_all["validated"] is True, search_all
+    assert search_all["packet_type_name"] == "SEARCH_ALL", search_all
+    assert search_all["fields"]["name"] == "Bob", search_all
+
+    # Current LSB defines Language but its _HandleSearchRequest default branch assigns it no value
+    # semantics. Keep the enum identity and control bits, but do not guess a payload width/value.
+    def write_known_unhandled(packet: bytearray):
+        packet[0x10] = 1
+        bits = bytearray(1)
+        off = _pack_bits_le(bits, 0x17, 0, 5)
+        off = _pack_bits_le(bits, 1, off, 1)
+        _pack_bits_le(bits, 1, off, 1)
+        packet[0x11] = bits[0]
+
+    known_unhandled = search_request_decode.decode_validated_request(decrypted_request(0x03, write_known_unhandled, 38))
+    assert known_unhandled["validated"] is True, known_unhandled
+    assert any(e["type_name"] == "Language" for e in known_unhandled["entries"]), known_unhandled
+    assert any(d["kind"] == "known_enum_unhandled_by_lsb_parser" for d in known_unhandled["diagnostics"]), known_unhandled
+
+    # A declared packed query that runs into the 20-byte trailer fails closed before reading bits.
+    def write_truncated_filter(packet: bytearray):
+        packet[0x10] = 30
+
+    truncated = search_request_decode.decode_validated_request(decrypted_request(0x03, write_truncated_filter, 40))
+    assert truncated["validated"] is True, truncated
+    assert truncated["decoder_status"] == "validated_search_filter_partial_or_rejected", truncated
+    assert truncated["fields"] == {}, truncated
+    assert any(d["kind"] == "truncated_search_filter_block" for d in truncated["diagnostics"]), truncated
+
     # Known AH traffic remains deliberately opaque in this capture/protocol slice.
     ah = search_request_decode.decode_validated_request(decrypted_request(0x15))
     assert ah["validated"] is True, ah
@@ -83,7 +227,7 @@ def main():
     assert rejected["fields"] == {}, rejected
     assert rejected["decoder_status"] == "rejected_before_request_decode", rejected
 
-    print("Validated basic search request decode regression: PASS")
+    print("Validated packed/basic search request decode regression: PASS")
     return 0
 
 
