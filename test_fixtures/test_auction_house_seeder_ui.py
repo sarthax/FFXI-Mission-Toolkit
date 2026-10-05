@@ -9,7 +9,7 @@ def test_seeder_page_route_and_workspace_mount():
     assert '@router.get("/auction-house/seeder"' in route
     assert "auction_house_seeder.html" in route
     assert "auction_house_seeder_ui_router" in bridge
-    assert '"AH Seeder", "href": "/auction-house/seeder"' in bridge
+    assert '("AH Seeder", "/auction-house/seeder", "/auction-house/listing-manager")' in bridge
 
 
 def test_seeder_template_exposes_both_listing_modes():
