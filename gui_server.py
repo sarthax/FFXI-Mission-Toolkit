@@ -9416,6 +9416,34 @@ def itemedit_latentmeta():
     return JSONResponse(item_edit.latent_metadata())
 
 
+@app.get("/itemedit/proc-script.json")
+def itemedit_proc_script(item_id: int = 0, name: str = ""):
+    """Where does this item's scripted proc live in the active server tree, and does the file exist?"""
+    import re as _re
+    import zone_plot
+    internal = _re.sub(r"[^a-z0-9_]", "", (name or "").lower())
+    out = {"item_id": item_id, "name": internal, "root": "", "candidates": []}
+    try:
+        root = zone_plot._server_root()
+    except Exception:
+        return JSONResponse(out)
+    out["root"] = str(root)
+    if not internal:
+        return JSONResponse(out)
+    for rel in (f"scripts/globals/items/{internal}.lua", f"scripts/items/{internal}.lua"):
+        p = root / rel
+        if p.is_file():
+            try:
+                txt = p.read_text(encoding="utf-8", errors="ignore")
+            except Exception:
+                txt = ""
+            out["candidates"].append({"path": rel, "exists": True, "has_additional_effect": "onAdditionalEffect" in txt})
+    if not out["candidates"]:
+        base = "scripts/items" if (root / "scripts/items").is_dir() and not (root / "scripts/globals/items").is_dir() else "scripts/globals/items"
+        out["candidates"].append({"path": f"{base}/{internal}.lua", "exists": False, "has_additional_effect": False})
+    return JSONResponse(out)
+
+
 @app.get("/itemedit/dat-target.json")
 def itemedit_dat_target_get():
     import item_dat_tools

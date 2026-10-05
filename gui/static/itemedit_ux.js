@@ -474,7 +474,26 @@
     rerenderEffects();
   };
 
-  const mName = id => MOD_NAMES[id] || `Effect #${id}`;
+  const isScriptFlag = id => Number(id) === 431 && /^ADDITIONAL_EFFECT/.test(MOD_NAMES[431] || '');
+  const mName = id => isScriptFlag(id) ? 'Runs an item script (additional effect)' : (MOD_NAMES[id] || `Effect #${id}`);
+  let procScript = null, procScriptKey = '';
+  const scriptBanner = () => {
+    const has = (stagedEffects.mods || []).some(r => isScriptFlag(r.modId) && Number(r.value) > 0);
+    const nm = (typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_basic && loadedServerState.item_basic.name) || '';
+    if (!has) return '';
+    const c = procScript && procScriptKey === nm && procScript.candidates && procScript.candidates[0];
+    let state = '<span class="muted">checking server for the script...</span>';
+    if (c) state = c.exists ? (c.has_additional_effect ? '<b>Script found</b> - it defines onAdditionalEffect.' : '<b>Script file exists but has no onAdditionalEffect</b> - the proc will do nothing.') : '<b>No script found</b> - the proc does nothing until this file is created.';
+    return `<div class="ie-fxgroup"><h4>Script-driven effect <small>not stored as numbers on the item</small></h4>
+      <div class="ie-fx"><div class="tx"><div class="nm">This item has an on/off switch (effect 431) for a scripted proc.</div>
+      <div class="sub">Chance, damage, element, status and the combat message are written in <code>${esc(c ? c.path : 'scripts/.../items/' + (nm || '&lt;item&gt;') + '.lua')}</code> (onAdditionalEffect), so you cannot edit them with the fields here. ${state}</div></div></div></div>`;
+  };
+  const loadProcScript = () => {
+    const nm = (typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_basic && loadedServerState.item_basic.name) || '';
+    if (!nm || procScriptKey === nm) return;
+    procScriptKey = nm;
+    fetch('/itemedit/proc-script.json?item_id=' + (currentItemId || 0) + '&name=' + encodeURIComponent(nm)).then(r => r.json()).then(j => { procScript = j; rerenderEffects(); }).catch(() => {});
+  };
   const sv = n => (n > 0 ? '+' : '') + n;
   const status = (kind, row) => {
     const k = effectSortKey(kind, row), was = (loadedEffects[kind] || []).find(x => effectSortKey(kind, x) === k);
@@ -494,6 +513,8 @@
       ['latents', 'Conditional bonuses', 'only while the condition is met', stagedEffects.latents, r => fxRow('latents', r, mName(r.modId), 'When: ' + (LATENT_NAMES[r.latentId] || 'condition ' + r.latentId) + (r.latentParam ? ' (' + r.latentParam + ')' : ''))],
     ];
     fxList.innerHTML = '';
+    loadProcScript();
+    { const sb = scriptBanner(); if (sb) fxList.insertAdjacentHTML('beforeend', sb); }
     for (const [kind, title, hint, rows, render] of sections) {
       const g = mk('div', null, 'ie-fxgroup');
       g.innerHTML = `<h4>${title} (${rows.length}) <small>${hint}</small></h4>` + (rows.length ? rows.map(render).join('') : '<div class="ie-none">None.</div>');
