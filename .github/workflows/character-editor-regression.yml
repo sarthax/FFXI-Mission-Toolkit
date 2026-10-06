@@ -3,10 +3,13 @@ name: Character Editor Regression
 on:
   pull_request:
     paths:
+      - "gui_server.py"
+      - "src/workbench/app/**"
       - "src/workbench/editors/character/**"
       - "src/workbench/server_admin/auction_house/**"
       - "src/workbench/runtime/server_profiles.py"
       - "src/workbench/runtime/legacy_settings.py"
+      - "src/workbench/runtime/settings_store.py"
       - "gui/templates/character_editor*.html"
       - "gui/templates/auction_house.html"
       - "gui/static/character_editor*.js"
