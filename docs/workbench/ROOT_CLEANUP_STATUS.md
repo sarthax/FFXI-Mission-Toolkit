@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `2b7f4d795f2ff5f1ae26002201362094dd54e55c` after PR #567  
-Current work branch: `cleanup/dialog-audit-phase3c3`  
+Current merged baseline: `main` at `aa31f4156c8903b95e681336ede379a017e6cd90` after PR #568  
+Current work branch: none  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -84,26 +84,28 @@ reset_install.bat
   - removed `ffxiclopedia_adapter.py`.
   - canonical FFXIclopedia CLI/import coverage retained.
   - Workbench #2741 + Src Layout #620 green.
+- **PR #568 / Slice 3c3** → `aa31f4156c8903b95e681336ede379a017e6cd90`
+  - moved dialog audit implementation to `workbench.devtools.reference.dialog.audit_drift`.
+  - reduced `workbench.reference.dialog.audit_drift` to a compatibility alias.
+  - removed root `audit_dialog_drift.py`.
+  - canonical CLI/import coverage plus old packaged-namespace compatibility retained.
+  - Workbench #2742 + Src Layout #621 green.
 
-## Current slice
+## Next recommended slice
 
-### Slice 3c3 — finish dialog-audit namespace and retire root launcher
+### Slice 3c4 — Client binary CLI-doc migration
 
-Status: IN PROGRESS on `cleanup/dialog-audit-phase3c3`.
+The three Client binary root files are already pure aliases:
+- `client_binary_analyze.py`
+- `client_binary_index.py`
+- `client_binary_diff.py`
 
-Changes on this branch:
-- [x] moved dialog audit implementation to `workbench.devtools.reference.dialog.audit_drift`.
-- [x] reduced `workbench.reference.dialog.audit_drift` to a compatibility package alias.
-- [x] removed root `audit_dialog_drift.py`.
-- [x] migrated focused regression to the final Devtools namespace.
-- [x] preserved old packaged namespace identity for compatibility.
-- [x] added direct `python -m workbench.devtools.reference.dialog.audit_drift --help` smoke coverage.
+Do **not** delete them until active docs/examples are repointed from physical root filenames to:
+- `python -m workbench.client.cli.binary_analyze`
+- `python -m workbench.client.cli.binary_index`
+- `python -m workbench.client.cli.binary_diff`
 
-Before merge:
-- [ ] Run Workbench Regression.
-- [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by this namespace/root-launcher migration.
-- [ ] Merge only when green.
+Then migrate `test_client_binary_cli_package_migration.py` to canonical imports/direct module CLI smoke, delete the three root launchers, and validate Workbench + Src Layout.
 
 ## Explicitly retained / deferred
 
@@ -113,14 +115,13 @@ These are **not** deletion candidates yet:
 - `backport_convert_7_packages.py`, `backport_convert_gm_debug_tools.py`, `backport_convert_nyzul_package.py` — wrappers seed Settings-derived operator defaults.
 - `backport_sql_live_check.py` — active GUI/package/runtime operator guidance still names it.
 - `backport_package.py`, `backport_lua_convert.py`, `backport_sql_convert.py` — higher-fan-in operator/test surfaces.
-- `client_binary_analyze.py`, `client_binary_index.py`, `client_binary_diff.py` — pure aliases, but active Client Binary Research documentation still instructs users to run the root commands; retire them in a dedicated CLI-doc migration slice.
 
 ## Remaining slices
 
 ### Compatibility-shim families
-- remaining reference/devtool wrappers;
-- client/DAT/model wrappers;
-- indexing/server-analysis wrappers;
+- Client binary CLI-doc migration above;
+- remaining client/DAT/model wrappers;
+- remaining indexing/server-analysis wrappers;
 - capture/protocol wrappers;
 - spatial/domain/runtime wrappers;
 - final application/bootstrap compatibility files such as `gui_server.py`, `settings.py`, `feature_checker.py`, and `id_bridge.py` only after their caller contracts are intentionally retired.
@@ -157,7 +158,7 @@ PENDING.
 1. Read this file first.
 2. Fetch current `main`; concurrent work may have advanced it.
 3. Check for an open `cleanup/*` PR/branch before starting a new slice.
-4. Continue the first incomplete current-slice item.
+4. Continue the first incomplete next slice.
 5. Keep PRs bounded by one logical ownership family.
 6. Update this tracker in every cleanup PR.
 7. Never merge a cleanup slice with failing required CI.
