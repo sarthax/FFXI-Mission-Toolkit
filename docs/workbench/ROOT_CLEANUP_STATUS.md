@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `26567a0fe7d3a95fe0156a8ffc77df2da2f6216a` after PR #557  
-Current work branch: `cleanup/root-shims-indexing-phase3a`  
+Current merged baseline: `main` at `416432905d9fc45ce78f0cc222dc88ad98a4b045` after PR #558  
+Current work branch: `cleanup/backport-callers-phase3b1`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This document is the authoritative resume point for the post-Phase-D repository-structure cleanup. `docs/workbench/SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning; this file tracks what is actually merged, in progress, and still pending.
@@ -77,65 +77,55 @@ Completed:
 
 Validation: Workbench #2717 + Src Layout #597 green.
 
-## Current slice
-
 ### Slice 3a — low-coupling setup-linked index/reference shims
 
-Status: IN PROGRESS on `cleanup/root-shims-indexing-phase3a` / PR #558.
+MERGED: PR #558 → `416432905d9fc45ce78f0cc222dc88ad98a4b045`
 
-Root wrappers removed on this branch:
+Removed root wrappers:
 
-- [x] `build_database.py` → `workbench.devtools.indexing.build_database`
-- [x] `build_npc_index.py` → `workbench.devtools.indexing.build_npc_index`
-- [x] `build_dialog_index.py` → `workbench.devtools.reference.dialog.build_index`
-- [x] `ingest_global_tables.py` → `workbench.client.dat.global_tables`
-- [x] `build_sql_index.py` → `workbench.devtools.indexing.build_sql_index`
-- [x] `build_lsb_index.py` → `workbench.devtools.indexing.build_lsb_index`
-- [x] `scrape_bg_wiki.py` → `workbench.devtools.reference.scrape_bg_wiki`
+- `build_database.py` → `workbench.devtools.indexing.build_database`
+- `build_npc_index.py` → `workbench.devtools.indexing.build_npc_index`
+- `build_dialog_index.py` → `workbench.devtools.reference.dialog.build_index`
+- `ingest_global_tables.py` → `workbench.client.dat.global_tables`
+- `build_sql_index.py` → `workbench.devtools.indexing.build_sql_index`
+- `build_lsb_index.py` → `workbench.devtools.indexing.build_lsb_index`
+- `scrape_bg_wiki.py` → `workbench.devtools.reference.scrape_bg_wiki`
 
-Explicitly deferred from this slice:
+`build_capture_index.py` was deliberately retained as a zero-logic compatibility alias because exact code search found roughly 33 historical import occurrences, including capture regressions that rely on module-global monkeypatch behavior. Setup and newly touched callers already use `workbench.captures.ingestion.build_index`; final removal is deferred to the dedicated test/high-fan-in cleanup slice.
 
-- [ ] `build_capture_index.py` → `workbench.captures.ingestion.build_index`
+Coverage migrated in 3a includes package-migration tests for database/dialog/global-table/SQL/LSB/BG-Wiki paths, Research BG-Wiki callers, several capture callers found during CI, and Source Layout guards for the seven deleted wrappers plus the retained thin capture alias.
 
-`build_capture_index.py` has much higher legacy-test fan-in than the sibling indexers. Exact code search found roughly 33 historical import occurrences, including many capture regression fixtures that rely on module-global monkeypatch behavior. The root file therefore remains temporarily as a **zero-logic alias** while setup and newly touched first-party callers already use the canonical package. It will be removed during the dedicated test-migration cleanup rather than forcing 30+ unrelated test edits into this indexing slice.
+Validation: Workbench #2730 + Src Layout #610 green on exact PR head `18d32c588498f343c221f902f811c5eaed2bdc3e`.
 
-Already repointed away from the capture root name where encountered:
+## Current slice
 
-- `discord_inventory.py`
-- `discord_holiday_load.py`
-- root `test_capture_ingestion.py`
-- `test_fixtures/test_youtube_ocr_evidence.py`
-- `test_fixtures/test_eventview_session_unknown_zone.py`
+### Slice 3b1 — remove packaged callers of root backport aliases
 
-Coverage migrated on this branch:
+Status: IN PROGRESS on `cleanup/backport-callers-phase3b1`.
 
-- [x] Database index package migration test validates canonical behavior/paths and root-shim absence.
-- [x] Dialog index migration test validates canonical behavior/paths and root-shim absence.
-- [x] Global tables migration test validates canonical behavior and root-shim absence.
-- [x] SQL index migration/parser tests use canonical package imports and guard root-shim absence.
-- [x] LSB index migration test validates packaged foundations/paths and root-shim absence.
-- [x] BG Wiki scraper migration test validates canonical dump behavior and root-shim absence.
-- [x] Research extended tools now import packaged BG Wiki scraping directly.
-- [x] Source Layout regression guards all seven retired filenames.
-- [x] Source Layout explicitly requires retained `build_capture_index.py` to remain a thin alias with no repository-path/database implementation logic.
+Completed in this small batch:
 
-Important compatibility note:
+- [x] `workbench.migrations.backend_registry` now imports `workbench.packages.migration.sql_convert` directly instead of root `backport_sql_convert`.
+- [x] `workbench.migrations.legacy_package_service` now imports packaged migration/validation owners directly for Lua conversion, SQL conversion, package orchestration, binding audit, and Lua sanity checks.
+- [x] No `backport_*` root wrapper is deleted in this batch; this is caller decoupling only.
 
-Staged `_impl.py` files may still contain historical absolute-import names such as `import build_database` or `import build_sql_index`. Their canonical adapters supply packaged modules through `sys.modules` while loading those mature implementations. Those internal strings are not a reason to retain the deleted root files.
+Remaining in this family before wrapper deletion:
 
-Remaining before merge:
+- [ ] Repoint `workbench.validation.live_db._sql_check_impl` from root `backport_sql_convert` to `workbench.packages.migration.sql_convert`.
+- [ ] Audit tests and operator/docs callers for each `backport_*` wrapper.
+- [ ] Split wrappers into safe-to-delete vs intentionally retained CLI compatibility entry points.
+- [ ] Convert alias-dependent tests to canonical package tests.
+- [ ] Tighten Source Layout guard, then delete only the proven-unused wrappers.
 
-- [ ] Run final Workbench + Src Layout regression on the corrected seven-shim head.
-- [ ] Fix only genuine active callers/test assumptions exposed by CI; do not restore the seven retired wrappers.
-- [ ] Merge only when green.
+Validation for this branch should include Workbench core regression (especially `test_migration_backend_registry.py` and `test_legacy_package_service.py`) plus Source Layout before merge.
 
 ## Remaining slices
 
 ### Slice 3b+ — remaining compatibility shim forest
 
-PENDING. Process in bounded logical families:
+PENDING after 3b1. Process in bounded logical families:
 
-- backport/package/migration wrappers;
+- remaining backport/package/migration wrappers;
 - remaining indexing/devtools wrappers;
 - capture/protocol wrappers (with `build_capture_index.py` deferred until its tests are migrated);
 - client/DAT/model wrappers;
