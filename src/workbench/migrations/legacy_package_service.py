@@ -8,11 +8,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import backport_binding_audit
-import backport_lua_convert
-import backport_lua_sanity_check
-import backport_package
-import backport_sql_convert
+from workbench.packages.migration import lua_convert as backport_lua_convert
+from workbench.packages.migration import orchestrator as backport_package
+from workbench.packages.migration import sql_convert as backport_sql_convert
+from workbench.validation.packages import binding_audit as backport_binding_audit
+from workbench.validation.packages import lua_sanity as backport_lua_sanity_check
 
 
 def run_legacy_package_workflow(
