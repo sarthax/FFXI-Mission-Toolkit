@@ -51,7 +51,6 @@ def _closure_db():
     CREATE TABLE identity_snapshots(snapshot_id TEXT, version TEXT);
     CREATE TABLE captures(capture_id INTEGER, capture_label TEXT, client_build TEXT);
     CREATE TABLE research_sessions(research_session_id TEXT, question TEXT, feature_root TEXT, entity_root TEXT);
-    CREATE TABLE validation_runs(run_id TEXT, name TEXT, feature_id TEXT);
     """)
     con.execute("INSERT INTO lsb_item_basic VALUES(2413,'Coiler')")
     con.executemany(
@@ -68,7 +67,12 @@ def _closure_db():
         ("feature:wotg-25","MISSION","Crossroads of Time","{}"),
     )
     con.execute("INSERT INTO research_sessions VALUES('research:wotg-25','Why does this differ?','feature:wotg-25',NULL)")
-    con.execute("INSERT INTO validation_runs VALUES('validation:wotg-25','WotG 25 validation','feature:wotg-25')")
+    con.execute(
+        """INSERT INTO validation_runs(
+               run_id,name,source_snapshot_id,target_snapshot_id,feature_id,status,started_at,finished_at,metadata_json
+           ) VALUES(?,?,?,?,?,?,?,?,?)""",
+        ("validation:wotg-25","WotG 25 validation",None,None,"feature:wotg-25","VERIFIED",None,None,"{}"),
+    )
     con.execute(
         "INSERT INTO artifacts(artifact_id,artifact_type,path,metadata_json) VALUES(?,?,?,?)",
         ("artifact:raustigne-lua","LUA","scripts/zones/Southern_San_dOria_S/npcs/Raustigne.lua","{}"),
