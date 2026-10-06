@@ -1,7 +1,7 @@
 # Current Workbench Roadmap
 
 Status: ACTIVE REWORK  
-Last fully reconciled against merged PR and branch history: **2026-10-04** (Auction House section 16 updated 2026-10-05)  
+Last fully reconciled against merged PR and branch history: **2026-10-05**  
 Authoritative repository: `sarthax/FFXI-Mission-Toolkit`  
 Authoritative branch: `main`
 
@@ -15,7 +15,7 @@ This is the authoritative current planning and capability inventory for the Miss
 - `[~]` = substantial foundation exists, but the capability is intentionally incomplete or evidence-limited.
 - `[ ]` = planned / not yet implemented.
 - Closed PRs that were superseded, transplanted, or replaced are not roadmap capabilities.
-- As of this reconciliation, Behavior Inspector foundation and the reconciled Feature Trace provider/closure work are merged into `main`; current `main` is the product baseline for these capabilities.
+- As of this reconciliation, Behavior Inspector, Feature Trace provider/closure work, native modern-LSB Nyzul support, and the Research contradiction/evidence deepening slices are merged into `main`; current `main` is the product baseline for these capabilities.
 
 ---
 
@@ -213,8 +213,8 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Spatial entity/path visualization, labels/IDs/positions/search, navigation helpers, model integration, bookmarks/templates, and review/bulk workflows.
 - [x] Capture 2D/3D viewer routes and Zone Editor handoffs are covered by live-app route regressions.
 - [x] Model catalog failures from unrecognized gear-slot indices no longer abort the complete catalog.
-- [x] Nyzul Editor selects a configured compatible DSP/Topaz-era source root and explicitly rejects incompatible modern-LSB layout instead of parsing it incorrectly.
-- [~] Native modern-LSB Nyzul floor-generation adapter remains future work.
+- [x] Nyzul Editor preserves explicit DSP/Topaz legacy-layout handling while routing modern LandSandBoat checkouts through the native adapter.
+- [x] Native modern-LSB Nyzul adapter parses `floor_generation.lua`, current objective/layout selection, YAML-backed entity tables, native boss/Rampart positions, shared spawn pools, and fail-closed unsupported mappings; merged in PR #544.
 
 # 10. Capture ingestion and evidence
 
@@ -241,7 +241,7 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Modular Evidence Search across events/dialogue, protocol, entities, battle/actions, items/KIs, shops, crafting, chat/text, movement/spatial, and environment/world state.
 - [x] Campaign/session manifest import support and message-ID shift handling.
 - [x] Capture spatial JSON routing bug fixed and plot viewer routing guarded by live-app regression.
-- [~] Continue lobby/world/search protocol research and add decoder certainty only where structural evidence supports it.
+- [~] Continue lobby/world/search protocol research and add decoder certainty only where structural evidence supports it; draft PR #545 is the active evidence-backed protocol slice and remains pending real-capture validation.
 
 # 11. Packet / protocol research
 
@@ -250,7 +250,7 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Packetlyzer reference DB improvements including XiPackets-named opcodes and corrected verified field offsets.
 - [x] PCAP/PCAPNG frame parsing and bidirectional TCP reconstruction with gaps/retransmissions/conflicts preserved.
 - [x] Conservative lobby TCP classification/framing/decoder foundation.
-- [~] World/search/lobby protocol families remain separated where protocol understanding is incomplete.
+- [~] Draft PR #545 deepens lobby/search/map classification, source-backed search framing/crypto, strict same-flow sequencing, non-AH response parsing, and exact UDP map handoff; it remains intentionally unmerged pending real-capture validation and therefore is not yet the `main` baseline.
 
 # 12. Video / OCR / temporal evidence
 
@@ -265,9 +265,12 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Persistent Research Sessions with provider/model, permissions, budgets, timeout, replay, tool transcripts, evidence IDs, proposals, and final reports.
 - [x] Local Ollama support without silent provider fallback.
 - [x] Contradiction browsing across canonical findings, snapshots, and research proposals.
+- [x] Evidence-backed contradiction dossiers group existing records into explicit sides with value/status/confidence/source-snapshot provenance, conservative completeness states, ResearchSession scoping, truncation visibility, and exact Feature Trace handoffs; merged in PR #546.
 - [x] BG Wiki / FFXIclopedia claim-level alignment and conflict detection with provenance.
+- [x] Reference Evidence Detail exposes canonical claim provenance and exact claim/mapping Feature Trace handoffs without duplicating mapped-target closure logic.
+- [x] Dual-wiki `REFERENCE_CONFLICT` findings render BG Wiki vs FFXIclopedia side-by-side from importer-preserved claim IDs/excerpts while retaining `REFERENCE_ONLY` semantics and selecting no winner; merged in PR #547.
 - [x] Feature Trace can close exact `MAPPED` reference-wiki targets into indexed implementation rows when target identity resolves uniquely.
-- [~] Continue deeper evidence contradiction drill-down; additional claim-to-implementation closure should be driven by real-data gaps rather than inferred mappings.
+- [~] Additional claim-to-implementation or provider-specific presentation should be driven by real-data gaps rather than inferred mappings; the planned contradiction/evidence deepening work is otherwise complete.
 
 # 14. Package / migration / validation
 
@@ -278,7 +281,7 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Feature Trace can navigate explicit Research/Validation/Package feature/entity/artifact references back to exact canonical nodes without creating graph edges.
 - [x] Source/target conversion support where deterministic and audited.
 - [x] Phase D packaging has moved many mature root modules into logical `src/workbench/...` homes while preserving compatibility imports.
-- [~] Continue low-risk source-layout cleanup without disrupting mature GUI/server routes.
+- [~] Final Phase D source-layout cleanup is intentionally deferred until draft protocol PR #545 settles. Then briefly freeze the shared GUI/route surface, perform a fresh root-Python/source-layout inventory, and finish only low-risk bounded migrations with compatibility and regression coverage.
 
 # 15. CI / regression safety
 
@@ -331,11 +334,10 @@ Operator summary: `AUCTION_HOUSE_CAPABILITY_STATUS.md`. Economy detail: `AUCTION
 # Highest-value next work
 
 1. **Feature Trace real-data validation** — exercise the current closure model against representative NPC/entity, mission, drop-chain, capture/client-build, reference mapping, and migration/package cases. Implement more Feature Trace wiring only when testing exposes a deterministic gap.
-2. **Client Asset Cache expansion** — only for proven asset families where reusing pre-extracted data materially improves interactive tools.
-3. **Native modern-LSB Nyzul adapter** — current Nyzul parser remains legacy-layout-specific by design.
-4. **Capture/protocol research** — continue lobby/world/search classification and evidence-backed decoder coverage.
-5. **Broader client/server synchronization and named-system reconstruction** — extend deterministic comparison/validation workflows without weakening provenance rules.
-6. **Phase D source-layout cleanup** — continue in bounded slices with compatibility and regression coverage.
+2. **Capture/protocol PR #545 validation and closeout** — validate the current evidence-backed lobby/search/map work against representative real captures, preserve fail-closed unknowns, then reconcile/merge only if the evidence holds.
+3. **Client Asset Cache expansion** — only for proven asset families where reusing pre-extracted data materially improves interactive tools.
+4. **Broader client/server synchronization and named-system reconstruction** — extend deterministic comparison/validation workflows without weakening provenance rules.
+5. **Final Phase D source-layout cleanup** — after #545 settles, briefly freeze shared GUI/routes, inventory remaining root Python/source-layout debt, and finish bounded low-risk moves with compatibility and regression coverage.
 
 A future Feature Trace development phase may add **reverse discovery** from a canonical feature/entity/artifact back to Research, Validation, Package, Capture, or reference records that explicitly point to it. Treat that as a distinct phase after real-data testing, not unfinished cleanup.
 
