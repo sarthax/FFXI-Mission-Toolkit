@@ -90,4 +90,4 @@ def test_economy_page_and_routes_are_mounted():
     assert "/auction-house/economy.json" in script
     assert "sample_limit" in api and "50000" in api
     assert "LIMIT %s" in core
-    assert "Read-only" in template
+    assert "Economy Intelligence" in template
