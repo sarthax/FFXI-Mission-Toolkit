@@ -9,7 +9,7 @@ from typing import Any
 
 import capture_backtrace
 import item_dat_tools
-import scrape_bg_wiki
+from workbench.devtools.reference import scrape_bg_wiki
 
 
 class CaptureResearchReader:
