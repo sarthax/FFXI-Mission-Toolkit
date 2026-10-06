@@ -69,7 +69,7 @@ def _closure_db():
         """INSERT INTO migration_actions(
                action_id,migration_id,action,artifact_id,status,reason,metadata_json
            ) VALUES(?,?,?,?,?,?,?)""",
-        ("action:1",None,"COPY_FILE","artifact:raustigne-lua","PLANNED","fixture","{}"),
+        ("action:1","migration:fixture","COPY_FILE","artifact:raustigne-lua","PLANNED","fixture","{}"),
     )
     con.commit()
     return con
