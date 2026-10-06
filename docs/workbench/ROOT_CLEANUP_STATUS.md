@@ -82,7 +82,7 @@ Changes on this branch:
 - [x] migrate live Entity Profile, Entity Detail, and look-decoder command hints to `python -m workbench.client.models.schedule_dump`.
 - [x] migrate model schedule and model catalog regressions to canonical package imports.
 - [x] require the retired root launcher to remain absent.
-- [x] keep Src Layout coverage on the focused migration regression and include model catalog coverage.
+- [x] keep Src Layout coverage on the focused schedule migration regression; model catalog remains covered by Workbench because it reads repository UI fixtures.
 - [x] refresh current tooling guidance so retired client/model root filenames are no longer advertised.
 - [x] remove root `model_schedule_dump.py`.
 
