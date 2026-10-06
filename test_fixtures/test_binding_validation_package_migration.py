@@ -29,12 +29,10 @@ def main() -> None:
     dev_index = importlib.import_module("workbench.devtools.server.binding_index")
     from workbench.runtime.paths import DATA_ROOT
 
-    legacy_index = _load_root("backport_binding_index", REPO_ROOT / "backport_binding_index.py")
-    legacy_item = _load_root("backport_item_audit", REPO_ROOT / "backport_item_audit.py")
     legacy_sql = _load_root("backport_sql_convert", REPO_ROOT / "backport_sql_convert.py")
-    assert legacy_index is binding_index
+    assert not (REPO_ROOT / "backport_binding_index.py").exists()
     assert not (REPO_ROOT / "backport_binding_audit.py").exists()
-    assert legacy_item.audit_package is item_audit.audit_package
+    assert not (REPO_ROOT / "backport_item_audit.py").exists()
     assert legacy_sql is sql_convert
     assert sql_convert.MAP_PATH == DATA_ROOT / "dsp_sql_schema_map.json"
 
