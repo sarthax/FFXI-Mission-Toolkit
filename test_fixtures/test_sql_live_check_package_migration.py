@@ -56,6 +56,7 @@ def main() -> None:
 
     assert legacy is live
     assert live.bsc is converter
+    assert sys.modules["backport_sql_convert"] is converter
     assert live.parse_id_range("1,3-5,9") == [1, 3, 4, 5, 9]
 
     schema = {
