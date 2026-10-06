@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import importlib.util
 import sqlite3
 import subprocess
 import sys
@@ -12,18 +11,8 @@ from workbench.client.models import build_altana_index as canonical
 from workbench.runtime.paths import REPO_ROOT
 
 
-def load_root_alias():
-    spec = importlib.util.spec_from_file_location("_altana_index_legacy", REPO_ROOT / "build_altana_index.py")
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return sys.modules[spec.name]
-
-
 def main() -> None:
-    legacy = load_root_alias()
-    assert legacy is canonical
+    assert not (REPO_ROOT / "build_altana_index.py").exists()
     assert canonical.DB_PATH == REPO_ROOT / "altana_view_index.db"
 
     assert canonical.parse_location_refs("1/2/3") == [(1, 2, 3, 3)]
