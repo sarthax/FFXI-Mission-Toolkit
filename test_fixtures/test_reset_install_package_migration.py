@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import importlib.util
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CANONICAL = ROOT / "scripts" / "bootstrap" / "reset_install.py"
-ROOT_SHIM = ROOT / "reset_install.py"
 
 
 def _load(path: Path, name: str):
@@ -22,15 +20,11 @@ def main() -> None:
     assert canonical.TOOLS_ROOT == ROOT
     assert canonical.human_size(1024) == "1KB"
     assert (".venv", "this toolkit's dedicated Python environment (recreated by setup.bat)") in canonical.TARGET_DIRS
+    assert not (ROOT / "reset_install.py").exists()
 
-    root_module = _load(ROOT_SHIM, "reset_install")
-    assert root_module.TOOLS_ROOT == ROOT
-    assert root_module.plan is not None
-    assert sys.modules["reset_install"] is root_module
-
-    source = ROOT_SHIM.read_text(encoding="utf-8")
-    assert "shutil.rmtree" not in source
-    assert "scripts\" / \"bootstrap\" / \"reset_install.py" in source
+    launcher = (ROOT / "reset_install.bat").read_text(encoding="utf-8")
+    assert "scripts\\bootstrap\\reset_install.py" in launcher
+    assert "python reset_install.py" not in launcher
 
 
 if __name__ == "__main__":
