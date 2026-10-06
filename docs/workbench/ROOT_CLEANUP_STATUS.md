@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `148c050bb6024ff595e01c4259d87cce42b1b094` after PR #575  
-Current work branch: `cleanup/mob-model-tables-phase3c10`  
+Current merged baseline: `main` at `2f634d3dc5eccdc5e2c622619f843545fb182c27` after PR #576  
+Current work branch: `cleanup/binary-inspector-phase3c11`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -66,24 +66,24 @@ reset_install.bat
 - PR #573 — retired `client_model_catalog.py`; Workbench #2746 + Src Layout #625 green.
 - PR #574 — retired `client_model_resolver.py`; packaged resolver ownership retained.
 - PR #575 — retired `client_overview.py`; Workbench #2748 + Src Layout #627 green.
+- PR #576 — retired `mob_model_tables.py`; package migration regression preserved.
 
 ## Current slice
 
-### Slice 3c10 — retire mob model tables root wrapper
+### Slice 3c11 — retire Binary Inspector root alias
 
-Status: IN PROGRESS on `cleanup/mob-model-tables-phase3c10`.
+Status: IN PROGRESS on `cleanup/binary-inspector-phase3c11`.
 
 Changes on this branch:
-- [x] removed root `mob_model_tables.py`.
-- [x] `test_mob_model_tables_package_migration.py` now imports `workbench.client.models.mob_model_tables` directly.
-- [x] regression requires the retired root wrapper to remain absent.
-- [x] external-CWD canonical import provenance remains covered.
-- [x] production catalog/model-viewer callers already use the packaged table service directly.
+- [x] removed root `binary_inspector.py`.
+- [x] `test_client_binary_cli_package_migration.py` now treats the root alias as retired while continuing to validate `workbench.client.binary.inspector` outside repository CWD.
+- [x] `test_binary_probes.py` imports the packaged Binary Inspector directly.
+- [x] production ownership was already package-based; the remaining root-name caller search only found tests/documentation.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by mob-model-table wrapper retirement.
+- [ ] Fix only regressions caused by Binary Inspector alias retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
@@ -97,7 +97,7 @@ Before merge:
 ## Remaining slices
 
 ### Compatibility-shim families
-- remaining Client/model wrappers (`model_schedule_dump.py`, `model_viewer.py`, `mob_look_decode.py`, `binary_inspector.py`, etc.) after caller audits;
+- remaining Client/model wrappers (`model_schedule_dump.py`, `model_viewer.py`, `mob_look_decode.py`, etc.) after caller audits;
 - remaining indexing/server-analysis wrappers;
 - capture/protocol wrappers;
 - spatial/domain/runtime wrappers;
