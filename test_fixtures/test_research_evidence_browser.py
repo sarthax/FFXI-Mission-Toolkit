@@ -231,9 +231,7 @@ def main() -> int:
         assert "Supporting evidence" in contradictions_html
         assert "Contradicting evidence" in contradictions_html
         assert "evidence%3Aclient" in contradictions_html
-        # Canonical subjects use the existing exact Feature Trace query route.
         assert "/features/trace?q=feature%3Atest" in contradictions_html
-        # Dual-reference conflicts use importer-preserved claim identities; no source is promoted.
         assert "BG Wiki" in contradictions_html
         assert "FFXIclopedia" in contradictions_html
         assert "bg-claim:test" in contradictions_html
@@ -264,7 +262,6 @@ def main() -> int:
         assert "CONTRADICTING" in evidence_html
         assert "graph.search" in evidence_html
         assert "/features/trace?q=feature%3Atest" in evidence_html
-        # ResearchSession references keep their dedicated session route instead of being rewritten as traces.
         assert "/research/research%3Aevidence" in evidence_html
 
         wiki_html=render(
@@ -296,7 +293,7 @@ def main() -> int:
         assert "/research/contradictions?session_id=research%3Aevidence" in session_html
         assert "/research/evidence?evidence_id=evidence%3Aclient" in session_html
 
-    source=(ROOT/"gui_server.py").read_text(encoding="utf-8")
+    source=(ROOT/"src"/"workbench"/"app"/"_host_impl.py").read_text(encoding="utf-8")
     assert '@app.get("/research/contradictions"' in source
     assert '@app.get("/research/evidence"' in source
 
