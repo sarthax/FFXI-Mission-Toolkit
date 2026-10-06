@@ -3,7 +3,7 @@
 from __future__ import annotations
 import tempfile
 from pathlib import Path
-from build_integration_index import index
+from workbench.devtools.server.build_integration_index import index
 
 def main():
     with tempfile.TemporaryDirectory() as td:

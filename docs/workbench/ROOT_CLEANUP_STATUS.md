@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `434bd1ba993c9d45f1557beee3e3284412dca857` after PR #581  
-Current work branch: `cleanup/altana-index-phase3c16`  
+Current merged baseline: `main` at `93a7c7ad9a532428f44f7272a06d925ffe619026` after PR #582  
+Current work branch: `cleanup/cpp-server-analyzers-phase3c17`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -72,25 +72,27 @@ reset_install.bat
 - PR #579 — retired `mob_look_decode.py`; Workbench #2757 + Src Layout #635 green.
 - PR #580 — retired `gear_tables.py`; Workbench #2758 + Src Layout #636 green.
 - PR #581 — retired `model_schedule_dump.py`; Workbench #2761 + Src Layout #639 green.
+- PR #582 — retired `build_altana_index.py`; Workbench #2762 + Src Layout #640 green.
 
 ## Current slice
 
-### Slice 3c16 — retire Altana index root launcher
+### Slice 3c17 — retire Development C++/integration analyzer root launchers
 
-Status: IN PROGRESS on `cleanup/altana-index-phase3c16`.
+Status: IN PROGRESS on `cleanup/cpp-server-analyzers-phase3c17`.
 
 Changes on this branch:
-- [x] remove root `build_altana_index.py`.
-- [x] keep canonical ownership at `workbench.client.models.build_altana_index`.
-- [x] migrate the focused regression from root-alias identity to root-absence plus canonical behavior.
-- [x] preserve the existing repository-root-safe Altana index DB path contract.
-- [x] retain existing Src Layout trigger and explicit focused regression coverage.
+- [x] remove root `cpp_api_index.py`, `cpp_dependency_index.py`, and `build_integration_index.py`.
+- [x] migrate direct regression imports to `workbench.devtools.server.*`.
+- [x] migrate the package-migration regression from root-alias identity to root-absence plus canonical behavior.
+- [x] update the external-source smoke workflow to watch the packaged server-analyzer directory so future analyzer changes still trigger integration coverage.
+- [x] preserve the existing canonical analyzer behavior and external LSB smoke path.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by Altana index launcher retirement.
-- [ ] Merge only when green.
+- [ ] Run/verify External Source Smoke when triggered.
+- [ ] Fix only regressions caused by server-analyzer launcher retirement.
+- [ ] Merge only when required gates are green.
 
 ## Explicitly retained / deferred
 

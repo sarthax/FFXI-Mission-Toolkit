@@ -7,9 +7,7 @@ on:
     paths:
       - "workbench/adapters/servers/**"
       - "workbench/migrations/**"
-      - "cpp_api_index.py"
-      - "cpp_dependency_index.py"
-      - "build_integration_index.py"
+      - "src/workbench/devtools/server/**"
       - "workbench_connect_server.py"
       - "test_fixtures/test_external_lsb_pipeline.py"
       - "test_fixtures/test_external_lsb_dsp_migration.py"
