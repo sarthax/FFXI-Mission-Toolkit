@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import build_capture_index
-import mob_look_decode
+from workbench.client.models import look_decode
 
 
 ROOT = Path(__file__).resolve().parent
@@ -229,7 +229,7 @@ def _assert_uka_20_byte_backfill_decode():
             (cid,),
         ).fetchone()[0] is None
 
-        decoded = mob_look_decode.decode_look_data(row[0])
+        decoded = look_decode.decode_look_data(row[0])
         assert "error" not in decoded, decoded
         assert decoded["size"] == 1 and decoded["kind"] == "gear", decoded
         assert decoded["race_name"] == "Mithra", decoded
