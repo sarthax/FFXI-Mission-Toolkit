@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `66374fb022f5e94b1fa9a53d0e12ed521f73f36f` after PR #562  
-Current work branch: `cleanup/backport-validation-wrappers-phase3b5`  
+Current merged baseline: `main` at `6b7d677af0755ff9fb24743e3b11b22cdc742d37` after PR #563  
+Current work branch: `cleanup/backport-map-lint-phase3b6`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This document is the authoritative resume point for the post-Phase-D repository-structure cleanup. `docs/workbench/SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning; this file tracks what is actually merged, in progress, and still pending.
@@ -111,33 +111,44 @@ Tests now import canonical validation modules directly; Ancient Vows no longer w
 
 Validation: Workbench #2735 + Src Layout #615 green.
 
-## Current slice
-
 ### Slice 3b5 — retire coverage and map-confidence validation wrappers
 
-Status: IN PROGRESS on `cleanup/backport-validation-wrappers-phase3b5`.
+MERGED: PR #563 → `6b7d677af0755ff9fb24743e3b11b22cdc742d37`
+
+Removed root:
+- `backport_coverage_check.py` → `workbench.validation.packages.coverage`
+- `backport_map_confidence_check.py` → `workbench.validation.packages.map_confidence`
+
+`test_package_coverage_confidence_migration.py` now exercises canonical modules directly and requires both root wrappers to remain absent.
+
+Validation: Workbench #2736 + Src Layout #616 green.
+
+## Current slice
+
+### Slice 3b6 — retire namespace-map lint wrapper
+
+Status: IN PROGRESS on `cleanup/backport-map-lint-phase3b6`.
 
 Removed on this branch:
-- [x] `backport_coverage_check.py` → `workbench.validation.packages.coverage`
-- [x] `backport_map_confidence_check.py` → `workbench.validation.packages.map_confidence`
+- [x] `backport_map_lint.py` → `workbench.validation.packages.map_lint`
 
 Caller/test migration completed:
-- [x] `test_package_coverage_confidence_migration.py` uses canonical package modules directly.
-- [x] The migration regression requires both retired root wrappers to remain absent.
-- [x] Historical roadmap prose may continue to mention old filenames as historical feature names; those references are not executable dependencies.
+- [x] `test_lua_converter_map_lint_package_migration.py` no longer loads the root map-lint wrapper.
+- [x] The regression requires `backport_map_lint.py` to remain absent.
+- [x] The canonical `python -m workbench.validation.packages.map_lint` CLI is exercised from outside the repository CWD.
 
-Explicitly retained for later dedicated batches:
-- `backport_package.py` — root-facing regression/operator surface remains.
-- `backport_lua_convert.py` — standalone root regression/operator surface remains.
-- `backport_sql_convert.py` — standalone root regression/operator surface remains.
-- `backport_sql_live_check.py`, map-lint, conversion-driver, and other remaining wrappers — audit separately.
+Explicitly retained:
+- `backport_sql_live_check.py` — active GUI/package/runtime operator guidance still names this command, so it is not a low-coupling deletion candidate yet.
+- `backport_package.py`, `backport_lua_convert.py`, `backport_sql_convert.py` — root-facing regression/operator surfaces remain and need dedicated CLI/test migrations.
+- conversion-driver and other remaining wrappers — audit separately in later small batches.
 
 Known harmless cleanup debt:
-- `.github/workflows/src-layout-regression.yml` still contains some deleted root filenames in its broad path trigger. These inert entries will be removed in a dedicated workflow-filter sweep.
+- `.github/workflows/src-layout-regression.yml` still contains deleted root filenames in its broad path trigger. These inert entries will be removed in a dedicated workflow-filter sweep.
+- historical roadmap/source-layout prose may still name retired wrappers as historical feature names; executable coupling is the deletion gate for these small batches, with documentation reconciliation reserved for closeout.
 
 Remaining before merge:
 - [ ] Run Workbench + Src Layout regression.
-- [ ] Fix only regressions caused by these two wrapper removals.
+- [ ] Fix only regressions caused by the map-lint wrapper removal.
 - [ ] Merge only when green.
 
 ## Remaining slices
