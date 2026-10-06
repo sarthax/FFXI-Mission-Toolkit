@@ -6,7 +6,13 @@ from workbench.core import graph
 from workbench.devtools.features import trace as feature_trace
 from workbench.devtools.features.trace_benchmarks import SCENARIO_BY_ID, evaluate_trace
 from workbench.devtools.features.trace_expansion import provider_candidates
-from workbench.devtools.features.trace_validation import TraceValidationCase, validate_case
+from workbench.devtools.features.trace_validation import (
+    ClosureValidationCase,
+    TraceValidationCase,
+    validate_case,
+    validate_closure_case,
+    validate_closure_cases,
+)
 
 
 def _provider_db():
@@ -30,6 +36,39 @@ def _provider_db():
     con.execute("INSERT INTO topaz_item_basic VALUES(?,?,?,?,?,?)",(5002,"Benchmark Rare Drop",1,0,0,0))
     con.commit()
     return con,mobid
+
+
+def _closure_db():
+    con=sqlite3.connect(":memory:")
+    con.executescript(graph.SCHEMA)
+    con.executescript("""
+    CREATE TABLE lsb_item_basic(itemid INTEGER, name TEXT);
+    CREATE TABLE reference_wiki_mappings(
+        mapping_id TEXT, claim_id TEXT, target_domain TEXT, target_table TEXT,
+        target_key TEXT, target_label TEXT, mapping_method TEXT,
+        mapping_status TEXT, confidence TEXT
+    );
+    CREATE TABLE identity_snapshots(snapshot_id TEXT, version TEXT);
+    CREATE TABLE captures(capture_id INTEGER, capture_label TEXT, client_build TEXT);
+    CREATE TABLE migration_actions(action_id TEXT, action TEXT, artifact_id TEXT);
+    """)
+    con.execute("INSERT INTO lsb_item_basic VALUES(2413,'Coiler')")
+    con.executemany(
+        "INSERT INTO reference_wiki_mappings VALUES(?,?,?,?,?,?,?,?,?)",
+        [
+            ("map-ok","claim-1","item","lsb_item_basic","2413","Coiler","NORMALIZED_NAME_EXACT","MAPPED","HIGH"),
+            ("map-ambiguous","claim-2","item","lsb_item_basic","2413","Coiler","NORMALIZED_NAME_EXACT","AMBIGUOUS","LOW"),
+        ],
+    )
+    con.execute("INSERT INTO identity_snapshots VALUES('client:2022','30120222_1')")
+    con.execute("INSERT INTO captures VALUES(17,'Ancient Vows retail','30120222_1')")
+    con.execute(
+        "INSERT INTO artifacts(artifact_id,artifact_type,path,metadata_json) VALUES(?,?,?,?)",
+        ("artifact:raustigne-lua","LUA","scripts/zones/Southern_San_dOria_S/npcs/Raustigne.lua","{}"),
+    )
+    con.execute("INSERT INTO migration_actions VALUES('action:1','COPY_FILE','artifact:raustigne-lua')")
+    con.commit()
+    return con
 
 
 def test_generic_nm_trace_reaches_drop_rows_and_items():
@@ -70,6 +109,52 @@ def test_generic_nm_trace_reaches_drop_rows_and_items():
     assert validation["resolved_root"]==root,validation
     assert validation["evaluation"]["checks"]["required_generators"] is True,validation
     con.close()
+
+    closure=_closure_db()
+    report=validate_closure_cases(
+        closure,
+        (
+            ClosureValidationCase(
+                "wiki-to-item",
+                "catalog:reference_wiki_mappings:map-ok",
+                (("REFERENCE_MAPPING_TARGET","catalog:lsb_item_basic:2413"),),
+            ),
+            ClosureValidationCase(
+                "capture-to-client",
+                "catalog:captures:17",
+                (("CAPTURE_CLIENT_BUILD","catalog:identity_snapshots:client:2022"),),
+            ),
+            ClosureValidationCase(
+                "migration-to-artifact",
+                "catalog:migration_actions:action:1",
+                (("MIGRATION_ACTION_ARTIFACT","artifact:raustigne-lua"),),
+            ),
+            ClosureValidationCase(
+                "ambiguous-wiki-fails-closed",
+                "catalog:reference_wiki_mappings:map-ambiguous",
+                (),
+                forbidden_relationships=("REFERENCE_MAPPING_TARGET",),
+            ),
+        ),
+        closure,
+    )
+    assert report["counts"]["PASS"]==4,report
+    assert report["counts"]["CONTRACT_GAP"]==0,report
+    assert report["all_attempted_passed"] is True,report
+
+    closure.execute("INSERT INTO identity_snapshots VALUES('client:2022-copy','30120222_1')")
+    duplicate=validate_closure_case(
+        closure,
+        ClosureValidationCase(
+            "duplicate-client-build-fails-closed",
+            "catalog:captures:17",
+            (),
+            forbidden_relationships=("CAPTURE_CLIENT_BUILD",),
+        ),
+        closure,
+    )
+    assert duplicate["status"]=="PASS",duplicate
+    closure.close()
 
 
 def test_drop_row_composite_identity_is_stable_and_navigable():
