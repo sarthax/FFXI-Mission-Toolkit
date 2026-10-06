@@ -99,6 +99,7 @@ on:
       - "test_fixtures/test_client_binary_cli_package_migration.py"
       - "test_fixtures/test_client_overview_package_migration.py"
       - "test_fixtures/test_model_schedule_dump_package_migration.py"
+      - "test_fixtures/test_client_model_catalog.py"
       - "test_fixtures/test_model_viewer_package_migration.py"
       - "test_fixtures/test_mob_look_decode_package_migration.py"
       - "test_fixtures/test_gear_tables_package_migration.py"
@@ -179,6 +180,7 @@ jobs:
           python test_fixtures/test_client_binary_cli_package_migration.py
           python test_fixtures/test_client_overview_package_migration.py
           python test_fixtures/test_model_schedule_dump_package_migration.py
+          python test_fixtures/test_client_model_catalog.py
           python test_fixtures/test_model_viewer_package_migration.py
           python test_fixtures/test_mob_look_decode_package_migration.py
           python test_fixtures/test_gear_tables_package_migration.py
