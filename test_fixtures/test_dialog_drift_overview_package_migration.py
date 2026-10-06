@@ -2,7 +2,6 @@
 """Focused migration smoke for the canonical dialog reference services."""
 from __future__ import annotations
 
-import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -11,22 +10,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-def _load_root():
-    name = "dialog_drift_overview"
-    sys.modules.pop(name, None)
-    spec = importlib.util.spec_from_file_location(name, REPO_ROOT / "dialog_drift_overview.py")
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return sys.modules[name]
-
-
 def main() -> None:
     from workbench.devtools.reference.dialog import drift_overview as canonical
 
-    legacy = _load_root()
-    assert legacy is canonical
+    assert not (REPO_ROOT / "dialog_drift_overview.py").exists()
     assert callable(canonical.detect_offset)
     assert callable(canonical.overview)
     assert callable(canonical.summary)
