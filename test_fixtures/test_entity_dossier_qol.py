@@ -3,7 +3,7 @@
 
 from pathlib import Path
 
-import entity_profile
+from workbench.devtools.entities import profile as entity_profile
 
 ROOT = Path(__file__).resolve().parents[1]
 
