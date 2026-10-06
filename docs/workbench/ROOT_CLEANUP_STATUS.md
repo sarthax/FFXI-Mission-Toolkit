@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `05bfeea999e31d58658d2fb99d1c46af5cfc30b9` after PR #565  
-Current work branch: `cleanup/reference-research-shims-phase3c1`  
+Current merged baseline: `main` at `2922596de81acecef198c5b34770bbd81b69959b` after PR #566  
+Current work branch: `cleanup/ffxiclopedia-wrapper-phase3c2`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -89,25 +89,29 @@ reset_install.bat
   - retained the three Settings-aware `backport_convert_*` drivers because they still add operator-default behavior.
   - Workbench #2739 + Src Layout #618 green.
 
+- **PR #566 / Slice 3c1** → `2922596de81acecef198c5b34770bbd81b69959b`
+  - removed `dialog_drift_overview.py` and `research_gaps.py`.
+  - focused migration tests now use canonical Devtools modules directly and require the root shims to stay absent.
+  - Workbench #2740 + Src Layout #619 green.
+
 ## Current slice
 
-### Slice 3c1 — retire low-coupling reference/research import shims
+### Slice 3c2 — retire FFXIclopedia root launcher
 
-Status: IN PROGRESS on `cleanup/reference-research-shims-phase3c1`.
+Status: IN PROGRESS on `cleanup/ffxiclopedia-wrapper-phase3c2`.
 
 Removed on this branch:
-- [x] `dialog_drift_overview.py` → `workbench.devtools.reference.dialog.drift_overview`
-- [x] `research_gaps.py` → `workbench.devtools.research.gaps`
+- [x] `ffxiclopedia_adapter.py` → `workbench.devtools.reference.ffxiclopedia`
 
 Caller/test migration:
-- [x] `test_dialog_drift_overview_package_migration.py` now uses the canonical package module and requires the root shim to remain absent.
-- [x] `test_research_gaps_package_migration.py` now uses the canonical package module and requires the root shim to remain absent.
-- [x] Historical roadmap/audit mentions may retain the old filenames as historical feature labels; there is no supported CLI contract on either removed file.
+- [x] `test_ffxiclopedia_adapter_package_migration.py` now uses the canonical module directly.
+- [x] The migration regression requires `ffxiclopedia_adapter.py` to remain absent.
+- [x] The canonical `python -m workbench.devtools.reference.ffxiclopedia` CLI is exercised outside repository CWD.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by these two wrapper removals.
+- [ ] Fix only regressions caused by this wrapper removal.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
@@ -119,6 +123,7 @@ These are **not** deletion candidates yet:
 - `backport_sql_live_check.py` — active GUI/package/runtime operator guidance still names it.
 - `backport_package.py`, `backport_lua_convert.py`, `backport_sql_convert.py` — higher-fan-in operator/test surfaces.
 - `client_binary_analyze.py`, `client_binary_index.py`, `client_binary_diff.py` — pure aliases, but active Client Binary Research documentation still instructs users to run the root commands; retire them in a dedicated CLI-doc migration slice.
+- `audit_dialog_drift.py` — root launcher is pure, but implementation ownership still sits under the older `workbench.reference.dialog` namespace rather than the intended final Devtools namespace; finish that namespace migration before deleting the root command.
 
 ## Remaining slices
 
