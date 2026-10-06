@@ -1,12 +1,22 @@
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load_test(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
 
 
 def main() -> None:
@@ -36,8 +46,9 @@ def main() -> None:
     )
     subprocess.run([sys.executable, "-c", code], cwd=tempfile.gettempdir(), check=True)
 
-    converter_migration = importlib.import_module(
-        "test_fixtures.test_lua_converter_map_lint_package_migration"
+    converter_migration = _load_test(
+        "_lua_converter_map_lint_package_migration",
+        REPO_ROOT / "test_fixtures" / "test_lua_converter_map_lint_package_migration.py",
     )
     converter_migration.main()
 
