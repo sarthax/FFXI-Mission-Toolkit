@@ -3,8 +3,6 @@ import sqlite3
 import tempfile
 from pathlib import Path
 
-import entity_profile as legacy_profile
-import lookup_entity as legacy_lookup
 from workbench.client.models import look_decode
 from workbench.devtools.entities import lookup, profile as entity_profile
 from workbench.devtools.entities.profile_graph import import_entity_profile_provenance
@@ -12,12 +10,11 @@ from workbench.runtime.paths import DATABASE_PATH
 
 
 def main():
-    # Phase C root -> canonical package compatibility.
+    repo_root = Path(__file__).resolve().parents[1]
+    assert not (repo_root / "lookup_entity.py").exists()
+    assert not (repo_root / "entity_profile.py").exists()
     assert lookup.DB_PATH == DATABASE_PATH
-    assert legacy_lookup.resolve_query_to_ids is lookup.resolve_query_to_ids
     assert entity_profile.DB_PATH == DATABASE_PATH
-    assert legacy_profile.build_profile is entity_profile.build_profile
-    assert legacy_profile.decode_entity_id is entity_profile.decode_entity_id
 
     # The moved implementation must execute against canonical component dependencies rather than
     # depending on repository-root modules being importable from sys.path.
