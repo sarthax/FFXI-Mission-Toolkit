@@ -9,7 +9,7 @@ The binary may remain anywhere on the local filesystem. It does **not** need to 
 Example indexing command:
 
 ```
-python client_binary_index.py "C:\\path\\to\\FINAL FANTASY XI\\FFXiMain.dll" ^
+python -m workbench.client.cli.binary_index "C:\\path\\to\\FINAL FANTASY XI\\FFXiMain.dll" ^
   --client-build 30191204_1 ^
   --label FFXiMain-30191204_1 ^
   --output .workbench/client-binaries/30191204_1/FFXiMain.dll.json ^
@@ -52,14 +52,14 @@ The first seven operate from precomputed indexes. The deeper byte/xref/function-
 
 ## Deeper binary analysis
 
-`client_binary_analyze.py` and `workbench.client.binary_deep` add a dependency-free deeper static layer.
+`workbench.client.cli.binary_analyze` and `workbench.client.binary_deep` add a dependency-free deeper static layer.
 
 ### Bounded byte/pattern search
 
 Hex patterns support one-byte wildcards:
 
 ```
-python client_binary_analyze.py FFXiMain.dll pattern "E8 ?? ?? ?? ?? 83 C4 04" --executable-only
+python -m workbench.client.cli.binary_analyze FFXiMain.dll pattern "E8 ?? ?? ?? ?? 83 C4 04" --executable-only
 ```
 
 Pattern matches are exact byte observations and therefore reported as VERIFIED byte evidence. Search is bounded by pattern length, result count, section filters, and small context windows.
@@ -75,7 +75,7 @@ The xref scanner accepts one RVA, VA, or file offset and looks for:
 Example:
 
 ```
-python client_binary_analyze.py FFXiMain.dll xrefs --rva 0x123456
+python -m workbench.client.cli.binary_analyze FFXiMain.dll xrefs --rva 0x123456
 ```
 
 These are intentionally **xref candidates**, not authoritative decoded references. Relative-control-flow hits remain INFERRED because a byte scanner does not independently prove instruction boundaries. Raw pointer/value matches are also INFERRED because constants can occur as data.
@@ -91,7 +91,7 @@ The function-candidate pass collects:
 Example:
 
 ```
-python client_binary_analyze.py FFXiMain.dll functions
+python -m workbench.client.cli.binary_analyze FFXiMain.dll functions
 ```
 
 PE entry point/export locations are verified seeds, but this output does **not** claim recovered function bodies or semantic function identities. Direct-call targets remain INFERRED until corroborated by disassembly, symbols, another client build, or runtime evidence.
@@ -101,7 +101,7 @@ PE entry point/export locations are verified seeds, but this output does **not**
 Index each binary independently, then compare the indexes:
 
 ```
-python client_binary_diff.py ^
+python -m workbench.client.cli.binary_diff ^
   .workbench/client-binaries/old/FFXiMain.dll.json ^
   .workbench/client-binaries/new/FFXiMain.dll.json ^
   --output .workbench/client-binaries/FFXiMain-old-vs-new.diff.json
@@ -129,7 +129,7 @@ The supplied `FFXiMain.dll` (SHA-256 `514653a260c51eaec25d88510e51a86fb2a4abd986
 
 The byte scanner finds 1,678 distinct candidate entry RVAs, including the mapped PE entry point; direct-call-derived candidates remain INFERRED. An xref scan to the entry point found zero candidates. In `POL1`, broad `FF 15` and `FF 25` searches yield 351 and 77 byte matches respectively; many operands are outside mapped image addresses, underscoring the false-positive risk of byte scanning through packed content.
 
-The new `import-refs` command and `client.import-refs` tool check only PE32 `FF 15`/`FF 25` absolute operands that match an actual import address table slot (`iat_rva`, distinct from the import lookup thunk). On this file they return **22 candidates** (20 calls, 2 jumps), including byte patterns pointing to `CreateThread`, `FindFirstFileA`, and `GetKeyboardLayout`. These are exact operand/IAT address matches, but opcode alignment and execution are unverified; each result remains INFERRED. Example: `python client_binary_analyze.py FFXiMain.dll import-refs`.
+The new `import-refs` command and `client.import-refs` tool check only PE32 `FF 15`/`FF 25` absolute operands that match an actual import address table slot (`iat_rva`, distinct from the import lookup thunk). On this file they return **22 candidates** (20 calls, 2 jumps), including byte patterns pointing to `CreateThread`, `FindFirstFileA`, and `GetKeyboardLayout`. These are exact operand/IAT address matches, but opcode alignment and execution are unverified; each result remains INFERRED. Example: `python -m workbench.client.cli.binary_analyze FFXiMain.dll import-refs`.
 
 Next validation needs either an optional decoder with versioned provenance and reachable instruction boundaries, or runtime/unpacked memory evidence for the virtual `.text`. No semantic feature or recovered function claim follows from this packed on-disk image alone.
 
