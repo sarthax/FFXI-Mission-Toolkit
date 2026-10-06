@@ -75,6 +75,48 @@ def main() -> None:
     assert (ROOT / "docs" / "archive" / "ui" / "mission_toolkit_gui_artifact.html").is_file()
     assert (ROOT / "docs" / "reports" / "backport" / "backport_coverage_report.md").is_file()
 
+    # Bootstrap implementations now live only under scripts/bootstrap. Root .bat launchers call
+    # those structured scripts or packaged modules directly rather than treating loose .py files
+    # as the public interface.
+    for name in ("install_xi_tinkerer.py", "install_external_tools.py", "reset_install.py"):
+        assert not (ROOT / name).exists(), name
+    assert (ROOT / "scripts" / "bootstrap" / "install_xi_tinkerer.py").is_file()
+    assert (ROOT / "scripts" / "bootstrap" / "install_external_tools.py").is_file()
+    assert (ROOT / "scripts" / "bootstrap" / "reset_install.py").is_file()
+
+    setup_text = (ROOT / "setup.bat").read_text(encoding="utf-8")
+    assert "%PY% -m pip install --quiet --disable-pip-version-check -e ." in setup_text
+    assert "%PY% scripts\\bootstrap\\install_xi_tinkerer.py" in setup_text
+    assert "%PY% scripts\\bootstrap\\install_external_tools.py xi-tinkerer-cli" in setup_text
+    assert "%PY% -m workbench.devtools.indexing.build_database" in setup_text
+    assert "%PY% -m workbench.devtools.indexing.build_npc_index" in setup_text
+    assert "%PY% -m workbench.devtools.reference.dialog.build_index" in setup_text
+    assert "%PY% -m workbench.client.dat.global_tables" in setup_text
+    assert "%PY% -m workbench.captures.ingestion.build_index list" in setup_text
+    assert "%PY% -m workbench.devtools.indexing.build_sql_index" in setup_text
+    assert "%PY% -m workbench.devtools.indexing.build_lsb_index" in setup_text
+    assert "%PY% -m workbench.devtools.reference.scrape_bg_wiki" in setup_text
+    for legacy_call in (
+        "%PY% install_xi_tinkerer.py",
+        "%PY% install_external_tools.py",
+        "%PY% build_database.py",
+        "%PY% build_npc_index.py",
+        "%PY% build_dialog_index.py",
+        "%PY% ingest_global_tables.py",
+        "%PY% build_capture_index.py",
+        "%PY% build_sql_index.py",
+        "%PY% build_lsb_index.py",
+        "%PY% scrape_bg_wiki.py",
+    ):
+        assert legacy_call not in setup_text, legacy_call
+
+    start_text = (ROOT / "start.bat").read_text(encoding="utf-8")
+    assert '"%PY%" -m workbench.app.host' in start_text
+    assert '"%PY%" gui_server.py' not in start_text
+    reset_text = (ROOT / "reset_install.bat").read_text(encoding="utf-8")
+    assert "python scripts\\bootstrap\\reset_install.py" in reset_text
+    assert "python reset_install.py" not in reset_text
+
     # These former root compatibility/implementation modules are retired. First-party code and
     # regressions must use canonical package imports directly rather than recreating hidden root
     # coupling.
