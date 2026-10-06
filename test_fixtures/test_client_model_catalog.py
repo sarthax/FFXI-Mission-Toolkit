@@ -4,7 +4,7 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-import client_model_catalog as catalog
+from workbench.client.models import catalog
 import model_schedule_dump as msd
 
 ROOT = Path(__file__).resolve().parents[1]
