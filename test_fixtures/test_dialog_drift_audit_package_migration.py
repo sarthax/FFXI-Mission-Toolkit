@@ -1,29 +1,19 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import importlib.util
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
-from workbench.reference.dialog import audit_drift
+from workbench.devtools.reference.dialog import audit_drift
+from workbench.reference.dialog import audit_drift as legacy_audit_drift
 from workbench.runtime.paths import REPO_ROOT, VENDOR_ROOT
 
 
-def _load_root_compatibility_module():
-    name = "_dialog_drift_root_compat_test"
-    spec = importlib.util.spec_from_file_location(name, REPO_ROOT / "audit_dialog_drift.py")
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return sys.modules[name]
-
-
 def main() -> None:
-    legacy = _load_root_compatibility_module()
-    assert legacy is audit_drift
+    assert legacy_audit_drift is audit_drift
+    assert not (REPO_ROOT / "audit_dialog_drift.py").exists()
 
     assert audit_drift.dat_id_for_zone(0) == 6420
     assert audit_drift.dat_id_for_zone(255) == 6675
@@ -50,13 +40,22 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory() as td:
         code = (
-            "from workbench.reference.dialog import audit_drift as a; "
+            "from workbench.devtools.reference.dialog import audit_drift as a; "
+            "from workbench.reference.dialog import audit_drift as legacy; "
             "from workbench.runtime.paths import REPO_ROOT; "
+            "assert legacy is a; "
             "assert a.XI_TINKERER_EXE.is_absolute(); "
             "assert REPO_ROOT in a.XI_TINKERER_EXE.parents; "
             "assert a.dat_id_for_zone(256) == 85590"
         )
         subprocess.run([sys.executable, "-c", code], cwd=td, check=True)
+
+    subprocess.run(
+        [sys.executable, "-m", "workbench.devtools.reference.dialog.audit_drift", "--help"],
+        cwd=tempfile.gettempdir(),
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
 
     print("dialog drift audit package migration: PASS")
 
