@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Development entity lookup service and CLI implementation.
 
-Canonical home for the historical ``lookup_entity.py`` tool. The root filename remains a
-compatibility launcher during Phase C.
+Canonical home for the historical entity lookup tool. The retired root filename is no longer
+part of the supported import/CLI surface.
 """
 import argparse
 import io
