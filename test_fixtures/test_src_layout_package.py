@@ -121,6 +121,13 @@ def main() -> None:
         "build_sql_index.py",
         "build_lsb_index.py",
         "scrape_bg_wiki.py",
+        "backport_binding_audit.py",
+        "backport_lua_sanity_check.py",
+        "backport_binding_index.py",
+        "backport_item_audit.py",
+        "backport_coverage_check.py",
+        "backport_map_confidence_check.py",
+        "backport_map_lint.py",
     )
     for name in retired:
         assert not (ROOT / name).exists(), name
