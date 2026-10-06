@@ -7,9 +7,9 @@ defaults to this folder, so they work out of the box with zero configuration:
   file in a package folder, then runs the binding audit + Lua sanity check + SQL id-collision
   check over the whole result, and writes one consolidated `BACKPORT_REPORT.md`. See its own
   docstring (`py -3 backport_package.py --help`) for exactly what it does and does not automate.
-- `backport_binding_audit.py --all-packages` / `backport_lua_sanity_check.py --all-packages` --
-  the same two checks `backport_package.py` runs per-package, but across every package under
-  `mission-packages/` at once.
+- `py -3 -m workbench.validation.packages.binding_audit --all-packages` and
+  `py -3 -m workbench.validation.packages.lua_sanity --all-packages` — the same two checks
+  `backport_package.py` runs per-package, but across every package under `mission-packages/` at once.
 
 This is **not** a copy of any real Assault mission content — it ships empty of real project data
 on purpose. What it does include is the real folder shape all three tools expect, plus one small,
