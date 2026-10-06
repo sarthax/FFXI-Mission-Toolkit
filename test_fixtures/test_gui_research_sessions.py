@@ -172,7 +172,7 @@ def main():
         assert "research-run-grid" in proposal_html
         assert "Research Proposals" in proposal_html
 
-    source=(ROOT/"gui_server.py").read_text(encoding="utf-8")
+    source=(ROOT/"src"/"workbench"/"app"/"_host_impl.py").read_text(encoding="utf-8")
     assert '@app.get("/research"' in source
     assert '@app.post("/research"' in source
     assert '@app.get("/research/{research_session_id:path}"' in source
