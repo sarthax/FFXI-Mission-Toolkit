@@ -29,6 +29,15 @@ _impl.pcap_ingest = pcap_ingest
 _impl.TOOLS_ROOT = REPO_ROOT
 _impl.DB_PATH = DATABASE_PATH
 
-# Preserve module identity so existing callers that monkeypatch DB_PATH/private helpers continue
-# to mutate the globals used by the implementation functions themselves.
-sys.modules[__name__] = _impl
+
+def _run_cli() -> int:
+    result = _impl.main()
+    return int(result or 0)
+
+
+if __name__ == "__main__":
+    raise SystemExit(_run_cli())
+else:
+    # Preserve module identity so existing callers that monkeypatch DB_PATH/private helpers continue
+    # to mutate the globals used by the implementation functions themselves.
+    sys.modules[__name__] = _impl
