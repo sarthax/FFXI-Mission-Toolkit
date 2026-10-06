@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `dda1901650afb36abff24d02c1b22c1f427aa2c2` after PR #579  
-Current work branch: `cleanup/gear-tables-phase3c14`  
+Current merged baseline: `main` at `964ca87b4800094611c31b438f0aa6e1d96508e9` after PR #580  
+Current work branch: `cleanup/model-schedule-dump-phase3c15`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -70,29 +70,30 @@ reset_install.bat
 - PR #577 — retired `binary_inspector.py`; Workbench #2750 + Src Layout #629 green.
 - PR #578 — retired `model_viewer.py`; Workbench #2752 + Src Layout #630 green.
 - PR #579 — retired `mob_look_decode.py`; Workbench #2757 + Src Layout #635 green.
+- PR #580 — retired `gear_tables.py`; Workbench #2758 + Src Layout #636 green.
 
 ## Current slice
 
-### Slice 3c14 — retire gear tables root shim
+### Slice 3c15 — retire model schedule dump root launcher
 
-Status: IN PROGRESS on `cleanup/gear-tables-phase3c14`.
+Status: IN PROGRESS on `cleanup/model-schedule-dump-phase3c15`.
 
 Changes on this branch:
-- [x] removed root `gear_tables.py`.
-- [x] production look decoding already imports `workbench.client.models.gear_tables` directly.
-- [x] added a focused package-migration regression that requires the retired root shim to stay absent and verifies installed-package import outside the repository.
-- [x] Src Layout now watches the retired root path and focused regression and runs that regression explicitly.
-- [x] Model Viewer help text no longer advertises retired physical root filenames.
+- [x] migrate live Entity Profile, Entity Detail, and look-decoder command hints to `python -m workbench.client.models.schedule_dump`.
+- [x] migrate model schedule and model catalog regressions to canonical package imports.
+- [x] require the retired root launcher to remain absent.
+- [x] keep Src Layout coverage on the focused migration regression and include model catalog coverage.
+- [x] refresh current tooling guidance so retired client/model root filenames are no longer advertised.
+- [x] remove root `model_schedule_dump.py`.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by gear-table shim retirement.
+- [ ] Fix only regressions caused by model schedule launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
 
-- `model_schedule_dump.py` — root launcher is pure, but live entity/model UI and CLI output still emits the physical root command; migrate those command strings before deletion.
 - `build_capture_index.py` — high regression fan-in; dedicated test migration required.
 - `backport_convert_7_packages.py`, `backport_convert_gm_debug_tools.py`, `backport_convert_nyzul_package.py` — wrappers seed Settings-derived operator defaults.
 - `backport_sql_live_check.py` — active GUI/package/runtime operator guidance still names it.
