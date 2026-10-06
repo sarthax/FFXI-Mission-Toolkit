@@ -39,8 +39,6 @@ def main() -> None:
     assert (SRC_PACKAGE / "core" / "services" / "feature_package_analyzer.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "id_bridge.py").is_file()
 
-    # Canonical implementation lives under src/workbench. The root package is intentionally
-    # limited to one compatibility bootstrap so implementation files cannot drift back there.
     assert ROOT_PACKAGE.is_dir()
     assert sorted(path.name for path in ROOT_PACKAGE.iterdir()) == ["__init__.py"]
     assert BRIDGE.is_file()
@@ -49,8 +47,6 @@ def main() -> None:
     assert "__path__.append" in bridge_text
     assert "Do not add implementation modules" in bridge_text
 
-    # Root GUI/settings surfaces are now compatibility-only entry points. Their reusable
-    # implementations must remain under src/workbench.
     root_gui = (ROOT / "gui_server.py").read_text(encoding="utf-8")
     assert "from workbench.app import host as _canonical" in root_gui
     assert "FastAPI(" not in root_gui and "@app." not in root_gui
@@ -58,8 +54,6 @@ def main() -> None:
     assert "from workbench.runtime import settings_store as _canonical" in root_settings
     assert "sqlite3.connect" not in root_settings
 
-    # Post-Phase-D root cleanup keeps reference/report/design artifacts out of the repository
-    # root. These paths are deliberately structural data/docs locations, not runtime state moves.
     moved_root_artifacts = (
         "appraisal_item_id_xref.csv",
         "appraisal_pools_with_item_ids.csv",
@@ -75,9 +69,6 @@ def main() -> None:
     assert (ROOT / "docs" / "archive" / "ui" / "mission_toolkit_gui_artifact.html").is_file()
     assert (ROOT / "docs" / "reports" / "backport" / "backport_coverage_report.md").is_file()
 
-    # Bootstrap implementations now live only under scripts/bootstrap. Root .bat launchers call
-    # those structured scripts or packaged modules directly rather than treating loose .py files
-    # as the public interface.
     for name in ("install_xi_tinkerer.py", "install_external_tools.py", "reset_install.py"):
         assert not (ROOT / name).exists(), name
     assert (ROOT / "scripts" / "bootstrap" / "install_xi_tinkerer.py").is_file()
@@ -117,10 +108,6 @@ def main() -> None:
     assert "python scripts\\bootstrap\\reset_install.py" in reset_text
     assert "python reset_install.py" not in reset_text
 
-    # These former root compatibility/implementation modules are retired. First-party code and
-    # regressions must use canonical package imports directly rather than recreating hidden root
-    # coupling. The staged index implementations may still contain historical absolute-import
-    # strings internally; canonical adapters supply those aliases without requiring root files.
     retired = (
         "workbench_graph.py",
         "workbench_schema.py",
@@ -131,13 +118,20 @@ def main() -> None:
         "build_npc_index.py",
         "build_dialog_index.py",
         "ingest_global_tables.py",
-        "build_capture_index.py",
         "build_sql_index.py",
         "build_lsb_index.py",
         "scrape_bg_wiki.py",
     )
     for name in retired:
         assert not (ROOT / name).exists(), name
+
+    # Capture ingestion has substantially higher legacy-test fan-in than the sibling indexers.
+    # Keep one explicitly transitional, zero-logic alias until the dedicated test-migration slice.
+    capture_shim = (ROOT / "build_capture_index.py").read_text(encoding="utf-8")
+    assert "workbench.captures.ingestion import build_index as _canonical" in capture_shim
+    assert "sqlite3.connect" not in capture_shim
+    assert "Path(__file__)" not in capture_shim
+
     forbidden_imports = (
         "import workbench_graph",
         "from workbench_schema import",
@@ -154,9 +148,6 @@ def main() -> None:
         for legacy_import in forbidden_imports:
             assert legacy_import not in text, f"{legacy_import!r} remains in {path.relative_to(ROOT)}"
 
-    # Feature Checker is canonical under Development. The root checker remains a temporary
-    # compatibility shim for the exact migrated host implementation until its imports are cleaned
-    # up in a later hygiene pass; root gui_server.py itself no longer owns that dependency.
     feature_checker_wrapper_path = ROOT / "feature_checker.py"
     assert feature_checker_wrapper_path.is_file()
     feature_checker_wrapper = feature_checker_wrapper_path.read_text(encoding="utf-8")
@@ -172,9 +163,6 @@ def main() -> None:
             legacy_feature_checker_callers.append(path.relative_to(ROOT).as_posix())
     assert legacy_feature_checker_callers == ["src/workbench/app/_host_impl.py"], legacy_feature_checker_callers
 
-    # ID Bridge is canonical under src but retains a root CLI compatibility entry point because
-    # operator documentation still uses `python id_bridge.py ...`. The wrapper must contain no
-    # database-path derivation or implementation logic of its own.
     id_bridge_wrapper_path = ROOT / "id_bridge.py"
     assert id_bridge_wrapper_path.is_file()
     id_bridge_wrapper = id_bridge_wrapper_path.read_text(encoding="utf-8")
@@ -182,8 +170,6 @@ def main() -> None:
     assert "Path(__file__)" not in id_bridge_wrapper
     assert "sqlite3.connect" not in id_bridge_wrapper
 
-    # DAT Inspector and extractor are canonical under Client/DAT. Historical root imports remain
-    # zero-logic compatibility aliases for older imports and rebuild scripts.
     dat_extractor_wrapper = (ROOT / "dat_extractor_bin.py").read_text(encoding="utf-8")
     assert "from workbench.client.dat import extractor_bin" in dat_extractor_wrapper
     assert "Path(__file__)" not in dat_extractor_wrapper
@@ -202,10 +188,6 @@ def main() -> None:
     assert 'src/workbench/core/services/feature_checker.py' not in ancient_vows
     assert '"feature_checker.py"' not in ancient_vows
 
-    # Editable installation in CI must make the canonical src package importable even when
-    # neither the repository root nor PYTHONPATH participates in import resolution. Package
-    # resources must load from src while repository-owned vendor/docs data remains anchored at
-    # the repository root via workbench.runtime.paths.
     with tempfile.TemporaryDirectory() as td:
         env = dict(os.environ)
         env.pop("PYTHONPATH", None)
