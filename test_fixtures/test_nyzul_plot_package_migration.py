@@ -148,6 +148,10 @@ def _patch_profiles(monkeypatch, *, active, profiles=(), legacy_dsp=None):
 def test_root_module_is_packaged_implementation():
     assert legacy is canonical
     assert canonical.EXCL_FILE == DATA_ROOT / "nyzul_exclusions.json"
+    root_source = (Path(__file__).resolve().parents[1] / "nyzul_plot.py").read_text(encoding="utf-8")
+    assert "_nyzul_profile_bridge" in root_source
+    assert "def _configured_server_source" not in root_source
+    assert "def _load_data" not in root_source
 
 
 def test_nyzul_gui_routes_explicit_dsp_to_legacy_dsp_adapter(tmp_path, monkeypatch):
