@@ -17,8 +17,11 @@ BRIDGE = ROOT_PACKAGE / "__init__.py"
 def main() -> None:
     assert (ROOT / "pyproject.toml").is_file()
     assert (SRC_PACKAGE / "__init__.py").is_file()
+    assert (SRC_PACKAGE / "app" / "host.py").is_file()
+    assert (SRC_PACKAGE / "app" / "_host_impl.py").is_file()
     assert (SRC_PACKAGE / "core").is_dir()
     assert (SRC_PACKAGE / "runtime" / "paths.py").is_file()
+    assert (SRC_PACKAGE / "runtime" / "settings_store.py").is_file()
     assert (SRC_PACKAGE / "domains" / "service.py").is_file()
     assert (SRC_PACKAGE / "domains" / "definitions.json").is_file()
     assert (SRC_PACKAGE / "client" / "binary_index.py").is_file()
@@ -29,7 +32,7 @@ def main() -> None:
     assert (SRC_PACKAGE / "client" / "dat" / "inspector.py").is_file()
     assert (SRC_PACKAGE / "gui_shell.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "feature_candidates.py").is_file()
-    assert (SRC_PACKAGE / "core" / "services" / "feature_checker.py").is_file()  # compatibility shim
+    assert (SRC_PACKAGE / "core" / "services" / "feature_checker.py").is_file()
     assert (SRC_PACKAGE / "devtools" / "features" / "checker.py").is_file()
     assert (SRC_PACKAGE / "devtools" / "features" / "trace_binding_drilldown.py").is_file()
     assert (SRC_PACKAGE / "devtools" / "server" / "binding_index.py").is_file()
@@ -45,6 +48,15 @@ def main() -> None:
     assert "src" in bridge_text and "workbench" in bridge_text
     assert "__path__.append" in bridge_text
     assert "Do not add implementation modules" in bridge_text
+
+    # Root GUI/settings surfaces are now compatibility-only entry points. Their reusable
+    # implementations must remain under src/workbench.
+    root_gui = (ROOT / "gui_server.py").read_text(encoding="utf-8")
+    assert "from workbench.app import host as _canonical" in root_gui
+    assert "FastAPI(" not in root_gui and "@app." not in root_gui
+    root_settings = (ROOT / "settings.py").read_text(encoding="utf-8")
+    assert "from workbench.runtime import settings_store as _canonical" in root_settings
+    assert "sqlite3.connect" not in root_settings
 
     # These former root compatibility/implementation modules are retired. First-party code and
     # regressions must use canonical package imports directly rather than recreating hidden root
@@ -74,13 +86,13 @@ def main() -> None:
         for legacy_import in forbidden_imports:
             assert legacy_import not in text, f"{legacy_import!r} remains in {path.relative_to(ROOT)}"
 
-    # Feature Checker is canonical under Development. Root and old Core paths remain temporary
-    # compatibility shims while the monolithic GUI and older regressions migrate.
+    # Feature Checker is canonical under Development. The root checker remains a temporary
+    # compatibility shim for the exact migrated host implementation until its imports are cleaned
+    # up in a later hygiene pass; root gui_server.py itself no longer owns that dependency.
     feature_checker_wrapper_path = ROOT / "feature_checker.py"
     assert feature_checker_wrapper_path.is_file()
     feature_checker_wrapper = feature_checker_wrapper_path.read_text(encoding="utf-8")
     assert "workbench.devtools.features.checker" in feature_checker_wrapper
-    assert "gui_server.py" in feature_checker_wrapper
     core_checker_shim = (SRC_PACKAGE / "core" / "services" / "feature_checker.py").read_text(encoding="utf-8")
     assert "workbench.devtools.features.checker" in core_checker_shim
     legacy_feature_checker_callers = []
@@ -90,7 +102,7 @@ def main() -> None:
         lines = [line.strip() for line in path.read_text(encoding="utf-8", errors="ignore").splitlines()]
         if any(line == "import feature_checker" or line.startswith("from feature_checker import") for line in lines):
             legacy_feature_checker_callers.append(path.relative_to(ROOT).as_posix())
-    assert legacy_feature_checker_callers == ["gui_server.py"], legacy_feature_checker_callers
+    assert legacy_feature_checker_callers == ["src/workbench/app/_host_impl.py"], legacy_feature_checker_callers
 
     # ID Bridge is canonical under src but retains a root CLI compatibility entry point because
     # operator documentation still uses `python id_bridge.py ...`. The wrapper must contain no
@@ -103,7 +115,7 @@ def main() -> None:
     assert "sqlite3.connect" not in id_bridge_wrapper
 
     # DAT Inspector and extractor are canonical under Client/DAT. Historical root imports remain
-    # zero-logic compatibility aliases for the monolithic GUI and rebuild scripts.
+    # zero-logic compatibility aliases for older imports and rebuild scripts.
     dat_extractor_wrapper = (ROOT / "dat_extractor_bin.py").read_text(encoding="utf-8")
     assert "from workbench.client.dat import extractor_bin" in dat_extractor_wrapper
     assert "Path(__file__)" not in dat_extractor_wrapper
@@ -113,6 +125,10 @@ def main() -> None:
 
     workflow = (ROOT / ".github" / "workflows" / "workbench-regression.yml").read_text(encoding="utf-8")
     assert '- "src/workbench/**"' in workflow
+    character_workflow = (ROOT / ".github" / "workflows" / "character-editor-regression.yml").read_text(encoding="utf-8")
+    assert '- "gui_server.py"' in character_workflow
+    assert '- "src/workbench/app/**"' in character_workflow
+    assert '- "src/workbench/runtime/settings_store.py"' in character_workflow
     ancient_vows = (ROOT / ".github" / "workflows" / "workbench-ancient-vows.yml").read_text(encoding="utf-8")
     assert 'src/workbench/devtools/features/checker.py' in ancient_vows
     assert 'src/workbench/core/services/feature_checker.py' not in ancient_vows
