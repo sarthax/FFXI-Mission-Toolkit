@@ -129,11 +129,13 @@ def test_preset_ui_and_api_are_mounted():
     integration = Path("src/workbench/server_admin/auction_house/integration.py").read_text(encoding="utf-8")
     template = Path("gui/templates/auction_house_presets.html").read_text(encoding="utf-8")
     script = Path("gui/static/auction_house_presets.js").read_text(encoding="utf-8")
+    console_template = Path("gui/templates/auction_house_console.html").read_text(encoding="utf-8")
+    console_script = Path("gui/static/auction_house_console.js").read_text(encoding="utf-8")
     api = Path("src/workbench/server_admin/auction_house/preset_api.py").read_text(encoding="utf-8")
     assert "auction_house_preset_api_router" in integration
     assert "auction_house_preset_ui_router" in integration
-    assert '"AH Presets"' in integration
-    assert "/auction-house/presets" in integration
+    assert 'data-t="presets"' in console_template
+    assert "/auction-house/presets/" in console_script
     assert "/auction-house/presets/preview.json" in script
     assert "/auction-house/presets/execute.json" in script
     assert "preset_preview_token" in api
