@@ -50,7 +50,6 @@ def _closure_db():
     );
     CREATE TABLE identity_snapshots(snapshot_id TEXT, version TEXT);
     CREATE TABLE captures(capture_id INTEGER, capture_label TEXT, client_build TEXT);
-    CREATE TABLE migration_actions(action_id TEXT, action TEXT, artifact_id TEXT);
     """)
     con.execute("INSERT INTO lsb_item_basic VALUES(2413,'Coiler')")
     con.executemany(
@@ -66,7 +65,12 @@ def _closure_db():
         "INSERT INTO artifacts(artifact_id,artifact_type,path,metadata_json) VALUES(?,?,?,?)",
         ("artifact:raustigne-lua","LUA","scripts/zones/Southern_San_dOria_S/npcs/Raustigne.lua","{}"),
     )
-    con.execute("INSERT INTO migration_actions VALUES('action:1','COPY_FILE','artifact:raustigne-lua')")
+    con.execute(
+        """INSERT INTO migration_actions(
+               action_id,migration_id,action,artifact_id,status,reason,metadata_json
+           ) VALUES(?,?,?,?,?,?,?)""",
+        ("action:1",None,"COPY_FILE","artifact:raustigne-lua","PLANNED","fixture","{}"),
+    )
     con.commit()
     return con
 
