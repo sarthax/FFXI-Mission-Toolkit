@@ -133,8 +133,8 @@ Capture features include:
 - Manual and bulk packet decode, including multiline PacketLogger/PacketViewer-style hex grids.
 - Packetlyzer/XiPackets opcode-reference improvements and corrected packet field handling where verified.
 - PCAP/PCAPNG frame parsing and generic bidirectional TCP reconstruction with gaps/retransmissions/conflicts preserved explicitly.
-- Conservative lobby classification/decoding for known structurally valid commands.
-- World/search/lobby transport research kept separated where protocol evidence is incomplete.
+- Evidence-backed lobby/search/map classification and framing, including source-backed search/cache evidence, strict same-flow sequencing, and exact UDP map handoff where the capture proves it.
+- Unknown or ambiguous streams remain fail-closed rather than being assigned protocol semantics by port number or guesswork.
 - Packet Viewer handoffs from decoded/capture evidence.
 
 ### Research Sessions and reference evidence
@@ -151,14 +151,14 @@ Capture features include:
 - Patch-plan drift checks, explicit approval states, deterministic file apply journals, and rollback support.
 - Validation dashboard/runs tied back into canonical evidence.
 - Source/target conversion and migration support where transformations are deterministic and audited.
-- Ongoing Phase D source-layout migration has moved major Workbench components under `src/workbench/...` while preserving thin compatibility imports for older entry points.
+- Phase D implementation ownership is complete: reusable Workbench Python implementation lives under `src/workbench/...`; root `gui_server.py`, `settings.py`, and historical CLI/import files remain only as intentional compatibility/launcher surfaces where supported checkout workflows still need them.
 
 ### Editors and domain workspaces
 
 - Modern **Zone Editor** (`/zoneplot2`) with spatial editing, detection overlays, navmesh/client-mesh context, bookmarks/templates, review tools, bulk alignment, and server-aware editing workflows.
 - 2D/3D plot/viewer routing is guarded by live-app regressions and integrated handoffs.
 - 3D zone/model viewers integrated into the shared Workbench shell.
-- Nyzul layout tooling uses compatible DSP/Topaz-era source layouts and rejects incompatible modern-LSB layouts instead of parsing them incorrectly.
+- Nyzul layout tooling preserves compatible DSP/Topaz-era handling and routes modern LandSandBoat checkouts through the native `floor_generation.lua`/YAML adapter, failing closed on unsupported mappings.
 - Domain-oriented workflows for Assault, Nyzul, and Salvage rather than forcing every named system into the generic feature list.
 
 ## Evidence model and safety philosophy
@@ -257,7 +257,7 @@ For the authoritative capability inventory, current incomplete areas, and recent
 - [`docs/workbench/ROADMAP.md`](docs/workbench/ROADMAP.md) — historical implementation ledger
 - [`docs/workbench/AUDIT_STATUS.md`](docs/workbench/AUDIT_STATUS.md) — historical/implementation audit notes
 
-Near-term work remains focused on richer progression/transition reasoning, broader client/server asset synchronization, protocol/capture research, named-system reconstruction, and continued source-layout cleanup without regressing mature tools.
+Near-term work is focused on Feature Trace real-data validation, protocol real-capture validation, proven Client Asset Cache expansion, broader client/server synchronization and named-system reconstruction, and remaining Auction House live-write validation on a real Test server.
 
 ## Screenshots
 
