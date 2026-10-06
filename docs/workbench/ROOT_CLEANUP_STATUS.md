@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `9a076ce8d37e770abb1272c96cff35a626c0d71b` after PR #574  
-Current work branch: `cleanup/client-overview-phase3c9`  
+Current merged baseline: `main` at `148c050bb6024ff595e01c4259d87cce42b1b094` after PR #575  
+Current work branch: `cleanup/mob-model-tables-phase3c10`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -64,29 +64,31 @@ reset_install.bat
 - PR #571 — retired `dat_extractor_bin.py`; Workbench #2744 + Src Layout #623 green.
 - PR #572 — retired `dat_inspector.py`; Workbench #2745 + Src Layout #624 green.
 - PR #573 — retired `client_model_catalog.py`; Workbench #2746 + Src Layout #625 green.
-- PR #574 — retired `client_model_resolver.py`; resolver callers now use the packaged model service and Zone Editor compatibility remains package-internal.
+- PR #574 — retired `client_model_resolver.py`; packaged resolver ownership retained.
+- PR #575 — retired `client_overview.py`; Workbench #2748 + Src Layout #627 green.
 
 ## Current slice
 
-### Slice 3c9 — retire Client overview root wrapper
+### Slice 3c10 — retire mob model tables root wrapper
 
-Status: IN PROGRESS on `cleanup/client-overview-phase3c9`.
+Status: IN PROGRESS on `cleanup/mob-model-tables-phase3c10`.
 
 Changes on this branch:
-- [x] removed root `client_overview.py`.
-- [x] `test_client_overview_package_migration.py` now imports `workbench.client.snapshots.overview` directly.
+- [x] removed root `mob_model_tables.py`.
+- [x] `test_mob_model_tables_package_migration.py` now imports `workbench.client.models.mob_model_tables` directly.
 - [x] regression requires the retired root wrapper to remain absent.
-- [x] external-CWD import provenance remains covered.
-- [x] Client Overview GUI route/template behavior is unaffected because those callers already use packaged app/snapshot services.
+- [x] external-CWD canonical import provenance remains covered.
+- [x] production catalog/model-viewer callers already use the packaged table service directly.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by Client Overview wrapper retirement.
+- [ ] Fix only regressions caused by mob-model-table wrapper retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
 
+- `model_schedule_dump.py` — root launcher is pure, but live entity/model UI and CLI output still emits the physical root command; migrate those command strings before deletion.
 - `build_capture_index.py` — high regression fan-in; dedicated test migration required.
 - `backport_convert_7_packages.py`, `backport_convert_gm_debug_tools.py`, `backport_convert_nyzul_package.py` — wrappers seed Settings-derived operator defaults.
 - `backport_sql_live_check.py` — active GUI/package/runtime operator guidance still names it.
@@ -95,7 +97,7 @@ Before merge:
 ## Remaining slices
 
 ### Compatibility-shim families
-- remaining Client/model wrappers (model viewer/schedule/table aliases, `binary_inspector.py`, etc.) after caller audits;
+- remaining Client/model wrappers (`model_schedule_dump.py`, `model_viewer.py`, `mob_look_decode.py`, `binary_inspector.py`, etc.) after caller audits;
 - remaining indexing/server-analysis wrappers;
 - capture/protocol wrappers;
 - spatial/domain/runtime wrappers;
