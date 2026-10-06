@@ -30,6 +30,7 @@ def main() -> None:
     assert (SRC_PACKAGE / "client" / "identity_extract.py").is_file()
     assert (SRC_PACKAGE / "client" / "dat" / "extractor_bin.py").is_file()
     assert (SRC_PACKAGE / "client" / "dat" / "inspector.py").is_file()
+    assert (SRC_PACKAGE / "client" / "models" / "catalog.py").is_file()
     assert (SRC_PACKAGE / "gui_shell.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "feature_candidates.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "feature_checker.py").is_file()
@@ -130,6 +131,7 @@ def main() -> None:
         "backport_map_lint.py",
         "dat_extractor_bin.py",
         "dat_inspector.py",
+        "client_model_catalog.py",
     )
     for name in retired:
         assert not (ROOT / name).exists(), name
@@ -199,6 +201,7 @@ def main() -> None:
             "import workbench.client.event_fingerprint as ef; "
             "import workbench.client.identity_extract as ie; "
             "from workbench.client.dat import extractor_bin as de, inspector as di; "
+            "from workbench.client.models import catalog as mc; "
             "import workbench.gui_shell as gs; "
             "from workbench.core.services.feature_candidates import candidates; "
             "from workbench.devtools.features.checker import resolve_feature, check_feature; "
@@ -218,8 +221,10 @@ def main() -> None:
             "assert de.PROJECT_DIR == p.VENDOR_ROOT / 'dat-extractor', de.PROJECT_DIR; "
             "assert di.dat_id_for_zone_family(0, 'dialog') == 6420; "
             "assert di.resource_context(6421) == {'family':'dialog','zone_id':1}; "
+            "assert mc._empty(740)['resource_file_id'] == 2040; "
             "assert 'src' in Path(de.__file__).resolve().parts, de.__file__; "
             "assert 'src' in Path(di.__file__).resolve().parts, di.__file__; "
+            "assert 'src' in Path(mc.__file__).resolve().parts, mc.__file__; "
             "assert 'src' in Path(ib.__file__).resolve().parts, ib.__file__; "
             "assert 'src' in Path(bi.__file__).resolve().parts, bi.__file__; "
             "assert 'src' in Path(ef.__file__).resolve().parts, ef.__file__; "
