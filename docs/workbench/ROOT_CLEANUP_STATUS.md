@@ -2,15 +2,13 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `c39ea9ccdc959e79c00baec2b29035db0febcf07` after PR #556  
-Current work branch: `cleanup/root-entrypoints-phase2`  
+Current merged baseline: `main` at `26567a0fe7d3a95fe0156a8ffc77df2da2f6216a` after PR #557  
+Current work branch: `cleanup/root-shims-indexing-phase3a`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
-This document is the resume point for the post-Phase-D repository-structure cleanup. `docs/workbench/SRC_LAYOUT_MIGRATION_PLAN.md` remains the historical migration plan; this file tracks the final compatibility/operator/data cleanup after reusable implementation ownership moved under `src/workbench/...`.
+This document is the authoritative resume point for the post-Phase-D repository-structure cleanup. `docs/workbench/SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning; this file tracks what is actually merged, in progress, and still pending.
 
 ## Target root shape
-
-The desired repository root is approximately:
 
 ```text
 .claude/
@@ -34,44 +32,113 @@ start.bat
 reset_install.bat
 ```
 
-`addons/` may remain at root while external/addon workflows depend on that exact location. Other resource directories may remain temporarily when relocation would change persisted/runtime paths for little benefit.
+`addons/` and other resource roots may remain temporarily where an exact external/runtime location is still part of the supported contract.
 
 ## Safety rules
 
-1. Do not move runtime DB/config/capture/cache state merely to make root look cleaner.
-2. Do not delete a compatibility shim until every repository caller is repointed or the compatibility surface is deliberately retained.
-3. Prefer package entry points (`python -m workbench...`) or canonical callable imports over invoking physical root filenames.
-4. Preserve exact behavior while relocating files; refactor semantics separately.
-5. Update setup/start/reset scripts, workflows, tests, docs/examples, subprocess callers, and GUI handlers atomically with each removed entry point.
-6. Run Source Layout Regression plus relevant Workbench/Character/admin regressions for every behavioral slice.
-7. Add a root-clutter regression so new loose implementation/data artifacts do not silently return.
+1. Never move runtime DB/config/capture/cache state merely for cosmetics.
+2. Delete a compatibility shim only after active repository callers are repointed or proven unnecessary.
+3. Prefer package imports / `python -m workbench...` over physical root Python filenames.
+4. Preserve behavior while relocating; semantic refactors are separate work.
+5. Update setup/start/reset, workflows, tests, docs/examples, subprocess callers, and GUI handlers with each removed entry point.
+6. Require green Source Layout plus relevant Workbench/admin regressions before merge.
+7. Tighten the root-clutter guard as each legacy family disappears.
 
-## Inventory categories
+## Completed slices
 
-### A. Intentional root files — keep
+### Slice 1 — low-risk data/docs relocation
 
-- `.gitignore`
-- `README.md`
-- `LICENSE`
-- `pyproject.toml`
-- `requirements.txt`
-- thin bootstrap launchers: `setup.bat`, `start.bat`, `reset_install.bat`
+MERGED: PR #556 → `c39ea9ccdc959e79c00baec2b29035db0febcf07`
 
-### B. Compatibility Python shims — remove after caller migration
+Moved out of root:
 
-This includes most remaining small root `build_*.py`, `backport_*.py`, audit/index/packet/client wrappers, `gui_server.py`, `settings.py`, and similar historical import/CLI aliases whose implementation already lives under `src/workbench/...`.
+- `appraisal_item_id_xref.csv` → `data/reference/appraisal/item_id_xref.csv`
+- `appraisal_pools_with_item_ids.csv` → `data/reference/appraisal/pools_with_item_ids.csv`
+- `uncharted90_names.txt` → `data/reference/uncharted90_names.txt`
+- `mission_toolkit_gui_artifact.html` → `docs/archive/ui/mission_toolkit_gui_artifact.html`
+- `backport_coverage_report.md` → `docs/reports/backport/backport_coverage_report.md`
 
-Do not mass-delete these. For each shim:
+Validation: Workbench #2716 + Src Layout #596 green.
 
-1. identify its canonical packaged module;
-2. search all repository callers by filename/import name;
-3. repoint callers to packaged import or `python -m` entry point;
-4. add/adjust regression coverage;
-5. delete only when no supported caller requires the old path.
+### Slice 2 — bootstrap and stable package entry points
 
-### C. Standalone operator/maintenance scripts — move under `scripts/`
+MERGED: PR #557 → `26567a0fe7d3a95fe0156a8ffc77df2da2f6216a`
 
-Planned structure:
+Completed:
+
+- `setup.bat` installs the editable package before package commands run.
+- Setup uses `scripts/bootstrap/install_xi_tinkerer.py` and `scripts/bootstrap/install_external_tools.py` directly.
+- Setup writes settings through `workbench.runtime.settings_store`.
+- Setup uses packaged module entry points for database/NPC/dialog/global-table/capture/SQL/LSB/BG-Wiki commands.
+- `start.bat` runs `python -m workbench.app.host`.
+- `reset_install.bat` runs `scripts/bootstrap/reset_install.py`.
+- Canonical dialog and capture adapters support direct `python -m` execution.
+- Removed root wrappers:
+  - `install_xi_tinkerer.py`
+  - `install_external_tools.py`
+  - `reset_install.py`
+- Regressions enforce the structured bootstrap contract.
+
+Validation: Workbench #2717 + Src Layout #597 green.
+
+## Current slice
+
+### Slice 3a — setup-linked indexing/capture/reference shims
+
+Status: IN PROGRESS on `cleanup/root-shims-indexing-phase3a`
+
+Root wrappers removed on this branch:
+
+- [x] `build_database.py` → `workbench.devtools.indexing.build_database`
+- [x] `build_npc_index.py` → `workbench.devtools.indexing.build_npc_index`
+- [x] `build_dialog_index.py` → `workbench.devtools.reference.dialog.build_index`
+- [x] `ingest_global_tables.py` → `workbench.client.dat.global_tables`
+- [x] `build_capture_index.py` → `workbench.captures.ingestion.build_index`
+- [x] `build_sql_index.py` → `workbench.devtools.indexing.build_sql_index`
+- [x] `build_lsb_index.py` → `workbench.devtools.indexing.build_lsb_index`
+- [x] `scrape_bg_wiki.py` → `workbench.devtools.reference.scrape_bg_wiki`
+
+Coverage migrated on this branch:
+
+- [x] Database index package migration test now validates canonical behavior/paths and root-shim absence.
+- [x] Capture index migration test now validates canonical dependencies/paths and root-shim absence.
+- [x] Global tables migration test now validates canonical behavior and root-shim absence.
+- [x] SQL index migration test now validates canonical parser/paths and root-shim absence.
+- [x] LSB index migration test now validates packaged foundations/paths and root-shim absence.
+- [x] BG Wiki scraper migration test now validates canonical dump behavior and root-shim absence.
+- [x] Source Layout regression explicitly guards all eight retired root filenames.
+
+Important compatibility note:
+
+The staged `_impl.py` files may still contain historical absolute-import names such as `import build_database` or `import build_sql_index`. Their canonical adapters inject the packaged modules into `sys.modules` while loading those mature implementations. Those strings are therefore internal implementation compatibility, **not** a reason to retain root files.
+
+Remaining before merge:
+
+- [ ] Run Workbench + Src Layout regression and fix any overlooked test-only dependency.
+- [ ] Remove obsolete workflow path-filter references to deleted root shims when encountered.
+- [ ] Merge only when green.
+
+## Remaining slices
+
+### Slice 3b+ — remaining compatibility shim forest
+
+PENDING. Process in bounded logical families:
+
+- indexing/devtools wrappers not covered by 3a;
+- capture/protocol wrappers;
+- backport/package/migration wrappers;
+- client/DAT/model wrappers;
+- reference/research wrappers;
+- spatial/domain/runtime wrappers;
+- final `gui_server.py`, `settings.py`, `feature_checker.py`, `id_bridge.py` only after their remaining actual callers are removed/repointed.
+
+For each family: search executable/import callers, repoint, convert alias tests to canonical tests, delete wrappers, tighten guard, run CI.
+
+### Slice 4 — standalone operator scripts
+
+PENDING.
+
+Target structure:
 
 ```text
 scripts/
@@ -81,126 +148,52 @@ scripts/
   diagnostics/
 ```
 
-Known candidates include `build_item_repair_package.py`, `seed_auction_house.py`, Discord intake/load utilities, and one-off spatial/repair tools that are not product libraries. Bootstrap implementations are already structured under `scripts/bootstrap/`; their temporary root wrappers are being retired in Slice 2.
+Known candidates:
 
-### D. Tests — move under `tests/`
+- `build_item_repair_package.py`
+- `seed_auction_house.py`
+- `discord_inventory.py`
+- `discord_holiday_load.py`
+- one-off spatial/repair utilities such as `fix_zone_door_props.py` / `pull_mob_positions.py` after caller/path audit.
 
-All remaining root `test_*.py` files should move under `tests/legacy/` or the appropriate structured test subtree after imports are package-clean. `test_fixtures/` should be reviewed separately for eventual normalization under `tests/`.
-
-### E. Reference/generated artifacts — move out of root
-
-Completed in Slice 1:
-
-- `appraisal_item_id_xref.csv` -> `data/reference/appraisal/item_id_xref.csv`
-- `appraisal_pools_with_item_ids.csv` -> `data/reference/appraisal/pools_with_item_ids.csv`
-- `uncharted90_names.txt` -> `data/reference/uncharted90_names.txt`
-- `mission_toolkit_gui_artifact.html` -> `docs/archive/ui/mission_toolkit_gui_artifact.html`
-- `backport_coverage_report.md` -> `docs/reports/backport/backport_coverage_report.md`
-
-Future root reference/report artifacts should follow the same rule: data under `data/reference/...`, historical presentation under `docs/archive/...`, generated/review reports under `docs/reports/...`.
-
-### F. Workspace material
-
-`backport-workspace/` is a working-artifact tree, not a root-level product directory. Preferred final home: `workspaces/backport/`, after all explicit references are updated and any generated subtrees are classified.
-
-## Execution slices
-
-### Slice 1 — baseline + low-risk non-code relocation
-
-Status: MERGED — PR #556, merge commit `c39ea9ccdc959e79c00baec2b29035db0febcf07`
-
-- [x] Create this resumable tracker.
-- [x] Re-audit root against current post-Phase-D `main` and historical disposition map.
-- [x] Move reference CSV/TXT artifacts with no runtime callers.
-- [x] Move/archive obsolete root HTML/report artifacts.
-- [x] Extend Source Layout regression to require the new structured paths and forbid the old root artifact paths.
-- [x] Validate Workbench Regression #2716 and Src Layout Regression #596 green before merge.
-
-Notes:
-
-- No runtime DB/config/cache/capture state moved.
-- The initial guard is intentionally narrow: compatibility Python shims remain allowed until their callers are repointed in Slices 2–3.
-- `docs/guides/DIST_PACKAGING.md` and older migration-plan wording contain historical root examples and should be reconciled as the later shim/operator slices land rather than treated as runtime callers.
-
-### Slice 2 — bootstrap and stable package entry points
-
-Status: IN PROGRESS on `cleanup/root-entrypoints-phase2`
-
-Completed on the branch:
-
-- [x] `setup.bat` installs the project editable (`pip install -e .`) before package-module commands are used.
-- [x] `setup.bat` calls `scripts/bootstrap/install_xi_tinkerer.py` and `scripts/bootstrap/install_external_tools.py` directly.
-- [x] `setup.bat` writes settings through `workbench.runtime.settings_store`, not root `settings.py`.
-- [x] `setup.bat` uses packaged module entry points for database, NPC, dialog, global-table, capture, SQL, LSB, and BG Wiki commands.
-- [x] `start.bat` launches `python -m workbench.app.host`, not root `gui_server.py`.
-- [x] `reset_install.bat` calls `scripts/bootstrap/reset_install.py`, not root `reset_install.py`.
-- [x] Added direct `python -m` CLI behavior to the canonical dialog-index and capture-index adapters without duplicating their implementations.
-- [x] Removed root bootstrap wrappers `install_xi_tinkerer.py`, `install_external_tools.py`, and `reset_install.py`.
-- [x] Updated bootstrap/source-layout regressions to require those root wrappers to stay absent and to verify the structured launcher contracts.
-
-Still required before Slice 2 closes:
-
-- [ ] Audit repository code/tests/workflows/docs for remaining active calls/imports that treat root compatibility filenames as stable interfaces.
-- [ ] Classify historical prose separately from executable callers; do not retain shims solely because old migration documentation names them.
-- [ ] Identify the first logical compatibility-shim families ready for deletion in Slice 3.
-- [ ] Run and merge with green Source Layout + Workbench regression.
-
-### Slice 3 — remove compatibility shim forest
-
-Status: PENDING
-
-- [ ] Delete proven-unused root compatibility `.py` files in logical families (indexing, backport/migrations, capture/protocol, client/DAT, reference/research, spatial/domain).
-- [ ] Keep temporary aliases only when an actual supported external/bootstrap workflow still requires them.
-- [ ] Tighten root-clutter regression after each family is removed.
-
-### Slice 4 — operator scripts
-
-Status: PENDING
-
-- [x] `scripts/bootstrap/`: installer/reset Python helpers are already physically structured; Slice 2 is removing their obsolete root wrappers.
-- [ ] `scripts/maintenance/`: item-repair, AH seeding, one-off maintenance utilities.
-- [ ] `scripts/import/`: Discord/reference import utilities.
-- [ ] `scripts/diagnostics/`: remaining standalone diagnostic commands.
-- [ ] Repoint docs/examples and preserve repo-root path resolution through `workbench.runtime.paths`.
+` scripts/bootstrap/ ` implementations are already structured; obsolete root bootstrap wrappers were removed in Slice 2.
 
 ### Slice 5 — tests
 
-Status: PENDING
+PENDING.
 
-- [ ] Move remaining root `test_*.py` to `tests/legacy/` or focused suites.
-- [ ] Remove repository-root import assumptions.
-- [ ] Review `test_fixtures/` -> `tests/fixtures/` only after workflow path filters and test discovery are updated safely.
+- Move remaining root `test_*.py` under `tests/legacy/` or focused suites.
+- Remove root-import assumptions.
+- Review `test_fixtures/` → `tests/fixtures/` only after workflow/test-discovery updates are ready.
 
 ### Slice 6 — workspace/resource normalization
 
-Status: PENDING
+PENDING.
 
-- [ ] Move `backport-workspace/` -> `workspaces/backport/` after reference audit.
-- [ ] Review whether `client_probe_sets/`, `plot_descriptors/`, and `addons/` should remain stable resource roots or move beneath `data/`.
-- [ ] Do not relocate runtime state directories as part of this cosmetic/structural cleanup.
+- `backport-workspace/` → preferred `workspaces/backport/` after reference audit.
+- Review `client_probe_sets/`, `plot_descriptors/`, `addons/` separately; do not move stable runtime/resource roots without value.
 
 ### Slice 7 — final root guard and closeout
 
-Status: PENDING
+PENDING.
 
-- [ ] Root allowlist permits only intentional launch/config/project files and explicitly approved resource directories.
-- [ ] Fail CI on unexpected root `.py`, `.csv`, `.html`, `.txt`, or report `.md` additions.
-- [ ] Verify editable install/imports from outside repo root.
-- [ ] Verify setup/start/reset launcher behavior.
-- [ ] Run Workbench, Source Layout, Character Editor/server-admin, and focused affected suites.
-- [ ] Update `README.md`, `ROADMAP_CURRENT.md`, and `SRC_LAYOUT_STATUS.md` with final root contract.
+- Root allowlist permits only intentional project/bootstrap files and approved resource directories.
+- Fail CI on unexpected root `.py`, `.csv`, `.html`, `.txt`, or report `.md` additions.
+- Verify editable imports outside repository CWD.
+- Verify setup/start/reset behavior.
+- Run Workbench, Source Layout, Character/server-admin, and focused affected suites.
+- Reconcile `README.md`, `ROADMAP_CURRENT.md`, `SRC_LAYOUT_STATUS.md`, packaging docs, and component-ownership docs.
 
 ## Resume instructions
 
-When resuming:
-
 1. Read this file first.
-2. Fetch current `main`; do not assume the baseline SHA above is still current.
-3. Check open PRs/branches for another root-cleanup slice before creating a new branch.
-4. Continue the first incomplete slice above.
-5. Keep each PR logically bounded and merge only after its relevant CI is green.
-6. Update this checklist in the same PR so the next session knows exactly what moved and what remains.
+2. Fetch current `main`; concurrent work may have advanced it.
+3. Check for an open `cleanup/root-*` PR/branch before creating another.
+4. Continue the first incomplete item in the current slice.
+5. Keep PRs bounded by logical ownership family.
+6. Update this tracker in every cleanup PR.
+7. Never merge a cleanup slice with failing required CI.
 
 ## Completion definition
 
-The cleanup is complete when product implementation is package-owned, supported commands no longer depend on loose root Python filenames, standalone scripts live under `scripts/`, tests live under `tests/`, reference/report artifacts are structured under `data/` or `docs/`, workspace material is under `workspaces/`, and CI prevents new unexplained root clutter.
+Cleanup is complete when reusable implementation is package-owned, supported commands no longer depend on loose root Python filenames, standalone scripts live under `scripts/`, tests live under `tests/`, reference/report artifacts are structured under `data/` or `docs/`, workspace material is under `workspaces/`, and CI prevents new unexplained root clutter.
