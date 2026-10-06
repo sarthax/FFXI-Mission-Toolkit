@@ -25,9 +25,8 @@ def main() -> None:
     from workbench.validation.packages import map_lint
 
     root_converter = load_root("backport_lua_convert", REPO_ROOT / "backport_lua_convert.py")
-    root_lint = load_root("backport_map_lint", REPO_ROOT / "backport_map_lint.py")
     assert root_converter is lua_convert
-    assert root_lint is map_lint
+    assert not (REPO_ROOT / "backport_map_lint.py").exists()
 
     assert lua_convert.MAP_PATH == DATA_ROOT / "dsp_namespace_map.json"
     ns_map = lua_convert.load_map()
@@ -48,6 +47,11 @@ def main() -> None:
             "assert map_lint.lint() == 0"
         )
         subprocess.run([sys.executable, "-c", code], cwd=tmp, check=True)
+        subprocess.run(
+            [sys.executable, "-m", "workbench.validation.packages.map_lint"],
+            cwd=tmp,
+            check=True,
+        )
 
 
 if __name__ == "__main__":
