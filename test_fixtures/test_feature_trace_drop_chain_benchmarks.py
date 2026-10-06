@@ -50,6 +50,8 @@ def _closure_db():
     );
     CREATE TABLE identity_snapshots(snapshot_id TEXT, version TEXT);
     CREATE TABLE captures(capture_id INTEGER, capture_label TEXT, client_build TEXT);
+    CREATE TABLE research_sessions(research_session_id TEXT, question TEXT, feature_root TEXT, entity_root TEXT);
+    CREATE TABLE validation_runs(run_id TEXT, name TEXT, feature_id TEXT);
     """)
     con.execute("INSERT INTO lsb_item_basic VALUES(2413,'Coiler')")
     con.executemany(
@@ -61,6 +63,12 @@ def _closure_db():
     )
     con.execute("INSERT INTO identity_snapshots VALUES('client:2022','30120222_1')")
     con.execute("INSERT INTO captures VALUES(17,'Ancient Vows retail','30120222_1')")
+    con.execute(
+        "INSERT INTO features(feature_id,feature_type,name,metadata_json) VALUES(?,?,?,?)",
+        ("feature:wotg-25","MISSION","Crossroads of Time","{}"),
+    )
+    con.execute("INSERT INTO research_sessions VALUES('research:wotg-25','Why does this differ?','feature:wotg-25',NULL)")
+    con.execute("INSERT INTO validation_runs VALUES('validation:wotg-25','WotG 25 validation','feature:wotg-25')")
     con.execute(
         "INSERT INTO artifacts(artifact_id,artifact_type,path,metadata_json) VALUES(?,?,?,?)",
         ("artifact:raustigne-lua","LUA","scripts/zones/Southern_San_dOria_S/npcs/Raustigne.lua","{}"),
@@ -129,6 +137,16 @@ def test_generic_nm_trace_reaches_drop_rows_and_items():
                 (("CAPTURE_CLIENT_BUILD","catalog:identity_snapshots:client:2022"),),
             ),
             ClosureValidationCase(
+                "mission-research-to-feature",
+                "catalog:research_sessions:research:wotg-25",
+                (("RESEARCH_FEATURE_ROOT","feature:wotg-25"),),
+            ),
+            ClosureValidationCase(
+                "mission-validation-to-feature",
+                "catalog:validation_runs:validation:wotg-25",
+                (("VALIDATES_FEATURE","feature:wotg-25"),),
+            ),
+            ClosureValidationCase(
                 "migration-to-artifact",
                 "catalog:migration_actions:action:1",
                 (("MIGRATION_ACTION_ARTIFACT","artifact:raustigne-lua"),),
@@ -142,7 +160,7 @@ def test_generic_nm_trace_reaches_drop_rows_and_items():
         ),
         closure,
     )
-    assert report["counts"]["PASS"]==4,report
+    assert report["counts"]["PASS"]==6,report
     assert report["counts"]["CONTRACT_GAP"]==0,report
     assert report["all_attempted_passed"] is True,report
 
