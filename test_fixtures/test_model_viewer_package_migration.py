@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-import model_viewer as legacy
+from pathlib import Path
+
 from workbench.client.models import viewer as canonical
 
 
-def test_root_module_is_packaged_implementation():
-    assert legacy is canonical
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_root_module_is_retired_and_package_is_canonical():
+    assert not (REPO_ROOT / "model_viewer.py").exists()
     assert canonical.look.__name__ == "workbench.client.models.look_decode"
     assert canonical.msd.__name__ == "workbench.client.models.schedule_dump"
     assert canonical.client_model_resolver.__name__ == "workbench.client.models.resolver"
