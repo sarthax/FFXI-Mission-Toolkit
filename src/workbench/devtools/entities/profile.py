@@ -7,6 +7,9 @@ root-level compatibility modules.
 """
 from __future__ import annotations
 
+import io
+import sys
+
 from workbench.client.models import look_decode as _look_decode
 from workbench.devtools.entities import _profile_impl as _impl
 from workbench.devtools.entities import lookup as _lookup
@@ -37,3 +40,8 @@ TOPAZ_ROOT = _impl.TOPAZ_ROOT
 def main():
     """Run the preserved Entity Profile CLI through the canonical Development module."""
     return _impl.main()
+
+
+if __name__ == "__main__":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    main()
