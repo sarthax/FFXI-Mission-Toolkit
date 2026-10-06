@@ -128,6 +128,7 @@ def main() -> None:
         "backport_coverage_check.py",
         "backport_map_confidence_check.py",
         "backport_map_lint.py",
+        "dat_extractor_bin.py",
     )
     for name in retired:
         assert not (ROOT / name).exists(), name
@@ -177,9 +178,6 @@ def main() -> None:
     assert "Path(__file__)" not in id_bridge_wrapper
     assert "sqlite3.connect" not in id_bridge_wrapper
 
-    dat_extractor_wrapper = (ROOT / "dat_extractor_bin.py").read_text(encoding="utf-8")
-    assert "from workbench.client.dat import extractor_bin" in dat_extractor_wrapper
-    assert "Path(__file__)" not in dat_extractor_wrapper
     dat_inspector_wrapper = (ROOT / "dat_inspector.py").read_text(encoding="utf-8")
     assert "workbench.client.dat" in dat_inspector_wrapper
     assert "Path(__file__)" not in dat_inspector_wrapper

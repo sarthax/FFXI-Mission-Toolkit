@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -14,17 +13,8 @@ from workbench.runtime.paths import VENDOR_ROOT
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def load_root():
-    spec = importlib.util.spec_from_file_location("dat_extractor_bin", REPO_ROOT / "dat_extractor_bin.py")
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["dat_extractor_bin"] = module
-    spec.loader.exec_module(module)
-    return sys.modules["dat_extractor_bin"]
-
-
 def main() -> None:
-    assert load_root() is canonical
+    assert not (REPO_ROOT / "dat_extractor_bin.py").exists()
     assert canonical.PROJECT_DIR == VENDOR_ROOT / "dat-extractor"
     assert canonical.EXE == canonical.PROJECT_DIR / "bin" / "Debug" / "net9.0" / "dat-extractor.exe"
 
