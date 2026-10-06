@@ -5,10 +5,9 @@ import sys
 from pathlib import Path
 
 
-def test_root_import_aliases_canonical_module():
-    root = importlib.import_module("pull_mob_positions")
-    canonical = importlib.import_module("workbench.devtools.spatial.pull_mob_positions")
-    assert root is canonical
+def test_root_launcher_is_retired():
+    repo_root = Path(__file__).resolve().parents[1]
+    assert not (repo_root / "pull_mob_positions.py").exists()
 
 
 def test_csv_and_lua_capture_discovery(tmp_path: Path):
