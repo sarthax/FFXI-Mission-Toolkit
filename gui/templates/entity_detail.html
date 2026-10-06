@@ -474,7 +474,7 @@
     {% if xi_model_viewer_url %}
     <a class="inline" href="{{ xi_model_viewer_url }}/?npc={{ m.file_id }}" target="_blank">view 3D model &rarr;</a>
     {% endif %}
-    <span class="muted">(py -3 model_schedule_dump.py --file-id {{ m.file_id }})</span></p>
+    <span class="muted">(py -3 -m workbench.client.models.schedule_dump --file-id {{ m.file_id }})</span></p>
   {% if m.shared_with_n_other_pools %}
   <div class="warn">
     <strong>Likely placeholder, not this mob's real model.</strong> This exact raw

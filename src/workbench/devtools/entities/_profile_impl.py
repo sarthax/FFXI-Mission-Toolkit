@@ -806,7 +806,7 @@ def print_profile(profile: dict):
         m = profile["model"]
         if m.get("kind") == "flat":
             print(f"Model: {m['model_type']}, file_id={m['file_id']} "
-                  f"(py -3 model_schedule_dump.py --file-id {m['file_id']})")
+                  f"(py -3 -m workbench.client.models.schedule_dump --file-id {m['file_id']})")
         elif m.get("kind") == "gear":
             print(f"Model: {m['model_type']}, race={m['race_name']} -- composite, no single DAT "
                   f"({m['note']})")

@@ -341,8 +341,6 @@ Older docs and scripts may still mention standalone names such as:
 - `build_database.py`,
 - `id_bridge.py`,
 - `wiki_lookup.py`,
-- `mob_look_decode.py`,
-- `model_schedule_dump.py`,
 - older NPCLogger cross-reference scripts.
 
 Some remain useful compatibility/research entry points, while others have been absorbed into richer Workbench surfaces. Prefer the browser Workbench and canonical `src/workbench/...` modules for current development unless a historical tool is specifically required for a legacy dataset.
