@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
-import build_plot_descriptors as legacy
 from workbench.devtools.spatial import build_plot_descriptors as canonical
 from workbench.runtime.paths import PLOT_DESCRIPTORS_ROOT
 
 
-def test_root_module_is_packaged_implementation():
-    assert legacy is canonical
+def test_root_launcher_is_retired_and_package_path_is_canonical():
+    repo_root = Path(__file__).resolve().parents[1]
+    assert not (repo_root / "build_plot_descriptors.py").exists()
     assert canonical.OUT == PLOT_DESCRIPTORS_ROOT
 
 
