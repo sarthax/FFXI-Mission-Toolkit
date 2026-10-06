@@ -3,7 +3,6 @@
 
 from pathlib import Path
 
-import gear_tables as legacy_gear_tables
 from workbench.client.models import gear_tables
 from workbench.client.models import look_decode
 from workbench.client.models import resolver as cmr
@@ -15,7 +14,6 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     assert not (ROOT / "client_model_resolver.py").exists()
     assert not (ROOT / "mob_look_decode.py").exists()
-    assert legacy_gear_tables.GEAR_TABLES is gear_tables.GEAR_TABLES
     assert gear_tables.model_id_to_file_id("ElvaanFemale", "head", 20) == 16660
     assert callable(look_decode.decode_look_data)
     assert cmr.DAT_EXTRACTOR_DLL == VENDOR_ROOT / "dat-extractor/bin/Debug/net9.0/dat-extractor.dll"
