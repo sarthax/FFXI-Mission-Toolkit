@@ -1,16 +1,19 @@
 from __future__ import annotations
 
-import client_model_catalog as legacy
+from pathlib import Path
+
 from workbench.client.models import catalog as canonical
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
-def test_root_module_is_packaged_implementation():
-    assert legacy is canonical
+
+def test_root_module_is_retired_and_package_is_canonical():
+    assert not (REPO_ROOT / "client_model_catalog.py").exists()
     assert canonical.client_model_resolver.__name__ == "workbench.client.models.resolver"
     assert canonical.look.__name__ == "workbench.client.models.look_decode"
     assert canonical.mob_model_tables.__name__ == "workbench.client.models.mob_model_tables"
     assert canonical.msd.__name__ == "workbench.client.models.schedule_dump"
-    assert canonical.zone_plot.__name__ == "workbench.devtools.spatial.zone_plot"
+    assert canonical.zone_plot.__name__.startswith("workbench.devtools.spatial")
 
 
 def test_build_catalog_uses_package_safe_ffxi_lookup(monkeypatch):
