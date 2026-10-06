@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `2922596de81acecef198c5b34770bbd81b69959b` after PR #566  
-Current work branch: `cleanup/ffxiclopedia-wrapper-phase3c2`  
+Current merged baseline: `main` at `2b7f4d795f2ff5f1ae26002201362094dd54e55c` after PR #567  
+Current work branch: `cleanup/dialog-audit-phase3c3`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -42,76 +42,67 @@ reset_install.bat
 4. Preserve behavior while relocating; semantic refactors are separate work.
 5. Update tests, workflows, docs/examples, subprocess callers, setup/start/reset, and GUI handlers as required by each removal.
 6. Require green Workbench plus Src Layout for each cleanup slice that changes executable/import surfaces.
-7. Keep the cleanup tracker current and PRs bounded by one ownership family.
+7. Keep cleanup PRs bounded by one logical ownership family.
 
 ## Completed slices
 
 - **PR #556 / Slice 1** → `c39ea9ccdc959e79c00baec2b29035db0febcf07`
   - moved root reference/report artifacts under `data/reference/`, `docs/archive/`, and `docs/reports/`.
   - Workbench #2716 + Src Layout #596 green.
-
 - **PR #557 / Slice 2** → `26567a0fe7d3a95fe0156a8ffc77df2da2f6216a`
   - setup/start/reset use structured bootstrap scripts or packaged module entry points.
   - removed root `install_xi_tinkerer.py`, `install_external_tools.py`, `reset_install.py`.
   - Workbench #2717 + Src Layout #597 green.
-
 - **PR #558 / Slice 3a** → `416432905d9fc45ce78f0cc222dc88ad98a4b045`
-  - removed `build_database.py`, `build_npc_index.py`, `build_dialog_index.py`, `ingest_global_tables.py`, `build_sql_index.py`, `build_lsb_index.py`, `scrape_bg_wiki.py`.
-  - `build_capture_index.py` intentionally retained for a dedicated high-fan-in test migration.
+  - removed setup-linked index/reference shims except intentionally deferred `build_capture_index.py`.
   - Workbench #2730 + Src Layout #610 green.
-
 - **PR #559 / Slice 3b1** → `b39ea8332ecf55c944a5d3a63653f0ca2d3a6f93`
   - packaged migration services no longer depend on root `backport_*` imports.
   - Workbench #2731 + Src Layout #611 green.
-
 - **PR #560 / Slice 3b2** → `b3eb6c4ece3e4a16d452befffed20128497f3fe9`
-  - verified live SQL checker is package-contained and preserves only an internal canonical alias binding.
+  - verified live SQL checker is package-contained.
   - Workbench #2732 + Src Layout #612 green.
-
 - **PR #561 / Slice 3b3** → `ec457df9faf735cbee208b21cf81874146077f73`
   - removed `backport_binding_audit.py`, `backport_lua_sanity_check.py`.
   - Workbench #2734 + Src Layout #614 green.
-
 - **PR #562 / Slice 3b4** → `66374fb022f5e94b1fa9a53d0e12ed521f73f36f`
   - removed `backport_binding_index.py`, `backport_item_audit.py`.
   - Workbench #2735 + Src Layout #615 green.
-
 - **PR #563 / Slice 3b5** → `6b7d677af0755ff9fb24743e3b11b22cdc742d37`
   - removed `backport_coverage_check.py`, `backport_map_confidence_check.py`.
   - Workbench #2736 + Src Layout #616 green.
-
 - **PR #564 / Slice 3b6** → `0601134a3a845342626ede2ea4c9ea9d855c8162`
   - removed `backport_map_lint.py`.
   - Workbench #2738 + Src Layout #617 green.
-
 - **PR #565 / Slice 3b7** → `05bfeea999e31d58658d2fb99d1c46af5cfc30b9`
   - removed `engine_change_index.py`, `engine_migration_compare.py`.
-  - retained the three Settings-aware `backport_convert_*` drivers because they still add operator-default behavior.
   - Workbench #2739 + Src Layout #618 green.
-
 - **PR #566 / Slice 3c1** → `2922596de81acecef198c5b34770bbd81b69959b`
-  - removed `dialog_drift_overview.py` and `research_gaps.py`.
-  - focused migration tests now use canonical Devtools modules directly and require the root shims to stay absent.
+  - removed `dialog_drift_overview.py`, `research_gaps.py`.
   - Workbench #2740 + Src Layout #619 green.
+- **PR #567 / Slice 3c2** → `2b7f4d795f2ff5f1ae26002201362094dd54e55c`
+  - removed `ffxiclopedia_adapter.py`.
+  - canonical FFXIclopedia CLI/import coverage retained.
+  - Workbench #2741 + Src Layout #620 green.
 
 ## Current slice
 
-### Slice 3c2 — retire FFXIclopedia root launcher
+### Slice 3c3 — finish dialog-audit namespace and retire root launcher
 
-Status: IN PROGRESS on `cleanup/ffxiclopedia-wrapper-phase3c2`.
+Status: IN PROGRESS on `cleanup/dialog-audit-phase3c3`.
 
-Removed on this branch:
-- [x] `ffxiclopedia_adapter.py` → `workbench.devtools.reference.ffxiclopedia`
-
-Caller/test migration:
-- [x] `test_ffxiclopedia_adapter_package_migration.py` now uses the canonical module directly.
-- [x] The migration regression requires `ffxiclopedia_adapter.py` to remain absent.
-- [x] The canonical `python -m workbench.devtools.reference.ffxiclopedia` CLI is exercised outside repository CWD.
+Changes on this branch:
+- [x] moved dialog audit implementation to `workbench.devtools.reference.dialog.audit_drift`.
+- [x] reduced `workbench.reference.dialog.audit_drift` to a compatibility package alias.
+- [x] removed root `audit_dialog_drift.py`.
+- [x] migrated focused regression to the final Devtools namespace.
+- [x] preserved old packaged namespace identity for compatibility.
+- [x] added direct `python -m workbench.devtools.reference.dialog.audit_drift --help` smoke coverage.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by this wrapper removal.
+- [ ] Fix only regressions caused by this namespace/root-launcher migration.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
@@ -119,17 +110,14 @@ Before merge:
 These are **not** deletion candidates yet:
 
 - `build_capture_index.py` — high regression fan-in; dedicated test migration required.
-- `backport_convert_7_packages.py`, `backport_convert_gm_debug_tools.py`, `backport_convert_nyzul_package.py` — root wrappers seed Settings-derived operator defaults.
+- `backport_convert_7_packages.py`, `backport_convert_gm_debug_tools.py`, `backport_convert_nyzul_package.py` — wrappers seed Settings-derived operator defaults.
 - `backport_sql_live_check.py` — active GUI/package/runtime operator guidance still names it.
 - `backport_package.py`, `backport_lua_convert.py`, `backport_sql_convert.py` — higher-fan-in operator/test surfaces.
 - `client_binary_analyze.py`, `client_binary_index.py`, `client_binary_diff.py` — pure aliases, but active Client Binary Research documentation still instructs users to run the root commands; retire them in a dedicated CLI-doc migration slice.
-- `audit_dialog_drift.py` — root launcher is pure, but implementation ownership still sits under the older `workbench.reference.dialog` namespace rather than the intended final Devtools namespace; finish that namespace migration before deleting the root command.
 
 ## Remaining slices
 
 ### Compatibility-shim families
-
-Continue in small logical PRs:
 - remaining reference/devtool wrappers;
 - client/DAT/model wrappers;
 - indexing/server-analysis wrappers;
@@ -138,7 +126,6 @@ Continue in small logical PRs:
 - final application/bootstrap compatibility files such as `gui_server.py`, `settings.py`, `feature_checker.py`, and `id_bridge.py` only after their caller contracts are intentionally retired.
 
 ### Standalone operator scripts
-
 PENDING. Move appropriate commands under `scripts/{maintenance,import,diagnostics}` after caller/path audit. Known candidates:
 - `build_item_repair_package.py`
 - `seed_auction_house.py`
@@ -146,7 +133,6 @@ PENDING. Move appropriate commands under `scripts/{maintenance,import,diagnostic
 - `discord_holiday_load.py`
 
 ### Tests and high-fan-in compatibility removal
-
 PENDING.
 - move remaining root `test_*.py` under `tests/legacy/` or focused suites;
 - repoint remaining capture regressions from `import build_capture_index` to `workbench.captures.ingestion.build_index` while preserving monkeypatch behavior;
@@ -154,13 +140,11 @@ PENDING.
 - consider `test_fixtures/` → `tests/fixtures/` only with workflow/discovery updates.
 
 ### Workspace/resource normalization
-
 PENDING.
 - `backport-workspace/` → preferred `workspaces/backport/` after reference audit;
 - review `client_probe_sets/`, `plot_descriptors/`, and `addons/` separately; do not move stable runtime/resource roots only for cosmetics.
 
 ### Final root guard and closeout
-
 PENDING.
 - root allowlist permits only intentional project/bootstrap files and approved resource directories;
 - fail CI on unexpected root `.py`, `.csv`, `.html`, `.txt`, or report `.md` additions;
