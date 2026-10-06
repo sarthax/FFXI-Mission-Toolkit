@@ -32,7 +32,7 @@
 <div id="model-viewer">
 <div id="panel" class="dense-panel">
   <div class="dense-toolbar" style="margin:-8px -8px 8px;border-top:0;"><strong>Model Viewer</strong><span class="sp"></span><a href="/entity" target="_blank">Entity search ↗</a></div>
-  <div class="muted">Renders an NPC/mob's real model DAT(s), resolved live from the DB via <span class="mono">mob_look_decode.py</span> + <span class="mono">gear_tables.py</span> + dat-extractor. Single-DAT ("flat") entities render one file; gear-composite humanoids render the race skeleton DAT plus every equipped slot's gear DAT, skinned to the shared skeleton. Find an id first through Entity search when needed.</div>
+  <div class="muted">Renders an NPC/mob's real model DAT(s), resolved live from the DB via the packaged look decoder + gear tables + dat-extractor. Single-DAT ("flat") entities render one file; gear-composite humanoids render the race skeleton DAT plus every equipped slot's gear DAT, skinned to the shared skeleton. Find an id first through Entity search when needed.</div>
 
   <label>Server</label>
   <select id="server"><option value="topaz">topaz</option><option value="dsp">dsp</option></select>

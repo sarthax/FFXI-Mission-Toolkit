@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `aa25b81f2390ba6d9733033085641f76f6476402` after PR #578  
-Current work branch: `cleanup/mob-look-decode-phase3c13`  
+Current merged baseline: `main` at `dda1901650afb36abff24d02c1b22c1f427aa2c2` after PR #579  
+Current work branch: `cleanup/gear-tables-phase3c14`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -69,23 +69,25 @@ reset_install.bat
 - PR #576 — retired `mob_model_tables.py`; package migration regression preserved.
 - PR #577 — retired `binary_inspector.py`; Workbench #2750 + Src Layout #629 green.
 - PR #578 — retired `model_viewer.py`; Workbench #2752 + Src Layout #630 green.
+- PR #579 — retired `mob_look_decode.py`; Workbench #2757 + Src Layout #635 green.
 
 ## Current slice
 
-### Slice 3c13 — retire mob look decode root launcher
+### Slice 3c14 — retire gear tables root shim
 
-Status: IN PROGRESS on `cleanup/mob-look-decode-phase3c13`.
+Status: IN PROGRESS on `cleanup/gear-tables-phase3c14`.
 
 Changes on this branch:
-- [x] removed root `mob_look_decode.py`.
-- [x] `test_client_model_resolver.py` now validates `workbench.client.models.look_decode` directly and requires the retired root launcher to stay absent.
-- [x] packaged Zone Editor and Entity Profile adapters already inject `workbench.client.models.look_decode` under the historical import name before loading legacy implementations, so production compatibility does not require the root file.
-- [x] Src Layout workflow now watches the retired root path and focused regression, and runs that regression explicitly.
+- [x] removed root `gear_tables.py`.
+- [x] production look decoding already imports `workbench.client.models.gear_tables` directly.
+- [x] added a focused package-migration regression that requires the retired root shim to stay absent and verifies installed-package import outside the repository.
+- [x] Src Layout now watches the retired root path and focused regression and runs that regression explicitly.
+- [x] Model Viewer help text no longer advertises retired physical root filenames.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by look-decoder launcher retirement.
+- [ ] Fix only regressions caused by gear-table shim retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
