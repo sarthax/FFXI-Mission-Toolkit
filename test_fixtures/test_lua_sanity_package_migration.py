@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -10,19 +9,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def _load_root(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return sys.modules[name]
-
-
 def main() -> None:
     canonical = importlib.import_module("workbench.validation.packages.lua_sanity")
-    legacy = _load_root("backport_lua_sanity_check", REPO_ROOT / "backport_lua_sanity_check.py")
-    assert legacy is canonical
+    assert not (REPO_ROOT / "backport_lua_sanity_check.py").exists()
 
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -47,9 +36,8 @@ def main() -> None:
     )
     subprocess.run([sys.executable, "-c", code], cwd=tempfile.gettempdir(), check=True)
 
-    converter_migration = _load_root(
-        "_lua_converter_map_lint_package_migration",
-        REPO_ROOT / "test_fixtures" / "test_lua_converter_map_lint_package_migration.py",
+    converter_migration = importlib.import_module(
+        "test_fixtures.test_lua_converter_map_lint_package_migration"
     )
     converter_migration.main()
 
