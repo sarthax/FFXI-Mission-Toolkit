@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `964ca87b4800094611c31b438f0aa6e1d96508e9` after PR #580  
-Current work branch: `cleanup/model-schedule-dump-phase3c15`  
+Current merged baseline: `main` at `434bd1ba993c9d45f1557beee3e3284412dca857` after PR #581  
+Current work branch: `cleanup/altana-index-phase3c16`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -71,25 +71,25 @@ reset_install.bat
 - PR #578 — retired `model_viewer.py`; Workbench #2752 + Src Layout #630 green.
 - PR #579 — retired `mob_look_decode.py`; Workbench #2757 + Src Layout #635 green.
 - PR #580 — retired `gear_tables.py`; Workbench #2758 + Src Layout #636 green.
+- PR #581 — retired `model_schedule_dump.py`; Workbench #2761 + Src Layout #639 green.
 
 ## Current slice
 
-### Slice 3c15 — retire model schedule dump root launcher
+### Slice 3c16 — retire Altana index root launcher
 
-Status: IN PROGRESS on `cleanup/model-schedule-dump-phase3c15`.
+Status: IN PROGRESS on `cleanup/altana-index-phase3c16`.
 
 Changes on this branch:
-- [x] migrate live Entity Profile, Entity Detail, and look-decoder command hints to `python -m workbench.client.models.schedule_dump`.
-- [x] migrate model schedule and model catalog regressions to canonical package imports.
-- [x] require the retired root launcher to remain absent.
-- [x] keep Src Layout coverage on the focused schedule migration regression; model catalog remains covered by Workbench because it reads repository UI fixtures.
-- [x] refresh current tooling guidance so retired client/model root filenames are no longer advertised.
-- [x] remove root `model_schedule_dump.py`.
+- [x] remove root `build_altana_index.py`.
+- [x] keep canonical ownership at `workbench.client.models.build_altana_index`.
+- [x] migrate the focused regression from root-alias identity to root-absence plus canonical behavior.
+- [x] preserve the existing repository-root-safe Altana index DB path contract.
+- [x] retain existing Src Layout trigger and explicit focused regression coverage.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by model schedule launcher retirement.
+- [ ] Fix only regressions caused by Altana index launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
@@ -102,7 +102,7 @@ Before merge:
 ## Remaining slices
 
 ### Compatibility-shim families
-- remaining Client/model wrappers (`model_schedule_dump.py`, etc.) after caller audits;
+- remaining Client/model wrappers after caller audits;
 - remaining indexing/server-analysis wrappers;
 - capture/protocol wrappers;
 - spatial/domain/runtime wrappers;
