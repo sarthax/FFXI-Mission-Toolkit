@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Regression checks for Workbench plan scoping in backport_package."""
+"""Regression checks for Workbench plan scoping in backport package orchestration."""
 import json
 from pathlib import Path
 import tempfile
 
-import backport_package
-import backport_binding_audit
-import backport_lua_sanity_check
+from workbench.packages.migration import orchestrator as backport_package
+from workbench.validation.packages import binding_audit as backport_binding_audit
+from workbench.validation.packages import lua_sanity as backport_lua_sanity_check
 
 
 def main():
