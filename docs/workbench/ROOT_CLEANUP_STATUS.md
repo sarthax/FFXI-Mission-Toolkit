@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `c75519a17b09e5ecbbe5ec061f9772f013e972dd` after PR #571  
-Current work branch: `cleanup/dat-inspector-wrapper-phase3c6`  
+Current merged baseline: `main` at `5fee201cb5633996ef7b7e5ea4b410bb2d90852c` after PR #572  
+Current work branch: `cleanup/client-model-catalog-phase3c7`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -46,85 +46,74 @@ reset_install.bat
 
 ## Completed slices
 
-- **PR #556 / Slice 1** → `c39ea9ccdc959e79c00baec2b29035db0febcf07` — moved root reference/report artifacts under structured `data/` and `docs/`; Workbench #2716 + Src Layout #596 green.
-- **PR #557 / Slice 2** → `26567a0fe7d3a95fe0156a8ffc77df2da2f6216a` — structured bootstrap/package entry points; removed root bootstrap wrappers; Workbench #2717 + Src Layout #597 green.
-- **PR #558 / Slice 3a** → `416432905d9fc45ce78f0cc222dc88ad98a4b045` — removed setup-linked index/reference shims except deferred `build_capture_index.py`; Workbench #2730 + Src Layout #610 green.
-- **PR #559 / Slice 3b1** → `b39ea8332ecf55c944a5d3a63653f0ca2d3a6f93` — packaged migration services decoupled from root `backport_*`; Workbench #2731 + Src Layout #611 green.
-- **PR #560 / Slice 3b2** → `b3eb6c4ece3e4a16d452befffed20128497f3fe9` — live SQL checker canonical alias locked; Workbench #2732 + Src Layout #612 green.
-- **PR #561 / Slice 3b3** → `ec457df9faf735cbee208b21cf81874146077f73` — removed `backport_binding_audit.py`, `backport_lua_sanity_check.py`; Workbench #2734 + Src Layout #614 green.
-- **PR #562 / Slice 3b4** → `66374fb022f5e94b1fa9a53d0e12ed521f73f36f` — removed `backport_binding_index.py`, `backport_item_audit.py`; Workbench #2735 + Src Layout #615 green.
-- **PR #563 / Slice 3b5** → `6b7d677af0755ff9fb24743e3b11b22cdc742d37` — removed `backport_coverage_check.py`, `backport_map_confidence_check.py`; Workbench #2736 + Src Layout #616 green.
-- **PR #564 / Slice 3b6** → `0601134a3a845342626ede2ea4c9ea9d855c8162` — removed `backport_map_lint.py`; Workbench #2738 + Src Layout #617 green.
-- **PR #565 / Slice 3b7** → `05bfeea999e31d58658d2fb99d1c46af5cfc30b9` — removed `engine_change_index.py`, `engine_migration_compare.py`; Workbench #2739 + Src Layout #618 green.
-- **PR #566 / Slice 3c1** → `2922596de81acecef198c5b34770bbd81b69959b` — removed `dialog_drift_overview.py`, `research_gaps.py`; Workbench #2740 + Src Layout #619 green.
-- **PR #567 / Slice 3c2** → `2b7f4d795f2ff5f1ae26002201362094dd54e55c` — removed `ffxiclopedia_adapter.py`; Workbench #2741 + Src Layout #620 green.
-- **PR #568 / Slice 3c3** → `aa31f4156c8903b95e681336ede379a017e6cd90` — moved dialog audit to final Devtools namespace and removed root `audit_dialog_drift.py`; Workbench #2742 + Src Layout #621 green.
-- **PR #569** → `7dffaf6f2e037a31792db2a02d6b3f62e8961608` — synchronized the resume tracker after PR #568.
-- **PR #570 / Slice 3c4** → `0af840485f599baee12e4fb431a2d4b2732fb993` — retired `client_binary_analyze.py`, `client_binary_index.py`, and `client_binary_diff.py`; active Client Binary Research docs now use packaged module commands; Workbench #2743 + Src Layout #622 green.
-- **PR #571 / Slice 3c5** → `c75519a17b09e5ecbbe5ec061f9772f013e972dd` — retired `dat_extractor_bin.py`; canonical DAT extractor migration/path regression retained; Workbench #2744 + Src Layout #623 green.
+- PR #556 — moved root reference/report artifacts; Workbench #2716 + Src Layout #596 green.
+- PR #557 — structured bootstrap/package entry points; removed root bootstrap wrappers; Workbench #2717 + Src Layout #597 green.
+- PR #558 — removed setup-linked index/reference shims except deferred `build_capture_index.py`; Workbench #2730 + Src Layout #610 green.
+- PR #559 — decoupled packaged migration services from root `backport_*`; Workbench #2731 + Src Layout #611 green.
+- PR #560 — live SQL checker canonical alias locked; Workbench #2732 + Src Layout #612 green.
+- PR #561 — removed `backport_binding_audit.py`, `backport_lua_sanity_check.py`; Workbench #2734 + Src Layout #614 green.
+- PR #562 — removed `backport_binding_index.py`, `backport_item_audit.py`; Workbench #2735 + Src Layout #615 green.
+- PR #563 — removed `backport_coverage_check.py`, `backport_map_confidence_check.py`; Workbench #2736 + Src Layout #616 green.
+- PR #564 — removed `backport_map_lint.py`; Workbench #2738 + Src Layout #617 green.
+- PR #565 — removed `engine_change_index.py`, `engine_migration_compare.py`; Workbench #2739 + Src Layout #618 green.
+- PR #566 — removed `dialog_drift_overview.py`, `research_gaps.py`; Workbench #2740 + Src Layout #619 green.
+- PR #567 — removed `ffxiclopedia_adapter.py`; Workbench #2741 + Src Layout #620 green.
+- PR #568 — moved dialog audit to final Devtools namespace and removed root `audit_dialog_drift.py`; Workbench #2742 + Src Layout #621 green.
+- PR #569 — synchronized the cleanup tracker.
+- PR #570 — retired Client binary analyze/index/diff root CLIs and migrated active docs; Workbench #2743 + Src Layout #622 green.
+- PR #571 — retired `dat_extractor_bin.py`; Workbench #2744 + Src Layout #623 green.
+- PR #572 — retired `dat_inspector.py` after moving the GUI regression to `workbench.client.dat.inspector`; Workbench #2745 + Src Layout #624 green.
 
 ## Current slice
 
-### Slice 3c6 — retire DAT Inspector root wrapper
+### Slice 3c7 — retire Client model catalog root alias
 
-Status: IN PROGRESS on `cleanup/dat-inspector-wrapper-phase3c6`.
+Status: IN PROGRESS on `cleanup/client-model-catalog-phase3c7`.
 
 Changes on this branch:
-- [x] `test_gui_dat_inspector.py` imports `workbench.client.dat.inspector` directly instead of the root compatibility name.
-- [x] removed root `dat_inspector.py`.
-- [x] Source Layout retired-root guard now includes both `dat_extractor_bin.py` and `dat_inspector.py`.
-- [x] canonical DAT Inspector behavior and external-CWD package imports remain covered by existing regressions.
+- [x] removed root `client_model_catalog.py`.
+- [x] `test_client_model_catalog.py` imports `workbench.client.models.catalog` directly.
+- [x] `test_client_model_catalog_package_migration.py` uses only the canonical package and requires the root alias to remain absent.
+- [x] the catalog regression now reads route ownership from packaged `src/workbench/app/_host_impl.py` instead of root `gui_server.py`.
+- [x] Source Layout requires the root alias to stay absent and smoke-imports the canonical catalog from outside repository CWD.
+
+Explicit boundary:
+- [x] `client_model_resolver.py` remains because `src/workbench/editors/zone/_editor_impl.py` still imports the root compatibility name in production. Migrate that caller in a separate slice.
 
 Before merge:
-- [ ] Run Workbench Regression, including the focused DAT Inspector UX job.
+- [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by this GUI-import/root-wrapper migration.
+- [ ] Fix only regressions caused by catalog alias retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
-
-These are **not** deletion candidates yet:
 
 - `build_capture_index.py` — high regression fan-in; dedicated test migration required.
 - `backport_convert_7_packages.py`, `backport_convert_gm_debug_tools.py`, `backport_convert_nyzul_package.py` — wrappers seed Settings-derived operator defaults.
 - `backport_sql_live_check.py` — active GUI/package/runtime operator guidance still names it.
 - `backport_package.py`, `backport_lua_convert.py`, `backport_sql_convert.py` — higher-fan-in operator/test surfaces.
+- `client_model_resolver.py` — active Zone Editor production import remains.
 
 ## Remaining slices
 
 ### Compatibility-shim families
-- remaining client/model wrappers;
+- Client model resolver production-import migration and remaining client/model wrappers;
 - remaining indexing/server-analysis wrappers;
 - capture/protocol wrappers;
 - spatial/domain/runtime wrappers;
 - final application/bootstrap compatibility files such as `gui_server.py`, `settings.py`, `feature_checker.py`, and `id_bridge.py` only after their caller contracts are intentionally retired.
 
 ### Standalone operator scripts
-PENDING. Move appropriate commands under `scripts/{maintenance,import,diagnostics}` after caller/path audit. Known candidates:
-- `build_item_repair_package.py`
-- `seed_auction_house.py`
-- `discord_inventory.py`
-- `discord_holiday_load.py`
+PENDING. Move appropriate commands under `scripts/{maintenance,import,diagnostics}` after caller/path audit. Known candidates include `build_item_repair_package.py`, `seed_auction_house.py`, `discord_inventory.py`, and `discord_holiday_load.py`.
 
 ### Tests and high-fan-in compatibility removal
-PENDING.
-- move remaining root `test_*.py` under `tests/legacy/` or focused suites;
-- repoint remaining capture regressions from `import build_capture_index` to `workbench.captures.ingestion.build_index` while preserving monkeypatch behavior;
-- delete `build_capture_index.py` only after that migration is green;
-- consider `test_fixtures/` → `tests/fixtures/` only with workflow/discovery updates.
+PENDING. Move remaining root `test_*.py`, migrate `build_capture_index.py` callers, and consider `test_fixtures/` → `tests/fixtures/` only with workflow/discovery updates.
 
 ### Workspace/resource normalization
-PENDING.
-- `backport-workspace/` → preferred `workspaces/backport/` after reference audit;
-- review `client_probe_sets/`, `plot_descriptors/`, and `addons/` separately; do not move stable runtime/resource roots only for cosmetics.
+PENDING. Move `backport-workspace/` to `workspaces/backport/` after reference audit; review `client_probe_sets/`, `plot_descriptors/`, and `addons/` separately.
 
 ### Final root guard and closeout
-PENDING.
-- root allowlist permits only intentional project/bootstrap files and approved resource directories;
-- fail CI on unexpected root `.py`, `.csv`, `.html`, `.txt`, or report `.md` additions;
-- verify editable imports outside repository CWD plus setup/start/reset behavior;
-- run Workbench, Src Layout, Character/server-admin, and focused affected suites;
-- reconcile README, roadmap, src-layout status, workflow path filters, and component-ownership docs.
+PENDING. Add a strict root allowlist, verify editable imports and bootstrap behavior, run broad regressions, and reconcile README/roadmap/src-layout/ownership docs.
 
 ## Resume instructions
 
