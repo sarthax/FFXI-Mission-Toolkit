@@ -20,8 +20,8 @@ becomes real (Phase 5, deferred but not deleted), a field with conflicting or wi
 sources has to be visibly flagged, not silently trusted.
 
 Usage:
-    py -3 entity_profile.py 17093430
-    py -3 entity_profile.py "Vending Box"
+    py -3 -m workbench.devtools.entities.profile 17093430
+    py -3 -m workbench.devtools.entities.profile "Vending Box"
 """
 import argparse
 import io
