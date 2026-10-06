@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `aa31f4156c8903b95e681336ede379a017e6cd90` after PR #568  
-Current work branch: none  
+Current merged baseline: `main` at `7dffaf6f2e037a31792db2a02d6b3f62e8961608` after PR #569  
+Current work branch: `cleanup/client-binary-cli-phase3c4`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -46,66 +46,43 @@ reset_install.bat
 
 ## Completed slices
 
-- **PR #556 / Slice 1** → `c39ea9ccdc959e79c00baec2b29035db0febcf07`
-  - moved root reference/report artifacts under `data/reference/`, `docs/archive/`, and `docs/reports/`.
-  - Workbench #2716 + Src Layout #596 green.
-- **PR #557 / Slice 2** → `26567a0fe7d3a95fe0156a8ffc77df2da2f6216a`
-  - setup/start/reset use structured bootstrap scripts or packaged module entry points.
-  - removed root `install_xi_tinkerer.py`, `install_external_tools.py`, `reset_install.py`.
-  - Workbench #2717 + Src Layout #597 green.
-- **PR #558 / Slice 3a** → `416432905d9fc45ce78f0cc222dc88ad98a4b045`
-  - removed setup-linked index/reference shims except intentionally deferred `build_capture_index.py`.
-  - Workbench #2730 + Src Layout #610 green.
-- **PR #559 / Slice 3b1** → `b39ea8332ecf55c944a5d3a63653f0ca2d3a6f93`
-  - packaged migration services no longer depend on root `backport_*` imports.
-  - Workbench #2731 + Src Layout #611 green.
-- **PR #560 / Slice 3b2** → `b3eb6c4ece3e4a16d452befffed20128497f3fe9`
-  - verified live SQL checker is package-contained.
-  - Workbench #2732 + Src Layout #612 green.
-- **PR #561 / Slice 3b3** → `ec457df9faf735cbee208b21cf81874146077f73`
-  - removed `backport_binding_audit.py`, `backport_lua_sanity_check.py`.
-  - Workbench #2734 + Src Layout #614 green.
-- **PR #562 / Slice 3b4** → `66374fb022f5e94b1fa9a53d0e12ed521f73f36f`
-  - removed `backport_binding_index.py`, `backport_item_audit.py`.
-  - Workbench #2735 + Src Layout #615 green.
-- **PR #563 / Slice 3b5** → `6b7d677af0755ff9fb24743e3b11b22cdc742d37`
-  - removed `backport_coverage_check.py`, `backport_map_confidence_check.py`.
-  - Workbench #2736 + Src Layout #616 green.
-- **PR #564 / Slice 3b6** → `0601134a3a845342626ede2ea4c9ea9d855c8162`
-  - removed `backport_map_lint.py`.
-  - Workbench #2738 + Src Layout #617 green.
-- **PR #565 / Slice 3b7** → `05bfeea999e31d58658d2fb99d1c46af5cfc30b9`
-  - removed `engine_change_index.py`, `engine_migration_compare.py`.
-  - Workbench #2739 + Src Layout #618 green.
-- **PR #566 / Slice 3c1** → `2922596de81acecef198c5b34770bbd81b69959b`
-  - removed `dialog_drift_overview.py`, `research_gaps.py`.
-  - Workbench #2740 + Src Layout #619 green.
-- **PR #567 / Slice 3c2** → `2b7f4d795f2ff5f1ae26002201362094dd54e55c`
-  - removed `ffxiclopedia_adapter.py`.
-  - canonical FFXIclopedia CLI/import coverage retained.
-  - Workbench #2741 + Src Layout #620 green.
-- **PR #568 / Slice 3c3** → `aa31f4156c8903b95e681336ede379a017e6cd90`
-  - moved dialog audit implementation to `workbench.devtools.reference.dialog.audit_drift`.
-  - reduced `workbench.reference.dialog.audit_drift` to a compatibility alias.
-  - removed root `audit_dialog_drift.py`.
-  - canonical CLI/import coverage plus old packaged-namespace compatibility retained.
-  - Workbench #2742 + Src Layout #621 green.
+- **PR #556 / Slice 1** → `c39ea9ccdc959e79c00baec2b29035db0febcf07` — moved root reference/report artifacts under structured `data/` and `docs/`; Workbench #2716 + Src Layout #596 green.
+- **PR #557 / Slice 2** → `26567a0fe7d3a95fe0156a8ffc77df2da2f6216a` — structured bootstrap/package entry points; removed root bootstrap wrappers; Workbench #2717 + Src Layout #597 green.
+- **PR #558 / Slice 3a** → `416432905d9fc45ce78f0cc222dc88ad98a4b045` — removed setup-linked index/reference shims except deferred `build_capture_index.py`; Workbench #2730 + Src Layout #610 green.
+- **PR #559 / Slice 3b1** → `b39ea8332ecf55c944a5d3a63653f0ca2d3a6f93` — packaged migration services decoupled from root `backport_*`; Workbench #2731 + Src Layout #611 green.
+- **PR #560 / Slice 3b2** → `b3eb6c4ece3e4a16d452befffed20128497f3fe9` — live SQL checker canonical alias locked; Workbench #2732 + Src Layout #612 green.
+- **PR #561 / Slice 3b3** → `ec457df9faf735cbee208b21cf81874146077f73` — removed `backport_binding_audit.py`, `backport_lua_sanity_check.py`; Workbench #2734 + Src Layout #614 green.
+- **PR #562 / Slice 3b4** → `66374fb022f5e94b1fa9a53d0e12ed521f73f36f` — removed `backport_binding_index.py`, `backport_item_audit.py`; Workbench #2735 + Src Layout #615 green.
+- **PR #563 / Slice 3b5** → `6b7d677af0755ff9fb24743e3b11b22cdc742d37` — removed `backport_coverage_check.py`, `backport_map_confidence_check.py`; Workbench #2736 + Src Layout #616 green.
+- **PR #564 / Slice 3b6** → `0601134a3a845342626ede2ea4c9ea9d855c8162` — removed `backport_map_lint.py`; Workbench #2738 + Src Layout #617 green.
+- **PR #565 / Slice 3b7** → `05bfeea999e31d58658d2fb99d1c46af5cfc30b9` — removed `engine_change_index.py`, `engine_migration_compare.py`; Workbench #2739 + Src Layout #618 green.
+- **PR #566 / Slice 3c1** → `2922596de81acecef198c5b34770bbd81b69959b` — removed `dialog_drift_overview.py`, `research_gaps.py`; Workbench #2740 + Src Layout #619 green.
+- **PR #567 / Slice 3c2** → `2b7f4d795f2ff5f1ae26002201362094dd54e55c` — removed `ffxiclopedia_adapter.py`; Workbench #2741 + Src Layout #620 green.
+- **PR #568 / Slice 3c3** → `aa31f4156c8903b95e681336ede379a017e6cd90` — moved dialog audit to final Devtools namespace and removed root `audit_dialog_drift.py`; Workbench #2742 + Src Layout #621 green.
+- **PR #569** → `7dffaf6f2e037a31792db2a02d6b3f62e8961608` — synchronized this resume tracker after PR #568.
 
-## Next recommended slice
+## Current slice
 
-### Slice 3c4 — Client binary CLI-doc migration
+### Slice 3c4 — retire Client binary CLI launchers
 
-The three Client binary root files are already pure aliases:
-- `client_binary_analyze.py`
-- `client_binary_index.py`
-- `client_binary_diff.py`
+Status: IN PROGRESS on `cleanup/client-binary-cli-phase3c4`.
 
-Do **not** delete them until active docs/examples are repointed from physical root filenames to:
-- `python -m workbench.client.cli.binary_analyze`
-- `python -m workbench.client.cli.binary_index`
-- `python -m workbench.client.cli.binary_diff`
+Removed on this branch:
+- [x] `client_binary_analyze.py` → `python -m workbench.client.cli.binary_analyze`
+- [x] `client_binary_index.py` → `python -m workbench.client.cli.binary_index`
+- [x] `client_binary_diff.py` → `python -m workbench.client.cli.binary_diff`
 
-Then migrate `test_client_binary_cli_package_migration.py` to canonical imports/direct module CLI smoke, delete the three root launchers, and validate Workbench + Src Layout.
+Caller/test/doc migration:
+- [x] `CLIENT_BINARY_RESEARCH.md` uses packaged module commands for index/analyze/diff examples.
+- [x] `test_client_binary_cli_package_migration.py` imports canonical modules directly and requires all three root wrappers to remain absent.
+- [x] The canonical analyze/index/diff `--help` CLIs are exercised from outside repository CWD.
+- [x] `binary_inspector.py` remains intentionally supported; it is a separate GUI/import compatibility contract.
+
+Before merge:
+- [ ] Run Workbench Regression.
+- [ ] Run Src Layout Regression.
+- [ ] Fix only regressions caused by this CLI-doc/root-launcher migration.
+- [ ] Merge only when green.
 
 ## Explicitly retained / deferred
 
@@ -119,7 +96,6 @@ These are **not** deletion candidates yet:
 ## Remaining slices
 
 ### Compatibility-shim families
-- Client binary CLI-doc migration above;
 - remaining client/DAT/model wrappers;
 - remaining indexing/server-analysis wrappers;
 - capture/protocol wrappers;
@@ -158,7 +134,7 @@ PENDING.
 1. Read this file first.
 2. Fetch current `main`; concurrent work may have advanced it.
 3. Check for an open `cleanup/*` PR/branch before starting a new slice.
-4. Continue the first incomplete next slice.
+4. Continue the first incomplete current-slice item.
 5. Keep PRs bounded by one logical ownership family.
 6. Update this tracker in every cleanup PR.
 7. Never merge a cleanup slice with failing required CI.
