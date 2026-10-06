@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 import tempfile
 
-import backport_binding_index as bbi
+from workbench.validation.packages import binding_index as bbi
 from workbench.devtools.server import binding_index as dev_binding_index
 
 
@@ -21,7 +21,7 @@ def main():
         )
 
         # Development read-only scanner must preserve the exact registration inventory used by
-        # the legacy backport tool without importing its cache/diff/package concerns.
+        # Validation's cache/diff policy without depending on a root compatibility module.
         assert dev_binding_index.build_dsp_index(root)==bbi.build_dsp_index(root)
         assert dev_binding_index.build_topaz_index(root)==bbi.build_topaz_index(root)
         assert dev_binding_index.binding_source_fingerprint(root)==bbi.binding_source_fingerprint(root)
