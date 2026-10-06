@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `3fc83ec5bed10ef7b5f783b8e90203c2377d8cd5` after PR #577  
-Current work branch: `cleanup/model-viewer-phase3c12`  
+Current merged baseline: `main` at `aa25b81f2390ba6d9733033085641f76f6476402` after PR #578  
+Current work branch: `cleanup/mob-look-decode-phase3c13`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -68,29 +68,29 @@ reset_install.bat
 - PR #575 — retired `client_overview.py`; Workbench #2748 + Src Layout #627 green.
 - PR #576 — retired `mob_model_tables.py`; package migration regression preserved.
 - PR #577 — retired `binary_inspector.py`; Workbench #2750 + Src Layout #629 green.
+- PR #578 — retired `model_viewer.py`; Workbench #2752 + Src Layout #630 green.
 
 ## Current slice
 
-### Slice 3c12 — retire model viewer root alias
+### Slice 3c13 — retire mob look decode root launcher
 
-Status: IN PROGRESS on `cleanup/model-viewer-phase3c12`.
+Status: IN PROGRESS on `cleanup/mob-look-decode-phase3c13`.
 
 Changes on this branch:
-- [x] removed root `model_viewer.py`.
-- [x] `test_model_viewer_package_migration.py` now imports `workbench.client.models.viewer` directly.
-- [x] regression requires the retired root wrapper to remain absent.
-- [x] caller audit found no production import or root command dependency; remaining filename mentions are planning/ownership documentation only.
+- [x] removed root `mob_look_decode.py`.
+- [x] `test_client_model_resolver.py` now validates `workbench.client.models.look_decode` directly and requires the retired root launcher to stay absent.
+- [x] packaged Zone Editor and Entity Profile adapters already inject `workbench.client.models.look_decode` under the historical import name before loading legacy implementations, so production compatibility does not require the root file.
+- [x] Src Layout workflow now watches the retired root path and focused regression, and runs that regression explicitly.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by model-viewer alias retirement.
+- [ ] Fix only regressions caused by look-decoder launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
 
 - `model_schedule_dump.py` — root launcher is pure, but live entity/model UI and CLI output still emits the physical root command; migrate those command strings before deletion.
-- `mob_look_decode.py` — packaged implementation exists, but entity-profile compatibility imports still need caller migration first.
 - `build_capture_index.py` — high regression fan-in; dedicated test migration required.
 - `backport_convert_7_packages.py`, `backport_convert_gm_debug_tools.py`, `backport_convert_nyzul_package.py` — wrappers seed Settings-derived operator defaults.
 - `backport_sql_live_check.py` — active GUI/package/runtime operator guidance still names it.
@@ -99,7 +99,7 @@ Before merge:
 ## Remaining slices
 
 ### Compatibility-shim families
-- remaining Client/model wrappers (`model_schedule_dump.py`, `mob_look_decode.py`, etc.) after caller audits;
+- remaining Client/model wrappers (`model_schedule_dump.py`, etc.) after caller audits;
 - remaining indexing/server-analysis wrappers;
 - capture/protocol wrappers;
 - spatial/domain/runtime wrappers;
