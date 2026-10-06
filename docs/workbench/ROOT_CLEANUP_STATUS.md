@@ -2,7 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Baseline: `main` at `4e1f93e36d461b71aef0362c1f5d2cd5268ce317`  
+Current merged baseline: `main` at `c39ea9ccdc959e79c00baec2b29035db0febcf07` after PR #556  
+Current work branch: `cleanup/root-entrypoints-phase2`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This document is the resume point for the post-Phase-D repository-structure cleanup. `docs/workbench/SRC_LAYOUT_MIGRATION_PLAN.md` remains the historical migration plan; this file tracks the final compatibility/operator/data cleanup after reusable implementation ownership moved under `src/workbench/...`.
@@ -80,7 +81,7 @@ scripts/
   diagnostics/
 ```
 
-Known candidates include installer/reset helpers, `build_item_repair_package.py`, `seed_auction_house.py`, Discord intake/load utilities, and one-off spatial/repair tools that are not product libraries.
+Known candidates include `build_item_repair_package.py`, `seed_auction_house.py`, Discord intake/load utilities, and one-off spatial/repair tools that are not product libraries. Bootstrap implementations are already structured under `scripts/bootstrap/`; their temporary root wrappers are being retired in Slice 2.
 
 ### D. Tests — move under `tests/`
 
@@ -106,13 +107,14 @@ Future root reference/report artifacts should follow the same rule: data under `
 
 ### Slice 1 — baseline + low-risk non-code relocation
 
-Status: COMPLETE ON `cleanup/root-structure-phase1` — pending merge/CI
+Status: MERGED — PR #556, merge commit `c39ea9ccdc959e79c00baec2b29035db0febcf07`
 
 - [x] Create this resumable tracker.
 - [x] Re-audit root against current post-Phase-D `main` and historical disposition map.
 - [x] Move reference CSV/TXT artifacts with no runtime callers.
 - [x] Move/archive obsolete root HTML/report artifacts.
 - [x] Extend Source Layout regression to require the new structured paths and forbid the old root artifact paths.
+- [x] Validate Workbench Regression #2716 and Src Layout Regression #596 green before merge.
 
 Notes:
 
@@ -122,11 +124,26 @@ Notes:
 
 ### Slice 2 — bootstrap and stable package entry points
 
-Status: PENDING
+Status: IN PROGRESS on `cleanup/root-entrypoints-phase2`
 
-- [ ] Inventory every `setup.bat`, `start.bat`, `reset_install.bat`, workflow, Python subprocess, GUI handler, test, and docs/example reference to root filenames.
-- [ ] Convert direct script invocation to `python -m workbench...` where canonical packaged entry points already exist.
-- [ ] Add missing `__main__`/CLI adapters only where necessary; do not duplicate implementation.
+Completed on the branch:
+
+- [x] `setup.bat` installs the project editable (`pip install -e .`) before package-module commands are used.
+- [x] `setup.bat` calls `scripts/bootstrap/install_xi_tinkerer.py` and `scripts/bootstrap/install_external_tools.py` directly.
+- [x] `setup.bat` writes settings through `workbench.runtime.settings_store`, not root `settings.py`.
+- [x] `setup.bat` uses packaged module entry points for database, NPC, dialog, global-table, capture, SQL, LSB, and BG Wiki commands.
+- [x] `start.bat` launches `python -m workbench.app.host`, not root `gui_server.py`.
+- [x] `reset_install.bat` calls `scripts/bootstrap/reset_install.py`, not root `reset_install.py`.
+- [x] Added direct `python -m` CLI behavior to the canonical dialog-index and capture-index adapters without duplicating their implementations.
+- [x] Removed root bootstrap wrappers `install_xi_tinkerer.py`, `install_external_tools.py`, and `reset_install.py`.
+- [x] Updated bootstrap/source-layout regressions to require those root wrappers to stay absent and to verify the structured launcher contracts.
+
+Still required before Slice 2 closes:
+
+- [ ] Audit repository code/tests/workflows/docs for remaining active calls/imports that treat root compatibility filenames as stable interfaces.
+- [ ] Classify historical prose separately from executable callers; do not retain shims solely because old migration documentation names them.
+- [ ] Identify the first logical compatibility-shim families ready for deletion in Slice 3.
+- [ ] Run and merge with green Source Layout + Workbench regression.
 
 ### Slice 3 — remove compatibility shim forest
 
@@ -140,7 +157,7 @@ Status: PENDING
 
 Status: PENDING
 
-- [ ] `scripts/bootstrap/`: installer/reset Python helpers.
+- [x] `scripts/bootstrap/`: installer/reset Python helpers are already physically structured; Slice 2 is removing their obsolete root wrappers.
 - [ ] `scripts/maintenance/`: item-repair, AH seeding, one-off maintenance utilities.
 - [ ] `scripts/import/`: Discord/reference import utilities.
 - [ ] `scripts/diagnostics/`: remaining standalone diagnostic commands.
