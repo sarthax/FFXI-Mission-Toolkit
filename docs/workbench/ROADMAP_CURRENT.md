@@ -334,13 +334,39 @@ Operator summary: `AUCTION_HOUSE_CAPABILITY_STATUS.md`. Economy detail: `AUCTION
 - [x] Synth & Crafting module at `/synth` (`server_admin/synth`): schema-adaptive over `synth_recipes` for DSP/Topaz/LSB, ingredient availability + missing report, audit, SQL create/edit/delete preview per flavor, export/port, gated Test-write apply.
 - [ ] Open: vendor-loop data exploit (shop prices below BaseSell) is documented but not fixed; synth audit cannot see gathering/fishing/quest sources.
 
+
+# 17. Workbench UI Framework / Unified Module Layout
+
+The shared `base.html` shell already unifies global navigation, workspace context, theme variables, and common dense UI primitives. The next UI architecture phase should unify **module composition and geometry** so independently developed tools stop drifting in width, spacing, panel sizing, controls, and interaction structure.
+
+- [ ] Add a shared Workbench page wrapper above `base.html` for module-level layout contracts rather than navigation/chrome alone.
+- [ ] Define a small set of canonical page archetypes:
+  - Browser — search/filter + result list/table + pagination;
+  - Detail/Dossier — summary/header + evidence/detail sections;
+  - Workbench/Inspector — navigator + primary workspace + inspector;
+  - Editor — navigator + editable surface + properties/actions;
+  - Dashboard/Console — status/KPI/action strip + panels/tables.
+- [ ] Standardize page header/title/status/action regions, help/about affordances, read-only/write-capable badges, empty/loading/error states, and shared filter/search rows.
+- [ ] Standardize one-, two-, and three-pane layouts including reusable left/right sidebar widths, panel gaps, inspector sizing, scrolling ownership, sticky regions, and responsive stacking.
+- [ ] Replace repeated page-local geometry such as arbitrary `main` padding, max-widths, toolbar heights, and control sizing with shared Workbench design tokens.
+- [ ] Define shared tokens for page padding, toolbar/control height, panel gap, table row density, sidebar sizes, inspector width, and responsive breakpoints.
+- [ ] Keep feature-specific visualization/layout behavior where required (Zone Editor canvas, Packet Viewer byte presentation, Auction House economy surfaces, etc.) while removing feature-specific reinvention of basic UI geometry.
+- [ ] Convert existing `dense-toolbar`, `dense-panel`, tabs, cards, chips, tables, forms, and inspector patterns into documented reusable primitives where their contracts are already stable.
+- [ ] Add a UI/template contract regression: new module pages must use the standard Workbench wrapper/archetype or explicitly opt into a justified custom/fullscreen surface.
+- [ ] Inventory current templates against the archetypes and migrate them systematically by workspace rather than opportunistically when features happen to be edited.
+- [ ] Preserve behavior during migration; visual/layout normalization should not silently change feature semantics, write safety, evidence meaning, or route ownership.
+- [ ] Perform this phase **after the active root-cleanup/bootstrap retirement work** so cross-cutting template refactors do not collide with repository-structure cleanup.
+
+
 # Highest-value next work
 
-1. **Feature Trace real-data validation** — exercise the current closure model against representative NPC/entity, mission, drop-chain, capture/client-build, reference mapping, and migration/package cases. Implement more Feature Trace wiring only when testing exposes a deterministic gap.
-2. **Protocol real-capture validation** — exercise the merged PR #545 lobby/search/map classifier and decoder coverage against representative captures; add semantics only when source/structural evidence proves them and preserve fail-closed unknowns.
-3. **Client Asset Cache expansion** — only for proven asset families where reusing pre-extracted data materially improves interactive tools.
-4. **Broader client/server synchronization and named-system reconstruction** — extend deterministic comparison/validation workflows without weakening provenance rules.
-5. **Auction House live-write validation** — run the remaining restock, Buy, Return, MyISAM purchase, and gil-delivery tests against a real Test server before treating those mutation paths as operationally closed.
+1. **Complete active root cleanup / bootstrap retirement** — finish the bounded compatibility-shim, standalone-script, workspace/resource, and final root-allowlist work tracked in `ROOT_CLEANUP_STATUS.md` without reintroducing import/path coupling.
+2. **Workbench UI Framework / Unified Module Layout** — after root cleanup, introduce the shared page wrapper, canonical page archetypes, design tokens, panel/layout contracts, and template regression described in section 17; then migrate existing modules workspace-by-workspace.
+3. **Feature Trace real-data validation** — exercise the current closure model against representative NPC/entity, mission, drop-chain, capture/client-build, reference mapping, and migration/package cases. Implement more Feature Trace wiring only when testing exposes a deterministic gap.
+4. **Protocol real-capture validation** — exercise the merged PR #545 lobby/search/map classifier and decoder coverage against representative captures; add semantics only when source/structural evidence proves them and preserve fail-closed unknowns.
+5. **Client Asset Cache expansion** — only for proven asset families where reusing pre-extracted data materially improves interactive tools.
+6. **Broader client/server synchronization and named-system reconstruction** — extend deterministic comparison/validation workflows without weakening provenance rules.
+7. **Auction House live-write validation** — run the remaining restock, Buy, Return, MyISAM purchase, and gil-delivery tests against a real Test server before treating those mutation paths as operationally closed.
 
 A future Feature Trace development phase may add **reverse discovery** from a canonical feature/entity/artifact back to Research, Validation, Package, Capture, or reference records that explicitly point to it. Treat that as a distinct phase after real-data testing, not unfinished cleanup.
 
