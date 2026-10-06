@@ -95,14 +95,13 @@ def test_unified_activity_merges_execution_evidence_and_campaign(monkeypatch):
 
 def test_activity_route_ui_and_workspace_are_mounted():
     api = Path("src/workbench/server_admin/auction_house/activity_api.py").read_text(encoding="utf-8")
-    integration = Path("src/workbench/server_admin/auction_house/integration.py").read_text(encoding="utf-8")
     template = Path("gui/templates/auction_house_activity.html").read_text(encoding="utf-8")
     script = Path("gui/static/auction_house_activity.js").read_text(encoding="utf-8")
+    console = Path("gui/static/auction_house_console.js").read_text(encoding="utf-8")
 
     assert '"/auction-house/activity"' in api
     assert '"/auction-house/activity.json"' in api
-    assert '"AH Activity"' in integration
-    assert '"/auction-house/activity"' in integration
+    assert "/auction-house/activity" in console
     assert "aaCharacter" in template and "aaItem" in template and "aaEvidence" in template
     assert "/auction-house/activity.json" in script
 

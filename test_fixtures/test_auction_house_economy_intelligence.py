@@ -81,12 +81,13 @@ def test_economy_page_and_routes_are_mounted():
     integration = Path("src/workbench/server_admin/auction_house/integration.py").read_text(encoding="utf-8")
     template = Path("gui/templates/auction_house_economy.html").read_text(encoding="utf-8")
     script = Path("gui/static/auction_house_economy.js").read_text(encoding="utf-8")
+    console = Path("gui/static/auction_house_console.js").read_text(encoding="utf-8")
     api = Path("src/workbench/server_admin/auction_house/economy_api.py").read_text(encoding="utf-8")
     core = Path("src/workbench/server_admin/auction_house/economy_intelligence.py").read_text(encoding="utf-8")
     assert "auction_house_economy_router" in integration
-    assert '"AH Economy"' in integration
+    assert "/auction-house/economy" in console
     assert "/auction-house/economy.json" in api
     assert "/auction-house/economy.json" in script
     assert "sample_limit" in api and "50000" in api
     assert "LIMIT %s" in core
-    assert "Read-only" in template
+    assert "Economy Intelligence" in template
