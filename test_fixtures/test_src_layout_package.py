@@ -132,6 +132,7 @@ def main() -> None:
         "dat_extractor_bin.py",
         "dat_inspector.py",
         "client_model_catalog.py",
+        "client_model_resolver.py",
     )
     for name in retired:
         assert not (ROOT / name).exists(), name
