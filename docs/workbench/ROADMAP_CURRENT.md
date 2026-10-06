@@ -1,7 +1,7 @@
 # Current Workbench Roadmap
 
 Status: ACTIVE REWORK  
-Last fully reconciled against merged PR and branch history: **2026-10-05**  
+Last fully reconciled against merged PR and branch history: **2026-10-06**  
 Authoritative repository: `sarthax/FFXI-Mission-Toolkit`  
 Authoritative branch: `main`
 
@@ -15,7 +15,7 @@ This is the authoritative current planning and capability inventory for the Miss
 - `[~]` = substantial foundation exists, but the capability is intentionally incomplete or evidence-limited.
 - `[ ]` = planned / not yet implemented.
 - Closed PRs that were superseded, transplanted, or replaced are not roadmap capabilities.
-- As of this reconciliation, Behavior Inspector, Feature Trace provider/closure work, native modern-LSB Nyzul support, and the Research contradiction/evidence deepening slices are merged into `main`; current `main` is the product baseline for these capabilities.
+- As of this reconciliation, Behavior Inspector, Feature Trace provider/closure work, native modern-LSB Nyzul support, Research contradiction/evidence deepening, protocol PR #545, and final Phase D source-layout ownership cleanup are merged into `main`; current `main` is the product baseline for these capabilities.
 
 ---
 
@@ -23,7 +23,7 @@ This is the authoritative current planning and capability inventory for the Miss
 
 - [x] Canonical evidence/provenance model for source, feature, entity, implementation, dependency, capture evidence, findings, migrations, validation, packages, and research output.
 - [x] Feature and Package remain distinct concepts.
-- [x] `src/workbench/...` is the canonical source-layout direction; major editors, capture tooling, validation code, runtime bridges, and related modules have been progressively packaged while thin compatibility imports preserve older entry points.
+- [x] `src/workbench/...` is the canonical implementation layout; mature editors, capture tooling, validation code, runtime bridges, application host, settings store, and related modules are package-owned while thin compatibility imports/launchers preserve older entry points.
 - [x] Source Layout Regression protects packaged imports and editable-install behavior.
 - [x] Shared shell navigation has top-level category menus plus persistent Sections navigation.
 - [x] Global runtime context exposes the active named server environment without leaking credentials.
@@ -241,7 +241,8 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Modular Evidence Search across events/dialogue, protocol, entities, battle/actions, items/KIs, shops, crafting, chat/text, movement/spatial, and environment/world state.
 - [x] Campaign/session manifest import support and message-ID shift handling.
 - [x] Capture spatial JSON routing bug fixed and plot viewer routing guarded by live-app regression.
-- [~] Continue lobby/world/search protocol research and add decoder certainty only where structural evidence supports it; draft PR #545 is the active evidence-backed protocol slice and remains pending real-capture validation.
+- [x] Evidence-backed lobby/search/map stream classification and framing from PR #545 is part of the merged baseline, including fail-closed unknown TCP handling and source-backed handoff evidence.
+- [~] Continue lobby/world/search protocol research only where representative real captures justify additional decoder certainty or semantics.
 
 # 11. Packet / protocol research
 
@@ -250,7 +251,8 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Packetlyzer reference DB improvements including XiPackets-named opcodes and corrected verified field offsets.
 - [x] PCAP/PCAPNG frame parsing and bidirectional TCP reconstruction with gaps/retransmissions/conflicts preserved.
 - [x] Conservative lobby TCP classification/framing/decoder foundation.
-- [~] Draft PR #545 deepens lobby/search/map classification, source-backed search framing/crypto, strict same-flow sequencing, non-AH response parsing, and exact UDP map handoff; it remains intentionally unmerged pending real-capture validation and therefore is not yet the `main` baseline.
+- [x] PR #545 merged evidence-backed lobby/search/map classification, source-backed search framing/crypto evidence, strict same-flow sequencing, non-AH response parsing, exact UDP map handoff, and conservative endpoint/session diagnostics without guessing unknown protocol semantics.
+- [~] Validate and extend decoder coverage against representative real captures; preserve unknown/ambiguous classifications when evidence is insufficient.
 
 # 12. Video / OCR / temporal evidence
 
@@ -280,8 +282,8 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Validation runs tied back to canonical evidence.
 - [x] Feature Trace can navigate explicit Research/Validation/Package feature/entity/artifact references back to exact canonical nodes without creating graph edges.
 - [x] Source/target conversion support where deterministic and audited.
-- [x] Phase D packaging has moved many mature root modules into logical `src/workbench/...` homes while preserving compatibility imports.
-- [~] Final Phase D source-layout cleanup is intentionally deferred until draft protocol PR #545 settles. Then briefly freeze the shared GUI/route surface, perform a fresh root-Python/source-layout inventory, and finish only low-risk bounded migrations with compatibility and regression coverage.
+- [x] Phase D packaging moved mature root implementations into logical `src/workbench/...` homes while preserving intentional compatibility imports/launchers.
+- [x] Final Phase D source-layout ownership cleanup is complete: PR #549 packaged the settings store, PR #552 packaged the application host, root `settings.py`/`gui_server.py` are thin compatibility surfaces, and Workbench/Src Layout/Character Editor regressions cover the final boundary. Compatibility-launcher retirement is a separate future bootstrap/distribution decision, not unfinished Phase D work.
 
 # 15. CI / regression safety
 
@@ -293,6 +295,7 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Character Editor progression regressions cover modern LSB and legacy DSP/Topaz transition-bundle, projected-result, assessment, and UI contracts.
 - [x] Behavior Inspector regressions cover extraction, complex state/event flows, callbacks, shared helpers, Clarified Flow/Plain View projection, backend/UI contract parity, stage/event lifecycle contracts, and source-layout service boundaries.
 - [x] Feature Trace regressions cover deterministic provider relationships, fail-closed ambiguity, focused modes, executable scenario contracts, NM drop/item traversal, wiki→implementation closure, capture→client-build closure, and provider→canonical feature/entity/artifact closure without synthetic canonical edges.
+- [x] Application-host/settings changes are included in Character Editor/server-admin regression path coverage after the final Phase D migration.
 - [x] Documentation reconciliation should occur after major multi-PR feature batches rather than allowing README/roadmap drift to accumulate again.
 
 ---
@@ -334,12 +337,14 @@ Operator summary: `AUCTION_HOUSE_CAPABILITY_STATUS.md`. Economy detail: `AUCTION
 # Highest-value next work
 
 1. **Feature Trace real-data validation** — exercise the current closure model against representative NPC/entity, mission, drop-chain, capture/client-build, reference mapping, and migration/package cases. Implement more Feature Trace wiring only when testing exposes a deterministic gap.
-2. **Capture/protocol PR #545 validation and closeout** — validate the current evidence-backed lobby/search/map work against representative real captures, preserve fail-closed unknowns, then reconcile/merge only if the evidence holds.
+2. **Protocol real-capture validation** — exercise the merged PR #545 lobby/search/map classifier and decoder coverage against representative captures; add semantics only when source/structural evidence proves them and preserve fail-closed unknowns.
 3. **Client Asset Cache expansion** — only for proven asset families where reusing pre-extracted data materially improves interactive tools.
 4. **Broader client/server synchronization and named-system reconstruction** — extend deterministic comparison/validation workflows without weakening provenance rules.
-5. **Final Phase D source-layout cleanup** — after #545 settles, briefly freeze shared GUI/routes, inventory remaining root Python/source-layout debt, and finish bounded low-risk moves with compatibility and regression coverage.
+5. **Auction House live-write validation** — run the remaining restock, Buy, Return, MyISAM purchase, and gil-delivery tests against a real Test server before treating those mutation paths as operationally closed.
 
 A future Feature Trace development phase may add **reverse discovery** from a canonical feature/entity/artifact back to Research, Validation, Package, Capture, or reference records that explicitly point to it. Treat that as a distinct phase after real-data testing, not unfinished cleanup.
+
+A future source-layout/bootstrap phase may retire root compatibility launchers and the root `workbench` bootstrap after every supported setup/start/CI path installs the package or explicitly uses `src`. That is intentionally separate from completed Phase D implementation ownership.
 
 # Documentation map
 
@@ -351,6 +356,7 @@ A future Feature Trace development phase may add **reverse discovery** from a ca
 - `docs/workbench/BEHAVIOR_FEATURE_TRACE_GUIDE.md` — combined Behavior Inspector / Feature Trace workflow, evidence boundaries, and October 4 implementation summary.
 - `docs/workbench/FEATURE_TRACE_BRANCH_RECONCILIATION_2026-10-04.md` — branch-level Feature Trace reconciliation and drop-chain transplant record.
 - `docs/workbench/FEATURE_TRACE_CLOSEOUT_2026-10-04.md` — current Feature Trace closure matrix, fail-closed rules, regression coverage, and testing boundary.
+- `docs/workbench/PHASE_D_ROOT_CLEANUP_STATUS.md` — final Phase D source-layout ownership closeout and remaining compatibility/bootstrap boundary.
 - `docs/guides/SETUP.md` — current user setup and named environment configuration.
 - `docs/guides/TOOLING_OVERVIEW.md` — living tooling/component overview.
 - `docs/workbench/AUCTION_HOUSE_CAPABILITY_STATUS.md` — Auction House operator summary.
