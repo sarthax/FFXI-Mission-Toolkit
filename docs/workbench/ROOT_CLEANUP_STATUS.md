@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `53d5f92ee6a7ee01174426866235dd39c9d1fcd8` after PR #573  
-Current work branch: `cleanup/client-model-resolver-phase3c8`  
+Current merged baseline: `main` at `9a076ce8d37e770abb1272c96cff35a626c0d71b` after PR #574  
+Current work branch: `cleanup/client-overview-phase3c9`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -63,25 +63,26 @@ reset_install.bat
 - PR #570 — retired Client binary analyze/index/diff root CLIs and migrated active docs; Workbench #2743 + Src Layout #622 green.
 - PR #571 — retired `dat_extractor_bin.py`; Workbench #2744 + Src Layout #623 green.
 - PR #572 — retired `dat_inspector.py`; Workbench #2745 + Src Layout #624 green.
-- PR #573 — retired `client_model_catalog.py`, migrated regressions to the canonical catalog, and added external-CWD Src Layout coverage; Workbench #2746 + Src Layout #625 green.
+- PR #573 — retired `client_model_catalog.py`; Workbench #2746 + Src Layout #625 green.
+- PR #574 — retired `client_model_resolver.py`; resolver callers now use the packaged model service and Zone Editor compatibility remains package-internal.
 
 ## Current slice
 
-### Slice 3c8 — retire Client model resolver root wrapper
+### Slice 3c9 — retire Client overview root wrapper
 
-Status: IN PROGRESS on `cleanup/client-model-resolver-phase3c8`.
+Status: IN PROGRESS on `cleanup/client-overview-phase3c9`.
 
 Changes on this branch:
-- [x] removed root `client_model_resolver.py`.
-- [x] `test_client_model_resolver.py` now uses `workbench.client.models.resolver` directly and requires the root wrapper to remain absent.
-- [x] stale static source checks in that regression now point to packaged model viewer and app-host ownership.
-- [x] Source Layout retired-root guard includes `client_model_resolver.py`.
-- [x] Zone Editor compatibility remains preserved because `workbench.editors.zone.editor` already injects the canonical resolver into `sys.modules["client_model_resolver"]` while executing the mature implementation.
+- [x] removed root `client_overview.py`.
+- [x] `test_client_overview_package_migration.py` now imports `workbench.client.snapshots.overview` directly.
+- [x] regression requires the retired root wrapper to remain absent.
+- [x] external-CWD import provenance remains covered.
+- [x] Client Overview GUI route/template behavior is unaffected because those callers already use packaged app/snapshot services.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by resolver wrapper retirement.
+- [ ] Fix only regressions caused by Client Overview wrapper retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
@@ -94,7 +95,7 @@ Before merge:
 ## Remaining slices
 
 ### Compatibility-shim families
-- remaining client/model wrappers (`client_overview.py`, model viewer/schedule/table aliases, etc.) after caller audits;
+- remaining Client/model wrappers (model viewer/schedule/table aliases, `binary_inspector.py`, etc.) after caller audits;
 - remaining indexing/server-analysis wrappers;
 - capture/protocol wrappers;
 - spatial/domain/runtime wrappers;
