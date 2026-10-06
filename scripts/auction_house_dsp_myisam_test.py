@@ -1,4 +1,4 @@
-"""One-shot local operator entry point for DSP Test MyISAM player listing.
+"""One-shot local operator entry point for DSP Test MyISAM player listing and purchase.
 
 Run only against a disposable named DSP Test profile after setting both Auction House
 Test-write feature flags. This intentionally does not expose an HTTP mutation route.
@@ -10,6 +10,10 @@ import json
 
 from workbench.runtime.legacy_settings import get_active_server_identity, get_active_server_root
 from workbench.server_admin.auction_house.dsp_myisam_listing import dsp_myisam_listing_readiness
+from workbench.server_admin.auction_house.dsp_myisam_purchase import (
+    dsp_myisam_purchase_readiness,
+    execute_dsp_myisam_test_player_purchase,
+)
 from workbench.server_admin.auction_house.dsp_myisam_runner import (
     execute_dsp_myisam_test_player_listing_with_connection_guard,
 )
@@ -23,6 +27,9 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--inventory-slot", type=int, default=0)
     parser.add_argument("--item-id", type=int, default=0)
     parser.add_argument("--price", type=int, default=0)
+    parser.add_argument("--purchase", action="store_true", help="buy an existing listing (needs --auction-id, --buyer-id, --price)")
+    parser.add_argument("--auction-id", type=int, default=0)
+    parser.add_argument("--buyer-id", type=int, default=0)
     parser.add_argument("--stack", action="store_true")
     parser.add_argument("--confirmation", default="", help="exact active DSP Test profile name")
     return parser
@@ -39,6 +46,16 @@ def main() -> int:
         if args.readiness:
             result = dsp_myisam_listing_readiness(service=ctx.service, environment=environment)
             result["server_root"] = str(root)
+            result["purchase"] = dsp_myisam_purchase_readiness(service=ctx.service, environment=environment)
+        elif args.purchase:
+            result = execute_dsp_myisam_test_player_purchase(
+                service=ctx.service,
+                environment=environment,
+                auction_id=args.auction_id,
+                expected_price=args.price,
+                buyer_id=args.buyer_id,
+                confirmation=args.confirmation,
+            )
         else:
             result = execute_dsp_myisam_test_player_listing_with_connection_guard(
                 service=ctx.service,

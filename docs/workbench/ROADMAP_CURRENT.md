@@ -1,7 +1,7 @@
 # Current Workbench Roadmap
 
 Status: ACTIVE REWORK  
-Last fully reconciled against merged PR and branch history: **2026-10-04**  
+Last fully reconciled against merged PR and branch history: **2026-10-04** (Auction House section 16 updated 2026-10-05)  
 Authoritative repository: `sarthax/FFXI-Mission-Toolkit`  
 Authoritative branch: `main`
 
@@ -294,6 +294,40 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 
 ---
 
+# 16. Auction House administration and Economy BI
+
+Operator summary: `AUCTION_HOUSE_CAPABILITY_STATUS.md`. Economy detail: `AUCTION_HOUSE_ECONOMY_INTELLIGENCE.md`.
+
+- [x] Single hub at `/auction-house` (Economy, Items, Sellers, Restock, Inbox, plus Seeder/Presets/Activity/Cleanup/Rewards); legacy page URLs forward to it.
+- [x] Write flags are settings-backed (Settings -> Auction House) with an env-var override; the Help page lists every requirement and the blocked code it produces.
+- [x] Shared action drawer for Buy/Return/Restock/Inbox with typed profile-name confirmation, backdrop, and a Close button that is not hidden under the site header.
+- [x] Inbox delivery supports gil as well as items.
+- [x] Economy Intelligence: KPI strip with prior-period deltas and sparklines, Market activity chart, Price movers with thin-evidence flagging, "Where to look" queues (needs supply, oversupplied, stagnant, seller concentration), category sell-through/time-to-sale, player and account lookup.
+- [x] Daily snapshots of supply and sell-through in the toolkit SQLite DB (background loop plus "Record now"); Supply history chart.
+- [x] Baselines: each snapshot metric compared with the median of its previous snapshots (usual range = median +/- 2 MAD); reports "building" until 7 earlier snapshots exist.
+- [x] Admin-impact overlay: completed toolkit actions (seed, restock, Admin Buy, return, rewards, player listing/purchase) marked on the activity chart and listed with item median price 7 days before/after. Pointer, not proof.
+- [x] Test-data seeding in the Seeder tab: history, scenarios (monopolised/stagnant/flooded), clear. Test profile only, gated, confined to fake sellers 990000-990024.
+- [x] Items page: Recent Sales stacked above uncapped Active listings, price-markup chip vs recent-sale median, listing filters (text/price/type/markup) that scope bulk actions, active seller/item links with Back.
+- [x] Supply/sell-through deltas on the Economy supply card (vs snapshot ~7d earlier). Sellers page: markup chip on listings, 30-day sales, gil, sell-through and median time-to-sell per seller, Recent sales stacked above uncapped Active listings, filters, item links with Back.
+- [x] Economy anomaly detection (Anomalies card): price shifts, volume spikes, over/underpriced listings, seller listing floods, each against its own history (median/MAD). Restock and Inbox share a multi-character picker (browse, type name/id, remove chips); Restock spreads listings across several sellers.
+- [x] Synthetic category seeding consolidated into Restock ("Add a whole category", multi-seller, same preview/confirm path); the Seeder panel now points there. Player-backed listing and Market history stay in the Seeder.
+- [x] Presets: 18 built-in Restock/Cleanup presets, editable in a native Presets tab with Edit/Back; Restock uses a configurable default seller (AHRestock, synthetic id in 990000-990999) when no character is picked.
+- [x] Native Cleanup tab with seller/item search pickers, preset loading and an empty-state hint showing oldest listing age.
+- [x] Items status toggle (Active / Unlisted / All) backed by `/auction-house/console/catalog.json`; unlisted items show sales history.
+- [x] Buyers tab (`buyers.json`, `buyer.json`; `buyer_stats.py`, unit-tested): per-buyer spend, overpaid purchases vs item median (>=50%), gil refund of the overpay via the rewards flow. Buyers keyed by name (DSP sold rows have no buyer id); refund needs a `chars` row.
+- [x] "Buy as..." (player purchase) folded into Items/Sellers listing rows; Listing Manager kept only as a legacy view.
+- [x] Fixed the confirm drawer (missing `dwConfName` element) that blocked Buy/Return/Restock/refund drawers from opening.
+- [ ] KPI prior-period deltas for supply and sell-through (needs more than one day of snapshots).
+- [ ] Anomaly detection and forecasting (deliberately deferred until snapshot history exists).
+- [ ] Live write tests for restock, Buy, Return, MyISAM purchase and gil delivery on a real Test server.
+- [ ] "All characters on this account" filter.
+
+---
+
+- [x] Arbitrage tab (underpriced listings, post-for-profit, vendor loops) with a vendor-ratio Cleanup rule and two built-in presets; restock presets accept include/exclude item lists; More tools regrouped; Inbox campaigns now record the chosen template.
+- [x] Synth & Crafting module at `/synth` (`server_admin/synth`): schema-adaptive over `synth_recipes` for DSP/Topaz/LSB, ingredient availability + missing report, audit, SQL create/edit/delete preview per flavor, export/port, gated Test-write apply.
+- [ ] Open: vendor-loop data exploit (shop prices below BaseSell) is documented but not fixed; synth audit cannot see gathering/fishing/quest sources.
+
 # Highest-value next work
 
 1. **Feature Trace real-data validation** — exercise the current closure model against representative NPC/entity, mission, drop-chain, capture/client-build, reference mapping, and migration/package cases. Implement more Feature Trace wiring only when testing exposes a deterministic gap.
@@ -317,5 +351,6 @@ A future Feature Trace development phase may add **reverse discovery** from a ca
 - `docs/workbench/FEATURE_TRACE_CLOSEOUT_2026-10-04.md` — current Feature Trace closure matrix, fail-closed rules, regression coverage, and testing boundary.
 - `docs/guides/SETUP.md` — current user setup and named environment configuration.
 - `docs/guides/TOOLING_OVERVIEW.md` — living tooling/component overview.
+- `docs/workbench/AUCTION_HOUSE_CAPABILITY_STATUS.md` — Auction House operator summary.
 - `docs/workbench/ROADMAP.md` — historical implementation ledger.
 - `docs/workbench/AUDIT_STATUS.md` — historical implementation/audit notes.

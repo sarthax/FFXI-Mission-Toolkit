@@ -90,7 +90,14 @@ def _preview_payload_with_policy(preview) -> dict:
 @router.get("", response_class=HTMLResponse)
 def auction_house_page(request: Request):
     _sync_host_template_globals()
-    return templates.TemplateResponse(request=request, name="auction_house.html", context={"title": "Auction House Admin"})
+    return templates.TemplateResponse(request=request, name="auction_house_console.html", context={"title": "Auction House"})
+
+
+@router.get("/overview", response_class=HTMLResponse)
+def auction_house_overview_page(request: Request):
+    """Item history, write readiness, economy health and action previews (embedded in the hub as a tool)."""
+    _sync_host_template_globals()
+    return templates.TemplateResponse(request=request, name="auction_house.html", context={"title": "Auction House Readiness & History"})
 
 
 @router.get("/status.json")

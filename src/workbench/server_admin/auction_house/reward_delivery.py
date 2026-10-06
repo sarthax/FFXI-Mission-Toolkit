@@ -80,10 +80,22 @@ def _resolve_recipients(service, *, mode: str, character_ids: list[int] | None) 
     return rows
 
 
+GIL_ITEM_ID = 65535
+GIL_MAX_PER_ROW = 999_999_999
+
+
 def _resolve_items(service, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     normalized = normalize_items(items)
     resolved: list[dict[str, Any]] = []
     for entry in normalized:
+        if entry["item_id"] == GIL_ITEM_ID:
+            # DSP maps itemid 65535 to CItemCurrency; charutils::AddItem credits it as gil on take.
+            quantity = int(entry["quantity"])
+            if quantity > GIL_MAX_PER_ROW:
+                raise LegacyTestExecutionBlocked(f"Gil amount {quantity} exceeds the {GIL_MAX_PER_ROW} per-row limit")
+            resolved.append({"item_id": GIL_ITEM_ID, "item_name": "Gil", "quantity": quantity,
+                             "stack_size": GIL_MAX_PER_ROW})
+            continue
         item = service.item_snapshot(entry["item_id"])
         if not item:
             raise LegacyTestExecutionBlocked(f"Reward item {entry['item_id']} does not exist")

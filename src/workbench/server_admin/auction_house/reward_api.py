@@ -39,7 +39,8 @@ def _items(payload: dict) -> tuple[list[dict], dict | None]:
     template_id = str(payload.get("template_id") or "").strip()
     if template_id:
         template = get_reward_template(template_id)
-        return list(template["items"]), template
+        # items sent with the request win (the operator may have edited a loaded template); the template is kept for history
+        return list(payload.get("items") or template["items"]), template
     return list(payload.get("items") or []), None
 
 

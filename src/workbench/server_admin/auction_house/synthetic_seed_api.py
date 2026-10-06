@@ -75,3 +75,41 @@ def synthetic_category_seed(payload: dict = Body(...)):
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=503, detail=str(exc))
+
+
+def _market_args(payload: dict) -> dict:
+    return dict(mode=str(payload.get("mode") or ""), items=int(payload.get("items") or 60),
+                days=int(payload.get("days") or 90), seed=int(payload.get("seed") or 1234))
+
+
+@router.post("/market-seed-preview.json")
+def market_seed_preview(payload: dict = Body(...)):
+    from .market_seed import preview_market_seed
+    try:
+        with _context() as ctx:
+            return JSONResponse(preview_market_seed(ctx.service, **_market_args(payload)))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@router.post("/market-seed.json")
+def market_seed(payload: dict = Body(...)):
+    from .market_seed import execute_market_seed
+    try:
+        environment = get_active_server_identity()
+        with _context() as ctx:
+            result = execute_market_seed(ctx.service, environment, confirmation=str(payload.get("confirmation") or ""),
+                                         **_market_args(payload))
+        try:
+            record_executor_result(environment=environment, result=result, request_payload=payload, operation="market_seed")
+        except Exception:
+            pass
+        return JSONResponse(result)
+    except LegacyTestExecutionBlocked as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))

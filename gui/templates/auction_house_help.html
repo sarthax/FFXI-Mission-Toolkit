@@ -19,6 +19,48 @@
     </tbody></table>
   </section>
 
+  <section class="panel" id="enable-writes">
+    <h2>Reading the Economy page</h2>
+    <ul>
+      <li><strong>Window</strong> sets the time range for every number. Arrows and percentages compare it with the same-length period just before.</li>
+      <li><strong>Market activity</strong>: daily bars; switch between Sales, New listings and Gil volume. Orange bars mark days with admin actions.</li>
+      <li><strong>Supply history</strong>: the game server keeps no history of how much was listed, so the toolkit saves a snapshot once a day. A trend appears from the second day. <em>Record now</em> saves today's immediately (toolkit database only). Under the chart, <em>baselines</em> say whether each figure is Normal, Above usual or Below usual compared with its previous snapshots; they say "building" until 7 days exist.</li>
+      <li><strong>Admin actions</strong>: seeds, restocks, Admin Buys, returns and rewards done through this toolkit, with the item's median sale price 7 days before and after. Other things change at the same time, so treat it as a pointer, not proof.</li>
+      <li><strong>Price movers</strong>: items whose median sale price changed most. Items with very few sales are hidden unless you tick "include thin evidence" (shown with ⚠).</li>
+      <li><strong>Where to look</strong>: Needs supply (selling but nearly nothing listed), Oversupplied, Stagnant (old listings, no sales) and Seller concentration (one seller holds most of the supply). Hover a card subtitle for its exact rule.</li>
+    </ul>
+    <h2>Seeding test data (Seeder tab)</h2>
+    <p>The <strong>Seeder</strong> tab has a "Market history &amp; scenarios" panel. It fills the Economy page with test sales and listings from 25 fake sellers (Tst*), so Clear only ever removes those rows. Choose <em>Seed history</em>, <em>Add scenarios</em> or <em>Clear</em>, press Preview, then type the profile name and Run. It needs the same write settings as every other test write (below).</p>
+    <h2>Anomalies and character pickers</h2>
+    <p>The Economy page Anomalies card flags items whose recent median sale price or sales volume departs from their own 60-day history, listings priced above 3x or below 0.4x the item median sale, and sellers posting far more than usual. Items with fewer than 5 earlier sales are never judged. In Restock and Inbox, pick characters by typing a name or ID, or use Browse; Restock spreads listings round-robin across every seller chosen, and can add a whole category (up to 50 items; price defaults to each item's average sale). This replaces the Seeder's category seeding.</p>
+    <h2>Items and Sellers pages</h2>
+    <p>Picking an item shows <b>Recent sales</b> (newest 50, scrollable) above every <b>Active listing</b> (no row cap). The <b>Markup</b> chip compares each asking price with the median of recent sales of the same type (single or stack): red above +50%, amber +15% to +50%, grey within &plusmn;15%, green below &minus;15% (underpriced). Use the filter row to narrow by name, price range, type or markup; <b>Buy all / Return all</b> then act only on the filtered rows and say "(filtered)". Seller names jump to the Sellers tab and item names jump back to Items; <b>&larr; Back</b> returns where you came from.</p>
+    <p>A seller shows the same filters plus their last 30 days: items sold, gil earned, sell-through (sold &divide; sold + still listed) and median hours to sell, with their recent sales listed above their active listings. Seller listings carry the same <b>Markup</b> chip, measured against the median 30-day sale price of that item across all sellers (&mdash; if it has not sold in that window).</p>
+    <p>On the Economy page, the Supply history card shows four tiles &mdash; active listings, asking gil, sell-through and 7-day sales &mdash; each compared with the snapshot about 7 days earlier (sell-through in percentage points). With a shorter history the oldest snapshot is used and the span is stated; with one snapshot the tiles say they need a second.</p>
+    <h2>Items status, Buyers, Cleanup and Presets</h2>
+    <p><b>Items</b> has a status toggle: <em>Active</em> (listed now), <em>Unlisted</em> (Auction House items with no active listing) and <em>All</em>. Unlisted and All load the full item catalog and add Sold and Avg sale columns, so you can browse everything that could be on the AH. Unlisted items can still be restocked from the item detail.</p>
+    <p><b>Buyers</b> lists who bought what over 7, 30 or 90 days. Sold rows on this server record only the buyer's name, so buyers are matched by name. Open a buyer to see top items, top sellers and each purchase with its median sale price and markup; a purchase 50% or more above the median counts as overpaid. <em>Refund</em> sends the overpaid difference as gil to the buyer's delivery box through the same guarded rewards flow as Inbox (typed confirmation required). The sale itself is not reversed, and the buyer must have a character record on the server.</p>
+    <p><b>Buy as&hellip;</b> on any listing row in Items or Sellers buys that listing for a chosen character: search the character, Preview, then confirm. The buyer must be offline with enough gil and a free Inventory slot.</p>
+    <p><b>Cleanup</b> finds listings by seller (search by name or ID, including AH-only fake sellers), item, category, price range and minimum age, then Admin Buys or Returns them. An empty result shows how old your oldest active listing is, so you can lower the age rule. <b>Presets</b> stores reusable Restock and Cleanup rules; Restock falls back to the default seller (AHRestock, editable) when no character is chosen.</p>
+    <p><b>Arbitrage</b> compares listings with NPC prices: <em>Underpriced listings</em> (asking below what an NPC pays), <em>Post for profit</em> (vendor-sold items worth more on the AH) and <em>Vendor loops</em> (an NPC sells an item for less than any NPC pays, a data exploit). &ldquo;Clean up via Cleanup rules&rdquo; loads the <em>max vendor ratio</em> rule so it can be previewed and run with a preset. Restock presets can also include or exclude specific items.</p>
+    <p><b>Synth &amp; Crafting</b> (sidebar, /synth) browses, checks, edits and ports the <code>synth_recipes</code> table on DSP, Topaz and LSB layouts. The Audit tab flags recipes whose ingredients have no vendor, guild shop, mob drop or craftable source in the data (gathered, fished and quest items show here too). Edits show the exact SQL for each server layout; applying needs the same Test write gate as the AH.</p>
+    <h2>Enabling writes: what you need to set up</h2>
+    <p>Every write (Admin Buy/Return, restock, price change, cleanup, Inbox delivery of items or gil) is blocked until <strong>all</strong> of these are true. The blocked message lists the failed ones by code.</p>
+    <table>
+      <thead><tr><th>Requirement</th><th>Where to set it</th><th>Blocked code</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Auction House test writes enabled</strong></td><td><a href="/settings#auction-house-settings">Settings &rarr; Auction House</a> (tick the first box and Save). Alternative: environment variable <code>FFXI_MISSION_TOOLKIT_AH_LEGACY_TEST_WRITES=1</code>, which wins if set.</td><td><code>legacy_test_write_feature_disabled</code></td></tr>
+        <tr><td><strong>Active server profile is a DSP or Topaz profile classified &ldquo;Test&rdquo;</strong>, enabled and active</td><td><a href="/settings#server-environments">Settings &rarr; Server environments</a></td><td><code>environment_not_active</code>, <code>environment_disabled</code>, <code>environment_not_test</code>, <code>lineage_not_legacy_supported</code></td></tr>
+        <tr><td><strong>Typed confirmation</strong> equal to the active profile name</td><td>Type it in the confirmation box of the action drawer each time (the active profile name is shown in the page header chip).</td><td><code>test_confirmation_required</code></td></tr>
+        <tr><td>DSP/Topaz-compatible AH schema</td><td>Automatic: detected from the database.</td><td><code>schema_not_legacy_compatible</code></td></tr>
+        <tr><td>Inbox delivery needs a transactional <code>delivery_box</code> table and the <code>delivery_box_insert</code> trigger</td><td>Database side (see Readiness &amp; item history).</td><td>&ldquo;Reward delivery requires&hellip;&rdquo;</td></tr>
+        <tr><td>Player-backed listing / player Buy on MyISAM AH tables only</td><td><a href="/settings#auction-house-settings">Settings &rarr; Auction House</a> second box, or <code>FFXI_MISSION_TOOLKIT_AH_DSP_MYISAM_TEST_WRITES=1</code>.</td><td>MyISAM readiness blockers</td></tr>
+        <tr><td>Optional: preview validity window (default 300&nbsp;s)</td><td>Settings &rarr; Auction House, or <code>FFXI_MISSION_TOOLKIT_AH_PREVIEW_TTL_SECONDS</code></td><td>stale / expired preview</td></tr>
+      </tbody>
+    </table>
+    <p>Settings-page values apply immediately, no restart. An environment variable, if present on the machine running the toolkit, overrides the Settings page; the Settings page shows which source is in effect.</p>
+  </section>
+
   <section class="panel">
     <h2>Write guardrails</h2>
     <p>DSP/Topaz Test writes require the existing Auction House Test-write feature flag, an active environment classified as <strong>Test</strong>, compatible discovered schema, and an exact typed confirmation equal to the active profile name. Preview-bound operations also revalidate live state immediately before mutation and use replay protection where applicable.</p>

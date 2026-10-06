@@ -1,6 +1,12 @@
 """Preview-bound rule-driven cleanup for DSP/Topaz Auction House administration."""
 from __future__ import annotations
 
+from .schema import sellable_clause
+
+_AI, _AIB = "i", "ib"
+
+_bt = lambda c: f"`{c}`"
+
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 import json
@@ -22,6 +28,7 @@ class CleanupCriteria:
     min_price: int | None = None
     max_price: int | None = None
     listed_before: int | None = None
+    max_vendor_ratio: float | None = None   # asking price below this fraction of the NPC buy-back (BaseSell) price
     limit: int = 100
 
     def normalized(self) -> "CleanupCriteria":
@@ -30,6 +37,9 @@ class CleanupCriteria:
         max_price = None if self.max_price is None else max(0, int(self.max_price))
         if min_price is not None and max_price is not None and min_price > max_price:
             raise LegacyTestExecutionBlocked("min_price cannot exceed max_price")
+        ratio = None if self.max_vendor_ratio in (None, "") else float(self.max_vendor_ratio)
+        if ratio is not None and ratio <= 0:
+            raise LegacyTestExecutionBlocked("max_vendor_ratio must be positive")
         return CleanupCriteria(
             seller_id=None if self.seller_id is None else int(self.seller_id),
             seller_name=(str(self.seller_name).strip() or None) if self.seller_name is not None else None,
@@ -38,6 +48,7 @@ class CleanupCriteria:
             min_price=min_price,
             max_price=max_price,
             listed_before=None if self.listed_before is None else int(self.listed_before),
+            max_vendor_ratio=ratio,
             limit=limit,
         )
 
@@ -62,6 +73,7 @@ def criteria_from_payload(payload: dict[str, Any], *, now: int | None = None) ->
         min_price=None if payload.get("min_price") in (None, "") else int(payload["min_price"]),
         max_price=None if payload.get("max_price") in (None, "") else int(payload["max_price"]),
         listed_before=None if listed_before in (None, "") else int(listed_before),
+        max_vendor_ratio=None if payload.get("max_vendor_ratio") in (None, "") else float(payload["max_vendor_ratio"]),
         limit=int(payload.get("limit") or _MAX_TARGETS),
     ).normalized()
 
@@ -101,13 +113,19 @@ def _select(service, criteria: CleanupCriteria) -> list[dict[str, Any]]:
         clauses.append(f"ah.`{a['listed_at']}`<=%s")
         params.append(c.listed_before)
 
+    if c.max_vendor_ratio is not None:
+        qty = (f"(CASE WHEN ah.`{a['stack']}`>0 THEN GREATEST(ib.`{i['stack_size']}`,1) ELSE 1 END)"
+               if a.get("stack") and i.get("stack_size") else "1")
+        clauses.append(f"ib.`BaseSell`>0 AND ah.`{a['asking_price']}` < ib.`BaseSell` * {qty} * %s")
+        params.append(c.max_vendor_ratio)
+
     seller_name_expr = f"ah.`{a['seller_name']}`" if a.get("seller_name") else "NULL"
     sql = (
         "SELECT "
         f"ah.`{a['id']}`,ah.`{a['item_id']}`,ib.`{i['name']}`,ib.`{i['ah_category']}`,"
         f"ah.`{a['seller_id']}`,{seller_name_expr},ah.`{a['listed_at']}`,ah.`{a['asking_price']}` "
         "FROM `auction_house` ah JOIN `item_basic` ib "
-        f"ON ib.`{i['item_id']}`=ah.`{a['item_id']}` WHERE " + " AND ".join(clauses) +
+        f"ON ib.`{i['item_id']}`=ah.`{a['item_id']}` AND {sellable_clause(i, _bt, _AIB)} WHERE " + " AND ".join(clauses) +
         f" ORDER BY ah.`{a['listed_at']}` ASC,ah.`{a['id']}` ASC LIMIT %s"
     )
     params.append(c.limit)

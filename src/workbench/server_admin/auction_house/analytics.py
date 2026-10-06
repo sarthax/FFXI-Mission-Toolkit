@@ -1,6 +1,10 @@
 """Read-only catalog and economy analytics layered over AuctionHouseService."""
 from __future__ import annotations
 
+from .schema import sellable_clause
+
+_AI, _AIB = "i", "ib"
+
 from datetime import datetime, timezone
 from typing import Any
 
@@ -12,7 +16,7 @@ def search_items(service: AuctionHouseService, query: str = "", *, category_id: 
     i, a = service.schema.item_columns, service.schema.auction_columns
     qn = service.q
     safe_limit = max(1, min(int(limit), 500))
-    where = [f"i.{qn(i['ah_category'])} > 0"]
+    where = [sellable_clause(i, qn, "i")]
     params: list[Any] = []
     term = str(query or "").strip()
     if term:
@@ -78,7 +82,7 @@ def price_trends(service: AuctionHouseService, item_id: int, *, days: int = 30) 
             f"SELECT DATE(FROM_UNIXTIME(ah.{qn(a['sold_at'])})),ah.{qn(a['stack'])},COUNT(*),"
             f"AVG(ah.{qn(a['sale_price'])}),MIN(ah.{qn(a['sale_price'])}),MAX(ah.{qn(a['sale_price'])}),"
             f"AVG({unit_expr}) FROM `auction_house` ah JOIN `item_basic` i "
-            f"ON i.{qn(i['item_id'])}=ah.{qn(a['item_id'])} "
+            f"ON i.{qn(i['item_id'])}=ah.{qn(a['item_id'])} AND {sellable_clause(i, qn, _AI)} "
             f"WHERE ah.{qn(a['item_id'])}=%s AND ah.{qn(a['sold_at'])}>=%s GROUP BY 1,2 ORDER BY 1,2",
             (int(item_id), cutoff),
         )

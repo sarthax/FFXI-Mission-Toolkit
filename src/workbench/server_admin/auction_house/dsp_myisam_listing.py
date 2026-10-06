@@ -22,7 +22,14 @@ _MYISAM_FLAG = "FFXI_MISSION_TOOLKIT_AH_DSP_MYISAM_TEST_WRITES"
 
 
 def dsp_myisam_test_writes_enabled() -> bool:
-    return str(os.getenv(_MYISAM_FLAG, "")).strip().lower() in {"1", "true", "yes", "on"}
+    env = str(os.getenv(_MYISAM_FLAG, "")).strip()
+    if env:
+        return env.lower() in {"1", "true", "yes", "on"}
+    try:
+        import settings as _settings
+        return _settings.get_ah_flag("ah_dsp_myisam_test_writes").lower() in {"1", "true", "yes", "on"}
+    except Exception:
+        return False
 
 
 def dsp_myisam_listing_readiness(*, service, environment: dict[str, Any]) -> dict[str, Any]:

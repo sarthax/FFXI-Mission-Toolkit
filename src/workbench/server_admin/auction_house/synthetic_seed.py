@@ -56,7 +56,7 @@ def _category_items(service, *, category_id: int, stack_mode: str, copies_per_it
     try:
         cursor.execute(
             f"SELECT `{i['item_id']}`,`{i['name']}`,`{i['stack_size']}`,`{i['ah_category']}` "
-            f"FROM `item_basic` WHERE `{i['ah_category']}`=%s ORDER BY `{i['item_id']}` ASC LIMIT %s",
+            f"FROM `item_basic` WHERE `{i['ah_category']}`=%s AND ({i.get('flags') and '`'+i['flags']+'` & 64' or '0'})=0 ORDER BY `{i['item_id']}` ASC LIMIT %s",
             (category_id, limit_items),
         )
         rows = list(cursor.fetchall() or [])

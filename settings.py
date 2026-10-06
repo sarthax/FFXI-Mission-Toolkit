@@ -43,7 +43,44 @@ DEFAULTS = {
     "backup_retention_count": "10",
     "llm_base_url": "http://127.0.0.1:3000",
     "llm_default_model": "qwen2.5-coder:7b",
+    # Auction House write gates. Each can also be forced by an environment variable of the same
+    # purpose (the variable wins when set); see AH_FLAGS and get_ah_flag().
+    "ah_legacy_test_writes": "0",       # 1 = allow guarded DSP/Topaz Test-environment AH writes
+    "ah_dsp_myisam_test_writes": "0",   # 1 = allow DSP MyISAM listing/purchase test writes
+    "ah_preview_ttl_seconds": "300",    # how long an AH preview stays valid (30-86400)
 }
+
+# setting key -> environment variable that overrides it
+AH_FLAGS = {
+    "ah_legacy_test_writes": "FFXI_MISSION_TOOLKIT_AH_LEGACY_TEST_WRITES",
+    "ah_dsp_myisam_test_writes": "FFXI_MISSION_TOOLKIT_AH_DSP_MYISAM_TEST_WRITES",
+    "ah_preview_ttl_seconds": "FFXI_MISSION_TOOLKIT_AH_PREVIEW_TTL_SECONDS",
+}
+
+
+def get_ah_flag(key: str) -> str:
+    """Effective value of an AH setting: the environment variable if set, else the stored setting."""
+    import os
+    env = os.environ.get(AH_FLAGS[key])
+    if env is not None and str(env).strip() != "":
+        return str(env).strip()
+    try:
+        con = sqlite3.connect(DB_PATH)
+        try:
+            row = con.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
+        finally:
+            con.close()
+        if row and row[0] is not None:
+            return str(row[0]).strip()
+    except sqlite3.Error:
+        pass
+    return DEFAULTS[key]
+
+
+def ah_flag_source(key: str) -> str:
+    import os
+    return "environment variable" if str(os.environ.get(AH_FLAGS[key], "")).strip() else "Settings page"
+
 
 
 def init_db(con: sqlite3.Connection):

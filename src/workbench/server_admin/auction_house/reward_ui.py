@@ -1,32 +1,12 @@
-"""Auction House reward bundle and Mog delivery operator page."""
+"""Legacy Rewards page location: the bundle/recipient workflow now lives in the hub's Inbox tab."""
 from __future__ import annotations
 
-import sys
-from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from workbench.runtime.paths import GUI_ROOT
+from fastapi import APIRouter
+from fastapi.responses import RedirectResponse
 
 router = APIRouter(tags=["Auction House Rewards"])
-templates = Jinja2Templates(directory=str(GUI_ROOT / "templates"))
 
 
-def _sync_host_template_globals() -> None:
-    for module_name in ("gui_server", "__main__"):
-        host = sys.modules.get(module_name)
-        host_templates = getattr(host, "templates", None) if host is not None else None
-        host_env = getattr(host_templates, "env", None)
-        host_globals = getattr(host_env, "globals", None)
-        if host_globals:
-            templates.env.globals.update(host_globals)
-            return
-
-
-@router.get("/auction-house/rewards", response_class=HTMLResponse)
-def rewards_page(request: Request):
-    _sync_host_template_globals()
-    return templates.TemplateResponse(
-        request=request,
-        name="auction_house_rewards.html",
-        context={"title": "Auction House Rewards"},
-    )
+@router.get("/auction-house/rewards")
+def rewards_page():
+    return RedirectResponse("/auction-house#inbox", status_code=307)

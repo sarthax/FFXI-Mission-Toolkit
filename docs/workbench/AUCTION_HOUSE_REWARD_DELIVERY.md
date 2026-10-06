@@ -2,7 +2,7 @@
 
 ## Status
 
-DSP/Topaz Test-only guarded reward/mail administration surface under **Server -> AH Rewards**.
+DSP/Topaz Test-only guarded reward/mail administration surface under **Server -> Auction House -> Inbox**.
 
 This feature is intentionally separate from Auction House sale settlement. It uses the already-verified legacy `delivery_box` contract to queue administrator-supplied items into character Mog delivery boxes.
 

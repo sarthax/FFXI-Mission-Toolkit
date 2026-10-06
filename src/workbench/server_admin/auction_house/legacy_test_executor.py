@@ -51,7 +51,14 @@ class LegacyTestWriteGate:
 
 
 def legacy_test_write_feature_enabled() -> bool:
-    return str(os.getenv(LEGACY_TEST_WRITE_ENV, "")).strip().lower() in {"1", "true", "yes", "on"}
+    env = str(os.getenv(LEGACY_TEST_WRITE_ENV, "")).strip()
+    if env:
+        return env.lower() in {"1", "true", "yes", "on"}
+    try:
+        import settings as _settings
+        return _settings.get_ah_flag("ah_legacy_test_writes").lower() in {"1", "true", "yes", "on"}
+    except Exception:
+        return False
 
 
 def evaluate_legacy_test_write_gate(
@@ -78,7 +85,7 @@ def evaluate_legacy_test_write_gate(
     if env_kind != "test":
         issues.append(LegacyTestWriteIssue("environment_not_test", "Auction House execution is permitted only for named Test environments."))
     if not enabled:
-        issues.append(LegacyTestWriteIssue("legacy_test_write_feature_disabled", f"Set {LEGACY_TEST_WRITE_ENV}=1 to enable guarded DSP/Topaz Test writes."))
+        issues.append(LegacyTestWriteIssue("legacy_test_write_feature_disabled", f"Enable \"Auction House test writes\" in Settings (or set {LEGACY_TEST_WRITE_ENV}=1) and restart the toolkit."))
 
     expected = str(environment.get("name") or "").strip()
     if not expected or str(confirmation or "").strip() != expected:
@@ -197,6 +204,7 @@ def execute_legacy_test_synthetic_listing(
     confirmation: str,
     feature_enabled: bool | None = None,
     listed_at: int | None = None,
+    virtual_seller_name: str | None = None,
 ) -> dict[str, Any]:
     """Insert one explicit admin-created DSP/Topaz active listing.
 
@@ -221,6 +229,8 @@ def execute_legacy_test_synthetic_listing(
     stack_size = max(1, int(item.get("stack_size") or 1))
     if stack and stack_size <= 1:
         raise LegacyTestExecutionBlocked("The requested item cannot be listed as a stack")
+    if not seller and virtual_seller_name and 990000 <= seller_id <= 990999:
+        seller = {"char_id": seller_id, "char_name": str(virtual_seller_name)}   # reserved synthetic seller, no chars row
     if not seller:
         raise LegacyTestExecutionBlocked("The requested seller character does not exist")
 

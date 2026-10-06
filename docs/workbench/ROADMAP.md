@@ -1031,3 +1031,9 @@ History / audit / safety:
 - [x] Scan bundled LSB scripts for literal setAnimationSub(N) uses and show counts, nearby literal setModelId values, and source-line samples as model-dependent evidence.
 - [x] Expose LSB animationString FOURCC values separately so transient entityAnimationPacket effects are not confused with persistent npc_list animation/animationsub bytes.
 - [ ] Future animation work: correlate captures/client model schedules with specific model IDs so subanimation meanings can be promoted from observed script evidence to model-specific verified labels where evidence is sufficient.
+
+### 2026-10-05 Auction House Economy BI and seeding
+- [x] Economy Intelligence trends (KPI deltas, activity chart, price movers), queues, category sell-through, supply snapshots, baselines, admin-impact overlay.
+- [x] Seeder-tab market history/scenario/clear tool (Test only, fake-seller range 990000-990024); `seed_auction_house.py` now exposes `column_map` for reuse.
+- [x] Drawer Close button no longer hidden under the site header (z-index 2000, backdrop click closes).
+- [ ] Items/Sellers strengthening pass; supply/sell-through KPI deltas; anomaly detection and forecasting.

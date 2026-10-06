@@ -33,6 +33,20 @@ class AuctionHouseSchema:
         }
 
 
+ITEM_FLAG_NOAUCTION = 0x0040   # item_basic.flags bit: cannot be sold on the AH
+UNSELLABLE_CATEGORY = 99        # aH value this data uses for items with no AH category
+
+
+def sellable_clause(item_columns: dict, qn, alias: str = "") -> str:
+    """SQL predicate: an AH category is assigned and the NoAuction flag is clear."""
+    p = f"{alias}." if alias else ""
+    cat = f"{p}{qn(item_columns['ah_category'])}"
+    sql = f"{cat} > 0 AND {cat} < {UNSELLABLE_CATEGORY}"
+    if item_columns.get("flags"):
+        sql += f" AND ({p}{qn(item_columns['flags'])} & {ITEM_FLAG_NOAUCTION}) = 0"
+    return sql
+
+
 def _columns(connection, table: str) -> set[str]:
     cursor = connection.cursor()
     try:

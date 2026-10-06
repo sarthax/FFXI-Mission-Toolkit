@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Auction House Console{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/auction_house_console.css?v=20261005k">
+<main class="ahc" id="ahConsole">
+  <div class="ahc-top">
+    <h1>Auction House</h1>
+    <span id="ahcEnv" class="ahc-chip">checking…</span>
+    <span id="ahcFresh" class="ahc-chip mut"></span>
+    <button class="b" id="ahcRefresh" type="button" title="Reload all data">Refresh</button>
+    <nav class="ahc-tabs" id="ahcTabs">
+      <button data-t="economy" class="on" type="button">Economy</button>
+      <button data-t="items" type="button">Items</button>
+      <button data-t="sellers" type="button">Sellers</button>
+      <button data-t="buyers" type="button">Buyers</button>
+      <button data-t="restock" type="button">Restock</button>
+      <button data-t="arbitrage" type="button">Arbitrage</button>
+      <button data-t="cleanup" type="button">Cleanup</button>
+      <button data-t="presets" type="button">Presets</button>
+      <button data-t="inbox" type="button">Inbox</button>
+    </nav>
+    <details class="ahc-menu" id="ahcMenu">
+      <summary id="ahcMenuLabel">More tools ▾</summary>
+      <div class="ahc-pop">
+        <b>Create</b>
+        <a href="#seeder">Player listing &amp; market history <small>list from a character's inventory; fill Economy with test data</small></a>
+        <b>Review</b>
+        <a href="#activity">Activity <small>action ledger</small></a>
+        <a href="#reward-history">Reward history <small>Inbox campaigns</small></a>
+        <a href="#overview">Readiness &amp; item history <small>price trends, previews</small></a>
+        <b>Reference</b>
+        <a href="#help">Status &amp; help <small>capabilities, boundaries</small></a>
+        <b>Legacy</b>
+        <a href="#listings">Listing Manager <small>superseded by Items / Sellers / Cleanup / Buyers</small></a>
+      </div>
+    </details>
+  </div>
+
+  <div class="ahc-body">
+
+    <section class="ahc-pane" id="p-items">
+      <div class="ahc-split three">
+        <div class="ahc-col"><header><b>Categories</b></header><div class="ahc-scroll ahc-tree" id="itTree"></div></div>
+        <div class="ahc-col">
+          <header><input id="itQ" type="search" placeholder="Filter items…" style="flex:1"><select id="itStatus" title="Which items to show"><option value="active">Active listings</option><option value="unlisted">Unlisted</option><option value="all">All AH items</option></select><small class="mut" id="itCatLbl"></small></header>
+          <div class="ahc-scroll" id="itList"></div>
+        </div>
+        <div class="ahc-col" id="itDetail"><div class="ahc-empty">Pick a category, then an item, to see and manage every listing for it.</div></div>
+      </div>
+    </section>
+
+    <section class="ahc-pane" id="p-sellers">
+      <div class="ahc-split">
+        <div class="ahc-col">
+          <header><input id="seQ" type="search" placeholder="Filter sellers…" style="flex:1"><select id="seSort"><option value="listings">Listings</option><option value="value">Value</option><option value="oldest_days">Oldest</option><option value="name">Name</option></select></header>
+          <div class="ahc-scroll" id="seList"></div>
+        </div>
+        <div class="ahc-col" id="seDetail"><div class="ahc-empty">Select a seller to see everything they have posted.</div></div>
+      </div>
+    </section>
+
+    <section class="ahc-pane" id="p-buyers">
+      <div class="ahc-split">
+        <div class="ahc-col">
+          <header><input id="buQ" type="search" placeholder="Filter buyers…" style="flex:1"><select id="buDays"><option value="7">7d</option><option value="30" selected>30d</option><option value="90">90d</option></select><select id="buSort"><option value="spent">Spent</option><option value="purchases">Purchases</option><option value="overpaid_gil">Overpaid gil</option><option value="avg_markup_pct">Avg markup</option><option value="last_at">Latest</option></select></header>
+          <div class="ahc-bar" style="padding:4px 8px"><small class="mut" id="buSummary"></small></div>
+          <div class="ahc-scroll" id="buList"></div>
+        </div>
+        <div class="ahc-col" id="buDetail"><div class="ahc-empty">Select a buyer to see everything they bought, what they paid against the going rate, and refund overpaid purchases.</div></div>
+      </div>
+    </section>
+
+    <section class="ahc-pane" id="p-restock">
+      <div class="ahc-form">
+        <div class="ahc-card">
+          <h3>Restock / top off</h3>
+          <div class="ahc-bar"><select id="rsPreset" style="flex:1"><option value="">Load a preset…</option></select><button class="b" id="rsPresetLoad" type="button">Load</button><button class="b" id="rsPresetEdit" type="button" title="Open this preset in Presets">✎ Edit</button><button class="b" id="rsPresetNew" type="button">+ New</button><button class="b" id="rsPresetDel" type="button" title="Delete this preset">🗑 Delete</button></div>
+          <div class="mut" id="rsPresetInfo" style="font-size:12px"></div>
+          <label>Seller characters <small class="mut" id="rsSellerHint">listings are spread across everyone you pick</small></label>
+          <div class="ahc-charpick" id="rsChars"></div>
+          <label>Add item <input id="rsItemQ" placeholder="search item name or id" autocomplete="off"></label>
+          <div class="ahc-sug" id="rsSug" hidden></div>
+          <div class="ahc-bar"><label>Or add a whole category <select id="rsCat"><option value="">Choose category…</option></select></label>
+            <label>Price <input id="rsCatPrice" type="number" min="1" placeholder="blank = avg sale" style="width:110px"></label>
+            <label>Target <input id="rsCatTarget" type="number" min="1" value="3" style="width:60px"></label>
+            <label>Max items <input id="rsCatLimit" type="number" min="1" max="50" value="50" style="width:60px"></label>
+            <button class="b" id="rsCatAdd" type="button">Add category items</button></div>
+          <div class="ahc-scroll"><table><thead><tr><th>Item</th><th class="n">Now</th><th class="n">Target listings</th><th class="n">Price</th><th>Stack</th><th></th></tr></thead><tbody id="rsRows"></tbody></table></div>
+          <div class="ahc-bar ahc-bar-bottom"><button class="b pri" id="rsPreview" type="button">Preview restock</button><small>Synthetic supply — no inventory removed, no fee charged. Target = total active listings wanted for the item.</small></div>
+        </div>
+        <div class="ahc-card"><h3>Plan</h3><div class="ahc-scroll" id="rsPlan"><div class="ahc-empty">Preview shows current stock vs target and how many listings will be created.</div></div></div>
+      </div>
+    </section>
+
+    <section class="ahc-pane" id="p-arbitrage">
+      <div class="ahc-card" style="margin:10px">
+        <h3>Arbitrage <small class="mut" id="arSummary"></small></h3>
+        <div class="ahc-bar"><div id="arViews" class="ahc-bar" style="margin:0">
+          <button class="b pri" data-v="listings" type="button">Underpriced listings <span id="arCnt_listings">0</span></button>
+          <button class="b" data-v="post" type="button">Post for profit <span id="arCnt_post">0</span></button>
+          <button class="b" data-v="loops" type="button">Vendor loops <span id="arCnt_loops">0</span></button></div>
+          <label>Min profit <input id="arMin" type="number" min="0" value="1" style="width:90px"></label><button class="b" id="arRefresh" type="button">Refresh</button></div>
+        <div class="ahc-bar" id="arActions"></div>
+        <div id="arBody"><div class="ahc-empty">Open this tab to scan.</div></div>
+      </div>
+    </section>
+
+    <section class="ahc-pane" id="p-cleanup">
+      <div class="ahc-form">
+        <div class="ahc-card">
+          <h3>Cleanup rules</h3>
+          <div class="ahc-bar"><select id="cuPreset" style="flex:1"><option value="">Load a preset…</option></select><button class="b" id="cuPresetLoad" type="button">Load</button><button class="b" id="cuPresetEdit" type="button" title="Open this preset in Presets">✎ Edit</button><button class="b" id="cuPresetNew" type="button">+ New</button></div>
+          <small class="mut" id="cuPresetInfo"></small>
+          <div class="ahc-grid2">
+            <label class="wide">Seller <input id="cuSellerQ" placeholder="search seller name or id (blank = any seller)" autocomplete="off"><input id="cuSellerId" type="hidden"><input id="cuSellerName" type="hidden"></label>
+            <div class="ahc-sug wide" id="cuSellerSug" hidden></div>
+            <label>Category <select id="cuCategory"><option value="">Any category</option></select></label>
+            <label>Item <input id="cuItemQ" placeholder="search item name or id" autocomplete="off"><input id="cuItemId" type="hidden"></label>
+            <div class="ahc-sug wide" id="cuItemSug" hidden></div>
+            <label>Min price <input id="cuMinPrice" type="number" min="0"></label>
+            <label>Max price <input id="cuMaxPrice" type="number" min="0"></label>
+            <label>Older than (days) <input id="cuAgeDays" type="number" min="0" step="0.1" value="30"></label>
+            <label title="1 = priced below the NPC buy-back value; 0.5 = below half of it">Below vendor value × <input id="cuVendor" type="number" min="0" step="0.05" placeholder="e.g. 1"></label>
+            <label>Limit <input id="cuLimit" type="number" min="1" max="100" value="100"></label>
+          </div>
+          <div class="ahc-bar ahc-bar-bottom"><button class="b pri" id="cuPreview" type="button">Preview targets</button><button class="b" id="cuClear" type="button">Clear</button><small>Nothing changes until you pick Admin Buy or Return on the previewed list.</small></div>
+        </div>
+        <div class="ahc-card">
+          <h3>Targets <small class="mut" id="cuSummary"></small></h3>
+          <div class="ahc-bar"><button class="b" id="cuBuy" type="button" disabled>Admin Buy all</button><button class="b" id="cuReturn" type="button" disabled>Return all</button><small id="cuAction" class="mut"></small></div>
+          <div class="ahc-scroll" id="cuRows"><div class="ahc-empty">Set rules and preview to see exactly which listings match.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ahc-pane" id="p-presets">
+      <div class="ahc-form">
+        <div class="ahc-card">
+          <h3>Presets</h3>
+          <div class="ahc-bar"><input id="pzQ" placeholder="search presets" style="flex:1"><select id="pzKind"><option value="">All types</option><option value="restock">Restock</option><option value="cleanup">Cleanup</option></select></div>
+          <div class="ahc-bar"><button class="b pri" id="pzNewRestock" type="button">+ Restock preset</button><button class="b pri" id="pzNewCleanup" type="button">+ Cleanup preset</button></div>
+          <div class="ahc-scroll" id="pzList"></div>
+          <h3 style="margin-top:8px">Default restock seller</h3>
+          <small class="mut">Used when Restock has no character selected. It is a synthetic seller (reserved id range 990000-990999), not a real account.</small>
+          <div class="ahc-bar"><input id="pzDefName" placeholder="name" style="flex:1"><input id="pzDefId" type="number" placeholder="id" style="width:100px"><button class="b" id="pzDefSave" type="button">Save</button></div>
+        </div>
+        <div class="ahc-card" id="pzEditor"><div class="ahc-empty">Pick a preset to edit, or create a new one.</div></div>
+      </div>
+    </section>
+
+    <section class="ahc-pane on" id="p-tool"><iframe id="ahcFrame" title="Auction House tool"></iframe></section>
+
+    <section class="ahc-pane" id="p-inbox">
+      <div class="ahc-form">
+        <div class="ahc-card">
+          <h3>Item bundle</h3>
+          <div class="ahc-bar"><select id="ibTpl" style="flex:1"><option value="">Ad hoc bundle</option></select><input id="ibName" placeholder="template name" style="flex:1"></div>
+          <input id="ibItemQ" placeholder="search item name or id to add" autocomplete="off">
+          <div class="ahc-sug" id="ibSug" hidden></div>
+          <div class="ahc-bar"><input id="ibGil" type="number" min="1" max="999999999" placeholder="gil amount" style="flex:1"><button class="b" id="ibGilAdd" type="button">Add gil</button></div>
+          <div class="ahc-scroll"><table><thead><tr><th>Item</th><th class="n">Qty</th><th></th></tr></thead><tbody id="ibRows"></tbody></table></div>
+          <div class="ahc-bar"><button class="b" id="ibSave" type="button">Save template</button><button class="b" id="ibDel" type="button">Delete template</button></div>
+        </div>
+        <div class="ahc-card">
+          <h3>Recipients</h3>
+          <div class="ahc-bar"><label style="flex-direction:row;gap:4px"><input type="radio" name="ibMode" value="selected" checked> Selected</label><label style="flex-direction:row;gap:4px"><input type="radio" name="ibMode" value="all"> All characters</label></div>
+          <div class="ahc-charpick" id="ibChars"></div>
+          <div class="ahc-bar"><button class="b pri" id="ibPreview" type="button">Preview delivery</button></div>
+          <small>Items are delivered to each character's delivery box (Mog). Preview is required before sending.</small>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="ahc-backdrop" id="ahcBackdrop"></div>
+  <aside class="ahc-drawer" id="ahcDrawer" aria-live="polite">
+    <div class="ahc-bar"><h3 id="dwTitle" style="margin:0;flex:1">Action</h3><button class="b" id="dwClose" type="button">✕ Close</button></div>
+    <div class="ahc-scroll" id="dwBody"></div>
+    <label id="dwConfWrap">Type the active Test profile name <b id="dwConfName"></b> exactly to confirm <input id="dwConf" autocomplete="off"></label>
+    <div class="ahc-bar"><button class="b pri" id="dwGo" type="button" disabled>Execute</button><span id="dwMsg" class="mut"></span></div>
+  </aside>
+  <div class="ahc-toast" id="ahcToast"></div>
+</main>
+<script src="/static/auction_house_console.js?v=20261005s"></script>
+{% endblock %}

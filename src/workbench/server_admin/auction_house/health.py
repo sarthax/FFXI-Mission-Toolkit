@@ -1,6 +1,10 @@
 """Read-only Auction House economy-health and anomaly diagnostics."""
 from __future__ import annotations
 
+from .schema import sellable_clause
+
+_AI, _AIB = "i", "ib"
+
 from collections import defaultdict
 from datetime import datetime, timezone
 from statistics import median
@@ -30,7 +34,7 @@ def stale_listings(service: AuctionHouseService, *, days: int = 30, limit: int =
             f"ah.{qn(a['stack'])},ah.{qn(a['seller_id'])},{seller_name},"
             f"ah.{qn(a['listed_at'])},ah.{qn(a['asking_price'])} "
             "FROM `auction_house` ah JOIN `item_basic` i "
-            f"ON i.{qn(i['item_id'])}=ah.{qn(a['item_id'])} "
+            f"ON i.{qn(i['item_id'])}=ah.{qn(a['item_id'])} AND {sellable_clause(i, qn, _AI)} "
             f"WHERE ah.{qn(a['sold_at'])}=0 AND ah.{qn(a['listed_at'])}>0 "
             f"AND ah.{qn(a['listed_at'])}<=%s ORDER BY ah.{qn(a['listed_at'])} ASC LIMIT %s",
             (cutoff, safe_limit),
@@ -75,7 +79,7 @@ def market_movement(
             f"SUM(CASE WHEN ah.{qn(a['sold_at'])}>=%s AND ah.{qn(a['sold_at'])}<%s THEN 1 ELSE 0 END),"
             f"AVG(CASE WHEN ah.{qn(a['sold_at'])}>=%s AND ah.{qn(a['sold_at'])}<%s THEN ah.{qn(a['sale_price'])} END) "
             "FROM `auction_house` ah JOIN `item_basic` i "
-            f"ON i.{qn(i['item_id'])}=ah.{qn(a['item_id'])} "
+            f"ON i.{qn(i['item_id'])}=ah.{qn(a['item_id'])} AND {sellable_clause(i, qn, _AI)} "
             f"WHERE ah.{qn(a['sold_at'])}>=%s "
             f"GROUP BY ah.{qn(a['item_id'])},i.{qn(i['name'])},i.{qn(i['ah_category'])},ah.{qn(a['stack'])}",
             (recent_cutoff, recent_cutoff, baseline_cutoff, recent_cutoff,
@@ -178,7 +182,7 @@ def transaction_outliers(
             f"ah.{qn(a['stack'])},ah.{qn(a['seller_id'])},{seller_name},{buyer_id},{buyer_name},"
             f"ah.{qn(a['sale_price'])},ah.{qn(a['sold_at'])} "
             "FROM `auction_house` ah JOIN `item_basic` i "
-            f"ON i.{qn(i['item_id'])}=ah.{qn(a['item_id'])} "
+            f"ON i.{qn(i['item_id'])}=ah.{qn(a['item_id'])} AND {sellable_clause(i, qn, _AI)} "
             f"WHERE ah.{qn(a['sold_at'])}>=%s ORDER BY ah.{qn(a['sold_at'])} DESC LIMIT %s",
             (cutoff, sample_limit),
         )

@@ -175,6 +175,10 @@ def load_active_legacy_policy(*, server_root: Path | str, family: str) -> Config
     source, values = parsed[0]
     result.source_path = str(source)
     result.source_kind = "active"
+    if normalized_family == "dsp" and "ah_list_limit" not in values:
+        # Stock DSP's map server has no ah_list_limit setting (it exists only in LSB/Topaz), so it
+        # enforces no per-seller listing cap; 0 means unlimited in this policy.
+        values["ah_list_limit"] = "0"
     result.raw_values = dict(values)
     missing = [key for key in _REQUIRED_KEYS if key not in values]
     if missing:

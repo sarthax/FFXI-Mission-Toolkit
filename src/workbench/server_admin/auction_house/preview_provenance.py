@@ -42,7 +42,13 @@ class PreviewProvenanceCheck:
 
 def preview_ttl_seconds() -> int:
     """Return the configured validation lifetime, clamped to a bounded safety range."""
-    raw = str(os.environ.get(PREVIEW_TTL_ENV, DEFAULT_PREVIEW_TTL_SECONDS)).strip()
+    raw = str(os.environ.get(PREVIEW_TTL_ENV, "")).strip()
+    if not raw:
+        try:
+            import settings as _settings
+            raw = _settings.get_ah_flag("ah_preview_ttl_seconds")
+        except Exception:
+            raw = str(DEFAULT_PREVIEW_TTL_SECONDS)
     try:
         value = int(raw)
     except ValueError:

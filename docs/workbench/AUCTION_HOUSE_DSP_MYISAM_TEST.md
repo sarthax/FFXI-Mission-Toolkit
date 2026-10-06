@@ -49,3 +49,25 @@ execution_mode = dsp_myisam_compensating
 Use a low-value ordinary auctionable item on an offline test character with enough gil for the listing fee. Record the character ID, inventory slot, item ID, quantity, and gil before the run so recovery can be verified independently.
 
 The normal transactional player-listing path remains preferred whenever both `auction_house` and `char_inventory` use a transactional engine.
+
+## Active policy note (`ah_list_limit`)
+
+Stock DSP's map server has no `ah_list_limit` setting (it exists only in LSB/Topaz). For the DSP family the
+policy loader therefore treats a missing `ah_list_limit` as `0` (no per-seller cap); every other key
+(`ah_base_fee_*`, `ah_tax_rate_*`, `ah_max_fee`) is still required.
+
+## First listing validated
+
+Seller 21828 (Gwendy), slot 11, Hi-Potion (4116) x1 at 500 gil on the `DSP` profile (environment `test`):
+slot emptied, 6 gil fee deducted (1 base + 1.0% of 500), AH row created at 500, and the Listing Manager
+query returns the row with `preview_buy` / `return_to_seller` actions.
+
+## Player purchase fallback
+
+`scripts/auction_house_dsp_myisam_test.py --purchase --auction-id N --buyer-id C --price P --confirmation "<profile>"`
+(`dsp_myisam_purchase.py`). On stock DSP only `char_inventory` is MyISAM, so the exact AH row is claimed inside a
+real InnoDB transaction (the `auction_house_buy` / `delivery_box_insert` triggers queue seller settlement), the
+buyer's gil debit and item grant are guarded writes, the post-state is verified, then the transaction commits.
+Any ordinary failure rolls the transaction back and compensates the buyer writes. Still `atomic=false`: a crash
+between the buyer writes and the commit can leave the buyer charged without the row claimed. The buyer must be
+offline and different from the seller. `--readiness` now reports both listing and purchase readiness.

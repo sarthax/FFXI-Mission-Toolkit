@@ -110,6 +110,23 @@
     <input type="text" name="xi_model_viewer_url" value="{{ values.xi_model_viewer_url }}" style="width:100%; margin-top:6px;">
   </div>
 
+  <h2 id="auction-house-settings">Auction House</h2>
+  <p class="muted">These control whether the Auction House tools may <em>write</em> to the database. Everything is read-only until
+    test writes are enabled. Changes apply immediately after saving (no restart). A matching environment variable,
+    if set on the machine, overrides these.</p>
+  <div class="table-wrap" style="padding:14px;">
+    <label><input type="checkbox" name="ah_legacy_test_writes" value="1" {% if values.ah_legacy_test_writes == "1" %}checked{% endif %}>
+      <strong>Enable Auction House test writes</strong> -- price changes, restock, Admin Buy/Return, cleanup, and Inbox item/gil delivery.
+      Only ever runs against the active server profile when it is classified <em>Test</em>.</label>
+    <div class="muted" style="margin:2px 0 10px 22px;">Overrides: <code class="chip">FFXI_MISSION_TOOLKIT_AH_LEGACY_TEST_WRITES</code> (currently from: {{ ah_env_overrides.ah_legacy_test_writes }})</div>
+    <label><input type="checkbox" name="ah_dsp_myisam_test_writes" value="1" {% if values.ah_dsp_myisam_test_writes == "1" %}checked{% endif %}>
+      <strong>Enable DSP MyISAM listing / purchase test writes</strong> -- only needed for player-backed listings and player Buy on stock DSP databases whose AH tables are MyISAM. Also requires the option above.</label>
+    <div class="muted" style="margin:2px 0 10px 22px;">Overrides: <code class="chip">FFXI_MISSION_TOOLKIT_AH_DSP_MYISAM_TEST_WRITES</code> (currently from: {{ ah_env_overrides.ah_dsp_myisam_test_writes }})</div>
+    <label class="muted">Preview validity (seconds, 30-86400)</label><br>
+    <input type="number" name="ah_preview_ttl_seconds" min="30" max="86400" value="{{ values.ah_preview_ttl_seconds }}" style="width:120px; margin-top:6px;">
+    <div class="muted" style="margin-top:2px;">Overrides: <code class="chip">FFXI_MISSION_TOOLKIT_AH_PREVIEW_TTL_SECONDS</code> (currently from: {{ ah_env_overrides.ah_preview_ttl_seconds }})</div>
+  </div>
+
   <h2>Local LLM (Open WebUI / Ollama)</h2>
   <p class="muted">Used by the <a class="inline" href="/llm">LLM Assistant</a> page and any
     automated tool built on <code class="chip">llm_client.py</code> for draft-only offload work

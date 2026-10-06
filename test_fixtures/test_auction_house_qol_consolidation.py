@@ -8,7 +8,6 @@ TEMPLATES = [
     "auction_house_cleanup.html",
     "auction_house_presets.html",
     "auction_house_economy.html",
-    "auction_house_rewards.html",
     "auction_house_reward_history.html",
     "auction_house_activity.html",
     "auction_house_help.html",
@@ -22,20 +21,7 @@ def test_major_auction_house_pages_use_shared_navigation_and_status():
         assert '{% include "_auction_house_nav.html" %}' in text, name
 
     partial = (root / "_auction_house_nav.html").read_text(encoding="utf-8")
-    for href in (
-        "/auction-house",
-        "/auction-house/listing-manager",
-        "/auction-house/seeder",
-        "/auction-house/cleanup",
-        "/auction-house/presets",
-        "/auction-house/economy",
-        "/auction-house/rewards",
-        "/auction-house/reward-history",
-        "/auction-house/activity",
-        "/auction-house/help",
-    ):
-        assert f'href="{href}"' in partial
-    assert "data-ah-shared-status" in partial
+    assert "embed=1" in partial and "location.replace('/auction-house'" in partial
 
 
 def test_overview_no_longer_claims_preview_only_or_no_executor():
@@ -64,7 +50,7 @@ def test_help_route_and_workspace_entry_are_mounted():
     status = Path("src/workbench/server_admin/auction_house/status_ui.py").read_text(encoding="utf-8")
     help_template = Path("gui/templates/auction_house_help.html").read_text(encoding="utf-8")
     assert "auction_house_status_router" in integration
-    assert '"AH Help / Status", "/auction-house/help"' in integration
+    assert "'/auction-house/help'" in Path("gui/static/auction_house_console.js").read_text(encoding="utf-8")
     assert '@router.get("/auction-house/help"' in status
     assert "Scoped DSP/Topaz Test writes" in help_template or "DSP/Topaz <strong>Test-environment</strong> executors" in help_template
     assert "Live writes" in help_template

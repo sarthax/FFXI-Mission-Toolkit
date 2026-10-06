@@ -12,7 +12,7 @@ from workbench.runtime.legacy_settings import get_active_server_identity, get_ac
 
 from .factory import open_auction_house
 from .legacy_test_executor import LegacyTestExecutionBlocked
-from .presets import PresetError, delete_preset, get_preset, list_presets, save_preset
+from .presets import PresetError, delete_preset, get_preset, list_presets, save_preset, seed_builtin_presets
 from .rule_cleanup import criteria_from_payload, execute_cleanup, preview_cleanup
 from .synthetic_seed import execute_synthetic_category_seed, preview_synthetic_category_seed
 
@@ -78,6 +78,7 @@ def _preset_preview_token(preset: dict, preview: dict) -> str:
 @router.get(".json")
 def presets_list(kind: str | None = Query(default=None)):
     try:
+        seed_builtin_presets()
         rows = list_presets(kind=kind)
         return JSONResponse({"count": len(rows), "rows": rows})
     except PresetError as exc:

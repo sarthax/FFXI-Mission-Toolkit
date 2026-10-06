@@ -1,6 +1,12 @@
 """Granular DSP/Topaz Auction House listing browsing and TEST-only return-to-seller support."""
 from __future__ import annotations
 
+from .schema import sellable_clause
+
+_AI, _AIB = "i", "ib"
+
+_bt = lambda c: f"`{c}`"
+
 from dataclasses import asdict, dataclass
 from typing import Any
 
@@ -66,7 +72,7 @@ def browse_active_listings(service, filters: ListingFilter) -> list[dict[str, An
         f"ah.`{a['id']}`,ah.`{a['item_id']}`,ib.`{i['name']}`,ib.`{i['stack_size']}`,ib.`{i['ah_category']}`,"
         f"ah.`{a['stack']}`,ah.`{a['seller_id']}`,{seller_name_expr},ah.`{a['listed_at']}`,ah.`{a['asking_price']}` "
         "FROM `auction_house` ah JOIN `item_basic` ib "
-        f"ON ib.`{i['item_id']}`=ah.`{a['item_id']}` "
+        f"ON ib.`{i['item_id']}`=ah.`{a['item_id']}` AND {sellable_clause(i, _bt, _AIB)} "
         "WHERE " + " AND ".join(clauses) +
         f" ORDER BY ah.`{a['listed_at']}` ASC, ah.`{a['id']}` ASC LIMIT %s"
     )

@@ -1,28 +1,43 @@
 {% extends "base.html" %}
+{% block title %}Auction House Economy Intelligence{% endblock %}
 {% block content %}
-<section class="workspace-page" id="ahEconomy">
-  <div class="page-header">
-    <div><h1>Auction House Economy Intelligence</h1><p class="muted">Read-only seller and category exposure, aging, sell-through, price distribution, and supply-health indicators.</p></div>
+<link rel="stylesheet" href="/static/auction_house_console.css?v=20261005h">
+{% include "_auction_house_nav.html" %}
+<main class="ahc" id="ahEconomy">
+  <div class="ahc-top">
+    <h1>Economy Intelligence</h1>
+    <label class="ahc-bar" style="flex-direction:row" title="Time range for every number on this page. Arrows and percentages compare it with the same-length period before.">Window
+      <select id="aeDays"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option><option value="365">1 year</option><option value="0">All time</option></select>
+    </label>
+    <button class="b" id="aeRefresh" type="button" title="Reload the figures from the server database">Refresh</button>
+    <nav class="ahc-tabs" id="aeTabs">
+      <button data-t="overview" class="on" type="button">Overview</button>
+      <button data-t="sellers" type="button">Sellers</button>
+      <button data-t="buyers" type="button">Buyers</button>
+      <button data-t="categories" type="button">Categories</button>
+      <button data-t="people" type="button">Players &amp; accounts</button>
+    </nav>
   </div>
-  {% include "_auction_house_nav.html" %}
-
-  <div class="card">
-    <h2>Filters</h2>
-    <div class="form-grid">
-      <label>Lookback days<input id="aeDays" type="number" min="1" max="3650" value="30"></label>
-      <label>Stale threshold days<input id="aeStaleDays" type="number" min="1" max="3650" value="30"></label>
-      <label>Seller ID<input id="aeSellerId" type="number" min="1" placeholder="Optional"></label>
-      <label>Category ID<input id="aeCategoryId" type="number" min="1" placeholder="Optional"></label>
-      <label>Row limit<input id="aeLimit" type="number" min="1" max="500" value="100"></label>
-      <label>Sample limit<input id="aeSampleLimit" type="number" min="100" max="50000" value="20000"></label>
-    </div>
-    <div class="row-actions"><button id="aeLoad">Refresh analysis</button></div>
+  <div class="ahc-body">
+    <section class="ahc-pane on ahc-dash" id="e-overview"></section>
+    <section class="ahc-pane" id="e-sellers"><div class="ahc-split">
+      <div class="ahc-col"><header><input id="sellersQ" type="search" placeholder="Filter by seller name…" style="flex:1"></header><div class="ahc-scroll" id="sellersList"></div></div>
+      <div class="ahc-col ahc-scroll" id="sellersDetail"><div class="ahc-empty">Select a seller to see their sales history, active exposure and top buyers.</div></div>
+    </div></section>
+    <section class="ahc-pane" id="e-buyers"><div class="ahc-split">
+      <div class="ahc-col"><header><input id="buyersQ" type="search" placeholder="Filter by buyer name…" style="flex:1"></header><div class="ahc-scroll" id="buyersList"></div></div>
+      <div class="ahc-col ahc-scroll" id="buyersDetail"><div class="ahc-empty">Select a buyer to see what they bought, from whom and when.</div></div>
+    </div></section>
+    <section class="ahc-pane" id="e-item"><div class="ahc-col ahc-scroll" id="itemDetail" style="width:100%"></div></section>
+    <section class="ahc-pane" id="e-categories"><div class="ahc-split wide">
+      <div class="ahc-col"><header><input id="categoriesQ" type="search" placeholder="Filter categories…" style="flex:1"></header><div class="ahc-scroll" id="categoriesList"></div></div>
+      <div class="ahc-col ahc-scroll" id="categoriesDetail"><div class="ahc-empty">Select a category for its history, top items and supply signal.</div></div>
+    </div></section>
+    <section class="ahc-pane" id="e-people"><div class="ahc-split">
+      <div class="ahc-col"><header><input id="peopleQ" type="search" placeholder="Character name, account name, id or IP address…" style="flex:1"><button class="b" id="peopleGo" type="button">Search</button></header><div class="ahc-scroll" id="peopleList"><div class="ahc-empty">Search by character, account, id, or IP to find every account and character behind a player.</div></div></div>
+      <div class="ahc-col ahc-scroll" id="peopleDetail"><div class="ahc-empty">Select an account to see all its characters, IP history, linked accounts and combined AH activity.</div></div>
+    </div></section>
   </div>
-
-  <div id="aeSummary" class="card"><p class="muted">Load analysis to begin.</p></div>
-  <div class="card"><h2>Seller intelligence</h2><div id="aeSellers"></div></div>
-  <div class="card"><h2>Category intelligence</h2><div id="aeCategories"></div></div>
-  <div class="card"><h2>Interpretation</h2><p class="muted">Supply-health labels are transparent administrative heuristics, not conclusions about player behavior or market manipulation.</p></div>
-</section>
-<script src="/static/auction_house_economy.js"></script>
+</main>
+<script src="/static/auction_house_economy.js?v=20261005g"></script>
 {% endblock %}

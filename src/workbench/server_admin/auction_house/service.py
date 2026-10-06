@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .categories import category_metadata
-from .schema import AuctionHouseSchema, discover_auction_house_schema
+from .schema import AuctionHouseSchema, discover_auction_house_schema, sellable_clause
 
 
 def epoch_iso(value: Any) -> str | None:
@@ -36,7 +36,7 @@ class AuctionHouseService:
         try:
             c.execute(
                 f"SELECT {self.q(i['ah_category'])}, COUNT(*) FROM `item_basic` "
-                f"WHERE {self.q(i['ah_category'])} > 0 GROUP BY {self.q(i['ah_category'])} "
+                f"WHERE {sellable_clause(i, self.q)} GROUP BY {self.q(i['ah_category'])} "
                 f"ORDER BY {self.q(i['ah_category'])}"
             )
             rows = []

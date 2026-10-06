@@ -141,4 +141,42 @@
     });
   }
   loadCategories().catch(error => showResult($('seedSyntheticResult'), 'Category load failed', error.message, true));
+
+  // ---- Market history & scenarios -------------------------------------------------------
+  const MKT_HELP = {
+    history: 'Creates completed sales over the chosen days plus some active listings across many categories. Refuses if seeded rows already exist.',
+    scenarios: 'Adds a few deliberate situations (one seller owning an item, listings that never sell, a flooded item) so the Economy "Where to look" cards have something to show.',
+    clear: 'Deletes every row sold or listed by the fake Tst* sellers. Real player listings are never touched.',
+  };
+  let mktPreview = null;
+  const mktBody = () => ({mode: $('mktMode').value, items: Number($('mktItems').value || 60),
+    days: Number($('mktDays').value || 90), seed: Number($('mktRng').value || 1234)});
+  function mktSync() {
+    const mode = $('mktMode').value;
+    $('mktHelp').textContent = MKT_HELP[mode];
+    document.querySelectorAll('.mkt-h').forEach(l => { l.hidden = mode !== 'history' && !(mode === 'scenarios' && l.contains($('mktRng'))); });
+    mktPreview = null; $('mktRun').hidden = true;
+  }
+  $('mktMode').addEventListener('change', mktSync);
+  for (const id of ['mktItems', 'mktDays', 'mktRng']) $(id).addEventListener('change', () => { mktPreview = null; $('mktRun').hidden = true; });
+  $('mktPreview').addEventListener('click', async () => {
+    try {
+      const body = mktBody();
+      const d = await request('/auction-house/test-write/market-seed-preview.json', {method: 'POST', body: JSON.stringify(body)});
+      showResult($('mktResult'), d.blocked_reason ? 'Cannot run: ' + d.blocked_reason : 'Preview (nothing written yet)', d);
+      mktPreview = body;
+      $('mktRun').hidden = !!d.blocked_reason;
+      try { $('mktConfName').textContent = (await request('/auction-house/capability-status.json')).environment?.name || ''; } catch (e) { /* label only */ }
+    } catch (e) { mktPreview = null; $('mktRun').hidden = true; showResult($('mktResult'), 'Preview failed', e.message, true); }
+  });
+  $('mktExecute').addEventListener('click', async () => {
+    if (!mktPreview) return;
+    try {
+      const d = await request('/auction-house/test-write/market-seed.json', {method: 'POST',
+        body: JSON.stringify({...mktPreview, confirmation: $('mktConf').value})});
+      showResult($('mktResult'), 'Done', d);
+      mktPreview = null; $('mktRun').hidden = true; $('mktConf').value = '';
+    } catch (e) { showResult($('mktResult'), 'Blocked', e.message, true); }
+  });
+  mktSync();
 })();

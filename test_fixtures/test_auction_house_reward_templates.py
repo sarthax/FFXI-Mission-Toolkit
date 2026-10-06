@@ -40,12 +40,9 @@ def test_reward_template_rejects_duplicate_items_and_too_many_rows(tmp_path: Pat
 
 def test_reward_routes_and_ui_are_mounted():
     integration = Path("src/workbench/server_admin/auction_house/integration.py").read_text(encoding="utf-8")
-    template = Path("gui/templates/auction_house_rewards.html").read_text(encoding="utf-8")
-    script = Path("gui/static/auction_house_rewards.js").read_text(encoding="utf-8")
+    script = Path("gui/static/auction_house_console.js").read_text(encoding="utf-8")
     assert "auction_house_reward_api_router" in integration
     assert "auction_house_reward_ui_router" in integration
-    assert '"AH Rewards"' in integration
-    assert "/auction-house/rewards" in integration
+    assert "/auction-house#inbox" in Path("src/workbench/server_admin/auction_house/reward_ui.py").read_text(encoding="utf-8")
     assert "/auction-house/rewards/preview.json" in script
     assert "/auction-house/rewards/execute.json" in script
-    assert "fresh preview" in template

@@ -16,10 +16,10 @@ from workbench.runtime.paths import DATA_ROOT
 
 DEFAULT_PRESET_PATH = DATA_ROOT / "auction_house_presets.db"
 PRESET_SCHEMA_VERSION = 1
-_SUPPORTED_KINDS = {"cleanup", "synthetic_seed"}
+_SUPPORTED_KINDS = {"cleanup", "synthetic_seed", "restock"}
 _CLEANUP_FIELDS = {
     "seller_id", "seller_name", "category_id", "item_id", "min_price", "max_price",
-    "min_age_days", "listed_before", "limit", "default_action",
+    "min_age_days", "listed_before", "max_vendor_ratio", "limit", "default_action", "description",
 }
 _SEED_FIELDS = {"seller_id", "category_id", "price", "stack_mode", "copies_per_item", "limit_items"}
 
@@ -75,6 +75,12 @@ def normalize_preset_config(kind: str, config: dict[str, Any]) -> dict[str, Any]
         raise PresetError(f"Unsupported Auction House preset kind: {kind or 'unknown'}")
     if not isinstance(config, dict):
         raise PresetError("Preset config must be an object")
+    if kind == "restock":
+        from .restock_presets import RESTOCK_FIELDS, normalize_restock_config
+        unknown = sorted(set(config) - RESTOCK_FIELDS)
+        if unknown:
+            raise PresetError("Unsupported preset field(s): " + ", ".join(unknown))
+        return normalize_restock_config(config)
     allowed = _CLEANUP_FIELDS if kind == "cleanup" else _SEED_FIELDS
     unknown = sorted(set(config) - allowed)
     if unknown:
@@ -93,6 +99,8 @@ def normalize_preset_config(kind: str, config: dict[str, Any]) -> dict[str, Any]
             out["limit"] = max(1, min(int(out["limit"]), 100))
         if "seller_name" in out:
             out["seller_name"] = str(out["seller_name"]).strip()
+        if "description" in out:
+            out["description"] = str(out["description"]).strip()[:300]
         if "default_action" in out:
             action = str(out["default_action"]).strip().lower()
             if action not in {"admin_buy", "return_to_seller"}:
@@ -197,3 +205,66 @@ def delete_preset(preset_id: str, *, path: Path | str = DEFAULT_PRESET_PATH) -> 
         return int(cur.rowcount or 0) == 1
     finally:
         con.close()
+
+
+def get_meta(key: str, *, path: Path | str = DEFAULT_PRESET_PATH) -> str | None:
+    con = _connect(path)
+    try:
+        row = con.execute("SELECT value FROM ah_preset_meta WHERE key=?", (key,)).fetchone()
+        return None if row is None else str(row["value"])
+    finally:
+        con.close()
+
+
+def set_meta(key: str, value: str, *, path: Path | str = DEFAULT_PRESET_PATH) -> None:
+    con = _connect(path)
+    try:
+        con.execute("INSERT INTO ah_preset_meta(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (key, str(value)))
+        con.commit()
+    finally:
+        con.close()
+
+
+def get_default_seller(*, path: Path | str = DEFAULT_PRESET_PATH) -> dict[str, Any]:
+    """The synthetic seller used by Restock when no character is chosen (a reserved id with no chars row)."""
+    from .restock_presets import DEFAULT_SELLER_ID, DEFAULT_SELLER_NAME
+    raw = get_meta("default_restock_seller", path=path)
+    if raw:
+        try:
+            data = json.loads(raw)
+            return {"char_id": int(data["char_id"]), "char_name": str(data["char_name"])}
+        except (ValueError, KeyError, TypeError):
+            pass
+    return {"char_id": DEFAULT_SELLER_ID, "char_name": DEFAULT_SELLER_NAME}
+
+
+def set_default_seller(char_id: int, char_name: str, *, path: Path | str = DEFAULT_PRESET_PATH) -> dict[str, Any]:
+    from .restock_presets import VIRTUAL_SELLER_RANGE
+    char_id, char_name = int(char_id), str(char_name or "").strip()
+    if not char_name or len(char_name) > 15 or not char_name.replace("_", "").isalnum():
+        raise PresetError("Seller name must be 1-15 letters or digits (FFXI character-name rules)")
+    if not VIRTUAL_SELLER_RANGE[0] <= char_id <= VIRTUAL_SELLER_RANGE[1]:
+        raise PresetError(f"Default seller id must be in the reserved synthetic range {VIRTUAL_SELLER_RANGE[0]}-{VIRTUAL_SELLER_RANGE[1]}")
+    set_meta("default_restock_seller", json.dumps({"char_id": char_id, "char_name": char_name}), path=path)
+    return get_default_seller(path=path)
+
+
+def seed_builtin_presets(*, path: Path | str = DEFAULT_PRESET_PATH) -> int:
+    """Insert the shipped presets once per BUILTIN_VERSION; later edits and deletions are never undone."""
+    from .restock_presets import BUILTIN_CLEANUP_PRESETS, BUILTIN_RESTOCK_PRESETS
+    version = "2"
+    stored = get_meta("builtin_presets_version", path=path)
+    if stored == version:
+        return 0
+    n = 0
+    existing = {(r["kind"], r["name"].lower()) for r in list_presets(path=path)}
+    for p in BUILTIN_RESTOCK_PRESETS + BUILTIN_CLEANUP_PRESETS:
+        # an upgrade only adds presets introduced after the stored version, so deleted older ones stay deleted
+        if stored and int(p.get("since", 1)) <= int(stored):
+            continue
+        if (p["kind"], p["name"].lower()) in existing:
+            continue
+        save_preset(name=p["name"], kind=p["kind"], config=p["config"], path=path)
+        n += 1
+    set_meta("builtin_presets_version", version, path=path)
+    return n

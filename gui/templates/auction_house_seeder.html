@@ -30,6 +30,9 @@
   </section>
 
   <section class="panel">
+    <div class="page-head"><div><h2>Synthetic category seeding has moved</h2><p class="muted">Category seeding is now part of <a href="/auction-house/console#restock" target="_top">Restock</a>: pick several seller characters, add a whole category (or single items), and preview before executing.</p></div></div>
+  </section>
+  <section class="panel" hidden>
     <div class="page-head">
       <div><h2>Synthetic category seeding</h2><p class="muted">Administrative supply injection. No player Inventory is removed and no listing fee is charged.</p></div>
       <span class="badge">TEST ONLY</span>
@@ -47,6 +50,30 @@
       <button id="seedSyntheticExecute" type="button" disabled>Execute previewed seed</button>
     </div>
     <div id="seedSyntheticResult" class="result muted">No category seed previewed.</div>
+  </section>
+  <section class="panel" id="mktSeed">
+    <div class="page-head">
+      <div><h2>Market history &amp; scenarios</h2><p class="muted">Fills the Economy page with realistic test data. Every row is owned by 25 fake sellers (Tst*, ids 990000-990024), so Clear removes only these rows and never real listings. Runs on the Test profile only.</p></div>
+      <span class="badge">TEST ONLY</span>
+    </div>
+    <div class="form-grid">
+      <label>What to do <select id="mktMode">
+        <option value="history">Seed history (sales + active listings)</option>
+        <option value="scenarios">Add scenarios (monopolised, stagnant, flooded items)</option>
+        <option value="clear">Clear all seeded rows</option></select></label>
+      <label class="mkt-h">Items <input id="mktItems" type="number" min="1" max="300" value="60"></label>
+      <label class="mkt-h">Days of history <input id="mktDays" type="number" min="1" max="365" value="90"></label>
+      <label class="mkt-h">Random seed <input id="mktRng" type="number" value="1234"></label>
+    </div>
+    <p class="muted" id="mktHelp"></p>
+    <div class="actions">
+      <button id="mktPreview" type="button">Preview</button>
+    </div>
+    <div id="mktResult" class="result muted">Nothing previewed.</div>
+    <div class="actions" id="mktRun" hidden>
+      <label>To confirm, type the profile name shown in the header chip: <b id="mktConfName"></b> <input id="mktConf" autocomplete="off"></label>
+      <button id="mktExecute" type="button">Run</button>
+    </div>
   </section>
 </main>
 <style>

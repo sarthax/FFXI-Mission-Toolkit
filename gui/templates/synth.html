@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Synth & Crafting{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/auction_house_console.css?v=20261005s">
+<link rel="stylesheet" href="/static/synth.css?v=10">
+<main class="ahc sy" id="synth">
+  <div class="ahc-top">
+    <h1>Synth &amp; Crafting</h1>
+    <span id="syEnv" class="ahc-chip">checking…</span>
+    <span id="syFlavor" class="ahc-chip mut"></span>
+    <nav class="ahc-tabs" id="syTabs">
+      <button data-t="recipes" class="on" type="button">Recipes</button>
+      <button data-t="audit" type="button">Audit</button>
+      <button data-t="health" type="button">Health</button>
+      <button data-t="compare" type="button">Compare</button>
+      <button data-t="economy" type="button">Economy</button>
+      <button data-t="editor" type="button">Editor</button>
+      <button data-t="port" type="button">Export / Port</button>
+    </nav>
+  </div>
+  <div class="ahc-body">
+    <section class="ahc-pane on" id="p-recipes">
+      <div class="sy-list">
+        <div class="sy-filters">
+          <select id="syCraft"><option value="">Any craft</option></select>
+          <input id="syMin" type="number" min="0" max="255" placeholder="Skill min" title="Minimum skill level">
+          <input id="syMax" type="number" min="0" max="255" placeholder="max" title="Maximum skill level">
+          <select id="syMode"><option value="synth">Synths</option><option value="desynth">Desynths</option><option value="all">Both</option></select>
+          <input id="syQ" type="search" placeholder="Result or ingredient name…" class="sy-grow">
+          <label class="mut"><input type="checkbox" id="syOnlyMissing"> only incomplete (this page)</label>
+        </div>
+        <div class="sy-count mut" id="syCount"></div>
+        <div class="sy-scroll"><table id="syTable"><thead><tr><th>ID</th><th>Result</th><th>Craft</th><th class="n">Skill</th><th>Ingredients</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+        <div class="sy-pager"><button class="b" id="syPrev" type="button">‹ Prev</button><span id="syPage" class="mut"></span><button class="b" id="syNext" type="button">Next ›</button></div>
+      </div>
+      <div class="sy-detail" id="syDetail"><div class="ahc-empty">Select a recipe to see its ingredients, where each one comes from, and anything missing.</div></div>
+    </section>
+
+    <section class="ahc-pane" id="p-audit">
+      <div class="ahc-dash">
+        <div class="sy-filters"><select id="syAuditMode"><option value="synth">Synths</option><option value="desynth">Desynths</option><option value="all">Both</option></select>
+          <button class="b pri" id="syAuditRun" type="button">Run audit</button><a class="b" id="syAuditCsv" href="/synth/audit.csv">Download CSV</a><button class="b" id="syGapRun" type="button">Vendor gaps</button><button class="b" id="syResRun" type="button">Naming &amp; guild research</button><small class="mut" id="syAuditNote"></small></div>
+        <div class="ahc-tiles" id="syAuditTiles"></div>
+        <div class="sy-scroll"><table id="syAuditTable"><thead><tr><th>ID</th><th>Recipe</th><th>Problem</th></tr></thead><tbody></tbody></table></div>
+        <div id="syResBody"></div>
+      </div>
+    </section>
+
+
+    <section class="ahc-pane" id="p-health">
+      <div class="ahc-dash">
+        <div class="sy-filters"><button class="b pri" id="syHealthRun" type="button">Run health check</button><small class="mut">Structural checks plus source coverage, all recipe types.</small></div>
+        <div class="ahc-tiles" id="syHealthTiles"></div>
+        <div id="syHealthBody"></div>
+      </div>
+    </section>
+
+    <section class="ahc-pane" id="p-compare">
+      <div class="ahc-dash">
+        <p class="mut">Compare this server's recipes with another environment. Recipes are matched by crystal, ingredient set and main result, not by recipe id.</p>
+        <div class="sy-filters"><select id="cmpOther"></select><button class="b pri" id="cmpRun" type="button">Compare</button></div>
+        <div class="ahc-tiles" id="cmpTiles"></div>
+        <div id="cmpBody"></div>
+      </div>
+    </section>
+
+    <section class="ahc-pane" id="p-economy">
+      <div class="ahc-dash">
+        <div class="sy-filters"><button class="b pri" id="ecoRun" type="button">Analyze</button><small class="mut">Craft cost from vendor prices vs NPC sell value, plus ingredient cycles.</small></div>
+        <div class="ahc-tiles" id="ecoTiles"></div>
+        <div id="ecoBody"></div>
+      </div>
+    </section>
+
+    <section class="ahc-pane" id="p-editor">
+      <div class="ahc-dash"><div id="syEditor"></div></div>
+    </section>
+
+    <section class="ahc-pane" id="p-port">
+      <div class="ahc-dash">
+        <p class="mut">Generate INSERT statements for recipes from this server in another server's table layout. Pick recipes by ID range or a search, then copy the SQL and run it on the target. Nothing is written here.</p>
+        <div class="sy-filters"><label>From ID <input id="pxFrom" type="number" min="0"></label><label>to <input id="pxTo" type="number" min="0"></label>
+          <label>Target <select id="pxFlavor"><option value="dsp">DSP</option><option value="topaz">Topaz</option><option value="lsb">LSB</option></select></label>
+          <button class="b pri" id="pxGo" type="button">Generate SQL</button><button class="b" id="pxCopy" type="button">Copy</button></div>
+        <div id="pxWarn" class="mut"></div>
+        <textarea id="pxOut" class="sy-sql" readonly rows="18" placeholder="INSERT statements appear here"></textarea>
+      </div>
+    </section>
+  </div>
+  <datalist id="syItemDl"></datalist>
+</main>
+<script src="/static/synth.js?v=12"></script>
+{% endblock %}
