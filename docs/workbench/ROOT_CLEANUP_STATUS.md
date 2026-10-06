@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `416432905d9fc45ce78f0cc222dc88ad98a4b045` after PR #558  
-Current work branch: `cleanup/backport-callers-phase3b1`  
+Current merged baseline: `main` at `b39ea8332ecf55c944a5d3a63653f0ca2d3a6f93` after PR #559  
+Current work branch: `cleanup/backport-live-db-caller-phase3b2`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This document is the authoritative resume point for the post-Phase-D repository-structure cleanup. `docs/workbench/SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning; this file tracks what is actually merged, in progress, and still pending.
@@ -97,33 +97,44 @@ Coverage migrated in 3a includes package-migration tests for database/dialog/glo
 
 Validation: Workbench #2730 + Src Layout #610 green on exact PR head `18d32c588498f343c221f902f811c5eaed2bdc3e`.
 
+### Slice 3b1 — decouple packaged backport callers
+
+MERGED: PR #559 → `b39ea8332ecf55c944a5d3a63653f0ca2d3a6f93`
+
+Completed:
+
+- `workbench.migrations.backend_registry` now imports `workbench.packages.migration.sql_convert` directly instead of root `backport_sql_convert`.
+- `workbench.migrations.legacy_package_service` now imports packaged migration/validation owners directly for Lua conversion, SQL conversion, package orchestration, binding audit, and Lua sanity checks.
+- No `backport_*` root wrapper was deleted; this was caller decoupling only.
+
+Validation: Workbench #2731 + Src Layout #611 green.
+
 ## Current slice
 
-### Slice 3b1 — remove packaged callers of root backport aliases
+### Slice 3b2 — audit live SQL alias and define real deletion blocker
 
-Status: IN PROGRESS on `cleanup/backport-callers-phase3b1`.
+Status: IN PROGRESS on `cleanup/backport-live-db-caller-phase3b2`.
 
-Completed in this small batch:
+Findings/completed in this small batch:
 
-- [x] `workbench.migrations.backend_registry` now imports `workbench.packages.migration.sql_convert` directly instead of root `backport_sql_convert`.
-- [x] `workbench.migrations.legacy_package_service` now imports packaged migration/validation owners directly for Lua conversion, SQL conversion, package orchestration, binding audit, and Lua sanity checks.
-- [x] No `backport_*` root wrapper is deleted in this batch; this is caller decoupling only.
+- [x] `workbench.validation.live_db.sql_check` already pre-binds the historical `backport_sql_convert` module name to canonical `workbench.packages.migration.sql_convert` before loading `_sql_check_impl.py`.
+- [x] `_sql_check_impl.py` therefore does **not** require the root `backport_sql_convert.py` file; its absolute import is an internal preserved-implementation compatibility string.
+- [x] `test_sql_live_check_package_migration.py` now explicitly asserts `sys.modules["backport_sql_convert"] is workbench.packages.migration.sql_convert`, locking that package-only behavior.
+- [x] No production code change is needed in the large preserved live-DB implementation.
 
-Remaining in this family before wrapper deletion:
+Actual blockers before deleting root `backport_sql_convert.py`:
 
-- [ ] Repoint `workbench.validation.live_db._sql_check_impl` from root `backport_sql_convert` to `workbench.packages.migration.sql_convert`.
-- [ ] Audit tests and operator/docs callers for each `backport_*` wrapper.
-- [ ] Split wrappers into safe-to-delete vs intentionally retained CLI compatibility entry points.
-- [ ] Convert alias-dependent tests to canonical package tests.
-- [ ] Tighten Source Layout guard, then delete only the proven-unused wrappers.
+- [ ] `test_backport_sql_convert.py` remains a standalone root regression built around the historical module/CLI name.
+- [ ] operator/docs examples still name the root CLI and should either be migrated to `python -m workbench.packages.migration.sql_convert` or deliberately retained as compatibility documentation.
+- [ ] audit `backport_package.py` and sibling `backport_*` wrappers as a family before deleting one-off aliases, so package tooling keeps a coherent operator surface.
 
-Validation for this branch should include Workbench core regression (especially `test_migration_backend_registry.py` and `test_legacy_package_service.py`) plus Source Layout before merge.
+Next small batch: audit the `backport_package.py` / `backport_lua_convert.py` / validation wrapper family and classify wrappers into safe-delete vs retained CLI aliases. Do not delete `backport_sql_convert.py` yet.
 
 ## Remaining slices
 
 ### Slice 3b+ — remaining compatibility shim forest
 
-PENDING after 3b1. Process in bounded logical families:
+PENDING after the backport-family audit. Process in bounded logical families:
 
 - remaining backport/package/migration wrappers;
 - remaining indexing/devtools wrappers;
