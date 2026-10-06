@@ -13,7 +13,13 @@ from workbench.runtime.paths import DATABASE_PATH, REPO_ROOT
 
 
 def main() -> None:
-    assert not (REPO_ROOT / "build_capture_index.py").exists()
+    shim = REPO_ROOT / "build_capture_index.py"
+    assert shim.is_file()
+    shim_text = shim.read_text(encoding="utf-8")
+    assert "workbench.captures.ingestion import build_index as _canonical" in shim_text
+    assert "sqlite3.connect" not in shim_text
+    assert "Path(__file__)" not in shim_text
+
     assert canonical.DB_PATH == DATABASE_PATH
     assert canonical.TOOLS_ROOT == REPO_ROOT
     assert canonical.entity_profile is entity_profile
