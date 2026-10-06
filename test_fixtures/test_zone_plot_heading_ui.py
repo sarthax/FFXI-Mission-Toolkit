@@ -11,28 +11,20 @@ def main():
         / "zone_plot2.html"
     ).read_text(encoding="utf-8")
 
-    # FFXI heading convention is intentionally east-indexed, not north-indexed.
     assert "0=East; values increase counter-clockwise (64=N, 128=W, 192=S)" in template
     assert "ROT_DIRS" in template and "'E'" in template and "'NE'" in template and "'N'" in template and "'NW'" in template
     assert "const bearing=(90+ffxiDeg)%360;" in template
-
-    # Selected entities expose a real heading indicator and readable rotation details.
     assert "const headingArrow=new THREE.ArrowHelper" in template
     assert "updateHeadingArrow();" in template
     assert "rotText(e.r)" in template
     assert 'id="er-dir"' in template
-
-    # World compass follows the projected world-North vector.
     assert 'id="map-compass"' in template
     assert 'id="compass-rose"' in template
     assert "add(new THREE.Vector3(0,0,-25)).project(camera)" in template
-
-    # Close zoom is deliberately finer than far-distance zoom.
     assert "controls.zoomSpeed=(1.4+2.6*far)*mult;" in template
     assert "controls.minDistance=0.05;" in template
     assert "renderer.domElement.addEventListener('wheel', ev=>{ ev.preventDefault(); updateZoomSpeed(" in template
 
-    # First Zone Editor QOL priority stack.
     assert "const undoStack=[], redoStack=[];" in template
     assert "pre_restore_backup" in template
     for marker in (
@@ -56,7 +48,6 @@ def main():
     assert 'data-rpreset="64"' in template and 'data-rpreset="0"' in template
     assert "Ctrl+Z" in template and "Ctrl+Y" in template
 
-    # Next Zone Editor QOL stacks: cameras/state, gizmo, SQL sync state, orthographic mode.
     assert "const perspectiveCamera = new THREE.PerspectiveCamera" in template
     assert "const orthoCamera = new THREE.OrthographicCamera" in template
     assert "function cameraPreset(name)" in template
@@ -65,21 +56,18 @@ def main():
     assert 'data-cam="top"' in template and 'data-cam="north"' in template
     assert 'id="projection"' in template
     assert "camera.isOrthographicCamera" in template
-
     assert "TransformControls" in template
     assert "const transformProxy=new THREE.Object3D()" in template
     assert "transformControls.showX=mode==='translate'" in template
     assert "transformControls.showY=true" in template
     assert "transformControls.showZ=mode==='translate'" in template
     assert "e.r=Math.round(turns*256)%256" in template
-
     assert 'id="esyncstatus"' in template
     assert "const entitySyncState=new Map();" in template
     assert "Live DB: modified   SQL source: NOT SYNCED" in template
     assert "Live DB ✓   SQL source ✓" in template
     assert "markSqlSynced(lastTouched.k,lastTouched.id)" in template
 
-    # Conservative multi-select / bulk transform workflow.
     assert "const multiSelected=new Set();" in template
     assert 'id="bulk-panel"' in template
     assert "Ctrl/Cmd-click dots or list rows to add/remove" in template
@@ -98,41 +86,17 @@ def main():
     assert 'id="bulk-sync"' in template
     assert "markSqlSynced(e.k,e.id)" in template
 
-    zone_edit = (
-        Path(__file__).resolve().parents[1]
-        / "src"
-        / "workbench"
-        / "editors"
-        / "zone"
-        / "_editor_impl.py"
-    ).read_text(encoding="utf-8")
-    gui_server = (
-        Path(__file__).resolve().parents[1]
-        / "gui_server.py"
-    ).read_text(encoding="utf-8")
-    nyzul_plot = (
-        Path(__file__).resolve().parents[1]
-        / "src"
-        / "workbench"
-        / "devtools"
-        / "domains"
-        / "nyzul_plot.py"
-    ).read_text(encoding="utf-8")
-    zone_plot = (
-        Path(__file__).resolve().parents[1]
-        / "src"
-        / "workbench"
-        / "devtools"
-        / "spatial"
-        / "zone_plot.py"
-    ).read_text(encoding="utf-8")
+    root = Path(__file__).resolve().parents[1]
+    zone_edit = (root / "src" / "workbench" / "editors" / "zone" / "_editor_impl.py").read_text(encoding="utf-8")
+    gui_server = (root / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
+    nyzul_plot = (root / "src" / "workbench" / "devtools" / "domains" / "nyzul_plot.py").read_text(encoding="utf-8")
+    zone_plot = (root / "src" / "workbench" / "devtools" / "spatial" / "zone_plot.py").read_text(encoding="utf-8")
     assert "def update_positions_bulk(rows, comment=" in zone_edit
     assert "bulk transform is limited to 256 entities per action" in zone_edit
     assert "bulk transform must stay within one zone" in zone_edit
     assert "_save_backup(f\"bulk transform {len(normalized)} entities\"" in zone_edit
     assert '@app.post("/zoneplot/edit_bulk")' in gui_server
 
-    # Entity discovery / navigation chunk.
     assert "renderer.domElement.addEventListener('dblclick'" in template
     assert "Double-click to select and frame" in template
     assert 'id="lf-kind"' in template
@@ -145,7 +109,6 @@ def main():
     assert "first 1000 shown" in template
     assert "grid-template-columns:30px 60px minmax(90px,1fr) 44px" in template
 
-    # Orientation / snap / clipboard / measurement tools.
     assert 'id="labelHeading"' in template
     assert "Show heading on labels" in template
     assert 'id="faceDrag"' in template
@@ -161,7 +124,6 @@ def main():
     assert "horizontal ${horizontal.toFixed(2)}" in template
     assert "bearing ${bearing.toFixed(1)}°" in template
 
-    # Snap-to-selected and selected-entity history / restore.
     assert "Snap XYZ to other selected" in template
     assert "Snap Y to other selected" in template
     assert "function otherSelectedEntity()" in template
@@ -180,7 +142,6 @@ def main():
     assert '@app.get("/zoneplot/history/{kind}/{eid}")' in gui_server
     assert '@app.post("/zoneplot/restore_entity_previous")' in gui_server
 
-    # Explicit mob roam/spawn-leash radii: source-backed only, never inferred from engine defaults.
     assert "RADIUS_MOB_MODS" in zone_plot
     assert '31: ("roam_radius", "ROAM_DISTANCE")' in zone_plot
     assert '47: ("leash_radius", "SPAWN_LEASH")' in zone_plot
@@ -196,7 +157,6 @@ def main():
     assert "function radiusText(e)" in template
     assert "No explicit ROAM_DISTANCE or SPAWN_LEASH stored for this mob." in template
 
-    # Selection defaults back to Move mode and Help documents the editor surface.
     assert "if(typeof setGizmoMode==='function') setGizmoMode('translate');" in template
     assert 'id="zhelpBtn"' in template
     assert 'id="tab-help"' in template
@@ -205,7 +165,6 @@ def main():
     assert "Client model preview" in template
     assert "Animation, model preview, NPC rows" in template
 
-    # Model changes are preview/impact gated, backup-backed, and pool-aware for mobs.
     assert "def _flat_look_blob(model_id):" in zone_edit
     assert "def preview_model_change(kind, eid, model_id):" in zone_edit
     assert "def apply_model_change(kind, eid, model_id, comment=\"\"):" in zone_edit
@@ -221,13 +180,11 @@ def main():
     assert "async function applySelectedModel()" in template
     assert "Selection/candidate changed. Check impact again." in template
 
-    # Animation metadata comes from current bundled LSB sources, with subanimation evidence.
     assert "/zoneplot/animation-meta.json" in gui_server
     assert "loadAnimationMetadata()" in template
     assert "renderAnimationEvidence()" in template
     assert "Transient FOURCC animation reference" in template
 
-    # Nav diagnostics / elevation / persistent door orientation.
     assert 'id="navdiag"' in template
     assert 'id="navdiagOut"' in template
     assert "async function loadSelectedNavDiag()" in template
@@ -241,7 +198,6 @@ def main():
     assert "def nav_diagnostics(zid, x, y, z, server=None):" in zone_plot
     assert '@app.get("/zoneplot/{zid}/navdiag.json")' in gui_server
 
-    # Add workflow: clone selected, repeat placement, richer ghost.
     assert 'id="cloneSelectedBtn"' in template
     assert 'id="repeatAdd"' in template
     assert 'id="addGhostInfo"' in template
@@ -251,7 +207,6 @@ def main():
     assert "Repeated placement active: source/rotation/instance retained" in template
     assert '"gid": int(gid)' in zone_plot
 
-    # Nav diagnostics / elevation / persistent door orientation.
     assert 'id="navdiag"' in template
     assert 'id="navdiagOut"' in template
     assert "async function loadSelectedNavDiag()" in template
