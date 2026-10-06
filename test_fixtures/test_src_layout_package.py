@@ -58,6 +58,23 @@ def main() -> None:
     assert "from workbench.runtime import settings_store as _canonical" in root_settings
     assert "sqlite3.connect" not in root_settings
 
+    # Post-Phase-D root cleanup keeps reference/report/design artifacts out of the repository
+    # root. These paths are deliberately structural data/docs locations, not runtime state moves.
+    moved_root_artifacts = (
+        "appraisal_item_id_xref.csv",
+        "appraisal_pools_with_item_ids.csv",
+        "uncharted90_names.txt",
+        "mission_toolkit_gui_artifact.html",
+        "backport_coverage_report.md",
+    )
+    for name in moved_root_artifacts:
+        assert not (ROOT / name).exists(), name
+    assert (ROOT / "data" / "reference" / "appraisal" / "item_id_xref.csv").is_file()
+    assert (ROOT / "data" / "reference" / "appraisal" / "pools_with_item_ids.csv").is_file()
+    assert (ROOT / "data" / "reference" / "uncharted90_names.txt").is_file()
+    assert (ROOT / "docs" / "archive" / "ui" / "mission_toolkit_gui_artifact.html").is_file()
+    assert (ROOT / "docs" / "reports" / "backport" / "backport_coverage_report.md").is_file()
+
     # These former root compatibility/implementation modules are retired. First-party code and
     # regressions must use canonical package imports directly rather than recreating hidden root
     # coupling.
