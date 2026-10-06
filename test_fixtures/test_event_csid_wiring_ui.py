@@ -57,7 +57,7 @@ References[2]
     assert "observed capture params (uninterpreted)" in scaffold
     assert "Scaffolding only" in scaffold
 
-    server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
+    server = (ROOT / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
     browser = (ROOT / "gui" / "templates" / "events.html").read_text(encoding="utf-8")
     detail = (ROOT / "gui" / "templates" / "event_view.html").read_text(encoding="utf-8")
     bridge = (ROOT / "vendor" / "xi-events-py" / "decompile_from_mission_toolkit.py").read_text(encoding="utf-8")
