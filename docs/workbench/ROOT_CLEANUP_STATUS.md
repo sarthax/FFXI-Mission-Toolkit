@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `5fee201cb5633996ef7b7e5ea4b410bb2d90852c` after PR #572  
-Current work branch: `cleanup/client-model-catalog-phase3c7`  
+Current merged baseline: `main` at `53d5f92ee6a7ee01174426866235dd39c9d1fcd8` after PR #573  
+Current work branch: `cleanup/client-model-resolver-phase3c8`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -62,28 +62,26 @@ reset_install.bat
 - PR #569 — synchronized the cleanup tracker.
 - PR #570 — retired Client binary analyze/index/diff root CLIs and migrated active docs; Workbench #2743 + Src Layout #622 green.
 - PR #571 — retired `dat_extractor_bin.py`; Workbench #2744 + Src Layout #623 green.
-- PR #572 — retired `dat_inspector.py` after moving the GUI regression to `workbench.client.dat.inspector`; Workbench #2745 + Src Layout #624 green.
+- PR #572 — retired `dat_inspector.py`; Workbench #2745 + Src Layout #624 green.
+- PR #573 — retired `client_model_catalog.py`, migrated regressions to the canonical catalog, and added external-CWD Src Layout coverage; Workbench #2746 + Src Layout #625 green.
 
 ## Current slice
 
-### Slice 3c7 — retire Client model catalog root alias
+### Slice 3c8 — retire Client model resolver root wrapper
 
-Status: IN PROGRESS on `cleanup/client-model-catalog-phase3c7`.
+Status: IN PROGRESS on `cleanup/client-model-resolver-phase3c8`.
 
 Changes on this branch:
-- [x] removed root `client_model_catalog.py`.
-- [x] `test_client_model_catalog.py` imports `workbench.client.models.catalog` directly.
-- [x] `test_client_model_catalog_package_migration.py` uses only the canonical package and requires the root alias to remain absent.
-- [x] the catalog regression now reads route ownership from packaged `src/workbench/app/_host_impl.py` instead of root `gui_server.py`.
-- [x] Source Layout requires the root alias to stay absent and smoke-imports the canonical catalog from outside repository CWD.
-
-Explicit boundary:
-- [x] `client_model_resolver.py` remains because `src/workbench/editors/zone/_editor_impl.py` still imports the root compatibility name in production. Migrate that caller in a separate slice.
+- [x] removed root `client_model_resolver.py`.
+- [x] `test_client_model_resolver.py` now uses `workbench.client.models.resolver` directly and requires the root wrapper to remain absent.
+- [x] stale static source checks in that regression now point to packaged model viewer and app-host ownership.
+- [x] Source Layout retired-root guard includes `client_model_resolver.py`.
+- [x] Zone Editor compatibility remains preserved because `workbench.editors.zone.editor` already injects the canonical resolver into `sys.modules["client_model_resolver"]` while executing the mature implementation.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by catalog alias retirement.
+- [ ] Fix only regressions caused by resolver wrapper retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
@@ -92,12 +90,11 @@ Before merge:
 - `backport_convert_7_packages.py`, `backport_convert_gm_debug_tools.py`, `backport_convert_nyzul_package.py` — wrappers seed Settings-derived operator defaults.
 - `backport_sql_live_check.py` — active GUI/package/runtime operator guidance still names it.
 - `backport_package.py`, `backport_lua_convert.py`, `backport_sql_convert.py` — higher-fan-in operator/test surfaces.
-- `client_model_resolver.py` — active Zone Editor production import remains.
 
 ## Remaining slices
 
 ### Compatibility-shim families
-- Client model resolver production-import migration and remaining client/model wrappers;
+- remaining client/model wrappers (`client_overview.py`, model viewer/schedule/table aliases, etc.) after caller audits;
 - remaining indexing/server-analysis wrappers;
 - capture/protocol wrappers;
 - spatial/domain/runtime wrappers;
