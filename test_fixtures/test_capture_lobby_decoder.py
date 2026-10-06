@@ -7,6 +7,7 @@ import sqlite3
 import struct
 
 import build_capture_index
+from workbench.captures import lobby_ingest, map_framing, protocol_classification, search_framing
 
 
 CLIENT_IP = (10, 0, 0, 2)
@@ -23,6 +24,27 @@ def lobby_packet(command: int, body: bytes) -> bytes:
     packet[12:28] = b"\x00" * 16
     packet[12:28] = hashlib.md5(packet).digest()
     return bytes(packet)
+
+
+def search_frame(size: int = 32) -> bytes:
+    packet = bytearray([0xA5] * size)
+    struct.pack_into("<H", packet, 0, size)
+    packet[2:4] = b"\x00\x00"
+    packet[4:8] = b"IXFF"
+    return bytes(packet)
+
+
+def map_login_datagram() -> bytes:
+    inner = bytearray(map_framing.LOGIN_PACKET_SIZE)
+    header = map_framing.LOGIN_OPCODE | ((map_framing.LOGIN_PACKET_SIZE // 4) << 9)
+    struct.pack_into("<H", inner, 0, header)
+    struct.pack_into("<H", inner, 2, 0x1234)
+    for i in range(map_framing.LOGIN_PACKET_CHECK_SUM_START, map_framing.LOGIN_PACKET_SIZE):
+        inner[i] = (i * 19 + 5) & 0xFF
+    inner[map_framing.LOGIN_PACKET_CHECK_OFFSET] = (
+        sum(inner[map_framing.LOGIN_PACKET_CHECK_SUM_START:map_framing.LOGIN_PACKET_SIZE]) & 0xFF
+    )
+    return bytes(bytearray(map_framing.FFXI_HEADER_SIZE) + inner + hashlib.md5(inner).digest())
 
 
 def ipv4_tcp_frame(payload: bytes, *, sport: int, dport: int, seq: int, src, dst, flags: int = 0x18) -> bytes:
@@ -44,6 +66,21 @@ def ipv4_tcp_frame(payload: bytes, *, sport: int, dport: int, seq: int, src, dst
     return eth + bytes(ip) + bytes(tcp) + payload
 
 
+def ipv4_udp_frame(payload: bytes, *, sport: int, dport: int, src, dst) -> bytes:
+    eth = bytes.fromhex("00112233445566778899AABB0800")
+    total_len = 20 + 8 + len(payload)
+    ip = bytearray(20)
+    ip[0] = 0x45
+    struct.pack_into("!H", ip, 2, total_len)
+    ip[8] = 64
+    ip[9] = 17
+    ip[12:16] = bytes(src)
+    ip[16:20] = bytes(dst)
+    udp = bytearray(8)
+    struct.pack_into("!HHHH", udp, 0, sport, dport, 8 + len(payload), 0)
+    return eth + bytes(ip) + bytes(udp) + payload
+
+
 def make_pcap(frames):
     out = bytearray()
     out += b"\xd4\xc3\xb2\xa1"
@@ -59,23 +96,39 @@ def encode_ip_u32(ip):
     return struct.unpack("<I", packed)[0]
 
 
+def _empty_direction():
+    return {"ranges": [], "gaps": [], "retransmissions": [], "overlaps": [], "conflicting_overlaps": []}
+
+
+def _single_range_direction(payload: bytes, seq: int):
+    return {
+        "ranges": [{
+            "seq_start": seq,
+            "seq_end": seq + len(payload),
+            "length": len(payload),
+            "payload_hex": payload.hex().upper(),
+            "frame_numbers": [1],
+            "first_timestamp_seconds": 1.0,
+            "last_timestamp_seconds": 1.0,
+        }],
+        "gaps": [], "retransmissions": [], "overlaps": [], "conflicting_overlaps": [],
+    }
+
+
 def main():
     con = sqlite3.connect(":memory:")
     build_capture_index.init_db(con)
     cid = build_capture_index.create_manual_capture(con, "lobby tcp", "Research", None)
 
-    # C->S RequestQueryWorldList (0x24, fixed 0x2C)
     req_worlds = lobby_packet(0x0024, b"\x00" * 16)
     assert len(req_worlds) == 0x2C
 
-    # S->C ResponseKey (0x05, fixed 0x28) with wardrobes 3-8 enabled.
     response_key = lobby_packet(
         0x0005,
         struct.pack("<III", 0x11223344, 0x00000FFF, 0x000000FD),
     )
     assert len(response_key) == 0x28
 
-    # S->C ResponseNextLogin (0x0B, fixed 0x48)
     body = bytearray()
     body += struct.pack("<I", 0x01020304)
     body += struct.pack("<I", 0x00081234)
@@ -88,12 +141,13 @@ def main():
     next_login = lobby_packet(0x000B, bytes(body))
     assert len(next_login) == 0x48
 
-    # A separate flow with IXFF + known command but invalid MD5 must remain unknown_tcp.
     false_packet = bytearray(req_worlds)
     false_packet[12] ^= 0xFF
+    sf = search_frame()
+    map_udp_payload = map_login_datagram()
+    assert len(map_udp_payload) == map_framing.MIN_DATAGRAM_SIZE
 
     frames = [
-        # Split request across two TCP segments to ensure classification happens after reassembly.
         (1_700_000_000, 100_000, ipv4_tcp_frame(
             req_worlds[:17], sport=CLIENT_PORT, dport=SERVER_PORT, seq=1000,
             src=CLIENT_IP, dst=SERVER_IP,
@@ -102,7 +156,6 @@ def main():
             req_worlds[17:], sport=CLIENT_PORT, dport=SERVER_PORT, seq=1017,
             src=CLIENT_IP, dst=SERVER_IP,
         )),
-        # Two valid server responses back-to-back across separate segments.
         (1_700_000_000, 300_000, ipv4_tcp_frame(
             response_key, sport=SERVER_PORT, dport=CLIENT_PORT, seq=5000,
             src=SERVER_IP, dst=CLIENT_IP,
@@ -116,10 +169,19 @@ def main():
             seq=5000 + len(response_key) + 31,
             src=SERVER_IP, dst=CLIENT_IP,
         )),
-        # False-positive candidate on another TCP flow/port.
         (1_700_000_001, 100_000, ipv4_tcp_frame(
             bytes(false_packet), sport=41000, dport=65000, seq=9000,
             src=CLIENT_IP, dst=SERVER_IP,
+        )),
+        (1_700_000_001, 200_000, ipv4_tcp_frame(
+            sf, sport=42000, dport=54002, seq=12000,
+            src=CLIENT_IP, dst=(55, 66, 77, 88),
+        )),
+        # Exact zone/map endpoint learned from ResponseNextLogin plus a source-backed client 0x000A
+        # UDP login datagram. Semantic fields remain intentionally opaque.
+        (1_700_000_001, 300_000, ipv4_udp_frame(
+            map_udp_payload, sport=43000, dport=54230,
+            src=CLIENT_IP, dst=(11, 22, 33, 44),
         )),
     ]
 
@@ -135,7 +197,7 @@ def main():
            ORDER BY flow_id""",
         (cid,),
     ).fetchall()
-    assert len(flows) == 2, flows
+    assert len(flows) == 3, flows
 
     lobby_flow = next(row for row in flows if row[2] == CLIENT_PORT and row[4] == SERVER_PORT)
     lobby_meta = json.loads(lobby_flow[5])
@@ -143,11 +205,42 @@ def main():
     assert lobby_meta["classification_validated"] is True, lobby_meta
     assert lobby_meta["endpoint_roles"] == {"client": "a", "server": "b"}, lobby_meta
     assert lobby_meta["role_status"] == "validated_from_command_direction", lobby_meta
+    assert lobby_meta["cross_source_merge_performed"] is False, lobby_meta
 
     false_flow = next(row for row in flows if row[2] == 41000)
     false_meta = json.loads(false_flow[5])
     assert false_meta["protocol_family"] == "unknown_tcp", false_meta
     assert false_meta["classification_validated"] is False, false_meta
+
+    ingested_search_flow = next(row for row in flows if row[2] == 42000 and row[4] == 54002)
+    ingested_search_meta = json.loads(ingested_search_flow[5])
+    assert ingested_search_meta["protocol_family"] == "ffxi_search_endpoint", ingested_search_meta
+    assert ingested_search_meta["classification_validated"] is False, ingested_search_meta
+    assert ingested_search_meta["classification_scope"] == "verified_search_handoff_plus_source_backed_search_framing", ingested_search_meta
+    assert ingested_search_meta["framing_evidence"]["frame_count"] == 1, ingested_search_meta
+    assert ingested_search_meta["decoder_status"] == "encrypted_or_opaque", ingested_search_meta
+    assert ingested_search_meta["cross_source_merge_performed"] is False, ingested_search_meta
+
+    udp_rows = con.execute(
+        """SELECT payload_json FROM capture_structured_records
+           WHERE capture_id=? AND source_file='lobby-session.pcap'
+             AND family='pcap_network' AND record_type='UDP'""",
+        (cid,),
+    ).fetchall()
+    assert len(udp_rows) == 1, udp_rows
+    udp_meta = json.loads(udp_rows[0][0])
+    assert udp_meta["protocol_family"] == "ffxi_map_endpoint", udp_meta
+    assert udp_meta["classification_validated"] is True, udp_meta
+    assert udp_meta["classification_scope"] == "verified_lobby_handoff_plus_verified_map_0x000A_udp_handshake", udp_meta
+    assert udp_meta["classification_certainty"] == "verified", udp_meta
+    assert udp_meta["transport_payload_hex"] == map_udp_payload.hex().upper(), udp_meta
+    assert udp_meta["decoder_status"] == "verified_handshake_structure_payload_fields_opaque", udp_meta
+    assert udp_meta["map_handshake_probe"]["recognized"] is True, udp_meta
+    assert udp_meta["framing_evidence"]["message_type"] == "client_zone_login_0x000A", udp_meta
+    assert udp_meta["framing_evidence"]["direction"] == "client_to_map", udp_meta
+    assert udp_meta["normalized_packet_correlation"]["status"] == "unmatched", udp_meta
+    assert udp_meta["normalized_packet_correlation"]["automatic_merge_performed"] is False, udp_meta
+    assert udp_meta["cross_source_merge_performed"] is False, udp_meta
 
     messages = con.execute(
         """SELECT direction,command,command_name,validation_status,fields_json,provenance_json
@@ -180,6 +273,82 @@ def main():
     assert next_fields["cache_ip"] == "55.66.77.88", next_fields
     assert next_fields["cache_port"] == 54002, next_fields
 
+    decoded_next = lobby_ingest.decode_packet(next_login)
+    assert decoded_next["field_evidence"]["server_ip"]["certainty"] == "verified", decoded_next
+    resync = lobby_ingest.scan_range_detailed(b"\xAA\xBB" + next_login, 7000)
+    assert len(resync["messages"]) == 1, resync
+    assert any(d["kind"] == "framing_resynchronization" for d in resync["diagnostics"]), resync
+    truncated = lobby_ingest.scan_range_detailed(next_login[:40], 8000)
+    assert truncated["messages"] == [], truncated
+    assert any(d["kind"] == "truncated_frame_candidate" for d in truncated["diagnostics"]), truncated
+
+    search_scan = search_framing.scan_range(b"\xFE" + sf, 8500)
+    assert len(search_scan["frames"]) == 1, search_scan
+    assert search_scan["frames"][0]["seq_start"] == 8501, search_scan
+    assert search_scan["frames"][0]["decoder_status"] == "encrypted_or_opaque", search_scan
+    search_truncated = search_framing.scan_range(sf[:-2], 8600)
+    assert search_truncated["frames"] == [], search_truncated
+    assert any(d["kind"] == "truncated_frame_candidate" for d in search_truncated["diagnostics"]), search_truncated
+
+    research_lobby_flow = {
+        "flow_id": "research-lobby",
+        "endpoint_a": {"ip": "10.0.0.2", "port": 40000},
+        "endpoint_b": {"ip": "203.0.113.10", "port": 54001},
+        "transport": "tcp",
+        "frames": [],
+        "directions": {
+            "a_to_b": _empty_direction(),
+            "b_to_a": _single_range_direction(next_login, 9000),
+        },
+    }
+    map_tcp_flow = {
+        "flow_id": "map-handoff-tcp",
+        "endpoint_a": {"ip": "10.0.0.2", "port": 41000},
+        "endpoint_b": {"ip": "11.22.33.44", "port": 54230},
+        "transport": "tcp",
+        "frames": [],
+        "directions": {
+            "a_to_b": _single_range_direction(b"opaque-world", 10000),
+            "b_to_a": _empty_direction(),
+        },
+    }
+    search_flow = {
+        "flow_id": "search-handoff",
+        "endpoint_a": {"ip": "10.0.0.2", "port": 42000},
+        "endpoint_b": {"ip": "55.66.77.88", "port": 54002},
+        "transport": "tcp",
+        "frames": [],
+        "directions": {
+            "a_to_b": _single_range_direction(sf, 11000),
+            "b_to_a": _empty_direction(),
+        },
+    }
+    signature_only_flow = {
+        "flow_id": "signature-only",
+        "endpoint_a": {"ip": "10.0.0.2", "port": 42001},
+        "endpoint_b": {"ip": "192.0.2.77", "port": 54002},
+        "transport": "tcp",
+        "frames": [],
+        "directions": {
+            "a_to_b": _single_range_direction(sf, 12000),
+            "b_to_a": _empty_direction(),
+        },
+    }
+    classified = {row["flow_id"]: row for row in protocol_classification.classify_reconstructed_flows(
+        [research_lobby_flow, map_tcp_flow, search_flow, signature_only_flow]
+    )}
+    assert classified["research-lobby"]["protocol_family"] == "ffxi_lobby", classified
+    assert classified["map-handoff-tcp"]["protocol_family"] == "unknown_tcp", classified
+    assert classified["map-handoff-tcp"]["classification_scope"] == "handoff_endpoint_transport_mismatch", classified
+    assert classified["map-handoff-tcp"]["protocol_candidates"][0]["protocol_family"] == "ffxi_map_endpoint", classified
+    assert classified["map-handoff-tcp"]["protocol_candidates"][0]["expected_transport"] == "udp", classified
+    assert classified["search-handoff"]["protocol_family"] == "ffxi_search_endpoint", classified
+    assert classified["search-handoff"]["classification_scope"] == "verified_search_handoff_plus_source_backed_search_framing", classified
+    assert classified["search-handoff"]["framing_evidence"]["frame_count"] == 1, classified
+    assert classified["search-handoff"]["decoder_status"] == "encrypted_or_opaque", classified
+    assert classified["signature-only"]["protocol_family"] == "unknown_tcp", classified
+    assert classified["signature-only"]["classification_scope"] == "insufficient_evidence", classified
+
     req_msg = next(row for row in messages if row[1] == 0x0024)
     assert req_msg[0] == "a_to_b", req_msg
     req_prov = json.loads(req_msg[5])
@@ -188,7 +357,6 @@ def main():
     assert req_prov["frame_numbers"] == [1, 2], req_prov
     assert req_prov["sensitive_field_policy"].startswith("raw_packet_retained"), req_prov
 
-    # Invalid-MD5 traffic must never become a decoded lobby message.
     assert con.execute(
         """SELECT COUNT(*) FROM capture_network_messages
            WHERE capture_id=? AND flow_id=?""",
@@ -207,7 +375,6 @@ def main():
     assert all(row[0] == "pcap-tcp-message" for row in locators), locators
     assert all(json.loads(row[1])["md5_valid"] is True for row in locators), locators
 
-    # Reingestion remains idempotent.
     again = build_capture_index.ingest_single_file(con, cid, "lobby-session.pcap", pcap)
     assert again["error"] is None, again
     assert con.execute(
@@ -215,9 +382,14 @@ def main():
            WHERE capture_id=? AND source_file='lobby-session.pcap'""",
         (cid,),
     ).fetchone()[0] == 3
+    assert con.execute(
+        """SELECT COUNT(*) FROM capture_network_flows
+           WHERE capture_id=? AND source_file='lobby-session.pcap'""",
+        (cid,),
+    ).fetchone()[0] == 3
 
     con.close()
-    print("Validated lobby TCP classifier/decoder regression: PASS")
+    print("Validated lobby/search/map endpoint classifier regression: PASS")
     return 0
 
 
