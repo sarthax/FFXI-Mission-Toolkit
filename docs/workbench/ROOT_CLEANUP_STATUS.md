@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `6b7d677af0755ff9fb24743e3b11b22cdc742d37` after PR #563  
-Current work branch: `cleanup/backport-map-lint-phase3b6`  
+Current merged baseline: `main` at `0601134a3a845342626ede2ea4c9ea9d855c8162` after PR #564  
+Current work branch: `cleanup/engine-validation-wrappers-phase3b7`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This document is the authoritative resume point for the post-Phase-D repository-structure cleanup. `docs/workbench/SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning; this file tracks what is actually merged, in progress, and still pending.
@@ -123,24 +123,36 @@ Removed root:
 
 Validation: Workbench #2736 + Src Layout #616 green.
 
-## Current slice
-
 ### Slice 3b6 — retire namespace-map lint wrapper
 
-Status: IN PROGRESS on `cleanup/backport-map-lint-phase3b6`.
+MERGED: PR #564 → `0601134a3a845342626ede2ea4c9ea9d855c8162`
+
+Removed root:
+- `backport_map_lint.py` → `workbench.validation.packages.map_lint`
+
+`test_lua_converter_map_lint_package_migration.py` now exercises the canonical module and direct `python -m` CLI outside repo CWD. Src-layout retirement guards now include all seven removed backport validation wrappers.
+
+Validation: Workbench #2738 + Src Layout #617 green.
+
+## Current slice
+
+### Slice 3b7 — retire engine-validation wrappers
+
+Status: IN PROGRESS on `cleanup/engine-validation-wrappers-phase3b7`.
 
 Removed on this branch:
-- [x] `backport_map_lint.py` → `workbench.validation.packages.map_lint`
+- [x] `engine_change_index.py` → `workbench.validation.environments.engine_change_index`
+- [x] `engine_migration_compare.py` → `workbench.validation.environments.engine_compare`
 
 Caller/test migration completed:
-- [x] `test_lua_converter_map_lint_package_migration.py` no longer loads the root map-lint wrapper.
-- [x] The regression requires `backport_map_lint.py` to remain absent.
-- [x] The canonical `python -m workbench.validation.packages.map_lint` CLI is exercised from outside the repository CWD.
+- [x] `test_engine_validation_package_migration.py` no longer loads either root wrapper.
+- [x] The regression requires both root wrappers to remain absent.
+- [x] Both canonical `python -m` CLIs are exercised from outside the repository CWD.
 
-Explicitly retained:
-- `backport_sql_live_check.py` — active GUI/package/runtime operator guidance still names this command, so it is not a low-coupling deletion candidate yet.
-- `backport_package.py`, `backport_lua_convert.py`, `backport_sql_convert.py` — root-facing regression/operator surfaces remain and need dedicated CLI/test migrations.
-- conversion-driver and other remaining wrappers — audit separately in later small batches.
+Classification decisions:
+- [x] `backport_convert_7_packages.py`, `backport_convert_gm_debug_tools.py`, and `backport_convert_nyzul_package.py` are retained for now because their root wrappers seed Settings-derived operator defaults into canonical drivers; deleting them would remove behavior rather than just aliases.
+- [x] `backport_sql_live_check.py` remains retained because active GUI/package/runtime operator guidance still names it.
+- [x] `backport_package.py`, `backport_lua_convert.py`, and `backport_sql_convert.py` remain dedicated higher-fan-in CLI/test migration work.
 
 Known harmless cleanup debt:
 - `.github/workflows/src-layout-regression.yml` still contains deleted root filenames in its broad path trigger. These inert entries will be removed in a dedicated workflow-filter sweep.
@@ -148,7 +160,7 @@ Known harmless cleanup debt:
 
 Remaining before merge:
 - [ ] Run Workbench + Src Layout regression.
-- [ ] Fix only regressions caused by the map-lint wrapper removal.
+- [ ] Fix only regressions caused by the engine-wrapper removals.
 - [ ] Merge only when green.
 
 ## Remaining slices
