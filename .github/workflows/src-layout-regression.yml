@@ -43,6 +43,7 @@ on:
       - "pull_mob_positions.py"
       - "zmesh.py"
       - "build_plot_descriptors.py"
+      - "fix_zone_door_props.py"
       - "engine_change_index.py"
       - "engine_migration_compare.py"
       - "backport_coverage_check.py"
@@ -110,6 +111,7 @@ on:
       - "test_fixtures/test_pull_mob_positions_package_migration.py"
       - "test_fixtures/test_zmesh_package_migration.py"
       - "test_fixtures/test_build_plot_descriptors_package_migration.py"
+      - "test_fixtures/test_fix_zone_door_props_package_migration.py"
       - "test_fixtures/test_engine_validation_package_migration.py"
       - "test_fixtures/test_lua_sanity_package_migration.py"
       - "test_fixtures/test_package_coverage_confidence_migration.py"
@@ -190,7 +192,7 @@ jobs:
           python test_fixtures/test_gear_tables_package_migration.py
           python test_fixtures/test_mob_model_tables_package_migration.py
           python test_fixtures/test_altana_index_package_migration.py
-          python -m pytest -q test_fixtures/test_pull_mob_positions_package_migration.py test_fixtures/test_zmesh_package_migration.py test_fixtures/test_build_plot_descriptors_package_migration.py
+          python -m pytest -q test_fixtures/test_pull_mob_positions_package_migration.py test_fixtures/test_zmesh_package_migration.py test_fixtures/test_build_plot_descriptors_package_migration.py test_fixtures/test_fix_zone_door_props_package_migration.py
           python test_fixtures/test_engine_validation_package_migration.py
           python test_fixtures/test_lua_sanity_package_migration.py
           python test_fixtures/test_package_coverage_confidence_migration.py

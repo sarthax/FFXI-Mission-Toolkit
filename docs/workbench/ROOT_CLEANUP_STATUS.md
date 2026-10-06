@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `02d3e7fbcdeeae79653d27edc53786945bbfafab` after PR #584  
-Current work branch: `cleanup/spatial-devtools-phase3c18`  
+Current merged baseline: `main` at `0ad6925ed1fe5796dc35514e4efc90a0e2eb76e1` after PR #585  
+Current work branch: `cleanup/fix-zone-door-props-phase3c19`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -75,26 +75,25 @@ reset_install.bat
 - PR #582 — retired `build_altana_index.py`; Workbench #2762 + Src Layout #640 green.
 - PR #583 — retired `cpp_api_index.py`, `cpp_dependency_index.py`, and `build_integration_index.py`; Workbench #2763 + Src Layout #641 green.
 - PR #584 — added the post-cleanup Workbench UI Framework / Unified Module Layout roadmap phase.
+- PR #585 — retired `pull_mob_positions.py`, `zmesh.py`, and `build_plot_descriptors.py`; Workbench #2764 + Src Layout #642 green.
 
 ## Current slice
 
-### Slice 3c18 — retire read-only Development spatial root launchers
+### Slice 3c19 — retire zone door/object repair root launcher
 
-Status: IN PROGRESS on `cleanup/spatial-devtools-phase3c18`.
+Status: IN PROGRESS on `cleanup/fix-zone-door-props-phase3c19`.
 
 Changes on this branch:
-- [x] remove root `pull_mob_positions.py`, `zmesh.py`, and `build_plot_descriptors.py`.
-- [x] preserve canonical ownership under `workbench.devtools.spatial`.
-- [x] migrate focused regressions from root-import identity to explicit root-absence contracts.
-- [x] add those pytest-style spatial migration regressions to Src Layout execution rather than leaving them dormant.
-- [x] add the retired root names and focused tests to Src Layout path triggers.
-- [x] remove the stale physical `build_plot_descriptors.py` filename from the active Zone Plot UI comment.
-- [x] keep write-capable `fix_zone_door_props.py` out of this read-only Devtools slice for a separate editor/maintenance audit.
+- [x] remove root `fix_zone_door_props.py`.
+- [x] preserve canonical implementation at `workbench.devtools.spatial.fix_zone_door_props`.
+- [x] retain the focused write-safety regression that mutates only temporary configured SQL/data paths.
+- [x] migrate the root-alias regression to an explicit root-absence contract.
+- [x] add the focused pytest migration regression to Src Layout execution and path triggers.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by spatial launcher retirement.
+- [ ] Fix only regressions caused by zone door/object repair launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
