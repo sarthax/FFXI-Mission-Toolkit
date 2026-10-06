@@ -119,13 +119,22 @@ def main() -> None:
 
     # These former root compatibility/implementation modules are retired. First-party code and
     # regressions must use canonical package imports directly rather than recreating hidden root
-    # coupling.
+    # coupling. The staged index implementations may still contain historical absolute-import
+    # strings internally; canonical adapters supply those aliases without requiring root files.
     retired = (
         "workbench_graph.py",
         "workbench_schema.py",
         "source_snapshot.py",
         "feature_candidates.py",
         "feature_package_analyzer.py",
+        "build_database.py",
+        "build_npc_index.py",
+        "build_dialog_index.py",
+        "ingest_global_tables.py",
+        "build_capture_index.py",
+        "build_sql_index.py",
+        "build_lsb_index.py",
+        "scrape_bg_wiki.py",
     )
     for name in retired:
         assert not (ROOT / name).exists(), name
