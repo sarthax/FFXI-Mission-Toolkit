@@ -132,7 +132,7 @@ def main():
 
         # Static route/template assertions keep the clickable source-view contract in regression
         # without importing FastAPI into the lightweight core job.
-        gui_source = Path("gui_server.py").read_text(encoding="utf-8")
+        gui_source = Path("src/workbench/app/_host_impl.py").read_text(encoding="utf-8")
         feature_template = Path("gui/templates/feature_trace.html").read_text(encoding="utf-8")
         source_template = Path("gui/templates/capture_source_locator.html").read_text(encoding="utf-8")
         assert '/captures/{capture_id}/source-locator' in gui_source

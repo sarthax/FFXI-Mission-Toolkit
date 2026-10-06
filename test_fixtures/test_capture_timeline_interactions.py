@@ -46,7 +46,7 @@ def main():
 
     root = Path(__file__).resolve().parents[1]
     template = (root/"gui/templates/capture_timeline.html").read_text(encoding="utf-8")
-    gui = (root/"gui_server.py").read_text(encoding="utf-8")
+    gui = (root/"src/workbench/app/_host_impl.py").read_text(encoding="utf-8")
     assert "Interaction candidates" in template
     assert "not</strong> asserted as canonical gameplay transactions" in template
     assert "reconstruct_interaction_candidates(events)" in gui

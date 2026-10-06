@@ -183,7 +183,7 @@ def main() -> int:
         assert "6496" in html and "6498" in html
         assert "ROM/7/44.DAT" in html
 
-    source=(ROOT/"gui_server.py").read_text(encoding="utf-8")
+    source=(ROOT/"src"/"workbench"/"app"/"_host_impl.py").read_text(encoding="utf-8")
     assert 'dat_path: str = ""' in source
     assert 'family: str = ""' in source
     assert "dat_id_for_zone_family" in source

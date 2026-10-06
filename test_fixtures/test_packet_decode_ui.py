@@ -44,7 +44,7 @@ def main():
 
     template = (ROOT / "gui" / "templates" / "packets_decode.html").read_text(encoding="utf-8")
     tools_template = (ROOT / "gui" / "templates" / "packets.html").read_text(encoding="utf-8")
-    server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
+    server = (ROOT / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
     backend = (ROOT / "packet_decode.py").read_text(encoding="utf-8")
 
     assert "{% block main_class %}wide-workbench{% endblock %}" in template

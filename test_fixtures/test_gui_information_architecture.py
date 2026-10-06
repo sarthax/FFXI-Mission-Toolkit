@@ -10,7 +10,7 @@ from workbench.gui_shell import WORKSPACES, build_shell_context
 
 
 ROOT=Path(__file__).resolve().parents[1]
-GUI=ROOT/"gui_server.py"
+GUI=ROOT/"src"/"workbench"/"app"/"_host_impl.py"
 ROUTE_MAP=ROOT/"docs"/"workbench"/"GUI_ROUTE_MAP.json"
 AUX_ROUTE_MAP=ROOT/"docs"/"workbench"/"GUI_ROUTE_MAP_AUXILIARY.json"
 TEMPLATES=ROOT/"gui"/"templates"

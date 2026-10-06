@@ -52,7 +52,7 @@ def main():
         root = Path(__file__).resolve().parents[1]
         two_d = (root / "gui" / "templates" / "path_plot_all.html").read_text(encoding="utf-8")
         three_d = (root / "gui" / "templates" / "zone_view3d.html").read_text(encoding="utf-8")
-        server = (root / "gui_server.py").read_text(encoding="utf-8")
+        server = (root / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
 
         assert "name / entity id" in two_d
         assert "labels / IDs / XYZ" in two_d

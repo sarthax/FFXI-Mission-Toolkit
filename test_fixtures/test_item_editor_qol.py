@@ -8,7 +8,7 @@ def main():
     template = (ROOT / "gui" / "templates" / "itemedit.html").read_text(encoding="utf-8")
     item_edit = (ROOT / "src" / "workbench" / "editors" / "items" / "_editor_impl.py").read_text(encoding="utf-8")
     item_dat = (ROOT / "src" / "workbench" / "editors" / "items" / "_dat_tools_impl.py").read_text(encoding="utf-8")
-    gui = (ROOT / "gui_server.py").read_text(encoding="utf-8")
+    gui = (ROOT / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
 
     assert 'id="dirtySummary"' in template
     assert 'id="saveAllBtn"' in template
