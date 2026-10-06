@@ -63,7 +63,7 @@ def main():
         current,
     )
     assert reconciled, "ROADMAP_CURRENT.md must declare its last full reconciliation date"
-    assert reconciled.group(1) >= "2026-10-03", "roadmap reconciliation date regressed before the current baseline"
+    assert reconciled.group(1) >= "2026-10-05", "roadmap reconciliation date regressed before the current closeout baseline"
 
     assert "`main` is the product baseline" in current
     assert "Clarified Flow is the default view" in current
@@ -71,7 +71,10 @@ def main():
     assert "Persistent **client item DAT cache**" in current
     assert "Campaign/session manifest import support" in current
     assert "Progression transition bundles group trigger/event" in current
-    assert "Native modern-LSB Nyzul floor-generation adapter remains future work" in current
+    assert "Native modern-LSB Nyzul adapter parses" in current
+    assert "Evidence-backed contradiction dossiers" in current
+    assert "draft protocol PR #545" in current
+    assert "Final Phase D source-layout cleanup is intentionally deferred until draft protocol PR #545 settles" in current
 
     print("roadmap reconciliation self-test: PASS")
 
