@@ -88,13 +88,15 @@ All remaining root `test_*.py` files should move under `tests/legacy/` or the ap
 
 ### E. Reference/generated artifacts — move out of root
 
-Planned examples:
+Completed in Slice 1:
 
 - `appraisal_item_id_xref.csv` -> `data/reference/appraisal/item_id_xref.csv`
 - `appraisal_pools_with_item_ids.csv` -> `data/reference/appraisal/pools_with_item_ids.csv`
-- other root reference `.txt/.csv` -> `data/reference/...`
-- historical UI/design artifacts -> `docs/archive/...`
-- generated/review reports -> `docs/reports/...`
+- `uncharted90_names.txt` -> `data/reference/uncharted90_names.txt`
+- `mission_toolkit_gui_artifact.html` -> `docs/archive/ui/mission_toolkit_gui_artifact.html`
+- `backport_coverage_report.md` -> `docs/reports/backport/backport_coverage_report.md`
+
+Future root reference/report artifacts should follow the same rule: data under `data/reference/...`, historical presentation under `docs/archive/...`, generated/review reports under `docs/reports/...`.
 
 ### F. Workspace material
 
@@ -104,13 +106,19 @@ Planned examples:
 
 ### Slice 1 — baseline + low-risk non-code relocation
 
-Status: IN PROGRESS
+Status: COMPLETE ON `cleanup/root-structure-phase1` — pending merge/CI
 
 - [x] Create this resumable tracker.
-- [ ] Inventory root files against current `main`.
-- [ ] Move reference CSV/TXT artifacts with caller updates.
-- [ ] Move/archive obsolete root HTML/report artifacts with link updates.
-- [ ] Add initial root-clutter regression/allowlist without prematurely banning compatibility shims.
+- [x] Re-audit root against current post-Phase-D `main` and historical disposition map.
+- [x] Move reference CSV/TXT artifacts with no runtime callers.
+- [x] Move/archive obsolete root HTML/report artifacts.
+- [x] Extend Source Layout regression to require the new structured paths and forbid the old root artifact paths.
+
+Notes:
+
+- No runtime DB/config/cache/capture state moved.
+- The initial guard is intentionally narrow: compatibility Python shims remain allowed until their callers are repointed in Slices 2–3.
+- `docs/guides/DIST_PACKAGING.md` and older migration-plan wording contain historical root examples and should be reconciled as the later shim/operator slices land rather than treated as runtime callers.
 
 ### Slice 2 — bootstrap and stable package entry points
 
