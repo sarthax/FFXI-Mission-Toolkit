@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import sqlite3
 import subprocess
 import sys
@@ -13,19 +12,8 @@ from workbench.client.snapshots import overview as canonical
 from workbench.runtime.paths import REPO_ROOT
 
 
-def load_root_alias():
-    path = REPO_ROOT / "client_overview.py"
-    spec = importlib.util.spec_from_file_location("client_overview", path)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["client_overview"] = module
-    spec.loader.exec_module(module)
-    return sys.modules["client_overview"]
-
-
 def main() -> None:
-    legacy = load_root_alias()
-    assert legacy is canonical
+    assert not (REPO_ROOT / "client_overview.py").exists()
 
     with tempfile.TemporaryDirectory() as td:
         root = Path(td) / "ffxi"
@@ -71,9 +59,11 @@ def main() -> None:
         assert empty == {"graph_built": False, "counts": {}, "rows": []}
 
         code = (
+            "from pathlib import Path; "
             "from workbench.client.snapshots import overview as o; "
             "assert o.BUILD_ANCHOR == 'FFXiMain.dll'; "
             "assert o.saved_observations(None, None)['graph_built'] is False; "
+            "assert 'src' in Path(o.__file__).resolve().parts; "
             "print('outside-repo client overview import: PASS')"
         )
         subprocess.run([sys.executable, "-c", code], cwd=tempfile.gettempdir(), check=True)
