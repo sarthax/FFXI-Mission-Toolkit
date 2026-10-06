@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `ec457df9faf735cbee208b21cf81874146077f73` after PR #561  
-Current work branch: `cleanup/backport-validation-wrappers-phase3b4`  
+Current merged baseline: `main` at `66374fb022f5e94b1fa9a53d0e12ed521f73f36f` after PR #562  
+Current work branch: `cleanup/backport-validation-wrappers-phase3b5`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This document is the authoritative resume point for the post-Phase-D repository-structure cleanup. `docs/workbench/SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning; this file tracks what is actually merged, in progress, and still pending.
@@ -67,15 +67,7 @@ Validation: Workbench #2717 + Src Layout #597 green.
 
 MERGED: PR #558 → `416432905d9fc45ce78f0cc222dc88ad98a4b045`
 
-Removed root:
-
-- `build_database.py`
-- `build_npc_index.py`
-- `build_dialog_index.py`
-- `ingest_global_tables.py`
-- `build_sql_index.py`
-- `build_lsb_index.py`
-- `scrape_bg_wiki.py`
+Removed root `build_database.py`, `build_npc_index.py`, `build_dialog_index.py`, `ingest_global_tables.py`, `build_sql_index.py`, `build_lsb_index.py`, and `scrape_bg_wiki.py`.
 
 `build_capture_index.py` remains a thin transitional alias because it still has high regression fan-in; remove it only during the dedicated test migration slice.
 
@@ -102,44 +94,48 @@ Validation: Workbench #2732 + Src Layout #612 green.
 MERGED: PR #561 → `ec457df9faf735cbee208b21cf81874146077f73`
 
 Removed root:
-
 - `backport_binding_audit.py` → `workbench.validation.packages.binding_audit`
 - `backport_lua_sanity_check.py` → `workbench.validation.packages.lua_sanity`
 
-Tests and backport-workspace CLI docs were repointed to packaged modules. The initial Src Layout failure was only a test-helper import issue (`test_fixtures` is not a Python package); file-based loading was restored for that nested fixture without restoring either root wrapper.
-
 Validation: Workbench #2734 + Src Layout #614 green.
+
+### Slice 3b4 — retire binding-index and item-audit wrappers
+
+MERGED: PR #562 → `66374fb022f5e94b1fa9a53d0e12ed521f73f36f`
+
+Removed root:
+- `backport_binding_index.py` → `workbench.validation.packages.binding_index`
+- `backport_item_audit.py` → `workbench.validation.packages.item_audit`
+
+Tests now import canonical validation modules directly; Ancient Vows no longer watches the retired binding-index root filename.
+
+Validation: Workbench #2735 + Src Layout #615 green.
 
 ## Current slice
 
-### Slice 3b4 — retire binding-index and item-audit validation wrappers
+### Slice 3b5 — retire coverage and map-confidence validation wrappers
 
-Status: IN PROGRESS on `cleanup/backport-validation-wrappers-phase3b4`.
+Status: IN PROGRESS on `cleanup/backport-validation-wrappers-phase3b5`.
 
 Removed on this branch:
-
-- [x] `backport_binding_index.py` → `workbench.validation.packages.binding_index`
-- [x] `backport_item_audit.py` → `workbench.validation.packages.item_audit`
+- [x] `backport_coverage_check.py` → `workbench.validation.packages.coverage`
+- [x] `backport_map_confidence_check.py` → `workbench.validation.packages.map_confidence`
 
 Caller/test migration completed:
-
-- [x] `test_binding_index_provenance.py` imports packaged binding index directly.
-- [x] `test_binding_validation_package_migration.py` requires both root wrappers to be absent and continues exercising canonical binding-index/item-audit behavior.
-- [x] Ancient Vows workflow no longer watches `backport_binding_index.py`.
+- [x] `test_package_coverage_confidence_migration.py` uses canonical package modules directly.
+- [x] The migration regression requires both retired root wrappers to remain absent.
+- [x] Historical roadmap prose may continue to mention old filenames as historical feature names; those references are not executable dependencies.
 
 Explicitly retained for later dedicated batches:
-
 - `backport_package.py` — root-facing regression/operator surface remains.
 - `backport_lua_convert.py` — standalone root regression/operator surface remains.
 - `backport_sql_convert.py` — standalone root regression/operator surface remains.
-- `backport_sql_live_check.py`, coverage/map-confidence wrappers, conversion-driver wrappers — audit separately.
+- `backport_sql_live_check.py`, map-lint, conversion-driver, and other remaining wrappers — audit separately.
 
 Known harmless cleanup debt:
-
-- `.github/workflows/src-layout-regression.yml` still contains some deleted root filenames in its broad path trigger. These inert trigger entries do not affect runtime/tests and will be removed in a dedicated workflow-filter sweep rather than repeatedly rewriting the large workflow in every small wrapper PR.
+- `.github/workflows/src-layout-regression.yml` still contains some deleted root filenames in its broad path trigger. These inert entries will be removed in a dedicated workflow-filter sweep.
 
 Remaining before merge:
-
 - [ ] Run Workbench + Src Layout regression.
 - [ ] Fix only regressions caused by these two wrapper removals.
 - [ ] Merge only when green.
@@ -149,7 +145,6 @@ Remaining before merge:
 ### Slice 3b+ — remaining compatibility shim forest
 
 Continue in small logical families:
-
 - remaining backport/package/migration wrappers;
 - remaining indexing/devtools wrappers;
 - capture/protocol wrappers (`build_capture_index.py` deferred until its tests migrate);
@@ -165,7 +160,6 @@ PENDING. Move appropriate one-off commands under `scripts/{maintenance,import,di
 ### Slice 5 — tests and high-fan-in compatibility removal
 
 PENDING.
-
 - Move remaining root `test_*.py` under `tests/legacy/` or focused suites.
 - Repoint remaining capture regressions from `import build_capture_index` to `workbench.captures.ingestion.build_index` while preserving monkeypatch behavior.
 - Delete `build_capture_index.py` only after that migration is green.
@@ -174,14 +168,12 @@ PENDING.
 ### Slice 6 — workspace/resource normalization
 
 PENDING.
-
 - `backport-workspace/` → preferred `workspaces/backport/` after reference audit.
 - Review `client_probe_sets/`, `plot_descriptors/`, and `addons/` separately; do not move stable runtime/resource roots only for cosmetics.
 
 ### Slice 7 — final root guard and closeout
 
 PENDING.
-
 - Root allowlist permits only intentional project/bootstrap files and approved resource directories.
 - Fail CI on unexpected root `.py`, `.csv`, `.html`, `.txt`, or report `.md` additions.
 - Verify editable imports outside repository CWD and setup/start/reset behavior.

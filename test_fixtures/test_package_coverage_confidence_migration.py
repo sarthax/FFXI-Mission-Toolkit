@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -10,22 +9,11 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def _load_root(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return sys.modules[name]
-
-
 def main() -> None:
     coverage = importlib.import_module("workbench.validation.packages.coverage")
     confidence = importlib.import_module("workbench.validation.packages.map_confidence")
-    legacy_coverage = _load_root("backport_coverage_check", REPO_ROOT / "backport_coverage_check.py")
-    legacy_confidence = _load_root("backport_map_confidence_check", REPO_ROOT / "backport_map_confidence_check.py")
-    assert legacy_coverage is coverage
-    assert legacy_confidence is confidence
+    assert not (REPO_ROOT / "backport_coverage_check.py").exists()
+    assert not (REPO_ROOT / "backport_map_confidence_check.py").exists()
 
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
