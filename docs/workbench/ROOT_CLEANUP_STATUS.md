@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `93a7c7ad9a532428f44f7272a06d925ffe619026` after PR #582  
-Current work branch: `cleanup/cpp-server-analyzers-phase3c17`  
+Current merged baseline: `main` at `02d3e7fbcdeeae79653d27edc53786945bbfafab` after PR #584  
+Current work branch: `cleanup/spatial-devtools-phase3c18`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -73,26 +73,29 @@ reset_install.bat
 - PR #580 — retired `gear_tables.py`; Workbench #2758 + Src Layout #636 green.
 - PR #581 — retired `model_schedule_dump.py`; Workbench #2761 + Src Layout #639 green.
 - PR #582 — retired `build_altana_index.py`; Workbench #2762 + Src Layout #640 green.
+- PR #583 — retired `cpp_api_index.py`, `cpp_dependency_index.py`, and `build_integration_index.py`; Workbench #2763 + Src Layout #641 green.
+- PR #584 — added the post-cleanup Workbench UI Framework / Unified Module Layout roadmap phase.
 
 ## Current slice
 
-### Slice 3c17 — retire Development C++/integration analyzer root launchers
+### Slice 3c18 — retire read-only Development spatial root launchers
 
-Status: IN PROGRESS on `cleanup/cpp-server-analyzers-phase3c17`.
+Status: IN PROGRESS on `cleanup/spatial-devtools-phase3c18`.
 
 Changes on this branch:
-- [x] remove root `cpp_api_index.py`, `cpp_dependency_index.py`, and `build_integration_index.py`.
-- [x] migrate direct regression imports to `workbench.devtools.server.*`.
-- [x] migrate the package-migration regression from root-alias identity to root-absence plus canonical behavior.
-- [x] update the external-source smoke workflow to watch the packaged server-analyzer directory so future analyzer changes still trigger integration coverage.
-- [x] preserve the existing canonical analyzer behavior and external LSB smoke path.
+- [x] remove root `pull_mob_positions.py`, `zmesh.py`, and `build_plot_descriptors.py`.
+- [x] preserve canonical ownership under `workbench.devtools.spatial`.
+- [x] migrate focused regressions from root-import identity to explicit root-absence contracts.
+- [x] add those pytest-style spatial migration regressions to Src Layout execution rather than leaving them dormant.
+- [x] add the retired root names and focused tests to Src Layout path triggers.
+- [x] remove the stale physical `build_plot_descriptors.py` filename from the active Zone Plot UI comment.
+- [x] keep write-capable `fix_zone_door_props.py` out of this read-only Devtools slice for a separate editor/maintenance audit.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Run/verify External Source Smoke when triggered.
-- [ ] Fix only regressions caused by server-analyzer launcher retirement.
-- [ ] Merge only when required gates are green.
+- [ ] Fix only regressions caused by spatial launcher retirement.
+- [ ] Merge only when green.
 
 ## Explicitly retained / deferred
 
