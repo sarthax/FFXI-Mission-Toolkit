@@ -73,19 +73,15 @@ Completed:
 - `start.bat` runs `python -m workbench.app.host`.
 - `reset_install.bat` runs `scripts/bootstrap/reset_install.py`.
 - Canonical dialog and capture adapters support direct `python -m` execution.
-- Removed root wrappers:
-  - `install_xi_tinkerer.py`
-  - `install_external_tools.py`
-  - `reset_install.py`
-- Regressions enforce the structured bootstrap contract.
+- Removed root wrappers: `install_xi_tinkerer.py`, `install_external_tools.py`, `reset_install.py`.
 
 Validation: Workbench #2717 + Src Layout #597 green.
 
 ## Current slice
 
-### Slice 3a — setup-linked indexing/capture/reference shims
+### Slice 3a — low-coupling setup-linked index/reference shims
 
-Status: IN PROGRESS on `cleanup/root-shims-indexing-phase3a`
+Status: IN PROGRESS on `cleanup/root-shims-indexing-phase3a` / PR #558.
 
 Root wrappers removed on this branch:
 
@@ -93,29 +89,44 @@ Root wrappers removed on this branch:
 - [x] `build_npc_index.py` → `workbench.devtools.indexing.build_npc_index`
 - [x] `build_dialog_index.py` → `workbench.devtools.reference.dialog.build_index`
 - [x] `ingest_global_tables.py` → `workbench.client.dat.global_tables`
-- [x] `build_capture_index.py` → `workbench.captures.ingestion.build_index`
 - [x] `build_sql_index.py` → `workbench.devtools.indexing.build_sql_index`
 - [x] `build_lsb_index.py` → `workbench.devtools.indexing.build_lsb_index`
 - [x] `scrape_bg_wiki.py` → `workbench.devtools.reference.scrape_bg_wiki`
 
+Explicitly deferred from this slice:
+
+- [ ] `build_capture_index.py` → `workbench.captures.ingestion.build_index`
+
+`build_capture_index.py` has much higher legacy-test fan-in than the sibling indexers. Exact code search found roughly 33 historical import occurrences, including many capture regression fixtures that rely on module-global monkeypatch behavior. The root file therefore remains temporarily as a **zero-logic alias** while setup and newly touched first-party callers already use the canonical package. It will be removed during the dedicated test-migration cleanup rather than forcing 30+ unrelated test edits into this indexing slice.
+
+Already repointed away from the capture root name where encountered:
+
+- `discord_inventory.py`
+- `discord_holiday_load.py`
+- root `test_capture_ingestion.py`
+- `test_fixtures/test_youtube_ocr_evidence.py`
+- `test_fixtures/test_eventview_session_unknown_zone.py`
+
 Coverage migrated on this branch:
 
-- [x] Database index package migration test now validates canonical behavior/paths and root-shim absence.
-- [x] Capture index migration test now validates canonical dependencies/paths and root-shim absence.
-- [x] Global tables migration test now validates canonical behavior and root-shim absence.
-- [x] SQL index migration test now validates canonical parser/paths and root-shim absence.
-- [x] LSB index migration test now validates packaged foundations/paths and root-shim absence.
-- [x] BG Wiki scraper migration test now validates canonical dump behavior and root-shim absence.
-- [x] Source Layout regression explicitly guards all eight retired root filenames.
+- [x] Database index package migration test validates canonical behavior/paths and root-shim absence.
+- [x] Dialog index migration test validates canonical behavior/paths and root-shim absence.
+- [x] Global tables migration test validates canonical behavior and root-shim absence.
+- [x] SQL index migration/parser tests use canonical package imports and guard root-shim absence.
+- [x] LSB index migration test validates packaged foundations/paths and root-shim absence.
+- [x] BG Wiki scraper migration test validates canonical dump behavior and root-shim absence.
+- [x] Research extended tools now import packaged BG Wiki scraping directly.
+- [x] Source Layout regression guards all seven retired filenames.
+- [x] Source Layout explicitly requires retained `build_capture_index.py` to remain a thin alias with no repository-path/database implementation logic.
 
 Important compatibility note:
 
-The staged `_impl.py` files may still contain historical absolute-import names such as `import build_database` or `import build_sql_index`. Their canonical adapters inject the packaged modules into `sys.modules` while loading those mature implementations. Those strings are therefore internal implementation compatibility, **not** a reason to retain root files.
+Staged `_impl.py` files may still contain historical absolute-import names such as `import build_database` or `import build_sql_index`. Their canonical adapters supply packaged modules through `sys.modules` while loading those mature implementations. Those internal strings are not a reason to retain the deleted root files.
 
 Remaining before merge:
 
-- [ ] Run Workbench + Src Layout regression and fix any overlooked test-only dependency.
-- [ ] Remove obsolete workflow path-filter references to deleted root shims when encountered.
+- [ ] Run final Workbench + Src Layout regression on the corrected seven-shim head.
+- [ ] Fix only genuine active callers/test assumptions exposed by CI; do not restore the seven retired wrappers.
 - [ ] Merge only when green.
 
 ## Remaining slices
@@ -124,9 +135,9 @@ Remaining before merge:
 
 PENDING. Process in bounded logical families:
 
-- indexing/devtools wrappers not covered by 3a;
-- capture/protocol wrappers;
 - backport/package/migration wrappers;
+- remaining indexing/devtools wrappers;
+- capture/protocol wrappers (with `build_capture_index.py` deferred until its tests are migrated);
 - client/DAT/model wrappers;
 - reference/research wrappers;
 - spatial/domain/runtime wrappers;
@@ -156,14 +167,14 @@ Known candidates:
 - `discord_holiday_load.py`
 - one-off spatial/repair utilities such as `fix_zone_door_props.py` / `pull_mob_positions.py` after caller/path audit.
 
-` scripts/bootstrap/ ` implementations are already structured; obsolete root bootstrap wrappers were removed in Slice 2.
-
-### Slice 5 — tests
+### Slice 5 — tests and high-fan-in compatibility removal
 
 PENDING.
 
 - Move remaining root `test_*.py` under `tests/legacy/` or focused suites.
-- Remove root-import assumptions.
+- Repoint remaining capture regressions from `import build_capture_index` to `workbench.captures.ingestion.build_index` while preserving monkeypatch behavior.
+- Delete `build_capture_index.py` only after that migration is complete and green.
+- Remove other root-import assumptions.
 - Review `test_fixtures/` → `tests/fixtures/` only after workflow/test-discovery updates are ready.
 
 ### Slice 6 — workspace/resource normalization
