@@ -2,7 +2,6 @@
 """Focused migration regression for global client DAT table ingestion."""
 from __future__ import annotations
 
-import importlib.util
 import sqlite3
 import subprocess
 import sys
@@ -12,24 +11,12 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-def _load_root():
-    name = "ingest_global_tables"
-    sys.modules.pop(name, None)
-    spec = importlib.util.spec_from_file_location(name, REPO_ROOT / "ingest_global_tables.py")
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return sys.modules[name]
-
-
 def main() -> None:
     from workbench.client.dat import global_tables as canonical
     from workbench.client.dat import extractor_bin
     from workbench.runtime.paths import DATABASE_PATH, REPO_ROOT as RUNTIME_ROOT
 
-    legacy = _load_root()
-    assert legacy is canonical
+    assert not (REPO_ROOT / "ingest_global_tables.py").exists()
     assert canonical.DB_PATH == DATABASE_PATH
     assert canonical.MASS_EXTRACTOR_DIR == RUNTIME_ROOT / "MassExtractor_output"
     assert canonical.DAT_EXTRACTOR_EXE == extractor_bin.EXE

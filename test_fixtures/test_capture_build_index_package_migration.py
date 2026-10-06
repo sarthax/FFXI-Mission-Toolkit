@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -13,20 +12,14 @@ from workbench.devtools.entities import profile as entity_profile
 from workbench.runtime.paths import DATABASE_PATH, REPO_ROOT
 
 
-def _load_root_compat():
-    root_path = Path(__file__).resolve().parents[1] / "build_capture_index.py"
-    name = "build_capture_index_compat"
-    spec = importlib.util.spec_from_file_location(name, root_path)
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return sys.modules[name]
-
-
 def main() -> None:
-    legacy = _load_root_compat()
-    assert legacy is canonical
+    shim = REPO_ROOT / "build_capture_index.py"
+    assert shim.is_file()
+    shim_text = shim.read_text(encoding="utf-8")
+    assert "workbench.captures.ingestion import build_index as _canonical" in shim_text
+    assert "sqlite3.connect" not in shim_text
+    assert "Path(__file__)" not in shim_text
+
     assert canonical.DB_PATH == DATABASE_PATH
     assert canonical.TOOLS_ROOT == REPO_ROOT
     assert canonical.entity_profile is entity_profile
@@ -36,14 +29,6 @@ def main() -> None:
     assert canonical.pcap_ingest is pcap_ingest
     assert callable(canonical.init_db)
     assert callable(canonical.main)
-
-    original = canonical.DB_PATH
-    sentinel = REPO_ROOT / "__capture_index_migration_sentinel__.db"
-    canonical.DB_PATH = sentinel
-    try:
-        assert legacy.DB_PATH == sentinel
-    finally:
-        canonical.DB_PATH = original
 
     code = (
         "from workbench.captures import chat, integrity, pcap_ingest, raw_packet_ingest; "

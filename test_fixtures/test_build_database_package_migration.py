@@ -12,20 +12,17 @@ def _import_database_indexer(monkeypatch):
     # The implementation only dereferences it when client parsing is requested, so a module stub
     # is sufficient for package-migration import/path tests in CI.
     monkeypatch.setitem(sys.modules, "xi_tinkerer", ModuleType("xi_tinkerer"))
-    sys.modules.pop("build_database", None)
     sys.modules.pop("workbench.devtools.indexing.build_database", None)
-    canonical = importlib.import_module("workbench.devtools.indexing.build_database")
-    root = importlib.import_module("build_database")
-    return root, canonical
+    return importlib.import_module("workbench.devtools.indexing.build_database")
 
 
-def test_root_build_database_aliases_canonical_module(monkeypatch):
-    root, canonical = _import_database_indexer(monkeypatch)
-    assert root is canonical
+def test_root_build_database_shim_is_retired(monkeypatch):
+    _import_database_indexer(monkeypatch)
+    assert not (REPO_ROOT / "build_database.py").exists()
 
 
 def test_canonical_build_database_preserves_repository_paths(monkeypatch):
-    _, canonical = _import_database_indexer(monkeypatch)
+    canonical = _import_database_indexer(monkeypatch)
     assert canonical.TOOLS_ROOT == REPO_ROOT
     assert canonical.DB_PATH == DATABASE_PATH
     assert canonical.LSB_ROOT == REPO_ROOT / "LandSandBoat"
@@ -37,21 +34,18 @@ def test_canonical_build_database_preserves_repository_paths(monkeypatch):
 
 
 def test_database_indexer_import_time_opcode_table_still_loads(monkeypatch):
-    _, canonical = _import_database_indexer(monkeypatch)
+    canonical = _import_database_indexer(monkeypatch)
     assert canonical.OPCODE_TABLE
     assert canonical.SIZES
     assert canonical.NAMES
 
 
 def test_database_indexer_keeps_core_normalization_behavior(monkeypatch):
-    _, canonical = _import_database_indexer(monkeypatch)
+    canonical = _import_database_indexer(monkeypatch)
     assert canonical.normalize("Foo Bar!") == "foobar"
 
 
-def test_root_wrapper_is_thin_and_implementation_moved_under_src():
-    root_source = Path("build_database.py").read_text(encoding="utf-8")
+def test_implementation_remains_packaged_under_src():
     impl_source = Path("src/workbench/devtools/indexing/_build_database_impl.py").read_text(encoding="utf-8")
-    assert "import settings" not in root_source
-    assert "from workbench.devtools.indexing import build_database as _canonical" in root_source
     assert "import xi_tinkerer" in impl_source
     assert "import settings" in impl_source

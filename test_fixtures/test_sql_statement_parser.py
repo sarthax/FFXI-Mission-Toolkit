@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 """Regression coverage for SQL statement parsing used by DSP/Topaz/LSB indexers."""
 from pathlib import Path
-import sys
 import tempfile
 
-sys.path.insert(0,str(Path(__file__).resolve().parent.parent))  # repo root, so no PYTHONPATH needed
-
-import build_sql_index as sqlidx
+from workbench.devtools.indexing import build_sql_index as sqlidx
 
 
 def main():

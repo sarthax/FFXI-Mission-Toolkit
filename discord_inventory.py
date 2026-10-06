@@ -1,6 +1,6 @@
 """Inventory of Discord channels scraped for capture links (link-first intake groundwork).
 
-Tables live in the same SQLite DB as build_capture_index (captures table):
+Tables live in the same SQLite DB as the canonical capture index (captures table):
   discord_channels  one row per channel: category, last scrape time, post count, oldest/newest post
   discord_posts     one row per message: author, date, title, text, urls (json), optional capture_id link
 
@@ -12,7 +12,7 @@ Usage:
 posts.json is a list of {id, t (ISO), a (author line), x (text), l (urls)} as produced by the browser scrape.
 """
 import argparse, json, re, sqlite3, time
-import build_capture_index as b
+from workbench.captures.ingestion import build_index as b
 
 GUILD = "443544205206355968"
 
