@@ -10,7 +10,7 @@ Also backfills discord_posts.author and sets capture_id / ingest_status='link_lo
 Usage: py -3 discord_holiday_load.py [--apply]
 """
 import argparse, json, re, sqlite3, datetime as dt
-import build_capture_index as b
+from workbench.captures.ingestion import build_index as b
 
 CATS = {"holiday events": "Events - Holiday", "temporary events": "Events - Temporary"}
 VIDEO = re.compile(r"(youtu\.be|youtube\.com|rumble\.com|twitch\.tv)")
