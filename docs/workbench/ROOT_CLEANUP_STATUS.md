@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `0af840485f599baee12e4fb431a2d4b2732fb993` after PR #570  
-Current work branch: `cleanup/dat-extractor-wrapper-phase3c5`  
+Current merged baseline: `main` at `c75519a17b09e5ecbbe5ec061f9772f013e972dd` after PR #571  
+Current work branch: `cleanup/dat-inspector-wrapper-phase3c6`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -59,28 +59,26 @@ reset_install.bat
 - **PR #566 / Slice 3c1** → `2922596de81acecef198c5b34770bbd81b69959b` — removed `dialog_drift_overview.py`, `research_gaps.py`; Workbench #2740 + Src Layout #619 green.
 - **PR #567 / Slice 3c2** → `2b7f4d795f2ff5f1ae26002201362094dd54e55c` — removed `ffxiclopedia_adapter.py`; Workbench #2741 + Src Layout #620 green.
 - **PR #568 / Slice 3c3** → `aa31f4156c8903b95e681336ede379a017e6cd90` — moved dialog audit to final Devtools namespace and removed root `audit_dialog_drift.py`; Workbench #2742 + Src Layout #621 green.
-- **PR #569** → `7dffaf6f2e037a31792db2a02d6b3f62e8961608` — synchronized this resume tracker after PR #568.
-- **PR #570 / Slice 3c4** → `0af840485f599baee12e4fb431a2d4b2732fb993` — retired `client_binary_analyze.py`, `client_binary_index.py`, and `client_binary_diff.py`; active Client Binary Research docs now use packaged `python -m workbench.client.cli...` commands; Workbench #2743 + Src Layout #622 green.
+- **PR #569** → `7dffaf6f2e037a31792db2a02d6b3f62e8961608` — synchronized the resume tracker after PR #568.
+- **PR #570 / Slice 3c4** → `0af840485f599baee12e4fb431a2d4b2732fb993` — retired `client_binary_analyze.py`, `client_binary_index.py`, and `client_binary_diff.py`; active Client Binary Research docs now use packaged module commands; Workbench #2743 + Src Layout #622 green.
+- **PR #571 / Slice 3c5** → `c75519a17b09e5ecbbe5ec061f9772f013e972dd` — retired `dat_extractor_bin.py`; canonical DAT extractor migration/path regression retained; Workbench #2744 + Src Layout #623 green.
 
 ## Current slice
 
-### Slice 3c5 — retire DAT extractor root wrapper
+### Slice 3c6 — retire DAT Inspector root wrapper
 
-Status: IN PROGRESS on `cleanup/dat-extractor-wrapper-phase3c5`.
+Status: IN PROGRESS on `cleanup/dat-inspector-wrapper-phase3c6`.
 
 Changes on this branch:
-- [x] removed root `dat_extractor_bin.py`.
-- [x] `test_dat_extractor_bin_package_migration.py` now exercises `workbench.client.dat.extractor_bin` directly and requires the root wrapper to remain absent.
-- [x] Source Layout retired-root guard now includes `dat_extractor_bin.py`.
-- [x] Canonical outside-repo import/path behavior remains covered.
-
-Explicit boundary:
-- [x] `dat_inspector.py` remains for now because `test_gui_dat_inspector.py` still imports the root name directly; migrate that GUI/import contract in its own slice.
+- [x] `test_gui_dat_inspector.py` imports `workbench.client.dat.inspector` directly instead of the root compatibility name.
+- [x] removed root `dat_inspector.py`.
+- [x] Source Layout retired-root guard now includes both `dat_extractor_bin.py` and `dat_inspector.py`.
+- [x] canonical DAT Inspector behavior and external-CWD package imports remain covered by existing regressions.
 
 Before merge:
-- [ ] Run Workbench Regression.
+- [ ] Run Workbench Regression, including the focused DAT Inspector UX job.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by DAT extractor wrapper retirement.
+- [ ] Fix only regressions caused by this GUI-import/root-wrapper migration.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
@@ -91,12 +89,10 @@ These are **not** deletion candidates yet:
 - `backport_convert_7_packages.py`, `backport_convert_gm_debug_tools.py`, `backport_convert_nyzul_package.py` — wrappers seed Settings-derived operator defaults.
 - `backport_sql_live_check.py` — active GUI/package/runtime operator guidance still names it.
 - `backport_package.py`, `backport_lua_convert.py`, `backport_sql_convert.py` — higher-fan-in operator/test surfaces.
-- `dat_inspector.py` — direct GUI regression import remains; dedicated migration required.
 
 ## Remaining slices
 
 ### Compatibility-shim families
-- DAT Inspector GUI/import migration;
 - remaining client/model wrappers;
 - remaining indexing/server-analysis wrappers;
 - capture/protocol wrappers;

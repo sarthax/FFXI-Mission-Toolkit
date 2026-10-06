@@ -129,12 +129,11 @@ def main() -> None:
         "backport_map_confidence_check.py",
         "backport_map_lint.py",
         "dat_extractor_bin.py",
+        "dat_inspector.py",
     )
     for name in retired:
         assert not (ROOT / name).exists(), name
 
-    # Capture ingestion has substantially higher legacy-test fan-in than the sibling indexers.
-    # Keep one explicitly transitional, zero-logic alias until the dedicated test-migration slice.
     capture_shim = (ROOT / "build_capture_index.py").read_text(encoding="utf-8")
     assert "workbench.captures.ingestion import build_index as _canonical" in capture_shim
     assert "sqlite3.connect" not in capture_shim
@@ -177,10 +176,6 @@ def main() -> None:
     assert "workbench.core.services.id_bridge" in id_bridge_wrapper
     assert "Path(__file__)" not in id_bridge_wrapper
     assert "sqlite3.connect" not in id_bridge_wrapper
-
-    dat_inspector_wrapper = (ROOT / "dat_inspector.py").read_text(encoding="utf-8")
-    assert "workbench.client.dat" in dat_inspector_wrapper
-    assert "Path(__file__)" not in dat_inspector_wrapper
 
     workflow = (ROOT / ".github" / "workflows" / "workbench-regression.yml").read_text(encoding="utf-8")
     assert '- "src/workbench/**"' in workflow

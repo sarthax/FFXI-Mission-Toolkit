@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-import dat_inspector
+from workbench.client.dat import inspector as dat_inspector
 from workbench.gui_shell import build_shell_context
 
 
