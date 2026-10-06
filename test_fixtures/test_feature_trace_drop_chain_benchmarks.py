@@ -6,6 +6,7 @@ from workbench.core import graph
 from workbench.devtools.features import trace as feature_trace
 from workbench.devtools.features.trace_benchmarks import SCENARIO_BY_ID, evaluate_trace
 from workbench.devtools.features.trace_expansion import provider_candidates
+from workbench.devtools.features.trace_validation import TraceValidationCase, validate_case
 
 
 def _provider_db():
@@ -58,6 +59,16 @@ def test_generic_nm_trace_reaches_drop_rows_and_items():
     assert benchmark["checks"]["required_generators"] is True
     assert benchmark["required"]["drop"] is True
     assert benchmark["required"]["item"] is True
+
+    validation=validate_case(
+        con,
+        TraceValidationCase("benchmark-nm-real-object", "nm", root=root),
+        con,
+    )
+    assert validation["status"]=="PASS",validation
+    assert validation["passed"] is True,validation
+    assert validation["resolved_root"]==root,validation
+    assert validation["evaluation"]["checks"]["required_generators"] is True,validation
     con.close()
 
 
