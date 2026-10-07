@@ -20,8 +20,8 @@ becomes real (Phase 5, deferred but not deleted), a field with conflicting or wi
 sources has to be visibly flagged, not silently trusted.
 
 Usage:
-    py -3 entity_profile.py 17093430
-    py -3 entity_profile.py "Vending Box"
+    py -3 -m workbench.devtools.entities.profile 17093430
+    py -3 -m workbench.devtools.entities.profile "Vending Box"
 """
 import argparse
 import io
@@ -30,10 +30,10 @@ import sqlite3
 import sys
 from pathlib import Path
 
-import lookup_entity
-import mob_look_decode
-import settings
-from workbench.core.services.entity_profile_graph import import_entity_profile_provenance
+from workbench.client.models import look_decode as mob_look_decode
+from workbench.devtools.entities import lookup as lookup_entity
+from workbench.devtools.entities.profile_graph import import_entity_profile_provenance
+from workbench.runtime import legacy_settings as settings
 
 TOOLS_ROOT = Path(__file__).parent
 TOPAZ_ROOT = settings.get_topaz_root()
