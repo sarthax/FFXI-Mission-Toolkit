@@ -1,10 +1,14 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Event {{ csid }} · {{ zone }}{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}event-view-page{% endblock %}
-{% block content %}
+{% block page_archetype %}detail{% endblock %}
+{% block page_class %}event-view-page{% endblock %}
+{% block page_heading %}{{ entity_name or ('Entity ' ~ entity) }} — CSID {{ csid }}{% endblock %}
+{% block page_back %}<a class="chip" href="/events?zone={{ zone|urlencode }}">&larr; Events</a>{% endblock %}
+{% block page_identity %}<span class="chip">{{ zone }}{% if zoneid %} / zone {{ zoneid }}{% endif %}</span><span class="chip mono">entity {{ entity }}</span><span class="chip mono">CSID {{ csid }} / 0x{{ "%04X"|format(csid) }}</span>{% endblock %}
+{% block page_status %}{% if summary %}<span class="chip">{{ summary.line_count }} decompiled lines</span>{% endif %}{% if server_refs %}<span class="pill match">{{ server_refs|length }} server ref{{ '' if server_refs|length == 1 else 's' }}</span>{% endif %}{% if capture_rows %}<span class="pill match">{{ capture_rows|length }} runtime obs.</span>{% endif %}{% endblock %}
+{% block page_actions %}<a class="chip" href="/entity/{{ entity }}">Entity Profile</a><a class="chip" href="/features/trace?q={{ entity }}">Feature Trace</a>{% if zoneid %}<a class="chip" href="/dialog?zone={{ zone|urlencode }}">Zone Dialog</a>{% endif %}{% endblock %}
+{% block page_body %}
 <style>
-main.event-view-page{padding:8px 10px 24px}
 .event-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
 .event-head h1{margin:0;font-size:16px}
 .event-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
@@ -29,25 +33,6 @@ main.event-view-page{padding:8px 10px 24px}
 @media(max-width:1150px){.event-grid{grid-template-columns:1fr}}
 </style>
 
-<div class="event-head">
-  <div>
-    <h1>{{ entity_name or ('Entity ' ~ entity) }} &mdash; CSID {{ csid }}</h1>
-    <div class="muted"><a class="inline" href="/events?zone={{ zone|urlencode }}">&larr; Events</a></div>
-    <div class="event-chips">
-      <span class="chip">{{ zone }}{% if zoneid %} / zone {{ zoneid }}{% endif %}</span>
-      <span class="chip mono">entity {{ entity }}</span>
-      <span class="chip mono">CSID {{ csid }} / 0x{{ "%04X"|format(csid) }}</span>
-      {% if summary %}<span class="chip">{{ summary.line_count }} decompiled lines</span>{% endif %}
-      {% if server_refs %}<span class="pill match">{{ server_refs|length }} server ref{{ '' if server_refs|length == 1 else 's' }}</span>{% endif %}
-      {% if capture_rows %}<span class="pill match">{{ capture_rows|length }} runtime obs.</span>{% endif %}
-    </div>
-  </div>
-  <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
-    <a class="chip" href="/entity/{{ entity }}">Entity Profile</a>
-    <a class="chip" href="/features/trace?q={{ entity }}">Feature Trace</a>
-    {% if zoneid %}<a class="chip" href="/dialog?zone={{ zone|urlencode }}">Zone Dialog</a>{% endif %}
-  </div>
-</div>
 
 {% if error %}
 <div class="warn"><strong>Client decompile unavailable:</strong><br><span class="mono">{{ error }}</span><br><span class="muted">Server references, capture observations, and other independent evidence below remain available.</span></div>
