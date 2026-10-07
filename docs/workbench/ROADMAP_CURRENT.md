@@ -383,6 +383,7 @@ A future source-layout/bootstrap phase may retire root compatibility launchers a
 - `docs/workbench/FEATURE_TRACE_BRANCH_RECONCILIATION_2026-10-04.md` — branch-level Feature Trace reconciliation and drop-chain transplant record.
 - `docs/workbench/FEATURE_TRACE_CLOSEOUT_2026-10-04.md` — current Feature Trace closure matrix, fail-closed rules, regression coverage, and testing boundary.
 - `docs/workbench/PHASE_D_ROOT_CLEANUP_STATUS.md` — final Phase D source-layout ownership closeout and remaining compatibility/bootstrap boundary.
+- `docs/workbench/UI_FRAMEWORK.md` — shared module wrapper, canonical archetypes, geometry tokens, migration rules, and template contract.
 - `docs/guides/SETUP.md` — current user setup and named environment configuration.
 - `docs/guides/TOOLING_OVERVIEW.md` — living tooling/component overview.
 - `docs/workbench/AUCTION_HOUSE_CAPABILITY_STATUS.md` — Auction House operator summary.
