@@ -330,9 +330,13 @@ def main():
         "EVENT Identity Results",
     ]
     client_overview_source=(TEMPLATES/"client_overview.html").read_text(encoding="utf-8")
+    client_overview_wrapper=(TEMPLATES/"workbench_page.html").read_text(encoding="utf-8")
     capture_env.get_template("client_overview.html")
     for marker in client_overview_contracts:
-        assert marker in client_overview_source,marker
+        if marker == "{% block shell_mode %}dense{% endblock %}" and '{% extends "workbench_page.html" %}' in client_overview_source:
+            assert marker in client_overview_wrapper,"wrapper must preserve dense shell mode"
+        else:
+            assert marker in client_overview_source,marker
 
     package_workflow_contracts = {
         "packages_scope.html": ["{% block shell_mode %}dense{% endblock %}", "package-scope-page", "Package Workflow", "1 · Scope", "scope-decision-form"],
