@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `ff06f33647721a198bb1c053d5cf96a3fd4a32ba` after PR #599  
-Current work branch: `cleanup/runtime-connectors-phase3c33`  
+Current merged baseline: `main` at `8a382227c1991f0e95aa9a29670cd5abd2f08fcf` after PR #600  
+Current work branch: `cleanup/zone-topdown-phase3c34`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -90,25 +90,27 @@ reset_install.bat
 - PR #597 — retired `capture_backtrace.py`, repointed packaged research/runtime validation callers, and merged after Workbench #2782 + Src Layout #660 green.
 - PR #598 — retired `capture_graph_connect.py` and repointed active Graph Connect regressions to `workbench.captures.correlation.graph_connect`; Workbench #2783 + Src Layout #661 green.
 - PR #599 — retired `validation_pipeline.py`, moved the suite CLI regression to `python -m workbench.validation.pipeline`, and added Src Layout migration coverage; Workbench #2784 + Src Layout #662 green.
+- PR #600 — retired `workbench_connect.py` and `workbench_connect_server.py`, repointing active connector regressions to `workbench.runtime.connect` / `connect_server`; Workbench #2785 + Src Layout #663 green.
 
 ## Current slice
 
-### Slice 3c33 — retire Workbench runtime connector root launchers
+### Slice 3c34 — retire zone top-down root launcher
 
-Status: IN PROGRESS on `cleanup/runtime-connectors-phase3c33`.
+Status: IN PROGRESS on `cleanup/zone-topdown-phase3c34`.
 
 Changes on this branch:
-- [x] remove root `workbench_connect.py` and `workbench_connect_server.py`.
-- [x] preserve canonical Runtime ownership at `workbench.runtime.connect` and `workbench.runtime.connect_server`.
-- [x] preserve packaged CLI/API and graph-import behavior.
-- [x] repoint active capture/server connector regressions to canonical Runtime imports.
-- [x] migrate the combined runtime-connectors package regression from root-alias identity to explicit root-absence contracts.
-- [x] update Src Layout status to mark both historical root connector entry points retired.
+- [x] remove root `build_zone_topdown.py`.
+- [x] preserve canonical Development spatial ownership at `workbench.devtools.spatial.build_topdown`.
+- [x] preserve package-owned database/cache paths and CLI behavior.
+- [x] migrate the focused package regression from root-alias loading to an explicit root-absence contract.
+- [x] add Src Layout trigger/execution coverage for the zone top-down migration smoke.
+- [x] update canonical module/status documentation to describe the packaged surface directly.
+- [x] leave `build_zone_visual_cache.py` deferred because live GUI/operator guidance still names that root command.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by runtime-connector launcher retirement.
+- [ ] Fix only regressions caused by zone top-down launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
