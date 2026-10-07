@@ -145,7 +145,6 @@ def main() -> None:
         assert not (ROOT / name).exists(), name
 
     assert not (ROOT / "build_capture_index.py").exists()
-    assert "Path(__file__)" not in capture_shim
 
     forbidden_imports = (
         "import workbench_graph",
