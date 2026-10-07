@@ -52,9 +52,7 @@ def main() -> None:
     root_gui = (ROOT / "gui_server.py").read_text(encoding="utf-8")
     assert "from workbench.app import host as _canonical" in root_gui
     assert "FastAPI(" not in root_gui and "@app." not in root_gui
-    root_settings = (ROOT / "settings.py").read_text(encoding="utf-8")
-    assert "from workbench.runtime import settings_store as _canonical" in root_settings
-    assert "sqlite3.connect" not in root_settings
+    assert not (ROOT / "settings.py").exists()
 
     moved_root_artifacts = (
         "appraisal_item_id_xref.csv",
@@ -140,6 +138,7 @@ def main() -> None:
         "nyzul_plot.py",
         "backport_sql_live_check.py",
         "build_capture_index.py",
+        "settings.py",
     )
     for name in retired:
         assert not (ROOT / name).exists(), name
