@@ -1,23 +1,18 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}All Paths{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}capture-all-paths-page{% endblock %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_class %}capture-all-paths-page{% endblock %}
+{% block page_heading %}All Paths{% endblock %}
+{% block page_back %}<a class="chip" href="/captures/{{ capture_id }}">&larr; Capture</a>{% endblock %}
+{% block page_identity %}<span class="chip mono">#{{ capture_id }}</span>{% if cap %}<span class="muted">{{ cap.capture_label }}{% if cap.mission_name %} · {{ cap.mission_name }}{% endif %}</span>{% endif %}{% endblock %}
+{% block page_actions %}{% if zoneid %}<a class="chip" href="/zones/{{ zoneid }}/view3d_all?capture_id={{ capture_id }}&zone_db={{ zone_db }}">3D view</a>{% endif %}{% endblock %}
+{% block page_help %}Specialized multi-entity path visualization. The shared wrapper standardizes page chrome and controls while preserving the custom zoom/pan canvas, map filters, labels, and entity table.{% endblock %}
 
-{% block content %}
+{% block page_body %}
 <style>
-main.capture-all-paths-page{padding:8px 10px 24px}
 #plot-viewport{width:min(100%,1200px);max-width:none!important}
 </style>
-<div class="dense-toolbar">
-  <a class="chip" href="/captures/{{ capture_id }}">&larr; Capture</a>
-  <strong>All Paths</strong>
-  <span class="chip mono">#{{ capture_id }}</span>
-  {% if cap %}<span class="muted">{{ cap.capture_label }}{% if cap.mission_name %} · {{ cap.mission_name }}{% endif %}</span>{% endif %}
-  <span class="sp"></span>
-  {% if zoneid %}<a class="chip" href="/zones/{{ zoneid }}/view3d_all?capture_id={{ capture_id }}&zone_db={{ zone_db }}">3D view</a>{% endif %}
-</div>
-
-<form method="get" class="dense-toolbar" style="margin:6px 0;flex-wrap:wrap;">
+<form method="get" class="wb-filter-row">
   <input type="hidden" name="capture_id" value="{{ capture_id }}">
   {% if zones|length > 1 %}
   <span class="muted">zone:</span>

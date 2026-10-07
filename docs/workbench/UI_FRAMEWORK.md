@@ -70,3 +70,4 @@ Completed workspace migrations:
 - **LLM** — Assistant (Workbench; draft-output boundary) and Call Detail (Detail, read-only).
 - **Events / CSID** — Browser (Browser) and Event Detail (Detail).
 - **Wiki Compiler** — Evidence compilation and comparison workspace (Workbench).
+- **Capture Path Plots** — Single Path and All Paths (Workbench; specialized visualization geometry preserved).

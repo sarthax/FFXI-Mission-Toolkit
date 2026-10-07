@@ -1,26 +1,20 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Path Plot{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}capture-path-page{% endblock %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_class %}capture-path-page{% endblock %}
+{% block page_heading %}Path Plot{% endblock %}
+{% block page_back %}<a class="chip" href="/captures/{{ capture_id }}">&larr; Capture</a>{% endblock %}
+{% block page_identity %}{% if pc %}<span class="chip">PC trace</span>{% else %}<span class="chip mono">{{ entity_id }}</span>{% endif %}{% if entry %}<span class="muted">{{ entry.name or 'unknown' }} · {{ entry.zone_db }}</span>{% endif %}{% endblock %}
+{% block page_actions %}<a class="chip" href="/captures/plot_all?capture_id={{ capture_id }}">All paths</a>{% if zoneid %}<a class="chip" href="/zones/{{ zoneid }}/view3d?capture_id={{ capture_id }}&{% if pc %}pc=1&zone_db={{ zone_db|urlencode }}{% else %}entity_id={{ entity_id }}{% endif %}">3D view</a>{% endif %}{% endblock %}
+{% block page_help %}Specialized capture-path visualization. Scroll to zoom, drag to pan, and double-click to reset; the shared wrapper standardizes only the outer page chrome while preserving the custom plot geometry.{% endblock %}
 
-{% block content %}
+{% block page_body %}
 <style>
-main.capture-path-page{padding:8px 10px 24px}
 #plot-viewport{width:min(100%,1100px);max-width:none!important}
 .capture-path-lower{display:grid!important;grid-template-columns:minmax(360px,.8fr) minmax(360px,1.2fr);gap:10px!important}
 @media(max-width:900px){.capture-path-lower{grid-template-columns:1fr}}
 </style>
 {% set qs_id = ('pc=1&zone_db=' + (zone_db|urlencode)) if pc else ('entity_id=' + entity_id|string) %}
-<div class="dense-toolbar">
-  <a class="chip" href="/captures/{{ capture_id }}">&larr; Capture</a>
-  <strong>Path Plot</strong>
-  {% if pc %}<span class="chip">PC trace</span>{% else %}<span class="chip mono">{{ entity_id }}</span>{% endif %}
-  {% if entry %}<span class="muted">{{ entry.name or 'unknown' }} · {{ entry.zone_db }}</span>{% endif %}
-  <span class="sp"></span>
-  <a class="chip" href="/captures/plot_all?capture_id={{ capture_id }}">All paths</a>
-  {% if zoneid %}<a class="chip" href="/zones/{{ zoneid }}/view3d?capture_id={{ capture_id }}&{{ qs_id }}">3D view</a>{% endif %}
-</div>
-
 {% if entry %}
 <p>{% if pc %}Capturing character's own path{% else %}{{ entry.name or '?' }}{% endif %} in <strong>{{ entry.zone_db }}</strong>
   {% if svg %}-- {{ svg.n_points }} real position samples{% endif %}</p>
@@ -29,7 +23,7 @@ main.capture-path-page{padding:8px 10px 24px}
 {% if topdown_available and svg %}
 <h2>Aligned overlay</h2>
 
-<form method="get" class="dense-toolbar" style="margin:6px 0;flex-wrap:wrap;">
+<form method="get" class="wb-filter-row">
   <input type="hidden" name="capture_id" value="{{ capture_id }}">
   {% if pc %}
   <input type="hidden" name="pc" value="1">
