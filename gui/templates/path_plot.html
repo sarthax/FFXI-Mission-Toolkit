@@ -5,7 +5,7 @@
 {% block page_heading %}Path Plot{% endblock %}
 {% block page_back %}<a class="chip" href="/captures/{{ capture_id }}">&larr; Capture</a>{% endblock %}
 {% block page_identity %}{% if pc %}<span class="chip">PC trace</span>{% else %}<span class="chip mono">{{ entity_id }}</span>{% endif %}{% if entry %}<span class="muted">{{ entry.name or 'unknown' }} · {{ entry.zone_db }}</span>{% endif %}{% endblock %}
-{% block page_actions %}<a class="chip" href="/captures/plot_all?capture_id={{ capture_id }}">All paths</a>{% if zoneid %}<a class="chip" href="/zones/{{ zoneid }}/view3d?capture_id={{ capture_id }}&{{ qs_id }}">3D view</a>{% endif %}{% endblock %}
+{% block page_actions %}<a class="chip" href="/captures/plot_all?capture_id={{ capture_id }}">All paths</a>{% if zoneid %}<a class="chip" href="/zones/{{ zoneid }}/view3d?capture_id={{ capture_id }}&{% if pc %}pc=1&zone_db={{ zone_db|urlencode }}{% else %}entity_id={{ entity_id }}{% endif %}">3D view</a>{% endif %}{% endblock %}
 {% block page_help %}Specialized capture-path visualization. Scroll to zoom, drag to pan, and double-click to reset; the shared wrapper standardizes only the outer page chrome while preserving the custom plot geometry.{% endblock %}
 
 {% block page_body %}
