@@ -12,19 +12,13 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-import feature_trace as legacy_trace
 from workbench.core.contracts import capture_row_locators
 from workbench.devtools.features import trace as canonical_trace
 from workbench.devtools.features import trace_catalog
 
 
 def main() -> None:
-    # Root import compatibility must resolve to the same callable implementation objects.
-    assert legacy_trace.node_info is canonical_trace.node_info
-    assert legacy_trace.search_nodes is canonical_trace.search_nodes
-    assert legacy_trace.entity_implementation_path is canonical_trace.entity_implementation_path
-    assert legacy_trace.runtime_observation_page is canonical_trace.runtime_observation_page
-    assert legacy_trace.main is canonical_trace.main
+    assert not (ROOT / "feature_trace.py").exists()
 
     # The staged implementation may retain historical import text, but its bound runtime
     # dependencies must be the final Development catalog and Core capture contract.

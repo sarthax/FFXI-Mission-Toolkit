@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-import feature_trace
+from workbench.devtools.features import trace as feature_trace
 from workbench.core import graph as graph_store
 from workbench.plugins.domain.mission_graph_emit import (
     extract_and_project_lsb_mission,

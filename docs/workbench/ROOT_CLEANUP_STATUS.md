@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `530118be2d036fd49277fd3c53210f7f68f03724` after PR #605  
-Current work branch: `cleanup/wiki-reference-phase3c39`  
+Current merged baseline: `main` at `88ed4b2011754acdee021e30e270a970b6b19028` after PR #606  
+Current work branch: `cleanup/feature-tools-phase3c40`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -96,29 +96,34 @@ reset_install.bat
 - PR #603 — retired `build_topaz_index.py` and `build_wiki_index.py`, repointed Entity Profile Wiki rebuild guidance, and activated both package smokes; Workbench #2789 + Src Layout #667 green.
 - PR #604 — retired the Assault/GM/Nyzul package-driver root wrappers and moved their Settings-derived defaults into the canonical drivers; Workbench #2790 + Src Layout #668 green.
 - PR #605 — retired `backport_lua_convert.py`, `backport_sql_convert.py`, and `backport_package.py`, moved package CLI defaults into the canonical orchestrator, and repointed active package guidance; Workbench #2791 + Src Layout #669 green.
+- PR #606 — retired `wiki_lookup.py`, `wiki_evidence.py`, and `wiki_claim_compare.py`, repointed Wiki regressions to canonical Development imports, and preserved staged adapter aliasing internally; Workbench #2792 + Src Layout #670 green.
 
 ## Current slice
 
-### Slice 3c39 — retire Wiki reference root compatibility wrappers
+### Slice 3c40 — retire Feature root entry points and normalize packaged-host imports
 
-Status: IN PROGRESS on `cleanup/wiki-reference-phase3c39`.
+Status: IN PROGRESS on `cleanup/feature-tools-phase3c40`.
 
 Changes on this branch:
-- [x] remove root `wiki_lookup.py`, `wiki_evidence.py`, and `wiki_claim_compare.py`.
-- [x] preserve canonical Development reference ownership under `workbench.devtools.reference`.
-- [x] preserve staged implementation compatibility by retaining temporary legacy module-name injection inside the canonical adapters only.
-- [x] repoint active Wiki evidence/alignment regressions to canonical Development imports.
-- [x] migrate Wiki lookup/evidence package smokes to explicit root-absence contracts while preserving module-global mutation semantics.
-- [x] update canonical Wiki lookup CLI examples to `python -m workbench.devtools.reference.wiki_lookup`.
-- [x] update current tooling guidance to the packaged Wiki lookup surface.
-- [x] add the missing Src Layout path trigger for `wiki_lookup.py`.
-- [x] update Src Layout status to mark all three historical root wrappers retired.
+- [x] remove root `feature_trace.py` and `feature_checker.py`.
+- [x] preserve canonical Development ownership at `workbench.devtools.features.trace` and `workbench.devtools.features.checker`.
+- [x] repoint the packaged host to canonical Feature Trace/Checker imports.
+- [x] repoint active direct Feature Trace regression callers to the canonical Development surface.
+- [x] migrate the focused Feature Trace package smoke to an explicit root-absence contract while retaining canonical dependency-binding assertions.
+- [x] update the Src Layout package contract to require both Feature root entry points absent and reject future first-party root Feature imports.
+- [x] retain the package-level `workbench.core.services.feature_checker` shim for older internal imports.
+- [x] normalize packaged-host imports for already-retired indexing, entity, package-migration, Wiki, and runtime modules so host startup no longer depends on deleted root compatibility files.
+- [x] move reusable external-tool installer implementation to `workbench.runtime.external_tools` and reduce `scripts/bootstrap/install_external_tools.py` to a thin launcher.
+- [x] strengthen external-tools and Src Layout regressions around the canonical Runtime/host contracts.
+- [x] add the missing Src Layout path trigger for `feature_checker.py`.
+- [x] keep still-live/high-risk root imports such as `build_capture_index.py`, `build_zone_visual_cache.py`, `explore_event.py`, `youtube_chat_ocr.py`, `packet_decode.py`, `settings.py`, and the legacy LLM trio out of this slice.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by Wiki reference compatibility retirement.
-- [ ] Merge only when green.
+- [ ] Run Character Editor Regression because the packaged host import surface changed.
+- [ ] Fix only regressions caused by Feature/root-host import normalization.
+- [ ] Merge only when all relevant gates are green.
 
 ## Explicitly retained / deferred
 
@@ -132,7 +137,7 @@ Before merge:
 - remaining indexing/server-analysis wrappers;
 - capture/protocol wrappers;
 - spatial/domain/runtime wrappers;
-- final application/bootstrap compatibility files such as `gui_server.py`, `settings.py`, `feature_checker.py`, and `id_bridge.py` only after their caller contracts are intentionally retired.
+- final application/bootstrap compatibility files such as `gui_server.py`, `settings.py`, and `id_bridge.py` only after their caller contracts are intentionally retired.
 
 ### Standalone operator scripts
 PENDING. Move appropriate commands under `scripts/{maintenance,import,diagnostics}` after caller/path audit. Known candidates include `build_item_repair_package.py`, `seed_auction_house.py`, `discord_inventory.py`, and `discord_holiday_load.py`.

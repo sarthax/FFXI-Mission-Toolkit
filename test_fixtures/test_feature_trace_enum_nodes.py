@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 from workbench.core import graph
 from workbench.core.schema import EnumDefinition
-from feature_trace import node_info,search_nodes
+from workbench.devtools.features.trace import node_info,search_nodes
 
 def main():
     with tempfile.TemporaryDirectory() as td:
