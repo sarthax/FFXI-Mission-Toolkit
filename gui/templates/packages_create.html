@@ -1,10 +1,13 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Create Package — Mission Toolkit{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}package-create-page{% endblock %}
-{% block content %}
+{% block page_archetype %}editor{% endblock %}
+{% block page_class %}package-create-page{% endblock %}
+{% block page_heading %}Package Workflow{% endblock %}
+{% block page_status %}<span class="chip">2 · Create</span><span class="wb-write-badge">Writes package files only</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/packages/scope">1 · Scope</a><a class="chip" href="/packages/review">3 · Review</a><a class="chip" href="/packages">Library</a>{% endblock %}
+{% block page_help %}Requires reviewed scope. Package generation creates files only; it does not approve, apply, or modify the target server.{% endblock %}
+{% block page_body %}
 <style>
-main.package-create-page{padding:8px 10px 24px}
 .package-form-grid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:6px}
 .package-form-grid label{display:flex;flex-direction:column;gap:3px}
 .package-result-section{border:1px solid var(--border);border-radius:7px;background:var(--surface);margin:7px 0;overflow:hidden}
@@ -12,17 +15,7 @@ main.package-create-page{padding:8px 10px 24px}
 .package-result-section>.body{padding:0 8px 8px}
 @media(max-width:800px){.package-form-grid{grid-template-columns:1fr}}
 </style>
-<div class="dense-toolbar">
-  <strong>Package Workflow</strong>
-  <a class="chip" href="/packages/scope">1 · Scope</a>
-  <span class="chip">2 · Create</span>
-  <a class="chip" href="/packages/review">3 · Review</a>
-  <span class="sp"></span>
-  <a class="chip" href="/packages">Library</a>
-</div>
-<div class="warn" style="margin:6px 0"><strong>Requires reviewed scope.</strong> Package generation creates files only; it does not approve, apply, or modify the target server.</div>
-
-{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+{% if error %}<div class="wb-error">{{ error }}</div>{% endif %}
 
 <form method="post" action="/packages/create">
 <div class="package-form-grid">
@@ -49,7 +42,7 @@ main.package-create-page{padding:8px 10px 24px}
 </form>
 
 {% if not migrations %}
-<p class="muted">No canonical migrations are currently available in workbench.db.</p>
+<div class="wb-empty">No canonical migrations are currently available in workbench.db.</div>
 {% endif %}
 
 {% if result %}
