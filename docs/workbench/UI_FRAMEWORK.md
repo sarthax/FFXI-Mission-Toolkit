@@ -71,3 +71,4 @@ Completed workspace migrations:
 - **Events / CSID** — Browser (Browser) and Event Detail (Detail).
 - **Wiki Compiler** — Evidence compilation and comparison workspace (Workbench).
 - **Capture Path Plots** — Single Path and All Paths (Workbench; specialized visualization geometry preserved).
+- **Client Overview** — Installed-client fingerprint and build identity comparison (Dashboard).
