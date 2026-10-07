@@ -7,6 +7,7 @@ on:
       - "src/workbench/**"
       - "workbench/__init__.py"
       - "docs/workbench/SRC_LAYOUT_STATUS.md"
+      - "feature_checker.py"
       - "feature_trace.py"
       - "wiki_lookup.py"
       - "wiki_evidence.py"
