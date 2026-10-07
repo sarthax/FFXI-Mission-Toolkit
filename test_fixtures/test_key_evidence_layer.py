@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import build_capture_index
-import capture_graph_connect
+from workbench.captures.correlation import graph_connect as capture_graph_connect
 from workbench.core import graph as workbench_graph
 from workbench.core.services import timeline_alignment as ta
 
