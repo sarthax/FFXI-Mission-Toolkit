@@ -215,7 +215,6 @@
     "reset_install.py": "bootstrap_tests",
     "salvage_reconstruct.py": "captures",
     "scrape_bg_wiki.py": "devtools",
-    "settings.py": "core",
     "tests/legacy/test_backport_lua_convert.py": "bootstrap_tests",
     "tests/legacy/test_backport_sql_convert.py": "bootstrap_tests",
     "tests/legacy/test_capture_ingestion.py": "bootstrap_tests",
