@@ -68,3 +68,4 @@ Completed workspace migrations:
 - **Backport** — Package Workflow (Editor; package-workspace writes only), Lua Converter (Editor), SQL Converter (Editor), and Binding Reference (Browser).
 - **ID Drift** — Overview (Dashboard) and Category Detail (Browser).
 - **LLM** — Assistant (Workbench; draft-output boundary) and Call Detail (Detail, read-only).
+- **Events / CSID** — Browser (Browser) and Event Detail (Detail).
