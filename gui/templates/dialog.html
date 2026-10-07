@@ -1,7 +1,10 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Dialog Browser{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}dialog-browser-page{% endblock %}
+{% block page_archetype %}browser{% endblock %}
+{% block page_class %}dialog-browser-page{% endblock %}
+{% block page_heading %}Dialog Browser{% endblock %}
+{% block page_actions %}<a class="chip" href="/dialogdrift">Dialog Drift Overview</a><a class="chip" href="/events{% if zone %}?zone={{ zone|urlencode }}{% endif %}">Events / CSID</a>{% endblock %}
+{% block page_help %}Search client dialog by text, decimal ID, or hex ID, with links back to IDs.lua wiring, Events/CSID, captures, and drift evidence. Zone browse mode preserves direct ID jumping and pagination.{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -22,9 +25,8 @@
 {% endif %}
 {% endmacro %}
 
-{% block content %}
+{% block page_body %}
 <style>
-main.dialog-browser-page{padding:8px 10px 24px}
 .dialog-head{display:flex;justify-content:space-between;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:6px;padding:5px 7px;border:1px solid var(--border);border-radius:7px;background:var(--surface)}
 .dialog-head h1{margin:0;font-size:15px}
 .dialog-result{border-bottom:1px solid var(--border)}
@@ -47,16 +49,7 @@ main.dialog-browser-page{padding:8px 10px 24px}
 @media(max-width:1050px){.dialog-main{grid-template-columns:130px 150px 1fr}.dialog-main>div:last-child{grid-column:1/-1}.dialog-grid{grid-template-columns:1fr}}
 </style>
 
-<div class="dialog-head dense-toolbar">
-  <div><h1>Dialog Browser</h1></div>
-  <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
-    <a class="chip" href="/dialogdrift">Dialog Drift Overview</a>
-    <a class="chip" href="/events{% if zone %}?zone={{ zone|urlencode }}{% endif %}">Events / CSID</a>
-    <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:720px">Search client dialog by text, decimal ID, or hex ID, with links back to IDs.lua wiring, Events/CSID, captures, and drift evidence.</div></details>
-  </div>
-</div>
-
-<form class="search dense-toolbar" method="get" style="margin:6px 0">
+<form class="search wb-filter-row" method="get">
   <input type="text" name="q" value="{{ q }}" placeholder="text, decimal ID (7465), or hex ID (0x1D29)">
   <select name="zone">
     <option value="">All zones</option>
