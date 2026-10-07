@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Regression checks for conservative Lua event local type propagation."""
+from pathlib import Path
 from workbench.analyzers.server.lua_events import FUNC_RE, typed_calls, return_type_hints_from_api
 
 
 def main():
+    repo_root=Path(__file__).resolve().parents[1]
+    assert not (repo_root/"lua_event_index.py").exists()
     text="""
 function onEventFinish(player, csid, option)
     local p = player
@@ -24,7 +27,7 @@ end
     assert by_method["getID"]["class_hint"]=="CLuaBaseEntity",calls
     assert by_method["getID"]["class_hint_source"]=="LOCAL_ALIAS",calls
     assert by_method["getArea"]["class_hint"]=="CLuaBattlefield",calls
-    assert by_method["getArea"]["class_hint_source"]=="CONFIGURED_RETURN_TYPE",calls
+    assert by_method["getArea"]["class_hint_source"]=="API_RETURN_TYPE",calls
 
     api_payload={
         "functions":[
@@ -59,7 +62,12 @@ end
         ],
     }
     derived=return_type_hints_from_api(api_payload)
-    assert derived=={("CLuaBaseEntity","getBattlefield"):"CLuaBattlefield"},derived
+    hint=derived[("CLuaBaseEntity","getBattlefield")]
+    assert hint["class_name"]=="CLuaBattlefield",derived
+    assert hint["source"]=="CPP_API_RETURN_TYPE",derived
+    assert hint["binding_ids"]==["b:getBattlefield"],derived
+    assert hint["function_ids"]==["f:getBattlefield"],derived
+    assert hint["return_types"]==["CLuaBattlefield*"],derived
 
     no_hint=typed_calls(text,fn.start(),len(text),fn,{})
     no_hint_by_method={call["method"]:call for call in no_hint}

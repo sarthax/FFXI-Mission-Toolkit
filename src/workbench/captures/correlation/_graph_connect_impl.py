@@ -509,7 +509,7 @@ def main():
     ap.add_argument("--db",type=Path,default=Path("ffxi_zone_database.db"))
     ap.add_argument("--graph-db",type=Path,default=Path("workbench.db"))
     ap.add_argument("--capture-id",type=int)
-    ap.add_argument("--lua-json",type=Path,help="Lua event-surface JSON produced by lua_event_index.py")
+    ap.add_argument("--lua-json",type=Path,help="Lua event-surface JSON produced by python -m workbench.analyzers.server.lua_events")
     ap.add_argument("--json",type=Path)
     a=ap.parse_args()
     out=json.dumps(connect(a.db,a.graph_db,a.capture_id,a.lua_json),indent=2,sort_keys=True)
