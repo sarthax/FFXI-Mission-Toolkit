@@ -1,5 +1,4 @@
 from pathlib import Path
-import importlib
 
 from workbench.client.models import zone_animation_meta
 from workbench.devtools.indexing import build_lsb_index
@@ -12,10 +11,9 @@ def test_zone_animation_meta_uses_packaged_lsb_index():
     assert "from workbench.devtools.indexing import build_lsb_index" in source
 
 
-def test_root_zone_animation_meta_aliases_canonical_module():
-    root = importlib.import_module("zone_animation_meta")
-    canonical = importlib.import_module("workbench.client.models.zone_animation_meta")
-    assert root is canonical
+def test_root_zone_animation_meta_launcher_is_retired():
+    repo_root = Path(__file__).resolve().parents[1]
+    assert not (repo_root / "zone_animation_meta.py").exists()
 
 
 def test_fallback_animation_contract_remains_available(monkeypatch):
