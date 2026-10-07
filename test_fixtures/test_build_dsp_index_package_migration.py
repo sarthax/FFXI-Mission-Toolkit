@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from types import ModuleType
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
+
+# xi_tinkerer is an optional compiled dependency installed by setup.bat; this migration smoke
+# only verifies package ownership/path rebinding and does not invoke client DAT parsing.
+sys.modules.setdefault("xi_tinkerer", ModuleType("xi_tinkerer"))
 
 from workbench.devtools.indexing import build_database, build_dsp_index, build_sql_index
 from workbench.runtime.paths import DATABASE_PATH, REPO_ROOT, repo_path
