@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `5c674ad70ba08ba8768e2f54f0d06576f19e10f7` after PR #616  
-Current work branch: `cleanup/settings-root-phase3c49`  
+Current merged baseline: `main` at `9110d9beaac7a1944d7f6607bccc0d3c54c39c5d` after PR #617  
+Current work branch: `cleanup/gui-server-phase3c50`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -109,27 +109,27 @@ reset_install.bat
 
 ## Current slice
 
-### Slice 3c49 — retire root Settings compatibility alias
+### Slice 3c50 — retire final root GUI launcher
 
-Status: IN PROGRESS on `cleanup/settings-root-phase3c49`.
+Status: IN PROGRESS on `cleanup/gui-server-phase3c50`.
 
 Changes on this branch:
-- [x] migrate remaining Auction House runtime reads to `workbench.runtime.settings_store`.
-- [x] remove root `settings.py` compatibility alias.
-- [x] preserve staged implementation compatibility through existing explicit package-safe settings injection.
-- [x] update Src Layout/settings migration regressions to require root absence.
-- [x] update active ownership/status/roadmap guidance.
-- [x] leave `gui_server.py` untouched as the final bootstrap compatibility launcher.
+- [x] bind packaged GUI resource paths explicitly to `REPO_ROOT`.
+- [x] remove the packaged host's synthetic `gui_server.py` filename dependency.
+- [x] migrate live-route regressions to `workbench.app.host`.
+- [x] migrate Auction House template-global lookup to the canonical host module.
+- [x] update developer launch configuration and route-map source metadata.
+- [x] require root `gui_server.py` absence in Src Layout coverage.
+- [x] retire root `gui_server.py`.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Run Character Editor Regression if triggered by Auction House/settings paths.
+- [ ] Run Character Editor Regression.
 - [ ] Merge only when required gates are green.
 
 ## Explicitly retained / deferred
 
-- `gui_server.py` remains the final supported bootstrap compatibility launcher; retire only after live-route tests and packaged-host legacy filename assumptions are migrated.
 
 ## Remaining slices
 
