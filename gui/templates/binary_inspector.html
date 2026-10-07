@@ -1,11 +1,12 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Binary Inspector{% endblock %}
-{% block content %}
-<h1>Binary Inspector</h1>
-<p class="muted">Read-only PE evidence for client DLL/EXE files. Header facts and exact byte matches are
-reliable; a string hit shows the text exists in the file, not that the feature is wired up.
-FFXiMain.dll is packed, so its code is largely not visible on disk.</p>
-<form class="search" method="get">
+{% block page_archetype %}workbench{% endblock %}
+{% block page_heading %}Binary Inspector{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Read-only inspection</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/clientoverview">Client Overview</a>{% endblock %}
+{% block page_help %}Inspect PE headers, exact byte/string evidence, imports/exports, binary diffs, and running-client version strings. String or byte hits are evidence only and do not prove feature wiring.{% endblock %}
+{% block page_body %}
+<form class="search wb-filter-row" method="get">
   <input type="text" name="path" value="{{ path }}" list="cands" placeholder="Full path to a .dll/.exe" style="min-width:420px;" required>
   <datalist id="cands">{% for c in candidates %}<option value="{{ c.path }}">{{ c.name }}</option>{% endfor %}</datalist>
   <input type="text" name="q" value="{{ q }}" placeholder="string search, e.g. wardrobe">

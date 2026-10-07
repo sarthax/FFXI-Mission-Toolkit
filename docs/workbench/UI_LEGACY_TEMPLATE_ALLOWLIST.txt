@@ -15,7 +15,6 @@ auction_house_seeder.html | legacy page pending archetype migration
 backup_delete_confirm.html | legacy page pending archetype migration
 backup_restore_confirm.html | legacy page pending archetype migration
 behavior_visualizer.html | legacy page pending archetype migration
-binary_inspector.html | legacy page pending archetype migration
 capture_add.html | legacy page pending archetype migration
 capture_alignment.html | legacy page pending archetype migration
 capture_bulk_ingest.html | legacy page pending archetype migration
