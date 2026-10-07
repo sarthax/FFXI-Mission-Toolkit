@@ -5,7 +5,7 @@ import json
 import sqlite3
 import struct
 
-import build_capture_index
+from workbench.captures.ingestion import build_index as build_capture_index
 
 
 FFXI_CHUNK = bytes.fromhex("0E 08 34 12 AA BB CC DD 00 00 00 00 00 00 00 00")

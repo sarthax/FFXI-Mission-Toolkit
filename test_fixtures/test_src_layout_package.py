@@ -139,14 +139,12 @@ def main() -> None:
         "id_bridge.py",
         "nyzul_plot.py",
         "backport_sql_live_check.py",
+        "build_capture_index.py",
     )
     for name in retired:
         assert not (ROOT / name).exists(), name
 
-    capture_shim = (ROOT / "build_capture_index.py").read_text(encoding="utf-8")
-    assert "workbench.captures.ingestion import build_index as _canonical" in capture_shim
-    assert "sqlite3.connect" not in capture_shim
-    assert "Path(__file__)" not in capture_shim
+    assert not (ROOT / "build_capture_index.py").exists()
 
     forbidden_imports = (
         "import workbench_graph",

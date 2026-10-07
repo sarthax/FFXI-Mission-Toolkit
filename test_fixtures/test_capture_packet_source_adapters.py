@@ -6,7 +6,7 @@ import sqlite3
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import build_capture_index as bci
+from workbench.captures.ingestion import build_index as bci
 from workbench.core.services import capture_integrity
 from workbench.core.services import packet_correlation
 

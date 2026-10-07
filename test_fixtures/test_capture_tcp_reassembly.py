@@ -5,7 +5,7 @@ import json
 import sqlite3
 import struct
 
-import build_capture_index
+from workbench.captures.ingestion import build_index as build_capture_index
 
 
 def ipv4_tcp_frame(

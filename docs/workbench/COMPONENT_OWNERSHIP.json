@@ -158,7 +158,6 @@
     "backport_sql_live_check.py": "validation_packages",
     "binary_inspector.py": "client_shared",
     "build_altana_index.py": "client_shared",
-    "build_capture_index.py": "captures",
     "build_condition_index.py": "devtools",
     "build_database.py": "devtools",
     "build_dialog_index.py": "devtools",

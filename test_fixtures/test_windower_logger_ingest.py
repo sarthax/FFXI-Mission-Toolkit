@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import sqlite3
 
-import build_capture_index
+from workbench.captures.ingestion import build_index as build_capture_index
 
 
 def main():

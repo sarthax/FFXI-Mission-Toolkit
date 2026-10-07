@@ -6,7 +6,7 @@ import sqlite3
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import build_capture_index
+from workbench.captures.ingestion import build_index as build_capture_index
 from workbench.devtools.features import trace as feature_trace
 from workbench.core import graph as workbench_graph
 from workbench.core.services import capture_integrity
