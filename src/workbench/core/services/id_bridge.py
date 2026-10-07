@@ -141,7 +141,7 @@ def main():
 
     args = ap.parse_args()
     if not DB_PATH.exists():
-        raise SystemExit(f"{DB_PATH} not found -- run build_database.py first.")
+        raise SystemExit(f"{DB_PATH} not found -- run `python -m workbench.devtools.indexing.build_database` first.")
     conn = sqlite3.connect(DB_PATH)
 
     if args.cmd == "drift-report":
