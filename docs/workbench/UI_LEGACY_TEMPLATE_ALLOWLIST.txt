@@ -45,8 +45,6 @@ domains_index.html | legacy page pending archetype migration
 drift.html | legacy page pending archetype migration
 entity.html | legacy page pending archetype migration
 entity_detail.html | legacy page pending archetype migration
-event_view.html | legacy page pending archetype migration
-events.html | legacy page pending archetype migration
 feature_checker.html | legacy page pending archetype migration
 feature_trace.html | legacy page pending archetype migration
 gaps.html | legacy page pending archetype migration
