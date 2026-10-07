@@ -1,9 +1,13 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Rebuild {{ row.label }}{% endblock %}
-{% block content %}
-<p><a class="inline" href="/">&larr; back to homepage</a></p>
-
-<h1>Rebuild <span class="chip mono">{{ row.label }}</span>?</h1>
+{% block page_archetype %}editor{% endblock %}
+{% block page_width %}narrow{% endblock %}
+{% block page_back %}<a class="chip" href="/">&larr; Home</a>{% endblock %}
+{% block page_heading %}Rebuild{% endblock %}
+{% block page_identity %}<span class="chip mono">{{ row.label }}</span>{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Re-index action</span>{% endblock %}
+{% block page_help %}Re-indexes only the selected source after taking a timestamped database backup. Other source tables are not intentionally modified.{% endblock %}
+{% block page_body %}
 
 <div class="warn">
   {{ row.rebuild_note }}

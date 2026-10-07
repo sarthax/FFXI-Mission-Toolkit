@@ -1,9 +1,13 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Restore Backup{% endblock %}
-{% block content %}
-<p><a class="inline" href="/settings">&larr; back to Settings</a></p>
-
-<h1>Restore <span class="chip mono">{{ backup.name }}</span>?</h1>
+{% block page_archetype %}editor{% endblock %}
+{% block page_width %}narrow{% endblock %}
+{% block page_back %}<a class="chip" href="/settings">&larr; Settings</a>{% endblock %}
+{% block page_heading %}Restore backup{% endblock %}
+{% block page_identity %}<span class="chip mono">{{ backup.name }}</span>{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Replaces live database</span>{% endblock %}
+{% block page_help %}Restores the selected backup over the live database after taking a safety copy of the current state. The toolkit restarts automatically after the restore finishes.{% endblock %}
+{% block page_body %}
 
 <div class="warn">
   <strong>This replaces the entire live database.</strong> Everything currently in
