@@ -69,3 +69,4 @@ Completed workspace migrations:
 - **ID Drift** — Overview (Dashboard) and Category Detail (Browser).
 - **LLM** — Assistant (Workbench; draft-output boundary) and Call Detail (Detail, read-only).
 - **Events / CSID** — Browser (Browser) and Event Detail (Detail).
+- **Wiki Compiler** — Evidence compilation and comparison workspace (Workbench).
