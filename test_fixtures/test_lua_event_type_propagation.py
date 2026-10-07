@@ -27,7 +27,7 @@ end
     assert by_method["getID"]["class_hint"]=="CLuaBaseEntity",calls
     assert by_method["getID"]["class_hint_source"]=="LOCAL_ALIAS",calls
     assert by_method["getArea"]["class_hint"]=="CLuaBattlefield",calls
-    assert by_method["getArea"]["class_hint_source"]=="CONFIGURED_RETURN_TYPE",calls
+    assert by_method["getArea"]["class_hint_source"]=="API_RETURN_TYPE",calls
 
     api_payload={
         "functions":[
