@@ -87,3 +87,4 @@ Completed workspace migrations:
 - **Domains Index** — Domain implementation inventory and editor coverage (Dashboard, read-only).
 - **Feature Checker** — Capability-requirement evidence evaluator with separate implementation and validation dimensions (Workbench, read-only).
 - **Packet Tools** — Manual packet decoder and opcode browser (Workbench; capture-native provenance guidance preserved).
+- **Assault Domain** — Assault-specific development/validation landing workspace (Dashboard).
