@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `54a8dd5aa09dd1d544a1ea495b2b51276b45cd23` after PR #612  
-Current work branch: `cleanup/packet-ocr-phase3c46`  
+Current merged baseline: `main` at `36bfbaa92a3cfd6265b48ab5e97e0e5f8a921354` after PR #613  
+Current work branch: `cleanup/spatial-runtime-phase3c47`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -103,30 +103,31 @@ reset_install.bat
 - PR #610 — retired `backport_sql_live_check.py`, `id_bridge.py`, and `nyzul_plot.py`; moved Nyzul profile-bridge installation into the canonical module and refreshed the full modern-LSB migration fixture; Workbench #2813 + Src Layout #691 green.
 - PR #611 — retired `mission_toolkit.py` and `explore_event.py`, moved Event Explorer export generation to the packaged Mission Toolkit CLI, and activated both focused migration smokes; Workbench #2814 + Src Layout #692 green.
 - PR #612 — retired `llm_client.py`, `llm_db_tools.py`, and `llm_log.py`, normalized packaged research callers, and activated all three focused LLM migration regressions; Workbench #2815 + Src Layout #693 green.
+- PR #613 — retired `packet_decode.py` and `youtube_chat_ocr.py`, added direct packaged CLIs, normalized Capture/regression callers, and preserved mutable OCR state through the canonical adapter; Workbench #2816 + Src Layout #694 green.
 
 ## Current slice
 
-### Slice 3c46 — retire packet decoder and Capture OCR root launchers
+### Slice 3c47 — retire spatial visual-cache and Zone Plot root surfaces
 
-Status: IN PROGRESS on `cleanup/packet-ocr-phase3c46`.
+Status: IN PROGRESS on `cleanup/spatial-runtime-phase3c47`.
 
 Changes on this branch:
-- [x] remove root `packet_decode.py` and `youtube_chat_ocr.py`.
-- [x] preserve canonical packet decoder ownership at `workbench.packets.decode`.
-- [x] preserve canonical Capture video/OCR ownership at `workbench.captures.video.ocr`.
-- [x] add direct `python -m workbench.packets.decode` CLI behavior, including the historical UTF-8 stdout wrapper.
-- [x] add direct `python -m workbench.captures.video.ocr` CLI behavior.
-- [x] repoint Capture ingestion/OCR packet-decoder imports to the canonical shared packet service.
-- [x] repoint active packet/OCR regressions to canonical imports and canonical implementation source paths.
-- [x] migrate both focused package smokes to explicit root-absence contracts while adding outside-repo packaged CLI help checks.
-- [x] preserve mutable OCR module-global behavior through the canonical adapter.
-- [x] update active OCR/packet UI guidance, Runtime installer wording, ownership records, and Src Layout status.
-- [x] retain existing Src Layout trigger/execution coverage for both focused migration smokes.
+- [x] remove root `build_zone_visual_cache.py` and `zone_plot.py`.
+- [x] preserve canonical visual-cache ownership at `workbench.devtools.spatial.build_visual_cache`.
+- [x] preserve active-environment Zone Plot ownership at `workbench.devtools.spatial.active_zone_plot` over the mature packaged backend.
+- [x] repoint packaged host, Zone Editor, and Item Editor/helper imports to the active Zone Plot adapter.
+- [x] repoint packaged host visual-cache imports to the canonical builder.
+- [x] preserve Zone Plot live DB writes, nav helpers, named-server routing, and `DATA_ROOT/zoneplot_edit_log.sql` journaling.
+- [x] migrate both focused spatial package regressions to explicit root-absence contracts.
+- [x] add Src Layout triggers and execution for both spatial migration regressions.
+- [x] repoint current 3D/Zone Plot docs/templates and bootstrap reset metadata to packaged surfaces.
+- [x] update ownership records and Src Layout status.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by packet/OCR launcher retirement and packaged CLI migration.
+- [ ] Run Character Editor/server-admin regression if application/editor path coverage triggers it.
+- [ ] Fix only regressions caused by spatial root-surface retirement.
 - [ ] Merge only when required gates are green.
 
 ## Explicitly retained / deferred
