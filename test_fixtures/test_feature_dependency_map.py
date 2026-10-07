@@ -51,7 +51,7 @@ def main():
     assert "nodeDragging" in template
     assert "getBBox()" in template  # drag begins from the rendered node position
     assert "entity:av" not in template  # no fixture-specific renderer behavior
-    gui_source=(ROOT/"gui_server.py").read_text(encoding="utf-8")
+    gui_source=(ROOT/"src"/"workbench"/"app"/"_host_impl.py").read_text(encoding="utf-8")
     assert "build_feature_trace_closure(con, root)" in gui_source
 
     # The running GUI seeds registered reference bundles into its canonical graph and
