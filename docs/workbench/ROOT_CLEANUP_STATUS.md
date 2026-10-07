@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `580990c8eb2b7e1de20b3a2cbeff083aff75508f` after PR #596  
-Current work branch: `cleanup/capture-backtrace-phase3c30`  
+Current merged baseline: `main` at `e5bb2e33a160d3b20007fddb41c5e4cef352279a` after PR #597  
+Current work branch: `cleanup/capture-graph-connect-phase3c31`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -87,25 +87,26 @@ reset_install.bat
 - PR #594 — retired `salvage_reconstruct.py`; Workbench #2778 + Src Layout #656 green.
 - PR #595 — retired `addon_tools.py` and moved active usage guidance to `python -m workbench.runtime.addon_tools`; Workbench #2779 + Src Layout #657 green.
 - PR #596 — retired `packet_opcode_index.py` and repointed direct packet-dispatch regression to `workbench.packets.opcode_index`; Workbench #2780 + Src Layout #658 green.
+- PR #597 — retired `capture_backtrace.py`, repointed packaged research/runtime validation callers, and merged after Workbench #2782 + Src Layout #660 green.
 
 ## Current slice
 
-### Slice 3c30 — retire Capture Backtrace root launcher
+### Slice 3c31 — retire Capture Graph Connect root launcher
 
-Status: IN PROGRESS on `cleanup/capture-backtrace-phase3c30`.
+Status: IN PROGRESS on `cleanup/capture-graph-connect-phase3c31`.
 
 Changes on this branch:
-- [x] repoint `workbench.research.extended_tools` from root `capture_backtrace` to `workbench.captures.correlation.backtrace`.
-- [x] remove root `capture_backtrace.py`.
-- [x] preserve canonical Capture ownership and direct packaged CLI behavior at `workbench.captures.correlation.backtrace`.
-- [x] preserve Capture-owned packet identity use.
+- [x] remove root `capture_graph_connect.py`.
+- [x] preserve canonical Capture correlation ownership at `workbench.captures.correlation.graph_connect`.
+- [x] preserve the mature staged implementation and Capture-owned packet identity/correlation bindings.
 - [x] migrate the focused package regression from root-launcher loading to an explicit root-absence contract.
-- [x] update active Capture Backtrace documentation and Src Layout status to the canonical package surface.
+- [x] repoint all active Graph Connect regression fixtures to canonical package imports.
+- [x] update Src Layout status to mark the historical root launcher retired.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by Capture Backtrace launcher retirement.
+- [ ] Fix only regressions caused by Capture Graph Connect launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred

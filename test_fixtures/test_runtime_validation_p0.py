@@ -8,7 +8,7 @@ from pathlib import Path
 import sqlite3
 import tempfile
 
-from capture_graph_connect import connect as connect_capture_graph
+from workbench.captures.correlation.graph_connect import connect as connect_capture_graph
 from workbench.captures.correlation.backtrace import backtrace
 from workbench.core import graph
 from workbench.core.services.validation_run import ValidationSpec, run_validation_suite
