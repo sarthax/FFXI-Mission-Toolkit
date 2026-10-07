@@ -7,7 +7,7 @@ import sqlite3
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import build_capture_index
+from workbench.captures.ingestion import build_index as build_capture_index
 
 
 LUA_TABLES = """[17000021] = {['id']=17000021, ['name']="Legacy NPC", ['x']=1.0, ['y']=2.0, ['z']=3.0, ['r']=64, ['flags']=1, ['status']=0, ['animation']=0, ['speed']=40},
