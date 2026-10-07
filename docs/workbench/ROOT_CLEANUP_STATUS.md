@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `04da08e4310255e761232675fff77b108592404f` after PR #588  
-Current work branch: `cleanup/zone-animation-meta-phase3c22`  
+Current merged baseline: `main` at `e9168de6d3e29b816c64f91e2e4f6c20dda3399a` after PR #589  
+Current work branch: `cleanup/build-condition-index-phase3c23`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -79,24 +79,26 @@ reset_install.bat
 - PR #586 — retired `fix_zone_door_props.py`; Workbench #2765 + Src Layout #643 green.
 - PR #587 — retired `lookup_entity.py` and `entity_profile.py`, removing the temporary Entity Profile root-import alias bridge; Workbench #2766 + Src Layout #644 green.
 - PR #588 — retired `lua_event_index.py`; Workbench #2769 + Src Layout #647 green after activating and refreshing the canonical Lua-event regression.
+- PR #589 — retired `zone_animation_meta.py`; Workbench #2773 + Src Layout #651 green after activating its package regression and adding explicit optional-dependency stubs.
 
 ## Current slice
 
-### Slice 3c22 — retire Client zone animation metadata root alias
+### Slice 3c23 — retire build-condition index root launcher
 
-Status: IN PROGRESS on `cleanup/zone-animation-meta-phase3c22`.
+Status: IN PROGRESS on `cleanup/build-condition-index-phase3c23`.
 
 Changes on this branch:
-- [x] remove root `zone_animation_meta.py`.
-- [x] preserve canonical read-only ownership at `workbench.client.models.zone_animation_meta`.
-- [x] migrate the focused package regression from root-alias identity to an explicit root-absence contract.
-- [x] add the focused pytest regression and retired root name to Src Layout trigger/execution coverage.
-- [x] preserve the existing packaged LSB-index dependency and fallback animation metadata behavior.
+- [x] remove root `build_condition_index.py`.
+- [x] preserve canonical Development ownership at `workbench.devtools.server.condition_index`.
+- [x] preserve direct packaged CLI execution through `python -m workbench.devtools.server.condition_index`.
+- [x] migrate the focused package regression from legacy root-module loading to an explicit root-absence contract.
+- [x] update Src Layout status to mark the root compatibility surface retired.
+- [x] retain the existing conservative compile-condition/generated-source evidence behavior and outside-repo import smoke.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by zone-animation metadata alias retirement.
+- [ ] Fix only regressions caused by build-condition launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
