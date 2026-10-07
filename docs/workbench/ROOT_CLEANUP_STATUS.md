@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `01df102d04e2f0571b8e2d2993b9fafea9168425` after PR #598  
-Current work branch: `cleanup/validation-pipeline-phase3c32`  
+Current merged baseline: `main` at `ff06f33647721a198bb1c053d5cf96a3fd4a32ba` after PR #599  
+Current work branch: `cleanup/runtime-connectors-phase3c33`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -89,27 +89,26 @@ reset_install.bat
 - PR #596 — retired `packet_opcode_index.py` and repointed direct packet-dispatch regression to `workbench.packets.opcode_index`; Workbench #2780 + Src Layout #658 green.
 - PR #597 — retired `capture_backtrace.py`, repointed packaged research/runtime validation callers, and merged after Workbench #2782 + Src Layout #660 green.
 - PR #598 — retired `capture_graph_connect.py` and repointed active Graph Connect regressions to `workbench.captures.correlation.graph_connect`; Workbench #2783 + Src Layout #661 green.
+- PR #599 — retired `validation_pipeline.py`, moved the suite CLI regression to `python -m workbench.validation.pipeline`, and added Src Layout migration coverage; Workbench #2784 + Src Layout #662 green.
 
 ## Current slice
 
-### Slice 3c32 — retire validation pipeline root launcher
+### Slice 3c33 — retire Workbench runtime connector root launchers
 
-Status: IN PROGRESS on `cleanup/validation-pipeline-phase3c32`.
+Status: IN PROGRESS on `cleanup/runtime-connectors-phase3c33`.
 
 Changes on this branch:
-- [x] remove root `validation_pipeline.py`.
-- [x] preserve canonical Validation ownership at `workbench.validation.pipeline`.
-- [x] preserve single-validator and suite CLI behavior.
-- [x] migrate the focused package regression from root-alias loading to an explicit root-absence contract.
-- [x] run the suite CLI regression through `python -m workbench.validation.pipeline`.
-- [x] update Validation Pipeline documentation to the packaged surface.
-- [x] add Src Layout trigger/execution coverage for the validation pipeline migration smoke.
-- [x] update Src Layout status to mark the historical root launcher retired.
+- [x] remove root `workbench_connect.py` and `workbench_connect_server.py`.
+- [x] preserve canonical Runtime ownership at `workbench.runtime.connect` and `workbench.runtime.connect_server`.
+- [x] preserve packaged CLI/API and graph-import behavior.
+- [x] repoint active capture/server connector regressions to canonical Runtime imports.
+- [x] migrate the combined runtime-connectors package regression from root-alias identity to explicit root-absence contracts.
+- [x] update Src Layout status to mark both historical root connector entry points retired.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by validation-pipeline launcher retirement.
+- [ ] Fix only regressions caused by runtime-connector launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
