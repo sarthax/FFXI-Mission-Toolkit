@@ -263,7 +263,7 @@ Contextual entry points:
 - Package → validation requirements.
 - Server logical record → live target check.
 
-The specialized `backport_sql_live_check.py` remains preserved as a diagnostic/specialized tool rather than being removed.
+The specialized `workbench.validation.live_db.sql_check` remains available as a diagnostic/live-validation tool.
 
 ### Packages
 
