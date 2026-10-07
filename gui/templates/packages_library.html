@@ -1,12 +1,13 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Package Library — Mission Toolkit{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}package-library-page{% endblock %}
-{% block content %}
-<style>main.package-library-page{padding:8px 10px 24px}</style>
-<div class="dense-toolbar"><strong>Package Library</strong><span class="chip mono">{{ project_root }}</span><span class="sp"></span><a class="chip" href="/packages/create">Create package</a><a class="chip" href="/packages/scope">Scope review</a><a class="chip" href="/packages/review">Review</a></div>
+{% block page_archetype %}browser{% endblock %}
+{% block page_class %}package-library-page{% endblock %}
+{% block page_heading %}Package Library{% endblock %}
+{% block page_identity %}<span class="chip mono">{{ project_root }}</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/packages/create">Create package</a><a class="chip" href="/packages/scope">Scope review</a><a class="chip" href="/packages/review">Review</a>{% endblock %}
+{% block page_body %}
 
-<form class="search dense-toolbar" method="get" action="/packages" style="margin:6px 0">
+<form class="search wb-filter-row" method="get" action="/packages">
   <input type="text" name="q" value="{{ q }}" placeholder="Package path, migration ID, or feature ID">
   <button type="submit">Filter</button>
 </form>
@@ -28,7 +29,7 @@
 </tbody>
 </table></div>
 {% else %}
-<p class="muted">No assembled Workbench packages were found under the configured project root.</p>
+<div class="wb-empty">No assembled Workbench packages were found under the configured project root.</div>
 {% endif %}
 
 <details class="dense-card" style="margin-top:8px"><summary>Legacy package builder</summary><div class="muted" style="padding-top:5px">Backport Package (legacy) remains available until the new Packages workspace reaches full creation/apply parity.</div></details>

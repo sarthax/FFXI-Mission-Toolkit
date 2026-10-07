@@ -339,7 +339,10 @@ def main():
         capture_env.get_template(template_name)
         source=(TEMPLATES/template_name).read_text(encoding="utf-8")
         for marker in markers:
-            assert marker in source,(template_name,marker)
+            if marker == "{% block shell_mode %}dense{% endblock %}" and '{% extends "workbench_page.html" %}' in source:
+                assert marker in wrapper_source,(template_name,"wrapper must preserve dense shell mode")
+            else:
+                assert marker in source,(template_name,marker)
 
     assert '<body class="shell-dense">' in captures_html
     assert '<strong>Captures</strong>' in captures_html
@@ -507,8 +510,9 @@ def main():
 
     packages_html = render("packages_library.html", "/packages", q="", project_root="C:/workspace", packages=[])
     assert '<body class="shell-dense">' in packages_html
-    assert '<strong>Package Library</strong>' in packages_html
-    assert 'form class="search dense-toolbar"' in packages_html
+    assert 'wb-archetype-browser' in packages_html
+    assert 'class="wb-page-title">Package Library</span>' in packages_html
+    assert 'form class="search wb-filter-row"' in packages_html
 
     validation_shell = context_for("/validation")
     assert validation_shell["active_home"] == "Validation"
