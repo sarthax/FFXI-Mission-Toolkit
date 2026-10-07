@@ -88,3 +88,4 @@ Completed workspace migrations:
 - **Feature Checker** — Capability-requirement evidence evaluator with separate implementation and validation dimensions (Workbench, read-only).
 - **Packet Tools** — Manual packet decoder and opcode browser (Workbench; capture-native provenance guidance preserved).
 - **Assault Domain** — Assault-specific development/validation landing workspace (Dashboard).
+- **Message-ID Shift Master** — Evidence-derived packet-message/dialog-index shift ranges with explicit rebuild write boundary (Workbench, reading width).
