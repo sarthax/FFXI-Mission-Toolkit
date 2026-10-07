@@ -139,6 +139,7 @@ def main() -> None:
         "id_bridge.py",
         "nyzul_plot.py",
         "backport_sql_live_check.py",
+        "build_capture_index.py",
     )
     for name in retired:
         assert not (ROOT / name).exists(), name
