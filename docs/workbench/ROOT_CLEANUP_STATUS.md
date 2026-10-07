@@ -80,25 +80,26 @@ reset_install.bat
 - PR #587 — retired `lookup_entity.py` and `entity_profile.py`, removing the temporary Entity Profile root-import alias bridge; Workbench #2766 + Src Layout #644 green.
 - PR #588 — retired `lua_event_index.py`; Workbench #2769 + Src Layout #647 green after activating and refreshing the canonical Lua-event regression.
 - PR #589 — retired `zone_animation_meta.py`; Workbench #2773 + Src Layout #651 green after activating its package regression and adding explicit optional-dependency stubs.
+- PR #590 — retired `build_condition_index.py`; Workbench #2774 + Src Layout #652 green.
 
 ## Current slice
 
-### Slice 3c23 — retire build-condition index root launcher
+### Slice 3c24 — retire wiki compiler root launcher
 
-Status: IN PROGRESS on `cleanup/build-condition-index-phase3c23`.
+Status: IN PROGRESS on `cleanup/wiki-compile-phase3c24`.
 
 Changes on this branch:
-- [x] remove root `build_condition_index.py`.
-- [x] preserve canonical Development ownership at `workbench.devtools.server.condition_index`.
-- [x] preserve direct packaged CLI execution through `python -m workbench.devtools.server.condition_index`.
-- [x] migrate the focused package regression from legacy root-module loading to an explicit root-absence contract.
-- [x] update Src Layout status to mark the root compatibility surface retired.
-- [x] retain the existing conservative compile-condition/generated-source evidence behavior and outside-repo import smoke.
+- [x] remove root `wiki_compile.py`.
+- [x] preserve canonical Development reference ownership at `workbench.devtools.reference.wiki_compile`.
+- [x] preserve direct packaged CLI execution, including UTF-8 stdout handling, through `python -m workbench.devtools.reference.wiki_compile`.
+- [x] migrate the focused package regression from root-alias identity to an explicit root-absence contract.
+- [x] add the retired root name and focused migration smoke to Src Layout trigger/execution coverage.
+- [x] update the active GUI roadmap to reference the canonical package surface.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by build-condition launcher retirement.
+- [ ] Fix only regressions caused by wiki compiler launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred

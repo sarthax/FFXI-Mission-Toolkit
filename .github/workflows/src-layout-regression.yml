@@ -10,6 +10,7 @@ on:
       - "feature_trace.py"
       - "wiki_evidence.py"
       - "wiki_claim_compare.py"
+      - "wiki_compile.py"
       - "capture_backtrace.py"
       - "capture_graph_connect.py"
       - "build_capture_index.py"
@@ -70,6 +71,7 @@ on:
       - "test_fixtures/test_map_confidence_graph_package_migration.py"
       - "test_fixtures/test_wiki_lookup_package_migration.py"
       - "test_fixtures/test_wiki_evidence_package_migration.py"
+      - "test_fixtures/test_wiki_compile_package_migration.py"
       - "test_fixtures/test_wiki_evidence_graph_package_migration.py"
       - "test_fixtures/test_capture_services_package_migration.py"
       - "test_fixtures/test_capture_integrity_package_migration.py"
@@ -157,6 +159,7 @@ jobs:
           python test_fixtures/test_map_confidence_graph_package_migration.py
           python test_fixtures/test_wiki_lookup_package_migration.py
           python test_fixtures/test_wiki_evidence_package_migration.py
+          python test_fixtures/test_wiki_compile_package_migration.py
           python test_fixtures/test_wiki_evidence_graph_package_migration.py
           python test_fixtures/test_capture_services_package_migration.py
           python test_fixtures/test_capture_integrity_package_migration.py

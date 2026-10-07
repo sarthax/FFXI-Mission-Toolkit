@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import importlib
 import sys
+from pathlib import Path
 
 from workbench.devtools.reference import wiki_compile as canonical
 from workbench.runtime.paths import DATABASE_PATH, VENDOR_ROOT
 
 
 def main() -> None:
-    sys.modules.pop("wiki_compile", None)
-    root = importlib.import_module("wiki_compile")
-    assert root is canonical
+    repo_root = Path(__file__).resolve().parents[1]
+    assert not (repo_root / "wiki_compile.py").exists()
 
     assert canonical.DB_PATH == DATABASE_PATH
     assert canonical.DUMP_PATH == VENDOR_ROOT / "ffxi-wiki-dumps-dist" / "bg-wiki.jsonl.gz"
