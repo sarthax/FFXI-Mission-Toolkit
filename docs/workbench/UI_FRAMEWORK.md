@@ -86,3 +86,4 @@ Completed workspace migrations:
 - **Dialog Browser** — Client dialog search/browse with drift, CSID, capture, and implementation evidence (Browser; specialized result geometry preserved).
 - **Domains Index** — Domain implementation inventory and editor coverage (Dashboard, read-only).
 - **Feature Checker** — Capability-requirement evidence evaluator with separate implementation and validation dimensions (Workbench, read-only).
+- **Packet Tools** — Manual packet decoder and opcode browser (Workbench; capture-native provenance guidance preserved).
