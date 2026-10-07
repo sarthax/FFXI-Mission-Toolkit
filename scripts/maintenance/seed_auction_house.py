@@ -4,11 +4,11 @@
 Every generated row is tagged by a reserved fake seller-id range (SELLER_BASE..SELLER_BASE+N), so
 --clear removes only seeded rows and never touches real player listings.
 
-Usage (from D:\\Claude\\mission_toolkit):
-    py -3 seed_auction_house.py --dry-run             # show the plan, write nothing
-    py -3 seed_auction_house.py                       # seed 60 items over 90 days
-    py -3 seed_auction_house.py --items 120 --days 30 --seed 7
-    py -3 seed_auction_house.py --clear               # remove seeded rows only
+Usage (from repository root):
+    py -3 scripts/maintenance/seed_auction_house.py --dry-run             # show the plan, write nothing
+    py -3 scripts/maintenance/seed_auction_house.py                       # seed 60 items over 90 days
+    py -3 scripts/maintenance/seed_auction_house.py --items 120 --days 30 --seed 7
+    py -3 scripts/maintenance/seed_auction_house.py --clear               # remove seeded rows only
 
 DB credentials come from the server's conf/map.conf (default C:\\topaz\\conf\\map.conf).
 Schema is discovered with DESCRIBE, so legacy (buyer_name) and LSB-style (numeric buyer) layouts work.
@@ -233,7 +233,7 @@ def main():
             return
         insert(cur, a, players, rows)
         conn.commit()
-        print("inserted. remove later with: py -3 seed_auction_house.py --clear")
+        print("inserted. remove later with: py -3 scripts/maintenance/seed_auction_house.py --clear")
         return
 
     cur.execute(f"SELECT COUNT(*) FROM auction_house WHERE `{a['seller']}` BETWEEN %s AND %s", (lo, hi))
@@ -250,7 +250,7 @@ def main():
         return
     insert(cur, a, players, rows)
     conn.commit()
-    print("inserted. remove later with: py -3 seed_auction_house.py --clear")
+    print("inserted. remove later with: py -3 scripts/maintenance/seed_auction_house.py --clear")
 
 
 if __name__ == "__main__":

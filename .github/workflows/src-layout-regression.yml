@@ -8,6 +8,11 @@ on:
       - "workbench/__init__.py"
       - "docs/workbench/SRC_LAYOUT_STATUS.md"
       - "feature_checker.py"
+      - "tools_gen_dsp_enums.py"
+      - "discord_holiday_load.py"
+      - "discord_inventory.py"
+      - "seed_auction_house.py"
+      - "build_item_repair_package.py"
       - "feature_trace.py"
       - "wiki_lookup.py"
       - "wiki_evidence.py"
@@ -69,6 +74,7 @@ on:
       - "backport_convert_nyzul_package.py"
       - "backport_package.py"
       - "test_fixtures/test_src_layout_package.py"
+      - "test_fixtures/test_standalone_operator_scripts_relocation.py"
       - "test_fixtures/test_feature_trace_package_migration.py"
       - "test_fixtures/test_dependency_services_package_migration.py"
       - "test_fixtures/test_acquisition_services_package_migration.py"
@@ -167,6 +173,7 @@ jobs:
       - name: Validate canonical src package outside repository cwd
         run: |
           python test_fixtures/test_src_layout_package.py
+          python test_fixtures/test_standalone_operator_scripts_relocation.py
           python test_fixtures/test_feature_trace_package_migration.py
           python test_fixtures/test_dependency_services_package_migration.py
           python test_fixtures/test_acquisition_services_package_migration.py

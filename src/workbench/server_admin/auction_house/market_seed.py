@@ -1,6 +1,6 @@
 """TEST-only market-history seeding (history, scenarios, clear) for the AH Economy views.
 
-Wraps the standalone seed_auction_house.py logic. Every row is written under the reserved fake-seller
+Wraps the standalone scripts/maintenance/seed_auction_house.py logic. Every row is written under the reserved fake-seller
 range (990000..990024) so clear removes only seeded rows. Writes pass the same gate as other AH test writes.
 """
 from __future__ import annotations

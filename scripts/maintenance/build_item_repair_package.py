@@ -17,12 +17,13 @@ import re
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).parent
-sys.path[:0] = [str(ROOT / "src"), str(ROOT), r"D:\Claude\FFXI-Tools"]
-from workbench.editors.items import item_proc_sync as ps  # noqa: E402
-from workbench.editors.items import item_summary as isum  # noqa: E402
+from workbench.runtime.legacy_settings import get_dsp_root
+from workbench.runtime.paths import REPO_ROOT
+from workbench.editors.items import item_proc_sync as ps
+from workbench.editors.items import item_summary as isum
 
-DSP = Path(r"D:\Claude\dsp-master")
+ROOT = REPO_ROOT
+DSP = get_dsp_root() or Path(r"D:\Claude\dsp-master")
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(r"D:\Claude\Item-Script-Repairs")
 
 # Template specs: what the wiki confirms (effect/element) and what no source supplies (missing).

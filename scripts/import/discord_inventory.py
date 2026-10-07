@@ -5,9 +5,9 @@ Tables live in the same SQLite DB as the canonical capture index (captures table
   discord_posts     one row per message: author, date, title, text, urls (json), optional capture_id link
 
 Usage:
-  py -3 discord_inventory.py load <posts.json> --channel-id ID --name NAME --category CAT
-  py -3 discord_inventory.py list
-  py -3 discord_inventory.py link          # attach discord_posts.capture_id by matching video_url / data urls
+  py -3 scripts/import/discord_inventory.py load <posts.json> --channel-id ID --name NAME --category CAT
+  py -3 scripts/import/discord_inventory.py list
+  py -3 scripts/import/discord_inventory.py link          # attach discord_posts.capture_id by matching video_url / data urls
 
 posts.json is a list of {id, t (ISO), a (author line), x (text), l (urls)} as produced by the browser scrape.
 """

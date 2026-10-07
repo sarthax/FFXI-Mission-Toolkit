@@ -7,7 +7,7 @@ One captures row per post (source_path = discord://<message_id>, so re-runs are 
   tags        'Events - Holiday' or 'Events - Temporary' (+ 'Events')
 Also backfills discord_posts.author and sets capture_id / ingest_status='link_logged'.
 
-Usage: py -3 discord_holiday_load.py [--apply]
+Usage: py -3 scripts/import/discord_holiday_load.py [--apply]
 """
 import argparse, json, re, sqlite3, datetime as dt
 from workbench.captures.ingestion import build_index as b
