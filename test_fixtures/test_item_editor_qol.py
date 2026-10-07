@@ -312,7 +312,7 @@ def main():
 
 
 def test_client_job_mask_shift():
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     # client DAT job masks leave bit 0 unused (WAR = bit 1); server masks put WAR at bit 0
     rows = {"item_basic": {}, "item_equipment": {"jobs": 2098561, "level": 1, "slot": 1}}
     assert not item_edit.compare_server_client(rows, {"jobs": 4197122, "level": 1, "slots": 1})["mismatches"]
