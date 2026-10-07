@@ -17,12 +17,11 @@ xi.parse_entity_names = lambda *_args, **_kwargs: {}
 xi.parse_events = lambda *_args, **_kwargs: {}
 sys.modules.setdefault("xi_tinkerer", xi)
 
-import mission_toolkit as root_module
 from workbench.devtools.app import mission_toolkit
 
 
 def main() -> None:
-    assert root_module is mission_toolkit
+    assert not (ROOT / "mission_toolkit.py").exists()
     assert mission_toolkit.TOOLS_ROOT == ROOT
     assert mission_toolkit.LEGACY_FILE == ROOT / "mission_toolkit.py"
     assert mission_toolkit.IMPLEMENTATION_FILE == SRC / "workbench" / "devtools" / "app" / "_mission_toolkit_impl.py"
@@ -32,9 +31,6 @@ def main() -> None:
     assert mission_toolkit.dat_id_for_zone(0, "events") == 5820
     assert mission_toolkit.dat_id_for_zone(256, "events") == 84991
 
-    root_source = (ROOT / "mission_toolkit.py").read_text(encoding="utf-8")
-    assert "def resolve_topaz_zone" not in root_source
-    assert "workbench.devtools.app" in root_source
 
 
 if __name__ == "__main__":

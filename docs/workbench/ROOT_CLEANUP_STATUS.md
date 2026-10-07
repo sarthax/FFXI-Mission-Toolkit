@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `8fceb6afcea103c7b1616b0f8a6b7cad3ca7fb6b` after PR #609  
-Current work branch: `cleanup/thin-wrappers-phase3c43`  
+Current merged baseline: `main` at `e0b27607b5c8a88bf63a14fe319bc0cc548f3c56` after PR #610  
+Current work branch: `cleanup/mission-event-cli-phase3c44`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -100,29 +100,29 @@ reset_install.bat
 - PR #607 — retired `feature_trace.py` and `feature_checker.py`, normalized packaged-host imports for already-retired root modules, and promoted reusable external-tool installer logic into Runtime; Workbench #2805 + Src Layout #683 + Character Editor #203 green.
 - PR #608 — relocated five standalone maintenance/import scripts out of repository root, normalized repo-sensitive paths, and added Src Layout relocation coverage; Workbench #2807 + Src Layout #685 + Character Editor #205 green.
 - PR #609 — relocated `test_backport_lua_convert.py`, `test_backport_sql_convert.py`, and `test_capture_ingestion.py` to `tests/legacy/`, updated path-sensitive fixtures/docs, and activated relocation coverage.
+- PR #610 — retired `backport_sql_live_check.py`, `id_bridge.py`, and `nyzul_plot.py`; moved Nyzul profile-bridge installation into the canonical module and refreshed the full modern-LSB migration fixture; Workbench #2813 + Src Layout #691 green.
 
 ## Current slice
 
-### Slice 3c43 — retire remaining thin runtime/domain compatibility wrappers
+### Slice 3c44 — retire Mission Toolkit and Event Explorer root CLIs
 
-Status: IN PROGRESS on `cleanup/thin-wrappers-phase3c43`.
+Status: IN PROGRESS on `cleanup/mission-event-cli-phase3c44`.
 
 Changes on this branch:
-- [x] remove root `backport_sql_live_check.py`, `id_bridge.py`, and `nyzul_plot.py`.
-- [x] preserve canonical live SQL validation at `workbench.validation.live_db.sql_check`.
-- [x] preserve canonical ID Bridge ownership at `workbench.core.services.id_bridge` and repository database-path resolution.
-- [x] preserve canonical Nyzul visualization/research ownership at `workbench.devtools.domains.nyzul_plot`, including server-profile routing and exclusion paths.
-- [x] migrate focused live-SQL, ID Bridge, Nyzul, and src-layout regressions to explicit root-absence/canonical contracts.
-- [x] repoint active package, GUI, roadmap, audit, and tooling guidance away from retired root commands.
-- [x] update canonical implementation comments/help text to packaged surfaces.
-- [x] add Src Layout trigger/execution coverage for all three retirements.
-- [x] update Src Layout status and advance this tracker from merged PR #609.
+- [x] remove root `mission_toolkit.py` and `explore_event.py`.
+- [x] preserve canonical Mission Toolkit developer CLI ownership at `workbench.devtools.app.mission_toolkit`.
+- [x] preserve canonical Event/CSID explorer ownership at `workbench.devtools.server.explore_event`.
+- [x] migrate Event Explorer's missing-export subprocess from the root script path to `python -m workbench.devtools.app.mission_toolkit`.
+- [x] migrate the focused Mission Toolkit/Event Explorer package smokes to explicit root-absence contracts.
+- [x] repoint the Event/CSID UI regression to the canonical Event Explorer import.
+- [x] update current tooling/roadmap guidance and canonical adapter documentation to packaged surfaces.
+- [x] add Src Layout triggers and execution for both focused migration smokes.
+- [x] update Src Layout status and advance this tracker from merged PR #610.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Run Character Editor/server-admin regression if triggered by application/runtime path coverage.
-- [ ] Fix only regressions caused by thin-wrapper retirement.
+- [ ] Fix only regressions caused by Mission Toolkit/Event Explorer root CLI retirement.
 - [ ] Merge only when required gates are green.
 
 ## Explicitly retained / deferred

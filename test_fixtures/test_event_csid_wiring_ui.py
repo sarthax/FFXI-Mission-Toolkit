@@ -3,7 +3,7 @@
 
 from pathlib import Path
 
-import explore_event
+from workbench.devtools.server import explore_event
 
 ROOT = Path(__file__).resolve().parents[1]
 
