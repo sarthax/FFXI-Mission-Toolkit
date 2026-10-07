@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `de52c3627326ad9d822abad97222960dcc3e011e` after PR #593  
-Current work branch: `cleanup/salvage-reconstruct-phase3c27`  
+Current merged baseline: `main` at `c7996cfc21e83610c1939e51388502cc4c109193` after PR #594  
+Current work branch: `cleanup/addon-tools-phase3c28`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -84,26 +84,26 @@ reset_install.bat
 - PR #591 — retired `wiki_compile.py`; Workbench #2775 + Src Layout #653 green.
 - PR #592 — moved the mission-event reconciliation CLI into `workbench.devtools.missions.event_reconcile` and retired root `mission_event_reconcile.py`; Workbench #2776 + Src Layout #654 green.
 - PR #593 — retired `mission_graph_ingest.py`, exposing the existing packaged CLI through `python -m workbench.devtools.missions.graph_ingest`; Workbench #2777 + Src Layout #655 green.
+- PR #594 — retired `salvage_reconstruct.py`; Workbench #2778 + Src Layout #656 green.
 
 ## Current slice
 
-### Slice 3c27 — retire Salvage reconstruction root launcher
+### Slice 3c28 — retire addon-tools root launcher
 
-Status: IN PROGRESS on `cleanup/salvage-reconstruct-phase3c27`.
+Status: IN PROGRESS on `cleanup/addon-tools-phase3c28`.
 
 Changes on this branch:
-- [x] remove root `salvage_reconstruct.py`.
-- [x] preserve canonical Capture CLI ownership at `workbench.captures.cli.salvage_reconstruct`.
-- [x] preserve the canonical default database path through `workbench.runtime.paths.DATABASE_PATH`.
-- [x] migrate the focused package regression from root-module loading to an explicit root-absence contract.
-- [x] update the Salvage domain pipeline guide to use the packaged `python -m` CLI.
+- [x] remove root `addon_tools.py`.
+- [x] preserve canonical Runtime ownership at `workbench.runtime.addon_tools`.
+- [x] preserve package/install/list behavior and canonical `REPO_ROOT` / `ADDONS_ROOT` path resolution.
+- [x] migrate the focused package regression from root-alias identity to an explicit root-absence contract.
+- [x] update runtime error guidance and active distro/roadmap docs to the packaged `python -m workbench.runtime.addon_tools` command.
 - [x] update Src Layout status to mark the root compatibility command retired.
-- [x] repair the authoritative tracker header so merged baseline/current branch match the actual cleanup state.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by Salvage launcher retirement.
+- [ ] Fix only regressions caused by addon-tools launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
