@@ -69,10 +69,6 @@ model_viewer.html | legacy page pending archetype migration
 nyzul_plot.html | legacy page pending archetype migration
 ocr.html | legacy page pending archetype migration
 ocr_run.html | legacy page pending archetype migration
-packages_create.html | legacy page pending archetype migration
-packages_library.html | legacy page pending archetype migration
-packages_review.html | legacy page pending archetype migration
-packages_scope.html | legacy page pending archetype migration
 packets.html | legacy page pending archetype migration
 packets_decode.html | legacy page pending archetype migration
 path_plot.html | legacy page pending archetype migration
