@@ -8709,7 +8709,7 @@ def assault_domain_page(request: Request):
 
 # ---- Nyzul Isle plot tool (nyzul_plot.py) ---------------------------------------------------
 from workbench.devtools.domains import nyzul_plot
-import zone_plot  # reused below for zone 77's live door/prop rows (npc_list "_"-named entities)
+from workbench.devtools.spatial import zone_plot  # reused below for zone 77's live door/prop rows (npc_list "_"-named entities)
 
 
 @app.get("/nyzul", response_class=HTMLResponse)
