@@ -8,13 +8,12 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-import build_dsp_index as root_module
 from workbench.devtools.indexing import build_database, build_dsp_index, build_sql_index
 from workbench.runtime.paths import DATABASE_PATH, REPO_ROOT, repo_path
 
 
 def main() -> None:
-    assert root_module is build_dsp_index
+    assert not (ROOT / "build_dsp_index.py").exists()
     assert build_dsp_index.TOOLS_ROOT == REPO_ROOT == ROOT
     assert build_dsp_index.DB_PATH == DATABASE_PATH
     assert build_dsp_index.WORKBENCH_DB == repo_path("workbench.db")
@@ -24,8 +23,6 @@ def main() -> None:
     assert build_dsp_index.parse_table_file is build_sql_index.parse_table_file
     assert build_dsp_index.unquote is build_sql_index.unquote
 
-    root_source = (ROOT / "build_dsp_index.py").read_text(encoding="utf-8")
-    assert "sqlite3.connect" not in root_source
     adapter_source = (SRC / "workbench" / "devtools" / "indexing" / "build_dsp_index.py").read_text(encoding="utf-8")
     assert "from workbench.runtime import legacy_settings" in adapter_source
     assert "_build_dsp_index_impl.py" in adapter_source
