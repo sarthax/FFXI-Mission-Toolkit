@@ -196,7 +196,7 @@ end;
 def build_report(server_root: Path | None = None, lsb_root: Path | None = None) -> dict:
     """Full script-health report with an LSB cross-check/repair plan for every broken item."""
     if server_root is None:
-        import zone_plot
+        from workbench.devtools.spatial import active_zone_plot as zone_plot
         server_root = zone_plot._server_root()
     root = Path(server_root)
     h = isum.health_report(root)
@@ -264,7 +264,7 @@ def repair_item(item_id: int, server_root: Path | None = None, *, apply: bool = 
     a stub or check-only file is backed up first."""
     from workbench.editors.items import _editor_impl as impl
     if server_root is None:
-        import zone_plot
+        from workbench.devtools.spatial import active_zone_plot as zone_plot
         server_root = zone_plot._server_root()
     root = Path(server_root)
     db = impl._item_db(); cu = db.cursor()
