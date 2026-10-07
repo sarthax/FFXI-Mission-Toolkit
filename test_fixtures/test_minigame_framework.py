@@ -3,7 +3,7 @@
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-import feature_trace
+from workbench.devtools.features import trace as feature_trace
 from workbench.core import graph as graph_store
 from workbench.core.schema import Entity, Feature
 from workbench.plugins.domain import PluginContext, default_registry
