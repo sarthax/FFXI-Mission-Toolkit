@@ -133,6 +133,8 @@ def main() -> None:
         "dat_inspector.py",
         "client_model_catalog.py",
         "client_model_resolver.py",
+        "feature_checker.py",
+        "feature_trace.py",
     )
     for name in retired:
         assert not (ROOT / name).exists(), name
@@ -158,20 +160,28 @@ def main() -> None:
         for legacy_import in forbidden_imports:
             assert legacy_import not in text, f"{legacy_import!r} remains in {path.relative_to(ROOT)}"
 
-    feature_checker_wrapper_path = ROOT / "feature_checker.py"
-    assert feature_checker_wrapper_path.is_file()
-    feature_checker_wrapper = feature_checker_wrapper_path.read_text(encoding="utf-8")
-    assert "workbench.devtools.features.checker" in feature_checker_wrapper
+    assert not (ROOT / "feature_checker.py").exists()
+    assert not (ROOT / "feature_trace.py").exists()
     core_checker_shim = (SRC_PACKAGE / "core" / "services" / "feature_checker.py").read_text(encoding="utf-8")
     assert "workbench.devtools.features.checker" in core_checker_shim
-    legacy_feature_checker_callers = []
+    host_source = (SRC_PACKAGE / "app" / "_host_impl.py").read_text(encoding="utf-8")
+    assert "from workbench.devtools.features import checker as feature_checker" in host_source
+    assert "from workbench.devtools.features import trace as feature_trace" in host_source
+    legacy_feature_callers = []
     for path in first_party_python:
-        if path.resolve() in {Path(__file__).resolve(), feature_checker_wrapper_path.resolve()}:
+        if path.resolve() == Path(__file__).resolve():
             continue
         lines = [line.strip() for line in path.read_text(encoding="utf-8", errors="ignore").splitlines()]
-        if any(line == "import feature_checker" or line.startswith("from feature_checker import") for line in lines):
-            legacy_feature_checker_callers.append(path.relative_to(ROOT).as_posix())
-    assert legacy_feature_checker_callers == ["src/workbench/app/_host_impl.py"], legacy_feature_checker_callers
+        if any(
+            line == "import feature_checker"
+            or line.startswith("from feature_checker import")
+            or line == "import feature_trace"
+            or line.startswith("from feature_trace import")
+            or line.startswith("import feature_trace as")
+            for line in lines
+        ):
+            legacy_feature_callers.append(path.relative_to(ROOT).as_posix())
+    assert legacy_feature_callers == [], legacy_feature_callers
 
     id_bridge_wrapper_path = ROOT / "id_bridge.py"
     assert id_bridge_wrapper_path.is_file()
