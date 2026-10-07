@@ -31,7 +31,7 @@ poolid spawning under different in-world names at different positions within the
 real, common FFXI pattern -- not every (poolid, zoneid) match is a bug).
 
 Usage (library):
-    import backport_sql_convert as bsc
+    from workbench.packages.migration import sql_convert as bsc
     schema_map = bsc.load_schema_map()
     rows = bsc.parse_insert_values(sql_text)
     result = bsc.convert_table(table_name, rows, schema_map)
