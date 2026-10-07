@@ -141,7 +141,9 @@ def main():
         assert "Evidence mapping ledger" in template
         assert "Build / refresh evidence map" in template
         assert "confirm identity" in template
-        assert "{% block shell_mode %}dense{% endblock %}" in template
+        assert '{% extends "workbench_page.html" %}' in template
+        wrapper = (Path(__file__).resolve().parents[1] / "gui" / "templates" / "workbench_page.html").read_text(encoding="utf-8")
+        assert "{% block shell_mode %}dense{% endblock %}" in wrapper
         assert "wiki-section" in template
         assert "wiki-kpis" in template
         assert "Export handoff packet" in template
