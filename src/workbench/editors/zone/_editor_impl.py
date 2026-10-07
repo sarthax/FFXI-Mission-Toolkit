@@ -12,7 +12,7 @@ from decimal import Decimal
 from pathlib import Path
 
 import settings
-import zone_plot
+from workbench.devtools.spatial import active_zone_plot as zone_plot
 import client_model_resolver
 import mob_look_decode
 
