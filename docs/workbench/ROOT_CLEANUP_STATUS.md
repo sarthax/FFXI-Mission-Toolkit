@@ -138,10 +138,10 @@ Before merge:
 - final application/bootstrap compatibility files such as `gui_server.py`, `settings.py`, and `id_bridge.py` only after their caller contracts are intentionally retired.
 
 ### Standalone operator scripts
-IN PROGRESS in slice 3c41. Five known root maintenance/import scripts are being relocated under `scripts/{maintenance,import}` with path contracts and Src Layout regression coverage.
+COMPLETE through slice 3c41. Five root maintenance/import scripts now live under `scripts/{maintenance,import}` with path contracts and Src Layout regression coverage.
 
 ### Tests and high-fan-in compatibility removal
-PENDING. Move remaining root `test_*.py`, migrate `build_capture_index.py` callers, and consider `test_fixtures/` → `tests/fixtures/` only with workflow/discovery updates.
+IN PROGRESS in slice 3c42. The remaining root `test_*.py` scripts are moving to `tests/legacy/`; `build_capture_index.py` and any broader `test_fixtures/` → `tests/fixtures/` move remain separate later work.
 
 ### Workspace/resource normalization
 PENDING. Move `backport-workspace/` to `workspaces/backport/` after reference audit; review `client_probe_sets/`, `plot_descriptors/`, and `addons/` separately.
