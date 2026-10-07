@@ -49,8 +49,8 @@ Every root-level Python file present at the start of Phase A has exactly one own
 | `build_capture_index.py` | Captures ingestion → `src/workbench/captures/ingestion/build_index.py` | Large/high fan-in. Root wrapper until setup/import callers migrate. |
 | `capture_backtrace.py` | Captures correlation → `src/workbench/captures/correlation/backtrace.py` | Evidence/capture-specific. |
 | `capture_graph_connect.py` | Captures correlation → `src/workbench/captures/correlation/graph_connect.py` | Must depend on Core graph/provenance contracts, not product internals. |
-| `youtube_chat_ocr.py` | Captures video → `src/workbench/captures/video/ocr.py` | External-tool/profile dependencies are Capture optional dependencies. |
-| `packet_decode.py` | Captures packets → `src/workbench/captures/packets/decode.py` | Packetlyzer/vendor path must be normalized first. |
+| historical `youtube_chat_ocr.py` | Captures video → `src/workbench/captures/video/ocr.py` | Root launcher retired; external-tool/profile dependencies remain Capture optional dependencies. |
+| historical `packet_decode.py` | Shared packets → `src/workbench/packets/decode.py` | Root launcher retired; Packetlyzer/vendor paths are package-owned. |
 | `packet_opcode_index.py` | Captures packets → `src/workbench/captures/packets/opcode_index.py` | Protocol research belongs with Capture Workbench. |
 
 ## Validation / Packages — 18
