@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `530118be2d036fd49277fd3c53210f7f68f03724` after PR #605  
-Current work branch: `cleanup/wiki-reference-phase3c39`  
+Current merged baseline: `main` at `88ed4b2011754acdee021e30e270a970b6b19028` after PR #606  
+Current work branch: `cleanup/feature-tools-phase3c40`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -96,28 +96,28 @@ reset_install.bat
 - PR #603 — retired `build_topaz_index.py` and `build_wiki_index.py`, repointed Entity Profile Wiki rebuild guidance, and activated both package smokes; Workbench #2789 + Src Layout #667 green.
 - PR #604 — retired the Assault/GM/Nyzul package-driver root wrappers and moved their Settings-derived defaults into the canonical drivers; Workbench #2790 + Src Layout #668 green.
 - PR #605 — retired `backport_lua_convert.py`, `backport_sql_convert.py`, and `backport_package.py`, moved package CLI defaults into the canonical orchestrator, and repointed active package guidance; Workbench #2791 + Src Layout #669 green.
+- PR #606 — retired `wiki_lookup.py`, `wiki_evidence.py`, and `wiki_claim_compare.py`, repointed Wiki regressions to canonical Development imports, and preserved staged adapter aliasing internally; Workbench #2792 + Src Layout #670 green.
 
 ## Current slice
 
-### Slice 3c39 — retire Wiki reference root compatibility wrappers
+### Slice 3c40 — retire Feature root compatibility entry points
 
-Status: IN PROGRESS on `cleanup/wiki-reference-phase3c39`.
+Status: IN PROGRESS on `cleanup/feature-tools-phase3c40`.
 
 Changes on this branch:
-- [x] remove root `wiki_lookup.py`, `wiki_evidence.py`, and `wiki_claim_compare.py`.
-- [x] preserve canonical Development reference ownership under `workbench.devtools.reference`.
-- [x] preserve staged implementation compatibility by retaining temporary legacy module-name injection inside the canonical adapters only.
-- [x] repoint active Wiki evidence/alignment regressions to canonical Development imports.
-- [x] migrate Wiki lookup/evidence package smokes to explicit root-absence contracts while preserving module-global mutation semantics.
-- [x] update canonical Wiki lookup CLI examples to `python -m workbench.devtools.reference.wiki_lookup`.
-- [x] update current tooling guidance to the packaged Wiki lookup surface.
-- [x] add the missing Src Layout path trigger for `wiki_lookup.py`.
-- [x] update Src Layout status to mark all three historical root wrappers retired.
+- [x] remove root `feature_trace.py` and `feature_checker.py`.
+- [x] preserve canonical Development ownership at `workbench.devtools.features.trace` and `workbench.devtools.features.checker`.
+- [x] repoint the packaged GUI host to canonical Feature modules.
+- [x] migrate all active direct root Feature Trace regression imports to the Development namespace.
+- [x] migrate the Feature Trace package smoke to an explicit root-absence contract.
+- [x] update Src Layout regression to require both root entry points absent and fail on any remaining first-party root Feature imports.
+- [x] retain the package-level `workbench.core.services.feature_checker` compatibility shim for older internal imports.
+- [x] update Src Layout status and cleanup backlog to remove Feature Checker from the final root/bootstrap set.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by Wiki reference compatibility retirement.
+- [ ] Fix only regressions caused by Feature root compatibility retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
@@ -132,7 +132,7 @@ Before merge:
 - remaining indexing/server-analysis wrappers;
 - capture/protocol wrappers;
 - spatial/domain/runtime wrappers;
-- final application/bootstrap compatibility files such as `gui_server.py`, `settings.py`, `feature_checker.py`, and `id_bridge.py` only after their caller contracts are intentionally retired.
+- final application/bootstrap compatibility files such as `gui_server.py`, `settings.py`, and `id_bridge.py` only after their caller contracts are intentionally retired.
 
 ### Standalone operator scripts
 PENDING. Move appropriate commands under `scripts/{maintenance,import,diagnostics}` after caller/path audit. Known candidates include `build_item_repair_package.py`, `seed_auction_house.py`, `discord_inventory.py`, and `discord_holiday_load.py`.
