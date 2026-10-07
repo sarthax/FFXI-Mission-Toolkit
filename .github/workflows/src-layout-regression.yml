@@ -5,6 +5,8 @@ on:
     paths:
       - "pyproject.toml"
       - "src/workbench/**"
+      - "build_zone_visual_cache.py"
+      - "zone_plot.py"
       - "llm_client.py"
       - "llm_db_tools.py"
       - "llm_log.py"
@@ -82,6 +84,8 @@ on:
       - "backport_package.py"
       - "tests/legacy/**"
       - "test_fixtures/test_src_layout_package.py"
+      - "test_fixtures/test_zone_visual_cache_package_migration.py"
+      - "test_fixtures/test_zone_plot_package_migration.py"
       - "test_fixtures/test_mission_toolkit_package_migration.py"
       - "test_fixtures/test_llm_client_package_migration.py"
       - "test_fixtures/test_llm_db_tools_package_migration.py"
@@ -189,6 +193,7 @@ jobs:
       - name: Validate canonical src package outside repository cwd
         run: |
           python test_fixtures/test_src_layout_package.py
+          python -m pytest -q test_fixtures/test_zone_visual_cache_package_migration.py test_fixtures/test_zone_plot_package_migration.py
           python test_fixtures/test_mission_toolkit_package_migration.py
           python test_fixtures/test_explore_event_package_migration.py
           python -m pytest -q test_fixtures/test_llm_client_package_migration.py test_fixtures/test_llm_db_tools_package_migration.py test_fixtures/test_llm_log_package_migration.py
