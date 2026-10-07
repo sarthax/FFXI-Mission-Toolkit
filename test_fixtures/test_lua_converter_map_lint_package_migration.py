@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -10,22 +9,12 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def load_root(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return sys.modules[name]
-
-
 def main() -> None:
     from workbench.packages.migration import lua_convert
     from workbench.runtime.paths import DATA_ROOT
     from workbench.validation.packages import map_lint
 
-    root_converter = load_root("backport_lua_convert", REPO_ROOT / "backport_lua_convert.py")
-    assert root_converter is lua_convert
+    assert not (REPO_ROOT / "backport_lua_convert.py").exists()
     assert not (REPO_ROOT / "backport_map_lint.py").exists()
 
     assert lua_convert.MAP_PATH == DATA_ROOT / "dsp_namespace_map.json"
