@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `b5a25c76f4c7e36ee0c14c12de05387cbfe0b5ec` after PR #604  
-Current work branch: `cleanup/backport-core-phase3c38`  
+Current merged baseline: `main` at `530118be2d036fd49277fd3c53210f7f68f03724` after PR #605  
+Current work branch: `cleanup/wiki-reference-phase3c39`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -95,30 +95,29 @@ reset_install.bat
 - PR #602 — retired `build_dsp_index.py`, preserved canonical DSP indexing/path rebinding, and added Src Layout migration coverage; Workbench #2788 + Src Layout #666 green.
 - PR #603 — retired `build_topaz_index.py` and `build_wiki_index.py`, repointed Entity Profile Wiki rebuild guidance, and activated both package smokes; Workbench #2789 + Src Layout #667 green.
 - PR #604 — retired the Assault/GM/Nyzul package-driver root wrappers and moved their Settings-derived defaults into the canonical drivers; Workbench #2790 + Src Layout #668 green.
+- PR #605 — retired `backport_lua_convert.py`, `backport_sql_convert.py`, and `backport_package.py`, moved package CLI defaults into the canonical orchestrator, and repointed active package guidance; Workbench #2791 + Src Layout #669 green.
 
 ## Current slice
 
-### Slice 3c38 — retire backport core root compatibility surfaces
+### Slice 3c39 — retire Wiki reference root compatibility wrappers
 
-Status: IN PROGRESS on `cleanup/backport-core-phase3c38`.
+Status: IN PROGRESS on `cleanup/wiki-reference-phase3c39`.
 
 Changes on this branch:
-- [x] remove root `backport_lua_convert.py`, `backport_sql_convert.py`, and `backport_package.py`.
-- [x] preserve canonical Packages ownership at `workbench.packages.migration.lua_convert`, `sql_convert`, and `orchestrator`.
-- [x] move the historical backport-package Settings DSP/database CLI defaults into lazy canonical-orchestrator fallbacks while preserving explicit caller overrides.
-- [x] migrate the root Lua/SQL converter regression scripts to canonical package imports.
-- [x] migrate focused Lua/SQL/orchestrator package regressions to explicit root-absence contracts.
-- [x] replace the backport-package wrapper Settings regression with a canonical default-resolution contract.
-- [x] repoint active workspace, package, GUI, roadmap, and feature-package guidance to packaged migration surfaces.
-- [x] update canonical implementation usage text to avoid recommending retired root imports.
-- [x] strengthen Src Layout coverage for the Lua converter migration smoke and orchestrator default-resolution contract.
-- [x] update Src Layout status to mark all three historical root surfaces retired.
-- [x] leave `backport_sql_live_check.py` deferred because active live-DB/operator guidance still names that command.
+- [x] remove root `wiki_lookup.py`, `wiki_evidence.py`, and `wiki_claim_compare.py`.
+- [x] preserve canonical Development reference ownership under `workbench.devtools.reference`.
+- [x] preserve staged implementation compatibility by retaining temporary legacy module-name injection inside the canonical adapters only.
+- [x] repoint active Wiki evidence/alignment regressions to canonical Development imports.
+- [x] migrate Wiki lookup/evidence package smokes to explicit root-absence contracts while preserving module-global mutation semantics.
+- [x] update canonical Wiki lookup CLI examples to `python -m workbench.devtools.reference.wiki_lookup`.
+- [x] update current tooling guidance to the packaged Wiki lookup surface.
+- [x] add the missing Src Layout path trigger for `wiki_lookup.py`.
+- [x] update Src Layout status to mark all three historical root wrappers retired.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by backport-core compatibility retirement/default migration.
+- [ ] Fix only regressions caused by Wiki reference compatibility retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
