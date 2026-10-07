@@ -78,10 +78,6 @@ packets_decode.html | legacy page pending archetype migration
 path_plot.html | legacy page pending archetype migration
 path_plot_all.html | legacy page pending archetype migration
 rebuild_confirm.html | legacy page pending archetype migration
-research_contradictions.html | legacy page pending archetype migration
-research_gaps.html | legacy page pending archetype migration
-research_session_detail.html | legacy page pending archetype migration
-research_sessions.html | legacy page pending archetype migration
 roadmap.html | legacy page pending archetype migration
 settings.html | legacy page pending archetype migration
 shift_master.html | legacy page pending archetype migration
