@@ -20,10 +20,10 @@ The workflow is intentionally evidence-first:
 6. **Generate a review package**, not direct server writes.
 7. **Validate closure** against the original captures and known implementation truth set.
 
-`workbench/domains/salvage_reconstruction.py` implements the read-only dossier. `salvage_reconstruct.py` exposes it as JSON:
+`workbench/domains/salvage_reconstruction.py` implements the read-only dossier. The packaged Capture CLI exposes it as JSON:
 
 ```text
-py -3 salvage_reconstruct.py <capture_id> --zone ZHAYOLM_REMNANTS
+py -3 -m workbench.captures.cli.salvage_reconstruct <capture_id> --zone ZHAYOLM_REMNANTS
 ```
 
 The dossier separates:
