@@ -22,6 +22,7 @@ def main() -> None:
     assert (SRC_PACKAGE / "core").is_dir()
     assert (SRC_PACKAGE / "runtime" / "paths.py").is_file()
     assert (SRC_PACKAGE / "runtime" / "settings_store.py").is_file()
+    assert (SRC_PACKAGE / "runtime" / "external_tools.py").is_file()
     assert (SRC_PACKAGE / "domains" / "service.py").is_file()
     assert (SRC_PACKAGE / "domains" / "definitions.json").is_file()
     assert (SRC_PACKAGE / "client" / "binary_index.py").is_file()
@@ -167,6 +168,13 @@ def main() -> None:
     host_source = (SRC_PACKAGE / "app" / "_host_impl.py").read_text(encoding="utf-8")
     assert "from workbench.devtools.features import checker as feature_checker" in host_source
     assert "from workbench.devtools.features import trace as feature_trace" in host_source
+    assert "from workbench.devtools.indexing import build_database" in host_source
+    assert "from workbench.devtools.reference.dialog import build_index as build_dialog_index" in host_source
+    assert "from workbench.client.dat import global_tables as ingest_global_tables" in host_source
+    assert "from workbench.runtime import addon_tools" in host_source
+    assert "from workbench.runtime import external_tools as install_external_tools" in host_source
+    assert "from workbench.packages.migration import orchestrator as backport_package" in host_source
+    assert "from workbench.devtools.reference import wiki_evidence" in host_source
     legacy_feature_callers = []
     for path in first_party_python:
         if path.resolve() == Path(__file__).resolve():
