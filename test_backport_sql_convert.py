@@ -11,7 +11,7 @@ from __future__ import annotations
 import sqlite3
 import sys
 
-import backport_sql_convert as bsc
+from workbench.packages.migration import sql_convert as bsc
 
 FAILURES: list[str] = []
 
