@@ -1,8 +1,11 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}SQL Backport Converter{% endblock %}
+{% block page_archetype %}editor{% endblock %}
+{% block page_heading %}SQL Backport Converter{% endblock %}
+{% block page_actions %}<a class="chip" href="/backport/package">Package workflow</a><a class="chip" href="/backport/lua-convert">Lua converter</a><a class="chip" href="/backport/bindings">Binding reference</a>{% endblock %}
+{% block page_help %}Converts Topaz INSERT statements to the confirmed DSP schema shape, then checks indexed DSP data for ID collisions and duplicate content identities.{% endblock %}
 
-{% block content %}
-<h1>SQL Backport Converter</h1>
+{% block page_body %}
 <p class="muted">Converts one Topaz table's <code>INSERT INTO ... VALUES (...)</code> statements to
 DSP's real column order/shape, applying every mapping confirmed in
 <code>data/dsp_sql_schema_map.json</code>, then checks every row's id against DSP's real,
