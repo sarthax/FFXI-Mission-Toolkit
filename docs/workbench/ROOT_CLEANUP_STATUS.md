@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `a70f31580fafd8945cc49546c2a18b897b1e1ecf` after PR #602  
-Current work branch: `cleanup/index-builders-phase3c36`  
+Current merged baseline: `main` at `2ff67a0a3d1a1e8be8a9cc7af0f9664dc3ae32d1` after PR #603  
+Current work branch: `cleanup/package-drivers-phase3c37`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -93,34 +93,33 @@ reset_install.bat
 - PR #600 — retired `workbench_connect.py` and `workbench_connect_server.py`, repointing active connector regressions to `workbench.runtime.connect` / `connect_server`; Workbench #2785 + Src Layout #663 green.
 - PR #601 — retired `build_zone_topdown.py`, preserved packaged spatial cache generation, and added Src Layout migration coverage; Workbench #2786 + Src Layout #664 green.
 - PR #602 — retired `build_dsp_index.py`, preserved canonical DSP indexing/path rebinding, and added Src Layout migration coverage; Workbench #2788 + Src Layout #666 green.
+- PR #603 — retired `build_topaz_index.py` and `build_wiki_index.py`, repointed Entity Profile Wiki rebuild guidance, and activated both package smokes; Workbench #2789 + Src Layout #667 green.
 
 ## Current slice
 
-### Slice 3c36 — retire Topaz and Wiki index root launchers
+### Slice 3c37 — retire package conversion driver root wrappers
 
-Status: IN PROGRESS on `cleanup/index-builders-phase3c36`.
+Status: IN PROGRESS on `cleanup/package-drivers-phase3c37`.
 
 Changes on this branch:
-- [x] remove root `build_topaz_index.py` and `build_wiki_index.py`.
-- [x] preserve canonical Topaz indexing at `workbench.devtools.indexing.build_topaz_index`.
-- [x] preserve canonical BG Wiki reverse-reference indexing at `workbench.devtools.reference.build_wiki_index`.
-- [x] preserve package-safe Topaz Settings/path rebinding and mature staged implementation behavior.
-- [x] migrate both focused package regressions to explicit root-absence contracts.
-- [x] repoint live Entity Profile Wiki rebuild guidance to `python -m workbench.devtools.reference.build_wiki_index`.
-- [x] update the Topaz implementation usage guidance to the packaged module command.
-- [x] add Src Layout trigger/execution coverage for both migration smokes.
-- [x] update Src Layout status for both retired launchers.
+- [x] remove root `backport_convert_7_packages.py`, `backport_convert_gm_debug_tools.py`, and `backport_convert_nyzul_package.py`.
+- [x] preserve canonical package-driver ownership under `workbench.packages.migration.drivers`.
+- [x] preserve explicit argument/global overrides for programmatic callers.
+- [x] move the historical Settings-derived package/DSP defaults into lazy canonical-driver fallbacks.
+- [x] migrate the combined package-driver regression to explicit root-absence contracts.
+- [x] replace three wrapper-settings regressions with canonical default-resolution contracts.
+- [x] run the default-resolution regressions in Src Layout CI as well as broad Workbench regression.
+- [x] update Src Layout status to mark all three historical wrapper commands retired.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by Topaz/Wiki index launcher retirement.
+- [ ] Fix only regressions caused by package-driver wrapper retirement/default migration.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
 
 - `build_capture_index.py` — high regression fan-in; dedicated test migration required.
-- `backport_convert_7_packages.py`, `backport_convert_gm_debug_tools.py`, `backport_convert_nyzul_package.py` — wrappers seed Settings-derived operator defaults.
 - `backport_sql_live_check.py` — active GUI/package/runtime operator guidance still names it.
 - `backport_package.py`, `backport_lua_convert.py`, `backport_sql_convert.py` — higher-fan-in operator/test surfaces.
 
