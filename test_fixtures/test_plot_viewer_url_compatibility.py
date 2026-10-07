@@ -1,7 +1,7 @@
 """Compatibility contract for URLs users may still have in bookmarks/history."""
 from __future__ import annotations
 
-from gui_server import app
+from workbench.app.host import app
 
 
 def run() -> None:
