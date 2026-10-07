@@ -1,10 +1,12 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Research Sessions{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}research-sessions-page{% endblock %}
-{% block content %}
-<style>main.research-sessions-page{padding:8px 10px 24px}.research-sessions-page h2{font-size:14px;margin:8px 0 5px}</style>
-<div class="dense-toolbar"><strong>Research Sessions</strong><span class="sp"></span><a class="chip" href="/research/contradictions">Contradictions</a><a class="chip" href="/researchgaps">Research Gaps</a><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:720px">Persistent replay-oriented evidence research. Sessions pin provider/model/context and retain typed tool calls, evidence IDs, proposals, budgets, usage, and verification state.</div></details></div>
+{% block page_archetype %}browser{% endblock %}
+{% block page_class %}research-sessions-page{% endblock %}
+{% block page_heading %}Research Sessions{% endblock %}
+{% block page_actions %}<a class="chip" href="/research/contradictions">Contradictions</a><a class="chip" href="/researchgaps">Research Gaps</a>{% endblock %}
+{% block page_help %}Persistent replay-oriented evidence research. Sessions pin provider/model/context and retain typed tool calls, evidence IDs, proposals, budgets, usage, and verification state.{% endblock %}
+{% block page_body %}
+<style>.research-sessions-page h2{font-size:14px;margin:8px 0 5px}</style>
 
 <details class="dense-card" style="margin:7px 0"><summary><strong>Create Research Session</strong></summary><div style="padding-top:6px"><p class="muted">Creation records research intent and safety profile only; it does not run a model or mutate repositories/SQL.</p>
 <form method="post" action="/research">
@@ -27,7 +29,7 @@
 <div class="dense-toolbar" style="margin:8px 0 5px"><strong>Session History</strong><span class="chip">{{ sessions|length }}</span></div>
 {% if created %}<p class="chip">Research session created.</p>{% endif %}
 {% if not sessions %}
-<p class="muted">No research sessions have been recorded yet.</p>
+<div class="wb-empty">No research sessions have been recorded yet.</div>
 {% else %}
 <div class="table-wrap"><table>
   <tr><th>Updated</th><th>Question</th><th>Provider / Model</th><th>Profile</th><th>Verification</th><th>Tool calls</th><th>Proposals</th></tr>
