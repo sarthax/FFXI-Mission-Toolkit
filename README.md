@@ -194,7 +194,7 @@ Capture features include:
 - Validation dashboard/runs tied back into canonical evidence.
 - Source/target conversion and migration support where transformations are deterministic and audited.
 - Crafting/producibility closure can recursively include recipe ingredients, crystals, key-item prerequisites, synergy/synthesis requirements, and verified alternate acquisition evidence in package scope.
-- Phase D implementation ownership is complete: reusable Workbench Python implementation lives under `src/workbench/...`; root `gui_server.py` remains as the final intentional compatibility launcher while reusable runtime/settings and historical CLI/import implementations are package-owned.
+- Phase D implementation ownership is complete: reusable Workbench Python implementation and the GUI application host live under `src/workbench/...`; historical repository-root Python launch/import shims are retired.
 
 ### Editors and domain workspaces
 
