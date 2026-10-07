@@ -5,6 +5,17 @@ from workbench.packages.migration import lua_convert as blc
 
 PKG_ROOT: Path | None = None
 
+
+def _default_pkg_root() -> Path | None:
+    from workbench.runtime import legacy_settings
+
+    backport_root = legacy_settings.get_backport_root()
+    return (
+        backport_root / "mission-packages" / "nyzul_isle_investigation"
+        if backport_root is not None
+        else None
+    )
+
 SKIP_GENERIC_CONVERSION = {
     "scripts/zones/Nyzul_Isle/IDs.lua",
     "scripts/zones/Aht_Urhgan_Whitegate/IDs.lua",
@@ -47,7 +58,7 @@ def zone_settings_for(rel_path: str, text: str | None = None) -> dict:
 
 
 def main(pkg_root: Path | None = None):
-    package = pkg_root or PKG_ROOT
+    package = pkg_root or PKG_ROOT or _default_pkg_root()
     if package is None:
         raise SystemExit("No backport checkout configured -- set Settings' backport_root first.")
     src_root = package / "lua"
