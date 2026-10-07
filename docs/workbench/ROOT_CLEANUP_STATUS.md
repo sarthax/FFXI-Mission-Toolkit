@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `a34242c35178ce8892c210546c38ef9116369a9d` after PR #608  
-Current work branch: `cleanup/legacy-tests-phase3c42`  
+Current merged baseline: `main` at `8fceb6afcea103c7b1616b0f8a6b7cad3ca7fb6b` after PR #609  
+Current work branch: `cleanup/thin-wrappers-phase3c43`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -99,34 +99,35 @@ reset_install.bat
 - PR #606 — retired `wiki_lookup.py`, `wiki_evidence.py`, and `wiki_claim_compare.py`, repointed Wiki regressions to canonical Development imports, and preserved staged adapter aliasing internally; Workbench #2792 + Src Layout #670 green.
 - PR #607 — retired `feature_trace.py` and `feature_checker.py`, normalized packaged-host imports for already-retired root modules, and promoted reusable external-tool installer logic into Runtime; Workbench #2805 + Src Layout #683 + Character Editor #203 green.
 - PR #608 — relocated five standalone maintenance/import scripts out of repository root, normalized repo-sensitive paths, and added Src Layout relocation coverage; Workbench #2807 + Src Layout #685 + Character Editor #205 green.
+- PR #609 — relocated `test_backport_lua_convert.py`, `test_backport_sql_convert.py`, and `test_capture_ingestion.py` to `tests/legacy/`, updated path-sensitive fixtures/docs, and activated relocation coverage.
 
 ## Current slice
 
-### Slice 3c42 — relocate legacy script-style regressions out of repository root
+### Slice 3c43 — retire remaining thin runtime/domain compatibility wrappers
 
-Status: IN PROGRESS on `cleanup/legacy-tests-phase3c42`.
+Status: IN PROGRESS on `cleanup/thin-wrappers-phase3c43`.
 
 Changes on this branch:
-- [x] move `test_backport_lua_convert.py`, `test_backport_sql_convert.py`, and `test_capture_ingestion.py` to `tests/legacy/`.
-- [x] remove all three historical root copies.
-- [x] preserve canonical Packages imports for the Lua/SQL converter suites.
-- [x] make capture-ingestion fixture discovery resolve through `workbench.runtime.paths.REPO_ROOT`.
-- [x] update roadmap, GUI roadmap, ownership inventory/manifest, and migration-plan references to the new test paths.
-- [x] add a focused relocation smoke covering root absence, destination presence, canonical imports, and fixture-root safety.
-- [x] add `tests/legacy/**` to Workbench Regression triggers and execute all three legacy suites there.
-- [x] add Src Layout trigger/execution coverage for the relocation contract.
-- [x] update Src Layout status to record the legacy test relocation.
+- [x] remove root `backport_sql_live_check.py`, `id_bridge.py`, and `nyzul_plot.py`.
+- [x] preserve canonical live SQL validation at `workbench.validation.live_db.sql_check`.
+- [x] preserve canonical ID Bridge ownership at `workbench.core.services.id_bridge` and repository database-path resolution.
+- [x] preserve canonical Nyzul visualization/research ownership at `workbench.devtools.domains.nyzul_plot`, including server-profile routing and exclusion paths.
+- [x] migrate focused live-SQL, ID Bridge, Nyzul, and src-layout regressions to explicit root-absence/canonical contracts.
+- [x] repoint active package, GUI, roadmap, audit, and tooling guidance away from retired root commands.
+- [x] update canonical implementation comments/help text to packaged surfaces.
+- [x] add Src Layout trigger/execution coverage for all three retirements.
+- [x] update Src Layout status and advance this tracker from merged PR #609.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by legacy test relocation/activation.
-- [ ] Merge only when green.
+- [ ] Run Character Editor/server-admin regression if triggered by application/runtime path coverage.
+- [ ] Fix only regressions caused by thin-wrapper retirement.
+- [ ] Merge only when required gates are green.
 
 ## Explicitly retained / deferred
 
 - `build_capture_index.py` — high regression fan-in; dedicated test migration required.
-- `backport_sql_live_check.py` — active GUI/package/runtime operator guidance still names it.
 
 ## Remaining slices
 
@@ -141,7 +142,7 @@ Before merge:
 COMPLETE through slice 3c41. Five root maintenance/import scripts now live under `scripts/{maintenance,import}` with path contracts and Src Layout regression coverage.
 
 ### Tests and high-fan-in compatibility removal
-IN PROGRESS in slice 3c42. The remaining root `test_*.py` scripts are moving to `tests/legacy/`; `build_capture_index.py` and any broader `test_fixtures/` → `tests/fixtures/` move remain separate later work.
+Legacy root `test_*.py` relocation is complete through slice 3c42. `build_capture_index.py` and any broader `test_fixtures/` → `tests/fixtures/` move remain separate later work.
 
 ### Workspace/resource normalization
 PENDING. Move `backport-workspace/` to `workspaces/backport/` after reference audit; review `client_probe_sets/`, `plot_descriptors/`, and `addons/` separately.
