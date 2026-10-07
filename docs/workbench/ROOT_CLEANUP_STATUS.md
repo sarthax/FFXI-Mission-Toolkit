@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `4c0ca296fe59e18e937a7d220626ff97fc3d266e` after PR #587  
-Current work branch: `cleanup/lua-event-index-phase3c21`  
+Current merged baseline: `main` at `04da08e4310255e761232675fff77b108592404f` after PR #588  
+Current work branch: `cleanup/zone-animation-meta-phase3c22`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -78,25 +78,25 @@ reset_install.bat
 - PR #585 — retired `pull_mob_positions.py`, `zmesh.py`, and `build_plot_descriptors.py`; Workbench #2764 + Src Layout #642 green.
 - PR #586 — retired `fix_zone_door_props.py`; Workbench #2765 + Src Layout #643 green.
 - PR #587 — retired `lookup_entity.py` and `entity_profile.py`, removing the temporary Entity Profile root-import alias bridge; Workbench #2766 + Src Layout #644 green.
+- PR #588 — retired `lua_event_index.py`; Workbench #2769 + Src Layout #647 green after activating and refreshing the canonical Lua-event regression.
 
 ## Current slice
 
-### Slice 3c21 — retire Lua event analyzer root launcher
+### Slice 3c22 — retire Client zone animation metadata root alias
 
-Status: IN PROGRESS on `cleanup/lua-event-index-phase3c21`.
+Status: IN PROGRESS on `cleanup/zone-animation-meta-phase3c22`.
 
 Changes on this branch:
-- [x] remove root `lua_event_index.py`.
-- [x] preserve canonical analyzer ownership and direct CLI execution at `workbench.analyzers.server.lua_events`.
-- [x] replace the remaining Capture Graph CLI help reference with the packaged `python -m` command.
-- [x] update Src Layout status to mark the compatibility entry point retired.
-- [x] extend the existing canonical Lua event type-propagation regression with an explicit root-absence contract.
-- [x] add that regression and root filename to Src Layout trigger/execution coverage.
+- [x] remove root `zone_animation_meta.py`.
+- [x] preserve canonical read-only ownership at `workbench.client.models.zone_animation_meta`.
+- [x] migrate the focused package regression from root-alias identity to an explicit root-absence contract.
+- [x] add the focused pytest regression and retired root name to Src Layout trigger/execution coverage.
+- [x] preserve the existing packaged LSB-index dependency and fallback animation metadata behavior.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by Lua event launcher retirement.
+- [ ] Fix only regressions caused by zone-animation metadata alias retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
