@@ -62,7 +62,12 @@ end
         ],
     }
     derived=return_type_hints_from_api(api_payload)
-    assert derived=={("CLuaBaseEntity","getBattlefield"):"CLuaBattlefield"},derived
+    hint=derived[("CLuaBaseEntity","getBattlefield")]
+    assert hint["class_name"]=="CLuaBattlefield",derived
+    assert hint["source"]=="CPP_API_RETURN_TYPE",derived
+    assert hint["binding_ids"]==["b:getBattlefield"],derived
+    assert hint["function_ids"]==["f:getBattlefield"],derived
+    assert hint["return_types"]==["CLuaBattlefield*"],derived
 
     no_hint=typed_calls(text,fn.start(),len(text),fn,{})
     no_hint_by_method={call["method"]:call for call in no_hint}
