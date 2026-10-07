@@ -106,7 +106,7 @@ Every root-level Python file present at the start of Phase A has exactly one own
 | `zone_plot.py` | Development spatial/viewer → `src/workbench/devtools/spatial/zone_plot.py` | Read-only viewer belongs in Devtools; editing remains Editors. |
 | `zmesh.py` | Development spatial/viewer → `src/workbench/devtools/spatial/zmesh.py` | Visual mesh/cache consumer; GUI path normalization first. |
 | `build_zone_topdown.py` | Development spatial → `src/workbench/devtools/spatial/build_topdown.py` | Read-only derived visualization output. |
-| `build_zone_visual_cache.py` | Development spatial → `src/workbench/devtools/spatial/build_visual_cache.py` | Read-only visualization/cache builder. |
+| historical `build_zone_visual_cache.py` | Development spatial → `src/workbench/devtools/spatial/build_visual_cache.py` | Root launcher retired; read-only visualization/cache builder is package-owned. |
 | `build_plot_descriptors.py` | Development spatial → `src/workbench/devtools/spatial/build_plot_descriptors.py` | Plot/reference descriptors. |
 | `pull_mob_positions.py` | Development spatial/server evidence → `src/workbench/devtools/spatial/pull_mob_positions.py` | Read-only source extraction. |
 | `nyzul_plot.py` | Development domain tooling → `src/workbench/devtools/domains/nyzul_plot.py` | Domain visualization/research. |
