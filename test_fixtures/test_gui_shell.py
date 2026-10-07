@@ -493,7 +493,8 @@ def main():
 
     validation_html = render("validation_dashboard.html", "/validation", runs=[], status_counts={}, result_counts={}, total_results=0, error=None)
     assert '<body class="shell-dense">' in validation_html
-    assert '<strong>Validation</strong>' in validation_html
+    assert 'class="wb-page-title">Validation</span>' in validation_html
+    assert 'class="wb-readonly-badge">Read only</span>' in validation_html
 
     validation_runs_html = render("validation_runs.html", "/validation/runs", q="", status="", statuses=[], runs=[], error=None)
     assert '<body class="shell-dense">' in validation_runs_html
