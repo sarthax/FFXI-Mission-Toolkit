@@ -6,6 +6,8 @@ on:
       - "workbench/**"
       - "src/workbench/**"
       - "test_fixtures/**"
+      - "gui/templates/**"
+      - "docs/workbench/UI_LEGACY_TEMPLATE_ALLOWLIST.txt"
       - "tests/legacy/**"
       - "feature_*.py"
       - "capture_*.py"
