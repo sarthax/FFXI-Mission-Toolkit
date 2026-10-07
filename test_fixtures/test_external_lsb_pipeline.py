@@ -12,7 +12,7 @@ from workbench.migrations.instance_feature_slice import extract_instance_feature
 from workbench.devtools.server.cpp_api_index import index as index_api
 from workbench.devtools.server.cpp_dependency_index import index as index_dependencies
 from workbench.devtools.server.build_integration_index import index as index_build
-from workbench_connect_server import import_payload
+from workbench.runtime.connect_server import import_payload
 
 
 def main():
