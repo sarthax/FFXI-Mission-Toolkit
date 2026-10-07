@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import sqlite3
+from pathlib import Path
 
-import llm_log as legacy
 from workbench.devtools.research.legacy_llm import log as canonical
 from workbench.runtime.paths import DATABASE_PATH
 
 
-def test_root_module_is_packaged_implementation():
-    assert legacy is canonical
+def test_root_module_is_retired_and_packaged_log_is_canonical():
+    repo_root = Path(__file__).resolve().parents[1]
+    assert not (repo_root / "llm_log.py").exists()
     assert canonical.DB_PATH == DATABASE_PATH
 
 
