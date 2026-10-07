@@ -46,7 +46,7 @@ Every root-level Python file present at the start of Phase A has exactly one own
 | Root file | Final ownership / intended destination | Notes |
 | --- | --- | --- |
 | `salvage_reconstruct.py` | Captures CLI → `src/workbench/captures/cli/salvage_reconstruct.py` | Canonical reconstruction logic already exists in packaged code; root file is mostly launcher. |
-| `build_capture_index.py` | Captures ingestion → `src/workbench/captures/ingestion/build_index.py` | Large/high fan-in. Root wrapper until setup/import callers migrate. |
+| historical `build_capture_index.py` | Captures ingestion → `src/workbench/captures/ingestion/build_index.py` | Root launcher retired after setup/import callers migrated to the packaged module. |
 | `capture_backtrace.py` | Captures correlation → `src/workbench/captures/correlation/backtrace.py` | Evidence/capture-specific. |
 | `capture_graph_connect.py` | Captures correlation → `src/workbench/captures/correlation/graph_connect.py` | Must depend on Core graph/provenance contracts, not product internals. |
 | historical `youtube_chat_ocr.py` | Captures video → `src/workbench/captures/video/ocr.py` | Root launcher retired; external-tool/profile dependencies remain Capture optional dependencies. |
