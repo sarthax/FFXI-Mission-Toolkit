@@ -7,7 +7,7 @@ import sqlite3
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import build_capture_index
+from workbench.captures.ingestion import build_index as build_capture_index
 
 
 KI = """[2026-09-28 10:00:00] Obtained KI
