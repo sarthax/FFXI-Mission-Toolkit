@@ -67,3 +67,4 @@ Completed workspace migrations:
 - **Packages** — Library (Browser), Scope Review (Workbench), Create Package (Editor; package-files-only write boundary), and Review & Readiness (Detail, read-only).
 - **Backport** — Package Workflow (Editor; package-workspace writes only), Lua Converter (Editor), SQL Converter (Editor), and Binding Reference (Browser).
 - **ID Drift** — Overview (Dashboard) and Category Detail (Browser).
+- **LLM** — Assistant (Workbench; draft-output boundary) and Call Detail (Detail, read-only).

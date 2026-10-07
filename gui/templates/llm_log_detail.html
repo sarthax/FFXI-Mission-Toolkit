@@ -1,9 +1,12 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}LLM Call Detail{% endblock %}
+{% block page_archetype %}detail{% endblock %}
+{% block page_heading %}LLM Call #{{ row.id }}{% endblock %}
+{% block page_back %}<a class="chip" href="/llm">&larr; back to LLM Assistant</a>{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Read only</span>{% endblock %}
+{% block page_subtitle %}{{ row.created_display }} · {{ row.source }} · {{ row.model }}{% endblock %}
 
-{% block content %}
-<p><a class="inline" href="/llm">&larr; back to LLM Assistant</a></p>
-<h1>LLM Call #{{ row.id }}</h1>
+{% block page_body %}
 <p class="muted">
   {{ row.created_display }} &middot; source: <code class="chip">{{ row.source }}</code>
   &middot; model: <code class="chip">{{ row.model }}</code>
