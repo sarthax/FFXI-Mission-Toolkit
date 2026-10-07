@@ -459,3 +459,10 @@ def nav_route(a, b, path=None):
     pts = [list(start)] + [list(pos[p]) for p in chain[1:]] + [list(goal)]
     length = sum(d3(pts[i], pts[i + 1]) for i in range(len(pts) - 1))
     return {"ok": True, "points": pts, "length": length}
+
+
+# Install named-server/modern-LSB routing onto this packaged backend after the legacy
+# functions are defined. The bridge imports this module and replaces only the profile-sensitive
+# hooks, so importing the canonical module directly now has the same behavior the retired root
+# compatibility launcher previously established.
+from workbench.devtools.domains import _nyzul_profile_bridge as _profile_bridge  # noqa: E402,F401
