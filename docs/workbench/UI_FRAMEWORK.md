@@ -76,3 +76,4 @@ Completed workspace migrations:
 - **Behavior Inspector** — Lua behavior/evidence graph and source drill-down (Workbench).
 - **Dialog Drift** — Cross-zone dialog offset/status overview (Dashboard, read-only).
 - **Zone Dialog Drift** — Per-zone wired-comment versus client-dialog report (Detail, read-only).
+- **Roadmap** — Reconciled project status and historical roadmap (Dashboard).
