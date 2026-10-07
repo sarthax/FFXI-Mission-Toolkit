@@ -55,4 +55,3 @@ shift_master.html | legacy page pending archetype migration
 synth.html | legacy page pending archetype migration
 zone_plot2.html | legacy page pending archetype migration
 zone_view3d.html | legacy page pending archetype migration
-zones_browse.html | legacy page pending archetype migration

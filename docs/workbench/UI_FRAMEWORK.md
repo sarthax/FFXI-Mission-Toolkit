@@ -82,3 +82,4 @@ Completed workspace migrations:
 - **Entity Gaps** — Zero-position/unregistered diagnostic browser (Browser, read-only).
 - **Key Items** — Client/server readiness and capture-evidence browser (Browser, read-only).
 - **Assault Missions** — Mission text and observed implementation-coverage browser (Browser).
+- **Zones Browser** — Zone/content-tag entity browser (Browser, read-only).
