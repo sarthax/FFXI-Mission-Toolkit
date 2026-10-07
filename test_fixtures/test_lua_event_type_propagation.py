@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Regression checks for conservative Lua event local type propagation."""
+from pathlib import Path
 from workbench.analyzers.server.lua_events import FUNC_RE, typed_calls, return_type_hints_from_api
 
 
 def main():
+    repo_root=Path(__file__).resolve().parents[1]
+    assert not (repo_root/"lua_event_index.py").exists()
     text="""
 function onEventFinish(player, csid, option)
     local p = player
