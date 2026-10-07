@@ -2,7 +2,7 @@
 
 This module owns the compatibility bridge that lets the historical Nyzul plot backend
 select DSP, Topaz, or modern LandSandBoat sources through named server environments.
-Root ``nyzul_plot.py`` imports this bridge only to preserve the legacy import surface.
+The packaged Nyzul plot backend imports this bridge to select the configured server lineage.
 """
 from __future__ import annotations
 
