@@ -35,7 +35,7 @@ TARGET_DIRS = [
     ("FFXI-DATS", "door/prop/elevator/zone-line position data (re-fetched)"),
     ("FFXI-Resources-dist", "external item/keyitem reference catalogue (re-fetched)"),
     (".venv", "this toolkit's dedicated Python environment (recreated by setup.bat)"),
-    ("gui/static/zone_visual", "build_zone_visual_cache.py's generated per-zone OBJ mesh cache"),
+    ("gui/static/zone_visual", "workbench.devtools.spatial.build_visual_cache generated per-zone OBJ mesh cache"),
 ]
 TARGET_FILES = [
     ("ffxi_zone_database.db", "the main SQLite database"),
