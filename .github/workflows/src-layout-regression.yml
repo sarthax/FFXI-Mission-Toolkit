@@ -32,6 +32,7 @@ on:
       - "cpp_api_index.py"
       - "cpp_dependency_index.py"
       - "build_integration_index.py"
+      - "build_dsp_index.py"
       - "client_binary_analyze.py"
       - "client_binary_index.py"
       - "client_binary_diff.py"
@@ -109,6 +110,7 @@ on:
       - "test_fixtures/test_battlefield_lsb_package_migration.py"
       - "test_fixtures/test_battlefield_validation_package_migration.py"
       - "test_fixtures/test_cpp_server_analyzers_package_migration.py"
+      - "test_fixtures/test_build_dsp_index_package_migration.py"
       - "test_fixtures/test_client_binary_cli_package_migration.py"
       - "test_fixtures/test_client_overview_package_migration.py"
       - "test_fixtures/test_model_schedule_dump_package_migration.py"
@@ -199,6 +201,7 @@ jobs:
           python test_fixtures/test_battlefield_lsb_package_migration.py
           python test_fixtures/test_battlefield_validation_package_migration.py
           python test_fixtures/test_cpp_server_analyzers_package_migration.py
+          python test_fixtures/test_build_dsp_index_package_migration.py
           python test_fixtures/test_client_binary_cli_package_migration.py
           python test_fixtures/test_client_overview_package_migration.py
           python test_fixtures/test_model_schedule_dump_package_migration.py
