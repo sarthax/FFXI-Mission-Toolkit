@@ -65,14 +65,14 @@ hand each time.
 
 ## `addons/` -- neither strip nor a distro-source concern (added 2026-09-08)
 
-`addons/*.zip` (see `addon_tools.py`) are small, hand-packaged bundles of real data one install
+`addons/*.zip` (see `workbench.runtime.addon_tools`) are small, hand-packaged bundles of real data one install
 already has that another install would otherwise have to regenerate the slow way (network scrape,
 etc.) -- e.g. `addons/bg-wiki-dump.zip` holds the real BG-Wiki page dump `scrape_bg_wiki.py` would
 otherwise need to re-scrape from scratch. Not a "strip" item (`reset_install.py` deliberately never
 touches `addons/`) and not really "distro source" either -- it's a portable, checksummed local
 package a user can carry between their own installs (or attach to a future release) without
-re-fetching data that's genuinely already sitting on their disk somewhere. `py -3 addon_tools.py
-list` shows what's packaged in a given install; `py -3 addon_tools.py package <name> <file...>`
+re-fetching data that's genuinely already sitting on their disk somewhere. `py -3 -m workbench.runtime.addon_tools
+list` shows what's packaged in a given install; `py -3 -m workbench.runtime.addon_tools package <name> <file...>`
 creates a new one from any real file(s) already present.
 
 ## Confirmed: keep (hand-authored source, not reproducible by re-running a script)

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -15,21 +14,7 @@ assert canonical.human_size(1024) == "1KB"
 assert callable(canonical.install_addon)
 assert callable(canonical.main)
 
-spec = importlib.util.spec_from_file_location("addon_tools", REPO_ROOT / "addon_tools.py")
-assert spec and spec.loader
-legacy = importlib.util.module_from_spec(spec)
-sys.modules["addon_tools"] = legacy
-spec.loader.exec_module(legacy)
-legacy = sys.modules["addon_tools"]
-assert legacy is canonical
-
-original = canonical.ADDONS_DIR
-try:
-    sentinel = REPO_ROOT / "__addon_tools_migration_sentinel__"
-    canonical.ADDONS_DIR = sentinel
-    assert legacy.ADDONS_DIR == sentinel
-finally:
-    canonical.ADDONS_DIR = original
+assert not (REPO_ROOT / "addon_tools.py").exists()
 
 with tempfile.TemporaryDirectory() as td:
     code = (

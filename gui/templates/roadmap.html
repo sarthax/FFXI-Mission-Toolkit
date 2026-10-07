@@ -144,13 +144,13 @@
       retention with create/restore/delete UI (double-confirmed), Paths extended with
       <code class="chip">dsp_server_path</code></td></tr>
   <tr><td>Install/test tooling <span class="pill match">new 2026-09-08</span></td>
-    <td class="muted"><code class="chip">reset_install.py</code>, <code class="chip">addon_tools.py</code></td>
+    <td class="muted"><code class="chip">reset_install.py</code>, <code class="chip">workbench.runtime.addon_tools</code></td>
     <td><code class="chip">reset_install.py</code>/<code class="chip">reset_install.bat</code> strip an
       install back to source-only (database, backups, generated reports, LandSandBoat/FFXI-DATS/
       FFXI-Resources-dist) for testing <code class="chip">setup.bat</code> from scratch, matching
       DIST_PACKAGING.md's confirmed strip list exactly -- dry-run by default, double-confirmed
       (<code class="chip">--i-am-sure</code>) to actually delete, backs up the DB first.
-      <code class="chip">addon_tools.py</code> packages real, already-fetched data (e.g. the real
+      <code class="chip">workbench.runtime.addon_tools</code> packages real, already-fetched data (e.g. the real
       BG-Wiki page dump, ~19MB/47,608 pages) into a small checksummed portable <code class="chip">.zip</code>
       one install can hand to another instead of regenerating it the slow way -- verifies a real
       sha256 per file on install, never silently overwrites different real content without

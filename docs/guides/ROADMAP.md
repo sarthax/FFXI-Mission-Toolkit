@@ -318,9 +318,9 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
     (same double-confirmation convention `build_database.py --wipe-everything` already uses), backs
     up the DB first unless told not to, and never touches `test_fixtures/` or any hand-authored
     source file.
-  - `addon_tools.py` added — packages real, already-fetched data one install has (e.g. the real
+  - `workbench.runtime.addon_tools` added — packages real, already-fetched data one install has (e.g. the real
     BG-Wiki page dump, ~19MB/47,608 pages) into a small, checksummed, portable `.zip` under
-    `addons/` that another install can extract via `py -3 addon_tools.py install <name>` instead of
+    `addons/` that another install can extract via `py -3 -m workbench.runtime.addon_tools install <name>` instead of
     regenerating it the slow way (a real network scrape, in BG-Wiki's case). Verifies a real sha256
     per file on install, refuses to silently overwrite a destination file with different real
     content unless `--force`, and skips cleanly (no-op) when the destination already matches.
