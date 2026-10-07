@@ -11,7 +11,7 @@ import hashlib
 import json
 from typing import Any, Callable
 
-import item_dat_tools
+from workbench.editors.items import dat_tools as item_dat_tools
 from workbench.adapters.servers.base import LogicalRecord
 from workbench.core import graph
 from workbench.core.schema import Capability, CapabilityObservation, Evidence
