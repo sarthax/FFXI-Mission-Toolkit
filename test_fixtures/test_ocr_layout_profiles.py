@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 
 from PIL import Image
 
-import youtube_chat_ocr as ocr
+from workbench.captures.video import ocr
 
 
 def main():
