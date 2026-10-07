@@ -270,11 +270,15 @@ def main():
         "path_plot_all.html": ["{% block shell_mode %}dense{% endblock %}", "capture-all-paths-page", "width:min(100%,1200px)", "Capture entities"],
     }
     capture_env = Environment(loader=FileSystemLoader(str(TEMPLATES)), autoescape=select_autoescape(("html",)))
+    capture_wrapper_source=(TEMPLATES/"workbench_page.html").read_text(encoding="utf-8")
     for template_name, markers in capture_template_contracts.items():
         capture_env.get_template(template_name)
         source=(TEMPLATES/template_name).read_text(encoding="utf-8")
         for marker in markers:
-            assert marker in source,(template_name,marker)
+            if marker == "{% block shell_mode %}dense{% endblock %}" and '{% extends "workbench_page.html" %}' in source:
+                assert marker in capture_wrapper_source,(template_name,"wrapper must preserve dense shell mode")
+            else:
+                assert marker in source,(template_name,marker)
     library_search_contracts = {
         "itembrowser.html": ["Item Browser", "ib-page"],
         "keyitems.html": ["{% block shell_mode %}dense{% endblock %}", "keyitems-page"],
