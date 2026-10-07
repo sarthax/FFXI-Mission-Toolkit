@@ -20,7 +20,7 @@ main.nyzul-page{max-width:none!important;padding:0!important;overflow:hidden}.lb
   (green ok, red disconnected, orange off-mesh). Navmesh evidence is optional for modern LSB; if unavailable the editor still opens without reachability colouring.</p>
 
 {% if not obj_available %}
-<div class="warn">No cached visual mesh for zone 77 &mdash; run <code class="chip">py -3 build_zone_visual_cache.py 77</code>.</div>
+<div class="warn">No cached visual mesh for zone 77 &mdash; run <code class="chip">py -3 -m workbench.devtools.spatial.build_visual_cache 77</code>.</div>
 {% endif %}
 
 <div style="display:flex; gap:12px; align-items:flex-start;">
