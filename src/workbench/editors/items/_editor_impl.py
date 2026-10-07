@@ -17,7 +17,7 @@ from decimal import Decimal
 from pathlib import Path
 
 import item_dat_tools as dat
-import zone_plot
+from workbench.devtools.spatial import active_zone_plot as zone_plot
 from workbench.editors.items._db_alias import item_db as _item_db
 
 DATA = Path(__file__).parent / "data"
