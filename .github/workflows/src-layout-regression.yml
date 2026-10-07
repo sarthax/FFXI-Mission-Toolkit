@@ -5,6 +5,8 @@ on:
     paths:
       - "pyproject.toml"
       - "src/workbench/**"
+      - "mission_toolkit.py"
+      - "explore_event.py"
       - "workbench/__init__.py"
       - "docs/workbench/SRC_LAYOUT_STATUS.md"
       - "feature_checker.py"
@@ -77,6 +79,8 @@ on:
       - "backport_package.py"
       - "tests/legacy/**"
       - "test_fixtures/test_src_layout_package.py"
+      - "test_fixtures/test_mission_toolkit_package_migration.py"
+      - "test_fixtures/test_explore_event_package_migration.py"
       - "test_fixtures/test_legacy_root_tests_relocation.py"
       - "test_fixtures/test_standalone_operator_scripts_relocation.py"
       - "test_fixtures/test_feature_trace_package_migration.py"
@@ -179,6 +183,8 @@ jobs:
       - name: Validate canonical src package outside repository cwd
         run: |
           python test_fixtures/test_src_layout_package.py
+          python test_fixtures/test_mission_toolkit_package_migration.py
+          python test_fixtures/test_explore_event_package_migration.py
           python test_fixtures/test_legacy_root_tests_relocation.py
           python test_fixtures/test_standalone_operator_scripts_relocation.py
           python test_fixtures/test_feature_trace_package_migration.py
