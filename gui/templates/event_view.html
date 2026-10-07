@@ -9,9 +9,6 @@
 {% block page_actions %}<a class="chip" href="/entity/{{ entity }}">Entity Profile</a><a class="chip" href="/features/trace?q={{ entity }}">Feature Trace</a>{% if zoneid %}<a class="chip" href="/dialog?zone={{ zone|urlencode }}">Zone Dialog</a>{% endif %}{% endblock %}
 {% block page_body %}
 <style>
-.event-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
-.event-head h1{margin:0;font-size:16px}
-.event-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
 .event-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(340px,.8fr);gap:8px;align-items:start}
 .event-card{border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
 .event-card h3{margin:0;padding:6px 8px;border-bottom:1px solid var(--border);font-size:12px}
