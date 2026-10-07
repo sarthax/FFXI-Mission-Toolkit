@@ -82,25 +82,27 @@ reset_install.bat
 - PR #589 — retired `zone_animation_meta.py`; Workbench #2773 + Src Layout #651 green after activating its package regression and adding explicit optional-dependency stubs.
 - PR #590 — retired `build_condition_index.py`; Workbench #2774 + Src Layout #652 green.
 - PR #591 — retired `wiki_compile.py`; Workbench #2775 + Src Layout #653 green.
+- PR #592 — moved the mission-event reconciliation CLI into `workbench.devtools.missions.event_reconcile` and retired root `mission_event_reconcile.py`; Workbench #2776 + Src Layout #654 green.
 
 ## Current slice
 
-### Slice 3c25 — retire mission event reconciliation root launcher
+### Slice 3c26 — retire mission graph ingest root launcher
 
-Status: IN PROGRESS on `cleanup/mission-event-reconcile-phase3c25`.
+Status: IN PROGRESS on `cleanup/mission-graph-ingest-phase3c26`.
 
 Changes on this branch:
-- [x] move the mission-event reconciliation CLI into `workbench.devtools.missions.event_reconcile`.
-- [x] preserve preview-by-default and explicit `--write` persistence semantics.
-- [x] preserve the package compatibility surface at `workbench.plugins.domain.mission_event_reconcile`.
-- [x] remove root `mission_event_reconcile.py`.
+- [x] preserve mission graph projection ownership at `workbench.devtools.missions.graph_ingest`.
+- [x] expose the existing packaged operator CLI through `python -m workbench.devtools.missions.graph_ingest`.
+- [x] preserve preview-by-default / explicit `--write` behavior in `graph_ingest_cli`.
+- [x] preserve the zero-logic package compatibility surface at `workbench.plugins.domain.mission_graph_emit`.
+- [x] remove root `mission_graph_ingest.py`.
 - [x] migrate the focused package regression from root-module loading to an explicit root-absence contract.
-- [x] update Src Layout status to distinguish the retained package shim from the retired root CLI.
+- [x] update Src Layout status for the retired root launcher.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by mission-event CLI migration/launcher retirement.
+- [ ] Fix only regressions caused by mission-graph launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
