@@ -570,7 +570,7 @@ def main():
 
     packets_html = render("packets.html", "/packets", q="", direction="s2c", opcodes=[])
     assert '<body class="shell-dense">' in packets_html
-    assert '<strong>Packet Tools</strong>' in packets_html
+    assert 'class="wb-page-title">Packet Tools</span>' in packets_html
     assert 'Manual Packet Viewer / Decoder' in packets_html
     assert 'Browse known opcodes' in packets_html
 
