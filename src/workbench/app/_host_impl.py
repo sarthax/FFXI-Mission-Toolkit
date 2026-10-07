@@ -8708,7 +8708,7 @@ def assault_domain_page(request: Request):
 
 
 # ---- Nyzul Isle plot tool (nyzul_plot.py) ---------------------------------------------------
-import nyzul_plot
+from workbench.devtools.domains import nyzul_plot
 import zone_plot  # reused below for zone 77's live door/prop rows (npc_list "_"-named entities)
 
 
