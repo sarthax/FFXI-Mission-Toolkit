@@ -1,5 +1,9 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}{{ label }} - ID Drift{% endblock %}
+{% block page_archetype %}browser{% endblock %}
+{% block page_heading %}{{ label }}{% endblock %}
+{% block page_back %}<a class="chip" href="/iddrift">&larr; all categories</a>{% endblock %}
+{% block page_subtitle %}{{ description }}{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -20,12 +24,8 @@
 {% endif %}
 {% endmacro %}
 
-{% block content %}
-<p><a class="chip" href="/iddrift">&larr; all categories</a></p>
-<h1>{{ label }}</h1>
-<p class="muted">{{ description }}</p>
-
-<form class="search" method="get">
+{% block page_body %}
+<form class="search wb-filter-row" method="get">
   {% if zone_scoped %}
   <select name="zone">
     <option value="">All zones</option>
@@ -78,6 +78,6 @@
 </table></div>
 {{ pager() }}
 {% else %}
-<p class="muted">No mismatches found{{ " for \"%s\"" % q if q else "" }}.</p>
+<div class="wb-empty">No mismatches found{{ " for \"%s\"" % q if q else "" }}.</div>
 {% endif %}
 {% endblock %}
