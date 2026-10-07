@@ -139,6 +139,37 @@ zones[xi.zone.NYZUL_ISLE] =
     at: [1, 1, 1]
 """,
     )
+    _write(
+        root,
+        "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+        """local function pickSetPoint(instance)
+    local currentFloor = instance:getLocalVar('Nyzul_Current_Floor')
+    instance:setLocalVar('Nyzul_Isle_FloorLayout', math.randomInt(1, (#xi.nyzul.FloorLayout - 0)))
+    instance:setLocalVar('gearObjective', 0)
+
+    if currentFloor % 20 == 0 then
+        instance:setStage(xi.nyzul.objective.ELIMINATE_ENEMY_LEADER)
+        instance:setLocalVar('Nyzul_Isle_FloorLayout', 0)
+    elseif math.randomInt(1, 30) == 1 and instance:getLocalVar('freeFloor') == 0 then
+        instance:setStage(xi.nyzul.objective.FREE_FLOOR)
+        instance:setLocalVar('freeFloor', 1)
+    else
+        local objective = {}
+        for i = xi.nyzul.objective.ELIMINATE_ENEMY_LEADER, xi.nyzul.objective.ELIMINATE_ALL_ENEMIES do
+            table.insert(objective, i)
+        end
+        if instance:getStage() ~= 0 and instance:getStage() ~= 6 then
+            table.remove(objective, instance:getStage())
+        end
+        instance:setStage(utils.randomEntry(objective))
+        if math.randomInt(1, 30) <= 5 then
+            instance:setLocalVar('gearObjective', math.randomInt(xi.nyzul.gearObjective.AVOID_AGRO, xi.nyzul.gearObjective.DO_NOT_DESTROY))
+        end
+    end
+    instance:setLocalVar('menuChoice', math.randomInt(1, 20))
+end
+""",
+    )
 
     if with_nav:
         nav = root / "navmeshes/Nyzul_Isle.nav"
