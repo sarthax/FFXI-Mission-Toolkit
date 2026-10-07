@@ -1,7 +1,7 @@
-"""Canonical package entry point for the legacy Mission Toolkit developer CLI.
+"""Canonical package entry point for the Mission Toolkit developer CLI.
 
 The mature implementation is retained in ``_mission_toolkit_impl.py``. This wrapper preserves its
-legacy filename/resource assumptions while binding its historical ``settings`` import to the
+historical filename/resource assumptions while binding its historical ``settings`` import to the
 package runtime bridge, where the named active server environment is now authoritative.
 """
 from __future__ import annotations
