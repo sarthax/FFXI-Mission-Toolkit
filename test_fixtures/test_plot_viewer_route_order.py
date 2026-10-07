@@ -1,7 +1,7 @@
 """Ensure static capture plot routes are registered before the dynamic capture detail route."""
 from __future__ import annotations
 
-from gui_server import app
+from workbench.app.host import app
 
 
 def run() -> None:
