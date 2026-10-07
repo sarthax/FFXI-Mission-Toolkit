@@ -73,3 +73,4 @@ Completed workspace migrations:
 - **Capture Path Plots** — Single Path and All Paths (Workbench; specialized visualization geometry preserved).
 - **Client Overview** — Installed-client fingerprint and build identity comparison (Dashboard).
 - **Binary Inspector** — PE/binary evidence inspection and probe workflow (Workbench; inspection read-only, explicit probe-save write action preserved).
+- **Behavior Inspector** — Lua behavior/evidence graph and source drill-down (Workbench).
