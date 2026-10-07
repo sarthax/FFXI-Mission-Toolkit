@@ -339,21 +339,21 @@ Operator summary: `AUCTION_HOUSE_CAPABILITY_STATUS.md`. Economy detail: `AUCTION
 
 The shared `base.html` shell already unifies global navigation, workspace context, theme variables, and common dense UI primitives. The next UI architecture phase should unify **module composition and geometry** so independently developed tools stop drifting in width, spacing, panel sizing, controls, and interaction structure.
 
-- [ ] Add a shared Workbench page wrapper above `base.html` for module-level layout contracts rather than navigation/chrome alone.
-- [ ] Define a small set of canonical page archetypes:
+- [x] Add a shared Workbench page wrapper above `base.html` for module-level layout contracts rather than navigation/chrome alone.
+- [x] Define a small set of canonical page archetypes:
   - Browser — search/filter + result list/table + pagination;
   - Detail/Dossier — summary/header + evidence/detail sections;
   - Workbench/Inspector — navigator + primary workspace + inspector;
   - Editor — navigator + editable surface + properties/actions;
   - Dashboard/Console — status/KPI/action strip + panels/tables.
-- [ ] Standardize page header/title/status/action regions, help/about affordances, read-only/write-capable badges, empty/loading/error states, and shared filter/search rows.
-- [ ] Standardize one-, two-, and three-pane layouts including reusable left/right sidebar widths, panel gaps, inspector sizing, scrolling ownership, sticky regions, and responsive stacking.
+- [x] Standardize page header/title/status/action regions, help/about affordances, read-only/write-capable badges, empty/loading/error states, and shared filter/search rows.
+- [x] Standardize one-, two-, and three-pane layout primitives including reusable sidebar/inspector widths, panel gaps, and responsive stacking; scrolling/sticky behavior remains workspace-specific until migrated.
 - [ ] Replace repeated page-local geometry such as arbitrary `main` padding, max-widths, toolbar heights, and control sizing with shared Workbench design tokens.
-- [ ] Define shared tokens for page padding, toolbar/control height, panel gap, table row density, sidebar sizes, inspector width, and responsive breakpoints.
+- [x] Define shared tokens for page padding, toolbar/control height, panel gap, table row density, sidebar sizes, inspector width, and responsive breakpoints.
 - [ ] Keep feature-specific visualization/layout behavior where required (Zone Editor canvas, Packet Viewer byte presentation, Auction House economy surfaces, etc.) while removing feature-specific reinvention of basic UI geometry.
 - [ ] Convert existing `dense-toolbar`, `dense-panel`, tabs, cards, chips, tables, forms, and inspector patterns into documented reusable primitives where their contracts are already stable.
-- [ ] Add a UI/template contract regression: new module pages must use the standard Workbench wrapper/archetype or explicitly opt into a justified custom/fullscreen surface.
-- [ ] Inventory current templates against the archetypes and migrate them systematically by workspace rather than opportunistically when features happen to be edited.
+- [x] Add a UI/template contract regression: new module pages must use the standard Workbench wrapper/archetype or explicitly opt into the legacy/custom allowlist with a reason.
+- [ ] Inventory current templates against the archetypes and migrate them systematically by workspace rather than opportunistically when features happen to be edited. Foundation adopters: SQL Browser (Browser), Validation (Dashboard), and Research Evidence (Detail).
 - [ ] Preserve behavior during migration; visual/layout normalization should not silently change feature semantics, write safety, evidence meaning, or route ownership.
 - [ ] Perform this phase **after the active root-cleanup/bootstrap retirement work** so cross-cutting template refactors do not collide with repository-structure cleanup.
 
