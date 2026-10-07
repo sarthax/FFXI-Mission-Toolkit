@@ -49,9 +49,7 @@ def main() -> None:
     assert "__path__.append" in bridge_text
     assert "Do not add implementation modules" in bridge_text
 
-    root_gui = (ROOT / "gui_server.py").read_text(encoding="utf-8")
-    assert "from workbench.app import host as _canonical" in root_gui
-    assert "FastAPI(" not in root_gui and "@app." not in root_gui
+    assert not (ROOT / "gui_server.py").exists()
     assert not (ROOT / "settings.py").exists()
 
     moved_root_artifacts = (
@@ -139,6 +137,7 @@ def main() -> None:
         "backport_sql_live_check.py",
         "build_capture_index.py",
         "settings.py",
+        "gui_server.py",
     )
     for name in retired:
         assert not (ROOT / name).exists(), name
@@ -196,7 +195,6 @@ def main() -> None:
     workflow = (ROOT / ".github" / "workflows" / "workbench-regression.yml").read_text(encoding="utf-8")
     assert '- "src/workbench/**"' in workflow
     character_workflow = (ROOT / ".github" / "workflows" / "character-editor-regression.yml").read_text(encoding="utf-8")
-    assert '- "gui_server.py"' in character_workflow
     assert '- "src/workbench/app/**"' in character_workflow
     assert '- "src/workbench/runtime/settings_store.py"' in character_workflow
     ancient_vows = (ROOT / ".github" / "workflows" / "workbench-ancient-vows.yml").read_text(encoding="utf-8")
