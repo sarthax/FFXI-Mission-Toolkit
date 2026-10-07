@@ -113,3 +113,5 @@ The src-layout self-test rejects reintroduction of retired root graph/schema/pro
 Phase D implementation ownership is complete. The repository still retains historical root-level application/CLI entry points, `gui_server.py`, `settings.py`, bootstrap scripts, and compatibility utilities because supported checkout-local workflows and documentation still invoke them. Their reusable implementation is package-owned.
 
 Retiring those files is a separate bootstrap/distribution phase, not unfinished source-layout migration. That future phase should require every supported setup/start/CI path to install the project or explicitly place `src` on the Python import path before compatibility launchers are removed.
+
+- Standalone operator scripts for item repair, Auction House seeding, Discord intake, and DSP enum generation no longer live at repository root. They are grouped under `scripts/maintenance` and `scripts/import`; repo-sensitive scripts resolve paths through `workbench.runtime.paths` / `legacy_settings`, and Src Layout enforces the relocation contract.
