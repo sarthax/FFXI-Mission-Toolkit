@@ -519,7 +519,7 @@ GUI, auditability, and evaluation:
 - [ ] Budget/timeout/tool-call limits and complete audit logging for every autonomous research run.
 - [ ] Model-independent regression/evaluation fixtures using canned tool results to verify evidence citation, UNKNOWN/INFERRED preservation, contradiction handling, source authority, correct typed-tool selection, and no-direct-write guarantees.
 - [ ] Provider/model quality evaluation remains separate from Workbench evidence/safety evaluation.
-- [ ] Keep `llm_client.py`, `llm_db_tools.py`, `llm_log.py`, and existing GUI routes as compatibility entry points while moving provider/tool/research orchestration into `workbench/research/`.
+- [ ] Keep `workbench.devtools.research.legacy_llm.client`, `workbench.devtools.research.legacy_llm.db_tools`, `workbench.devtools.research.legacy_llm.log`, and existing GUI routes as compatibility entry points while moving provider/tool/research orchestration into `workbench/research/`.
 
 Evidence rules:
 - Graph reachability is never proof by itself.
