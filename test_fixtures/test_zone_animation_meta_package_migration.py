@@ -1,4 +1,8 @@
 from pathlib import Path
+from types import ModuleType
+import sys
+
+sys.modules.setdefault("xi_tinkerer", ModuleType("xi_tinkerer"))
 
 from workbench.client.models import zone_animation_meta
 from workbench.devtools.indexing import build_lsb_index
