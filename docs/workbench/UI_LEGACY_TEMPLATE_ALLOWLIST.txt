@@ -83,9 +83,6 @@ settings.html | legacy page pending archetype migration
 shift_master.html | legacy page pending archetype migration
 shutdown.html | legacy page pending archetype migration
 synth.html | legacy page pending archetype migration
-validation_live_target.html | legacy page pending archetype migration
-validation_run_detail.html | legacy page pending archetype migration
-validation_runs.html | legacy page pending archetype migration
 wiki.html | legacy page pending archetype migration
 zone_plot2.html | legacy page pending archetype migration
 zone_view3d.html | legacy page pending archetype migration
