@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `c7996cfc21e83610c1939e51388502cc4c109193` after PR #594  
-Current work branch: `cleanup/addon-tools-phase3c28`  
+Current merged baseline: `main` at `3d5e17289122786c8fcc67d981090afdc354998a` after PR #595  
+Current work branch: `cleanup/packet-opcode-index-phase3c29`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -85,25 +85,27 @@ reset_install.bat
 - PR #592 — moved the mission-event reconciliation CLI into `workbench.devtools.missions.event_reconcile` and retired root `mission_event_reconcile.py`; Workbench #2776 + Src Layout #654 green.
 - PR #593 — retired `mission_graph_ingest.py`, exposing the existing packaged CLI through `python -m workbench.devtools.missions.graph_ingest`; Workbench #2777 + Src Layout #655 green.
 - PR #594 — retired `salvage_reconstruct.py`; Workbench #2778 + Src Layout #656 green.
+- PR #595 — retired `addon_tools.py` and moved active usage guidance to `python -m workbench.runtime.addon_tools`; Workbench #2779 + Src Layout #657 green.
 
 ## Current slice
 
-### Slice 3c28 — retire addon-tools root launcher
+### Slice 3c29 — retire packet opcode index root launcher
 
-Status: IN PROGRESS on `cleanup/addon-tools-phase3c28`.
+Status: IN PROGRESS on `cleanup/packet-opcode-index-phase3c29`.
 
 Changes on this branch:
-- [x] remove root `addon_tools.py`.
-- [x] preserve canonical Runtime ownership at `workbench.runtime.addon_tools`.
-- [x] preserve package/install/list behavior and canonical `REPO_ROOT` / `ADDONS_ROOT` path resolution.
+- [x] remove root `packet_opcode_index.py`.
+- [x] preserve canonical packet ownership at `workbench.packets.opcode_index`.
+- [x] preserve direct packaged CLI execution and deterministic `--self-test` behavior.
 - [x] migrate the focused package regression from root-alias identity to an explicit root-absence contract.
-- [x] update runtime error guidance and active distro/roadmap docs to the packaged `python -m workbench.runtime.addon_tools` command.
-- [x] update Src Layout status to mark the root compatibility command retired.
+- [x] repoint the direct packet-dispatch regression from the root import to `workbench.packets.opcode_index`.
+- [x] update Src Layout status to mark the root compatibility entry point retired.
+- [x] leave `packet_decode.py` deferred because Capture/OCR production code still imports that root name.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by addon-tools launcher retirement.
+- [ ] Fix only regressions caused by packet-opcode launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
