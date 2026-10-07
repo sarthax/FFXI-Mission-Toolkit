@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 import feature_trace
-import workbench_connect
+from workbench.runtime import connect as workbench_connect
 from workbench.captures.correlation.graph_connect import connect
 from workbench.core import graph
 from workbench.core.services import capture_integrity
