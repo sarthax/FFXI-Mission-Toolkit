@@ -513,7 +513,7 @@ def packet_symbol_assistance(parsed: dict) -> dict:
         return result
 
     try:
-        import packet_decode
+        from workbench.packets import decode as packet_decode
         opcode_defs = [row for row in packet_decode.list_opcodes("") if row["direction"] == direction_key]
     except Exception as exc:
         result["symbol_index_error"] = str(exc)
