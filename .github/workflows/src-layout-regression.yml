@@ -138,6 +138,9 @@ on:
       - "test_fixtures/test_sql_convert_package_migration.py"
       - "test_fixtures/test_sql_live_check_package_migration.py"
       - "test_fixtures/test_package_conversion_drivers_migration.py"
+      - "test_fixtures/test_nyzul_backport_wrapper_settings.py"
+      - "test_fixtures/test_gm_debug_backport_wrapper_settings.py"
+      - "test_fixtures/test_assault_backport_wrapper_settings.py"
       - "test_fixtures/test_backport_package_orchestrator_migration.py"
       - ".github/workflows/src-layout-regression.yml"
   workflow_dispatch:
@@ -226,4 +229,5 @@ jobs:
           python test_fixtures/test_sql_convert_package_migration.py
           python test_fixtures/test_sql_live_check_package_migration.py
           python test_fixtures/test_package_conversion_drivers_migration.py
+          python -m pytest -q test_fixtures/test_assault_backport_wrapper_settings.py test_fixtures/test_gm_debug_backport_wrapper_settings.py test_fixtures/test_nyzul_backport_wrapper_settings.py
           python test_fixtures/test_backport_package_orchestrator_migration.py
