@@ -1,10 +1,11 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Domains{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}domains-index-page{% endblock %}
-{% block content %}
-<style>main.domains-index-page{padding:8px 10px 24px}</style>
-<div class="dense-toolbar"><strong>Domains</strong><span class="sp"></span><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:720px">Domain-level implementation inventory. “Present” means expected files/tables exist; it does not prove completeness. Wiki counts are reference-only.</div></details></div>
+{% block page_archetype %}dashboard{% endblock %}
+{% block page_class %}domains-index-page{% endblock %}
+{% block page_heading %}Domains{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Inventory only</span>{% endblock %}
+{% block page_help %}Domain-level implementation inventory. “Present” means expected files/tables exist; it does not prove completeness. Wiki counts are reference-only.{% endblock %}
+{% block page_body %}
 <div class="table-wrap"><table>
 <tr><th>Domain</th><th>Archetype</th><th>Wiki pages</th>{% for r in roots %}<th>{{ r|upper }} entities present</th>{% endfor %}<th>Editors</th></tr>
 <tr><td><a href="/domains/assault">Assault</a></td><td>system.assault</td><td>-</td>{% for r in roots %}<td class="muted">see page</td>{% endfor %}<td>Built: Assault workspace</td></tr>

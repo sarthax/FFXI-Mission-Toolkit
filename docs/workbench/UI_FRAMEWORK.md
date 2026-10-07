@@ -84,3 +84,4 @@ Completed workspace migrations:
 - **Assault Missions** — Mission text and observed implementation-coverage browser (Browser).
 - **Zones Browser** — Zone/content-tag entity browser (Browser, read-only).
 - **Dialog Browser** — Client dialog search/browse with drift, CSID, capture, and implementation evidence (Browser; specialized result geometry preserved).
+- **Domains Index** — Domain implementation inventory and editor coverage (Dashboard, read-only).
