@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `36bfbaa92a3cfd6265b48ab5e97e0e5f8a921354` after PR #613  
-Current work branch: `cleanup/editor-spatial-aliases-phase3c47`  
+Current merged baseline: `main` at `b9d7d56e5552f195c58505bd18cacf6fb92948cf` after PR #615  
+Current work branch: `cleanup/capture-index-phase3c48`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -104,32 +104,30 @@ reset_install.bat
 - PR #611 — retired `mission_toolkit.py` and `explore_event.py`, moved Event Explorer export generation to the packaged Mission Toolkit CLI, and activated both focused migration smokes; Workbench #2814 + Src Layout #692 green.
 - PR #612 — retired `llm_client.py`, `llm_db_tools.py`, and `llm_log.py`, normalized packaged research callers, and activated all three focused LLM migration regressions; Workbench #2815 + Src Layout #693 green.
 - PR #613 — retired `packet_decode.py` and `youtube_chat_ocr.py`, added packaged CLI entry points, repointed packet/OCR callers, and preserved mutable OCR behavior; Workbench #2816 + Src Layout #694 green.
+- PR #615 — retired editor/spatial root aliases (`build_zone_visual_cache.py`, `item_dat_tools.py`, `item_edit.py`, `zone_edit.py`, `zone_plot.py`) and preserved packaged ownership.
 
 ## Current slice
 
-### Slice 3c47 — retire editor/spatial root compatibility aliases
+### Slice 3c48 — retire Capture index root compatibility launcher
 
-Status: IN PROGRESS on `cleanup/editor-spatial-aliases-phase3c40`.
+Status: IN PROGRESS on `cleanup/capture-index-phase3c48`.
 
 Changes on this branch:
-- [x] remove root `build_zone_visual_cache.py`, `item_dat_tools.py`, `item_edit.py`, `zone_edit.py`, and `zone_plot.py`.
-- [x] preserve canonical ownership at `workbench.devtools.spatial.build_visual_cache`, `workbench.editors.items.dat_tools`, `workbench.editors.items.editor`, `workbench.editors.zone.editor`, and `workbench.devtools.spatial.active_zone_plot`.
-- [x] repoint real Item DAT production callers to `workbench.editors.items.dat_tools`.
-- [x] preserve editor backup/journal path behavior through the existing packaged adapters' synthetic legacy `__file__` values without requiring physical root files.
-- [x] migrate Item DAT / Item Editor / Zone Editor / Zone Plot package regressions to explicit root-absence contracts.
-- [x] run Zone Plot regression against the active-environment packaged backend.
-- [x] add Src Layout path and execution coverage for all four focused migration regressions.
-- [x] leave `build_capture_index.py`, `settings.py`, and `gui_server.py` for the final capture/bootstrap boundary.
+- [x] repoint capture regressions from root `build_capture_index` imports to `workbench.captures.ingestion.build_index`.
+- [x] remove root `build_capture_index.py`.
+- [x] preserve the packaged Capture ingestion CLI and setup entry point.
+- [x] migrate focused Src Layout/Capture migration checks to explicit root-absence contracts.
+- [x] update active Capture ownership/CLI guidance.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by editor/spatial compatibility retirement.
+- [ ] Fix only regressions caused by Capture index launcher retirement.
 - [ ] Merge only when required gates are green.
 
 ## Explicitly retained / deferred
 
-- `build_capture_index.py` — high regression fan-in; dedicated test migration required.
+- `settings.py` and `gui_server.py` remain supported bootstrap compatibility surfaces; retire only as a separate bootstrap/distribution decision.
 
 ## Remaining slices
 
