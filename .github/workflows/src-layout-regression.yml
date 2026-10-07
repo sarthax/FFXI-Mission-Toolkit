@@ -27,6 +27,7 @@ on:
       - "capture_graph_connect.py"
       - "build_capture_index.py"
       - "test_fixtures/test_zone_plot_package_migration.py"
+      - "test_fixtures/test_zone_visual_cache_package_migration.py"
       - "test_fixtures/test_zone_editor_package_migration.py"
       - "test_fixtures/test_item_editor_package_migration.py"
       - "test_fixtures/test_item_dat_tools_package_migration.py"
@@ -229,6 +230,7 @@ jobs:
           python test_fixtures/test_item_editor_package_migration.py
           python test_fixtures/test_zone_editor_package_migration.py
           python -m pytest -q test_fixtures/test_zone_plot_package_migration.py
+          python test_fixtures/test_zone_visual_cache_package_migration.py
           python test_fixtures/test_youtube_ocr_package_migration.py
           python test_fixtures/test_packet_decode_package_migration.py
           python test_fixtures/test_packet_opcode_index_package_migration.py
