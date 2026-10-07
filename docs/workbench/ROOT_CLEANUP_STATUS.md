@@ -100,25 +100,30 @@ reset_install.bat
 
 ## Current slice
 
-### Slice 3c40 — retire Feature root compatibility entry points
+### Slice 3c40 — retire Feature root entry points and normalize packaged-host imports
 
 Status: IN PROGRESS on `cleanup/feature-tools-phase3c40`.
 
 Changes on this branch:
 - [x] remove root `feature_trace.py` and `feature_checker.py`.
 - [x] preserve canonical Development ownership at `workbench.devtools.features.trace` and `workbench.devtools.features.checker`.
-- [x] repoint the packaged GUI host to canonical Feature modules.
-- [x] migrate all active direct root Feature Trace regression imports to the Development namespace.
-- [x] migrate the Feature Trace package smoke to an explicit root-absence contract.
-- [x] update Src Layout regression to require both root entry points absent and fail on any remaining first-party root Feature imports.
-- [x] retain the package-level `workbench.core.services.feature_checker` compatibility shim for older internal imports.
-- [x] update Src Layout status and cleanup backlog to remove Feature Checker from the final root/bootstrap set.
+- [x] repoint the packaged host to canonical Feature Trace/Checker imports.
+- [x] repoint active direct Feature Trace regression callers to the canonical Development surface.
+- [x] migrate the focused Feature Trace package smoke to an explicit root-absence contract while retaining canonical dependency-binding assertions.
+- [x] update the Src Layout package contract to require both Feature root entry points absent and reject future first-party root Feature imports.
+- [x] retain the package-level `workbench.core.services.feature_checker` shim for older internal imports.
+- [x] normalize packaged-host imports for already-retired indexing, entity, package-migration, Wiki, and runtime modules so host startup no longer depends on deleted root compatibility files.
+- [x] move reusable external-tool installer implementation to `workbench.runtime.external_tools` and reduce `scripts/bootstrap/install_external_tools.py` to a thin launcher.
+- [x] strengthen external-tools and Src Layout regressions around the canonical Runtime/host contracts.
+- [x] add the missing Src Layout path trigger for `feature_checker.py`.
+- [x] keep still-live/high-risk root imports such as `build_capture_index.py`, `build_zone_visual_cache.py`, `explore_event.py`, `youtube_chat_ocr.py`, `packet_decode.py`, `settings.py`, and the legacy LLM trio out of this slice.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by Feature root compatibility retirement.
-- [ ] Merge only when green.
+- [ ] Run Character Editor Regression because the packaged host import surface changed.
+- [ ] Fix only regressions caused by Feature/root-host import normalization.
+- [ ] Merge only when all relevant gates are green.
 
 ## Explicitly retained / deferred
 
