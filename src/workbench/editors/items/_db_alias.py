@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 
-import zone_plot
+from workbench.devtools.spatial import active_zone_plot as zone_plot
 
 _ALIASES = ("item_equipment", "item_armor")
 _resolved: dict[str, str] = {}
