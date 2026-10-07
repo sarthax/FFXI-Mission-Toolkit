@@ -35,7 +35,6 @@ capture_source_locator.html | legacy page pending archetype migration
 capture_timeline.html | legacy page pending archetype migration
 captures.html | legacy page pending archetype migration
 character_editor.html | legacy page pending archetype migration
-client_overview.html | legacy page pending archetype migration
 dat_inspector.html | legacy page pending archetype migration
 dialog.html | legacy page pending archetype migration
 dialog_drift.html | legacy page pending archetype migration
