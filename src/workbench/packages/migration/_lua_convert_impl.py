@@ -1,5 +1,5 @@
 """
-backport_lua_convert.py -- Topaz -> DSP Lua conversion for the backport module.
+Topaz -> DSP Lua conversion for the backport module.
 
 Ported from D:\\Claude\\Topaz-Assault-Backport\\tools\\dsp_backport_toolkit\\convert_lua_to_dsp.py,
 built during the Nyzul Isle Investigation backport package. That standalone tool remains the
