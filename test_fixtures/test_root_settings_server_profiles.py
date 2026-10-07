@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import settings
+from workbench.runtime import settings_store as settings
 from workbench.runtime import server_profiles
 
 
