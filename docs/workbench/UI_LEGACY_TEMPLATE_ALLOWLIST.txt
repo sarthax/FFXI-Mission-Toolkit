@@ -44,7 +44,6 @@ home.html | legacy page pending archetype migration
 itembrowser.html | legacy page pending archetype migration
 itemedit.html | legacy page pending archetype migration
 itemhealth.html | legacy page pending archetype migration
-missions.html | legacy page pending archetype migration
 model_viewer.html | legacy page pending archetype migration
 nyzul_plot.html | legacy page pending archetype migration
 ocr.html | legacy page pending archetype migration
