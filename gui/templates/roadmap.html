@@ -165,7 +165,7 @@
       <code class="chip">.venv/</code> for every Python invocation instead, so this toolkit's own
       dependencies can never conflict with anything else already on a user's machine.</td></tr>
   <tr><td>Backport Lua Converter <span class="pill match">new 2026-09-12</span></td>
-    <td class="muted"><code class="chip">backport_lua_convert.py</code>, <code class="chip">data/dsp_namespace_map.json</code>,
+    <td class="muted"><code class="chip">workbench.packages.migration.lua_convert</code>, <code class="chip">data/dsp_namespace_map.json</code>,
       <code class="chip">backport_coverage_check.py</code></td>
     <td>Paste-in Topaz&rarr;DSP Lua converter at <code class="chip">/backport/lua-convert</code>
       (gated behind the same <code class="chip">backport_enabled()</code> check as ID Drift) --
@@ -218,7 +218,7 @@
       converter page itself now surfaces each flagged line's real evidence/fix/checked citation
       inline instead of a bare regex string.</td></tr>
   <tr><td>Backport SQL Converter <span class="pill match">new 2026-09-13</span></td>
-    <td class="muted"><code class="chip">backport_sql_convert.py</code>, <code class="chip">data/dsp_sql_schema_map.json</code>,
+    <td class="muted"><code class="chip">workbench.packages.migration.sql_convert</code>, <code class="chip">data/dsp_sql_schema_map.json</code>,
       <code class="chip">backport_sql_live_check.py</code></td>
     <td>Paste-in Topaz&rarr;DSP SQL converter at <code class="chip">/backport/sql-convert</code>
       (same <code class="chip">backport_enabled()</code> gate). Reformats Topaz

@@ -3,7 +3,7 @@
 
 {% block content %}
 <h1>Backport Package</h1>
-<p class="muted">Runs the full <code>backport_package.py</code> pipeline against one package folder
+<p class="muted">Runs the full <code>workbench.packages.migration.orchestrator</code> pipeline against one package folder
 under <code class="chip">{{ packages_root }}</code>: converts every <code>.lua</code>/<code>.sql</code>
 file, then runs the binding audit, Lua sanity check, and SQL id-collision check over the whole
 result, and writes one consolidated <code>BACKPORT_REPORT.md</code> next to the package. Run this

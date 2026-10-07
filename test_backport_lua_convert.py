@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import sys
 
-import backport_lua_convert as blc
+from workbench.packages.migration import lua_convert as blc
 
 FAILURES: list[str] = []
 

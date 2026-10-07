@@ -3,10 +3,10 @@
 Bundled, turnkey scaffold for the backport-package CLI tools — the Settings page's `backport_root`
 defaults to this folder, so they work out of the box with zero configuration:
 
-- `backport_package.py <package_dir>` — the end-to-end orchestrator. Converts every `.lua`/`.sql`
+- `python -m workbench.packages.migration.orchestrator <package_dir>` — the end-to-end orchestrator. Converts every `.lua`/`.sql`
   file in a package folder, then runs the binding audit + Lua sanity check + SQL id-collision
   check over the whole result, and writes one consolidated `BACKPORT_REPORT.md`. See its own
-  docstring (`py -3 backport_package.py --help`) for exactly what it does and does not automate.
+  docstring (`py -3 -m workbench.packages.migration.orchestrator --help`) for exactly what it does and does not automate.
 - `py -3 -m workbench.validation.packages.binding_audit --all-packages` and
   `py -3 -m workbench.validation.packages.lua_sanity --all-packages` — the same two checks
   `backport_package.py` runs per-package, but across every package under `mission-packages/` at once.
