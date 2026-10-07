@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}workbench-page wb-archetype-{% block page_archetype %}browser{% endblock %} wb-width-{% block page_width %}fluid{% endblock %} {% block page_class %}{% endblock %}{% endblock %}
+{% block content %}
+<div class="wb-page-frame">
+  <header class="wb-page-header">
+    <div class="wb-page-heading">
+      {% block page_back %}{% endblock %}
+      <span class="wb-page-title">{% block page_heading %}Workbench{% endblock %}</span>
+      {% block page_identity %}{% endblock %}
+      {% if self.page_subtitle()|trim %}<span class="wb-page-subtitle">{% block page_subtitle %}{% endblock %}</span>{% endif %}
+    </div>
+    {% if self.page_status()|trim %}<div class="wb-page-status">{% block page_status %}{% endblock %}</div>{% endif %}
+    {% if self.page_actions()|trim or self.page_help()|trim %}
+    <div class="wb-page-actions">
+      {% block page_actions %}{% endblock %}
+      {% if self.page_help()|trim %}
+      <details class="dense-card wb-page-help">
+        <summary>About</summary>
+        <div class="wb-page-help-body">{% block page_help %}{% endblock %}</div>
+      </details>
+      {% endif %}
+    </div>
+    {% endif %}
+  </header>
+  {% block page_notices %}{% endblock %}
+  <div class="wb-page-body">
+    {% block page_body %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

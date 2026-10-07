@@ -292,12 +292,16 @@ def main():
         "research_evidence.html": ["{% block shell_mode %}dense{% endblock %}", "research-evidence-page"],
         "research_gaps.html": ["{% block shell_mode %}dense{% endblock %}", "research-gaps-page"],
     }
+    wrapper_source=(TEMPLATES/"workbench_page.html").read_text(encoding="utf-8")
     for template_name, markers in library_search_contracts.items():
         capture_env.get_template(template_name)
         source=(TEMPLATES/template_name).read_text(encoding="utf-8")
         assert 'href="/research/gaps"' not in source,(template_name,"stale Research Gaps route")
         for marker in markers:
-            assert marker in source,(template_name,marker)
+            if marker == "{% block shell_mode %}dense{% endblock %}" and '{% extends "workbench_page.html" %}' in source:
+                assert marker in wrapper_source,(template_name,"wrapper must preserve dense shell mode")
+            else:
+                assert marker in source,(template_name,marker)
 
     workflow_ux_contracts = {
         "wiki.html": ["{% block shell_mode %}dense{% endblock %}", "wiki-compiler-page", "wiki-actions", "wiki-kpis", "Evidence mapping ledger", "Dual-wiki claim comparison"],
@@ -489,7 +493,8 @@ def main():
 
     validation_html = render("validation_dashboard.html", "/validation", runs=[], status_counts={}, result_counts={}, total_results=0, error=None)
     assert '<body class="shell-dense">' in validation_html
-    assert '<strong>Validation</strong>' in validation_html
+    assert 'class="wb-page-title">Validation</span>' in validation_html
+    assert 'class="wb-readonly-badge">Read only</span>' in validation_html
 
     validation_runs_html = render("validation_runs.html", "/validation/runs", q="", status="", statuses=[], runs=[], error=None)
     assert '<body class="shell-dense">' in validation_runs_html
