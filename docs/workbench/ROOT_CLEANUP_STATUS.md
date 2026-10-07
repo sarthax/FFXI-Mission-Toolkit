@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `e0b27607b5c8a88bf63a14fe319bc0cc548f3c56` after PR #610  
-Current work branch: `cleanup/mission-event-cli-phase3c44`  
+Current merged baseline: `main` at `ebeb7ea78883493078ae20c68384ee9286dda582` after PR #611  
+Current work branch: `cleanup/legacy-llm-phase3c45`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -101,28 +101,27 @@ reset_install.bat
 - PR #608 — relocated five standalone maintenance/import scripts out of repository root, normalized repo-sensitive paths, and added Src Layout relocation coverage; Workbench #2807 + Src Layout #685 + Character Editor #205 green.
 - PR #609 — relocated `test_backport_lua_convert.py`, `test_backport_sql_convert.py`, and `test_capture_ingestion.py` to `tests/legacy/`, updated path-sensitive fixtures/docs, and activated relocation coverage.
 - PR #610 — retired `backport_sql_live_check.py`, `id_bridge.py`, and `nyzul_plot.py`; moved Nyzul profile-bridge installation into the canonical module and refreshed the full modern-LSB migration fixture; Workbench #2813 + Src Layout #691 green.
+- PR #611 — retired `mission_toolkit.py` and `explore_event.py`, moved Event Explorer export generation to the packaged Mission Toolkit CLI, and activated both focused migration smokes; Workbench #2814 + Src Layout #692 green.
 
 ## Current slice
 
-### Slice 3c44 — retire Mission Toolkit and Event Explorer root CLIs
+### Slice 3c45 — retire legacy local-LLM root aliases
 
-Status: IN PROGRESS on `cleanup/mission-event-cli-phase3c44`.
+Status: IN PROGRESS on `cleanup/legacy-llm-phase3c45`.
 
 Changes on this branch:
-- [x] remove root `mission_toolkit.py` and `explore_event.py`.
-- [x] preserve canonical Mission Toolkit developer CLI ownership at `workbench.devtools.app.mission_toolkit`.
-- [x] preserve canonical Event/CSID explorer ownership at `workbench.devtools.server.explore_event`.
-- [x] migrate Event Explorer's missing-export subprocess from the root script path to `python -m workbench.devtools.app.mission_toolkit`.
-- [x] migrate the focused Mission Toolkit/Event Explorer package smokes to explicit root-absence contracts.
-- [x] repoint the Event/CSID UI regression to the canonical Event Explorer import.
-- [x] update current tooling/roadmap guidance and canonical adapter documentation to packaged surfaces.
-- [x] add Src Layout triggers and execution for both focused migration smokes.
-- [x] update Src Layout status and advance this tracker from merged PR #610.
+- [x] remove root `llm_client.py`, `llm_db_tools.py`, and `llm_log.py`.
+- [x] preserve canonical legacy local-LLM ownership under `workbench.devtools.research.legacy_llm`.
+- [x] repoint OpenWebUI provider and research DB-tool registration to packaged imports.
+- [x] migrate all three focused package regressions to explicit root-absence contracts while preserving functional coverage.
+- [x] repoint current LLM architecture, roadmap, audit, Settings, and GUI guidance to packaged module names.
+- [x] add Src Layout triggers and execution for all three focused LLM migration regressions.
+- [x] update Src Layout status and advance this tracker from merged PR #611.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by Mission Toolkit/Event Explorer root CLI retirement.
+- [ ] Fix only regressions caused by legacy LLM root-alias retirement.
 - [ ] Merge only when required gates are green.
 
 ## Explicitly retained / deferred

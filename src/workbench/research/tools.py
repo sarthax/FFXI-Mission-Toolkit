@@ -141,7 +141,7 @@ class ResearchToolRegistry:
 
 def register_legacy_db_tools(registry: ResearchToolRegistry) -> None:
     """Expose current llm_db_tools only as explicit read-only compatibility tools."""
-    import llm_db_tools
+    from workbench.devtools.research.legacy_llm import db_tools as llm_db_tools
 
     for name,(handler,description) in llm_db_tools.TOOLS.items():
         registry.register(ResearchTool(

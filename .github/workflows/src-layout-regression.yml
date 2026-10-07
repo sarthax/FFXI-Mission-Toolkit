@@ -5,6 +5,9 @@ on:
     paths:
       - "pyproject.toml"
       - "src/workbench/**"
+      - "llm_client.py"
+      - "llm_db_tools.py"
+      - "llm_log.py"
       - "mission_toolkit.py"
       - "explore_event.py"
       - "workbench/__init__.py"
@@ -80,6 +83,9 @@ on:
       - "tests/legacy/**"
       - "test_fixtures/test_src_layout_package.py"
       - "test_fixtures/test_mission_toolkit_package_migration.py"
+      - "test_fixtures/test_llm_client_package_migration.py"
+      - "test_fixtures/test_llm_db_tools_package_migration.py"
+      - "test_fixtures/test_llm_log_package_migration.py"
       - "test_fixtures/test_explore_event_package_migration.py"
       - "test_fixtures/test_legacy_root_tests_relocation.py"
       - "test_fixtures/test_standalone_operator_scripts_relocation.py"
@@ -185,6 +191,7 @@ jobs:
           python test_fixtures/test_src_layout_package.py
           python test_fixtures/test_mission_toolkit_package_migration.py
           python test_fixtures/test_explore_event_package_migration.py
+          python -m pytest -q test_fixtures/test_llm_client_package_migration.py test_fixtures/test_llm_db_tools_package_migration.py test_fixtures/test_llm_log_package_migration.py
           python test_fixtures/test_legacy_root_tests_relocation.py
           python test_fixtures/test_standalone_operator_scripts_relocation.py
           python test_fixtures/test_feature_trace_package_migration.py
