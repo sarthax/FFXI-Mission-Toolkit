@@ -1,10 +1,14 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Research Session{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}research-session-page{% endblock %}
-{% block content %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_class %}research-session-page{% endblock %}
+{% block page_back %}<a class="chip" href="/research">← Sessions</a>{% endblock %}
+{% block page_heading %}Research Session{% endblock %}
+{% block page_identity %}<span class="chip mono">{{ session.research_session_id }}</span>{% endblock %}
+{% block page_status %}<span class="chip">{{ session.verification_state }}</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/research/contradictions?session_id={{ session.research_session_id|urlencode }}">Contradictions</a>{% endblock %}
+{% block page_body %}
 <style>
-main.research-session-page{padding:8px 10px 24px}
 .research-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:5px;margin:6px 0}
 .research-meta .item{border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:5px 7px;min-width:0}
 .research-meta .k{font-size:10px;text-transform:uppercase;color:var(--muted);letter-spacing:.04em}
@@ -16,14 +20,6 @@ main.research-session-page{padding:8px 10px 24px}
 .research-run-grid label{display:flex;flex-direction:column;gap:3px}
 @media(max-width:850px){.research-run-grid{grid-template-columns:1fr}}
 </style>
-<div class="dense-toolbar">
-  <a class="chip" href="/research">← Sessions</a>
-  <strong>Research Session</strong>
-  <span class="chip mono">{{ session.research_session_id }}</span>
-  <span class="chip">{{ session.verification_state }}</span>
-  <span class="sp"></span>
-  <a class="chip" href="/research/contradictions?session_id={{ session.research_session_id|urlencode }}">Contradictions</a>
-</div>
 {% if created %}<div class="chip" style="margin:6px 0">Session created. No provider has been run by this page.</div>{% endif %}
 
 <div class="research-meta">
@@ -84,7 +80,7 @@ main.research-session-page{padding:8px 10px 24px}
 
 <details class="research-section"{% if session.tool_calls %} open{% endif %}><summary>Typed Tool Transcript <span class="chip">{{ session.tool_calls|length }}</span></summary><div class="body">
 {% if not session.tool_calls %}
-<p class="muted">No typed tool calls recorded.</p>
+<div class="wb-empty">No typed tool calls recorded.</div>
 {% else %}
 {% for call in session.tool_calls %}
 <details {% if loop.first %}open{% endif %}>
@@ -122,6 +118,6 @@ main.research-session-page{padding:8px 10px 24px}
 
 <details class="research-section"{% if session.final_report %} open{% endif %}><summary>Final Report {% if session.final_report %}<span class="chip">available</span>{% endif %}</summary><div class="body">
 {% if session.final_report %}<pre style="white-space:pre-wrap;max-height:70vh;overflow:auto">{{ session.final_report }}</pre>
-{% else %}<p class="muted">No final report recorded.</p>{% endif %}
+{% else %}<div class="wb-empty">No final report recorded.</div>{% endif %}
 </div></details>
 {% endblock %}

@@ -311,7 +311,10 @@ def main():
         capture_env.get_template(template_name)
         source=(TEMPLATES/template_name).read_text(encoding="utf-8")
         for marker in markers:
-            assert marker in source,(template_name,marker)
+            if marker == "{% block shell_mode %}dense{% endblock %}" and '{% extends "workbench_page.html" %}' in source:
+                assert marker in wrapper_source,(template_name,"wrapper must preserve dense shell mode")
+            else:
+                assert marker in source,(template_name,marker)
 
     client_overview_contracts = [
         "{% block shell_mode %}dense{% endblock %}",
