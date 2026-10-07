@@ -89,6 +89,7 @@ from workbench.devtools.reference import scrape_bg_wiki
 from workbench.devtools.entities import lookup as lookup_entity
 from workbench.packets import decode as packet_decode
 from workbench.runtime import settings_store as settings_mod
+from workbench.runtime.paths import REPO_ROOT
 from workbench.devtools.reference import wiki_compile
 from workbench.devtools.reference import wiki_evidence
 from workbench.devtools.reference import wiki_claim_compare
@@ -107,7 +108,7 @@ from workbench.migrations.package_scope import (
     set_scope_review_status,
 )
 
-TOOLS_ROOT = Path(__file__).parent
+TOOLS_ROOT = REPO_ROOT
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
 WORKBENCH_DB = TOOLS_ROOT / "workbench.db"
 TEMPLATES_DIR = TOOLS_ROOT / "gui" / "templates"
@@ -8801,7 +8802,7 @@ def zoneplot_live_info(zid: int):
 @app.get("/zoneplot/descriptors.json")
 def zoneplot_descriptors():
     import json as _j
-    d = Path(__file__).parent / "plot_descriptors"
+    d = TOOLS_ROOT / "plot_descriptors"
     return JSONResponse([_j.loads(f.read_text()) for f in sorted(d.glob("*.json"))])
 
 
