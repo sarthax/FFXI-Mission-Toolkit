@@ -6,7 +6,7 @@ import sqlite3
 import tempfile
 from pathlib import Path
 
-import feature_trace
+from workbench.devtools.features import trace as feature_trace
 from workbench.core import graph
 
 
