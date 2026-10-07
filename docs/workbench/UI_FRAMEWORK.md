@@ -80,3 +80,4 @@ Completed workspace migrations:
 - **Help** — Workbench usage guide and evidence-boundary reference (Detail, reading width).
 - **System confirmations** — Backup delete/restore and source rebuild confirmations (Editor, narrow; explicit destructive/write status), plus shutdown/restart status (Detail, narrow).
 - **Entity Gaps** — Zero-position/unregistered diagnostic browser (Browser, read-only).
+- **Key Items** — Client/server readiness and capture-evidence browser (Browser, read-only).
