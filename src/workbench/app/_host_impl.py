@@ -49,7 +49,7 @@ import build_sql_index
 import build_zone_visual_cache
 import entity_profile
 import explore_event
-import feature_trace
+from workbench.devtools.features import trace as feature_trace
 from workbench.core.services.feature_trace_catalog import present_relationships
 from workbench.core.services.feature_trace_dossier import build_dossier
 from workbench.core.services.feature_trace_binding_drilldown import binding_lookup as feature_trace_binding_lookup, behavior_engine_drilldown as feature_trace_behavior_engine_drilldown
@@ -66,7 +66,7 @@ from workbench.runtime.interaction_reconstruction import reconstruct_interaction
 from workbench.analyzers.server import lua_events
 from workbench.editors.character import gui as character_editor_gui
 character_editor_router = character_editor_gui.router
-import feature_checker
+from workbench.devtools.features import checker as feature_checker
 from workbench.core.services.feature_trace_closure import build_feature_trace_closure
 import ingest_global_tables
 import addon_tools
