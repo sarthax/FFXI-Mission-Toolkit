@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `88ed4b2011754acdee021e30e270a970b6b19028` after PR #606  
-Current work branch: `cleanup/feature-tools-phase3c40`  
+Current merged baseline: `main` at `709064ba26990cf4460471c405b8368e9cde9eda` after PR #607  
+Current work branch: `cleanup/standalone-scripts-phase3c41`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -97,33 +97,32 @@ reset_install.bat
 - PR #604 — retired the Assault/GM/Nyzul package-driver root wrappers and moved their Settings-derived defaults into the canonical drivers; Workbench #2790 + Src Layout #668 green.
 - PR #605 — retired `backport_lua_convert.py`, `backport_sql_convert.py`, and `backport_package.py`, moved package CLI defaults into the canonical orchestrator, and repointed active package guidance; Workbench #2791 + Src Layout #669 green.
 - PR #606 — retired `wiki_lookup.py`, `wiki_evidence.py`, and `wiki_claim_compare.py`, repointed Wiki regressions to canonical Development imports, and preserved staged adapter aliasing internally; Workbench #2792 + Src Layout #670 green.
+- PR #607 — retired `feature_trace.py` and `feature_checker.py`, normalized packaged-host imports for already-retired root modules, and promoted reusable external-tool installer logic into Runtime; Workbench #2805 + Src Layout #683 + Character Editor #203 green.
 
 ## Current slice
 
-### Slice 3c40 — retire Feature root entry points and normalize packaged-host imports
+### Slice 3c41 — relocate standalone operator scripts out of repository root
 
-Status: IN PROGRESS on `cleanup/feature-tools-phase3c40`.
+Status: IN PROGRESS on `cleanup/standalone-scripts-phase3c41`.
 
 Changes on this branch:
-- [x] remove root `feature_trace.py` and `feature_checker.py`.
-- [x] preserve canonical Development ownership at `workbench.devtools.features.trace` and `workbench.devtools.features.checker`.
-- [x] repoint the packaged host to canonical Feature Trace/Checker imports.
-- [x] repoint active direct Feature Trace regression callers to the canonical Development surface.
-- [x] migrate the focused Feature Trace package smoke to an explicit root-absence contract while retaining canonical dependency-binding assertions.
-- [x] update the Src Layout package contract to require both Feature root entry points absent and reject future first-party root Feature imports.
-- [x] retain the package-level `workbench.core.services.feature_checker` shim for older internal imports.
-- [x] normalize packaged-host imports for already-retired indexing, entity, package-migration, Wiki, and runtime modules so host startup no longer depends on deleted root compatibility files.
-- [x] move reusable external-tool installer implementation to `workbench.runtime.external_tools` and reduce `scripts/bootstrap/install_external_tools.py` to a thin launcher.
-- [x] strengthen external-tools and Src Layout regressions around the canonical Runtime/host contracts.
-- [x] add the missing Src Layout path trigger for `feature_checker.py`.
-- [x] keep still-live/high-risk root imports such as `build_capture_index.py`, `build_zone_visual_cache.py`, `explore_event.py`, `youtube_chat_ocr.py`, `packet_decode.py`, `settings.py`, and the legacy LLM trio out of this slice.
+- [x] move `build_item_repair_package.py` to `scripts/maintenance/build_item_repair_package.py`.
+- [x] move `seed_auction_house.py` to `scripts/maintenance/seed_auction_house.py`.
+- [x] move `tools_gen_dsp_enums.py` to `scripts/maintenance/generate_dsp_item_enums.py`.
+- [x] move `discord_inventory.py` and `discord_holiday_load.py` to `scripts/import/`.
+- [x] remove all five historical root copies rather than leave compatibility shims.
+- [x] replace item-repair repository-root derivation with `workbench.runtime.paths.REPO_ROOT`.
+- [x] make DSP enum generation resolve the configured DSP checkout through `legacy_settings` and write generated output through `REPO_ROOT`.
+- [x] update Auction House, generated-enum, and script usage references to the new paths.
+- [x] add a focused relocation regression covering root absence, destination presence, and path-safe behavior.
+- [x] add Src Layout triggers/execution coverage for the moved script families.
+- [x] update Src Layout status to record the repository-structure cleanup.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Run Character Editor Regression because the packaged host import surface changed.
-- [ ] Fix only regressions caused by Feature/root-host import normalization.
-- [ ] Merge only when all relevant gates are green.
+- [ ] Fix only regressions caused by standalone script relocation.
+- [ ] Merge only when green.
 
 ## Explicitly retained / deferred
 
@@ -140,7 +139,7 @@ Before merge:
 - final application/bootstrap compatibility files such as `gui_server.py`, `settings.py`, and `id_bridge.py` only after their caller contracts are intentionally retired.
 
 ### Standalone operator scripts
-PENDING. Move appropriate commands under `scripts/{maintenance,import,diagnostics}` after caller/path audit. Known candidates include `build_item_repair_package.py`, `seed_auction_house.py`, `discord_inventory.py`, and `discord_holiday_load.py`.
+IN PROGRESS in slice 3c41. Five known root maintenance/import scripts are being relocated under `scripts/{maintenance,import}` with path contracts and Src Layout regression coverage.
 
 ### Tests and high-fan-in compatibility removal
 PENDING. Move remaining root `test_*.py`, migrate `build_capture_index.py` callers, and consider `test_fixtures/` → `tests/fixtures/` only with workflow/discovery updates.
