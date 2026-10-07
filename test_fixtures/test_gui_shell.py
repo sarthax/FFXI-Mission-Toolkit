@@ -507,8 +507,9 @@ def main():
 
     packages_html = render("packages_library.html", "/packages", q="", project_root="C:/workspace", packages=[])
     assert '<body class="shell-dense">' in packages_html
-    assert '<strong>Package Library</strong>' in packages_html
-    assert 'form class="search dense-toolbar"' in packages_html
+    assert 'wb-archetype-browser' in packages_html
+    assert 'class="wb-page-title">Package Library</span>' in packages_html
+    assert 'form class="search wb-filter-row"' in packages_html
 
     validation_shell = context_for("/validation")
     assert validation_shell["active_home"] == "Validation"
