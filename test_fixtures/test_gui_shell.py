@@ -556,8 +556,9 @@ def main():
 
     events_html = render("events.html", "/events", zones=[], zone="", q="", rows=[], generated_note=None, health_summary={})
     assert '<body class="shell-dense">' in events_html
-    assert '<strong>Events / CSID Browser</strong>' in events_html
-    assert 'form class="search dense-toolbar"' in events_html
+    assert 'wb-archetype-browser' in events_html
+    assert 'class="wb-page-title">Events / CSID Browser</span>' in events_html
+    assert 'form class="search wb-filter-row"' in events_html
 
     packets_html = render("packets.html", "/packets", q="", direction="s2c", opcodes=[])
     assert '<body class="shell-dense">' in packets_html
