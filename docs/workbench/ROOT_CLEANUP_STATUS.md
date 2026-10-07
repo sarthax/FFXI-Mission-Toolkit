@@ -81,25 +81,26 @@ reset_install.bat
 - PR #588 — retired `lua_event_index.py`; Workbench #2769 + Src Layout #647 green after activating and refreshing the canonical Lua-event regression.
 - PR #589 — retired `zone_animation_meta.py`; Workbench #2773 + Src Layout #651 green after activating its package regression and adding explicit optional-dependency stubs.
 - PR #590 — retired `build_condition_index.py`; Workbench #2774 + Src Layout #652 green.
+- PR #591 — retired `wiki_compile.py`; Workbench #2775 + Src Layout #653 green.
 
 ## Current slice
 
-### Slice 3c24 — retire wiki compiler root launcher
+### Slice 3c25 — retire mission event reconciliation root launcher
 
-Status: IN PROGRESS on `cleanup/wiki-compile-phase3c24`.
+Status: IN PROGRESS on `cleanup/mission-event-reconcile-phase3c25`.
 
 Changes on this branch:
-- [x] remove root `wiki_compile.py`.
-- [x] preserve canonical Development reference ownership at `workbench.devtools.reference.wiki_compile`.
-- [x] preserve direct packaged CLI execution, including UTF-8 stdout handling, through `python -m workbench.devtools.reference.wiki_compile`.
-- [x] migrate the focused package regression from root-alias identity to an explicit root-absence contract.
-- [x] add the retired root name and focused migration smoke to Src Layout trigger/execution coverage.
-- [x] update the active GUI roadmap to reference the canonical package surface.
+- [x] move the mission-event reconciliation CLI into `workbench.devtools.missions.event_reconcile`.
+- [x] preserve preview-by-default and explicit `--write` persistence semantics.
+- [x] preserve the package compatibility surface at `workbench.plugins.domain.mission_event_reconcile`.
+- [x] remove root `mission_event_reconcile.py`.
+- [x] migrate the focused package regression from root-module loading to an explicit root-absence contract.
+- [x] update Src Layout status to distinguish the retained package shim from the retired root CLI.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by wiki compiler launcher retirement.
+- [ ] Fix only regressions caused by mission-event CLI migration/launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
