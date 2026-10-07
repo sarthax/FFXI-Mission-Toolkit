@@ -3,7 +3,7 @@
 {% block page_archetype %}browser{% endblock %}
 {% block page_class %}binding-reference-page{% endblock %}
 {% block page_heading %}Binding Reference{% endblock %}
-{% block page_actions %}<a class="chip" href="/backport/package">Package workflow</a><a class="chip" href="/backport/lua-convert">Lua converter</a><a class="chip" href="/backport/sql-convert">SQL converter</a>{% if trace_q %}<a class="chip" href="/features/trace?q={{ trace_q|urlencode }}">Feature Trace {{ trace_q }}</a>{% endif %}{% endblock %}
+{% block page_actions %}<a class="chip" href="/backport/package">Package workflow</a><a class="chip" href="/backport/lua-convert">Lua converter</a><a class="chip" href="/backport/sql-convert">SQL converter</a>{% if trace_q %}<a class="chip" href="/features/trace?q={{ trace_q|urlencode }}">Feature Trace entity {{ trace_q }}</a>{% endif %}{% endblock %}
 {% block page_help %}Reference lookup for Lua method bindings registered in Topaz and old-dsp-reference, including confirmed namespace renames and source locations.{% endblock %}
 
 {% macro pager() %}
