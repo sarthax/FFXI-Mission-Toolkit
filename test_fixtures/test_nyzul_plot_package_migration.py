@@ -64,6 +64,11 @@ local pTableFloorRandomEntities =
 {
     [1] = { ID.mob.MOB_OFFSET, ID.mob.MOB_OFFSET + 11 }, -- Aquans
 }
+
+local function bossFloor(instance, floorBoss)
+    GetMobByID(ID.mob.ARCHAIC_RAMPART_OFFSET, instance):setSpawn(-36, 0, -362, 0)
+    GetMobByID(floorBoss, instance):setSpawn(-55.000, 1, -380.000, 250)
+end
 """,
     )
     _write(
