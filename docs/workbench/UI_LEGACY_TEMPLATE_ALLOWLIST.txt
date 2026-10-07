@@ -40,7 +40,6 @@ entity.html | legacy page pending archetype migration
 entity_detail.html | legacy page pending archetype migration
 feature_checker.html | legacy page pending archetype migration
 feature_trace.html | legacy page pending archetype migration
-gaps.html | legacy page pending archetype migration
 home.html | legacy page pending archetype migration
 itembrowser.html | legacy page pending archetype migration
 itemedit.html | legacy page pending archetype migration
