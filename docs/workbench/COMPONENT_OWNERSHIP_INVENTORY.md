@@ -160,9 +160,9 @@ Every root-level Python file present at the start of Phase A has exactly one own
 | `install_external_tools.py` | Bootstrap → `scripts/bootstrap/install_external_tools.py` | Update setup wrapper atomically. |
 | `install_xi_tinkerer.py` | Bootstrap → `scripts/bootstrap/install_xi_tinkerer.py` | Same. |
 | `reset_install.py` | Bootstrap → `scripts/bootstrap/reset_install.py` | Update `reset_install.bat` atomically. |
-| `test_backport_lua_convert.py` | Tests → `tests/regression/packages/test_backport_lua_convert.py` | Validation/Packages regression. |
-| `test_backport_sql_convert.py` | Tests → `tests/regression/packages/test_backport_sql_convert.py` | Validation/Packages regression. |
-| `test_capture_ingestion.py` | Tests → `tests/regression/captures/test_capture_ingestion.py` | Capture regression. |
+| `tests/legacy/test_backport_lua_convert.py` | Tests → `tests/regression/packages/tests/legacy/test_backport_lua_convert.py` | Validation/Packages regression. |
+| `tests/legacy/test_backport_sql_convert.py` | Tests → `tests/regression/packages/tests/legacy/test_backport_sql_convert.py` | Validation/Packages regression. |
+| `tests/legacy/test_capture_ingestion.py` | Tests → `tests/regression/captures/tests/legacy/test_capture_ingestion.py` | Capture regression. |
 
 Root total check: **4 + 7 + 18 + 39 + 4 + 18 + 7 = 97**.
 
