@@ -42,12 +42,12 @@ import yaml
 from PIL import Image, ImageDraw
 
 import build_capture_index
-from workbench.devtools.indexing import build_database
-from workbench.devtools.reference.dialog import build_index as build_dialog_index
-from workbench.devtools.indexing import build_npc_index
-from workbench.devtools.indexing import build_sql_index
+import build_database
+import build_dialog_index
+import build_npc_index
+import build_sql_index
 import build_zone_visual_cache
-from workbench.devtools.entities import profile as entity_profile
+import entity_profile
 import explore_event
 from workbench.devtools.features import trace as feature_trace
 from workbench.core.services.feature_trace_catalog import present_relationships
@@ -68,31 +68,31 @@ from workbench.editors.character import gui as character_editor_gui
 character_editor_router = character_editor_gui.router
 from workbench.devtools.features import checker as feature_checker
 from workbench.core.services.feature_trace_closure import build_feature_trace_closure
-from workbench.client.dat import global_tables as ingest_global_tables
-from workbench.runtime import addon_tools
-from workbench.runtime import external_tools as install_external_tools
-from workbench.devtools.indexing import build_lsb_index
+import ingest_global_tables
+import addon_tools
+import install_external_tools
+import build_lsb_index
 import youtube_chat_ocr
-from workbench.packages.migration import lua_convert as backport_lua_convert
-from workbench.packages.migration import sql_convert as backport_sql_convert
-from workbench.validation.packages import binding_index as backport_binding_index
-from workbench.validation.packages import binding_audit as backport_binding_audit
-from workbench.validation.packages import lua_sanity as backport_lua_sanity_check
-from workbench.packages.migration import orchestrator as backport_package
+import backport_lua_convert
+import backport_sql_convert
+import backport_binding_index
+import backport_binding_audit
+import backport_lua_sanity_check
+import backport_package
 from workbench.migrations.legacy_package_service import run_legacy_package_workflow
-from workbench.devtools.indexing import build_dsp_index
-from workbench.devtools.indexing import build_topaz_index
+import build_dsp_index
+import build_topaz_index
 import llm_client
 import llm_log
 import llm_db_tools
-from workbench.devtools.reference import scrape_bg_wiki
-from workbench.devtools.entities import lookup as lookup_entity
+import scrape_bg_wiki
+import lookup_entity
 import packet_decode
 import settings as settings_mod
-from workbench.devtools.reference import wiki_compile
-from workbench.devtools.reference import wiki_evidence
-from workbench.devtools.reference import wiki_claim_compare
-from workbench.devtools.reference import wiki_evidence_graph
+import wiki_compile
+import wiki_evidence
+import wiki_claim_compare
+from workbench.core.services import wiki_evidence_graph
 from workbench.gui_shell import build_shell_context
 from workbench.adapters.servers import LogicalRecord, adapter_for
 from workbench.migrations.live_target_validation import DBAPITargetReader, persist_live_validation, validate_live_records
