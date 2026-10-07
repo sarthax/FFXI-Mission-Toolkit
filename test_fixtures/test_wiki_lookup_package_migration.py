@@ -9,17 +9,12 @@ import sys
 import tempfile
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-import wiki_lookup as legacy
 from workbench.devtools.reference import wiki_lookup as canonical
 from workbench.runtime.paths import VENDOR_ROOT
 
 
 def main() -> None:
-    assert legacy.clean_wikitext is canonical.clean_wikitext
-    assert legacy.load_pages is canonical.load_pages
+    assert not (REPO_ROOT / "wiki_lookup.py").exists()
     assert canonical.DUMP_PATH == VENDOR_ROOT / "ffxi-wiki-dumps-dist" / "bg-wiki.jsonl.gz"
     with tempfile.TemporaryDirectory() as tmp:
         env=dict(os.environ)

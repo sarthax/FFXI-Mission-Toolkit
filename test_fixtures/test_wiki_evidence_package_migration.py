@@ -9,11 +9,6 @@ import sys
 import tempfile
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-import wiki_evidence as legacy_evidence
-import wiki_claim_compare as legacy_compare
 from workbench.devtools.reference import wiki_evidence as canonical_evidence
 from workbench.devtools.reference import wiki_claim_compare as canonical_compare
 from workbench.devtools.reference import wiki_lookup as canonical_lookup
@@ -21,8 +16,8 @@ from workbench.runtime.paths import DATABASE_PATH, VENDOR_ROOT
 
 
 def main() -> None:
-    assert legacy_evidence is canonical_evidence
-    assert legacy_compare is canonical_compare
+    assert not (REPO_ROOT / "wiki_evidence.py").exists()
+    assert not (REPO_ROOT / "wiki_claim_compare.py").exists()
     assert canonical_evidence.wiki_lookup is canonical_lookup
     assert canonical_compare.wiki_evidence is canonical_evidence
     assert canonical_evidence.DB_PATH == DATABASE_PATH
@@ -30,7 +25,7 @@ def main() -> None:
 
     original = canonical_evidence.find_reference_page
     marker = lambda *_args, **_kwargs: None
-    legacy_evidence.find_reference_page = marker
+    canonical_evidence.find_reference_page = marker
     try:
         assert canonical_evidence.find_reference_page is marker
         assert canonical_evidence.ingest_page.__globals__["find_reference_page"] is marker

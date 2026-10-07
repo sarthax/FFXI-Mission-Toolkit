@@ -9,10 +9,10 @@ rough reward, walkthrough shape) then verify anything load-bearing (ids, exact d
 mechanics) against Topaz's own SQL/Lua/dat-extractor output before relying on it.
 
 Usage:
-    python wiki_lookup.py title "Promotion: Lance Corporal"     # exact/substring title match
-    python wiki_lookup.py title "Promotion: Lance Corporal" --raw   # dump full raw wikitext
-    python wiki_lookup.py category Mission --limit 20           # list pages in a category
-    python wiki_lookup.py category Mission --zone "Ilrusi Atoll" # AND filter on title/text
+    python -m workbench.devtools.reference.wiki_lookup title "Promotion: Lance Corporal"     # exact/substring title match
+    python -m workbench.devtools.reference.wiki_lookup title "Promotion: Lance Corporal" --raw   # dump full raw wikitext
+    python -m workbench.devtools.reference.wiki_lookup category Mission --limit 20           # list pages in a category
+    python -m workbench.devtools.reference.wiki_lookup category Mission --zone "Ilrusi Atoll" # AND filter on title/text
 """
 import argparse
 import gzip
