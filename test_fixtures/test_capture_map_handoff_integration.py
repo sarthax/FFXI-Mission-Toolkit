@@ -6,7 +6,7 @@ import json
 import sqlite3
 import struct
 
-import build_capture_index
+from workbench.captures.ingestion import build_index as build_capture_index
 from workbench.captures import map_framing
 
 
