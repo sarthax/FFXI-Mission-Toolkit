@@ -6,9 +6,9 @@ Baseline: 2026-09-25
 ## Current state
 
 The toolkit already has a useful but narrow local-model integration:
-- `llm_client.py` talks to Open WebUI/Ollama and treats model output as draft-only.
-- `llm_db_tools.py` exposes read-only SQLite research tools.
-- `llm_log.py` and the GUI preserve model interaction history.
+- `workbench.devtools.research.legacy_llm.client` talks to Open WebUI/Ollama and treats model output as draft-only.
+- `workbench.devtools.research.legacy_llm.db_tools` exposes read-only SQLite research tools.
+- `workbench.devtools.research.legacy_llm.log` and the GUI preserve model interaction history.
 
 Those constraints remain. The rework now includes the first implementation slice: persistent ResearchSession records, provider-neutral adapters, a permission-aware typed tool registry, bounded source crawling, canonical graph search/trace tools, and a bounded research runner. Capability should continue expanding through typed Workbench evidence, not by relaxing evidence discipline.
 
@@ -221,9 +221,9 @@ Provider/model quality can then be evaluated separately from Workbench safety/ev
 
 ## Migration from current implementation
 
-1. Keep `llm_client.py` functional as a compatibility entry point.
+1. Keep `workbench.devtools.research.legacy_llm.client` functional as a compatibility entry point.
 2. Move provider behavior under `workbench/research/providers/`.
-3. Wrap `llm_db_tools.py` as one tool provider rather than the complete LLM capability.
+3. Wrap `workbench.devtools.research.legacy_llm.db_tools` as one tool provider rather than the complete LLM capability.
 4. Add typed graph/server/packet/capture tools first.
 5. Add ResearchSession persistence and provenance.
 6. Update the GUI to render tool/evidence trails, proposed findings, contradictions, and verification state.
