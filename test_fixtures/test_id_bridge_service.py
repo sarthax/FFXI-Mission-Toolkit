@@ -5,12 +5,14 @@ from __future__ import annotations
 import io
 import sqlite3
 from contextlib import redirect_stdout
+from pathlib import Path
 
 from workbench.core.services import id_bridge
 from workbench.runtime.paths import DATABASE_PATH
 
 
 def main() -> None:
+    assert not (Path(__file__).resolve().parents[1] / "id_bridge.py").exists()
     assert id_bridge.DB_PATH == DATABASE_PATH
     assert id_bridge.normalize("Chocobo Bedding") == "chocobobedding"
 

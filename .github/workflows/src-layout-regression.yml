@@ -69,6 +69,8 @@ on:
       - "backport_lua_convert.py"
       - "backport_sql_convert.py"
       - "backport_sql_live_check.py"
+      - "nyzul_plot.py"
+      - "id_bridge.py"
       - "backport_convert_7_packages.py"
       - "backport_convert_gm_debug_tools.py"
       - "backport_convert_nyzul_package.py"
@@ -149,6 +151,8 @@ on:
       - "test_fixtures/test_lua_converter_map_lint_package_migration.py"
       - "test_fixtures/test_sql_convert_package_migration.py"
       - "test_fixtures/test_sql_live_check_package_migration.py"
+      - "test_fixtures/test_nyzul_plot_package_migration.py"
+      - "test_fixtures/test_id_bridge_service.py"
       - "test_fixtures/test_package_conversion_drivers_migration.py"
       - "test_fixtures/test_nyzul_backport_wrapper_settings.py"
       - "test_fixtures/test_gm_debug_backport_wrapper_settings.py"
@@ -244,6 +248,8 @@ jobs:
           python test_fixtures/test_lua_converter_map_lint_package_migration.py
           python test_fixtures/test_sql_convert_package_migration.py
           python test_fixtures/test_sql_live_check_package_migration.py
+          python test_fixtures/test_id_bridge_service.py
+          python -m pytest -q test_fixtures/test_nyzul_plot_package_migration.py
           python test_fixtures/test_package_conversion_drivers_migration.py
           python -m pytest -q test_fixtures/test_assault_backport_wrapper_settings.py test_fixtures/test_gm_debug_backport_wrapper_settings.py test_fixtures/test_nyzul_backport_wrapper_settings.py
           python test_fixtures/test_backport_package_orchestrator_migration.py

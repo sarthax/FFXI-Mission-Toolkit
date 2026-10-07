@@ -1,7 +1,6 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-import nyzul_plot as legacy
 from workbench.devtools.domains import nyzul_plot as canonical
 from workbench.runtime.paths import DATA_ROOT
 
@@ -65,6 +64,11 @@ local pTableFloorRandomEntities =
 {
     [1] = { ID.mob.MOB_OFFSET, ID.mob.MOB_OFFSET + 11 }, -- Aquans
 }
+
+local function bossFloor(instance, floorBoss)
+    GetMobByID(ID.mob.ARCHAIC_RAMPART_OFFSET, instance):setSpawn(-36, 0, -362, 0)
+    GetMobByID(floorBoss, instance):setSpawn(-55.000, 1, -380.000, 250)
+end
 """,
     )
     _write(
@@ -72,6 +76,15 @@ local pTableFloorRandomEntities =
         "scripts/globals/nyzul.lua",
         """xi = xi or {}
 xi.nyzul = xi.nyzul or {}
+xi.nyzul.objective =
+{
+    ELIMINATE_ENEMY_LEADER = 1,
+    ELIMINATE_SPECIFIED_ENEMIES = 2,
+    ACTIVATE_ALL_LAMPS = 3,
+    ELIMINATE_SPECIFIED_ENEMY = 4,
+    ELIMINATE_ALL_ENEMIES = 5,
+    FREE_FLOOR = 6,
+}
 xi.nyzul.FloorLayout =
 {
     [0] = { -20, -0.5, -380 },
@@ -126,6 +139,37 @@ zones[xi.zone.NYZUL_ISLE] =
     at: [1, 1, 1]
 """,
     )
+    _write(
+        root,
+        "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+        """local function pickSetPoint(instance)
+    local currentFloor = instance:getLocalVar('Nyzul_Current_Floor')
+    instance:setLocalVar('Nyzul_Isle_FloorLayout', math.randomInt(1, (#xi.nyzul.FloorLayout - 0)))
+    instance:setLocalVar('gearObjective', 0)
+
+    if currentFloor % 20 == 0 then
+        instance:setStage(xi.nyzul.objective.ELIMINATE_ENEMY_LEADER)
+        instance:setLocalVar('Nyzul_Isle_FloorLayout', 0)
+    elseif math.randomInt(1, 30) == 1 and instance:getLocalVar('freeFloor') == 0 then
+        instance:setStage(xi.nyzul.objective.FREE_FLOOR)
+        instance:setLocalVar('freeFloor', 1)
+    else
+        local objective = {}
+        for i = xi.nyzul.objective.ELIMINATE_ENEMY_LEADER, xi.nyzul.objective.ELIMINATE_ALL_ENEMIES do
+            table.insert(objective, i)
+        end
+        if instance:getStage() ~= 0 and instance:getStage() ~= 6 then
+            table.remove(objective, instance:getStage())
+        end
+        instance:setStage(utils.randomEntry(objective))
+        if math.randomInt(1, 30) <= 5 then
+            instance:setLocalVar('gearObjective', math.randomInt(xi.nyzul.gearObjective.AVOID_AGRO, xi.nyzul.gearObjective.DO_NOT_DESTROY))
+        end
+    end
+    instance:setLocalVar('menuChoice', math.randomInt(1, 20))
+end
+""",
+    )
 
     if with_nav:
         nav = root / "navmeshes/Nyzul_Isle.nav"
@@ -145,13 +189,9 @@ def _patch_profiles(monkeypatch, *, active, profiles=(), legacy_dsp=None):
     monkeypatch.setitem(resolver.__globals__, "get_dsp_root", lambda: legacy_dsp)
 
 
-def test_root_module_is_packaged_implementation():
-    assert legacy is canonical
+def test_root_module_is_retired():
+    assert not (Path(__file__).resolve().parents[1] / "nyzul_plot.py").exists()
     assert canonical.EXCL_FILE == DATA_ROOT / "nyzul_exclusions.json"
-    root_source = (Path(__file__).resolve().parents[1] / "nyzul_plot.py").read_text(encoding="utf-8")
-    assert "_nyzul_profile_bridge" in root_source
-    assert "def _configured_server_source" not in root_source
-    assert "def _load_data" not in root_source
 
 
 def test_nyzul_gui_routes_explicit_dsp_to_legacy_dsp_adapter(tmp_path, monkeypatch):

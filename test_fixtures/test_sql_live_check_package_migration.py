@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -9,14 +8,6 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-
-def _load_root(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return sys.modules[name]
 
 
 class FakeCursor:
@@ -52,9 +43,7 @@ class FakeCursor:
 def main() -> None:
     live = importlib.import_module("workbench.validation.live_db.sql_check")
     converter = importlib.import_module("workbench.packages.migration.sql_convert")
-    legacy = _load_root("backport_sql_live_check", REPO_ROOT / "backport_sql_live_check.py")
-
-    assert legacy is live
+    assert not (REPO_ROOT / "backport_sql_live_check.py").exists()
     assert live.bsc is converter
     assert sys.modules["backport_sql_convert"] is converter
     assert live.parse_id_range("1,3-5,9") == [1, 3, 4, 5, 9]

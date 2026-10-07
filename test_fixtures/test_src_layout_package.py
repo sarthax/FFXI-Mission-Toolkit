@@ -136,6 +136,9 @@ def main() -> None:
         "client_model_resolver.py",
         "feature_checker.py",
         "feature_trace.py",
+        "id_bridge.py",
+        "nyzul_plot.py",
+        "backport_sql_live_check.py",
     )
     for name in retired:
         assert not (ROOT / name).exists(), name
@@ -191,12 +194,7 @@ def main() -> None:
             legacy_feature_callers.append(path.relative_to(ROOT).as_posix())
     assert legacy_feature_callers == [], legacy_feature_callers
 
-    id_bridge_wrapper_path = ROOT / "id_bridge.py"
-    assert id_bridge_wrapper_path.is_file()
-    id_bridge_wrapper = id_bridge_wrapper_path.read_text(encoding="utf-8")
-    assert "workbench.core.services.id_bridge" in id_bridge_wrapper
-    assert "Path(__file__)" not in id_bridge_wrapper
-    assert "sqlite3.connect" not in id_bridge_wrapper
+    assert not (ROOT / "id_bridge.py").exists()
 
     workflow = (ROOT / ".github" / "workflows" / "workbench-regression.yml").read_text(encoding="utf-8")
     assert '- "src/workbench/**"' in workflow

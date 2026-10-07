@@ -204,7 +204,7 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
     `(poolid, zoneid)`, its real identity per `dsp_sql_schema_map.json`'s own composite-PK note)
     and `check_content_duplication()`, the offline (indexed-snapshot) counterpart to
     `check_id_collisions()`.
-  - `backport_sql_live_check.py`: `check_live_content_duplication()` (classifies each match by real
+  - `workbench.validation.live_db.sql_check`: `check_live_content_duplication()` (classifies each match by real
     live impact — `harmless` / `live_conflict` / `orphaned` / `ambiguous`, using a real
     `mob_spawn_points` join, not just presence/absence) and a new `--scan-duplicates TABLE` flag
     for a standalone, periodic full-DB health check independent of any candidate package.
@@ -407,7 +407,7 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
     downstream reference (`mob_spawn_points.groupid`, `mob_groups.dropid`) updated to match.
     10-test regression suite (`tests/legacy/test_backport_sql_convert.py`), matching the Lua converter's
     testing discipline.
-  - `backport_sql_live_check.py` — a live-MySQL counterpart to the snapshot-based checker above,
+  - `workbench.validation.live_db.sql_check` — a live-MySQL counterpart to the snapshot-based checker above,
     for DSP_TRANSITION_PLAN.md task 4 (`[NEEDS DBA/ADMIN]`, live Valhalla-target DB access we don't
     have). Runs the exact same same-entity-vs-real-collision classification against a REAL live
     database instead of the indexed snapshot -- read-only (`SELECT` only, never writes), ready to

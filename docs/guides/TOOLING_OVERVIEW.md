@@ -339,7 +339,7 @@ Older docs and scripts may still mention standalone names such as:
 
 - `mission_toolkit.py`,
 - `build_database.py`,
-- `id_bridge.py`,
+- `workbench.core.services.id_bridge`,
 - `workbench.devtools.reference.wiki_lookup`,
 - older NPCLogger cross-reference scripts.
 
