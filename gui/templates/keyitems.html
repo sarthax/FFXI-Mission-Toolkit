@@ -1,7 +1,10 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Key Items{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}keyitems-page{% endblock %}
+{% block page_archetype %}browser{% endblock %}
+{% block page_class %}keyitems-page{% endblock %}
+{% block page_heading %}Key Items{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Read only</span>{% endblock %}
+{% block page_help %}Client key-item names and descriptions cross-referenced against server enums, scripting constants, readiness, optional Topaz backport state, and observed capture evidence.{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -21,14 +24,8 @@
 {% endif %}
 {% endmacro %}
 
-{% block content %}
-<style>main.keyitems-page{padding:8px 10px 24px}</style>
-<div class="dense-toolbar">
-  <strong>Key Items</strong>
-  <span class="sp"></span>
-  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:720px">Client key-item names/descriptions cross-referenced against server enums, scripting constants, readiness, and observed capture evidence.</div></details>
-</div>
-<form class="search dense-toolbar" method="get" style="margin:6px 0">
+{% block page_body %}
+<form class="search wb-filter-row" method="get">
   <input type="text" name="q" value="{{ q }}" placeholder="search by name, e.g. Zeruhn">
   <button type="submit">Search</button>
 </form>
