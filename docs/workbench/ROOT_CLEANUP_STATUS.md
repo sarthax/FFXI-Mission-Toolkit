@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `efa4e910a1eb23144e6638a882c12c6471d0dd9d` after PR #586  
-Current work branch: `cleanup/entity-devtools-phase3c20`  
+Current merged baseline: `main` at `4c0ca296fe59e18e937a7d220626ff97fc3d266e` after PR #587  
+Current work branch: `cleanup/lua-event-index-phase3c21`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -77,26 +77,26 @@ reset_install.bat
 - PR #584 — added the post-cleanup Workbench UI Framework / Unified Module Layout roadmap phase.
 - PR #585 — retired `pull_mob_positions.py`, `zmesh.py`, and `build_plot_descriptors.py`; Workbench #2764 + Src Layout #642 green.
 - PR #586 — retired `fix_zone_door_props.py`; Workbench #2765 + Src Layout #643 green.
+- PR #587 — retired `lookup_entity.py` and `entity_profile.py`, removing the temporary Entity Profile root-import alias bridge; Workbench #2766 + Src Layout #644 green.
 
 ## Current slice
 
-### Slice 3c20 — retire Development entity root launchers
+### Slice 3c21 — retire Lua event analyzer root launcher
 
-Status: IN PROGRESS on `cleanup/entity-devtools-phase3c20`.
+Status: IN PROGRESS on `cleanup/lua-event-index-phase3c21`.
 
 Changes on this branch:
-- [x] rewrite Entity Profile implementation imports to canonical package paths.
-- [x] remove the temporary `sys.modules` alias bridge from the canonical Entity Profile adapter.
-- [x] preserve direct CLI execution through `python -m workbench.devtools.entities.profile`, including UTF-8 output handling.
-- [x] migrate active Entity Profile/Entity Dossier regressions to package imports and root-absence contracts.
-- [x] add focused Entity Profile migration coverage to Src Layout.
-- [x] remove root `lookup_entity.py` and `entity_profile.py`.
-- [x] refresh active Entity Profile CLI/UI references to the canonical package surface.
+- [x] remove root `lua_event_index.py`.
+- [x] preserve canonical analyzer ownership and direct CLI execution at `workbench.analyzers.server.lua_events`.
+- [x] replace the remaining Capture Graph CLI help reference with the packaged `python -m` command.
+- [x] update Src Layout status to mark the compatibility entry point retired.
+- [x] extend the existing canonical Lua event type-propagation regression with an explicit root-absence contract.
+- [x] add that regression and root filename to Src Layout trigger/execution coverage.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by entity launcher retirement.
+- [ ] Fix only regressions caused by Lua event launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
