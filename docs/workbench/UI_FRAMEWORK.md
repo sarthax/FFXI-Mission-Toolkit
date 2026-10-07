@@ -81,3 +81,4 @@ Completed workspace migrations:
 - **System confirmations** — Backup delete/restore and source rebuild confirmations (Editor, narrow; explicit destructive/write status), plus shutdown/restart status (Detail, narrow).
 - **Entity Gaps** — Zero-position/unregistered diagnostic browser (Browser, read-only).
 - **Key Items** — Client/server readiness and capture-evidence browser (Browser, read-only).
+- **Assault Missions** — Mission text and observed implementation-coverage browser (Browser).
