@@ -82,9 +82,9 @@ from workbench.packages.migration import orchestrator as backport_package
 from workbench.migrations.legacy_package_service import run_legacy_package_workflow
 from workbench.devtools.indexing import build_dsp_index
 from workbench.devtools.indexing import build_topaz_index
-import llm_client
-import llm_log
-import llm_db_tools
+from workbench.devtools.research.legacy_llm import client as llm_client
+from workbench.devtools.research.legacy_llm import log as llm_log
+from workbench.devtools.research.legacy_llm import db_tools as llm_db_tools
 from workbench.devtools.reference import scrape_bg_wiki
 from workbench.devtools.entities import lookup as lookup_entity
 from workbench.packets import decode as packet_decode
