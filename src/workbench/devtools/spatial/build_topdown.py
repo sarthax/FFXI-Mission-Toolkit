@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build coordinate-aligned top-down zone silhouettes from real client geometry.
 
-Canonical src-layout implementation for the legacy ``build_zone_topdown.py`` entry point.
+Canonical src-layout implementation for zone top-down cache generation.
 Generated PNG/JSON cache files intentionally remain under ``gui/static/zone_topdown``.
 """
 from __future__ import annotations
