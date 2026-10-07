@@ -151,7 +151,7 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
 
 ## Completed
 
-- **2026-09-21: Zone Plot (`zone_plot.py`/`zone_edit.py`/`gui/templates/zone_plot.html`) — server-
+- **2026-09-21: Zone Plot (`workbench.devtools.spatial.active_zone_plot`/`zone_edit.py`/`gui/templates/zone_plot.html`) — server-
   agnostic live level editor, Add-tab UX overhaul, and a zone-switch rendering race fix.** Zone
   Plot (View/Edit/Add/Backups on `/zoneplot`) draws every mob/NPC/door spawn row of a zone from
   the *live* server DB over the real client mesh + navmesh, and can add/move/delete rows straight
