@@ -8,6 +8,19 @@ from workbench.packages.migration import lua_convert as blc
 PKG_ROOT_BASE: Path | None = None
 DSP_ROOT: Path | None = None
 
+
+def _default_package_root_base() -> Path | None:
+    from workbench.runtime import legacy_settings
+
+    backport_root = legacy_settings.get_backport_root()
+    return (backport_root / "mission-packages") if backport_root is not None else None
+
+
+def _default_dsp_root() -> Path | None:
+    from workbench.runtime import legacy_settings
+
+    return legacy_settings.get_dsp_root()
+
 PACKAGES = [
     "leujaoam_sanctum_missions_1-4",
     "mamool_ja_training_grounds_missions_1-4",
@@ -75,8 +88,8 @@ def convert_package(pkg_name: str, ns_map: dict, package_root_base: Path | None 
 
 
 def main(package_root_base: Path | None = None, dsp_root: Path | None = None):
-    root_base = package_root_base or PKG_ROOT_BASE
-    target = dsp_root or DSP_ROOT
+    root_base = package_root_base or PKG_ROOT_BASE or _default_package_root_base()
+    target = dsp_root or DSP_ROOT or _default_dsp_root()
     if root_base is None:
         raise SystemExit("No backport checkout configured -- set Settings' backport_root first.")
     if target is None:
