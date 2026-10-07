@@ -7,7 +7,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-import capture_backtrace
+from workbench.captures.correlation import backtrace as capture_backtrace
 import item_dat_tools
 from workbench.devtools.reference import scrape_bg_wiki
 

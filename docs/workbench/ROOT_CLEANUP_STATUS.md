@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `3d5e17289122786c8fcc67d981090afdc354998a` after PR #595  
-Current work branch: `cleanup/packet-opcode-index-phase3c29`  
+Current merged baseline: `main` at `580990c8eb2b7e1de20b3a2cbeff083aff75508f` after PR #596  
+Current work branch: `cleanup/capture-backtrace-phase3c30`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -86,26 +86,26 @@ reset_install.bat
 - PR #593 — retired `mission_graph_ingest.py`, exposing the existing packaged CLI through `python -m workbench.devtools.missions.graph_ingest`; Workbench #2777 + Src Layout #655 green.
 - PR #594 — retired `salvage_reconstruct.py`; Workbench #2778 + Src Layout #656 green.
 - PR #595 — retired `addon_tools.py` and moved active usage guidance to `python -m workbench.runtime.addon_tools`; Workbench #2779 + Src Layout #657 green.
+- PR #596 — retired `packet_opcode_index.py` and repointed direct packet-dispatch regression to `workbench.packets.opcode_index`; Workbench #2780 + Src Layout #658 green.
 
 ## Current slice
 
-### Slice 3c29 — retire packet opcode index root launcher
+### Slice 3c30 — retire Capture Backtrace root launcher
 
-Status: IN PROGRESS on `cleanup/packet-opcode-index-phase3c29`.
+Status: IN PROGRESS on `cleanup/capture-backtrace-phase3c30`.
 
 Changes on this branch:
-- [x] remove root `packet_opcode_index.py`.
-- [x] preserve canonical packet ownership at `workbench.packets.opcode_index`.
-- [x] preserve direct packaged CLI execution and deterministic `--self-test` behavior.
-- [x] migrate the focused package regression from root-alias identity to an explicit root-absence contract.
-- [x] repoint the direct packet-dispatch regression from the root import to `workbench.packets.opcode_index`.
-- [x] update Src Layout status to mark the root compatibility entry point retired.
-- [x] leave `packet_decode.py` deferred because Capture/OCR production code still imports that root name.
+- [x] repoint `workbench.research.extended_tools` from root `capture_backtrace` to `workbench.captures.correlation.backtrace`.
+- [x] remove root `capture_backtrace.py`.
+- [x] preserve canonical Capture ownership and direct packaged CLI behavior at `workbench.captures.correlation.backtrace`.
+- [x] preserve Capture-owned packet identity use.
+- [x] migrate the focused package regression from root-launcher loading to an explicit root-absence contract.
+- [x] update active Capture Backtrace documentation and Src Layout status to the canonical package surface.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by packet-opcode launcher retirement.
+- [ ] Fix only regressions caused by Capture Backtrace launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
