@@ -41,8 +41,8 @@ capture-observed position/model/HP alongside SQL/wiki/dat facts, with the source
 -- never silently merged into a single "truth".
 
 Usage:
-    py -3 build_capture_index.py ingest "<path to a capture folder or .zip>"
-    py -3 build_capture_index.py ingest-all "<path to a directory of capture zips>" [--pattern "*.zip"]
+    py -3 -m workbench.captures.ingestion.build_index ingest "<path to a capture folder or .zip>"
+    py -3 -m workbench.captures.ingestion.build_index ingest-all "<path to a directory of capture zips>" [--pattern "*.zip"]
     py -3 build_capture_index.py list
     py -3 build_capture_index.py show <capture_id>
 """
