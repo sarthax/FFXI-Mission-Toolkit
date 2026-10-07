@@ -41,7 +41,8 @@ def main():
         proc=subprocess.run(
             [
                 sys.executable,
-                str(repo/"validation_pipeline.py"),
+                "-m",
+                "workbench.validation.pipeline",
                 "--suite",str(suite),
                 "--graph-db",str(db),
             ],
