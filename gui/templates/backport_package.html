@@ -1,8 +1,12 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Backport Package{% endblock %}
+{% block page_archetype %}editor{% endblock %}
+{% block page_heading %}Backport Package{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Writes package workspace</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/backport/lua-convert">Lua converter</a><a class="chip" href="/backport/sql-convert">SQL converter</a><a class="chip" href="/backport/bindings">Binding reference</a>{% endblock %}
+{% block page_help %}Runs the complete backport conversion and verification pipeline for one package. It writes package output and reports only; it does not apply changes to a target server.{% endblock %}
 
-{% block content %}
-<h1>Backport Package</h1>
+{% block page_body %}
 <p class="muted">Runs the full <code>workbench.packages.migration.orchestrator</code> pipeline against one package folder
 under <code class="chip">{{ packages_root }}</code>: converts every <code>.lua</code>/<code>.sql</code>
 file, then runs the binding audit, Lua sanity check, and SQL id-collision check over the whole
