@@ -2,7 +2,7 @@
 """Regression coverage for Captain StatTrack CSV ingestion retained during branch reconciliation."""
 from pathlib import Path
 
-import build_capture_index
+from workbench.captures.ingestion import build_index as build_capture_index
 from workbench.core.services import capture_integrity
 
 
