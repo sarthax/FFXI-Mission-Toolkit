@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build cached Wavefront OBJ files from FFXI zone visual geometry.
 
-Canonical src-layout implementation for the legacy ``build_zone_visual_cache.py`` entry point.
+Canonical src-layout implementation for the zone visual-cache builder.
 The generated cache intentionally remains under ``gui/static/zone_visual``.
 """
 from __future__ import annotations
