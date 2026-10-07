@@ -65,3 +65,4 @@ Completed workspace migrations:
 - **Research** — Sessions (Browser), Contradictions (Browser), Gaps (Dashboard), Session Detail (Workbench), and Evidence (Detail).
 - **Validation** — Dashboard (Dashboard), Runs (Browser), Run Detail (Detail), and Live Target (Workbench, read-only).
 - **Packages** — Library (Browser), Scope Review (Workbench), Create Package (Editor; package-files-only write boundary), and Review & Readiness (Detail, read-only).
+- **Backport** — Package Workflow (Editor; package-workspace writes only), Lua Converter (Editor), SQL Converter (Editor), and Binding Reference (Browser).
