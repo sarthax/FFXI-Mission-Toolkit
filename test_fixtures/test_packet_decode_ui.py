@@ -3,7 +3,7 @@
 
 from pathlib import Path
 
-import packet_decode
+from workbench.packets import decode as packet_decode
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -45,7 +45,7 @@ def main():
     template = (ROOT / "gui" / "templates" / "packets_decode.html").read_text(encoding="utf-8")
     tools_template = (ROOT / "gui" / "templates" / "packets.html").read_text(encoding="utf-8")
     server = (ROOT / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
-    backend = (ROOT / "packet_decode.py").read_text(encoding="utf-8")
+    backend = (ROOT / "src" / "workbench" / "packets" / "_decode_impl.py").read_text(encoding="utf-8")
 
     assert "{% block main_class %}wide-workbench{% endblock %}" in template
     assert "Decoded structure" in template
