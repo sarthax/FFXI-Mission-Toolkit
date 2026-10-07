@@ -314,7 +314,7 @@ Phase A does not change imports yet; it records where Phase B contracts are need
 | `plugins/domain/*` → `workbench.migrations.*` | Development → Validation/Packages internals | Replace shared artifact types with Core contract or explicit Packages public API. |
 | `cli/live_target_validation.py` → server adapter implementation + migrations | Validation → Development adapter internals | Introduce server-source provider contract; Validation consumes interface. |
 | `migrations/backend_registry.py` → root `backport_*` modules | Packages → legacy root same-component code | Package the implementations and remove root-to-src dependency. |
-| `gui_server.py` → nearly every product area | integrated host → all components | Decompose routes late; host only registers component apps. |
+| historical `gui_server.py` → nearly every product area | integrated host → `workbench.app.host` | Root launcher retired; packaged host remains the composition root while route decomposition continues independently. |
 | tests importing root builders/services | Tests → physical filenames | Update to canonical product APIs during each component move. |
 
 The current Capture service graph already shows a coherent internal cluster: capture chat/related evidence/raw packet/PCAP modules all depend on Capture integrity. This should move as one component rather than be exposed through Core.
