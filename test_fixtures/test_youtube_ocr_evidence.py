@@ -8,7 +8,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from workbench.captures.correlation import graph_connect as capture_graph_connect
-import youtube_chat_ocr
+from workbench.captures.video import ocr as youtube_chat_ocr
 from workbench.captures.ingestion import build_index as build_capture_index
 from workbench.core import graph as workbench_graph
 

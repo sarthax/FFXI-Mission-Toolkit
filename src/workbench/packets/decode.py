@@ -7,6 +7,7 @@ module object for legacy monkeypatch/import behavior.
 """
 from __future__ import annotations
 
+import io
 import sys
 
 from workbench.runtime.paths import REPO_ROOT, VENDOR_ROOT
@@ -22,5 +23,9 @@ _impl.PACKETLYZER_ROOT = _PACKETLYZER_ROOT
 _impl.DB_XML = _PACKETLYZER_ROOT / "packetlyzer_db.xml"
 _impl.EXT_JSON = _PACKETLYZER_ROOT / "packetlyzer_ext.json"
 _impl.LOOKUP_DIR = _PACKETLYZER_ROOT / "lookup"
+
+if __name__ == "__main__":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    raise SystemExit(_impl.main())
 
 sys.modules[__name__] = _impl

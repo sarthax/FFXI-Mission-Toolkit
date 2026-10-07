@@ -5,8 +5,8 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import packet_decode
-import youtube_chat_ocr as ocr
+from workbench.packets import decode as packet_decode
+from workbench.captures.video import ocr
 
 
 def _garble(symbol: str) -> str:

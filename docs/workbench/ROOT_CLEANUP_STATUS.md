@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `ebeb7ea78883493078ae20c68384ee9286dda582` after PR #611  
-Current work branch: `cleanup/legacy-llm-phase3c45`  
+Current merged baseline: `main` at `54a8dd5aa09dd1d544a1ea495b2b51276b45cd23` after PR #612  
+Current work branch: `cleanup/packet-ocr-phase3c46`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -102,26 +102,31 @@ reset_install.bat
 - PR #609 — relocated `test_backport_lua_convert.py`, `test_backport_sql_convert.py`, and `test_capture_ingestion.py` to `tests/legacy/`, updated path-sensitive fixtures/docs, and activated relocation coverage.
 - PR #610 — retired `backport_sql_live_check.py`, `id_bridge.py`, and `nyzul_plot.py`; moved Nyzul profile-bridge installation into the canonical module and refreshed the full modern-LSB migration fixture; Workbench #2813 + Src Layout #691 green.
 - PR #611 — retired `mission_toolkit.py` and `explore_event.py`, moved Event Explorer export generation to the packaged Mission Toolkit CLI, and activated both focused migration smokes; Workbench #2814 + Src Layout #692 green.
+- PR #612 — retired `llm_client.py`, `llm_db_tools.py`, and `llm_log.py`, normalized packaged research callers, and activated all three focused LLM migration regressions; Workbench #2815 + Src Layout #693 green.
 
 ## Current slice
 
-### Slice 3c45 — retire legacy local-LLM root aliases
+### Slice 3c46 — retire packet decoder and Capture OCR root launchers
 
-Status: IN PROGRESS on `cleanup/legacy-llm-phase3c45`.
+Status: IN PROGRESS on `cleanup/packet-ocr-phase3c46`.
 
 Changes on this branch:
-- [x] remove root `llm_client.py`, `llm_db_tools.py`, and `llm_log.py`.
-- [x] preserve canonical legacy local-LLM ownership under `workbench.devtools.research.legacy_llm`.
-- [x] repoint OpenWebUI provider and research DB-tool registration to packaged imports.
-- [x] migrate all three focused package regressions to explicit root-absence contracts while preserving functional coverage.
-- [x] repoint current LLM architecture, roadmap, audit, Settings, and GUI guidance to packaged module names.
-- [x] add Src Layout triggers and execution for all three focused LLM migration regressions.
-- [x] update Src Layout status and advance this tracker from merged PR #611.
+- [x] remove root `packet_decode.py` and `youtube_chat_ocr.py`.
+- [x] preserve canonical packet decoder ownership at `workbench.packets.decode`.
+- [x] preserve canonical Capture video/OCR ownership at `workbench.captures.video.ocr`.
+- [x] add direct `python -m workbench.packets.decode` CLI behavior, including the historical UTF-8 stdout wrapper.
+- [x] add direct `python -m workbench.captures.video.ocr` CLI behavior.
+- [x] repoint Capture ingestion/OCR packet-decoder imports to the canonical shared packet service.
+- [x] repoint active packet/OCR regressions to canonical imports and canonical implementation source paths.
+- [x] migrate both focused package smokes to explicit root-absence contracts while adding outside-repo packaged CLI help checks.
+- [x] preserve mutable OCR module-global behavior through the canonical adapter.
+- [x] update active OCR/packet UI guidance, Runtime installer wording, ownership records, and Src Layout status.
+- [x] retain existing Src Layout trigger/execution coverage for both focused migration smokes.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by legacy LLM root-alias retirement.
+- [ ] Fix only regressions caused by packet/OCR launcher retirement and packaged CLI migration.
 - [ ] Merge only when required gates are green.
 
 ## Explicitly retained / deferred

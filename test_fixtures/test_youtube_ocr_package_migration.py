@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -11,19 +10,8 @@ from workbench.captures.video import ocr as canonical
 from workbench.runtime.paths import REPO_ROOT, VENDOR_ROOT
 
 
-def _load_legacy_launcher():
-    path = REPO_ROOT / "youtube_chat_ocr.py"
-    spec = importlib.util.spec_from_file_location("youtube_chat_ocr", path)
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["youtube_chat_ocr"] = module
-    spec.loader.exec_module(module)
-    return sys.modules["youtube_chat_ocr"]
-
-
 def main() -> None:
-    legacy = _load_legacy_launcher()
-    assert legacy is canonical
+    assert not (REPO_ROOT / "youtube_chat_ocr.py").exists()
     assert canonical.ROOT == REPO_ROOT
     assert canonical.RUNS_ROOT == REPO_ROOT / "mission_reports_v2" / "youtube_ocr_runs"
     assert canonical.OCR_TIMING_PATH == REPO_ROOT / "mission_reports_v2" / "ocr_timing.jsonl"
@@ -38,7 +26,7 @@ def main() -> None:
     sentinel = REPO_ROOT / "__youtube_ocr_migration_sentinel__"
     canonical.RUNS_ROOT = sentinel
     try:
-        assert legacy.RUNS_ROOT == sentinel
+        assert canonical.RUNS_ROOT == sentinel
     finally:
         canonical.RUNS_ROOT = original_runs
 
@@ -55,6 +43,14 @@ def main() -> None:
     )
     with tempfile.TemporaryDirectory() as tmp:
         subprocess.run([sys.executable, "-c", code], cwd=Path(tmp), check=True)
+        subprocess.run(
+            [sys.executable, "-m", "workbench.captures.video.ocr", "--help"],
+            cwd=Path(tmp),
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
 
 
 if __name__ == "__main__":

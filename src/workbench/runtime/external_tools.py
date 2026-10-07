@@ -226,7 +226,7 @@ def install_yt_dlp() -> tuple[bool, str]:
 def install_ffmpeg() -> tuple[bool, str]:
     """Downloads the real prebuilt Windows ffmpeg 'essentials' build from gyan.dev (the same
     build already vendored manually this session, confirmed working via `ffmpeg -version`) and
-    vendors it under vendor/ffmpeg/bin/ -- no system PATH changes, matches youtube_chat_ocr.py's
+    vendors it under vendor/ffmpeg/bin/ -- no system PATH changes, matches the packaged Capture OCR service's
     resolve_tool() fallback lookup."""
     dest_bin = TOOLS_ROOT / "vendor" / "ffmpeg" / "bin"
     if (dest_bin / "ffmpeg.exe").exists():
