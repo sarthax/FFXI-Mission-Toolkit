@@ -5,6 +5,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta, timezone
 import os
 from typing import Any
+
+from workbench.runtime import settings_store
 from uuid import uuid4
 
 PROVENANCE_VERSION = "ah-preview-provenance-v2"
@@ -45,8 +47,7 @@ def preview_ttl_seconds() -> int:
     raw = str(os.environ.get(PREVIEW_TTL_ENV, "")).strip()
     if not raw:
         try:
-            import settings as _settings
-            raw = _settings.get_ah_flag("ah_preview_ttl_seconds")
+            raw = settings_store.get_ah_flag("ah_preview_ttl_seconds")
         except Exception:
             raw = str(DEFAULT_PREVIEW_TTL_SECONDS)
     try:
