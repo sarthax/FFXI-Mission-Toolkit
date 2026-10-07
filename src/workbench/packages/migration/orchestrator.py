@@ -295,7 +295,7 @@ def build_report(
                         f"id(s) {existing_ids}"
                     )
                 lines.append(
-                    "  Run `backport_sql_live_check.py --package <this dir>` against the live "
+                    "  Run `python -m workbench.validation.live_db.sql_check --package <this dir>` against the live "
                     "server before deciding whether to reuse or keep both."
                 )
         lines.append("")
