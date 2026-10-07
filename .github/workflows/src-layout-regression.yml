@@ -17,6 +17,7 @@ on:
       - "youtube_chat_ocr.py"
       - "packet_decode.py"
       - "packet_opcode_index.py"
+      - "validation_pipeline.py"
       - "salvage_reconstruct.py"
       - "addon_tools.py"
       - "workbench_connect.py"
@@ -86,6 +87,7 @@ on:
       - "test_fixtures/test_youtube_ocr_package_migration.py"
       - "test_fixtures/test_packet_decode_package_migration.py"
       - "test_fixtures/test_packet_opcode_index_package_migration.py"
+      - "test_fixtures/test_validation_pipeline_package_migration.py"
       - "test_fixtures/test_salvage_reconstruct_package_migration.py"
       - "test_fixtures/test_addon_tools_package_migration.py"
       - "test_fixtures/test_runtime_connectors_package_migration.py"
@@ -174,6 +176,7 @@ jobs:
           python test_fixtures/test_youtube_ocr_package_migration.py
           python test_fixtures/test_packet_decode_package_migration.py
           python test_fixtures/test_packet_opcode_index_package_migration.py
+          python test_fixtures/test_validation_pipeline_package_migration.py
           python test_fixtures/test_salvage_reconstruct_package_migration.py
           python test_fixtures/test_addon_tools_package_migration.py
           python test_fixtures/test_runtime_connectors_package_migration.py
