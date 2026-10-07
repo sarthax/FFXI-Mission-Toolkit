@@ -501,7 +501,9 @@ def main():
 
     validation_runs_html = render("validation_runs.html", "/validation/runs", q="", status="", statuses=[], runs=[], error=None)
     assert '<body class="shell-dense">' in validation_runs_html
-    assert 'form class="search dense-toolbar"' in validation_runs_html
+    assert 'wb-archetype-browser' in validation_runs_html
+    assert 'form class="search wb-filter-row"' in validation_runs_html
+    assert 'class="wb-readonly-badge">Read only</span>' in validation_runs_html
 
     packages_html = render("packages_library.html", "/packages", q="", project_root="C:/workspace", packages=[])
     assert '<body class="shell-dense">' in packages_html
