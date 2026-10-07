@@ -41,7 +41,7 @@ browser:
 
 Server side (`gui_server.py`):
 - `zones` table already had a `geometry_rom_path` column (was only used by the offline
-  `build_zone_visual_cache.py` OBJ bake before this). Reused for the live-parse path.
+  `workbench.devtools.spatial.build_visual_cache` OBJ bake before this). Reused for the live-parse path.
 - Reused the existing generic `/modelviewer/dat?ffxi_path=&rom_path=` endpoint
   unmodified — it already serves raw DAT bytes for any rom_path.
 - `zone_view3d` route now also resolves + passes `geometry_rom_path`,
@@ -68,7 +68,7 @@ Client side (`zone_view3d.html`):
 
 **Key discovery**: level editing is **not a greenfield feature**. It already exists,
 fully wired to the live DB, in `gui/templates/zone_plot.html` (the 2D-named but
-actually-3D "Zone Plot" page) + `zone_edit.py` + routes in `gui_server.py`:
+actually-3D "Zone Plot" page) + `workbench.editors.zone.editor` + routes in `gui_server.py`:
 
 - `zone_edit.update_position(k, id, x, y, z, r, comment)` → `POST /zoneplot/edit`
 - `zone_edit.update_animation(k, id, animation, animationsub, comment)` → `POST /zoneplot/animate`
@@ -83,10 +83,10 @@ actually-3D "Zone Plot" page) + `zone_edit.py` + routes in `gui_server.py`:
   (`panSpeed = BASE_PAN/distance`, see comment block ~line 144 in `zone_plot.html`),
   a full Backups tab (snapshot/restore/restore-exact).
 - Every write auto-backs-up first and appends to `data/zoneplot_edit_log.sql`
-  (`zone_edit.py`'s log target — NOT yet double-checked against the older,
-  probably-superseded `zone_plot.update_position()` function in `zone_plot.py` lines
+  (`workbench.editors.zone.editor`'s log target — NOT yet double-checked against the older,
+  probably-superseded `workbench.devtools.spatial.active_zone_plot.update_position()` function in `workbench.devtools.spatial.active_zone_plot` lines
   174-201, which appears to be dead code / an earlier version now replaced by
-  `zone_edit.py`. Worth a quick confirm-and-delete-dead-code pass at some point but not
+  `workbench.editors.zone.editor`. Worth a quick confirm-and-delete-dead-code pass at some point but not
   blocking.)
 - `zone_plot.html` has its **own separate 3D view** already (not `zone_view3d.html`):
   uses `/zoneplot/{zid}/mesh.zmesh` + `/zoneplot/{zid}/mesh_info.json`, an on-demand
@@ -145,8 +145,8 @@ end-to-end against the live DB).
 |---|---|
 | Phase 1-3 standalone viewer | `gui/templates/zone_view3d.html` |
 | Existing level editor (2D-named, actually has 3D view) | `gui/templates/zone_plot.html` |
-| Live-DB write-back module | `zone_edit.py` (need to read in full — not yet done) |
-| Old/likely-dead write-back fn | `zone_plot.py` lines ~174-201 (`update_position`, `EDIT_LOG`) |
+| Live-DB write-back module | `workbench.editors.zone.editor` (need to read in full — not yet done) |
+| Old/likely-dead write-back fn | `workbench.devtools.spatial.active_zone_plot` lines ~174-201 (`update_position`, `EDIT_LOG`) |
 | Server routes | `gui_server.py` — search `zone_view3d`, `/zoneplot/` |
 | Vendored DAT parser lib | `gui/static/ffxi-dat/*.js` (from Soverance/Vanalytics, MIT) |
 | Reference source (not copied, ported) | `D:\Claude\FFXI-Tools\vanalytics-full\src\Vanalytics.Web\src\components\zone\ThreeZoneViewer.tsx` (lines 430-670 = scene construction), `SpawnMarkers.tsx`, `FlyCamera` (for later terrain-nav phase) |
