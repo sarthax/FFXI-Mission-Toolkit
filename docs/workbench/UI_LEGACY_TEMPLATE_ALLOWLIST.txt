@@ -12,8 +12,6 @@ auction_house_listing_manager.html | legacy page pending archetype migration
 auction_house_presets.html | legacy page pending archetype migration
 auction_house_reward_history.html | legacy page pending archetype migration
 auction_house_seeder.html | legacy page pending archetype migration
-backup_delete_confirm.html | legacy page pending archetype migration
-backup_restore_confirm.html | legacy page pending archetype migration
 capture_add.html | legacy page pending archetype migration
 capture_alignment.html | legacy page pending archetype migration
 capture_bulk_ingest.html | legacy page pending archetype migration
@@ -55,10 +53,8 @@ ocr.html | legacy page pending archetype migration
 ocr_run.html | legacy page pending archetype migration
 packets.html | legacy page pending archetype migration
 packets_decode.html | legacy page pending archetype migration
-rebuild_confirm.html | legacy page pending archetype migration
 settings.html | legacy page pending archetype migration
 shift_master.html | legacy page pending archetype migration
-shutdown.html | legacy page pending archetype migration
 synth.html | legacy page pending archetype migration
 zone_plot2.html | legacy page pending archetype migration
 zone_view3d.html | legacy page pending archetype migration
