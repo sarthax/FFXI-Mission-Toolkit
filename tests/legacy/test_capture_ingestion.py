@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-test_capture_ingestion.py -- regression test against real capturer-tool folder layouts, so a fix
+tests/legacy/test_capture_ingestion.py -- regression test against real capturer-tool folder layouts, so a fix
 for one capturer's real quirk (e.g. an optional capturer-name subfolder) never silently re-breaks
 another capturer's layout the way npclogger/logs/ regressed relative to npclogger/tables/ and
 npclogger/database/ before 2026-09-08 -- those three patterns were meant to be handled identically
@@ -27,16 +27,16 @@ Each fixture has a KNOWN_GAPS allowlist below for files that are expected to fai
 on that list is a real regression and fails this script.
 
 Usage:
-    py -3 test_capture_ingestion.py
+    py -3 tests/legacy/test_capture_ingestion.py
 """
 import sqlite3
 import sys
 from pathlib import Path
 
 from workbench.captures.ingestion import build_index as bci
+from workbench.runtime.paths import REPO_ROOT
 
-TOOLS_ROOT = Path(__file__).parent
-FIXTURES_DIR = TOOLS_ROOT / "test_fixtures" / "captures"
+FIXTURES_DIR = REPO_ROOT / "test_fixtures" / "captures"
 
 # Per-fixture allowlist of relative-path regex fragments (plain substring match against the
 # reported filename) that are known, tracked, non-regression gaps -- not "this test is broken",

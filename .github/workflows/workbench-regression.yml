@@ -6,6 +6,7 @@ on:
       - "workbench/**"
       - "src/workbench/**"
       - "test_fixtures/**"
+      - "tests/legacy/**"
       - "feature_*.py"
       - "capture_*.py"
       - "packet_*.py"
@@ -36,6 +37,9 @@ jobs:
           PYTHONPATH: .
         run: |
           set -euo pipefail
+          python tests/legacy/test_backport_lua_convert.py
+          python tests/legacy/test_backport_sql_convert.py
+          python tests/legacy/test_capture_ingestion.py
           python test_fixtures/test_packet_identity.py
           python test_fixtures/test_graph_cpp_symbol_resolution.py
           python test_fixtures/test_graph_enum_resolution.py

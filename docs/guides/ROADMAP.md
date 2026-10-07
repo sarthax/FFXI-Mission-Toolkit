@@ -293,7 +293,7 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
     entries (real zero-content records ending in `/`) in its file listing, alongside the `.7z`/
     folder branches which already filtered to real files only — a real 25-entry capture zip had
     exactly 15 such directory entries, all misreported as "failed" imports.
-  - Permanent regression-test fixtures added (`test_fixtures/captures/`, `test_capture_ingestion.py`)
+  - Permanent regression-test fixtures added (`test_fixtures/captures/`, `tests/legacy/test_capture_ingestion.py`)
     — two real, trimmed-of-nothing capturer trees (Foxmulder- and Tacocat-style layouts) with a
     standalone test script (no pytest dependency) that fails loudly on any unexpected format
     failure, so a fix for one capturer's layout can't silently re-break another's the way
@@ -366,8 +366,8 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
     whole zone tree — every hit is either the unrelated general open-world Treasure Casket system
     or a comment-only mention — documented as out of scope rather than porting an unused ~990-line
     module.
-  - `test_backport_lua_convert.py` — a permanent, pytest-free regression suite (16 test functions,
-    matching this project's existing `test_capture_ingestion.py` convention) against small
+  - `tests/legacy/test_backport_lua_convert.py` — a permanent, pytest-free regression suite (16 test functions,
+    matching this project's existing `tests/legacy/test_capture_ingestion.py` convention) against small
     hand-written snippets, one per converter code path (each `simple_families`/`reshaped_families`
     shape, incompatible-enum flagging, `missing_lua_modules` flagging, method/whole-call renames,
     both script-shape regression guards, both ID-shape conventions, the generic unmapped-reference
@@ -405,7 +405,7 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
       Nyzul-specific item; DSP's existing dropId 15 belongs to an unrelated mob entirely). Both
     renumbered into confirmed-free blocks above this DSP snapshot's real max, with every
     downstream reference (`mob_spawn_points.groupid`, `mob_groups.dropid`) updated to match.
-    10-test regression suite (`test_backport_sql_convert.py`), matching the Lua converter's
+    10-test regression suite (`tests/legacy/test_backport_sql_convert.py`), matching the Lua converter's
     testing discipline.
   - `backport_sql_live_check.py` — a live-MySQL counterpart to the snapshot-based checker above,
     for DSP_TRANSITION_PLAN.md task 4 (`[NEEDS DBA/ADMIN]`, live Valhalla-target DB access we don't

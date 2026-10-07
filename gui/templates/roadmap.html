@@ -125,7 +125,7 @@
       and <code class="chip">packetviewer/full.log</code>/<code class="chip">incoming.log</code>/
       <code class="chip">outgoing.log</code> combined-session dumps recognized as real, deliberately
       unattributable duplicates rather than reported as failures). A permanent regression-test
-      fixture pair (real Foxmulder- and Tacocat-capturer trees, <code class="chip">test_capture_ingestion.py</code>)
+      fixture pair (real Foxmulder- and Tacocat-capturer trees, <code class="chip">tests/legacy/test_capture_ingestion.py</code>)
       now guards against a fix for one capturer's layout silently re-breaking another's, plus a
       content-sniffing fallback that upgrades a genuinely unrecognized file's error message from a
       bare "not recognized" into "looks like a real &lt;format&gt;, path pattern may need updating."</td></tr>
@@ -201,9 +201,9 @@
       inspection to have zero real Assault callers at all (every hit is either the unrelated
       general open-world Treasure Casket system or a comment-only mention) -- documented as out of
       scope rather than porting an unused ~990-line module.
-      <span class="pill match">new 2026-09-12</span> <strong><code class="chip">test_backport_lua_convert.py</code></strong>
+      <span class="pill match">new 2026-09-12</span> <strong><code class="chip">tests/legacy/test_backport_lua_convert.py</code></strong>
       -- a permanent, pytest-free suite (16 test functions, matching this project's existing
-      <code class="chip">test_capture_ingestion.py</code> convention) checking converter mechanics
+      <code class="chip">tests/legacy/test_capture_ingestion.py</code> convention) checking converter mechanics
       against small fixed snippets, one per code path (every family shape, both script-shape
       regression guards, both ID-shape conventions, incompatible-enum/missing-module flagging).
       <strong><code class="chip">backport_map_confidence_check.py</code></strong> -- a decay check
@@ -242,7 +242,7 @@
       live-MySQL counterpart, ready to hand to whoever has actual Valhalla-target DB access to
       re-verify the renumbered ranges are still free against real current data, not just this
       snapshot (see <code class="chip">LIVE_DB_COLLISION_CHECK.md</code>). 10-test regression suite
-      (<code class="chip">test_backport_sql_convert.py</code>), matching the Lua converter's
+      (<code class="chip">tests/legacy/test_backport_sql_convert.py</code>), matching the Lua converter's
       testing discipline.</td></tr>
   <tr><td>Item Editor <span class="pill match">new 2026-09-23</span></td>
     <td class="muted"><code class="chip">item_edit.py</code>, <code class="chip">item_dat_tools.py</code></td>

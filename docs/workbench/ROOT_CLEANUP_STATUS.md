@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `709064ba26990cf4460471c405b8368e9cde9eda` after PR #607  
-Current work branch: `cleanup/standalone-scripts-phase3c41`  
+Current merged baseline: `main` at `a34242c35178ce8892c210546c38ef9116369a9d` after PR #608  
+Current work branch: `cleanup/legacy-tests-phase3c42`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -98,30 +98,29 @@ reset_install.bat
 - PR #605 — retired `backport_lua_convert.py`, `backport_sql_convert.py`, and `backport_package.py`, moved package CLI defaults into the canonical orchestrator, and repointed active package guidance; Workbench #2791 + Src Layout #669 green.
 - PR #606 — retired `wiki_lookup.py`, `wiki_evidence.py`, and `wiki_claim_compare.py`, repointed Wiki regressions to canonical Development imports, and preserved staged adapter aliasing internally; Workbench #2792 + Src Layout #670 green.
 - PR #607 — retired `feature_trace.py` and `feature_checker.py`, normalized packaged-host imports for already-retired root modules, and promoted reusable external-tool installer logic into Runtime; Workbench #2805 + Src Layout #683 + Character Editor #203 green.
+- PR #608 — relocated five standalone maintenance/import scripts out of repository root, normalized repo-sensitive paths, and added Src Layout relocation coverage; Workbench #2807 + Src Layout #685 + Character Editor #205 green.
 
 ## Current slice
 
-### Slice 3c41 — relocate standalone operator scripts out of repository root
+### Slice 3c42 — relocate legacy script-style regressions out of repository root
 
-Status: IN PROGRESS on `cleanup/standalone-scripts-phase3c41`.
+Status: IN PROGRESS on `cleanup/legacy-tests-phase3c42`.
 
 Changes on this branch:
-- [x] move `build_item_repair_package.py` to `scripts/maintenance/build_item_repair_package.py`.
-- [x] move `seed_auction_house.py` to `scripts/maintenance/seed_auction_house.py`.
-- [x] move `tools_gen_dsp_enums.py` to `scripts/maintenance/generate_dsp_item_enums.py`.
-- [x] move `discord_inventory.py` and `discord_holiday_load.py` to `scripts/import/`.
-- [x] remove all five historical root copies rather than leave compatibility shims.
-- [x] replace item-repair repository-root derivation with `workbench.runtime.paths.REPO_ROOT`.
-- [x] make DSP enum generation resolve the configured DSP checkout through `legacy_settings` and write generated output through `REPO_ROOT`.
-- [x] update Auction House, generated-enum, and script usage references to the new paths.
-- [x] add a focused relocation regression covering root absence, destination presence, and path-safe behavior.
-- [x] add Src Layout triggers/execution coverage for the moved script families.
-- [x] update Src Layout status to record the repository-structure cleanup.
+- [x] move `test_backport_lua_convert.py`, `test_backport_sql_convert.py`, and `test_capture_ingestion.py` to `tests/legacy/`.
+- [x] remove all three historical root copies.
+- [x] preserve canonical Packages imports for the Lua/SQL converter suites.
+- [x] make capture-ingestion fixture discovery resolve through `workbench.runtime.paths.REPO_ROOT`.
+- [x] update roadmap, GUI roadmap, ownership inventory/manifest, and migration-plan references to the new test paths.
+- [x] add a focused relocation smoke covering root absence, destination presence, canonical imports, and fixture-root safety.
+- [x] add `tests/legacy/**` to Workbench Regression triggers and execute all three legacy suites there.
+- [x] add Src Layout trigger/execution coverage for the relocation contract.
+- [x] update Src Layout status to record the legacy test relocation.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by standalone script relocation.
+- [ ] Fix only regressions caused by legacy test relocation/activation.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred
@@ -139,10 +138,10 @@ Before merge:
 - final application/bootstrap compatibility files such as `gui_server.py`, `settings.py`, and `id_bridge.py` only after their caller contracts are intentionally retired.
 
 ### Standalone operator scripts
-IN PROGRESS in slice 3c41. Five known root maintenance/import scripts are being relocated under `scripts/{maintenance,import}` with path contracts and Src Layout regression coverage.
+COMPLETE through slice 3c41. Five root maintenance/import scripts now live under `scripts/{maintenance,import}` with path contracts and Src Layout regression coverage.
 
 ### Tests and high-fan-in compatibility removal
-PENDING. Move remaining root `test_*.py`, migrate `build_capture_index.py` callers, and consider `test_fixtures/` → `tests/fixtures/` only with workflow/discovery updates.
+IN PROGRESS in slice 3c42. The remaining root `test_*.py` scripts are moving to `tests/legacy/`; `build_capture_index.py` and any broader `test_fixtures/` → `tests/fixtures/` move remain separate later work.
 
 ### Workspace/resource normalization
 PENDING. Move `backport-workspace/` to `workspaces/backport/` after reference audit; review `client_probe_sets/`, `plot_descriptors/`, and `addons/` separately.

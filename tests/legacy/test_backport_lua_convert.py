@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-test_backport_lua_convert.py -- regression test for backport_lua_convert.py, so a change to the
+tests/legacy/test_backport_lua_convert.py -- regression test for the canonical Lua converter, so a change to the
 converter's regex rules (or to data/dsp_namespace_map.json's shape) can't silently break a family
 that was already working. This is NOT a substitute for backport_coverage_check.py (which validates
 coverage against real Topaz source) -- this checks the converter's MECHANICS against small, fixed,
 hand-written snippets, one per code path, so a future regex change gets caught immediately instead
 of waiting for the next coverage run to notice.
 
-No pytest dependency, matching this project's existing test_capture_ingestion.py convention.
+No pytest dependency, matching this project's existing tests/legacy/test_capture_ingestion.py convention.
 
 Usage:
-    py -3 test_backport_lua_convert.py
+    py -3 tests/legacy/test_backport_lua_convert.py
 """
 from __future__ import annotations
 

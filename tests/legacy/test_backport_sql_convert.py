@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-test_backport_sql_convert.py -- regression test for backport_sql_convert.py, matching this
-project's existing test_capture_ingestion.py / test_backport_lua_convert.py convention (no pytest).
+tests/legacy/test_backport_sql_convert.py -- regression test for the canonical SQL converter, matching this
+project's existing tests/legacy/test_capture_ingestion.py / tests/legacy/test_backport_lua_convert.py convention (no pytest).
 
 Usage:
-    py -3 test_backport_sql_convert.py
+    py -3 tests/legacy/test_backport_sql_convert.py
 """
 from __future__ import annotations
 
