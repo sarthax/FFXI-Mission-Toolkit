@@ -38,7 +38,6 @@ dialog.html | legacy page pending archetype migration
 domain_assault.html | legacy page pending archetype migration
 domain_detail.html | legacy page pending archetype migration
 domains_index.html | legacy page pending archetype migration
-drift.html | legacy page pending archetype migration
 entity.html | legacy page pending archetype migration
 entity_detail.html | legacy page pending archetype migration
 feature_checker.html | legacy page pending archetype migration

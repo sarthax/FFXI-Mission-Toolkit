@@ -1,10 +1,13 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Drift · {{ zone_name }}{% endblock %}
-{% block content %}
-<p><a class="chip" href="/zones">&larr; browse by zone</a></p>
-<h1>{{ zone_name }} -- dialog drift report</h1>
-
-<form class="search" method="get" action="#" onsubmit="return false;">
+{% block page_archetype %}detail{% endblock %}
+{% block page_heading %}{{ zone_name }} — dialog drift report{% endblock %}
+{% block page_back %}<a class="chip" href="/zones">&larr; Browse by zone</a>{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Read only</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/dialog/drift">Dialog Drift Overview</a><a class="chip" href="/dialog">Dialog Browser</a>{% endblock %}
+{% block page_help %}Compare wired IDs.lua comments with the current client dialog text for this zone. This report is diagnostic only and does not apply inferred offsets or modify server/client data.{% endblock %}
+{% block page_body %}
+<form class="search wb-filter-row" method="get" action="#" onsubmit="return false;">
   <select onchange="if (this.value) location = '/zone/' + this.value + '/drift';">
     <option value="">Jump to another zone...</option>
     {% for z in zones %}
