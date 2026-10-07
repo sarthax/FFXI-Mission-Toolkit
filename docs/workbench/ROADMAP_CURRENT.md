@@ -283,7 +283,7 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Feature Trace can navigate explicit Research/Validation/Package feature/entity/artifact references back to exact canonical nodes without creating graph edges.
 - [x] Source/target conversion support where deterministic and audited.
 - [x] Phase D packaging moved mature root implementations into logical `src/workbench/...` homes while preserving intentional compatibility imports/launchers.
-- [x] Final Phase D source-layout ownership cleanup is complete: PR #549 packaged the settings store, PR #552 packaged the application host, root `settings.py`/`gui_server.py` are thin compatibility surfaces, and Workbench/Src Layout/Character Editor regressions cover the final boundary. Compatibility-launcher retirement is a separate future bootstrap/distribution decision, not unfinished Phase D work.
+- [x] Final Phase D source-layout ownership cleanup is complete: the settings store and application host are package-owned, historical root `settings.py` and `gui_server.py` compatibility surfaces are retired, and Workbench/Src Layout/Character Editor regressions cover the final boundary.
 
 # 15. CI / regression safety
 
