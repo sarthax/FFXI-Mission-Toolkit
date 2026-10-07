@@ -1,6 +1,9 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Roadmap{% endblock %}
-{% block content %}
+{% block page_archetype %}dashboard{% endblock %}
+{% block page_heading %}Roadmap{% endblock %}
+{% block page_help %}Status report and revised roadmap for the Mission Toolkit. Current reconciled status takes precedence when older historical phase text conflicts; historical sections are retained for provenance.{% endblock %}
+{% block page_body %}
 <style>
   .phase { background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
            padding: 16px 20px; margin: 14px 0; }
@@ -21,13 +24,6 @@
   .req-box ul { margin: 6px 0 0; }
   h2.rm { margin-top: 36px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
 </style>
-
-<h1>Roadmap</h1>
-<p class="muted">Status report and revised roadmap for the Mission Toolkit -- also published as a
-  standalone artifact for sharing outside this app. Started as a proposal for turning the
-  dat-extraction / capture-mining pipeline into something browsable; every phase below is either
-  built and running, on hold, or a newly-scoped future phase with a concrete build-requirements
-  breakdown, not a one-line wish.</p>
 
 <h2 class="rm">Current reconciled status <span class="pill match">2026-09-27</span></h2>
 <div class="phase">
