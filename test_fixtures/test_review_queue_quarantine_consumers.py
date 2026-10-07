@@ -4,7 +4,7 @@ from __future__ import annotations
 import sqlite3, tempfile
 from pathlib import Path
 from workbench.captures import review_queue as rq
-from capture_graph_connect import connect
+from workbench.captures.correlation.graph_connect import connect
 from workbench.core import graph
 
 
