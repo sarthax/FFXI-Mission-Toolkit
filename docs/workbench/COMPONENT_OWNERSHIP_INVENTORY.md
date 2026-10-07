@@ -37,7 +37,7 @@ Every root-level Python file present at the start of Phase A has exactly one own
 | Root file | Final ownership / intended destination | Notes |
 | --- | --- | --- |
 | `addon_tools.py` | Core runtime → `src/workbench/runtime/addon_tools.py` | Shared addon/resource discovery. Must remain product-neutral. |
-| `settings.py` | Core config → `src/workbench/core/config/settings.py` | High fan-in. Central path/config migration before move. |
+| historical `settings.py` | Runtime config → `src/workbench/runtime/settings_store.py` | Root alias retired after active runtime callers migrated to packaged settings APIs. |
 | `workbench_connect.py` | Core runtime/integration → `src/workbench/runtime/connect.py` | Shared process/integration surface; preserve stable external entry point if used. |
 | `workbench_connect_server.py` | Core runtime/integration → `src/workbench/runtime/connect_server.py` | Same ownership as connect client. |
 
