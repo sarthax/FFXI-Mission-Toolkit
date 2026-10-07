@@ -77,3 +77,4 @@ Completed workspace migrations:
 - **Dialog Drift** — Cross-zone dialog offset/status overview (Dashboard, read-only).
 - **Zone Dialog Drift** — Per-zone wired-comment versus client-dialog report (Detail, read-only).
 - **Roadmap** — Reconciled project status and historical roadmap (Dashboard).
+- **Help** — Workbench usage guide and evidence-boundary reference (Detail, reading width).
