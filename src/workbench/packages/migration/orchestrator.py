@@ -2,8 +2,8 @@
 r"""End-to-end orchestration for converting and validating one assembled backport package.
 
 The canonical implementation is package-safe: checkout and indexed-database locations are explicit
-inputs. The legacy root CLI supplies its historical Settings defaults while direct package callers
-can pass paths explicitly.
+inputs for programmatic callers, while the CLI lazily resolves the historical Settings/database
+defaults when explicit values are not supplied.
 """
 from __future__ import annotations
 
@@ -319,6 +319,18 @@ def build_report(
     return "\n".join(lines) + "\n"
 
 
+def _default_dsp_root() -> Path | None:
+    from workbench.runtime.legacy_settings import get_dsp_root
+
+    return get_dsp_root()
+
+
+def _default_db_path() -> Path:
+    from workbench.runtime.paths import DATABASE_PATH
+
+    return DATABASE_PATH
+
+
 def main(
     argv: list[str] | None = None,
     *,
@@ -328,8 +340,8 @@ def main(
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("package_dir", type=Path, help="Folder with lua/ and optionally sql/")
     ap.add_argument("--target", default="old_dsp_reference", choices=["old_dsp_reference", "landsandboat"])
-    ap.add_argument("--dsp-root", default=None, help="Real DSP checkout; root compatibility CLI can supply Settings default")
-    ap.add_argument("--db-path", default=None, help="Indexed DSP SQLite database; root compatibility CLI can supply Settings default")
+    ap.add_argument("--dsp-root", default=None, help="Real DSP checkout; defaults to the configured Settings DSP path")
+    ap.add_argument("--db-path", default=None, help="Indexed DSP SQLite database; defaults to the Workbench database path")
     ap.add_argument("--zone-table", default=None, help="Zone id-table name, applied to every .lua file")
     ap.add_argument("--id-shape", default="flat", help="Zone id-table shape, applied to every .lua file")
     ap.add_argument("--id-file-hint", default=None)
@@ -341,9 +353,9 @@ def main(
     if not package_dir.is_dir():
         ap.error(f"{package_dir} is not a directory")
 
-    dsp_root = Path(args.dsp_root) if args.dsp_root else default_dsp_root
+    dsp_root = Path(args.dsp_root) if args.dsp_root else (default_dsp_root or _default_dsp_root())
     if dsp_root is None:
-        ap.error("No DSP checkout configured -- pass --dsp-root or use the root compatibility CLI Settings default.")
+        ap.error("No DSP checkout configured -- pass --dsp-root or configure Settings dsp_server_path.")
     flavor = blc.detect_target_flavor(dsp_root)
     if flavor is None:
         print(
@@ -358,7 +370,7 @@ def main(
         )
         raise SystemExit(2)
 
-    db_path = Path(args.db_path) if args.db_path else default_db_path
+    db_path = Path(args.db_path) if args.db_path else (default_db_path or _default_db_path())
     lua_src, lua_dst = package_dir / "lua", package_dir / "lua-dsp"
     sql_src, sql_dst = package_dir / "sql", package_dir / "sql-dsp"
 
