@@ -3,6 +3,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+from workbench.runtime import external_tools
+
 ROOT = Path(__file__).resolve().parents[1]
 CANONICAL = ROOT / "scripts" / "bootstrap" / "install_external_tools.py"
 
@@ -16,9 +18,11 @@ def _load(path: Path, name: str):
 
 
 def main() -> None:
-    canonical = _load(CANONICAL, "external_tools_canonical_test")
-    assert canonical.TOOLS_ROOT == ROOT
-    assert set(canonical.INSTALLERS) == {
+    launcher = _load(CANONICAL, "external_tools_launcher_test")
+    assert launcher.TOOLS_ROOT == ROOT
+    assert launcher.INSTALLERS is external_tools.INSTALLERS
+    assert external_tools.TOOLS_ROOT == ROOT
+    assert set(external_tools.INSTALLERS) == {
         "xi-tinkerer-cli",
         "ffxi-dats",
         "landsandboat-full",
@@ -27,7 +31,7 @@ def main() -> None:
         "ffmpeg",
         "tesseract",
     }
-    assert canonical.pending_installer("not-a-tool") is None
+    assert external_tools.pending_installer("not-a-tool") is None
     assert not (ROOT / "install_external_tools.py").exists()
 
     setup = (ROOT / "setup.bat").read_text(encoding="utf-8")
