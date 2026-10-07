@@ -41,14 +41,14 @@ from fastapi.templating import Jinja2Templates
 import yaml
 from PIL import Image, ImageDraw
 
-import build_capture_index
+from workbench.captures.ingestion import build_index as build_capture_index
 from workbench.devtools.indexing import build_database
 from workbench.devtools.reference.dialog import build_index as build_dialog_index
 from workbench.devtools.indexing import build_npc_index
 from workbench.devtools.indexing import build_sql_index
-import build_zone_visual_cache
+from workbench.devtools.spatial import build_visual_cache as build_zone_visual_cache
 from workbench.devtools.entities import profile as entity_profile
-import explore_event
+from workbench.devtools.server import explore_event
 from workbench.devtools.features import trace as feature_trace
 from workbench.core.services.feature_trace_catalog import present_relationships
 from workbench.core.services.feature_trace_dossier import build_dossier
@@ -72,7 +72,7 @@ from workbench.client.dat import global_tables as ingest_global_tables
 from workbench.runtime import addon_tools
 from workbench.runtime import external_tools as install_external_tools
 from workbench.devtools.indexing import build_lsb_index
-import youtube_chat_ocr
+from workbench.captures.video import ocr as youtube_chat_ocr
 from workbench.packages.migration import lua_convert as backport_lua_convert
 from workbench.packages.migration import sql_convert as backport_sql_convert
 from workbench.validation.packages import binding_index as backport_binding_index
@@ -87,8 +87,8 @@ import llm_log
 import llm_db_tools
 from workbench.devtools.reference import scrape_bg_wiki
 from workbench.devtools.entities import lookup as lookup_entity
-import packet_decode
-import settings as settings_mod
+from workbench.packets import decode as packet_decode
+from workbench.runtime import settings_store as settings_mod
 from workbench.devtools.reference import wiki_compile
 from workbench.devtools.reference import wiki_evidence
 from workbench.devtools.reference import wiki_claim_compare
