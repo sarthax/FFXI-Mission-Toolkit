@@ -41,7 +41,7 @@ browser:
 
 Server side (`gui_server.py`):
 - `zones` table already had a `geometry_rom_path` column (was only used by the offline
-  `build_zone_visual_cache.py` OBJ bake before this). Reused for the live-parse path.
+  `workbench.devtools.spatial.build_visual_cache` OBJ bake before this). Reused for the live-parse path.
 - Reused the existing generic `/modelviewer/dat?ffxi_path=&rom_path=` endpoint
   unmodified — it already serves raw DAT bytes for any rom_path.
 - `zone_view3d` route now also resolves + passes `geometry_rom_path`,
@@ -84,7 +84,7 @@ actually-3D "Zone Plot" page) + `zone_edit.py` + routes in `gui_server.py`:
   a full Backups tab (snapshot/restore/restore-exact).
 - Every write auto-backs-up first and appends to `data/zoneplot_edit_log.sql`
   (`zone_edit.py`'s log target — NOT yet double-checked against the older,
-  probably-superseded `zone_plot.update_position()` function in `zone_plot.py` lines
+  probably-superseded `zone_plot.update_position()` function in `workbench.devtools.spatial.active_zone_plot` lines
   174-201, which appears to be dead code / an earlier version now replaced by
   `zone_edit.py`. Worth a quick confirm-and-delete-dead-code pass at some point but not
   blocking.)
@@ -146,7 +146,7 @@ end-to-end against the live DB).
 | Phase 1-3 standalone viewer | `gui/templates/zone_view3d.html` |
 | Existing level editor (2D-named, actually has 3D view) | `gui/templates/zone_plot.html` |
 | Live-DB write-back module | `zone_edit.py` (need to read in full — not yet done) |
-| Old/likely-dead write-back fn | `zone_plot.py` lines ~174-201 (`update_position`, `EDIT_LOG`) |
+| Old/likely-dead write-back fn | `workbench.devtools.spatial.active_zone_plot` lines ~174-201 (`update_position`, `EDIT_LOG`) |
 | Server routes | `gui_server.py` — search `zone_view3d`, `/zoneplot/` |
 | Vendored DAT parser lib | `gui/static/ffxi-dat/*.js` (from Soverance/Vanalytics, MIT) |
 | Reference source (not copied, ported) | `D:\Claude\FFXI-Tools\vanalytics-full\src\Vanalytics.Web\src\components\zone\ThreeZoneViewer.tsx` (lines 430-670 = scene construction), `SpawnMarkers.tsx`, `FlyCamera` (for later terrain-nav phase) |
