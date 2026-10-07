@@ -171,7 +171,6 @@
     "build_topaz_index.py": "devtools",
     "build_wiki_index.py": "devtools",
     "build_zone_topdown.py": "devtools",
-    "build_zone_visual_cache.py": "devtools",
     "capture_backtrace.py": "captures",
     "capture_graph_connect.py": "captures",
     "client_binary_analyze.py": "client_shared",
@@ -199,8 +198,6 @@
     "ingest_global_tables.py": "devtools",
     "install_external_tools.py": "bootstrap_tests",
     "install_xi_tinkerer.py": "bootstrap_tests",
-    "item_dat_tools.py": "editors",
-    "item_edit.py": "editors",
     "llm_client.py": "devtools",
     "llm_db_tools.py": "devtools",
     "llm_log.py": "devtools",
@@ -230,9 +227,7 @@
     "wiki_lookup.py": "devtools",
     "workbench_connect.py": "core",
     "workbench_connect_server.py": "core",    "zmesh.py": "devtools",
-    "zone_animation_meta.py": "client_shared",
-    "zone_edit.py": "editors",
-    "zone_plot.py": "devtools"
+    "zone_animation_meta.py": "client_shared"
   },
   "status": "phase-a",
   "version": 1

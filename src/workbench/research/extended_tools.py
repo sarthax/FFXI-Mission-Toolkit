@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from workbench.captures.correlation import backtrace as capture_backtrace
-import item_dat_tools
+from workbench.editors.items import dat_tools as item_dat_tools
 from workbench.devtools.reference import scrape_bg_wiki
 
 

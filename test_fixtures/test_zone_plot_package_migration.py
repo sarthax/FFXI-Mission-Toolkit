@@ -3,16 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
-import zone_plot as legacy
-from workbench.devtools.spatial import zone_plot as canonical
+from workbench.devtools.spatial import active_zone_plot as canonical
 from workbench.runtime import legacy_settings
 from workbench.runtime.paths import DATA_ROOT
 
 
-def test_root_module_is_packaged_implementation():
-    # The root alias now passes through active_zone_plot, which patches and returns the mature
-    # canonical module rather than maintaining a second backend implementation.
-    assert legacy is canonical
+def test_root_module_is_retired_and_active_backend_is_packaged():
+    root = Path(__file__).resolve().parents[1]
+    assert not (root / "zone_plot.py").exists()
     assert canonical.EDIT_LOG == DATA_ROOT / "zoneplot_edit_log.sql"
 
 

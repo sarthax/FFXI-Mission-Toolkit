@@ -8,12 +8,11 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-import item_dat_tools as root_module
 from workbench.editors.items import dat_tools
 
 
 def main() -> None:
-    assert root_module is dat_tools
+    assert not (ROOT / "item_dat_tools.py").exists()
     assert Path(dat_tools.__file__) == ROOT / "item_dat_tools.py"
     assert dat_tools._dat_backup_root() == ROOT / "data" / "item_dat_backups"
     assert Path(dat_tools.settings_mod.DB_PATH) == ROOT / "ffxi_zone_database.db"
@@ -21,9 +20,6 @@ def main() -> None:
     assert dat_tools.STRIDE_RETAIL == 0x1400
     assert dat_tools.TYPE_LAYOUT[3] == "armor"
 
-    root_source = (ROOT / "item_dat_tools.py").read_text(encoding="utf-8")
-    assert "sqlite3" not in root_source
-    assert "workbench.editors.items" in root_source
 
 
 if __name__ == "__main__":

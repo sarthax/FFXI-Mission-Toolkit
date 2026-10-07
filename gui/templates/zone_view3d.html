@@ -66,7 +66,7 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
     <button type="submit">Build it now</button>
   </form>
   Zone meshes run 30-75MB and take a real parse (up to a minute) -- or run
-  <code class="chip">py -3 build_zone_visual_cache.py {{ zoneid }}</code> from a terminal instead.</div>
+  <code class="chip">py -3 -m workbench.devtools.spatial.build_visual_cache {{ zoneid }}</code> from a terminal instead.</div>
 {% else %}
 <div class="dense-toolbar" style="margin-bottom:6px; flex-wrap:wrap;">
   <label class="muted" for="tod-slider">Time of day</label>

@@ -103,10 +103,10 @@ Every root-level Python file present at the start of Phase A has exactly one own
 | `llm_db_tools.py` | Development research → `src/workbench/devtools/research/legacy_llm/db_tools.py` | DB/path audit. |
 | `llm_log.py` | Development research → `src/workbench/devtools/research/legacy_llm/log.py` | Normalize DB path. |
 | `research_gaps.py` | Development research → `src/workbench/devtools/research/gaps.py` | Research workflow. |
-| `zone_plot.py` | Development spatial/viewer → `src/workbench/devtools/spatial/zone_plot.py` | Read-only viewer belongs in Devtools; editing remains Editors. |
+| historical `zone_plot.py` | Development spatial/viewer → `src/workbench/devtools/spatial/active_zone_plot.py` / `zone_plot.py` | Root alias retired; active-environment routing and viewer behavior are package-owned. |
 | `zmesh.py` | Development spatial/viewer → `src/workbench/devtools/spatial/zmesh.py` | Visual mesh/cache consumer; GUI path normalization first. |
 | `build_zone_topdown.py` | Development spatial → `src/workbench/devtools/spatial/build_topdown.py` | Read-only derived visualization output. |
-| `build_zone_visual_cache.py` | Development spatial → `src/workbench/devtools/spatial/build_visual_cache.py` | Read-only visualization/cache builder. |
+| historical `build_zone_visual_cache.py` | Development spatial → `src/workbench/devtools/spatial/build_visual_cache.py` | Root launcher retired; visualization/cache builder is package-owned. |
 | `build_plot_descriptors.py` | Development spatial → `src/workbench/devtools/spatial/build_plot_descriptors.py` | Plot/reference descriptors. |
 | `pull_mob_positions.py` | Development spatial/server evidence → `src/workbench/devtools/spatial/pull_mob_positions.py` | Read-only source extraction. |
 | `nyzul_plot.py` | Development domain tooling → `src/workbench/devtools/domains/nyzul_plot.py` | Domain visualization/research. |
@@ -124,9 +124,9 @@ Every root-level Python file present at the start of Phase A has exactly one own
 
 | Root file | Final ownership / intended destination | Notes |
 | --- | --- | --- |
-| `item_dat_tools.py` | Editors items/client → `src/workbench/editors/items/dat_tools.py` | Contains write/backup/journal behavior; not Client Shared. |
-| `item_edit.py` | Editors items → `src/workbench/editors/items/editor.py` | Large write workflow. |
-| `zone_edit.py` | Editors zone → `src/workbench/editors/zone/editor.py` | Write workflow and journals/backups. |
+| historical `item_dat_tools.py` | Editors items/client → `src/workbench/editors/items/dat_tools.py` | Root alias retired; write/backup behavior remains package-owned. |
+| historical `item_edit.py` | Editors items → `src/workbench/editors/items/editor.py` | Root alias retired; Item Editor backend remains package-owned. |
+| historical `zone_edit.py` | Editors zone → `src/workbench/editors/zone/editor.py` | Root alias retired; write/journal/backup behavior remains package-owned. |
 | `fix_zone_door_props.py` | Editors zone/maintenance → `src/workbench/editors/zone/fix_door_props.py` | Intentional data modification. |
 
 ## Client Shared — 18

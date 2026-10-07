@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `54a8dd5aa09dd1d544a1ea495b2b51276b45cd23` after PR #612  
-Current work branch: `cleanup/packet-ocr-phase3c46`  
+Current merged baseline: `main` at `36bfbaa92a3cfd6265b48ab5e97e0e5f8a921354` after PR #613  
+Current work branch: `cleanup/editor-spatial-aliases-phase3c47`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -103,30 +103,28 @@ reset_install.bat
 - PR #610 — retired `backport_sql_live_check.py`, `id_bridge.py`, and `nyzul_plot.py`; moved Nyzul profile-bridge installation into the canonical module and refreshed the full modern-LSB migration fixture; Workbench #2813 + Src Layout #691 green.
 - PR #611 — retired `mission_toolkit.py` and `explore_event.py`, moved Event Explorer export generation to the packaged Mission Toolkit CLI, and activated both focused migration smokes; Workbench #2814 + Src Layout #692 green.
 - PR #612 — retired `llm_client.py`, `llm_db_tools.py`, and `llm_log.py`, normalized packaged research callers, and activated all three focused LLM migration regressions; Workbench #2815 + Src Layout #693 green.
+- PR #613 — retired `packet_decode.py` and `youtube_chat_ocr.py`, added packaged CLI entry points, repointed packet/OCR callers, and preserved mutable OCR behavior; Workbench #2816 + Src Layout #694 green.
 
 ## Current slice
 
-### Slice 3c46 — retire packet decoder and Capture OCR root launchers
+### Slice 3c47 — retire editor/spatial root compatibility aliases
 
-Status: IN PROGRESS on `cleanup/packet-ocr-phase3c46`.
+Status: IN PROGRESS on `cleanup/editor-spatial-aliases-phase3c40`.
 
 Changes on this branch:
-- [x] remove root `packet_decode.py` and `youtube_chat_ocr.py`.
-- [x] preserve canonical packet decoder ownership at `workbench.packets.decode`.
-- [x] preserve canonical Capture video/OCR ownership at `workbench.captures.video.ocr`.
-- [x] add direct `python -m workbench.packets.decode` CLI behavior, including the historical UTF-8 stdout wrapper.
-- [x] add direct `python -m workbench.captures.video.ocr` CLI behavior.
-- [x] repoint Capture ingestion/OCR packet-decoder imports to the canonical shared packet service.
-- [x] repoint active packet/OCR regressions to canonical imports and canonical implementation source paths.
-- [x] migrate both focused package smokes to explicit root-absence contracts while adding outside-repo packaged CLI help checks.
-- [x] preserve mutable OCR module-global behavior through the canonical adapter.
-- [x] update active OCR/packet UI guidance, Runtime installer wording, ownership records, and Src Layout status.
-- [x] retain existing Src Layout trigger/execution coverage for both focused migration smokes.
+- [x] remove root `build_zone_visual_cache.py`, `item_dat_tools.py`, `item_edit.py`, `zone_edit.py`, and `zone_plot.py`.
+- [x] preserve canonical ownership at `workbench.devtools.spatial.build_visual_cache`, `workbench.editors.items.dat_tools`, `workbench.editors.items.editor`, `workbench.editors.zone.editor`, and `workbench.devtools.spatial.active_zone_plot`.
+- [x] repoint real Item DAT production callers to `workbench.editors.items.dat_tools`.
+- [x] preserve editor backup/journal path behavior through the existing packaged adapters' synthetic legacy `__file__` values without requiring physical root files.
+- [x] migrate Item DAT / Item Editor / Zone Editor / Zone Plot package regressions to explicit root-absence contracts.
+- [x] run Zone Plot regression against the active-environment packaged backend.
+- [x] add Src Layout path and execution coverage for all four focused migration regressions.
+- [x] leave `build_capture_index.py`, `settings.py`, and `gui_server.py` for the final capture/bootstrap boundary.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by packet/OCR launcher retirement and packaged CLI migration.
+- [ ] Fix only regressions caused by editor/spatial compatibility retirement.
 - [ ] Merge only when required gates are green.
 
 ## Explicitly retained / deferred
