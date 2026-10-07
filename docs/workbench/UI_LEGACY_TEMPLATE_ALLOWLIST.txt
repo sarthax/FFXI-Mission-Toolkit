@@ -52,8 +52,6 @@ feature_trace.html | legacy page pending archetype migration
 gaps.html | legacy page pending archetype migration
 help.html | legacy page pending archetype migration
 home.html | legacy page pending archetype migration
-iddrift.html | legacy page pending archetype migration
-iddrift_detail.html | legacy page pending archetype migration
 itembrowser.html | legacy page pending archetype migration
 itemedit.html | legacy page pending archetype migration
 itemhealth.html | legacy page pending archetype migration
