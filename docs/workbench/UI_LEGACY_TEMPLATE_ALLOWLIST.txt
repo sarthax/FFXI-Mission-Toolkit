@@ -35,7 +35,6 @@ captures.html | legacy page pending archetype migration
 character_editor.html | legacy page pending archetype migration
 dat_inspector.html | legacy page pending archetype migration
 dialog.html | legacy page pending archetype migration
-dialog_drift.html | legacy page pending archetype migration
 domain_assault.html | legacy page pending archetype migration
 domain_detail.html | legacy page pending archetype migration
 domains_index.html | legacy page pending archetype migration
