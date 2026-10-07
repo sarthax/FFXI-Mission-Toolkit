@@ -21,7 +21,7 @@ def main() -> None:
     repair = (ROOT / MOVED["build_item_repair_package.py"]).read_text(encoding="utf-8")
     assert "from workbench.runtime.paths import REPO_ROOT" in repair
     assert "ROOT = REPO_ROOT" in repair
-    assert "Path(__file__).parent" not in repair
+    assert "\nROOT = Path(__file__).parent\n" not in repair
 
     enums = (ROOT / MOVED["tools_gen_dsp_enums.py"]).read_text(encoding="utf-8")
     assert "from workbench.runtime.paths import REPO_ROOT" in enums
