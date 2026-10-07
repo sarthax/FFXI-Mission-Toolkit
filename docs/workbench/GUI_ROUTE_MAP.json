@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "source": "gui_server.py",
+  "source": "workbench.app.host",
   "route_count": 257,
   "routes": [
     {

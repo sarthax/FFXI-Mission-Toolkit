@@ -1,7 +1,7 @@
-"""The Character Editor router must be mounted on the real gui_server app (not just owned by the nav shell)."""
+"""The Character Editor router must be mounted on the canonical Workbench app."""
 import asyncio
 
-import gui_server
+from workbench.app import host
 
 
 def _status(path: str) -> int:
@@ -28,7 +28,7 @@ def _status(path: str) -> int:
             if message["type"] == "http.response.start":
                 seen["status"] = message["status"]
 
-        await gui_server.app(scope, receive, send)
+        await host.app(scope, receive, send)
 
     asyncio.run(run())
     return seen["status"]
@@ -36,7 +36,7 @@ def _status(path: str) -> int:
 
 def test_character_editor_page_and_nested_routes_are_mounted():
     # app.routes only holds a lazy wrapper for included routers, so check the resolved route table.
-    paths = gui_server.app.openapi()["paths"]
+    paths = host.app.openapi()["paths"]
     assert "/character-editor" in paths
     assert "/character-editor/status.json" in paths
 

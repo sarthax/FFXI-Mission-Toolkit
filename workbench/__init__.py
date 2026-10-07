@@ -1,10 +1,8 @@
 """Repo-root compatibility bootstrap for the canonical src-layout Workbench package.
 
-All Workbench implementation code lives under ``src/workbench``. This one-file bridge is kept
-intentionally because supported checkout workflows still launch root entry points directly
-(e.g. ``python gui_server.py``) and the broad regression suite still exercises repo-root imports
-with ``PYTHONPATH=.``. In those contexts the project is not guaranteed to be installed as a
-package first, so this shim extends the package search path to the canonical src package.
+All Workbench implementation code lives under ``src/workbench``. This one-file bridge remains for
+repo-root development and regression workflows that exercise imports with ``PYTHONPATH=.`` before
+an editable install is guaranteed. It extends the package search path to the canonical src package.
 
 Do not add implementation modules below this root ``workbench/`` directory. The bridge can be
 removed only after launch/setup and CI universally install the project or put ``src`` on the

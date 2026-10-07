@@ -1,12 +1,12 @@
 """Regression coverage for the capture 2D/3D viewer routes on the live FastAPI app.
 
 These routes were recently touched indirectly by Capture/Zone Editor handoff changes.  A template
-or route-map string is not enough: verify the actual ``gui_server:app`` route table still owns the
+or route-map string is not enough: verify the actual ``workbench.app.host:app`` route table still owns the
 URLs the browser opens.
 """
 from __future__ import annotations
 
-from gui_server import app
+from workbench.app.host import app
 
 
 EXPECTED = {

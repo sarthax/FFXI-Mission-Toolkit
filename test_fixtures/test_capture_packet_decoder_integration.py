@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def main():
-    server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
+    server = (ROOT / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
     base = (ROOT / "gui" / "templates" / "base.html").read_text(encoding="utf-8")
     packet_list = (ROOT / "gui" / "templates" / "capture_packets.html").read_text(encoding="utf-8")
     packet_detail = (ROOT / "gui" / "templates" / "capture_packet_detail.html").read_text(encoding="utf-8")

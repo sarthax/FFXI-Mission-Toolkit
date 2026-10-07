@@ -1,7 +1,7 @@
 from pathlib import Path
 import tempfile
 
-from gui_server import app
+from workbench.app.host import app
 from workbench.editors.character.connection import discover_database_profile, normalize_server_root
 
 

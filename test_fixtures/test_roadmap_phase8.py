@@ -75,7 +75,7 @@ def main():
     assert "Evidence-backed contradiction dossiers" in current
     assert "PR #545 merged evidence-backed lobby/search/map classification" in current
     assert "Final Phase D source-layout ownership cleanup is complete" in current
-    assert "Compatibility-launcher retirement is a separate future bootstrap/distribution decision" in current
+    assert "historical root `settings.py` and `gui_server.py` compatibility surfaces are retired" in current
 
     print("roadmap reconciliation self-test: PASS")
 

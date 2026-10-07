@@ -11,8 +11,9 @@ This closeout does **not** mean every compatibility file should be deleted. Remo
 ## Final closeout migrations
 
 - PR #549 — the settings store moved to `workbench.runtime.settings_store`; root `settings.py` is now a zero-logic compatibility alias and `workbench.runtime.legacy_settings` no longer filesystem-loads root implementation code.
-- PR #552 — the monolithic GUI application host moved under `workbench.app`; root `gui_server.py` is now a thin launcher/import alias. The mature route implementation was relocated without an intentional route/body rewrite.
-- PR #552 also moved static route/source regressions to the canonical packaged host and expanded Character Editor regression path coverage so future app-host/settings changes cannot bypass the server-admin integration suite.
+- PR #552 — the monolithic GUI application host moved under `workbench.app`; the mature route implementation was relocated without an intentional route/body rewrite.
+- PR #552 also moved static route/source regressions toward the canonical packaged host and expanded Character Editor regression path coverage so future app-host/settings changes cannot bypass the server-admin integration suite.
+- PR #618 — the final root `gui_server.py` launcher was retired after host resource paths, live-route regressions, developer launch configuration, and the Auction House template bridge moved to `workbench.app.host`.
 
 Earlier Phase D work packaged the remaining mature server analyzers, client tooling, DAT/model tooling, capture ingestion/correlation, packet tooling, mission/research services, validation/package conversion services, index builders, and other reusable root implementations while retaining compatibility entry points where operator workflows still use them.
 
