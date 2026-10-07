@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Analyze an assembled migration package into generic Feature/Artifact/Dependency records.
 
-This complements backport_package.py rather than replacing it. It consumes a package directory and
+This complements `workbench.packages.migration.orchestrator` rather than replacing it. It consumes a package directory and
 its existing BACKPORT_REPORT.md, while optionally reading a feature manifest. It does not invent
 dependencies from require() chains; explicit manifest edges and deterministic artifact relationships
 are preferred.
