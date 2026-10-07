@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-youtube_chat_ocr.py -- pull a YouTube FFXI playthrough, crop its chat-log box, OCR the scrolled
+Capture video/OCR CLI -- pull a YouTube FFXI playthrough, crop its chat-log box, OCR the scrolled
 text, and fuzzy-match the result against this toolkit's own `dialog_text_fts` index (built by
 build_dialog_index.py) so raw OCR output gets corrected against real client dialog text instead
 of being trusted verbatim.
@@ -15,12 +15,12 @@ Pipeline stages (each is its own subcommand so you can inspect/redo any one step
     run        does all five stages back to back for one URL
 
 Usage:
-    py -3 youtube_chat_ocr.py run "<youtube-url>" --crop 40,760,760,260 --zone Nyzul_Isle
-    py -3 youtube_chat_ocr.py download "<youtube-url>"
-    py -3 youtube_chat_ocr.py frames <run_id> --crop 40,760,760,260 --fps 2
-    py -3 youtube_chat_ocr.py dedupe <run_id>
-    py -3 youtube_chat_ocr.py ocr <run_id>
-    py -3 youtube_chat_ocr.py match <run_id> --zone Nyzul_Isle
+    py -3 -m workbench.captures.video.ocr run "<youtube-url>" --crop 40,760,760,260 --zone Nyzul_Isle
+    py -3 -m workbench.captures.video.ocr download "<youtube-url>"
+    py -3 -m workbench.captures.video.ocr frames <run_id> --crop 40,760,760,260 --fps 2
+    py -3 -m workbench.captures.video.ocr dedupe <run_id>
+    py -3 -m workbench.captures.video.ocr ocr <run_id>
+    py -3 -m workbench.captures.video.ocr match <run_id> --zone Nyzul_Isle
 
 Requires external tools NOT installed by requirements.txt. All three can be one-click installed
 from the OCR page's Prerequisites section (backed by install_external_tools.py), or manually:
