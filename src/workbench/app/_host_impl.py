@@ -46,7 +46,7 @@ from workbench.devtools.indexing import build_database
 from workbench.devtools.reference.dialog import build_index as build_dialog_index
 from workbench.devtools.indexing import build_npc_index
 from workbench.devtools.indexing import build_sql_index
-import build_zone_visual_cache
+from workbench.devtools.spatial import build_visual_cache as build_zone_visual_cache
 from workbench.devtools.entities import profile as entity_profile
 import explore_event
 from workbench.devtools.features import trace as feature_trace
@@ -130,7 +130,7 @@ app.include_router(character_editor_router)
 from workbench.client.animlab.router import router as animlab_router
 app.include_router(animlab_router)
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
-# Zone visual-mesh OBJs (build_zone_visual_cache.py) are real but large (tens of MB of ASCII
+# Zone visual-mesh OBJs (workbench.devtools.spatial.build_visual_cache) are real but large (tens of MB of ASCII
 # text per zone) -- gzip compresses that ratio very well over the wire, worth it app-wide.
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 if MAPS_DIR.exists():
@@ -5975,7 +5975,7 @@ def zoneid_for_zone_db(con, zone_db: str) -> int | None:
 @app.get("/zones/{zoneid}/view3d", response_class=HTMLResponse)
 def zone_view3d(request: Request, zoneid: int, capture_id: int = 0, entity_id: int = 0,
                  pc: int = 0, zone_db: str = ""):
-    """Real 3D viewer over the zone's own visual mesh (build_zone_visual_cache.py), vanilla
+    """Real 3D viewer over the zone's own visual mesh (workbench.devtools.spatial.build_visual_cache), vanilla
     Three.js loaded via CDN (no build step, matching this app's existing no-bundler approach) --
     ported from studying Soverance/Vanalytics' React Three Fiber viewer (MIT), not copy-pasted:
     react-three-fiber/drei have no CDN/UMD build, so the scene setup here is hand-written directly
@@ -5998,7 +5998,7 @@ def zone_view3d(request: Request, zoneid: int, capture_id: int = 0, entity_id: i
     # Phase 3: live in-browser MZB/MMB parse (gui/static/ffxi-dat, vendored from Vanalytics) gives
     # real textures/water/instancing straight from the DAT bytes -- no offline OBJ bake needed when
     # both the install path and this zone's geometry DAT are known. Falls back to the pre-baked OBJ
-    # (build_zone_visual_cache.py) below when either is missing.
+    # (workbench.devtools.spatial.build_visual_cache) below when either is missing.
     live_parse_available = bool(ffxi_path and geometry_rom_path)
 
     paths = []
@@ -8709,7 +8709,7 @@ def assault_domain_page(request: Request):
 
 # ---- Nyzul Isle plot tool (nyzul_plot.py) ---------------------------------------------------
 import nyzul_plot
-import zone_plot  # reused below for zone 77's live door/prop rows (npc_list "_"-named entities)
+from workbench.devtools.spatial import active_zone_plot as zone_plot  # reused below for zone 77 live door/prop rows
 
 
 @app.get("/nyzul", response_class=HTMLResponse)
@@ -8724,7 +8724,7 @@ def nyzul_data():
     d["reach"] = nyzul_plot.reachability()
     d["exclusions"] = nyzul_plot.load_exclusions()
     # Door/wall props for zone 77, straight from the live DB -- same npc_list "_"-prefixed-name
-    # convention Zone Plot already uses to tell doors/props apart from real NPCs (zone_plot.py's
+    # convention Zone Plot already uses to tell doors/props apart from real NPCs (workbench.devtools.spatial.active_zone_plot's
     # zone_data()), reused here rather than re-deriving it.
     try:
         d["doors"] = [e for e in zone_plot.zone_data(77, server="dsp")["entities"] if e["k"] == "d"]
@@ -8745,7 +8745,7 @@ async def nyzul_save_exclusions(request: Request):
     return {"ok": True}
 
 
-# ---- Generic zone plot (zone_plot.py) -------------------------------------------------------
+# ---- Generic zone plot (workbench.devtools.spatial.active_zone_plot) -------------------------------------------------------
 # (imported above, alongside nyzul_plot)
 
 
@@ -8887,7 +8887,8 @@ def zoneplot_scripts(zid: int):
 def zoneplot_mesh(zid: int, lod: int = 0):
     import zmesh
     if not (ZONE_VISUAL_DIR / f"{zid}.obj").exists():  # build the visual-mesh cache on demand
-        import sqlite3, settings, build_zone_visual_cache as bz
+        import sqlite3, settings
+        from workbench.devtools.spatial import build_visual_cache as bz
         ffxi = settings.get_ffxi_install()
         if ffxi:
             con = sqlite3.connect(str(bz.DB_PATH))
@@ -8907,7 +8908,8 @@ def zoneplot_mesh_info(zid: int):
     before it commits to fetching a potentially huge zone (e.g. zone 34 is ~4.7M tris / 44MB at Full)."""
     import zmesh
     if not (ZONE_VISUAL_DIR / f"{zid}.obj").exists():
-        import sqlite3, settings, build_zone_visual_cache as bz
+        import sqlite3, settings
+        from workbench.devtools.spatial import build_visual_cache as bz
         ffxi = settings.get_ffxi_install()
         if ffxi:
             con = sqlite3.connect(str(bz.DB_PATH))
@@ -8926,14 +8928,14 @@ def zoneplot_mesh_info(zid: int):
 
 @app.post("/zoneplot/{zid}/build_cache")
 def zoneplot_build_cache(zid: int):
-    """UI-triggered equivalent of `py -3 build_zone_visual_cache.py <zid>` -- builds the Legacy OBJ
+    """UI-triggered equivalent of `py -3 workbench.devtools.spatial.build_visual_cache <zid>` -- builds the Legacy OBJ
     cache on demand so Zone Plot users never have to drop to a terminal for it. Captures build_one's
     own print() diagnostics (dat path missing, no geometry_rom_path, parse failure, etc.) so the
     button can surface the real reason instead of just a bare pass/fail."""
     import contextlib
     import io
     import sqlite3
-    import build_zone_visual_cache as bz
+    from workbench.devtools.spatial import build_visual_cache as bz
     ffxi = settings_mod.get_ffxi_install()
     if not ffxi:
         return JSONResponse({"ok": False, "log": "FFXI install path isn't configured -- set it on the Settings page first"}, status_code=400)
@@ -9318,7 +9320,7 @@ def itemedit_latentmeta():
 @app.get("/itemedit/special-cases.json")
 def itemedit_special_cases(item_id: int = 0, name: str = ""):
     """Gear sets, food/use bonuses and server-code mentions for one item (read-only, parsed from the server tree)."""
-    import zone_plot
+    from workbench.devtools.spatial import active_zone_plot as zone_plot
     from workbench.editors.items import _special_cases
     try:
         root = zone_plot._server_root()
@@ -9453,7 +9455,7 @@ def itemhealth_page(request: Request):
 def itemedit_proc_script(item_id: int = 0, name: str = ""):
     """Where does this item's scripted proc live in the active server tree, and does the file exist?"""
     import re as _re
-    import zone_plot
+    from workbench.devtools.spatial import active_zone_plot as zone_plot
     internal = _re.sub(r"[^a-z0-9_]", "", (name or "").lower())
     out = {"item_id": item_id, "name": internal, "root": "", "candidates": []}
     try:
