@@ -396,3 +396,9 @@ def extract_and_project_lsb_mission(
         machine,source_path=source_path,source_snapshot_id=source_snapshot_id,
         source_family="LSB",feature_name=feature_name,
     )
+
+
+if __name__ == "__main__":
+    from workbench.devtools.missions.graph_ingest_cli import main
+
+    main()
