@@ -63,3 +63,4 @@ Foundation adopters:
 Completed workspace migrations:
 
 - **Research** — Sessions (Browser), Contradictions (Browser), Gaps (Dashboard), Session Detail (Workbench), and Evidence (Detail).
+- **Validation** — Dashboard (Dashboard), Runs (Browser), Run Detail (Detail), and Live Target (Workbench, read-only).
