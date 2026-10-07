@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Regression for large PacketViewer provenance parsing."""
-import build_capture_index as bci
+from workbench.captures.ingestion import build_index as bci
 
 BLOCK = """[{ts}] 
         |  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F      | 0123456789ABCDEF
