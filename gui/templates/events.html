@@ -1,10 +1,11 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Events / CSID Browser{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}events-browser-page{% endblock %}
-{% block content %}
+{% block page_archetype %}browser{% endblock %}
+{% block page_class %}events-browser-page{% endblock %}
+{% block page_heading %}Events / CSID Browser{% endblock %}
+{% block page_help %}Client event/CSID inventory by zone and entity. Open an event to compare decompiled client script, dialog IDs, server Lua references, capture traffic, and implementation scaffolding.{% endblock %}
+{% block page_body %}
 <style>
-main.events-browser-page{padding:8px 10px 24px}
 .event-browser-head{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
 .event-browser-head .hint{max-width:900px}
 .event-table td,.event-table th{vertical-align:middle}
@@ -14,9 +15,7 @@ main.events-browser-page{padding:8px 10px 24px}
 .event-actions a{text-decoration:none}
 </style>
 
-<div class="dense-toolbar">
-  <strong>Events / CSID Browser</strong>
-  <form class="search dense-toolbar" method="get" style="margin:0;flex:1">
+<form class="search wb-filter-row" method="get">
   <select name="zone">
     <option value="">Pick a zone...</option>
     {% for z in zones %}
@@ -25,9 +24,7 @@ main.events-browser-page{padding:8px 10px 24px}
   </select>
   <input type="text" name="q" value="{{ q }}" placeholder="entity id, NPC name, or exact CSID">
   <button type="submit">Browse</button>
-  </form>
-  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="hint muted" style="padding:6px 2px;max-width:760px">Client event/CSID inventory by zone and entity. Open an event to compare decompiled client script, dialog IDs, server Lua references, capture traffic, and implementation scaffolding.</div></details>
-</div>
+</form>
 
 {% if generated_note %}<p class="muted">{{ generated_note }} (this can take a minute the first time.)</p>{% endif %}
 
@@ -48,7 +45,7 @@ main.events-browser-page{padding:8px 10px 24px}
 </div>
 {% endif %}
 {% if not rows %}
-<p class="muted">No events found (or no cached/generatable export for this zone).</p>
+<div class="wb-empty">No events found (or no cached/generatable export for this zone).</div>
 {% else %}
 <div class="table-wrap"><table class="event-table">
   <tr><th>entity</th><th>name</th><th>CSID</th><th>decompile</th><th>evidence</th><th>actions</th></tr>
