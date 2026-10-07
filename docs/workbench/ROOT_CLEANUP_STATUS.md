@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `b9d7d56e5552f195c58505bd18cacf6fb92948cf` after PR #615  
-Current work branch: `cleanup/capture-index-phase3c48`  
+Current merged baseline: `main` at `5c674ad70ba08ba8768e2f54f0d06576f19e10f7` after PR #616  
+Current work branch: `cleanup/settings-root-phase3c49`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -105,29 +105,31 @@ reset_install.bat
 - PR #612 — retired `llm_client.py`, `llm_db_tools.py`, and `llm_log.py`, normalized packaged research callers, and activated all three focused LLM migration regressions; Workbench #2815 + Src Layout #693 green.
 - PR #613 — retired `packet_decode.py` and `youtube_chat_ocr.py`, added packaged CLI entry points, repointed packet/OCR callers, and preserved mutable OCR behavior; Workbench #2816 + Src Layout #694 green.
 - PR #615 — retired editor/spatial root aliases (`build_zone_visual_cache.py`, `item_dat_tools.py`, `item_edit.py`, `zone_edit.py`, `zone_plot.py`) and preserved packaged ownership.
+- PR #616 — retired `build_capture_index.py` and moved active Capture ingestion callers to `workbench.captures.ingestion.build_index`; Workbench + Src Layout green.
 
 ## Current slice
 
-### Slice 3c48 — retire Capture index root compatibility launcher
+### Slice 3c49 — retire root Settings compatibility alias
 
-Status: IN PROGRESS on `cleanup/capture-index-phase3c48`.
+Status: IN PROGRESS on `cleanup/settings-root-phase3c49`.
 
 Changes on this branch:
-- [x] repoint capture regressions from root `build_capture_index` imports to `workbench.captures.ingestion.build_index`.
-- [x] remove root `build_capture_index.py`.
-- [x] preserve the packaged Capture ingestion CLI and setup entry point.
-- [x] migrate focused Src Layout/Capture migration checks to explicit root-absence contracts.
-- [x] update active Capture ownership/CLI guidance.
+- [x] migrate remaining Auction House runtime reads to `workbench.runtime.settings_store`.
+- [x] remove root `settings.py` compatibility alias.
+- [x] preserve staged implementation compatibility through existing explicit package-safe settings injection.
+- [x] update Src Layout/settings migration regressions to require root absence.
+- [x] update active ownership/status/roadmap guidance.
+- [x] leave `gui_server.py` untouched as the final bootstrap compatibility launcher.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by Capture index launcher retirement.
+- [ ] Run Character Editor Regression if triggered by Auction House/settings paths.
 - [ ] Merge only when required gates are green.
 
 ## Explicitly retained / deferred
 
-- `settings.py` and `gui_server.py` remain supported bootstrap compatibility surfaces; retire only as a separate bootstrap/distribution decision.
+- `gui_server.py` remains the final supported bootstrap compatibility launcher; retire only after live-route tests and packaged-host legacy filename assumptions are migrated.
 
 ## Remaining slices
 

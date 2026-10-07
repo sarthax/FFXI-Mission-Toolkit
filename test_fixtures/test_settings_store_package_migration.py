@@ -38,3 +38,8 @@ def test_legacy_settings_bridge_targets_packaged_store():
     source = Path(legacy_settings.__file__).read_text(encoding="utf-8")
     assert "importlib.util" not in source
     assert 'REPO_ROOT / "settings.py"' not in source
+
+
+def test_root_settings_alias_is_retired():
+    repo_root = Path(__file__).resolve().parents[1]
+    assert not (repo_root / "settings.py").exists()
