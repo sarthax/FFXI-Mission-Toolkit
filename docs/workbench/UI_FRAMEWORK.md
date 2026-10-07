@@ -59,3 +59,7 @@ Foundation adopters:
 - `sql.html` — Browser;
 - `validation_dashboard.html` — Dashboard;
 - `research_evidence.html` — Detail.
+
+Completed workspace migrations:
+
+- **Research** — Sessions (Browser), Contradictions (Browser), Gaps (Dashboard), Session Detail (Workbench), and Evidence (Detail).
