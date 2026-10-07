@@ -3,19 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 
 
-def test_root_gui_server_is_launcher_only():
-    root = Path("gui_server.py").read_text(encoding="utf-8")
-    assert "from workbench.app import host as _canonical" in root
-    assert "_canonical.main()" in root
-    assert "sys.modules[__name__] = _canonical" in root
-    assert "@app." not in root
-    assert "FastAPI(" not in root
+def test_root_gui_server_launcher_is_retired():
+    assert not Path("gui_server.py").exists()
 
-
-def test_packaged_host_loader_preserves_repo_path_and_canonical_uvicorn_target():
+def test_packaged_host_loader_uses_packaged_impl_and_canonical_uvicorn_target():
     loader = Path("src/workbench/app/host.py").read_text(encoding="utf-8")
-    assert 'REPO_ROOT / "gui_server.py"' in loader
     assert '_LOADER_FILE.with_name("_host_impl.py")' in loader
+    assert 'REPO_ROOT / "gui_server.py"' not in loader
     assert "compile(_IMPL_FILE.read_text" in loader
     assert 'uvicorn.run("workbench.app.host:app"' in loader
 
