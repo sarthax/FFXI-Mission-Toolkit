@@ -71,7 +71,7 @@
     <label>System prompt (optional)
       <br><input type="text" name="system" value="{{ system }}" style="width:340px;" placeholder="e.g. You are terse.">
     </label>
-    <label style="display:flex; align-items:center; gap:6px;" title="Lets the model query this toolkit's own database on demand (list_tables/describe_table/query_sql) instead of relying only on what's in the prompt. Read-only, physically enforced -- see llm_db_tools.py. Every query made is shown below the response.">
+    <label style="display:flex; align-items:center; gap:6px;" title="Lets the model query this toolkit's own database on demand (list_tables/describe_table/query_sql) instead of relying only on what's in the prompt. Read-only, physically enforced -- see workbench.devtools.research.legacy_llm.db_tools. Every query made is shown below the response.">
       <input type="checkbox" name="use_db_tools" {% if use_db_tools %}checked{% endif %}>
       Allow read-only DB tool access
     </label>
@@ -116,7 +116,7 @@
 {% endif %}
 
 <h2 style="margin-top:24px;">Recent calls</h2>
-<p class="muted">Every call through <code class="chip">llm_client.py</code> lands here -- manual
+<p class="muted">Every call through <code class="chip">workbench.devtools.research.legacy_llm.client</code> lands here -- manual
   (this page), quick actions from other pages (Lua Converter's "ask LLM", a capture's "summarize
   with LLM"), and anything else an automated tool records via
   <code class="chip">llm_log.record()</code> -- so what's been sent/received stays visible in one
