@@ -1,7 +1,7 @@
 """Nyzul Isle plot tool backend: parses the DSP Lua spawn data + Nyzul_Isle.nav (pure Python)
 and computes per-layout reachability (connected components of the navmesh from each entrance).
 Everything is read live from the DSP repo (Settings' dsp_server_path) so re-running picks up
-edits. zone_plot.py also imports this module's generic nav_polys()/nav_triangles_bytes() for
+edits. The packaged spatial Zone Plot backend also imports this module's generic nav_polys()/nav_triangles_bytes() for
 every zone (Topaz included), so the DSP root below is resolved lazily per-call, never at import
 time -- importing this module must not require dsp_server_path to be configured."""
 import json
