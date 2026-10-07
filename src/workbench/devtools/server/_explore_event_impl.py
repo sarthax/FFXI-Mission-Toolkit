@@ -7,7 +7,7 @@ step this session (reading raw opcode dumps line by line to find where a menu's 
 actually come from, done by hand for the Vending Box mechanic). This is a thin wrapper: the real
 decompiler is xi-events-py (via its own mission_toolkit.py bridge script), which already renders
 message ids with dialog.yml's text inline. This script just:
-  - auto-generates a zone's events.yml/dialog.yml via mission_toolkit.py if not already cached
+  - auto-generates a zone's events.yml/dialog.yml via the packaged Mission Toolkit CLI if not already cached
   - resolves an entity by name (via npc_names) instead of requiring the raw id
   - cross-checks every message id the decompiler renders against OUR OWN dialog_text index
     (built by build_dialog_index.py via dat-extractor -- a second, independently-extracted
@@ -206,8 +206,8 @@ def ensure_export(zone_folder_name: str, ffxi_path: str) -> Path:
     dialog_yml = out_dir / "dialog.yml"
     if events_yml.exists() and dialog_yml.exists():
         return out_dir
-    print(f"[{zone_folder_name}] no cached events/dialog export -- generating via mission_toolkit.py...")
-    # mission_toolkit.py's own --out-dir defaults to the RELATIVE path "mission_reports", resolved
+    print(f"[{zone_folder_name}] no cached events/dialog export -- generating via the packaged Mission Toolkit CLI...")
+    # the Mission Toolkit CLI's own --out-dir defaults to the RELATIVE path "mission_reports", resolved
     # against the subprocess's cwd -- without cwd=TOOLS_ROOT here, this silently inherited whatever
     # directory the GUI server process itself happened to be started from (e.g. D:\Claude, not
     # D:\Claude\mission_toolkit), writing real generated output to a stray mission_reports/ next to
@@ -215,11 +215,11 @@ def ensure_export(zone_folder_name: str, ffxi_path: str) -> Path:
     # real path, and the page just rendered "0 events found" with no error -- confirmed live: 12
     # zones' worth of real exports had silently piled up at D:\Claude\mission_reports\ this way.
     result = subprocess.run(
-        [sys.executable, str(TOOLS_ROOT / "mission_toolkit.py"), zone_folder_name, "--ffxi-path", ffxi_path],
+        [sys.executable, "-m", "workbench.devtools.app.mission_toolkit", zone_folder_name, "--ffxi-path", ffxi_path],
         capture_output=True, text=True, cwd=str(TOOLS_ROOT),
     )
     if result.returncode != 0:
-        raise SystemExit(f"mission_toolkit.py failed:\n{result.stdout}\n{result.stderr}")
+        raise SystemExit(f"Mission Toolkit CLI failed:\n{result.stdout}\n{result.stderr}")
     return out_dir
 
 
