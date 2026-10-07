@@ -115,3 +115,5 @@ Phase D implementation ownership is complete. The repository still retains histo
 Retiring those files is a separate bootstrap/distribution phase, not unfinished source-layout migration. That future phase should require every supported setup/start/CI path to install the project or explicitly place `src` on the Python import path before compatibility launchers are removed.
 
 - Standalone operator scripts for item repair, Auction House seeding, Discord intake, and DSP enum generation no longer live at repository root. They are grouped under `scripts/maintenance` and `scripts/import`; repo-sensitive scripts resolve paths through `workbench.runtime.paths` / `legacy_settings`, and Src Layout enforces the relocation contract.
+
+- Legacy script-style regression suites for backport Lua, backport SQL, and capture ingestion now live under `tests/legacy/` rather than repository root. Capture fixtures resolve through `workbench.runtime.paths.REPO_ROOT`; Workbench executes all three suites and Src Layout enforces the relocation contract.
