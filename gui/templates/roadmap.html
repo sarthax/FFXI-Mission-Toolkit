@@ -219,7 +219,7 @@
       inline instead of a bare regex string.</td></tr>
   <tr><td>Backport SQL Converter <span class="pill match">new 2026-09-13</span></td>
     <td class="muted"><code class="chip">workbench.packages.migration.sql_convert</code>, <code class="chip">data/dsp_sql_schema_map.json</code>,
-      <code class="chip">backport_sql_live_check.py</code></td>
+      <code class="chip">workbench.validation.live_db.sql_check</code></td>
     <td>Paste-in Topaz&rarr;DSP SQL converter at <code class="chip">/backport/sql-convert</code>
       (same <code class="chip">backport_enabled()</code> gate). Reformats Topaz
       <code class="chip">INSERT INTO</code> statements to DSP's real column order per table
@@ -238,7 +238,7 @@
       (<code class="chip">mob_spawn_points.groupid</code>, <code class="chip">mob_groups.dropid</code>)
       updated to match; 5 more real name-mismatch collisions found and listed for a human decision.
       Full write-up in <code class="chip">ID_COLLISION_REPORT.md</code>.
-      <strong><code class="chip">backport_sql_live_check.py</code></strong> -- a read-only
+      <strong><code class="chip">workbench.validation.live_db.sql_check</code></strong> -- a read-only
       live-MySQL counterpart, ready to hand to whoever has actual Valhalla-target DB access to
       re-verify the renumbered ranges are still free against real current data, not just this
       snapshot (see <code class="chip">LIVE_DB_COLLISION_CHECK.md</code>). 10-test regression suite
