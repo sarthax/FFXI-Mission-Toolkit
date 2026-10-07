@@ -1,8 +1,10 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Help — Mission Toolkit{% endblock %}
-{% block content %}
-<h1>Mission Toolkit Help</h1>
-<p class="muted">Mission Toolkit is an evidence-driven FFXI development workbench for tracing features across server code and data, client assets, captures, research evidence, validation, and migration packages. Use this page as a map of the current GUI.</p>
+{% block page_archetype %}detail{% endblock %}
+{% block page_width %}reading{% endblock %}
+{% block page_heading %}Mission Toolkit Help{% endblock %}
+{% block page_help %}Mission Toolkit is an evidence-driven FFXI development workbench for tracing features across server code and data, client assets, captures, research evidence, validation, and migration packages. This page is the map of the current GUI.{% endblock %}
+{% block page_body %}
 
 <div class="warn"><strong>Evidence is not a verdict.</strong> A match, missing edge, capture observation, or catalog entry tells you what the Workbench currently knows. It does not by itself prove that a feature is implemented, broken, or absent.</div>
 
