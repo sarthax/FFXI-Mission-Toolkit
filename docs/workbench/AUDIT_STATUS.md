@@ -505,7 +505,7 @@ The Workbench now performs a real public repository migration smoke using pinned
 
 ## 2026-09-25 — LLM Research & Agent backlog
 
-The existing LLM integration is confirmed to be a narrow local-model layer: `llm_client.py` connects to Open WebUI/Ollama, `llm_db_tools.py` exposes read-only SQLite research calls, `llm_log.py` records interactions, and the GUI exposes prompt/tool transcripts. The rework will preserve those safety properties but promote LLM functionality into a first-class evidence-aware research subsystem.
+The existing LLM integration is confirmed to be a narrow local-model layer: `workbench.devtools.research.legacy_llm.client` connects to Open WebUI/Ollama, `workbench.devtools.research.legacy_llm.db_tools` exposes read-only SQLite research calls, `workbench.devtools.research.legacy_llm.log` records interactions, and the GUI exposes prompt/tool transcripts. The rework will preserve those safety properties but promote LLM functionality into a first-class evidence-aware research subsystem.
 
 Priority implementation order:
 1. provider abstraction and ResearchSession persistence;
