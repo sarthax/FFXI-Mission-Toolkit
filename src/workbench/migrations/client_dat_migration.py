@@ -13,7 +13,7 @@ from pathlib import Path
 import shutil
 from typing import Any, Callable, Mapping, Sequence
 
-import item_dat_tools
+from workbench.editors.items import dat_tools as item_dat_tools
 from workbench.client.dat_adapter import ClientDatRecord, ItemDatAdapter
 from workbench.migrations.generated_output import GeneratedOutput
 
