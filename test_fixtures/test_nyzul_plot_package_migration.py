@@ -71,6 +71,15 @@ local pTableFloorRandomEntities =
         "scripts/globals/nyzul.lua",
         """xi = xi or {}
 xi.nyzul = xi.nyzul or {}
+xi.nyzul.objective =
+{
+    ELIMINATE_ENEMY_LEADER = 1,
+    ELIMINATE_SPECIFIED_ENEMIES = 2,
+    ACTIVATE_ALL_LAMPS = 3,
+    ELIMINATE_SPECIFIED_ENEMY = 4,
+    ELIMINATE_ALL_ENEMIES = 5,
+    FREE_FLOOR = 6,
+}
 xi.nyzul.FloorLayout =
 {
     [0] = { -20, -0.5, -380 },
