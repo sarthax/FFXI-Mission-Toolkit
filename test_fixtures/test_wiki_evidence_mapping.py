@@ -6,7 +6,7 @@ import sqlite3
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import wiki_evidence
+from workbench.devtools.reference import wiki_evidence
 from workbench.core import graph as workbench_graph
 from workbench.core.services import wiki_evidence_graph
 from workbench.core.services.feature_trace_providers import provider_tables
