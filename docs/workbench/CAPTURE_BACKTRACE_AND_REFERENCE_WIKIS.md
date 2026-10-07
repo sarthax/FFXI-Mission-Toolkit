@@ -28,7 +28,7 @@ capture
 
 A capture proves that something occurred on a particular client/server combination. It does not prove that the target checkout can reproduce it. The backtrace therefore distinguishes PRESENT, MISSING, AMBIGUOUS, and UNKNOWN rather than turning an absent index entry into a false negative.
 
-`capture_backtrace.py` is the first reverse-direction checker. As more canonical relationships are connected, the same capture can be traced farther without changing the capture ingestion format.
+`workbench.captures.correlation.backtrace` is the reverse-direction checker. As more canonical relationships are connected, the same capture can be traced farther without changing the capture ingestion format.
 
 ### CSID/message handling
 
