@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-import importlib.util
 import json
 import subprocess
 import sys
@@ -11,24 +10,6 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def _load_root(name: str, path: Path):
-    added = False
-    root_text = str(REPO_ROOT)
-    if root_text not in sys.path:
-        sys.path.insert(0, root_text)
-        added = True
-    try:
-        spec = importlib.util.spec_from_file_location(name, path)
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[name] = module
-        assert spec.loader is not None
-        spec.loader.exec_module(module)
-        return sys.modules[name]
-    finally:
-        if added:
-            sys.path.remove(root_text)
-
-
 def _write(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
@@ -36,8 +17,7 @@ def _write(path: Path, text: str) -> None:
 
 def main() -> None:
     canonical = importlib.import_module("workbench.packages.migration.orchestrator")
-    legacy = _load_root("backport_package", REPO_ROOT / "backport_package.py")
-    assert legacy is canonical
+    assert not (REPO_ROOT / "backport_package.py").exists()
 
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
