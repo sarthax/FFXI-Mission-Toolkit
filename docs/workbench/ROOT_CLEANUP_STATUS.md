@@ -2,8 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-06  
-Current merged baseline: `main` at `337604a121d095f1dbc12d1cef935a69d92dc552` after PR #601  
-Current work branch: `cleanup/dsp-index-phase3c35`  
+Current merged baseline: `main` at `a70f31580fafd8945cc49546c2a18b897b1e1ecf` after PR #602  
+Current work branch: `cleanup/index-builders-phase3c36`  
 Goal: reduce repository-root clutter without reintroducing import/path coupling or moving runtime state accidentally.
 
 This file is the authoritative resume point for post-Phase-D root cleanup. `SRC_LAYOUT_MIGRATION_PLAN.md` is historical planning only.
@@ -92,25 +92,29 @@ reset_install.bat
 - PR #599 — retired `validation_pipeline.py`, moved the suite CLI regression to `python -m workbench.validation.pipeline`, and added Src Layout migration coverage; Workbench #2784 + Src Layout #662 green.
 - PR #600 — retired `workbench_connect.py` and `workbench_connect_server.py`, repointing active connector regressions to `workbench.runtime.connect` / `connect_server`; Workbench #2785 + Src Layout #663 green.
 - PR #601 — retired `build_zone_topdown.py`, preserved packaged spatial cache generation, and added Src Layout migration coverage; Workbench #2786 + Src Layout #664 green.
+- PR #602 — retired `build_dsp_index.py`, preserved canonical DSP indexing/path rebinding, and added Src Layout migration coverage; Workbench #2788 + Src Layout #666 green.
 
 ## Current slice
 
-### Slice 3c35 — retire DSP index root launcher
+### Slice 3c36 — retire Topaz and Wiki index root launchers
 
-Status: IN PROGRESS on `cleanup/dsp-index-phase3c35`.
+Status: IN PROGRESS on `cleanup/index-builders-phase3c36`.
 
 Changes on this branch:
-- [x] remove root `build_dsp_index.py`.
-- [x] preserve canonical Development indexing ownership at `workbench.devtools.indexing.build_dsp_index`.
-- [x] preserve package-safe Settings/path rebinding and mature staged DSP indexing behavior.
-- [x] migrate the focused package regression from root-alias identity to an explicit root-absence contract while retaining canonical invariants.
-- [x] add Src Layout trigger/execution coverage for the DSP index package migration smoke.
-- [x] update Src Layout status to mark the historical root launcher retired.
+- [x] remove root `build_topaz_index.py` and `build_wiki_index.py`.
+- [x] preserve canonical Topaz indexing at `workbench.devtools.indexing.build_topaz_index`.
+- [x] preserve canonical BG Wiki reverse-reference indexing at `workbench.devtools.reference.build_wiki_index`.
+- [x] preserve package-safe Topaz Settings/path rebinding and mature staged implementation behavior.
+- [x] migrate both focused package regressions to explicit root-absence contracts.
+- [x] repoint live Entity Profile Wiki rebuild guidance to `python -m workbench.devtools.reference.build_wiki_index`.
+- [x] update the Topaz implementation usage guidance to the packaged module command.
+- [x] add Src Layout trigger/execution coverage for both migration smokes.
+- [x] update Src Layout status for both retired launchers.
 
 Before merge:
 - [ ] Run Workbench Regression.
 - [ ] Run Src Layout Regression.
-- [ ] Fix only regressions caused by DSP-index launcher retirement.
+- [ ] Fix only regressions caused by Topaz/Wiki index launcher retirement.
 - [ ] Merge only when green.
 
 ## Explicitly retained / deferred

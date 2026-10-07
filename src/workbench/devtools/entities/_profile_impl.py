@@ -838,7 +838,7 @@ def print_profile(profile: dict):
             print(f"  {ref['title']}  ({ref['url']})")
     else:
         print("\nWiki references: none found (or wiki_entity_refs not built yet -- "
-              "run py -3 build_wiki_index.py)")
+              "run py -3 -m workbench.devtools.reference.build_wiki_index)")
 
     print("\nField provenance:")
     for field_name, sources in profile["field_sources"].items():
