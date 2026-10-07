@@ -2,16 +2,15 @@ from pathlib import Path
 import importlib
 
 
-def test_root_wrapper_aliases_canonical_module():
-    root = importlib.import_module("backport_package")
+def test_orchestrator_resolves_package_safe_cli_defaults():
     canonical = importlib.import_module("workbench.packages.migration.orchestrator")
-    assert root is canonical
+    legacy = importlib.import_module("workbench.runtime.legacy_settings")
+    runtime_paths = importlib.import_module("workbench.runtime.paths")
+
+    assert canonical._default_dsp_root() == legacy.get_dsp_root()
+    assert canonical._default_db_path() == runtime_paths.DATABASE_PATH
 
 
-def test_root_wrapper_uses_package_safe_cli_defaults():
-    source = Path("backport_package.py").read_text(encoding="utf-8")
-    assert "import settings" not in source
-    assert "from workbench.runtime.legacy_settings import get_dsp_root" in source
-    assert "from workbench.runtime.paths import DATABASE_PATH" in source
-    assert "default_dsp_root=get_dsp_root()" in source
-    assert "default_db_path=DATABASE_PATH" in source
+def test_backport_package_root_wrapper_is_retired():
+    repo_root = Path(__file__).resolve().parents[1]
+    assert not (repo_root / "backport_package.py").exists()
