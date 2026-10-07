@@ -4,7 +4,7 @@
     {
       "name": "mission-toolkit",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["gui_server.py"],
+      "runtimeArgs": ["-m", "workbench.app.host"],
       "port": 8420
     }
   ]

@@ -4,7 +4,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-import build_capture_index as bci
+from workbench.captures.ingestion import build_index as bci
 
 
 ROOT = Path(__file__).resolve().parents[1]

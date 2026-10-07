@@ -2,7 +2,6 @@
 """Focused migration smoke for the Development build-condition indexer."""
 from __future__ import annotations
 
-import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -11,21 +10,11 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-def _load_root(name: str, path: str):
-    sys.modules.pop(name, None)
-    spec = importlib.util.spec_from_file_location(name, REPO_ROOT / path)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return sys.modules[name]
-
 
 def main() -> None:
     from workbench.devtools.server import condition_index
 
-    legacy = _load_root("build_condition_index", "build_condition_index.py")
-    assert legacy is condition_index
+    assert not (REPO_ROOT / "build_condition_index.py").exists()
 
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)

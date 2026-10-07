@@ -1,7 +1,10 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Binding Reference{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}binding-reference-page{% endblock %}
+{% block page_archetype %}browser{% endblock %}
+{% block page_class %}binding-reference-page{% endblock %}
+{% block page_heading %}Binding Reference{% endblock %}
+{% block page_actions %}<a class="chip" href="/backport/package">Package workflow</a><a class="chip" href="/backport/lua-convert">Lua converter</a><a class="chip" href="/backport/sql-convert">SQL converter</a>{% if trace_q %}<a class="chip" href="/features/trace?q={{ trace_q|urlencode }}">Feature Trace entity {{ trace_q }}</a>{% endif %}{% endblock %}
+{% block page_help %}Reference lookup for Lua method bindings registered in Topaz and old-dsp-reference, including confirmed namespace renames and source locations.{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -23,23 +26,7 @@
 {% endif %}
 {% endmacro %}
 
-{% block content %}
-<style>main.binding-reference-page{padding:8px 10px 24px}</style>
-<div class="dense-toolbar">
-  <strong>Binding Reference</strong>
-  <span class="sp"></span>
-  <p class="tabs" style="margin:0;">
-  <a class="chip" href="/backport/lua-convert">&larr; Convert</a>
-  <a class="chip" href="/backport/bindings{% if trace_q %}?trace_q={{ trace_q|urlencode }}{% endif %}" style="background:var(--accent);color:#fff;">Binding Reference</a>
-  {% if trace_q %}<a class="chip" href="/features/trace?q={{ trace_q|urlencode }}">&larr; Feature Trace entity {{ trace_q }}</a>{% endif %}
-</p>
-  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:760px">Every Lua method binding registered in Topaz (<code>SOL_REGISTER</code>) and in
-old-dsp-reference (<code>LUNAR_DECLARE_METHOD</code>), cross-referenced against
-<code>data/dsp_namespace_map.json</code>'s confirmed renames. Built for reference/lookup outside a
-conversion run -- e.g. checking what a name is called before writing new Lua by hand. Regenerate
-the underlying indexes after a DSP engine patch with
-<code>py -3 backport_binding_index.py --build</code>.</div></details>
-</div>
+{% block page_body %}
 
 {% if index_missing %}
 <div class="warn">
@@ -67,7 +54,7 @@ the underlying indexes after a DSP engine patch with
 </table>
 </div>
 
-<form class="search dense-toolbar" method="get" style="margin:6px 0">
+<form class="search wb-filter-row" method="get">
   <input type="hidden" name="trace_q" value="{{ trace_q }}">
   <select name="status">
     <option value="">All statuses</option>
@@ -121,7 +108,7 @@ the underlying indexes after a DSP engine patch with
 </table></div>
 {{ pager() }}
 {% else %}
-<p class="muted">No bindings found{{ " for \"%s\"" % q if q else "" }}.</p>
+<div class="wb-empty">No bindings found{{ " for \"%s\"" % q if q else "" }}.</div>
 {% endif %}
 {% endif %}
 

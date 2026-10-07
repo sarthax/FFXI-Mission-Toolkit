@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-import dat_inspector
+from workbench.client.dat import inspector as dat_inspector
 from workbench.gui_shell import build_shell_context
 
 
@@ -183,7 +183,7 @@ def main() -> int:
         assert "6496" in html and "6498" in html
         assert "ROM/7/44.DAT" in html
 
-    source=(ROOT/"gui_server.py").read_text(encoding="utf-8")
+    source=(ROOT/"src"/"workbench"/"app"/"_host_impl.py").read_text(encoding="utf-8")
     assert 'dat_path: str = ""' in source
     assert 'family: str = ""' in source
     assert "dat_id_for_zone_family" in source

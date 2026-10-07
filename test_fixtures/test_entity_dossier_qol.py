@@ -3,7 +3,7 @@
 
 from pathlib import Path
 
-import entity_profile
+from workbench.devtools.entities import profile as entity_profile
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -87,7 +87,7 @@ def main():
         "client_event_decompile",
     } <= kinds, actions
 
-    server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
+    server = (ROOT / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
     template = (ROOT / "gui" / "templates" / "entity_detail.html").read_text(encoding="utf-8")
 
     assert 'profile["event_wiring"] = []' in server

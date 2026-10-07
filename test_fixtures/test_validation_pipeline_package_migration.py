@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -11,18 +10,9 @@ from workbench.runtime.paths import REPO_ROOT
 from workbench.validation import pipeline as canonical
 
 
-def load_root_alias():
-    path = REPO_ROOT / "validation_pipeline.py"
-    spec = importlib.util.spec_from_file_location("validation_pipeline", path)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["validation_pipeline"] = module
-    spec.loader.exec_module(module)
-    return sys.modules["validation_pipeline"]
-
 
 def main() -> None:
-    assert load_root_alias() is canonical
+    assert not (REPO_ROOT / "validation_pipeline.py").exists()
 
     class Result:
         run_id = "run:demo"

@@ -1,12 +1,13 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Validation Runs — Mission Toolkit{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}validation-runs-page{% endblock %}
-{% block content %}
-<style>main.validation-runs-page{padding:8px 10px 24px}</style>
-<div class="dense-toolbar"><strong>Validation Runs &amp; Results</strong><span class="sp"></span><a class="chip" href="/validation">Dashboard</a></div>
+{% block page_archetype %}browser{% endblock %}
+{% block page_class %}validation-runs-page{% endblock %}
+{% block page_heading %}Validation Runs &amp; Results{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Read only</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/validation">Dashboard</a>{% endblock %}
+{% block page_body %}
 
-<form class="search dense-toolbar" method="get" action="/validation/runs" style="margin:6px 0">
+<form class="search wb-filter-row" method="get" action="/validation/runs">
   <input type="text" name="q" value="{{ q }}" placeholder="Run ID, name, or feature ID">
   <select name="status">
     <option value="">All statuses</option>
@@ -17,7 +18,7 @@
   <button type="submit">Filter</button>
 </form>
 
-{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+{% if error %}<div class="wb-error">{{ error }}</div>{% endif %}
 
 {% if runs %}
 <div class="dense-toolbar" style="margin:4px 0 6px"><strong>{{ runs|length }} run(s)</strong></div>
@@ -36,6 +37,6 @@
 {% endfor %}
 </tbody></table></div>
 {% elif not error %}
-<p class="muted">No validation runs match the current filter.</p>
+<div class="wb-empty">No validation runs match the current filter.</div>
 {% endif %}
 {% endblock %}

@@ -1,7 +1,7 @@
 # Current Workbench Roadmap
 
 Status: ACTIVE REWORK  
-Last fully reconciled against merged PR and branch history: **2026-10-05**  
+Last fully reconciled against merged PR and branch history: **2026-10-06**  
 Authoritative repository: `sarthax/FFXI-Mission-Toolkit`  
 Authoritative branch: `main`
 
@@ -15,7 +15,7 @@ This is the authoritative current planning and capability inventory for the Miss
 - `[~]` = substantial foundation exists, but the capability is intentionally incomplete or evidence-limited.
 - `[ ]` = planned / not yet implemented.
 - Closed PRs that were superseded, transplanted, or replaced are not roadmap capabilities.
-- As of this reconciliation, Behavior Inspector, Feature Trace provider/closure work, native modern-LSB Nyzul support, and the Research contradiction/evidence deepening slices are merged into `main`; current `main` is the product baseline for these capabilities.
+- As of this reconciliation, Behavior Inspector, Feature Trace provider/closure work, native modern-LSB Nyzul support, Research contradiction/evidence deepening, protocol PR #545, and final Phase D source-layout ownership cleanup are merged into `main`; current `main` is the product baseline for these capabilities.
 
 ---
 
@@ -23,7 +23,7 @@ This is the authoritative current planning and capability inventory for the Miss
 
 - [x] Canonical evidence/provenance model for source, feature, entity, implementation, dependency, capture evidence, findings, migrations, validation, packages, and research output.
 - [x] Feature and Package remain distinct concepts.
-- [x] `src/workbench/...` is the canonical source-layout direction; major editors, capture tooling, validation code, runtime bridges, and related modules have been progressively packaged while thin compatibility imports preserve older entry points.
+- [x] `src/workbench/...` is the canonical implementation layout; mature editors, capture tooling, validation code, runtime bridges, application host, settings store, and related modules are package-owned while thin compatibility imports/launchers preserve older entry points.
 - [x] Source Layout Regression protects packaged imports and editable-install behavior.
 - [x] Shared shell navigation has top-level category menus plus persistent Sections navigation.
 - [x] Global runtime context exposes the active named server environment without leaking credentials.
@@ -241,7 +241,8 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Modular Evidence Search across events/dialogue, protocol, entities, battle/actions, items/KIs, shops, crafting, chat/text, movement/spatial, and environment/world state.
 - [x] Campaign/session manifest import support and message-ID shift handling.
 - [x] Capture spatial JSON routing bug fixed and plot viewer routing guarded by live-app regression.
-- [~] Continue lobby/world/search protocol research and add decoder certainty only where structural evidence supports it; draft PR #545 is the active evidence-backed protocol slice and remains pending real-capture validation.
+- [x] Evidence-backed lobby/search/map stream classification and framing from PR #545 is part of the merged baseline, including fail-closed unknown TCP handling and source-backed handoff evidence.
+- [~] Continue lobby/world/search protocol research only where representative real captures justify additional decoder certainty or semantics.
 
 # 11. Packet / protocol research
 
@@ -250,7 +251,8 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Packetlyzer reference DB improvements including XiPackets-named opcodes and corrected verified field offsets.
 - [x] PCAP/PCAPNG frame parsing and bidirectional TCP reconstruction with gaps/retransmissions/conflicts preserved.
 - [x] Conservative lobby TCP classification/framing/decoder foundation.
-- [~] Draft PR #545 deepens lobby/search/map classification, source-backed search framing/crypto, strict same-flow sequencing, non-AH response parsing, and exact UDP map handoff; it remains intentionally unmerged pending real-capture validation and therefore is not yet the `main` baseline.
+- [x] PR #545 merged evidence-backed lobby/search/map classification, source-backed search framing/crypto evidence, strict same-flow sequencing, non-AH response parsing, exact UDP map handoff, and conservative endpoint/session diagnostics without guessing unknown protocol semantics.
+- [~] Validate and extend decoder coverage against representative real captures; preserve unknown/ambiguous classifications when evidence is insufficient.
 
 # 12. Video / OCR / temporal evidence
 
@@ -280,8 +282,8 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Validation runs tied back to canonical evidence.
 - [x] Feature Trace can navigate explicit Research/Validation/Package feature/entity/artifact references back to exact canonical nodes without creating graph edges.
 - [x] Source/target conversion support where deterministic and audited.
-- [x] Phase D packaging has moved many mature root modules into logical `src/workbench/...` homes while preserving compatibility imports.
-- [~] Final Phase D source-layout cleanup is intentionally deferred until draft protocol PR #545 settles. Then briefly freeze the shared GUI/route surface, perform a fresh root-Python/source-layout inventory, and finish only low-risk bounded migrations with compatibility and regression coverage.
+- [x] Phase D packaging moved mature root implementations into logical `src/workbench/...` homes while preserving intentional compatibility imports/launchers.
+- [x] Final Phase D source-layout ownership cleanup is complete: the settings store and application host are package-owned, historical root `settings.py` and `gui_server.py` compatibility surfaces are retired, and Workbench/Src Layout/Character Editor regressions cover the final boundary.
 
 # 15. CI / regression safety
 
@@ -293,6 +295,7 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Character Editor progression regressions cover modern LSB and legacy DSP/Topaz transition-bundle, projected-result, assessment, and UI contracts.
 - [x] Behavior Inspector regressions cover extraction, complex state/event flows, callbacks, shared helpers, Clarified Flow/Plain View projection, backend/UI contract parity, stage/event lifecycle contracts, and source-layout service boundaries.
 - [x] Feature Trace regressions cover deterministic provider relationships, fail-closed ambiguity, focused modes, executable scenario contracts, NM drop/item traversal, wiki→implementation closure, capture→client-build closure, and provider→canonical feature/entity/artifact closure without synthetic canonical edges.
+- [x] Application-host/settings changes are included in Character Editor/server-admin regression path coverage after the final Phase D migration.
 - [x] Documentation reconciliation should occur after major multi-PR feature batches rather than allowing README/roadmap drift to accumulate again.
 
 ---
@@ -331,15 +334,43 @@ Operator summary: `AUCTION_HOUSE_CAPABILITY_STATUS.md`. Economy detail: `AUCTION
 - [x] Synth & Crafting module at `/synth` (`server_admin/synth`): schema-adaptive over `synth_recipes` for DSP/Topaz/LSB, ingredient availability + missing report, audit, SQL create/edit/delete preview per flavor, export/port, gated Test-write apply.
 - [ ] Open: vendor-loop data exploit (shop prices below BaseSell) is documented but not fixed; synth audit cannot see gathering/fishing/quest sources.
 
+
+# 17. Workbench UI Framework / Unified Module Layout
+
+The shared `base.html` shell already unifies global navigation, workspace context, theme variables, and common dense UI primitives. The next UI architecture phase should unify **module composition and geometry** so independently developed tools stop drifting in width, spacing, panel sizing, controls, and interaction structure.
+
+- [x] Add a shared Workbench page wrapper above `base.html` for module-level layout contracts rather than navigation/chrome alone.
+- [x] Define a small set of canonical page archetypes:
+  - Browser — search/filter + result list/table + pagination;
+  - Detail/Dossier — summary/header + evidence/detail sections;
+  - Workbench/Inspector — navigator + primary workspace + inspector;
+  - Editor — navigator + editable surface + properties/actions;
+  - Dashboard/Console — status/KPI/action strip + panels/tables.
+- [x] Standardize page header/title/status/action regions, help/about affordances, read-only/write-capable badges, empty/loading/error states, and shared filter/search rows.
+- [x] Standardize one-, two-, and three-pane layout primitives including reusable sidebar/inspector widths, panel gaps, and responsive stacking; scrolling/sticky behavior remains workspace-specific until migrated.
+- [ ] Replace repeated page-local geometry such as arbitrary `main` padding, max-widths, toolbar heights, and control sizing with shared Workbench design tokens.
+- [x] Define shared tokens for page padding, toolbar/control height, panel gap, table row density, sidebar sizes, inspector width, and responsive breakpoints.
+- [ ] Keep feature-specific visualization/layout behavior where required (Zone Editor canvas, Packet Viewer byte presentation, Auction House economy surfaces, etc.) while removing feature-specific reinvention of basic UI geometry.
+- [ ] Convert existing `dense-toolbar`, `dense-panel`, tabs, cards, chips, tables, forms, and inspector patterns into documented reusable primitives where their contracts are already stable.
+- [x] Add a UI/template contract regression: new module pages must use the standard Workbench wrapper/archetype or explicitly opt into the legacy/custom allowlist with a reason.
+- [ ] Inventory current templates against the archetypes and migrate them systematically by workspace rather than opportunistically when features happen to be edited. Foundation adopters: SQL Browser (Browser), Validation (Dashboard), and Research Evidence (Detail). Research workspace migration is complete: Sessions, Contradictions, Gaps, Session Detail, and Evidence now use the shared wrapper. Validation workspace migration is complete: Dashboard, Runs, Run Detail, and Live Target now use the shared wrapper. Packages workspace migration is complete: Library, Scope Review, Create Package, and Review & Readiness now use the shared wrapper. Backport workspace migration is complete: Package Workflow, Lua Converter, SQL Converter, and Binding Reference now use the shared wrapper. ID Drift workspace migration is complete: Overview and Category Detail now use the shared wrapper. LLM workspace migration is complete: Assistant and Call Detail now use the shared wrapper. Events / CSID workspace migration is complete: Browser and Event Detail now use the shared wrapper. Wiki Compiler migration is complete and now uses the shared Workbench wrapper. Capture Path Plot migration is complete: Single Path and All Paths now use the shared wrapper while retaining specialized visualization geometry. Client Overview migration is complete and now uses the shared Dashboard wrapper. Binary Inspector migration is complete and now uses the shared Workbench wrapper. Behavior Inspector migration is complete and now uses the shared Workbench wrapper. Dialog Drift overview migration is complete and now uses the shared Dashboard wrapper. Per-zone Dialog Drift report migration is complete and now uses the shared Detail wrapper. Roadmap page migration is complete and now uses the shared Dashboard wrapper. Help page migration is complete and now uses the shared Detail wrapper. System confirmation/status pages (backup delete/restore, rebuild, shutdown/restart) are migrated to the shared wrapper. Entity Gaps diagnostic browser migration is complete and now uses the shared Browser wrapper. Key Items browser migration is complete and now uses the shared Browser wrapper. Assault Missions browser migration is complete and now uses the shared Browser wrapper. Zones browser migration is complete and now uses the shared Browser wrapper. Dialog Browser migration is complete and now uses the shared Browser wrapper while preserving jump/pagination and evidence drill-down. Domains index migration is complete and now uses the shared Dashboard wrapper. Feature Checker migration is complete and now uses the shared Workbench wrapper. Packet Tools migration is complete and now uses the shared Workbench wrapper. Assault Domain landing page migration is complete and now uses the shared Dashboard wrapper. Message-ID Shift Master migration is complete and now uses the shared Workbench wrapper.
+- [ ] Preserve behavior during migration; visual/layout normalization should not silently change feature semantics, write safety, evidence meaning, or route ownership.
+- [ ] Perform this phase **after the active root-cleanup/bootstrap retirement work** so cross-cutting template refactors do not collide with repository-structure cleanup.
+
+
 # Highest-value next work
 
-1. **Feature Trace real-data validation** — exercise the current closure model against representative NPC/entity, mission, drop-chain, capture/client-build, reference mapping, and migration/package cases. Implement more Feature Trace wiring only when testing exposes a deterministic gap.
-2. **Capture/protocol PR #545 validation and closeout** — validate the current evidence-backed lobby/search/map work against representative real captures, preserve fail-closed unknowns, then reconcile/merge only if the evidence holds.
-3. **Client Asset Cache expansion** — only for proven asset families where reusing pre-extracted data materially improves interactive tools.
-4. **Broader client/server synchronization and named-system reconstruction** — extend deterministic comparison/validation workflows without weakening provenance rules.
-5. **Final Phase D source-layout cleanup** — after #545 settles, briefly freeze shared GUI/routes, inventory remaining root Python/source-layout debt, and finish bounded low-risk moves with compatibility and regression coverage.
+1. **Complete active root cleanup / bootstrap retirement** — finish the bounded compatibility-shim, standalone-script, workspace/resource, and final root-allowlist work tracked in `ROOT_CLEANUP_STATUS.md` without reintroducing import/path coupling.
+2. **Workbench UI Framework / Unified Module Layout** — after root cleanup, introduce the shared page wrapper, canonical page archetypes, design tokens, panel/layout contracts, and template regression described in section 17; then migrate existing modules workspace-by-workspace.
+3. **Feature Trace real-data validation** — exercise the current closure model against representative NPC/entity, mission, drop-chain, capture/client-build, reference mapping, and migration/package cases. Implement more Feature Trace wiring only when testing exposes a deterministic gap.
+4. **Protocol real-capture validation** — exercise the merged PR #545 lobby/search/map classifier and decoder coverage against representative captures; add semantics only when source/structural evidence proves them and preserve fail-closed unknowns.
+5. **Client Asset Cache expansion** — only for proven asset families where reusing pre-extracted data materially improves interactive tools.
+6. **Broader client/server synchronization and named-system reconstruction** — extend deterministic comparison/validation workflows without weakening provenance rules.
+7. **Auction House live-write validation** — run the remaining restock, Buy, Return, MyISAM purchase, and gil-delivery tests against a real Test server before treating those mutation paths as operationally closed.
 
 A future Feature Trace development phase may add **reverse discovery** from a canonical feature/entity/artifact back to Research, Validation, Package, Capture, or reference records that explicitly point to it. Treat that as a distinct phase after real-data testing, not unfinished cleanup.
+
+A future source-layout/bootstrap phase may retire root compatibility launchers and the root `workbench` bootstrap after every supported setup/start/CI path installs the package or explicitly uses `src`. That is intentionally separate from completed Phase D implementation ownership.
 
 # Documentation map
 
@@ -351,6 +382,8 @@ A future Feature Trace development phase may add **reverse discovery** from a ca
 - `docs/workbench/BEHAVIOR_FEATURE_TRACE_GUIDE.md` — combined Behavior Inspector / Feature Trace workflow, evidence boundaries, and October 4 implementation summary.
 - `docs/workbench/FEATURE_TRACE_BRANCH_RECONCILIATION_2026-10-04.md` — branch-level Feature Trace reconciliation and drop-chain transplant record.
 - `docs/workbench/FEATURE_TRACE_CLOSEOUT_2026-10-04.md` — current Feature Trace closure matrix, fail-closed rules, regression coverage, and testing boundary.
+- `docs/workbench/PHASE_D_ROOT_CLEANUP_STATUS.md` — final Phase D source-layout ownership closeout and remaining compatibility/bootstrap boundary.
+- `docs/workbench/UI_FRAMEWORK.md` — shared module wrapper, canonical archetypes, geometry tokens, migration rules, and template contract.
 - `docs/guides/SETUP.md` — current user setup and named environment configuration.
 - `docs/guides/TOOLING_OVERVIEW.md` — living tooling/component overview.
 - `docs/workbench/AUCTION_HOUSE_CAPABILITY_STATUS.md` — Auction House operator summary.

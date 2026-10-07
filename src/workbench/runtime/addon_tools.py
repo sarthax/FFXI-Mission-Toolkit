@@ -2,8 +2,8 @@
 """
 Addon package support for repository-owned reusable data bundles.
 
-This preserves the historical ``addon_tools.py`` CLI/API while resolving repository and addon
-locations through the canonical runtime path service so the module is safe under the src layout.
+Canonical runtime addon-tools CLI/API. Repository and addon locations resolve through the
+canonical runtime path service so the module is safe under the src layout.
 """
 from __future__ import annotations
 
@@ -93,7 +93,7 @@ def install_addon(name: str, force: bool = False) -> tuple[bool, str]:
     zpath = ADDONS_DIR / f"{name}.zip"
     if not zpath.is_file():
         return False, (f"No such addon package: {zpath.relative_to(TOOLS_ROOT)} -- run "
-                        f"'py -3 addon_tools.py list' to see what's available.")
+                        f"'py -3 -m workbench.runtime.addon_tools list' to see what's available.")
 
     lines = []
     any_failed = False

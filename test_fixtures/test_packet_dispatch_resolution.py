@@ -2,7 +2,7 @@
 from pathlib import Path
 import tempfile
 
-from packet_opcode_index import index_packet_db, index_server
+from workbench.packets.opcode_index import index_packet_db, index_server
 
 
 def main():

@@ -1,5 +1,5 @@
 """
-backport_sql_live_check.py -- run the SAME id-collision AND content-duplication classification
+Live SQL validation -- run the SAME id-collision AND content-duplication classification
 backport_sql_convert.py's check_id_collisions()/check_content_duplication() do, but against a REAL
 LIVE MySQL/MariaDB server (the actual DSP/Valhalla target database), not this toolkit's own indexed
 snapshot.
@@ -27,7 +27,7 @@ yourself before using this: `py -3 -m pip install mysql-connector-python`). Deli
 separate, optional dependency since only someone actually running this live check needs it.
 
 Usage:
-    py -3 backport_sql_live_check.py --host <host> --user <user> --password <pw> --database <db> \
+    py -3 -m workbench.validation.live_db.sql_check --host <host> --user <user> --password <pw> --database <db> \
         --package "D:\\Claude\\Topaz-Assault-Backport\\mission-packages\\nyzul_isle_investigation"
 
     # Or check one table/range directly without a package directory:

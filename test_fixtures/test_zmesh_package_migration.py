@@ -1,5 +1,4 @@
 from pathlib import Path
-import importlib
 import struct
 
 from workbench.devtools.spatial import zmesh
@@ -12,10 +11,9 @@ def test_packaged_zmesh_uses_canonical_gui_path():
     assert "Path(__file__)" not in source
 
 
-def test_root_zmesh_aliases_canonical_module():
-    root = importlib.import_module("zmesh")
-    canonical = importlib.import_module("workbench.devtools.spatial.zmesh")
-    assert root is canonical
+def test_root_zmesh_launcher_is_retired():
+    repo_root = Path(__file__).resolve().parents[1]
+    assert not (repo_root / "zmesh.py").exists()
 
 
 def test_zmesh_conversion_behavior_is_preserved(tmp_path, monkeypatch):

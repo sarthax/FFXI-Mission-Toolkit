@@ -1,10 +1,11 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Behavior Inspector — Mission Toolkit{% endblock %}
-{% block content %}
-<h1>Behavior Inspector</h1>
-<p class="muted">Scan server Lua (Topaz, DSP or LandSandBoat -- whichever trees are configured) as a behavior/evidence graph. The primary source produces causal behavior edges; same-zone Zone.lua, globals.lua, and instance scripts are shown separately as context unless another analyzer proves a dependency.</p>
-
-<form class="search" method="get" action="/behavior">
+{% block page_archetype %}workbench{% endblock %}
+{% block page_heading %}Behavior Inspector{% endblock %}
+{% block page_actions %}<a class="chip" href="/features/trace">Feature Trace</a>{% endblock %}
+{% block page_help %}Scan configured Topaz, DSP, or LandSandBoat Lua as a behavior/evidence graph. Primary-source causal edges remain distinct from same-zone and shared-script context unless another analyzer proves a dependency.{% endblock %}
+{% block page_body %}
+<form class="search wb-filter-row" method="get" action="/behavior">
   <input type="text" name="q" value="{{ q }}" placeholder="Mob, NPC, object, zone, instance, or Lua filename">
   {% if servers and servers|length > 1 %}
   <select name="server" title="Which server tree to search">

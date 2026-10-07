@@ -1,9 +1,13 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Delete Backup{% endblock %}
-{% block content %}
-<p><a class="inline" href="/settings">&larr; back to Settings</a></p>
-
-<h1>Delete backup <span class="chip mono">{{ backup.name }}</span>?</h1>
+{% block page_archetype %}editor{% endblock %}
+{% block page_width %}narrow{% endblock %}
+{% block page_back %}<a class="chip" href="/settings">&larr; Settings</a>{% endblock %}
+{% block page_heading %}Delete backup{% endblock %}
+{% block page_identity %}<span class="chip mono">{{ backup.name }}</span>{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Destructive action</span>{% endblock %}
+{% block page_help %}Deletes only this backup copy from disk. The live database is not modified, but the backup deletion itself cannot be undone.{% endblock %}
+{% block page_body %}
 
 <div class="warn">
   <strong>This is permanent -- there is no undo.</strong> Removes this {{ backup.size_mb }} MB

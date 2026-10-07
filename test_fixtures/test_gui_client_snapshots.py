@@ -125,8 +125,6 @@ def main() -> int:
         assert row["dialog_count"] == 1
         assert row["is_current"] is True
 
-        # Import validation: missing root, missing required client files, missing tool,
-        # duplicate snapshot IDs, and non-empty payload destinations must fail before extraction.
         try:
             identity_gui.validate_client_snapshot_import(
                 client_root=root / "missing",
@@ -181,8 +179,6 @@ def main() -> int:
         except identity_gui.ClientSnapshotImportError as ex:
             assert "will not be overwritten" in str(ex)
 
-        # Import wiring: all zones from the canonical zone DB are passed to the existing
-        # extractor, then its manifest is passed to the existing ingestion service.
         zone_db = root / "zones.db"
         zcon = sqlite3.connect(zone_db)
         zcon.execute("CREATE TABLE zones (zoneid INTEGER PRIMARY KEY, name TEXT)")
@@ -280,9 +276,7 @@ def main() -> int:
             "unresolved": 1,
         }
 
-        # Route regression without importing the entire local GUI runtime: assert the real
-        # FastAPI route declarations remain wired to the expected Client Overview endpoints.
-        gui_source = (ROOT / "gui_server.py").read_text(encoding="utf-8")
+        gui_source = (ROOT / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
         assert '@app.post("/clientoverview/import"' in gui_source
         assert '@app.post("/clientoverview/compare"' in gui_source
         assert '@app.get("/clientoverview/compare.csv")' in gui_source

@@ -1094,7 +1094,7 @@ async function loadZone(){
   } else frameAll();
   rebuild(); updateFamLegend(); if(typeof aNextId==='function') aNextId(); if(typeof zoneChanged==='function') zoneChanged(); $('viewer-loading').hidden = true;
   if (Z.obj) await autoLodAndLoad(zid, gen);
-  else $('sum').textContent += '\n(no cached visual mesh: py -3 build_zone_visual_cache.py '+zid+')';
+  else $('sum').textContent += '\n(no cached visual mesh: py -3 -m workbench.devtools.spatial.build_visual_cache '+zid+')';
   if (Z.has_nav) await loadNav(zid, gen);
 }
 const lodAutoDone = new Set();
@@ -1542,7 +1542,7 @@ fillInst();
 if(!qz.get('zone') && savedUiState?.instance && $('inst').querySelector(`option[value="${savedUiState.instance}"]`)) $('inst').value=String(savedUiState.instance);
 loadZone();
 
-// ---- generator descriptors (see build_plot_descriptors.py) ----
+// ---- generator descriptors (see packaged Workbench plot-descriptor builder) ----
 let DESC = []; try { DESC = await (await fetch('/zoneplot/descriptors.json')).json(); } catch(e){ console.warn('descriptors', e); }
 $('gd').innerHTML += DESC.map(d=>`<option value="${d.id}">${d.title}</option>`).join('');
 let genGroup = null; const genLabels=[];

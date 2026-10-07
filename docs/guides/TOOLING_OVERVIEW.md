@@ -337,12 +337,10 @@ Phase D source-layout work continues to relocate mature root-level modules into 
 
 Older docs and scripts may still mention standalone names such as:
 
-- `mission_toolkit.py`,
+- `workbench.devtools.app.mission_toolkit`,
 - `build_database.py`,
-- `id_bridge.py`,
-- `wiki_lookup.py`,
-- `mob_look_decode.py`,
-- `model_schedule_dump.py`,
+- `workbench.core.services.id_bridge`,
+- `workbench.devtools.reference.wiki_lookup`,
 - older NPCLogger cross-reference scripts.
 
 Some remain useful compatibility/research entry points, while others have been absorbed into richer Workbench surfaces. Prefer the browser Workbench and canonical `src/workbench/...` modules for current development unless a historical tool is specifically required for a legacy dataset.

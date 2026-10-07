@@ -270,11 +270,15 @@ def main():
         "path_plot_all.html": ["{% block shell_mode %}dense{% endblock %}", "capture-all-paths-page", "width:min(100%,1200px)", "Capture entities"],
     }
     capture_env = Environment(loader=FileSystemLoader(str(TEMPLATES)), autoescape=select_autoescape(("html",)))
+    capture_wrapper_source=(TEMPLATES/"workbench_page.html").read_text(encoding="utf-8")
     for template_name, markers in capture_template_contracts.items():
         capture_env.get_template(template_name)
         source=(TEMPLATES/template_name).read_text(encoding="utf-8")
         for marker in markers:
-            assert marker in source,(template_name,marker)
+            if marker == "{% block shell_mode %}dense{% endblock %}" and '{% extends "workbench_page.html" %}' in source:
+                assert marker in capture_wrapper_source,(template_name,"wrapper must preserve dense shell mode")
+            else:
+                assert marker in source,(template_name,marker)
     library_search_contracts = {
         "itembrowser.html": ["Item Browser", "ib-page"],
         "keyitems.html": ["{% block shell_mode %}dense{% endblock %}", "keyitems-page"],
@@ -292,12 +296,16 @@ def main():
         "research_evidence.html": ["{% block shell_mode %}dense{% endblock %}", "research-evidence-page"],
         "research_gaps.html": ["{% block shell_mode %}dense{% endblock %}", "research-gaps-page"],
     }
+    wrapper_source=(TEMPLATES/"workbench_page.html").read_text(encoding="utf-8")
     for template_name, markers in library_search_contracts.items():
         capture_env.get_template(template_name)
         source=(TEMPLATES/template_name).read_text(encoding="utf-8")
         assert 'href="/research/gaps"' not in source,(template_name,"stale Research Gaps route")
         for marker in markers:
-            assert marker in source,(template_name,marker)
+            if marker == "{% block shell_mode %}dense{% endblock %}" and '{% extends "workbench_page.html" %}' in source:
+                assert marker in wrapper_source,(template_name,"wrapper must preserve dense shell mode")
+            else:
+                assert marker in source,(template_name,marker)
 
     workflow_ux_contracts = {
         "wiki.html": ["{% block shell_mode %}dense{% endblock %}", "wiki-compiler-page", "wiki-actions", "wiki-kpis", "Evidence mapping ledger", "Dual-wiki claim comparison"],
@@ -307,7 +315,10 @@ def main():
         capture_env.get_template(template_name)
         source=(TEMPLATES/template_name).read_text(encoding="utf-8")
         for marker in markers:
-            assert marker in source,(template_name,marker)
+            if marker == "{% block shell_mode %}dense{% endblock %}" and '{% extends "workbench_page.html" %}' in source:
+                assert marker in wrapper_source,(template_name,"wrapper must preserve dense shell mode")
+            else:
+                assert marker in source,(template_name,marker)
 
     client_overview_contracts = [
         "{% block shell_mode %}dense{% endblock %}",
@@ -319,9 +330,13 @@ def main():
         "EVENT Identity Results",
     ]
     client_overview_source=(TEMPLATES/"client_overview.html").read_text(encoding="utf-8")
+    client_overview_wrapper=(TEMPLATES/"workbench_page.html").read_text(encoding="utf-8")
     capture_env.get_template("client_overview.html")
     for marker in client_overview_contracts:
-        assert marker in client_overview_source,marker
+        if marker == "{% block shell_mode %}dense{% endblock %}" and '{% extends "workbench_page.html" %}' in client_overview_source:
+            assert marker in client_overview_wrapper,"wrapper must preserve dense shell mode"
+        else:
+            assert marker in client_overview_source,marker
 
     package_workflow_contracts = {
         "packages_scope.html": ["{% block shell_mode %}dense{% endblock %}", "package-scope-page", "Package Workflow", "1 · Scope", "scope-decision-form"],
@@ -332,7 +347,10 @@ def main():
         capture_env.get_template(template_name)
         source=(TEMPLATES/template_name).read_text(encoding="utf-8")
         for marker in markers:
-            assert marker in source,(template_name,marker)
+            if marker == "{% block shell_mode %}dense{% endblock %}" and '{% extends "workbench_page.html" %}' in source:
+                assert marker in wrapper_source,(template_name,"wrapper must preserve dense shell mode")
+            else:
+                assert marker in source,(template_name,marker)
 
     assert '<body class="shell-dense">' in captures_html
     assert '<strong>Captures</strong>' in captures_html
@@ -489,16 +507,20 @@ def main():
 
     validation_html = render("validation_dashboard.html", "/validation", runs=[], status_counts={}, result_counts={}, total_results=0, error=None)
     assert '<body class="shell-dense">' in validation_html
-    assert '<strong>Validation</strong>' in validation_html
+    assert 'class="wb-page-title">Validation</span>' in validation_html
+    assert 'class="wb-readonly-badge">Read only</span>' in validation_html
 
     validation_runs_html = render("validation_runs.html", "/validation/runs", q="", status="", statuses=[], runs=[], error=None)
     assert '<body class="shell-dense">' in validation_runs_html
-    assert 'form class="search dense-toolbar"' in validation_runs_html
+    assert 'wb-archetype-browser' in validation_runs_html
+    assert 'form class="search wb-filter-row"' in validation_runs_html
+    assert 'class="wb-readonly-badge">Read only</span>' in validation_runs_html
 
     packages_html = render("packages_library.html", "/packages", q="", project_root="C:/workspace", packages=[])
     assert '<body class="shell-dense">' in packages_html
-    assert '<strong>Package Library</strong>' in packages_html
-    assert 'form class="search dense-toolbar"' in packages_html
+    assert 'wb-archetype-browser' in packages_html
+    assert 'class="wb-page-title">Package Library</span>' in packages_html
+    assert 'form class="search wb-filter-row"' in packages_html
 
     validation_shell = context_for("/validation")
     assert validation_shell["active_home"] == "Validation"
@@ -542,12 +564,13 @@ def main():
 
     events_html = render("events.html", "/events", zones=[], zone="", q="", rows=[], generated_note=None, health_summary={})
     assert '<body class="shell-dense">' in events_html
-    assert '<strong>Events / CSID Browser</strong>' in events_html
-    assert 'form class="search dense-toolbar"' in events_html
+    assert 'wb-archetype-browser' in events_html
+    assert 'class="wb-page-title">Events / CSID Browser</span>' in events_html
+    assert 'form class="search wb-filter-row"' in events_html
 
     packets_html = render("packets.html", "/packets", q="", direction="s2c", opcodes=[])
     assert '<body class="shell-dense">' in packets_html
-    assert '<strong>Packet Tools</strong>' in packets_html
+    assert 'class="wb-page-title">Packet Tools</span>' in packets_html
     assert 'Manual Packet Viewer / Decoder' in packets_html
     assert 'Browse known opcodes' in packets_html
 

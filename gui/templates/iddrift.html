@@ -1,8 +1,11 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}ID Drift{% endblock %}
+{% block page_archetype %}dashboard{% endblock %}
+{% block page_heading %}ID Drift{% endblock %}
+{% block page_actions %}<a class="chip" href="/dialogdrift">Dialog Drift</a>{% endblock %}
+{% block page_help %}Cross-checks LandSandBoat against the configured server and retail references where available so ID mismatches are visible before they surface only in-game.{% endblock %}
 
-{% block content %}
-<h1>ID Drift</h1>
+{% block page_body %}
 <p class="muted">Cross-checks LandSandBoat (what this content was backported from, full repo)
 against your Topaz server's own code/SQL and, for items, the external retail reference -- three
 layers, so a wrong event/npc/item/mobskill/effect id shows up here instead of only in-game. Click

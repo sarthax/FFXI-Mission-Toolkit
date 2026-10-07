@@ -1,8 +1,11 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}LLM Assistant{% endblock %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_heading %}LLM Assistant{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Draft output only</span>{% endblock %}
+{% block page_help %}Use the local model for summarization, triage, and draft suggestions. Real IDs, bindings, and mappings still require source-backed verification before use.{% endblock %}
 
-{% block content %}
-<h1>LLM Assistant</h1>
+{% block page_body %}
 <div class="warn">Every response here is a <strong>{{ draft_tag }}</strong>. This project's whole
   methodology runs on citing real source for every id/binding/mapping -- never paste a response
   from here into a real file without the same grep/human verification pass everything else in
@@ -71,7 +74,7 @@
     <label>System prompt (optional)
       <br><input type="text" name="system" value="{{ system }}" style="width:340px;" placeholder="e.g. You are terse.">
     </label>
-    <label style="display:flex; align-items:center; gap:6px;" title="Lets the model query this toolkit's own database on demand (list_tables/describe_table/query_sql) instead of relying only on what's in the prompt. Read-only, physically enforced -- see llm_db_tools.py. Every query made is shown below the response.">
+    <label style="display:flex; align-items:center; gap:6px;" title="Lets the model query this toolkit's own database on demand (list_tables/describe_table/query_sql) instead of relying only on what's in the prompt. Read-only, physically enforced -- see workbench.devtools.research.legacy_llm.db_tools. Every query made is shown below the response.">
       <input type="checkbox" name="use_db_tools" {% if use_db_tools %}checked{% endif %}>
       Allow read-only DB tool access
     </label>
@@ -116,13 +119,13 @@
 {% endif %}
 
 <h2 style="margin-top:24px;">Recent calls</h2>
-<p class="muted">Every call through <code class="chip">llm_client.py</code> lands here -- manual
+<p class="muted">Every call through <code class="chip">workbench.devtools.research.legacy_llm.client</code> lands here -- manual
   (this page), quick actions from other pages (Lua Converter's "ask LLM", a capture's "summarize
   with LLM"), and anything else an automated tool records via
   <code class="chip">llm_log.record()</code> -- so what's been sent/received stays visible in one
   place as automation gets built out.</p>
 
-<form method="get" action="/llm" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:10px;">
+<form method="get" action="/llm" class="wb-filter-row">
   <label class="muted">Source
     <br><select name="source">
       <option value="" {% if not filter_source %}selected{% endif %}>(all)</option>
@@ -160,7 +163,7 @@
   {% endfor %}
 </table></div>
 {% else %}
-<p class="muted">No calls yet{% if filter_source or filter_model or filter_q %} matching this filter{% endif %}.</p>
+<div class="wb-empty">No calls yet{% if filter_source or filter_model or filter_q %} matching this filter{% endif %}.</div>
 {% endif %}
 
 <script>

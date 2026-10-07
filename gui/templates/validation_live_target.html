@@ -1,10 +1,14 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Live Target Validation — Mission Toolkit{% endblock %}
-{% block content %}
-<h1>Live Target Validation</h1>
-<p class="muted">Compare normalized expected records with the current target database through the selected server adapter. This workflow is read-only: it issues SELECT queries only. Database representation validation does not prove Lua, runtime, packet, capture, or client behavior.</p>
+{% block page_archetype %}workbench{% endblock %}
+{% block page_class %}validation-live-target-page{% endblock %}
+{% block page_heading %}Live Target Validation{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Read only</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/validation">Dashboard</a><a class="chip" href="/validation/runs">Runs</a>{% endblock %}
+{% block page_help %}Compare normalized expected records with the current target database through the selected server adapter. This workflow issues SELECT queries only. Database representation validation does not prove Lua, runtime, packet, capture, or client behavior.{% endblock %}
+{% block page_body %}
 
-{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+{% if error %}<div class="wb-error">{{ error }}</div>{% endif %}
 
 <form method="post" action="/validation/live-target">
 <h2>Target</h2>

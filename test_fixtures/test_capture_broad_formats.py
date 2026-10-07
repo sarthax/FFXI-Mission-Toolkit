@@ -5,7 +5,7 @@ import sqlite3
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import build_capture_index
+from workbench.captures.ingestion import build_index as build_capture_index
 
 
 def sqlite_blob(path: Path, columns: str, values: tuple) -> bytes:

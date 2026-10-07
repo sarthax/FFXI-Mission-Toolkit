@@ -109,8 +109,11 @@ def test_cleanup_ui_and_routes_are_mounted():
     api = (root / "src/workbench/server_admin/auction_house/cleanup_api.py").read_text(encoding="utf-8")
     template = (root / "gui/templates/auction_house_cleanup.html").read_text(encoding="utf-8")
     script = (root / "gui/static/auction_house_cleanup.js").read_text(encoding="utf-8")
+    console_template = (root / "gui/templates/auction_house_console.html").read_text(encoding="utf-8")
+    console_script = (root / "gui/static/auction_house_console.js").read_text(encoding="utf-8")
     assert "auction_house_cleanup_router" in integration
-    assert '"AH Cleanup"' in integration
+    assert 'data-t="cleanup"' in console_template
+    assert "/auction-house/cleanup/preview.json" in console_script
     assert '"/auction-house/cleanup/preview.json"' in api
     assert '"/auction-house/test-write/cleanup.json"' in api
     assert "Preview exact targets" in template

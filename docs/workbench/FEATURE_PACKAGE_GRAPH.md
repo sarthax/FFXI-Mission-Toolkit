@@ -9,7 +9,7 @@ It deliberately preserves the distinction:
 - **Dependency** = explicit relationship supported by manifest evidence.
 - **MigrationAction** = generic operation against an artifact.
 
-Existing `backport_package.py` remains responsible for actual Lua/SQL conversion and package validation. The analyzer consumes its report instead of duplicating its conversion logic.
+`workbench.packages.migration.orchestrator` remains responsible for actual Lua/SQL conversion and package validation. The analyzer consumes its report instead of duplicating its conversion logic.
 
 Dependency discovery is intentionally conservative. It accepts explicit `FEATURE_MANIFEST.yaml` dependencies and does not infer arbitrary `require()` relationships, because prior project analysis established that require chains can contain ambiguous cross-zone IDs.
 

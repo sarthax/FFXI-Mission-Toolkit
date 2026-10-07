@@ -1,6 +1,6 @@
 # Validation Pipeline
 
-`validation_pipeline.py` provides a common envelope for existing validators without replacing them.
+`workbench.validation.pipeline` provides a common envelope for existing validators without replacing them.
 
 Independent validation dimensions remain separate: Lua, SQL, bindings, C++, client, packets, and
 runtime captures. A successful result in one dimension does not imply the others are verified.
@@ -29,7 +29,7 @@ With `--graph-db`, results are persisted as canonical `ValidationRun` and
 `ValidationResult` records. This validates database representation only; runtime behavior,
 packets, captures, Lua execution, and client behavior remain independent validation dimensions.
 
-The specialized `backport_sql_live_check.py` tool remains available for package-specific live
+The specialized package live-SQL checker remains available for package-specific live
 collision and content-duplication checks such as `mob_groups`. The generic validator does not
 replace specialized MariaDB health/admin tooling.
 

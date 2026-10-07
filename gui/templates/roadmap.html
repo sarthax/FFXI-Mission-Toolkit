@@ -1,6 +1,9 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Roadmap{% endblock %}
-{% block content %}
+{% block page_archetype %}dashboard{% endblock %}
+{% block page_heading %}Roadmap{% endblock %}
+{% block page_help %}Status report and revised roadmap for the Mission Toolkit. Current reconciled status takes precedence when older historical phase text conflicts; historical sections are retained for provenance.{% endblock %}
+{% block page_body %}
 <style>
   .phase { background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
            padding: 16px 20px; margin: 14px 0; }
@@ -21,13 +24,6 @@
   .req-box ul { margin: 6px 0 0; }
   h2.rm { margin-top: 36px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
 </style>
-
-<h1>Roadmap</h1>
-<p class="muted">Status report and revised roadmap for the Mission Toolkit -- also published as a
-  standalone artifact for sharing outside this app. Started as a proposal for turning the
-  dat-extraction / capture-mining pipeline into something browsable; every phase below is either
-  built and running, on hold, or a newly-scoped future phase with a concrete build-requirements
-  breakdown, not a one-line wish.</p>
 
 <h2 class="rm">Current reconciled status <span class="pill match">2026-09-27</span></h2>
 <div class="phase">
@@ -68,7 +64,7 @@
 <div class="table-wrap"><table>
   <tr><th>Page</th><th>Backed by</th><th>Real, verified stats</th></tr>
   <tr><td>Home</td><td class="muted">live stats query</td><td>Real dialog/NPC/SQL/drift counts, updated live</td></tr>
-  <tr><td>Entity Lookup</td><td class="muted"><code class="chip">entity_profile.py</code></td>
+  <tr><td>Entity Lookup</td><td class="muted"><code class="chip">workbench.devtools.entities.profile</code></td>
     <td>One canonical per-entity profile -- position, model, mob group, drop table, SQL/Lua refs,
       wiki refs (canonical page vs. incidental mentions, split), observed abilities, EventView
       packets, attack timing, level range, capture appearances -- each cross-checked live against
@@ -96,14 +92,14 @@
     <td>Direct search across 7 structured tables: npc_list, mob_spawn_points, mob_groups
       (+ real <code class="chip">dropid</code>), mob_pools, mob_droplist, instance_entities,
       instance_list</td></tr>
-  <tr><td>Events / CSIDs</td><td class="muted"><code class="chip">explore_event.py</code></td>
+  <tr><td>Events / CSIDs</td><td class="muted"><code class="chip">workbench.devtools.server.explore_event</code></td>
     <td>Every entity/CSID pair per zone -- click to decompile with real text substituted in</td></tr>
-  <tr><td>Packet Decoder</td><td class="muted"><code class="chip">packet_decode.py</code>, Packetlyzer's real decoder</td>
+  <tr><td>Packet Decoder</td><td class="muted"><code class="chip">workbench.packets.decode</code>, Packetlyzer's real decoder</td>
     <td>Paste or upload a raw capture packet -- opcode, decoded fields, drift-caution banner</td></tr>
-  <tr><td>Wiki Compiler</td><td class="muted"><code class="chip">wiki_compile.py</code></td>
+  <tr><td>Wiki Compiler</td><td class="muted"><code class="chip">workbench.devtools.reference.wiki_compile</code></td>
     <td>BG Wiki page -- sectioned readiness report with real Walkthrough/Notes text, key-item enum
       cross-check, Markdown handoff export; CatsEyeXI private-server content excluded at the index</td></tr>
-  <tr><td>Captures <span class="pill match">updated</span></td><td class="muted"><code class="chip">build_capture_index.py</code></td>
+  <tr><td>Captures <span class="pill match">updated</span></td><td class="muted"><code class="chip">workbench.captures.ingestion.build_index</code></td>
     <td>225+ real captures ingested (up from 83) across seven distinct log/db formats (NPCLogger,
       ActionView, HPTrack, idview, KITrack, EventView, LevelRangeTrack, AttackDelay), including a
       147-zip bulk sweep of the full Assault/Salvage corpus this session.
@@ -125,7 +121,7 @@
       and <code class="chip">packetviewer/full.log</code>/<code class="chip">incoming.log</code>/
       <code class="chip">outgoing.log</code> combined-session dumps recognized as real, deliberately
       unattributable duplicates rather than reported as failures). A permanent regression-test
-      fixture pair (real Foxmulder- and Tacocat-capturer trees, <code class="chip">test_capture_ingestion.py</code>)
+      fixture pair (real Foxmulder- and Tacocat-capturer trees, <code class="chip">tests/legacy/test_capture_ingestion.py</code>)
       now guards against a fix for one capturer's layout silently re-breaking another's, plus a
       content-sniffing fallback that upgrades a genuinely unrecognized file's error message from a
       bare "not recognized" into "looks like a real &lt;format&gt;, path pattern may need updating."</td></tr>
@@ -139,18 +135,18 @@
   <tr><td>3D Zone Viewer</td><td class="muted"><code class="chip">xi-tinkerer-py</code>, Three.js via CDN</td>
     <td>Real client visual mesh in an orbitable 3D scene with real entity paths, single- or
       multi-entity, in-page "Build it now" for any uncached zone</td></tr>
-  <tr><td>Settings <span class="pill match">updated</span></td><td class="muted"><code class="chip">settings.py</code></td>
+  <tr><td>Settings <span class="pill match">updated</span></td><td class="muted"><code class="chip">workbench.runtime.settings_store</code></td>
     <td>Theme now a header sun/moon toggle, consolidated Server section, configurable backup
       retention with create/restore/delete UI (double-confirmed), Paths extended with
       <code class="chip">dsp_server_path</code></td></tr>
   <tr><td>Install/test tooling <span class="pill match">new 2026-09-08</span></td>
-    <td class="muted"><code class="chip">reset_install.py</code>, <code class="chip">addon_tools.py</code></td>
+    <td class="muted"><code class="chip">reset_install.py</code>, <code class="chip">workbench.runtime.addon_tools</code></td>
     <td><code class="chip">reset_install.py</code>/<code class="chip">reset_install.bat</code> strip an
       install back to source-only (database, backups, generated reports, LandSandBoat/FFXI-DATS/
       FFXI-Resources-dist) for testing <code class="chip">setup.bat</code> from scratch, matching
       DIST_PACKAGING.md's confirmed strip list exactly -- dry-run by default, double-confirmed
       (<code class="chip">--i-am-sure</code>) to actually delete, backs up the DB first.
-      <code class="chip">addon_tools.py</code> packages real, already-fetched data (e.g. the real
+      <code class="chip">workbench.runtime.addon_tools</code> packages real, already-fetched data (e.g. the real
       BG-Wiki page dump, ~19MB/47,608 pages) into a small checksummed portable <code class="chip">.zip</code>
       one install can hand to another instead of regenerating it the slow way -- verifies a real
       sha256 per file on install, never silently overwrites different real content without
@@ -165,7 +161,7 @@
       <code class="chip">.venv/</code> for every Python invocation instead, so this toolkit's own
       dependencies can never conflict with anything else already on a user's machine.</td></tr>
   <tr><td>Backport Lua Converter <span class="pill match">new 2026-09-12</span></td>
-    <td class="muted"><code class="chip">backport_lua_convert.py</code>, <code class="chip">data/dsp_namespace_map.json</code>,
+    <td class="muted"><code class="chip">workbench.packages.migration.lua_convert</code>, <code class="chip">data/dsp_namespace_map.json</code>,
       <code class="chip">backport_coverage_check.py</code></td>
     <td>Paste-in Topaz&rarr;DSP Lua converter at <code class="chip">/backport/lua-convert</code>
       (gated behind the same <code class="chip">backport_enabled()</code> check as ID Drift) --
@@ -201,9 +197,9 @@
       inspection to have zero real Assault callers at all (every hit is either the unrelated
       general open-world Treasure Casket system or a comment-only mention) -- documented as out of
       scope rather than porting an unused ~990-line module.
-      <span class="pill match">new 2026-09-12</span> <strong><code class="chip">test_backport_lua_convert.py</code></strong>
+      <span class="pill match">new 2026-09-12</span> <strong><code class="chip">tests/legacy/test_backport_lua_convert.py</code></strong>
       -- a permanent, pytest-free suite (16 test functions, matching this project's existing
-      <code class="chip">test_capture_ingestion.py</code> convention) checking converter mechanics
+      <code class="chip">tests/legacy/test_capture_ingestion.py</code> convention) checking converter mechanics
       against small fixed snippets, one per code path (every family shape, both script-shape
       regression guards, both ID-shape conventions, incompatible-enum/missing-module flagging).
       <strong><code class="chip">backport_map_confidence_check.py</code></strong> -- a decay check
@@ -218,8 +214,8 @@
       converter page itself now surfaces each flagged line's real evidence/fix/checked citation
       inline instead of a bare regex string.</td></tr>
   <tr><td>Backport SQL Converter <span class="pill match">new 2026-09-13</span></td>
-    <td class="muted"><code class="chip">backport_sql_convert.py</code>, <code class="chip">data/dsp_sql_schema_map.json</code>,
-      <code class="chip">backport_sql_live_check.py</code></td>
+    <td class="muted"><code class="chip">workbench.packages.migration.sql_convert</code>, <code class="chip">data/dsp_sql_schema_map.json</code>,
+      <code class="chip">workbench.validation.live_db.sql_check</code></td>
     <td>Paste-in Topaz&rarr;DSP SQL converter at <code class="chip">/backport/sql-convert</code>
       (same <code class="chip">backport_enabled()</code> gate). Reformats Topaz
       <code class="chip">INSERT INTO</code> statements to DSP's real column order per table
@@ -238,14 +234,14 @@
       (<code class="chip">mob_spawn_points.groupid</code>, <code class="chip">mob_groups.dropid</code>)
       updated to match; 5 more real name-mismatch collisions found and listed for a human decision.
       Full write-up in <code class="chip">ID_COLLISION_REPORT.md</code>.
-      <strong><code class="chip">backport_sql_live_check.py</code></strong> -- a read-only
+      <strong><code class="chip">workbench.validation.live_db.sql_check</code></strong> -- a read-only
       live-MySQL counterpart, ready to hand to whoever has actual Valhalla-target DB access to
       re-verify the renumbered ranges are still free against real current data, not just this
       snapshot (see <code class="chip">LIVE_DB_COLLISION_CHECK.md</code>). 10-test regression suite
-      (<code class="chip">test_backport_sql_convert.py</code>), matching the Lua converter's
+      (<code class="chip">tests/legacy/test_backport_sql_convert.py</code>), matching the Lua converter's
       testing discipline.</td></tr>
   <tr><td>Item Editor <span class="pill match">new 2026-09-23</span></td>
-    <td class="muted"><code class="chip">item_edit.py</code>, <code class="chip">item_dat_tools.py</code></td>
+    <td class="muted"><code class="chip">workbench.editors.items.editor</code>, <code class="chip">workbench.editors.items.dat_tools</code></td>
     <td>Search any live item and edit every column its class actually has, across all six
       <code class="chip">item_*</code> tables (<code class="chip">item_basic</code>,
       <code class="chip">item_equipment</code>, <code class="chip">item_weapon</code>,

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import sqlite3
+from pathlib import Path
 
 import pytest
 
-import llm_db_tools as legacy
 from workbench.devtools.research.legacy_llm import db_tools as canonical
 
 
@@ -18,9 +18,10 @@ def _make_db(path):
         con.close()
 
 
-def test_root_module_is_packaged_implementation():
-    assert legacy is canonical
-    assert legacy.TOOLS is canonical.TOOLS
+def test_root_module_is_retired_and_packaged_tools_are_canonical():
+    repo_root = Path(__file__).resolve().parents[1]
+    assert not (repo_root / "llm_db_tools.py").exists()
+    assert canonical.TOOLS
 
 
 def test_packaged_tools_use_runtime_database_path_and_remain_read_only(tmp_path, monkeypatch):

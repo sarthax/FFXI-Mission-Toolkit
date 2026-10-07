@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-import importlib.util
 import json
 import sqlite3
 import subprocess
@@ -12,15 +11,6 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def _load_root(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return sys.modules[name]
-
-
 def main() -> None:
     binding_index = importlib.import_module("workbench.validation.packages.binding_index")
     binding_audit = importlib.import_module("workbench.validation.packages.binding_audit")
@@ -29,14 +19,10 @@ def main() -> None:
     dev_index = importlib.import_module("workbench.devtools.server.binding_index")
     from workbench.runtime.paths import DATA_ROOT
 
-    legacy_index = _load_root("backport_binding_index", REPO_ROOT / "backport_binding_index.py")
-    legacy_audit = _load_root("backport_binding_audit", REPO_ROOT / "backport_binding_audit.py")
-    legacy_item = _load_root("backport_item_audit", REPO_ROOT / "backport_item_audit.py")
-    legacy_sql = _load_root("backport_sql_convert", REPO_ROOT / "backport_sql_convert.py")
-    assert legacy_index is binding_index
-    assert legacy_audit is binding_audit
-    assert legacy_item.audit_package is item_audit.audit_package
-    assert legacy_sql is sql_convert
+    assert not (REPO_ROOT / "backport_sql_convert.py").exists()
+    assert not (REPO_ROOT / "backport_binding_index.py").exists()
+    assert not (REPO_ROOT / "backport_binding_audit.py").exists()
+    assert not (REPO_ROOT / "backport_item_audit.py").exists()
     assert sql_convert.MAP_PATH == DATA_ROOT / "dsp_sql_schema_map.json"
 
     with tempfile.TemporaryDirectory() as td:

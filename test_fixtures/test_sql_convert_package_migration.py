@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-import importlib.util
 import sqlite3
 import subprocess
 import sys
@@ -11,19 +10,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def _load_root(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return sys.modules[name]
-
-
 def main() -> None:
     sql_convert = importlib.import_module("workbench.packages.migration.sql_convert")
-    legacy = _load_root("backport_sql_convert", REPO_ROOT / "backport_sql_convert.py")
-    assert legacy is sql_convert
+    assert not (REPO_ROOT / "backport_sql_convert.py").exists()
 
     real_map = sql_convert.load_schema_map()
     assert "npc_list" in real_map

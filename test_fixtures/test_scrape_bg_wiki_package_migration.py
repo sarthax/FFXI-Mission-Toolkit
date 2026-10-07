@@ -1,19 +1,15 @@
 from __future__ import annotations
 
-import importlib
-import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
 from workbench.devtools.reference import scrape_bg_wiki as canonical
-from workbench.runtime.paths import VENDOR_ROOT
+from workbench.runtime.paths import REPO_ROOT, VENDOR_ROOT
 
 
 def main() -> None:
-    sys.modules.pop("scrape_bg_wiki", None)
-    root = importlib.import_module("scrape_bg_wiki")
-    assert root is canonical
+    assert not (REPO_ROOT / "scrape_bg_wiki.py").exists()
     assert canonical.DUMP_PATH == VENDOR_ROOT / "ffxi-wiki-dumps-dist" / "bg-wiki.jsonl.gz"
 
     row = canonical._page_to_row({

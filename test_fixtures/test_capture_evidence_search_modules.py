@@ -7,7 +7,7 @@ WORKBENCH_SRC = ROOT / "src" / "workbench"
 
 
 def main():
-    server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
+    server = (WORKBENCH_SRC / "app" / "_host_impl.py").read_text(encoding="utf-8")
     related_service = (WORKBENCH_SRC / "captures" / "_related_evidence_impl.py").read_text(encoding="utf-8")
     template = (ROOT / "gui" / "templates" / "capture_search.html").read_text(encoding="utf-8")
 

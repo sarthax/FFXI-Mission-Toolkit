@@ -11,7 +11,7 @@ def main():
     behavior=(ROOT/"gui/templates/behavior_visualizer.html").read_text(encoding="utf-8")
     event=(ROOT/"gui/templates/event_view.html").read_text(encoding="utf-8")
     sql=(ROOT/"gui/templates/sql.html").read_text(encoding="utf-8")
-    server=(ROOT/"gui_server.py").read_text(encoding="utf-8")
+    server=(WORKBENCH_SRC/"app/_host_impl.py").read_text(encoding="utf-8")
     binding_service=(WORKBENCH_SRC/"devtools/features/trace_binding_drilldown.py").read_text(encoding="utf-8")
     binding_shim=(WORKBENCH_SRC/"core/services/feature_trace_binding_drilldown.py").read_text(encoding="utf-8")
 

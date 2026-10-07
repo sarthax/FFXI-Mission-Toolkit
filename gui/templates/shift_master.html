@@ -1,11 +1,11 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Message-ID Shift Master{% endblock %}
-{% block content %}
-<h2>Message-ID shift master</h2>
-<p class="muted">Server packet message id &minus; shift = client DAT dialog index. Measured from packets vs CapLog chat
-(never assumed). Ranges need &ge;3 observations; <b>conflict</b> = captures disagree (likely different client builds).
-Ids outside a range are unverified. Evidence rows: {{ obs_total }} across {{ obs_caps }} captures.
-Rebuild with the button below.</p>
+{% block page_archetype %}workbench{% endblock %}
+{% block page_width %}reading{% endblock %}
+{% block page_heading %}Message-ID Shift Master{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Rebuild writes derived observations</span>{% endblock %}
+{% block page_help %}Server packet message ID minus shift equals client DAT dialog index. Values are measured from packet/chat evidence, never assumed. Ranges require at least three observations; conflicts mean captures disagree and IDs outside a measured range remain unverified. Evidence rows: {{ obs_total }} across {{ obs_caps }} captures.{% endblock %}
+{% block page_body %}
 <form method="post" action="/shift-master/rebuild"><button>Observe all captures &amp; rebuild</button></form>
 <table class="data" style="margin-top:10px"><thead><tr><th>Zone</th><th>Id range</th><th>Shift</th><th>Observations</th><th>Captures</th><th>Gap before</th><th>Conflict</th><th>Other drift data</th></tr></thead><tbody>
 {% for r in rows %}<tr{% if r.conflict %} style="background:rgba(200,100,0,.15)"{% endif %}>

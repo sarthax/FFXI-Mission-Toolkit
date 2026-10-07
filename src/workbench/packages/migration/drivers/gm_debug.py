@@ -7,9 +7,26 @@ PKG_ROOT: Path | None = None
 DSP_ROOT: Path | None = None
 
 
+def _default_pkg_root() -> Path | None:
+    from workbench.runtime import legacy_settings
+
+    backport_root = legacy_settings.get_backport_root()
+    return (
+        backport_root / "mission-packages" / "assault_gm_debug_tools"
+        if backport_root is not None
+        else None
+    )
+
+
+def _default_dsp_root() -> Path | None:
+    from workbench.runtime import legacy_settings
+
+    return legacy_settings.get_dsp_root()
+
+
 def main(pkg_root: Path | None = None, dsp_root: Path | None = None):
-    package = pkg_root or PKG_ROOT
-    target = dsp_root or DSP_ROOT
+    package = pkg_root or PKG_ROOT or _default_pkg_root()
+    target = dsp_root or DSP_ROOT or _default_dsp_root()
     if package is None:
         raise SystemExit("No backport checkout configured -- set Settings' backport_root first.")
     if target is None:

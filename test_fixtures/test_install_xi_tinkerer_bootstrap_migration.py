@@ -18,6 +18,7 @@ def load_impl():
 
 def main() -> None:
     assert IMPL.is_file()
+    assert not (ROOT / "install_xi_tinkerer.py").exists()
     module = load_impl()
 
     exact = f"xi_tinkerer-1.0-cp{sys.version_info.major}{sys.version_info.minor}-cp{sys.version_info.major}{sys.version_info.minor}-win_amd64.whl"
@@ -32,9 +33,9 @@ def main() -> None:
     assert module.pick_asset([assets[0]])["name"] == abi3
     assert module.pick_asset([assets[2]]) is None
 
-    root_source = (ROOT / "install_xi_tinkerer.py").read_text(encoding="utf-8")
-    assert "urllib.request" not in root_source
-    assert '"scripts" / "bootstrap" / "install_xi_tinkerer.py"' in root_source
+    setup = (ROOT / "setup.bat").read_text(encoding="utf-8")
+    assert "scripts\\bootstrap\\install_xi_tinkerer.py" in setup
+    assert "%PY% install_xi_tinkerer.py" not in setup
 
 
 if __name__ == "__main__":

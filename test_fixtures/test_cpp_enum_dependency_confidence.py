@@ -3,7 +3,7 @@
 from __future__ import annotations
 import tempfile
 from pathlib import Path
-from cpp_dependency_index import index
+from workbench.devtools.server.cpp_dependency_index import index
 
 def main():
     with tempfile.TemporaryDirectory() as td:

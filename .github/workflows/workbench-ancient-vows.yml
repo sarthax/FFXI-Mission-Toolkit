@@ -13,8 +13,6 @@ on:
       - "src/workbench/validation/packages/binding_index.py"
       - "src/workbench/validation/packages/binding_audit.py"
       - "test_fixtures/test_ancient_vows_crossfork.py"
-      - "backport_binding_audit.py"
-      - "backport_binding_index.py"
       - ".github/workflows/workbench-ancient-vows.yml"
   workflow_dispatch:
 

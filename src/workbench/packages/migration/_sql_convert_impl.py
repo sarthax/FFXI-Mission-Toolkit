@@ -31,7 +31,7 @@ poolid spawning under different in-world names at different positions within the
 real, common FFXI pattern -- not every (poolid, zoneid) match is a bug).
 
 Usage (library):
-    import backport_sql_convert as bsc
+    from workbench.packages.migration import sql_convert as bsc
     schema_map = bsc.load_schema_map()
     rows = bsc.parse_insert_values(sql_text)
     result = bsc.convert_table(table_name, rows, schema_map)
@@ -382,7 +382,7 @@ def check_content_duplication(con: sqlite3.Connection, table: str, rows: list[li
     has live spawns, whether it's a real collision or a legitimate same-poolid-different-name
     variant per the incident report) -- that needs the real live DB (mob_spawn_points join), which
     this offline indexed snapshot doesn't carry in a form safe to assume is current. Use
-    backport_sql_live_check.py for that live classification before deciding anything.
+    workbench.validation.live_db.sql_check for that live classification before deciding anything.
     """
     key_cols = CONTENT_KEY_COLUMNS.get(table)
     spec = schema_map.get(table, {})
@@ -450,7 +450,7 @@ def check_content_duplication(con: sqlite3.Connection, table: str, rows: list[li
         })
 
     note = (f"{len(duplicates)} of {checked} distinct content key(s) checked already have an "
-            f"existing DSP row under a DIFFERENT id -- review each one (see backport_sql_live_check.py "
+            f"existing DSP row under a DIFFERENT id -- review each one (see workbench.validation.live_db.sql_check "
             f"for live spawn/loot classification before deciding whether to reuse or keep both).")
     if not duplicates:
         note = f"None of the {checked} distinct content key(s) checked already exist in DSP."

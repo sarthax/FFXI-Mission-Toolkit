@@ -6,7 +6,7 @@ import sqlite3
 import tempfile
 from pathlib import Path
 
-import feature_trace
+from workbench.devtools.features import trace as feature_trace
 from workbench.core import graph
 
 
@@ -91,8 +91,9 @@ def main():
         drift_path=feature_trace.entity_implementation_path(con,catalog,"Diagnostic Mob")
         assert drift_path and drift_path["numeric_ids"]==[17000099,17084539],drift_path
 
-        template=(Path(__file__).resolve().parents[1]/"gui/templates/feature_trace.html").read_text(encoding="utf-8")
-        server=(Path(__file__).resolve().parents[1]/"gui_server.py").read_text(encoding="utf-8")
+        repo_root=Path(__file__).resolve().parents[1]
+        template=(repo_root/"gui/templates/feature_trace.html").read_text(encoding="utf-8")
+        server=(repo_root/"src/workbench/app/_host_impl.py").read_text(encoding="utf-8")
         for text in (
             "Direct canonical evidence / provenance",
             "Canonical semantic traversal reached its node budget",

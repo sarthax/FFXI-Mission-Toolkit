@@ -1,9 +1,9 @@
 """Canonical Development event/CSID explorer adapter.
 
-The mature root ``explore_event.py`` implementation is preserved byte-for-byte in
+The mature Event Explorer implementation is preserved byte-for-byte in
 ``_explore_event_impl.py``. Its repository paths and mission-export subprocess behavior are
 intentionally rooted at the historical repository location, so execute the preserved source with
-the legacy root filename and then pin those path globals to the canonical runtime path service.
+the historical virtual root filename and then pin those path globals to the canonical runtime path service.
 """
 from __future__ import annotations
 

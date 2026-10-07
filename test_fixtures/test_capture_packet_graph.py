@@ -3,7 +3,7 @@
 from __future__ import annotations
 import json, sqlite3, tempfile
 from pathlib import Path
-import workbench_connect
+from workbench.runtime import connect as workbench_connect
 from workbench.core import graph
 
 def main():

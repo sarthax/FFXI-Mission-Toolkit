@@ -2,7 +2,6 @@
 """Focused regression for the packaged dialog index builder."""
 from __future__ import annotations
 
-import importlib.util
 import os
 import sqlite3
 import subprocess
@@ -18,6 +17,7 @@ def main() -> None:
     from workbench.devtools.reference.dialog import build_index as canonical
     from workbench.runtime.paths import DATABASE_PATH, REPO_ROOT
 
+    assert not (ROOT / "build_dialog_index.py").exists()
     assert canonical.TOOLS_ROOT == REPO_ROOT
     assert canonical.DB_PATH == DATABASE_PATH
     assert canonical.DAT_EXTRACTOR_EXE == extractor_bin.EXE
@@ -45,19 +45,6 @@ def main() -> None:
     assert "dialog_drift_report" in tables
     assert "dialog_text_fts" in tables
     con.close()
-
-    wrapper_path = ROOT / "build_dialog_index.py"
-    wrapper_text = wrapper_path.read_text(encoding="utf-8")
-    assert "workbench.devtools.reference.dialog" in wrapper_text
-    assert "sqlite3.connect" not in wrapper_text
-    assert "Path(__file__)" not in wrapper_text
-
-    spec = importlib.util.spec_from_file_location("_dialog_index_root_compat", wrapper_path)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    assert sys.modules[spec.name] is canonical
 
     with tempfile.TemporaryDirectory() as td:
         env = dict(os.environ)

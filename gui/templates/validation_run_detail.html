@@ -1,9 +1,14 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Validation Run — Mission Toolkit{% endblock %}
-{% block content %}
-<h1>Validation Run</h1>
+{% block page_archetype %}detail{% endblock %}
+{% block page_class %}validation-run-detail-page{% endblock %}
+{% block page_back %}<a class="chip" href="/validation/runs">← Validation Runs</a>{% endblock %}
+{% block page_heading %}Validation Run{% endblock %}
+{% block page_identity %}{% if run %}<span class="chip mono">{{ run.run_id }}</span>{% endif %}{% endblock %}
+{% block page_status %}{% if run %}<span class="chip">{{ run.status or "UNKNOWN" }}</span>{% endif %}<span class="wb-readonly-badge">Read only</span>{% endblock %}
+{% block page_body %}
 
-{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+{% if error %}<div class="wb-error">{{ error }}</div>{% endif %}
 
 {% if run %}
 <h2>{{ run.name }}</h2>
@@ -31,11 +36,10 @@
 {% endfor %}
 </tbody></table></div>
 {% else %}
-<p class="muted">No ValidationResult records are attached to this run.</p>
+<div class="wb-empty">No ValidationResult records are attached to this run.</div>
 {% endif %}
 {% elif not error %}
-<div class="warn">Validation run <code>{{ run_id }}</code> was not found.</div>
+<div class="wb-error">Validation run <code>{{ run_id }}</code> was not found.</div>
 {% endif %}
 
-<p><a class="zonelink" href="/validation/runs">Back to validation runs</a></p>
 {% endblock %}

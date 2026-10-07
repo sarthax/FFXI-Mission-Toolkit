@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 from workbench.packages.migration import lua_convert as legacy_lua
-import backport_sql_convert as legacy_sql
+from workbench.packages.migration import sql_convert as legacy_sql
 from workbench.migrations.backend_probe import classify_lsb_lua_methods
 
 

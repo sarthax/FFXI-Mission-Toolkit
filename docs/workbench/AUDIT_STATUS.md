@@ -505,7 +505,7 @@ The Workbench now performs a real public repository migration smoke using pinned
 
 ## 2026-09-25 — LLM Research & Agent backlog
 
-The existing LLM integration is confirmed to be a narrow local-model layer: `llm_client.py` connects to Open WebUI/Ollama, `llm_db_tools.py` exposes read-only SQLite research calls, `llm_log.py` records interactions, and the GUI exposes prompt/tool transcripts. The rework will preserve those safety properties but promote LLM functionality into a first-class evidence-aware research subsystem.
+The existing LLM integration is confirmed to be a narrow local-model layer: `workbench.devtools.research.legacy_llm.client` connects to Open WebUI/Ollama, `workbench.devtools.research.legacy_llm.db_tools` exposes read-only SQLite research calls, `workbench.devtools.research.legacy_llm.log` records interactions, and the GUI exposes prompt/tool transcripts. The rework will preserve those safety properties but promote LLM functionality into a first-class evidence-aware research subsystem.
 
 Priority implementation order:
 1. provider abstraction and ResearchSession persistence;
@@ -1013,7 +1013,7 @@ Regression runs #1117 and #1118 are green with collision inspection coverage in 
 
 ## 2026-09-25 — Live target validation foundation
 
-The Workbench now has a generic adapter-aware live database validation path that complements, but does not replace, the existing specialized `backport_sql_live_check.py` MariaDB tooling.
+The Workbench now has a generic adapter-aware live database validation path that complements, but does not replace, the specialized `workbench.validation.live_db.sql_check` MariaDB tooling.
 
 Implemented:
 - `workbench.migrations.live_target_validation` compares expected adapter-normalized `LogicalRecord` records against current live target rows using target adapter physical table/column mappings;
@@ -1025,7 +1025,7 @@ Implemented:
 - `python -m workbench.cli.live_target_validation` supports read-only SQLite validation and optional MySQL/MariaDB validation via `mysql-connector-python`;
 - MySQL/MariaDB passwords are read from an environment variable (default `FFXI_DB_PASSWORD`) rather than accepted as a normal CLI argument.
 
-The legacy `backport_sql_live_check.py` remains present and separate because it contains specialized package ID/content-duplication logic, including `mob_groups` live-conflict analysis. Existing admin/write tooling is not removed or absorbed into the generic validator.
+The specialized `workbench.validation.live_db.sql_check` remains separate because it contains specialized package ID/content-duplication logic, including `mob_groups` live-conflict analysis. Existing admin/write tooling is not removed or absorbed into the generic validator.
 
 
 ## 2026-09-25 — Logical schema coverage audit and FeatureSurface rule expansion

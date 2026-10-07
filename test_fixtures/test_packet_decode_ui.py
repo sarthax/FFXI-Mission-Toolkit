@@ -3,7 +3,7 @@
 
 from pathlib import Path
 
-import packet_decode
+from workbench.packets import decode as packet_decode
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -27,7 +27,7 @@ def main():
       4 | 20 F7 E3 2B 00 00 00 00 00 00 00 00 01 00 00 00    4 |  ..+............
       5 | 00 00 00 00 00 00 00 00 80 03 00 00 3B 00 00 00    5 | ............;...
 """
-    import build_capture_index
+    from workbench.captures.ingestion import build_index as build_capture_index
     parsed = build_capture_index.parse_packetlogger_records(packetlogger_grid, "0x037")
     assert len(parsed) == 1, parsed
     assert parsed[0]["ts"] == "2025-05-01 23:24:24", parsed
@@ -44,8 +44,8 @@ def main():
 
     template = (ROOT / "gui" / "templates" / "packets_decode.html").read_text(encoding="utf-8")
     tools_template = (ROOT / "gui" / "templates" / "packets.html").read_text(encoding="utf-8")
-    server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
-    backend = (ROOT / "packet_decode.py").read_text(encoding="utf-8")
+    server = (ROOT / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
+    backend = (ROOT / "src" / "workbench" / "packets" / "_decode_impl.py").read_text(encoding="utf-8")
 
     assert "{% block main_class %}wide-workbench{% endblock %}" in template
     assert "Decoded structure" in template

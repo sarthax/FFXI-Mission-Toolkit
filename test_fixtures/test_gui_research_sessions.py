@@ -114,6 +114,8 @@ def main():
             ),
         )
         assert "Research Sessions" in list_html
+        assert 'wb-archetype-browser' in list_html
+        assert 'class="wb-page-title">Research Sessions</span>' in list_html
         assert "Trace one feature with evidence" in list_html
         assert "PROPOSE_CHANGES" in list_html
         assert "No provider has been run" not in list_html
@@ -139,6 +141,8 @@ def main():
         assert "Draft evidence report." in detail_html
         assert "No provider has been run by this page." in detail_html
         assert '<body class="shell-dense">' in detail_html
+        assert 'wb-archetype-workbench' in detail_html
+        assert 'class="wb-page-title">Research Session</span>' in detail_html
         assert 'class="research-meta"' in detail_html
         assert 'class="research-section" open' in detail_html
         assert "Typed Tool Transcript" in detail_html
@@ -172,7 +176,7 @@ def main():
         assert "research-run-grid" in proposal_html
         assert "Research Proposals" in proposal_html
 
-    source=(ROOT/"gui_server.py").read_text(encoding="utf-8")
+    source=(ROOT/"src"/"workbench"/"app"/"_host_impl.py").read_text(encoding="utf-8")
     assert '@app.get("/research"' in source
     assert '@app.post("/research"' in source
     assert '@app.get("/research/{research_session_id:path}"' in source

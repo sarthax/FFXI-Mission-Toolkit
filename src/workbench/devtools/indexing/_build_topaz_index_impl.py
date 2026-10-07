@@ -54,7 +54,7 @@ subdirectory) doesn't exist, every function here degrades to "0 rows" rather tha
 as build_dsp_index.py does when dsp_server_path is unset.
 
 Usage:
-    py -3 build_topaz_index.py               # parse and (re)load every topaz_* table
+    py -3 -m workbench.devtools.indexing.build_topaz_index  # parse and (re)load every topaz_* table
 """
 import re
 import sqlite3

@@ -1,8 +1,11 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}SQL Backport Converter{% endblock %}
+{% block page_archetype %}editor{% endblock %}
+{% block page_heading %}SQL Backport Converter{% endblock %}
+{% block page_actions %}<a class="chip" href="/backport/package">Package workflow</a><a class="chip" href="/backport/lua-convert">Lua converter</a><a class="chip" href="/backport/bindings">Binding reference</a>{% endblock %}
+{% block page_help %}Converts Topaz INSERT statements to the confirmed DSP schema shape, then checks indexed DSP data for ID collisions and duplicate content identities.{% endblock %}
 
-{% block content %}
-<h1>SQL Backport Converter</h1>
+{% block page_body %}
 <p class="muted">Converts one Topaz table's <code>INSERT INTO ... VALUES (...)</code> statements to
 DSP's real column order/shape, applying every mapping confirmed in
 <code>data/dsp_sql_schema_map.json</code>, then checks every row's id against DSP's real,
@@ -85,7 +88,7 @@ every existing entry was checked, don't guess a column mapping just to clear a w
 {% if duplication.duplicates %}
 <p><span class="badge badge-empty">{{ duplication.duplicates|length }}</span> content key(s) already
   exist in DSP under a DIFFERENT id -- do not ship these as new rows without reviewing first. Run
-  <code>backport_sql_live_check.py --package &lt;dir&gt;</code> against the real live server for a
+  <code>python -m workbench.validation.live_db.sql_check --package &lt;dir&gt;</code> against the real live server for a
   real-impact classification (live spawns/loot) before deciding whether to reuse the existing id or
   keep both.</p>
 <div class="table-wrap"><table>

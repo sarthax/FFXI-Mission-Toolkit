@@ -1,29 +1,12 @@
 from __future__ import annotations
 
 import importlib
-import importlib.util
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-
-
-def _load_root(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    assert spec.loader is not None
-    inserted = str(REPO_ROOT) not in sys.path
-    if inserted:
-        sys.path.insert(0, str(REPO_ROOT))
-    try:
-        spec.loader.exec_module(module)
-    finally:
-        if inserted:
-            sys.path.remove(str(REPO_ROOT))
-    return sys.modules[name]
 
 
 def _write(path: Path, text: str) -> None:
@@ -37,12 +20,9 @@ def main() -> None:
     nyzul = importlib.import_module("workbench.packages.migration.drivers.nyzul")
     lua_convert = importlib.import_module("workbench.packages.migration.lua_convert")
 
-    legacy_assault = _load_root("backport_convert_7_packages", REPO_ROOT / "backport_convert_7_packages.py")
-    legacy_gm = _load_root("backport_convert_gm_debug_tools", REPO_ROOT / "backport_convert_gm_debug_tools.py")
-    legacy_nyzul = _load_root("backport_convert_nyzul_package", REPO_ROOT / "backport_convert_nyzul_package.py")
-    assert legacy_assault is assault
-    assert legacy_gm is gm
-    assert legacy_nyzul is nyzul
+    assert not (REPO_ROOT / "backport_convert_7_packages.py").exists()
+    assert not (REPO_ROOT / "backport_convert_gm_debug_tools.py").exists()
+    assert not (REPO_ROOT / "backport_convert_nyzul_package.py").exists()
 
     periqia = assault.zone_settings_for("scripts/zones/Periqia/npcs/test.lua")
     assert periqia == {"zone_table": "PERIQIA", "id_shape": "zones_table", "id_file_hint": None}

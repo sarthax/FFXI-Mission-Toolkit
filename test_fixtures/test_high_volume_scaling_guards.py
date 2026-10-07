@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import sqlite3
-import build_capture_index as bci
-import feature_trace
+from workbench.captures.ingestion import build_index as bci
+from workbench.devtools.features import trace as feature_trace
 from workbench.core import graph
 from workbench.core.schema import DependencyEdge, MigrationAction
 from workbench.core.services import packet_correlation

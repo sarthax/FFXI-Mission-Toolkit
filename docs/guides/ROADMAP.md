@@ -151,7 +151,7 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
 
 ## Completed
 
-- **2026-09-21: Zone Plot (`zone_plot.py`/`zone_edit.py`/`gui/templates/zone_plot.html`) — server-
+- **2026-09-21: Zone Plot (`workbench.devtools.spatial.active_zone_plot`/`workbench.editors.zone.editor`/`gui/templates/zone_plot.html`) — server-
   agnostic live level editor, Add-tab UX overhaul, and a zone-switch rendering race fix.** Zone
   Plot (View/Edit/Add/Backups on `/zoneplot`) draws every mob/NPC/door spawn row of a zone from
   the *live* server DB over the real client mesh + navmesh, and can add/move/delete rows straight
@@ -200,15 +200,15 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
   `dropid` that collided with unrelated DSP-native content, while the correctly-remapped duplicate
   from an earlier pass sat orphaned with zero spawns). Repaired live (195 rows fixed, 270 harmless
   duplicates cleaned up, verified `0` live-wrong-loot cases remain) and closed at the tooling level:
-  - `backport_sql_convert.py`: new `CONTENT_KEY_COLUMNS` map (currently `mob_groups` →
+  - `workbench.packages.migration.sql_convert`: new `CONTENT_KEY_COLUMNS` map (currently `mob_groups` →
     `(poolid, zoneid)`, its real identity per `dsp_sql_schema_map.json`'s own composite-PK note)
     and `check_content_duplication()`, the offline (indexed-snapshot) counterpart to
     `check_id_collisions()`.
-  - `backport_sql_live_check.py`: `check_live_content_duplication()` (classifies each match by real
+  - `workbench.validation.live_db.sql_check`: `check_live_content_duplication()` (classifies each match by real
     live impact — `harmless` / `live_conflict` / `orphaned` / `ambiguous`, using a real
     `mob_spawn_points` join, not just presence/absence) and a new `--scan-duplicates TABLE` flag
     for a standalone, periodic full-DB health check independent of any candidate package.
-  - `backport_package.py`: wired into the existing `run_id_collision_checks()`/`build_report()`
+  - `workbench.packages.migration.orchestrator`: wired into the existing `run_id_collision_checks()`/`build_report()`
     flow automatically for any table in `CONTENT_KEY_COLUMNS` — a duplicate now fails the overall
     "Clean" verdict the same way a real id-collision already did.
   - GUI: both `/backport/sql-convert` and `/backport/package` now render a "Content-duplication
@@ -293,7 +293,7 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
     entries (real zero-content records ending in `/`) in its file listing, alongside the `.7z`/
     folder branches which already filtered to real files only — a real 25-entry capture zip had
     exactly 15 such directory entries, all misreported as "failed" imports.
-  - Permanent regression-test fixtures added (`test_fixtures/captures/`, `test_capture_ingestion.py`)
+  - Permanent regression-test fixtures added (`test_fixtures/captures/`, `tests/legacy/test_capture_ingestion.py`)
     — two real, trimmed-of-nothing capturer trees (Foxmulder- and Tacocat-style layouts) with a
     standalone test script (no pytest dependency) that fails loudly on any unexpected format
     failure, so a fix for one capturer's layout can't silently re-break another's the way
@@ -318,9 +318,9 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
     (same double-confirmation convention `build_database.py --wipe-everything` already uses), backs
     up the DB first unless told not to, and never touches `test_fixtures/` or any hand-authored
     source file.
-  - `addon_tools.py` added — packages real, already-fetched data one install has (e.g. the real
+  - `workbench.runtime.addon_tools` added — packages real, already-fetched data one install has (e.g. the real
     BG-Wiki page dump, ~19MB/47,608 pages) into a small, checksummed, portable `.zip` under
-    `addons/` that another install can extract via `py -3 addon_tools.py install <name>` instead of
+    `addons/` that another install can extract via `py -3 -m workbench.runtime.addon_tools install <name>` instead of
     regenerating it the slow way (a real network scrape, in BG-Wiki's case). Verifies a real sha256
     per file on install, refuses to silently overwrite a destination file with different real
     content unless `--force`, and skips cleanly (no-op) when the destination already matches.
@@ -328,7 +328,7 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
     replacing it — this is for real local data with no public single-file source to re-fetch from.
 - **2026-09-12: Backport module — Topaz→DSP Lua converter, namespace map, and coverage regression
   check** (see `STRESS_TEST_FINDINGS.md`):
-  - `backport_lua_convert.py` + `data/dsp_namespace_map.json` — a config-driven Topaz→DSP Lua
+  - `workbench.packages.migration.lua_convert` + `data/dsp_namespace_map.json` — a config-driven Topaz→DSP Lua
     converter, live at `/backport/lua-convert` (gated behind `backport_enabled()`, same as ID
     Drift). Applies every namespace mapping confirmed against real DSP source (simple prefix
     families, reshaped tables, incompatible-enum name-maps, method/whole-call renames, script-shape
@@ -347,7 +347,7 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
     regression check: runs the converter against every real `.lua` file under the actual Topaz
     checkout's `scripts/zones/` tree (`--zone` to scope, `--report` for a Markdown report), and
     reports any line whose converted output still mentions `tpz.` without being covered by a flag
-    (`ConversionResult.unflagged_leftovers()` in `backport_lua_convert.py`) — a real coverage gap,
+    (`ConversionResult.unflagged_leftovers()` in `workbench.packages.migration.lua_convert`) — a real coverage gap,
     not a cosmetic one. The first manual run (6 zones outside Nyzul) found 97 such gaps; each was
     fixed with the same evidence-checked discipline as every other map entry (new `mobMod`/
     `animation`/`objType`/`path_flag` families, the missing physical half of the
@@ -366,8 +366,8 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
     whole zone tree — every hit is either the unrelated general open-world Treasure Casket system
     or a comment-only mention — documented as out of scope rather than porting an unused ~990-line
     module.
-  - `test_backport_lua_convert.py` — a permanent, pytest-free regression suite (16 test functions,
-    matching this project's existing `test_capture_ingestion.py` convention) against small
+  - `tests/legacy/test_backport_lua_convert.py` — a permanent, pytest-free regression suite (16 test functions,
+    matching this project's existing `tests/legacy/test_capture_ingestion.py` convention) against small
     hand-written snippets, one per converter code path (each `simple_families`/`reshaped_families`
     shape, incompatible-enum flagging, `missing_lua_modules` flagging, method/whole-call renames,
     both script-shape regression guards, both ID-shape conventions, the generic unmapped-reference
@@ -391,7 +391,7 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
     citation inline instead of a bare regex string — refactored `_flag_unhandled` to carry
     provenance (which map section/key each pattern came from) through to the flag record, so a user
     of the page sees the same reasoning a map author would have to go dig up manually before.
-  - **SQL backport tooling** — `backport_sql_convert.py` + `data/dsp_sql_schema_map.json`, with a
+  - **SQL backport tooling** — `workbench.packages.migration.sql_convert` + `data/dsp_sql_schema_map.json`, with a
     live GUI page at `/backport/sql-convert` (same gate as the Lua converter). Converts Topaz
     `INSERT INTO` statements to DSP's real column order/shape per table, and — the more valuable
     half — checks every row's id against DSP's REAL, already-indexed data
@@ -405,9 +405,9 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
       Nyzul-specific item; DSP's existing dropId 15 belongs to an unrelated mob entirely). Both
     renumbered into confirmed-free blocks above this DSP snapshot's real max, with every
     downstream reference (`mob_spawn_points.groupid`, `mob_groups.dropid`) updated to match.
-    10-test regression suite (`test_backport_sql_convert.py`), matching the Lua converter's
+    10-test regression suite (`tests/legacy/test_backport_sql_convert.py`), matching the Lua converter's
     testing discipline.
-  - `backport_sql_live_check.py` — a live-MySQL counterpart to the snapshot-based checker above,
+  - `workbench.validation.live_db.sql_check` — a live-MySQL counterpart to the snapshot-based checker above,
     for DSP_TRANSITION_PLAN.md task 4 (`[NEEDS DBA/ADMIN]`, live Valhalla-target DB access we don't
     have). Runs the exact same same-entity-vs-real-collision classification against a REAL live
     database instead of the indexed snapshot -- read-only (`SELECT` only, never writes), ready to
@@ -419,7 +419,7 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
     `SOL_REGISTER` style) instead of `old-dsp-reference` (DarkstarProject/darkstar, 2017-vintage
     Lunar-binding-library `LUNAR_DECLARE_METHOD` style) — the actual real production target. Full
     re-audit and fix pass run against the correct codebase; the mistake is now structurally
-    impossible to repeat silently: `backport_lua_convert.py` gained `TARGET_FINGERPRINTS`/
+    impossible to repeat silently: `workbench.packages.migration.lua_convert` gained `TARGET_FINGERPRINTS`/
     `detect_target_flavor()`/`verify_target_or_raise()`, and `/backport/lua-convert` shows a live
     fingerprint-mismatch warning banner comparing the configured DSP checkout against the selected
     conversion target.
@@ -519,11 +519,11 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
     0x0CA, 0x0CC, 0x0D3, 0x0DC, 0x0E1, 0x0E2, 0x0E4, 0x0F4, 0x110, 0x113, 0x0FA), each verified
     against real LandSandBoat struct source and, where real capture data existed, decode-validated.
     Two opcodes (0x00A Zone In, 0x0B4 Config) remain genuinely unresolved — see Known Gaps below.
-- **2026-09-14: `backport_package.py` — end-to-end package backport orchestrator, plus a bundled
+- **2026-09-14: `workbench.packages.migration.orchestrator` — end-to-end package backport orchestrator, plus a bundled
   turnkey `backport-workspace/` scaffold**:
   - Chains together every already-built per-file/per-table backport tool into one run over a whole
     package folder instead of four separate manual invocations: converts every `.lua` file
-    (`backport_lua_convert.py`) and every `.sql` file (`backport_sql_convert.py`), then runs the
+    (`workbench.packages.migration.lua_convert`) and every `.sql` file (`workbench.packages.migration.sql_convert`), then runs the
     binding audit, the Lua sanity check, and the SQL id-collision check (against real indexed DSP
     data) over the whole converted result, and writes one consolidated `BACKPORT_REPORT.md`.
     `--verify-only` re-runs just the 3 checks against an already-converted `lua-dsp/` without
@@ -543,7 +543,7 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
     lua-dsp}`, `dsp-engine-changes/<name>/{README,.diff}`, `reports/` shapes, one small real
     already-verified example package, zero real Assault project content) -- `settings.
     get_backport_root()` now defaults to it instead of returning `None`, so the `--all-packages`
-    CLI tools (and `backport_package.py`) work turnkey on a fresh clone with zero configuration.
+    CLI tools (and `workbench.packages.migration.orchestrator`) work turnkey on a fresh clone with zero configuration.
 
 ## Known Gaps (blocked on real data, not effort)
 

@@ -5,7 +5,7 @@ import sqlite3
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import build_capture_index
+from workbench.captures.ingestion import build_index as build_capture_index
 from workbench.core.services import capture_integrity
 
 
@@ -101,11 +101,12 @@ def main():
             "SELECT COUNT(*) FROM capture_content_manifest WHERE capture_id=?", (a,)
         ).fetchone()[0] == 0
 
-        gui = (Path(__file__).resolve().parents[1] / "gui" / "templates" / "capture_detail.html").read_text(encoding="utf-8")
+        repo_root = Path(__file__).resolve().parents[1]
+        gui = (repo_root / "gui" / "templates" / "capture_detail.html").read_text(encoding="utf-8")
         assert "Capture content fingerprint" in gui
         assert "source history" in gui
 
-        server = (Path(__file__).resolve().parents[1] / "gui_server.py").read_text(encoding="utf-8")
+        server = (repo_root / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
         assert 'parser_name="archive_open"' in server
         con.close()
 

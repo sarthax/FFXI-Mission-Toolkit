@@ -8,6 +8,7 @@ canonical module.
 from __future__ import annotations
 
 import importlib.util
+import io
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -58,4 +59,17 @@ def _load_impl() -> ModuleType:
 
 
 _impl = _load_impl()
-sys.modules[__name__] = _impl
+
+
+def _run_cli() -> int:
+    stream = getattr(sys.stdout, "buffer", None)
+    if stream is not None:
+        sys.stdout = io.TextIOWrapper(stream, encoding="utf-8", errors="replace")
+    result = _impl.main()
+    return int(result or 0)
+
+
+if __name__ == "__main__":
+    raise SystemExit(_run_cli())
+else:
+    sys.modules[__name__] = _impl

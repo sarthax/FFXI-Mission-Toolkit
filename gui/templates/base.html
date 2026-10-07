@@ -10,6 +10,10 @@
     --accent:#2f6f6a; --accent-soft:#e2efee; --red:#b33f3f; --red-soft:#f6e3e3;
     --amber:#9a6a12; --amber-soft:#f4ecd8; --code-bg:#eef1f3;
     --shell-h:40px; --control-h:30px; --panel-left:280px; --panel-right:340px;
+    --wb-page-pad-y:8px; --wb-page-pad-x:10px; --wb-page-pad-bottom:24px;
+    --wb-section-gap:8px; --wb-panel-gap:8px; --wb-toolbar-h:34px; --wb-control-h:24px;
+    --wb-sidebar-sm:220px; --wb-sidebar-md:280px; --wb-inspector-w:340px;
+    --wb-content-narrow:900px; --wb-content-reading:1100px; --wb-table-row-y:7px;
   }
   html { color-scheme:light; }
   html[data-theme="dark"] {
@@ -95,15 +99,65 @@
   body.shell-focus header { display:none; }
   body.shell-focus main { padding-top:0; }
 
+  /* Workbench page framework: shared module geometry above the global shell. */
+  main.workbench-page {
+    padding:var(--wb-page-pad-y) var(--wb-page-pad-x) var(--wb-page-pad-bottom);
+  }
+  main.workbench-page.wb-width-narrow { max-width:var(--wb-content-narrow); margin-left:auto; margin-right:auto; }
+  main.workbench-page.wb-width-reading { max-width:var(--wb-content-reading); margin-left:auto; margin-right:auto; }
+  main.workbench-page.wb-width-fluid { max-width:none; }
+  .wb-page-frame { min-height:100%; display:flex; flex-direction:column; gap:var(--wb-section-gap); }
+  .wb-page-header {
+    min-height:var(--wb-toolbar-h); display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+    border-bottom:1px solid var(--border); background:var(--surface); padding:3px 6px;
+  }
+  .wb-page-heading { display:flex; align-items:center; gap:6px; min-width:0; }
+  .wb-page-title { font-size:13px; font-weight:700; white-space:nowrap; }
+  .wb-page-subtitle { color:var(--muted); font-size:11px; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .wb-page-status { display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+  .wb-page-actions { margin-left:auto; display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+  .wb-page-help { margin:0; padding:0 6px; }
+  .wb-page-help > summary { cursor:pointer; color:var(--muted); font-size:11px; }
+  .wb-page-help-body { padding:6px 2px; max-width:720px; color:var(--muted); }
+  .wb-page-body { min-width:0; }
+  .wb-filter-row {
+    min-height:var(--wb-toolbar-h); display:flex; align-items:center; gap:5px; flex-wrap:wrap;
+    margin:0; padding:3px 6px; border:1px solid var(--border); border-radius:6px; background:var(--surface);
+  }
+  .wb-filter-row input,.wb-filter-row select,.wb-filter-row button {
+    min-height:var(--wb-control-h); padding:2px 6px; font-size:11px; line-height:1.25;
+  }
+  .wb-layout-one { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--wb-panel-gap); min-width:0; }
+  .wb-layout-two { display:grid; grid-template-columns:var(--wb-sidebar-md) minmax(0,1fr); gap:var(--wb-panel-gap); min-width:0; }
+  .wb-layout-three { display:grid; grid-template-columns:var(--wb-sidebar-sm) minmax(0,1fr) var(--wb-inspector-w); gap:var(--wb-panel-gap); min-width:0; }
+  .wb-pane { min-width:0; background:var(--surface); }
+  .wb-empty,.wb-loading {
+    padding:14px; border:1px dashed var(--border); border-radius:6px; color:var(--muted); background:var(--surface);
+  }
+  .wb-error { background:var(--red-soft); border-left:3px solid var(--red); padding:9px 12px; border-radius:0 6px 6px 0; }
+  .wb-readonly-badge,.wb-write-badge {
+    display:inline-flex; align-items:center; border-radius:100px; padding:1px 7px; font-size:10px; font-weight:700;
+  }
+  .wb-readonly-badge { color:var(--accent); background:var(--accent-soft); }
+  .wb-write-badge { color:var(--amber); background:var(--amber-soft); }
+  @media (max-width:1180px) {
+    .wb-layout-three { grid-template-columns:var(--wb-sidebar-sm) minmax(0,1fr); }
+    .wb-layout-three > .wb-inspector { grid-column:1/-1; }
+  }
+  @media (max-width:850px) {
+    .wb-layout-two,.wb-layout-three { grid-template-columns:minmax(0,1fr); }
+    .wb-page-actions { width:100%; margin-left:0; }
+  }
+
   /* Shared workstation primitives. Pages can adopt these incrementally. */
   .dense-toolbar {
-    min-height:34px; display:flex; align-items:center; gap:5px; flex-wrap:wrap;
+    min-height:var(--wb-toolbar-h); display:flex; align-items:center; gap:5px; flex-wrap:wrap;
     border-bottom:1px solid var(--border); background:var(--surface); padding:3px 6px;
   }
   .dense-toolbar .sp { flex:1; }
   .dense-toolbar button,.dense-toolbar select,.dense-toolbar input,
   .dense-panel button,.dense-panel select,.dense-panel input {
-    min-height:24px; padding:2px 6px; font-size:11px; line-height:1.25;
+    min-height:var(--wb-control-h); padding:2px 6px; font-size:11px; line-height:1.25;
   }
   .dense-panel { font-size:12px; background:var(--surface); }
   .dense-tabs { display:flex; gap:2px; border-bottom:1px solid var(--border); padding:3px 3px 0; }

@@ -1,7 +1,11 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Browse by Zone{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}zones-browser-page{% endblock %}
+{% block page_archetype %}browser{% endblock %}
+{% block page_class %}zones-browser-page{% endblock %}
+{% block page_heading %}Browse by Zone{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Read only</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/entity">Entity Lookup</a>{% endblock %}
+{% block page_help %}Filter indexed entities by zone and/or server content_tag. Tags are server classification hints, not proof of mission membership.{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -22,11 +26,8 @@
 {% endif %}
 {% endmacro %}
 
-{% block content %}
-<style>main.zones-browser-page{padding:8px 10px 24px}</style>
-<div class="dense-toolbar"><strong>Browse by Zone</strong><span class="sp"></span><a class="chip" href="/entity">Entity Lookup</a><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:700px">Filter indexed entities by zone and/or server content_tag. Tags are server classification hints, not proof of mission membership.</div></details></div>
-
-<form class="search dense-toolbar" method="get" style="margin:6px 0">
+{% block page_body %}
+<form class="search wb-filter-row" method="get">
   <select name="zone">
     <option value="">(all zones)</option>
     {% for z in zones %}

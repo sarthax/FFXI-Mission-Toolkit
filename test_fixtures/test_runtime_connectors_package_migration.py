@@ -2,7 +2,6 @@
 """Focused migration smoke for the Workbench runtime connectors."""
 from __future__ import annotations
 
-import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -24,10 +23,8 @@ def _load_root(name: str, path: str):
 def main() -> None:
     from workbench.runtime import connect, connect_server
 
-    legacy_connect = _load_root("workbench_connect", "workbench_connect.py")
-    legacy_server = _load_root("workbench_connect_server", "workbench_connect_server.py")
-    assert legacy_connect is connect
-    assert legacy_server is connect_server
+    assert not (REPO_ROOT / "workbench_connect.py").exists()
+    assert not (REPO_ROOT / "workbench_connect_server.py").exists()
     assert callable(connect.connect)
     assert callable(connect.main)
     assert callable(connect_server.import_payload)

@@ -2,7 +2,6 @@
 """Package migration smoke for mission graph projection and root/plugin compatibility."""
 from __future__ import annotations
 
-import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -11,30 +10,17 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-def load_root_module():
-    name = "mission_graph_ingest_migration_root"
-    spec = importlib.util.spec_from_file_location(name, REPO_ROOT / "mission_graph_ingest.py")
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return sys.modules[name]
-
 
 def main():
     from workbench.devtools.missions import graph_ingest as canonical
     from workbench.plugins.domain import mission_graph_emit as legacy
 
-    root = load_root_module()
-    assert root is canonical
     assert legacy is canonical
+    assert not (REPO_ROOT / "mission_graph_ingest.py").exists()
 
-    root_source = (REPO_ROOT / "mission_graph_ingest.py").read_text(encoding="utf-8")
+    canonical_source = (REPO_ROOT / "src" / "workbench" / "devtools" / "missions" / "graph_ingest.py").read_text(encoding="utf-8")
     cli_source = (REPO_ROOT / "src" / "workbench" / "devtools" / "missions" / "graph_ingest_cli.py").read_text(encoding="utf-8")
-    assert "ArgumentParser" not in root_source
-    assert "graph_store.init_db" not in root_source
-    assert "extract_and_project_lsb_mission" not in root_source
-    assert "graph_ingest_cli import main" in root_source
+    assert "graph_ingest_cli import main" in canonical_source
     assert "ArgumentParser" in cli_source
     assert '"--write"' in cli_source
     assert "graph_store.init_db" in cli_source

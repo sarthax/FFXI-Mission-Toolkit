@@ -86,7 +86,7 @@ def decode_look(blob: bytes):
         print(f"  flat modelid = {modelid}")
         print(f"  -> FFXiMain lookup: {rule} -> file_id {file_id}")
         print(f"  -> this file_id identifies the client monster resource/skeleton entry; visible mesh resources may be linked separately")
-        print(f"  -> python model_schedule_dump.py --file-id {file_id}")
+        print(f"  -> python -m workbench.client.models.schedule_dump --file-id {file_id}")
     elif size in GEAR_MODEL_TYPES:
         face, race = blob[2], blob[3]
         head, body, hands, legs, feet, main, sub, ranged = struct.unpack_from("<8H", blob, 4)

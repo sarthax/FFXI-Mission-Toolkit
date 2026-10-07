@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import importlib
-import importlib.util
+import json
 import subprocess
 import sys
 import tempfile
@@ -10,20 +10,11 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def load_root(name: str, filename: str):
-    spec = importlib.util.spec_from_file_location(name, REPO_ROOT / filename)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return sys.modules[name]
-
-
 def main() -> None:
     change = importlib.import_module("workbench.validation.environments.engine_change_index")
     compare = importlib.import_module("workbench.validation.environments.engine_compare")
-    assert load_root("engine_change_index", "engine_change_index.py") is change
-    assert load_root("engine_migration_compare", "engine_migration_compare.py") is compare
+    assert not (REPO_ROOT / "engine_change_index.py").exists()
+    assert not (REPO_ROOT / "engine_migration_compare.py").exists()
 
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -47,22 +38,44 @@ def main() -> None:
         assert implementations[0].status == "IMPLEMENTED"
         assert implementations[0].requires_build is True
 
-    source = {
-        "functions": [
-            {"qualified_name": "Foo::same", "signature": {"return_type": "int", "parameters": [], "const": False, "static": False, "noexcept": False}},
-            {"qualified_name": "Foo::missing", "signature": {"return_type": "void", "parameters": [], "const": False, "static": False, "noexcept": False}},
-        ],
-        "bindings": [{"lua_name": "same", "cpp_symbol": "Foo::same"}],
-    }
-    target = {
-        "functions": [
-            {"qualified_name": "Foo::same", "signature": {"return_type": "int", "parameters": [], "const": False, "static": False, "noexcept": False}},
-        ],
-        "bindings": [{"lua_name": "same", "cpp_symbol": "Foo::same"}],
-    }
-    actions = compare.compare(source, target)
-    assert any(a.get("symbol") == "Foo::same" and a["action"] == "NOT_REQUIRED" for a in actions)
-    assert any(a.get("symbol") == "Foo::missing" and a["action"] == "IMPLEMENT" for a in actions)
+        source = {
+            "functions": [
+                {"qualified_name": "Foo::same", "signature": {"return_type": "int", "parameters": [], "const": False, "static": False, "noexcept": False}},
+                {"qualified_name": "Foo::missing", "signature": {"return_type": "void", "parameters": [], "const": False, "static": False, "noexcept": False}},
+            ],
+            "bindings": [{"lua_name": "same", "cpp_symbol": "Foo::same"}],
+        }
+        target = {
+            "functions": [
+                {"qualified_name": "Foo::same", "signature": {"return_type": "int", "parameters": [], "const": False, "static": False, "noexcept": False}},
+            ],
+            "bindings": [{"lua_name": "same", "cpp_symbol": "Foo::same"}],
+        }
+        actions = compare.compare(source, target)
+        assert any(a.get("symbol") == "Foo::same" and a["action"] == "NOT_REQUIRED" for a in actions)
+        assert any(a.get("symbol") == "Foo::missing" and a["action"] == "IMPLEMENT" for a in actions)
+
+        source_path = root / "source.json"
+        target_path = root / "target.json"
+        source_path.write_text(json.dumps(source), encoding="utf-8")
+        target_path.write_text(json.dumps(target), encoding="utf-8")
+
+        subprocess.run(
+            [sys.executable, "-m", "workbench.validation.environments.engine_change_index", str(root)],
+            cwd=tempfile.gettempdir(),
+            check=True,
+        )
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "workbench.validation.environments.engine_compare",
+                str(source_path),
+                str(target_path),
+            ],
+            cwd=tempfile.gettempdir(),
+            check=True,
+        )
 
     code = (
         "from workbench.validation.environments.engine_change_index import index; "

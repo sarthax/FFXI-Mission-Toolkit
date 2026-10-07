@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import gzip
-import importlib
 import json
 import sqlite3
 import sys
@@ -14,9 +13,7 @@ from workbench.runtime.paths import DATABASE_PATH, VENDOR_ROOT
 
 
 def main() -> None:
-    sys.modules.pop("build_wiki_index", None)
-    root = importlib.import_module("build_wiki_index")
-    assert root is canonical
+    assert not (Path(__file__).resolve().parents[1] / "build_wiki_index.py").exists()
 
     assert canonical.DB_PATH == DATABASE_PATH
     assert canonical.DUMP_PATH == VENDOR_ROOT / "ffxi-wiki-dumps-dist" / "bg-wiki.jsonl.gz"

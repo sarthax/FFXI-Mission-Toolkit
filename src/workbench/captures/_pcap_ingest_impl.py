@@ -495,7 +495,7 @@ def reconstruct_tcp_flows(frame_rows: list[dict]) -> list[dict]:
 
 def _known_opcodes() -> set[int]:
     try:
-        import packet_decode
+        from workbench.packets import decode as packet_decode
         return {int(row["opcode"]) for row in packet_decode.list_opcodes("")}
     except Exception:
         return set()

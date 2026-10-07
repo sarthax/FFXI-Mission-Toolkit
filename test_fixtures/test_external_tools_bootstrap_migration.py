@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import importlib.util
-import sys
 from pathlib import Path
+
+from workbench.runtime import external_tools
 
 ROOT = Path(__file__).resolve().parents[1]
 CANONICAL = ROOT / "scripts" / "bootstrap" / "install_external_tools.py"
-ROOT_SHIM = ROOT / "install_external_tools.py"
 
 
 def _load(path: Path, name: str):
@@ -18,9 +18,11 @@ def _load(path: Path, name: str):
 
 
 def main() -> None:
-    canonical = _load(CANONICAL, "external_tools_canonical_test")
-    assert canonical.TOOLS_ROOT == ROOT
-    assert set(canonical.INSTALLERS) == {
+    launcher = _load(CANONICAL, "external_tools_launcher_test")
+    assert launcher.TOOLS_ROOT == ROOT
+    assert launcher.INSTALLERS is external_tools.INSTALLERS
+    assert external_tools.TOOLS_ROOT == ROOT
+    assert set(external_tools.INSTALLERS) == {
         "xi-tinkerer-cli",
         "ffxi-dats",
         "landsandboat-full",
@@ -29,16 +31,12 @@ def main() -> None:
         "ffmpeg",
         "tesseract",
     }
-    assert canonical.pending_installer("not-a-tool") is None
+    assert external_tools.pending_installer("not-a-tool") is None
+    assert not (ROOT / "install_external_tools.py").exists()
 
-    root_module = _load(ROOT_SHIM, "install_external_tools")
-    assert root_module.TOOLS_ROOT == ROOT
-    assert root_module.INSTALLERS is not None
-    assert sys.modules["install_external_tools"] is root_module
-
-    source = ROOT_SHIM.read_text(encoding="utf-8")
-    assert "urllib.request.urlopen" not in source
-    assert "scripts\" / \"bootstrap\" / \"install_external_tools.py" in source
+    setup = (ROOT / "setup.bat").read_text(encoding="utf-8")
+    assert "scripts\\bootstrap\\install_external_tools.py xi-tinkerer-cli" in setup
+    assert "%PY% install_external_tools.py" not in setup
 
 
 if __name__ == "__main__":

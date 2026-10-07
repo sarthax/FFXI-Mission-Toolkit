@@ -2,7 +2,6 @@
 """Focused package migration smoke for mission event reconciliation."""
 from __future__ import annotations
 
-import importlib.util
 import sqlite3
 import subprocess
 import sys
@@ -12,23 +11,13 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-def _load_root(name: str, path: str):
-    sys.modules.pop(name, None)
-    spec = importlib.util.spec_from_file_location(name, REPO_ROOT / path)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return sys.modules[name]
-
 
 def main() -> None:
     from workbench.devtools.missions import event_reconcile
     from workbench.plugins.domain import mission_event_reconcile as legacy_package
 
-    legacy_root = _load_root("mission_event_reconcile", "mission_event_reconcile.py")
     assert legacy_package is event_reconcile
-    assert legacy_root is event_reconcile
+    assert not (REPO_ROOT / "mission_event_reconcile.py").exists()
 
     con = sqlite3.connect(":memory:")
     try:

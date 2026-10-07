@@ -17,8 +17,12 @@ BRIDGE = ROOT_PACKAGE / "__init__.py"
 def main() -> None:
     assert (ROOT / "pyproject.toml").is_file()
     assert (SRC_PACKAGE / "__init__.py").is_file()
+    assert (SRC_PACKAGE / "app" / "host.py").is_file()
+    assert (SRC_PACKAGE / "app" / "_host_impl.py").is_file()
     assert (SRC_PACKAGE / "core").is_dir()
     assert (SRC_PACKAGE / "runtime" / "paths.py").is_file()
+    assert (SRC_PACKAGE / "runtime" / "settings_store.py").is_file()
+    assert (SRC_PACKAGE / "runtime" / "external_tools.py").is_file()
     assert (SRC_PACKAGE / "domains" / "service.py").is_file()
     assert (SRC_PACKAGE / "domains" / "definitions.json").is_file()
     assert (SRC_PACKAGE / "client" / "binary_index.py").is_file()
@@ -27,17 +31,16 @@ def main() -> None:
     assert (SRC_PACKAGE / "client" / "identity_extract.py").is_file()
     assert (SRC_PACKAGE / "client" / "dat" / "extractor_bin.py").is_file()
     assert (SRC_PACKAGE / "client" / "dat" / "inspector.py").is_file()
+    assert (SRC_PACKAGE / "client" / "models" / "catalog.py").is_file()
     assert (SRC_PACKAGE / "gui_shell.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "feature_candidates.py").is_file()
-    assert (SRC_PACKAGE / "core" / "services" / "feature_checker.py").is_file()  # compatibility shim
+    assert (SRC_PACKAGE / "core" / "services" / "feature_checker.py").is_file()
     assert (SRC_PACKAGE / "devtools" / "features" / "checker.py").is_file()
     assert (SRC_PACKAGE / "devtools" / "features" / "trace_binding_drilldown.py").is_file()
     assert (SRC_PACKAGE / "devtools" / "server" / "binding_index.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "feature_package_analyzer.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "id_bridge.py").is_file()
 
-    # Canonical implementation lives under src/workbench. The root package is intentionally
-    # limited to one compatibility bootstrap so implementation files cannot drift back there.
     assert ROOT_PACKAGE.is_dir()
     assert sorted(path.name for path in ROOT_PACKAGE.iterdir()) == ["__init__.py"]
     assert BRIDGE.is_file()
@@ -46,18 +49,101 @@ def main() -> None:
     assert "__path__.append" in bridge_text
     assert "Do not add implementation modules" in bridge_text
 
-    # These former root compatibility/implementation modules are retired. First-party code and
-    # regressions must use canonical package imports directly rather than recreating hidden root
-    # coupling.
+    assert not (ROOT / "gui_server.py").exists()
+    assert not (ROOT / "settings.py").exists()
+
+    moved_root_artifacts = (
+        "appraisal_item_id_xref.csv",
+        "appraisal_pools_with_item_ids.csv",
+        "uncharted90_names.txt",
+        "mission_toolkit_gui_artifact.html",
+        "backport_coverage_report.md",
+    )
+    for name in moved_root_artifacts:
+        assert not (ROOT / name).exists(), name
+    assert (ROOT / "data" / "reference" / "appraisal" / "item_id_xref.csv").is_file()
+    assert (ROOT / "data" / "reference" / "appraisal" / "pools_with_item_ids.csv").is_file()
+    assert (ROOT / "data" / "reference" / "uncharted90_names.txt").is_file()
+    assert (ROOT / "docs" / "archive" / "ui" / "mission_toolkit_gui_artifact.html").is_file()
+    assert (ROOT / "docs" / "reports" / "backport" / "backport_coverage_report.md").is_file()
+
+    for name in ("install_xi_tinkerer.py", "install_external_tools.py", "reset_install.py"):
+        assert not (ROOT / name).exists(), name
+    assert (ROOT / "scripts" / "bootstrap" / "install_xi_tinkerer.py").is_file()
+    assert (ROOT / "scripts" / "bootstrap" / "install_external_tools.py").is_file()
+    assert (ROOT / "scripts" / "bootstrap" / "reset_install.py").is_file()
+
+    setup_text = (ROOT / "setup.bat").read_text(encoding="utf-8")
+    assert "%PY% -m pip install --quiet --disable-pip-version-check -e ." in setup_text
+    assert "%PY% scripts\\bootstrap\\install_xi_tinkerer.py" in setup_text
+    assert "%PY% scripts\\bootstrap\\install_external_tools.py xi-tinkerer-cli" in setup_text
+    assert "%PY% -m workbench.devtools.indexing.build_database" in setup_text
+    assert "%PY% -m workbench.devtools.indexing.build_npc_index" in setup_text
+    assert "%PY% -m workbench.devtools.reference.dialog.build_index" in setup_text
+    assert "%PY% -m workbench.client.dat.global_tables" in setup_text
+    assert "%PY% -m workbench.captures.ingestion.build_index list" in setup_text
+    assert "%PY% -m workbench.devtools.indexing.build_sql_index" in setup_text
+    assert "%PY% -m workbench.devtools.indexing.build_lsb_index" in setup_text
+    assert "%PY% -m workbench.devtools.reference.scrape_bg_wiki" in setup_text
+    for legacy_call in (
+        "%PY% install_xi_tinkerer.py",
+        "%PY% install_external_tools.py",
+        "%PY% build_database.py",
+        "%PY% build_npc_index.py",
+        "%PY% build_dialog_index.py",
+        "%PY% ingest_global_tables.py",
+        "%PY% build_capture_index.py",
+        "%PY% build_sql_index.py",
+        "%PY% build_lsb_index.py",
+        "%PY% scrape_bg_wiki.py",
+    ):
+        assert legacy_call not in setup_text, legacy_call
+
+    start_text = (ROOT / "start.bat").read_text(encoding="utf-8")
+    assert '"%PY%" -m workbench.app.host' in start_text
+    assert '"%PY%" gui_server.py' not in start_text
+    reset_text = (ROOT / "reset_install.bat").read_text(encoding="utf-8")
+    assert "python scripts\\bootstrap\\reset_install.py" in reset_text
+    assert "python reset_install.py" not in reset_text
+
     retired = (
         "workbench_graph.py",
         "workbench_schema.py",
         "source_snapshot.py",
         "feature_candidates.py",
         "feature_package_analyzer.py",
+        "build_database.py",
+        "build_npc_index.py",
+        "build_dialog_index.py",
+        "ingest_global_tables.py",
+        "build_sql_index.py",
+        "build_lsb_index.py",
+        "scrape_bg_wiki.py",
+        "backport_binding_audit.py",
+        "backport_lua_sanity_check.py",
+        "backport_binding_index.py",
+        "backport_item_audit.py",
+        "backport_coverage_check.py",
+        "backport_map_confidence_check.py",
+        "backport_map_lint.py",
+        "dat_extractor_bin.py",
+        "dat_inspector.py",
+        "client_model_catalog.py",
+        "client_model_resolver.py",
+        "feature_checker.py",
+        "feature_trace.py",
+        "id_bridge.py",
+        "nyzul_plot.py",
+        "backport_sql_live_check.py",
+        "build_capture_index.py",
+        "settings.py",
+        "gui_server.py",
     )
     for name in retired:
         assert not (ROOT / name).exists(), name
+
+    assert not (ROOT / "build_capture_index.py").exists()
+
     forbidden_imports = (
         "import workbench_graph",
         "from workbench_schema import",
@@ -74,54 +160,48 @@ def main() -> None:
         for legacy_import in forbidden_imports:
             assert legacy_import not in text, f"{legacy_import!r} remains in {path.relative_to(ROOT)}"
 
-    # Feature Checker is canonical under Development. Root and old Core paths remain temporary
-    # compatibility shims while the monolithic GUI and older regressions migrate.
-    feature_checker_wrapper_path = ROOT / "feature_checker.py"
-    assert feature_checker_wrapper_path.is_file()
-    feature_checker_wrapper = feature_checker_wrapper_path.read_text(encoding="utf-8")
-    assert "workbench.devtools.features.checker" in feature_checker_wrapper
-    assert "gui_server.py" in feature_checker_wrapper
+    assert not (ROOT / "feature_checker.py").exists()
+    assert not (ROOT / "feature_trace.py").exists()
     core_checker_shim = (SRC_PACKAGE / "core" / "services" / "feature_checker.py").read_text(encoding="utf-8")
     assert "workbench.devtools.features.checker" in core_checker_shim
-    legacy_feature_checker_callers = []
+    host_source = (SRC_PACKAGE / "app" / "_host_impl.py").read_text(encoding="utf-8")
+    assert "from workbench.devtools.features import checker as feature_checker" in host_source
+    assert "from workbench.devtools.features import trace as feature_trace" in host_source
+    assert "from workbench.devtools.indexing import build_database" in host_source
+    assert "from workbench.devtools.reference.dialog import build_index as build_dialog_index" in host_source
+    assert "from workbench.client.dat import global_tables as ingest_global_tables" in host_source
+    assert "from workbench.runtime import addon_tools" in host_source
+    assert "from workbench.runtime import external_tools as install_external_tools" in host_source
+    assert "from workbench.packages.migration import orchestrator as backport_package" in host_source
+    assert "from workbench.devtools.reference import wiki_evidence" in host_source
+    legacy_feature_callers = []
     for path in first_party_python:
-        if path.resolve() in {Path(__file__).resolve(), feature_checker_wrapper_path.resolve()}:
+        if path.resolve() == Path(__file__).resolve():
             continue
         lines = [line.strip() for line in path.read_text(encoding="utf-8", errors="ignore").splitlines()]
-        if any(line == "import feature_checker" or line.startswith("from feature_checker import") for line in lines):
-            legacy_feature_checker_callers.append(path.relative_to(ROOT).as_posix())
-    assert legacy_feature_checker_callers == ["gui_server.py"], legacy_feature_checker_callers
+        if any(
+            line == "import feature_checker"
+            or line.startswith("from feature_checker import")
+            or line == "import feature_trace"
+            or line.startswith("from feature_trace import")
+            or line.startswith("import feature_trace as")
+            for line in lines
+        ):
+            legacy_feature_callers.append(path.relative_to(ROOT).as_posix())
+    assert legacy_feature_callers == [], legacy_feature_callers
 
-    # ID Bridge is canonical under src but retains a root CLI compatibility entry point because
-    # operator documentation still uses `python id_bridge.py ...`. The wrapper must contain no
-    # database-path derivation or implementation logic of its own.
-    id_bridge_wrapper_path = ROOT / "id_bridge.py"
-    assert id_bridge_wrapper_path.is_file()
-    id_bridge_wrapper = id_bridge_wrapper_path.read_text(encoding="utf-8")
-    assert "workbench.core.services.id_bridge" in id_bridge_wrapper
-    assert "Path(__file__)" not in id_bridge_wrapper
-    assert "sqlite3.connect" not in id_bridge_wrapper
-
-    # DAT Inspector and extractor are canonical under Client/DAT. Historical root imports remain
-    # zero-logic compatibility aliases for the monolithic GUI and rebuild scripts.
-    dat_extractor_wrapper = (ROOT / "dat_extractor_bin.py").read_text(encoding="utf-8")
-    assert "from workbench.client.dat import extractor_bin" in dat_extractor_wrapper
-    assert "Path(__file__)" not in dat_extractor_wrapper
-    dat_inspector_wrapper = (ROOT / "dat_inspector.py").read_text(encoding="utf-8")
-    assert "workbench.client.dat" in dat_inspector_wrapper
-    assert "Path(__file__)" not in dat_inspector_wrapper
+    assert not (ROOT / "id_bridge.py").exists()
 
     workflow = (ROOT / ".github" / "workflows" / "workbench-regression.yml").read_text(encoding="utf-8")
     assert '- "src/workbench/**"' in workflow
+    character_workflow = (ROOT / ".github" / "workflows" / "character-editor-regression.yml").read_text(encoding="utf-8")
+    assert '- "src/workbench/app/**"' in character_workflow
+    assert '- "src/workbench/runtime/settings_store.py"' in character_workflow
     ancient_vows = (ROOT / ".github" / "workflows" / "workbench-ancient-vows.yml").read_text(encoding="utf-8")
     assert 'src/workbench/devtools/features/checker.py' in ancient_vows
     assert 'src/workbench/core/services/feature_checker.py' not in ancient_vows
     assert '"feature_checker.py"' not in ancient_vows
 
-    # Editable installation in CI must make the canonical src package importable even when
-    # neither the repository root nor PYTHONPATH participates in import resolution. Package
-    # resources must load from src while repository-owned vendor/docs data remains anchored at
-    # the repository root via workbench.runtime.paths.
     with tempfile.TemporaryDirectory() as td:
         env = dict(os.environ)
         env.pop("PYTHONPATH", None)
@@ -133,6 +213,7 @@ def main() -> None:
             "import workbench.client.event_fingerprint as ef; "
             "import workbench.client.identity_extract as ie; "
             "from workbench.client.dat import extractor_bin as de, inspector as di; "
+            "from workbench.client.models import catalog as mc; "
             "import workbench.gui_shell as gs; "
             "from workbench.core.services.feature_candidates import candidates; "
             "from workbench.devtools.features.checker import resolve_feature, check_feature; "
@@ -152,8 +233,10 @@ def main() -> None:
             "assert de.PROJECT_DIR == p.VENDOR_ROOT / 'dat-extractor', de.PROJECT_DIR; "
             "assert di.dat_id_for_zone_family(0, 'dialog') == 6420; "
             "assert di.resource_context(6421) == {'family':'dialog','zone_id':1}; "
+            "assert mc._empty(740)['resource_file_id'] == 2040; "
             "assert 'src' in Path(de.__file__).resolve().parts, de.__file__; "
             "assert 'src' in Path(di.__file__).resolve().parts, di.__file__; "
+            "assert 'src' in Path(mc.__file__).resolve().parts, mc.__file__; "
             "assert 'src' in Path(ib.__file__).resolve().parts, ib.__file__; "
             "assert 'src' in Path(bi.__file__).resolve().parts, bi.__file__; "
             "assert 'src' in Path(ef.__file__).resolve().parts, ef.__file__; "

@@ -20,4 +20,7 @@ _impl.LAYOUT_PROFILE_PATH = REPO_ROOT / "mission_reports_v2" / "youtube_chat_lay
 _impl.VENDOR_FFMPEG_BIN = VENDOR_ROOT / "ffmpeg" / "bin"
 _impl.VENDOR_TESSERACT_DIR = VENDOR_ROOT / "tesseract"
 
+if __name__ == "__main__":
+    raise SystemExit(_impl.main())
+
 sys.modules[__name__] = _impl

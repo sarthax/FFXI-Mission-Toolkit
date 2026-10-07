@@ -6,8 +6,8 @@ import sqlite3
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import build_capture_index
-from capture_graph_connect import connect as connect_capture_graph
+from workbench.captures.ingestion import build_index as build_capture_index
+from workbench.captures.correlation.graph_connect import connect as connect_capture_graph
 from workbench.core import graph
 from workbench.core.services import packet_correlation as pc
 from workbench.core.services import timeline_alignment as ta

@@ -5,10 +5,9 @@ import json
 from pathlib import Path
 
 
-def test_root_import_aliases_canonical_module():
-    root = importlib.import_module("fix_zone_door_props")
-    canonical = importlib.import_module("workbench.devtools.spatial.fix_zone_door_props")
-    assert root is canonical
+def test_root_launcher_is_retired():
+    repo_root = Path(__file__).resolve().parents[1]
+    assert not (repo_root / "fix_zone_door_props.py").exists()
 
 
 def test_loaders_use_configured_repository_data_paths(monkeypatch, tmp_path: Path):

@@ -6,6 +6,9 @@ on:
       - "workbench/**"
       - "src/workbench/**"
       - "test_fixtures/**"
+      - "gui/templates/**"
+      - "docs/workbench/UI_LEGACY_TEMPLATE_ALLOWLIST.txt"
+      - "tests/legacy/**"
       - "feature_*.py"
       - "capture_*.py"
       - "packet_*.py"
@@ -36,6 +39,9 @@ jobs:
           PYTHONPATH: .
         run: |
           set -euo pipefail
+          python tests/legacy/test_backport_lua_convert.py
+          python tests/legacy/test_backport_sql_convert.py
+          python tests/legacy/test_capture_ingestion.py
           python test_fixtures/test_packet_identity.py
           python test_fixtures/test_graph_cpp_symbol_resolution.py
           python test_fixtures/test_graph_enum_resolution.py
@@ -226,6 +232,7 @@ jobs:
           python test_fixtures/test_client_dat_migration.py
           python test_fixtures/test_gui_information_architecture.py
           python test_fixtures/test_gui_shell.py
+          python test_fixtures/test_unified_ui_framework.py
           python test_fixtures/test_item_editor_qol.py
           python test_fixtures/test_gui_client_snapshots.py
           python test_fixtures/test_client_binary_deep.py

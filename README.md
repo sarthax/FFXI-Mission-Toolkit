@@ -1,8 +1,8 @@
 # FFXI Mission Toolkit / Workbench
 
-A local, browser-based research, reverse-engineering, validation, capture-analysis, administration, and development workbench for Final Fantasy XI private-server work.
+A local, browser-based research, reverse-engineering, validation, capture-analysis, administration, economy, crafting, and development workbench for Final Fantasy XI private-server work.
 
-The project began as a mission/data lookup utility. It has grown into a broader evidence-driven toolkit that connects server source, SQL, Lua, client DAT/resources, packet captures, video/OCR evidence, wiki/reference claims, client-build snapshots, migration packages, runtime observations, and guarded server administration into one searchable local workspace.
+The project began as a mission/data lookup utility. It has grown into a broader evidence-driven toolkit that connects server source, SQL, Lua, client DAT/resources, packet captures, video/OCR evidence, wiki/reference claims, client-build snapshots, migration packages, runtime observations, economy/crafting state, and guarded server administration into one searchable local workspace.
 
 The guiding rule is simple: **preserve what was observed, keep inference separate, and do not manufacture certainty when the evidence is incomplete.**
 
@@ -18,6 +18,8 @@ The Workbench is designed to answer questions such as:
 - Is a server entity wired correctly across SQL, Lua, instance registration, groups/pools, client identity, and runtime evidence?
 - What does this NPC, mob, door, instance, or mission step actually do in plain language?
 - Which character flags, key items, mission states, titles, inventory rows, spells, merits, or packed fields represent a player state?
+- What is currently listed or selling on the Auction House, where are price/volume anomalies, and which admin action produced a market change?
+- Can this synthesis recipe actually be made on the selected server, which ingredients or key items are missing, and how would the recipe translate to another supported lineage?
 - What changed between two FFXI client builds?
 - Which packet/capture observations support a behavior or implementation claim?
 - What source, capture, client, or reference evidence contradicts another source?
@@ -34,7 +36,7 @@ The Workbench now treats server targets as named environments rather than a sing
 - Named **Live / Test / Dev / Backup / Other** profiles can point to LandSandBoat, Topaz, DSP, or compatible custom forks.
 - Settings is the canonical place to create, edit, enable, test, activate, and remove server profiles.
 - The active environment is shown in the shared shell and is consumed by generic/admin tooling.
-- Zone Editor, Item Editor, model/client correlation, Entity Profile, and Character Editor use the active profile where appropriate.
+- Zone Editor, Item Editor, model/client correlation, Entity Profile, Character Editor, Auction House, and Synth & Crafting use the active profile where appropriate.
 - Multiple environments from the same server family are supported without silently collapsing them into one root.
 - Native server configuration remains authoritative for database credentials; passwords are not surfaced by the toolkit.
 - LIVE-target selections require explicit confirmation in editor workflows that can write.
@@ -61,6 +63,46 @@ Current capabilities include:
 Runtime-owned status effects, recasts, pet/session state, and unknown lineage-specific fields remain intentionally read-only.
 
 See [`docs/workbench/CHARACTER_EDITOR_CLOSEOUT.md`](docs/workbench/CHARACTER_EDITOR_CLOSEOUT.md).
+
+### Auction House administration and economy tooling
+
+The **Server → Auction House** workspace has grown into a dedicated administration and economy-health module instead of a read-only market browser.
+
+Current capabilities include:
+
+- Runtime schema discovery across LandSandBoat, Topaz, DSP, and compatible forks for read/analysis paths rather than assuming one fixed `auction_house` layout.
+- Canonical Auction House category browsing, item/name/ID search, client-derived icons, active listings, seller/buyer history, sale timestamps, stack/single lots, and 7/30/90-day price/volume summaries.
+- Economy dashboards for listing/sales totals, transacted gil, distinct buyers/sellers, price history, activity trends, baselines, and administration-impact overlays.
+- Economy-health review for stale, monopolized, flooded, thin, or otherwise unusual market conditions without treating those signals as proof of player intent.
+- **Listing Manager** for exact active rows, including guarded Admin Buy, safe Return, exact player-backed listing, exact player-backed purchase, and bounded multi-select actions on supported legacy schemas.
+- **Cleanup** rules for stale/targeted listings with preview-first execution, reusable presets, seller/category/item filters, age/quantity rules, and vendor-ratio cleanup support.
+- **Restock / Seeder** workflows for bounded Test-environment supply generation, category seeding, reusable presets, include/exclude item lists, scenario/test-data generation, and fake-seller cleanup.
+- **Arbitrage** analysis for underpriced listings, post-for-profit opportunities, and NPC-vendor loops, with explicit distinction between market analysis and verified exploit/data defects.
+- **Inbox / Rewards** for guarded DSP/Topaz delivery-box campaigns, saved reward templates, campaign history, recipient outcomes, failed-recipient retry previews, and recorded template identity.
+- Unified **Activity / Audit** views combining administrative executions, preview/replay evidence, and reward campaigns.
+- Toolkit-local audit/replay ledgers, exact preview policy binding, stale-state checks, environment snapshots, and explicit Test/LIVE safety boundaries.
+
+The module deliberately separates **cross-lineage read/analysis support** from **write support**. Guarded Auction House mutation paths are currently implemented for explicitly supported DSP/Topaz Test workflows; the Workbench does not pretend those write semantics are portable to LandSandBoat or arbitrary forks without a verified adapter.
+
+See the Auction House documentation under `docs/workbench/AUCTION_HOUSE_*.md` for the individual safety contracts and execution paths.
+
+### Synth & Crafting
+
+**Server → Synth & Crafting** (`/synth`) is a schema-adaptive recipe administration workspace over server `synth_recipes` data.
+
+Current capabilities include:
+
+- DSP, Topaz, and LandSandBoat recipe-schema discovery instead of hard-coding one physical column layout.
+- Recipe browsing/search and normalized presentation of crystal, ingredients, skill requirements, key-item requirements, outputs, HQ results, and lineage-specific fields where present.
+- Ingredient/item availability checks with explicit missing-material reports rather than assuming a recipe is producible merely because its row exists.
+- Recipe audit/validation for malformed references, missing items, incomplete requirements, and schema-dependent incompatibilities.
+- SQL generation and preview for create/edit/delete operations using the selected server flavor's real column contract.
+- Export/port workflows for carrying recipe definitions between supported server families while preserving unsupported or non-equivalent fields as visible differences rather than silently dropping semantics.
+- Gated **Test-environment apply** for supported recipe edits after preview/validation; LIVE and unsupported-schema writes remain guarded/fail-closed.
+- Capture Evidence Search support for structured crafting observations, including result/grade/count, crystal/material/lost-material fields, skill-ups, and synthesis animation/effect evidence where the source format provides them.
+- Migration/package **crafting closure** that recursively follows synthesis/synergy acquisition requirements, ingredients, crystals, key items, and verified non-crafting acquisition evidence when determining whether an item can actually be produced.
+
+Known limits remain explicit: the synthesis audit does not yet prove every gathering, fishing, quest, or other external acquisition source, so missing acquisition evidence is not treated as proof that an ingredient is unobtainable.
 
 ### Feature Trace and implementation discovery
 
@@ -133,8 +175,8 @@ Capture features include:
 - Manual and bulk packet decode, including multiline PacketLogger/PacketViewer-style hex grids.
 - Packetlyzer/XiPackets opcode-reference improvements and corrected packet field handling where verified.
 - PCAP/PCAPNG frame parsing and generic bidirectional TCP reconstruction with gaps/retransmissions/conflicts preserved explicitly.
-- Conservative lobby classification/decoding for known structurally valid commands.
-- World/search/lobby transport research kept separated where protocol evidence is incomplete.
+- Evidence-backed lobby/search/map classification and framing, including source-backed search/cache evidence, strict same-flow sequencing, and exact UDP map handoff where the capture proves it.
+- Unknown or ambiguous streams remain fail-closed rather than being assigned protocol semantics by port number or guesswork.
 - Packet Viewer handoffs from decoded/capture evidence.
 
 ### Research Sessions and reference evidence
@@ -151,14 +193,15 @@ Capture features include:
 - Patch-plan drift checks, explicit approval states, deterministic file apply journals, and rollback support.
 - Validation dashboard/runs tied back into canonical evidence.
 - Source/target conversion and migration support where transformations are deterministic and audited.
-- Ongoing Phase D source-layout migration has moved major Workbench components under `src/workbench/...` while preserving thin compatibility imports for older entry points.
+- Crafting/producibility closure can recursively include recipe ingredients, crystals, key-item prerequisites, synergy/synthesis requirements, and verified alternate acquisition evidence in package scope.
+- Phase D implementation ownership is complete: reusable Workbench Python implementation and the GUI application host live under `src/workbench/...`; historical repository-root Python launch/import shims are retired.
 
 ### Editors and domain workspaces
 
 - Modern **Zone Editor** (`/zoneplot2`) with spatial editing, detection overlays, navmesh/client-mesh context, bookmarks/templates, review tools, bulk alignment, and server-aware editing workflows.
 - 2D/3D plot/viewer routing is guarded by live-app regressions and integrated handoffs.
 - 3D zone/model viewers integrated into the shared Workbench shell.
-- Nyzul layout tooling uses compatible DSP/Topaz-era source layouts and rejects incompatible modern-LSB layouts instead of parsing them incorrectly.
+- Nyzul layout tooling preserves compatible DSP/Topaz-era handling and routes modern LandSandBoat checkouts through the native `floor_generation.lua`/YAML adapter, failing closed on unsupported mappings.
 - Domain-oriented workflows for Assault, Nyzul, and Salvage rather than forcing every named system into the generic feature list.
 
 ## Evidence model and safety philosophy
@@ -188,9 +231,9 @@ Different forks are not assumed to be schema-identical. Cross-source normalizati
 
 The project is **not globally read-only**.
 
-Most research/indexing/capture/client-inspection workflows remain read-only, but explicit development/admin workflows can write when the user chooses them. Character/server editing paths use lineage/schema contracts, offline checks, preview/approval, stale-state checks, audits and Undo where implemented. Package/file and supported client patch workflows use approval, validation, backup/journal, fingerprint, or rollback mechanisms where implemented.
+Most research/indexing/capture/client-inspection workflows remain read-only, but explicit development/admin workflows can write when the user chooses them. Character/server editing paths use lineage/schema contracts, offline checks, preview/approval, stale-state checks, audits and Undo where implemented. Auction House and Synth & Crafting writes are capability-gated and environment-gated: supported admin actions require the verified lineage/schema contract and are generally restricted to Test-oriented workflows unless an explicit LIVE confirmation path exists. Package/file and supported client patch workflows use approval, validation, backup/journal, fingerprint, or rollback mechanisms where implemented.
 
-Automatic SQL/Lua application from reconstruction evidence and fully generalized client-record creation are **not** currently claimed as complete.
+Automatic SQL/Lua application from reconstruction evidence, fully generalized Auction House writes across every server family, and fully generalized client-record creation are **not** currently claimed as complete.
 
 ## Requirements
 
@@ -233,9 +276,9 @@ See [`docs/guides/SETUP.md`](docs/guides/SETUP.md) for current setup and environ
 The shared Workbench shell organizes the product into these broad areas:
 
 - **Home / Project** — source/configuration overview and project entry points
-- **Server** — Character Editor and server administration/environment-aware tools
+- **Server** — Character Editor, Auction House economy/admin, Synth & Crafting, and environment-aware server administration tools
 - **Features** — Feature Trace, Implementation Path, Entity/Behavior research, Events/CSIDs, and generic feature research
-- **Packages** — dependency scope, package creation/review, migration planning
+- **Packages** — dependency scope, package creation/review, migration planning, including crafting/producibility closure
 - **Validation** — validation runs and evidence-backed checks
 - **Client** — snapshots, DAT inspection, model/item/client-build tooling
 - **Research** — Research Sessions and wiki/reference workflows
@@ -257,11 +300,11 @@ For the authoritative capability inventory, current incomplete areas, and recent
 - [`docs/workbench/ROADMAP.md`](docs/workbench/ROADMAP.md) — historical implementation ledger
 - [`docs/workbench/AUDIT_STATUS.md`](docs/workbench/AUDIT_STATUS.md) — historical/implementation audit notes
 
-Near-term work remains focused on richer progression/transition reasoning, broader client/server asset synchronization, protocol/capture research, named-system reconstruction, and continued source-layout cleanup without regressing mature tools.
+Near-term work is focused on real-object Feature Trace validation, protocol real-capture validation, proven Client Asset Cache expansion, broader client/server synchronization and named-system reconstruction, real-Test-server validation of guarded administration paths, and remaining evidence gaps such as non-recipe crafting acquisition sources.
 
 ## Screenshots
 
-The screenshots currently stored under `docs/screenshots/` represent earlier generations of the UI and are intentionally not embedded here as the primary project presentation. The shared shell, Character Editor, Behavior Inspector, Capture Evidence Search/Data Explorer, Feature Trace, domain workspaces, Zone Editor, client tooling, and research surfaces have changed substantially since those images were captured.
+The screenshots currently stored under `docs/screenshots/` represent earlier generations of the UI and are intentionally not embedded here as the primary project presentation. The shared shell, Character Editor, Auction House console, Synth & Crafting, Behavior Inspector, Capture Evidence Search/Data Explorer, Feature Trace, domain workspaces, Zone Editor, client tooling, and research surfaces have changed substantially since those images were captured.
 
 A refreshed screenshot set should be captured from the current Workbench before screenshots are promoted back onto the project home page.
 

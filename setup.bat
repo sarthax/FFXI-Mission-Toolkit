@@ -80,7 +80,7 @@ echo Saved your paths to toolkit_config.txt -- delete that file if you ever need
 echo to change them (this script will ask again next run).
 echo.
 
-REM --- 5. Install required Python packages ---
+REM --- 5. Install required Python packages and the Workbench package itself ---
 echo Installing required Python packages...
 %PY% -m pip install --quiet --disable-pip-version-check -r requirements.txt
 if errorlevel 1 (
@@ -88,14 +88,20 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+%PY% -m pip install --quiet --disable-pip-version-check -e .
+if errorlevel 1 (
+    echo [ERROR] Installing the Mission Toolkit package failed -- see the output above for details.
+    pause
+    exit /b 1
+)
 
 REM --- 6. Install xi_tinkerer (a compiled tool, not a normal package from pip) ---
-REM Required -- the toolkit will not start at all without it (gui_server.py imports it directly).
-REM install_xi_tinkerer.py downloads the real wheel straight from its GitHub release --
-REM no manual download needed unless that fails (e.g. no internet access).
+REM Required -- the toolkit will not start at all without it (the packaged GUI host imports it).
+REM scripts\bootstrap\install_xi_tinkerer.py downloads the real wheel straight from its GitHub
+REM release -- no manual download needed unless that fails (e.g. no internet access).
 echo.
 echo Checking for the xi_tinkerer component...
-%PY% install_xi_tinkerer.py
+%PY% scripts\bootstrap\install_xi_tinkerer.py
 if errorlevel 1 (
     echo.
     echo [ERROR] Could not install xi_tinkerer automatically. The toolkit cannot
@@ -110,49 +116,48 @@ if errorlevel 1 (
 )
 
 REM --- 7. Save the same paths into the toolkit's own settings, so the web pages match ---
-%PY% -c "import settings, sqlite3; con = sqlite3.connect(str(settings.DB_PATH)); settings.set_many(con, {'ffxi_install_path': r'%FFXI_PATH%', 'topaz_server_path': r'%TOPAZ_PATH%'}); con.close()"
+%PY% -c "import sqlite3; from workbench.runtime import settings_store as settings; con = sqlite3.connect(str(settings.DB_PATH)); settings.set_many(con, {'ffxi_install_path': r'%FFXI_PATH%', 'topaz_server_path': r'%TOPAZ_PATH%'}); con.close()"
 
 REM --- 8. Optional tools/data for the core module, ID Drift, and Events pages -- each is a real
-REM download from its own GitHub/public-bucket source (install_external_tools.py), same
-REM "auto-download, tell you if it fails" pattern as xi_tinkerer above. None of these block setup
-REM if they fail (no internet, GitHub down, etc) -- the affected homepage rows just show their own
-REM "Install" button instead, same as if you'd skipped this step and clicked it there later.
+REM download from its own GitHub/public-bucket source (scripts\bootstrap\install_external_tools.py),
+REM same "auto-download, tell you if it fails" pattern as xi_tinkerer above. None of these block
+REM setup if they fail (no internet, GitHub down, etc) -- the affected homepage rows just show
+REM their own "Install" button instead.
 REM
-REM IMPORTANT: this must run BEFORE build_database.py/build_sql_index.py below -- FFXI-DATS feeds
-REM build_database.py's door/prop/elevator/zone-line tables, FFXI-Resources-dist feeds its
-REM items_external/keyitems_external tables, and LandSandBoat/sql is what build_sql_index.py (the
-REM core module's required SQL indexer) now parses instead of a Topaz server. Fetching these first
-REM means one pass of the build steps below picks up everything instead of needing a manual
-REM "Rebuild" click afterward.
+REM IMPORTANT: this must run BEFORE the database/index module calls below -- FFXI-DATS feeds
+REM the zone database's door/prop/elevator/zone-line tables, FFXI-Resources-dist feeds its
+REM items_external/keyitems_external tables, and LandSandBoat/sql is what the canonical SQL
+REM indexer parses. Fetching these first means one pass picks up everything instead of needing a
+REM manual "Rebuild" click afterward.
 echo.
 echo Installing optional tools/data (xi-tinkerer-cli, FFXI-DATS, FFXI-Resources, LandSandBoat)...
 echo   these are large downloads (LandSandBoat ~180MB, FFXI-DATS ~200MB) -- this may take a while
-%PY% install_external_tools.py xi-tinkerer-cli
-%PY% install_external_tools.py ffxi-dats
-%PY% install_external_tools.py ffxi-resources-dist
-%PY% install_external_tools.py landsandboat-full
+%PY% scripts\bootstrap\install_external_tools.py xi-tinkerer-cli
+%PY% scripts\bootstrap\install_external_tools.py ffxi-dats
+%PY% scripts\bootstrap\install_external_tools.py ffxi-resources-dist
+%PY% scripts\bootstrap\install_external_tools.py landsandboat-full
 
 REM --- 9. Build the zone database ---
 echo.
 echo Building the zone database (usually under a minute)...
-%PY% build_database.py --ffxi-path "%FFXI_PATH%"
+%PY% -m workbench.devtools.indexing.build_database --ffxi-path "%FFXI_PATH%"
 
 REM --- 10. Index NPC names and dialog text for every zone (slower -- reads real client data) ---
 echo.
 echo Indexing NPC names for every zone (this can take a few minutes)...
-%PY% build_npc_index.py --all --ffxi-path "%FFXI_PATH%"
+%PY% -m workbench.devtools.indexing.build_npc_index --all --ffxi-path "%FFXI_PATH%"
 
 echo.
 echo Indexing dialog text for every zone (this can take a few minutes)...
-%PY% build_dialog_index.py --all --quiet --ffxi-path "%FFXI_PATH%"
+%PY% -m workbench.devtools.reference.dialog.build_index --all --quiet --ffxi-path "%FFXI_PATH%"
 
 REM --- 11. Create remaining tables the web pages expect (Assault mission text, key items) ---
 REM Real source data for these (MassExtractor_output/) isn't bundled -- see docs\guides\SETUP.md. This just
 REM creates the tables so the pages don't error; they'll show 0 entries until that data exists.
 echo.
 echo Setting up remaining reference tables...
-%PY% ingest_global_tables.py --ffxi-path "%FFXI_PATH%"
-%PY% build_capture_index.py list >nul
+%PY% -m workbench.client.dat.global_tables --ffxi-path "%FFXI_PATH%"
+%PY% -m workbench.captures.ingestion.build_index list >nul
 
 REM --- 12. Index the bundled LandSandBoat checkout's own SQL (npc_list, mob_spawn_points, etc) --
 REM this is the core module's primary data source (LSB-primary), required, not optional. If step 8
@@ -160,14 +165,14 @@ REM couldn't fetch LandSandBoat (no internet access during setup), this just ind
 REM the "Install" button on the homepage's "Your LSB server's own SQL" row to fetch it later.
 echo.
 echo Indexing the bundled LandSandBoat checkout's SQL data...
-%PY% build_sql_index.py
+%PY% -m workbench.devtools.indexing.build_sql_index
 
 REM --- 13. Cross-reference LandSandBoat vs your Topaz server (ID Drift page) -- only meaningful
 REM once LandSandBoat/ actually exists (step 8 just fetched it, or you placed it yourself).
 if exist "%~dp0LandSandBoat\sql" (
     echo.
     echo Indexing LandSandBoat cross-reference data...
-    %PY% build_lsb_index.py
+    %PY% -m workbench.devtools.indexing.build_lsb_index
 ) else (
     echo.
     echo Skipping LandSandBoat cross-reference indexing -- LandSandBoat/ wasn't fetched
@@ -181,7 +186,7 @@ REM is just a quick incremental sync to catch anything the wiki has changed sinc
 REM was taken. Never blocks setup -- if it fails, the homepage's own "Rebuild" button retries it.
 echo.
 echo Syncing BG Wiki data (incremental -- only pages changed since the bundled snapshot)...
-%PY% scrape_bg_wiki.py
+%PY% -m workbench.devtools.reference.scrape_bg_wiki
 
 echo.
 echo ============================================

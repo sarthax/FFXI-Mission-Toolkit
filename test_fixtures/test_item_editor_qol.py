@@ -8,7 +8,7 @@ def main():
     template = (ROOT / "gui" / "templates" / "itemedit.html").read_text(encoding="utf-8")
     item_edit = (ROOT / "src" / "workbench" / "editors" / "items" / "_editor_impl.py").read_text(encoding="utf-8")
     item_dat = (ROOT / "src" / "workbench" / "editors" / "items" / "_dat_tools_impl.py").read_text(encoding="utf-8")
-    gui = (ROOT / "gui_server.py").read_text(encoding="utf-8")
+    gui = (ROOT / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
 
     assert 'id="dirtySummary"' in template
     assert 'id="saveAllBtn"' in template
@@ -312,7 +312,7 @@ def main():
 
 
 def test_client_job_mask_shift():
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     # client DAT job masks leave bit 0 unused (WAR = bit 1); server masks put WAR at bit 0
     rows = {"item_basic": {}, "item_equipment": {"jobs": 2098561, "level": 1, "slot": 1}}
     assert not item_edit.compare_server_client(rows, {"jobs": 4197122, "level": 1, "slots": 1})["mismatches"]

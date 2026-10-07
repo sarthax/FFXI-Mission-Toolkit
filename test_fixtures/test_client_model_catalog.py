@@ -4,8 +4,8 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-import client_model_catalog as catalog
-import model_schedule_dump as msd
+from workbench.client.models import catalog
+from workbench.client.models import schedule_dump as msd
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -61,7 +61,6 @@ def main():
     finally:
         catalog.build_catalog = original
 
-    # Large catalogs resolve file ids in bounded subprocess batches.
     original_run = msd.subprocess.run
     calls = []
     try:
@@ -76,7 +75,7 @@ def main():
     finally:
         msd.subprocess.run = original_run
 
-    server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
+    server = (ROOT / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
     viewer = (ROOT / "gui" / "templates" / "model_viewer.html").read_text(encoding="utf-8")
     zone = (ROOT / "gui" / "templates" / "zone_plot.html").read_text(encoding="utf-8")
     route_map = (ROOT / "docs" / "workbench" / "GUI_ROUTE_MAP.json").read_text(encoding="utf-8")

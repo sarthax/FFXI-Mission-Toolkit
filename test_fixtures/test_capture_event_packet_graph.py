@@ -3,7 +3,7 @@
 from __future__ import annotations
 import sqlite3,tempfile
 from pathlib import Path
-from capture_graph_connect import connect
+from workbench.captures.correlation.graph_connect import connect
 from workbench.core import graph
 
 def main():

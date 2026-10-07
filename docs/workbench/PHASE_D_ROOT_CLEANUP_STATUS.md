@@ -1,60 +1,52 @@
 # Phase D repository-root cleanup status
 
-Status: **ACTIVE / BOUNDED ROOT CLEANUP**  
-Aligned through: PR #300 (`f15813beec63f2ab40f4efa7691f1bc0ec305103`)  
-Date: 2026-10-02
+Status: **COMPLETE — IMPLEMENTATION OWNERSHIP PACKAGED**  
+Aligned through: PR #552 (`fbd6e844b40a1608a0e66b76910b254e6a03d3fc`)  
+Date: 2026-10-06
 
-The canonical Python package migration is complete under `src/workbench`. Phase D is the separate cleanup of historical repository-root Python implementations. The rule for this phase remains: move one bounded implementation at a time, preserve root CLI/import compatibility where still required, normalize repository/vendor/runtime paths before moving code, and require both Src Layout Regression and Workbench Regression before merge.
+Phase D is complete at the source-layout / implementation-ownership boundary. Canonical Workbench Python implementation lives under `src/workbench`; repository-root Python files that remain are intentional compatibility imports, operator/setup launchers, or historical command entry points whose implementations live in the canonical package.
 
-## Recently completed bounded migrations
+This closeout does **not** mean every compatibility file should be deleted. Removing checkout-local launchers and the root `workbench/__init__.py` bootstrap requires a separate distribution/bootstrap decision in which supported setup/start paths install the project or otherwise place `src` on the import path.
 
-- PR #294 — Client Binary Inspector implementation moved to `workbench.client.binary.inspector`; root `binary_inspector.py` is compatibility-only.
-- PR #295 — model schedule inspection moved to `workbench.client.models.schedule_dump`; vendor lookup uses canonical runtime paths.
-- PR #296 — verified mob model-family tables moved to `workbench.client.models.mob_model_tables`; root module is compatibility-only and verified-range behavior remains fail-closed.
-- PR #297 — dialog drift audit moved to `workbench.reference.dialog.audit_drift`; root script remains a compatibility entry point and vendor/repository paths use runtime path services.
-- PR #298 — AltanaView index builder moved to `workbench.client.models.build_altana_index`; `altana_view_index.db` remains intentionally at repository root through `REPO_ROOT`.
-- PR #299 — Client Overview/build fingerprinting moved to `workbench.client.snapshots.overview`; root `client_overview.py` is a zero-logic compatibility alias.
-- PR #300 — validation pipeline CLI moved to `workbench.validation.pipeline`; root `validation_pipeline.py` is a compatibility launcher/import alias.
+## Final closeout migrations
 
-Earlier Phase D work also packaged C++ server analyzers, Client binary CLI entry points, engine-environment validation, package Lua/map/binding/SQL validation, legacy DSP conversion drivers, and package conversion orchestration. These are already covered by the canonical `SRC_LAYOUT_STATUS.md` history.
+- PR #549 — the settings store moved to `workbench.runtime.settings_store`; root `settings.py` is now a zero-logic compatibility alias and `workbench.runtime.legacy_settings` no longer filesystem-loads root implementation code.
+- PR #552 — the monolithic GUI application host moved under `workbench.app`; the mature route implementation was relocated without an intentional route/body rewrite.
+- PR #552 also moved static route/source regressions toward the canonical packaged host and expanded Character Editor regression path coverage so future app-host/settings changes cannot bypass the server-admin integration suite.
+- PR #618 — the final root `gui_server.py` launcher was retired after host resource paths, live-route regressions, developer launch configuration, and the Auction House template bridge moved to `workbench.app.host`.
 
-## Current migration guardrails
+Earlier Phase D work packaged the remaining mature server analyzers, client tooling, DAT/model tooling, capture ingestion/correlation, packet tooling, mission/research services, validation/package conversion services, index builders, and other reusable root implementations while retaining compatibility entry points where operator workflows still use them.
 
-1. Do not move `gui_server.py` yet. It remains the highest-coupling application surface and should be handled near the end of root cleanup.
-2. Do not move `settings.py` until all repository/database/vendor/config paths it exposes have explicit canonical ownership and launch/setup behavior is ready for the change.
-3. Do not move a module that only works because the repository root is on `sys.path`. Canonical code must import through packaged namespaces and pass the editable-install smoke outside repository cwd.
-4. Preserve current runtime-state locations. Moving implementation code must not silently relocate `ffxi_zone_database.db`, generated indexes, captures, edit journals, backups, addons, or other user/runtime state.
-5. Root compatibility files must contain no independent business logic unless they are intentionally still operator/setup launchers waiting for a later migration.
-6. Every migration slice must pass both **Src Layout Regression** and **Workbench Regression** before merge.
+## Closeout guardrails that remain in force
 
-## Deferred because of coupling
+1. New reusable implementation code belongs under `src/workbench`, not repository root.
+2. Root compatibility files must remain zero-logic aliases/launchers unless a file is explicitly documented as an operator/setup command surface.
+3. Repository/runtime state locations must not move merely because implementation code moved. Existing database, capture, backup, addon, generated-index, vendor, and edit-journal locations remain governed by `workbench.runtime.paths` and current product contracts.
+4. Canonical package code must not rely on repository root being on `sys.path`; Src Layout Regression continues to exercise editable-install imports outside repository cwd.
+5. Broad Workbench Regression continues to protect the supported checkout-local/root-launch workflow.
+6. Application-host or runtime-settings changes must also run Character Editor/server-admin regression because router composition and active-environment behavior cross those boundaries.
 
-- `build_dialog_index.py` — still coupled to root `settings.py` and root `dat_extractor_bin.py`; move only after DAT extractor path normalization and settings decoupling.
-- `client_model_catalog.py` — still coupled to root `settings` / `zone_plot`; moving it now would create a package that works only from repo-root execution.
-- `dat_inspector.py` — depends on DAT extractor/vendor plumbing that should be normalized first.
-- `model_viewer.py` — higher GUI/static/model coupling; defer until its lower-level Client dependencies are package-safe.
-- `gui_server.py` and `settings.py` — intentionally late/high-risk.
+## Intentional compatibility/bootstrap surfaces
 
-## Good next candidates
+- `gui_server.py` — supported checkout-local launcher/import alias for `workbench.app.host`.
+- `settings.py` — compatibility import alias for `workbench.runtime.settings_store`.
+- root `workbench/__init__.py` — bootstrap bridge that exposes `src/workbench` when the repository is run directly without installing the project.
+- historical root CLI/import files — retained where user/operator documentation or compatibility callers still invoke the root command; their reusable implementation is package-owned.
 
-Prefer the next root implementation that is still real code, has packaged dependencies, and has no implicit `Path(__file__).parent` repository semantics. Before selecting a candidate, first verify that it is not already a compatibility shim from an earlier migration.
+These surfaces are not Phase D implementation debt. Their eventual retirement belongs to a separate packaging/distribution/bootstrap phase and should happen only after setup/start/CI paths no longer require them.
 
-Near-term dependency work that unlocks more candidates:
+## Validation at closeout
 
-- package/normalize `dat_extractor_bin.py` around `workbench.runtime.paths.VENDOR_ROOT`;
-- then migrate `dat_inspector.py` and `build_dialog_index.py` in separate slices;
-- continue reducing direct `settings.py` consumers by passing explicit paths/configuration into canonical package services;
-- defer `client_model_catalog.py`, `model_viewer.py`, and the GUI application shell until those lower-level dependencies are clean.
+PR #552 final head `e356a780d1b50787c5cc1cd7deccfd48ce2a27d3` passed:
 
-## Validation history for the latest slices
+- **Workbench Regression #2713**, including the full core regression sequence;
+- **Src Layout Regression #593**;
+- **Character Editor Regression #190**, including pytest-style and script-style server-admin regressions.
 
-- PR #297: Src Layout #113 / Workbench #2164 — green.
-- PR #298: Src Layout #114 / Workbench #2165 — green.
-- PR #299: Src Layout #116 / Workbench #2167 — green after correcting a test-harness root-import assumption.
-- PR #300: Src Layout #117 / Workbench #2168 — green.
+The closeout regression sweep also removed the old assumption that static route tests should inspect root `gui_server.py`; those tests now inspect the canonical packaged application host while a dedicated migration regression verifies that the root launcher remains thin.
 
-The recurring test lesson from PRs #297 and #299 is explicit: outside-repo editable-install tests must validate canonical package imports only. Root compatibility shims should be loaded explicitly from `REPO_ROOT` when identity compatibility itself is under test.
+## Completion condition
 
-## Completion condition for Phase D
+Phase D is considered complete because reusable implementation ownership is under `src/workbench`, the two intentionally late/high-coupling root implementations (`settings.py` and `gui_server.py`) have been packaged, compatibility behavior is regression-covered, and remaining root entry points are intentional launch/bootstrap surfaces rather than duplicate implementation homes.
 
-Phase D is complete when the remaining root `.py` files are limited to intentional launch/bootstrap compatibility entry points, generated/operator data is not colocated accidentally with implementation code, setup/start workflows no longer depend on implementation modules living at repository root, and the remaining compatibility shims have a documented removal path.
+Future work should not reopen Phase D merely to remove compatibility launchers. Create a distinct bootstrap/distribution cleanup item when the project is ready to require an installed package or an explicit `src` import path for every supported execution mode.

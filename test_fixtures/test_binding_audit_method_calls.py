@@ -3,7 +3,7 @@
 from pathlib import Path
 import tempfile
 
-import backport_binding_audit as bba
+from workbench.validation.packages import binding_audit as bba
 
 
 def main():

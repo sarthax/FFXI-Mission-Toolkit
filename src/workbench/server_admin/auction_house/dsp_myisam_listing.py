@@ -11,6 +11,7 @@ import time
 from typing import Any
 
 from workbench.editors.character.schema import discover_character_schema
+from workbench.runtime import settings_store
 from workbench.editors.character.session_state import detect_online_state
 
 from .config_policy import load_active_legacy_policy
@@ -26,8 +27,7 @@ def dsp_myisam_test_writes_enabled() -> bool:
     if env:
         return env.lower() in {"1", "true", "yes", "on"}
     try:
-        import settings as _settings
-        return _settings.get_ah_flag("ah_dsp_myisam_test_writes").lower() in {"1", "true", "yes", "on"}
+        return settings_store.get_ah_flag("ah_dsp_myisam_test_writes").lower() in {"1", "true", "yes", "on"}
     except Exception:
         return False
 

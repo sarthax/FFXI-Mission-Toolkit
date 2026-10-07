@@ -5,7 +5,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-import feature_trace
+from workbench.devtools.features import trace as feature_trace
 from workbench.core.services.feature_trace_catalog import present_relationships, runtime_hierarchy, filter_runtime_observations, provider_relationships
 from workbench.core.services.feature_trace_dossier import build_dossier
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import llm_client
+from workbench.devtools.research.legacy_llm import client as llm_client
 
 from .base import ProviderCapabilities, ProviderResponse
 

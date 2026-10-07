@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-import llm_client as legacy
+from pathlib import Path
+
 from workbench.devtools.research.legacy_llm import client as canonical
 from workbench.runtime.paths import OPENWEBUI_KEY_PATH
 
 
-def test_root_module_is_packaged_implementation():
-    assert legacy is canonical
+def test_root_module_is_retired_and_packaged_implementation_is_canonical():
+    repo_root = Path(__file__).resolve().parents[1]
+    assert not (repo_root / "llm_client.py").exists()
     assert canonical.KEY_FILE == OPENWEBUI_KEY_PATH
 
 

@@ -5,7 +5,7 @@ from workbench.server_admin.auction_house import gui
 
 
 def test_auction_house_syncs_host_template_globals():
-    original = sys.modules.get("gui_server")
+    original = sys.modules.get("workbench.app.host")
     sentinel_theme = lambda: "dark"
     sentinel_shell = lambda request: {"request": request}
     fake_env = SimpleNamespace(globals={
@@ -13,7 +13,7 @@ def test_auction_house_syncs_host_template_globals():
         "shell_context": sentinel_shell,
         "backport_enabled": lambda: False,
     })
-    sys.modules["gui_server"] = SimpleNamespace(templates=SimpleNamespace(env=fake_env))
+    sys.modules["workbench.app.host"] = SimpleNamespace(templates=SimpleNamespace(env=fake_env))
     try:
         gui.templates.env.globals.pop("current_theme", None)
         gui.templates.env.globals.pop("shell_context", None)
@@ -22,9 +22,9 @@ def test_auction_house_syncs_host_template_globals():
         assert gui.templates.env.globals["shell_context"] is sentinel_shell
     finally:
         if original is None:
-            sys.modules.pop("gui_server", None)
+            sys.modules.pop("workbench.app.host", None)
         else:
-            sys.modules["gui_server"] = original
+            sys.modules["workbench.app.host"] = original
 
 
 def test_auction_house_page_syncs_before_template_render():

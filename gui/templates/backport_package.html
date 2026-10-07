@@ -1,9 +1,13 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Backport Package{% endblock %}
+{% block page_archetype %}editor{% endblock %}
+{% block page_heading %}Backport Package{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Writes package workspace</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/backport/lua-convert">Lua converter</a><a class="chip" href="/backport/sql-convert">SQL converter</a><a class="chip" href="/backport/bindings">Binding reference</a>{% endblock %}
+{% block page_help %}Runs the complete backport conversion and verification pipeline for one package. It writes package output and reports only; it does not apply changes to a target server.{% endblock %}
 
-{% block content %}
-<h1>Backport Package</h1>
-<p class="muted">Runs the full <code>backport_package.py</code> pipeline against one package folder
+{% block page_body %}
+<p class="muted">Runs the full <code>workbench.packages.migration.orchestrator</code> pipeline against one package folder
 under <code class="chip">{{ packages_root }}</code>: converts every <code>.lua</code>/<code>.sql</code>
 file, then runs the binding audit, Lua sanity check, and SQL id-collision check over the whole
 result, and writes one consolidated <code>BACKPORT_REPORT.md</code> next to the package. Run this
@@ -192,7 +196,7 @@ boundary on what it does and doesn't automate).</p>
 {% if d.duplicates %}
 <p><span class="badge badge-empty">{{ d.duplicates|length }}</span> content key(s) already exist in
   DSP under a different id -- do not ship as new rows without reviewing first. Run
-  <code>backport_sql_live_check.py --package &lt;this dir&gt;</code> against the real live server
+  <code>python -m workbench.validation.live_db.sql_check --package &lt;this dir&gt;</code> against the real live server
   for a real-impact classification (live spawns/loot) before deciding whether to reuse or keep both.</p>
 <div class="table-wrap"><table>
   <tr><th>Content key</th><th>Candidate id</th><th>DSP's existing id(s)</th></tr>

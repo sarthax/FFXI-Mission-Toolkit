@@ -37,7 +37,7 @@ Every root-level Python file present at the start of Phase A has exactly one own
 | Root file | Final ownership / intended destination | Notes |
 | --- | --- | --- |
 | `addon_tools.py` | Core runtime → `src/workbench/runtime/addon_tools.py` | Shared addon/resource discovery. Must remain product-neutral. |
-| `settings.py` | Core config → `src/workbench/core/config/settings.py` | High fan-in. Central path/config migration before move. |
+| historical `settings.py` | Runtime config → `src/workbench/runtime/settings_store.py` | Root alias retired after active runtime callers migrated to packaged settings APIs. |
 | `workbench_connect.py` | Core runtime/integration → `src/workbench/runtime/connect.py` | Shared process/integration surface; preserve stable external entry point if used. |
 | `workbench_connect_server.py` | Core runtime/integration → `src/workbench/runtime/connect_server.py` | Same ownership as connect client. |
 
@@ -46,11 +46,11 @@ Every root-level Python file present at the start of Phase A has exactly one own
 | Root file | Final ownership / intended destination | Notes |
 | --- | --- | --- |
 | `salvage_reconstruct.py` | Captures CLI → `src/workbench/captures/cli/salvage_reconstruct.py` | Canonical reconstruction logic already exists in packaged code; root file is mostly launcher. |
-| `build_capture_index.py` | Captures ingestion → `src/workbench/captures/ingestion/build_index.py` | Large/high fan-in. Root wrapper until setup/import callers migrate. |
+| historical `build_capture_index.py` | Captures ingestion → `src/workbench/captures/ingestion/build_index.py` | Root launcher retired after setup/import callers migrated to the packaged module. |
 | `capture_backtrace.py` | Captures correlation → `src/workbench/captures/correlation/backtrace.py` | Evidence/capture-specific. |
 | `capture_graph_connect.py` | Captures correlation → `src/workbench/captures/correlation/graph_connect.py` | Must depend on Core graph/provenance contracts, not product internals. |
-| `youtube_chat_ocr.py` | Captures video → `src/workbench/captures/video/ocr.py` | External-tool/profile dependencies are Capture optional dependencies. |
-| `packet_decode.py` | Captures packets → `src/workbench/captures/packets/decode.py` | Packetlyzer/vendor path must be normalized first. |
+| historical `youtube_chat_ocr.py` | Captures video → `src/workbench/captures/video/ocr.py` | Root launcher retired; external-tool/profile dependencies remain Capture optional dependencies. |
+| historical `packet_decode.py` | Shared packets → `src/workbench/packets/decode.py` | Root launcher retired; Packetlyzer/vendor paths are package-owned. |
 | `packet_opcode_index.py` | Captures packets → `src/workbench/captures/packets/opcode_index.py` | Protocol research belongs with Capture Workbench. |
 
 ## Validation / Packages — 18
@@ -103,10 +103,10 @@ Every root-level Python file present at the start of Phase A has exactly one own
 | `llm_db_tools.py` | Development research → `src/workbench/devtools/research/legacy_llm/db_tools.py` | DB/path audit. |
 | `llm_log.py` | Development research → `src/workbench/devtools/research/legacy_llm/log.py` | Normalize DB path. |
 | `research_gaps.py` | Development research → `src/workbench/devtools/research/gaps.py` | Research workflow. |
-| `zone_plot.py` | Development spatial/viewer → `src/workbench/devtools/spatial/zone_plot.py` | Read-only viewer belongs in Devtools; editing remains Editors. |
+| historical `zone_plot.py` | Development spatial/viewer → `src/workbench/devtools/spatial/active_zone_plot.py` / `zone_plot.py` | Root alias retired; active-environment routing and viewer behavior are package-owned. |
 | `zmesh.py` | Development spatial/viewer → `src/workbench/devtools/spatial/zmesh.py` | Visual mesh/cache consumer; GUI path normalization first. |
 | `build_zone_topdown.py` | Development spatial → `src/workbench/devtools/spatial/build_topdown.py` | Read-only derived visualization output. |
-| `build_zone_visual_cache.py` | Development spatial → `src/workbench/devtools/spatial/build_visual_cache.py` | Read-only visualization/cache builder. |
+| historical `build_zone_visual_cache.py` | Development spatial → `src/workbench/devtools/spatial/build_visual_cache.py` | Root launcher retired; visualization/cache builder is package-owned. |
 | `build_plot_descriptors.py` | Development spatial → `src/workbench/devtools/spatial/build_plot_descriptors.py` | Plot/reference descriptors. |
 | `pull_mob_positions.py` | Development spatial/server evidence → `src/workbench/devtools/spatial/pull_mob_positions.py` | Read-only source extraction. |
 | `nyzul_plot.py` | Development domain tooling → `src/workbench/devtools/domains/nyzul_plot.py` | Domain visualization/research. |
@@ -124,9 +124,9 @@ Every root-level Python file present at the start of Phase A has exactly one own
 
 | Root file | Final ownership / intended destination | Notes |
 | --- | --- | --- |
-| `item_dat_tools.py` | Editors items/client → `src/workbench/editors/items/dat_tools.py` | Contains write/backup/journal behavior; not Client Shared. |
-| `item_edit.py` | Editors items → `src/workbench/editors/items/editor.py` | Large write workflow. |
-| `zone_edit.py` | Editors zone → `src/workbench/editors/zone/editor.py` | Write workflow and journals/backups. |
+| historical `item_dat_tools.py` | Editors items/client → `src/workbench/editors/items/dat_tools.py` | Root alias retired; write/backup behavior remains package-owned. |
+| historical `item_edit.py` | Editors items → `src/workbench/editors/items/editor.py` | Root alias retired; Item Editor backend remains package-owned. |
+| historical `zone_edit.py` | Editors zone → `src/workbench/editors/zone/editor.py` | Root alias retired; write/journal/backup behavior remains package-owned. |
 | `fix_zone_door_props.py` | Editors zone/maintenance → `src/workbench/editors/zone/fix_door_props.py` | Intentional data modification. |
 
 ## Client Shared — 18
@@ -160,9 +160,9 @@ Every root-level Python file present at the start of Phase A has exactly one own
 | `install_external_tools.py` | Bootstrap → `scripts/bootstrap/install_external_tools.py` | Update setup wrapper atomically. |
 | `install_xi_tinkerer.py` | Bootstrap → `scripts/bootstrap/install_xi_tinkerer.py` | Same. |
 | `reset_install.py` | Bootstrap → `scripts/bootstrap/reset_install.py` | Update `reset_install.bat` atomically. |
-| `test_backport_lua_convert.py` | Tests → `tests/regression/packages/test_backport_lua_convert.py` | Validation/Packages regression. |
-| `test_backport_sql_convert.py` | Tests → `tests/regression/packages/test_backport_sql_convert.py` | Validation/Packages regression. |
-| `test_capture_ingestion.py` | Tests → `tests/regression/captures/test_capture_ingestion.py` | Capture regression. |
+| `tests/legacy/test_backport_lua_convert.py` | Tests → `tests/regression/packages/tests/legacy/test_backport_lua_convert.py` | Validation/Packages regression. |
+| `tests/legacy/test_backport_sql_convert.py` | Tests → `tests/regression/packages/tests/legacy/test_backport_sql_convert.py` | Validation/Packages regression. |
+| `tests/legacy/test_capture_ingestion.py` | Tests → `tests/regression/captures/tests/legacy/test_capture_ingestion.py` | Capture regression. |
 
 Root total check: **4 + 7 + 18 + 39 + 4 + 18 + 7 = 97**.
 
@@ -314,7 +314,7 @@ Phase A does not change imports yet; it records where Phase B contracts are need
 | `plugins/domain/*` → `workbench.migrations.*` | Development → Validation/Packages internals | Replace shared artifact types with Core contract or explicit Packages public API. |
 | `cli/live_target_validation.py` → server adapter implementation + migrations | Validation → Development adapter internals | Introduce server-source provider contract; Validation consumes interface. |
 | `migrations/backend_registry.py` → root `backport_*` modules | Packages → legacy root same-component code | Package the implementations and remove root-to-src dependency. |
-| `gui_server.py` → nearly every product area | integrated host → all components | Decompose routes late; host only registers component apps. |
+| historical `gui_server.py` → nearly every product area | integrated host → `workbench.app.host` | Root launcher retired; packaged host remains the composition root while route decomposition continues independently. |
 | tests importing root builders/services | Tests → physical filenames | Update to canonical product APIs during each component move. |
 
 The current Capture service graph already shows a coherent internal cluster: capture chat/related evidence/raw packet/PCAP modules all depend on Capture integrity. This should move as one component rather than be exposed through Core.

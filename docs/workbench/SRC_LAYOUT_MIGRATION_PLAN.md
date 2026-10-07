@@ -340,9 +340,9 @@ These are repository bootstrap/operator scripts, not application libraries. They
 
 | Current root file | Proposed destination | Risk | Transition |
 | --- | --- | ---: | --- |
-| `test_backport_lua_convert.py` | `tests/legacy/test_backport_lua_convert.py` | M | Remove repo-root import dependence as migration modules move. |
-| `test_backport_sql_convert.py` | `tests/legacy/test_backport_sql_convert.py` | M | Same. |
-| `test_capture_ingestion.py` | `tests/legacy/test_capture_ingestion.py` | M | Align with capture package imports. |
+| `tests/legacy/test_backport_lua_convert.py` | `tests/legacy/tests/legacy/test_backport_lua_convert.py` | M | Remove repo-root import dependence as migration modules move. |
+| `tests/legacy/test_backport_sql_convert.py` | `tests/legacy/tests/legacy/test_backport_sql_convert.py` | M | Same. |
+| `tests/legacy/test_capture_ingestion.py` | `tests/legacy/tests/legacy/test_capture_ingestion.py` | M | Align with capture package imports. |
 
 `test_fixtures/` should eventually become `tests/fixtures/`, but that directory move should occur only after the production package is stable. Mixing a full test-tree rename into the first source move would create unnecessary review noise.
 
