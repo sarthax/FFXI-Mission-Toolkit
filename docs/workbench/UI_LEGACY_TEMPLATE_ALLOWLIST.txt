@@ -61,8 +61,6 @@ ocr.html | legacy page pending archetype migration
 ocr_run.html | legacy page pending archetype migration
 packets.html | legacy page pending archetype migration
 packets_decode.html | legacy page pending archetype migration
-path_plot.html | legacy page pending archetype migration
-path_plot_all.html | legacy page pending archetype migration
 rebuild_confirm.html | legacy page pending archetype migration
 roadmap.html | legacy page pending archetype migration
 settings.html | legacy page pending archetype migration
