@@ -85,7 +85,7 @@ creates a new one from any real file(s) already present.
 ## Confirmed: strip (settled 2026-09-13)
 
 - `gui/static/zone_visual/` (~311MB as of 2026-09-13, grows per zone visited) -- confirmed
-  entirely `build_zone_visual_cache.py`'s generated per-zone Wavefront OBJ cache (real zone visual
+  entirely `workbench.devtools.spatial.build_visual_cache`'s generated per-zone Wavefront OBJ cache (real zone visual
   mesh, re-derivable from a real LandSandBoat/FFXI DAT source any install already needs). This was
   the flagged suspicion in the original "needs a follow-up check" note below -- inspected
   (`gui/static/` had exactly one subdirectory, `zone_visual/`, holding only `.obj` files) and
