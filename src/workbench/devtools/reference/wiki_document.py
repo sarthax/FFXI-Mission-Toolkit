@@ -322,6 +322,14 @@ def search_pages(con, query: str, limit: int = 40) -> list[dict]:
     for r in con.execute("""SELECT source_id,page_id,title FROM reference_wiki_pages
       WHERE lower(title) LIKE ? OR lower(norm_title) LIKE ? LIMIT ?""",(like,like,limit*3)):
         add(*r,"title",score=100 if normalize_search(r[2])==q else 80)
+    # BG Wiki's full offline dump is indexed separately; keep it searchable without
+    # copying every page into reference_wiki_pages.
+    has_bg_index=con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='wiki_pages'").fetchone()
+    if has_bg_index:
+        compact=re.sub(r"[^a-z0-9]","",q)
+        for r in con.execute("""SELECT title,url FROM wiki_pages
+          WHERE lower(title) LIKE ? OR norm_title LIKE ? LIMIT ?""",(like,f"%{compact}%",limit*3)):
+            add("BGWiki",r[0],r[0],"BG index",r[1],75)
     for r in con.execute("""SELECT a.source_id,a.page_id,p.title,a.alias FROM reference_wiki_aliases a
       JOIN reference_wiki_pages p ON p.source_id=a.source_id AND p.page_id=a.page_id
       WHERE a.norm_alias LIKE ? LIMIT ?""",(like,limit*3)):
