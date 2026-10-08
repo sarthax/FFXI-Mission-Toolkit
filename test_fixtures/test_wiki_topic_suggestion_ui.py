@@ -29,6 +29,10 @@ def main():
     assert 'search is not a verified mapping' in template
     assert '{% if link.entity_target %}' in template
     assert '"trace_query":("entity:"+key if domain=="entity" else key)' in host
+    assert 'confirmed_node=feature_trace.node_info(con,exact_node,con)' in host
+    assert 'link["entity_target"]["trace_node"]=exact_node' in host
+    assert 'link.entity_target.trace_node|urlencode' in template
+    assert 'Search Feature Trace for this ID' in template
     print("Wiki multilingual suggestion reader regression: PASS")
 
 if __name__=="__main__":

@@ -234,7 +234,7 @@
         <div class="muted">Explicit source links (review only):</div>
         {% for link in item.field_candidate.source_links %}
         <div><code>{{ link.source_markup }}</code> → {{ link.target }} <span class="muted">[{{ link.resolution }}{% if link.canonical_title %}: {{ link.canonical_title }}{% endif %}]</span></div>
-        <div class="muted">Toolkit entity: {{ link.entity_resolution }}{% if link.entity_target %} ({{ link.entity_target.domain }} · {{ link.entity_target.table }} · {{ link.entity_target.key }}) — <a href="/features/trace?q={{ link.entity_target.trace_query|urlencode }}">Search Feature Trace for this ID</a>{% endif %} — review hint only; search is not a verified mapping</div>
+        <div class="muted">Toolkit entity: {{ link.entity_resolution }}{% if link.entity_target %} ({{ link.entity_target.domain }} · {{ link.entity_target.table }} · {{ link.entity_target.key }}) — {% if link.entity_target.trace_node %}<a href="/features/trace?q={{ link.entity_target.trace_node|urlencode }}">Open exact indexed Feature Trace node</a>{% else %}<a href="/features/trace?q={{ link.entity_target.trace_query|urlencode }}">Search Feature Trace for this ID</a>{% endif %}{% endif %} — review hint only; search is not a verified mapping</div>
         <details class="wiki-entity-evidence">
           <summary>Inspect entity candidates ({{ link.entity_candidate_count }}) — evidence only</summary>
           <pre>{{ link.entity_candidate_lines }}</pre>

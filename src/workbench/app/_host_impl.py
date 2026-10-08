@@ -5575,6 +5575,15 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
                         link["entity_resolution"]="UNIQUE_ENTITY_HINT"
                         link["entity_target"]={"domain":domain,"table":table,"key":key,
                                                "trace_query":("entity:"+key if domain=="entity" else key)}
+                        # Direct node navigation is allowed only when the
+                        # Feature Trace catalog recognizes this exact row.
+                        exact_node=f"catalog:{table}:{key}"
+                        try:
+                            confirmed_node=feature_trace.node_info(con,exact_node,con)
+                        except (ValueError,KeyError,sqlite3.Error):
+                            confirmed_node=None
+                        if confirmed_node and str(confirmed_node.get("node_id"))==exact_node:
+                            link["entity_target"]["trace_node"]=exact_node
                     else:
                         link["entity_resolution"]=("AMBIGUOUS" if identities else "UNRESOLVED") if allowed_domains is not None else "NOT_APPLICABLE"
                         link["entity_target"]=None
