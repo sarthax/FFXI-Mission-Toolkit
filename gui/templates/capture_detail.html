@@ -1,11 +1,15 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Capture Detail{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}capture-detail-page{% endblock %}
-
-{% block content %}
+{% block page_archetype %}detail{% endblock %}
+{% block page_class %}capture-detail-page{% endblock %}
+{% block page_back %}<a class="chip" href="/captures?content_type={{ content_type }}&q={{ q }}">&larr; Captures</a>{% endblock %}
+{% block page_heading %}{{ detail.capture_label }}{% endblock %}
+{% block page_identity %}<span class="chip mono">#{{ detail.capture_id }}</span>{% if detail.health and detail.health.status == "OK" %}<span class="chip">{{ detail.health.overall }}</span>{% endif %}{% endblock %}
+{% block page_status %}{% if capture_review_items(detail.capture_id) %}<span class="wb-write-badge">Unreviewed exceptions</span>{% else %}<span class="wb-readonly-badge">Capture dossier</span>{% endif %}{% endblock %}
+{% block page_actions %}{% if prev_id %}<a class="chip" href="/captures/{{ prev_id }}?content_type={{ content_type }}&q={{ q }}">&larr;</a>{% endif %}{% if position %}<span class="muted mono">{{ position }}</span>{% endif %}{% if next_id %}<a class="chip" href="/captures/{{ next_id }}?content_type={{ content_type }}&q={{ q }}">&rarr;</a>{% endif %}{% endblock %}
+{% block page_help %}Capture dossier over ingested evidence, integrity diagnostics, provenance, derived views, and maintenance actions. Mutation controls remain explicit within their individual sections.{% endblock %}
+{% block page_body %}
 <style>
-main.capture-detail-page{padding:8px 10px 24px}
 .capture-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
 .capture-head .title{font-size:15px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .capture-head .sp{flex:1}
@@ -33,16 +37,6 @@ main.capture-detail-page{padding:8px 10px 24px}
 {% if rv %}<div class="warn" style="border-color:var(--amber)"><span aria-hidden="true" style="font-size:20px">&#9888;</span> <strong>This capture has {{ rv|length }} unreviewed exception{{ 's' if rv|length != 1 }}.</strong>
   {% for r in rv %}<span class="chip">{{ r.label }}{% if r.blocking %} &middot; held out of derived data{% endif %}</span> {% endfor %}
   The raw data below is shown as ingested and may be incomplete or unverified. <a href="/captures/review?kind={{ rv[0].kind }}">Open review queue</a></div>{% endif %}
-<div class="capture-head dense-toolbar">
-  <a class="chip" href="/captures?content_type={{ content_type }}&q={{ q }}">&larr; Captures</a>
-  <span class="title">{{ detail.capture_label }}</span>
-  <span class="chip mono">#{{ detail.capture_id }}</span>
-  {% if detail.health and detail.health.status == "OK" %}<span class="chip">{{ detail.health.overall }}</span>{% endif %}
-  <span class="sp"></span>
-  {% if prev_id %}<a class="chip" href="/captures/{{ prev_id }}?content_type={{ content_type }}&q={{ q }}">&larr;</a>{% endif %}
-  {% if position %}<span class="muted mono">{{ position }}</span>{% endif %}
-  {% if next_id %}<a class="chip" href="/captures/{{ next_id }}?content_type={{ content_type }}&q={{ q }}">&rarr;</a>{% endif %}
-</div>
 <div class="capture-actions dense-toolbar">
   <a class="chip" href="/captures/{{ detail.capture_id }}/timeline">Timeline</a>
   {% if detail.n_raw_packets %}<a class="chip" href="/captures/{{ detail.capture_id }}/packets">Packet Browser</a>{% endif %}

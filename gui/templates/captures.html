@@ -1,26 +1,20 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Captures{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}captures-page{% endblock %}
-
-{% block content %}
-<style>main.captures-page{padding:8px 10px 24px}</style>
-<div class="dense-toolbar">
-  <strong>Captures</strong>
-  <a class="chip" href="/captures/new">+ New capture</a>
-  <a class="chip" href="/captures/search">Cross-capture search</a>
-  <a class="chip" href="/captures/help">Formats / gaps</a>
-  <a class="chip" href="/captures/bulk-ingest">Bulk ingest</a>
-  <a class="chip" href="/captures/metadata-import">Source info sheet</a>
-  {% set zr = review_pending() if review_pending is defined else 0 %}
+{% block page_archetype %}browser{% endblock %}
+{% block page_class %}captures-page{% endblock %}
+{% block page_heading %}Captures{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Indexed capture library</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/captures/new">+ New capture</a><a class="chip" href="/captures/search">Cross-capture search</a><a class="chip" href="/captures/help">Formats / gaps</a><a class="chip" href="/captures/bulk-ingest">Bulk ingest</a><a class="chip" href="/captures/metadata-import">Source info sheet</a>{% endblock %}
+{% block page_help %}Indexed capture bundles are explicitly typed and tagged so unrelated content is not silently conflated. Blocking review exceptions keep affected captures out of derived data while preserving raw evidence browsing.{% endblock %}
+{% block page_body %}
+{% set zr = review_pending() if review_pending is defined else 0 %}
+<div class="wb-filter-row">
   <a class="chip" href="/captures/review" style="{% if zr %}background:var(--amber-soft);color:var(--amber);border-color:var(--amber);font-weight:700{% endif %}">{% if zr %}<span aria-hidden="true">&#9888;</span> {% endif %}Review queue{% if zr %} <span style="background:var(--amber);color:var(--amber-soft);border-radius:9px;padding:0 6px;margin-left:2px">{{ zr }}</span>{% endif %}</a>
-  <span class="sp"></span>
-  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:680px">Indexed capture bundles are explicitly typed and tagged so unrelated content is not silently conflated.</div></details>
 </div>
 
 {% if zr %}<div class="warn" style="display:flex;gap:8px;align-items:center"><span style="font-size:22px" aria-hidden="true">&#9888;</span><span><strong>{{ zr }} capture exception{{ 's' if zr != 1 }} need manual review.</strong> Captures with blocking exceptions are held out of derived data (shift evidence, etc.) until decided; the raw data stays viewable and is flagged &#9888; below. <a href="/captures/review">Open review queue</a></span></div>{% endif %}
 
-<form class="search dense-toolbar" method="get" style="margin:6px 0">
+<form class="search wb-filter-row" method="get" style="margin:6px 0">
   <input type="text" name="q" value="{{ q }}" placeholder="filter by mission or label" list="mission-list">
   <datalist id="mission-list">
     {% for m in missions %}<option value="{{ m }}">{% endfor %}

@@ -101,3 +101,6 @@ Completed workspace migrations:
 - **Related Capture Evidence** — Deterministic provenance/packet/entity/item/chat relationship dossier (Detail, read-only).
 - **Capture / Video Alignment** — Landmark-based clock alignment, packet correlation, anchors, and key-evidence workspace with explicit mutation boundaries (Workbench).
 - **Capture Evidence Search** — Cross-capture modular evidence discovery and drill-down surface (Browser, read-only).
+- **Captures** — Typed/tagged capture library with filtering, review-state visibility, and administration entry points (Browser).
+- **Capture Detail** — Capture dossier spanning integrity, metadata, provenance, derived views, and maintenance actions (Detail).
+- **Capture Packet Browser** — Filterable canonical raw-packet browser with contextual viewer/manual-decoder handoff (Browser, read-only).

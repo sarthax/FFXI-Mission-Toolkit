@@ -353,8 +353,8 @@ def main():
                 assert marker in source,(template_name,marker)
 
     assert '<body class="shell-dense">' in captures_html
-    assert '<strong>Captures</strong>' in captures_html
-    assert 'form class="search dense-toolbar"' in captures_html
+    assert 'class="wb-page-title">Captures</span>' in captures_html
+    assert 'form class="search wb-filter-row"' in captures_html
     assert re.search(r'class="workspace-link active"\s+href="/captures"', captures_html)
     assert 'href="/captures/plot"' not in captures_html
     assert 'href="/captures/plot_all"' not in captures_html
