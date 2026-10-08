@@ -472,7 +472,12 @@ def suggest_topic_links(con, *, source_id: str, page_id: str, limit: int = 20) -
             continue
         item=topics.setdefault(topic_id,{"topic_id":topic_id,"canonical_title":title,
             "match_method":"EXACT_REVIEWED_ALIAS","review_only":True,"supporting_pages":[]})
-        item["supporting_pages"].append({"source_id":matched_source,"page_id":str(matched_page)})
+        matched_title=con.execute(
+            "SELECT title FROM reference_wiki_pages WHERE source_id=? AND page_id=?",
+            (matched_source,str(matched_page)),
+        ).fetchone()
+        item["supporting_pages"].append({"source_id":matched_source,"page_id":str(matched_page),
+                                         "title":matched_title[0] if matched_title else None})
     return list(topics.values())[:max(0,min(limit,100))]
 
 
