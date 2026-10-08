@@ -8629,6 +8629,11 @@ async def settings_save(request: Request):
         "dsp_server_path": form.get("dsp_server_path", "").strip(),
         "backport_root": form.get("backport_root", "").strip(),
         "ffxi_install_path": form.get("ffxi_install_path", "").strip(),
+        "live_client_source": (form.get("live_client_source", "disabled")
+                               if form.get("live_client_source") in ("disabled", "replay") else "disabled"),
+        "live_client_replay_file": form.get("live_client_replay_file", "").strip()[:2048],
+        "live_client_replay_client": form.get("live_client_replay_client", "").strip()[:200],
+        "live_client_auto_connect": "1" if form.get("live_client_auto_connect") else "0",
         "xi_model_viewer_url": form.get("xi_model_viewer_url", "").strip(),
         "shell_brand_enabled": "1" if form.get("shell_brand_enabled") else "0",
         "shell_brand_text": form.get("shell_brand_text", "").strip()[:80],
