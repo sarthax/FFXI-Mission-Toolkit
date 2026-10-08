@@ -273,6 +273,90 @@ def catalog_node(con: sqlite3.Connection, node_id: str):
     return None
 
 
+def _wiki_composite_relationships(
+    con: sqlite3.Connection,
+    node_id: str,
+    table: str,
+    identity_columns: tuple[str, ...] | list[str],
+    identity_values: tuple,
+) -> list[dict]:
+    """Exact Wiki V2 links that require composite source/page identity."""
+    identity=dict(zip(identity_columns,identity_values))
+    links=[]
+    specs={candidate:(key,name,provider_id,domain,object_type,spec)
+           for candidate,key,name,provider_id,domain,object_type,spec in _indexed_specs(con)}
+
+    def target_node(target_table: str, requested: dict, relationship: str):
+        target_specs=specs.get(target_table)
+        if target_specs is None:
+            return
+        target_key,_name,_provider,_domain,_type,target_spec=target_specs
+        columns=_columns(con,target_table)
+        target_identity_columns=_identity_columns(columns,target_key,target_spec)
+        lowered={str(k).casefold():v for k,v in requested.items()}
+        if not all(column.casefold() in lowered for column in target_identity_columns):
+            return
+        values=tuple(lowered[column.casefold()] for column in target_identity_columns)
+        rows=con.execute(
+            f"SELECT {','.join(target_identity_columns)} FROM {target_table} "
+            f"WHERE {_identity_where(target_identity_columns)} LIMIT 2",
+            tuple(str(v) for v in values),
+        ).fetchall()
+        if len(rows)!=1:
+            return
+        actual=tuple(rows[0])
+        tid=_catalog_id(target_table,actual,target_identity_columns)
+        target=catalog_node(con,tid)
+        if target is None:
+            return
+        rep=(target.get("representations") or [{}])[0]
+        candidate={
+            "relationship":relationship,
+            "source_node":node_id,
+            "target_node":tid,
+            "target_name":rep.get("display_name") or tid,
+            "target_type":rep.get("node_type") or "UNKNOWN",
+            "provider_native":True,
+            "basis":"source_id+page_id",
+            "adapter":"reference-wiki",
+        }
+        if not any(x.get("relationship")==relationship and x.get("target_node")==tid for x in links):
+            links.append(candidate)
+
+    if table in {"reference_wiki_claims","reference_wiki_blocks","reference_wiki_topic_pages"}:
+        columns=_columns(con,table)
+        if "source_id" in columns and "page_id" in columns:
+            row=con.execute(
+                f"SELECT {columns['source_id']},{columns['page_id']} FROM {table} "
+                f"WHERE {_identity_where(identity_columns)}",
+                tuple(str(v) for v in identity_values),
+            ).fetchone()
+            if row and row[0] is not None and row[1] is not None:
+                rel={
+                    "reference_wiki_claims":"FROM_REFERENCE_PAGE",
+                    "reference_wiki_blocks":"IN_REFERENCE_PAGE",
+                    "reference_wiki_topic_pages":"TOPIC_MEMBER_PAGE",
+                }[table]
+                target_node("reference_wiki_pages",{"source_id":row[0],"page_id":row[1]},rel)
+
+    if table=="reference_wiki_pages":
+        source_id=identity.get("source_id")
+        page_id=identity.get("page_id")
+        if source_id is not None and page_id is not None and "reference_wiki_topic_pages" in specs:
+            rows=con.execute(
+                """SELECT topic_id,source_id,page_id FROM reference_wiki_topic_pages
+                   WHERE source_id=? AND page_id=? ORDER BY topic_id""",
+                (str(source_id),str(page_id)),
+            ).fetchall()
+            for topic_id,src,pid in rows:
+                target_node(
+                    "reference_wiki_topic_pages",
+                    {"topic_id":topic_id,"source_id":src,"page_id":pid},
+                    "IN_REFERENCE_TOPIC",
+                )
+    return links
+
+
 def provider_relationships(con: sqlite3.Connection, node_id: str) -> list[dict]:
     """Return exact source-native links for a catalog node without adding graph edges."""
     if not node_id.startswith("catalog:"):
@@ -289,7 +373,7 @@ def provider_relationships(con: sqlite3.Connection, node_id: str) -> list[dict]:
     identity_values=_resolve_identity_values(con,table,raw,identity_columns,key)
     if identity_values is None:
         return []
-    links=[]
+    links=_wiki_composite_relationships(con,node_id,table,identity_columns,identity_values)
     for link in PROVIDER_LINKS:
         if link.source_table!=table or link.source_column.lower() not in columns:
             continue
