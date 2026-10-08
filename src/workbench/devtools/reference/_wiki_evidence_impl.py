@@ -48,6 +48,7 @@ def _norm(value: str) -> str:
 
 
 def init_db(con: sqlite3.Connection) -> None:
+    wiki_document.init_db(con)
     con.executescript("""
         CREATE TABLE IF NOT EXISTS reference_wiki_sources(
           source_id TEXT PRIMARY KEY, display_name TEXT NOT NULL, base_url TEXT NOT NULL,
