@@ -8646,7 +8646,9 @@ async def settings_save(request: Request):
         "backport_root": form.get("backport_root", "").strip(),
         "ffxi_install_path": form.get("ffxi_install_path", "").strip(),
         "live_client_source": (form.get("live_client_source", "disabled")
-                               if form.get("live_client_source") in ("disabled", "replay") else "disabled"),
+                               if form.get("live_client_source") in ("disabled", "replay", "file_feed") else "disabled"),
+        "live_client_feed_file": form.get("live_client_feed_file", "").strip()[:2048],
+        "live_client_feed_client": form.get("live_client_feed_client", "").strip()[:200],
         "live_client_replay_file": form.get("live_client_replay_file", "").strip()[:2048],
         "live_client_replay_client": form.get("live_client_replay_client", "").strip()[:200],
         "live_client_auto_connect": "1" if form.get("live_client_auto_connect") else "0",
