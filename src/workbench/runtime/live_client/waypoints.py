@@ -37,3 +37,28 @@ def path_document(samples: list[PathSample]) -> dict:
 def export_waypoints(path: Path, waypoints: list[Waypoint]) -> None:
     """Write only to explicitly provided local paths; do not execute file content."""
     path.write_text(json.dumps(waypoint_document(waypoints), indent=2), encoding="utf-8")
+
+
+def parse_path(document: dict) -> list[PathSample]:
+    """Read an exported path without conflating coordinates across zones."""
+    if document.get("schema_version") != 1 or document.get("kind") != "live_client_path":
+        raise ValueError("unsupported path document")
+    rows = document.get("samples")
+    if not isinstance(rows, list) or len(rows) > 100000:
+        raise ValueError("invalid path samples")
+    result = []
+    for row in rows:
+        observed_at = row["observed_at"]
+        client_id = row["client_id"]
+        if not isinstance(observed_at, (float, int)) or not __import__("math").isfinite(observed_at):
+            raise ValueError("invalid timestamp")
+        if not isinstance(client_id, str) or not client_id or len(client_id) > 200:
+            raise ValueError("invalid client id")
+        result.append(PathSample(observed_at=observed_at,
+                                 position=Position(**row["position"]),
+                                 client_id=client_id))
+    return result
+
+
+def export_path(path: Path, samples: list[PathSample]) -> None:
+    path.write_text(json.dumps(path_document(samples), indent=2), encoding="utf-8")
