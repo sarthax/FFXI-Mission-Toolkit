@@ -68,6 +68,8 @@ class ReplayRegistry:
             "zone_id": (replay.feed._latest.snapshot.position.zone_id
                         if replay.feed._latest is not None else None),
             "remaining_frames": replay.remaining,
+            "frame_position": replay.position,
+            "total_frames": replay.total,
             "read_only": True,
         } for client_id, replay in sorted(self._clients.items())) + tuple({
             'client_id': client_id,
