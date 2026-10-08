@@ -114,3 +114,5 @@ Completed workspace migrations:
 - **Item Script Health** — Active-server script audit, LSB cross-check, repair preview, and explicit confirmed repair-write workflow (Workbench; write boundary explicit).
 - **Feature Trace** — Canonical graph/evidence traversal and implementation-path diagnostics (Workbench, read-only).
 - **Home / Data & Tools** — Toolkit data-source health dashboard with explicit rebuild/install action boundary (Dashboard).
+- **Domain Detail** — Domain-specific implementation/evidence dossier with specialized embedded read-only workspaces (Detail).
+- **Model Viewer** — Full-width client DAT/model inspection workspace with preserved specialized renderer layout (Workbench, read-only).
