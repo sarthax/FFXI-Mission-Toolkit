@@ -149,6 +149,9 @@ def main():
         root=Path(tmp)
         test_english_mediawiki_relation_without_network(root)
         test_japanese_relation_uses_reviewed_topics(root)
+    template=(Path(__file__).resolve().parents[1]/"gui"/"templates"/"wiki.html").read_text(encoding="utf-8")
+    assert "Structured reference relationships" in template
+    assert "REFERENCE_ONLY" in template
     print("Wiki V2 typed relation regression: PASS")
     return 0
 
