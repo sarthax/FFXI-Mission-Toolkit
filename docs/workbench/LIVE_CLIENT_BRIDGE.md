@@ -120,3 +120,11 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Client list reports read-only session status; selected-client projection returns the validated, zone/instance-filtered player and entity observations. Unknown clients return 404; registered clients with no frame return 409. No client discovery, filesystem access, replay advancement, game writes, or global GUI router mutation.
 - Added `tests/test_live_client_registry_api.py` for independent replay clients, selection, unobserved sessions, invalid parameters, and no POST methods.
 - The router is **not yet mounted** into the running GUI. Next: coordinate opt-in registration and a player marker with the GUI refactor; afterward prioritize the Windows read-only telemetry bridge.
+
+
+## 2026-10-08 opt-in replay browser console
+- `src/workbench/runtime/live_client/replay_console.py`: self-contained browser page at `GET /live-client/replay/console` showing explicit registered-client selection, read-only status and observed character, zone, XYZ, heading, timestamp and entity count.
+- `ReplayRegistry.status()` now includes the selected client's last observed zone so the console can request a zone-scoped projection without assuming a default zone.
+- `tests/test_live_client_replay_console.py` covers an explicitly mounted console, no-frame status, selected-client projection, and GET-only behavior.
+- **Important:** router is not mounted into the application and is not linked from navigation yet. No actual live client or map overlay; this is a standalone read-only replay console for opt-in integration testing.
+- Next: coordinate explicit registration in toolkit GUI and the first map marker; then prioritize Windows-side read-only observation adapter and actual FFXI compatibility validation.
