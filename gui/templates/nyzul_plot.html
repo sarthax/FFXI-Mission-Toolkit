@@ -1,10 +1,17 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Nyzul Isle Layout Editor{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}nyzul-page{% endblock %}
-{% block content %}
+{% block page_archetype %}editor{% endblock %}
+{% block page_class %}nyzul-page{% endblock %}
+{% block page_width %}fluid{% endblock %}
+{% block page_heading %}Nyzul Isle Layout Editor{% endblock %}
+{% block page_identity %}<span class="chip mono">zone 77</span>{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Exclusion changes persist server-side; generation/export remain preview-oriented</span>{% endblock %}
+{% block page_help %}Read DSP, Topaz, or LandSandBoat Nyzul generation data through the lineage-aware adapter, generate floor layouts from source rules, visualize candidate/spawn/lamp points on the client mesh, and inspect navmesh reachability when available. Clicking candidates to exclude/include them preserves the existing server-side exclusion workflow.{% endblock %}
+{% block page_body %}
 <style>
-main.nyzul-page{max-width:none!important;padding:0!important;overflow:hidden}.lbl{color:#fff;font:11px monospace;background:rgba(0,0,0,.65);padding:0 3px;border-radius:3px;pointer-events:none;white-space:nowrap}
+main.nyzul-page{max-width:none!important;overflow:hidden}
+main.nyzul-page .wb-page-frame{min-height:calc(100vh - var(--shell-h))}
+main.nyzul-page .wb-page-body{min-height:0;margin:0 -10px -24px}.lbl{color:#fff;font:11px monospace;background:rgba(0,0,0,.65);padding:0 3px;border-radius:3px;pointer-events:none;white-space:nowrap}
 #nyzul-header{padding:10px 14px 6px;border-bottom:1px solid var(--border);background:var(--surface)}#nyzul-header h1{margin:0 0 4px}#nyzul-header p{margin:0;max-width:1100px}
 #nyzul-editor{display:grid!important;grid-template-columns:minmax(225px,290px) minmax(0,1fr) minmax(220px,270px);gap:0!important;align-items:stretch!important;min-height:calc(100vh - var(--shell-h) - 112px)}
 #panel{width:auto!important;min-width:0!important;font-size:12px!important;border-right:1px solid var(--border);padding:0!important;overflow:auto;background:var(--bg)}#panel label{font-size:11px}#panel select,#panel input[type=number]{width:145px}#panel h3{margin:5px 0 3px}
@@ -13,12 +20,6 @@ main.nyzul-page{max-width:none!important;padding:0!important;overflow:hidden}.lb
 #nyzul-focus{position:absolute;right:10px;top:10px;z-index:12;background:rgba(4,8,12,.8);color:#fff;border:1px solid #789;border-radius:4px}body.nyzul-focus #panel,body.nyzul-focus #nyzul-side{display:none}body.nyzul-focus #nyzul-editor{grid-template-columns:minmax(0,1fr)}
 @media(max-width:1050px){ #nyzul-editor{grid-template-columns:minmax(205px,270px) minmax(0,1fr)}#nyzul-side{display:none}body.nyzul-show-side #nyzul-side{display:block;position:absolute;right:0;top:0;bottom:0;width:270px;z-index:20;box-shadow:-5px 0 20px #0008}}@media(max-width:720px){ #nyzul-editor{display:block!important;min-height:0}#panel{border-right:0;border-bottom:1px solid var(--border);max-height:42vh}#viewer-container{height:58vh!important;min-height:360px}#nyzul-side{display:block;border-left:0;border-top:1px solid var(--border);max-height:34vh}}
 </style>
-<h1>Nyzul Isle Plot <span class="chip mono">zone 77</span></h1>
-<p class="muted">Reads the selected DSP, Topaz, or LandSandBoat server source live and adapts its Nyzul generation data to this viewer. Pick a layout and
-  drive the source-lineage generation rules (or let them roll from a seed); every spawn point, lamp point and generated entity is drawn on the client mesh with a label. <b>Click a dot to exclude/include it</b>
-  (saved server-side; export as Lua below). Dot colour on candidates = navmesh reachability from the entrance
-  (green ok, red disconnected, orange off-mesh). Navmesh evidence is optional for modern LSB; if unavailable the editor still opens without reachability colouring.</p>
-
 {% if not obj_available %}
 <div class="warn">No cached visual mesh for zone 77 &mdash; run <code class="chip">py -3 -m workbench.devtools.spatial.build_visual_cache 77</code>.</div>
 {% endif %}
