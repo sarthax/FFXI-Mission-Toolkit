@@ -356,6 +356,13 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
                 "reward":"REWARDS","rewards":"REWARDS","報酬":"REWARDS",
                 "location":"LOCATION","zone":"LOCATION","場所":"LOCATION","エリア":"LOCATION",
                 "requirements":"REQUIRES","prerequisites":"REQUIRES","必要条件":"REQUIRES","参加条件":"REQUIRES",
+                "spawn conditions":"SPAWN_CONDITIONS","spawn condition":"SPAWN_CONDITIONS",
+                "spawn":"SPAWN_CONDITIONS","pop conditions":"SPAWN_CONDITIONS",
+                "出現条件":"SPAWN_CONDITIONS","ポップ条件":"SPAWN_CONDITIONS",
+                "quest":"QUEST","quests":"QUEST","mission":"QUEST","missions":"QUEST",
+                "クエスト":"QUEST","ミッション":"QUEST",
+                "notorious monster":"NM_IDENTITY","nm":"NM_IDENTITY","nm name":"NM_IDENTITY",
+                "ノートリアスモンスター":"NM_IDENTITY",
             }
             candidate=({"field_type":typed_fields[field_class],"field":field_name,
                         "value":b.get("text") or "","value_raw":metadata.get("raw_value"),
