@@ -1,6 +1,11 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}DAT Inspector{% endblock %}
-{% block content %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_heading %}DAT Inspector{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Client resource inspection</span>{% endblock %}
+{% block page_actions %}<span class="chip">client: {{ ffxi_path }}</span><a class="chip" href="/settings">Change client path</a>{% endblock %}
+{% block page_help %}Read-only client resource workbench. Identify a DAT by file ID, zone/resource family, or ROM-relative path; inspect bounded structural evidence and parser interpretations; then hand off to the appropriate downstream tool without treating one parser acceptance as semantic proof.{% endblock %}
+{% block page_body %}
 <style>
 .dat-head{display:flex;gap:14px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
 .dat-head h1{margin:0 0 4px}
@@ -45,17 +50,6 @@
 .dat-neighbors{display:flex;gap:6px;flex-wrap:wrap}
 @media(max-width:1000px){.dat-locator,.dat-result-head{grid-template-columns:1fr}.dat-alt-grid{grid-template-columns:1fr}.dat-match-grid{grid-template-columns:1fr}}
 </style>
-
-<div class="dat-head">
-  <div>
-    <h1>DAT Inspector</h1>
-    <div class="muted">Read-only client resource workbench. Identify a DAT, inspect meaningful decoded records, and jump directly into the tool that can use them.</div>
-  </div>
-  <div class="dat-chips">
-    <span class="chip">client: {{ ffxi_path }}</span>
-    <a class="chip" href="/settings">Change client path</a>
-  </div>
-</div>
 
 <div class="dat-locator">
   <section class="dat-card">
