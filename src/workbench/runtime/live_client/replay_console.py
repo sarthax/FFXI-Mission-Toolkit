@@ -47,6 +47,9 @@ async function refresh(){
   const row=rows.find(r=>r.client_id===client.value);
   document.getElementById('step').disabled=!row.remaining_frames;
   document.getElementById('poll').disabled=row.source!=='file_feed';
+  document.getElementById('previous').disabled=!(row.frame_position>1);
+  document.getElementById('restart').disabled=!(row.frame_position>1);
+  if(row.total_frames)state.textContent='Frame '+row.frame_position+' of '+row.total_frames;
   state.textContent=row.observed?'Recorded observation available':'Waiting for recorded frame';
   if(!row.observed){reset();return;}
   // Zone is read from selected client's already-observed frame via registry status.
