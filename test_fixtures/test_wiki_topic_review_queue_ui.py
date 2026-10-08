@@ -17,6 +17,8 @@ def main():
     assert '"review_origin": review_origin' in host
     assert 'review_status={{ review_status }}&review_page={{ review_page }}' in ui
     assert 'entry.pending' in ui and 'entry.dismissed' in ui
+    assert '{{ entry.pending|length }} pending' in ui
+    assert '{{ entry.dismissed|length }} dismissed' in ui
     assert '{% for proof in item.supporting_pages %}' in ui
     assert 'proof.title|urlencode' in ui
     assert 'target="_blank" rel="noopener"' in ui
