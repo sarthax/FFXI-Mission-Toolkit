@@ -1,14 +1,13 @@
-{% extends "base.html" %}
-{% block title %}Auction House Admin{% endblock %}
-{% block content %}
-<main class="ah-admin" id="ahAdmin">
-  <div class="page-head">
-    <div>
-      <h1>Auction House Administration</h1>
-      <p class="muted">Economy health, listings, history, price trends, and guarded DSP/Topaz Test administration for the active server environment.</p>
-    </div>
-    <span class="badge" id="ahReadOnlyBadge">READ + SCOPED TEST WRITE</span>
-  </div>
+{% extends "workbench_page.html" %}
+{% block title %}Auction House Administration{% endblock %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_width %}fluid{% endblock %}
+{% block page_class %}auction-house-admin-page{% endblock %}
+{% block page_heading %}Auction House Administration{% endblock %}
+{% block page_status %}<span class="wb-write-badge">READ + SCOPED TEST WRITE — overview controls preview/validate only; writes execute through guarded Test-only tools</span>{% endblock %}
+{% block page_help %}Inspect economy health, listings, history, price trends, lineage semantics, and write readiness. Administrative controls on this page preview and validate only; execution remains in the dedicated guarded Listings, Seeder, Cleanup, Rewards, or Console workflows.{% endblock %}
+{% block page_body %}
+<div class="ah-admin" id="ahAdmin">
   {% include "_auction_house_nav.html" %}
 
   <section class="panel ah-status">
@@ -93,7 +92,7 @@
       </div>
     </div>
   </section>
-</main>
+</div>
 <style>
 .ah-admin{padding:10px 14px 24px}.page-head,.ah-toolbar,.ah-status,.ah-validation-head{display:flex;align-items:center;gap:12px}.page-head,.ah-validation-head{justify-content:space-between}.page-head h1,.page-head h2,.ah-validation-head h3{margin-bottom:2px}.muted{opacity:.7}.badge{font-size:12px;font-weight:700;border:1px solid currentColor;border-radius:999px;padding:4px 9px}.panel{border:1px solid var(--border-color,#5555);border-radius:8px;padding:12px;margin:10px 0}.ah-status{justify-content:space-between}.ah-metrics{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:8px}.metric{border:1px solid var(--border-color,#5555);border-radius:8px;padding:10px}.metric span{display:block;font-size:12px;opacity:.7}.metric strong{font-size:20px}.ah-health-controls{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:8px 0 12px}.ah-health-controls label{display:grid;gap:4px;font-size:13px}.ah-health-summary{margin-bottom:10px}.ah-health-summary .metric{display:inline-block;min-width:130px;margin:0 6px 6px 0}.ah-health-grid{display:grid;grid-template-columns:repeat(2,minmax(300px,1fr));gap:10px}.ah-health-card{border:1px solid var(--border-color,#5554);border-radius:8px;padding:10px;min-height:150px}.ah-health-card h3{margin-top:0}.ah-health-list{margin:0;padding-left:18px}.ah-health-list li{margin:4px 0}.ah-preview-grid{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:12px}.ah-preview-form{display:grid;gap:8px;border:1px solid var(--border-color,#5554);border-radius:8px;padding:10px}.ah-preview-form label{display:grid;gap:4px;font-size:13px}.ah-preview-form label:has(input[type=checkbox]){display:flex;align-items:center;gap:8px}.ah-action-preview{margin-top:10px;border-top:1px solid var(--border-color,#5554);padding-top:10px}.ah-warning{padding:5px 8px;border-left:3px solid currentColor;margin:4px 0}.ah-readiness-grid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:8px;margin-top:8px}.ah-readiness-card,.ah-semantic-gate{border:1px solid var(--border-color,#5554);border-radius:8px;padding:8px}.ah-semantic-gate{margin:8px 0}.ah-semantic-gate ul{margin:6px 0 0;padding-left:20px}.ah-validation-head{margin-top:14px;border-top:1px solid var(--border-color,#5554);padding-top:12px}.ah-validation-report{margin-top:8px}.ah-validation-summary{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}.ah-validation-grid{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:8px}.ah-validation-stage{border:1px solid var(--border-color,#5554);border-radius:8px;padding:8px}.ah-validation-stage ul,.ah-validation-blockers{margin:6px 0 0;padding-left:20px}.ah-toolbar{flex-wrap:wrap}.ah-toolbar label{display:flex;align-items:center;gap:6px}.ah-toolbar .grow{flex:1}.ah-toolbar input{width:100%;min-width:220px}.ah-grid{display:grid;grid-template-columns:minmax(340px,.9fr) minmax(430px,1.4fr);gap:14px;margin-top:12px}.ah-items{max-height:68vh;overflow:auto}.ah-item{display:grid;grid-template-columns:38px 1fr auto;gap:8px;align-items:center;width:100%;text-align:left;border:0;border-bottom:1px solid var(--border-color,#5554);background:transparent;padding:7px;cursor:pointer;color:inherit}.ah-item:hover{background:var(--surface-2,#8881)}.ah-item img,.ah-icon{width:32px;height:32px;object-fit:contain}.ah-item small{display:block;opacity:.7}.ah-count{text-align:right;font-size:12px}.ah-table{width:100%;border-collapse:collapse;font-size:13px}.ah-table th,.ah-table td{padding:5px;border-bottom:1px solid var(--border-color,#5554);text-align:left}.ah-price{text-align:right!important;font-variant-numeric:tabular-nums}.ah-trends{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.ah-trend{border:1px solid var(--border-color,#5554);padding:8px;border-radius:6px}@media(max-width:900px){.ah-grid,.ah-preview-grid,.ah-readiness-grid,.ah-health-grid,.ah-validation-grid{grid-template-columns:1fr}.ah-metrics{grid-template-columns:repeat(2,1fr)}}
 </style>

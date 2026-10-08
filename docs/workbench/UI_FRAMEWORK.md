@@ -130,3 +130,6 @@ Completed workspace migrations:
 - **Auction House Economy Intelligence** — Full-width analytical economy workspace with explicit toolkit-local snapshot-recording boundary (Workbench).
 - **Auction House Help & Status** — Capability/safety/operations reference for Auction House workflows (Detail-like Workbench, read-only).
 - **Auction House Reward History** — Read-only reward campaign/outcome history with retry preview handoff (Workbench).
+- **Auction House Administration** — Readiness/economy/listing overview with preview/validation-only controls and guarded-tool handoffs (Workbench).
+- **Auction House Console** — Full-width operational hub with guarded Test-only mutation workflows and fail-closed safety gates (Workbench).
+- **Auction House Presets** — Reusable cleanup/seeding configuration workspace; writes toolkit preset state but never authorization (Workbench).

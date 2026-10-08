@@ -1,10 +1,15 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Auction House Console{% endblock %}
-{% block content %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_width %}fluid{% endblock %}
+{% block page_class %}auction-house-console-page{% endblock %}
+{% block page_heading %}Auction House Console{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Operational console: guarded DSP/Topaz Test-only mutations; Live writes remain blocked</span>{% endblock %}
+{% block page_help %}Unified Auction House operations console for economy, items, sellers, buyers, restock, arbitrage, cleanup, presets, inbox, and linked tools. Existing preview tokens, typed confirmations, environment gates, replay protection, and fail-closed safety behavior remain unchanged.{% endblock %}
+{% block page_body %}
 <link rel="stylesheet" href="/static/auction_house_console.css?v=20261005k">
-<main class="ahc" id="ahConsole">
+<div class="ahc" id="ahConsole">
   <div class="ahc-top">
-    <h1>Auction House</h1>
     <span id="ahcEnv" class="ahc-chip">checking…</span>
     <span id="ahcFresh" class="ahc-chip mut"></span>
     <button class="b" id="ahcRefresh" type="button" title="Reload all data">Refresh</button>
@@ -180,6 +185,6 @@
     <div class="ahc-bar"><button class="b pri" id="dwGo" type="button" disabled>Execute</button><span id="dwMsg" class="mut"></span></div>
   </aside>
   <div class="ahc-toast" id="ahcToast"></div>
-</main>
+</div>
 <script src="/static/auction_house_console.js?v=20261005s"></script>
 {% endblock %}
