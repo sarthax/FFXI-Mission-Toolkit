@@ -10,7 +10,7 @@ from html.parser import HTMLParser
 
 import mwparserfromhell
 
-PARSER_VERSION = "wiki-doc-v1"
+PARSER_VERSION = "wiki-doc-v2-template-fields"
 
 
 def normalize_search(value: str) -> str:
@@ -147,6 +147,33 @@ def mediawiki_blocks(page_id: str, wikitext: str) -> list[dict]:
                 metadata={"hidden":True},
                 source_locator=(f"section:{section_title}:wikilink:{target}" if section_title else f"wikilink:{target}"),
             ))
+    # Named template parameters are preserved as inspectable fields, not
+    # inferred gameplay relationships. MediaWiki templates can contain nested
+    # expressions; only explicit names are surfaced, with original wikitext
+    # retained on the document for deeper/manual interpretation.
+    for section in code.get_sections(include_headings=True, flat=True):
+        headings=section.filter_headings()
+        section_title=str(headings[0].title).strip() if headings else ""
+        for template_index, template in enumerate(section.filter_templates(recursive=False), 1):
+            template_name=str(template.name).strip()
+            if not template_name:
+                continue
+            for param_index,param in enumerate(template.params,1):
+                if not param.showkey:
+                    continue  # positional parameters have no reliable field label
+                field_name=str(param.name).strip()
+                if not field_name:
+                    continue
+                raw_value=str(param.value).strip()
+                display=str(mwparserfromhell.parse(raw_value).strip_code(normalize=True,collapse=True)).strip()
+                ordinal+=1
+                blocks.append(_block(
+                    page_id,ordinal,"template_field",display,
+                    section_path=section_title or None,
+                    metadata={"template":template_name,"field":field_name,
+                              "raw_value":raw_value,"review_only":True},
+                    source_locator=f"section:{section_title}:template:{template_index}:field:{param_index}",
+                ))
     return blocks
 
 
@@ -300,6 +327,10 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
                     "marker":(blocks[i].get("metadata") or {}).get("marker") or "*",
                 }); i+=1
             current["content"].append({"type":"list","items":items}); continue
+        if kind=="template_field":
+            metadata=b.get("metadata") or {}
+            current["content"].append({"type":"definition","term":str(metadata.get("template") or "Template")+": "+str(metadata.get("field") or "Field"),"definition":b.get("text") or ""})
+            i+=1; continue
         if kind=="definition_term":
             term=b.get("text") or ""; definition=""
             if i+1 < len(blocks) and blocks[i+1].get("block_type")=="definition":
