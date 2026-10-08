@@ -90,3 +90,11 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Validates the complete capture before constructing replay; no writes, code execution, process discovery, or FFXI attachment.
 - `tests/test_live_client_recording.py` covers multi-zone replay, client mismatch, duplicate/out-of-order frames, malformed input, empty recordings, and size/count guards.
 - CI is required before considering this slice validated; integration with an opt-in viewer is still pending.
+
+
+## 2026-10-07 read-only viewer projection milestone
+- `src/workbench/runtime/live_client/viewer.py`: pure JSON-compatible player/entity projection for later 2D/3D overlays; no GUI route, process attachment, or memory writes.
+- The projection filters by explicitly selected client and zone; requested instance hints must match the player, and entity observations are independently instance-filtered.
+- Exposes observed client indices separately from optional server IDs, entity kinds, names, XYZ/heading, and source timestamps.
+- `tests/test_live_client_viewer.py`: selected-instance, wrong-client, wrong-zone, wrong-instance, and zone-only filtering regressions.
+- Next: optional reader/API entry point and viewer wiring through the shared shell, coordinating with active GUI refactor. CI and Windows runtime compatibility remain separate validation steps.
