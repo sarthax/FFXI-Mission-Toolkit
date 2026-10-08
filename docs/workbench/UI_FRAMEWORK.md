@@ -122,3 +122,4 @@ Completed workspace migrations:
 - **OCR Run** — Video crop/extraction/layout/OCR/matching/capture-conversion workspace with explicit write actions (Workbench).
 - **Settings** — Shared environment/branding/path/write-gate/LLM/backup/server configuration workspace with explicit mutation boundary (Workbench).
 - **Character Editor** — Adapter-aware character/inventory editor with offline/capability safety gates and preview/confirm writes (Editor).
+- **Item Editor** — Live server/client item editor with preview/apply batching, DAT synchronization, backup, SQL journaling, and session history controls (Editor).

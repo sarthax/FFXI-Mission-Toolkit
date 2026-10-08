@@ -1,22 +1,13 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Item Editor{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}item-editor-page{% endblock %}
-
-{% block content %}
-<div id="itemEditorTop" class="dense-toolbar">
-  <strong>Item Editor</strong>
-  <label>Server <select id="srv" onchange="setItemServer()"><option value="topaz">Topaz</option><option value="dsp">DSP</option></select></label>
-  <span class="sp"></span>
-  <a href="/itembrowser" title="Read-only browser with summaries and LSB compare">Item Browser</a>
-  <a href="/itemhealth" title="Which proc items have working scripts">Script Health</a>
-  <details class="dense-card" style="margin:0;padding:0 6px;">
-    <summary>About</summary>
-    <div class="muted" style="padding:6px 2px;max-width:760px;">Search and edit live item_* rows. Client-enforced fields are mirrored into the client DAT, with backup and SQL journaling before writes. The server selector shares the same live DB target used by the Zone Editor.</div>
-  </details>
-</div>
-
-<form class="search dense-toolbar" onsubmit="doSearch(event)" style="margin:6px 0;flex-wrap:wrap;">
+{% block page_archetype %}editor{% endblock %}
+{% block page_class %}item-editor-page{% endblock %}
+{% block page_heading %}Item Editor{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Live server/client item writes use preview, backup, journaling, and validated apply flows</span>{% endblock %}
+{% block page_actions %}<label>Server <select id="srv" onchange="setItemServer()"><option value="topaz">Topaz</option><option value="dsp">DSP</option></select></label><a class="chip" href="/itembrowser">Item Browser</a><a class="chip" href="/itemhealth">Script Health</a>{% endblock %}
+{% block page_help %}Search and edit live item_* rows. Client-enforced fields are mirrored into client DAT data with backup and SQL journaling before writes. Batch changes remain preview-then-apply, and session undo/redo/restore behavior is preserved.{% endblock %}
+{% block page_body %}
+<form class="search wb-filter-row" onsubmit="doSearch(event)" style="margin:6px 0;flex-wrap:wrap;">
   <input type="text" id="q" placeholder="item name substring (min 2 chars), or exact item id">
   <select id="category">
     <option value="">all classes</option><option value="armor">armor</option><option value="weapon">weapon</option>
@@ -87,7 +78,6 @@
 </div>
 
 <style>
-  main.item-editor-page{padding:8px 10px 24px}
   #itemEditorTop label{display:flex;align-items:center;gap:4px;margin:0}
   form.search.dense-toolbar input[type=text]{min-width:260px;flex:1}
   #results{max-height:260px;overflow:auto}
