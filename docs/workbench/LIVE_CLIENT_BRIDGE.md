@@ -82,3 +82,11 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - `tests/test_live_client_replay.py`: multi-frame transitions, zone changes, exhaustion, malformed/cross-client retry behavior, and reference-time input validation.
 - No automatic runtime discovery, live connection, write operations or viewer integration yet. Tests require CI verification.
 - Next: feed a stable JSON-lines recorded fixture through this interface and wire read-only session-health/position visualization.
+
+
+## 2026-10-07 JSON-lines recorded telemetry import
+- `src/workbench/runtime/live_client/recording.py` loads UTF-8 JSON-lines into an offline `RecordedTelemetryReplay` using the strict v1 telemetry decoder.
+- Enforces explicit client identity, monotonic frame timestamps, finite decoded numeric values, default 10,000-frame and 16 MiB bounds, with blank lines ignored and malformed rows rejected with source line numbers.
+- Validates the complete capture before constructing replay; no writes, code execution, process discovery, or FFXI attachment.
+- `tests/test_live_client_recording.py` covers multi-zone replay, client mismatch, duplicate/out-of-order frames, malformed input, empty recordings, and size/count guards.
+- CI is required before considering this slice validated; integration with an opt-in viewer is still pending.
