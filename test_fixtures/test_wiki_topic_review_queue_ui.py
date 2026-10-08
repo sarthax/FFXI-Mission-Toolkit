@@ -12,6 +12,8 @@ def main():
     assert '{% for entry in review_queue %}' in ui
     assert 'entry.pending' in ui and 'entry.dismissed' in ui
     assert 'Read-only overview' in ui
+    assert 'Counts apply only to the current page.' in ui
+    assert 'selectattr("pending")' in ui and 'selectattr("dismissed")' in ui
     print("Wiki topic review queue UI regression: PASS")
 
 if __name__=="__main__":
