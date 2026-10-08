@@ -56,3 +56,6 @@ vendor/*.exe
 
 # User-configured shell branding uploaded from Settings
 gui/static/branding/custom_brand.*
+
+# Imported Live Client replay captures remain local and are not source-controlled
+data/live_client_recordings/
