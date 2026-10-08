@@ -182,6 +182,37 @@
 {% endif %}
 
 {% if tab == 'evidence' and evidence and evidence.status == "OK" %}
+{% if evidence.relations %}
+<details class="wiki-section" open>
+<summary>Structured reference relationships <span class="chip">{{ evidence.relations|length }}</span></summary>
+<div class="body">
+  <p class="muted">These are structure-labelled wiki relationships only. They remain <code>REFERENCE_ONLY</code>; a mapped row means the endpoint identity resolved, not that server/client behavior is verified.</p>
+  <div class="table-wrap"><table>
+    <tr><th>section</th><th>relationship</th><th>subject</th><th>object</th><th>endpoint mapping</th></tr>
+    {% for rel in evidence.relations %}
+    <tr>
+      <td>{{ rel.section_title or "page" }}<div class="muted mono">{{ rel.source_locator or "" }}</div></td>
+      <td><span class="pill">{{ rel.relation_type }}</span><div class="muted">{{ rel.extraction_method }}</div></td>
+      <td><b>{{ rel.subject_text }}</b></td>
+      <td><b>{{ rel.object_text }}</b></td>
+      <td>
+        {% for m in rel.mappings %}
+          <div style="margin-bottom:5px;">
+            <span class="mono">{{ m.endpoint }}</span>:
+            {% if m.mapping_status == "MAPPED" %}<span class="pill exists">mapped</span>
+            {% elif m.mapping_status == "AMBIGUOUS" %}<span class="pill gap">ambiguous</span>
+            {% else %}<span class="pill mismatch">{{ m.mapping_status|lower }}</span>{% endif %}
+            {% if m.target_table %}<span class="mono">{{ m.target_table }}:{{ m.target_key }}</span>{% if m.target_label %} — {{ m.target_label }}{% endif %}{% endif %}
+            <div class="muted">{{ m.mapping_method }} · {{ m.confidence }}</div>
+          </div>
+        {% endfor %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table></div>
+</div>
+</details>
+{% endif %}
 <details class="wiki-section" open>
 <summary>Evidence mapping ledger — {{ source }} {% if evidence.claims %}<span class="chip">{{ evidence.claims|length }} claims</span>{% endif %}</summary>
 <div class="body">

@@ -323,7 +323,7 @@ def _wiki_composite_relationships(
         if not any(x.get("relationship")==relationship and x.get("target_node")==tid for x in links):
             links.append(candidate)
 
-    if table in {"reference_wiki_claims","reference_wiki_blocks","reference_wiki_topic_pages"}:
+    if table in {"reference_wiki_claims","reference_wiki_blocks","reference_wiki_topic_pages","reference_wiki_relations"}:
         columns=_columns(con,table)
         if "source_id" in columns and "page_id" in columns:
             row=con.execute(
@@ -336,6 +336,7 @@ def _wiki_composite_relationships(
                     "reference_wiki_claims":"FROM_REFERENCE_PAGE",
                     "reference_wiki_blocks":"IN_REFERENCE_PAGE",
                     "reference_wiki_topic_pages":"TOPIC_MEMBER_PAGE",
+                    "reference_wiki_relations":"FROM_REFERENCE_PAGE",
                 }[table]
                 target_node("reference_wiki_pages",{"source_id":row[0],"page_id":row[1]},rel)
 

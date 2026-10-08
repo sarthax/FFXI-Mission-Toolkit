@@ -127,14 +127,26 @@ def mediawiki_blocks(page_id: str, wikitext: str) -> list[dict]:
             paragraph.append(line)
     flush()
 
+    # Preserve links with the section in which they actually occur.  Typed relationship
+    # extraction relies on this source location, so do not inherit the parser's final section.
     seen = set()
-    for link in code.filter_wikilinks(recursive=True):
-        target = str(link.title).split("#", 1)[0].strip()
-        label = str(link.text or link.title).strip()
-        if not target or (target, label) in seen:
-            continue
-        seen.add((target, label))
-        emit("link", label, target=target, metadata={"hidden": True}, source_locator=f"wikilink:{target}")
+    for section in code.get_sections(include_headings=True, flat=True):
+        headings=section.filter_headings()
+        section_title=str(headings[0].title).strip() if headings else ""
+        for link in section.filter_wikilinks(recursive=True):
+            target = str(link.title).split("#", 1)[0].strip()
+            label = str(link.text or link.title).strip()
+            key=(section_title.casefold(),target.casefold(),label)
+            if not target or key in seen:
+                continue
+            seen.add(key)
+            ordinal += 1
+            blocks.append(_block(
+                page_id,ordinal,"link",label,target=target,
+                section_path=section_title or None,
+                metadata={"hidden":True},
+                source_locator=(f"section:{section_title}:wikilink:{target}" if section_title else f"wikilink:{target}"),
+            ))
     return blocks
 
 
