@@ -399,3 +399,4 @@ A future source-layout/bootstrap phase may retire root compatibility launchers a
 
 - Recorded-session console: independent identities for duplicate-client recordings; observed-time play/pause and speed; timeline seek; runtime replace/unload; independent observation comparison. See [Live Client resume guide](LIVE_CLIENT_BRIDGE.md).
 - Validation covers synthetic offline telemetry and real-browser console behavior. Native Windows/FFXI telemetry, calibrated zone overlays and writable development adapters remain unverified/incomplete.
+- Live Client now uses the shared fluid Workbench page and Client navigation. Relative traces preserve zone/instance discontinuities and spatial aspect ratio. [Native source research](LIVE_CLIENT_NATIVE_RESEARCH.md) documents framework interfaces and real-client validation prerequisites; it does not mark Windows integration complete.

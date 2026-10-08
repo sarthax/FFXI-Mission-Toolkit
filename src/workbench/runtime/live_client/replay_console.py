@@ -1,20 +1,22 @@
 """Standalone read-only replay browser console; mount explicitly with the registry router."""
 from __future__ import annotations
 
-from fastapi import APIRouter
+import re
+
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
 
-def create_replay_console_router() -> APIRouter:
+def create_replay_console_router(render=None) -> APIRouter:
     router = APIRouter(prefix="/live-client/replay", tags=["Live Client Replay"])
 
     @router.get("/console", response_class=HTMLResponse)
-    def console() -> str:
-        return """<!doctype html>
+    def console(request: Request):
+        html = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Live Client — Replay Console</title>
 <style>
-body{font:15px system-ui,sans-serif;max-width:1600px;margin:2rem auto;padding:0 1rem;color:#ddd;background:#161b22}
+body{font:15px system-ui,sans-serif;max-width:none;margin:2rem auto;padding:0 1rem;color:#ddd;background:#161b22}
 header{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 section{background:#212833;border:1px solid #414a58;border-radius:9px;padding:1rem;margin:1rem 0}
 select,button,input{background:#111923;color:#fff;padding:.5rem;border:1px solid #6b7788;border-radius:5px}
@@ -65,7 +67,8 @@ async function drawTrace(clientId,zoneId,instanceHint){
  if(!points.length){show('trace-status','No trace points in this zone.');return;}
  const minX=Math.min(...points.map(p=>p.x)),maxX=Math.max(...points.map(p=>p.x));
  const minZ=Math.min(...points.map(p=>p.z)),maxZ=Math.max(...points.map(p=>p.z));
- const coords=points.map(p=>({x:30+(p.x-minX)/Math.max(maxX-minX,1)*540,y:250-(p.z-minZ)/Math.max(maxZ-minZ,1)*220,segment:p.segment}));
+ const scale=Math.min(540/Math.max(maxX-minX,1),220/Math.max(maxZ-minZ,1));
+ const coords=points.map(p=>({x:300+(p.x-(minX+maxX)/2)*scale,y:140-(p.z-(minZ+maxZ)/2)*scale,segment:p.segment}));
  const ns='http://www.w3.org/2000/svg';
  const segments=new Map();
  for(const point of coords){if(!segments.has(point.segment))segments.set(point.segment,[]);segments.get(point.segment).push(point);}
@@ -81,7 +84,7 @@ async function refresh(){
  const prior=client.value,compare=document.getElementById('compare'),priorCompare=compare.value;
  client.replaceChildren(new Option('Choose recording',''));compare.replaceChildren(new Option('No comparison',''));
  for(const row of rows){
-  const label=(row.label||row.client_id)+(row.recorded_client_id?' · '+row.recorded_client_id:'');
+  const label=(row.label||row.client_id)+(row.recorded_client_id?' · '+row.recorded_client_id+' · '+row.client_id.slice(-8):'');
   client.add(new Option(label,row.client_id));compare.add(new Option(label,row.client_id));
  }
  client.value=rows.some(r=>r.client_id===prior)?prior:'';
@@ -157,5 +160,16 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});
 window.addEventListener('pagehide',pause);
 safeRefresh();
 </script></body></html>"""
+
+        if render is not None:
+            style = html.split("<style>", 1)[1].split("</style>", 1)[0]
+            # Scope the standalone console styles to its shared-shell container.
+            for selector in ("body", "header", "section", "select", "button", "input", "dl", "dt", "dd", "pre"):
+                style = re.sub(r"(?<![\w-])" + selector + r"(?=[,{])",
+                               ".live-client-console" if selector == "body" else ".live-client-console " + selector,
+                               style)
+            body = html.split("<body>", 1)[1].rsplit("</body>", 1)[0]
+            return render(request, style, body)
+        return html
 
     return router

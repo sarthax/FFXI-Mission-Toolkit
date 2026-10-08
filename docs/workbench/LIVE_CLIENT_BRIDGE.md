@@ -210,3 +210,10 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Added dedicated `Live Client Regression` CI with offline API/contracts and a real Chromium console test. Cloud testing uses synthetic telemetry; it does not establish compatibility with Windows or a running FFXI client.
 - PR #687 is incorporated into the replay integration branch with review corrections: exact trace bounds, independent zone visits and explicit instance discontinuities. Its remote merge status and GitHub CI remain unconfirmed until GitHub API access is available. Relative X/Z traces do not imply calibrated map transforms.
 - Remaining work: shared-shell integration, calibrated map overlays, verified native telemetry adapters and explicitly authorized development controls. No memory offsets, supported client builds or game write capabilities have been added by this milestone.
+
+## Shared Workbench page and native research follow-up
+
+- The host now renders the console inside `workbench_page.html`, with a fluid page width and a Client → Live Client navigation entry. The isolated router keeps its standalone rendering for contract tests.
+- Browser regression exercises the shared-shell page, duplicate identities, playback/pause/speed, seek, independent comparison, replacement, unload and segmented X/Z traces. Trace axes use a common scale and do not join zone/instance discontinuities.
+- Optional startup-source failures remain visible on the page; opening a recording is independent of Settings. Existing startup configuration remains supported rather than removing users' saved sources.
+- [Native source research](LIVE_CLIENT_NATIVE_RESEARCH.md) records immutable upstream revisions, licensing observations and requirements for genuine Windows/FFXI validation. No native build is declared supported and no game write adapter is enabled.

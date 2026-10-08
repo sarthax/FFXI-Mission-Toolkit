@@ -170,6 +170,7 @@ WORKSPACES = (
         "href": "/modelviewer",
         "sections": (
             {"label": "Client Overview", "href": "/clientoverview"},
+            {"label": "Live Client", "href": "/live-client/replay/console"},
             {"label": "Model Viewer", "href": "/modelviewer"},
             {"label": "DAT Inspector", "href": "/datinspector"},
             {"label": "Binary Inspector", "href": "/binaryinspector"},
@@ -253,6 +254,9 @@ def route_owner(path: str, method: str = "GET") -> dict:
             "role": "page",
             "disposition": "KEEP",
         }
+    if method == "GET" and path == "/live-client/replay/console":
+        return {"home": "Client", "section": "Live Client", "path": path,
+                "method": method, "role": "page", "disposition": "KEEP"}
     for row in route_owners():
         if row["method"] == method and row["pattern"].match(path):
             return {key: value for key, value in row.items() if key not in {"pattern", "parameter_count"}}

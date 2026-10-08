@@ -19,7 +19,18 @@ def test_recording_controls_in_browser(tmp_path):
     registry = ReplayRegistry()
     app = FastAPI()
     app.include_router(create_registry_router(registry))
-    app.include_router(create_replay_console_router())
+    from pathlib import Path
+    from fastapi.templating import Jinja2Templates
+    from workbench.gui_shell import build_shell_context
+    templates = Jinja2Templates(directory=str(Path(__file__).resolve().parents[1] / 'gui' / 'templates'))
+    templates.env.globals.update(current_theme=lambda: 'dark', backport_enabled=lambda: False)
+    templates.env.globals['shell_context'] = lambda request: build_shell_context(
+        path=request.url.path, method=request.method, settings={},
+        default_topaz_root='/missing', default_backport_root='/missing')
+    def render(request, style, body):
+        return templates.TemplateResponse(request, 'live_client_console.html',
+                                          {'console_style': style, 'console_body': body})
+    app.include_router(create_replay_console_router(render))
     app.include_router(create_recording_upload_router(tmp_path, registry))
     sock = socket.socket(); sock.bind(('127.0.0.1', 0))
     port = sock.getsockname()[1]
@@ -42,6 +53,7 @@ def test_recording_controls_in_browser(tmp_path):
             page = browser.new_page()
             errors = []; page.on('pageerror', lambda error: errors.append(str(error)))
             page.goto(f'http://127.0.0.1:{port}/live-client/replay/console')
+            playwright.expect(page.locator('#app-shell')).to_be_visible()
             page.locator('#recording').set_input_files({'name': 'walk.jsonl', 'mimeType': 'application/x-ndjson', 'buffer': content})
             page.locator('#open-recording').click()
             playwright.expect(page.locator('#state')).to_have_text('Frame 1 of 4')
