@@ -1,10 +1,15 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Capture / Video Alignment{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}capture-alignment-page{% endblock %}
-{% block content %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_class %}capture-alignment-page{% endblock %}
+{% block page_back %}<a class="chip" href="/captures/{{ cap.capture_id }}">&larr; Capture</a>{% endblock %}
+{% block page_heading %}Capture / Video Alignment{% endblock %}
+{% block page_identity %}<span class="chip mono">#{{ cap.capture_id }}</span>{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Anchors, correlations, and evidence can be rebuilt or edited</span>{% endblock %}
+{% block page_actions %}{% if cap.video_url %}<a class="chip" href="{{ cap.video_url }}" target="_blank" rel="noopener">Open video</a>{% endif %}{% if cap.ocr_run_id %}<a class="chip" href="/ocr/{{ cap.ocr_run_id }}">OCR run</a>{% endif %}{% endblock %}
+{% block page_help %}Align video time to one explicit capture clock using landmarks. Logger clocks remain independent until anchored; repeated opcodes stay ambiguous rather than being auto-matched. Derived aligned times remain estimates, not observed truth.{% endblock %}
+{% block page_body %}
 <style>
-main.capture-alignment-page{padding:8px 10px 24px}
 .capture-alignment-page h2{font-size:14px;margin:9px 0 5px}
 .capture-alignment-page form[style*="grid"]{gap:7px!important}
 .capture-alignment-page .table-wrap{margin-top:5px}
@@ -12,15 +17,6 @@ main.capture-alignment-page{padding:8px 10px 24px}
 .align-section>summary{padding:7px 9px;cursor:pointer;font-weight:600}
 .align-section>.body{padding:0 8px 8px}
 </style>
-<div class="dense-toolbar">
-  <a class="chip" href="/captures/{{ cap.capture_id }}">&larr; Capture</a>
-  <strong>Capture / Video Alignment</strong>
-  <span class="chip mono">#{{ cap.capture_id }}</span>
-  <span class="sp"></span>
-  {% if cap.video_url %}<a class="chip" href="{{ cap.video_url }}" target="_blank" rel="noopener">Open video</a>{% endif %}
-  {% if cap.ocr_run_id %}<a class="chip" href="/ocr/{{ cap.ocr_run_id }}">OCR run</a>{% endif %}
-  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:720px">Align video time to one explicit capture clock using landmarks. Logger clocks remain independent until anchored; repeated opcodes stay ambiguous rather than being auto-matched.</div></details>
-</div>
 {% if error %}<div class="warn">{{ error }}</div>{% endif %}
 
 {% if not cap.video_url %}
