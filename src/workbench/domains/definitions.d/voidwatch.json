@@ -1,0 +1,34 @@
+{
+  "voidwatch": {
+    "label": "Voidwatch",
+    "archetype": "system.voidwatch",
+    "summary": "Voidwatch notorious monsters: Planar Rift entry, Riftworn Pyxis chests, abyssite key items and voidstones, per-NM mob data and weaknesses. The tracker below lists all 71 wiki-roster NMs with build status and open gaps.",
+    "wiki": {
+      "categories": ["Voidwatch", "Voidwatch Notorious Monsters", "Voidwatch Quests", "Voidwatch Key Items", "Voidwatch NPCs", "Voidwatch Rewards"],
+      "templates": [],
+      "headings": ["Strategy", "Drops", "Weakness", "Requirements"]
+    },
+    "children": [],
+    "entities": [
+      {
+        "kind": "Rift / Pyxis NPCs",
+        "fields": ["zone id", "npc id", "position", "rift count per zone", "params"],
+        "server_globs": ["sql/slices/voidwatch-vwnm/*.sql", "scripts/zones/*/npcs/Planar_Rift.lua", "scripts/zones/*/npcs/Riftworn_Pyxis.lua"],
+        "edit": "/entity"
+      },
+      {
+        "kind": "VW NM mobs",
+        "fields": ["mob id", "name", "pool/group", "skills", "spells", "weakness/stagger", "drops"],
+        "server_globs": ["scripts/zones/*/mobs/*.lua", "sql/mob_groups.sql", "sql/mob_pools.sql"],
+        "edit": "/zoneplot2"
+      },
+      {
+        "kind": "Abyssite / voidstone key items",
+        "fields": ["key item id", "name", "tier", "path"],
+        "server_globs": ["scripts/globals/keyitems.lua"],
+        "edit": "/keyitems"
+      }
+    ],
+    "compare": "Compare each built NM's zone, rift positions and abyssite KI against the tracker, then against captures and the wiki roster. Wiki content is reference-only."
+  }
+}

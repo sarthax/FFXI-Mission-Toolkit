@@ -6,6 +6,34 @@
 {% if d.children %}<p>Sub-areas: {% for c in d.children %}<a id="{{ slug(c) }}"></a><span class="chip">{{ c }}</span> {% endfor %}
 <span class="muted">(per-area data is not split out yet)</span></p>{% endif %}
 
+{% if d.archetype == "system.voidwatch" %}
+<section id="vw-tracker">
+<h2>NM tracker <span class="chip">reference</span> <a class="chip" href="/domains/voidwatch/tracker.json" target="_blank">json</a></h2>
+<div id="vw-sum" class="muted"></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">
+<input type="search" id="vw-q" placeholder="Search NM or zone" style="flex:1;min-width:180px">
+<select id="vw-st"><option value="">All status</option><option value="built">Built</option><option value="not built">Not built</option></select>
+<select id="vw-pa"><option value="">All paths</option><option>Crimson</option><option>Indigo</option><option>Jade</option><option>Ashen</option><option>White</option></select>
+</div>
+<div class="table-wrap"><table><thead><tr><th>NM</th><th>Zone (id)</th><th>Rifts x, y, z</th><th>Abyssite KI</th><th>Status</th><th>Gaps</th></tr></thead><tbody id="vw-tb"></tbody></table></div>
+<p class="muted">Voidstone KIs are ids 1539-1544; which grade each NM needs is not yet recorded. Rift Y is the DB value (inverted axis). Source data: data/voidwatch/nm_tracker.json.</p>
+</section>
+<script>
+(function(){
+var D=[],q=document.getElementById('vw-q'),st=document.getElementById('vw-st'),pa=document.getElementById('vw-pa'),tb=document.getElementById('vw-tb');
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function draw(){var t=q.value.toLowerCase();
+ var rows=D.filter(function(x){return (!t||(x.name+x.zone).toLowerCase().indexOf(t)>=0)&&(!st.value||x.status===st.value)&&(!pa.value||x.path===pa.value);});
+ tb.innerHTML=rows.map(function(x){var rf=x.rifts.length?x.rifts.map(function(p){return '('+p[1]+', '+p[2]+', '+p[3]+')';}).join('<br>'):'<span class="muted">none in DB</span>';
+  return '<tr><td><b>'+esc(x.name)+'</b></td><td>'+esc(x.zone)+' ('+(x.zone_id==null?'?':x.zone_id)+')</td><td class="mono">'+rf+'</td><td>'+(x.ki_id?esc(x.ki_name)+' ('+x.ki_id+')':'<span class="muted">unknown</span>')+'</td><td><b>'+x.status+'</b></td><td class="muted" style="max-width:420px">'+esc(x.gaps)+'</td></tr>';}).join('');
+ var b=D.filter(function(x){return x.status==='built';}).length;
+ document.getElementById('vw-sum').textContent=D.length+' NMs: '+b+' built, '+(D.length-b)+' not built';}
+fetch('/domains/voidwatch/tracker.json').then(function(r){return r.json();}).then(function(d){D=d;draw();});
+[q,st,pa].forEach(function(e){e.addEventListener('input',draw);});
+})();
+</script>
+{% endif %}
+
 {% if d.archetype == "system.salvage" %}
 <style>
 #salvage-reconstruction-workspace{margin:14px 0 24px}.sr-toolbar{display:flex;gap:8px;align-items:end;flex-wrap:wrap;padding:10px;border:1px solid var(--border,#444);border-radius:8px}.sr-toolbar label{display:grid;gap:4px}.sr-toolbar input{min-width:150px}.sr-grid{display:grid;grid-template-columns:minmax(220px,.75fr) minmax(420px,1.6fr) minmax(300px,1fr);gap:10px;margin-top:10px}.sr-pane{border:1px solid var(--border,#444);border-radius:8px;padding:10px;min-width:0}.sr-pane h3{margin:0 0 8px}.sr-stack{display:grid;gap:8px}.sr-ready{display:flex;justify-content:space-between;gap:8px;padding:7px 8px;border:1px solid var(--border,#444);border-radius:6px}.sr-ready span{font-family:monospace}.sr-ready-for-review span,.sr-ok{font-weight:700}.sr-card{padding:8px;border:1px solid var(--border,#444);border-radius:6px;margin:6px 0}.sr-svg{width:100%;min-height:360px;border:1px solid var(--border,#444);border-radius:6px}.sr-map-bg{fill:transparent}.sr-player-path{fill:none;stroke:currentColor;stroke-width:2;opacity:.7}.sr-region rect{fill:none;stroke:currentColor;stroke-width:1.5;stroke-dasharray:8 5;opacity:.45}.sr-region text{fill:currentColor;font-size:11px;opacity:.8}.sr-entity-mark{fill:currentColor}.sr-door-mark{fill:currentColor;stroke:currentColor}.sr-interactive-mark{fill:transparent;stroke:currentColor;stroke-width:2}.sr-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.9em;margin-top:5px}.sr-empty{padding:12px}.sr-tabs details{border-top:1px solid var(--border,#444);padding:7px 0}.sr-tabs details:first-child{border-top:0}.sr-tabs summary{cursor:pointer;font-weight:700}.sr-tabs .table-wrap{max-height:360px;overflow:auto}.sr-status{margin-left:auto}.sr-handoffs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}@media(max-width:1100px){.sr-grid{grid-template-columns:1fr}.sr-svg{min-height:300px}}

@@ -10516,7 +10516,7 @@ def researchgaps_page(request: Request):
 
 
 def _domain_roots():
-    import build_lsb_index
+    from workbench.devtools.indexing import build_lsb_index
     return {"topaz": settings_mod.get_topaz_root(), "dsp": settings_mod.get_dsp_root(), "lsb": build_lsb_index.LSB_ROOT}
 
 
@@ -10530,6 +10530,14 @@ def domains_index_page(request: Request):
                      "wiki_pages": sum(dsvc.wiki_counts(d["wiki"]["categories"]).values()),
                      "status": dsvc.domain_status(d, res), "total": len(res), "editors": sum(1 for e in res if e["edit"])})
     return templates.TemplateResponse(request, "domains_index.html", {"request": request, "rows": rows, "roots": list(roots)})
+
+
+@app.get("/domains/voidwatch/tracker.json")
+def voidwatch_tracker_json():
+    f = REPO_ROOT / "data" / "voidwatch" / "nm_tracker.json"
+    if not f.exists():
+        raise HTTPException(status_code=404, detail="data/voidwatch/nm_tracker.json missing")
+    return Response(f.read_text(encoding="utf-8"), media_type="application/json")
 
 
 @app.get("/domains/{key}", response_class=HTMLResponse)
