@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 
 from workbench.core import graph as workbench_graph
 from workbench.core.services import wiki_evidence_graph
+from workbench.devtools.features import trace as feature_trace
 from workbench.devtools.reference import wiki_document, wiki_evidence
 
 
@@ -83,6 +84,15 @@ def main():
         assert confidence=="INFERRED",edges
         assert '"authority": "REFERENCE_ONLY"' in metadata,metadata
         assert '"mapping_method": "MULTILINGUAL_TOPIC_ALIAS"' in metadata,metadata
+
+        # Reverse discovery is traversal, not a fabricated reverse semantic edge: starting from
+        # the implementation entity reaches the incoming REFERENCE_ONLY wiki claim.
+        traced=feature_trace.trace(graph,"entity:npcid:1001",depth=2,direction="both")
+        wiki_edges=[e for e in traced["edges"] if str(e.get("relationship_id") or "").startswith("wiki-reference:")]
+        assert wiki_edges,wiki_edges
+        assert wiki_edges[0]["traversed_direction"]=="in",wiki_edges[0]
+        claim_nodes=[n for n in traced["nodes"] if n.get("node_id","").startswith("wiki-claim:")]
+        assert claim_nodes, traced["nodes"]
         graph.close()
         con.close()
 
