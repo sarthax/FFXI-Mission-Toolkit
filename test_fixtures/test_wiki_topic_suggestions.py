@@ -25,6 +25,7 @@ def main():
     assert suggestions[0]["review_only"] is True
     assert wiki_document.page_topic(db,"WikiWikiJP","jp1") is None
     assert wiki_document.topic_review_queue(db,source_id="WikiWikiJP",limit=1,offset=1)==[]
+    assert wiki_document.topic_review_queue(db,source_id="WikiWikiJP",matching_only=True)
     queue=wiki_document.topic_review_queue(db,source_id="WikiWikiJP")
     assert len(queue)==1 and len(queue[0]["pending"])==1 and queue[0]["dismissed"]==[],queue
     wiki_document.dismiss_topic_suggestion(db,source_id="WikiWikiJP",page_id="jp1",

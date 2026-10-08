@@ -5586,13 +5586,11 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
     ]
     review_page = max(1, min(review_page, 10000))
     review_offset = (review_page - 1) * 50
-    review_queue = (wiki_document.topic_review_queue(con, source_id=source, limit=50, offset=review_offset)
-                    if tab == "review" and source != "all" else [])
-    review_has_more = bool(tab == "review" and source != "all" and con.execute("""
-      SELECT 1 FROM reference_wiki_pages w WHERE w.source_id=?
-      AND NOT EXISTS (SELECT 1 FROM reference_wiki_topic_pages p
-                      WHERE p.source_id=w.source_id AND p.page_id=w.page_id)
-      ORDER BY w.title,w.page_id LIMIT 1 OFFSET ?""", (source,review_offset+50)).fetchone())
+    review_window = (wiki_document.topic_review_queue(
+        con, source_id=source, limit=51, offset=review_offset, matching_only=True)
+        if tab == "review" and source != "all" else [])
+    review_has_more = len(review_window) > 50
+    review_queue = review_window[:50]
     if tab == "review" and review_status in ("pending", "dismissed"):
         review_queue = [entry for entry in review_queue if entry[review_status]]
     con.close()
