@@ -13,10 +13,7 @@ auction_house_presets.html | legacy page pending archetype migration
 auction_house_reward_history.html | legacy page pending archetype migration
 auction_house_seeder.html | legacy page pending archetype migration
 capture_alignment.html | legacy page pending archetype migration
-capture_bulk_ingest.html | legacy page pending archetype migration
-capture_bulk_job.html | legacy page pending archetype migration
 capture_detail.html | legacy page pending archetype migration
-capture_metadata_import.html | legacy page pending archetype migration
 capture_packet_detail.html | legacy page pending archetype migration
 capture_packets.html | legacy page pending archetype migration
 capture_query.html | legacy page pending archetype migration

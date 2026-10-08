@@ -1,6 +1,13 @@
-{% extends "base.html" %}
-{% block content %}
-<h1>Capture source information - spreadsheet</h1>
+{% extends "workbench_page.html" %}
+{% block title %}Capture Source Information — Spreadsheet{% endblock %}
+{% block page_archetype %}editor{% endblock %}
+{% block page_width %}reading{% endblock %}
+{% block page_back %}<a class="chip" href="/captures">&larr; Captures</a>{% endblock %}
+{% block page_heading %}Capture source information — spreadsheet{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Validate is read-only; Apply saves metadata</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/captures/review?kind=manifest_link">Review missing source info</a>{% endblock %}
+{% block page_help %}Use the pre-filled or blank CSV template to validate source metadata in bulk. Validate mode saves nothing; Apply mode writes accepted rows, with overwrite requiring explicit opt-in.{% endblock %}
+{% block page_body %}
 <p class="muted">Some captures have no source information (who posted them, when, the video link, the type). Fill these in with a spreadsheet instead of one at a time.
 {{ npend }} capture(s) are waiting for it. <a href="/captures/review?kind=manifest_link">See the list</a>.</p>
 

@@ -1,7 +1,12 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Bulk ingest job — Mission Toolkit{% endblock %}
-{% block content %}
-<h1>Bulk ingest job {{ job.id }}</h1>
+{% block page_archetype %}detail{% endblock %}
+{% block page_back %}<a class="chip" href="/captures/bulk-ingest">&larr; Bulk ingest</a>{% endblock %}
+{% block page_heading %}Bulk ingest job {{ job.id }}{% endblock %}
+{% block page_identity %}<span class="chip">{{ job.state }}</span><span class="muted mono">{{ job.root }}</span>{% endblock %}
+{% block page_status %}{% if job.state == 'running' %}<span class="wb-write-badge">Active ingest job</span>{% else %}<span class="wb-readonly-badge">Job result</span>{% endif %}{% endblock %}
+{% block page_help %}Shows progress and final outcomes for one bulk-ingest job. Cancellation, when available, stops after the current capture rather than interrupting an in-progress capture write.{% endblock %}
+{% block page_body %}
 {% if job.state == 'running' %}<meta http-equiv="refresh" content="3">{% endif %}
 <p><b>{{ job.state }}</b> · <code>{{ job.root }}</code> · mode {{ job.mode }} · content type {{ job.content_type }}{% if job.override %} · disk warning overridden{% endif %}</p>
 <p>{% for k,v in summary.items() %}{{ k }}: {{ v }} · {% endfor %}</p>
@@ -17,5 +22,4 @@
 {% for it in job['items'] %}<tr><td><code>{{ it.path }}</code></td><td>{{ it.status }}</td>
 <td>{% if it.capture_id %}<a href="/captures/{{ it.capture_id }}">#{{ it.capture_id }}</a>{% endif %}</td><td>{{ it.secs or '' }}</td><td class="muted">{{ it.error or it.reason }}</td></tr>{% endfor %}
 </tbody></table>
-<p><a href="/captures/bulk-ingest">Back</a></p>
 {% endblock %}

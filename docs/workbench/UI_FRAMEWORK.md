@@ -94,3 +94,6 @@ Completed workspace migrations:
 - **Capture Add Files** — Capture evidence upload/ingestion surface with individual-file and directory-preserving workflows (Editor, write boundary explicit).
 - **New Capture** — Capture metadata/classification creation form (Editor, reading width).
 - **Capture Source Evidence** — Exact source locator/hash/row provenance dossier (Detail, read-only).
+- **Capture Bulk Ingest** — Directory scan/plan/run workflow with explicit scan-versus-ingest boundary and disk safeguards (Editor).
+- **Capture Bulk Ingest Job** — Active/completed bulk-ingest progress, failure, source-sheet, and cancellation detail (Detail).
+- **Capture Metadata Import** — CSV validation/apply workflow for capture source information with explicit overwrite control (Editor, reading width).
