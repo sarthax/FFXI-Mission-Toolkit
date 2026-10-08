@@ -98,3 +98,10 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Exposes observed client indices separately from optional server IDs, entity kinds, names, XYZ/heading, and source timestamps.
 - `tests/test_live_client_viewer.py`: selected-instance, wrong-client, wrong-zone, wrong-instance, and zone-only filtering regressions.
 - Next: optional reader/API entry point and viewer wiring through the shared shell, coordinating with active GUI refactor. CI and Windows runtime compatibility remain separate validation steps.
+
+
+## 2026-10-07 opt-in GET-only projection router
+- `src/workbench/runtime/live_client/readonly_api.py`: `create_readonly_router(provider)` exposes only `GET /live-client/read-only/projection`. The host must explicitly register the router and provide previously decoded telemetry; there is no auto-registration, ingestion, discovery or write endpoint.
+- Query parameters select client/zone/optional instance; wrong-provider client identity fails closed with HTTP 409, missing observations return 404, and invalid query values are rejected.
+- `tests/test_live_client_readonly_api.py` checks projection response, missing client, cross-client guard, query validation and GET-only behavior.
+- **Not GUI-integrated:** this is a registration-ready backend seam, not a running toolkit route. Next: opt-in GUI registration with a user-selected feed, test against actual template/viewer conventions, then overlay wiring. CI must validate current HEAD first.
