@@ -1,10 +1,16 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Packet Viewer{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}wide-workbench capture-packet-page{% endblock %}
-{% block content %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_class %}wide-workbench capture-packet-page{% endblock %}
+{% block page_width %}wide{% endblock %}
+{% block page_back %}<a class="chip" href="/captures/{{ capture_id }}/packets">&larr; Packet Browser</a>{% endblock %}
+{% block page_heading %}Packet Viewer{% endblock %}
+{% block page_identity %}<span class="chip mono">seq {{ packet.seq }}</span><span class="chip mono">#{{ capture_id }}</span><span class="muted">{{ cap.capture_label }}</span>{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Contextual packet evidence</span>{% endblock %}
+{% block page_actions %}{% if prev_packet %}<a class="chip" href="/captures/{{ capture_id }}/packets/{{ prev_packet.seq }}">&larr; Previous ({{ prev_packet.seq }})</a>{% endif %}{% if next_packet %}<a class="chip" href="/captures/{{ capture_id }}/packets/{{ next_packet.seq }}">Next ({{ next_packet.seq }}) &rarr;</a>{% endif %}{% endblock %}
+{% block page_help %}Inspect decoded fields against exact raw byte spans while preserving neighboring packet context, source provenance, and cross-source correlations. Unclaimed and overlapping bytes remain explicit rather than receiving guessed meanings.{% endblock %}
+{% block page_body %}
 <style>
-main.capture-packet-page{padding:8px 10px 24px}
 .packet-breadcrumb{font-size:12px;color:var(--muted);margin-bottom:4px}
 .packet-titlebar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:6px;padding:5px 7px;border:1px solid var(--border);border-radius:7px;background:var(--surface)}
 .packet-titlebar h1{margin:0;font-size:16px}
@@ -52,32 +58,13 @@ main.capture-packet-page{padding:8px 10px 24px}
 @media(max-width:1320px){.capture-packet-layout{grid-template-columns:1fr}.packet-rail{position:static}.packet-main-grid{grid-template-columns:1fr}.packet-rail .rail-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}.context-row{grid-template-columns:1fr}}
 </style>
 
-<div class="packet-breadcrumb">
-  <a class="inline" href="/captures">Captures</a> &rsaquo;
-  <a class="inline" href="/captures/{{ capture_id }}">{{ cap.capture_label }}</a> &rsaquo;
-  <a class="inline" href="/captures/{{ capture_id }}/packets">Packet Browser</a> &rsaquo;
-  Packet Viewer
+<div class="packet-chips">
+  <span class="packet-chip {{ 'in' if packet.direction == 'incoming' else 'out' }}">{{ packet.direction }}{% if packet.pd_direction %} ({{ packet.pd_direction }}){% endif %}</span>
+  <span class="packet-chip mono">{{ packet.opcode }}</span>
+  {% if layout %}<span class="packet-chip">{{ layout.length }} bytes</span>{% elif packet.packet_size is not none %}<span class="packet-chip">{{ packet.packet_size }} bytes</span>{% endif %}
+  {% if packet.ts %}<span class="packet-chip mono">{{ packet.ts }}</span>{% endif %}
+  {% if layout %}<span class="packet-chip{% if layout.coverage_pct == 100 %} good{% endif %}">coverage {{ layout.coverage_pct }}%</span>{% endif %}
 </div>
-
-<div class="packet-titlebar dense-toolbar">
-  <div>
-    <h1>Packet Viewer <span class="chip mono">seq {{ packet.seq }}</span></h1>
-    <div class="muted">{{ cap.capture_label }} &mdash; capture #{{ capture_id }}</div>
-    <div class="packet-chips">
-      <span class="packet-chip {{ 'in' if packet.direction == 'incoming' else 'out' }}">{{ packet.direction }}{% if packet.pd_direction %} ({{ packet.pd_direction }}){% endif %}</span>
-      <span class="packet-chip mono">{{ packet.opcode }}</span>
-      {% if layout %}<span class="packet-chip">{{ layout.length }} bytes</span>{% elif packet.packet_size is not none %}<span class="packet-chip">{{ packet.packet_size }} bytes</span>{% endif %}
-      {% if packet.ts %}<span class="packet-chip mono">{{ packet.ts }}</span>{% endif %}
-      {% if layout %}<span class="packet-chip{% if layout.coverage_pct == 100 %} good{% endif %}">coverage {{ layout.coverage_pct }}%</span>{% endif %}
-    </div>
-  </div>
-  <div class="nav-actions">
-    <a class="chip" href="/captures/{{ capture_id }}/packets">&larr; Packet Browser</a>
-    {% if prev_packet %}<a class="chip" href="/captures/{{ capture_id }}/packets/{{ prev_packet.seq }}">&larr; Previous ({{ prev_packet.seq }})</a>{% endif %}
-    {% if next_packet %}<a class="chip" href="/captures/{{ capture_id }}/packets/{{ next_packet.seq }}">Next ({{ next_packet.seq }}) &rarr;</a>{% endif %}
-  </div>
-</div>
-
 <div class="capture-packet-layout">
   <aside class="packet-rail">
     <h3>Session packets</h3>
