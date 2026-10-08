@@ -12,5 +12,4 @@ auction_house_listing_manager.html | legacy page pending archetype migration
 auction_house_presets.html | legacy page pending archetype migration
 auction_house_reward_history.html | legacy page pending archetype migration
 auction_house_seeder.html | legacy page pending archetype migration
-nyzul_plot.html | legacy page pending archetype migration
 synth.html | legacy page pending archetype migration
