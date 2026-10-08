@@ -80,7 +80,7 @@ document.getElementById('open-recording').addEventListener('click',async()=>{
  const button=document.getElementById('open-recording');button.disabled=true;
  try{
   const form=new FormData();form.append('recording',file);
-  const response=await fetch('/live-client/upload-recording',{method:'POST',body:form});
+  const response=await fetch('/live-client/upload-recording?open_session=true',{method:'POST',body:form});
   const data=await response.json();
   if(!response.ok)throw Error(data.detail||'Unable to open recording');
   status.textContent='Loaded '+data.frames+' frames for '+data.client_id;
