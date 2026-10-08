@@ -135,3 +135,11 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Routes remain GET-only. There is **no client process attachment, automatic discovery, user-upload ingest or memory write**, and the console initially says no replay sessions registered.
 - `tests/test_live_client_host_registration.py` verifies registration and the absence of non-GET methods on the new endpoints.
 - Main toolkit navigation link and controlled replay-import workflow are still pending. Do not imply player position is live without a connected Windows adapter.
+
+
+## 2026-10-08 opt-in offline replay bootstrap
+- `src/workbench/runtime/live_client/bootstrap.py` introduces explicit, validated startup initialization. Set both environment variables `FFXI_LIVE_REPLAY_FILE` (path to a UTF-8 JSON-lines v1 telemetry recording) and `FFXI_LIVE_REPLAY_CLIENT` (exact client ID in those frames) **before starting the toolkit**.
+- Startup loads and validates all frames, registers the recording and advances one frame so `/live-client/replay/console` can show its first player observation. The console still has no browser-controlled advancing; remaining frames stay ready for future controlled replay operations.
+- If neither variable is set, registration is disabled. Partial or invalid configuration raises an error rather than allowing an ambiguous or malformed data source.
+- `tests/test_live_client_bootstrap.py` covers disabled mode, partial configuration rejection, first-frame initialization, duplicate registration and invalid recording isolation.
+- The source is offline recording data, **not a real FFXI connection**. No GUI navigation link, Windows reader or game-memory writes have been added.
