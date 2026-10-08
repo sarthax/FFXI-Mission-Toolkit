@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Capture Data Explorer{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}capture-query-page{% endblock %}
+{% block page_archetype %}browser{% endblock %}
+{% block page_class %}capture-query-page{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -29,9 +29,13 @@
   {% endif %}
 {% endmacro %}
 
-{% block content %}
+{% block page_back %}<a class="chip" href="/captures">&larr; Captures</a>{% endblock %}
+{% block page_heading %}Capture Data Explorer{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Normalized dataset inspection</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/captures/search">Evidence Search</a>{% endblock %}
+{% block page_help %}Deep inspection of normalized capture datasets. The main result view surfaces useful fields first while every row retains its complete physical database record under Raw row / provenance.{% endblock %}
+{% block page_body %}
 <style>
-main.capture-query-page{padding:8px 10px 24px}
 .data-explorer{display:grid;grid-template-columns:245px minmax(0,1fr);gap:8px;align-items:start}
 .dataset-nav{position:sticky;top:calc(var(--shell-h) + 8px);max-height:calc(100vh - var(--shell-h) - 22px);overflow:auto}
 .dataset-group{margin-bottom:8px}
@@ -59,20 +63,6 @@ main.capture-query-page{padding:8px 10px 24px}
   .raw-grid{grid-template-columns:1fr}
 }
 </style>
-
-<div class="dense-toolbar">
-  <a class="chip" href="/captures">&larr; Captures</a>
-  <strong>Capture Data Explorer</strong>
-  <a class="chip" href="/captures/search">Evidence Search</a>
-  <span class="sp"></span>
-  <details class="dense-card" style="margin:0;padding:0 6px">
-    <summary>About</summary>
-    <div class="muted" style="padding:6px 2px;max-width:700px">
-      Deep inspection of normalized capture datasets. The main result view shows useful fields first;
-      every row keeps its complete physical database record under Raw row / provenance.
-    </div>
-  </details>
-</div>
 
 <div class="data-explorer">
   <aside class="dense-panel dataset-nav">
@@ -103,7 +93,7 @@ main.capture-query-page{padding:8px 10px 24px}
       <a class="chip" href="/captures/query.csv?table={{ table|urlencode }}&capture_id={{ capture_id|urlencode }}&q={{ q|urlencode }}">Export full matching CSV</a>
     </div>
 
-    <form class="search dense-toolbar" method="get" action="/captures/query" style="flex-wrap:wrap;margin:6px 0">
+    <form class="search wb-filter-row" method="get" action="/captures/query" style="flex-wrap:wrap;margin:6px 0">
       <input type="hidden" name="table" value="{{ table }}">
       <input type="text" name="capture_id" value="{{ capture_id }}" placeholder="capture id (blank = all)" style="width:170px">
       <input type="text" name="q" value="{{ q }}" placeholder="ID exact or name/text substring">
