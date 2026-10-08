@@ -5559,6 +5559,13 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
                         matches=[m for m in matches if m.get("target_domain") in allowed_domains]
                     identities={(m.get("target_domain"),m.get("target_table"),str(m.get("target_key")))
                                 for m in matches if m.get("target_table") and m.get("target_key") is not None}
+                    link["entity_candidates"]=[
+                        {"domain":m.get("target_domain"),"table":m.get("target_table"),
+                         "key":str(m.get("target_key")),"label":m.get("target_label") or "",
+                         "method":m.get("mapping_method") or "UNKNOWN"}
+                        for m in matches if m.get("target_table") and m.get("target_key") is not None
+                    ][:10]
+                    link["entity_candidate_count"]=len(identities)
                     if len(identities)==1:
                         domain,table,key=next(iter(identities))
                         link["entity_resolution"]="UNIQUE_ENTITY_HINT"
