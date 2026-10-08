@@ -476,7 +476,7 @@ def suggest_topic_links(con, *, source_id: str, page_id: str, limit: int = 20) -
     return list(topics.values())[:max(0,min(limit,100))]
 
 
-def topic_review_queue(con, *, source_id: str, limit: int = 50) -> list[dict]:
+def topic_review_queue(con, *, source_id: str, limit: int = 50, offset: int = 0) -> list[dict]:
     """Read-only bounded queue of pages with pending or dismissed topic suggestions.
 
     Dismissed entries remain visible for audit but never reappear as pending.
@@ -490,8 +490,8 @@ def topic_review_queue(con, *, source_id: str, limit: int = 50) -> list[dict]:
           SELECT 1 FROM reference_wiki_topic_pages p
           WHERE p.source_id=w.source_id AND p.page_id=w.page_id
         )
-      ORDER BY w.title,w.page_id LIMIT ?
-    """,(source_id,max(0,min(limit,200)))).fetchall()
+      ORDER BY w.title,w.page_id LIMIT ? OFFSET ?
+    """,(source_id,max(0,min(limit,200)),max(0,offset))).fetchall()
     queue=[]
     for page_id,title in pages:
         pending=suggest_topic_links(con,source_id=source_id,page_id=str(page_id))
