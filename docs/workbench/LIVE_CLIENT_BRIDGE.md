@@ -105,3 +105,11 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Query parameters select client/zone/optional instance; wrong-provider client identity fails closed with HTTP 409, missing observations return 404, and invalid query values are rejected.
 - `tests/test_live_client_readonly_api.py` checks projection response, missing client, cross-client guard, query validation and GET-only behavior.
 - **Not GUI-integrated:** this is a registration-ready backend seam, not a running toolkit route. Next: opt-in GUI registration with a user-selected feed, test against actual template/viewer conventions, then overlay wiring. CI must validate current HEAD first.
+
+
+## 2026-10-07 multi-client replay selection foundation
+- Added `src/workbench/runtime/live_client/registry.py`: explicit in-memory replay registration, sorted client listing, selected-client frame lookup, cursor advancement, removal and read-only status summaries.
+- Multiple replay clients advance independently. Cross-client registration and duplicate IDs fail closed. Registry is not OS client discovery and does not attach to FFXI.
+- Added `tests/test_live_client_registry.py` for independent cursors, selection, removal, and invalid registration.
+- No changes to global routing or GUI; wire this registry into the optional GET-only API with opt-in viewer presentation in a later slice.
+- Current slice still requires CI verification.
