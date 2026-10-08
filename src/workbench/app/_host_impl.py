@@ -5544,6 +5544,19 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
                     # Toolkit entity hints are read-only and require exactly one
                     # resolved client/server reference. Do not create graph edges.
                     matches=wiki_evidence.resolve_subject(con,link.get("lookup_title") or "")
+                    # Only named source fields with a reliable target domain may
+                    # propose a typed identity; conditions are prose, not entities.
+                    allowed_domains={
+                        "DROPS":{"item","key_item"},
+                        "REWARDS":{"item","key_item"},
+                        "LOCATION":{"zone"},
+                        "NM_IDENTITY":{"entity"},
+                    }.get(candidate.get("field_type"))
+                    if allowed_domains is None:
+                        matches=[]
+                        link["entity_resolution"]="NOT_APPLICABLE"
+                    else:
+                        matches=[m for m in matches if m.get("target_domain") in allowed_domains]
                     identities={(m.get("target_domain"),m.get("target_table"),str(m.get("target_key")))
                                 for m in matches if m.get("target_table") and m.get("target_key") is not None}
                     if len(identities)==1:
@@ -5551,7 +5564,7 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
                         link["entity_resolution"]="UNIQUE_ENTITY_HINT"
                         link["entity_target"]={"domain":domain,"table":table,"key":key}
                     else:
-                        link["entity_resolution"]="AMBIGUOUS" if identities else "UNRESOLVED"
+                        link["entity_resolution"]=("AMBIGUOUS" if identities else "UNRESOLVED") if allowed_domains is not None else "NOT_APPLICABLE"
                         link["entity_target"]=None
     topic = wiki_document.page_topic(con, source, page_id)
     degraded = any((b.get("metadata") or {}).get("degraded") for b in visible_blocks)
