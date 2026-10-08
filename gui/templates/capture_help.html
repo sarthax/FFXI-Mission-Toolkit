@@ -1,24 +1,19 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Capture Help — Mission Toolkit{% endblock %}
-{% block main_class %}capture-help-page{% endblock %}
-
-{% block content %}
+{% block page_archetype %}detail{% endblock %}
+{% block page_class %}capture-help-page{% endblock %}
+{% block page_width %}wide{% endblock %}
+{% block page_back %}<a class="chip" href="/captures">&larr; Captures</a>{% endblock %}
+{% block page_heading %}Capture Ingestion Help{% endblock %}
+{% block page_actions %}<a class="chip" href="/captures/new">New capture</a><a class="chip" href="/captures/search">Search captures</a>{% endblock %}
+{% block page_help %}Reference for supported capture/logging formats, intentionally deduplicated secondary files, network evidence handling, and known adapter gaps. Evidence stays source-specific and correlated rather than silently collapsed.{% endblock %}
+{% block page_body %}
 <style>
-main.capture-help-page{max-width:1200px}
 .capture-help-section{border:1px solid var(--border);border-radius:7px;background:var(--surface);margin:7px 0;overflow:hidden}
 .capture-help-section>summary{padding:7px 9px;cursor:pointer;font-weight:600}
 .capture-help-section>.body{padding:0 9px 9px}
 .capture-help-section .table-wrap{margin-top:5px}
 </style>
-<div class="dense-toolbar">
-  <a class="chip" href="/captures">&larr; Captures</a>
-  <strong>Capture Ingestion Help</strong>
-  <span class="sp"></span>
-  <a class="chip" href="/captures/new">New capture</a>
-  <a class="chip" href="/captures/search">Search captures</a>
-</div>
-<p class="muted">Reference for supported capture/logging formats, intentionally deduplicated secondary files, network evidence handling, and known adapter gaps.</p>
-
 <div class="warn"><strong>Evidence stays source-specific.</strong> When the same packet or observation exists in multiple tools, Mission Toolkit keeps each source observation and provenance separately, then correlates equivalent evidence instead of silently collapsing it.</div>
 
 <details class="capture-help-section" open><summary>Fully supported ingestion</summary><div class="body">
