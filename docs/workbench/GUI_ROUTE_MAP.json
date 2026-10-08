@@ -1822,6 +1822,14 @@
     },
     {
       "method": "POST",
+      "path": "/wiki/topic",
+      "home": "Tools",
+      "section": "Wiki Compiler",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
       "path": "/wiki/map",
       "home": "Tools",
       "section": "Wiki Compiler",
