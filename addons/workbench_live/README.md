@@ -32,6 +32,13 @@ entity, with kind `unknown`. Missing targets produce an empty entity list.
 There is no OS process discovery, memory-layout validation or write adapter.
 Ashita v3 compatibility has not been established.
 
+The zone comes from the local player's party slot (`GetMemberZone(0)`), checked
+again after sampling. Ashita's SDK documents entity `ZoneId` as only populated
+for the local player under certain conditions; it is not required for player or
+selected-target observations. If an older copy reports "entity zone does not
+match player zone", replace `workbench_observation.lua`, unload the addon with
+`/addon unload workbench_live`, and load it again before starting a fresh export.
+
 ## Windows acceptance run
 
 Record the actual Ashita version, FFXI game/module version and module SHA-256

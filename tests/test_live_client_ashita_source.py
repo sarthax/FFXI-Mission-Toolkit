@@ -81,9 +81,9 @@ def test_explicit_ashita_export_sdk_fields_and_target_feed_roundtrip(tmp_path):
 
 
 @pytest.mark.parametrize('failure', [
-    'party.active=0', 'party.server_id=0', 'party.server_id=456', 'party.zone=101',
+    'party.active=0', 'party.server_id=0', 'party.server_id=456', 'party.zone=0',
     'entities[1].name="Different"', 'entities[1].x=0/0', 'clock=99',
-    'entity.GetLocalPositionX=nil', 'entities[42].zone=101',
+    'entity.GetLocalPositionX=nil',
 ])
 def test_ashita_unsupported_or_changed_source_stops_without_consuming_bad_frame(tmp_path, failure):
     lua = runtime(tmp_path)
@@ -103,6 +103,23 @@ def test_ashita_missing_target_empty_array_and_unload(tmp_path):
     assert bridge.poll() == 1 and bridge.feed.entities() == ()
     lua.execute('events.unload(); clock=101; events.d3d_present()')
     assert bridge.poll() == 0
+
+
+@pytest.mark.parametrize('entity_zone', [0, 101, None])
+def test_ashita_entity_zone_is_not_required_for_local_observations(tmp_path, entity_zone):
+    lua = runtime(tmp_path)
+    lua.globals().entity_zone = entity_zone
+    lua.execute('''
+        entities[1].zone=entity_zone; entities[42].zone=entity_zone
+        -- The field is optional even when the getter itself is unavailable.
+        if entity_zone == nil then entity.GetZoneId=nil end
+        command('/wblive start ashita-a')
+    ''')
+    path, = tmp_path.glob('*.jsonl')
+    bridge = FileTelemetryBridge(path, 'ashita-a')
+    assert bridge.poll() == 1
+    assert bridge.feed.snapshot().position.zone_id == 100
+    assert bridge.feed.entities()[0].position.zone_id == 100
 
 
 def test_ashita_zone_transition_during_capture_is_rejected_before_file_creation(tmp_path):
