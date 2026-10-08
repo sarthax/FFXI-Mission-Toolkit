@@ -112,7 +112,8 @@ def mediawiki_blocks(page_id: str, wikitext: str) -> list[dict]:
             for cell in re.split(r"!!|\|\|", line[1:]):
                 raw_cell=cell.strip()
                 clean = str(mwparserfromhell.parse(raw_cell).strip_code(normalize=True, collapse=True)).strip()
-                emit(kind, clean, metadata={"raw_value":raw_cell, "review_only":True})
+                emit(kind, clean, metadata={"raw_value":raw_cell, "review_only":True},
+                     source_locator=f"block:{page_id}:table-cell:{ordinal + 1}")
             continue
         lm = re.match(r"^\s*([*#;:]+)\s*(.*)$", line)
         if lm:
