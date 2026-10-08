@@ -83,6 +83,12 @@
   <a class="chip {% if tab == 'review' %}
 <section class="wiki-section">
   <h3>Multilingual topic review queue</h3>
+  <div class="wiki-actions dense-toolbar">
+    <span class="muted">Show:</span>
+    {% for state, label in [('all', 'All'), ('pending', 'Pending'), ('dismissed', 'Dismissed')] %}
+    <a class="chip {% if review_status == state %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=review&review_status={{ state }}">{{ label }}</a>
+    {% endfor %}
+  </div>
   <p class="muted">Read-only overview, up to 50 source pages. Dismissed candidates are retained for audit and excluded from pending suggestions. Open a page to approve or dismiss a pending topic.</p>
   {% if review_queue %}
   <div class="table-wrap"><table>
