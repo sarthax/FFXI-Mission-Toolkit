@@ -112,7 +112,11 @@
     <label>Recording file (.jsonl; local path on the toolkit computer)
       <input type="text" name="live_client_replay_file" id="liveClientReplayFile" value="{{ values.live_client_replay_file }}" style="width:100%" placeholder="D:\\FFXI\\captures\\session.jsonl">
     </label>
+    <label>Or choose a recording to import into toolkit storage
+      <input type="file" id="liveClientUploadFile" accept=".jsonl,application/x-ndjson" />
+    </label>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button type="button" id="liveClientUpload">Import selected recording</button>
       <button type="button" id="liveClientInspect">Validate recording / detect client ID</button>
       <span id="liveClientInspectStatus" role="status" class="muted"></span>
     </div>
@@ -125,6 +129,26 @@
   </div>
 
 <script>
+document.getElementById('liveClientUpload').addEventListener('click', async () => {
+  const status = document.getElementById('liveClientInspectStatus');
+  const file = document.getElementById('liveClientUploadFile').files[0];
+  if (!file) { status.textContent = 'Choose a .jsonl file first'; return; }
+  const button = document.getElementById('liveClientUpload');
+  button.disabled = true;
+  status.textContent = 'Importing and validating...';
+  try {
+    const data = new FormData();
+    data.append('recording', file);
+    const response = await fetch('/live-client/upload-recording', {method:'POST',body:data});
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.detail || 'Import failed');
+    document.getElementById('liveClientReplayFile').value = result.path;
+    document.getElementById('liveClientReplayClient').value = result.client_id;
+    status.textContent = 'Imported ' + result.frames + ' frames. Click Save Settings to retain the selection.';
+  } catch (error) {
+    status.textContent = String(error.message || error);
+  } finally { button.disabled = false; }
+});
 document.getElementById('liveClientInspect').addEventListener('click', async () => {
   const status = document.getElementById('liveClientInspectStatus');
   const button = document.getElementById('liveClientInspect');
