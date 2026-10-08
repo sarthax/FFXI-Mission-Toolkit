@@ -1,10 +1,13 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Auction House Reward History{% endblock %}
-{% block content %}
-<main class="ah-reward-history" id="ahRewardHistory">
-  <div class="page-head">
-    <div><h1>Auction House Reward History</h1><p class="muted">Review reward campaigns, recipient outcomes, and preview retries for failed recipients only.</p></div>
-  </div>
+{% block page_archetype %}workbench{% endblock %}
+{% block page_width %}fluid{% endblock %}
+{% block page_class %}ah-reward-history-page{% endblock %}
+{% block page_heading %}Auction House Reward History{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Read-only campaign history / retry preview</span>{% endblock %}
+{% block page_help %}Review reward campaigns and recipient outcomes. Failed-recipient retry inspection remains a preview surface; execution occurs only through the guarded reward workflow.{% endblock %}
+{% block page_body %}
+<div class="ah-reward-history" id="ahRewardHistory">
   {% include "_auction_house_nav.html" %}
   <section class="panel">
     <div class="form-grid">
@@ -16,7 +19,7 @@
   </section>
   <section class="panel"><h2>Campaigns</h2><div id="rhList"><p class="muted">Loading…</p></div></section>
   <section class="panel"><h2>Campaign detail</h2><div id="rhDetail"><p class="muted">Select a campaign.</p></div></section>
-</main>
+</div>
 <style>
 .ah-reward-history{padding:10px 14px 24px}.page-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.muted{opacity:.72}.panel{border:1px solid var(--border-color,#5555);border-radius:8px;padding:12px;margin:10px 0}.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:10px 0}.form-grid label{display:grid;gap:4px;font-size:12px}.history-table{width:100%;border-collapse:collapse;font-size:13px}.history-table th,.history-table td{padding:6px;border-bottom:1px solid var(--border-color,#5554);text-align:left}.preview-json{white-space:pre-wrap;max-height:420px;overflow:auto;font-size:12px}@media(max-width:800px){.page-head{flex-direction:column}}
 </style>
