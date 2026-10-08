@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 257,
+  "route_count": 261,
   "routes": [
     {
       "method": "GET",
@@ -2058,6 +2058,38 @@
       "home": "Tools",
       "section": "Editors > Item Editor",
       "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/domains/voidwatch/tracker.json",
+      "home": "Domains",
+      "section": "Battle Systems > Voidwatch",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/wiki/scrape",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/wiki/jobs",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/wiki/translate",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "data",
       "disposition": "KEEP"
     }
   ]
