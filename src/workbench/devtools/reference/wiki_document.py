@@ -501,7 +501,7 @@ def topic_review_queue(con, *, source_id: str, limit: int = 50) -> list[dict]:
             FROM reference_wiki_topic_dismissals d
             LEFT JOIN reference_wiki_topics t ON t.topic_id=d.topic_id
             WHERE d.source_id=? AND d.page_id=?
-            ORDER BY label,d.topic_id
+            ORDER BY t.canonical_title,d.topic_id
           """,(source_id,str(page_id))).fetchall()]
         if pending or dismissed:
             queue.append({"source_id":source_id,"page_id":str(page_id),"title":title,
