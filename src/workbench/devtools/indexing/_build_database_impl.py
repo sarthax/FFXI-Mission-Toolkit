@@ -31,7 +31,7 @@ from datetime import datetime
 from pathlib import Path
 
 import xi_tinkerer
-import settings
+from workbench.runtime import settings_store as settings
 from dat_extractor_bin import ensure_dat_extractor
 
 TOOLS_ROOT = Path(__file__).parent
@@ -432,7 +432,7 @@ def backup_database_file(min_interval_seconds: float = 0):
     # net for "undo my last few actions," not a permanent archive; unbounded growth would just
     # quietly fill the disk with db-sized copies). Read fresh here rather than cached, so a
     # Settings change applies to the very next backup.
-    import settings as _settings
+    from workbench.runtime import settings_store as _settings
     keep_con = sqlite3.connect(DB_PATH)
     try:
         retention = int(_settings.get(keep_con, "backup_retention_count") or _settings.DEFAULTS["backup_retention_count"])

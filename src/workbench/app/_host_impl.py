@@ -8829,7 +8829,7 @@ def zoneplot2_page(request: Request):
 
 @app.get("/zoneplot/server.json")
 def zoneplot_server_get():
-    import settings
+    from workbench.runtime import settings_store as settings
     return JSONResponse({"server": zone_plot.get_server(), "dsp_configured": settings.get_dsp_root() is not None})
 
 
@@ -8952,9 +8952,11 @@ def zoneplot_scripts(zid: int):
 
 @app.get("/zoneplot/{zid}/mesh.zmesh")
 def zoneplot_mesh(zid: int, lod: int = 0):
-    import zmesh
+    from workbench.devtools.spatial import zmesh as zmesh
     if not (ZONE_VISUAL_DIR / f"{zid}.obj").exists():  # build the visual-mesh cache on demand
-        import sqlite3, settings, build_zone_visual_cache as bz
+        import sqlite3
+        from workbench.runtime import settings_store as settings
+        from workbench.devtools.spatial import build_visual_cache as bz
         ffxi = settings.get_ffxi_install()
         if ffxi:
             con = sqlite3.connect(str(bz.DB_PATH))
@@ -8972,9 +8974,11 @@ def zoneplot_mesh(zid: int, lod: int = 0):
 def zoneplot_mesh_info(zid: int):
     """Base (LOD 0) triangle count, without downloading the mesh -- lets the client pick a sane default LOD
     before it commits to fetching a potentially huge zone (e.g. zone 34 is ~4.7M tris / 44MB at Full)."""
-    import zmesh
+    from workbench.devtools.spatial import zmesh as zmesh
     if not (ZONE_VISUAL_DIR / f"{zid}.obj").exists():
-        import sqlite3, settings, build_zone_visual_cache as bz
+        import sqlite3
+        from workbench.runtime import settings_store as settings
+        from workbench.devtools.spatial import build_visual_cache as bz
         ffxi = settings.get_ffxi_install()
         if ffxi:
             con = sqlite3.connect(str(bz.DB_PATH))
@@ -9000,7 +9004,7 @@ def zoneplot_build_cache(zid: int):
     import contextlib
     import io
     import sqlite3
-    import build_zone_visual_cache as bz
+    from workbench.devtools.spatial import build_visual_cache as bz
     ffxi = settings_mod.get_ffxi_install()
     if not ffxi:
         return JSONResponse({"ok": False, "log": "FFXI install path isn't configured -- set it on the Settings page first"}, status_code=400)
@@ -9016,7 +9020,7 @@ def zoneplot_build_cache(zid: int):
 
 @app.post("/zoneplot/edit")
 async def zoneplot_edit(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.update_position(b["k"], b["id"], b["x"], b["y"], b["z"], b.get("r", 0), b.get("comment", "")))
@@ -9026,7 +9030,7 @@ async def zoneplot_edit(request: Request):
 
 @app.get("/zoneplot/history/{kind}/{eid}")
 async def zoneplot_entity_history(kind: str, eid: int, limit: int = 20):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     try:
         return JSONResponse(zone_edit.entity_history(kind, eid, limit))
     except Exception as ex:
@@ -9035,7 +9039,7 @@ async def zoneplot_entity_history(kind: str, eid: int, limit: int = 20):
 
 @app.post("/zoneplot/restore_entity_previous")
 async def zoneplot_restore_entity_previous(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.restore_entity_previous(b["k"], b["id"]))
@@ -9045,7 +9049,7 @@ async def zoneplot_restore_entity_previous(request: Request):
 
 @app.post("/zoneplot/edit_bulk")
 async def zoneplot_edit_bulk(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.update_positions_bulk(b["rows"], b.get("comment", "")))
@@ -9055,7 +9059,7 @@ async def zoneplot_edit_bulk(request: Request):
 
 @app.post("/zoneplot/animate")
 async def zoneplot_animate(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.update_animation(b["k"], b["id"], b["animation"], b["animationsub"], b.get("comment", "")))
@@ -9065,7 +9069,7 @@ async def zoneplot_animate(request: Request):
 
 @app.get("/zoneplot/animation-meta.json")
 def zoneplot_animation_meta():
-    import zone_animation_meta
+    from workbench.client.models import zone_animation_meta as zone_animation_meta
     try:
         return JSONResponse(zone_animation_meta.metadata())
     except Exception as ex:
@@ -9074,7 +9078,7 @@ def zoneplot_animation_meta():
 
 @app.post("/zoneplot/model/preview")
 async def zoneplot_model_preview(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.preview_model_change(b["k"], b["id"], b["model_id"]))
@@ -9084,7 +9088,7 @@ async def zoneplot_model_preview(request: Request):
 
 @app.post("/zoneplot/model/apply")
 async def zoneplot_model_apply(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.apply_model_change(
@@ -9096,7 +9100,7 @@ async def zoneplot_model_apply(request: Request):
 
 @app.post("/zoneplot/model/sync_sql")
 async def zoneplot_model_sync_sql(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.sync_model_sql(b["k"], b["id"]))
@@ -9106,7 +9110,7 @@ async def zoneplot_model_sync_sql(request: Request):
 
 @app.post("/zoneplot/delete")
 async def zoneplot_delete(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.delete_entity(b["k"], b["id"], b.get("comment", "")))
@@ -9116,13 +9120,13 @@ async def zoneplot_delete(request: Request):
 
 @app.get("/zoneplot/catalogue.json")
 def zoneplot_catalogue(kind: str, q: str = "", zone: str = "", family: str = "", sort: str = "name"):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     return JSONResponse(zone_edit.catalogue(kind, q, zone=zone, family=family, sort=sort))
 
 
 @app.get("/zoneplot/{zid}/next_id.json")
 def zoneplot_next_id(zid: int):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     try:
         return JSONResponse(zone_edit.next_id_info(zid))
     except Exception as ex:
@@ -9131,7 +9135,7 @@ def zoneplot_next_id(zid: int):
 
 @app.get("/zoneplot/{eid}/drops.json")
 def zoneplot_drops(eid: int):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     try:
         return JSONResponse(zone_edit.get_drops(eid))
     except Exception as ex:
@@ -9140,7 +9144,7 @@ def zoneplot_drops(eid: int):
 
 @app.post("/zoneplot/drops/dropid")
 async def zoneplot_drops_dropid(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.set_group_dropid(b["mobid"], b["dropid"], b.get("comment", "")))
@@ -9150,7 +9154,7 @@ async def zoneplot_drops_dropid(request: Request):
 
 @app.post("/zoneplot/drops/save")
 async def zoneplot_drops_save(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.save_drop_row(
@@ -9162,7 +9166,7 @@ async def zoneplot_drops_save(request: Request):
 
 @app.post("/zoneplot/drops/delete")
 async def zoneplot_drops_delete(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.delete_drop_row(b["dropid"], b.get("drop_type", 0), b["group_id"], b["item_id"], b.get("comment", "")))
@@ -9172,13 +9176,13 @@ async def zoneplot_drops_delete(request: Request):
 
 @app.get("/zoneplot/items.json")
 def zoneplot_items(q: str = ""):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     return JSONResponse(zone_edit.item_catalogue(q))
 
 
 @app.post("/zoneplot/add")
 async def zoneplot_add(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.add_entity(b["k"], b["zone"], b["src"], b["x"], b["y"], b["z"], b.get("r", 0), b.get("name", ""), b.get("comment", ""), b.get("instance", 0)))
@@ -9188,7 +9192,7 @@ async def zoneplot_add(request: Request):
 
 @app.post("/zoneplot/sync_sql/entity")
 async def zoneplot_sync_sql_entity(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.sync_entity_sql(b["k"], b["id"]))
@@ -9198,7 +9202,7 @@ async def zoneplot_sync_sql_entity(request: Request):
 
 @app.post("/zoneplot/sync_sql/dropid")
 async def zoneplot_sync_sql_dropid(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.sync_group_dropid_sql(b["mobid"]))
@@ -9208,7 +9212,7 @@ async def zoneplot_sync_sql_dropid(request: Request):
 
 @app.post("/zoneplot/sync_sql/drop_row")
 async def zoneplot_sync_sql_drop_row(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.sync_drop_row_sql(
@@ -9220,19 +9224,19 @@ async def zoneplot_sync_sql_drop_row(request: Request):
 
 @app.get("/zoneplot/backups.json")
 def zoneplot_backups():
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     return JSONResponse(zone_edit.list_backups())
 
 
 @app.post("/zoneplot/{zid}/snapshot")
 def zoneplot_snapshot(zid: int, label: str = ""):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     return JSONResponse({"id": zone_edit.snapshot_zone(zid, label)})
 
 
 @app.post("/zoneplot/restore")
 async def zoneplot_restore(request: Request):
-    import zone_edit
+    from workbench.editors.zone import editor as zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.restore(b["id"], b.get("exact", False)))
@@ -9270,7 +9274,7 @@ def zoneplot_nav_meta(zid: int):
 # the threadpool used to import item_edit concurrently on first load, so some threads saw the
 # module half-initialised ("module 'item_edit' has no attribute 'mod_names'", HTTP 500).
 try:
-    import item_edit  # noqa: F401
+    from workbench.editors.items import editor as item_edit  # noqa: F401
 except Exception as _ex:  # surfaced per-request instead of blocking startup
     print(f"WARNING: item_edit preload failed: {_ex}")
 
@@ -9283,7 +9287,7 @@ def itemedit_page(request: Request):
 @app.get("/itemedit/search.json")
 def itemedit_search(q: str = "", category: str = "", min_level: int = -1, max_level: int = -1,
                     job: int = -1, skill: int = -1, client_state: str = ""):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     try:
         return JSONResponse(item_edit.search(q, category, min_level, max_level, job, skill, client_state))
     except Exception as ex:
@@ -9292,13 +9296,13 @@ def itemedit_search(q: str = "", category: str = "", min_level: int = -1, max_le
 
 @app.get("/itemedit/backups.json")
 def itemedit_backups():
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     return JSONResponse(item_edit.list_backups())
 
 
 @app.get("/itemedit/{item_id}/history.json")
 def itemedit_history(item_id: int, limit: int = 100):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     try:
         return JSONResponse(item_edit.list_item_history(item_id, limit))
     except Exception as ex:
@@ -9307,7 +9311,7 @@ def itemedit_history(item_id: int, limit: int = 100):
 
 @app.get("/itemedit/{item_id}/usage.json")
 def itemedit_usage(item_id: int, source_limit: int = 100):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     try:
         return JSONResponse(item_edit.item_usage(item_id, source_limit))
     except Exception as ex:
@@ -9316,7 +9320,7 @@ def itemedit_usage(item_id: int, source_limit: int = 100):
 
 @app.post("/itemedit/batch/preview")
 async def itemedit_batch_preview(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     try:
         body = await request.json()
         return JSONResponse(item_edit.preview_batch_edit(body.get("item_ids") or [], body.get("field"), body.get("value")))
@@ -9326,7 +9330,7 @@ async def itemedit_batch_preview(request: Request):
 
 @app.post("/itemedit/batch/apply")
 async def itemedit_batch_apply(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     try:
         body = await request.json()
         return JSONResponse(item_edit.apply_batch_edit(
@@ -9338,7 +9342,7 @@ async def itemedit_batch_apply(request: Request):
 
 @app.post("/itemedit/batch/restore")
 async def itemedit_batch_restore(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     try:
         body = await request.json()
         return JSONResponse(item_edit.restore_batch_backup(body.get("id"), body.get("comment") or ""))
@@ -9348,44 +9352,44 @@ async def itemedit_batch_restore(request: Request):
 
 @app.get("/itemedit/bitmasks.json")
 def itemedit_bitmasks():
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     return JSONResponse(item_edit.bitmask_schema())
 
 
 @app.get("/itemedit/modnames.json")
 def itemedit_modnames():
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     return JSONResponse(item_edit.mod_names())
 
 
 @app.get("/itemedit/modmeta.json")
 def itemedit_modmeta():
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     return JSONResponse(item_edit.mod_metadata())
 
 
 @app.get("/itemedit/pettypes.json")
 def itemedit_pettypes():
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     return JSONResponse(item_edit.pet_type_names())
 
 
 @app.get("/itemedit/latentnames.json")
 def itemedit_latentnames():
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     return JSONResponse(item_edit.latent_names())
 
 
 @app.get("/itemedit/latentmeta.json")
 def itemedit_latentmeta():
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     return JSONResponse(item_edit.latent_metadata())
 
 
 @app.get("/itemedit/special-cases.json")
 def itemedit_special_cases(item_id: int = 0, name: str = ""):
     """Gear sets, food/use bonuses and server-code mentions for one item (read-only, parsed from the server tree)."""
-    import zone_plot
+    from workbench.devtools.spatial import zone_plot as zone_plot
     from workbench.editors.items import _special_cases
     try:
         root = zone_plot._server_root()
@@ -9520,7 +9524,7 @@ def itemhealth_page(request: Request):
 def itemedit_proc_script(item_id: int = 0, name: str = ""):
     """Where does this item's scripted proc live in the active server tree, and does the file exist?"""
     import re as _re
-    import zone_plot
+    from workbench.devtools.spatial import zone_plot as zone_plot
     internal = _re.sub(r"[^a-z0-9_]", "", (name or "").lower())
     out = {"item_id": item_id, "name": internal, "root": "", "candidates": []}
     try:
@@ -9548,7 +9552,7 @@ def itemedit_proc_script(item_id: int = 0, name: str = ""):
 
 @app.get("/itemedit/dat-target.json")
 def itemedit_dat_target_get():
-    import item_dat_tools
+    from workbench.editors.items import dat_tools as item_dat_tools
     return JSONResponse({
         "target": item_dat_tools.dat_target(),
         "pivot_root": str(item_dat_tools.pivot_root()),
@@ -9557,7 +9561,7 @@ def itemedit_dat_target_get():
 
 @app.post("/itemedit/dat-target.json")
 async def itemedit_dat_target_set(request: Request):
-    import item_dat_tools
+    from workbench.editors.items import dat_tools as item_dat_tools
     b = await request.json()
     try:
         item_dat_tools.set_dat_target(b["target"])
@@ -9568,13 +9572,13 @@ async def itemedit_dat_target_set(request: Request):
 
 @app.get("/itemedit/client-layout-audit.json")
 def itemedit_client_layout_audit():
-    import item_dat_tools
+    from workbench.editors.items import dat_tools as item_dat_tools
     return JSONResponse(item_dat_tools.item_record_layout_audit())
 
 
 @app.get("/itemedit/{item_id}/client-record.json")
 def itemedit_client_record(item_id: int):
-    import item_dat_tools
+    from workbench.editors.items import dat_tools as item_dat_tools
     try:
         return JSONResponse(item_dat_tools.client_record_inspector(item_id))
     except Exception as ex:
@@ -9583,7 +9587,7 @@ def itemedit_client_record(item_id: int):
 
 @app.get("/itemedit/{item_id}/icon.png")
 def itemedit_icon(item_id: int):
-    import item_dat_tools
+    from workbench.editors.items import dat_tools as item_dat_tools
     try:
         png = item_dat_tools.item_icon_png(item_id)
         if not png:
@@ -9595,7 +9599,7 @@ def itemedit_icon(item_id: int):
 
 @app.get("/itemedit/{item_id}/live-pivot-diff.json")
 def itemedit_live_pivot_diff(item_id: int):
-    import item_dat_tools
+    from workbench.editors.items import dat_tools as item_dat_tools
     try:
         return JSONResponse(item_dat_tools.compare_live_pivot_record(item_id))
     except Exception as ex:
@@ -9604,7 +9608,7 @@ def itemedit_live_pivot_diff(item_id: int):
 
 @app.post("/itemedit/live-pivot-copy")
 async def itemedit_live_pivot_copy(request: Request):
-    import item_dat_tools
+    from workbench.editors.items import dat_tools as item_dat_tools
     b = await request.json()
     try:
         return JSONResponse(item_dat_tools.copy_live_pivot_record(b["item_id"], b["direction"]))
@@ -9613,7 +9617,7 @@ async def itemedit_live_pivot_copy(request: Request):
 
 @app.get("/itemedit/{item_id}/dat-pristine-diff.json")
 def itemedit_dat_pristine_diff(item_id: int):
-    import item_dat_tools
+    from workbench.editors.items import dat_tools as item_dat_tools
     try:
         return JSONResponse(item_dat_tools.compare_client_record_to_pristine(item_id))
     except Exception as ex:
@@ -9621,13 +9625,13 @@ def itemedit_dat_pristine_diff(item_id: int):
 
 @app.get("/itemedit/dat-backups.json")
 def itemedit_dat_backups():
-    import item_dat_tools
+    from workbench.editors.items import dat_tools as item_dat_tools
     return JSONResponse(item_dat_tools.list_dat_backups())
 
 
 @app.post("/itemedit/dat-backups/restore")
 async def itemedit_dat_backups_restore(request: Request):
-    import item_dat_tools
+    from workbench.editors.items import dat_tools as item_dat_tools
     b = await request.json()
     try:
         return JSONResponse(item_dat_tools.restore_dat_backup(b["dat_ui"], b.get("backup_id")))
@@ -9637,7 +9641,7 @@ async def itemedit_dat_backups_restore(request: Request):
 
 @app.get("/itemedit/xi-pivot/manifest.json")
 def itemedit_xi_pivot_manifest():
-    import item_dat_tools
+    from workbench.editors.items import dat_tools as item_dat_tools
     return JSONResponse(item_dat_tools.pivot_manifest())
 
 
@@ -9647,7 +9651,7 @@ def itemedit_xi_pivot_export():
     distribution -- drop the extracted "ROM" folder from this zip next to the game install per
     whatever DAT-overlay loader the user is pairing Xi-Pivot with; the real install is never
     touched to produce this."""
-    import item_dat_tools
+    from workbench.editors.items import dat_tools as item_dat_tools
     manifest = item_dat_tools.pivot_manifest()
     root = Path(manifest["root"])
     if not manifest["files"]:
@@ -9663,7 +9667,7 @@ def itemedit_xi_pivot_export():
 
 @app.get("/itemedit/clone-template.json")
 def itemedit_clone_template(item_id: int):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     try:
         return JSONResponse(item_edit.clone_template(item_id))
     except Exception as ex:
@@ -9672,7 +9676,7 @@ def itemedit_clone_template(item_id: int):
 
 @app.post("/itemedit/reconcile")
 async def itemedit_reconcile(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     b = await request.json()
     try:
         return JSONResponse(item_edit.reconcile_item(
@@ -9683,7 +9687,7 @@ async def itemedit_reconcile(request: Request):
 
 @app.post("/itemedit/validate")
 async def itemedit_validate(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     b = await request.json()
     try:
         return JSONResponse(item_edit.validate_item_changes(b["item_id"], b.get("tables", {}), b.get("effects")))
@@ -9692,7 +9696,7 @@ async def itemedit_validate(request: Request):
 
 @app.post("/itemedit/save-atomic")
 async def itemedit_save_atomic(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     b = await request.json()
     try:
         return JSONResponse(item_edit.save_item_atomic(
@@ -9703,7 +9707,7 @@ async def itemedit_save_atomic(request: Request):
 
 @app.post("/itemedit/update")
 async def itemedit_update(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     b = await request.json()
     try:
         return JSONResponse(item_edit.update_item(b["item_id"], b["table"], b["fields"], b.get("comment", "")))
@@ -9713,7 +9717,7 @@ async def itemedit_update(request: Request):
 
 @app.get("/itemedit/slot-browser.json")
 def itemedit_slot_browser(category: str, offset: int = 0, limit: int = 200, state: str = ""):
-    import item_dat_tools
+    from workbench.editors.items import dat_tools as item_dat_tools
     try:
         return JSONResponse(item_dat_tools.browse_slots(category, offset, limit, state))
     except Exception as ex:
@@ -9721,7 +9725,7 @@ def itemedit_slot_browser(category: str, offset: int = 0, limit: int = 200, stat
 
 @app.get("/itemedit/create-preview.json")
 def itemedit_create_preview(category: str):
-    import item_dat_tools
+    from workbench.editors.items import dat_tools as item_dat_tools
     try:
         return JSONResponse(item_dat_tools.preview_free_slot(category))
     except Exception as ex:
@@ -9730,7 +9734,7 @@ def itemedit_create_preview(category: str):
 # Must stay AFTER the static /itemedit/*.json routes above, or "{itemid}.json" (int) swallows them with a 422.
 @app.get("/itemedit/{itemid}.json")
 def itemedit_get(itemid: int):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     try:
         return JSONResponse(item_edit.get_item(itemid))
     except Exception as ex:
@@ -9739,7 +9743,7 @@ def itemedit_get(itemid: int):
 
 @app.post("/itemedit/create")
 async def itemedit_create(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     b = await request.json()
     try:
         return JSONResponse(item_edit.create_item(
@@ -9751,7 +9755,7 @@ async def itemedit_create(request: Request):
 
 @app.post("/itemedit/delete")
 async def itemedit_delete(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     b = await request.json()
     try:
         return JSONResponse(item_edit.delete_item(b["item_id"], b.get("comment", ""), bool(b.get("clear_dat", False))))
@@ -9761,7 +9765,7 @@ async def itemedit_delete(request: Request):
 
 @app.post("/itemedit/restore-client-record")
 async def itemedit_restore_client_record(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     b = await request.json()
     try:
         return JSONResponse(item_edit.restore_client_record_from_backup(
@@ -9772,7 +9776,7 @@ async def itemedit_restore_client_record(request: Request):
 
 @app.post("/itemedit/restore")
 async def itemedit_restore(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     b = await request.json()
     try:
         return JSONResponse(item_edit.restore(b["id"]))
@@ -9782,7 +9786,7 @@ async def itemedit_restore(request: Request):
 
 @app.post("/itemedit/mods/set")
 async def itemedit_mods_set(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     b = await request.json()
     try:
         return JSONResponse(item_edit.set_item_mod(b["item_id"], b["mod_id"], b["value"], b.get("comment", "")))
@@ -9792,7 +9796,7 @@ async def itemedit_mods_set(request: Request):
 
 @app.post("/itemedit/mods/delete")
 async def itemedit_mods_delete(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     b = await request.json()
     try:
         return JSONResponse(item_edit.delete_item_mod(b["item_id"], b["mod_id"], b.get("comment", "")))
@@ -9802,7 +9806,7 @@ async def itemedit_mods_delete(request: Request):
 
 @app.post("/itemedit/petmods/set")
 async def itemedit_petmods_set(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     b = await request.json()
     try:
         return JSONResponse(item_edit.set_item_pet_mod(b["item_id"], b["mod_id"], b["pet_type"], b["value"], b.get("comment", "")))
@@ -9812,7 +9816,7 @@ async def itemedit_petmods_set(request: Request):
 
 @app.post("/itemedit/petmods/delete")
 async def itemedit_petmods_delete(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     b = await request.json()
     try:
         return JSONResponse(item_edit.delete_item_pet_mod(b["item_id"], b["mod_id"], b["pet_type"], b.get("comment", "")))
@@ -9822,7 +9826,7 @@ async def itemedit_petmods_delete(request: Request):
 
 @app.post("/itemedit/latents/add")
 async def itemedit_latents_add(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     b = await request.json()
     try:
         return JSONResponse(item_edit.add_item_latent(b["item_id"], b["mod_id"], b["value"], b["latent_id"], b["latent_param"], b.get("comment", "")))
@@ -9832,7 +9836,7 @@ async def itemedit_latents_add(request: Request):
 
 @app.post("/itemedit/latents/delete")
 async def itemedit_latents_delete(request: Request):
-    import item_edit
+    from workbench.editors.items import editor as item_edit
     b = await request.json()
     try:
         return JSONResponse(item_edit.delete_item_latent(b["item_id"], b["mod_id"], b["value"], b["latent_id"], b["latent_param"], b.get("comment", "")))
@@ -9853,7 +9857,7 @@ def modelviewer_page(request: Request):
 
 @app.get("/modelviewer/resolve.json")
 def modelviewer_resolve(kind: str, id: int, server: str = None):
-    import model_viewer
+    from workbench.client.models import viewer as model_viewer
     try:
         return JSONResponse(model_viewer.resolve(kind, id, server))
     except Exception as ex:
@@ -9862,7 +9866,7 @@ def modelviewer_resolve(kind: str, id: int, server: str = None):
 
 @app.get("/modelviewer/model.json")
 def modelviewer_model(model_id: int, server: str = None):
-    import model_viewer
+    from workbench.client.models import viewer as model_viewer
     try:
         return JSONResponse(model_viewer.resolve_model_id(model_id, server=server))
     except Exception as ex:
@@ -9871,7 +9875,7 @@ def modelviewer_model(model_id: int, server: str = None):
 
 @app.get("/modelviewer/catalog.json")
 def modelviewer_catalog(q: str = "", server: str = None, limit: int = 100, refresh: int = 0):
-    import client_model_catalog
+    from workbench.client.models import catalog as client_model_catalog
     try:
         return JSONResponse(client_model_catalog.search_catalog(
             q, server=server, limit=limit, refresh=bool(refresh)
@@ -9887,7 +9891,7 @@ def modelviewer_catalog_correlate(
     rom_path: str = None,
     server: str = None,
 ):
-    import client_model_catalog
+    from workbench.client.models import catalog as client_model_catalog
     try:
         return JSONResponse({"rows": client_model_catalog.correlate(
             model_id=model_id, file_id=file_id, rom_path=rom_path, server=server
@@ -9898,7 +9902,7 @@ def modelviewer_catalog_correlate(
 
 @app.get("/modelviewer/dat-info.json")
 def modelviewer_dat_info(file_id: int = None, rom_path: str = None, server: str = None):
-    import model_viewer
+    from workbench.client.models import viewer as model_viewer
     try:
         return JSONResponse(model_viewer.resolve_dat(file_id=file_id, rom_path=rom_path, server=server))
     except Exception as ex:
@@ -9907,7 +9911,7 @@ def modelviewer_dat_info(file_id: int = None, rom_path: str = None, server: str 
 
 @app.get("/modelviewer/dat")
 def modelviewer_dat(ffxi_path: str, rom_path: str):
-    import model_viewer
+    from workbench.client.models import viewer as model_viewer
     try:
         data = model_viewer.read_dat_bytes(ffxi_path, rom_path)
         return Response(data, media_type="application/octet-stream")
@@ -9924,7 +9928,7 @@ def datinspector_page(
     dat_path: str = "",
     ffxi_path: str = "",
 ):
-    import dat_inspector
+    from workbench.client.dat import inspector as dat_inspector
 
     path = ffxi_path or (settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI")
     result, error = None, None
@@ -10054,7 +10058,7 @@ def _clientoverview_context(
     import_form: dict | None = None,
     compare_form: dict | None = None,
 ):
-    import client_overview
+    from workbench.client.snapshots import overview as client_overview
     from workbench.client import identity_gui
 
     install = settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
@@ -10246,7 +10250,7 @@ def clientoverview_compare_csv(
 
 @app.get("/dialogdrift", response_class=HTMLResponse)
 def dialogdrift_page(request: Request):
-    import dialog_drift_overview as ddo
+    from workbench.devtools.reference.dialog import drift_overview as ddo
     rows, error, checked = [], None, None
     try:
         rows = ddo.overview(DB_PATH)
@@ -10508,7 +10512,7 @@ def research_session_replay(
 
 @app.get("/researchgaps", response_class=HTMLResponse)
 def researchgaps_page(request: Request):
-    import research_gaps
+    from workbench.devtools.research import gaps as research_gaps
     res = None
     if _workbench_graph_connection() is not None:
         res = research_gaps.detect(WORKBENCH_DB)
@@ -10554,7 +10558,7 @@ def domain_detail_page(request: Request, key: str):
 
 @app.post("/binaryinspector/save-probes", response_class=HTMLResponse)
 def binaryinspector_save_probes(request: Request, run_set: str = Form(...)):
-    import binary_inspector as bi
+    from workbench.client.binary import inspector as bi
     install = settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
     probe_con = _workbench_graph_connection()
     if probe_con is None:
@@ -10573,7 +10577,7 @@ def binaryinspector_save_probes(request: Request, run_set: str = Form(...)):
 def binaryinspector_page(request: Request, path: str = "", q: str = "", imp: str = "", pattern: str = "",
                          exec_only: str = "", diff_path: str = "", run_set: str = "", saved: str = "",
                          scan_mem: str = ""):
-    import binary_inspector as bi
+    from workbench.client.binary import inspector as bi
     install = settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
     ctx = {"request": request, "install": install, "candidates": bi.list_candidates(install),
            "path": path, "q": q, "imp": imp, "pattern": pattern, "exec_only": exec_only,

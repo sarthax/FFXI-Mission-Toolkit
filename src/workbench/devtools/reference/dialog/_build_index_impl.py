@@ -29,7 +29,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-import settings
+from workbench.runtime import settings_store as settings
 from dat_extractor_bin import ensure_dat_extractor
 
 TOOLS_ROOT = Path(__file__).parent

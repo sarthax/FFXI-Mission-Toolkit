@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS ah_snapshot_item (
 
 
 def _db() -> sqlite3.Connection:
-    import settings
+    from workbench.runtime import settings_store as settings
     con = sqlite3.connect(settings.DB_PATH, timeout=10)
     con.executescript(_SCHEMA)
     return con

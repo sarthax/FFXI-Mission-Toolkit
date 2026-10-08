@@ -237,7 +237,7 @@ def describe_item(item_id: int, *, server_root: Path | None = None) -> dict:
     name = ((data.get("server") or {}).get("item_basic") or {}).get("name") or ""
     if server_root is None:
         try:
-            import zone_plot
+            from workbench.devtools.spatial import zone_plot as zone_plot
             server_root = zone_plot._server_root()
         except Exception:
             server_root = None
@@ -285,7 +285,7 @@ def health_report(server_root: Path | None = None) -> dict:
     real behavior; (b) every item script file on disk -> classified, and whether any item uses it."""
     from workbench.editors.items import _editor_impl as impl
     if server_root is None:
-        import zone_plot
+        from workbench.devtools.spatial import zone_plot as zone_plot
         server_root = zone_plot._server_root()
     root = Path(server_root)
     db = impl._item_db(); cu = db.cursor()

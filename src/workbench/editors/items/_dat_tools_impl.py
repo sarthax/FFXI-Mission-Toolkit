@@ -28,7 +28,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Optional
 
-import settings as settings_mod
+from workbench.runtime import settings_store as settings_mod
 
 # ── stride / format constants ────────────────────────────────────────────────
 STRIDE_LEGACY = 0xC00    # 3072 -- every client before the 10 Sept 2026 update

@@ -28,7 +28,7 @@ import sqlite3
 import sys
 from pathlib import Path
 
-import settings
+from workbench.runtime import settings_store as settings
 from workbench.core.services.server_catalog_identity import sync_server_catalog_entities
 
 TOOLS_ROOT = Path(__file__).parent

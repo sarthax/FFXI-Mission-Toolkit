@@ -16,8 +16,8 @@ import sqlite3
 from decimal import Decimal
 from pathlib import Path
 
-import item_dat_tools as dat
-import zone_plot
+from workbench.editors.items import dat_tools as dat
+from workbench.devtools.spatial import zone_plot as zone_plot
 from workbench.editors.items._db_alias import item_db as _item_db
 
 DATA = Path(__file__).parent / "data"

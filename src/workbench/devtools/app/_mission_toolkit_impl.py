@@ -62,7 +62,7 @@ from pathlib import Path
 import yaml
 from xi_tinkerer import parse_dialog, parse_entity_names, parse_events
 
-import settings
+from workbench.runtime import settings_store as settings
 
 TOOLS_ROOT = Path(__file__).parent
 TOPAZ_ROOT = settings.get_topaz_root()

@@ -55,7 +55,7 @@ def legacy_test_write_feature_enabled() -> bool:
     if env:
         return env.lower() in {"1", "true", "yes", "on"}
     try:
-        import settings as _settings
+        from workbench.runtime import settings_store as _settings
         return _settings.get_ah_flag("ah_legacy_test_writes").lower() in {"1", "true", "yes", "on"}
     except Exception:
         return False
