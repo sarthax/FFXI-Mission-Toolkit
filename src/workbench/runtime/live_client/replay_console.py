@@ -63,9 +63,9 @@ const show=(id,value)=>document.getElementById(id).textContent=value;
 let rows=[],playing=false,timer=null,generation=0;
 const tracePlanes=new Map();
 const relativeSelections=new Map();
-let entityProjection=null;
+let entityProjection=null,displayedSession=null;
 const controls=['step','poll','previous','restart','play','timeline','unload','replace','capture-player','save-player','export-path'];
-function reset(){entityProjection=null;for(const id of ['character','zone','xyz','heading','observed','entities','source','version'])show(id,'—');document.getElementById('trace').replaceChildren();document.getElementById('entity-rows').replaceChildren();document.getElementById('relative-waypoint').replaceChildren(new Option('Choose a comparable waypoint',''));show('relative-status','Select a recorded session to compare saved positions.');show('entity-status','No entity observations.');show('trace-status','Select a recorded session.');}
+function reset(){entityProjection=null;displayedSession=null;for(const id of ['character','zone','xyz','heading','observed','entities','source','version'])show(id,'—');document.getElementById('trace').replaceChildren();document.getElementById('entity-rows').replaceChildren();document.getElementById('relative-waypoint').replaceChildren(new Option('Choose a comparable waypoint',''));show('relative-status','Select a recorded session to compare saved positions.');show('entity-status','No entity observations.');show('trace-status','Select a recorded session.');}
 function showEntities(data){entityProjection=data;renderEntities();}
 function renderEntities(){
  const body=document.getElementById('entity-rows');body.replaceChildren();
@@ -189,7 +189,7 @@ async function refresh(){
  show('character',data.player.character);show('zone',String(data.zone_id));show('xyz',[p.x,p.y,p.z].join(', '));
  show('heading',String(p.heading));show('observed',String(data.observed_at));show('entities',String(data.entities.length));
  show('source',data.adapter||'Unknown');show('version',data.client_version||'Unknown');
- showEntities(data);
+ displayedSession=client.value;showEntities(data);
  document.getElementById('capture-player').disabled=false;
  document.getElementById('save-player').disabled=false;
  document.getElementById('export-path').disabled=!recording;
@@ -247,7 +247,9 @@ document.getElementById('replace').addEventListener('click',()=>openRecording(tr
 client.addEventListener('change',()=>{pause();safeRefresh();});
 document.getElementById('compare').addEventListener('change',safeRefresh);
 async function exportObservation(kind,entityIndex){
- pause();const params=new URLSearchParams({client_id:client.value});
+ pause();
+ if(!entityProjection?.observation_token||displayedSession!==client.value){show('export-status','Refresh the observation before capturing.');return;}
+ const params=new URLSearchParams({client_id:displayedSession,observation_token:entityProjection.observation_token});
  if(kind==='waypoint'){
   const name=document.getElementById('waypoint-name').value.trim();
   if(!name){show('export-status','Enter a waypoint name first.');return;}
@@ -292,7 +294,8 @@ async function safeLibraryRefresh(){try{await refreshLibrary();}catch(error){doc
 async function saveWaypoint(entityIndex){
  pause();const name=document.getElementById('waypoint-name').value.trim();
  if(!name){show('library-status','Enter a waypoint name in Player observation first.');return;}
- const params=new URLSearchParams({client_id:client.value,name});if(entityIndex!==undefined)params.set('entity_index',String(entityIndex));
+ if(!entityProjection?.observation_token||displayedSession!==client.value){show('library-status','Refresh the observation before capturing.');return;}
+ const params=new URLSearchParams({client_id:displayedSession,name,observation_token:entityProjection.observation_token});if(entityIndex!==undefined)params.set('entity_index',String(entityIndex));
  try{await request('/live-client/waypoints/capture?'+params,{method:'POST'});await refreshLibrary();}
  catch(error){show('library-status',error.message);}
 }

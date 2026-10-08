@@ -389,3 +389,20 @@ absent IDs both stay unknown. Legacy scope is unspecified. These metrics describ
 supplied frames, not verified entity identity, target roles or world completeness.
 Use the existing [runtime report command](LIVE_CLIENT_WINDOWS_HANDOFF.md#produce-an-offline-runtime-report)
 for both inventory and historical recordings.
+
+## Displayed-observation capture guard
+
+Projection responses include an opaque `observation_token` for immutable frame
+contents and the registry's session generation. The console sends it when saving
+or downloading player/entity waypoints and recorded paths. Seek, feed updates,
+changed entity observations or recording replacement invalidate stale captures,
+including replacements with identical displayed values. HTTP 409 asks the user
+to refresh; rejected library captures preserve existing storage. Filtering does
+not invalidate an otherwise unchanged observation. Path export rechecks after
+collecting samples. Existing API callers may omit the optional token for backward
+compatibility; the console requires it and checks its displayed session selection.
+
+This token checks observation consistency, not authentication, verified server
+identity, native compatibility or game-write authorization. The existing origin
+and read-only boundaries remain separate. Tests cover replay/feed/session changes,
+slot identity changes and actual browser refresh/retry without moving the client.

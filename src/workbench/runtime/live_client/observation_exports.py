@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from .models import Waypoint
+from .observation_guard import require_observation
 from .telemetry import decode_frame
 from .waypoints import waypoint_document
 
@@ -73,8 +74,10 @@ def create_observation_export_router(registry) -> APIRouter:
     @router.get('/waypoint')
     def waypoint(client_id: str = Query(min_length=1, max_length=200),
                  name: str = Query(min_length=1, max_length=200),
-                 entity_index: int | None = Query(default=None, ge=0, le=65535)):
+                 entity_index: int | None = Query(default=None, ge=0, le=65535),
+                 observation_token: str | None = Query(default=None, min_length=64, max_length=64)):
         frame = observed(client_id)
+        require_observation(registry, client_id, frame, observation_token)
         try:
             document = capture_waypoint(frame, client_id, name, entity_index, recording_context(registry, client_id, frame))
         except ValueError as exc:
@@ -84,8 +87,10 @@ def create_observation_export_router(registry) -> APIRouter:
         return download(document, 'observed-waypoint.json')
 
     @router.get('/path')
-    def path(client_id: str = Query(min_length=1, max_length=200)):
+    def path(client_id: str = Query(min_length=1, max_length=200),
+             observation_token: str | None = Query(default=None, min_length=64, max_length=64)):
         frame = observed(client_id)
+        require_observation(registry, client_id, frame, observation_token)
         replay = registry._clients.get(client_id)
         if replay is None:
             raise HTTPException(404, 'path export requires a recorded session')
@@ -99,6 +104,7 @@ def create_observation_export_router(registry) -> APIRouter:
                             'position': asdict(snapshot.position),
                             'client_id': snapshot.client_id,
                             'instance_hint': snapshot.instance_hint})
+        require_observation(registry, client_id, frame, observation_token)
         return download({'schema_version': 1, 'kind': 'live_client_path',
                          'samples': samples,
                          'provenance': provenance(client_id, frame.snapshot)},
