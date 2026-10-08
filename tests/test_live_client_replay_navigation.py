@@ -24,5 +24,6 @@ def test_replay_end_previous_restart_and_resume():
     assert registry.navigate("demo","restart").snapshot.position.x==1
     assert registry.status()[0]["remaining_frames"]==3
     assert registry.advance("demo").snapshot.position.x==2
+    registry.navigate("demo","restart")
     with pytest.raises(StopIteration):
-        registry.navigate("demo","restart") and registry.navigate("demo","previous")
+        registry.navigate("demo","previous")
