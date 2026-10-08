@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 261,
+  "route_count": 262,
   "routes": [
     {
       "method": "GET",
@@ -1817,6 +1817,14 @@
       "path": "/ocr/layout/{profile_id}/delete",
       "home": "Captures",
       "section": "YouTube OCR",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/wiki/topic",
+      "home": "Tools",
+      "section": "Wiki Compiler",
       "role": "mutation",
       "disposition": "KEEP"
     },

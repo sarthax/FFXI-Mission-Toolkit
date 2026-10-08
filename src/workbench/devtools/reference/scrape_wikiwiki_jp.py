@@ -10,6 +10,8 @@ from __future__ import annotations
 import urllib.error, argparse, hashlib, html, re, sqlite3, time, urllib.parse, urllib.request
 from datetime import datetime, timezone
 
+from workbench.devtools.reference import wiki_document
+
 SOURCE_ID = "WikiWikiJP"
 BASE = "https://wikiwiki.jp/ffxi/"
 SKIP = ("::", "RecentChanges", "FINAL FANTASY XI Wiki", "MenuBar", "Menu")
@@ -62,8 +64,23 @@ def main():
             except Exception as e: print("skip", title, e); break
         if page is None: continue
         text = to_text(page)
+        page_id = title
         con.execute("INSERT OR REPLACE INTO reference_wiki_pages VALUES(?,?,?,?,?,?,?,?)",
-                    (SOURCE_ID, title, title, title, "", datetime.now(timezone.utc).isoformat(), text, hashlib.sha256(text.encode()).hexdigest()))
+                    (SOURCE_ID, page_id, title, title, "", datetime.now(timezone.utc).isoformat(), text, hashlib.sha256(text.encode()).hexdigest()))
+        _, source_format, blocks = wiki_document.build_blocks(
+            {"page_id": page_id, "title": title, "page_text": text},
+            source_format="html",
+            raw_source=page,
+        )
+        wiki_document.store_document(
+            con,
+            source_id=SOURCE_ID,
+            page_id=page_id,
+            source_format=source_format,
+            raw_source=page,
+            blocks=blocks,
+        )
+        wiki_document.ensure_title_alias(con, SOURCE_ID, page_id, title)
         n += 1
         for l in links(page):
             if a.all or any(l.startswith(s) for s in a.seed): queue.append((l, depth))
