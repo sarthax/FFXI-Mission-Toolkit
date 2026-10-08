@@ -24,6 +24,17 @@ def main():
     assert suggestions[0]["canonical_title"]=="Mars's Ring",suggestions
     assert suggestions[0]["review_only"] is True
     assert wiki_document.page_topic(db,"WikiWikiJP","jp1") is None
+    wiki_document.dismiss_topic_suggestion(db,source_id="WikiWikiJP",page_id="jp1",
+                                           topic_id=suggestions[0]["topic_id"])
+    assert wiki_document.suggest_topic_links(db,source_id="WikiWikiJP",page_id="jp1")==[]
+    try:
+        wiki_document.dismiss_topic_suggestion(db,source_id="WikiWikiJP",page_id="jp1",
+                                               topic_id=suggestions[0]["topic_id"])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Dismissal must reject stale suggestion")
+    assert wiki_document.page_topic(db,"WikiWikiJP","jp1") is None
     assert wiki_document.suggest_topic_links(db,source_id="FFXIclopedia",page_id="en1")==[]
     assert wiki_document.suggest_topic_links(db,source_id="FFXIclopedia",page_id="en2")==[]
     print("Wiki V2 reviewed topic suggestion regression: PASS")

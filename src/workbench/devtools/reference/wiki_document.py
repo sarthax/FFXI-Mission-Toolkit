@@ -48,6 +48,22 @@ def init_db(con: sqlite3.Connection) -> None:
     CREATE INDEX IF NOT EXISTS idx_reference_wiki_topic_page
       ON reference_wiki_topic_pages(source_id,page_id);
     """)
+    con.execute("""CREATE TABLE IF NOT EXISTS reference_wiki_topic_dismissals(
+      source_id TEXT NOT NULL,page_id TEXT NOT NULL,topic_id TEXT NOT NULL,
+      dismissed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY(source_id,page_id,topic_id))""")
+    con.commit()
+
+
+def dismiss_topic_suggestion(con, *, source_id: str, page_id: str, topic_id: str) -> None:
+    """Hide a suggested topic for one page; never unlink existing topics."""
+    init_db(con)
+    if page_topic(con,source_id,page_id):
+        raise ValueError("Page already has a topic link")
+    if not any(x["topic_id"]==topic_id for x in suggest_topic_links(con,source_id=source_id,page_id=page_id)):
+        raise ValueError("Topic is not a current suggestion")
+    con.execute("""INSERT OR IGNORE INTO reference_wiki_topic_dismissals
+      (source_id,page_id,topic_id) VALUES (?,?,?)""",(source_id,str(page_id),topic_id))
     con.commit()
 
 
@@ -451,6 +467,9 @@ def suggest_topic_links(con, *, source_id: str, page_id: str, limit: int = 20) -
     """,(norm,source_id,str(page_id))).fetchall()
     topics={}
     for topic_id,title,matched_source,matched_page in rows:
+        if con.execute("SELECT 1 FROM reference_wiki_topic_dismissals WHERE source_id=? AND page_id=? AND topic_id=?",
+                       (source_id,str(page_id),topic_id)).fetchone():
+            continue
         item=topics.setdefault(topic_id,{"topic_id":topic_id,"canonical_title":title,
             "match_method":"EXACT_REVIEWED_ALIAS","review_only":True,"supporting_pages":[]})
         item["supporting_pages"].append({"source_id":matched_source,"page_id":str(matched_page)})
