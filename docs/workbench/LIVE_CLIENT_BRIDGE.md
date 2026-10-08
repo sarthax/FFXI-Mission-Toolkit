@@ -217,3 +217,10 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Browser regression exercises the shared-shell page, duplicate identities, playback/pause/speed, seek, independent comparison, replacement, unload and segmented X/Z traces. Trace axes use a common scale and do not join zone/instance discontinuities.
 - Optional startup-source failures remain visible on the page; opening a recording is independent of Settings. Existing startup configuration remains supported rather than removing users' saved sources.
 - [Native source research](LIVE_CLIENT_NATIVE_RESEARCH.md) records immutable upstream revisions, licensing observations and requirements for genuine Windows/FFXI validation. No native build is declared supported and no game write adapter is enabled.
+
+## Experimental framework observation sources
+
+- PR #687 and replay/UI PR #691 are merged. Recorded-session and shared Workbench regression checks passed; Windows/FFXI support remains incomplete.
+- `addons/workbench_live/` contains original, explicit-start read-only Ashita v4 and Windower observation exporters with bounded JSONL output. Ashita is the selected real-runtime validation target. No memory offsets, OS process detector, supported-build allowlist or game write functions are provided.
+- Lua 5.1 cloud tests exercise actual addon code with synthetic interfaces, JSONL-to-`FileTelemetryBridge` ingestion, identity/zone transitions, invalid fields, missing SDK functions, clock reversal, logout/unload and independent sources. They do not establish real-client compatibility.
+- [Addon installation and Windows acceptance procedure](../../addons/workbench_live/README.md) distinguishes cloud JSONL upload from same-host live file-feed testing. Verify the actual Ashita major version and framework/game/module identity before claiming support.
