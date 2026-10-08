@@ -4,8 +4,10 @@ on:
   push:
     branches:
       - 'feature/live-client-replay-integration'
+      - 'feature/live-client-ashita-observations'
     paths:
       - 'src/workbench/runtime/live_client/**'
+      - 'addons/workbench_live/**'
       - 'src/workbench/app/_host_impl.py'
       - 'gui/templates/live_client_console.html'
       - 'src/workbench/gui_shell.py'
@@ -14,6 +16,7 @@ on:
   pull_request:
     paths:
       - 'src/workbench/runtime/live_client/**'
+      - 'addons/workbench_live/**'
       - 'src/workbench/app/_host_impl.py'
       - 'gui/templates/live_client_console.html'
       - 'src/workbench/gui_shell.py'
@@ -34,7 +37,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install offline regression dependencies
-        run: python -m pip install -e . pytest fastapi httpx python-multipart uvicorn playwright jinja2
+        run: python -m pip install -e . pytest fastapi httpx python-multipart uvicorn playwright jinja2 lupa
+      - name: Verify required Lua 5.1 test runtime
+        run: python -c 'from lupa.lua51 import LuaRuntime; assert LuaRuntime().eval("_VERSION") == "Lua 5.1"'
       - name: Install Chromium for browser regression
         run: python -m playwright install --with-deps chromium
       - name: Run Live Client contracts and recording regressions
