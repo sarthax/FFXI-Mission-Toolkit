@@ -5534,6 +5534,12 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
 
     visible_blocks = [b for b in blocks if not (b.get("metadata") or {}).get("hidden")]
     groups = wiki_document.presentation_groups(visible_blocks)
+    for section in groups:
+        for item in section.get("content", []):
+            candidate=item.get("field_candidate")
+            if candidate and candidate.get("source_links"):
+                candidate["source_links"]=wiki_document.resolve_reviewed_template_links(
+                    con,candidate["source_links"])
     topic = wiki_document.page_topic(con, source, page_id)
     degraded = any((b.get("metadata") or {}).get("degraded") for b in visible_blocks)
     return {
