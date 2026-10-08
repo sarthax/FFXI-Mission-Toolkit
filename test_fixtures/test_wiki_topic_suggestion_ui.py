@@ -25,6 +25,9 @@ def main():
     assert '[:10]' in host
     assert 'Inspect entity candidates ({{ link.entity_candidate_count }})' in template
     assert '{{ link.entity_candidate_lines }}' in template
+    assert 'href="/features/trace?q={{ link.entity_target.key|urlencode }}"' in template
+    assert 'search is not a verified mapping' in template
+    assert '{% if link.entity_target %}' in template
     print("Wiki multilingual suggestion reader regression: PASS")
 
 if __name__=="__main__":
