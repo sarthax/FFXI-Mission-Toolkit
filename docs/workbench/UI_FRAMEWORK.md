@@ -91,3 +91,6 @@ Completed workspace migrations:
 - **Message-ID Shift Master** — Evidence-derived packet-message/dialog-index shift ranges with explicit rebuild write boundary (Workbench, reading width).
 - **Capture Delete Confirmation** — Capture-owned-row deletion review with explicit permanent-delete boundary (Editor, narrow).
 - **Capture Help** — Supported ingestion formats, packet convergence, evidence provenance, and adapter-gap reference (Detail, wide, read-only).
+- **Capture Add Files** — Capture evidence upload/ingestion surface with individual-file and directory-preserving workflows (Editor, write boundary explicit).
+- **New Capture** — Capture metadata/classification creation form (Editor, reading width).
+- **Capture Source Evidence** — Exact source locator/hash/row provenance dossier (Detail, read-only).
