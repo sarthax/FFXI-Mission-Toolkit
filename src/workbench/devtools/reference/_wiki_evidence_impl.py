@@ -422,10 +422,30 @@ def map_claim(con: sqlite3.Connection, claim: dict) -> list[dict]:
 
 
 
+def _evidence_blocks(con: sqlite3.Connection, page: dict, source_id: str) -> list[dict]:
+    """Return source-located blocks, persisting offline-available MediaWiki structure when possible."""
+    page_id=str(page.get("pageid") or page.get("page_id") or page.get("title"))
+    blocks=wiki_document.stored_blocks(con,source_id,page_id)
+    if blocks:
+        return blocks
+    if source_id in {SOURCE_BG,SOURCE_FFXICLOPEDIA}:
+        raw=page.get("wikitext") if "wikitext" in page else page.get("page_text") or ""
+        _,source_format,blocks=wiki_document.build_blocks(
+            page,source_format="mediawiki",raw_source=raw
+        )
+        wiki_document.store_document(
+            con,source_id=source_id,page_id=page_id,source_format=source_format,
+            raw_source=raw,blocks=blocks,
+        )
+        wiki_document.ensure_title_alias(con,source_id,page_id,page.get("title") or page_id)
+        return blocks
+    return []
+
+
 def _structured_link_claims(con: sqlite3.Connection, page: dict, source_id: str) -> list[dict]:
     """Promote preserved source links into normal REFERENCE_ONLY entity-reference claims."""
     page_id=str(page.get("pageid") or page.get("page_id") or page.get("title"))
-    blocks=wiki_document.stored_blocks(con,source_id,page_id)
+    blocks=_evidence_blocks(con,page,source_id)
     if not blocks:
         return []
     title=page.get("title") or ""
@@ -535,7 +555,7 @@ def _internal_link_target(source_id: str, target: str) -> str | None:
 def extract_structured_relations(con: sqlite3.Connection, page: dict, source_id: str) -> list[dict]:
     """Extract only explicitly section-labelled binary reference relationships."""
     page_id=str(page.get("pageid") or page.get("page_id") or page.get("title"))
-    blocks=wiki_document.stored_blocks(con,source_id,page_id)
+    blocks=_evidence_blocks(con,page,source_id)
     if not blocks:
         return []
     topic=wiki_document.page_topic(con,source_id,page_id)
