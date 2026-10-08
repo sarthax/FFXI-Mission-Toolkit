@@ -139,7 +139,15 @@ from workbench.runtime.live_client.replay_console import create_replay_console_r
 live_client_replay_registry = ReplayRegistry()
 # Only the explicitly configured offline JSONL recording is loaded.
 from workbench.runtime.live_client.bootstrap import register_configured_replay
-register_configured_replay(live_client_replay_registry, os.environ)
+# Settings persist across restarts; explicit environment overrides remain optional.
+from workbench.runtime.live_client.configuration import effective_replay_configuration
+_live_client_settings_con = sqlite3.connect(str(settings_mod.DB_PATH))
+try:
+    _live_client_settings = settings_mod.get_all(_live_client_settings_con)
+finally:
+    _live_client_settings_con.close()
+register_configured_replay(live_client_replay_registry,
+                           effective_replay_configuration(_live_client_settings, os.environ))
 app.include_router(create_registry_router(live_client_replay_registry))
 app.include_router(create_replay_console_router())
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
