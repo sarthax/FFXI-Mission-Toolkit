@@ -158,3 +158,11 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Added `tests/test_live_client_file_bridge.py` covering append/poll, partial frame completion, cross-client rejection, file truncation, and size limits.
 - This is **transport groundwork only**, not a Windows process-memory reader or verified real-time FFXI integration. A native/Ashita helper must still be implemented and validated, and a controlled lifecycle needs wiring to the registered live-feed API.
 - Do not interpret client-reported version as independent version verification; writes remain unsupported.
+
+
+## 2026-10-08 Live Client Settings integration
+- The existing toolkit `Settings` form now includes a Live Client section. Source may be disabled or offline replay, with persistent recording path, client ID and auto-connect-on-startup checkbox stored via `workbench.runtime.settings_store` in the toolkit settings database.
+- The `Validate recording / detect client ID` button POSTs a **local toolkit path** to the same-origin `/live-client/inspect-recording` route. Inspection uses strict bounded v1 JSON-lines decoding and fills the detected client ID only on success. It does not connect to or control the FFXI process.
+- Startup prefers explicit paired `FFXI_LIVE_REPLAY_FILE` and `FFXI_LIVE_REPLAY_CLIENT` environment overrides when present; otherwise it uses saved Settings only when replay is selected and automatic restore is enabled. No Windows environment-variable editing is required.
+- `tests/test_live_client_settings.py` covers persisted values, optional overrides, disabled auto-connect and recording inspection. Host and Settings template assertions cover wiring.
+- The current path input references a file on the toolkit host computer; a browser file-upload/browse control and native live-client source are **not implemented**. Manual replay selection still requires a toolkit restart to restore the configured recording. The UI accurately labels live connection as future work.
