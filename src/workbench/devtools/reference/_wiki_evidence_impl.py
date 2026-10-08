@@ -29,6 +29,7 @@ BG_DUMP_PATH = TOOLS_ROOT / "vendor" / "ffxi-wiki-dumps-dist" / "bg-wiki.jsonl.g
 
 SOURCE_BG = "BGWiki"
 SOURCE_FFXICLOPEDIA = "FFXIclopedia"
+SOURCE_WIKIWIKI_JP = "WikiWikiJP"
 REFERENCE_ONLY = "REFERENCE_ONLY"
 
 _NON_ENTITY_PREFIXES = ("image:", "file:", "category:", "media:", "template:", "user:", "special:")
@@ -408,8 +409,12 @@ def find_bg_page(title_query: str) -> dict | None:
 def find_reference_page(con: sqlite3.Connection, source_id: str, title_query: str) -> dict | None:
     init_db(con)
     if source_id == SOURCE_BG:
-        return find_bg_page(title_query)
+        found = find_bg_page(title_query)
+        if found:
+            return found
     norm = _norm(title_from_query(title_query))
+    if source_id == SOURCE_WIKIWIKI_JP:
+        norm = title_from_query(title_query)  # JP titles have no a-z0-9 form; the scraper stores the raw title
     row = con.execute(
         """SELECT source_id,page_id,title,revision_id,revision_timestamp,page_text,page_hash
            FROM reference_wiki_pages WHERE source_id=? AND norm_title=? LIMIT 1""",

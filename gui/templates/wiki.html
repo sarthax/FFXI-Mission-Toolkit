@@ -23,9 +23,55 @@
     {% endfor %}
   </select>
   <input type="text" name="title" value="{{ title }}" placeholder="wiki page title or URL, e.g. Leujaoam Cleansing">
+  <input type="hidden" name="tab" value="{{ tab }}">
   <button type="submit">Open</button>
 </form>
-{% if title %}
+
+<details class="wiki-section" id="scrape-box">
+<summary>Scrape a wiki page by URL <span class="muted">(runs in the background, no LLM)</span></summary>
+<div class="body">
+  <form id="scrape-form" class="wiki-actions" style="margin:4px 0">
+    <input type="text" name="url" style="min-width:380px;flex:1" placeholder="https://www.bg-wiki.com/ffxi/Lord_Asag  |  https://ffxiclopedia.fandom.com/wiki/...  |  https://wikiwiki.jp/ffxi/...">
+    <button type="submit">Scrape</button>
+  </form>
+  <p class="muted">Pages download into a private temp database and merge into the main one in a short transaction, so other tools keep working. Japanese text is stored exactly as published.</p>
+  <div id="scrape-jobs">
+  {% for j in jobs %}<div class="muted job-row" data-job="{{ j.id }}">{{ j.source }} · {{ j.title }} — {{ j.state }}</div>{% endfor %}
+  </div>
+</div>
+</details>
+
+<div class="wiki-actions dense-toolbar" style="margin:6px 0">
+  <a class="chip {% if tab == 'browse' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=browse"><b>Browse</b></a>
+  <a class="chip {% if tab == 'evidence' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=evidence"><b>Evidence workflow</b></a>
+  <span class="sp"></span>
+  <span class="muted">Open site:</span>
+  {% for l in site_links %}<a class="chip" href="{{ l.page or l.home }}" target="_blank" rel="noopener">{{ l.label }}{% if l.page %} ↗ page{% else %} ↗{% endif %}</a>{% endfor %}
+</div>
+
+{% if tab == 'browse' %}
+{% if title and not page_view and not report %}
+<div class="warn">No stored {{ source }} page matches {{ title|e }}. Paste its URL in the scrape box above to fetch it.</div>
+{% endif %}
+{% if page_view %}
+<div class="dense-toolbar" style="margin:8px 0 5px">
+  <strong>{{ page_view.title }}</strong>
+  {% if page_view.timestamp %}<span class="muted">rev {{ page_view.revision or '' }} · {{ page_view.timestamp }}</span>{% endif %}
+  <span class="sp"></span>
+  {% if page_view.url %}<a class="chip" href="{{ page_view.url }}" target="_blank" rel="noopener">Open source page ↗</a>{% endif %}
+  {% if page_view.is_ja %}<button type="button" id="tr-btn" data-source="{{ source }}" data-title="{{ title }}">Translate to English (machine)</button>{% endif %}
+</div>
+{% if page_view.is_ja %}
+<div id="tr-out" class="warn" hidden></div>
+<p class="muted">Japanese original shown below, stored verbatim. Translations are machine-generated, cached separately, and never ingested as evidence.</p>
+{% endif %}
+{% for head, body in page_view.sections %}
+<details class="wiki-section" {% if loop.index <= 3 %}open{% endif %}><summary>{{ head }}</summary><div class="body"><pre style="white-space:pre-wrap;font-size:12.5px;background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:8px;">{{ body }}</pre></div></details>
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if title and tab == 'evidence' %}
 <div class="wiki-actions dense-toolbar" style="margin:4px 0">
 <form method="post" action="/wiki/map" style="margin:0">
   <input type="hidden" name="title" value="{{ title }}">
@@ -43,7 +89,7 @@
 </div>
 {% endif %}
 
-{% if evidence and evidence.status == "OK" %}
+{% if tab == 'evidence' and evidence and evidence.status == "OK" %}
 <details class="wiki-section" open>
 <summary>Evidence mapping ledger — {{ source }} {% if evidence.claims %}<span class="chip">{{ evidence.claims|length }} claims</span>{% endif %}</summary>
 <div class="body">
@@ -103,11 +149,11 @@
   <p class="muted">No claim ledger has been built for this page yet. Use <b>Build / refresh evidence map</b>.</p>
   {% endif %}
 </div></details>
-{% elif evidence and evidence.status == "NOT_FOUND" and source != "BGWiki" %}
+{% elif tab == 'evidence' and evidence and evidence.status == "NOT_FOUND" and source != "BGWiki" %}
 <div class="warn">No imported {{ source }} page matched this title.</div>
 {% endif %}
 
-{% if comparison and comparison.status == "OK" %}
+{% if tab == 'evidence' and comparison and comparison.status == "OK" %}
 <details class="wiki-section">
 <summary>Dual-wiki claim comparison <span class="chip">{{ comparison.pairs|length }} aligned claims</span></summary>
 <div class="body">
@@ -143,11 +189,11 @@
     {% endfor %}
   </table></div>
 </div></details>
-{% elif comparison and comparison.status == "NOT_BUILT" and title %}
+{% elif tab == 'evidence' and comparison and comparison.status == "NOT_BUILT" and title %}
 <p class="muted" style="margin-top:14px;">No dual-wiki comparison has been built for this title yet.</p>
 {% endif %}
 
-{% if report %}
+{% if report and tab == 'browse' %}
 {% if report.error %}
 <div class="warn">{{ report.error }}</div>
 {% else %}
@@ -220,4 +266,23 @@
 {% endif %}
 {% endif %}
 {% endif %}
+<script>
+(function(){
+  var f=document.getElementById('scrape-form'),box=document.getElementById('scrape-jobs'),timer=null;
+  function paint(jobs){box.innerHTML=jobs.map(function(j){return '<div class="muted job-row">'+j.source+' · '+j.title+' — <b>'+j.state+'</b>'+(j.error?' · '+j.error:'')+'</div>';}).join('');
+    return jobs.some(function(j){return ['queued','fetching','merging'].indexOf(j.state)>=0;});}
+  function poll(){fetch('/wiki/jobs').then(function(r){return r.json();}).then(function(d){if(paint(d.jobs)){timer=setTimeout(poll,2000);}else{timer=null;}});}
+  if(f){f.addEventListener('submit',function(e){e.preventDefault();
+    fetch('/wiki/scrape',{method:'POST',body:new FormData(f)}).then(function(r){return r.json();}).then(function(d){
+      if(d.error){box.insertAdjacentHTML('afterbegin','<div class="warn">'+d.error+'</div>');return;}
+      f.reset();if(!timer)poll();});});}
+  var tb=document.getElementById('tr-btn');
+  if(tb){tb.addEventListener('click',function(){var o=document.getElementById('tr-out');o.hidden=false;o.textContent='Translating...';
+    fetch('/wiki/translate?source='+encodeURIComponent(tb.dataset.source)+'&title='+encodeURIComponent(tb.dataset.title)).then(function(r){return r.json();}).then(function(d){
+      if(d.status==='OK'){o.className='';o.style.whiteSpace='pre-wrap';o.textContent='[machine translation, unverified]
+'+d.text;}
+      else if(d.status==='NO_ENGINE'){o.textContent='No translation engine configured. Set WIKI_TRANSLATE_CMD (a command that reads Japanese on stdin and prints English) and restart.';}
+      else{o.textContent='Translation failed: '+(d.error||d.status);}});});}
+})();
+</script>
 {% endblock %}

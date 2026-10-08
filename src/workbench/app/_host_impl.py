@@ -22,6 +22,7 @@ from collections import Counter
 import io
 import json
 import os
+import hashlib
 import re
 import subprocess
 import sqlite3
@@ -92,6 +93,7 @@ from workbench.runtime import settings_store as settings_mod
 from workbench.runtime.paths import REPO_ROOT
 from workbench.devtools.reference import wiki_compile
 from workbench.devtools.reference import wiki_evidence
+from workbench.devtools.reference import wiki_jobs
 from workbench.devtools.reference import wiki_claim_compare
 from workbench.core.services import wiki_evidence_graph
 from workbench.gui_shell import build_shell_context
@@ -5459,11 +5461,42 @@ async def packets_bulk_submit(request: Request):
     })
 
 
+def _wiki_page_view(con, source: str, title: str) -> dict | None:
+    """Readable view of one stored/dumped wiki page for the Browse tab."""
+    page = wiki_evidence.find_reference_page(con, source, title)
+    if not page:
+        return None
+    text = page.get("wikitext") if "wikitext" in page else page.get("page_text")
+    text = text or ""
+    sections, head, buf = [], "Overview", []
+    for line in text.splitlines():
+        m = re.match(r"^\s*(={2,6})\s*(.+?)\s*\1\s*$", line)
+        if m:
+            if "".join(buf).strip():
+                sections.append((head, chr(10).join(buf).strip()))
+            head, buf = m.group(2), []
+        else:
+            buf.append(line)
+    if "".join(buf).strip():
+        sections.append((head, chr(10).join(buf).strip()))
+    page_title = page.get("title") or title
+    return {
+        "title": page_title, "page_id": str(page.get("pageid") or page.get("page_id") or page_title),
+        "url": page.get("url") or wiki_jobs.page_url(source, page_title),
+        "revision": page.get("revid") or page.get("revision_id"),
+        "timestamp": page.get("timestamp") or page.get("revision_timestamp"),
+        "sections": sections, "chars": len(text),
+        "hash": page.get("page_hash") or hashlib.sha256(text.encode()).hexdigest(),
+        "text": text, "is_ja": source == wiki_evidence.SOURCE_WIKIWIKI_JP,
+    }
+
+
 @app.get("/wiki", response_class=HTMLResponse)
-def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = ""):
+def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = "", tab: str = "browse"):
     report = None
     evidence = None
     comparison = None
+    page_view = None
     con = get_con()
     wiki_evidence.init_db(con)
     wiki_claim_compare.init_db(con)
@@ -5472,18 +5505,18 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
             report = wiki_compile.compile_report(con, title)
         evidence = wiki_evidence.page_evidence(con, source, title)
         comparison = wiki_claim_compare.alignment_report(con, title)
+        page_view = _wiki_page_view(con, source, title)
+
+    def _have(sid):
+        return con.execute("SELECT 1 FROM reference_wiki_pages WHERE source_id=? LIMIT 1", (sid,)).fetchone() is not None
     available_sources = [
         {"id": wiki_evidence.SOURCE_BG, "label": "BG Wiki", "available": True},
-        {
-            "id": wiki_evidence.SOURCE_FFXICLOPEDIA,
-            "label": "FFXIclopedia",
-            "available": con.execute(
-                "SELECT 1 FROM reference_wiki_pages WHERE source_id=? LIMIT 1",
-                (wiki_evidence.SOURCE_FFXICLOPEDIA,),
-            ).fetchone() is not None,
-        },
+        {"id": wiki_evidence.SOURCE_FFXICLOPEDIA, "label": "FFXIclopedia", "available": _have(wiki_evidence.SOURCE_FFXICLOPEDIA)},
+        {"id": wiki_evidence.SOURCE_WIKIWIKI_JP, "label": "FFXI Wiki (Japanese)", "available": _have(wiki_evidence.SOURCE_WIKIWIKI_JP)},
     ]
     con.close()
+    site_links = [{"label": v["label"], "home": v["home"], "page": wiki_jobs.page_url(k, title) if title else None}
+                  for k, v in wiki_jobs.SITES.items()]
     return templates.TemplateResponse(request, "wiki.html", {
         "title": title,
         "source": source,
@@ -5492,7 +5525,40 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         "available_sources": available_sources,
         "comparison": comparison,
         "error": error,
+        "tab": tab if tab in ("browse", "evidence") else "browse",
+        "page_view": page_view,
+        "site_links": site_links,
+        "jobs": wiki_jobs.recent_jobs(),
     })
+
+
+@app.post("/wiki/scrape")
+async def wiki_scrape_url(request: Request):
+    form = await request.form()
+    url = (form.get("url") or "").strip()
+    try:
+        job = wiki_jobs.start_job(url, DB_PATH)
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    return {"job": job}
+
+
+@app.get("/wiki/jobs")
+def wiki_job_status():
+    return {"jobs": wiki_jobs.recent_jobs()}
+
+
+@app.get("/wiki/translate")
+def wiki_translate(source: str, title: str):
+    """Machine translation of a stored page, display-only; the stored original is untouched."""
+    con = get_con()
+    try:
+        view = _wiki_page_view(con, source, title)
+        if not view:
+            return JSONResponse({"status": "NOT_FOUND"}, status_code=404)
+        return wiki_jobs.translate_cached(con, source, view["page_id"], view["hash"], view["text"])
+    finally:
+        con.close()
 
 
 @app.post("/wiki/map", response_class=HTMLResponse)
