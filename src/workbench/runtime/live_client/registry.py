@@ -51,6 +51,16 @@ class ReplayRegistry:
             raise KeyError("client not registered")
         return self._clients[client_id].advance()
 
+    def navigate(self, client_id: str, action: str) -> TelemetryFrame:
+        if client_id not in self._clients:
+            raise KeyError("replay client not registered")
+        replay = self._clients[client_id]
+        if action == "restart":
+            return replay.restart()
+        if action == "previous":
+            return replay.previous()
+        raise ValueError("unknown replay navigation action")
+
     def status(self) -> tuple[dict, ...]:
         return tuple({
             "client_id": client_id,
@@ -58,6 +68,8 @@ class ReplayRegistry:
             "zone_id": (replay.feed._latest.snapshot.position.zone_id
                         if replay.feed._latest is not None else None),
             "remaining_frames": replay.remaining,
+            "frame_position": replay.position,
+            "total_frames": replay.total,
             "read_only": True,
         } for client_id, replay in sorted(self._clients.items())) + tuple({
             'client_id': client_id,

@@ -25,7 +25,7 @@ dt{color:#a9b8ca}dd{margin:0;overflow-wrap:anywhere}
 <header><h1>Live Client — Replay Console</h1><strong>Read-only • Offline</strong></header>
 <p>Displays explicitly registered replay clients. No client discovery, recording import or game-memory controls.</p>
 <section><label for="client">Recorded client </label><select id="client"><option value="">Choose client</option></select>
-<button id="refresh" type="button">Refresh</button><button id="poll" type="button" disabled>Poll file feed</button><button id="step" type="button" disabled>Next recorded frame</button><p id="state" role="status">Not connected</p></section>
+<button id="refresh" type="button">Refresh</button><button id="poll" type="button" disabled>Poll file feed</button><button id="previous" type="button" disabled>Previous</button><button id="restart" type="button" disabled>Restart</button><button id="step" type="button" disabled>Next recorded frame</button><p id="state" role="status">Not connected</p></section>
 <section><h2>Player observation</h2><dl>
 <div><dt>Character</dt><dd id="character">—</dd></div><div><dt>Zone</dt><dd id="zone">—</dd></div>
 <div><dt>XYZ</dt><dd id="xyz">—</dd></div><div><dt>Heading</dt><dd id="heading">—</dd></div>
@@ -43,11 +43,13 @@ async function refresh(){
   const prior=client.value;client.replaceChildren(new Option('Choose client',''));
   for(const row of rows)client.add(new Option(row.client_id,row.client_id));
   client.value=rows.some(r=>r.client_id===prior)?prior:'';
-  if(!client.value){document.getElementById('step').disabled=true;document.getElementById('poll').disabled=true;reset();state.textContent=rows.length?'Select a recorded client':'No replay sessions registered';return;}
+  if(!client.value){document.getElementById('step').disabled=true;document.getElementById('poll').disabled=true;document.getElementById('previous').disabled=true;document.getElementById('restart').disabled=true;reset();state.textContent=rows.length?'Select a recorded client':'No replay sessions registered';return;}
   const row=rows.find(r=>r.client_id===client.value);
   document.getElementById('step').disabled=!row.remaining_frames;
   document.getElementById('poll').disabled=row.source!=='file_feed';
-  state.textContent=row.observed?'Recorded observation available':'Waiting for recorded frame';
+  document.getElementById('previous').disabled=!(row.frame_position>1);
+  document.getElementById('restart').disabled=!(row.frame_position>1);
+  state.textContent=row.observed?(row.total_frames?'Frame '+row.frame_position+' of '+row.total_frames:'Observation available'):'Waiting for recorded frame';
   if(!row.observed){reset();return;}
   // Zone is read from selected client's already-observed frame via registry status.
   if(!Number.isInteger(row.zone_id)){reset();state.textContent='No zone in status; projection unavailable';return;}
@@ -71,6 +73,17 @@ async function step(){
  }catch(err){state.textContent=String(err.message||err);await refresh();}
 }
 document.getElementById('step').addEventListener('click',step);
+async function navigate(action){
+ if(!client.value)return;
+ try{
+  const url='/live-client/replay/navigate?'+new URLSearchParams({client_id:client.value,action});
+  const response=await fetch(url,{method:'POST'});
+  if(!response.ok){const result=await response.json();throw Error(result.detail||'Navigation failed');}
+  await refresh();
+ }catch(error){state.textContent=String(error.message||error);}
+}
+document.getElementById('previous').addEventListener('click',()=>navigate('previous'));
+document.getElementById('restart').addEventListener('click',()=>navigate('restart'));
 document.getElementById('poll').addEventListener('click',async()=>{
   if(!client.value)return;
   const button=document.getElementById('poll');button.disabled=true;
