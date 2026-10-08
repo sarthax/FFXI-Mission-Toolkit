@@ -4,7 +4,7 @@
 {% block page_width %}fluid{% endblock %}
 {% block page_class %}auction-house-admin-page{% endblock %}
 {% block page_heading %}Auction House Administration{% endblock %}
-{% block page_status %}<span class="wb-write-badge">Read + preview/validate; writes execute only through guarded Test-only tools</span>{% endblock %}
+{% block page_status %}<span class="wb-write-badge">READ + SCOPED TEST WRITE — overview controls preview/validate only; writes execute through guarded Test-only tools</span>{% endblock %}
 {% block page_help %}Inspect economy health, listings, history, price trends, lineage semantics, and write readiness. Administrative controls on this page preview and validate only; execution remains in the dedicated guarded Listings, Seeder, Cleanup, Rewards, or Console workflows.{% endblock %}
 {% block page_body %}
 <div class="ah-admin" id="ahAdmin">
