@@ -128,3 +128,10 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - `tests/test_live_client_replay_console.py` covers an explicitly mounted console, no-frame status, selected-client projection, and GET-only behavior.
 - **Important:** router is not mounted into the application and is not linked from navigation yet. No actual live client or map overlay; this is a standalone read-only replay console for opt-in integration testing.
 - Next: coordinate explicit registration in toolkit GUI and the first map marker; then prioritize Windows-side read-only observation adapter and actual FFXI compatibility validation.
+
+
+## 2026-10-08 host registration milestone
+- The toolkit host now explicitly mounts the replay registry, client listing, viewer projection, and standalone browser console, at `/live-client/replay/console`. Registration uses a new empty in-memory registry.
+- Routes remain GET-only. There is **no client process attachment, automatic discovery, user-upload ingest or memory write**, and the console initially says no replay sessions registered.
+- `tests/test_live_client_host_registration.py` verifies registration and the absence of non-GET methods on the new endpoints.
+- Main toolkit navigation link and controlled replay-import workflow are still pending. Do not imply player position is live without a connected Windows adapter.
