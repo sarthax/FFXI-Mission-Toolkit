@@ -151,3 +151,10 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - `tests/test_live_client_replay_step.py` covers these conditions and the console control.
 - This makes the replay API no longer literally GET-only: **projection and client listing remain GET-only**, while step is a narrowly scoped replay-state mutation. It is not a game-client control endpoint.
 - Next: optional playback timing and player map marker; then prioritize read-only Windows FFXI telemetry adapter and version validation.
+
+
+## 2026-10-08 bounded local-helper telemetry transport
+- Added `src/workbench/runtime/live_client/file_bridge.py`: explicit read-only polling of an operator-provided JSON-lines file with bounded complete-line reads, client identity checks through `TelemetryFeedAdapter`, partial trailing-line tolerance, and fail-closed file-rotation/truncation detection.
+- Added `tests/test_live_client_file_bridge.py` covering append/poll, partial frame completion, cross-client rejection, file truncation, and size limits.
+- This is **transport groundwork only**, not a Windows process-memory reader or verified real-time FFXI integration. A native/Ashita helper must still be implemented and validated, and a controlled lifecycle needs wiring to the registered live-feed API.
+- Do not interpret client-reported version as independent version verification; writes remain unsupported.
