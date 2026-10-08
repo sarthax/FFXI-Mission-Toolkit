@@ -396,7 +396,8 @@ Projection responses include an opaque `observation_token` for immutable frame
 contents and the registry's session generation. The console sends it when saving
 or downloading player/entity waypoints and recorded paths. Seek, feed updates,
 changed entity observations or recording replacement invalidate stale captures,
-including replacements with identical displayed values. HTTP 409 asks the user
+including replacements with identical displayed values. Entity-row actions retain
+their own displayed token across table refreshes. HTTP 409 asks the user
 to refresh; rejected library captures preserve existing storage. Filtering does
 not invalidate an otherwise unchanged observation. Path export rechecks after
 collecting samples. Existing API callers may omit the optional token for backward

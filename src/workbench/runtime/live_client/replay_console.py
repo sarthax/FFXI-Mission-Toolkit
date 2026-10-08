@@ -85,9 +85,10 @@ function renderEntities(){
   for(const value of [entity.name||'(unnamed)',entity.kind,entity.client_index,entity.server_entity_id??'Unknown',[p.x,p.y,p.z].join(', '),Number.isFinite(distance)?distance.toFixed(3)+' raw':'Outside numeric range']){
    const cell=document.createElement('td');cell.textContent=String(value);row.append(cell);
   }
+  const captureContext={session:displayedSession,token:entityProjection.observation_token};
   const cell=document.createElement('td'),button=document.createElement('button');
-  button.type='button';button.textContent='Download waypoint';button.addEventListener('click',()=>exportObservation('waypoint',entity.client_index));
-  const save=document.createElement('button');save.type='button';save.textContent='Save to library';save.addEventListener('click',()=>saveWaypoint(entity.client_index));
+  button.type='button';button.textContent='Download waypoint';button.addEventListener('click',()=>exportObservation('waypoint',entity.client_index,captureContext));
+  const save=document.createElement('button');save.type='button';save.textContent='Save to library';save.addEventListener('click',()=>saveWaypoint(entity.client_index,captureContext));
   cell.append(button,save);row.append(cell);body.append(row);
  }
  let status=entities.length?matches.length+' of '+entities.length+' observed entities match; client indices are not server IDs.':'No entity observations in this frame.';
@@ -246,10 +247,11 @@ document.getElementById('open-recording').addEventListener('click',()=>openRecor
 document.getElementById('replace').addEventListener('click',()=>openRecording(true));
 client.addEventListener('change',()=>{pause();safeRefresh();});
 document.getElementById('compare').addEventListener('change',safeRefresh);
-async function exportObservation(kind,entityIndex){
+async function exportObservation(kind,entityIndex,captureContext){
  pause();
- if(!entityProjection?.observation_token||displayedSession!==client.value){show('export-status','Refresh the observation before capturing.');return;}
- const params=new URLSearchParams({client_id:displayedSession,observation_token:entityProjection.observation_token});
+ const context=captureContext||{session:displayedSession,token:entityProjection?.observation_token};
+ if(!context.token||context.session!==client.value){show('export-status','Refresh the observation before capturing.');return;}
+ const params=new URLSearchParams({client_id:context.session,observation_token:context.token});
  if(kind==='waypoint'){
   const name=document.getElementById('waypoint-name').value.trim();
   if(!name){show('export-status','Enter a waypoint name first.');return;}
@@ -291,11 +293,12 @@ async function refreshLibrary(){
  if(client.value)await safeRefresh();
 }
 async function safeLibraryRefresh(){try{await refreshLibrary();}catch(error){document.getElementById('waypoint-rows').replaceChildren();show('library-status',error.message);}}
-async function saveWaypoint(entityIndex){
+async function saveWaypoint(entityIndex,captureContext){
  pause();const name=document.getElementById('waypoint-name').value.trim();
  if(!name){show('library-status','Enter a waypoint name in Player observation first.');return;}
- if(!entityProjection?.observation_token||displayedSession!==client.value){show('library-status','Refresh the observation before capturing.');return;}
- const params=new URLSearchParams({client_id:displayedSession,name,observation_token:entityProjection.observation_token});if(entityIndex!==undefined)params.set('entity_index',String(entityIndex));
+ const context=captureContext||{session:displayedSession,token:entityProjection?.observation_token};
+ if(!context.token||context.session!==client.value){show('library-status','Refresh the observation before capturing.');return;}
+ const params=new URLSearchParams({client_id:context.session,name,observation_token:context.token});if(entityIndex!==undefined)params.set('entity_index',String(entityIndex));
  try{await request('/live-client/waypoints/capture?'+params,{method:'POST'});await refreshLibrary();}
  catch(error){show('library-status',error.message);}
 }

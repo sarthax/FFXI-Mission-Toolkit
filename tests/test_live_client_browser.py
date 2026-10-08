@@ -248,6 +248,7 @@ def test_recording_controls_in_browser(tmp_path):
             assert registry._clients[inspection_session].position == 1
             # A replacement with identical frame values still requires refresh.
             from workbench.runtime.live_client.replay import RecordedTelemetryReplay
+            page.evaluate('window.oldEntitySave=document.querySelector("#entity-rows tr button:nth-of-type(2)")')
             replacement = RecordedTelemetryReplay('inventory-ui', [inventory]); replacement.advance()
             before = library.entries()
             registry.add_recording(replacement, label='Replacement', replace_session=inspection_session)
@@ -260,6 +261,9 @@ def test_recording_controls_in_browser(tmp_path):
             from workbench.runtime.live_client.observation_guard import observation_token
             fresh_token = observation_token(registry, inspection_session, registry.frame(inspection_session))
             page.wait_for_function('(token)=>entityProjection?.observation_token===token', arg=fresh_token)
+            page.evaluate("document.getElementById('library-status').textContent='Checking old row'; window.oldEntitySave.click()")
+            playwright.expect(page.locator('#library-status')).to_contain_text('refresh before capturing')
+            assert library.entries() == before
             page.locator('#save-player').click()
             playwright.expect(page.locator('#library-status')).to_contain_text('saved waypoints match')
             assert len(library.entries()) == len(before)+1
