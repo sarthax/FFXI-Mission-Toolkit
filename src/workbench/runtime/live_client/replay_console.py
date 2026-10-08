@@ -41,8 +41,10 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:.5rem;bo
 <div><dt>Observation source</dt><dd id="source">—</dd></div><div><dt>Reported client version (unverified)</dt><dd id="version">—</dd></div>
 </dl><label for="waypoint-name">Waypoint name </label><input id="waypoint-name" maxlength="200" placeholder="Name this observed position">
 <button id="capture-player" type="button" disabled>Download player waypoint</button><button id="save-player" type="button" disabled>Save player to library</button><button id="export-path" type="button" disabled>Download path to current frame</button><p id="export-status" role="status"></p></section>
-<section><h2>Entity observations</h2><p id="entity-status">No entity observations.</p>
-<div style="overflow:auto"><table><thead><tr><th>Name</th><th>Kind</th><th>Client index</th><th>Server ID</th><th>Raw XYZ</th><th>Capture</th></tr></thead><tbody id="entity-rows"></tbody></table></div></section>
+<section><h2>Entity observations</h2><label for="entity-search">Search names or IDs </label><input id="entity-search" maxlength="200" placeholder="Name, decimal ID or 0x index">
+<label for="entity-sort">Order </label><select id="entity-sort"><option value="observed">Observed order</option><option value="distance">Raw distance from player</option></select>
+<p>Distances use unverified raw units and do not describe navigable routes. Filters apply only to this frame's observed subset.</p><p id="entity-status">No entity observations.</p>
+<div style="overflow:auto"><table><thead><tr><th>Name</th><th>Kind</th><th>Client index</th><th>Server ID</th><th>Raw XYZ</th><th>Raw distance</th><th>Capture</th></tr></thead><tbody id="entity-rows"></tbody></table></div></section>
 <section><h2>Recorded position trace</h2><label for="trace-plane">Trace plane </label><select id="trace-plane"><option value="xz">X/Z</option><option value="xy">X/Y</option><option value="yz">Y/Z</option></select><p id="trace-status">Select a recording to view its observed movement.</p>
 <label><input type="checkbox" id="show-waypoints"> Show saved waypoint markers (up to 100)</label>
 <label for="relative-waypoint">Compare saved waypoint </label><select id="relative-waypoint"><option value="">Choose a comparable waypoint</option></select>
@@ -61,13 +63,26 @@ const show=(id,value)=>document.getElementById(id).textContent=value;
 let rows=[],playing=false,timer=null,generation=0;
 const tracePlanes=new Map();
 const relativeSelections=new Map();
+let entityProjection=null;
 const controls=['step','poll','previous','restart','play','timeline','unload','replace','capture-player','save-player','export-path'];
-function reset(){for(const id of ['character','zone','xyz','heading','observed','entities','source','version'])show(id,'—');document.getElementById('trace').replaceChildren();document.getElementById('entity-rows').replaceChildren();document.getElementById('relative-waypoint').replaceChildren(new Option('Choose a comparable waypoint',''));show('relative-status','Select a recorded session to compare saved positions.');show('entity-status','No entity observations.');show('trace-status','Select a recorded session.');}
-function showEntities(entities){
+function reset(){entityProjection=null;for(const id of ['character','zone','xyz','heading','observed','entities','source','version'])show(id,'—');document.getElementById('trace').replaceChildren();document.getElementById('entity-rows').replaceChildren();document.getElementById('relative-waypoint').replaceChildren(new Option('Choose a comparable waypoint',''));show('relative-status','Select a recorded session to compare saved positions.');show('entity-status','No entity observations.');show('trace-status','Select a recorded session.');}
+function showEntities(data){entityProjection=data;renderEntities();}
+function renderEntities(){
  const body=document.getElementById('entity-rows');body.replaceChildren();
- for(const entity of entities){
+ if(!entityProjection)return;
+ const entities=entityProjection.entities,player=entityProjection.player.position;
+ const query=document.getElementById('entity-search').value.trim().toLowerCase();
+ const ids=value=>value==null?[]:[String(value),'0x'+value.toString(16)];
+ const matches=entities.filter(entity=>[entity.name,...ids(entity.client_index),...ids(entity.server_entity_id)]
+  .some(value=>String(value).toLowerCase().includes(query))).map(entity=>({entity,
+   distance:Math.hypot(entity.position.x-player.x,entity.position.y-player.y,entity.position.z-player.z)}));
+ if(document.getElementById('entity-sort').value==='distance')matches.sort((a,b)=>{
+  const first=Number.isFinite(a.distance)?a.distance:Infinity,second=Number.isFinite(b.distance)?b.distance:Infinity;
+  return (first===second?0:first-second)||a.entity.client_index-b.entity.client_index;
+ });
+ for(const {entity,distance} of matches){
   const row=document.createElement('tr'),p=entity.position;
-  for(const value of [entity.name||'(unnamed)',entity.kind,entity.client_index,entity.server_entity_id??'Unknown',[p.x,p.y,p.z].join(', ')]){
+  for(const value of [entity.name||'(unnamed)',entity.kind,entity.client_index,entity.server_entity_id??'Unknown',[p.x,p.y,p.z].join(', '),Number.isFinite(distance)?distance.toFixed(3)+' raw':'Outside numeric range']){
    const cell=document.createElement('td');cell.textContent=String(value);row.append(cell);
   }
   const cell=document.createElement('td'),button=document.createElement('button');
@@ -75,8 +90,11 @@ function showEntities(entities){
   const save=document.createElement('button');save.type='button';save.textContent='Save to library';save.addEventListener('click',()=>saveWaypoint(entity.client_index));
   cell.append(button,save);row.append(cell);body.append(row);
  }
- show('entity-status',entities.length?entities.length+' observed entities; client indices are not server IDs.':'No entity observations in this frame.');
+ let status=entities.length?matches.length+' of '+entities.length+' observed entities match; client indices are not server IDs.':'No entity observations in this frame.';
+ if(entityProjection.observation_scope==='bounded_loaded_entities')status+=' Bounded loaded-entity observation (up to 32); '+(entityProjection.entities_truncated?'truncated.':'no truncation reported.')+' Kinds and instance identity remain unverified.';
+ show('entity-status',status);
 }
+
 function pause(){playing=false;clearTimeout(timer);timer=null;generation++;show('play','Play');}
 async function request(url,options={}){
  const response=await fetch(url,{cache:'no-store',...options});
@@ -171,8 +189,7 @@ async function refresh(){
  show('character',data.player.character);show('zone',String(data.zone_id));show('xyz',[p.x,p.y,p.z].join(', '));
  show('heading',String(p.heading));show('observed',String(data.observed_at));show('entities',String(data.entities.length));
  show('source',data.adapter||'Unknown');show('version',data.client_version||'Unknown');
- showEntities(data.entities);
- if(data.observation_scope==='bounded_loaded_entities')show('entity-status','Bounded loaded-entity observation (up to 32); '+(data.entities_truncated?'truncated.':'no truncation reported.')+' Kinds and instance identity remain unverified.');
+ showEntities(data);
  document.getElementById('capture-player').disabled=false;
  document.getElementById('save-player').disabled=false;
  document.getElementById('export-path').disabled=!recording;
@@ -299,6 +316,8 @@ document.getElementById('import-waypoints').addEventListener('click',async()=>{
 document.getElementById('trace-plane').addEventListener('change',event=>{
  if(client.value)tracePlanes.set(client.value,event.target.value);safeRefresh();
 });
+document.getElementById('entity-search').addEventListener('input',renderEntities);
+document.getElementById('entity-sort').addEventListener('change',renderEntities);
 document.getElementById('show-waypoints').addEventListener('change',()=>{pause();safeRefresh();});
 document.getElementById('relative-waypoint').addEventListener('change',event=>{
  pause();if(client.value)relativeSelections.set(client.value,event.target.value);safeRefresh();

@@ -366,3 +366,16 @@ names and reports truncation in JSONL and the Toolkit UI. Default start retains
 selected-target behavior. Invalid or changing observations fail closed; kinds,
 instances and runtime build remain unverified. No client writes or new minimap
 implementation. See [addon usage and remaining runtime tests](../../addons/workbench_live/README.md#experimental-bounded-ashita-inventory).
+
+## Entity observation inspection
+
+The Live Client table filters the current observed subset by case-insensitive name,
+client index or reported server ID (decimal/`0x` hexadecimal). Duplicate names stay
+separate by index; missing server IDs remain unknown. Choose observed order or
+raw distance from the player. Distances are straight-line XYZ differences in
+unverified source units, not routes; out-of-range numeric differences are labeled.
+Filtering/order are local presentation operations and do not seek or poll telemetry.
+Capture actions remain attached to the corresponding entity index. Inventory scope
+and truncation warnings remain visible even when no rows match a filter; filters
+cannot recover observations omitted by the exporter cap. Browser tests cover these
+behaviors without claiming Windows client or coordinate compatibility.
