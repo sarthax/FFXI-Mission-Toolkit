@@ -23,7 +23,7 @@ Provide native Toolkit-controlled development interaction with an authorized run
 - `src/workbench/runtime/live_client/waypoints.py`: JSON waypoint/path serialization and parsing.
 - `src/workbench/runtime/live_client/spatial.py`: same-zone nearby destinations, per-client/per-zone path splitting, preview-only NPC/mob placement candidates.
 - `tests/test_live_client_contracts.py`, `tests/test_live_client_service.py`, `tests/test_live_client_spatial.py`: offline regression coverage.
-These modules are not wired to the GUI and do not attach to or control FFXI yet.
+At the #663 foundation milestone these modules were not GUI-wired. Later milestones below integrate replay/UI and experimental addon observations; native process attachment and game controls remain unimplemented.
 
 ## Development roadmap (ordered)
 1. **Adapter/read telemetry:** enumerate running FFXI sessions; version-compatible zone/instance hint, XYZ, heading, character, target and entity observations; explicit disconnected/unverified states; no write operations.
@@ -336,3 +336,12 @@ has changed. Numeric differences outside the finite range are excluded. Tests
 use the supplied anonymized Ashita recording, synthetic return visits, duplicate
 client IDs and Chromium. These checks do not validate Windows client lifecycle,
 coordinate calibration or game writes.
+
+## 2026-10-08 reference audit and implementation decision
+
+[Tako / Clipper reference audit](LIVE_CLIENT_REFERENCE_AUDIT.md) reconciles current
+capabilities, pinned sources, Clipper GPL/LGPL discrepancy and unavailable archives.
+Prefer bounded Ashita loaded-entity observations next, followed by runtime identity
+and transform evidence. Existing replay/library work is reused. Native controls,
+calibrated overlays, editor placement callbacks and live navmesh validation remain
+incomplete; no old signature profile or historical map count establishes support.
