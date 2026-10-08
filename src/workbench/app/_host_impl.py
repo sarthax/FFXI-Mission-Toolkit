@@ -155,7 +155,7 @@ if live_client_startup_error:
 app.include_router(create_registry_router(live_client_replay_registry))
 app.include_router(create_replay_console_router())
 from workbench.runtime.live_client.setup_api import create_recording_upload_router
-app.include_router(create_recording_upload_router(REPO_ROOT / "data" / "live_client_recordings"))
+app.include_router(create_recording_upload_router(REPO_ROOT / "data" / "live_client_recordings", live_client_replay_registry))
 
 @app.post("/live-client/inspect-recording")
 async def live_client_inspect_recording(request: Request):
