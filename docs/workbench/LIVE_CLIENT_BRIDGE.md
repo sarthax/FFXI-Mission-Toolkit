@@ -166,3 +166,10 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Startup prefers explicit paired `FFXI_LIVE_REPLAY_FILE` and `FFXI_LIVE_REPLAY_CLIENT` environment overrides when present; otherwise it uses saved Settings only when replay is selected and automatic restore is enabled. No Windows environment-variable editing is required.
 - `tests/test_live_client_settings.py` covers persisted values, optional overrides, disabled auto-connect and recording inspection. Host and Settings template assertions cover wiring.
 - The current path input references a file on the toolkit host computer; a browser file-upload/browse control and native live-client source are **not implemented**. Manual replay selection still requires a toolkit restart to restore the configured recording. The UI accurately labels live connection as future work.
+
+
+## 2026-10-08 browser recording picker
+- Settings now supports selecting a local `.jsonl` recording in the browser and importing it through `POST /live-client/upload-recording`. The endpoint is same-origin guarded, limits the file to 16 MiB, validates the strict telemetry schema, and stores only validated recordings in `data/live_client_recordings/` (ignored by Git).
+- Successful import fills the managed recording path and detected client ID in Settings. **Save Settings** to persist the choice; enable offline replay and automatic restore to load the first frame on the next toolkit startup.
+- `tests/test_live_client_settings_upload.py` covers authorized upload, cross-origin denial, invalid extension/recording, no orphan files, Settings controls and Git exclusion.
+- Imported files are local toolkit data, not repository assets. No FFXI process discovery, game-memory read/write, or automatic live-client connection is involved.
