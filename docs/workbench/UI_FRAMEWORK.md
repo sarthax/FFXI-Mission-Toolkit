@@ -99,3 +99,5 @@ Completed workspace migrations:
 - **Capture Metadata Import** — CSV validation/apply workflow for capture source information with explicit overwrite control (Editor, reading width).
 - **Capture Review Queue** — Quarantine/review decision workbench for missing, duplicate, failed, and unverified capture data (Workbench; write boundary explicit).
 - **Related Capture Evidence** — Deterministic provenance/packet/entity/item/chat relationship dossier (Detail, read-only).
+- **Capture / Video Alignment** — Landmark-based clock alignment, packet correlation, anchors, and key-evidence workspace with explicit mutation boundaries (Workbench).
+- **Capture Evidence Search** — Cross-capture modular evidence discovery and drill-down surface (Browser, read-only).
