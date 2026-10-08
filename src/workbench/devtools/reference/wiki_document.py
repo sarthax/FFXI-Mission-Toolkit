@@ -347,7 +347,22 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
             current["content"].append({"type":"list","items":items}); continue
         if kind=="template_field":
             metadata=b.get("metadata") or {}
-            current["content"].append({"type":"definition","term":str(metadata.get("template") or "Template")+": "+str(metadata.get("field") or "Field"),"definition":b.get("text") or ""})
+            field_name=str(metadata.get("field") or "Field")
+            field_class=normalize_search(field_name)
+            # Only literal named fields are eligible. These hints never become
+            # claims or graph edges without subsequent evidence-backed review.
+            typed_fields={
+                "drops":"DROPS","drop":"DROPS","loot":"DROPS","戦利品":"DROPS","ドロップ":"DROPS",
+                "reward":"REWARDS","rewards":"REWARDS","報酬":"REWARDS",
+                "location":"LOCATION","zone":"LOCATION","場所":"LOCATION","エリア":"LOCATION",
+                "requirements":"REQUIRES","prerequisites":"REQUIRES","必要条件":"REQUIRES","参加条件":"REQUIRES",
+            }
+            candidate=({"field_type":typed_fields[field_class],"field":field_name,
+                        "value":b.get("text") or "","value_raw":metadata.get("raw_value"),
+                        "source_locator":b.get("source_locator"),"review_only":True}
+                       if field_class in typed_fields and (b.get("text") or "").strip() else None)
+            current["content"].append({"type":"definition","term":str(metadata.get("template") or "Template")+": "+field_name,
+                                       "definition":b.get("text") or "","field_candidate":candidate})
             i+=1; continue
         if kind=="definition_term":
             term=b.get("text") or ""; definition=""
