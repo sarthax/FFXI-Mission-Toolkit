@@ -5,8 +5,9 @@ import sqlite3
 from fastapi import APIRouter, HTTPException, Query, Request, UploadFile
 from fastapi.responses import JSONResponse
 
-from .observation_exports import capture_waypoint
+from .observation_exports import capture_waypoint, recording_context
 from .waypoint_library import MAX_DOCUMENT_BYTES, WaypointLibrary
+from .waypoint_comparison import compare_waypoints
 
 
 def create_waypoint_library_router(library: WaypointLibrary, registry) -> APIRouter:
@@ -36,6 +37,19 @@ def create_waypoint_library_router(library: WaypointLibrary, registry) -> APIRou
         return JSONResponse(operation(library.export_document), headers={
             'Content-Disposition': 'attachment; filename="waypoint-library.json"', 'Cache-Control': 'no-store'})
 
+    @router.get('/relative')
+    def relative(client_id: str = Query(min_length=1, max_length=200),
+                 observed_at: float | None = Query(default=None)):
+        if client_id not in registry.client_ids():
+            raise HTTPException(404, 'observation session not registered')
+        frame = registry.frame(client_id)
+        if frame is None:
+            raise HTTPException(409, 'session has no observed frame')
+        if observed_at is not None and observed_at != frame.snapshot.observed_at:
+            raise HTTPException(409, 'observation changed; refresh waypoint comparison')
+        return operation(lambda: compare_waypoints(frame, client_id, library.entries(),
+                                                    recording_context(registry, client_id, frame)))
+
     @router.post('/capture')
     def capture(request: Request, client_id: str = Query(min_length=1, max_length=200),
                 name: str = Query(min_length=1, max_length=200),
@@ -46,7 +60,8 @@ def create_waypoint_library_router(library: WaypointLibrary, registry) -> APIRou
         frame = registry.frame(client_id)
         if frame is None:
             raise HTTPException(409, 'session has no observed frame')
-        return {'added': operation(lambda: library.add_document(capture_waypoint(frame, client_id, name, entity_index)))}
+        return {'added': operation(lambda: library.add_document(capture_waypoint(
+            frame, client_id, name, entity_index, recording_context(registry, client_id, frame))))}
 
     @router.post('/import')
     async def import_document(request: Request, waypoints: UploadFile):

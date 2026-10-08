@@ -187,6 +187,26 @@ def test_recording_controls_in_browser(tmp_path):
             page.locator('#import-waypoints').click()
             playwright.expect(page.locator('#waypoint-rows tr')).to_have_count(3)
             assert len(library.entries()) == 3
+            # Stored waypoints are meaningful in their original recording visit,
+            # with raw differences and markers independent of native game writes.
+            playwright.expect(page.locator('#relative-waypoint option')).to_have_count(4)
+            chosen = library.entries()[0]['id']
+            page.locator('#relative-waypoint').select_option(chosen)
+            playwright.expect(page.locator('#relative-status')).to_contain_text('Straight-line distance')
+            page.locator('#show-waypoints').check()
+            playwright.expect(page.locator('#trace .waypoint-marker')).to_have_count(3)
+            playwright.expect(page.locator('#trace .waypoint-delta')).to_have_count(1)
+            assert registry._clients[runtime_session].position == target_frame
+            page.locator('#trace-plane').select_option('xy')
+            playwright.expect(page.locator('#trace .waypoint-marker')).to_have_count(3)
+            page.locator('#client').select_option(first)
+            playwright.expect(page.locator('#relative-waypoint option')).to_have_count(1)
+            playwright.expect(page.locator('#trace .waypoint-marker')).to_have_count(0)
+            page.locator('#client').select_option(runtime_session)
+            playwright.expect(page.locator('#trace .waypoint-marker')).to_have_count(3)
+            playwright.expect(page.locator('#relative-waypoint')).to_have_value(chosen)
+            page.locator('#show-waypoints').uncheck()
+            playwright.expect(page.locator('#trace .waypoint-marker')).to_have_count(0)
             empty_frame = next(i for i, f in enumerate(capture_frames, 1) if not f['entities'])
             page.locator('#timeline').evaluate('(el,n)=>{el.value=String(n);el.dispatchEvent(new Event("change",{bubbles:true}));}', empty_frame)
             playwright.expect(page.locator('#entity-rows tr')).to_have_count(0)
