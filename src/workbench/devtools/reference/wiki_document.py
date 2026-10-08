@@ -348,7 +348,24 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
                     row.append({"text":tb.get("text") or "","header":tk=="table_header_cell"})
                 i+=1
             if row: rows.append(row)
-            current["content"].append({"type":"table","rows":rows,"has_headers":headers})
+            # A heading and an explicit first-column label make a useful
+            # *review candidate*, not proof of a gameplay relationship.
+            # Keep these annotations purely in presentation, never in graph imports.
+            labels={"drops","drop","loot","rewards","reward","requirements","prerequisites","location","zone",
+                    "戦利品","ドロップ","報酬","必要条件","参加条件","場所","エリア"}
+            candidates=[]
+            for row_index, cells in enumerate(rows):
+                if len(cells)<2:
+                    continue
+                label=normalize_search(cells[0]["text"])
+                if label not in labels:
+                    continue
+                value=cells[1]["text"].strip()
+                if value:
+                    candidates.append({"row_index":row_index,"field":cells[0]["text"],
+                                       "value":value,"review_only":True})
+            current["content"].append({"type":"table","rows":rows,"has_headers":headers,
+                                       "field_candidates":candidates})
             i+=1; continue
         if kind in {"paragraph","legacy_text","definition"}:
             current["content"].append({
