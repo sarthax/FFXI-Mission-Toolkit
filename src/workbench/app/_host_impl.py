@@ -5647,6 +5647,12 @@ async def wiki_link_topic(request: Request):
         if not page:
             raise ValueError(f"{source}: page not found for {title!r}")
         page_id = str(page.get("pageid") or page.get("page_id") or page.get("title") or title)
+        suggested_topic_id = (form.get("suggested_topic_id") or "").strip()
+        if suggested_topic_id:
+            matches = wiki_document.suggest_topic_links(con, source_id=source, page_id=page_id)
+            if not any(item["topic_id"] == suggested_topic_id and item["canonical_title"] == canonical_title
+                       for item in matches):
+                raise ValueError("Suggested topic no longer matches reviewed aliases; reload and review.")
         wiki_document.link_topic(
             con,
             source_id=source,
