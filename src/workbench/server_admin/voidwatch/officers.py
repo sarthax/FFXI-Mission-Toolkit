@@ -28,7 +28,7 @@ OFFICERS = [
     {"id": "jade", "name": "Voidwatch Officer - Windurst", "npc": "Voidwatch_Officer", "zones": ["Windurst_Waters", "Windurst_Waters_[S]"], "grid": "G-5 / G-5 (S)",
      "ki": "JADE_STRATUM_ABYSSITE", "path": "Jade", "role": "start", "quest": ""},
     {"id": "white", "name": "Jeuno officer (Drafted by the Duchy)", "npc": "Voidwatch_Officer", "zones": ["RuLude_Gardens"], "grid": "H-6",
-     "ki": "WHITE_STRATUM_ABYSSITE", "path": "White", "role": "start", "quest": "Drafted by the Duchy", "note": "NPC name not given in the source table (it lists the quest); matched as Voidwatch_Officer."},
+     "ki": "WHITE_STRATUM_ABYSSITE", "path": "White", "role": "start", "quest": "Drafted by the Duchy", "note": "Source table lists the quest, not an NPC. Actually a cutscene chain (Door:Audience Chamber / Bulwark Gate), no officer exists."},
     {"id": "ashen", "name": "Kieran - Voidwatch Ops: Border Crossing", "npc": "Kieran", "zones": ["Norg"], "grid": "I-8",
      "ki": "ASHEN_STRATUM_ABYSSITE", "path": "Ashen", "role": "start", "quest": "Voidwatch Ops: Border Crossing"},
     {"id": "hyacinth", "name": "Owain - Tavnazian Terrors", "npc": "Owain", "zones": ["Tavnazian_Safehold"], "grid": "H-6",
@@ -45,12 +45,12 @@ OFFICERS = [
 
 
 # Build notes shown in the UI: what is implemented in the Lua slice and what is still missing (kept in sync with docs/voidwatch/UNIMPLEMENTED.md)
-SLICE = "voidwatch-officers-v2 (feature/voidwatch-officers, untested in-game)"
+SLICE = "voidwatch-officers-v5 (feature/voidwatch-officers, untested in-game)"
 IMPL = {
     "crimson": "Officer 963 + refiner 962 scripted; kill-tracking hook not wired; tier gate approximate",
     "indigo": "Officer 9 + refiner 8 scripted; kill-tracking hook not wired; tier gate approximate",
     "jade": "Officer 1024 + refiner 1023 scripted; kill-tracking hook not wired; Jade IV has no NM",
-    "white": "Not built: Ru'Lude has no officer entity in the client events (only a Purveyor); location unresolved",
+    "white": "Not an officer: quest chain Guardian of the Void -> Drafted by the Duchy (cutscenes at Veridical Conflux / Ru'Lude door / Bulwark Gate); not built, csids undecoded",
     "ashen": "Scripted from client-dat csids (Kieran event 259 + refiner 264); no capture; nation bits unknown; untested",
     "hyacinth": "Scripted from client-dat csids (Owain event 626 + refiner 627); no capture; nation bits unknown; untested",
     "amber": "Scripted from client-dat csids (Camille event 23 + refiner 24); no capture; nation bits unknown; untested",
