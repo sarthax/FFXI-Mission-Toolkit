@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 15,
+  "route_count": 16,
   "routes": [
     {
       "method": "GET",
@@ -120,6 +120,14 @@
       "path": "/shift-master/rebuild",
       "home": "Captures",
       "section": "Diagnostics",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/live-client/inspect-recording",
+      "home": "Settings",
+      "section": "Live Client",
       "role": "action",
       "disposition": "KEEP"
     }
