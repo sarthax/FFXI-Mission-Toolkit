@@ -2,6 +2,3 @@
 # These are grandfathered only while they await workspace-by-workspace migration.
 # New module pages should extend workbench_page.html. Adding an entry here requires
 # an explicit reason in the PR because it opts out of the unified Workbench page contract.
-auction_house_cleanup.html | legacy page pending archetype migration
-auction_house_listing_manager.html | legacy page pending archetype migration
-auction_house_seeder.html | legacy page pending archetype migration

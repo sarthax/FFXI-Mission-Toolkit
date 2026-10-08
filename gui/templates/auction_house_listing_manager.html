@@ -1,13 +1,13 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Auction House Listing Manager{% endblock %}
-{% block content %}
-<main class="ah-listing-manager" id="ahListingManager">
-  <div class="page-head">
-    <div>
-      <h1>Auction House Listing Manager</h1>
-      <p class="muted">Browse exact active listings by player, category, item, or auction ID and perform guarded administrative actions.</p>
-    </div>
-  </div>
+{% block page_archetype %}editor{% endblock %}
+{% block page_width %}fluid{% endblock %}
+{% block page_class %}auction-house-listing-manager-page{% endblock %}
+{% block page_heading %}Auction House Listing Manager{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Guarded DSP/Topaz Test-only listing administration</span>{% endblock %}
+{% block page_help %}Browse exact active listings by seller, category, item, or auction ID and perform guarded single/batch administrative actions. Existing active-Test-profile, feature-flag, preview, and exact-confirmation safeguards remain unchanged.{% endblock %}
+{% block page_body %}
+<div class="ah-listing-manager" id="ahListingManager">
   {% include "_auction_house_nav.html" %}
 
   <section class="panel">
@@ -36,7 +36,7 @@
   </section>
 
   <section class="panel"><h2>Last action</h2><div id="lmAction"><p class="muted">No action performed.</p></div></section>
-</main>
+</div>
 <style>
 .ah-listing-manager{padding:10px 14px 24px}.page-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.muted{opacity:.72}.badge{font-size:12px;font-weight:700;border:1px solid currentColor;border-radius:999px;padding:4px 9px}.panel{border:1px solid var(--border-color,#5555);border-radius:8px;padding:12px;margin:10px 0}.filters{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:12px 0}.filters label{display:grid;gap:4px;font-size:12px}.filters .grow{flex:1}.filters input,.filters select{min-width:120px}.filters .grow input{width:100%;min-width:240px}.batch-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0}.batch-bar .muted{margin-right:auto}.results{overflow:auto;max-height:70vh;margin-top:8px}.lm-table{width:100%;border-collapse:collapse;font-size:13px}.lm-table th,.lm-table td{padding:6px;border-bottom:1px solid var(--border-color,#5554);text-align:left}.lm-table .price{text-align:right}.lm-table .select-col{width:34px;text-align:center}.lm-actions{display:flex;gap:5px;flex-wrap:wrap}.lm-actions button{font-size:12px;padding:4px 7px}.action-result pre{white-space:pre-wrap;max-height:280px;overflow:auto;font-size:12px}@media(max-width:900px){.page-head{align-items:flex-start;flex-direction:column}.filters{align-items:stretch}.filters label,.filters .grow{width:100%}.filters input,.filters select,.filters .grow input{width:100%;min-width:0}.batch-bar .muted{margin-right:0;width:100%}}
 </style>

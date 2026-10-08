@@ -133,3 +133,6 @@ Completed workspace migrations:
 - **Auction House Administration** — Readiness/economy/listing overview with preview/validation-only controls and guarded-tool handoffs (Workbench).
 - **Auction House Console** — Full-width operational hub with guarded Test-only mutation workflows and fail-closed safety gates (Workbench).
 - **Auction House Presets** — Reusable cleanup/seeding configuration workspace; writes toolkit preset state but never authorization (Workbench).
+- **Auction House Cleanup** — Preview-token-bound stale/targeted listing cleanup with guarded Test-only Admin Buy/Return execution (Editor).
+- **Auction House Listing Manager** — Exact listing browser/admin surface with guarded single/batch DSP/Topaz Test writes (Editor).
+- **Auction House Seeder** — Test-only player-backed listing and market-history/scenario seeding workspace with readiness/confirmation safeguards (Editor).
