@@ -9,6 +9,7 @@ def main():
     assert '{% if not page_view.topic and page_view.topic_suggestions %}' in template
     assert '{{ suggestion.canonical_title }}' in template
     assert '{{ proof.source_id }} / {{ proof.page_id }}' in template
+    assert 'target="_blank" rel="noopener"' in template
     assert "do not link pages automatically" in template
     print("Wiki multilingual suggestion reader regression: PASS")
 
