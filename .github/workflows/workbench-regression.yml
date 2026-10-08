@@ -181,6 +181,7 @@ jobs:
           python test_fixtures/test_wiki_candidate_source_ui.py
           python test_fixtures/test_wiki_topic_suggestions.py
           python test_fixtures/test_wiki_topic_review_queue_ui.py
+          python test_fixtures/test_wiki_review_queue_filter.py
           python test_fixtures/test_wiki_topic_suggestion_ui.py
           python test_fixtures/test_wiki_topic_approval_ui.py
           python test_fixtures/test_wiki_idempotent_documents.py
