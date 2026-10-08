@@ -1,10 +1,11 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Item Script Health{% endblock %}
-{% block content %}
-<main>
-  <div class="page-head"><div><h1>Item Script Health</h1>
-    <p class="muted">For the active server tree: does each scripted item have a script file, is it a stub, and does it contain real behavior? <a href="/itembrowser">Item Browser</a></p></div>
-    <span class="badge">READ ONLY</span></div>
+{% block page_archetype %}workbench{% endblock %}
+{% block page_heading %}Item Script Health{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Repair preview is read-only; Apply writes server scripts</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/itembrowser">Item Browser</a><a class="chip" href="/itemhealth/report.md">Download report</a>{% endblock %}
+{% block page_help %}Audit scripted items against the active server tree and LandSandBoat reference data. Health/report views are read-only; the explicit repair Apply action writes a generated server script after confirmation and backs up an existing stub when applicable.{% endblock %}
+{% block page_body %}
   <section class="panel" id="ihSummary"><p class="muted">Scanning…</p></section>
   <section class="panel"><h2>Report &amp; LandSandBoat cross-check</h2>
     <p class="muted">LSB runs these procs from item data, so it has no script files to copy. It can only supply parameters, and only for some items. Download the report to share it.</p>
@@ -15,7 +16,6 @@
   <section class="panel"><h2>Items with a proc switch (effect 431) that need attention</h2><div id="ihFlagged"></div></section>
   <section class="panel"><h2>Script files that are stubs, check-only or carry a TODO</h2><div id="ihFiles"></div></section>
   <section class="panel"><details><summary>Script files no item name matches (<span id="ihOrphanN">0</span>)</summary><div id="ihOrphans"></div></details></section>
-</main>
 <script>
 (async () => {
   const $ = id => document.getElementById(id), esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
