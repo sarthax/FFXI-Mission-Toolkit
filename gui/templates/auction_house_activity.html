@@ -1,13 +1,13 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Auction House Activity{% endblock %}
-{% block content %}
-<main class="ah-activity" id="ahActivity">
-  <div class="page-head">
-    <div>
-      <h1>Auction House Activity</h1>
-      <p class="muted">Unified read-only timeline of executor outcomes, preview/replay evidence, and reward campaigns.</p>
-    </div>
-  </div>
+{% block page_archetype %}workbench{% endblock %}
+{% block page_width %}fluid{% endblock %}
+{% block page_class %}ah-activity-page{% endblock %}
+{% block page_heading %}Auction House Activity{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Read-only activity ledger</span>{% endblock %}
+{% block page_help %}Unified read-only timeline of executor outcomes, preview/replay evidence, and reward campaigns. Filters only change the displayed evidence set.{% endblock %}
+{% block page_body %}
+<div class="ah-activity" id="ahActivity">
   {% include "_auction_house_nav.html" %}
 
   <section class="panel">
@@ -36,7 +36,7 @@
       </table>
     </div>
   </section>
-</main>
+</div>
 <style>
 .ah-activity{padding:10px 14px 24px}.page-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.muted{opacity:.72}.panel{border:1px solid var(--border-color,#5555);border-radius:8px;padding:12px;margin:10px 0}.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:10px 0}.form-grid label{display:grid;gap:4px;font-size:12px}.form-grid .check{display:flex;align-items:center;gap:6px}.actions{display:flex;gap:8px}.summary{margin-bottom:8px}.table-wrap{overflow:auto}.activity-table{width:100%;border-collapse:collapse;font-size:12px;min-width:1050px}.activity-table th,.activity-table td{padding:6px;border-bottom:1px solid var(--border-color,#5554);text-align:left;vertical-align:top}.activity-table button{font-size:11px}.activity-detail{white-space:pre-wrap;max-width:520px;max-height:300px;overflow:auto}@media(max-width:800px){.page-head{flex-direction:column}}
 </style>
