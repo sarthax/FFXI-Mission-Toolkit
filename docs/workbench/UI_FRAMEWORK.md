@@ -97,3 +97,5 @@ Completed workspace migrations:
 - **Capture Bulk Ingest** — Directory scan/plan/run workflow with explicit scan-versus-ingest boundary and disk safeguards (Editor).
 - **Capture Bulk Ingest Job** — Active/completed bulk-ingest progress, failure, source-sheet, and cancellation detail (Detail).
 - **Capture Metadata Import** — CSV validation/apply workflow for capture source information with explicit overwrite control (Editor, reading width).
+- **Capture Review Queue** — Quarantine/review decision workbench for missing, duplicate, failed, and unverified capture data (Workbench; write boundary explicit).
+- **Related Capture Evidence** — Deterministic provenance/packet/entity/item/chat relationship dossier (Detail, read-only).
