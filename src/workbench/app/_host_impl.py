@@ -5587,7 +5587,8 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
     review_page = max(1, min(review_page, 10000))
     review_offset = (review_page - 1) * 50
     review_window = (wiki_document.topic_review_queue(
-        con, source_id=source, limit=51, offset=review_offset, matching_only=True)
+        con, source_id=source, limit=51, offset=review_offset, matching_only=True,
+        status=review_status if review_status in ("pending", "dismissed") else "all")
         if tab == "review" and source != "all" else [])
     review_has_more = len(review_window) > 50
     review_queue = review_window[:50]

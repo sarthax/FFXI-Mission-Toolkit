@@ -26,11 +26,15 @@ def main():
     assert wiki_document.page_topic(db,"WikiWikiJP","jp1") is None
     assert wiki_document.topic_review_queue(db,source_id="WikiWikiJP",limit=1,offset=1)==[]
     assert wiki_document.topic_review_queue(db,source_id="WikiWikiJP",matching_only=True)
+    assert len(wiki_document.topic_review_queue(db,source_id="WikiWikiJP",matching_only=True,status="pending"))==1
+    assert wiki_document.topic_review_queue(db,source_id="WikiWikiJP",matching_only=True,status="dismissed")==[]
     queue=wiki_document.topic_review_queue(db,source_id="WikiWikiJP")
     assert len(queue)==1 and len(queue[0]["pending"])==1 and queue[0]["dismissed"]==[],queue
     wiki_document.dismiss_topic_suggestion(db,source_id="WikiWikiJP",page_id="jp1",
                                            topic_id=suggestions[0]["topic_id"])
     assert wiki_document.suggest_topic_links(db,source_id="WikiWikiJP",page_id="jp1")==[]
+    assert wiki_document.topic_review_queue(db,source_id="WikiWikiJP",matching_only=True,status="pending")==[]
+    assert len(wiki_document.topic_review_queue(db,source_id="WikiWikiJP",matching_only=True,status="dismissed"))==1
     queue=wiki_document.topic_review_queue(db,source_id="WikiWikiJP")
     assert len(queue)==1 and queue[0]["pending"]==[] and len(queue[0]["dismissed"])==1,queue
     try:
