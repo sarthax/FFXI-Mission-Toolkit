@@ -163,6 +163,10 @@ def render_live_client_console(request: Request, style: str, body: str):
 app.include_router(create_replay_console_router(render_live_client_console))
 from workbench.runtime.live_client.setup_api import create_recording_upload_router
 app.include_router(create_recording_upload_router(REPO_ROOT / "data" / "live_client_recordings", live_client_replay_registry))
+from workbench.runtime.live_client.waypoint_library import WaypointLibrary
+from workbench.runtime.live_client.waypoint_library_api import create_waypoint_library_router
+app.include_router(create_waypoint_library_router(
+    WaypointLibrary(REPO_ROOT / "data" / "live_client_waypoints" / "library.db"), live_client_replay_registry))
 
 @app.post("/live-client/inspect-recording")
 async def live_client_inspect_recording(request: Request):

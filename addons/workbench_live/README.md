@@ -112,6 +112,12 @@ recorded observations, rather than the downsampled trace. These JSON downloads
 preserve raw coordinates and unverified source provenance; they do not warp the
 client or place entities in a zone database.
 
+Use **Save player to library** or an entity row's **Save to library** to keep a
+named raw observation on the toolkit host. The Waypoint library section supports
+name/zone filtering, rename/delete and portable JSON import/export. Saved points
+remain after recordings are unloaded and the host restarts. Import appends
+independent entries and preserves the existing library if validation fails.
+
 See the [Windows/Codex test handoff](../../docs/workbench/LIVE_CLIENT_WINDOWS_HANDOFF.md)
 for local test-agent setup and the offline runtime-report command. The report
 collects recording summaries and optional binary metadata without executing
