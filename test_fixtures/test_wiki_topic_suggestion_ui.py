@@ -20,6 +20,11 @@ def main():
     assert 'else "NOT_APPLICABLE"' in host
     assert 'Toolkit entity: {{ link.entity_resolution }}' in template
     assert 'review hint only' in template
+    assert 'link["entity_candidates"]=[' in host
+    assert 'link["entity_candidate_count"]=len(identities)' in host
+    assert '[:10]' in host
+    assert 'Inspect entity candidates ({{ link.entity_candidate_count }})' in template
+    assert 'via {{ match.method }}' in template
     print("Wiki multilingual suggestion reader regression: PASS")
 
 if __name__=="__main__":
