@@ -8,10 +8,12 @@ from fastapi import APIRouter, HTTPException, Query, Request
 
 from .registry import ReplayRegistry
 from .viewer import viewer_projection
+from .observation_exports import create_observation_export_router
 
 
 def create_registry_router(registry: ReplayRegistry) -> APIRouter:
     router = APIRouter(prefix="/live-client/replay", tags=["Live Client Replay"])
+    router.include_router(create_observation_export_router(registry))
 
     @router.get("/clients")
     def clients() -> dict:

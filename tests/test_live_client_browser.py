@@ -100,6 +100,19 @@ def test_recording_controls_in_browser(tmp_path):
             page.locator('#timeline').evaluate('(el)=>{el.value="121";el.dispatchEvent(new Event("change",{bubbles:true}));}')
             playwright.expect(page.locator('#trace-status')).to_contain_text('121 observed positions')
             playwright.expect(page.locator('#trace polyline')).to_have_count(1)
+            page.locator('#waypoint-name').fill('Runtime stairs')
+            with page.expect_download() as pending:
+                page.locator('#capture-player').click()
+            downloaded = json.loads(Path(pending.value.path()).read_text())
+            assert downloaded['waypoints'][0]['name'] == 'Runtime stairs'
+            assert downloaded['waypoints'][0]['position']['zone_id'] == 50
+            assert downloaded['provenance']['session_id'] == runtime_session
+            assert downloaded['provenance']['version_verified'] is False
+            with page.expect_download() as pending:
+                page.locator('#export-path').click()
+            path_document = json.loads(Path(pending.value.path()).read_text())
+            assert len(path_document['samples']) == 121
+            assert path_document['samples'][-1]['position'] == downloaded['waypoints'][0]['position']
             def displayed_span():
                 return page.locator('#trace polyline').evaluate('''el => {
                     const pairs=el.getAttribute('points').split(' ').map(p=>p.split(',').map(Number));
@@ -129,6 +142,11 @@ def test_recording_controls_in_browser(tmp_path):
             playwright.expect(page.locator('#entity-rows tr')).to_have_count(1)
             playwright.expect(page.locator('#entity-rows td').nth(0)).to_have_text(target['name'])
             playwright.expect(page.locator('#entity-rows td').nth(3)).to_have_text('Unknown')
+            with page.expect_download() as pending:
+                page.locator('#entity-rows button').click()
+            target_document = json.loads(Path(pending.value.path()).read_text())
+            assert target_document['waypoints'][0]['position'] == target['position']
+            assert target_document['observation']['server_entity_id'] is None
             empty_frame = next(i for i, f in enumerate(capture_frames, 1) if not f['entities'])
             page.locator('#timeline').evaluate('(el,n)=>{el.value=String(n);el.dispatchEvent(new Event("change",{bubbles:true}));}', empty_frame)
             playwright.expect(page.locator('#entity-rows tr')).to_have_count(0)

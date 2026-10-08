@@ -103,3 +103,9 @@ changing zones. The exact installed Ashita build and executable hashes remain
 unspecified. This is partial runtime evidence, not a supported-build declaration. Zone transitions, logout,
 multiple clients, coordinate calibration and same-host live polling still need
 acceptance evidence. The source remains read-only and explicitly unverified.
+
+In the replay console, enter a name and download the observed player or target
+position as a waypoint. **Download path to current frame** exports all consumed
+recorded observations, rather than the downsampled trace. These JSON downloads
+preserve raw coordinates and unverified source provenance; they do not warp the
+client or place entities in a zone database.

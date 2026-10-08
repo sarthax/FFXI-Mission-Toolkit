@@ -246,3 +246,24 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
   reconnect behavior, concurrent-client isolation, independent axis/heading
   verification and same-host polling. Calibrated map overlays, automatic process
   discovery and writable development actions remain incomplete.
+
+## Read-only observation downloads
+
+- Enter a waypoint name and use **Download player waypoint**, or **Download
+  waypoint** on an observed entity row, to capture the current raw observation
+  as a portable `live_client_waypoints` JSON document. Downloads include source,
+  reported version, session/client identity and observation provenance; unknown
+  server IDs remain unknown. Names are required and bounded to 200 characters.
+- **Download path to current frame** exports every recorded sample up to the
+  current replay cursor (at most 10,000), preserving numeric position/heading,
+  timestamps, zone IDs, client identity and per-frame instance hints. It does not
+  export the downsampled display trace or future frames. Seek backward for a prefix.
+- GET-only download routes reject missing/unobserved sessions and targets absent
+  from the current frame. File feeds can provide a latest-observation waypoint,
+  but cannot export historical paths. Downloading pauses browser playback and
+  does not advance the source, modify host files, change SQL or command the game.
+- The existing portable waypoint/path parsers accept these documents. Named
+  waypoint library management, calibrated Zone Editor placement, writable warp/
+  speed controls and live network transport are still separate development work.
+- Runtime-backed API and real Chromium tests exercise player/target/path downloads,
+  source isolation, raw values, cursor preservation and zone/instance metadata.
