@@ -273,6 +273,11 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Dual-wiki `REFERENCE_CONFLICT` findings render BG Wiki vs FFXIclopedia side-by-side from importer-preserved claim IDs/excerpts while retaining `REFERENCE_ONLY` semantics and selecting no winner; merged in PR #547.
 - [x] Feature Trace can close exact `MAPPED` reference-wiki targets into indexed implementation rows when target identity resolves uniquely.
 - [~] Additional claim-to-implementation or provider-specific presentation should be driven by real-data gaps rather than inferred mappings; the planned contradiction/evidence deepening work is otherwise complete.
+- [x] Background URL scrape (BG Wiki, FFXIclopedia, WikiWikiJP) into a temp DB, merged by `INSERT OR REPLACE`; Japanese stored verbatim with display-time translation (`WIKI_TRANSLATE_CMD`, no bundled engine). Re-scraping a URL overwrites the row; no history is kept.
+- [ ] Wiki page history: `reference_wiki_page_history`, skip the write when the page hash is unchanged, and report updated/unchanged on the scrape job. Also reap orphaned translation-cache rows.
+- [ ] Wiki link/entity extraction: store page links, templates and item/mob/zone names as edges (`reference_wiki_links`) instead of leaving pages as text blobs.
+- [ ] Register wiki pages as a Feature Trace provider so entity and mission traces list the wiki pages that document them, with REFERENCE_ONLY semantics kept.
+- [ ] Relationship graph view on wiki pages and Entity dossiers (filter by edge type and source; mark confirmed client/capture/DB edges apart from wiki-only edges). Pilot on the Voidwatch NM / zone / abyssite / key-item chain.
 
 # 14. Package / migration / validation
 
