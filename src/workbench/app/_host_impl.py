@@ -5566,6 +5566,10 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
                         for m in matches if m.get("target_table") and m.get("target_key") is not None
                     ][:10]
                     link["entity_candidate_count"]=len(identities)
+                    link["entity_candidate_lines"]="\n".join(
+                        f"{m['label']} ({m['domain']} / {m['table']} / {m['key']}) via {m['method']}"
+                        for m in link["entity_candidates"]
+                    ) or "No compatible entity candidates"
                     if len(identities)==1:
                         domain,table,key=next(iter(identities))
                         link["entity_resolution"]="UNIQUE_ENTITY_HINT"
