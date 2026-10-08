@@ -224,6 +224,14 @@
       <ul class="wiki-list">{% for li in item.items %}<li>{{ li.text }}</li>{% endfor %}</ul>
     {% elif item.type == 'definition' %}
       <dl class="wiki-definition"><dt>{{ item.term }}</dt><dd>{{ item.definition }}</dd></dl>
+      {% if item.field_candidate %}
+      <details class="wiki-field-review">
+        <summary>Review {{ item.field_candidate.field_type }} template field — reference only</summary>
+        <p class="muted">This extracted field is a review candidate, not a verified gameplay relationship.</p>
+        <div>Original: <code>{{ item.field_candidate.value_raw or item.field_candidate.value }}</code></div>
+        <div class="muted">Source: {{ item.field_candidate.source_locator }}</div>
+      </details>
+      {% endif %}
     {% elif item.type == 'table' %}
       <div class="table-wrap"><table>
       {% for row in item.rows %}<tr>
