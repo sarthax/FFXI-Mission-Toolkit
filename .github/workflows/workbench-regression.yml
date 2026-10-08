@@ -174,6 +174,7 @@ jobs:
           python test_fixtures/test_feature_trace_wiki_structured_links.py
           python test_fixtures/test_wiki_typed_relations.py
           python test_fixtures/test_wiki_template_inspection.py
+          python test_fixtures/test_wiki_table_provenance.py
           python test_fixtures/test_wiki_idempotent_documents.py
           python test_fixtures/test_wiki_page_history.py
           python test_fixtures/test_wiki_link_safety.py
