@@ -30,7 +30,7 @@ def load_recorded_frames(path: Path, *, client_id: str, max_frames: int = 10000,
             if len(frames) >= max_frames:
                 raise ValueError("recording exceeds frame limit")
             try:
-                payload = json.loads(raw.decode("utf-8"))
+                payload = json.loads(raw.decode("utf-8-sig" if line_number == 1 else "utf-8"))
                 frame = decode_frame(payload)
             except (UnicodeError, ValueError, TypeError, KeyError) as error:
                 raise ValueError(f"invalid telemetry at line {line_number}") from error
