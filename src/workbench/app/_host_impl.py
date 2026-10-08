@@ -5540,6 +5540,19 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
             if candidate and candidate.get("source_links"):
                 candidate["source_links"]=wiki_document.resolve_reviewed_template_links(
                     con,candidate["source_links"])
+                for link in candidate["source_links"]:
+                    # Toolkit entity hints are read-only and require exactly one
+                    # resolved client/server reference. Do not create graph edges.
+                    matches=wiki_evidence.resolve_subject(con,link.get("lookup_title") or "")
+                    identities={(m.get("target_domain"),m.get("target_table"),str(m.get("target_key")))
+                                for m in matches if m.get("target_table") and m.get("target_key") is not None}
+                    if len(identities)==1:
+                        domain,table,key=next(iter(identities))
+                        link["entity_resolution"]="UNIQUE_ENTITY_HINT"
+                        link["entity_target"]={"domain":domain,"table":table,"key":key}
+                    else:
+                        link["entity_resolution"]="AMBIGUOUS" if identities else "UNRESOLVED"
+                        link["entity_target"]=None
     topic = wiki_document.page_topic(con, source, page_id)
     degraded = any((b.get("metadata") or {}).get("degraded") for b in visible_blocks)
     return {
