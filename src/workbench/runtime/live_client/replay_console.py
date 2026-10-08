@@ -74,6 +74,17 @@ async function step(){
  }catch(err){state.textContent=String(err.message||err);await refresh();}
 }
 document.getElementById('step').addEventListener('click',step);
+async function navigate(action){
+ if(!client.value)return;
+ try{
+  const url='/live-client/replay/navigate?'+new URLSearchParams({client_id:client.value,action});
+  const response=await fetch(url,{method:'POST'});
+  if(!response.ok){const result=await response.json();throw Error(result.detail||'Navigation failed');}
+  await refresh();
+ }catch(error){state.textContent=String(error.message||error);}
+}
+document.getElementById('previous').addEventListener('click',()=>navigate('previous'));
+document.getElementById('restart').addEventListener('click',()=>navigate('restart'));
 document.getElementById('poll').addEventListener('click',async()=>{
   if(!client.value)return;
   const button=document.getElementById('poll');button.disabled=true;
