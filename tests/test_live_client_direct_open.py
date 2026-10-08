@@ -30,11 +30,13 @@ def test_open_recording_registers_and_legacy_import_does_not(tmp_path: Path):
                          files=files, headers=headers)
     assert opened.status_code == 200, opened.text
     assert opened.json()["loaded"] is True
-    assert registry.client_ids() == ("test-client-01",)
-    assert registry.frame("test-client-01").snapshot.position.x == 105
+    session_id = opened.json()["session_id"]
+    assert registry.client_ids() == (session_id,)
+    assert registry.frame(session_id).snapshot.position.x == 105
     again = client.post("/live-client/upload-recording?open_session=true",
                         files=files, headers=headers)
-    assert again.status_code == 409
+    assert again.status_code == 200
+    assert again.json()["session_id"] != session_id
     assert client.post("/live-client/upload-recording?open_session=true",
                        files=files).status_code == 403
 
@@ -43,4 +45,4 @@ def test_console_has_direct_open_ui():
     root = Path(__file__).resolve().parents[1]
     source = (root / "src/workbench/runtime/live_client/replay_console.py").read_text(encoding="utf-8")
     assert 'id="open-recording"' in source
-    assert "open_session=true" in source
+    assert "open_session:" in source

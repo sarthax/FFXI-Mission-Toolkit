@@ -1,0 +1,43 @@
+name: Live Client Regression
+
+on:
+  push:
+    branches:
+      - 'feature/live-client-replay-integration'
+    paths:
+      - 'src/workbench/runtime/live_client/**'
+      - 'src/workbench/app/_host_impl.py'
+      - 'gui/templates/live_client_console.html'
+      - 'src/workbench/gui_shell.py'
+      - 'tests/test_live_client_*.py'
+      - '.github/workflows/live-client-regression.yml'
+  pull_request:
+    paths:
+      - 'src/workbench/runtime/live_client/**'
+      - 'src/workbench/app/_host_impl.py'
+      - 'gui/templates/live_client_console.html'
+      - 'src/workbench/gui_shell.py'
+      - 'tests/test_live_client_*.py'
+      - '.github/workflows/live-client-regression.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install offline regression dependencies
+        run: python -m pip install -e . pytest fastapi httpx python-multipart uvicorn playwright jinja2
+      - name: Install Chromium for browser regression
+        run: python -m playwright install --with-deps chromium
+      - name: Run Live Client contracts and recording regressions
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python -m pytest -q tests/test_live_client_*.py

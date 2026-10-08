@@ -8,7 +8,7 @@ def test_host_registration_is_explicit_and_read_only():
     host = (ROOT / "src/workbench/app/_host_impl.py").read_text(encoding="utf-8")
     assert "live_client_replay_registry = ReplayRegistry()" in host
     assert "app.include_router(create_registry_router(live_client_replay_registry))" in host
-    assert "app.include_router(create_replay_console_router())" in host
+    assert "app.include_router(create_replay_console_router(render_live_client_console))" in host
 
     from fastapi import FastAPI
     from workbench.runtime.live_client.registry import ReplayRegistry

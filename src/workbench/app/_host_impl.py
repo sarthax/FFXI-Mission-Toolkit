@@ -153,7 +153,14 @@ live_client_startup_error = initialize_live_client(
 if live_client_startup_error:
     print("[Live Client] " + live_client_startup_error)
 app.include_router(create_registry_router(live_client_replay_registry))
-app.include_router(create_replay_console_router())
+def render_live_client_console(request: Request, style: str, body: str):
+    # Both fragments come exclusively from the repository-owned console renderer.
+    return templates.TemplateResponse(request, "live_client_console.html", {
+        "request": request, "console_style": style, "console_body": body,
+        "startup_error": live_client_startup_error,
+    })
+
+app.include_router(create_replay_console_router(render_live_client_console))
 from workbench.runtime.live_client.setup_api import create_recording_upload_router
 app.include_router(create_recording_upload_router(REPO_ROOT / "data" / "live_client_recordings", live_client_replay_registry))
 

@@ -69,20 +69,43 @@ class RecordedTelemetryReplay:
         self._count = position
         return last
 
+    @property
+    def next_frame_delay(self) -> float | None:
+        """Recorded seconds until the next frame; no clock or background process."""
+        if not self.remaining or self.feed._latest is None:
+            return None
+        from .telemetry import decode_frame
+        next_frame = decode_frame(self._frames[self._index])
+        return max(0.0, next_frame.snapshot.observed_at - self.feed._latest.snapshot.observed_at)
+
     def path_points(self, *, max_points: int = 1000) -> list[dict]:
         """Bounded, zone-preserving recording trace up to current frame."""
         from .telemetry import decode_frame
         if type(max_points) is not int or not 1 <= max_points <= 1000:
             raise ValueError("invalid trace limit")
-        current = self._frames[:self._index]
-        stride = max(1, (len(current) + max_points - 1) // max_points)
-        indices = list(range(0, len(current), stride))
-        if current and indices[-1] != len(current) - 1:
-            indices.append(len(current) - 1)
+        count = self._index
+        limit = min(count, max_points)
+        if not limit:
+            return []
+        # Include the current observation without exceeding the requested bound.
+        indices = ({count - 1} if limit == 1 else
+                   {i * (count - 1) // (limit - 1) for i in range(limit)})
         points = []
-        for index in indices:
-            p = decode_frame(current[index]).snapshot.position
+        segment = 0
+        previous = None
+        for index, payload in enumerate(self._frames[:count]):
+            # Every consumed frame has already passed feed validation. Preserve
+            # discontinuities even when downsampling omits transition frames.
+            context = (payload["position"]["zone_id"], payload.get("instance_hint"))
+            if previous is not None and context != previous:
+                segment += 1
+            previous = context
+            if index not in indices:
+                continue
+            snapshot = decode_frame(payload).snapshot
+            p = snapshot.position
             points.append({"frame": index + 1, "zone_id": p.zone_id,
+                           "instance_hint": snapshot.instance_hint, "segment": segment,
                            "x": p.x, "y": p.y, "z": p.z})
         return points
 

@@ -44,4 +44,6 @@ def test_feed_settings_and_console_controls():
     assert 'name="live_client_feed_file"' in settings
     assert 'name="live_client_feed_client"' in settings
     assert 'id="poll"' in console
-    assert "FileTelemetryBridge(Path(_feed_path), _feed_client)" in host
+    assert "initialize_live_client(" in host
+    startup = (root/"src/workbench/runtime/live_client/startup.py").read_text(encoding="utf-8")
+    assert "registry.add_feed(client, FileTelemetryBridge(Path(path), client))" in startup
