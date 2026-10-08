@@ -12,11 +12,13 @@ from uuid import uuid4
 from fastapi import APIRouter, HTTPException, Request, UploadFile
 
 from .inspection import inspect_recording
+from .recording import load_recorded_frames
+from .registry import ReplayRegistry
 
 MAX_UPLOAD_BYTES = 16 * 1024 * 1024
 
 
-def create_recording_upload_router(directory: Path) -> APIRouter:
+def create_recording_upload_router(directory: Path, registry: ReplayRegistry | None = None) -> APIRouter:
     router = APIRouter(prefix="/live-client", tags=["Live Client Settings"])
 
     @router.post("/upload-recording")
@@ -39,6 +41,18 @@ def create_recording_upload_router(directory: Path) -> APIRouter:
         except (ValueError, OSError) as exc:
             output.unlink(missing_ok=True)
             raise HTTPException(status_code=422, detail=str(exc))
-        return {**result, "path": str(output)}
+        if registry is not None:
+            client_id = result["client_id"]
+            if client_id in registry.client_ids():
+                output.unlink(missing_ok=True)
+                raise HTTPException(status_code=409, detail="client already loaded")
+            try:
+                replay = load_recorded_frames(output, client_id=client_id)
+                replay.advance()
+                registry.add(client_id, replay)
+            except (ValueError, OSError) as exc:
+                output.unlink(missing_ok=True)
+                raise HTTPException(status_code=422, detail=str(exc))
+        return {**result, "path": str(output), "loaded": registry is not None}
 
     return router
