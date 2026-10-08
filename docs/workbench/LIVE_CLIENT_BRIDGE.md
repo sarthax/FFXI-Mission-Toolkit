@@ -49,3 +49,11 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 4. Implement the next *isolated* slice: client discovery/read-only telemetry interface + fixtures and tests. Follow with limited Zone Viewer attachment through existing service patterns.
 5. Keep documentation status truthful, commit on `feature/live-client-foundation` or successor branch, and update this file plus roadmap at each milestone.
 6. Where only GitHub cloud is available, use GitHub PR and Actions; defer actual in-game compatibility claims to an authorized Windows client test.
+
+## 2026-10-07 additional slice: entity observation model
+- Added `src/workbench/runtime/live_client/entities.py` and `tests/test_live_client_entities.py` on PR #663.
+- `EntityObservation` keeps client index separate from optional observed server entity ID; categorizes player/NPC/mob/unknown and stores client, zone, instance hint and observation time.
+- `overlay_observations` filters by selected client/zone and fails closed when an explicit instance is selected but the observation has no matching hint.
+- `match_server_id` matches only known server IDs, never assumes memory slot equals SQL identifier.
+- **Not implemented:** Windows memory reader, live entity scan, realtime GUI marker overlay, or writes. Current work is transport-neutral backend contracts and offline tests.
+- Next: read-only adapter with real client telemetry, additional fixture replay and rendering adapter, then opt-in viewer integration.
