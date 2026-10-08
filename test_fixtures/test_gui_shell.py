@@ -473,7 +473,7 @@ def main():
 
     assert '<body class="shell-dense">' in model_html
     assert 'class="dense-panel"' in model_html
-    assert 'class="dense-toolbar"' in model_html
+    assert 'class="wb-page-title">Model Viewer</span>' in model_html
 
     capture_env.get_template("zone_view3d.html")
     capture_env.get_template("packets_decode.html")
