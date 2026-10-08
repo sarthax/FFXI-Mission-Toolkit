@@ -22,7 +22,7 @@ def create_recording_upload_router(directory: Path, registry: ReplayRegistry | N
     router = APIRouter(prefix="/live-client", tags=["Live Client Settings"])
 
     @router.post("/upload-recording")
-    async def upload_recording(request: Request, recording: UploadFile) -> dict:
+    async def upload_recording(request: Request, recording: UploadFile, open_session: bool = False) -> dict:
         origin = request.headers.get("origin")
         if not origin or origin != str(request.base_url).rstrip("/"):
             raise HTTPException(status_code=403, detail="same-origin request required")
@@ -41,7 +41,7 @@ def create_recording_upload_router(directory: Path, registry: ReplayRegistry | N
         except (ValueError, OSError) as exc:
             output.unlink(missing_ok=True)
             raise HTTPException(status_code=422, detail=str(exc))
-        if registry is not None:
+        if registry is not None and open_session:
             client_id = result["client_id"]
             if client_id in registry.client_ids():
                 output.unlink(missing_ok=True)
@@ -53,6 +53,6 @@ def create_recording_upload_router(directory: Path, registry: ReplayRegistry | N
             except (ValueError, OSError) as exc:
                 output.unlink(missing_ok=True)
                 raise HTTPException(status_code=422, detail=str(exc))
-        return {**result, "path": str(output), "loaded": registry is not None}
+        return {**result, "path": str(output), "loaded": registry is not None and open_session}
 
     return router
