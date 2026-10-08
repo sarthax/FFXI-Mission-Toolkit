@@ -5573,7 +5573,8 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
                     if len(identities)==1:
                         domain,table,key=next(iter(identities))
                         link["entity_resolution"]="UNIQUE_ENTITY_HINT"
-                        link["entity_target"]={"domain":domain,"table":table,"key":key}
+                        link["entity_target"]={"domain":domain,"table":table,"key":key,
+                                               "trace_query":("entity:"+key if domain=="entity" else key)}
                     else:
                         link["entity_resolution"]=("AMBIGUOUS" if identities else "UNRESOLVED") if allowed_domains is not None else "NOT_APPLICABLE"
                         link["entity_target"]=None
