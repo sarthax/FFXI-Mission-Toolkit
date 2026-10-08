@@ -1,11 +1,16 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Synth & Crafting{% endblock %}
-{% block content %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_width %}fluid{% endblock %}
+{% block page_class %}synth-workbench-page{% endblock %}
+{% block page_heading %}Synth & Crafting{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Analysis/export are read-only; Editor actions can write recipes</span>{% endblock %}
+{% block page_help %}Browse recipes, audit completeness, inspect health, compare environments, analyze economy, edit supported recipe data, and generate portable SQL. Analysis and export views remain read-only; the Editor tab preserves its existing write/validation behavior.{% endblock %}
+{% block page_body %}
 <link rel="stylesheet" href="/static/auction_house_console.css?v=20261005s">
 <link rel="stylesheet" href="/static/synth.css?v=10">
-<main class="ahc sy" id="synth">
+<div class="ahc sy" id="synth">
   <div class="ahc-top">
-    <h1>Synth &amp; Crafting</h1>
     <span id="syEnv" class="ahc-chip">checking…</span>
     <span id="syFlavor" class="ahc-chip mut"></span>
     <nav class="ahc-tabs" id="syTabs">
@@ -88,6 +93,6 @@
     </section>
   </div>
   <datalist id="syItemDl"></datalist>
-</main>
+</div>
 <script src="/static/synth.js?v=12"></script>
 {% endblock %}
