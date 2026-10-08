@@ -79,6 +79,11 @@
 </div>
 {% endif %}
 
+{% if review_notice == 'approved' %}
+<div class="muted" role="status">Topic link approved and saved.</div>
+{% elif review_notice == 'dismissed' %}
+<div class="muted" role="status">Topic suggestion dismissed and saved.</div>
+{% endif %}
 <div class="wiki-actions dense-toolbar" style="margin:6px 0">
   <a class="chip {% if tab == 'review' %}
 <section class="wiki-section">
