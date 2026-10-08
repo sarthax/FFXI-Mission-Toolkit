@@ -231,8 +231,8 @@ def _table_exists(con: sqlite3.Connection, table: str) -> bool:
     ).fetchone() is not None
 
 
-def resolve_subject(con: sqlite3.Connection, subject: str) -> list[dict]:
-    """Conservative name resolver across indexed client/server reference tables."""
+def _resolve_subject_direct(con: sqlite3.Connection, subject: str) -> list[dict]:
+    """Conservative direct-name resolver across indexed client/server reference tables."""
     candidates = []
     norm = _norm(subject)
 
@@ -291,6 +291,45 @@ def resolve_subject(con: sqlite3.Connection, subject: str) -> list[dict]:
     return list(unique.values())
 
 
+
+def _canonical_topic_aliases(con: sqlite3.Connection, subject: str) -> list[str]:
+    """Return reviewed canonical topic labels for a source-page title, if any."""
+    if not (_table_exists(con, "reference_wiki_pages") and _table_exists(con, "reference_wiki_topic_pages")
+            and _table_exists(con, "reference_wiki_topics")):
+        return []
+    rows=con.execute(
+        """SELECT DISTINCT t.canonical_title
+           FROM reference_wiki_pages p
+           JOIN reference_wiki_topic_pages tp
+             ON tp.source_id=p.source_id AND tp.page_id=p.page_id
+           JOIN reference_wiki_topics t ON t.topic_id=tp.topic_id
+           WHERE lower(p.title)=lower(?) OR p.page_id=?""",
+        (subject,subject),
+    ).fetchall()
+    return [str(row[0]) for row in rows if row and row[0] and str(row[0]).casefold()!=subject.casefold()]
+
+
+def resolve_subject(con: sqlite3.Connection, subject: str) -> list[dict]:
+    """Resolve a source label directly, then through reviewed multilingual topic aliases."""
+    direct=_resolve_subject_direct(con,subject)
+    if direct:
+        return direct
+    candidates=[]
+    for alias in _canonical_topic_aliases(con,subject):
+        for cand in _resolve_subject_direct(con,alias):
+            copy=dict(cand)
+            copy["mapping_method"]="MULTILINGUAL_TOPIC_ALIAS"
+            details=dict(copy.get("details") or {})
+            details.update({"source_subject":subject,"canonical_topic":alias})
+            copy["details"]=details
+            candidates.append(copy)
+    unique={}
+    for cand in candidates:
+        unique[(cand["target_table"],cand["target_key"])]=cand
+    return list(unique.values())
+
+
+
 def map_claim(con: sqlite3.Connection, claim: dict) -> list[dict]:
     if claim["claim_type"] != "ENTITY_REFERENCE" or not claim.get("subject_text"):
         return [{
@@ -328,6 +367,65 @@ def map_claim(con: sqlite3.Connection, claim: dict) -> list[dict]:
             "details": cand.get("details", {}),
         })
     return out
+
+
+
+def _structured_link_claims(con: sqlite3.Connection, page: dict, source_id: str) -> list[dict]:
+    """Promote preserved source links into normal REFERENCE_ONLY entity-reference claims."""
+    page_id=str(page.get("pageid") or page.get("page_id") or page.get("title"))
+    blocks=wiki_document.stored_blocks(con,source_id,page_id)
+    if not blocks:
+        return []
+    title=page.get("title") or ""
+    revision_id=str(page.get("revid") or page.get("revision_id") or "") or None
+    revision_ts=page.get("timestamp") or page.get("revision_timestamp")
+    page_url=page.get("url")
+    claims=[]
+    seen=set()
+    for block in blocks:
+        if block.get("block_type")!="link":
+            continue
+        target=(block.get("target") or "").strip()
+        label=(block.get("text") or "").strip()
+        if not target:
+            continue
+        parsed=urllib.parse.urlparse(target)
+        if parsed.scheme and parsed.netloc:
+            if source_id==SOURCE_WIKIWIKI_JP and parsed.netloc.endswith("wikiwiki.jp") and parsed.path.startswith("/ffxi/"):
+                target=urllib.parse.unquote(parsed.path[len("/ffxi/"):]).strip("/")
+            else:
+                continue
+        elif source_id==SOURCE_WIKIWIKI_JP and target.startswith("/ffxi/"):
+            target=urllib.parse.unquote(target[len("/ffxi/"):]).strip("/")
+        elif target.startswith(("#","javascript:","mailto:")):
+            continue
+        target=urllib.parse.unquote(target).replace("_"," ").strip()
+        if not target or target.lower().startswith(_NON_ENTITY_PREFIXES):
+            continue
+        section_path=block.get("section_path") or ""
+        section_title=section_path.split(" > ")[-1] if section_path else None
+        excerpt=label or target
+        key=(section_title or "",target.casefold(),excerpt)
+        if key in seen:
+            continue
+        seen.add(key)
+        claims.append({
+            "claim_id":_claim_id(source_id,page_id,section_title or "","ENTITY_REFERENCE",target,excerpt),
+            "source_id":source_id,
+            "page_id":page_id,
+            "page_title":title,
+            "page_url":page_url,
+            "revision_id":revision_id,
+            "revision_timestamp":revision_ts,
+            "section_title":section_title,
+            "claim_type":"ENTITY_REFERENCE",
+            "subject_text":target,
+            "excerpt":excerpt[:700],
+            "source_locator":block.get("source_locator") or f"block:{block.get('block_id')}",
+            "authority":REFERENCE_ONLY,
+        })
+    return claims
+
 
 
 def _store_claim(con: sqlite3.Connection, claim: dict) -> None:
@@ -438,6 +536,13 @@ def ingest_page(con: sqlite3.Connection, source_id: str, title_query: str) -> di
         return {"status": "NOT_FOUND", "source_id": source_id, "query": title_query}
 
     claims = extract_claims(page, source_id=source_id)
+    existing={(c.get("claim_type"),(c.get("section_title") or "").casefold(),(c.get("subject_text") or "").casefold())
+              for c in claims}
+    for claim in _structured_link_claims(con,page,source_id):
+        key=(claim.get("claim_type"),(claim.get("section_title") or "").casefold(),(claim.get("subject_text") or "").casefold())
+        if key not in existing:
+            claims.append(claim)
+            existing.add(key)
     page_id = str(page.get("pageid") or page.get("page_id") or page.get("title"))
     con.execute("DELETE FROM reference_wiki_mappings WHERE claim_id IN (SELECT claim_id FROM reference_wiki_claims WHERE source_id=? AND page_id=?)", (source_id, page_id))
     con.execute("DELETE FROM reference_wiki_claims WHERE source_id=? AND page_id=?", (source_id, page_id))

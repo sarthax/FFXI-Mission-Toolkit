@@ -203,7 +203,14 @@ class _HTMLBlocks(HTMLParser):
 
 
 def html_blocks(page_id: str, raw_html: str) -> list[dict]:
-    parser = _HTMLBlocks(page_id); parser.feed(raw_html or ""); return parser.blocks
+    # WikiWiki pages include navigation/tool chrome around the article. Keep the full raw source
+    # in reference_wiki_documents, but structure only the article body so nav/footer links do not
+    # become reference claims.
+    source=raw_html or ""
+    m=re.search(r'<div[^>]+id=["\']body["\'][^>]*>(.*?)(?=<div[^>]+id=["\'](?:footer|toolbar|bottom)["\'])',source,re.S|re.I)
+    if m:
+        source=m.group(1)
+    parser = _HTMLBlocks(page_id); parser.feed(source); return parser.blocks
 
 
 def legacy_text_blocks(page_id: str, text: str) -> list[dict]:
