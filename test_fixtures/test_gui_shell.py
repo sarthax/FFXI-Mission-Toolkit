@@ -478,9 +478,9 @@ def main():
     capture_env.get_template("zone_view3d.html")
     capture_env.get_template("packets_decode.html")
     zone_view3d_template=(TEMPLATES/"zone_view3d.html").read_text(encoding="utf-8")
-    assert "{% block shell_mode %}dense{% endblock %}" in zone_view3d_template
-    assert "{% block main_class %}zone-view3d-page{% endblock %}" in zone_view3d_template
-    assert 'id="zone3d-title" class="dense-toolbar"' in zone_view3d_template
+    assert '{% extends "workbench_page.html" %}' in zone_view3d_template
+    assert "{% block page_class %}zone-view3d-page{% endblock %}" in zone_view3d_template
+    assert "{% block page_heading %}3D Zone Viewer{% endblock %}" in zone_view3d_template
     assert 'href="/zoneplot2?zone={{ zoneid }}"' in zone_view3d_template
     assert "calc(100vh - var(--shell-h)" in zone_view3d_template
 
