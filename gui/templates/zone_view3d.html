@@ -1,30 +1,21 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}3D Zone Viewer{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}zone-view3d-page{% endblock %}
-{% block content %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_class %}zone-view3d-page{% endblock %}
+{% block page_width %}fluid{% endblock %}
+{% block page_heading %}3D Zone Viewer{% endblock %}
+{% block page_identity %}<span class="chip mono">{{ zone_name }} ({{ zoneid }})</span>{% endblock %}
+{% block page_status %}{% if not live_parse_available and not obj_available %}<span class="wb-write-badge">Build cache writes local derived mesh data</span>{% else %}<span class="wb-readonly-badge">Client zone inspection</span>{% endif %}{% endblock %}
+{% block page_actions %}{% if not multi %}<a class="chip" href="/zoneplot2?zone={{ zoneid }}">Open Zone Editor ↗</a>{% endif %}{% endblock %}
+{% block page_help %}View the zone’s client visual mesh with optional capture-observed entities/paths, navmesh overlay, time-of-day controls, fly mode, and spawn context. When no live/cached mesh is available, Build cache explicitly writes local derived mesh data before rendering.{% endblock %}
+{% block page_body %}
 <style>
-  main.zone-view3d-page{padding:8px 10px 24px}
   #zone3d-title{margin-bottom:6px}
   #zone3d-title .chip{font-weight:500}
   #viewer-container{height:calc(100vh - var(--shell-h) - 185px) !important;min-height:480px}
   #capture-spatial-controls{padding:5px 7px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
   @media (max-width:900px) { #viewer-container{height:calc(100vh - var(--shell-h) - 235px) !important;min-height:400px} }
 </style>
-<div id="zone3d-title" class="dense-toolbar"><strong>3D Zone Viewer</strong><span class="chip mono">{{ zone_name }} ({{ zoneid }})</span><span class="sp"></span>{% if not multi %}<a class="inline" href="/zoneplot2?zone={{ zoneid }}">Open Zone Editor ↗</a>{% endif %}</div>
-<details class="dense-card" style="margin:0 0 6px"><summary>About this view</summary><div class="muted" style="padding-top:4px">Real client visual mesh (walls/buildings/props -- not the invisible collision
-  mesh the 2D top-down view uses).
-  {% if live_parse_available %}Parsed live from the zone's own DAT in-browser (real textures,
-  water, day/night sky) via the vendored <code class="chip">ffxi-dat</code> bindings.
-  {% else %}No textures/materials -- Topaz's own chunk parsing doesn't carry per-triangle texture
-  assignment out to the pre-baked mesh cache this falls back to (flat-shaded), because the FFXI
-  install path or this zone's geometry DAT isn't configured/known. {% endif %}
-  Drag to orbit, scroll to zoom.
-  {% if multi %}Showing capture-observed entities and available paths from capture
-  <a class="inline" href="/captures/{{ capture_id }}">#{{ capture_id }}</a> in {{ zone_db }}.
-  {% elif entity_name %}Showing {{ entity_name }}'s real path from capture
-  <a class="inline" href="/captures/{{ capture_id }}">#{{ capture_id }}</a>.{% endif %}</div></details>
-
 {% if multi %}
 <form method="get" style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
   <input type="hidden" name="capture_id" value="{{ capture_id }}">

@@ -116,3 +116,5 @@ Completed workspace migrations:
 - **Home / Data & Tools** — Toolkit data-source health dashboard with explicit rebuild/install action boundary (Dashboard).
 - **Domain Detail** — Domain-specific implementation/evidence dossier with specialized embedded read-only workspaces (Detail).
 - **Model Viewer** — Full-width client DAT/model inspection workspace with preserved specialized renderer layout (Workbench, read-only).
+- **DAT Inspector** — Client resource identification/structure/parser workbench with downstream handoffs (Workbench, read-only).
+- **3D Zone Viewer** — Full-width client zone visual/capture overlay viewer with explicit derived-mesh cache build boundary (Workbench).
