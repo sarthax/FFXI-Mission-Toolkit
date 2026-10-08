@@ -20,6 +20,12 @@ def test_runtime_recording_summary_and_claim_boundaries():
     assert capture['frame_intervals'] == [{'seconds': 1, 'count': 120}]
     assert capture['frames_with_entities'] == 35
     assert capture['distinct_entity_observations'] == 8
+    summary = capture['entity_observation_summary']
+    assert summary['scope_frame_counts'] == {'unspecified': 121}
+    assert summary['truncated_frames'] == 0
+    assert summary['total_observations'] == 35
+    assert summary['observations_with_reported_server_id'] == 0
+    assert summary['complete_inventory_verified'] is False
     assert capture['context_transitions'] == []
     assert capture['raw_axis_ranges_by_zone']['50']['z'] == {'min': -6, 'max': 0}
     assert report['operator_reported_game_version'] == '30191204_1'
@@ -92,3 +98,52 @@ def test_report_hash_and_frames_survive_source_change_after_snapshot(tmp_path, m
     report = runtime_report.recording_report(path)['recording']
     assert report['frames'] == 121
     assert report['sha256'] == hashlib.sha256(original).hexdigest()
+
+
+def test_inventory_and_legacy_scopes_and_reported_ids_remain_distinct(tmp_path):
+    frames = [json.loads(line) for line in CAPTURE.read_text().splitlines()[:3]]
+    def entity(index, server_id):
+        return {'client_index': index, 'server_entity_id': server_id, 'name': 'Same name',
+                'position': {'zone_id': 50, 'x': 1, 'y': 2, 'z': 3}}
+    frames[0]['entities'] = [entity(42, 11)]
+    frames[1].update(observation_scope='selected_targets', entities=[entity(42, 22)])
+    frames[2].update(observation_scope='bounded_loaded_entities', entities_truncated=True,
+                     entities=[entity(42, 22), entity(43, None), entity(44, 0)])
+    path = tmp_path / 'mixed.jsonl'
+    path.write_text(''.join(json.dumps(frame)+'\n' for frame in frames))
+    report = recording_report(path)
+    assert report['recording']['distinct_entity_observations'] == 4
+    summary = report['recording']['entity_observation_summary']
+    assert summary['scope_frame_counts'] == {'unspecified': 1, 'selected_targets': 1, 'bounded_loaded_entities': 1}
+    assert summary['truncated_frames'] == 1
+    assert summary['entity_count_distribution'] == [{'entities': 1, 'frames': 2}, {'entities': 3, 'frames': 1}]
+    assert summary['total_observations'] == 5
+    assert summary['observations_with_reported_server_id'] == 3
+    assert summary['observations_without_reported_server_id'] == 2
+    assert all(summary[key] is False for key in ('target_roles_verified', 'complete_inventory_verified', 'server_identity_verified'))
+    assert report['validation']['build_verified'] is False
+    assert report['validation']['lifecycle_verified'] is False
+
+
+def test_observation_counts_do_not_merge_contexts_or_sources(tmp_path):
+    frames = [json.loads(line) for line in CAPTURE.read_text().splitlines()[:3]]
+    for frame in frames:
+        frame['entities'] = [{'client_index': 42, 'server_entity_id': 11, 'name': 'Same name',
+                              'position': {'zone_id': 50, 'x': 1, 'y': 2, 'z': 3}}]
+    frames[1]['instance_hint'] = 'another-instance'
+    frames[2]['adapter'] = 'another-source'
+    path = tmp_path / 'contexts.jsonl'
+    path.write_text(''.join(json.dumps(frame)+'\n' for frame in frames))
+    assert recording_report(path)['recording']['distinct_entity_observations'] == 3
+
+
+def test_zero_and_absent_server_ids_both_remain_unknown(tmp_path):
+    frames = [json.loads(line) for line in CAPTURE.read_text().splitlines()[:2]]
+    for frame, server_id in zip(frames, (None, 0)):
+        frame['entities'] = [{'client_index': 42, 'server_entity_id': server_id, 'name': 'Same name',
+                              'position': {'zone_id': 50, 'x': 1, 'y': 2, 'z': 3}}]
+    path = tmp_path / 'unknown.jsonl'
+    path.write_text(''.join(json.dumps(frame)+'\n' for frame in frames))
+    recording = recording_report(path)['recording']
+    assert recording['distinct_entity_observations'] == 1
+    assert recording['entity_observation_summary']['observations_without_reported_server_id'] == 2

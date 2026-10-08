@@ -379,3 +379,13 @@ Capture actions remain attached to the corresponding entity index. Inventory sco
 and truncation warnings remain visible even when no rows match a filter; filters
 cannot recover observations omitted by the exporter cap. Browser tests cover these
 behaviors without claiming Windows client or coordinate compatibility.
+
+## Inventory-aware offline diagnostics
+
+Runtime reports now preserve declared entity observation scope and summarize
+truncation, count distribution and reported server-ID coverage. Distinct observation
+counts include source/version/zone/instance/index/reported-ID/name context; zero and
+absent IDs both stay unknown. Legacy scope is unspecified. These metrics describe
+supplied frames, not verified entity identity, target roles or world completeness.
+Use the existing [runtime report command](LIVE_CLIENT_WINDOWS_HANDOFF.md#produce-an-offline-runtime-report)
+for both inventory and historical recordings.

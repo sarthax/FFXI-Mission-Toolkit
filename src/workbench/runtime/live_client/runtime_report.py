@@ -44,6 +44,25 @@ def binary_fingerprint(path: Path) -> dict:
         raise ValueError(f'{path.name} is not a valid PE file') from exc
 
 
+def entity_observation_summary(frames) -> dict:
+    """Summarize supplied observation coverage, never infer target roles or identity."""
+    scopes = Counter(frame.observation_scope for frame in frames)
+    counts = Counter(len(frame.entities) for frame in frames)
+    reported = sum(entity.server_entity_id not in (None, 0)
+                   for frame in frames for entity in frame.entities)
+    total = sum(len(frame.entities) for frame in frames)
+    return {'scope_frame_counts': dict(sorted(scopes.items())),
+            'truncated_frames': sum(frame.entities_truncated for frame in frames),
+            'entity_count_distribution': [{'entities': count, 'frames': number}
+                                          for count, number in sorted(counts.items())],
+            'total_observations': total,
+            'observations_with_reported_server_id': reported,
+            'observations_without_reported_server_id': total - reported,
+            'target_roles_verified': False,
+            'complete_inventory_verified': False,
+            'server_identity_verified': False}
+
+
 def recording_report(path: Path, *, game_version: str | None = None,
                      binaries: list[Path] | None = None) -> dict:
     data = bounded_bytes(path, 16 * 1024 * 1024)
@@ -84,8 +103,11 @@ def recording_report(path: Path, *, game_version: str | None = None,
                           'frame_intervals': [{'seconds': k, 'count': v} for k, v in sorted(deltas.items())],
                           'context_transitions': transitions, 'raw_axis_ranges_by_zone': ranges,
                           'frames_with_entities': sum(bool(f.entities) for f in frames),
-                          'distinct_entity_observations': len({(e.position.zone_id, e.client_index, e.name)
-                                                               for f in frames for e in f.entities})},
+                          'distinct_entity_observations': len({(f.snapshot.adapter, f.snapshot.version,
+                                                               e.position.zone_id, e.instance_hint, e.client_index,
+                                                               (e.server_entity_id or None), e.name)
+                                                               for f in frames for e in f.entities}),
+                          'entity_observation_summary': entity_observation_summary(frames)},
             'operator_reported_game_version': game_version,
             'supplied_binaries': [binary_fingerprint(p) for p in binaries or []],
             'validation': {'all_frames_decoded': True, 'build_verified': False,

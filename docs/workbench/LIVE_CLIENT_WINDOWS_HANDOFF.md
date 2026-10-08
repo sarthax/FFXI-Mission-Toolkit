@@ -89,3 +89,18 @@ reported game version `30191204_1`. Both PE resources report file/product versio
 [`ashita_supplied_binary_metadata.json`](../../tests/fixtures/live_client/ashita_supplied_binary_metadata.json).
 The binaries are not stored in the repository. These are supplied-file identities;
 they do not prove that those exact images were loaded during the recording.
+
+## Inventory report coverage
+
+The same report command accepts selected-target, inventory and legacy recordings.
+`recording.entity_observation_summary` lists frame counts by declared scope,
+truncated-frame count, entity-count distribution, total observations and optional
+nonzero server-ID coverage. Legacy frames remain `unspecified`; their contents do
+not establish target roles or complete inventory. Zero/absent IDs both remain unknown.
+
+`distinct_entity_observations` now counts observed adapter/version, zone/instance,
+client index, optional reported server ID and name combinations. It separates
+same-slot/name observations with different reported IDs without claiming distinct
+verified game entities. Missing instance identity stays unknown. Summary flags for
+target roles, complete inventory and server identity remain false. A recording with
+no truncation is not proof of complete world coverage or verified runtime support.
