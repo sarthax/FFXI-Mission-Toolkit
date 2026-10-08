@@ -33,6 +33,20 @@ def create_registry_router(registry: ReplayRegistry) -> APIRouter:
         return viewer_projection(frame, zone_id=zone_id, client_id=client_id,
                                  instance_hint=instance_hint)
 
+    @router.post("/poll-feed")
+    def poll_feed(request: Request, client_id: str = Query(min_length=1, max_length=200)) -> dict:
+        """Read bounded frames from an explicitly registered local telemetry file."""
+        origin = request.headers.get("origin")
+        if not origin or origin != str(request.base_url).rstrip("/"):
+            raise HTTPException(status_code=403, detail="same-origin request required")
+        if client_id not in registry._feeds:
+            raise HTTPException(status_code=404, detail="file feed not registered")
+        try:
+            count = registry.poll_feed(client_id)
+        except (OSError, ValueError, RuntimeError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc))
+        return {"client_id": client_id, "accepted": count}
+
     @router.post("/advance")
     def advance(request: Request, client_id: str = Query(min_length=1, max_length=200)) -> dict:
         """Advance offline replay only; reject browser cross-origin submissions."""
