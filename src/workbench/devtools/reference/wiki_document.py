@@ -10,7 +10,7 @@ from html.parser import HTMLParser
 
 import mwparserfromhell
 
-PARSER_VERSION = "wiki-doc-v2-template-fields"
+PARSER_VERSION = "wiki-doc-v3-table-fields"
 
 
 def normalize_search(value: str) -> str:
@@ -110,8 +110,9 @@ def mediawiki_blocks(page_id: str, wikitext: str) -> list[dict]:
         if in_table and line.startswith(("!", "|")):
             kind = "table_header_cell" if line.startswith("!") else "table_cell"
             for cell in re.split(r"!!|\|\|", line[1:]):
-                clean = str(mwparserfromhell.parse(cell).strip_code(normalize=True, collapse=True)).strip()
-                emit(kind, clean)
+                raw_cell=cell.strip()
+                clean = str(mwparserfromhell.parse(raw_cell).strip_code(normalize=True, collapse=True)).strip()
+                emit(kind, clean, metadata={"raw_value":raw_cell, "review_only":True})
             continue
         lm = re.match(r"^\s*([*#;:]+)\s*(.*)$", line)
         if lm:
