@@ -1,10 +1,12 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Item Browser{% endblock %}
-{% block content %}
-<main class="ib-page">
-  <div class="page-head"><div><h1>Item Browser</h1>
-    <p class="muted">Find items by name, AH category, job, slot, weapon skill, level, rarity or mod, then open one in the focused <a href="/itemedit">Item Editor</a>. Read-only. <a href="/itemhealth">Script health report</a></p></div>
-    <span class="badge">READ ONLY</span></div>
+{% block page_archetype %}browser{% endblock %}
+{% block page_class %}ib-page{% endblock %}
+{% block page_heading %}Item Browser{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Read only</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/itemedit">Item Editor</a><a class="chip" href="/itemhealth">Script health report</a>{% endblock %}
+{% block page_help %}Find items by name, AH category, job, slot, weapon skill, level, rarity, mod, or reference-catalogue state, then open a selected item in the focused Item Editor. Browsing and comparison remain read-only.{% endblock %}
+{% block page_body %}
 
   <section class="panel ib-filters">
     <form id="ibForm" onsubmit="return false">
@@ -41,7 +43,6 @@
     </section>
     <section class="panel ib-detail" id="ibDetail"><p class="muted">Select an item to see what it does and how it compares to LandSandBoat.</p></section>
   </div>
-</main>
 <style>
   .ib-page{max-width:none}
   .ib-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px}

@@ -110,3 +110,5 @@ Completed workspace migrations:
 - **Manual Packet Viewer / Decoder** — Wide manual/bulk raw-packet decode workbench preserving byte coverage and source-adapter evidence (Workbench, read-only).
 - **Entity Lookup** — Canonical entity-index search and candidate browser (Browser, read-only).
 - **Entity Detail** — Evidence-backed entity dossier bridging SQL, Lua, Feature Trace, client, capture, event/dialog, wiki, relationship, and provenance evidence (Detail, read-only).
+- **Item Browser** — Faceted item catalogue/search with reference drift comparison and editor/AH handoff (Browser, read-only).
+- **Item Script Health** — Active-server script audit, LSB cross-check, repair preview, and explicit confirmed repair-write workflow (Workbench; write boundary explicit).
