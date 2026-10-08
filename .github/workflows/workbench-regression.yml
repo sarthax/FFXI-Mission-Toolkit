@@ -183,6 +183,7 @@ jobs:
           python test_fixtures/test_wiki_reviewed_template_link_resolution.py
           python test_fixtures/test_wiki_trace_handoff_contract.py
           python test_fixtures/test_wiki_link_resolution_scenarios.py
+          python test_fixtures/test_wiki_import_audit.py
           python test_fixtures/test_wiki_topic_suggestions.py
           python test_fixtures/test_wiki_topic_review_queue_ui.py
           python test_fixtures/test_wiki_review_queue_filter.py
