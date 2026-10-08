@@ -23,6 +23,7 @@ def main():
     assert len(suggestions)==1,suggestions
     assert suggestions[0]["canonical_title"]=="Mars's Ring",suggestions
     assert suggestions[0]["review_only"] is True
+    assert suggestions[0]["supporting_pages"][0]["title"] == "Mars\u0027s Ring"
     assert wiki_document.page_topic(db,"WikiWikiJP","jp1") is None
     assert wiki_document.topic_review_queue(db,source_id="WikiWikiJP",limit=1,offset=1)==[]
     assert wiki_document.topic_review_queue(db,source_id="WikiWikiJP",matching_only=True)
