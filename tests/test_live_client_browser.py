@@ -214,6 +214,38 @@ def test_recording_controls_in_browser(tmp_path):
             page.locator('#timeline').evaluate('(el,n)=>{el.value=String(n);el.dispatchEvent(new Event("change",{bubbles:true}));}', empty_frame)
             playwright.expect(page.locator('#entity-rows tr')).to_have_count(0)
             playwright.expect(page.locator('#entity-status')).to_have_text('No entity observations in this frame.')
+            # Exercise bounded inventory inspection without altering playback.
+            inventory = {**frames[0], 'client_id': 'inventory-ui',
+                         'position': {'zone_id': 100, 'x': 1e308, 'y': 0, 'z': 0},
+                         'entities': [
+                {'client_index': 12, 'server_entity_id': 123, 'name': '<img src=x onerror=alert(1)>', 'position': {'zone_id': 100, 'x': -1e308, 'y': 0, 'z': 0}},
+                {'client_index': 11, 'name': 'Same name', 'position': {'zone_id': 100, 'x': 1e308, 'y': 6, 'z': 8}},
+                {'client_index': 10, 'server_entity_id': 16780001, 'name': 'Same name', 'position': {'zone_id': 100, 'x': 1e308, 'y': 3, 'z': 4}},
+            ]}
+            page.locator('#recording').set_input_files({'name': 'inventory.jsonl', 'mimeType': 'application/x-ndjson', 'buffer': (json.dumps(inventory)+'\n').encode()})
+            page.locator('#open-recording').click()
+            playwright.expect(page.locator('#entity-rows tr')).to_have_count(3)
+            playwright.expect(page.locator('#entity-status')).to_contain_text('truncated.')
+            assert page.locator('#entity-rows img').count() == 0
+            inspection_session = page.locator('#client').input_value()
+            page.locator('#entity-sort').select_option('distance')
+            playwright.expect(page.locator('#entity-rows tr').nth(0).locator('td').nth(2)).to_have_text('10')
+            playwright.expect(page.locator('#entity-rows tr').nth(0).locator('td').nth(5)).to_have_text('5.000 raw')
+            playwright.expect(page.locator('#entity-rows tr').nth(2).locator('td').nth(5)).to_have_text('Outside numeric range')
+            page.locator('#entity-search').fill('SAME NAME')
+            playwright.expect(page.locator('#entity-rows tr')).to_have_count(2)
+            page.locator('#entity-search').fill('0x'+format(16780001, 'x'))
+            playwright.expect(page.locator('#entity-rows tr')).to_have_count(1)
+            playwright.expect(page.locator('#entity-rows td').nth(2)).to_have_text('10')
+            page.locator('#entity-search').fill('0xB')
+            playwright.expect(page.locator('#entity-rows td').nth(2)).to_have_text('11')
+            page.locator('#entity-search').fill('no match')
+            playwright.expect(page.locator('#entity-rows tr')).to_have_count(0)
+            playwright.expect(page.locator('#entity-status')).to_contain_text('0 of 3')
+            playwright.expect(page.locator('#entity-status')).to_contain_text('truncated.')
+            page.locator('#entity-search').fill('')
+            playwright.expect(page.locator('#entity-rows tr')).to_have_count(3)
+            assert registry._clients[inspection_session].position == 1
             assert not errors
             browser.close()
     finally:
