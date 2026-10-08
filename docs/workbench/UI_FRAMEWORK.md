@@ -126,3 +126,7 @@ Completed workspace migrations:
 - **Zone Editor** — Full-width server/client spatial editor with entity/path/navmesh tooling, cache operations, and preserved save/undo/redo controls (Editor).
 - **Nyzul Isle Layout Editor** — Full-width lineage-aware floor-generation/spatial editor with optional navmesh evidence and persistent exclusion controls (Editor).
 - **Synth & Crafting** — Full-width recipe browser/audit/health/compare/economy/editor/export console with explicit mixed read/write boundary (Workbench).
+- **Auction House Activity** — Read-only executor/replay/reward activity ledger (Workbench).
+- **Auction House Economy Intelligence** — Full-width analytical economy workspace with explicit toolkit-local snapshot-recording boundary (Workbench).
+- **Auction House Help & Status** — Capability/safety/operations reference for Auction House workflows (Detail-like Workbench, read-only).
+- **Auction House Reward History** — Read-only reward campaign/outcome history with retry preview handoff (Workbench).
