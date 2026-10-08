@@ -174,7 +174,9 @@
     <div>
       <span class="muted">{{ suggestion.match_method }}</span>
       {% for proof in suggestion.supporting_pages %}
-        <span class="chip">{{ proof.source_id }} / {{ proof.page_id }}</span>
+        {% if proof.title %}
+        <a class="chip" href="/wiki?source={{ proof.source_id|urlencode }}&title={{ proof.title|urlencode }}&tab=browse">{{ proof.source_id }}: {{ proof.title }}</a>
+        {% else %}<span class="chip">{{ proof.source_id }} / {{ proof.page_id }}</span>{% endif %}
       {% endfor %}
       <form method="post" action="/wiki/topic" class="wiki-actions" style="margin:5px 0 0">
         <input type="hidden" name="title" value="{{ title }}">
