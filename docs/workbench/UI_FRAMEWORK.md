@@ -46,13 +46,14 @@ dimensions when a Workbench token or primitive expresses the same geometry.
 
 ## Migration and enforcement
 
-`test_unified_ui_framework.py` enforces the adoption boundary. Existing pages that still extend
-`base.html` directly are temporarily listed in `UI_LEGACY_TEMPLATE_ALLOWLIST.txt`. A new module
-page should extend `workbench_page.html`. Adding a new legacy entry is an explicit opt-out and
-requires a reason.
+`test_unified_ui_framework.py` enforces the adoption boundary. The workspace-by-workspace migration
+is complete and `UI_LEGACY_TEMPLATE_ALLOWLIST.txt` is intentionally empty of pending templates.
+All current module pages use the shared Workbench page contract.
 
-When a page migrates, remove it from the legacy allowlist in the same change. Migrate by workspace
-and preserve route behavior, data semantics, write safety, and evidence meaning.
+New module pages must extend `workbench_page.html`. Reintroducing a legacy allowlist entry is an
+explicit exception that requires a documented reason in the PR. Preserve route behavior, data
+semantics, write safety, evidence meaning, and specialized inner layouts when extending the shared
+framework.
 
 Foundation adopters:
 
