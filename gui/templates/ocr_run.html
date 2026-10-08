@@ -1,14 +1,13 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}OCR run {{ status.run_id }}{% endblock %}
-{% block content %}
-<h1>OCR run: {{ status.run_id }}</h1>
-<p class="muted"><a href="/ocr">&larr; all runs</a>{% if status.url %} &middot; source: {{ status.url }}{% endif %}
-  &middot;
-  <form method="post" action="/ocr/{{ status.run_id }}/delete" style="display:inline;"
-        onsubmit="return confirm('Permanently delete this entire run ({{ status.run_id }}) and all of its files (source video, frames, OCR/match output)? This cannot be undone.');">
-    <button type="submit" style="color:#c33;">Delete this run</button>
-  </form>
-</p>
+{% block page_archetype %}workbench{% endblock %}
+{% block page_back %}<a class="chip" href="/ocr">&larr; OCR Runs</a>{% endblock %}
+{% block page_heading %}OCR run {{ status.run_id }}{% endblock %}
+{% block page_identity %}{% if status.url %}<span class="muted">{{ status.url }}</span>{% endif %}{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Run extraction/layout/capture/delete actions modify local state</span>{% endblock %}
+{% block page_actions %}<form method="post" action="/ocr/{{ status.run_id }}/delete" style="display:inline;" onsubmit="return confirm('Permanently delete this entire run ({{ status.run_id }}) and all of its files (source video, frames, OCR/match output)? This cannot be undone.');"><button type="submit" class="chip" style="color:var(--red);">Delete run</button></form>{% endblock %}
+{% block page_help %}Configure reusable screen layouts, preview and crop source video, extract section frames, run OCR/matching, and optionally create a Capture linked to the video evidence. OCR-derived observations remain distinct from raw/binary packet captures.{% endblock %}
+{% block page_body %}
 
 {% if error %}<div class="warn">{{ error }}</div>{% endif %}
 
