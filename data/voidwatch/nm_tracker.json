@@ -937,7 +937,7 @@
   "tier": "I",
   "ki_id": 370,
   "ki_name": "Indigo Stratum Abyssite",
-  "status": "not built",
+  "status": "built",
   "rifts": [
    [
     17138606,
@@ -958,7 +958,7 @@
     -42.0
    ]
   ],
-  "gaps": "DSP mob data: none (group [])."
+  "gaps": "Indigo I. Script+SQL (group 18227, pool 6820, skill list 1180) in place; untested in game. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified."
  },
  {
   "name": "Ocythoe",
@@ -1061,7 +1061,7 @@
   "tier": "III",
   "ki_id": null,
   "ki_name": "",
-  "status": "not built",
+  "status": "built",
   "rifts": [
    [
     17175422,
@@ -1082,7 +1082,7 @@
     520.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13729])."
+  "gaps": "Jade III. Script+SQL (group 13729, pool 4684, skill list 1178) in place; message ids text-checked. Spawn positions need !checknav; untested in game. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified."
  },
  {
   "name": "Gugalanna",
@@ -1216,7 +1216,7 @@
   "tier": "III",
   "ki_id": 372,
   "ki_name": "Indigo Stratum Abyssite III",
-  "status": "not built",
+  "status": "built",
   "rifts": [
    [
     17224369,
@@ -1237,7 +1237,7 @@
     492.0
    ]
   ],
-  "gaps": "DSP mob data: none (group [])."
+  "gaps": "Indigo III. Script+SQL (group 14089, pool 5312, skill list 1182) in place; untested in game. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified."
  },
  {
   "name": "Yatagarasu",
@@ -1712,7 +1712,7 @@
   "tier": "IV",
   "ki_id": 373,
   "ki_name": "Indigo Stratum Abyssite IV",
-  "status": "not built",
+  "status": "built",
   "rifts": [
    [
     17559929,
@@ -1733,7 +1733,7 @@
     -164.0
    ]
   ],
-  "gaps": "DSP mob data: none (group [])."
+  "gaps": "Indigo IV. Script+SQL (group 18228, pool 6890, skill list 1183) in place; untested in game. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified."
  },
  {
   "name": "Voidwrought",
@@ -1743,7 +1743,7 @@
   "tier": "IV",
   "ki_id": null,
   "ki_name": "",
-  "status": "not built",
+  "status": "built",
   "rifts": [
    [
     17572303,
@@ -1764,7 +1764,7 @@
     760.0
    ]
   ],
-  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
+  "gaps": "Jade IV. Script+SQL (group 18226, pool 7058, skill list 1179) in place; message ids text-checked. Ids/spawn positions need !checknav; abyssite KI link missing; untested in game. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified."
  },
  {
   "name": "Lorbulcrud",
@@ -1774,7 +1774,7 @@
   "tier": "II",
   "ki_id": 371,
   "ki_name": "Indigo Stratum Abyssite II",
-  "status": "not built",
+  "status": "built",
   "rifts": [
    [
     17580410,
@@ -1795,7 +1795,7 @@
     -20.0
    ]
   ],
-  "gaps": "DSP mob data: none (group [])."
+  "gaps": "Indigo II. Script+SQL (group 14088, pool 5311, skill list 1181) in place; untested in game. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified."
  },
  {
   "name": "Mellonia",
