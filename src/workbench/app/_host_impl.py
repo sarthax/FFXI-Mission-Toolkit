@@ -133,6 +133,49 @@ app = FastAPI(title="Mission Toolkit GUI")
 app.include_router(character_editor_router)
 from workbench.client.animlab.router import router as animlab_router
 app.include_router(animlab_router)
+# Live Client replay is explicitly read-only; no process discovery or write routes.
+from workbench.runtime.live_client.registry import ReplayRegistry
+from workbench.runtime.live_client.registry_api import create_registry_router
+from workbench.runtime.live_client.replay_console import create_replay_console_router
+live_client_replay_registry = ReplayRegistry()
+# Only the explicitly configured offline JSONL recording is loaded.
+from workbench.runtime.live_client.bootstrap import register_configured_replay
+# Settings persist across restarts; explicit environment overrides remain optional.
+from workbench.runtime.live_client.configuration import effective_replay_configuration
+_live_client_settings_con = sqlite3.connect(str(settings_mod.DB_PATH))
+try:
+    _live_client_settings = settings_mod.get_all(_live_client_settings_con)
+finally:
+    _live_client_settings_con.close()
+if (_live_client_settings.get("live_client_source") == "file_feed"
+        and _live_client_settings.get("live_client_auto_connect") == "1"):
+    from workbench.runtime.live_client.file_bridge import FileTelemetryBridge
+    _feed_path = _live_client_settings.get("live_client_feed_file", "").strip()
+    _feed_client = _live_client_settings.get("live_client_feed_client", "").strip()
+    if _feed_path and _feed_client:
+        live_client_replay_registry.add_feed(
+            _feed_client, FileTelemetryBridge(Path(_feed_path), _feed_client))
+else:
+    register_configured_replay(live_client_replay_registry,
+                               effective_replay_configuration(_live_client_settings, os.environ))
+app.include_router(create_registry_router(live_client_replay_registry))
+app.include_router(create_replay_console_router())
+from workbench.runtime.live_client.setup_api import create_recording_upload_router
+app.include_router(create_recording_upload_router(REPO_ROOT / "data" / "live_client_recordings"))
+
+@app.post("/live-client/inspect-recording")
+async def live_client_inspect_recording(request: Request):
+    # Local admin-only setup surface: deny cross-origin attempts before accessing local paths.
+    origin = request.headers.get("origin")
+    if not origin or origin != str(request.base_url).rstrip("/"):
+        raise HTTPException(status_code=403, detail="same-origin request required")
+    body = await request.json()
+    from workbench.runtime.live_client.inspection import inspect_recording
+    try:
+        return inspect_recording(body.get("path", ""))
+    except (ValueError, OSError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # Zone visual-mesh OBJs (build_zone_visual_cache.py) are real but large (tens of MB of ASCII
 # text per zone) -- gzip compresses that ratio very well over the wire, worth it app-wide.
@@ -8669,6 +8712,13 @@ async def settings_save(request: Request):
         "dsp_server_path": form.get("dsp_server_path", "").strip(),
         "backport_root": form.get("backport_root", "").strip(),
         "ffxi_install_path": form.get("ffxi_install_path", "").strip(),
+        "live_client_source": (form.get("live_client_source", "disabled")
+                               if form.get("live_client_source") in ("disabled", "replay", "file_feed") else "disabled"),
+        "live_client_feed_file": form.get("live_client_feed_file", "").strip()[:2048],
+        "live_client_feed_client": form.get("live_client_feed_client", "").strip()[:200],
+        "live_client_replay_file": form.get("live_client_replay_file", "").strip()[:2048],
+        "live_client_replay_client": form.get("live_client_replay_client", "").strip()[:200],
+        "live_client_auto_connect": "1" if form.get("live_client_auto_connect") else "0",
         "xi_model_viewer_url": form.get("xi_model_viewer_url", "").strip(),
         "shell_brand_enabled": "1" if form.get("shell_brand_enabled") else "0",
         "shell_brand_text": form.get("shell_brand_text", "").strip()[:80],

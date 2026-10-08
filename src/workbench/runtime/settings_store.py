@@ -43,6 +43,12 @@ DEFAULTS = {
     "ah_legacy_test_writes": "0",
     "ah_dsp_myisam_test_writes": "0",
     "ah_preview_ttl_seconds": "300",
+    "live_client_source": "disabled",
+    "live_client_feed_file": "",
+    "live_client_feed_client": "",
+    "live_client_replay_file": "",
+    "live_client_replay_client": "",
+    "live_client_auto_connect": "0",
 }
 
 AH_FLAGS = {

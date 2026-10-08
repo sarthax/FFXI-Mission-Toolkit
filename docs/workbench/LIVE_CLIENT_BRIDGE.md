@@ -1,0 +1,202 @@
+# Live Client Development Bridge — Roadmap and Resume Guide
+
+Status: **foundation in progress** on [PR #663](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/663), branch `feature/live-client-foundation`.
+First recorded: 2026-10-07. Do not describe future items below as shipped.
+
+## Goal
+Provide native Toolkit-controlled development interaction with an authorized running FFXI client, independent of the Project Tako executable. Integrate live in-game positions and entities with Zone Editor, 2D/3D spatial viewers, capture provenance, spawn placement and navmesh investigation. Development should be achievable using GitHub cloud editing/CI; runtime client validation requires a Windows FFXI session.
+
+## Sources and decisions
+- User-provided Project Tako installations: `Project-Tako.7z` (original) and `Project-Tako.zip` (updated with maps/config/plugins). These are conversation attachments, not checked into the repository.
+- Reference repos: https://github.com/ProjectTako/Clipper and https://github.com/ProjectTako/ProjectTako.
+- Do **not** embed Project Tako executable as the product architecture, merely forward commands to it, or copy licensed code without review.
+- Favor a toolkit-managed Windows-side adapter plus transport-neutral Python orchestration.
+- Do not assume offsets, signatures, navmesh availability, or instance map identity without evidence.
+- Process-memory writes are disabled until authorized development session, verified client version, and adapter support. Public-server evasion is out of scope.
+- Keep work isolated from ongoing GUI refactor and Auction House development.
+
+## Implemented foundation (PR #663)
+- `src/workbench/runtime/live_client/models.py`: Position, ClientSnapshot, Waypoint, PathSample and enumerated actions.
+- `src/workbench/runtime/live_client/service.py`: adapter protocol, opt-in session, path observation, offline replay.
+- `src/workbench/runtime/live_client/waypoints.py`: JSON waypoint/path serialization and parsing.
+- `src/workbench/runtime/live_client/spatial.py`: same-zone nearby destinations, per-client/per-zone path splitting, preview-only NPC/mob placement candidates.
+- `tests/test_live_client_contracts.py`, `tests/test_live_client_service.py`, `tests/test_live_client_spatial.py`: offline regression coverage.
+These modules are not wired to the GUI and do not attach to or control FFXI yet.
+
+## Development roadmap (ordered)
+1. **Adapter/read telemetry:** enumerate running FFXI sessions; version-compatible zone/instance hint, XYZ, heading, character, target and entity observations; explicit disconnected/unverified states; no write operations.
+2. **Spatial UI integration:** view selected client location in 2D/3D Zone Viewer, position/heading readout, camera following, version and health indication. Reuse shared shell and Zone Editor positioning conventions.
+3. **Waypoints:** searchable named destinations by zone and instance hint; import validated Tako records; capture current location; categories/favorites; export/import and profile selection.
+4. **Live spatial controls:** configurable small/medium/large XYZ nudge, precise position entry, up/down elevation, warp to named waypoint, warp to entity (NPC, mob, player), speed settings; carefully verify coordinate axes, clamping, updates, readbacks and server synchronization. All writable actions restricted to explicitly authorized test sessions.
+5. **Development callbacks:** capture current position/heading into preview-only NPC or mob spawn proposal and submit via existing Zone Editor backup/audit/write path rather than direct DB mutation; reflect editor-selected entity back to client for locating/testing.
+6. **Path capture:** timed spatial samples with zone/client boundaries, deduplication and provenance; compare to 3D spatial geometry, roaming paths, capture packet observations and zone editor.
+7. **Navmesh validation:** route samples against available navmesh source; nearest valid polygon, unreachable segments, slope/height/collision discrepancies and map overlay, with explicit unsupported/unknown outcomes.
+8. **Exploration tools:** collision-free traversals, climbing, client-local visibility filtering (NPC/player hiding), pause/stop/recover controls; research capabilities separately and do not silently claim support.
+9. **Map resolver:** use Tako map GIS bounds as reference but validate instance- and level-specific selection; explicit override and diagnostic candidate explanations.
+10. **Hardening:** multiple clients, version profiles, recorded audit trail, teardown/restoration, authorization UX, CI and optional Windows runtime smoke tests.
+
+## Integration boundaries
+- Zone/Spatial existing backend: `src/workbench/devtools/spatial/zone_plot.py` (contains navmesh reference and server selection).
+- Zone Editor: `src/workbench/editors/zone/`.
+- 3D viewer: `gui/templates/zone_view3d.html`.
+- Capture/Research systems: preserve session/source identity and timestamps.
+- Reuse existing Zone Editor write mechanisms; read-only observations and proposals must never implicitly mutate SQL.
+
+## Resume checklist
+1. Inspect newest `main`, open PRs, CI status, and the actual head of PR #663; rebase/reconcile before editing any shared surface.
+2. Run or inspect regression for all three live-client test modules. Do not claim tests have passed for latest commit until workflow completes.
+3. Review adapter contracts and find existing game-facing addon or telemetry interfaces before inventing signatures.
+4. Implement the next *isolated* slice: client discovery/read-only telemetry interface + fixtures and tests. Follow with limited Zone Viewer attachment through existing service patterns.
+5. Keep documentation status truthful, commit on `feature/live-client-foundation` or successor branch, and update this file plus roadmap at each milestone.
+6. Where only GitHub cloud is available, use GitHub PR and Actions; defer actual in-game compatibility claims to an authorized Windows client test.
+
+## 2026-10-07 additional slice: entity observation model
+- Added `src/workbench/runtime/live_client/entities.py` and `tests/test_live_client_entities.py` on PR #663.
+- `EntityObservation` keeps client index separate from optional observed server entity ID; categorizes player/NPC/mob/unknown and stores client, zone, instance hint and observation time.
+- `overlay_observations` filters by selected client/zone and fails closed when an explicit instance is selected but the observation has no matching hint.
+- `match_server_id` matches only known server IDs, never assumes memory slot equals SQL identifier.
+- **Not implemented:** Windows memory reader, live entity scan, realtime GUI marker overlay, or writes. Current work is transport-neutral backend contracts and offline tests.
+- Next: read-only adapter with real client telemetry, additional fixture replay and rendering adapter, then opt-in viewer integration.
+
+## 2026-10-07 telemetry frame decoder slice
+- Added `src/workbench/runtime/live_client/telemetry.py` plus `tests/test_live_client_telemetry.py`.
+- Versioned read-only schema validates client, zone, XYZ, heading, time and bounded entity observations before use by GUI/service adapters.
+- Server entity IDs remain optional; no inference from client index. Malformed/non-finite values fail closed.
+- **No native memory attachment or actual FFXI read yet**; the decoder accepts external observations only.
+- Next: a read-only Windows client adapter (or supported Ashita feed), end-to-end offline feed fixture, then live viewer overlay.
+
+
+## 2026-10-07 read-only feed adapter slice
+- Added `src/workbench/runtime/live_client/feed.py` and `tests/test_live_client_feed.py`.
+- `TelemetryFeedAdapter` binds decoded telemetry to one explicit client identity and rejects stale or duplicate timestamps, cross-client frames, and malformed data before replacing its latest snapshot.
+- Exposes a read-only `snapshot()` for `LiveClientSession.observe()` and entity observations for later overlays; no implicit discovery, memory attachment, or live game writes.
+- Client-provided version text is **not** treated as a verified runtime version. Write capability is permanently false.
+- Offline tests cover initial disconnect, successful observation, immutable last-good snapshot on decode failure, stale/cross-client rejection, and read-only enforcement.
+- Cloud CI still requires independent verification. No live FFXI integration or GUI overlay is claimed.
+- Next: add a recorded multi-frame fixture and an explicit transport/health lifecycle, then integrate opt-in viewer overlay after tests run.
+
+
+## 2026-10-07 recorded replay and health milestone
+- `src/workbench/runtime/live_client/replay.py`: `RecordedTelemetryReplay` advances strict frames through `TelemetryFeedAdapter` with fail-closed validation and no process attachment. Invalid frames do not advance the replay cursor.
+- Explicit `FeedHealth` reports disconnected/connected/stale, last frame timestamp and count; it uses a caller-supplied clock with a validated age threshold. Future-dated frames are not considered connected.
+- `tests/test_live_client_replay.py`: multi-frame transitions, zone changes, exhaustion, malformed/cross-client retry behavior, and reference-time input validation.
+- No automatic runtime discovery, live connection, write operations or viewer integration yet. Tests require CI verification.
+- Next: feed a stable JSON-lines recorded fixture through this interface and wire read-only session-health/position visualization.
+
+
+## 2026-10-07 JSON-lines recorded telemetry import
+- `src/workbench/runtime/live_client/recording.py` loads UTF-8 JSON-lines into an offline `RecordedTelemetryReplay` using the strict v1 telemetry decoder.
+- Enforces explicit client identity, monotonic frame timestamps, finite decoded numeric values, default 10,000-frame and 16 MiB bounds, with blank lines ignored and malformed rows rejected with source line numbers.
+- Validates the complete capture before constructing replay; no writes, code execution, process discovery, or FFXI attachment.
+- `tests/test_live_client_recording.py` covers multi-zone replay, client mismatch, duplicate/out-of-order frames, malformed input, empty recordings, and size/count guards.
+- CI is required before considering this slice validated; integration with an opt-in viewer is still pending.
+
+
+## 2026-10-07 read-only viewer projection milestone
+- `src/workbench/runtime/live_client/viewer.py`: pure JSON-compatible player/entity projection for later 2D/3D overlays; no GUI route, process attachment, or memory writes.
+- The projection filters by explicitly selected client and zone; requested instance hints must match the player, and entity observations are independently instance-filtered.
+- Exposes observed client indices separately from optional server IDs, entity kinds, names, XYZ/heading, and source timestamps.
+- `tests/test_live_client_viewer.py`: selected-instance, wrong-client, wrong-zone, wrong-instance, and zone-only filtering regressions.
+- Next: optional reader/API entry point and viewer wiring through the shared shell, coordinating with active GUI refactor. CI and Windows runtime compatibility remain separate validation steps.
+
+
+## 2026-10-07 opt-in GET-only projection router
+- `src/workbench/runtime/live_client/readonly_api.py`: `create_readonly_router(provider)` exposes only `GET /live-client/read-only/projection`. The host must explicitly register the router and provide previously decoded telemetry; there is no auto-registration, ingestion, discovery or write endpoint.
+- Query parameters select client/zone/optional instance; wrong-provider client identity fails closed with HTTP 409, missing observations return 404, and invalid query values are rejected.
+- `tests/test_live_client_readonly_api.py` checks projection response, missing client, cross-client guard, query validation and GET-only behavior.
+- **Not GUI-integrated:** this is a registration-ready backend seam, not a running toolkit route. Next: opt-in GUI registration with a user-selected feed, test against actual template/viewer conventions, then overlay wiring. CI must validate current HEAD first.
+
+
+## 2026-10-07 multi-client replay selection foundation
+- Added `src/workbench/runtime/live_client/registry.py`: explicit in-memory replay registration, sorted client listing, selected-client frame lookup, cursor advancement, removal and read-only status summaries.
+- Multiple replay clients advance independently. Cross-client registration and duplicate IDs fail closed. Registry is not OS client discovery and does not attach to FFXI.
+- Added `tests/test_live_client_registry.py` for independent cursors, selection, removal, and invalid registration.
+- No changes to global routing or GUI; wire this registry into the optional GET-only API with opt-in viewer presentation in a later slice.
+- Current slice still requires CI verification.
+
+
+## 2026-10-07 opt-in multi-client replay HTTP API
+- Added `src/workbench/runtime/live_client/registry_api.py`: explicitly mounted, GET-only `/live-client/replay/clients` and `/live-client/replay/projection` endpoints using `ReplayRegistry`.
+- Client list reports read-only session status; selected-client projection returns the validated, zone/instance-filtered player and entity observations. Unknown clients return 404; registered clients with no frame return 409. No client discovery, filesystem access, replay advancement, game writes, or global GUI router mutation.
+- Added `tests/test_live_client_registry_api.py` for independent replay clients, selection, unobserved sessions, invalid parameters, and no POST methods.
+- The router is **not yet mounted** into the running GUI. Next: coordinate opt-in registration and a player marker with the GUI refactor; afterward prioritize the Windows read-only telemetry bridge.
+
+
+## 2026-10-08 opt-in replay browser console
+- `src/workbench/runtime/live_client/replay_console.py`: self-contained browser page at `GET /live-client/replay/console` showing explicit registered-client selection, read-only status and observed character, zone, XYZ, heading, timestamp and entity count.
+- `ReplayRegistry.status()` now includes the selected client's last observed zone so the console can request a zone-scoped projection without assuming a default zone.
+- `tests/test_live_client_replay_console.py` covers an explicitly mounted console, no-frame status, selected-client projection, and GET-only behavior.
+- **Important:** router is not mounted into the application and is not linked from navigation yet. No actual live client or map overlay; this is a standalone read-only replay console for opt-in integration testing.
+- Next: coordinate explicit registration in toolkit GUI and the first map marker; then prioritize Windows-side read-only observation adapter and actual FFXI compatibility validation.
+
+
+## 2026-10-08 host registration milestone
+- The toolkit host now explicitly mounts the replay registry, client listing, viewer projection, and standalone browser console, at `/live-client/replay/console`. Registration uses a new empty in-memory registry.
+- Routes remain GET-only. There is **no client process attachment, automatic discovery, user-upload ingest or memory write**, and the console initially says no replay sessions registered.
+- `tests/test_live_client_host_registration.py` verifies registration and the absence of non-GET methods on the new endpoints.
+- Main toolkit navigation link and controlled replay-import workflow are still pending. Do not imply player position is live without a connected Windows adapter.
+
+
+## 2026-10-08 opt-in offline replay bootstrap
+- `src/workbench/runtime/live_client/bootstrap.py` introduces explicit, validated startup initialization. Set both environment variables `FFXI_LIVE_REPLAY_FILE` (path to a UTF-8 JSON-lines v1 telemetry recording) and `FFXI_LIVE_REPLAY_CLIENT` (exact client ID in those frames) **before starting the toolkit**.
+- Startup loads and validates all frames, registers the recording and advances one frame so `/live-client/replay/console` can show its first player observation. The console still has no browser-controlled advancing; remaining frames stay ready for future controlled replay operations.
+- If neither variable is set, registration is disabled. Partial or invalid configuration raises an error rather than allowing an ambiguous or malformed data source.
+- `tests/test_live_client_bootstrap.py` covers disabled mode, partial configuration rejection, first-frame initialization, duplicate registration and invalid recording isolation.
+- The source is offline recording data, **not a real FFXI connection**. No GUI navigation link, Windows reader or game-memory writes have been added.
+
+
+## 2026-10-08 browser-controlled offline replay progression
+- The replay console now has a **Next recorded frame** button. The explicit `POST /live-client/replay/advance?client_id=...` endpoint advances only the registered in-memory recording cursor, returning observed timestamp and zone. It never writes to FFXI, SQL or files.
+- Step endpoint requires a same-origin browser Origin header and fails with 403 for cross-origin or missing Origin, 404 for unknown client, and 409 at the end of a recording. It does not upload or ingest new data.
+- `tests/test_live_client_replay_step.py` covers these conditions and the console control.
+- This makes the replay API no longer literally GET-only: **projection and client listing remain GET-only**, while step is a narrowly scoped replay-state mutation. It is not a game-client control endpoint.
+- Next: optional playback timing and player map marker; then prioritize read-only Windows FFXI telemetry adapter and version validation.
+
+
+## 2026-10-08 bounded local-helper telemetry transport
+- Added `src/workbench/runtime/live_client/file_bridge.py`: explicit read-only polling of an operator-provided JSON-lines file with bounded complete-line reads, client identity checks through `TelemetryFeedAdapter`, partial trailing-line tolerance, and fail-closed file-rotation/truncation detection.
+- Added `tests/test_live_client_file_bridge.py` covering append/poll, partial frame completion, cross-client rejection, file truncation, and size limits.
+- This is **transport groundwork only**, not a Windows process-memory reader or verified real-time FFXI integration. A native/Ashita helper must still be implemented and validated, and a controlled lifecycle needs wiring to the registered live-feed API.
+- Do not interpret client-reported version as independent version verification; writes remain unsupported.
+
+
+## 2026-10-08 Live Client Settings integration
+- The existing toolkit `Settings` form now includes a Live Client section. Source may be disabled or offline replay, with persistent recording path, client ID and auto-connect-on-startup checkbox stored via `workbench.runtime.settings_store` in the toolkit settings database.
+- The `Validate recording / detect client ID` button POSTs a **local toolkit path** to the same-origin `/live-client/inspect-recording` route. Inspection uses strict bounded v1 JSON-lines decoding and fills the detected client ID only on success. It does not connect to or control the FFXI process.
+- Startup prefers explicit paired `FFXI_LIVE_REPLAY_FILE` and `FFXI_LIVE_REPLAY_CLIENT` environment overrides when present; otherwise it uses saved Settings only when replay is selected and automatic restore is enabled. No Windows environment-variable editing is required.
+- `tests/test_live_client_settings.py` covers persisted values, optional overrides, disabled auto-connect and recording inspection. Host and Settings template assertions cover wiring.
+- The current path input references a file on the toolkit host computer; a browser file-upload/browse control and native live-client source are **not implemented**. Manual replay selection still requires a toolkit restart to restore the configured recording. The UI accurately labels live connection as future work.
+
+
+## 2026-10-08 browser recording picker
+- Settings now supports selecting a local `.jsonl` recording in the browser and importing it through `POST /live-client/upload-recording`. The endpoint is same-origin guarded, limits the file to 16 MiB, validates the strict telemetry schema, and stores only validated recordings in `data/live_client_recordings/` (ignored by Git).
+- Successful import fills the managed recording path and detected client ID in Settings. **Save Settings** to persist the choice; enable offline replay and automatic restore to load the first frame on the next toolkit startup.
+- `tests/test_live_client_settings_upload.py` covers authorized upload, cross-origin denial, invalid extension/recording, no orphan files, Settings controls and Git exclusion.
+- Imported files are local toolkit data, not repository assets. No FFXI process discovery, game-memory read/write, or automatic live-client connection is involved.
+
+
+## 2026-10-08 read-only telemetry feed registry
+- `ReplayRegistry` can now register a `FileTelemetryBridge` per explicit client ID, alongside offline replay sessions. `poll_feed(client_id)` ingests appended, validated JSONL observations and `frame()` / `status()` serve them through existing projection consumers.
+- Feed clients cannot use replay `advance()`; status identifies `source: file_feed`. Duplicate client IDs and wrong-client attachment are rejected. Regression coverage: `tests/test_live_client_feed_registry.py`.
+- The host has **not** yet been configured to register/poll a file feed, and no native FFXI memory reader exists. The current slice is a reusable registry boundary, not a working live connection.
+
+
+## 2026-10-08 Settings-managed local telemetry feed
+- Settings now offers **Local telemetry file feed (read-only)** with file path, client ID and auto-connect-on-startup. Startup creates a dedicated bounded `FileTelemetryBridge` registration; it does not attach to FFXI memory or scan running clients.
+- Replay console has **Poll file feed**, invoking same-origin `POST /live-client/replay/poll-feed`; it accepts up to 100 complete JSONL telemetry frames per click, then refreshes observed location. Regular GET requests do not perform file I/O.
+- `tests/test_live_client_feed_settings.py` exercises feed polling, denied cross-origin requests, empty polls, missing clients and Settings/host wiring.
+- A local addon/helper still needs to generate the versioned telemetry file; no automatic Windows game process reader is present. Settings changes take effect at toolkit restart.
+
+
+## 2026-10-08 read-only telemetry producer contract
+- `src/workbench/runtime/live_client/producer.py` defines a transport-neutral `ObservationSource.observe()` protocol and a `TelemetryProducer.sample_once()` JSONL writer. It validates the schema/client identity/timestamp before appending a bounded, UTF-8 telemetry frame.
+- `tests/test_live_client_producer.py` exercises producer-to-`FileTelemetryBridge` round trips, duplicate timestamp rejection, and wrong-client rejection without creating files.
+- The producer is library code, **not a running Windows helper**: no process discovery, memory offsets, memory reading, Ashita/Windower integration, automatic sampling scheduler, or game writes are implemented.
+- Next: build a version-verified adapter against an authorized running Windows FFXI instance; integrate the reader's observations into this contract. Preserve the file feed as a safe fallback and use real client testing for offset validation.
+
+
+## 2026-10-08 Windows executable verification boundary
+- Added `src/workbench/runtime/live_client/windows_identity.py`: an explicit SHA-256 allowlist contract for a user-selected Windows client executable; rejects unknown builds, invalid manifests, non-EXE paths and excessively large files.
+- Added `tests/test_live_client_windows_identity.py` using synthetic executable fixtures only. No actual FFXI binaries or digests are bundled or approved.
+- This is a **prerequisite, not an implemented memory adapter**. Correctly matched on-disk executable identity alone does not verify a running process or memory layout. A future adapter must additionally verify the target process instance, image identity, pointer validity, schema and offset provenance, and fail closed on mismatch.
+- No process handles, memory operations, or game writes are present. Actual Windows/FFXI validation is still outstanding.

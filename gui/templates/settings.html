@@ -100,6 +100,85 @@
     </div>
   </div>
 
+  <h2 id="live-client-settings">Live Client</h2>
+  <p class="muted">Configure offline telemetry replay here rather than setting Windows environment variables. No running FFXI client is attached or modified. Saving these options requires restarting the toolkit before the recorded session is connected.</p>
+  <div class="table-wrap" style="padding:14px;display:grid;gap:12px;">
+    <label>Telemetry source
+      <select name="live_client_source" id="liveClientSource">
+        <option value="disabled" {% if values.live_client_source != 'replay' %}selected{% endif %}>Disabled</option>
+        <option value="replay" {% if values.live_client_source == 'replay' %}selected{% endif %}>Offline replay</option>
+        <option value="file_feed" {% if values.live_client_source == 'file_feed' %}selected{% endif %}>Local telemetry file feed (read-only)</option>
+      </select>
+    </label>
+    <label>Local telemetry feed file (append-only JSONL on toolkit computer)
+      <input type="text" name="live_client_feed_file" value="{{ values.live_client_feed_file }}" style="width:100%" placeholder="D:\\FFXI\\telemetry\\live.jsonl">
+    </label>
+    <label>Feed client ID (must match incoming observations)
+      <input type="text" name="live_client_feed_client" value="{{ values.live_client_feed_client }}" maxlength="200">
+    </label>
+    <label>Recording file (.jsonl; local path on the toolkit computer)
+      <input type="text" name="live_client_replay_file" id="liveClientReplayFile" value="{{ values.live_client_replay_file }}" style="width:100%" placeholder="D:\\FFXI\\captures\\session.jsonl">
+    </label>
+    <label>Or choose a recording to import into toolkit storage
+      <input type="file" id="liveClientUploadFile" accept=".jsonl,application/x-ndjson" />
+    </label>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button type="button" id="liveClientUpload">Import selected recording</button>
+      <button type="button" id="liveClientInspect">Validate recording / detect client ID</button>
+      <span id="liveClientInspectStatus" role="status" class="muted"></span>
+    </div>
+    <label>Client ID (exact ID from recording)
+      <input type="text" name="live_client_replay_client" id="liveClientReplayClient" value="{{ values.live_client_replay_client }}" maxlength="200">
+    </label>
+    <label><input type="checkbox" name="live_client_auto_connect" value="1" {% if values.live_client_auto_connect == '1' %}checked{% endif %}> Automatically restore replay on toolkit startup</label>
+    <div class="muted">To identify the client ID in a recording, use the validation tool once this file is available locally. Advanced environment variables FFXI_LIVE_REPLAY_FILE and FFXI_LIVE_REPLAY_CLIENT override saved replay values.</div>
+    <a class="inline" href="/live-client/replay/console">Open replay console</a>
+  </div>
+
+<script>
+document.getElementById('liveClientUpload').addEventListener('click', async () => {
+  const status = document.getElementById('liveClientInspectStatus');
+  const file = document.getElementById('liveClientUploadFile').files[0];
+  if (!file) { status.textContent = 'Choose a .jsonl file first'; return; }
+  const button = document.getElementById('liveClientUpload');
+  button.disabled = true;
+  status.textContent = 'Importing and validating...';
+  try {
+    const data = new FormData();
+    data.append('recording', file);
+    const response = await fetch('/live-client/upload-recording', {method:'POST',body:data});
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.detail || 'Import failed');
+    document.getElementById('liveClientReplayFile').value = result.path;
+    document.getElementById('liveClientReplayClient').value = result.client_id;
+    status.textContent = 'Imported ' + result.frames + ' frames. Click Save Settings to retain the selection.';
+  } catch (error) {
+    status.textContent = String(error.message || error);
+  } finally { button.disabled = false; }
+});
+document.getElementById('liveClientInspect').addEventListener('click', async () => {
+  const status = document.getElementById('liveClientInspectStatus');
+  const button = document.getElementById('liveClientInspect');
+  button.disabled = true;
+  status.textContent = 'Validating recording...';
+  try {
+    const path = document.getElementById('liveClientReplayFile').value.trim();
+    const response = await fetch('/live-client/inspect-recording', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({path})
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.detail || 'Validation failed');
+    document.getElementById('liveClientReplayClient').value = result.client_id;
+    status.textContent = 'Validated ' + result.frames + ' frames; client ID detected: ' + result.client_id;
+  } catch (error) {
+    status.textContent = String(error.message || error);
+  } finally {
+    button.disabled = false;
+  }
+});
+</script>
+
   <h2>3D model viewer</h2>
   <p class="muted">Entity Lookup's "view 3D model" link opens
     <a class="inline" href="https://github.com/vekien/xi-model-viewer" target="_blank">xi-model-viewer</a>
