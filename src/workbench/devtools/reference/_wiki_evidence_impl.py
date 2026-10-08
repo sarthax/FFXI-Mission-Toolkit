@@ -544,9 +544,12 @@ def _internal_link_target(source_id: str, target: str) -> str | None:
             return None
     elif source_id==SOURCE_WIKIWIKI_JP and target.startswith("/ffxi/"):
         target=urllib.parse.unquote(target[len("/ffxi/"):]).strip("/")
-    elif target.startswith(("#","javascript:","mailto:")):
+    elif parsed.scheme or parsed.netloc or target.startswith(("#","//","?")):
+        # External, protocol-relative and non-page references cannot identify a
+        # wiki entity. In particular, do not turn mailto: or javascript: into
+        # a plausible target merely because they have no network location.
         return None
-    target=urllib.parse.unquote(target).replace("_"," ").strip()
+    target=urllib.parse.unquote(target).split("#", 1)[0].split("?", 1)[0].replace("_"," ").strip()
     if not target or target.lower().startswith(_NON_ENTITY_PREFIXES):
         return None
     return target

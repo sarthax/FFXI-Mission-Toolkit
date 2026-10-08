@@ -81,16 +81,54 @@ def _fetch(source_id: str, title: str, log) -> list[dict]:
     raise ValueError(f"unknown source {source_id}")
 
 
-def _merge(main_db: str, tmp_db: str, log) -> int:
+def _merge(main_db: str, tmp_db: str, log) -> dict:
+    """Merge changed pages only, retaining prior content revisions for audit."""
     for attempt in range(6):
         con = sqlite3.connect(main_db, timeout=30)
         try:
             con.execute("PRAGMA busy_timeout=30000")
             con.execute(_PAGES_DDL)
+            con.execute("""CREATE TABLE IF NOT EXISTS reference_wiki_page_history (
+              source_id TEXT NOT NULL, page_id TEXT NOT NULL, page_hash TEXT NOT NULL,
+              title TEXT NOT NULL, norm_title TEXT NOT NULL, revision_id TEXT,
+              revision_timestamp TEXT, page_text TEXT,
+              recorded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY(source_id,page_id,page_hash))""")
             con.execute("ATTACH DATABASE ? AS t", (tmp_db,))
-            n = con.execute("INSERT OR REPLACE INTO reference_wiki_pages SELECT * FROM t.reference_wiki_pages").rowcount
-            con.commit()
-            return n
+            changes = {"updated": 0, "unchanged": 0, "inserted": 0}
+            with con:
+                for row in con.execute("""SELECT source_id,page_id,title,norm_title,
+                  revision_id,revision_timestamp,page_text,page_hash
+                  FROM t.reference_wiki_pages""").fetchall():
+                    existing = con.execute("""SELECT source_id,page_id,title,norm_title,
+                      revision_id,revision_timestamp,page_text,page_hash
+                      FROM reference_wiki_pages WHERE source_id=? AND page_id=?""", row[:2]).fetchone()
+                    if existing and existing[-1] == row[-1]:
+                        changes["unchanged"] += 1
+                        continue
+                    if existing:
+                        con.execute("""INSERT OR IGNORE INTO reference_wiki_page_history
+                          (source_id,page_id,title,norm_title,revision_id,revision_timestamp,page_text,page_hash)
+                          VALUES (?,?,?,?,?,?,?,?)""", existing)
+                        changes["updated"] += 1
+                    else:
+                        changes["inserted"] += 1
+                    con.execute("""INSERT OR REPLACE INTO reference_wiki_pages
+                      (source_id,page_id,title,norm_title,revision_id,revision_timestamp,page_text,page_hash)
+                      VALUES (?,?,?,?,?,?,?,?)""", row)
+                    con.execute("""INSERT OR IGNORE INTO reference_wiki_page_history
+                      (source_id,page_id,title,norm_title,revision_id,revision_timestamp,page_text,page_hash)
+                      VALUES (?,?,?,?,?,?,?,?)""", row)
+                # Only prune translations whose source page no longer exists.
+                # Historical versions can still be inspected, so preserve their cache.
+                translation_table = con.execute("""SELECT 1 FROM sqlite_master
+                  WHERE type='table' AND name='reference_wiki_translations'""").fetchone()
+                if translation_table:
+                    con.execute("""DELETE FROM reference_wiki_translations
+                      WHERE NOT EXISTS (SELECT 1 FROM reference_wiki_pages p
+                        WHERE p.source_id=reference_wiki_translations.source_id
+                        AND p.page_id=reference_wiki_translations.page_id)""")
+            return changes
         except sqlite3.OperationalError as e:
             log(f"merge retry {attempt + 1}: {e}")
             time.sleep(5)
@@ -118,7 +156,9 @@ def _run(job: dict, main_db: str) -> None:
         t.close()
         log(f"fetched {len(rows)} page(s) into temp DB; merging")
         job["state"] = "merging"
-        job["result"] = _merge(main_db, tmp, log)
+        job["changes"] = _merge(main_db, tmp, log)
+        job["result"] = job["changes"]["updated"] + job["changes"]["inserted"]
+        log("page merge: " + ", ".join(f"{k}={v}" for k, v in job["changes"].items()))
 
         # Persist the structural projection after the short page-row merge. This uses the already
         # fetched source bytes and performs no second network request.

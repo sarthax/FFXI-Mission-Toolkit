@@ -247,6 +247,16 @@ def build_blocks(page: dict, *, source_format: str | None = None, raw_source: st
 def store_document(con, *, source_id, page_id, source_format, raw_source, blocks):
     init_db(con)
     raw_hash = hashlib.sha256((raw_source or "").encode("utf-8")).hexdigest()
+    # A repeat scrape of identical source under the same parser must not churn
+    # block identities, parsed_at, or review-facing evidence projections. Rebuild
+    # when a parser upgrade changes interpretation, or when blocks are absent.
+    previous = con.execute("""SELECT raw_hash, parser_version FROM reference_wiki_documents
+      WHERE source_id=? AND page_id=?""", (source_id, page_id)).fetchone()
+    if previous == (raw_hash, PARSER_VERSION) and con.execute(
+        "SELECT 1 FROM reference_wiki_blocks WHERE source_id=? AND page_id=? LIMIT 1",
+        (source_id, page_id),
+    ).fetchone():
+        return
     con.execute("""INSERT OR REPLACE INTO reference_wiki_documents
       (source_id,page_id,source_format,raw_source,raw_hash,parser_version,parsed_at)
       VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP)""",
