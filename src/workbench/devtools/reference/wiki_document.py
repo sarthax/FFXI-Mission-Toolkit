@@ -112,7 +112,8 @@ def mediawiki_blocks(page_id: str, wikitext: str) -> list[dict]:
             for cell in re.split(r"!!|\|\|", line[1:]):
                 raw_cell=cell.strip()
                 clean = str(mwparserfromhell.parse(raw_cell).strip_code(normalize=True, collapse=True)).strip()
-                emit(kind, clean, metadata={"raw_value":raw_cell, "review_only":True})
+                emit(kind, clean, metadata={"raw_value":raw_cell, "review_only":True},
+                     source_locator=f"block:{page_id}:table-cell:{ordinal + 1}")
             continue
         lm = re.match(r"^\s*([*#;:]+)\s*(.*)$", line)
         if lm:
@@ -345,7 +346,9 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
                     if row: rows.append(row); row=[]
                 elif tk in {"table_cell","table_header_cell"}:
                     headers=headers or tk=="table_header_cell"
-                    row.append({"text":tb.get("text") or "","header":tk=="table_header_cell"})
+                    row.append({"text":tb.get("text") or "","header":tk=="table_header_cell",
+                                "source_locator":tb.get("source_locator"),
+                                "raw_value":(tb.get("metadata") or {}).get("raw_value")})
                 i+=1
             if row: rows.append(row)
             # A heading and an explicit first-column label make a useful
@@ -363,7 +366,10 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
                 value=cells[1]["text"].strip()
                 if value:
                     candidates.append({"row_index":row_index,"field":cells[0]["text"],
-                                       "value":value,"review_only":True})
+                                       "value":value,"review_only":True,
+                                       "value_source_locator":cells[1].get("source_locator"),
+                                       "value_raw":cells[1].get("raw_value"),
+                                       "field_source_locator":cells[0].get("source_locator")})
             current["content"].append({"type":"table","rows":rows,"has_headers":headers,
                                        "field_candidates":candidates})
             i+=1; continue
