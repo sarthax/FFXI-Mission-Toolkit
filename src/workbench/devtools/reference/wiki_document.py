@@ -419,6 +419,43 @@ def link_topic(con, *, source_id: str, page_id: str, canonical_title: str, metho
     return {"topic_id":topic_id,"canonical_title":canonical_title}
 
 
+
+def suggest_topic_links(con, *, source_id: str, page_id: str, limit: int = 20) -> list[dict]:
+    """Suggest existing reviewed topics by exact title/alias match; never write links.
+
+    This is a deterministic review queue, not a translation system. In
+    particular, generated translations are not considered topic evidence.
+    """
+    init_db(con)
+    page=con.execute(
+        "SELECT title FROM reference_wiki_pages WHERE source_id=? AND page_id=?",
+        (source_id,str(page_id)),
+    ).fetchone()
+    if not page or page_topic(con,source_id,str(page_id)):
+        return []
+    norm=normalize_search(page[0])
+    if not norm:
+        return []
+    # Only user/reviewer-established aliases count. Exclude machine-produced
+    # text and aliases attached to the source page itself.
+    rows=con.execute("""
+      SELECT DISTINCT t.topic_id,t.canonical_title,a.source_id,a.page_id
+      FROM reference_wiki_aliases a
+      JOIN reference_wiki_topic_pages p
+        ON p.source_id=a.source_id AND p.page_id=a.page_id
+      JOIN reference_wiki_topics t ON t.topic_id=p.topic_id
+      WHERE a.norm_alias=? AND a.alias_type IN ('MANUAL','CANONICAL_TOPIC')
+        AND a.provenance NOT LIKE '%MACHINE%'
+        AND NOT (a.source_id=? AND a.page_id=?)
+      ORDER BY t.canonical_title,t.topic_id
+    """,(norm,source_id,str(page_id))).fetchall()
+    topics={}
+    for topic_id,title,matched_source,matched_page in rows:
+        item=topics.setdefault(topic_id,{"topic_id":topic_id,"canonical_title":title,
+            "match_method":"EXACT_REVIEWED_ALIAS","review_only":True,"supporting_pages":[]})
+        item["supporting_pages"].append({"source_id":matched_source,"page_id":str(matched_page)})
+    return list(topics.values())[:max(0,min(limit,100))]
+
 def page_topic(con, source_id: str, page_id: str) -> dict | None:
     init_db(con)
     row=con.execute("""SELECT t.topic_id,t.canonical_title FROM reference_wiki_topics t
