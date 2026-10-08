@@ -757,6 +757,10 @@ def ingest_page(con: sqlite3.Connection, source_id: str, title_query: str) -> di
     page_id = str(page.get("pageid") or page.get("page_id") or page.get("title"))
     con.execute("DELETE FROM reference_wiki_mappings WHERE claim_id IN (SELECT claim_id FROM reference_wiki_claims WHERE source_id=? AND page_id=?)", (source_id, page_id))
     con.execute("DELETE FROM reference_wiki_claims WHERE source_id=? AND page_id=?", (source_id, page_id))
+    con.execute("""DELETE FROM reference_wiki_relation_mappings
+                   WHERE relation_id IN (SELECT relation_id FROM reference_wiki_relations
+                                         WHERE source_id=? AND page_id=?)""",(source_id,page_id))
+    con.execute("DELETE FROM reference_wiki_relations WHERE source_id=? AND page_id=?",(source_id,page_id))
 
     mappings = []
     for claim in claims:
@@ -764,7 +768,26 @@ def ingest_page(con: sqlite3.Connection, source_id: str, title_query: str) -> di
         for mapping in map_claim(con, claim):
             _store_mapping(con, mapping)
             mappings.append(mapping)
+
+    relations=extract_structured_relations(con,page,source_id)
+    relation_mappings=[]
+    for relation in relations:
+        _store_relation(con,relation)
+        for endpoint in ("subject","object"):
+            for mapping in map_relation_endpoint(con,relation,endpoint):
+                _store_relation_mapping(con,mapping)
+                relation_mappings.append(mapping)
     con.commit()
+    mapped_relation_ids={
+        relation["relation_id"] for relation in relations
+        if all(
+            sum(1 for m in relation_mappings
+                if m["relation_id"]==relation["relation_id"]
+                and m["endpoint"]==endpoint
+                and m["mapping_status"]=="MAPPED")==1
+            for endpoint in ("subject","object")
+        )
+    }
     counts = {
         "claims": len(claims),
         "entity_references": sum(1 for c in claims if c["claim_type"] == "ENTITY_REFERENCE"),
@@ -773,6 +796,8 @@ def ingest_page(con: sqlite3.Connection, source_id: str, title_query: str) -> di
         "ambiguous": sum(1 for m in mappings if m["mapping_status"] == "AMBIGUOUS"),
         "unresolved": sum(1 for m in mappings if m["mapping_status"] == "UNRESOLVED"),
         "unmapped": sum(1 for m in mappings if m["mapping_status"] == "UNMAPPED"),
+        "relations": len(relations),
+        "mapped_relations": len(mapped_relation_ids),
     }
     return {
         "status": "OK", "source_id": source_id, "page_id": page_id,
@@ -810,9 +835,27 @@ def page_evidence(con: sqlite3.Connection, source_id: str, title_query: str) -> 
         mappings_by_claim.setdefault(item["claim_id"], []).append(item)
     for claim in claims:
         claim["mappings"] = mappings_by_claim.get(claim["claim_id"], [])
+    relations=[]
+    for row in con.execute(
+        """SELECT * FROM reference_wiki_relations
+           WHERE source_id=? AND page_id=? ORDER BY section_title,relation_type,relation_id""",
+        (source_id,page_id),
+    ).fetchall():
+        relation=dict(row)
+        relmaps=[]
+        for mrow in con.execute(
+            """SELECT * FROM reference_wiki_relation_mappings
+               WHERE relation_id=? ORDER BY endpoint,mapping_status,target_table,target_key""",
+            (relation["relation_id"],),
+        ).fetchall():
+            item=dict(mrow)
+            item["details"]=json.loads(item.pop("details_json") or "{}")
+            relmaps.append(item)
+        relation["mappings"]=relmaps
+        relations.append(relation)
     return {
         "status": "OK", "source_id": source_id, "page_id": page_id,
-        "page_title": page.get("title"), "claims": claims,
+        "page_title": page.get("title"), "claims": claims, "relations": relations,
     }
 
 
