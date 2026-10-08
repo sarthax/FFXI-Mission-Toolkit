@@ -45,17 +45,17 @@ OFFICERS = [
 
 
 # Build notes shown in the UI: what is implemented in the Lua slice and what is still missing (kept in sync with docs/voidwatch/UNIMPLEMENTED.md)
-SLICE = "voidwatch-officers-v1 (feature/voidwatch-officers, untested in-game)"
+SLICE = "voidwatch-officers-v2 (feature/voidwatch-officers, untested in-game)"
 IMPL = {
     "crimson": "Officer 963 + refiner 962 scripted; kill-tracking hook not wired; tier gate approximate",
     "indigo": "Officer 9 + refiner 8 scripted; kill-tracking hook not wired; tier gate approximate",
     "jade": "Officer 1024 + refiner 1023 scripted; kill-tracking hook not wired; Jade IV has no NM",
-    "white": "Not built: no npc row, csids not scanned",
-    "ashen": "Not built: no capture, csids not scanned",
-    "hyacinth": "Not built: no capture, csids not scanned",
-    "amber": "Not built: no capture, csids not scanned",
-    "hildegard": "Not built: no capture, csids not scanned",
-    "gushing": "Not built: no capture, csids not scanned",
+    "white": "Not built: Ru'Lude has no officer entity in the client events (only a Purveyor); location unresolved",
+    "ashen": "Scripted from client-dat csids (Kieran event 259 + refiner 264); no capture; nation bits unknown; untested",
+    "hyacinth": "Scripted from client-dat csids (Owain event 626 + refiner 627); no capture; nation bits unknown; untested",
+    "amber": "Scripted from client-dat csids (Camille event 23 + refiner 24); no capture; nation bits unknown; untested",
+    "hildegard": "Scripted from client-dat csids (Hildegard event 314 + refiner 316; quest flags not implemented); no capture; nation bits unknown; untested",
+    "gushing": "Scripted from client-dat csids (Gushing Spring event 14 + refiner 16; quest flags not implemented); no capture; nation bits unknown; untested",
 }
 
 
@@ -131,5 +131,5 @@ def overview(conn, active_root) -> dict:
             gaps.append("key item %s not in keyitems.lua" % o["ki"])
         rec = val.get(o["id"]) or {"areas": {}, "note": "", "updated": "", "by": ""}
         out.append({**o, "status": status, "zones_live": zrows, "ki_id": ki_id, "gaps": gaps,
-                    "validation": validation_status(rec), "validation_rec": rec, "impl_note": IMPL.get(o["id"], ""), "slice": SLICE if o["id"] in ("crimson", "indigo", "jade") else ""})
+                    "validation": validation_status(rec), "validation_rec": rec, "impl_note": IMPL.get(o["id"], ""), "slice": SLICE if IMPL.get(o["id"], "").find("Not built") < 0 else ""})
     return {"areas": AREAS, "states": D.STATES, "officers": out}
