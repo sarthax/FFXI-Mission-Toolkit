@@ -5519,9 +5519,11 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
     wiki_document.init_db(con)
     if q.strip():
         search_results = wiki_document.search_pages(con, q.strip(), limit=60)
-        if source:
+        if source and source != "all":
             search_results = [row for row in search_results if row["source_id"] == source]
     if title:
+        if source == "all":
+            source = wiki_evidence.SOURCE_BG
         if source == wiki_evidence.SOURCE_BG:
             report = wiki_compile.compile_report(con, title)
         evidence = wiki_evidence.page_evidence(con, source, title)
