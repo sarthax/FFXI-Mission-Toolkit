@@ -1,8 +1,12 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}{{ d.label }}{% endblock %}
-{% block content %}
-<h1>{{ d.label }}</h1>
-<p>{{ d.summary }} <span class="chip">{{ d.archetype }}</span></p>
+{% block page_archetype %}detail{% endblock %}
+{% block page_heading %}{{ d.label }}{% endblock %}
+{% block page_identity %}<span class="chip">{{ d.archetype }}</span>{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Reference / evidence workspace</span>{% endblock %}
+{% block page_help %}Domain-specific evidence, implementation readiness, source comparison, and research handoffs. Embedded workspaces preserve their own evidence rules and remain read-only unless a linked editor explicitly says otherwise.{% endblock %}
+{% block page_body %}
+<p>{{ d.summary }}</p>
 {% if d.children %}<p>Sub-areas: {% for c in d.children %}<a id="{{ slug(c) }}"></a><span class="chip">{{ c }}</span> {% endfor %}
 <span class="muted">(per-area data is not split out yet)</span></p>{% endif %}
 
