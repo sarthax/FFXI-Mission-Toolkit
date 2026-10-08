@@ -181,6 +181,8 @@
       <form method="post" action="/wiki/topic/dismiss" class="wiki-actions" style="margin:5px 0 0">
         <input type="hidden" name="title" value="{{ title }}">
         <input type="hidden" name="source" value="{{ source }}">
+        <input type="hidden" name="review_page" value="{{ review_page }}">
+        <input type="hidden" name="review_status" value="{{ review_status }}">
         <input type="hidden" name="suggested_topic_id" value="{{ suggestion.topic_id }}">
         <button type="submit">Dismiss suggestion</button>
       </form>
