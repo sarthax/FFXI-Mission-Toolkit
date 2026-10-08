@@ -476,7 +476,7 @@ def suggest_topic_links(con, *, source_id: str, page_id: str, limit: int = 20) -
     return list(topics.values())[:max(0,min(limit,100))]
 
 
-def topic_review_queue(con, *, source_id: str, limit: int = 50, offset: int = 0, matching_only: bool = False) -> list[dict]:
+def topic_review_queue(con, *, source_id: str, limit: int = 50, offset: int = 0, matching_only: bool = False, status: str = "all") -> list[dict]:
     """Read-only bounded queue of pages with pending or dismissed topic suggestions.
 
     Dismissed entries remain visible for audit but never reappear as pending.
@@ -492,6 +492,8 @@ def topic_review_queue(con, *, source_id: str, limit: int = 50, offset: int = 0,
         )
       ORDER BY w.title,w.page_id LIMIT ? OFFSET ?
     """,(source_id,max(0,min(limit,200)),max(0,offset))).fetchall()
+    if status not in ("all", "pending", "dismissed"):
+        raise ValueError("Invalid review queue status")
     if matching_only:
         # SQL narrows the scan to pages having possible reviewed-alias matches
         # or an explicit dismissal. The existing suggestion function remains
@@ -505,9 +507,9 @@ def topic_review_queue(con, *, source_id: str, limit: int = 50, offset: int = 0,
               WHERE p.source_id=w.source_id AND p.page_id=w.page_id
             )
             AND (
-              EXISTS (SELECT 1 FROM reference_wiki_topic_dismissals d
-                      WHERE d.source_id=w.source_id AND d.page_id=w.page_id)
-              OR EXISTS (
+              (? IN ('all','dismissed') AND EXISTS (SELECT 1 FROM reference_wiki_topic_dismissals d
+                      WHERE d.source_id=w.source_id AND d.page_id=w.page_id))
+              OR (? IN ('all','pending') AND EXISTS (
                 SELECT 1 FROM reference_wiki_aliases a
                 JOIN reference_wiki_topic_pages p
                   ON p.source_id=a.source_id AND p.page_id=a.page_id
@@ -515,10 +517,12 @@ def topic_review_queue(con, *, source_id: str, limit: int = 50, offset: int = 0,
                   AND a.alias_type IN ('MANUAL','CANONICAL_TOPIC')
                   AND a.provenance NOT LIKE '%MACHINE%'
                   AND NOT (a.source_id=w.source_id AND a.page_id=w.page_id)
-              )
+                  AND NOT EXISTS (SELECT 1 FROM reference_wiki_topic_dismissals d
+                    WHERE d.source_id=w.source_id AND d.page_id=w.page_id AND d.topic_id=p.topic_id)
+              ))
             )
           ORDER BY w.title,w.page_id LIMIT ? OFFSET ?
-        """,(source_id,max(0,min(limit,200)),max(0,offset))).fetchall()
+        """,(source_id,status,status,max(0,min(limit,200)),max(0,offset))).fetchall()
     queue=[]
     for page_id,title in pages:
         pending=suggest_topic_links(con,source_id=source_id,page_id=str(page_id))
@@ -530,6 +534,8 @@ def topic_review_queue(con, *, source_id: str, limit: int = 50, offset: int = 0,
             WHERE d.source_id=? AND d.page_id=?
             ORDER BY t.canonical_title,d.topic_id
           """,(source_id,str(page_id))).fetchall()]
+        if (status=="pending" and not pending) or (status=="dismissed" and not dismissed):
+            continue
         if pending or dismissed:
             queue.append({"source_id":source_id,"page_id":str(page_id),"title":title,
                           "pending":pending,"dismissed":dismissed})
