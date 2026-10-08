@@ -1,7 +1,13 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Manual Packet Viewer / Decoder{% endblock %}
-{% block main_class %}wide-workbench{% endblock %}
-{% block content %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_class %}wide-workbench{% endblock %}
+{% block page_width %}wide{% endblock %}
+{% block page_back %}<a class="chip" href="/packets?direction={{ direction }}&q={{ q }}">&larr; Packet Tools</a>{% endblock %}
+{% block page_heading %}{{ 'Bulk Packet Decode' if mode == 'bulk' else 'Manual Packet Viewer / Decoder' }}{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Decode workbench</span>{% endblock %}
+{% block page_help %}Decode raw packet bytes using the toolkit’s known opcode layouts. Bulk mode accepts capture/log sources through the same format adapters used by Capture ingestion; decoded bytes and uncovered regions remain explicit rather than guessed.{% endblock %}
+{% block page_body %}
 <style>
 .packet-breadcrumb{font-size:12px;color:var(--muted);margin-bottom:4px}
 .packet-titlebar{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px}.packet-titlebar h1{margin:0}
@@ -32,20 +38,14 @@
 @media(max-width:1180px){.packet-main-grid,.scratch-row{grid-template-columns:1fr}.decode-form{grid-template-columns:1fr 1fr}.decode-form input[name=hex_bytes],.decode-form textarea[name=hex_bytes]{grid-column:1/-1}.decode-form button{grid-column:1/-1}}
 </style>
 
-<div class="packet-breadcrumb"><a class="inline" href="/packets?direction={{ direction }}&q={{ q }}">Packet Tools</a> &rsaquo; {{ 'Bulk Packet Decode' if mode == 'bulk' else 'Manual Packet Viewer / Decoder' }}</div>
-<div class="packet-titlebar">
-  <div>
-    <h1>{{ 'Bulk Packet Decode' if mode == 'bulk' else 'Manual Packet Viewer / Decoder' }}</h1>
-    {% if layout %}
-    <div class="packet-chips">
-      <span class="packet-chip {{ 'in' if direction == 's2c' else 'out' }}">{{ 'incoming (s2c)' if direction == 's2c' else 'outgoing (c2s)' }}</span>
-      <span class="packet-chip mono">{{ opcode }}</span>
-      <span class="packet-chip">{{ layout.length }} bytes</span>
-      <span class="packet-chip{% if layout.coverage_pct == 100 %} good{% endif %}">coverage {{ layout.coverage_pct }}%</span>
-    </div>
-    {% endif %}
-  </div>
+{% if layout %}
+<div class="packet-chips">
+  <span class="packet-chip {{ 'in' if direction == 's2c' else 'out' }}">{{ 'incoming (s2c)' if direction == 's2c' else 'outgoing (c2s)' }}</span>
+  <span class="packet-chip mono">{{ opcode }}</span>
+  <span class="packet-chip">{{ layout.length }} bytes</span>
+  <span class="packet-chip{% if layout.coverage_pct == 100 %} good{% endif %}">coverage {{ layout.coverage_pct }}%</span>
 </div>
+{% endif %}
 <div class="dense-toolbar" style="margin:6px 0">
   <a class="chip{% if mode != 'bulk' %} active{% endif %}" href="/packets/decode?direction={{ direction }}&opcode={{ opcode }}&q={{ q }}">Manual decode</a>
   <a class="chip{% if mode == 'bulk' %} active{% endif %}" href="/packets/decode?mode=bulk&direction={{ direction }}&opcode={{ opcode }}">Bulk decode</a>
