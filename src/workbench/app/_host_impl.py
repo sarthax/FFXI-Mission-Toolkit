@@ -132,6 +132,13 @@ app = FastAPI(title="Mission Toolkit GUI")
 app.include_router(character_editor_router)
 from workbench.client.animlab.router import router as animlab_router
 app.include_router(animlab_router)
+# Live Client replay is explicitly read-only; no process discovery or write routes.
+from workbench.runtime.live_client.registry import ReplayRegistry
+from workbench.runtime.live_client.registry_api import create_registry_router
+from workbench.runtime.live_client.replay_console import create_replay_console_router
+live_client_replay_registry = ReplayRegistry()
+app.include_router(create_registry_router(live_client_replay_registry))
+app.include_router(create_replay_console_router())
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # Zone visual-mesh OBJs (build_zone_visual_cache.py) are real but large (tens of MB of ASCII
 # text per zone) -- gzip compresses that ratio very well over the wire, worth it app-wide.
