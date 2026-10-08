@@ -241,6 +241,56 @@ def stored_blocks(con, source_id: str, page_id: str) -> list[dict]:
              "text":r[5] or "","target":r[6],"metadata":json.loads(r[7] or "{}"),"source_locator":r[8]} for r in rows]
 
 
+
+def presentation_groups(blocks: list[dict]) -> list[dict]:
+    """Group the structural stream into renderer-friendly sections/lists/tables."""
+    sections=[{"title":"Overview","level":1,"content":[]}]
+    current=sections[0]
+    i=0
+    while i < len(blocks):
+        b=blocks[i]
+        kind=b.get("block_type")
+        if kind=="heading":
+            current={"title":b.get("text") or "Section","level":b.get("heading_level") or 2,"content":[]}
+            sections.append(current); i+=1; continue
+        if kind=="list_item":
+            items=[]
+            while i < len(blocks) and blocks[i].get("block_type")=="list_item":
+                items.append({
+                    "text":blocks[i].get("text") or "",
+                    "depth":max(1,int((blocks[i].get("metadata") or {}).get("depth") or 1)),
+                    "marker":(blocks[i].get("metadata") or {}).get("marker") or "*",
+                }); i+=1
+            current["content"].append({"type":"list","items":items}); continue
+        if kind=="definition_term":
+            term=b.get("text") or ""; definition=""
+            if i+1 < len(blocks) and blocks[i+1].get("block_type")=="definition":
+                definition=blocks[i+1].get("text") or ""; i+=1
+            current["content"].append({"type":"definition","term":term,"definition":definition}); i+=1; continue
+        if kind=="table_start":
+            rows=[]; row=[]; headers=False; i+=1
+            while i < len(blocks) and blocks[i].get("block_type")!="table_end":
+                tb=blocks[i]; tk=tb.get("block_type")
+                if tk=="table_row":
+                    if row: rows.append(row); row=[]
+                elif tk in {"table_cell","table_header_cell"}:
+                    headers=headers or tk=="table_header_cell"
+                    row.append({"text":tb.get("text") or "","header":tk=="table_header_cell"})
+                i+=1
+            if row: rows.append(row)
+            current["content"].append({"type":"table","rows":rows,"has_headers":headers})
+            i+=1; continue
+        if kind in {"paragraph","legacy_text","definition"}:
+            current["content"].append({
+                "type":"legacy_text" if kind=="legacy_text" else "paragraph",
+                "text":b.get("text") or "",
+                "degraded":bool((b.get("metadata") or {}).get("degraded")),
+            })
+        i+=1
+    return [section for section in sections if section["content"] or section["title"]!="Overview"]
+
+
+
 def add_alias(con, *, source_id, page_id, alias, language=None, alias_type="MANUAL", provenance="manual"):
     alias=(alias or "").strip()
     if not alias: return
