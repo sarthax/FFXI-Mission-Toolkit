@@ -1,8 +1,12 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Bulk ingest — Mission Toolkit{% endblock %}
-{% block content %}
+{% block page_archetype %}editor{% endblock %}
+{% block page_heading %}Bulk ingest{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Scan is read-only; Run ingests captures</span>{% endblock %}
+{% block page_help %}Scan a directory first to build a read-only ingest plan, review duplicates/unsupported inputs and disk-space impact, then explicitly run ingestion. Only one bulk-ingest job can run at a time.{% endblock %}
+{% block page_actions %}{% if running %}<a class="chip" href="/captures/bulk-ingest/job/{{ running.id }}">View running job</a>{% endif %}{% endblock %}
+{% block page_body %}
 {% macro mb(n) %}{{ '%.1f'|format(n/1048576) }} MB{% endmacro %}
-<h1>Bulk ingest</h1>
 {% if error %}<p style="color:var(--amber)"><b>{{ error }}</b></p>{% endif %}
 {% if running %}<p>A job is running: <a href="/captures/bulk-ingest/job/{{ running.id }}">view progress</a>. Only one job can run at a time.</p>{% endif %}
 
