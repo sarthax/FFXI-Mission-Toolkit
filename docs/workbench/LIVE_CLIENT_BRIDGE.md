@@ -74,3 +74,11 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Offline tests cover initial disconnect, successful observation, immutable last-good snapshot on decode failure, stale/cross-client rejection, and read-only enforcement.
 - Cloud CI still requires independent verification. No live FFXI integration or GUI overlay is claimed.
 - Next: add a recorded multi-frame fixture and an explicit transport/health lifecycle, then integrate opt-in viewer overlay after tests run.
+
+
+## 2026-10-07 recorded replay and health milestone
+- `src/workbench/runtime/live_client/replay.py`: `RecordedTelemetryReplay` advances strict frames through `TelemetryFeedAdapter` with fail-closed validation and no process attachment. Invalid frames do not advance the replay cursor.
+- Explicit `FeedHealth` reports disconnected/connected/stale, last frame timestamp and count; it uses a caller-supplied clock with a validated age threshold. Future-dated frames are not considered connected.
+- `tests/test_live_client_replay.py`: multi-frame transitions, zone changes, exhaustion, malformed/cross-client retry behavior, and reference-time input validation.
+- No automatic runtime discovery, live connection, write operations or viewer integration yet. Tests require CI verification.
+- Next: feed a stable JSON-lines recorded fixture through this interface and wire read-only session-health/position visualization.
