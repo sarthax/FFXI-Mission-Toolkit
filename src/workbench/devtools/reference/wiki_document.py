@@ -344,6 +344,36 @@ def template_field_review_links(raw_value: str) -> list[dict]:
     return links
 
 
+def resolve_reviewed_template_links(con, links: list[dict]) -> list[dict]:
+    """Annotate explicit links only when exactly one reviewed topic resolves.
+
+    No topic membership, claim, or graph data is written.
+    """
+    init_db(con)
+    resolved=[]
+    for link in links:
+        result=dict(link)
+        norm=link.get("normalized_title") or normalize_search(link.get("lookup_title") or "")
+        matches=con.execute("""
+          SELECT DISTINCT t.topic_id,t.canonical_title
+          FROM reference_wiki_topics t
+          WHERE t.norm_title=?
+          UNION
+          SELECT DISTINCT t.topic_id,t.canonical_title
+          FROM reference_wiki_aliases a
+          JOIN reference_wiki_topic_pages p ON p.source_id=a.source_id AND p.page_id=a.page_id
+          JOIN reference_wiki_topics t ON t.topic_id=p.topic_id
+          WHERE a.norm_alias=? AND a.alias_type IN ('MANUAL','CANONICAL_TOPIC')
+            AND a.provenance NOT LIKE '%MACHINE%'
+        """,(norm,norm)).fetchall() if norm else []
+        result["resolution"]="UNIQUE_REVIEWED_TOPIC" if len(matches)==1 else ("AMBIGUOUS" if matches else "UNRESOLVED")
+        result["topic_id"]=matches[0][0] if len(matches)==1 else None
+        result["canonical_title"]=matches[0][1] if len(matches)==1 else None
+        result["review_only"]=True
+        resolved.append(result)
+    return resolved
+
+
 def presentation_groups(blocks: list[dict]) -> list[dict]:
     """Group the structural stream into renderer-friendly sections/lists/tables."""
     sections=[{"title":"Overview","level":1,"content":[]}]
