@@ -40,6 +40,9 @@ class LiveClientSession:
             observed_at=snapshot.observed_at,
             position=snapshot.position,
             client_id=snapshot.client_id,
+            instance_hint=snapshot.instance_hint,
+            adapter=snapshot.adapter,
+            client_version=snapshot.version,
         )
         self._samples.append(sample)
         return sample

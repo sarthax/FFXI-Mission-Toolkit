@@ -407,3 +407,22 @@ This token checks observation consistency, not authentication, verified server
 identity, native compatibility or game-write authorization. The existing origin
 and read-only boundaries remain separate. Tests cover replay/feed/session changes,
 slot identity changes and actual browser refresh/retry without moving the client.
+
+## Portable path context and discontinuities
+
+Each exported path sample retains raw XYZ/heading, timestamp and client ID plus
+instance hint, adapter/reported version, Toolkit session/generation, recorded
+segment and entity observation scope/truncation. Portable parsing and serialization
+round-trip that context; legacy samples default to unknown source/session/instance
+and unspecified observation scope. Capturing through `LiveClientSession` retains
+snapshot instance/source/version without inventing registry or inventory metadata.
+
+Path splitting preserves changes in zone, client, known/unknown instance context,
+source/version, session/generation or recorded segment, and non-increasing sample
+times. Replay trace and export segment numbers also account for source/version
+changes. Returning to a zone does not reconnect segments across the intervening
+visit. A generation identifies a Toolkit registration, not a verified game process.
+Optional imported context is validated but remains unverified; lack of a boundary
+hint cannot establish continuity, physical instance identity or collision-free travel.
+These raw paths are suitable evidence for later calibrated map/navmesh analysis,
+not validated routes. No game or server writes are performed.
