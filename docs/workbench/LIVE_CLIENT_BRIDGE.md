@@ -64,3 +64,13 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Server entity IDs remain optional; no inference from client index. Malformed/non-finite values fail closed.
 - **No native memory attachment or actual FFXI read yet**; the decoder accepts external observations only.
 - Next: a read-only Windows client adapter (or supported Ashita feed), end-to-end offline feed fixture, then live viewer overlay.
+
+
+## 2026-10-07 read-only feed adapter slice
+- Added `src/workbench/runtime/live_client/feed.py` and `tests/test_live_client_feed.py`.
+- `TelemetryFeedAdapter` binds decoded telemetry to one explicit client identity and rejects stale or duplicate timestamps, cross-client frames, and malformed data before replacing its latest snapshot.
+- Exposes a read-only `snapshot()` for `LiveClientSession.observe()` and entity observations for later overlays; no implicit discovery, memory attachment, or live game writes.
+- Client-provided version text is **not** treated as a verified runtime version. Write capability is permanently false.
+- Offline tests cover initial disconnect, successful observation, immutable last-good snapshot on decode failure, stale/cross-client rejection, and read-only enforcement.
+- Cloud CI still requires independent verification. No live FFXI integration or GUI overlay is claimed.
+- Next: add a recorded multi-frame fixture and an explicit transport/health lifecycle, then integrate opt-in viewer overlay after tests run.
