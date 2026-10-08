@@ -239,6 +239,8 @@
           <summary>Inspect entity candidates ({{ link.entity_candidate_count }}) — evidence only</summary>
           <pre>{{ link.entity_candidate_lines }}</pre>
         </details>
+        {% endfor %}
+        {% endif %}
       </details>
       {% endif %}
     {% elif item.type == 'table' %}
