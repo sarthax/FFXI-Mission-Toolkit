@@ -33,6 +33,14 @@ def create_registry_router(registry: ReplayRegistry) -> APIRouter:
         return viewer_projection(frame, zone_id=zone_id, client_id=client_id,
                                  instance_hint=instance_hint)
 
+    @router.get("/trace")
+    def trace(client_id: str = Query(min_length=1, max_length=200),
+              max_points: int = Query(default=500, ge=1, le=1000)) -> dict:
+        replay = registry._clients.get(client_id)
+        if replay is None:
+            raise HTTPException(status_code=404, detail="recorded client not registered")
+        return {"client_id": client_id, "points": replay.path_points(max_points=max_points)}
+
     @router.post("/poll-feed")
     def poll_feed(request: Request, client_id: str = Query(min_length=1, max_length=200)) -> dict:
         """Read bounded frames from an explicitly registered local telemetry file."""
