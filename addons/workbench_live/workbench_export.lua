@@ -3,11 +3,11 @@
 local observation = require('workbench_observation')
 local M = {}
 function M.new(options)
-    local handle, client_id, identity, last_time, bytes
+    local handle, client_id, identity, last_time, bytes, inventory
     local MAX_BYTES = 16 * 1024 * 1024
     local function stop(reason)
         if handle then pcall(function() handle:close() end) end
-        handle, client_id, identity, last_time, bytes = nil, nil, nil, nil, 0
+        handle, client_id, identity, last_time, bytes, inventory = nil, nil, nil, nil, 0, false
         if reason then options.message(reason) end
     end
     local function emit(frame, now)
@@ -24,11 +24,11 @@ function M.new(options)
         if last_time and now == last_time then return end
         local ok, err = pcall(function()
             assert(not last_time or now > last_time, 'system clock moved backwards; start a new export')
-            emit(options.capture(client_id, now), now)
+            emit(options.capture(client_id, now, inventory), now)
         end)
         if not ok then stop('Export stopped: ' .. tostring(err)) end
     end
-    local function command(action, id)
+    local function command(action, id, mode)
         if action == 'stop' then stop('Export stopped.'); return end
         if action == 'status' then options.message(handle and ('Exporting ' .. client_id .. ' (unverified build).') or 'Not exporting.'); return end
         if action ~= 'start' then options.message('Use start <unique-instance-id>, stop or status. Read-only, experimental.'); return end
@@ -36,9 +36,13 @@ function M.new(options)
         if type(id) ~= 'string' or #id > 64 or not id:match('^[%w_-]+$') then
             options.message('Choose a unique instance ID containing 1–64 letters, digits, underscores or hyphens.'); return
         end
+        if mode ~= nil and (mode ~= 'inventory' or not options.supports_inventory) then
+            options.message('Unsupported observation mode; use start <id> or start <id> inventory on Ashita.'); return
+        end
+        inventory = mode == 'inventory'
         local ok, err = pcall(function()
             local now = os.time()
-            local frame = options.capture(id, now)
+            local frame = options.capture(id, now, inventory)
             local stem = options.directory .. '/telemetry-' .. id .. '-' .. now
             local output
             for suffix = 1, 100 do

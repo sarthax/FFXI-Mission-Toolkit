@@ -74,7 +74,7 @@ modify framework/SDK code without assessing the relevant distribution obligation
 Tako binaries/resources have no independently inspected licensing evidence here.
 Archive access would enable analysis, not automatically authorize redistribution.
 
-## Toolkit capability matrix
+## Toolkit capability matrix at audit baseline (#718)
 
 Statuses describe the bridge, not independent pre-existing Zone tools.
 
@@ -197,3 +197,24 @@ schemas. Decoding a capture is not proof that constructing/sending it is valid:
 write support requires independently verified framing/fields/direction, selected
 client/session, explicit authorization and observed client/server behavior.
 No packet injection or memory write has been added.
+
+## Bounded inventory implementation follow-up
+
+Further pinned source inspection found `addons/petinfo/petinfo.lua`'s
+`GetEntityByServerId` and `addons/chamcham/chamcham.lua` enumerate `GetEntity(0..2303)`;
+`actionparse` and `truesight` use a slightly smaller upper bound. Only observation
+concepts and published calls are reused; no third-party implementation, writes,
+patterns or offsets were copied. This supplies a source-backed experimental range,
+not proof of compatibility with the operator's loaded runtime.
+
+The Toolkit now offers opt-in bounded named-slot inventory (32 observations,
+selected-target first), preserves optional reported server IDs, rechecks observed
+identities and player/zone context, and reports `observation_scope` plus truncation
+through decoding, projection and UI. Blank-name and absent slots are omitted;
+unknown kind/instance stay unknown. Old recording fields default to unspecified
+scope. No complete-world or atomic-memory-snapshot claim is made. Cloud tests
+cover upper-bound slots, caps, duplicates, missing slots, entity disappearance,
+legacy mode/reset, invalid scope and Chromium truncation visibility. Windows
+inventory/lifecycle tests remain pending. Backlog slice 1 has its experimental
+cloud implementation; runtime acceptance and richer kind/status/target-role
+semantics remain open. Next gather runtime evidence, then identity/calibration.

@@ -356,3 +356,13 @@ no server IDs. Full loaded-entity enumeration remains pending verified bounds an
 runtime behavior. Packet integration should reuse existing Capture ingestion,
 correlation and `workbench.packets.decode`; no packet writes are implemented.
 See the [reference audit follow-up](LIVE_CLIENT_REFERENCE_AUDIT.md#ashita-minimap-and-packet-reuse-follow-up).
+
+## Experimental bounded Ashita inventory
+
+An explicit `/wblive start <unique-instance-id> inventory` mode now reuses published
+entity getters and Ashita's own 0–2303 enumeration examples. It records at most 32
+named observations with selected-target priority, omits player/duplicates/blank
+names and reports truncation in JSONL and the Toolkit UI. Default start retains
+selected-target behavior. Invalid or changing observations fail closed; kinds,
+instances and runtime build remain unverified. No client writes or new minimap
+implementation. See [addon usage and remaining runtime tests](../../addons/workbench_live/README.md#experimental-bounded-ashita-inventory).

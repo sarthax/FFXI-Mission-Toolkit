@@ -62,7 +62,7 @@ function M.capture(ffxi, client_id, observed_at)
     return frame
 end
 
-function M.capture_ashita(core, get_entity, client_id, observed_at)
+function M.capture_ashita(core, get_entity, client_id, observed_at, inventory)
     text(client_id, true)
     number(observed_at)
     local memory = assert(core:GetMemoryManager(), 'Ashita memory manager unavailable')
@@ -107,6 +107,39 @@ function M.capture_ashita(core, get_entity, client_id, observed_at)
         table.insert(frame.entities, {client_index = target_index, server_entity_id = target_id,
             kind = 'unknown', name = target_name, position = target_position})
     end
+    frame.observation_scope = inventory and 'bounded_loaded_entities' or 'selected_targets'
+    frame.entities_truncated = false
+    if inventory then
+        -- Pinned Ashita petinfo/chamcham enumerate GetEntity(0..2303).
+        -- 32 is a Toolkit output policy, not a game table-size claim.
+        local seen = {[index] = true}
+        for _, item in ipairs(frame.entities) do seen[item.client_index] = true end
+        for slot = 0, 2303 do
+            if not seen[slot] and get_entity(slot) ~= nil then
+                local entity_name = text(entity:GetName(slot), false)
+                if entity_name:find('%S') then
+                    if #frame.entities >= 32 then frame.entities_truncated = true; break end
+                    local id = nil
+                    if type(entity.GetServerId) == 'function' then
+                        id = integer(entity:GetServerId(slot), 0, 4294967295)
+                    end
+                    local p = entity_position(slot)
+                    assert(get_entity(slot) ~= nil and entity:GetName(slot) == entity_name
+                        and (id == nil or entity:GetServerId(slot) == id),
+                        'entity changed while sampling; restart observation explicitly')
+                    table.insert(frame.entities, {client_index = slot, kind = 'unknown',
+                        name = entity_name, position = p, server_entity_id = id ~= 0 and id or nil})
+                end
+            end
+        end
+        for _, item in ipairs(frame.entities) do
+            assert(get_entity(item.client_index) ~= nil and entity:GetName(item.client_index) == item.name
+                and (item.server_entity_id == nil or entity:GetServerId(item.client_index) == item.server_entity_id),
+                'entity changed while sampling; restart observation explicitly')
+        end
+        assert(target:GetTargetIndex(0) == target_index,
+               'target changed while sampling; restart observation explicitly')
+    end
     assert(party:GetMemberIsActive(0) ~= 0 and party:GetMemberServerId(0) == server_id
         and party:GetMemberTargetIndex(0) == index and party:GetMemberName(0) == name
         and party:GetMemberZone(0) == zone,
@@ -140,6 +173,8 @@ function M.encode(frame)
     return '{"schema_version":1,"client_id":' .. quote(frame.client_id)
         .. ',"client_version":' .. quote(frame.client_version) .. ',"character":' .. quote(frame.character)
         .. ',"adapter":' .. quote(frame.adapter) .. ',"observed_at":' .. numeric(frame.observed_at)
+        .. (frame.observation_scope and ',"observation_scope":' .. quote(frame.observation_scope)
+            .. ',"entities_truncated":' .. tostring(frame.entities_truncated) or '')
         .. ',"position":' .. encode_position(frame.position) .. ',"entities":[' .. table.concat(entities, ',') .. ']}'
 end
 return M

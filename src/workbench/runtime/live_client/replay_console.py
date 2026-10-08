@@ -172,6 +172,7 @@ async function refresh(){
  show('heading',String(p.heading));show('observed',String(data.observed_at));show('entities',String(data.entities.length));
  show('source',data.adapter||'Unknown');show('version',data.client_version||'Unknown');
  showEntities(data.entities);
+ if(data.observation_scope==='bounded_loaded_entities')show('entity-status','Bounded loaded-entity observation (up to 32); '+(data.entities_truncated?'truncated.':'no truncation reported.')+' Kinds and instance identity remain unverified.');
  document.getElementById('capture-player').disabled=false;
  document.getElementById('save-player').disabled=false;
  document.getElementById('export-path').disabled=!recording;
