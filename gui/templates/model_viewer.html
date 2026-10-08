@@ -1,10 +1,17 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Model Viewer{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}model-viewer-page{% endblock %}
-{% block content %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_class %}model-viewer-page{% endblock %}
+{% block page_width %}fluid{% endblock %}
+{% block page_heading %}Model Viewer{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Client DAT inspection</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/entity" target="_blank">Entity search ↗</a>{% endblock %}
+{% block page_help %}Resolve NPC/mob, model ID, or DAT references against the configured client/server data and render the corresponding client model. Animation playback remains an approximation where retail timing/blending semantics are not verified.{% endblock %}
+{% block page_body %}
 <style>
-  main.model-viewer-page { max-width:none; width:100%; padding:0; overflow:hidden; display:flex; }
+  main.model-viewer-page { max-width:none; width:100%; overflow:hidden; }
+  main.model-viewer-page .wb-page-frame { min-height:calc(100vh - var(--shell-h)); }
+  main.model-viewer-page .wb-page-body { display:flex; flex:1; min-height:0; margin:0 -10px -24px; }
   #model-viewer { display:flex; flex:1; min-height:0; background:#0a0d10; color:#d7dee3; font:13px/1.4 system-ui,sans-serif; }
   #panel{width:var(--panel-right);flex:none;background:#12171c;border-right:1px solid #26313a;padding:8px;overflow-y:auto}
   #viewer-container{flex:1;position:relative}
@@ -31,7 +38,6 @@
 </style>
 <div id="model-viewer">
 <div id="panel" class="dense-panel">
-  <div class="dense-toolbar" style="margin:-8px -8px 8px;border-top:0;"><strong>Model Viewer</strong><span class="sp"></span><a href="/entity" target="_blank">Entity search ↗</a></div>
   <div class="muted">Renders an NPC/mob's real model DAT(s), resolved live from the DB via the packaged look decoder + gear tables + dat-extractor. Single-DAT ("flat") entities render one file; gear-composite humanoids render the race skeleton DAT plus every equipped slot's gear DAT, skinned to the shared skeleton. Find an id first through Entity search when needed.</div>
 
   <label>Server</label>
