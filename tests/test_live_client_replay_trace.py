@@ -36,4 +36,19 @@ def test_trace_bounded():
     replay=RecordedTelemetryReplay("sample",[frame(i,i%2+100) for i in range(1,51)])
     for _ in range(50):replay.advance()
     points=replay.path_points(max_points=5)
-    assert len(points)<=6 and points[-1]["frame"]==50
+    assert len(points)<=5 and points[-1]["frame"]==50
+
+
+def test_trace_exact_bound_and_downsampled_discontinuities():
+    frames = [frame(1, 100), frame(2, 101), frame(3, 100), frame(4, 100)]
+    frames[-1]['instance_hint'] = 'other-instance'
+    replay = RecordedTelemetryReplay('sample', frames)
+    for _ in frames:
+        replay.advance()
+    for bound in (1, 2, 3, 4, 1000):
+        points = replay.path_points(max_points=bound)
+        assert len(points) <= bound
+        assert points[-1]['frame'] == 4
+    assert [p['segment'] for p in replay.path_points(max_points=4)] == [0, 1, 2, 3]
+    assert [p['segment'] for p in replay.path_points(max_points=2)] == [0, 3]
+    assert replay.path_points(max_points=1)[0]['instance_hint'] == 'other-instance'
