@@ -5,7 +5,8 @@ def main():
     root=Path(__file__).resolve().parents[1]
     host=(root/"src/workbench/app/_host_impl.py").read_text(encoding="utf-8")
     ui=(root/"gui/templates/wiki.html").read_text(encoding="utf-8")
-    assert 'wiki_document.topic_review_queue(con, source_id=source, limit=50, offset=review_offset)' in host
+    assert 'wiki_document.topic_review_queue(' in host
+    assert 'matching_only=True' in host
     assert '"review_queue": review_queue' in host
     assert '<b>Topic review queue</b>' in ui
     assert '{% for entry in review_queue %}' in ui
