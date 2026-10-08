@@ -241,7 +241,7 @@
           {% for match in link.entity_candidates %}
           <div><strong>{{ match.label }}</strong> ({{ match.domain }} / {{ match.table }} / {{ match.key }}) <span class="muted">via {{ match.method }}</span></div>
           {% endfor %}
-          {% if link.entity_candidate_count > link.entity_candidates|length %}<div class="muted">Candidate list limited to 10 entries.</div>{% endif %}
+          <div class="muted">Showing up to 10 matching candidates.</div>
         </details>
         {% endif %>
         {% endfor %}
