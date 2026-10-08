@@ -547,9 +547,9 @@ def main():
 
     trace_html = render("feature_trace.html", "/features/trace", q="", depth=3, direction="both", result=None, matches=[], error=None)
     assert '<body class="shell-dense">' in trace_html
-    assert 'id="featureTraceTop" class="dense-toolbar"' in trace_html
-    assert 'form class="search dense-toolbar"' in trace_html
-    assert '<summary>About</summary>' in trace_html
+    assert 'id="featureTraceTop" class="search wb-filter-row"' in trace_html
+    assert 'wb-archetype-workbench' in trace_html
+    assert 'class="wb-page-title">Feature Trace</span>' in trace_html
 
     trace_shell = context_for("/features/trace")
     assert trace_shell["active_home"] == "Features"

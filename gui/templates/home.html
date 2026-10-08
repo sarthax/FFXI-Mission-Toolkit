@@ -1,6 +1,10 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Mission Toolkit{% endblock %}
-{% block content %}
+{% block page_archetype %}dashboard{% endblock %}
+{% block page_heading %}Mission Toolkit{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Status is read-only; rebuild/install actions can modify local data/tools</span>{% endblock %}
+{% block page_help %}Current toolkit data-source health and setup status. Rebuild links open confirmation before regenerating derived data; installer actions download or install the named external prerequisite after confirmation.{% endblock %}
+{% block page_body %}
 {% if rebuilt %}
 <div class="flash {{ 'flash-ok' if rebuilt_ok else 'flash-error' }}">
   {% if rebuilt_ok %}

@@ -15,8 +15,6 @@ auction_house_seeder.html | legacy page pending archetype migration
 character_editor.html | legacy page pending archetype migration
 dat_inspector.html | legacy page pending archetype migration
 domain_detail.html | legacy page pending archetype migration
-feature_trace.html | legacy page pending archetype migration
-home.html | legacy page pending archetype migration
 itemedit.html | legacy page pending archetype migration
 model_viewer.html | legacy page pending archetype migration
 nyzul_plot.html | legacy page pending archetype migration

@@ -1,10 +1,12 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Feature Trace — Mission Toolkit{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}feature-trace-page{% endblock %}
-{% block content %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_class %}feature-trace-page{% endblock %}
+{% block page_heading %}Feature Trace{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Evidence navigation</span>{% endblock %}
+{% block page_help %}Trace canonical Workbench features, entities, capabilities, functions, bindings, build targets, artifacts, and enums through recorded graph relationships. Connectivity is evidence navigation, not an implementation verdict.{% endblock %}
+{% block page_body %}
 <style>
-main.feature-trace-page{padding:8px 10px 24px}
 #featureTraceTop{margin-bottom:6px}
 #featureTraceTop form{margin:0;flex:1}
 #featureTraceTop input[type=text]{min-width:280px}
@@ -45,9 +47,7 @@ main.feature-trace-page{padding:8px 10px 24px}
 .impl-engine-grid{display:grid;grid-template-columns:minmax(180px,.8fr) minmax(0,1.2fr);gap:6px 10px;align-items:start}
 .impl-engine-grid .k{color:var(--muted);font-size:11px}.impl-engine pre{white-space:pre-wrap;max-height:18rem;overflow:auto;font-size:11px}
 </style>
-<div id="featureTraceTop" class="dense-toolbar">
-  <strong>Feature Trace</strong>
-  <form class="search dense-toolbar" method="get" action="/features/trace">
+<form id="featureTraceTop" class="search wb-filter-row" method="get" action="/features/trace">
   <input type="text" name="q" value="{{ q }}" placeholder="Canonical node ID or partial name">
   <select name="direction">
     <option value="both"{% if direction == "both" %} selected{% endif %}>Both directions</option>
@@ -60,13 +60,7 @@ main.feature-trace-page{padding:8px 10px 24px}
     {% endfor %}
   </select>
   <button type="submit">Trace</button>
-  </form>
-  <details class="dense-card" style="margin:0;padding:0 6px;">
-    <summary>About</summary>
-    <div class="muted" style="padding:6px 2px;max-width:720px;">Trace canonical Workbench features, entities, capabilities, functions, bindings, build targets, artifacts, and enums through recorded graph relationships. Connectivity is evidence navigation, not an implementation verdict.</div>
-  </details>
-</div>
-
+</form>
 {% if error %}
 <div class="warn">{{ error }}</div>
 {% endif %}
