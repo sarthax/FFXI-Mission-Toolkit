@@ -150,6 +150,20 @@ register_configured_replay(live_client_replay_registry,
                            effective_replay_configuration(_live_client_settings, os.environ))
 app.include_router(create_registry_router(live_client_replay_registry))
 app.include_router(create_replay_console_router())
+
+@app.post("/live-client/inspect-recording")
+async def live_client_inspect_recording(request: Request):
+    # Local admin-only setup surface: deny cross-origin attempts before accessing local paths.
+    origin = request.headers.get("origin")
+    if not origin or origin != str(request.base_url).rstrip("/"):
+        raise HTTPException(status_code=403, detail="same-origin request required")
+    body = await request.json()
+    from workbench.runtime.live_client.inspection import inspect_recording
+    try:
+        return inspect_recording(body.get("path", ""))
+    except (ValueError, OSError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # Zone visual-mesh OBJs (build_zone_visual_cache.py) are real but large (tens of MB of ASCII
 # text per zone) -- gzip compresses that ratio very well over the wire, worth it app-wide.
