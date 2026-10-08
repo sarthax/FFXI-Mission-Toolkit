@@ -1,10 +1,17 @@
-{% extends "base.html" %}
-{% block title %}Zone Editor (new layout){% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}zp2page{% endblock %}
-{% block content %}
+{% extends "workbench_page.html" %}
+{% block title %}Zone Editor{% endblock %}
+{% block page_archetype %}editor{% endblock %}
+{% block page_class %}zp2page{% endblock %}
+{% block page_width %}fluid{% endblock %}
+{% block page_heading %}Zone Editor{% endblock %}
+{% block page_identity %}<span class="chip mono" id="zname"></span>{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Entity, path, cache, and server-data edits are write-capable</span>{% endblock %}
+{% block page_help %}Full-width live zone editor for entities, spawn/path geometry, navmesh context, client visual mesh, bulk movement, review, and server-backed edits. Existing save/undo/redo, validation, cache-build, and source-specific safety behavior is preserved.{% endblock %}
+{% block page_body %}
 <style>
-main.zp2page{max-width:none !important;padding:0 !important;overflow:hidden}
+main.zp2page{max-width:none !important;overflow:hidden}
+main.zp2page .wb-page-frame{height:calc(100vh - var(--shell-h));min-height:560px}
+main.zp2page .wb-page-body{display:flex;flex:1;min-height:0;margin:0 -10px -24px}
 #zp2{display:flex;flex-direction:column;height:100%;min-height:480px;font-size:13px}
 #zbar{display:flex;align-items:center;gap:8px;height:36px;flex:none;padding:0 8px;border-bottom:1px solid var(--border);background:var(--surface);overflow:hidden;white-space:nowrap}
 #zbar label{display:flex;align-items:center;gap:4px;margin:0}
@@ -63,7 +70,6 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
 
 <div id="zp2">
 <div id="zbar" class="dense-toolbar">
-  <strong>Zone Editor</strong><span class="chip mono" id="zname"></span>
   <label>Server <select id="srv"><option value="topaz">Topaz</option><option value="dsp">DSP</option></select></label>
   <label>Zone <input type="search" id="zfilter" placeholder="filter&hellip;" style="width:70px" title="Partial match on zone id or name"><select id="zsort" title="Sort zone list"><option value="id">by #</option><option value="name">by name</option></select><select id="zone"></select></label>
   <label>Instance <select id="inst"><option value="0">All rows</option></select></label>
