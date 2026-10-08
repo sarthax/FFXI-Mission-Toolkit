@@ -5678,7 +5678,13 @@ async def wiki_link_topic(request: Request):
         error = str(exc)
     finally:
         con.close()
-    suffix = f"?title={quote(title)}&source={quote(source)}&tab=browse"
+    review_page_raw = (form.get("review_page") or "").strip()
+    review_status = (form.get("review_status") or "all").strip()
+    if review_page_raw.isdecimal() and review_status in ("all", "pending", "dismissed") and not error:
+        review_page = max(1, min(int(review_page_raw), 10000))
+        suffix = f"?source={quote(source)}&tab=review&review_status={review_status}&review_page={review_page}"
+    else:
+        suffix = f"?title={quote(title)}&source={quote(source)}&tab=browse"
     if error:
         suffix += f"&error={quote(error)}"
     return RedirectResponse("/wiki" + suffix, status_code=303)
@@ -5703,7 +5709,13 @@ async def wiki_dismiss_topic(request: Request):
         error = str(exc)
     finally:
         con.close()
-    suffix = f"?title={quote(title)}&source={quote(source)}&tab=browse"
+    review_page_raw = (form.get("review_page") or "").strip()
+    review_status = (form.get("review_status") or "all").strip()
+    if review_page_raw.isdecimal() and review_status in ("all", "pending", "dismissed") and not error:
+        review_page = max(1, min(int(review_page_raw), 10000))
+        suffix = f"?source={quote(source)}&tab=review&review_status={review_status}&review_page={review_page}"
+    else:
+        suffix = f"?title={quote(title)}&source={quote(source)}&tab=browse"
     if error:
         suffix += f"&error={quote(error)}"
     return RedirectResponse("/wiki" + suffix, status_code=303)
