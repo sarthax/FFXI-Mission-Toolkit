@@ -475,6 +475,40 @@ def suggest_topic_links(con, *, source_id: str, page_id: str, limit: int = 20) -
         item["supporting_pages"].append({"source_id":matched_source,"page_id":str(matched_page)})
     return list(topics.values())[:max(0,min(limit,100))]
 
+
+def topic_review_queue(con, *, source_id: str, limit: int = 50) -> list[dict]:
+    """Read-only bounded queue of pages with pending or dismissed topic suggestions.
+
+    Dismissed entries remain visible for audit but never reappear as pending.
+    """
+    init_db(con)
+    pages=con.execute("""
+      SELECT w.page_id,w.title
+      FROM reference_wiki_pages w
+      WHERE w.source_id=?
+        AND NOT EXISTS (
+          SELECT 1 FROM reference_wiki_topic_pages p
+          WHERE p.source_id=w.source_id AND p.page_id=w.page_id
+        )
+      ORDER BY w.title,w.page_id LIMIT ?
+    """,(source_id,max(0,min(limit,200)))).fetchall()
+    queue=[]
+    for page_id,title in pages:
+        pending=suggest_topic_links(con,source_id=source_id,page_id=str(page_id))
+        dismissed=[{"topic_id":t,"canonical_title":label}
+          for t,label in con.execute("""
+            SELECT d.topic_id,COALESCE(t.canonical_title,'[missing topic]')
+            FROM reference_wiki_topic_dismissals d
+            LEFT JOIN reference_wiki_topics t ON t.topic_id=d.topic_id
+            WHERE d.source_id=? AND d.page_id=?
+            ORDER BY label,d.topic_id
+          """,(source_id,str(page_id))).fetchall()]
+        if pending or dismissed:
+            queue.append({"source_id":source_id,"page_id":str(page_id),"title":title,
+                          "pending":pending,"dismissed":dismissed})
+    return queue
+
+
 def page_topic(con, source_id: str, page_id: str) -> dict | None:
     init_db(con)
     row=con.execute("""SELECT t.topic_id,t.canonical_title FROM reference_wiki_topics t
