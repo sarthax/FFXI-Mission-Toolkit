@@ -173,3 +173,9 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Successful import fills the managed recording path and detected client ID in Settings. **Save Settings** to persist the choice; enable offline replay and automatic restore to load the first frame on the next toolkit startup.
 - `tests/test_live_client_settings_upload.py` covers authorized upload, cross-origin denial, invalid extension/recording, no orphan files, Settings controls and Git exclusion.
 - Imported files are local toolkit data, not repository assets. No FFXI process discovery, game-memory read/write, or automatic live-client connection is involved.
+
+
+## 2026-10-08 read-only telemetry feed registry
+- `ReplayRegistry` can now register a `FileTelemetryBridge` per explicit client ID, alongside offline replay sessions. `poll_feed(client_id)` ingests appended, validated JSONL observations and `frame()` / `status()` serve them through existing projection consumers.
+- Feed clients cannot use replay `advance()`; status identifies `source: file_feed`. Duplicate client IDs and wrong-client attachment are rejected. Regression coverage: `tests/test_live_client_feed_registry.py`.
+- The host has **not** yet been configured to register/poll a file feed, and no native FFXI memory reader exists. The current slice is a reusable registry boundary, not a working live connection.
