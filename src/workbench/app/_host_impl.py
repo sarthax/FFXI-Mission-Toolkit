@@ -5485,6 +5485,7 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
         source_format = row[0] if row else "structured"
 
     visible_blocks = [b for b in blocks if not (b.get("metadata") or {}).get("hidden")]
+    groups = wiki_document.presentation_groups(visible_blocks)
     degraded = any((b.get("metadata") or {}).get("degraded") for b in visible_blocks)
     return {
         "title": page_title,
@@ -5493,6 +5494,7 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
         "revision": page.get("revid") or page.get("revision_id"),
         "timestamp": page.get("timestamp") or page.get("revision_timestamp"),
         "blocks": visible_blocks,
+        "groups": groups,
         "block_count": len(visible_blocks),
         "chars": len(text),
         "hash": page.get("page_hash") or hashlib.sha256(text.encode()).hexdigest(),
