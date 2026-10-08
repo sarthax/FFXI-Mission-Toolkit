@@ -44,7 +44,8 @@ async function refresh(){
   for(const row of rows)client.add(new Option(row.client_id,row.client_id));
   client.value=rows.some(r=>r.client_id===prior)?prior:'';
   if(!client.value){document.getElementById('step').disabled=true;reset();state.textContent=rows.length?'Select a recorded client':'No replay sessions registered';return;}
-  const row=rows.find(r=>r.client_id===client.value);\n  document.getElementById('step').disabled=!row.remaining_frames;
+  const row=rows.find(r=>r.client_id===client.value);
+  document.getElementById('step').disabled=!row.remaining_frames;
   state.textContent=row.observed?'Recorded observation available':'Waiting for recorded frame';
   if(!row.observed){reset();return;}
   // Zone is read from selected client's already-observed frame via registry status.
@@ -59,7 +60,17 @@ async function refresh(){
   show('observed',String(data.observed_at));show('entities',String(data.entities.length));
  }catch(err){reset();state.textContent=String(err.message||err);}
 }
-async function step(){\n const selected=client.value;if(!selected)return;\n const button=document.getElementById('step');button.disabled=true;\n try{const url='/live-client/replay/advance?'+new URLSearchParams({client_id:selected});\n const result=await fetch(url,{method:'POST',headers:{'Accept':'application/json'}});\n if(!result.ok){const detail=await result.json();throw Error(detail.detail||'Replay advance failed');}\n await refresh();\n }catch(err){state.textContent=String(err.message||err);await refresh();}\n}\ndocument.getElementById('step').addEventListener('click',step);\nclient.addEventListener('change',refresh);document.getElementById('refresh').addEventListener('click',refresh);
+async function step(){
+ const selected=client.value;if(!selected)return;
+ const button=document.getElementById('step');button.disabled=true;
+ try{const url='/live-client/replay/advance?'+new URLSearchParams({client_id:selected});
+ const result=await fetch(url,{method:'POST',headers:{'Accept':'application/json'}});
+ if(!result.ok){const detail=await result.json();throw Error(detail.detail||'Replay advance failed');}
+ await refresh();
+ }catch(err){state.textContent=String(err.message||err);await refresh();}
+}
+document.getElementById('step').addEventListener('click',step);
+client.addEventListener('change',refresh);document.getElementById('refresh').addEventListener('click',refresh);
 refresh();
 </script></body></html>"""
 
