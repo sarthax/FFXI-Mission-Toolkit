@@ -135,6 +135,13 @@
       {% for proof in suggestion.supporting_pages %}
         <span class="chip">{{ proof.source_id }} / {{ proof.page_id }}</span>
       {% endfor %}
+      <form method="post" action="/wiki/topic" class="wiki-actions" style="margin:5px 0 0">
+        <input type="hidden" name="title" value="{{ title }}">
+        <input type="hidden" name="source" value="{{ source }}">
+        <input type="hidden" name="canonical_title" value="{{ suggestion.canonical_title }}">
+        <input type="hidden" name="suggested_topic_id" value="{{ suggestion.topic_id }}">
+        <button type="submit">Approve and link topic</button>
+      </form>
     </div>
   </div>
   {% endfor %}
