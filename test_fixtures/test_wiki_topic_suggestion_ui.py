@@ -13,7 +13,11 @@ def main():
     assert "do not link pages automatically" in template
     assert 'wiki_evidence.resolve_subject(con,link.get("lookup_title") or "")' in host
     assert 'link["entity_resolution"]="UNIQUE_ENTITY_HINT"' in host
-    assert 'link["entity_resolution"]="AMBIGUOUS" if identities else "UNRESOLVED"' in host
+    assert '"DROPS":{"item","key_item"}' in host
+    assert '"LOCATION":{"zone"}' in host
+    assert '"NM_IDENTITY":{"entity"}' in host
+    assert 'matches=[m for m in matches if m.get("target_domain") in allowed_domains]' in host
+    assert 'else "NOT_APPLICABLE"' in host
     assert 'Toolkit entity: {{ link.entity_resolution }}' in template
     assert 'review hint only' in template
     print("Wiki multilingual suggestion reader regression: PASS")
