@@ -107,6 +107,48 @@ def init_db(con: sqlite3.Connection) -> None:
           notes TEXT,
           reviewed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS reference_wiki_relations(
+          relation_id TEXT PRIMARY KEY,
+          source_id TEXT NOT NULL,
+          page_id TEXT NOT NULL,
+          page_title TEXT NOT NULL,
+          page_url TEXT,
+          revision_id TEXT,
+          revision_timestamp TEXT,
+          section_title TEXT,
+          relation_type TEXT NOT NULL,
+          subject_text TEXT NOT NULL,
+          object_text TEXT NOT NULL,
+          source_locator TEXT,
+          authority TEXT NOT NULL DEFAULT 'REFERENCE_ONLY',
+          extraction_method TEXT NOT NULL,
+          content_hash TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_reference_relation_page
+          ON reference_wiki_relations(source_id,page_id,section_title);
+        CREATE INDEX IF NOT EXISTS idx_reference_relation_type
+          ON reference_wiki_relations(relation_type);
+
+        CREATE TABLE IF NOT EXISTS reference_wiki_relation_mappings(
+          relation_mapping_id TEXT PRIMARY KEY,
+          relation_id TEXT NOT NULL,
+          endpoint TEXT NOT NULL,
+          target_domain TEXT,
+          target_table TEXT,
+          target_key TEXT,
+          target_label TEXT,
+          mapping_method TEXT NOT NULL,
+          mapping_status TEXT NOT NULL,
+          confidence TEXT NOT NULL,
+          details_json TEXT NOT NULL DEFAULT '{}',
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_reference_relation_mapping_relation
+          ON reference_wiki_relation_mappings(relation_id,endpoint);
+        CREATE INDEX IF NOT EXISTS idx_reference_relation_mapping_target
+          ON reference_wiki_relation_mappings(target_table,target_key);
     """)
     con.execute(
         """INSERT OR IGNORE INTO reference_wiki_sources
