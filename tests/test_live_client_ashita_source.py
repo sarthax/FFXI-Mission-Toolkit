@@ -183,3 +183,67 @@ def test_invalid_reported_server_id_never_creates_export(tmp_path, invalid):
     lua.globals().reported_id = invalid
     lua.execute('function entity:GetServerId(index) return reported_id end; command("/wblive start identity")')
     assert not list(tmp_path.glob('*.jsonl'))
+
+
+def test_inventory_reuses_getentity_bounds_and_prioritizes_target(tmp_path):
+    lua = runtime(tmp_path)
+    lua.execute('''
+        calls=0; local original=GetEntity
+        GetEntity=function(index) assert(index>=0 and index<=2303); calls=calls+1; return original(index) end
+        entities[2303]={name='Last slot',x=7,y=8,z=9,heading=0}
+        function entity:GetServerId(index) return index+16777216 end
+        command('/wblive start inventory-a inventory')
+    ''')
+    path, = tmp_path.glob('*.jsonl')
+    bridge = FileTelemetryBridge(path, 'inventory-a')
+    assert bridge.poll() == 1
+    frame = bridge.feed._latest
+    assert [item.client_index for item in frame.entities] == [42, 2303]
+    assert frame.entities[1].server_entity_id == 16779519
+    assert frame.observation_scope == 'bounded_loaded_entities'
+    assert frame.entities_truncated is False
+    assert lua.globals().calls <= 2340
+    from workbench.runtime.live_client.viewer import viewer_projection
+    assert viewer_projection(frame, client_id='inventory-a', zone_id=100)['observation_scope'] == 'bounded_loaded_entities'
+
+
+def test_inventory_output_cap_and_target_deduplication(tmp_path):
+    lua = runtime(tmp_path)
+    lua.execute('for slot=2,100 do entities[slot]={name="Entity"..slot,x=1,y=2,z=3,heading=0} end; command("/wblive start capped inventory")')
+    path, = tmp_path.glob('*.jsonl')
+    bridge = FileTelemetryBridge(path, 'capped')
+    assert bridge.poll() == 1
+    frame = bridge.feed._latest
+    assert len(frame.entities) == 32
+    assert frame.entities_truncated is True
+    assert frame.entities[0].client_index == 42
+    assert len({e.client_index for e in frame.entities}) == 32
+    assert path.stat().st_size < 65536
+
+
+def test_inventory_disappearance_stops_before_appending(tmp_path):
+    lua = runtime(tmp_path)
+    lua.execute('entities[3]={name="Other",x=1,y=2,z=3,heading=0}; command("/wblive start changing inventory")')
+    path, = tmp_path.glob('*.jsonl'); before = path.read_bytes()
+    lua.execute('local original=entity.GetHeading; function entity:GetHeading(index) local value=original(self,index); if index==3 then entities[3]=nil end; return value end; clock=101; events.d3d_present()')
+    assert path.read_bytes() == before
+    assert 'entity changed' in lua.globals().messages[len(lua.globals().messages)]
+
+
+def test_unknown_inventory_mode_does_not_create_file(tmp_path):
+    lua = runtime(tmp_path)
+    lua.execute('command("/wblive start mode invented")')
+    assert not list(tmp_path.glob('*.jsonl'))
+
+
+def test_inventory_skips_unnamed_slots_and_default_mode_resets(tmp_path):
+    lua = runtime(tmp_path)
+    lua.execute('entities[3]={name=" ",x=0/0,y=0,z=0,heading=0}; entities[4]={name="Other",x=4,y=5,z=6,heading=0}; command("/wblive start first inventory")')
+    first, = tmp_path.glob('*.jsonl')
+    bridge = FileTelemetryBridge(first, 'first'); assert bridge.poll() == 1
+    assert [e.client_index for e in bridge.feed.entities()] == [42, 4]
+    lua.execute('command("/wblive stop"); command("/wblive start second")')
+    second, = tmp_path.glob('telemetry-second-*.jsonl')
+    bridge = FileTelemetryBridge(second, 'second'); assert bridge.poll() == 1
+    assert [e.client_index for e in bridge.feed.entities()] == [42]
+    assert bridge.feed._latest.observation_scope == 'selected_targets'

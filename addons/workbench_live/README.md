@@ -131,3 +131,26 @@ identity unknown; invalid values or target changes during sampling stop export.
 The getter mapping is cloud-tested with synthetic Lua interfaces and requires
 Windows validation. It does not establish server/database correlation or entity
 kind. Existing recordings remain compatible; no client writes are enabled.
+
+### Experimental bounded Ashita inventory
+
+Use `/wblive start <unique-instance-id> inventory` to opt into additional named
+entity-slot observations. `/wblive start <unique-instance-id>` retains selected-
+target mode. Stop before changing modes. Inventory is Ashita-only and read-only.
+
+The range 0–2303 follows the pinned Ashita v4 `petinfo`/`chamcham` addon examples,
+not guessed offsets. Each sample queries that bounded range and retains at most
+32 entities, including the selected target first. The player, duplicate target,
+nil slots and blank names are excluded. `entities_truncated` marks when another
+named slot exists beyond the cap. This is a subset, not a complete world census.
+Kinds remain unknown; no instance, packet, or server-database identity is inferred.
+Existing one-second sampling, file/line limits and explicit stop/restart remain.
+
+New frames retain `observation_scope` and `entities_truncated`; the Toolkit console
+shows the bounded scope and truncation. Old recordings retain unspecified scope.
+Getter failures, invalid data, changed observed identities or player/zone changes
+stop export without appending the rejected frame. Cloud Lua/decoder/browser tests
+passed; actual enumeration bounds and behavior on your Windows client remain
+unverified. When testing later, collect an inventory recording with a selected
+NPC/mob/player and note displayed names/counts, target switching, zoning and any
+stop messages. You can perform this directly in Ashita without local Codex.

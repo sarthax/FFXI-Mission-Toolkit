@@ -49,6 +49,7 @@ def test_recording_controls_in_browser(tmp_path):
         frames = [{'schema_version': 1, 'client_id': 'same-client', 'client_version': 'fixture',
                    'character': 'Hero', 'adapter': 'offline', 'observed_at': i,
                    'position': {'zone_id': 101 if i == 2 else 100, 'x': i, 'y': 0, 'z': 2*i, 'heading': 0},
+                   'observation_scope': 'bounded_loaded_entities', 'entities_truncated': True,
                    'entities': []} for i in range(1, 5)]
         content = ''.join(json.dumps(f) + '\n' for f in frames).encode()
         with playwright.sync_playwright() as p:
@@ -61,6 +62,8 @@ def test_recording_controls_in_browser(tmp_path):
             page.locator('#recording').set_input_files({'name': 'walk.jsonl', 'mimeType': 'application/x-ndjson', 'buffer': content})
             page.locator('#open-recording').click()
             playwright.expect(page.locator('#state')).to_have_text('Frame 1 of 4')
+            playwright.expect(page.locator('#entity-status')).to_contain_text('truncated.')
+            playwright.expect(page.locator('#entity-status')).to_contain_text('up to 32')
             first = page.locator('#client').input_value()
             page.locator('#open-recording').click()
             playwright.expect(page.locator('#client option')).to_have_count(3)
