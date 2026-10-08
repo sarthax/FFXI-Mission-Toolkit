@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Capture Evidence Search{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}capture-search-page{% endblock %}
+{% block page_archetype %}browser{% endblock %}
+{% block page_class %}capture-search-page{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -14,9 +14,13 @@
 {% endif %}
 {% endmacro %}
 
-{% block content %}
+{% block page_back %}<a class="chip" href="/captures">&larr; Captures</a>{% endblock %}
+{% block page_heading %}Evidence Search{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Cross-capture discovery</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/captures/query">Data Explorer</a>{% endblock %}
+{% block page_help %}Cross-capture discovery by evidence domain. Modules search canonical observations across the corpus and hand results into Capture, Timeline, Entity, Packet Viewer, Related Evidence, or Data Explorer for deeper inspection.{% endblock %}
+{% block page_body %}
 <style>
-main.capture-search-page{padding:8px 10px 24px}
 .evidence-layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:8px;align-items:start}
 .evidence-modules{position:sticky;top:calc(var(--shell-h) + 8px);max-height:calc(100vh - var(--shell-h) - 20px);overflow:auto}
 .evidence-module{display:block;padding:7px 8px;margin:2px 0;border-radius:6px;text-decoration:none;color:var(--ink)}
@@ -36,20 +40,6 @@ main.capture-search-page{padding:8px 10px 24px}
 }
 </style>
 
-<div class="dense-toolbar">
-  <a class="chip" href="/captures">&larr; Captures</a>
-  <strong>Evidence Search</strong>
-  <a class="chip" href="/captures/query">Data Explorer</a>
-  <span class="sp"></span>
-  <details class="dense-card" style="margin:0;padding:0 6px">
-    <summary>About</summary>
-    <div class="muted" style="padding:6px 2px;max-width:720px">
-      Cross-capture discovery by evidence domain. Modules search canonical observations across the corpus
-      and hand results into Capture, Timeline, Entity, Packet Viewer or Data Explorer for deeper inspection.
-    </div>
-  </details>
-</div>
-
 <div class="evidence-layout">
   <aside class="dense-panel evidence-modules">
     {% for m in modules %}
@@ -68,7 +58,7 @@ main.capture-search-page{padding:8px 10px 24px}
     <div class="muted search-help">{{ module_meta.description }}</div>
 
     {% if module == 'events' %}
-    <form class="search dense-toolbar" method="get" action="/captures/search" style="margin:6px 0;flex-wrap:wrap">
+    <form class="search wb-filter-row" method="get" action="/captures/search" style="margin:6px 0;flex-wrap:wrap">
       <input type="hidden" name="module" value="events">
       <input type="text" name="entity" value="{{ entity }}" placeholder="NPC / entity name">
       <input type="text" name="message_id" value="{{ message_id }}" placeholder="message id (exact)">
@@ -87,7 +77,7 @@ main.capture-search-page{padding:8px 10px 24px}
     </form>
 
     {% elif module == 'packets' %}
-    <form class="search dense-toolbar" method="get" action="/captures/search" style="margin:6px 0;flex-wrap:wrap">
+    <form class="search wb-filter-row" method="get" action="/captures/search" style="margin:6px 0;flex-wrap:wrap">
       <input type="hidden" name="module" value="packets">
       <select name="pk_category">
         <option value="">packet category</option>
@@ -100,7 +90,7 @@ main.capture-search-page{padding:8px 10px 24px}
     </form>
 
     {% else %}
-    <form class="search dense-toolbar" method="get" action="/captures/search" style="margin:6px 0">
+    <form class="search wb-filter-row" method="get" action="/captures/search" style="margin:6px 0">
       <input type="hidden" name="module" value="{{ module }}">
       <input type="text" name="q" value="{{ q }}" placeholder="{{ module_meta.hint }}" style="min-width:340px">
       <button type="submit">Search {{ module_meta.label }}</button>
