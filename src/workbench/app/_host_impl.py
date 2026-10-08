@@ -5663,6 +5663,31 @@ async def wiki_link_topic(request: Request):
     return RedirectResponse("/wiki" + suffix, status_code=303)
 
 
+@app.post("/wiki/topic/dismiss", response_class=HTMLResponse)
+async def wiki_dismiss_topic(request: Request):
+    """Explicitly dismiss one unlinked page's currently proposed topic."""
+    form = await request.form()
+    title = (form.get("title") or "").strip()
+    source = (form.get("source") or wiki_evidence.SOURCE_BG).strip()
+    topic_id = (form.get("suggested_topic_id") or "").strip()
+    error = ""
+    con = get_con()
+    try:
+        page = wiki_evidence.find_reference_page(con, source, title)
+        if not page:
+            raise ValueError("Wiki page not found")
+        page_id = str(page.get("pageid") or page.get("page_id") or page.get("title") or title)
+        wiki_document.dismiss_topic_suggestion(con, source_id=source, page_id=page_id, topic_id=topic_id)
+    except ValueError as exc:
+        error = str(exc)
+    finally:
+        con.close()
+    suffix = f"?title={quote(title)}&source={quote(source)}&tab=browse"
+    if error:
+        suffix += f"&error={quote(error)}"
+    return RedirectResponse("/wiki" + suffix, status_code=303)
+
+
 @app.post("/wiki/map", response_class=HTMLResponse)
 async def wiki_build_evidence_map(request: Request):
     form = await request.form()
