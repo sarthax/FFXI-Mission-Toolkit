@@ -11,6 +11,11 @@ def main():
     assert '{{ proof.source_id }} / {{ proof.page_id }}' in template
     assert 'target="_blank" rel="noopener"' in template
     assert "do not link pages automatically" in template
+    assert 'wiki_evidence.resolve_subject(con,link.get("lookup_title") or "")' in host
+    assert 'link["entity_resolution"]="UNIQUE_ENTITY_HINT"' in host
+    assert 'link["entity_resolution"]="AMBIGUOUS" if identities else "UNRESOLVED"' in host
+    assert 'Toolkit entity: {{ link.entity_resolution }}' in template
+    assert 'review hint only' in template
     print("Wiki multilingual suggestion reader regression: PASS")
 
 if __name__=="__main__":
