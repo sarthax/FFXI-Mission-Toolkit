@@ -7,7 +7,7 @@ def main():
     assert 'review_status: str = "all"' in host
     assert 'entry[review_status]' in host
     assert '("pending", "dismissed")' in host
-    assert "review_status={{ state }}" in ui
+    assert "review_status={{ state }}&review_page=1" in ui
     print("Wiki queue status filters: PASS")
 
 if __name__=="__main__":
