@@ -20,13 +20,6 @@ permissions:
 
 jobs:
   offline-regression:
-  push:
-    branches:
-      - 'feature/live-client-replay-integration'
-    paths:
-      - 'src/workbench/runtime/live_client/**'
-      - 'tests/test_live_client_*.py'
-      - '.github/workflows/live-client-regression.yml'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
