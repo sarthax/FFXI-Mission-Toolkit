@@ -118,3 +118,5 @@ Completed workspace migrations:
 - **Model Viewer** — Full-width client DAT/model inspection workspace with preserved specialized renderer layout (Workbench, read-only).
 - **DAT Inspector** — Client resource identification/structure/parser workbench with downstream handoffs (Workbench, read-only).
 - **3D Zone Viewer** — Full-width client zone visual/capture overlay viewer with explicit derived-mesh cache build boundary (Workbench).
+- **YouTube Chat OCR** — OCR run/prerequisite dashboard for video evidence ingestion with explicit local-file/tool writes (Workbench).
+- **OCR Run** — Video crop/extraction/layout/OCR/matching/capture-conversion workspace with explicit write actions (Workbench).
