@@ -89,6 +89,7 @@
     <a class="chip {% if review_status == state %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=review&review_status={{ state }}&review_page=1">{{ label }}</a>
     {% endfor %}
   </div>
+  <p class="muted">This page: {{ review_queue|length }} source articles · {{ review_queue|selectattr("pending")|list|length }} with pending suggestions · {{ review_queue|selectattr("dismissed")|list|length }} with dismissed suggestions. Counts apply only to the current page.</p>
   <p class="muted">Read-only overview. Each page shows up to 50 source articles with potential review candidates. Dismissed candidates remain auditable; open a source page to review pending topics.</p>
   <div class="wiki-actions dense-toolbar">
     {% if review_page > 1 %}<a class="chip" href="/wiki?source={{ source|urlencode }}&tab=review&review_status={{ review_status }}&review_page={{ review_page - 1 }}">← Previous 50</a>{% endif %}
