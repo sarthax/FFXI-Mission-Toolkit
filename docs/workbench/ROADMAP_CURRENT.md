@@ -395,3 +395,7 @@ A future source-layout/bootstrap phase may retire root compatibility launchers a
 - `docs/workbench/AUCTION_HOUSE_CAPABILITY_STATUS.md` — Auction House operator summary.
 - `docs/workbench/ROADMAP.md` — historical implementation ledger.
 - `docs/workbench/AUDIT_STATUS.md` — historical implementation/audit notes.
+### Live Client cloud development follow-up
+
+- Recorded-session console: independent identities for duplicate-client recordings; observed-time play/pause and speed; timeline seek; runtime replace/unload; independent observation comparison. See [Live Client resume guide](LIVE_CLIENT_BRIDGE.md).
+- Validation covers synthetic offline telemetry and real-browser console behavior. Native Windows/FFXI telemetry, calibrated zone overlays and writable development adapters remain unverified/incomplete.

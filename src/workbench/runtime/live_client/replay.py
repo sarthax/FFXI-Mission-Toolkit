@@ -69,6 +69,15 @@ class RecordedTelemetryReplay:
         self._count = position
         return last
 
+    @property
+    def next_frame_delay(self) -> float | None:
+        """Recorded seconds until the next frame; no clock or background process."""
+        if not self.remaining or self.feed._latest is None:
+            return None
+        from .telemetry import decode_frame
+        next_frame = decode_frame(self._frames[self._index])
+        return max(0.0, next_frame.snapshot.observed_at - self.feed._latest.snapshot.observed_at)
+
     def restart(self):
         return self.seek(1)
 

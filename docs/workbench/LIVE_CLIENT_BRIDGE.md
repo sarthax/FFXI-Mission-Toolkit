@@ -200,3 +200,13 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Added `tests/test_live_client_windows_identity.py` using synthetic executable fixtures only. No actual FFXI binaries or digests are bundled or approved.
 - This is a **prerequisite, not an implemented memory adapter**. Correctly matched on-disk executable identity alone does not verify a running process or memory layout. A future adapter must additionally verify the target process instance, image identity, pointer validity, schema and offset provenance, and fail closed on mismatch.
 - No process handles, memory operations, or game writes are present. Actual Windows/FFXI validation is still outstanding.
+
+## Cloud recording sessions and playback controls
+
+- Direct console uploads now receive independent recording session IDs. Recordings containing the same embedded client ID can be loaded together and compared; telemetry identity remains validated against the embedded ID.
+- The console supports play/pause, 0.25–4× observed-time playback, one-based frame seeking/timeline scrubbing, previous/restart, replacement and unloading without a restart or Settings edits. Playback pauses when changing sessions or hiding the page, and stops at the end or on request failure.
+- Replacement validates the complete candidate before replacing the selected replay. Invalid uploads, missing sessions and attempts to replace a file feed preserve the existing session. Unloading releases the in-memory session; managed uploaded recording files remain available locally.
+- Comparison displays each selected recording's observed coordinates, zone and timestamp independently. It does not align time, calibrate coordinates or infer shared instance identity.
+- Added dedicated `Live Client Regression` CI with offline API/contracts and a real Chromium console test. Cloud testing uses synthetic telemetry; it does not establish compatibility with Windows or a running FFXI client.
+- PR #687 remains a separate spatial trace change pending review/CI. Its renderer must preserve discontinuities when leaving and returning to a zone; its requested trace bound must be enforced exactly.
+- Remaining work: shared-shell integration, calibrated map overlays, verified native telemetry adapters and explicitly authorized development controls. No memory offsets, supported client builds or game write capabilities have been added by this milestone.
