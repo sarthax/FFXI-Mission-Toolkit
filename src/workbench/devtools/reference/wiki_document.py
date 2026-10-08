@@ -328,7 +328,7 @@ def stored_blocks(con, source_id: str, page_id: str) -> list[dict]:
 def template_field_review_links(raw_value: str) -> list[dict]:
     """Expose explicit MediaWiki source links as review evidence, not graph edges."""
     links=[]
-    for match in re.finditer(r"\\[\\[([^\\[\\]]+)\\]\\]",raw_value or ""):
+    for match in re.finditer(r"\[\[([^\[\]]+)\]\]",raw_value or ""):
         target=match.group(1).split("|",1)[0].strip()
         if not target or target.startswith(("#",":")):
             continue
