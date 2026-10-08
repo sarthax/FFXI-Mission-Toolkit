@@ -39,9 +39,10 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:.5rem;bo
 <div><dt>XYZ</dt><dd id="xyz">—</dd></div><div><dt>Heading</dt><dd id="heading">—</dd></div>
 <div><dt>Observed at</dt><dd id="observed">—</dd></div><div><dt>Entities</dt><dd id="entities">—</dd></div>
 <div><dt>Observation source</dt><dd id="source">—</dd></div><div><dt>Reported client version (unverified)</dt><dd id="version">—</dd></div>
-</dl></section>
+</dl><label for="waypoint-name">Waypoint name </label><input id="waypoint-name" maxlength="200" placeholder="Name this observed position">
+<button id="capture-player" type="button" disabled>Download player waypoint</button><button id="export-path" type="button" disabled>Download path to current frame</button><p id="export-status" role="status"></p></section>
 <section><h2>Entity observations</h2><p id="entity-status">No entity observations.</p>
-<div style="overflow:auto"><table><thead><tr><th>Name</th><th>Kind</th><th>Client index</th><th>Server ID</th><th>Raw XYZ</th></tr></thead><tbody id="entity-rows"></tbody></table></div></section>
+<div style="overflow:auto"><table><thead><tr><th>Name</th><th>Kind</th><th>Client index</th><th>Server ID</th><th>Raw XYZ</th><th>Capture</th></tr></thead><tbody id="entity-rows"></tbody></table></div></section>
 <section><h2>Recorded position trace</h2><label for="trace-plane">Trace plane </label><select id="trace-plane"><option value="xz">X/Z</option><option value="xy">X/Y</option><option value="yz">Y/Z</option></select><p id="trace-status">Select a recording to view its observed movement.</p>
 <svg id="trace" viewBox="0 0 600 280" style="width:100%;background:#101720;border:1px solid #414a58" role="img" aria-label="Recorded positions in current zone"></svg>
 <p style="color:#a9b8ca">Raw relative coordinates. Ashita recordings initially use X/Y; choose another plane to inspect elevation. This is not a calibrated zone map.</p></section>
@@ -50,7 +51,7 @@ const client=document.getElementById('client'),state=document.getElementById('st
 const show=(id,value)=>document.getElementById(id).textContent=value;
 let rows=[],playing=false,timer=null,generation=0;
 const tracePlanes=new Map();
-const controls=['step','poll','previous','restart','play','timeline','unload','replace'];
+const controls=['step','poll','previous','restart','play','timeline','unload','replace','capture-player','export-path'];
 function reset(){for(const id of ['character','zone','xyz','heading','observed','entities','source','version'])show(id,'—');document.getElementById('trace').replaceChildren();document.getElementById('entity-rows').replaceChildren();show('entity-status','No entity observations.');show('trace-status','Select a recorded session.');}
 function showEntities(entities){
  const body=document.getElementById('entity-rows');body.replaceChildren();
@@ -58,7 +59,10 @@ function showEntities(entities){
   const row=document.createElement('tr'),p=entity.position;
   for(const value of [entity.name||'(unnamed)',entity.kind,entity.client_index,entity.server_entity_id??'Unknown',[p.x,p.y,p.z].join(', ')]){
    const cell=document.createElement('td');cell.textContent=String(value);row.append(cell);
-  }body.append(row);
+  }
+  const cell=document.createElement('td'),button=document.createElement('button');
+  button.type='button';button.textContent='Download waypoint';button.addEventListener('click',()=>exportObservation('waypoint',entity.client_index));
+  cell.append(button);row.append(cell);body.append(row);
  }
  show('entity-status',entities.length?entities.length+' observed entities; client indices are not server IDs.':'No entity observations in this frame.');
 }
@@ -126,6 +130,8 @@ async function refresh(){
  show('heading',String(p.heading));show('observed',String(data.observed_at));show('entities',String(data.entities.length));
  show('source',data.adapter||'Unknown');show('version',data.client_version||'Unknown');
  showEntities(data.entities);
+ document.getElementById('capture-player').disabled=false;
+ document.getElementById('export-path').disabled=!recording;
  document.getElementById('trace-plane').value=tracePlanes.get(client.value)||
   (data.adapter==='ashita-v4-api-experimental'?'xy':'xz');
  await drawTrace(client.value,data.zone_id,data.instance_hint);
@@ -178,6 +184,23 @@ document.getElementById('open-recording').addEventListener('click',()=>openRecor
 document.getElementById('replace').addEventListener('click',()=>openRecording(true));
 client.addEventListener('change',()=>{pause();safeRefresh();});
 document.getElementById('compare').addEventListener('change',safeRefresh);
+async function exportObservation(kind,entityIndex){
+ pause();const params=new URLSearchParams({client_id:client.value});
+ if(kind==='waypoint'){
+  const name=document.getElementById('waypoint-name').value.trim();
+  if(!name){show('export-status','Enter a waypoint name first.');return;}
+  params.set('name',name);if(entityIndex!==undefined)params.set('entity_index',String(entityIndex));
+ }
+ try{
+  const data=await request('/live-client/replay/'+kind+'?'+params);
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  const link=document.createElement('a');link.href=url;link.download=kind==='path'?'observed-path.json':'observed-waypoint.json';link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  show('export-status','Downloaded raw observed '+kind+'; source version remains unverified.');
+ }catch(error){show('export-status',error.message);}
+}
+document.getElementById('capture-player').addEventListener('click',()=>exportObservation('waypoint'));
+document.getElementById('export-path').addEventListener('click',()=>exportObservation('path'));
 document.getElementById('trace-plane').addEventListener('change',event=>{
  if(client.value)tracePlanes.set(client.value,event.target.value);safeRefresh();
 });
