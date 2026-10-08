@@ -43,7 +43,7 @@ async function refresh(){
   const prior=client.value;client.replaceChildren(new Option('Choose client',''));
   for(const row of rows)client.add(new Option(row.client_id,row.client_id));
   client.value=rows.some(r=>r.client_id===prior)?prior:'';
-  if(!client.value){document.getElementById('step').disabled=true;document.getElementById('poll').disabled=true;reset();state.textContent=rows.length?'Select a recorded client':'No replay sessions registered';return;}
+  if(!client.value){document.getElementById('step').disabled=true;document.getElementById('poll').disabled=true;document.getElementById('previous').disabled=true;document.getElementById('restart').disabled=true;reset();state.textContent=rows.length?'Select a recorded client':'No replay sessions registered';return;}
   const row=rows.find(r=>r.client_id===client.value);
   document.getElementById('step').disabled=!row.remaining_frames;
   document.getElementById('poll').disabled=row.source!=='file_feed';
