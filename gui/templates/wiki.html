@@ -80,7 +80,12 @@
 {% endif %}
 
 <div class="wiki-actions dense-toolbar" style="margin:6px 0">
-  <a class="chip {% if tab == 'review' %}
+  <a class="chip {% if review_result == 'approved' %}
+<div class="notice">Topic link approved. The review queue has been refreshed.</div>
+{% elif review_result == 'dismissed' %}
+<div class="notice">Topic suggestion dismissed. The review queue has been refreshed.</div>
+{% endif %}
+{% if tab == 'review' %}
 <section class="wiki-section">
   <h3>Multilingual topic review queue</h3>
   <div class="wiki-actions dense-toolbar">
