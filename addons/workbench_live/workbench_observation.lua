@@ -91,8 +91,21 @@ function M.capture_ashita(core, get_entity, client_id, observed_at)
     local target = assert(memory:GetTarget(), 'Ashita target interface unavailable')
     local target_index = integer(target:GetTargetIndex(0), 0, 65535)
     if target_index ~= 0 and target_index ~= index and get_entity(target_index) ~= nil then
-        table.insert(frame.entities, {client_index = target_index, kind = 'unknown',
-            name = text(entity:GetName(target_index), false), position = entity_position(target_index)})
+        local target_name = text(entity:GetName(target_index), false)
+        -- Published IEntity server identity is distinct from the memory slot.
+        -- Older interfaces may omit the getter; zero remains unknown.
+        local target_id = nil
+        if type(entity.GetServerId) == 'function' then
+            local id = integer(entity:GetServerId(target_index), 0, 4294967295)
+            if id ~= 0 then target_id = id end
+        end
+        local target_position = entity_position(target_index)
+        assert(target:GetTargetIndex(0) == target_index and get_entity(target_index) ~= nil
+            and entity:GetName(target_index) == target_name
+            and (target_id == nil or entity:GetServerId(target_index) == target_id),
+            'target changed while sampling; restart observation explicitly')
+        table.insert(frame.entities, {client_index = target_index, server_entity_id = target_id,
+            kind = 'unknown', name = target_name, position = target_position})
     end
     assert(party:GetMemberIsActive(0) ~= 0 and party:GetMemberServerId(0) == server_id
         and party:GetMemberTargetIndex(0) == index and party:GetMemberName(0) == name
@@ -120,7 +133,9 @@ function M.encode(frame)
     local entities = {}
     for _, entity in ipairs(frame.entities) do
         table.insert(entities, '{"client_index":' .. entity.client_index .. ',"kind":"unknown","name":'
-            .. quote(entity.name) .. ',"position":' .. encode_position(entity.position) .. '}')
+            .. quote(entity.name)
+            .. (entity.server_entity_id ~= nil and ',"server_entity_id":' .. integer(entity.server_entity_id, 1, 4294967295) or '')
+            .. ',"position":' .. encode_position(entity.position) .. '}')
     end
     return '{"schema_version":1,"client_id":' .. quote(frame.client_id)
         .. ',"client_version":' .. quote(frame.client_version) .. ',"character":' .. quote(frame.character)
