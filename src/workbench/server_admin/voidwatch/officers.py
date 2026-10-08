@@ -44,6 +44,21 @@ OFFICERS = [
 ]
 
 
+# Build notes shown in the UI: what is implemented in the Lua slice and what is still missing (kept in sync with docs/voidwatch/UNIMPLEMENTED.md)
+SLICE = "voidwatch-officers-v1 (feature/voidwatch-officers, untested in-game)"
+IMPL = {
+    "crimson": "Officer 963 + refiner 962 scripted; kill-tracking hook not wired; tier gate approximate",
+    "indigo": "Officer 9 + refiner 8 scripted; kill-tracking hook not wired; tier gate approximate",
+    "jade": "Officer 1024 + refiner 1023 scripted; kill-tracking hook not wired; Jade IV has no NM",
+    "white": "Not built: no npc row, csids not scanned",
+    "ashen": "Not built: no capture, csids not scanned",
+    "hyacinth": "Not built: no capture, csids not scanned",
+    "amber": "Not built: no capture, csids not scanned",
+    "hildegard": "Not built: no capture, csids not scanned",
+    "gushing": "Not built: no capture, csids not scanned",
+}
+
+
 def load_validation() -> dict:
     try:
         return json.loads(VALIDATION.read_text(encoding="utf-8")) if VALIDATION.exists() else {}
@@ -116,5 +131,5 @@ def overview(conn, active_root) -> dict:
             gaps.append("key item %s not in keyitems.lua" % o["ki"])
         rec = val.get(o["id"]) or {"areas": {}, "note": "", "updated": "", "by": ""}
         out.append({**o, "status": status, "zones_live": zrows, "ki_id": ki_id, "gaps": gaps,
-                    "validation": validation_status(rec), "validation_rec": rec})
+                    "validation": validation_status(rec), "validation_rec": rec, "impl_note": IMPL.get(o["id"], ""), "slice": SLICE if o["id"] in ("crimson", "indigo", "jade") else ""})
     return {"areas": AREAS, "states": D.STATES, "officers": out}
