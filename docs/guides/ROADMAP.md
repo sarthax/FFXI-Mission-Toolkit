@@ -602,3 +602,13 @@ tooling/format decisions) before implementation starts.
    instead. Not yet wired into the toolkit itself (still a manual WebFetch-per-mob-page workflow)
    — a future toolkit integration (scrape/cache real drop tables keyed by zone+mob, expose in the
    GUI) would remove the need to hand-fetch each page.
+
+
+## Live Client Development Bridge — native FFXI spatial development (2026-10-07)
+
+**Status: in progress on [PR #663](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/663); foundation only.** This is an independent native Toolkit feature informed by Project Tako, not an external-Tako command proxy. Detailed technical scope, shipped/pending delineation, integration boundaries and resumption steps: [LIVE_CLIENT_BRIDGE.md](../workbench/LIVE_CLIENT_BRIDGE.md).
+
+- **Implemented in draft branch:** typed position/client/session/waypoint/path data; replay adapter; read-only spatial helpers; waypoint serialization; NPC/mob *placement proposals*; fail-closed write authorization; regression tests. No game process hook, live telemetry or GUI yet.
+- **Next:** Windows client discovery and read-only positional/entity telemetry, version verification, offline fixtures and tests, then live 2D/3D Zone Viewer overlay.
+- **Subsequent:** searchable quick warp points, real-time XYZ nudge, entity-target warp, movement speed, optional collision/visibility exploration controls, path recording and navmesh checks; connect player position back to existing Zone Editor NPC/mob placement and audit/write paths.
+- **Constraints:** no source-code copying without license review, no unsafe assumptions about offsets/instance IDs, no public-server evasion, no implicit DB or game-state writes, preserve parallel GUI/Auction House changes. Cloud GitHub development/CI is possible; running client validation must happen separately on a Windows FFXI session.
