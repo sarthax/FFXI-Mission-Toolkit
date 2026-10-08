@@ -3,12 +3,8 @@
 # New module pages should extend workbench_page.html. Adding an entry here requires
 # an explicit reason in the PR because it opts out of the unified Workbench page contract.
 auction_house.html | legacy page pending archetype migration
-auction_house_activity.html | legacy page pending archetype migration
 auction_house_cleanup.html | legacy page pending archetype migration
 auction_house_console.html | legacy page pending archetype migration
-auction_house_economy.html | legacy page pending archetype migration
-auction_house_help.html | legacy page pending archetype migration
 auction_house_listing_manager.html | legacy page pending archetype migration
 auction_house_presets.html | legacy page pending archetype migration
-auction_house_reward_history.html | legacy page pending archetype migration
 auction_house_seeder.html | legacy page pending archetype migration
