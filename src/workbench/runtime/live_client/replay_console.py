@@ -25,7 +25,7 @@ dt{color:#a9b8ca}dd{margin:0;overflow-wrap:anywhere}
 <header><h1>Live Client — Replay Console</h1><strong>Read-only • Offline</strong></header>
 <p>Displays explicitly registered replay clients. No client discovery, recording import or game-memory controls.</p>
 <section><label for="client">Recorded client </label><select id="client"><option value="">Choose client</option></select>
-<button id="refresh" type="button">Refresh</button><p id="state" role="status">Not connected</p></section>
+<button id="refresh" type="button">Refresh</button><button id="step" type="button" disabled>Next recorded frame</button><p id="state" role="status">Not connected</p></section>
 <section><h2>Player observation</h2><dl>
 <div><dt>Character</dt><dd id="character">—</dd></div><div><dt>Zone</dt><dd id="zone">—</dd></div>
 <div><dt>XYZ</dt><dd id="xyz">—</dd></div><div><dt>Heading</dt><dd id="heading">—</dd></div>
@@ -43,8 +43,8 @@ async function refresh(){
   const prior=client.value;client.replaceChildren(new Option('Choose client',''));
   for(const row of rows)client.add(new Option(row.client_id,row.client_id));
   client.value=rows.some(r=>r.client_id===prior)?prior:'';
-  if(!client.value){reset();state.textContent=rows.length?'Select a recorded client':'No replay sessions registered';return;}
-  const row=rows.find(r=>r.client_id===client.value);
+  if(!client.value){document.getElementById('step').disabled=true;reset();state.textContent=rows.length?'Select a recorded client':'No replay sessions registered';return;}
+  const row=rows.find(r=>r.client_id===client.value);\n  document.getElementById('step').disabled=!row.remaining_frames;
   state.textContent=row.observed?'Recorded observation available':'Waiting for recorded frame';
   if(!row.observed){reset();return;}
   // Zone is read from selected client's already-observed frame via registry status.
@@ -59,7 +59,7 @@ async function refresh(){
   show('observed',String(data.observed_at));show('entities',String(data.entities.length));
  }catch(err){reset();state.textContent=String(err.message||err);}
 }
-client.addEventListener('change',refresh);document.getElementById('refresh').addEventListener('click',refresh);
+async function step(){\n const selected=client.value;if(!selected)return;\n const button=document.getElementById('step');button.disabled=true;\n try{const url='/live-client/replay/advance?'+new URLSearchParams({client_id:selected});\n const result=await fetch(url,{method:'POST',headers:{'Accept':'application/json'}});\n if(!result.ok){const detail=await result.json();throw Error(detail.detail||'Replay advance failed');}\n await refresh();\n }catch(err){state.textContent=String(err.message||err);await refresh();}\n}\ndocument.getElementById('step').addEventListener('click',step);\nclient.addEventListener('change',refresh);document.getElementById('refresh').addEventListener('click',refresh);
 refresh();
 </script></body></html>"""
 
