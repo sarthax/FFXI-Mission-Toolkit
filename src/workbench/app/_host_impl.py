@@ -5584,6 +5584,8 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         {"id": wiki_evidence.SOURCE_FFXICLOPEDIA, "label": "FFXIclopedia", "available": _have(wiki_evidence.SOURCE_FFXICLOPEDIA)},
         {"id": wiki_evidence.SOURCE_WIKIWIKI_JP, "label": "FFXI Wiki (Japanese)", "available": _have(wiki_evidence.SOURCE_WIKIWIKI_JP)},
     ]
+    review_queue = (wiki_document.topic_review_queue(con, source_id=source, limit=50)
+                    if tab == "review" and source != "all" else [])
     con.close()
     site_links = [{"label": v["label"], "home": v["home"], "page": wiki_jobs.page_url(k, title) if title else None}
                   for k, v in wiki_jobs.SITES.items()]
@@ -5597,7 +5599,8 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         "available_sources": available_sources,
         "comparison": comparison,
         "error": error,
-        "tab": tab if tab in ("browse", "evidence") else "browse",
+        "tab": tab if tab in ("browse", "evidence", "review") else "browse",
+        "review_queue": review_queue,
         "page_view": page_view,
         "site_links": site_links,
         "jobs": wiki_jobs.recent_jobs(),
