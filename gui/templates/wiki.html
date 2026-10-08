@@ -233,7 +233,7 @@
         {% if item.field_candidate.source_links %}
         <div class="muted">Explicit source links (review only):</div>
         {% for link in item.field_candidate.source_links %}
-        <div><code>{{ link.source_markup }}</code> → {{ link.target }}</div>
+        <div><code>{{ link.source_markup }}</code> → {{ link.target }} <span class="muted">[{{ link.resolution }}{% if link.canonical_title %}: {{ link.canonical_title }}{% endif %}]</span></div>
         {% endfor %}
         {% endif %}
       </details>
