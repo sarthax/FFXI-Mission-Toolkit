@@ -1,12 +1,10 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}YouTube Chat OCR{% endblock %}
-{% block content %}
-<h1>YouTube chat OCR</h1>
-<p class="muted">Pulls a YouTube playthrough, crops its chat-log box, OCRs the scrolled text, and
-  fuzzy-matches the result against this toolkit's own indexed dialog text
-  (<code>workbench.captures.video.ocr</code>). Nothing here is trusted as ground truth on its own -- treat
-  matched lines as OCR-assisted, not authoritative, the same way the rest of this toolkit treats
-  capture evidence.</p>
+{% block page_archetype %}workbench{% endblock %}
+{% block page_heading %}YouTube Chat OCR{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Install, start, and delete actions write local files/tools</span>{% endblock %}
+{% block page_help %}Pull a YouTube playthrough, crop its chat-log or research overlays, OCR the scrolled text, and fuzzy-match observations against indexed dialog evidence. OCR matches remain assistive evidence rather than ground truth. Starting/deleting runs and prerequisite installers modify local files/tools.{% endblock %}
+{% block page_body %}
 
 {% if error %}<div class="warn">{{ error }}</div>{% endif %}
 {% if installed %}
