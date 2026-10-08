@@ -1,5 +1,5 @@
 """Named Wiki template fields yield provenance-preserving review hints only."""
-from workbench.devtools.reference.wiki_document import presentation_groups
+from workbench.devtools.reference.wiki_document import presentation_groups, template_field_review_links
 
 def main():
     blocks=[
@@ -39,6 +39,10 @@ def main():
     assert content[4]["field_candidate"]["field_type"]=="QUEST"
     assert content[5]["field_candidate"]["field_type"]=="NM_IDENTITY"
     assert all(x["field_candidate"]["review_only"] for x in content if x["field_candidate"])
+    links=template_field_review_links("[[Abyssea_Attohwa#Notes|Attohwa]] [[Category:Foo]] [[#Internal]]")
+    assert len(links)==1,links
+    assert links[0]["lookup_title"]=="Abyssea Attohwa"
+    assert links[0]["target"]=="Abyssea_Attohwa#Notes"
     print("Wiki named-template candidate regression: PASS")
 
 if __name__=="__main__":
