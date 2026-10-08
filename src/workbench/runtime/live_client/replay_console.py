@@ -32,10 +32,28 @@ dt{color:#a9b8ca}dd{margin:0;overflow-wrap:anywhere}
 <div><dt>XYZ</dt><dd id="xyz">—</dd></div><div><dt>Heading</dt><dd id="heading">—</dd></div>
 <div><dt>Observed at</dt><dd id="observed">—</dd></div><div><dt>Entities</dt><dd id="entities">—</dd></div>
 </dl></section>
+<section><h2>Recorded position trace (X/Z)</h2><p id="trace-status">Select a recording to view its observed movement.</p>
+<svg id="trace" viewBox="0 0 600 280" style="width:100%;background:#101720;border:1px solid #414a58" role="img" aria-label="Recorded positions in current zone"></svg>
+<p style="color:#a9b8ca">Relative X/Z positions only; this is not a calibrated zone map.</p></section>
 <script>
 const client=document.getElementById('client'),state=document.getElementById('state');
 const show=(id,value)=>document.getElementById(id).textContent=value;
-function reset(){for(const id of ['character','zone','xyz','heading','observed','entities'])show(id,'—');}
+function reset(){for(const id of ['character','zone','xyz','heading','observed','entities'])show(id,'—');document.getElementById('trace').replaceChildren();show('trace-status','Select a recorded session.');}
+async function drawTrace(clientId,zoneId){
+ const svg=document.getElementById('trace');svg.replaceChildren();
+ const result=await fetch('/live-client/replay/trace?'+new URLSearchParams({client_id:clientId,max_points:'500'}),{cache:'no-store'});
+ if(!result.ok){show('trace-status','Trace only available for recorded sessions.');return;}
+ const all=(await result.json()).points||[];
+ const points=all.filter(p=>p.zone_id===zoneId);
+ if(!points.length){show('trace-status','No trace points in this zone.');return;}
+ const minX=Math.min(...points.map(p=>p.x)),maxX=Math.max(...points.map(p=>p.x));
+ const minZ=Math.min(...points.map(p=>p.z)),maxZ=Math.max(...points.map(p=>p.z));
+ const coords=points.map(p=>({x:30+(p.x-minX)/Math.max(maxX-minX,1)*540,y:250-(p.z-minZ)/Math.max(maxZ-minZ,1)*220}));
+ const ns='http://www.w3.org/2000/svg';
+ const line=document.createElementNS(ns,'polyline');line.setAttribute('fill','none');line.setAttribute('stroke','#60a5fa');line.setAttribute('stroke-width','2');line.setAttribute('points',coords.map(p=>p.x+','+p.y).join(' '));svg.append(line);
+ const current=coords[coords.length-1];const dot=document.createElementNS(ns,'circle');dot.setAttribute('cx',current.x);dot.setAttribute('cy',current.y);dot.setAttribute('r','6');dot.setAttribute('fill','#fb923c');svg.append(dot);
+ show('trace-status',points.length+' observed positions in zone '+zoneId+' (relative X/Z)');
+}
 async function refresh(){
  try{
   const response=await fetch('/live-client/replay/clients',{cache:'no-store'});
@@ -62,6 +80,7 @@ async function refresh(){
   show('character',data.player.character);show('zone',String(data.zone_id));
   show('xyz',[p.x,p.y,p.z].join(', '));show('heading',String(p.heading));
   show('observed',String(data.observed_at));show('entities',String(data.entities.length));
+  await drawTrace(client.value,data.zone_id);
  }catch(err){reset();state.textContent=String(err.message||err);}
 }
 async function step(){
