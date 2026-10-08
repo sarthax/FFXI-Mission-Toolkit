@@ -147,17 +147,11 @@ try:
     _live_client_settings = settings_mod.get_all(_live_client_settings_con)
 finally:
     _live_client_settings_con.close()
-if (_live_client_settings.get("live_client_source") == "file_feed"
-        and _live_client_settings.get("live_client_auto_connect") == "1"):
-    from workbench.runtime.live_client.file_bridge import FileTelemetryBridge
-    _feed_path = _live_client_settings.get("live_client_feed_file", "").strip()
-    _feed_client = _live_client_settings.get("live_client_feed_client", "").strip()
-    if _feed_path and _feed_client:
-        live_client_replay_registry.add_feed(
-            _feed_client, FileTelemetryBridge(Path(_feed_path), _feed_client))
-else:
-    register_configured_replay(live_client_replay_registry,
-                               effective_replay_configuration(_live_client_settings, os.environ))
+from workbench.runtime.live_client.startup import initialize_live_client
+live_client_startup_error = initialize_live_client(
+    live_client_replay_registry, _live_client_settings, os.environ)
+if live_client_startup_error:
+    print("[Live Client] " + live_client_startup_error)
 app.include_router(create_registry_router(live_client_replay_registry))
 app.include_router(create_replay_console_router())
 from workbench.runtime.live_client.setup_api import create_recording_upload_router
