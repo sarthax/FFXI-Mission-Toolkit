@@ -16,7 +16,15 @@ def main():
     report=audit(con,sample_limit=2)
     jp=next(s for s in report["sources"] if s["source"]=="WikiWikiJP")
     assert jp=={"source":"WikiWikiJP","pages_with_blocks":2,"blocks":3,"template_fields":1,"degraded_blocks":1},jp
-    assert report["recovery_candidates"]==[{"source":"WikiWikiJP","page_id":"old","legacy_blocks":1}]
+    assert report["recovery_candidates"]==[{"source":"WikiWikiJP","page_id":"old","legacy_blocks":1,
+                                            "recovery_action":"SELECTIVE_SOURCE_FETCH","source_format":None}]
+    con.execute("CREATE TABLE reference_wiki_documents (source_id TEXT,page_id TEXT,source_format TEXT,raw_source TEXT)")
+    con.execute("INSERT INTO reference_wiki_documents VALUES (?,?,?,?)",
+                ("WikiWikiJP","old","mediawiki","== 戦利品 ==\\n* [[Item]]"))
+    recovered=audit(con)
+    assert recovered["recovery_candidates"][0]["recovery_action"]=="REPARSE_LOCAL_SOURCE"
+    assert recovered["recovery_candidates"][0]["source_format"]=="mediawiki"
+
     assert len(report["samples"])==2
     assert report["samples"][0]["template_fields"]==1
     assert report["samples"][0]["source_locators"]==1
