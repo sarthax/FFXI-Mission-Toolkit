@@ -175,7 +175,7 @@
       <span class="muted">{{ suggestion.match_method }}</span>
       {% for proof in suggestion.supporting_pages %}
         {% if proof.title %}
-        <a class="chip" href="/wiki?source={{ proof.source_id|urlencode }}&title={{ proof.title|urlencode }}&tab=browse">{{ proof.source_id }}: {{ proof.title }}</a>
+        <a class="chip" href="/wiki?source={{ proof.source_id|urlencode }}&title={{ proof.title|urlencode }}&tab=browse" target="_blank" rel="noopener">{{ proof.source_id }}: {{ proof.title }}</a>
         {% else %}<span class="chip">{{ proof.source_id }} / {{ proof.page_id }}</span>{% endif %}
       {% endfor %}
       <form method="post" action="/wiki/topic" class="wiki-actions" style="margin:5px 0 0">
