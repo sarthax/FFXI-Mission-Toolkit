@@ -106,7 +106,7 @@
     <tbody>
     {% for entry in review_queue %}
       <tr>
-        <td><a href="/wiki?source={{ entry.source_id|urlencode }}&title={{ entry.title|urlencode }}&tab=browse&review_status={{ review_status }}&review_page={{ review_page }}&review_origin=1">{{ entry.title }}</a></td>
+        <td><a href="/wiki?source={{ entry.source_id|urlencode }}&title={{ entry.title|urlencode }}&tab=browse&review_status={{ review_status }}&review_page={{ review_page }}&review_origin=1">{{ entry.title }}</a><div class="muted">{{ entry.pending|length }} pending · {{ entry.dismissed|length }} dismissed</div></td>
         <td>{% for item in entry.pending %}<div><strong>{{ item.canonical_title }}</strong> <span class="muted">({{ item.match_method }})</span> {% for proof in item.supporting_pages %}{% if proof.title %}<a class="chip" href="/wiki?source={{ proof.source_id|urlencode }}&title={{ proof.title|urlencode }}&tab=browse" target="_blank" rel="noopener">{{ proof.source_id }} ↗</a>{% else %}<span class="muted">{{ proof.source_id }} / {{ proof.page_id }}</span>{% endif %}{% endfor %}</div>{% else %}<span class="muted">None</span>{% endfor %}</td>
         <td>{% for item in entry.dismissed %}<div>{{ item.canonical_title }}</div>{% else %}<span class="muted">None</span>{% endfor %}</td>
       </tr>
