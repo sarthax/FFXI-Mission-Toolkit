@@ -1,5 +1,5 @@
 """Named Wiki template fields yield provenance-preserving review hints only."""
-from workbench.devtools.reference.wiki_document import presentation_groups
+from workbench.devtools.reference.wiki_document import presentation_groups, template_field_review_links
 
 def main():
     blocks=[
@@ -25,7 +25,12 @@ def main():
     content=presentation_groups(blocks)[0]["content"]
     a=content[0]["field_candidate"]
     assert a["field_type"]=="DROPS" and a["review_only"]
-    assert a["source_links"]==[{"target":"Mars's Ring","source_markup":"[[Mars's Ring]]","review_only":True}]
+    assert len(a["source_links"])==1
+    assert a["source_links"][0]["target"]=="Mars's Ring"
+    assert a["source_links"][0]["lookup_title"]=="Mars's Ring"
+    assert a["source_links"][0]["normalized_title"]=="mars's ring"
+    assert a["source_links"][0]["source_markup"]=="[[Mars's Ring]]"
+    assert a["source_links"][0]["review_only"] is True
     assert a["value_raw"]=="[[Mars's Ring]]"
     assert a["source_locator"]=="section:Rewards:template:1:field:1"
     assert content[1]["field_candidate"]["field_type"]=="REQUIRES"
@@ -34,6 +39,10 @@ def main():
     assert content[4]["field_candidate"]["field_type"]=="QUEST"
     assert content[5]["field_candidate"]["field_type"]=="NM_IDENTITY"
     assert all(x["field_candidate"]["review_only"] for x in content if x["field_candidate"])
+    links=template_field_review_links("[[Abyssea_Attohwa#Notes|Attohwa]] [[Category:Foo]] [[#Internal]]")
+    assert len(links)==1,links
+    assert links[0]["lookup_title"]=="Abyssea Attohwa"
+    assert links[0]["target"]=="Abyssea_Attohwa#Notes"
     print("Wiki named-template candidate regression: PASS")
 
 if __name__=="__main__":

@@ -330,10 +330,15 @@ def template_field_review_links(raw_value: str) -> list[dict]:
     links=[]
     for match in re.finditer(r"\[\[([^\[\]]+)\]\]",raw_value or ""):
         target=match.group(1).split("|",1)[0].strip()
-        if not target or target.startswith(("#",":")):
+        if not target or target.startswith(("#",":")) or ":" in target:
+            continue
+        lookup_title=target.split("#",1)[0].replace("_"," ").strip()
+        if not lookup_title:
             continue
         if target not in [link["target"] for link in links]:
-            links.append({"target":target,"source_markup":match.group(0),"review_only":True})
+            links.append({"target":target,"lookup_title":lookup_title,
+                          "normalized_title":normalize_search(lookup_title),
+                          "source_markup":match.group(0),"review_only":True})
         if len(links)>=25:
             break
     return links
