@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Entity Lookup{% endblock %}
-{% block shell_mode %}dense{% endblock %}
-{% block main_class %}entity-lookup-page{% endblock %}
+{% block page_archetype %}browser{% endblock %}
+{% block page_class %}entity-lookup-page{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -21,18 +21,15 @@
 {% endif %}
 {% endmacro %}
 
-{% block content %}
-<style>main.entity-lookup-page{padding:8px 10px 24px}.entity-lookup-page .table-wrap{margin-top:6px}</style>
-<div class="dense-toolbar">
-  <strong>Entity Lookup</strong>
-  <form class="search dense-toolbar" method="get" style="margin:0;flex:1">
-
+{% block page_heading %}Entity Lookup{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Canonical entity index</span>{% endblock %}
+{% block page_help %}Canonical entity profiles shared by the GUI, Wiki Compiler resolution, and CLI. Exact numeric IDs jump directly to a dossier; name searches list candidates across indexed zones.{% endblock %}
+{% block page_body %}
+<style>.entity-lookup-page .table-wrap{margin-top:6px}</style>
+<form class="search wb-filter-row" method="get">
   <input type="text" name="q" value="{{ q }}" placeholder="npc/mob id, or a name substring (e.g. Vending Box)">
   <button type="submit">Look up</button>
-  </form>
-  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:680px">Canonical entity profiles shared by the GUI, Wiki Compiler resolution, and CLI. Exact IDs jump directly to a dossier; name searches list candidates.</div></details>
-</div>
-
+</form>
 {% if matches %}
 <div class="dense-toolbar" style="margin-top:6px"><strong>{{ total }} match(es)</strong><span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
 {{ pager() }}

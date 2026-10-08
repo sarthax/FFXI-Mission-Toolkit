@@ -1,7 +1,13 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Entity Detail{% endblock %}
-
-{% block content %}
+{% block page_archetype %}detail{% endblock %}
+{% block page_back %}<a class="chip" href="/entity?q={{ q }}&page={{ page }}">&larr; Entity Lookup</a>{% endblock %}
+{% block page_heading %}{% if profile and not profile.error %}{{ profile.name }}{% else %}Entity Detail{% endif %}{% endblock %}
+{% block page_identity %}{% if profile and not profile.error %}<span class="chip mono">{{ profile.npcid }}</span><span class="chip mono">{{ profile.id_decode.hex }}</span>{% endif %}{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Evidence-backed dossier</span>{% endblock %}
+{% block page_actions %}{% if profile and not profile.error %}{% if prev_id %}<a class="chip" href="/entity/{{ prev_id }}?q={{ q }}&page={{ page }}">&larr; prev</a>{% endif %}{% if position %}<span class="muted mono">{{ position }}</span>{% endif %}{% if next_id %}<a class="chip" href="/entity/{{ next_id }}?q={{ q }}&page={{ page }}">next &rarr;</a>{% endif %}{% endif %}{% endblock %}
+{% block page_help %}Evidence-backed entity dossier bridging SQL wiring, Lua behavior, Feature Trace, client identity, captures, events/dialog, wiki references, relationships, and provenance without collapsing source-specific confidence.{% endblock %}
+{% block page_body %}
 <style>
 .entity-actions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 14px}
 .entity-summary-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(340px,.8fr);gap:14px;margin:12px 0}
@@ -35,20 +41,8 @@
 .entity-trace-stat strong{display:block;font-size:18px}.entity-trace-cues{display:grid;gap:6px;margin-top:8px}
 @media(max-width:1000px){.entity-summary-grid{grid-template-columns:1fr}}
 </style>
-<p><a class="inline" href="/entity?q={{ q }}&page={{ page }}">&larr; back to search</a></p>
-
 {% if profile and not profile.error %}
 {% set d = profile.id_decode %}
-<div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
-  <h1 style="margin:0;">{{ profile.name }} <span class="chip mono">{{ profile.npcid }}</span> <span class="chip mono">{{ d.hex }}</span></h1>
-  {% if prev_id or next_id %}
-  <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
-    {% if prev_id %}<a class="chip" href="/entity/{{ prev_id }}?q={{ q }}&page={{ page }}">&larr; prev</a>{% endif %}
-    {% if position %}<span class="muted mono">{{ position }}</span>{% endif %}
-    {% if next_id %}<a class="chip" href="/entity/{{ next_id }}?q={{ q }}&page={{ page }}">next &rarr;</a>{% endif %}
-  </div>
-  {% endif %}
-</div>
 <div class="entity-actions">
   {% if profile.behavior_source %}
   <a class="chip" href="/behavior?source={{ profile.behavior_source|urlencode }}&server={{ (profile.behavior_server or "")|urlencode }}">Inspect Lua behavior</a>

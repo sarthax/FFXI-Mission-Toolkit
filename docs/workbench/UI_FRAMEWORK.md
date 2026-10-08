@@ -107,3 +107,6 @@ Completed workspace migrations:
 - **Capture Packet Viewer** — Contextual decoded-field/raw-byte/provenance/correlation inspector with specialized two-pane packet layout (Workbench, wide, read-only).
 - **Capture Data Explorer** — Normalized dataset browser exposing curated fields plus complete raw-row/provenance detail (Browser, read-only).
 - **Capture Timeline** — Source-specific event/battle/key-item/item/dialog timeline workbench preserving separate chronology and confidence semantics (Workbench, read-only).
+- **Manual Packet Viewer / Decoder** — Wide manual/bulk raw-packet decode workbench preserving byte coverage and source-adapter evidence (Workbench, read-only).
+- **Entity Lookup** — Canonical entity-index search and candidate browser (Browser, read-only).
+- **Entity Detail** — Evidence-backed entity dossier bridging SQL, Lua, Feature Trace, client, capture, event/dialog, wiki, relationship, and provenance evidence (Detail, read-only).
