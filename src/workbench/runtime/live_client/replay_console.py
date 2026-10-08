@@ -49,8 +49,7 @@ async function refresh(){
   document.getElementById('poll').disabled=row.source!=='file_feed';
   document.getElementById('previous').disabled=!(row.frame_position>1);
   document.getElementById('restart').disabled=!(row.frame_position>1);
-  if(row.total_frames)state.textContent='Frame '+row.frame_position+' of '+row.total_frames;
-  state.textContent=row.observed?'Recorded observation available':'Waiting for recorded frame';
+  state.textContent=row.observed?(row.total_frames?'Frame '+row.frame_position+' of '+row.total_frames:'Observation available'):'Waiting for recorded frame';
   if(!row.observed){reset();return;}
   // Zone is read from selected client's already-observed frame via registry status.
   if(!Number.isInteger(row.zone_id)){reset();state.textContent='No zone in status; projection unavailable';return;}
