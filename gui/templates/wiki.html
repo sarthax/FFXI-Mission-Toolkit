@@ -35,6 +35,7 @@
 {% if error %}<div class="warn" style="margin:6px 0">{{ error }}</div>{% endif %}
 <form class="search wb-filter-row" method="get">
   <select name="source">
+    <option value="all" {% if source == "all" %}selected{% endif %}>All imported/reference sources</option>
     {% for src in available_sources %}
     <option value="{{ src.id }}" {% if src.id == source %}selected{% endif %} {% if not src.available %}disabled{% endif %}>{{ src.label }}{% if not src.available %} (not imported){% endif %}</option>
     {% endfor %}
