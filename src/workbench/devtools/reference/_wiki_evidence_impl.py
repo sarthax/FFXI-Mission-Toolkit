@@ -170,6 +170,16 @@ def _mapping_id(claim_id: str, table: str | None, key: str | None, status: str) 
     return "wiki-map:" + hashlib.sha1(raw.encode("utf-8")).hexdigest()[:24]
 
 
+def _relation_id(source_id: str, page_id: str, section: str, relation_type: str, subject: str, obj: str) -> str:
+    raw="|".join([source_id,page_id,section or "",relation_type,subject or "",obj or ""])
+    return "wiki-rel:"+hashlib.sha1(raw.encode("utf-8")).hexdigest()[:24]
+
+
+def _relation_mapping_id(relation_id: str, endpoint: str, table: str | None, key: str | None, status: str) -> str:
+    raw="|".join([relation_id,endpoint,table or "",key or "",status])
+    return "wiki-relmap:"+hashlib.sha1(raw.encode("utf-8")).hexdigest()[:24]
+
+
 def _section_records(wikitext: str) -> list[tuple[str | None, str]]:
     wt = mwparserfromhell.parse(wikitext)
     sections = wt.get_sections(include_headings=True, flat=True)
@@ -468,6 +478,165 @@ def _structured_link_claims(con: sqlite3.Connection, page: dict, source_id: str)
         })
     return claims
 
+
+
+_RELATION_SECTION_NAMES = {
+    "REFERENCE_DROPS": {
+        "drops","drop","loot","戦利品","ドロップ","ドロップ品","戦利品一覧",
+    },
+    "REFERENCE_REWARDS": {
+        "reward","rewards","報酬","クリア報酬","報酬品",
+    },
+    "REFERENCE_LOCATED_IN": {
+        "location","locations","area","zone","場所","出現場所","エリア","生息域","所在地",
+    },
+    "REFERENCE_REQUIRES": {
+        "requirement","requirements","prerequisite","prerequisites","eligibility",
+        "条件","参加条件","前提条件","必要条件","突入条件",
+    },
+}
+_RELATION_OBJECT_DOMAINS = {
+    "REFERENCE_DROPS": {"item","key_item"},
+    "REFERENCE_REWARDS": {"item","key_item"},
+    "REFERENCE_LOCATED_IN": {"zone"},
+    "REFERENCE_REQUIRES": {"item","key_item","zone"},
+}
+
+
+def _relation_type_for_section(section_path: str | None) -> str | None:
+    parts=[wiki_document.normalize_search(x) for x in (section_path or "").split(" > ") if x.strip()]
+    for relation_type,names in _RELATION_SECTION_NAMES.items():
+        normalized={wiki_document.normalize_search(name) for name in names}
+        if any(part in normalized for part in parts):
+            return relation_type
+    return None
+
+
+def _internal_link_target(source_id: str, target: str) -> str | None:
+    target=(target or "").strip()
+    if not target:
+        return None
+    parsed=urllib.parse.urlparse(target)
+    if parsed.scheme and parsed.netloc:
+        if source_id==SOURCE_WIKIWIKI_JP and parsed.netloc.endswith("wikiwiki.jp") and parsed.path.startswith("/ffxi/"):
+            target=urllib.parse.unquote(parsed.path[len("/ffxi/"):]).strip("/")
+        else:
+            return None
+    elif source_id==SOURCE_WIKIWIKI_JP and target.startswith("/ffxi/"):
+        target=urllib.parse.unquote(target[len("/ffxi/"):]).strip("/")
+    elif target.startswith(("#","javascript:","mailto:")):
+        return None
+    target=urllib.parse.unquote(target).replace("_"," ").strip()
+    if not target or target.lower().startswith(_NON_ENTITY_PREFIXES):
+        return None
+    return target
+
+
+def extract_structured_relations(con: sqlite3.Connection, page: dict, source_id: str) -> list[dict]:
+    """Extract only explicitly section-labelled binary reference relationships."""
+    page_id=str(page.get("pageid") or page.get("page_id") or page.get("title"))
+    blocks=wiki_document.stored_blocks(con,source_id,page_id)
+    if not blocks:
+        return []
+    topic=wiki_document.page_topic(con,source_id,page_id)
+    subject=(topic or {}).get("canonical_title") or page.get("title") or ""
+    if not subject:
+        return []
+    revision_id=str(page.get("revid") or page.get("revision_id") or "") or None
+    revision_ts=page.get("timestamp") or page.get("revision_timestamp")
+    page_url=page.get("url")
+    out=[]
+    seen=set()
+    for block in blocks:
+        if block.get("block_type")!="link":
+            continue
+        relation_type=_relation_type_for_section(block.get("section_path"))
+        if not relation_type:
+            continue
+        obj=_internal_link_target(source_id,block.get("target") or "")
+        if not obj:
+            continue
+        section_path=block.get("section_path") or ""
+        section_title=section_path.split(" > ")[-1] if section_path else None
+        key=(relation_type,subject.casefold(),obj.casefold(),section_title or "")
+        if key in seen:
+            continue
+        seen.add(key)
+        locator=block.get("source_locator") or f"block:{block.get('block_id')}"
+        rid=_relation_id(source_id,page_id,section_title or "",relation_type,subject,obj)
+        out.append({
+            "relation_id":rid,"source_id":source_id,"page_id":page_id,
+            "page_title":page.get("title") or "","page_url":page_url,
+            "revision_id":revision_id,"revision_timestamp":revision_ts,
+            "section_title":section_title,"relation_type":relation_type,
+            "subject_text":subject,"object_text":obj,"source_locator":locator,
+            "authority":REFERENCE_ONLY,"extraction_method":"STRUCTURED_SECTION_LINK",
+        })
+    return out
+
+
+def map_relation_endpoint(con: sqlite3.Connection, relation: dict, endpoint: str) -> list[dict]:
+    if endpoint not in {"subject","object"}:
+        raise ValueError("endpoint must be subject or object")
+    text=relation[f"{endpoint}_text"]
+    candidates=resolve_subject(con,text)
+    if endpoint=="object":
+        allowed=_RELATION_OBJECT_DOMAINS.get(relation["relation_type"])
+        if allowed:
+            candidates=[c for c in candidates if c.get("target_domain") in allowed]
+    if not candidates:
+        return [{
+            "relation_mapping_id":_relation_mapping_id(relation["relation_id"],endpoint,None,None,"UNRESOLVED"),
+            "relation_id":relation["relation_id"],"endpoint":endpoint,
+            "target_domain":None,"target_table":None,"target_key":None,"target_label":None,
+            "mapping_method":"STRUCTURED_RELATION_RESOLUTION","mapping_status":"UNRESOLVED",
+            "confidence":"UNKNOWN","details":{"source_text":text},
+        }]
+    status="MAPPED" if len(candidates)==1 else "AMBIGUOUS"
+    confidence="HIGH" if len(candidates)==1 else "LOW"
+    return [{
+        "relation_mapping_id":_relation_mapping_id(
+            relation["relation_id"],endpoint,cand["target_table"],cand["target_key"],status
+        ),
+        "relation_id":relation["relation_id"],"endpoint":endpoint,**cand,
+        "mapping_status":status,"confidence":confidence,
+        "details":cand.get("details") or {},
+    } for cand in candidates]
+
+
+def _store_relation(con: sqlite3.Connection, relation: dict) -> None:
+    content_hash=hashlib.sha256(
+        "|".join([relation["relation_type"],relation["subject_text"],relation["object_text"]]).encode("utf-8")
+    ).hexdigest()
+    con.execute(
+        """INSERT OR REPLACE INTO reference_wiki_relations
+           (relation_id,source_id,page_id,page_title,page_url,revision_id,revision_timestamp,
+            section_title,relation_type,subject_text,object_text,source_locator,authority,
+            extraction_method,content_hash)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (
+            relation["relation_id"],relation["source_id"],relation["page_id"],relation["page_title"],
+            relation.get("page_url"),relation.get("revision_id"),relation.get("revision_timestamp"),
+            relation.get("section_title"),relation["relation_type"],relation["subject_text"],
+            relation["object_text"],relation.get("source_locator"),relation.get("authority",REFERENCE_ONLY),
+            relation["extraction_method"],content_hash,
+        ),
+    )
+
+
+def _store_relation_mapping(con: sqlite3.Connection, mapping: dict) -> None:
+    con.execute(
+        """INSERT OR REPLACE INTO reference_wiki_relation_mappings
+           (relation_mapping_id,relation_id,endpoint,target_domain,target_table,target_key,target_label,
+            mapping_method,mapping_status,confidence,details_json)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+        (
+            mapping["relation_mapping_id"],mapping["relation_id"],mapping["endpoint"],
+            mapping.get("target_domain"),mapping.get("target_table"),mapping.get("target_key"),
+            mapping.get("target_label"),mapping["mapping_method"],mapping["mapping_status"],
+            mapping["confidence"],json.dumps(mapping.get("details") or {},sort_keys=True),
+        ),
+    )
 
 
 def _store_claim(con: sqlite3.Connection, claim: dict) -> None:
