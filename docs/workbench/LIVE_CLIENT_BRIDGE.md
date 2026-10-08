@@ -57,3 +57,10 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - `match_server_id` matches only known server IDs, never assumes memory slot equals SQL identifier.
 - **Not implemented:** Windows memory reader, live entity scan, realtime GUI marker overlay, or writes. Current work is transport-neutral backend contracts and offline tests.
 - Next: read-only adapter with real client telemetry, additional fixture replay and rendering adapter, then opt-in viewer integration.
+
+## 2026-10-07 telemetry frame decoder slice
+- Added `src/workbench/runtime/live_client/telemetry.py` plus `tests/test_live_client_telemetry.py`.
+- Versioned read-only schema validates client, zone, XYZ, heading, time and bounded entity observations before use by GUI/service adapters.
+- Server entity IDs remain optional; no inference from client index. Malformed/non-finite values fail closed.
+- **No native memory attachment or actual FFXI read yet**; the decoder accepts external observations only.
+- Next: a read-only Windows client adapter (or supported Ashita feed), end-to-end offline feed fixture, then live viewer overlay.
