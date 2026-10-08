@@ -15,6 +15,11 @@ def main():
     assert template.count('name="review_status" value="{{ review_status }}"') >= 2
     assert host.count('review_page_raw = (form.get("review_page") or "").strip()') >= 2
     assert host.count('tab=review&review_status={review_status}&review_page={review_page}') >= 2
+    assert '&review_notice=approved' in host
+    assert '&review_notice=dismissed' in host
+    assert 'review_notice if review_notice in ("approved", "dismissed") else ""' in host
+    assert 'Topic link approved and saved.' in template
+    assert 'Topic suggestion dismissed and saved.' in template
     print("Wiki V2 reviewed topic approval UI regression: PASS")
 
 if __name__=="__main__":
