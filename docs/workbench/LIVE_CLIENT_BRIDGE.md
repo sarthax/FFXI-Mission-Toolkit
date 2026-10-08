@@ -143,3 +143,11 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - If neither variable is set, registration is disabled. Partial or invalid configuration raises an error rather than allowing an ambiguous or malformed data source.
 - `tests/test_live_client_bootstrap.py` covers disabled mode, partial configuration rejection, first-frame initialization, duplicate registration and invalid recording isolation.
 - The source is offline recording data, **not a real FFXI connection**. No GUI navigation link, Windows reader or game-memory writes have been added.
+
+
+## 2026-10-08 browser-controlled offline replay progression
+- The replay console now has a **Next recorded frame** button. The explicit `POST /live-client/replay/advance?client_id=...` endpoint advances only the registered in-memory recording cursor, returning observed timestamp and zone. It never writes to FFXI, SQL or files.
+- Step endpoint requires a same-origin browser Origin header and fails with 403 for cross-origin or missing Origin, 404 for unknown client, and 409 at the end of a recording. It does not upload or ingest new data.
+- `tests/test_live_client_replay_step.py` covers these conditions and the console control.
+- This makes the replay API no longer literally GET-only: **projection and client listing remain GET-only**, while step is a narrowly scoped replay-state mutation. It is not a game-client control endpoint.
+- Next: optional playback timing and player map marker; then prioritize read-only Windows FFXI telemetry adapter and version validation.
