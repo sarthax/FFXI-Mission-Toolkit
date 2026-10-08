@@ -169,6 +169,7 @@ jobs:
           python test_fixtures/test_ocr_consensus_symbol_correction.py
           python test_fixtures/test_ocr_layout_profiles.py
           python test_fixtures/test_wiki_evidence_mapping.py
+          python test_fixtures/test_wiki_document_v2.py
           python test_fixtures/test_dual_wiki_claim_alignment.py
           python test_fixtures/test_capture_integrity_hardening.py
           python test_fixtures/test_capture_row_locators.py
