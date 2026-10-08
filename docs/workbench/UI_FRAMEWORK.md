@@ -120,3 +120,4 @@ Completed workspace migrations:
 - **3D Zone Viewer** — Full-width client zone visual/capture overlay viewer with explicit derived-mesh cache build boundary (Workbench).
 - **YouTube Chat OCR** — OCR run/prerequisite dashboard for video evidence ingestion with explicit local-file/tool writes (Workbench).
 - **OCR Run** — Video crop/extraction/layout/OCR/matching/capture-conversion workspace with explicit write actions (Workbench).
+- **Settings** — Shared environment/branding/path/write-gate/LLM/backup/server configuration workspace with explicit mutation boundary (Workbench).
