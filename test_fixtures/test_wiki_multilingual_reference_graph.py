@@ -91,7 +91,7 @@ def main():
         wiki_edges=[e for e in traced["edges"] if str(e.get("relationship_id") or "").startswith("wiki-reference:")]
         assert wiki_edges,wiki_edges
         assert wiki_edges[0]["traversed_direction"]=="in",wiki_edges[0]
-        claim_nodes=[n for n in traced["nodes"] if n.get("node_id","").startswith("wiki-claim:")]
+        claim_nodes=[n for n in traced["nodes"] if n.get("node_id","").startswith("reference-claim:wiki-claim:")]
         assert claim_nodes, traced["nodes"]
         graph.close()
         con.close()
