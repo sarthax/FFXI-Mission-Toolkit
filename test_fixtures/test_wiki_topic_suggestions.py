@@ -1,10 +1,11 @@
 """Exact reviewed alias topic suggestions cannot alter topic identity."""
 import sqlite3
-from workbench.devtools.reference import wiki_document
+from workbench.devtools.reference import wiki_document, wiki_evidence
 
 
 def main():
     db=sqlite3.connect(":memory:")
+    wiki_evidence.init_db(db)
     wiki_document.init_db(db)
     for source,page,title in [
         ("WikiWikiJP","jp1","マーズリング"),
