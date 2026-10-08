@@ -86,10 +86,15 @@
   <div class="wiki-actions dense-toolbar">
     <span class="muted">Show:</span>
     {% for state, label in [('all', 'All'), ('pending', 'Pending'), ('dismissed', 'Dismissed')] %}
-    <a class="chip {% if review_status == state %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=review&review_status={{ state }}">{{ label }}</a>
+    <a class="chip {% if review_status == state %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=review&review_status={{ state }}&review_page={{ review_page }}">{{ label }}</a>
     {% endfor %}
   </div>
-  <p class="muted">Read-only overview, up to 50 source pages. Dismissed candidates are retained for audit and excluded from pending suggestions. Open a page to approve or dismiss a pending topic.</p>
+  <p class="muted">Read-only overview. Each page scans 50 unlinked source articles, so some pages may have no matching suggestions. Dismissed candidates remain auditable; open a source page to review pending topics.</p>
+  <div class="wiki-actions dense-toolbar">
+    {% if review_page > 1 %}<a class="chip" href="/wiki?source={{ source|urlencode }}&tab=review&review_status={{ review_status }}&review_page={{ review_page - 1 }}">← Previous 50</a>{% endif %}
+    <span class="muted">Source page window {{ review_page }}</span>
+    {% if review_has_more %}<a class="chip" href="/wiki?source={{ source|urlencode }}&tab=review&review_status={{ review_status }}&review_page={{ review_page + 1 }}">Next 50 →</a>{% endif %}
+  </div>
   {% if review_queue %}
   <div class="table-wrap"><table>
     <thead><tr><th>Source page</th><th>Pending topics</th><th>Dismissed topics</th></tr></thead>
