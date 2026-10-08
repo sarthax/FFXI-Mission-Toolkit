@@ -530,8 +530,8 @@
   "name": "Bismarck",
   "zone": "Bibiki Bay - Purgonorgo Isle",
   "zone_id": 4,
-  "path": "",
-  "tier": "",
+  "path": "Hyacinth",
+  "tier": "II",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -555,14 +555,14 @@
     -629.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: full (group [0])."
  },
  {
   "name": "Isarukitsck",
   "zone": "Uleguerand Range",
   "zone_id": 5,
-  "path": "",
-  "tier": "",
+  "path": "Hyacinth",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -586,14 +586,14 @@
     -358.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: full (group [0])."
  },
  {
   "name": "Fjalar",
   "zone": "Attohwa Chasm",
   "zone_id": 7,
-  "path": "",
-  "tier": "",
+  "path": "Hyacinth",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -617,14 +617,14 @@
     0.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: full (group [0])."
  },
  {
   "name": "Abununnu",
   "zone": "Lufaise Meadows",
   "zone_id": 24,
-  "path": "",
-  "tier": "",
+  "path": "Hyacinth",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -648,14 +648,14 @@
     125.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: full (group [0])."
  },
  {
   "name": "Tsui-Goab",
   "zone": "Misareaux Coast",
   "zone_id": 25,
-  "path": "",
-  "tier": "",
+  "path": "Hyacinth",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -679,14 +679,14 @@
     -313.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: full (group [0])."
  },
  {
   "name": "Dimgruzub",
   "zone": "Arrapago Reef",
   "zone_id": 54,
-  "path": "",
-  "tier": "",
+  "path": "Amber",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -710,14 +710,14 @@
     273.9
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13837])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13837])."
  },
  {
   "name": "Vanasarvik",
   "zone": "Mount Zhayolm",
   "zone_id": 61,
-  "path": "",
-  "tier": "",
+  "path": "Amber",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -741,14 +741,14 @@
     -63.6
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13830])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13830])."
  },
  {
   "name": "Yalungur",
   "zone": "Mamook",
   "zone_id": 65,
-  "path": "",
-  "tier": "",
+  "path": "Amber",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -772,14 +772,14 @@
     -85.5
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
  },
  {
   "name": "Morta",
   "zone": "Aydeewa Subterrane",
   "zone_id": 68,
-  "path": "",
-  "tier": "",
+  "path": "Amber",
+  "tier": "II",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -803,14 +803,14 @@
     393.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13651])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13651])."
  },
  {
   "name": "Brekekekex",
   "zone": "Caedarva Mire",
   "zone_id": 79,
-  "path": "",
-  "tier": "",
+  "path": "Amber",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -834,7 +834,7 @@
     -748.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
  },
  {
   "name": "Kholomodumo",
@@ -871,8 +871,8 @@
   "name": "Gaunab",
   "zone": "Vunkerl Inlet (S)",
   "zone_id": 83,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "VI",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -896,14 +896,14 @@
     520.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13814])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13814])."
  },
  {
   "name": "Taweret",
   "zone": "Batallia Downs (S)",
   "zone_id": 84,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -927,7 +927,7 @@
     -42.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13824])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13824])."
  },
  {
   "name": "Ushumgal",
@@ -995,8 +995,8 @@
   "name": "Ocythoe",
   "zone": "Grauberg (S)",
   "zone_id": 89,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "VI",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1020,7 +1020,7 @@
     285.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13724])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13724])."
  },
  {
   "name": "Melancholic Moira",
@@ -1057,8 +1057,8 @@
   "name": "Agathos",
   "zone": "Rolanberry Fields (S)",
   "zone_id": 91,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1082,7 +1082,7 @@
     -270.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13757])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13757])."
  },
  {
   "name": "Akupara",
@@ -1119,8 +1119,8 @@
   "name": "Gugalanna",
   "zone": "Sauromugue Champaign (S)",
   "zone_id": 98,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1144,14 +1144,14 @@
     -290.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13780])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13780])."
  },
  {
   "name": "Cherufe",
   "zone": "Batallia Downs",
   "zone_id": 105,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1175,14 +1175,14 @@
     -42.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13825])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13825])."
  },
  {
   "name": "Bhishani",
   "zone": "South Gustaberg",
   "zone_id": 107,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "IV",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1206,14 +1206,14 @@
     -640.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
  },
  {
   "name": "Gwynn Ap Nudd",
   "zone": "Konschtat Highlands",
   "zone_id": 108,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "V",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1237,7 +1237,7 @@
     -400.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
  },
  {
   "name": "Murk-veined Baneberry",
@@ -1274,8 +1274,8 @@
   "name": "Yatagarasu",
   "zone": "Rolanberry Fields",
   "zone_id": 110,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1299,14 +1299,14 @@
     -270.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13755])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13755])."
  },
  {
   "name": "Rw Nw Prt M Hrw",
   "zone": "East Sarutabaruta",
   "zone_id": 116,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "IV",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1330,14 +1330,14 @@
     560.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
  },
  {
   "name": "Goji",
   "zone": "Sauromugue Champaign",
   "zone_id": 120,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1361,14 +1361,14 @@
     -290.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13779])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13779])."
  },
  {
   "name": "Cath Palug",
   "zone": "The Sanctuary of Zi'Tah",
   "zone_id": 121,
-  "path": "",
-  "tier": "",
+  "path": "Ashen",
+  "tier": "II",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1392,14 +1392,14 @@
     -130.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13732])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13732])."
  },
  {
   "name": "Mimic King",
   "zone": "Ro'Maeve",
   "zone_id": 122,
-  "path": "",
-  "tier": "",
+  "path": "Ashen",
+  "tier": "II",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1423,14 +1423,14 @@
     -36.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [13736])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: full (group [13736])."
  },
  {
   "name": "Holy Moly",
   "zone": "Yuhtunga Jungle",
   "zone_id": 123,
-  "path": "",
-  "tier": "",
+  "path": "Ashen",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1454,14 +1454,14 @@
     -365.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
  },
  {
   "name": "Sabotender Campeador",
   "zone": "Western Altepa Desert",
   "zone_id": 125,
-  "path": "",
-  "tier": "",
+  "path": "Ashen",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1485,14 +1485,14 @@
     327.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
  },
  {
   "name": "Neith",
   "zone": "Temple of Uggalepih",
   "zone_id": 159,
-  "path": "",
-  "tier": "",
+  "path": "Ashen",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1516,14 +1516,14 @@
     -20.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
  },
  {
   "name": "Laidly Laurence",
   "zone": "Garlaige Citadel (S)",
   "zone_id": 164,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "II",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1547,14 +1547,14 @@
     -60.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
  },
  {
   "name": "Nympha Eunomia",
   "zone": "Crawlers' Nest (S)",
   "zone_id": 171,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "II",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1578,14 +1578,14 @@
     377.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13759])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13759])."
  },
  {
   "name": "Tangaroa",
   "zone": "Kuftal Tunnel",
   "zone_id": 174,
-  "path": "",
-  "tier": "",
+  "path": "Ashen",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1609,14 +1609,14 @@
     5.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [13820])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: full (group [13820])."
  },
  {
   "name": "Giltine",
   "zone": "The Eldieme Necropolis (S)",
   "zone_id": 175,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "II",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1640,14 +1640,14 @@
     140.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13818])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13818])."
  },
  {
   "name": "Uptala",
   "zone": "Ve'Lugannon Palace",
   "zone_id": 177,
-  "path": "",
-  "tier": "",
+  "path": "Ashen",
+  "tier": "III",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1671,14 +1671,14 @@
     280.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13739])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13739])."
  },
  {
   "name": "Qilin",
   "zone": "The Shrine of Ru'Avitau",
   "zone_id": 178,
-  "path": "",
-  "tier": "",
+  "path": "Ashen",
+  "tier": "III",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1702,14 +1702,14 @@
     -68.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13746])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13746])."
  },
  {
   "name": "Akvan",
   "zone": "Lower Delkfutt's Tower",
   "zone_id": 184,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "III",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1733,7 +1733,7 @@
     95.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13803])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13803])."
  },
  {
   "name": "Celaeno",
@@ -1770,8 +1770,8 @@
   "name": "Voidwrought",
   "zone": "Outer Horutoto Ruins",
   "zone_id": 194,
-  "path": "",
-  "tier": "",
+  "path": "Jade",
+  "tier": "IV",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1795,7 +1795,7 @@
     760.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
  },
  {
   "name": "Lorbulcrud",
@@ -1832,8 +1832,8 @@
   "name": "Mellonia",
   "zone": "Crawlers' Nest",
   "zone_id": 197,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "II",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1857,14 +1857,14 @@
     377.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13754])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13754])."
  },
  {
   "name": "Roly-Poly",
   "zone": "Garlaige Citadel",
   "zone_id": 200,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "II",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1888,14 +1888,14 @@
     180.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
  },
  {
   "name": "Malleator Maurok",
   "zone": "Quicksand Caves",
   "zone_id": 208,
-  "path": "",
-  "tier": "",
+  "path": "Ashen",
+  "tier": "I",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
@@ -1919,7 +1919,7 @@
     -130.0
    ]
   ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
  },
  {
   "name": "Asb",
@@ -2039,36 +2039,36 @@
   "name": "Gasha",
   "zone": "The Eldieme Necropolis",
   "zone_id": null,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "II",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
   "rifts": [],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. Zone id missing from roster. DSP mob data: full (group [13819])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. Zone id missing from roster. DSP mob data: full (group [13819])."
  },
  {
   "name": "Kalasutrax",
   "zone": "Fort Karugo-Narugo (S)",
   "zone_id": null,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "VI",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
   "rifts": [],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. Zone id missing from roster. DSP mob data: partial (group [13750])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. Zone id missing from roster. DSP mob data: partial (group [13750])."
  },
  {
   "name": "Pil",
   "zone": "Behemoth's Dominion/Provenance",
   "zone_id": null,
-  "path": "",
-  "tier": "",
+  "path": "White",
+  "tier": "III",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
   "rifts": [],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. Zone id missing from roster. DSP mob data: partial (group [11011])."
+  "gaps": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. Zone id missing from roster. DSP mob data: partial (group [11011])."
  }
 ]
