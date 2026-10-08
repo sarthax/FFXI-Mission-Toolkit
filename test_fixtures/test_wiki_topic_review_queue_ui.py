@@ -10,6 +10,8 @@ def main():
     assert '"review_queue": review_queue' in host
     assert '<b>Topic review queue</b>' in ui
     assert '{% for entry in review_queue %}' in ui
+    assert 'Back to topic review queue' in ui
+    assert 'review_status={{ review_status }}&review_page={{ review_page }}' in ui
     assert 'entry.pending' in ui and 'entry.dismissed' in ui
     assert 'Read-only overview' in ui
     print("Wiki topic review queue UI regression: PASS")

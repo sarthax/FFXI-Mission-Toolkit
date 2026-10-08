@@ -101,7 +101,7 @@
     <tbody>
     {% for entry in review_queue %}
       <tr>
-        <td><a href="/wiki?source={{ entry.source_id|urlencode }}&title={{ entry.title|urlencode }}&tab=browse">{{ entry.title }}</a></td>
+        <td><a href="/wiki?source={{ entry.source_id|urlencode }}&title={{ entry.title|urlencode }}&tab=browse&review_status={{ review_status }}&review_page={{ review_page }}">{{ entry.title }}</a></td>
         <td>{% for item in entry.pending %}<div>{{ item.canonical_title }} <span class="muted">({{ item.match_method }})</span></div>{% else %}<span class="muted">None</span>{% endfor %}</td>
         <td>{% for item in entry.dismissed %}<div>{{ item.canonical_title }}</div>{% else %}<span class="muted">None</span>{% endfor %}</td>
       </tr>
@@ -125,6 +125,9 @@
 <div class="warn">No stored {{ source }} page matches {{ title|e }}. Paste its URL in the scrape box above to fetch it.</div>
 {% endif %}
 {% if page_view %}
+{% if review_page > 1 or review_status != 'all' %}
+<a class="chip" href="/wiki?source={{ source|urlencode }}&tab=review&review_status={{ review_status }}&review_page={{ review_page }}">← Back to topic review queue</a>
+{% endif %}
 <div class="dense-toolbar" style="margin:8px 0 5px">
   <strong>{{ page_view.title }}</strong>
   {% if page_view.timestamp %}<span class="muted">rev {{ page_view.revision or '' }} · {{ page_view.timestamp }}</span>{% endif %}
