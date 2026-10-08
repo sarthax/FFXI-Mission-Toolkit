@@ -121,3 +121,4 @@ Completed workspace migrations:
 - **YouTube Chat OCR** — OCR run/prerequisite dashboard for video evidence ingestion with explicit local-file/tool writes (Workbench).
 - **OCR Run** — Video crop/extraction/layout/OCR/matching/capture-conversion workspace with explicit write actions (Workbench).
 - **Settings** — Shared environment/branding/path/write-gate/LLM/backup/server configuration workspace with explicit mutation boundary (Workbench).
+- **Character Editor** — Adapter-aware character/inventory editor with offline/capability safety gates and preview/confirm writes (Editor).
