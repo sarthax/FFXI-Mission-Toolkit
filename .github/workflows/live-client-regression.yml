@@ -39,7 +39,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install offline regression dependencies
-        run: python -m pip install -e . pytest fastapi httpx python-multipart uvicorn playwright jinja2 lupa
+        run: python -m pip install -e . pytest fastapi httpx python-multipart uvicorn playwright jinja2 lupa pefile
       - name: Verify required Lua 5.1 test runtime
         run: python -c 'from lupa.lua51 import LuaRuntime; assert LuaRuntime().eval("_VERSION") == "Lua 5.1"'
       - name: Install Chromium for browser regression

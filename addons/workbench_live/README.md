@@ -99,8 +99,10 @@ movement, changing raw heading and eight distinct selected targets. An anonymize
 copy now exercises replay and the Chromium viewer in cloud regression.
 
 The user reported game version `30191204_1` and walking up/down stairs without
-changing zones. The exact installed Ashita build and executable hashes remain
-unspecified. This is partial runtime evidence, not a supported-build declaration. Zone transitions, logout,
+changing zones. Later supplied Ashita-cli.exe/Ashita.dll both report PE version
+`4.0.0.2`; their exact hashes are recorded as supplied-file evidence. This does
+not verify the images loaded during capture. This is partial runtime evidence,
+not a supported-build declaration. Zone transitions, logout,
 multiple clients, coordinate calibration and same-host live polling still need
 acceptance evidence. The source remains read-only and explicitly unverified.
 
@@ -109,3 +111,8 @@ position as a waypoint. **Download path to current frame** exports all consumed
 recorded observations, rather than the downsampled trace. These JSON downloads
 preserve raw coordinates and unverified source provenance; they do not warp the
 client or place entities in a zone database.
+
+See the [Windows/Codex test handoff](../../docs/workbench/LIVE_CLIENT_WINDOWS_HANDOFF.md)
+for local test-agent setup and the offline runtime-report command. The report
+collects recording summaries and optional binary metadata without executing
+client binaries or declaring a supported running build.
