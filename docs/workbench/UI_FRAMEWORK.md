@@ -125,3 +125,4 @@ Completed workspace migrations:
 - **Item Editor** — Live server/client item editor with preview/apply batching, DAT synchronization, backup, SQL journaling, and session history controls (Editor).
 - **Zone Editor** — Full-width server/client spatial editor with entity/path/navmesh tooling, cache operations, and preserved save/undo/redo controls (Editor).
 - **Nyzul Isle Layout Editor** — Full-width lineage-aware floor-generation/spatial editor with optional navmesh evidence and persistent exclusion controls (Editor).
+- **Synth & Crafting** — Full-width recipe browser/audit/health/compare/economy/editor/export console with explicit mixed read/write boundary (Workbench).
