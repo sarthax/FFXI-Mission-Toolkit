@@ -325,6 +325,20 @@ def stored_blocks(con, source_id: str, page_id: str) -> list[dict]:
 
 
 
+def template_field_review_links(raw_value: str) -> list[dict]:
+    """Expose explicit MediaWiki source links as review evidence, not graph edges."""
+    links=[]
+    for match in re.finditer(r"\[\[([^\[\]]+)\]\]",raw_value or ""):
+        target=match.group(1).split("|",1)[0].strip()
+        if not target or target.startswith(("#",":")):
+            continue
+        if target not in [link["target"] for link in links]:
+            links.append({"target":target,"source_markup":match.group(0),"review_only":True})
+        if len(links)>=25:
+            break
+    return links
+
+
 def presentation_groups(blocks: list[dict]) -> list[dict]:
     """Group the structural stream into renderer-friendly sections/lists/tables."""
     sections=[{"title":"Overview","level":1,"content":[]}]
@@ -366,7 +380,8 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
             }
             candidate=({"field_type":typed_fields[field_class],"field":field_name,
                         "value":b.get("text") or "","value_raw":metadata.get("raw_value"),
-                        "source_locator":b.get("source_locator"),"review_only":True}
+                        "source_locator":b.get("source_locator"),"review_only":True,
+                        "source_links":template_field_review_links(str(metadata.get("raw_value") or ""))}
                        if field_class in typed_fields and (b.get("text") or "").strip() else None)
             current["content"].append({"type":"definition","term":str(metadata.get("template") or "Template")+": "+field_name,
                                        "definition":b.get("text") or "","field_candidate":candidate})

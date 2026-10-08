@@ -25,6 +25,7 @@ def main():
     content=presentation_groups(blocks)[0]["content"]
     a=content[0]["field_candidate"]
     assert a["field_type"]=="DROPS" and a["review_only"]
+    assert a["source_links"]==[{"target":"Mars's Ring","source_markup":"[[Mars's Ring]]","review_only":True}]
     assert a["value_raw"]=="[[Mars's Ring]]"
     assert a["source_locator"]=="section:Rewards:template:1:field:1"
     assert content[1]["field_candidate"]["field_type"]=="REQUIRES"
