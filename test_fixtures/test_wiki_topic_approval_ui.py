@@ -11,6 +11,10 @@ def main():
     assert 'if suggested_topic_id:' in host
     assert 'item["topic_id"] == suggested_topic_id and item["canonical_title"] == canonical_title' in host
     assert 'Suggested topic no longer matches reviewed aliases' in host
+    assert template.count('name="review_page" value="{{ review_page }}"') >= 2
+    assert template.count('name="review_status" value="{{ review_status }}"') >= 2
+    assert host.count('review_page_raw = (form.get("review_page") or "").strip()') >= 2
+    assert host.count('tab=review&review_status={review_status}&review_page={review_page}') >= 2
     print("Wiki V2 reviewed topic approval UI regression: PASS")
 
 if __name__=="__main__":
