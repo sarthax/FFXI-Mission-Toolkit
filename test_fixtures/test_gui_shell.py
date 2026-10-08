@@ -559,8 +559,8 @@ def main():
 
     entity_html = render("entity.html", "/entity", q="", matches=[], total=0, page=1, total_pages=1, zone_names={})
     assert '<body class="shell-dense">' in entity_html
-    assert '<strong>Entity Lookup</strong>' in entity_html
-    assert 'form class="search dense-toolbar"' in entity_html
+    assert 'class="wb-page-title">Entity Lookup</span>' in entity_html
+    assert 'form class="search wb-filter-row"' in entity_html
 
     events_html = render("events.html", "/events", zones=[], zone="", q="", rows=[], generated_note=None, health_summary={})
     assert '<body class="shell-dense">' in events_html
