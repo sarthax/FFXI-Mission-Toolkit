@@ -240,8 +240,9 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
   and an initial X/Y view for the experimental Ashita source. It preserves numeric
   data, uniform scale and zone/instance segment boundaries. Source and reported
   client version are displayed; entity details keep unknown server IDs explicit.
-- The user reported game version `30191204_1`, stairs traversal and no zone change;
-  the installed Ashita build and executable hashes remain unspecified. Next
+- The user reported game version `30191204_1`, stairs traversal and no zone change.
+  Subsequently supplied Ashita-cli.exe/Ashita.dll report PE version `4.0.0.2`;
+  hashes are retained as supplied-file evidence, not running-process verification. Next
   acceptance evidence: verified build identity, zone/logout and
   reconnect behavior, concurrent-client isolation, independent axis/heading
   verification and same-host polling. Calibrated map overlays, automatic process
@@ -267,3 +268,18 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
   speed controls and live network transport are still separate development work.
 - Runtime-backed API and real Chromium tests exercise player/target/path downloads,
   source isolation, raw values, cursor preservation and zone/instance metadata.
+
+## Runtime report and Windows test-agent handoff
+
+- `python -m workbench.runtime.live_client.runtime_report` produces bounded JSON
+  evidence from a strict immutable recording snapshot, with matching SHA-256,
+  frame cadence, per-zone raw axis ranges, target counts and context transitions.
+  Optional EXE/DLL inputs add PE version resources and hashes using pefile, without
+  executing/loading binaries. Existing output reports are not overwritten.
+- Supplied Ashita files report `4.0.0.2`; derived metadata is tracked separately
+  from the anonymized capture. No binary, supported-build allowlist or new memory
+  adapter is added. Running identity, lifecycle and coordinate calibration remain
+  unverified until the corresponding acceptance evidence is reviewed.
+- [Windows/Codex test handoff](LIVE_CLIENT_WINDOWS_HANDOFF.md) explains local CLI
+  access, report generation and remaining zone/logout/multiple-client tests.
+  Local Codex is a separate session; this cloud chat has no Windows remote shell.

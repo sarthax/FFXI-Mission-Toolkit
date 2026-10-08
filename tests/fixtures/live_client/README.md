@@ -17,8 +17,11 @@ zone transitions, logout/disconnect, concurrent clients, coordinate calibration,
 entity/server-ID matching, process detection or write support. In follow-up the
 user reported FFXI client version `30191204_1`, confirmed walking up/down stairs
 and no zone change, and identified the AshitaXI/Ashita-v4beta project. The exact
-installed Ashita build and executable hashes remain unspecified. The version is
-user-reported evidence, not a verified running-build identity or allowlist entry.
+installed Ashita files were subsequently supplied for offline metadata inspection:
+both report file/product version `4.0.0.2`. Their SHA-256 hashes and x86 PE machine
+are recorded in `ashita_supplied_binary_metadata.json`; binaries are not committed.
+The game version is user-reported evidence and supplied-file identity is not a
+verified running-build identity or allowlist entry.
 
 Raw X/Y spans are approximately 118/109, while Z spans 6. The replay viewer
 initially selects X/Y for the experimental Ashita source and permits X/Z and

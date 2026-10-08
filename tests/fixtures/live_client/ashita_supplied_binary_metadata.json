@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "kind": "supplied_framework_file_evidence",
+  "operator_reported_game_version": "30191204_1",
+  "binaries": [
+    {
+      "filename": "Ashita-cli.exe",
+      "size_bytes": 145408,
+      "sha256": "609ba99c6f40987a60a5c7db48e42c39234b91af08ec370e27ac9fcd381f225e",
+      "pe_machine": "0x014c",
+      "file_version": "4.0.0.2",
+      "product_version": "4.0.0.2",
+      "running_identity_verified": false
+    },
+    {
+      "filename": "Ashita.dll",
+      "size_bytes": 3021824,
+      "sha256": "031ca619172135e22f0b8d5111efde9564f542814bee4a7a21c05cb7f564a46a",
+      "pe_machine": "0x014c",
+      "file_version": "4.0.0.2",
+      "product_version": "4.0.0.2",
+      "running_identity_verified": false
+    }
+  ],
+  "scope": "Metadata parsed from user-supplied files; not a supported-build allowlist or running-process verification."
+}
