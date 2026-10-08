@@ -103,6 +103,26 @@
 <div id="tr-out" class="warn" hidden></div>
 <p class="muted">Japanese original shown below, stored verbatim. Translations are machine-generated, cached separately, and never ingested as evidence.</p>
 {% endif %}
+
+<div class="dense-toolbar" style="margin:6px 0 8px;">
+  {% if page_view.topic %}
+    <span class="muted">Canonical topic:</span><strong>{{ page_view.topic.canonical_title }}</strong>
+    {% for member in page_view.topic.members %}
+      {% if member.source_id != source or member.page_id != page_view.page_id %}
+        <a class="chip" href="/wiki?title={{ (member.title or page_view.topic.canonical_title)|urlencode }}&source={{ member.source_id|urlencode }}&tab=browse">{{ member.source_id }} ↗</a>
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    <span class="muted">No multilingual topic link yet.</span>
+  {% endif %}
+  <span class="sp"></span>
+  <form method="post" action="/wiki/topic" class="wiki-actions" style="margin:0;">
+    <input type="hidden" name="title" value="{{ title }}">
+    <input type="hidden" name="source" value="{{ source }}">
+    <input type="text" name="canonical_title" value="{{ page_view.topic.canonical_title if page_view.topic else '' }}" placeholder="Canonical English topic, e.g. Absolute Virtue" style="min-width:260px;">
+    <button type="submit">{% if page_view.topic %}Update topic{% else %}Link English topic{% endif %}</button>
+  </form>
+</div>
 {% if page_view.degraded_structure %}
 <div class="warn">This page came from the legacy flattened import. It is readable here, but original tables/links cannot be reconstructed until this page is selectively re-scraped.</div>
 {% elif page_view.persisted_structure %}
