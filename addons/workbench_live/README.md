@@ -49,7 +49,8 @@ metadata in the test report; do not upload game binaries or credentials.
   identity against independent runtime observations.
 - Record at least a minute, then stop. Upload the JSONL through the cloud
   Workbench's **Client → Live Client → Open recording** controls. Check playback,
-  seeking, last-frame behavior and the relative X/Z trace. Uploading the same
+  seeking, last-frame behavior and the relative trace. Ashita recordings initially
+  use X/Y; select X/Z or Y/Z to inspect the other raw axes. Uploading the same
   recording twice should create independent sessions.
 - Verify a normal zone transition, loading/logout, source unload and missing
   observations. A transient invalid SDK observation intentionally stops export;
@@ -88,3 +89,17 @@ source-to-file-feed tests alongside the replay and Chromium UI regressions.
 All addon implementation here is original MIT-licensed toolkit code. The reference
 SDK/API sources and their distinct licenses are documented in
 `docs/workbench/LIVE_CLIENT_NATIVE_RESEARCH.md`; their implementation is not bundled.
+
+## Runtime evidence received
+
+An authorized user confirmed that recording succeeded after the PR #698 zone-field
+fix and supplied 121 observations spanning 120 seconds in zone 50. Both the strict
+recording loader and file-feed decoder accepted every frame. The capture includes
+movement, changing raw heading and eight distinct selected targets. An anonymized
+copy now exercises replay and the Chromium viewer in cloud regression.
+
+The user reported game version `30191204_1` and walking up/down stairs without
+changing zones. The exact installed Ashita build and executable hashes remain
+unspecified. This is partial runtime evidence, not a supported-build declaration. Zone transitions, logout,
+multiple clients, coordinate calibration and same-host live polling still need
+acceptance evidence. The source remains read-only and explicitly unverified.

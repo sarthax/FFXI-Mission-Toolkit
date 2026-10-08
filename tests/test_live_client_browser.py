@@ -86,6 +86,53 @@ def test_recording_controls_in_browser(tmp_path):
             page.locator('#unload').click()
             playwright.expect(page.locator('#client option')).to_have_count(2)
             assert registry.client_ids() == (first,)
+
+            # Real Ashita data varies substantially in X/Y; X/Z alone hides
+            # most recorded travel. Exercise all planes in the shared shell.
+            capture = Path(__file__).parent / 'fixtures/live_client/ashita_v4_runtime_anonymized.jsonl'
+            page.locator('#recording').set_input_files(str(capture))
+            page.locator('#open-recording').click()
+            playwright.expect(page.locator('#state')).to_have_text('Frame 1 of 121')
+            runtime_session = page.locator('#client').input_value()
+            playwright.expect(page.locator('#trace-plane')).to_have_value('xy')
+            playwright.expect(page.locator('#source')).to_have_text('ashita-v4-api-experimental')
+            playwright.expect(page.locator('#version')).to_have_text('unverified-ashita-v4-api')
+            page.locator('#timeline').evaluate('(el)=>{el.value="121";el.dispatchEvent(new Event("change",{bubbles:true}));}')
+            playwright.expect(page.locator('#trace-status')).to_contain_text('121 observed positions')
+            playwright.expect(page.locator('#trace polyline')).to_have_count(1)
+            def displayed_span():
+                return page.locator('#trace polyline').evaluate('''el => {
+                    const pairs=el.getAttribute('points').split(' ').map(p=>p.split(',').map(Number));
+                    return [0,1].map(i=>Math.max(...pairs.map(p=>p[i]))-Math.min(...pairs.map(p=>p[i])));
+                }''')
+            xy = displayed_span()
+            assert xy[0] > 200 and xy[1] > 200
+            for plane, label in [('xz', 'X/Z'), ('yz', 'Y/Z')]:
+                page.locator('#trace-plane').select_option(plane)
+                playwright.expect(page.locator('#trace-status')).to_contain_text('relative '+label)
+                span = displayed_span()
+                assert span[0] > 500 and span[1] < 40
+            assert registry._clients[runtime_session].position == 121
+            page.locator('#client').select_option(first)
+            playwright.expect(page.locator('#trace-plane')).to_have_value('xz')
+            page.locator('#client').select_option(runtime_session)
+            playwright.expect(page.locator('#trace-plane')).to_have_value('yz')
+            page.locator('#restart').click()
+            playwright.expect(page.locator('#trace-status')).to_contain_text('1 observed positions')
+            playwright.expect(page.locator('#trace-plane')).to_have_value('yz')
+            # Inspect an actual target-bearing frame and ensure target details
+            # disappear on a frame with no observed target.
+            capture_frames = [json.loads(line) for line in capture.read_text().splitlines()]
+            target_frame = next(i for i, f in enumerate(capture_frames, 1) if f['entities'])
+            target = capture_frames[target_frame-1]['entities'][0]
+            page.locator('#timeline').evaluate('(el,n)=>{el.value=String(n);el.dispatchEvent(new Event("change",{bubbles:true}));}', target_frame)
+            playwright.expect(page.locator('#entity-rows tr')).to_have_count(1)
+            playwright.expect(page.locator('#entity-rows td').nth(0)).to_have_text(target['name'])
+            playwright.expect(page.locator('#entity-rows td').nth(3)).to_have_text('Unknown')
+            empty_frame = next(i for i, f in enumerate(capture_frames, 1) if not f['entities'])
+            page.locator('#timeline').evaluate('(el,n)=>{el.value=String(n);el.dispatchEvent(new Event("change",{bubbles:true}));}', empty_frame)
+            playwright.expect(page.locator('#entity-rows tr')).to_have_count(0)
+            playwright.expect(page.locator('#entity-status')).to_have_text('No entity observations in this frame.')
             assert not errors
             browser.close()
     finally:

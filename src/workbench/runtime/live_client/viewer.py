@@ -28,6 +28,8 @@ def viewer_projection(frame: TelemetryFrame, *, zone_id: int,
         "zone_id": zone_id,
         "instance_hint": snapshot.instance_hint,
         "observed_at": snapshot.observed_at,
+        "adapter": snapshot.adapter,
+        "client_version": snapshot.version,
         "player": {"character": snapshot.character,
                    "position": asdict(snapshot.position)},
         "entities": [
