@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from .observation_exports import capture_waypoint, recording_context
 from .waypoint_library import MAX_DOCUMENT_BYTES, WaypointLibrary
 from .waypoint_comparison import compare_waypoints
+from .observation_guard import require_observation
 
 
 def create_waypoint_library_router(library: WaypointLibrary, registry) -> APIRouter:
@@ -53,13 +54,15 @@ def create_waypoint_library_router(library: WaypointLibrary, registry) -> APIRou
     @router.post('/capture')
     def capture(request: Request, client_id: str = Query(min_length=1, max_length=200),
                 name: str = Query(min_length=1, max_length=200),
-                entity_index: int | None = Query(default=None, ge=0, le=65535)):
+                entity_index: int | None = Query(default=None, ge=0, le=65535),
+                observation_token: str | None = Query(default=None, min_length=64, max_length=64)):
         authorize(request)
         if client_id not in registry.client_ids():
             raise HTTPException(404, 'observation session not registered')
         frame = registry.frame(client_id)
         if frame is None:
             raise HTTPException(409, 'session has no observed frame')
+        require_observation(registry, client_id, frame, observation_token)
         return {'added': operation(lambda: library.add_document(capture_waypoint(
             frame, client_id, name, entity_index, recording_context(registry, client_id, frame))))}
 

@@ -63,9 +63,9 @@ const show=(id,value)=>document.getElementById(id).textContent=value;
 let rows=[],playing=false,timer=null,generation=0;
 const tracePlanes=new Map();
 const relativeSelections=new Map();
-let entityProjection=null;
+let entityProjection=null,displayedSession=null;
 const controls=['step','poll','previous','restart','play','timeline','unload','replace','capture-player','save-player','export-path'];
-function reset(){entityProjection=null;for(const id of ['character','zone','xyz','heading','observed','entities','source','version'])show(id,'—');document.getElementById('trace').replaceChildren();document.getElementById('entity-rows').replaceChildren();document.getElementById('relative-waypoint').replaceChildren(new Option('Choose a comparable waypoint',''));show('relative-status','Select a recorded session to compare saved positions.');show('entity-status','No entity observations.');show('trace-status','Select a recorded session.');}
+function reset(){entityProjection=null;displayedSession=null;for(const id of ['character','zone','xyz','heading','observed','entities','source','version'])show(id,'—');document.getElementById('trace').replaceChildren();document.getElementById('entity-rows').replaceChildren();document.getElementById('relative-waypoint').replaceChildren(new Option('Choose a comparable waypoint',''));show('relative-status','Select a recorded session to compare saved positions.');show('entity-status','No entity observations.');show('trace-status','Select a recorded session.');}
 function showEntities(data){entityProjection=data;renderEntities();}
 function renderEntities(){
  const body=document.getElementById('entity-rows');body.replaceChildren();
@@ -85,9 +85,10 @@ function renderEntities(){
   for(const value of [entity.name||'(unnamed)',entity.kind,entity.client_index,entity.server_entity_id??'Unknown',[p.x,p.y,p.z].join(', '),Number.isFinite(distance)?distance.toFixed(3)+' raw':'Outside numeric range']){
    const cell=document.createElement('td');cell.textContent=String(value);row.append(cell);
   }
+  const captureContext={session:displayedSession,token:entityProjection.observation_token};
   const cell=document.createElement('td'),button=document.createElement('button');
-  button.type='button';button.textContent='Download waypoint';button.addEventListener('click',()=>exportObservation('waypoint',entity.client_index));
-  const save=document.createElement('button');save.type='button';save.textContent='Save to library';save.addEventListener('click',()=>saveWaypoint(entity.client_index));
+  button.type='button';button.textContent='Download waypoint';button.addEventListener('click',()=>exportObservation('waypoint',entity.client_index,captureContext));
+  const save=document.createElement('button');save.type='button';save.textContent='Save to library';save.addEventListener('click',()=>saveWaypoint(entity.client_index,captureContext));
   cell.append(button,save);row.append(cell);body.append(row);
  }
  let status=entities.length?matches.length+' of '+entities.length+' observed entities match; client indices are not server IDs.':'No entity observations in this frame.';
@@ -189,7 +190,7 @@ async function refresh(){
  show('character',data.player.character);show('zone',String(data.zone_id));show('xyz',[p.x,p.y,p.z].join(', '));
  show('heading',String(p.heading));show('observed',String(data.observed_at));show('entities',String(data.entities.length));
  show('source',data.adapter||'Unknown');show('version',data.client_version||'Unknown');
- showEntities(data);
+ displayedSession=client.value;showEntities(data);
  document.getElementById('capture-player').disabled=false;
  document.getElementById('save-player').disabled=false;
  document.getElementById('export-path').disabled=!recording;
@@ -246,8 +247,11 @@ document.getElementById('open-recording').addEventListener('click',()=>openRecor
 document.getElementById('replace').addEventListener('click',()=>openRecording(true));
 client.addEventListener('change',()=>{pause();safeRefresh();});
 document.getElementById('compare').addEventListener('change',safeRefresh);
-async function exportObservation(kind,entityIndex){
- pause();const params=new URLSearchParams({client_id:client.value});
+async function exportObservation(kind,entityIndex,captureContext){
+ pause();
+ const context=captureContext||{session:displayedSession,token:entityProjection?.observation_token};
+ if(!context.token||context.session!==client.value){show('export-status','Refresh the observation before capturing.');return;}
+ const params=new URLSearchParams({client_id:context.session,observation_token:context.token});
  if(kind==='waypoint'){
   const name=document.getElementById('waypoint-name').value.trim();
   if(!name){show('export-status','Enter a waypoint name first.');return;}
@@ -289,10 +293,12 @@ async function refreshLibrary(){
  if(client.value)await safeRefresh();
 }
 async function safeLibraryRefresh(){try{await refreshLibrary();}catch(error){document.getElementById('waypoint-rows').replaceChildren();show('library-status',error.message);}}
-async function saveWaypoint(entityIndex){
+async function saveWaypoint(entityIndex,captureContext){
  pause();const name=document.getElementById('waypoint-name').value.trim();
  if(!name){show('library-status','Enter a waypoint name in Player observation first.');return;}
- const params=new URLSearchParams({client_id:client.value,name});if(entityIndex!==undefined)params.set('entity_index',String(entityIndex));
+ const context=captureContext||{session:displayedSession,token:entityProjection?.observation_token};
+ if(!context.token||context.session!==client.value){show('library-status','Refresh the observation before capturing.');return;}
+ const params=new URLSearchParams({client_id:context.session,name,observation_token:context.token});if(entityIndex!==undefined)params.set('entity_index',String(entityIndex));
  try{await request('/live-client/waypoints/capture?'+params,{method:'POST'});await refreshLibrary();}
  catch(error){show('library-status',error.message);}
 }

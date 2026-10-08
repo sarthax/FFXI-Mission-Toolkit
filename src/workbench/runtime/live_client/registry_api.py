@@ -7,6 +7,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query, Request
 
 from .registry import ReplayRegistry
+from .observation_guard import observation_token
 from .viewer import viewer_projection
 from .observation_exports import create_observation_export_router
 
@@ -32,8 +33,13 @@ def create_registry_router(registry: ReplayRegistry) -> APIRouter:
             raise HTTPException(status_code=409, detail="replay client has no observed frame")
         if frame.snapshot.client_id != registry.identity(client_id):
             raise HTTPException(status_code=409, detail="client identity mismatch")
-        return viewer_projection(frame, zone_id=zone_id, client_id=registry.identity(client_id),
-                                 instance_hint=instance_hint)
+        result = viewer_projection(frame, zone_id=zone_id, client_id=registry.identity(client_id),
+                                   instance_hint=instance_hint)
+        try:
+            result['observation_token'] = observation_token(registry, client_id, frame)
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from exc
+        return result
 
     @router.get("/trace")
     def trace(client_id: str = Query(min_length=1, max_length=200),
