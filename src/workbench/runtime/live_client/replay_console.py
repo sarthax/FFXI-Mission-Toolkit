@@ -23,7 +23,8 @@ dt{color:#a9b8ca}dd{margin:0;overflow-wrap:anywhere}
 #state{font-weight:bold}pre{white-space:pre-wrap;max-height:16rem;overflow:auto}
 </style></head><body>
 <header><h1>Live Client — Replay Console</h1><strong>Read-only • Offline</strong></header>
-<p>Displays explicitly registered replay clients. No client discovery, recording import or game-memory controls.</p>
+<p>Open a recording directly. No restart or Settings changes required. Game-memory controls are not available.</p>
+<section><label for="recording">Open recording (.jsonl) </label><input type="file" id="recording" accept=".jsonl"><button id="open-recording" type="button">Open recording</button><p id="import-status" role="status"></p></section>
 <section><label for="client">Recorded client </label><select id="client"><option value="">Choose client</option></select>
 <button id="refresh" type="button">Refresh</button><button id="poll" type="button" disabled>Poll file feed</button><button id="previous" type="button" disabled>Previous</button><button id="restart" type="button" disabled>Restart</button><button id="step" type="button" disabled>Next recorded frame</button><p id="state" role="status">Not connected</p></section>
 <section><h2>Player observation</h2><dl>
@@ -72,6 +73,21 @@ async function step(){
  await refresh();
  }catch(err){state.textContent=String(err.message||err);await refresh();}
 }
+document.getElementById('open-recording').addEventListener('click',async()=>{
+ const file=document.getElementById('recording').files[0];
+ const status=document.getElementById('import-status');
+ if(!file){status.textContent='Choose a .jsonl recording first';return;}
+ const button=document.getElementById('open-recording');button.disabled=true;
+ try{
+  const form=new FormData();form.append('recording',file);
+  const response=await fetch('/live-client/upload-recording?open_session=true',{method:'POST',body:form});
+  const data=await response.json();
+  if(!response.ok)throw Error(data.detail||'Unable to open recording');
+  status.textContent='Loaded '+data.frames+' frames for '+data.client_id;
+  await refresh();client.value=data.client_id;await refresh();
+ }catch(error){status.textContent=String(error.message||error);}
+ finally{button.disabled=false;}
+});
 document.getElementById('step').addEventListener('click',step);
 async function navigate(action){
  if(!client.value)return;
