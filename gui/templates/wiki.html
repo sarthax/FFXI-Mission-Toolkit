@@ -123,6 +123,23 @@
     <button type="submit">{% if page_view.topic %}Update topic{% else %}Link English topic{% endif %}</button>
   </form>
 </div>
+{% if not page_view.topic and page_view.topic_suggestions %}
+<details class="wiki-topic-suggestions">
+  <summary>Suggested multilingual topics ({{ page_view.topic_suggestions|length }}) — review only</summary>
+  <p class="muted">Exact matches to existing reviewed aliases. Suggestions do not link pages automatically. Review the supporting pages before entering a canonical topic above.</p>
+  {% for suggestion in page_view.topic_suggestions %}
+  <div class="wiki-definition">
+    <strong>{{ suggestion.canonical_title }}</strong>
+    <div>
+      <span class="muted">{{ suggestion.match_method }}</span>
+      {% for proof in suggestion.supporting_pages %}
+        <span class="chip">{{ proof.source_id }} / {{ proof.page_id }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</details>
+{% endif %}
 {% if page_view.degraded_structure %}
 <div class="warn">This page came from the legacy flattened import. It is readable here, but original tables/links cannot be reconstructed until this page is selectively re-scraped.</div>
 {% elif page_view.persisted_structure %}

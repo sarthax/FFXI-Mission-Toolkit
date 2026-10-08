@@ -5542,6 +5542,7 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
         "persisted_structure": persisted_structure,
         "degraded_structure": degraded,
         "topic": topic,
+        "topic_suggestions": ([] if topic else wiki_document.suggest_topic_links(con, source_id=source, page_id=page_id)),
     }
 
 
