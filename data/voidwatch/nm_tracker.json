@@ -844,7 +844,7 @@
   "tier": "III",
   "ki_id": 368,
   "ki_name": "Crimson Stratum Abyssite III",
-  "status": "not built",
+  "status": "built",
   "rifts": [
    [
     17114040,
@@ -865,7 +865,7 @@
     -124.0
    ]
   ],
-  "gaps": "DSP mob data: full (group [13783])."
+  "gaps": "Zone [S]: Cottus precedent, no Zone.lua hooks needed. Spawn row 1 was (0,0,0) -> rift-1 position [D], needs !checknav. Meteor missing; Armor/Amnesic/Ecliptic damage values [D]; no spell list; untested in game. See docs/voidwatch/UNIMPLEMENTED.md."
  },
  {
   "name": "Gaunab",
