@@ -11,31 +11,30 @@
 <span class="muted">(per-area data is not split out yet)</span></p>{% endif %}
 
 {% if d.archetype == "system.voidwatch" %}
+<style>
+.vwcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}.vwvgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:6px;margin:6px 0}.vwval{border:1px solid var(--border,#444);border-radius:6px;padding:8px;margin:8px 0}.vwcols>div{min-width:0;overflow-wrap:anywhere}.vwkv td{padding:1px 8px 1px 0}.vwc{padding:3px 8px;margin:3px 0;border-left:3px solid #888;font-size:.9em}.vwc-bad{border-color:#c0392b}.vwc-warn{border-color:#d68910}.vwc-info{border-color:#2e86c1}
+#vw-detail{border:1px solid var(--border,#444);border-radius:8px;padding:12px;margin:12px 0}
+</style>
 <section id="vw-tracker">
-<h2>NM tracker <span class="chip">reference</span> <a class="chip" href="/domains/voidwatch/tracker.json" target="_blank">json</a></h2>
+<h2>Voidwatch paths &amp; progression <span class="chip">live DSP data</span> <a class="chip" href="/domains/voidwatch/overview.json" target="_blank">json</a></h2>
+<div id="vw-srv" class="muted"></div>
+<div id="vw-graph" style="overflow-x:auto"></div>
+<div id="vw-unas" class="muted"></div>
+<p class="muted">Each box is a path/tier with its NM count; click one to filter the table. Solid arrows are tier advances, dashed arcs the City-to-White unlock. Advance rules are [W] BG Wiki digest, reference only; "?" means the method is not recorded. NM path/tier/abyssite come from data/voidwatch/nm_tracker.json.</p>
+<h2>Notorious monsters</h2>
+<div id="vw-off"></div>
 <div id="vw-sum" class="muted"></div>
 <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">
 <input type="search" id="vw-q" placeholder="Search NM or zone" style="flex:1;min-width:180px">
 <select id="vw-st"><option value="">All status</option><option value="built">Built</option><option value="not built">Not built</option></select>
-<select id="vw-pa"><option value="">All paths</option><option>Crimson</option><option>Indigo</option><option>Jade</option><option>Ashen</option><option>White</option></select>
+<select id="vw-vs"><option value="">All validation</option><option>validated</option><option>partial</option><option>issue</option><option>unvalidated</option></select>
+<select id="vw-pa"><option value="">All paths</option><option>Crimson</option><option>Indigo</option><option>Jade</option><option>Ashen</option><option>White</option><option value="__un">Unassigned</option></select>
 </div>
-<div class="table-wrap"><table><thead><tr><th>NM</th><th>Zone (id)</th><th>Rifts x, y, z</th><th>Abyssite KI</th><th>Status</th><th>Gaps</th></tr></thead><tbody id="vw-tb"></tbody></table></div>
-<p class="muted">Voidstone KIs are ids 1539-1544; which grade each NM needs is not yet recorded. Rift Y is the DB value (inverted axis). Source data: data/voidwatch/nm_tracker.json.</p>
+<div class="table-wrap"><table><thead><tr><th>NM</th><th>Zone (id)</th><th>Path / tier</th><th>HP</th><th>Abyssite KI</th><th>Status</th><th>Validation</th></tr></thead><tbody id="vw-tb" class="vwtb"></tbody></table></div>
+<p class="muted">Click an NM for its full dossier. Voidstone KIs are ids 1539-1544. Rift Y is the DB value (inverted axis).</p>
+<div id="vw-detail" hidden><div style="text-align:right"><button id="vw-close" type="button">Close</button></div><div id="vw-dbody"></div></div>
 </section>
-<script>
-(function(){
-var D=[],q=document.getElementById('vw-q'),st=document.getElementById('vw-st'),pa=document.getElementById('vw-pa'),tb=document.getElementById('vw-tb');
-function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-function draw(){var t=q.value.toLowerCase();
- var rows=D.filter(function(x){return (!t||(x.name+x.zone).toLowerCase().indexOf(t)>=0)&&(!st.value||x.status===st.value)&&(!pa.value||x.path===pa.value);});
- tb.innerHTML=rows.map(function(x){var rf=x.rifts.length?x.rifts.map(function(p){return '('+p[1]+', '+p[2]+', '+p[3]+')';}).join('<br>'):'<span class="muted">none in DB</span>';
-  return '<tr><td><b>'+esc(x.name)+'</b></td><td>'+esc(x.zone)+' ('+(x.zone_id==null?'?':x.zone_id)+')</td><td class="mono">'+rf+'</td><td>'+(x.ki_id?esc(x.ki_name)+' ('+x.ki_id+')':'<span class="muted">unknown</span>')+'</td><td><b>'+x.status+'</b></td><td class="muted" style="max-width:420px">'+esc(x.gaps)+'</td></tr>';}).join('');
- var b=D.filter(function(x){return x.status==='built';}).length;
- document.getElementById('vw-sum').textContent=D.length+' NMs: '+b+' built, '+(D.length-b)+' not built';}
-fetch('/domains/voidwatch/tracker.json').then(function(r){return r.json();}).then(function(d){D=d;draw();});
-[q,st,pa].forEach(function(e){e.addEventListener('input',draw);});
-})();
-</script>
+<script src="/static/voidwatch.js?v=7"></script>
 {% endif %}
 
 {% if d.archetype == "system.salvage" %}

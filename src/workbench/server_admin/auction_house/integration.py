@@ -36,6 +36,7 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
     from .seeder_ui import router as auction_house_seeder_ui_router
     from .status_ui import router as auction_house_status_router
     from workbench.server_admin.synth.api import router as synth_router
+    from workbench.server_admin.voidwatch.api import router as voidwatch_router
     from .synthetic_seed_api import router as auction_house_synthetic_seed_router
 
     existing_routes = {
@@ -67,6 +68,7 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
         auction_house_activity_router,
         auction_house_status_router,
         synth_router,
+        voidwatch_router,
     ):
         for route in carrier.routes:
             key = (getattr(route, "path", None), tuple(sorted(getattr(route, "methods", ()) or ())))
