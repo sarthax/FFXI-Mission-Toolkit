@@ -345,3 +345,14 @@ Prefer bounded Ashita loaded-entity observations next, followed by runtime ident
 and transform evidence. Existing replay/library work is reused. Native controls,
 calibrated overlays, editor placement callbacks and live navmesh validation remain
 incomplete; no old signature profile or historical map count establishes support.
+
+## Ashita reuse and target identity follow-up
+
+The bridge uses Ashita's published APIs rather than duplicating its minimap or
+memory reader. Selected targets now optionally carry reported server IDs,
+separate from memory indexes, with target-change sampling guards. This extension
+is cloud-tested, not yet Windows-tested; the existing supplied capture contains
+no server IDs. Full loaded-entity enumeration remains pending verified bounds and
+runtime behavior. Packet integration should reuse existing Capture ingestion,
+correlation and `workbench.packets.decode`; no packet writes are implemented.
+See the [reference audit follow-up](LIVE_CLIENT_REFERENCE_AUDIT.md#ashita-minimap-and-packet-reuse-follow-up).

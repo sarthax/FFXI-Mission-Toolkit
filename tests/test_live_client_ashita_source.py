@@ -146,3 +146,40 @@ def test_ashita_consistent_zone_and_local_slot_change_keep_same_character(tmp_pa
     assert bridge.poll() == 1
     assert bridge.feed.snapshot().position.zone_id == 101
     assert bridge.feed.snapshot().position.x == 9
+
+
+@pytest.mark.parametrize('server_id', [0, 16780001, 4294967295])
+def test_reported_server_identity_is_distinct_from_slot(tmp_path, server_id):
+    lua = runtime(tmp_path)
+    lua.globals().reported_id = server_id
+    lua.execute('function entity:GetServerId(index) assert(index==42); return reported_id end; command("/wblive start identity")')
+    path, = tmp_path.glob('*.jsonl')
+    bridge = FileTelemetryBridge(path, 'identity')
+    assert bridge.poll() == 1
+    observed, = bridge.feed.entities()
+    assert observed.client_index == 42
+    assert observed.server_entity_id == (server_id or None)
+    assert observed.kind.value == 'unknown'
+    assert bridge.feed.version_verified is False
+
+
+@pytest.mark.parametrize('change', [
+    'target.index=43', 'entities[42]=nil', 'entities[42].name="Replacement"',
+    'reported_id=456',
+])
+def test_target_changes_during_position_read_stop_export(tmp_path, change):
+    lua = runtime(tmp_path)
+    lua.execute('reported_id=123; function entity:GetServerId(index) return reported_id end; command("/wblive start identity")')
+    path, = tmp_path.glob('*.jsonl')
+    before = path.read_bytes()
+    lua.execute('local original=entity.GetHeading; function entity:GetHeading(index) local value=original(self,index); if index==42 then '+change+' end; return value end; clock=101; events.d3d_present()')
+    assert path.read_bytes() == before
+    assert 'target changed' in lua.globals().messages[len(lua.globals().messages)]
+
+
+@pytest.mark.parametrize('invalid', [-1, 4294967296, .5])
+def test_invalid_reported_server_id_never_creates_export(tmp_path, invalid):
+    lua = runtime(tmp_path)
+    lua.globals().reported_id = invalid
+    lua.execute('function entity:GetServerId(index) return reported_id end; command("/wblive start identity")')
+    assert not list(tmp_path.glob('*.jsonl'))

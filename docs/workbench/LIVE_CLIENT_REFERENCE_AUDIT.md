@@ -166,3 +166,34 @@ importing Tako waypoint/map formats. Continue public-source development meanwhil
 inventory first, then establish identity/lifecycle and coordinate calibration.
 That advances independent position/entity observation without Tako and supplies
 credible prerequisites for one deliberately authorized position-control adapter.
+
+## Ashita minimap and packet reuse follow-up
+
+The supplied [Ashita Minimap documentation](https://github.com/StiegFFXI/Ashita-v4beta-4.16-full/blob/4171c74c8ddb2ca2a31654f199e6c1cee40d7256/docs/Minimap/README.md)
+was inspected. It documents `drawmonsters`, `drawnpcs`, `drawplayers` and a target
+marker texture; distribution includes `plugins/minimap.dll`. This is a strong
+behavioral reference for available entity rendering, not a documented telemetry
+export interface or source-level verification of map transforms. Reuse Ashita
+published entity APIs and the Toolkit's own narrow observation bridge; do not
+recreate the in-game minimap or require it to render/export Toolkit observations.
+`IEntity:GetEntityMapSize` is published, but slot bounds/validity and enumeration
+semantics still need verification before advertising full loaded-entity support.
+
+The bridge now optionally exports `IEntity:GetServerId` for the selected target,
+separately from the client index. Missing getter or zero leaves identity unknown;
+invalid values fail closed. Rechecks reject target index/disappearance/name and
+known server-ID changes during position reads. Original recordings still import;
+kind remains unknown and version remains unverified. Synthetic Lua/file-feed tests
+validate mapping/rejection; this additional getter needs Windows runtime testing.
+A reported ID is an observation, not proof of the selected server/database identity.
+
+For packet integration, reuse `workbench.packets.decode` (`list_opcodes`,
+`get_field_schema`, `decode`), `captures/_raw_packet_ingest_impl.py` (PacketDB and
+Packeteer ingestion), `captures/packet_correlation.py` and the existing capture
+spatial services. Preserve packet direction, source bytes/locator, timestamps and
+version evidence. Established framework tools can supply additional formats and
+samples under their applicable licenses; no new decoder is required for covered
+schemas. Decoding a capture is not proof that constructing/sending it is valid:
+write support requires independently verified framing/fields/direction, selected
+client/session, explicit authorization and observed client/server behavior.
+No packet injection or memory write has been added.

@@ -122,3 +122,12 @@ See the [Windows/Codex test handoff](../../docs/workbench/LIVE_CLIENT_WINDOWS_HA
 for local test-agent setup and the offline runtime-report command. The report
 collects recording summaries and optional binary metadata without executing
 client binaries or declaring a supported running build.
+
+### Selected-target identity
+
+Ashita observations optionally retain the published `IEntity:GetServerId` value
+as `server_entity_id`, separate from `client_index`. Missing getter or zero keeps
+identity unknown; invalid values or target changes during sampling stop export.
+The getter mapping is cloud-tested with synthetic Lua interfaces and requires
+Windows validation. It does not establish server/database correlation or entity
+kind. Existing recordings remain compatible; no client writes are enabled.
