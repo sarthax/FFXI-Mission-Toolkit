@@ -583,7 +583,7 @@ def main():
     assert "section-link active mutation" in editor_html
     assert "Specialized: Nyzul" not in editor_html
     assert '<body class="shell-dense">' in editor_html
-    assert 'id="itemEditorTop" class="dense-toolbar"' in editor_html
+    assert 'class="wb-page-title">Item Editor</span>' in editor_html
     assert '<div id="itemBatchEditor"' in editor_html
     assert 'id="itemSessionHistory" class="dense-toolbar"' in editor_html
     assert 'class="editor-toolbar dense-toolbar"' in editor_html
