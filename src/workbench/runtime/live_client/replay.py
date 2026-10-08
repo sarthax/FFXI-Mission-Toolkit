@@ -96,7 +96,8 @@ class RecordedTelemetryReplay:
         for index, payload in enumerate(self._frames[:count]):
             # Every consumed frame has already passed feed validation. Preserve
             # discontinuities even when downsampling omits transition frames.
-            context = (payload["position"]["zone_id"], payload.get("instance_hint"))
+            context = (payload["client_id"], payload["position"]["zone_id"], payload.get("instance_hint"),
+                       payload["adapter"], payload["client_version"])
             if previous is not None and context != previous:
                 segment += 1
             previous = context

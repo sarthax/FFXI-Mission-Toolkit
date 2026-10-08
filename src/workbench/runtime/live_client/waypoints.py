@@ -56,7 +56,10 @@ def parse_path(document: dict) -> list[PathSample]:
             raise ValueError("invalid client id")
         result.append(PathSample(observed_at=observed_at,
                                  position=Position(**row["position"]),
-                                 client_id=client_id))
+                                 client_id=client_id,
+                                 **{key: row[key] for key in ("instance_hint", "adapter", "client_version",
+                                    "session_id", "session_generation", "recorded_segment",
+                                    "observation_scope", "entities_truncated") if key in row}))
     return result
 
 

@@ -97,13 +97,26 @@ def create_observation_export_router(registry) -> APIRouter:
         if replay.position > 10000:
             raise HTTPException(422, 'path export exceeds 10000-frame limit')
         samples = []
+        segment, previous_context = 0, None
+        generation = registry._generations[client_id][1]
         # Export every consumed frame, never the downsampled display trace.
         for payload in replay._frames[:replay.position]:
-            snapshot = decode_frame(payload).snapshot
+            sample_frame = decode_frame(payload)
+            snapshot = sample_frame.snapshot
+            context = (snapshot.client_id, snapshot.position.zone_id, snapshot.instance_hint,
+                       snapshot.adapter, snapshot.version)
+            if previous_context is not None and context != previous_context:
+                segment += 1
+            previous_context = context
             samples.append({'observed_at': snapshot.observed_at,
                             'position': asdict(snapshot.position),
                             'client_id': snapshot.client_id,
-                            'instance_hint': snapshot.instance_hint})
+                            'instance_hint': snapshot.instance_hint,
+                            'adapter': snapshot.adapter, 'client_version': snapshot.version,
+                            'session_id': client_id, 'session_generation': generation,
+                            'recorded_segment': segment,
+                            'observation_scope': sample_frame.observation_scope,
+                            'entities_truncated': sample_frame.entities_truncated})
         require_observation(registry, client_id, frame, observation_token)
         return download({'schema_version': 1, 'kind': 'live_client_path',
                          'samples': samples,

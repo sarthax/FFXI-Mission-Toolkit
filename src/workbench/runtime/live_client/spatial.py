@@ -46,11 +46,15 @@ def nearby_waypoints(position: Position, waypoints: Iterable[Waypoint],
 
 
 def split_path_by_zone(samples: Iterable[PathSample]) -> list[list[PathSample]]:
-    """Do not connect traces through zone transitions or across clients."""
+    """Preserve zone/source/session/instance/visit and time discontinuities."""
     segments: list[list[PathSample]] = []
+    def context(point):
+        return (point.position.zone_id, point.client_id, point.instance_hint,
+                point.adapter, point.client_version, point.session_id,
+                point.session_generation, point.recorded_segment)
     for sample in samples:
-        if not segments or (segments[-1][-1].position.zone_id != sample.position.zone_id
-                            or segments[-1][-1].client_id != sample.client_id):
+        previous = segments[-1][-1] if segments else None
+        if previous is None or context(previous) != context(sample) or sample.observed_at <= previous.observed_at:
             segments.append([])
         segments[-1].append(sample)
     return segments

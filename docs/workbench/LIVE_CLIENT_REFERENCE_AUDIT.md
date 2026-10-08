@@ -218,3 +218,13 @@ legacy mode/reset, invalid scope and Chromium truncation visibility. Windows
 inventory/lifecycle tests remain pending. Backlog slice 1 has its experimental
 cloud implementation; runtime acceptance and richer kind/status/target-role
 semantics remain open. Next gather runtime evidence, then identity/calibration.
+
+## Portable path provenance follow-up
+
+The earlier baseline `PathSample` metadata gap is now closed: optional instance,
+source/version, session/generation, segment and scope/truncation survive portable
+round trips. Session sampling retains known snapshot metadata; export supplies
+recording context. Source/version changes split replay trace segments as well as
+paths. Unknown legacy context stays unknown and non-increasing times break paths.
+This is cloud-validated evidence preservation; calibrated maps, navmesh traversal,
+actual runtime identity and client controls remain separate pending work.
