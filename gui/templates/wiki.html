@@ -155,6 +155,17 @@
         {% endfor %}
       </tr>{% endfor %}
       </table></div>
+      {% if item.field_candidates %}
+      <details class="wiki-table-review">
+        <summary>Review labeled fields ({{ item.field_candidates|length }}) — reference only</summary>
+        <p class="muted">These values were extracted from explicit table labels. They are not verified gameplay facts or approved Feature Trace relationships.</p>
+        <dl class="wiki-definition">
+          {% for candidate in item.field_candidates %}
+            <dt>{{ candidate.field }}</dt><dd>{{ candidate.value }}</dd>
+          {% endfor %}
+        </dl>
+      </details>
+      {% endif %}
     {% endif %}
   {% endfor %}
 </section>
