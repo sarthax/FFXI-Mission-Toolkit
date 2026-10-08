@@ -230,6 +230,12 @@
         <p class="muted">This extracted field is a review candidate, not a verified gameplay relationship.</p>
         <div>Original: <code>{{ item.field_candidate.value_raw or item.field_candidate.value }}</code></div>
         <div class="muted">Source: {{ item.field_candidate.source_locator }}</div>
+        {% if item.field_candidate.source_links %}
+        <div class="muted">Explicit source links (review only):</div>
+        {% for link in item.field_candidate.source_links %}
+        <div><code>{{ link.source_markup }}</code> → {{ link.target }}</div>
+        {% endfor %}
+        {% endif %}
       </details>
       {% endif %}
     {% elif item.type == 'table' %}
