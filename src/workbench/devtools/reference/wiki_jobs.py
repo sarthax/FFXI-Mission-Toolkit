@@ -8,6 +8,8 @@ from __future__ import annotations
 import hashlib, os, sqlite3, subprocess, tempfile, threading, time, urllib.parse, uuid
 from datetime import datetime, timezone
 
+from . import wiki_document
+
 SITES = {
     "BGWiki": {"label": "BG Wiki", "home": "https://www.bg-wiki.com/ffxi/Main_Page", "page": "https://www.bg-wiki.com/ffxi/{t}"},
     "FFXIclopedia": {"label": "FFXIclopedia", "home": "https://ffxiclopedia.fandom.com/wiki/Main_Page", "page": "https://ffxiclopedia.fandom.com/wiki/{t}"},
@@ -46,26 +48,36 @@ def page_url(source_id: str, title: str) -> str | None:
     return s["page"].format(t=urllib.parse.quote(t, safe="/"))
 
 
-def _fetch(source_id: str, title: str, log) -> list[tuple]:
-    """Rows for reference_wiki_pages."""
+def _fetch(source_id: str, title: str, log) -> list[dict]:
+    """Fetch page rows plus source-preserving structure metadata."""
     now = datetime.now(timezone.utc).isoformat()
     if source_id == "WikiWikiJP":
         from . import scrape_wikiwiki_jp as jp
         log("fetching wikiwiki.jp page")
-        text = jp.to_text(jp.get(title))
-        return [(source_id, title, title, title, "", now, text, hashlib.sha256(text.encode()).hexdigest())]
+        raw = jp.get(title)
+        text = jp.to_text(raw)
+        row = (source_id, title, title, title, "", now, text, hashlib.sha256(text.encode()).hexdigest())
+        return [{"row": row, "source_format": "html", "raw_source": raw}]
     if source_id == "FFXIclopedia":
         from . import scrape_ffxiclopedia as fx
         from .ffxiclopedia import norm_title
         log("fetching FFXIclopedia page via API")
-        return [(source_id, str(pid), t, norm_title(t), str(rev), ts, text, hashlib.sha256(text.encode()).hexdigest())
-                for pid, t, rev, ts, text in fx.fetch([title])]
+        out = []
+        for pid, t, rev, ts, text in fx.fetch([title]):
+            row = (source_id, str(pid), t, norm_title(t), str(rev), ts, text, hashlib.sha256(text.encode()).hexdigest())
+            out.append({"row": row, "source_format": "mediawiki", "raw_source": text})
+        return out
     if source_id == "BGWiki":
         from . import scrape_bg_wiki as bg
         from ._wiki_evidence_impl import _norm
         log("fetching BG Wiki page via API")
-        return [(source_id, str(r["pageid"]), r["title"], _norm(r["title"]), str(r["revid"]), r["timestamp"], r["wikitext"],
-                 hashlib.sha256(r["wikitext"].encode()).hexdigest()) for r in bg.fetch_pages_by_title([title])]
+        out = []
+        for r in bg.fetch_pages_by_title([title]):
+            text = r["wikitext"]
+            row = (source_id, str(r["pageid"]), r["title"], _norm(r["title"]), str(r["revid"]), r["timestamp"],
+                   text, hashlib.sha256(text.encode()).hexdigest())
+            out.append({"row": row, "source_format": "mediawiki", "raw_source": text})
+        return out
     raise ValueError(f"unknown source {source_id}")
 
 
@@ -93,11 +105,12 @@ def _run(job: dict, main_db: str) -> None:
     tmp = os.path.join(tempfile.gettempdir(), f"wikiscrape_{job['id']}.db")
     try:
         job["state"] = "fetching"
-        rows = _fetch(job["source"], job["title"], log)
-        if not rows:
+        fetched = _fetch(job["source"], job["title"], log)
+        if not fetched:
             job.update(state="not_found", result=0)
             log("page not found at source")
             return
+        rows = [item["row"] for item in fetched]
         t = sqlite3.connect(tmp)
         t.execute(_PAGES_DDL)
         t.executemany("INSERT OR REPLACE INTO reference_wiki_pages VALUES(?,?,?,?,?,?,?,?)", rows)
@@ -106,8 +119,27 @@ def _run(job: dict, main_db: str) -> None:
         log(f"fetched {len(rows)} page(s) into temp DB; merging")
         job["state"] = "merging"
         job["result"] = _merge(main_db, tmp, log)
+
+        # Persist the structural projection after the short page-row merge. This uses the already
+        # fetched source bytes and performs no second network request.
+        con = sqlite3.connect(main_db, timeout=30)
+        try:
+            for item in fetched:
+                row = item["row"]
+                page = {"page_id": row[1], "title": row[2], "page_text": row[6]}
+                page_id, source_format, blocks = wiki_document.build_blocks(
+                    page, source_format=item["source_format"], raw_source=item["raw_source"]
+                )
+                wiki_document.store_document(
+                    con, source_id=row[0], page_id=page_id, source_format=source_format,
+                    raw_source=item["raw_source"], blocks=blocks,
+                )
+                wiki_document.ensure_title_alias(con, row[0], page_id, row[2])
+        finally:
+            con.close()
+
         job["state"] = "done"
-        log("merged into main DB")
+        log("merged into main DB with structured document blocks")
     except Exception as exc:  # a job must never raise into the server
         job["state"] = "error"
         job["error"] = str(exc)
