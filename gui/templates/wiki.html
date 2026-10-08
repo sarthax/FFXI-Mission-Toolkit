@@ -14,6 +14,23 @@
 .wiki-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:5px;margin:6px 0}
 .wiki-kpi{border:1px solid var(--border);border-radius:6px;padding:5px 7px;background:var(--surface)}
 .wiki-kpi .n{font-weight:700;font-size:16px}.wiki-kpi .l{font-size:10px;color:var(--muted)}
+.wiki-search-results{display:grid;gap:6px;margin:8px 0}
+.wiki-search-hit{display:block;border:1px solid var(--border);border-radius:7px;background:var(--surface);padding:8px 10px;text-decoration:none;color:inherit}
+.wiki-search-hit:hover{border-color:var(--accent)}
+.wiki-search-hit .meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+.wiki-article{max-width:1180px}
+.wiki-article-section{padding:2px 0 10px;border-bottom:1px solid var(--border)}
+.wiki-article-section:last-child{border-bottom:0}
+.wiki-article-section h2,.wiki-article-section h3,.wiki-article-section h4{margin:10px 0 6px}
+.wiki-prose{line-height:1.55;margin:7px 0;white-space:pre-wrap}
+.wiki-list{margin:6px 0 8px 22px;padding:0}
+.wiki-list li{margin:3px 0;line-height:1.45}
+.wiki-definition{display:grid;grid-template-columns:minmax(150px,.3fr) 1fr;gap:8px;padding:5px 0;border-bottom:1px dotted var(--border)}
+.wiki-definition dt{font-weight:700}.wiki-definition dd{margin:0}
+.wiki-article table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12.5px}
+.wiki-article th,.wiki-article td{border:1px solid var(--border);padding:5px 7px;vertical-align:top;text-align:left}
+.wiki-article th{background:var(--surface-2)}
+.wiki-degraded{border-left:3px solid var(--warn,#b8860b);padding-left:9px}
 </style>
 {% if error %}<div class="warn" style="margin:6px 0">{{ error }}</div>{% endif %}
 <form class="search wb-filter-row" method="get">
@@ -22,9 +39,10 @@
     <option value="{{ src.id }}" {% if src.id == source %}selected{% endif %} {% if not src.available %}disabled{% endif %}>{{ src.label }}{% if not src.available %} (not imported){% endif %}</option>
     {% endfor %}
   </select>
-  <input type="text" name="title" value="{{ title }}" placeholder="wiki page title or URL, e.g. Leujaoam Cleansing">
-  <input type="hidden" name="tab" value="{{ tab }}">
-  <button type="submit">Open</button>
+  <input type="search" name="q" value="{{ q }}" placeholder="Search titles, article text, aliases, or cached English translations">
+  <input type="hidden" name="tab" value="browse">
+  <button type="submit">Search</button>
+  {% if title %}<a class="chip" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab={{ tab }}">Clear search</a>{% endif %}
 </form>
 
 <details class="wiki-section" id="scrape-box">
@@ -40,6 +58,25 @@
   </div>
 </div>
 </details>
+
+{% if q %}
+<div class="wiki-search-results">
+  {% if search_results %}
+    {% for r in search_results %}
+    <a class="wiki-search-hit" href="/wiki?title={{ r.title|urlencode }}&source={{ r.source_id|urlencode }}&tab=browse">
+      <strong>{{ r.title }}</strong>
+      <div class="meta">
+        <span class="chip">{{ r.source_id }}</span>
+        {% for why in r.reasons %}<span>{{ why }}</span>{% endfor %}
+      </div>
+      {% if r.snippet %}<div class="muted" style="margin-top:4px;">{{ r.snippet }}</div>{% endif %}
+    </a>
+    {% endfor %}
+  {% else %}
+    <div class="warn">No stored wiki page matched {{ q|e }}.</div>
+  {% endif %}
+</div>
+{% endif %}
 
 <div class="wiki-actions dense-toolbar" style="margin:6px 0">
   <a class="chip {% if tab == 'browse' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=browse"><b>Browse</b></a>
@@ -65,9 +102,43 @@
 <div id="tr-out" class="warn" hidden></div>
 <p class="muted">Japanese original shown below, stored verbatim. Translations are machine-generated, cached separately, and never ingested as evidence.</p>
 {% endif %}
-{% for head, body in page_view.sections %}
-<details class="wiki-section" {% if loop.index <= 3 %}open{% endif %}><summary>{{ head }}</summary><div class="body"><pre style="white-space:pre-wrap;font-size:12.5px;background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:8px;">{{ body }}</pre></div></details>
+{% if page_view.degraded_structure %}
+<div class="warn">This page came from the legacy flattened import. It is readable here, but original tables/links cannot be reconstructed until this page is selectively re-scraped.</div>
+{% elif page_view.persisted_structure %}
+<p class="muted">Structured source preserved · {{ page_view.source_format }} · {{ page_view.block_count }} document blocks</p>
+{% else %}
+<p class="muted">Structured on demand from the existing source snapshot; no network re-scrape was required.</p>
+{% endif %}
+<div class="wiki-article">
+{% for section in page_view.groups %}
+<section class="wiki-article-section">
+  {% if section.title != 'Overview' %}
+    {% if section.level <= 2 %}<h2>{{ section.title }}</h2>
+    {% elif section.level == 3 %}<h3>{{ section.title }}</h3>
+    {% else %}<h4>{{ section.title }}</h4>{% endif %}
+  {% endif %}
+  {% for item in section.content %}
+    {% if item.type == 'paragraph' %}
+      <p class="wiki-prose">{{ item.text }}</p>
+    {% elif item.type == 'legacy_text' %}
+      <div class="wiki-prose wiki-degraded">{{ item.text }}</div>
+    {% elif item.type == 'list' %}
+      <ul class="wiki-list">{% for li in item.items %}<li>{{ li.text }}</li>{% endfor %}</ul>
+    {% elif item.type == 'definition' %}
+      <dl class="wiki-definition"><dt>{{ item.term }}</dt><dd>{{ item.definition }}</dd></dl>
+    {% elif item.type == 'table' %}
+      <div class="table-wrap"><table>
+      {% for row in item.rows %}<tr>
+        {% for cell in row %}
+          {% if cell.header %}<th>{{ cell.text }}</th>{% else %}<td>{{ cell.text }}</td>{% endif %}
+        {% endfor %}
+      </tr>{% endfor %}
+      </table></div>
+    {% endif %}
+  {% endfor %}
+</section>
 {% endfor %}
+</div>
 {% endif %}
 {% endif %}
 
