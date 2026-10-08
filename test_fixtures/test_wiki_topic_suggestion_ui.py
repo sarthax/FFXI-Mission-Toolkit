@@ -24,7 +24,7 @@ def main():
     assert 'link["entity_candidate_count"]=len(identities)' in host
     assert '[:10]' in host
     assert 'Inspect entity candidates ({{ link.entity_candidate_count }})' in template
-    assert 'via {{ match.method }}' in template
+    assert '{{ link.entity_candidate_lines }}' in template
     print("Wiki multilingual suggestion reader regression: PASS")
 
 if __name__=="__main__":
