@@ -11,6 +11,10 @@ def main():
     assert '<b>Topic review queue</b>' in ui
     assert '{% for entry in review_queue %}' in ui
     assert 'Back to topic review queue' in ui
+    assert 'review_origin=1' in ui
+    assert "{% if review_origin %}" in ui
+    assert 'review_origin: bool = False' in host
+    assert '"review_origin": review_origin' in host
     assert 'review_status={{ review_status }}&review_page={{ review_page }}' in ui
     assert 'entry.pending' in ui and 'entry.dismissed' in ui
     assert 'Read-only overview' in ui
