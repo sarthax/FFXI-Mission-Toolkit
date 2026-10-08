@@ -137,6 +137,9 @@ from workbench.runtime.live_client.registry import ReplayRegistry
 from workbench.runtime.live_client.registry_api import create_registry_router
 from workbench.runtime.live_client.replay_console import create_replay_console_router
 live_client_replay_registry = ReplayRegistry()
+# Only the explicitly configured offline JSONL recording is loaded.
+from workbench.runtime.live_client.bootstrap import register_configured_replay
+register_configured_replay(live_client_replay_registry, os.environ)
 app.include_router(create_registry_router(live_client_replay_registry))
 app.include_router(create_replay_console_router())
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
