@@ -5554,7 +5554,7 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
 
 
 @app.get("/wiki", response_class=HTMLResponse)
-def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = "", tab: str = "browse", q: str = "", review_status: str = "all", review_page: int = 1):
+def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = "", tab: str = "browse", q: str = "", review_status: str = "all", review_page: int = 1, review_notice: str = ""):
     report = None
     evidence = None
     comparison = None
@@ -5610,6 +5610,7 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         "tab": tab if tab in ("browse", "evidence", "review") else "browse",
         "review_queue": review_queue,
         "review_page": review_page,
+        "review_notice": review_notice if review_notice in ("approved", "dismissed") else "",
         "review_has_more": review_has_more,
         "review_status": review_status if review_status in ("all", "pending", "dismissed") else "all",
         "page_view": page_view,
@@ -5687,6 +5688,8 @@ async def wiki_link_topic(request: Request):
         suffix = f"?title={quote(title)}&source={quote(source)}&tab=browse"
     if error:
         suffix += f"&error={quote(error)}"
+    else:
+        suffix += "&review_notice=approved"
     return RedirectResponse("/wiki" + suffix, status_code=303)
 
 
@@ -5718,6 +5721,8 @@ async def wiki_dismiss_topic(request: Request):
         suffix = f"?title={quote(title)}&source={quote(source)}&tab=browse"
     if error:
         suffix += f"&error={quote(error)}"
+    else:
+        suffix += "&review_notice=dismissed"
     return RedirectResponse("/wiki" + suffix, status_code=303)
 
 
