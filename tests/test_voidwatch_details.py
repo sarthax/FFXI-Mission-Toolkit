@@ -17,7 +17,7 @@ def test_checks_flags_built_without_script():
 
 def test_tracker_loads_and_paths_defined():
     nms = D.load_tracker()
-    assert len(nms) >= 71
+    assert len(nms) >= 70  # Cetus removed: ROV 2-18, not a VW NM
     assert {"Crimson", "Indigo", "Jade", "White", "Ashen"} <= set(D.PATHS)
 
 
