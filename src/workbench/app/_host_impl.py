@@ -5486,6 +5486,7 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
 
     visible_blocks = [b for b in blocks if not (b.get("metadata") or {}).get("hidden")]
     groups = wiki_document.presentation_groups(visible_blocks)
+    topic = wiki_document.page_topic(con, source, page_id)
     degraded = any((b.get("metadata") or {}).get("degraded") for b in visible_blocks)
     return {
         "title": page_title,
@@ -5503,6 +5504,7 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
         "source_format": source_format,
         "persisted_structure": persisted_structure,
         "degraded_structure": degraded,
+        "topic": topic,
     }
 
 
@@ -5584,6 +5586,37 @@ def wiki_translate(source: str, title: str):
         return wiki_jobs.translate_cached(con, source, view["page_id"], view["hash"], view["text"])
     finally:
         con.close()
+
+
+@app.post("/wiki/topic", response_class=HTMLResponse)
+async def wiki_link_topic(request: Request):
+    """Attach the current source page to a canonical multilingual topic."""
+    form = await request.form()
+    title = (form.get("title") or "").strip()
+    source = (form.get("source") or wiki_evidence.SOURCE_BG).strip()
+    canonical_title = (form.get("canonical_title") or "").strip()
+    error = ""
+    con = get_con()
+    try:
+        page = wiki_evidence.find_reference_page(con, source, title)
+        if not page:
+            raise ValueError(f"{source}: page not found for {title!r}")
+        page_id = str(page.get("pageid") or page.get("page_id") or page.get("title") or title)
+        wiki_document.link_topic(
+            con,
+            source_id=source,
+            page_id=page_id,
+            canonical_title=canonical_title,
+            method="MANUAL_REVIEW",
+        )
+    except ValueError as exc:
+        error = str(exc)
+    finally:
+        con.close()
+    suffix = f"?title={quote(title)}&source={quote(source)}&tab=browse"
+    if error:
+        suffix += f"&error={quote(error)}"
+    return RedirectResponse("/wiki" + suffix, status_code=303)
 
 
 @app.post("/wiki/map", response_class=HTMLResponse)
