@@ -17,8 +17,6 @@ capture_detail.html | legacy page pending archetype migration
 capture_packet_detail.html | legacy page pending archetype migration
 capture_packets.html | legacy page pending archetype migration
 capture_query.html | legacy page pending archetype migration
-capture_related_evidence.html | legacy page pending archetype migration
-capture_review.html | legacy page pending archetype migration
 capture_search.html | legacy page pending archetype migration
 capture_timeline.html | legacy page pending archetype migration
 captures.html | legacy page pending archetype migration
