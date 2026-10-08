@@ -25,7 +25,7 @@ dt{color:#a9b8ca}dd{margin:0;overflow-wrap:anywhere}
 <header><h1>Live Client — Replay Console</h1><strong>Read-only • Offline</strong></header>
 <p>Displays explicitly registered replay clients. No client discovery, recording import or game-memory controls.</p>
 <section><label for="client">Recorded client </label><select id="client"><option value="">Choose client</option></select>
-<button id="refresh" type="button">Refresh</button><button id="poll" type="button" disabled>Poll file feed</button><button id="step" type="button" disabled>Next recorded frame</button><p id="state" role="status">Not connected</p></section>
+<button id="refresh" type="button">Refresh</button><button id="poll" type="button" disabled>Poll file feed</button><button id="previous" type="button" disabled>Previous</button><button id="restart" type="button" disabled>Restart</button><button id="step" type="button" disabled>Next recorded frame</button><p id="state" role="status">Not connected</p></section>
 <section><h2>Player observation</h2><dl>
 <div><dt>Character</dt><dd id="character">—</dd></div><div><dt>Zone</dt><dd id="zone">—</dd></div>
 <div><dt>XYZ</dt><dd id="xyz">—</dd></div><div><dt>Heading</dt><dd id="heading">—</dd></div>
