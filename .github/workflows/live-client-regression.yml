@@ -12,6 +12,7 @@ on:
       - 'gui/templates/live_client_console.html'
       - 'src/workbench/gui_shell.py'
       - 'tests/test_live_client_*.py'
+      - 'tests/fixtures/live_client/**'
       - '.github/workflows/live-client-regression.yml'
   pull_request:
     paths:
@@ -21,6 +22,7 @@ on:
       - 'gui/templates/live_client_console.html'
       - 'src/workbench/gui_shell.py'
       - 'tests/test_live_client_*.py'
+      - 'tests/fixtures/live_client/**'
       - '.github/workflows/live-client-regression.yml'
   workflow_dispatch:
 

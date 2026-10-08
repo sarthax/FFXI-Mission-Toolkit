@@ -1,7 +1,9 @@
 # Live Client Development Bridge — Roadmap and Resume Guide
 
-Status: **foundation in progress** on [PR #663](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/663), branch `feature/live-client-foundation`.
-First recorded: 2026-10-07. Do not describe future items below as shipped.
+Status: **recorded sessions integrated; partial Ashita v4 runtime evidence received**.
+Foundation: [PR #663](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/663).
+First recorded: 2026-10-07. Dated entries below record historical progress; consult
+the latest milestone for current validation limits.
 
 ## Goal
 Provide native Toolkit-controlled development interaction with an authorized running FFXI client, independent of the Project Tako executable. Integrate live in-game positions and entities with Zone Editor, 2D/3D spatial viewers, capture provenance, spawn placement and navmesh investigation. Development should be achievable using GitHub cloud editing/CI; runtime client validation requires a Windows FFXI session.
@@ -224,3 +226,23 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - `addons/workbench_live/` contains original, explicit-start read-only Ashita v4 and Windower observation exporters with bounded JSONL output. Ashita is the selected real-runtime validation target. No memory offsets, OS process detector, supported-build allowlist or game write functions are provided.
 - Lua 5.1 cloud tests exercise actual addon code with synthetic interfaces, JSONL-to-`FileTelemetryBridge` ingestion, identity/zone transitions, invalid fields, missing SDK functions, clock reversal, logout/unload and independent sources. They do not establish real-client compatibility.
 - [Addon installation and Windows acceptance procedure](../../addons/workbench_live/README.md) distinguishes cloud JSONL upload from same-host live file-feed testing. Verify the actual Ashita major version and framework/game/module identity before claiming support.
+
+## Authorized Ashita recording and raw-coordinate trace planes
+
+- After the PR #698 conditional entity-zone correction, the user reported successful
+  recording and supplied a 121-frame, 120-second capture in zone 50. Every frame
+  passed the strict loader and file-feed decoder; 35 frames observe eight distinct
+  selected targets. This is real source evidence rather than a synthetic SDK run.
+- An anonymized regression fixture preserves all coordinates, headings and target
+  transitions while replacing names/indices and shifting timestamps. Tests cover
+  replay seeking/rewinding, bounded polling, target observations and Chromium UI.
+- The console exposes raw X/Y, X/Z and Y/Z trace planes, with a per-session choice
+  and an initial X/Y view for the experimental Ashita source. It preserves numeric
+  data, uniform scale and zone/instance segment boundaries. Source and reported
+  client version are displayed; entity details keep unknown server IDs explicit.
+- The user reported game version `30191204_1`, stairs traversal and no zone change;
+  the installed Ashita build and executable hashes remain unspecified. Next
+  acceptance evidence: verified build identity, zone/logout and
+  reconnect behavior, concurrent-client isolation, independent axis/heading
+  verification and same-host polling. Calibrated map overlays, automatic process
+  discovery and writable development actions remain incomplete.

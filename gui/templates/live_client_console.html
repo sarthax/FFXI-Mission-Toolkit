@@ -5,7 +5,7 @@
 {% block page_heading %}Live Client{% endblock %}
 {% block page_status %}<span class="wb-readonly-badge">Recorded telemetry · Read-only</span>{% endblock %}
 {% block page_actions %}<a class="chip" href="/settings">Optional startup sources</a>{% endblock %}
-{% block page_help %}Open recordings directly; Settings and restart are unnecessary. Playback follows observation timestamps. Comparison shows independent observations, without time synchronization or inferred shared instances. X/Z traces are relative views, not calibrated zone maps. Windows game attachment and write controls are not available.{% endblock %}
+{% block page_help %}Open recordings directly; Settings and restart are unnecessary. Playback follows observation timestamps. Comparison shows independent observations, without time synchronization or inferred shared instances. Choose X/Y, X/Z or Y/Z to inspect raw relative positions; traces are not calibrated zone maps. Windows game attachment and write controls are not available.{% endblock %}
 {% block page_body %}
 {% if startup_error %}<div class="warn" role="status">{{ startup_error }}. You can still open a recording below.</div>{% endif %}
 <style>{{ console_style | safe }}</style>
