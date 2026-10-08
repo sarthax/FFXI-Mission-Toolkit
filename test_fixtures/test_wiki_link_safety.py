@@ -1,5 +1,5 @@
 """Link safety for Wiki V2 structured relation extraction."""
-from workbench.devtools.reference import _wiki_evidence_impl as evidence
+from workbench.devtools.reference import wiki_evidence as evidence
 
 
 def main():
