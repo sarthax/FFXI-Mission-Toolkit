@@ -44,8 +44,11 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:.5rem;bo
 <section><h2>Entity observations</h2><p id="entity-status">No entity observations.</p>
 <div style="overflow:auto"><table><thead><tr><th>Name</th><th>Kind</th><th>Client index</th><th>Server ID</th><th>Raw XYZ</th><th>Capture</th></tr></thead><tbody id="entity-rows"></tbody></table></div></section>
 <section><h2>Recorded position trace</h2><label for="trace-plane">Trace plane </label><select id="trace-plane"><option value="xz">X/Z</option><option value="xy">X/Y</option><option value="yz">Y/Z</option></select><p id="trace-status">Select a recording to view its observed movement.</p>
+<label><input type="checkbox" id="show-waypoints"> Show saved waypoint markers (up to 100)</label>
+<label for="relative-waypoint">Compare saved waypoint </label><select id="relative-waypoint"><option value="">Choose a comparable waypoint</option></select>
+<p id="relative-status" role="status">Select a recorded session to compare saved positions.</p>
 <svg id="trace" viewBox="0 0 600 280" style="width:100%;background:#101720;border:1px solid #414a58" role="img" aria-label="Recorded positions in current zone"></svg>
-<p style="color:#a9b8ca">Raw relative coordinates. Ashita recordings initially use X/Y; choose another plane to inspect elevation. This is not a calibrated zone map.</p></section>
+<p style="color:#a9b8ca">Raw relative coordinates. Ashita recordings initially use X/Y; choose another plane to inspect elevation. Straight-line waypoint differences use unverified raw units; they are not routes or a calibrated zone map.</p></section>
 <section><h2>Waypoint library</h2><p>Saved on the toolkit host. Raw coordinates and unverified source provenance; library actions do not move the client.</p>
 <label for="waypoint-search">Search names </label><input id="waypoint-search" maxlength="200">
 <label for="waypoint-zone">Zone </label><input id="waypoint-zone" type="number" min="0" max="65535" placeholder="All zones">
@@ -57,8 +60,9 @@ const client=document.getElementById('client'),state=document.getElementById('st
 const show=(id,value)=>document.getElementById(id).textContent=value;
 let rows=[],playing=false,timer=null,generation=0;
 const tracePlanes=new Map();
+const relativeSelections=new Map();
 const controls=['step','poll','previous','restart','play','timeline','unload','replace','capture-player','save-player','export-path'];
-function reset(){for(const id of ['character','zone','xyz','heading','observed','entities','source','version'])show(id,'—');document.getElementById('trace').replaceChildren();document.getElementById('entity-rows').replaceChildren();show('entity-status','No entity observations.');show('trace-status','Select a recorded session.');}
+function reset(){for(const id of ['character','zone','xyz','heading','observed','entities','source','version'])show(id,'—');document.getElementById('trace').replaceChildren();document.getElementById('entity-rows').replaceChildren();document.getElementById('relative-waypoint').replaceChildren(new Option('Choose a comparable waypoint',''));show('relative-status','Select a recorded session to compare saved positions.');show('entity-status','No entity observations.');show('trace-status','Select a recorded session.');}
 function showEntities(entities){
  const body=document.getElementById('entity-rows');body.replaceChildren();
  for(const entity of entities){
@@ -84,18 +88,40 @@ function selectedRow(){return rows.find(row=>row.client_id===client.value);}
 async function projection(row){
  return request('/live-client/replay/projection?'+new URLSearchParams({client_id:row.client_id,zone_id:String(row.zone_id)}));
 }
-async function drawTrace(clientId,zoneId,instanceHint){
+async function relativeWaypoints(clientId,observedAt){
+ const select=document.getElementById('relative-waypoint');
+ select.replaceChildren(new Option('Choose a comparable waypoint',''));
+ try{
+  const data=await request('/live-client/waypoints/relative?'+new URLSearchParams({client_id:clientId,observed_at:String(observedAt)}));
+  for(const entry of data.waypoints)select.add(new Option(entry.name+' · '+entry.distance_raw.toFixed(3)+' raw',entry.id));
+  select.value=relativeSelections.get(clientId)||'';
+  const chosen=data.waypoints.find(entry=>entry.id===select.value);
+  show('relative-status',chosen?'Straight-line distance '+chosen.distance_raw.toFixed(3)+' raw units; ΔXYZ '+[chosen.delta.x,chosen.delta.y,chosen.delta.z].join(', ')+'. Coordinates, instance and route remain unverified.':
+   data.waypoints.length+' comparable waypoints; '+data.excluded.length+' excluded by source/session/zone/visit context.');
+  return data;
+ }catch(error){show('relative-status','Waypoint comparison unavailable: '+error.message);return {waypoints:[]};}
+}
+async function drawTrace(clientId,zoneId,instanceHint,comparison={waypoints:[]}){
  const svg=document.getElementById('trace');svg.replaceChildren();
  const result=await fetch('/live-client/replay/trace?'+new URLSearchParams({client_id:clientId,max_points:'500'}),{cache:'no-store'});
  if(!result.ok){show('trace-status','Trace only available for recorded sessions.');return;}
  const all=(await result.json()).points||[];
+ if(comparison.recorded_frame!=null&&all.at(-1)?.frame!==comparison.recorded_frame){show('trace-status','Recording changed; refresh waypoint comparison.');return;}
+ const waypoints=comparison.waypoints;
  const points=all.filter(p=>p.zone_id===zoneId&&(p.instance_hint??null)===(instanceHint??null));
  if(!points.length){show('trace-status','No trace points in this zone.');return;}
  const plane=document.getElementById('trace-plane').value,[horizontal,vertical]=plane;
- const minH=Math.min(...points.map(p=>p[horizontal])),maxH=Math.max(...points.map(p=>p[horizontal]));
- const minV=Math.min(...points.map(p=>p[vertical])),maxV=Math.max(...points.map(p=>p[vertical]));
- const scale=Math.min(540/Math.max(maxH-minH,1),220/Math.max(maxV-minV,1));
- const coords=points.map(p=>({x:300+(p[horizontal]-(minH+maxH)/2)*scale,y:140-(p[vertical]-(minV+maxV)/2)*scale,segment:p.segment}));
+ const selected=waypoints.find(entry=>entry.id===document.getElementById('relative-waypoint').value);
+ const markers=document.getElementById('show-waypoints').checked?waypoints.slice(0,100):[];
+ if(selected&&!markers.some(entry=>entry.id===selected.id)&&document.getElementById('show-waypoints').checked){markers.pop();markers.push(selected);}
+ const bounds=points.concat(markers.map(entry=>entry.position));
+ const minH=Math.min(...bounds.map(p=>p[horizontal])),maxH=Math.max(...bounds.map(p=>p[horizontal]));
+ const minV=Math.min(...bounds.map(p=>p[vertical])),maxV=Math.max(...bounds.map(p=>p[vertical]));
+ const rangeH=maxH-minH,rangeV=maxV-minV;
+ if(!Number.isFinite(rangeH)||!Number.isFinite(rangeV)){show('trace-status','Coordinates exceed relative plot range.');return;}
+ const scale=Math.min(540/Math.max(rangeH,1),220/Math.max(rangeV,1));
+ const project=p=>({x:300+(p[horizontal]-(minH+rangeH/2))*scale,y:140-(p[vertical]-(minV+rangeV/2))*scale});
+ const coords=points.map(p=>({...project(p),segment:p.segment}));
  const ns='http://www.w3.org/2000/svg';
  const segments=new Map();
  for(const point of coords){if(!segments.has(point.segment))segments.set(point.segment,[]);segments.get(point.segment).push(point);}
@@ -104,6 +130,14 @@ async function drawTrace(clientId,zoneId,instanceHint){
   line.setAttribute('fill','none');line.setAttribute('stroke','#58a6ff');line.setAttribute('stroke-width','2');svg.append(line);
  }
  const current=coords[coords.length-1];const dot=document.createElementNS(ns,'circle');dot.setAttribute('cx',current.x);dot.setAttribute('cy',current.y);dot.setAttribute('r','6');dot.setAttribute('fill','#fb923c');svg.append(dot);
+ for(const entry of markers){
+  const p=project(entry.position),marker=document.createElementNS(ns,'circle');
+  marker.setAttribute('class','waypoint-marker');marker.setAttribute('cx',p.x);marker.setAttribute('cy',p.y);marker.setAttribute('r','5');marker.setAttribute('fill','#3fb950');
+  const title=document.createElementNS(ns,'title');title.textContent=entry.name+' · '+entry.distance_raw.toFixed(3)+' raw units';marker.append(title);svg.append(marker);
+  if(entry.id===selected?.id){
+   const line=document.createElementNS(ns,'line');line.setAttribute('class','waypoint-delta');line.setAttribute('x1',current.x);line.setAttribute('y1',current.y);line.setAttribute('x2',p.x);line.setAttribute('y2',p.y);line.setAttribute('stroke','#3fb950');line.setAttribute('stroke-dasharray','5 5');svg.append(line);
+  }
+ }
  const label=horizontal.toUpperCase()+'/'+vertical.toUpperCase();
  svg.setAttribute('aria-label','Recorded '+label+' positions in current zone');
  show('trace-status',points.length+' observed positions in zone '+zoneId+' (relative '+label+')');
@@ -111,6 +145,7 @@ async function drawTrace(clientId,zoneId,instanceHint){
 async function refresh(){
  rows=(await request('/live-client/replay/clients')).clients||[];
  for(const id of tracePlanes.keys())if(!rows.some(row=>row.client_id===id))tracePlanes.delete(id);
+ for(const id of relativeSelections.keys())if(!rows.some(row=>row.client_id===id))relativeSelections.delete(id);
  const prior=client.value,compare=document.getElementById('compare'),priorCompare=compare.value;
  client.replaceChildren(new Option('Choose recording',''));compare.replaceChildren(new Option('No comparison',''));
  for(const row of rows){
@@ -142,7 +177,8 @@ async function refresh(){
  document.getElementById('export-path').disabled=!recording;
  document.getElementById('trace-plane').value=tracePlanes.get(client.value)||
   (data.adapter==='ashita-v4-api-experimental'?'xy':'xz');
- await drawTrace(client.value,data.zone_id,data.instance_hint);
+ const nearby=await relativeWaypoints(client.value,data.observed_at);
+ await drawTrace(client.value,data.zone_id,data.instance_hint,nearby);
  const other=rows.find(r=>r.client_id===compare.value);
  if(other&&other.observed){
   const second=await projection(other),q=second.player?.position;
@@ -232,6 +268,7 @@ async function refreshLibrary(){
    });actions.append(button);
   }row.append(actions);body.append(row);
  }show('library-status',data.waypoints.length+' saved waypoints match these filters.');
+ if(client.value)await safeRefresh();
 }
 async function safeLibraryRefresh(){try{await refreshLibrary();}catch(error){document.getElementById('waypoint-rows').replaceChildren();show('library-status',error.message);}}
 async function saveWaypoint(entityIndex){
@@ -260,6 +297,10 @@ document.getElementById('import-waypoints').addEventListener('click',async()=>{
 });
 document.getElementById('trace-plane').addEventListener('change',event=>{
  if(client.value)tracePlanes.set(client.value,event.target.value);safeRefresh();
+});
+document.getElementById('show-waypoints').addEventListener('change',()=>{pause();safeRefresh();});
+document.getElementById('relative-waypoint').addEventListener('change',event=>{
+ pause();if(client.value)relativeSelections.set(client.value,event.target.value);safeRefresh();
 });
 document.getElementById('refresh').addEventListener('click',()=>{pause();safeRefresh();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});

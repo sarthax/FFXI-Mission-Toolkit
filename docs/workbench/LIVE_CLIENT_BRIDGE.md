@@ -311,3 +311,28 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Runtime-backed API tests and real Chromium validate capture, persistence, filters,
   rename/delete, portable round-trips, invalid-import isolation and origin guards.
   Actual Windows lifecycle tests remain deferred; local Codex is not required.
+
+## Raw waypoint comparison
+
+Choose a saved waypoint in the movement trace to see straight-line 3D distance
+and XYZ differences from the current observation. Enable **Show waypoints** to
+plot up to 100 comparable points, with a dashed difference line for the selected
+point. XY, XZ and YZ views preserve raw coordinates; units, instance identity,
+map transforms and navigable routes remain unverified. No movement is issued.
+
+Comparison requires the same recording session, source adapter, embedded client
+identity, reported version, zone, instance hint and recorded visit segment. A
+return to a zone starts a separate segment even when its instance hint is unknown.
+Recordings with identical client IDs remain separate. Capture now stores the
+recorded frame and visit segment; older imports remain manageable but must be
+recaptured for comparison. Unload/reload creates a new session and excludes saved
+points from the previous session. File-feed captures remain supported, but their
+visit context is unknown, so they are excluded from this recording comparison.
+
+The read-only `/live-client/waypoints/relative` API reports comparable points and
+exclusion reasons. It rejects stale observation timestamps and context changes
+during capture/comparison; the browser suppresses overlays when the trace cursor
+has changed. Numeric differences outside the finite range are excluded. Tests
+use the supplied anonymized Ashita recording, synthetic return visits, duplicate
+client IDs and Chromium. These checks do not validate Windows client lifecycle,
+coordinate calibration or game writes.

@@ -9,7 +9,20 @@ from .telemetry import decode_frame
 from .waypoints import waypoint_document
 
 
-def capture_waypoint(frame, session_id: str, name: str, entity_index: int | None = None) -> dict:
+def recording_context(registry, session_id: str, expected_frame=None) -> dict:
+    replay = registry._clients.get(session_id)
+    if replay is None or not replay.position:
+        return {}
+    points = replay.path_points(max_points=1)
+    if (not points or registry._clients.get(session_id) is not replay
+            or (expected_frame is not None and replay.feed._latest is not expected_frame)
+            or replay.position != points[0]['frame']):
+        raise ValueError('observation changed; refresh waypoint comparison or capture')
+    return {'recorded_frame': points[0]['frame'], 'recorded_segment': points[0]['segment']}
+
+
+def capture_waypoint(frame, session_id: str, name: str, entity_index: int | None = None,
+                     context: dict | None = None) -> dict:
     """Capture an existing observation with provenance; no transport or game actions."""
     if not isinstance(name, str) or not name.strip() or len(name) > 200:
         raise ValueError('waypoint name is required and must be at most 200 characters')
@@ -29,6 +42,7 @@ def capture_waypoint(frame, session_id: str, name: str, entity_index: int | None
         'adapter': snapshot.adapter, 'reported_client_version': snapshot.version,
         'version_verified': False, 'observed_at': snapshot.observed_at,
         'instance_hint': snapshot.instance_hint, 'coordinates': 'raw'}
+    document['provenance'].update(context or {})
     document['observation'] = details
     return document
 
@@ -62,7 +76,7 @@ def create_observation_export_router(registry) -> APIRouter:
                  entity_index: int | None = Query(default=None, ge=0, le=65535)):
         frame = observed(client_id)
         try:
-            document = capture_waypoint(frame, client_id, name, entity_index)
+            document = capture_waypoint(frame, client_id, name, entity_index, recording_context(registry, client_id, frame))
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
         except KeyError as exc:
