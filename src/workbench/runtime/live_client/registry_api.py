@@ -47,6 +47,21 @@ def create_registry_router(registry: ReplayRegistry) -> APIRouter:
             raise HTTPException(status_code=409, detail=str(exc))
         return {"client_id": client_id, "accepted": count}
 
+    @router.post("/navigate")
+    def navigate(request: Request, client_id: str = Query(min_length=1, max_length=200),
+                 action: str = Query(pattern="^(restart|previous)$")) -> dict:
+        origin = request.headers.get("origin")
+        if not origin or origin != str(request.base_url).rstrip("/"):
+            raise HTTPException(status_code=403, detail="same-origin request required")
+        try:
+            frame = registry.navigate(client_id, action)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="replay client not registered")
+        except (StopIteration, ValueError) as error:
+            raise HTTPException(status_code=409, detail=str(error))
+        return {"client_id": client_id, "observed_at": frame.snapshot.observed_at,
+                "zone_id": frame.snapshot.position.zone_id}
+
     @router.post("/advance")
     def advance(request: Request, client_id: str = Query(min_length=1, max_length=200)) -> dict:
         """Advance offline replay only; reject browser cross-origin submissions."""
