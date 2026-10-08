@@ -123,3 +123,4 @@ Completed workspace migrations:
 - **Settings** — Shared environment/branding/path/write-gate/LLM/backup/server configuration workspace with explicit mutation boundary (Workbench).
 - **Character Editor** — Adapter-aware character/inventory editor with offline/capability safety gates and preview/confirm writes (Editor).
 - **Item Editor** — Live server/client item editor with preview/apply batching, DAT synchronization, backup, SQL journaling, and session history controls (Editor).
+- **Zone Editor** — Full-width server/client spatial editor with entity/path/navmesh tooling, cache operations, and preserved save/undo/redo controls (Editor).
