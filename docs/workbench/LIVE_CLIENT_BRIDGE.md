@@ -193,3 +193,10 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - `tests/test_live_client_producer.py` exercises producer-to-`FileTelemetryBridge` round trips, duplicate timestamp rejection, and wrong-client rejection without creating files.
 - The producer is library code, **not a running Windows helper**: no process discovery, memory offsets, memory reading, Ashita/Windower integration, automatic sampling scheduler, or game writes are implemented.
 - Next: build a version-verified adapter against an authorized running Windows FFXI instance; integrate the reader's observations into this contract. Preserve the file feed as a safe fallback and use real client testing for offset validation.
+
+
+## 2026-10-08 Windows executable verification boundary
+- Added `src/workbench/runtime/live_client/windows_identity.py`: an explicit SHA-256 allowlist contract for a user-selected Windows client executable; rejects unknown builds, invalid manifests, non-EXE paths and excessively large files.
+- Added `tests/test_live_client_windows_identity.py` using synthetic executable fixtures only. No actual FFXI binaries or digests are bundled or approved.
+- This is a **prerequisite, not an implemented memory adapter**. Correctly matched on-disk executable identity alone does not verify a running process or memory layout. A future adapter must additionally verify the target process instance, image identity, pointer validity, schema and offset provenance, and fail closed on mismatch.
+- No process handles, memory operations, or game writes are present. Actual Windows/FFXI validation is still outstanding.
