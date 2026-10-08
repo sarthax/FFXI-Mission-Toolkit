@@ -1,11 +1,16 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Auction House Economy Intelligence{% endblock %}
-{% block content %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_width %}fluid{% endblock %}
+{% block page_class %}ahc-page{% endblock %}
+{% block page_heading %}Auction House Economy Intelligence{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Analysis is read-only; supply snapshot recording writes toolkit-local history</span>{% endblock %}
+{% block page_help %}Inspect market activity, supply, seller/buyer/category behavior, anomalies, and linked account context. Analytical views do not mutate the game database; explicit snapshot recording stores toolkit-local historical evidence.{% endblock %}
+{% block page_body %}
 <link rel="stylesheet" href="/static/auction_house_console.css?v=20261005h">
 {% include "_auction_house_nav.html" %}
-<main class="ahc" id="ahEconomy">
+<div class="ahc" id="ahEconomy">
   <div class="ahc-top">
-    <h1>Economy Intelligence</h1>
     <label class="ahc-bar" style="flex-direction:row" title="Time range for every number on this page. Arrows and percentages compare it with the same-length period before.">Window
       <select id="aeDays"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option><option value="365">1 year</option><option value="0">All time</option></select>
     </label>
@@ -38,6 +43,6 @@
       <div class="ahc-col ahc-scroll" id="peopleDetail"><div class="ahc-empty">Select an account to see all its characters, IP history, linked accounts and combined AH activity.</div></div>
     </div></section>
   </div>
-</main>
+</div>
 <script src="/static/auction_house_economy.js?v=20261005g"></script>
 {% endblock %}
