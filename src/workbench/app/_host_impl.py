@@ -10605,4 +10605,4 @@ if __name__ == "__main__":
     _con = get_con()
     _port = int(settings_mod.get(_con, "port") or settings_mod.DEFAULTS["port"])
     _con.close()
-    uvicorn.run("gui_server:app", host="127.0.0.1", port=_port, reload=False)
+    uvicorn.run("workbench.app.host:app", host="127.0.0.1", port=_port, reload=False)
