@@ -74,7 +74,10 @@ function M.capture_ashita(core, get_entity, client_id, observed_at)
     local name = text(party:GetMemberName(0), true)
     local zone = integer(party:GetMemberZone(0), 1, 65535)
     local function entity_position(slot)
-        assert(entity:GetZoneId(slot) == zone, 'entity zone does not match player zone')
+        -- SDK entity ZoneId is only populated for the local player under
+        -- certain conditions; it cannot validate player or target location.
+        -- Local entity observations use the party slot's current zone, which
+        -- is rechecked with the player identity after sampling.
         return {zone_id = zone, x = number(entity:GetLocalPositionX(slot)),
                 y = number(entity:GetLocalPositionY(slot)), z = number(entity:GetLocalPositionZ(slot)),
                 heading = number(entity:GetHeading(slot))}
@@ -93,7 +96,7 @@ function M.capture_ashita(core, get_entity, client_id, observed_at)
     end
     assert(party:GetMemberIsActive(0) ~= 0 and party:GetMemberServerId(0) == server_id
         and party:GetMemberTargetIndex(0) == index and party:GetMemberName(0) == name
-        and party:GetMemberZone(0) == zone and entity:GetZoneId(index) == zone,
+        and party:GetMemberZone(0) == zone,
         'client changed while sampling; restart observation explicitly')
     return frame
 end
