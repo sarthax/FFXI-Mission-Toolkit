@@ -6,6 +6,7 @@ on:
       - 'feature/live-client-replay-integration'
     paths:
       - 'src/workbench/runtime/live_client/**'
+      - 'src/workbench/app/_host_impl.py'
       - 'gui/templates/live_client_console.html'
       - 'src/workbench/gui_shell.py'
       - 'tests/test_live_client_*.py'
@@ -13,6 +14,7 @@ on:
   pull_request:
     paths:
       - 'src/workbench/runtime/live_client/**'
+      - 'src/workbench/app/_host_impl.py'
       - 'gui/templates/live_client_console.html'
       - 'src/workbench/gui_shell.py'
       - 'tests/test_live_client_*.py'
