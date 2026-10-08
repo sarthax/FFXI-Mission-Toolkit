@@ -112,6 +112,10 @@
     <label>Recording file (.jsonl; local path on the toolkit computer)
       <input type="text" name="live_client_replay_file" id="liveClientReplayFile" value="{{ values.live_client_replay_file }}" style="width:100%" placeholder="D:\\FFXI\\captures\\session.jsonl">
     </label>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button type="button" id="liveClientInspect">Validate recording / detect client ID</button>
+      <span id="liveClientInspectStatus" role="status" class="muted"></span>
+    </div>
     <label>Client ID (exact ID from recording)
       <input type="text" name="live_client_replay_client" id="liveClientReplayClient" value="{{ values.live_client_replay_client }}" maxlength="200">
     </label>
@@ -119,6 +123,30 @@
     <div class="muted">To identify the client ID in a recording, use the validation tool once this file is available locally. Advanced environment variables FFXI_LIVE_REPLAY_FILE and FFXI_LIVE_REPLAY_CLIENT override saved replay values.</div>
     <a class="inline" href="/live-client/replay/console">Open replay console</a>
   </div>
+
+<script>
+document.getElementById('liveClientInspect').addEventListener('click', async () => {
+  const status = document.getElementById('liveClientInspectStatus');
+  const button = document.getElementById('liveClientInspect');
+  button.disabled = true;
+  status.textContent = 'Validating recording...';
+  try {
+    const path = document.getElementById('liveClientReplayFile').value.trim();
+    const response = await fetch('/live-client/inspect-recording', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({path})
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.detail || 'Validation failed');
+    document.getElementById('liveClientReplayClient').value = result.client_id;
+    status.textContent = 'Validated ' + result.frames + ' frames; client ID detected: ' + result.client_id;
+  } catch (error) {
+    status.textContent = String(error.message || error);
+  } finally {
+    button.disabled = false;
+  }
+});
+</script>
 
   <h2>3D model viewer</h2>
   <p class="muted">Entity Lookup's "view 3D model" link opens
