@@ -24,9 +24,13 @@ def main():
     assert suggestions[0]["canonical_title"]=="Mars's Ring",suggestions
     assert suggestions[0]["review_only"] is True
     assert wiki_document.page_topic(db,"WikiWikiJP","jp1") is None
+    queue=wiki_document.topic_review_queue(db,source_id="WikiWikiJP")
+    assert len(queue)==1 and len(queue[0]["pending"])==1 and queue[0]["dismissed"]==[],queue
     wiki_document.dismiss_topic_suggestion(db,source_id="WikiWikiJP",page_id="jp1",
                                            topic_id=suggestions[0]["topic_id"])
     assert wiki_document.suggest_topic_links(db,source_id="WikiWikiJP",page_id="jp1")==[]
+    queue=wiki_document.topic_review_queue(db,source_id="WikiWikiJP")
+    assert len(queue)==1 and queue[0]["pending"]==[] and len(queue[0]["dismissed"])==1,queue
     try:
         wiki_document.dismiss_topic_suggestion(db,source_id="WikiWikiJP",page_id="jp1",
                                                topic_id=suggestions[0]["topic_id"])
