@@ -80,8 +80,30 @@
 {% endif %}
 
 <div class="wiki-actions dense-toolbar" style="margin:6px 0">
-  <a class="chip {% if tab == 'browse' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=browse"><b>Browse</b></a>
+  <a class="chip {% if tab == 'review' %}
+<section class="wiki-section">
+  <h3>Multilingual topic review queue</h3>
+  <p class="muted">Read-only overview, up to 50 source pages. Dismissed candidates are retained for audit and excluded from pending suggestions. Open a page to approve or dismiss a pending topic.</p>
+  {% if review_queue %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Source page</th><th>Pending topics</th><th>Dismissed topics</th></tr></thead>
+    <tbody>
+    {% for entry in review_queue %}
+      <tr>
+        <td><a href="/wiki?source={{ entry.source_id|urlencode }}&title={{ entry.title|urlencode }}&tab=browse">{{ entry.title }}</a></td>
+        <td>{% for item in entry.pending %}<div>{{ item.canonical_title }} <span class="muted">({{ item.match_method }})</span></div>{% else %}<span class="muted">None</span>{% endfor %}</td>
+        <td>{% for item in entry.dismissed %}<div>{{ item.canonical_title }}</div>{% else %}<span class="muted">None</span>{% endfor %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<p class="muted">No pending or dismissed topic suggestions found in the selected source's review window.</p>{% endif %}
+</section>
+{% endif %}
+
+{% if tab == 'browse' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=browse"><b>Browse</b></a>
   <a class="chip {% if tab == 'evidence' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=evidence"><b>Evidence workflow</b></a>
+  <a class="chip {% if tab == 'review' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=review"><b>Topic review queue</b></a>
   <span class="sp"></span>
   <span class="muted">Open site:</span>
   {% for l in site_links %}<a class="chip" href="{{ l.page or l.home }}" target="_blank" rel="noopener">{{ l.label }}{% if l.page %} ↗ page{% else %} ↗{% endif %}</a>{% endfor %}
