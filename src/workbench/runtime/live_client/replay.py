@@ -69,6 +69,23 @@ class RecordedTelemetryReplay:
         self._count = position
         return last
 
+    def path_points(self, *, max_points: int = 1000) -> list[dict]:
+        """Bounded, zone-preserving recording trace up to current frame."""
+        from .telemetry import decode_frame
+        if type(max_points) is not int or not 1 <= max_points <= 1000:
+            raise ValueError("invalid trace limit")
+        current = self._frames[:self._index]
+        stride = max(1, (len(current) + max_points - 1) // max_points)
+        indices = list(range(0, len(current), stride))
+        if current and indices[-1] != len(current) - 1:
+            indices.append(len(current) - 1)
+        points = []
+        for index in indices:
+            p = decode_frame(current[index]).snapshot.position
+            points.append({"frame": index + 1, "zone_id": p.zone_id,
+                           "x": p.x, "y": p.y, "z": p.z})
+        return points
+
     def restart(self):
         return self.seek(1)
 
