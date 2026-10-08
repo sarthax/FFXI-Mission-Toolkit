@@ -16,7 +16,6 @@ capture_add.html | legacy page pending archetype migration
 capture_alignment.html | legacy page pending archetype migration
 capture_bulk_ingest.html | legacy page pending archetype migration
 capture_bulk_job.html | legacy page pending archetype migration
-capture_delete_confirm.html | legacy page pending archetype migration
 capture_detail.html | legacy page pending archetype migration
 capture_help.html | legacy page pending archetype migration
 capture_metadata_import.html | legacy page pending archetype migration

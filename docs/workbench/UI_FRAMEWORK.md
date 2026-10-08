@@ -89,3 +89,4 @@ Completed workspace migrations:
 - **Packet Tools** — Manual packet decoder and opcode browser (Workbench; capture-native provenance guidance preserved).
 - **Assault Domain** — Assault-specific development/validation landing workspace (Dashboard).
 - **Message-ID Shift Master** — Evidence-derived packet-message/dialog-index shift ranges with explicit rebuild write boundary (Workbench, reading width).
+- **Capture Delete Confirmation** — Capture-owned-row deletion review with explicit permanent-delete boundary (Editor, narrow).
