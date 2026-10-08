@@ -48,6 +48,35 @@ class RecordedTelemetryReplay:
         self._count += 1
         return frame
 
+    @property
+    def position(self) -> int:
+        return self._index
+
+    @property
+    def total(self) -> int:
+        return len(self._frames)
+
+    def seek(self, position: int):
+        """Seek to a one-based frame; reconstruct feed to permit backward movement."""
+        if type(position) is not int or not 1 <= position <= len(self._frames):
+            raise ValueError("frame position outside recording")
+        candidate = TelemetryFeedAdapter(self.feed.client_id)
+        last = None
+        for payload in self._frames[:position]:
+            last = candidate.ingest(payload)
+        self.feed = candidate
+        self._index = position
+        self._count = position
+        return last
+
+    def restart(self):
+        return self.seek(1)
+
+    def previous(self):
+        if self._index <= 1:
+            raise StopIteration("already at first recorded frame")
+        return self.seek(self._index - 1)
+
     def health(self, *, now: float, max_age: float = 5.0) -> FeedHealth:
         """Use caller-supplied time; replay timestamps need not be wall time."""
         if isinstance(now, bool) or not isinstance(now, (int, float)) or not isfinite(now):
