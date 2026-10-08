@@ -12,9 +12,6 @@ auction_house_listing_manager.html | legacy page pending archetype migration
 auction_house_presets.html | legacy page pending archetype migration
 auction_house_reward_history.html | legacy page pending archetype migration
 auction_house_seeder.html | legacy page pending archetype migration
-capture_packet_detail.html | legacy page pending archetype migration
-capture_query.html | legacy page pending archetype migration
-capture_timeline.html | legacy page pending archetype migration
 character_editor.html | legacy page pending archetype migration
 dat_inspector.html | legacy page pending archetype migration
 domain_detail.html | legacy page pending archetype migration

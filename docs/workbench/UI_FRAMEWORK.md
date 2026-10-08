@@ -104,3 +104,6 @@ Completed workspace migrations:
 - **Captures** — Typed/tagged capture library with filtering, review-state visibility, and administration entry points (Browser).
 - **Capture Detail** — Capture dossier spanning integrity, metadata, provenance, derived views, and maintenance actions (Detail).
 - **Capture Packet Browser** — Filterable canonical raw-packet browser with contextual viewer/manual-decoder handoff (Browser, read-only).
+- **Capture Packet Viewer** — Contextual decoded-field/raw-byte/provenance/correlation inspector with specialized two-pane packet layout (Workbench, wide, read-only).
+- **Capture Data Explorer** — Normalized dataset browser exposing curated fields plus complete raw-row/provenance detail (Browser, read-only).
+- **Capture Timeline** — Source-specific event/battle/key-item/item/dialog timeline workbench preserving separate chronology and confidence semantics (Workbench, read-only).
