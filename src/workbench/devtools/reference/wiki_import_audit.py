@@ -14,7 +14,7 @@ from pathlib import Path
 def audit(con: sqlite3.Connection, *, sample_limit: int = 12) -> dict:
     """Summarize actual persisted Wiki blocks, with bounded source-page samples."""
     if not con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='reference_wiki_blocks'").fetchone():
-        return {"status": "NO_STRUCTURED_BLOCKS_TABLE", "sources": [], "samples": []}
+        return {"status": "NO_STRUCTURED_BLOCKS_TABLE", "sources": [], "samples": [], "recovery_candidates": []}
     sources = [
         {"source": source, "pages_with_blocks": pages, "blocks": blocks,
          "template_fields": fields, "degraded_blocks": legacy}
@@ -38,7 +38,22 @@ def audit(con: sqlite3.Connection, *, sample_limit: int = 12) -> dict:
                    source_id,page_id LIMIT ?
         """, (max(0, min(sample_limit, 100)),)).fetchall()
     ]
-    return {"status": "OK", "sources": sources, "samples": samples}
+    # Rank pages which have only flattened legacy content; prioritize Japanese
+    # sources for selective recovery without requesting or changing source data.
+    recovery_candidates = [
+        {"source": source, "page_id": page_id, "legacy_blocks": legacy}
+        for source, page_id, legacy in con.execute("""
+          SELECT source_id,page_id,COUNT(*)
+          FROM reference_wiki_blocks
+          GROUP BY source_id,page_id
+          HAVING SUM(CASE WHEN block_type='legacy_text' THEN 1 ELSE 0 END)>0
+             AND SUM(CASE WHEN block_type NOT IN ('legacy_text') THEN 1 ELSE 0 END)=0
+          ORDER BY CASE WHEN source_id='WikiWikiJP' THEN 0 ELSE 1 END,
+                   COUNT(*) DESC,source_id,page_id LIMIT ?
+        """, (max(0,min(sample_limit,100)),)).fetchall()
+    ]
+    return {"status": "OK", "sources": sources, "samples": samples,
+            "recovery_candidates": recovery_candidates}
 
 
 def main() -> None:
