@@ -161,7 +161,15 @@
         <p class="muted">These values were extracted from explicit table labels. They are not verified gameplay facts or approved Feature Trace relationships.</p>
         <dl class="wiki-definition">
           {% for candidate in item.field_candidates %}
-            <dt>{{ candidate.field }}</dt><dd>{{ candidate.value }}</dd>
+            <dt>{{ candidate.field }}</dt>
+            <dd>{{ candidate.value }}
+              <details class="wiki-candidate-source">
+                <summary>Source cell</summary>
+                {% if candidate.value_raw %}<div class="mono">Original: <code>{{ candidate.value_raw }}</code></div>{% endif %}
+                {% if candidate.value_source_locator %}<div class="mono">Value: {{ candidate.value_source_locator }}</div>{% endif %}
+                {% if candidate.field_source_locator %}<div class="mono">Field: {{ candidate.field_source_locator }}</div>{% endif %}
+              </details>
+            </dd>
           {% endfor %}
         </dl>
       </details>
