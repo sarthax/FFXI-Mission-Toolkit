@@ -961,37 +961,6 @@
   "gaps": "DSP mob data: none (group [])."
  },
  {
-  "name": "Cetus",
-  "zone": "Grauberg (S)",
-  "zone_id": 89,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17142618,
-    -510.0,
-    32.1,
-    -795.0
-   ],
-   [
-    17142619,
-    -80.0,
-    -7.3,
-    -385.0
-   ],
-   [
-    17142620,
-    72.0,
-    -47.7,
-    285.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
- },
- {
   "name": "Ocythoe",
   "zone": "Grauberg (S)",
   "zone_id": 89,
@@ -1088,8 +1057,8 @@
   "name": "Akupara",
   "zone": "Meriphataud Mountains (S)",
   "zone_id": 97,
-  "path": "",
-  "tier": "",
+  "path": "Jade",
+  "tier": "III",
   "ki_id": null,
   "ki_name": "",
   "status": "not built",
