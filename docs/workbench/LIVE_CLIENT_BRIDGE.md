@@ -186,3 +186,10 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Replay console has **Poll file feed**, invoking same-origin `POST /live-client/replay/poll-feed`; it accepts up to 100 complete JSONL telemetry frames per click, then refreshes observed location. Regular GET requests do not perform file I/O.
 - `tests/test_live_client_feed_settings.py` exercises feed polling, denied cross-origin requests, empty polls, missing clients and Settings/host wiring.
 - A local addon/helper still needs to generate the versioned telemetry file; no automatic Windows game process reader is present. Settings changes take effect at toolkit restart.
+
+
+## 2026-10-08 read-only telemetry producer contract
+- `src/workbench/runtime/live_client/producer.py` defines a transport-neutral `ObservationSource.observe()` protocol and a `TelemetryProducer.sample_once()` JSONL writer. It validates the schema/client identity/timestamp before appending a bounded, UTF-8 telemetry frame.
+- `tests/test_live_client_producer.py` exercises producer-to-`FileTelemetryBridge` round trips, duplicate timestamp rejection, and wrong-client rejection without creating files.
+- The producer is library code, **not a running Windows helper**: no process discovery, memory offsets, memory reading, Ashita/Windower integration, automatic sampling scheduler, or game writes are implemented.
+- Next: build a version-verified adapter against an authorized running Windows FFXI instance; integrate the reader's observations into this contract. Preserve the file feed as a safe fallback and use real client testing for offset validation.
