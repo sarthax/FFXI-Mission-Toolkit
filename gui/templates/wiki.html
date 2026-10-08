@@ -235,6 +235,10 @@
         {% for link in item.field_candidate.source_links %}
         <div><code>{{ link.source_markup }}</code> → {{ link.target }} <span class="muted">[{{ link.resolution }}{% if link.canonical_title %}: {{ link.canonical_title }}{% endif %}]</span></div>
         <div class="muted">Toolkit entity: {{ link.entity_resolution }}{% if link.entity_target %} ({{ link.entity_target.domain }} · {{ link.entity_target.table }} · {{ link.entity_target.key }}){% endif %} — review hint only</div>
+        <details class="wiki-entity-evidence">
+          <summary>Inspect entity candidates ({{ link.entity_candidate_count }}) — evidence only</summary>
+          <pre>{{ link.entity_candidate_lines }}</pre>
+        </details>
         {% endfor %}
         {% endif %}
       </details>
