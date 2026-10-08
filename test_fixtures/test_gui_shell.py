@@ -497,6 +497,7 @@ def main():
     zone2_html = render("zone_plot2.html", "/zoneplot2")
     assert '<body class="shell-dense">' in zone2_html
     assert 'id="app-shell"' in zone2_html
+    assert 'class="wb-page-title">Zone Editor</span>' in zone2_html
     assert 'id="zbar" class="dense-toolbar"' in zone2_html
     assert 'class="zpanel dense-panel"' in zone2_html
     assert 'class="ztabs dense-tabs"' in zone2_html
