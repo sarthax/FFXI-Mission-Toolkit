@@ -73,7 +73,10 @@ def import_wiki_evidence(
     wiki_evidence.init_db(src)
     src.row_factory = sqlite3.Row
     dst = workbench_graph.init_db(graph_db)
-    counts = {"claims": 0, "mapped_edges": 0, "ambiguous_edges": 0, "unmapped_claims": 0}
+    counts = {
+        "claims": 0, "mapped_edges": 0, "ambiguous_edges": 0, "unmapped_claims": 0,
+        "relations": 0, "relation_edges": 0, "unresolved_relations": 0,
+    }
     try:
         if not _table_exists(src, "reference_wiki_claims"):
             return {"status": "NO_WIKI_CLAIMS", "counts": counts}
@@ -210,6 +213,90 @@ def import_wiki_evidence(
                 counts["mapped_edges"] += 1
             else:
                 counts["ambiguous_edges"] += 1
+
+        if _table_exists(src, "reference_wiki_relations"):
+            rel_where=[]
+            rel_args=[]
+            if source_id:
+                rel_where.append("source_id=?")
+                rel_args.append(source_id)
+            if page_id:
+                rel_where.append("page_id=?")
+                rel_args.append(str(page_id))
+            rel_clause=(" WHERE "+" AND ".join(rel_where)) if rel_where else ""
+            relations=src.execute(
+                f"""SELECT relation_id,source_id,page_id,page_title,page_url,revision_id,
+                           revision_timestamp,section_title,relation_type,subject_text,object_text,
+                           source_locator,authority,extraction_method,content_hash
+                    FROM reference_wiki_relations{rel_clause}
+                    ORDER BY relation_id""",
+                tuple(rel_args),
+            ).fetchall()
+            for rel in relations:
+                relation_id=rel["relation_id"]
+                counts["relations"]+=1
+                dst.execute(
+                    "DELETE FROM entity_relationships WHERE relationship_id=?",
+                    (f"wiki-relation:{relation_id}",),
+                )
+                mappings=src.execute(
+                    """SELECT endpoint,target_domain,target_table,target_key,target_label,mapping_method,
+                              mapping_status,confidence,details_json
+                       FROM reference_wiki_relation_mappings
+                       WHERE relation_id=? ORDER BY endpoint,relation_mapping_id""",
+                    (relation_id,),
+                ).fetchall()
+                endpoints={}
+                for mapping in mappings:
+                    if mapping["mapping_status"]!="MAPPED" or not mapping["target_table"] or not mapping["target_key"]:
+                        continue
+                    endpoints.setdefault(mapping["endpoint"],[]).append(mapping)
+                if len(endpoints.get("subject",[]))!=1 or len(endpoints.get("object",[]))!=1:
+                    counts["unresolved_relations"]+=1
+                    continue
+                subject_map=endpoints["subject"][0]
+                object_map=endpoints["object"][0]
+                subject_node=_target_node(
+                    dst,subject_map["target_table"],subject_map["target_key"],subject_map["target_label"]
+                )
+                object_node=_target_node(
+                    dst,object_map["target_table"],object_map["target_key"],object_map["target_label"]
+                )
+                evidence_id=f"evidence:{relation_id}"
+                excerpt=f"{rel['subject_text']} {rel['relation_type']} {rel['object_text']}"
+                dst.execute(
+                    "INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",
+                    (
+                        evidence_id,"REFERENCE",rel["source_id"],
+                        f"{rel['page_title']}#{rel['section_title'] or ''}",
+                        rel["revision_id"],excerpt,
+                    ),
+                )
+                metadata={
+                    "authority":"REFERENCE_ONLY",
+                    "source_id":rel["source_id"],
+                    "page_id":rel["page_id"],
+                    "page_title":rel["page_title"],
+                    "page_url":rel["page_url"],
+                    "revision_id":rel["revision_id"],
+                    "revision_timestamp":rel["revision_timestamp"],
+                    "section_title":rel["section_title"],
+                    "source_locator":rel["source_locator"],
+                    "extraction_method":rel["extraction_method"],
+                    "subject_text":rel["subject_text"],
+                    "object_text":rel["object_text"],
+                    "subject_mapping_method":subject_map["mapping_method"],
+                    "object_mapping_method":object_map["mapping_method"],
+                }
+                dst.execute(
+                    """INSERT OR REPLACE INTO entity_relationships
+                       VALUES(?,?,?,?,?,?,?,?,?)""",
+                    (
+                        f"wiki-relation:{relation_id}",subject_node,object_node,rel["relation_type"],
+                        evidence_id,"INFERRED","DISCOVERED",json.dumps(metadata,sort_keys=True),None,
+                    ),
+                )
+                counts["relation_edges"]+=1
 
         dst.commit()
         return {"status": "OK", "counts": counts}
