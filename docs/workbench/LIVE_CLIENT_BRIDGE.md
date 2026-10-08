@@ -179,3 +179,10 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - `ReplayRegistry` can now register a `FileTelemetryBridge` per explicit client ID, alongside offline replay sessions. `poll_feed(client_id)` ingests appended, validated JSONL observations and `frame()` / `status()` serve them through existing projection consumers.
 - Feed clients cannot use replay `advance()`; status identifies `source: file_feed`. Duplicate client IDs and wrong-client attachment are rejected. Regression coverage: `tests/test_live_client_feed_registry.py`.
 - The host has **not** yet been configured to register/poll a file feed, and no native FFXI memory reader exists. The current slice is a reusable registry boundary, not a working live connection.
+
+
+## 2026-10-08 Settings-managed local telemetry feed
+- Settings now offers **Local telemetry file feed (read-only)** with file path, client ID and auto-connect-on-startup. Startup creates a dedicated bounded `FileTelemetryBridge` registration; it does not attach to FFXI memory or scan running clients.
+- Replay console has **Poll file feed**, invoking same-origin `POST /live-client/replay/poll-feed`; it accepts up to 100 complete JSONL telemetry frames per click, then refreshes observed location. Regular GET requests do not perform file I/O.
+- `tests/test_live_client_feed_settings.py` exercises feed polling, denied cross-origin requests, empty polls, missing clients and Settings/host wiring.
+- A local addon/helper still needs to generate the versioned telemetry file; no automatic Windows game process reader is present. Settings changes take effect at toolkit restart.
