@@ -1,8 +1,10 @@
-{% extends "base.html" %}
+{% extends "workbench_page.html" %}
 {% block title %}Settings{% endblock %}
-
-{% block content %}
-<h1>Settings</h1>
+{% block page_archetype %}workbench{% endblock %}
+{% block page_heading %}Settings{% endblock %}
+{% block page_status %}<span class="wb-write-badge">Configuration, environment, backup, and server controls modify local/tool state</span>{% endblock %}
+{% block page_help %}Configure shared server environments, branding, source/client paths, Auction House write gates, local LLM access, backup behavior, and toolkit server controls. These settings affect multiple workspaces; save, environment, backup, restart, and related controls are write-capable actions.{% endblock %}
+{% block page_body %}
 {% if saved %}<div class="warn" style="border-left-color:var(--accent);background:var(--accent-soft);">Saved.</div>{% endif %}
 {% if brand_error %}<div class="warn"><strong>Branding:</strong> {{ brand_error }}</div>{% endif %}
 {% if backup_result %}
