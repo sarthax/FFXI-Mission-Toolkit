@@ -5554,7 +5554,7 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
 
 
 @app.get("/wiki", response_class=HTMLResponse)
-def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = "", tab: str = "browse", q: str = ""):
+def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = "", tab: str = "browse", q: str = "", review_status: str = "all"):
     report = None
     evidence = None
     comparison = None
@@ -5586,6 +5586,8 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
     ]
     review_queue = (wiki_document.topic_review_queue(con, source_id=source, limit=50)
                     if tab == "review" and source != "all" else [])
+    if tab == "review" and review_status in ("pending", "dismissed"):
+        review_queue = [entry for entry in review_queue if entry[review_status]]
     con.close()
     site_links = [{"label": v["label"], "home": v["home"], "page": wiki_jobs.page_url(k, title) if title else None}
                   for k, v in wiki_jobs.SITES.items()]
@@ -5601,6 +5603,7 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         "error": error,
         "tab": tab if tab in ("browse", "evidence", "review") else "browse",
         "review_queue": review_queue,
+        "review_status": review_status if review_status in ("all", "pending", "dismissed") else "all",
         "page_view": page_view,
         "site_links": site_links,
         "jobs": wiki_jobs.recent_jobs(),
