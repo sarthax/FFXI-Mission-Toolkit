@@ -1030,7 +1030,7 @@
   "tier": "III",
   "ki_id": 372,
   "ki_name": "Indigo Stratum Abyssite III",
-  "status": "not built",
+  "status": "built",
   "rifts": [
    [
     17146651,
@@ -1051,7 +1051,7 @@
     492.0
    ]
   ],
-  "gaps": "DSP mob data: full (group [13728])."
+  "gaps": "Skills are forum/LSB guesses (capture showed no TP moves); EBB not built; see UNIMPLEMENTED.md"
  },
  {
   "name": "Agathos",
