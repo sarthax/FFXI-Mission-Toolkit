@@ -263,8 +263,8 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
   from the current frame. File feeds can provide a latest-observation waypoint,
   but cannot export historical paths. Downloading pauses browser playback and
   does not advance the source, modify host files, change SQL or command the game.
-- The existing portable waypoint/path parsers accept these documents. Named
-  waypoint library management, calibrated Zone Editor placement, writable warp/
+- The existing portable waypoint/path parsers accept these documents. Persistent
+  waypoint library management is described below; calibrated Zone Editor placement, writable warp/
   speed controls and live network transport are still separate development work.
 - Runtime-backed API and real Chromium tests exercise player/target/path downloads,
   source isolation, raw values, cursor preservation and zone/instance metadata.
@@ -283,3 +283,31 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - [Windows/Codex test handoff](LIVE_CLIENT_WINDOWS_HANDOFF.md) explains local CLI
   access, report generation and remaining zone/logout/multiple-client tests.
   Local Codex is a separate session; this cloud chat has no Windows remote shell.
+
+## Persistent waypoint library
+
+- **Save player to library** and entity-row **Save to library** capture the current
+  named raw observation without moving the client or advancing playback. Capture
+  retains source/session/client identity, observed timestamp, instance hint and
+  unknown server identity. Browser playback pauses before capture.
+- The Live Client page lists saved waypoints, with case-insensitive name search
+  and an optional zone filter. Rename or delete individual entries; duplicate
+  names/coordinates remain independent entries. Unknown instance hints stay unknown.
+- Download the whole library as portable `live_client_waypoints` JSON. Import
+  that document or a previously downloaded player/target waypoint to append
+  validated entries. All rows are validated before insertion; malformed imports
+  and capacity failures preserve the current library. Empty imports are a no-op.
+- Toolkit persistence lives in the ignored `data/live_client_waypoints/library.db`,
+  separate from server SQL and the main toolkit database. It survives page reload,
+  recording unload and host restart. SQLite transactions serialize concurrent
+  mutations. GET on a new library does not create storage.
+- Limits: 1 MiB per uploaded JSON document, at most 1,000 stored points, 200-character
+  names/source labels, finite numeric raw positions and integer zone IDs. Imported
+  provenance is filtered and never promotes version or coordinate verification.
+- Mutations require same-origin browser requests; absent observations/targets and
+  storage errors produce useful errors. Corrupt storage is not reset automatically.
+  Library data never becomes a supported-build allowlist, warp destination action,
+  calibrated map overlay or implicit Zone Editor mutation.
+- Runtime-backed API tests and real Chromium validate capture, persistence, filters,
+  rename/delete, portable round-trips, invalid-import isolation and origin guards.
+  Actual Windows lifecycle tests remain deferred; local Codex is not required.

@@ -12,6 +12,8 @@ from workbench.runtime.live_client.registry import ReplayRegistry
 from workbench.runtime.live_client.registry_api import create_registry_router
 from workbench.runtime.live_client.replay_console import create_replay_console_router
 from workbench.runtime.live_client.setup_api import create_recording_upload_router
+from workbench.runtime.live_client.waypoint_library import WaypointLibrary
+from workbench.runtime.live_client.waypoint_library_api import create_waypoint_library_router
 
 
 def test_recording_controls_in_browser(tmp_path):
@@ -32,6 +34,8 @@ def test_recording_controls_in_browser(tmp_path):
                                           {'console_style': style, 'console_body': body})
     app.include_router(create_replay_console_router(render))
     app.include_router(create_recording_upload_router(tmp_path, registry))
+    library = WaypointLibrary(tmp_path / 'waypoint-library.db')
+    app.include_router(create_waypoint_library_router(library, registry))
     sock = socket.socket(); sock.bind(('127.0.0.1', 0))
     port = sock.getsockname()[1]
     server = uvicorn.Server(uvicorn.Config(app, log_level='error'))
@@ -108,6 +112,19 @@ def test_recording_controls_in_browser(tmp_path):
             assert downloaded['waypoints'][0]['position']['zone_id'] == 50
             assert downloaded['provenance']['session_id'] == runtime_session
             assert downloaded['provenance']['version_verified'] is False
+            page.locator('#save-player').click()
+            playwright.expect(page.locator('#waypoint-rows tr')).to_have_count(1)
+            saved, = library.entries()
+            assert saved['position'] == downloaded['waypoints'][0]['position']
+            assert saved['provenance'] == downloaded['provenance']
+            page.locator('#waypoint-rows input').fill('Renamed runtime landing')
+            page.locator('#waypoint-rows').get_by_role('button', name='Rename', exact=True).click()
+            playwright.expect(page.locator('#waypoint-rows input')).to_have_value('Renamed runtime landing')
+            page.reload()
+            playwright.expect(page.locator('#waypoint-rows input')).to_have_value('Renamed runtime landing')
+            page.locator('#client').select_option(runtime_session)
+            playwright.expect(page.locator('#state')).to_have_text('Frame 121 of 121')
+            page.locator('#waypoint-name').fill('Runtime target')
             with page.expect_download() as pending:
                 page.locator('#export-path').click()
             path_document = json.loads(Path(pending.value.path()).read_text())
@@ -143,10 +160,33 @@ def test_recording_controls_in_browser(tmp_path):
             playwright.expect(page.locator('#entity-rows td').nth(0)).to_have_text(target['name'])
             playwright.expect(page.locator('#entity-rows td').nth(3)).to_have_text('Unknown')
             with page.expect_download() as pending:
-                page.locator('#entity-rows button').click()
+                page.locator('#entity-rows').get_by_role('button', name='Download waypoint', exact=True).click()
             target_document = json.loads(Path(pending.value.path()).read_text())
             assert target_document['waypoints'][0]['position'] == target['position']
             assert target_document['observation']['server_entity_id'] is None
+            page.locator('#entity-rows').get_by_role('button', name='Save to library', exact=True).click()
+            playwright.expect(page.locator('#waypoint-rows tr')).to_have_count(2)
+            assert library.entries()[-1]['position'] == target['position']
+            page.locator('#waypoint-search').fill('LANDING')
+            page.locator('#filter-waypoints').click()
+            playwright.expect(page.locator('#waypoint-rows tr')).to_have_count(1)
+            page.locator('#waypoint-zone').fill('51'); page.locator('#filter-waypoints').click()
+            playwright.expect(page.locator('#waypoint-rows tr')).to_have_count(0)
+            page.locator('#waypoint-zone').fill('50'); page.locator('#filter-waypoints').click()
+            playwright.expect(page.locator('#waypoint-rows tr')).to_have_count(1)
+            with page.expect_download() as pending:
+                page.locator('#download-library').click()
+            library_document = json.loads(Path(pending.value.path()).read_text())
+            assert len(library_document['waypoints']) == 2
+            page.locator('#waypoint-rows').get_by_role('button', name='Delete', exact=True).click()
+            playwright.expect(page.locator('#waypoint-rows tr')).to_have_count(0)
+            page.locator('#waypoint-search').fill(''); page.locator('#filter-waypoints').click()
+            playwright.expect(page.locator('#waypoint-rows tr')).to_have_count(1)
+            page.locator('#waypoint-file').set_input_files({'name': 'library.json', 'mimeType': 'application/json',
+                'buffer': json.dumps(library_document).encode()})
+            page.locator('#import-waypoints').click()
+            playwright.expect(page.locator('#waypoint-rows tr')).to_have_count(3)
+            assert len(library.entries()) == 3
             empty_frame = next(i for i, f in enumerate(capture_frames, 1) if not f['entities'])
             page.locator('#timeline').evaluate('(el,n)=>{el.value=String(n);el.dispatchEvent(new Event("change",{bubbles:true}));}', empty_frame)
             playwright.expect(page.locator('#entity-rows tr')).to_have_count(0)

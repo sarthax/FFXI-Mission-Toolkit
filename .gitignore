@@ -59,3 +59,4 @@ gui/static/branding/custom_brand.*
 
 # Imported Live Client replay captures remain local and are not source-controlled
 data/live_client_recordings/
+data/live_client_waypoints/
