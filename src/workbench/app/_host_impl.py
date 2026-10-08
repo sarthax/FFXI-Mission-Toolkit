@@ -95,6 +95,7 @@ from workbench.devtools.reference import wiki_compile
 from workbench.devtools.reference import wiki_evidence
 from workbench.devtools.reference import wiki_jobs
 from workbench.devtools.reference import wiki_claim_compare
+from workbench.devtools.reference import wiki_document
 from workbench.core.services import wiki_evidence_graph
 from workbench.gui_shell import build_shell_context
 from workbench.adapters.servers import LogicalRecord, adapter_for
@@ -5462,44 +5463,62 @@ async def packets_bulk_submit(request: Request):
 
 
 def _wiki_page_view(con, source: str, title: str) -> dict | None:
-    """Readable view of one stored/dumped wiki page for the Browse tab."""
+    """Structured view of one stored/dumped wiki page for the Browse tab."""
     page = wiki_evidence.find_reference_page(con, source, title)
     if not page:
         return None
     text = page.get("wikitext") if "wikitext" in page else page.get("page_text")
     text = text or ""
-    sections, head, buf = [], "Overview", []
-    for line in text.splitlines():
-        m = re.match(r"^\s*(={2,6})\s*(.+?)\s*\1\s*$", line)
-        if m:
-            if "".join(buf).strip():
-                sections.append((head, chr(10).join(buf).strip()))
-            head, buf = m.group(2), []
-        else:
-            buf.append(line)
-    if "".join(buf).strip():
-        sections.append((head, chr(10).join(buf).strip()))
     page_title = page.get("title") or title
+    page_id = str(page.get("pageid") or page.get("page_id") or page_title)
+
+    blocks = wiki_document.stored_blocks(con, source, page_id)
+    persisted_structure = bool(blocks)
+    source_format = None
+    if not blocks:
+        page_id, source_format, blocks = wiki_document.build_blocks(page)
+    else:
+        row = con.execute(
+            "SELECT source_format FROM reference_wiki_documents WHERE source_id=? AND page_id=?",
+            (source, page_id),
+        ).fetchone()
+        source_format = row[0] if row else "structured"
+
+    visible_blocks = [b for b in blocks if not (b.get("metadata") or {}).get("hidden")]
+    degraded = any((b.get("metadata") or {}).get("degraded") for b in visible_blocks)
     return {
-        "title": page_title, "page_id": str(page.get("pageid") or page.get("page_id") or page_title),
+        "title": page_title,
+        "page_id": page_id,
         "url": page.get("url") or wiki_jobs.page_url(source, page_title),
         "revision": page.get("revid") or page.get("revision_id"),
         "timestamp": page.get("timestamp") or page.get("revision_timestamp"),
-        "sections": sections, "chars": len(text),
+        "blocks": visible_blocks,
+        "block_count": len(visible_blocks),
+        "chars": len(text),
         "hash": page.get("page_hash") or hashlib.sha256(text.encode()).hexdigest(),
-        "text": text, "is_ja": source == wiki_evidence.SOURCE_WIKIWIKI_JP,
+        "text": text,
+        "is_ja": source == wiki_evidence.SOURCE_WIKIWIKI_JP,
+        "source_format": source_format,
+        "persisted_structure": persisted_structure,
+        "degraded_structure": degraded,
     }
 
 
 @app.get("/wiki", response_class=HTMLResponse)
-def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = "", tab: str = "browse"):
+def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = "", tab: str = "browse", q: str = ""):
     report = None
     evidence = None
     comparison = None
     page_view = None
+    search_results = []
     con = get_con()
     wiki_evidence.init_db(con)
     wiki_claim_compare.init_db(con)
+    wiki_document.init_db(con)
+    if q.strip():
+        search_results = wiki_document.search_pages(con, q.strip(), limit=60)
+        if source:
+            search_results = [row for row in search_results if row["source_id"] == source]
     if title:
         if source == wiki_evidence.SOURCE_BG:
             report = wiki_compile.compile_report(con, title)
@@ -5519,7 +5538,9 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
                   for k, v in wiki_jobs.SITES.items()]
     return templates.TemplateResponse(request, "wiki.html", {
         "title": title,
+        "q": q,
         "source": source,
+        "search_results": search_results,
         "report": report,
         "evidence": evidence,
         "available_sources": available_sources,
