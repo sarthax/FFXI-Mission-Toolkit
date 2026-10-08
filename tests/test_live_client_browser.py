@@ -33,7 +33,7 @@ def test_recording_controls_in_browser(tmp_path):
             time.sleep(.01)
         frames = [{'schema_version': 1, 'client_id': 'same-client', 'client_version': 'fixture',
                    'character': 'Hero', 'adapter': 'offline', 'observed_at': i,
-                   'position': {'zone_id': 100, 'x': i, 'y': 0, 'z': 2*i, 'heading': 0},
+                   'position': {'zone_id': 101 if i == 2 else 100, 'x': i, 'y': 0, 'z': 2*i, 'heading': 0},
                    'entities': []} for i in range(1, 5)]
         content = ''.join(json.dumps(f) + '\n' for f in frames).encode()
         with playwright.sync_playwright() as p:
@@ -55,6 +55,7 @@ def test_recording_controls_in_browser(tmp_path):
             playwright.expect(page.locator('#comparison')).to_contain_text('Comparison: Hero')
             page.locator('#timeline').evaluate('(el)=>{el.value="3";el.dispatchEvent(new Event("change",{bubbles:true}));}')
             playwright.expect(page.locator('#state')).to_have_text('Frame 3 of 4')
+            playwright.expect(page.locator('#trace polyline')).to_have_count(2)
             assert registry._clients[first].position == 1
             page.locator('#restart').click()
             playwright.expect(page.locator('#state')).to_have_text('Frame 1 of 4')

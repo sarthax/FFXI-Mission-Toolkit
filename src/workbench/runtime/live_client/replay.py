@@ -78,6 +78,37 @@ class RecordedTelemetryReplay:
         next_frame = decode_frame(self._frames[self._index])
         return max(0.0, next_frame.snapshot.observed_at - self.feed._latest.snapshot.observed_at)
 
+    def path_points(self, *, max_points: int = 1000) -> list[dict]:
+        """Bounded, zone-preserving recording trace up to current frame."""
+        from .telemetry import decode_frame
+        if type(max_points) is not int or not 1 <= max_points <= 1000:
+            raise ValueError("invalid trace limit")
+        count = self._index
+        limit = min(count, max_points)
+        if not limit:
+            return []
+        # Include the current observation without exceeding the requested bound.
+        indices = ({count - 1} if limit == 1 else
+                   {i * (count - 1) // (limit - 1) for i in range(limit)})
+        points = []
+        segment = 0
+        previous = None
+        for index, payload in enumerate(self._frames[:count]):
+            # Every consumed frame has already passed feed validation. Preserve
+            # discontinuities even when downsampling omits transition frames.
+            context = (payload["position"]["zone_id"], payload.get("instance_hint"))
+            if previous is not None and context != previous:
+                segment += 1
+            previous = context
+            if index not in indices:
+                continue
+            snapshot = decode_frame(payload).snapshot
+            p = snapshot.position
+            points.append({"frame": index + 1, "zone_id": p.zone_id,
+                           "instance_hint": snapshot.instance_hint, "segment": segment,
+                           "x": p.x, "y": p.y, "z": p.z})
+        return points
+
     def restart(self):
         return self.seek(1)
 
