@@ -113,3 +113,10 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Added `tests/test_live_client_registry.py` for independent cursors, selection, removal, and invalid registration.
 - No changes to global routing or GUI; wire this registry into the optional GET-only API with opt-in viewer presentation in a later slice.
 - Current slice still requires CI verification.
+
+
+## 2026-10-07 opt-in multi-client replay HTTP API
+- Added `src/workbench/runtime/live_client/registry_api.py`: explicitly mounted, GET-only `/live-client/replay/clients` and `/live-client/replay/projection` endpoints using `ReplayRegistry`.
+- Client list reports read-only session status; selected-client projection returns the validated, zone/instance-filtered player and entity observations. Unknown clients return 404; registered clients with no frame return 409. No client discovery, filesystem access, replay advancement, game writes, or global GUI router mutation.
+- Added `tests/test_live_client_registry_api.py` for independent replay clients, selection, unobserved sessions, invalid parameters, and no POST methods.
+- The router is **not yet mounted** into the running GUI. Next: coordinate opt-in registration and a player marker with the GUI refactor; afterward prioritize the Windows read-only telemetry bridge.
