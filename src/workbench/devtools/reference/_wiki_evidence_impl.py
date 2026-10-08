@@ -22,6 +22,7 @@ from pathlib import Path
 import mwparserfromhell
 
 import wiki_lookup
+import wiki_document
 
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
