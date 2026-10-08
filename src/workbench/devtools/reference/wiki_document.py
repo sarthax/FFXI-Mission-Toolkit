@@ -38,6 +38,15 @@ def init_db(con: sqlite3.Connection) -> None:
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
     CREATE INDEX IF NOT EXISTS idx_reference_wiki_alias_norm ON reference_wiki_aliases(norm_alias);
     CREATE INDEX IF NOT EXISTS idx_reference_wiki_alias_page ON reference_wiki_aliases(source_id,page_id);
+    CREATE TABLE IF NOT EXISTS reference_wiki_topics(
+      topic_id TEXT PRIMARY KEY,canonical_title TEXT NOT NULL,norm_title TEXT NOT NULL UNIQUE,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS reference_wiki_topic_pages(
+      topic_id TEXT NOT NULL,source_id TEXT NOT NULL,page_id TEXT NOT NULL,
+      link_method TEXT NOT NULL DEFAULT 'MANUAL',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY(topic_id,source_id,page_id));
+    CREATE INDEX IF NOT EXISTS idx_reference_wiki_topic_page
+      ON reference_wiki_topic_pages(source_id,page_id);
     """)
     con.commit()
 
@@ -307,6 +316,39 @@ def ensure_title_alias(con, source_id: str, page_id: str, title: str):
     con.commit()
 
 
+def link_topic(con, *, source_id: str, page_id: str, canonical_title: str, method: str = "MANUAL") -> dict:
+    """Attach a source page to a language-neutral topic keyed by its canonical English label."""
+    canonical_title=(canonical_title or "").strip()
+    if not canonical_title:
+        raise ValueError("canonical_title is required")
+    init_db(con)
+    norm=normalize_search(canonical_title)
+    topic_id="wiki-topic:"+hashlib.sha1(norm.encode("utf-8")).hexdigest()[:20]
+    con.execute("""INSERT OR IGNORE INTO reference_wiki_topics(topic_id,canonical_title,norm_title)
+      VALUES (?,?,?)""",(topic_id,canonical_title,norm))
+    con.execute("""INSERT OR REPLACE INTO reference_wiki_topic_pages
+      (topic_id,source_id,page_id,link_method) VALUES (?,?,?,?)""",
+      (topic_id,source_id,str(page_id),method))
+    add_alias(con,source_id=source_id,page_id=str(page_id),alias=canonical_title,
+              language="en",alias_type="CANONICAL_TOPIC",provenance=method)
+    con.commit()
+    return {"topic_id":topic_id,"canonical_title":canonical_title}
+
+
+def page_topic(con, source_id: str, page_id: str) -> dict | None:
+    init_db(con)
+    row=con.execute("""SELECT t.topic_id,t.canonical_title FROM reference_wiki_topics t
+      JOIN reference_wiki_topic_pages p ON p.topic_id=t.topic_id
+      WHERE p.source_id=? AND p.page_id=? LIMIT 1""",(source_id,str(page_id))).fetchone()
+    if not row: return None
+    members=[{"source_id":r[0],"page_id":str(r[1]),"title":r[2],"link_method":r[3]}
+             for r in con.execute("""SELECT p.source_id,p.page_id,w.title,p.link_method
+               FROM reference_wiki_topic_pages p
+               LEFT JOIN reference_wiki_pages w ON w.source_id=p.source_id AND w.page_id=p.page_id
+               WHERE p.topic_id=? ORDER BY p.source_id,p.page_id""",(row[0],)).fetchall()]
+    return {"topic_id":row[0],"canonical_title":row[1],"members":members}
+
+
 def search_pages(con, query: str, limit: int = 40) -> list[dict]:
     init_db(con); q=normalize_search(query)
     if not q: return []
@@ -330,6 +372,12 @@ def search_pages(con, query: str, limit: int = 40) -> list[dict]:
         for r in con.execute("""SELECT title,url FROM wiki_pages
           WHERE lower(title) LIKE ? OR norm_title LIKE ? LIMIT ?""",(like,f"%{compact}%",limit*3)):
             add("BGWiki",r[0],r[0],"BG index",r[1],75)
+    for r in con.execute("""SELECT p.source_id,p.page_id,w.title,t.canonical_title
+      FROM reference_wiki_topics t
+      JOIN reference_wiki_topic_pages p ON p.topic_id=t.topic_id
+      LEFT JOIN reference_wiki_pages w ON w.source_id=p.source_id AND w.page_id=p.page_id
+      WHERE t.norm_title LIKE ? LIMIT ?""",(like,limit*3)):
+        add(r[0],r[1],r[2] or r[3],"canonical topic",r[3],95)
     for r in con.execute("""SELECT a.source_id,a.page_id,p.title,a.alias FROM reference_wiki_aliases a
       JOIN reference_wiki_pages p ON p.source_id=a.source_id AND p.page_id=a.page_id
       WHERE a.norm_alias LIKE ? LIMIT ?""",(like,limit*3)):
