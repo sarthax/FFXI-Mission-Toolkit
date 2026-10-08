@@ -5,7 +5,7 @@
 {% block page_class %}auction-house-presets-page{% endblock %}
 {% block page_heading %}Auction House Presets{% endblock %}
 {% block page_status %}<span class="wb-write-badge">Preset configuration writes toolkit state; never stores execution authorization</span>{% endblock %}
-{% block page_help %}Save reusable cleanup and synthetic-seeding configuration and preview those rules against live state. Presets do not store typed confirmation, preview authorization, or permission to execute Auction House mutations.{% endblock %}
+{% block page_help %}Save reusable cleanup and synthetic-seeding configuration and preview those rules against live state. Presets never store execution confirmation or preview authorization, and never grant permission to execute Auction House mutations.{% endblock %}
 {% block page_body %}
 <div class="ah-presets" id="ahPresets">
   {% include "_auction_house_nav.html" %}
