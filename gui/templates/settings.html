@@ -107,6 +107,7 @@
       <select name="live_client_source" id="liveClientSource">
         <option value="disabled" {% if values.live_client_source != 'replay' %}selected{% endif %}>Disabled</option>
         <option value="replay" {% if values.live_client_source == 'replay' %}selected{% endif %}>Offline replay</option>
+        <option value="file_feed" {% if values.live_client_source == 'file_feed' %}selected{% endif %}>Local telemetry file feed (read-only)</option>
       </select>
     </label>
     <label>Recording file (.jsonl; local path on the toolkit computer)
