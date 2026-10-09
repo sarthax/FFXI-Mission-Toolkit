@@ -269,6 +269,46 @@ Keep telemetry v1, decoder, registry, feeds, session generations and recorded UI
 
 No completed functionality is superseded. Ashita supersedes the *need to implement a second memory reader for API-accessible observations*, not the independent native fallback or future verified control work. Minimap behavior is reference evidence, not a new export/provider or competing Toolkit UI.
 
+### Supplied bounded inventory runtime evidence
+
+Two operator-supplied Ashita telemetry recordings validate completely:
+
+| Source | Frames / duration | Zone | Entities per frame | Total observations | Distinct slot/ID identities | Inventory-set changes |
+| --- | --- | --- | --- | --- | --- | --- |
+| telemetry-test-a-1791514258-1.jsonl | 30 / 29 seconds | 235 | 19–21 | 613 | 21 | 2 |
+| telemetry-test-b-1791514491-1.jsonl | 24 / 23 seconds | 107 | 11–20 | 422 | 20 | 6 |
+
+Original SHA-256: A `1555cec54d9f99c3c945e36033b5f9066240fb8f363cc399a4d7e930f1722395`;
+B `f5b7e5688154b86ddb28b43f8aa6c00d2353b565cd0e8619b86c30d173093a4e`.
+Both declare bounded_loaded_entities, one-second cadence, no truncation and nonzero
+server IDs for every entity observation. Raw player XYZ/heading changes are present.
+These files extend actual runtime observation evidence to populated zones and entity
+inventory; matching server catalog identities and complete enumeration are unverified.
+Changing inventory sets do not prove spawn/despawn: loading, range and other causes
+remain possible. Neither file contains zoning, overlapping live sessions, slot reuse,
+instance hints, raw entity type/status/spawn flags, explicit target roles or packet data.
+The records still declare unverified-ashita-v4-api; loaded build/compatibility, logout,
+disconnect/restart, target/subtarget semantics, cap behavior and packet fidelity remain
+pending. Separate recordings in different zones do not establish an observed transition.
+
+Operator-reported sequence: one client, test A login/walking in Bastok Markets,
+zoning toward North Gustaberg, target selection/combat and logout; test B relogin,
+walking in North Gustaberg, then Bastok Mines/Zeruhn Mines and combat. The file
+coverage above does not capture those zone transitions, combat actions or lifecycle
+boundaries. Current exporter behavior closes the file on any sampling validation
+failure (including inactive party, unavailable entities or mixed zone/identity),
+prints Export stopped, and requires explicit restart. This could explain the missing
+post-zone frames, but the exact stop condition needs the runtime message; no cause
+is inferred from these files alone. Selecting targets is not evidence of target-role
+export because neither file contains target_roles. No concurrent-client test occurred.
+
+Regression fixtures anonymize client/character/entity names and shift timestamps while
+preserving cadence, coordinates, indexes, reported IDs, duplicate-name relationships and
+inventory changes. Fixture hashes therefore differ from the original source hashes above.
+Cloud tests exercise strict decoding, projection, report boundaries and independent replay;
+independent replay is not proof of simultaneous connected game clients. No native controls,
+coordinate transforms, graph relations or packet interpretations are promoted by this evidence.
+
 ### Entity slice implementation follow-up
 
 The baseline raw type/status/spawn-flags and target-role gaps above now have an
@@ -314,46 +354,6 @@ Next: runtime packet/telemetry correlation evidence and source/time/zone/ID-qual
 research links through existing Capture/Feature Trace services. Further diagnostic
 profiles, calibration and native controls remain independent future work. See the
 [addon instructions](../../addons/workbench_live/README.md#optional-passive-packet-observations-ashita-only).
-
-### Supplied bounded inventory runtime evidence
-
-Two operator-supplied Ashita telemetry recordings validate completely:
-
-| Source | Frames / duration | Zone | Entities per frame | Total observations | Distinct slot/ID identities | Inventory-set changes |
-| --- | --- | --- | --- | --- | --- | --- |
-| telemetry-test-a-1791514258-1.jsonl | 30 / 29 seconds | 235 | 19–21 | 613 | 21 | 2 |
-| telemetry-test-b-1791514491-1.jsonl | 24 / 23 seconds | 107 | 11–20 | 422 | 20 | 6 |
-
-Original SHA-256: A `1555cec54d9f99c3c945e36033b5f9066240fb8f363cc399a4d7e930f1722395`;
-B `f5b7e5688154b86ddb28b43f8aa6c00d2353b565cd0e8619b86c30d173093a4e`.
-Both declare bounded_loaded_entities, one-second cadence, no truncation and nonzero
-server IDs for every entity observation. Raw player XYZ/heading changes are present.
-These files extend actual runtime observation evidence to populated zones and entity
-inventory; matching server catalog identities and complete enumeration are unverified.
-Changing inventory sets do not prove spawn/despawn: loading, range and other causes
-remain possible. Neither file contains zoning, overlapping live sessions, slot reuse,
-instance hints, raw entity type/status/spawn flags, explicit target roles or packet data.
-The records still declare unverified-ashita-v4-api; loaded build/compatibility, logout,
-disconnect/restart, target/subtarget semantics, cap behavior and packet fidelity remain
-pending. Separate recordings in different zones do not establish an observed transition.
-
-Operator-reported sequence: one client, test A login/walking in Bastok Markets,
-zoning toward North Gustaberg, target selection/combat and logout; test B relogin,
-walking in North Gustaberg, then Bastok Mines/Zeruhn Mines and combat. The file
-coverage above does not capture those zone transitions, combat actions or lifecycle
-boundaries. Current exporter behavior closes the file on any sampling validation
-failure (including inactive party, unavailable entities or mixed zone/identity),
-prints Export stopped, and requires explicit restart. This could explain the missing
-post-zone frames, but the exact stop condition needs the runtime message; no cause
-is inferred from these files alone. Selecting targets is not evidence of target-role
-export because neither file contains target_roles. No concurrent-client test occurred.
-
-Regression fixtures anonymize client/character/entity names and shift timestamps while
-preserving cadence, coordinates, indexes, reported IDs, duplicate-name relationships and
-inventory changes. Fixture hashes therefore differ from the original source hashes above.
-Cloud tests exercise strict decoding, projection, report boundaries and independent replay;
-independent replay is not proof of simultaneous connected game clients. No native controls,
-coordinate transforms, graph relations or packet interpretations are promoted by this evidence.
 
 ### Paired offline temporal evidence (cloud-tested)
 
