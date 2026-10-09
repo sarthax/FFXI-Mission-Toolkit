@@ -5,6 +5,8 @@ game DB operation failed or succeeded. Never auto-compensate from this journal.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -21,6 +23,7 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+@contextmanager
 def _connect(path: Path | str):
     dbpath = Path(path)
     dbpath.parent.mkdir(parents=True, exist_ok=True)
@@ -34,7 +37,14 @@ def _connect(path: Path | str):
         created_utc TEXT NOT NULL, updated_utc TEXT NOT NULL
     )""")
     db.commit()
-    return db
+    try:
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 
 def begin_case(*, operation: str, environment: dict[str, Any],
