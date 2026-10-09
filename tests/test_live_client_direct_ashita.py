@@ -77,3 +77,34 @@ def test_direct_live_refuses_source_changes_or_unavailable_bridge():
         assert(not live.active())
         assert(sends==0)
     """)
+
+
+def test_transient_bridge_failure_retries_without_recording_or_identity_reset():
+    lua = pytest.importorskip("lupa.lua51").LuaRuntime(unpack_returned_tuples=True)
+    lua.globals().addon_dir = str(ADDON) + "/"
+    lua.execute("""
+        package.path = addon_dir .. '?.lua;' .. package.path
+        local clock = 100
+        os.time = function() return clock end
+        local starts, sends = 0, 0
+        local direct = require('workbench_live_direct').new({
+            capture=function(id, now) return {
+                source_identity='123:Hero', character='Hero', client_id=id,
+                client_version='unverified-ashita-v4-api',
+                adapter='ashita-v4-api-experimental', schema_version=1,
+                observed_at=now,
+                position={zone_id=235,x=1,y=2,z=3,heading=0}, entities={}
+            } end,
+            start_bridge=function() starts=starts+1; return true end,
+            stop_bridge=function() end,
+            send=function() sends=sends+1; return sends~=1 end,
+        })
+        assert(direct.start('ashita-a'))
+        direct.sample()
+        assert(direct.active())
+        assert(starts==2 and sends==2)
+        clock=101
+        direct.sample()
+        assert(direct.active())
+        assert(sends==3)
+    """)
