@@ -61,8 +61,10 @@
 <form id="wiki-snapshot-import" class="wiki-actions" enctype="multipart/form-data">
 <label for="wiki-snapshot-file">Import snapshot</label>
 <input id="wiki-snapshot-file" type="file" name="file" accept=".gz,.jsonl.gz" required>
+<button type="button" id="wiki-snapshot-preview-btn">Preview changes</button>
 <button type="submit">Validate and import</button>
 </form>
+<div id="wiki-snapshot-preview-result" class="muted"></div>
 <div id="wiki-snapshot-status" class="muted" role="status"></div>
 </div>
 </details>
@@ -743,6 +745,31 @@
         output.appendChild(container);
       });
     }).catch(function(e){msg.textContent=e.message;});}
+    var previewBtn=document.getElementById('wiki-snapshot-preview-btn'),
+        previewOutput=document.getElementById('wiki-snapshot-preview-result');
+    var previewFingerprint=null;
+    function selectedFile(){return form.querySelector('input[type="file"]').files[0];}
+    function fingerprint(file){return file ? [file.name,file.size,file.lastModified].join(':') : null;}
+    form.querySelector('input[type="file"]').addEventListener('change',function(){
+      previewFingerprint=null;previewOutput.textContent='';status.textContent='';
+    });
+    previewBtn.addEventListener('click',function(){
+      if(!selectedFile()){status.textContent='Choose a snapshot file first.';return;}
+      previewBtn.disabled=true;status.textContent='Checking snapshot and local cache…';
+      fetch('/wiki/snapshot/preview',{method:'POST',body:new FormData(form)})
+        .then(function(response){return response.json().then(function(data){
+          if(!response.ok)throw Error(data.error||'HTTP '+response.status);
+          return data.preview;
+        });})
+        .then(function(result){
+          var counts=result.totals||{};
+          previewOutput.textContent='Preview: '+result.pages+' pages; '+(counts.new||0)+' new, '+(counts.updated||0)+' updated, '+(counts.unchanged||0)+' unchanged. By source: '+
+            Object.keys(result.sources||{}).map(function(source){var r=result.sources[source];return source+' ('+r.new+' new, '+r.updated+' updated, '+r.unchanged+' unchanged)';}).join('; ');
+          previewFingerprint=fingerprint(selectedFile());status.textContent='Preview completed. No pages were modified.';
+        })
+        .catch(function(error){previewFingerprint=null;status.textContent='Preview failed: '+error.message;})
+        .finally(function(){previewBtn.disabled=false;});
+    });
     form.addEventListener('submit',function(event){event.preventDefault();msg.textContent='Starting crawl…';post('start',new FormData(form)).then(function(){msg.textContent='Crawl queued';refresh();}).catch(function(e){msg.textContent=e.message;});});
     document.getElementById('wiki-jp-bulk-refresh').addEventListener('click',refresh);
     refresh();
@@ -752,6 +779,8 @@
     if(!form)return;
     form.addEventListener('submit',function(event){
       event.preventDefault();
+      if(previewFingerprint!==fingerprint(selectedFile())){status.textContent='Preview this file before importing.';return;}
+      if(!window.confirm('Import the validated Wiki snapshot into the local cache?'))return;
       var button=form.querySelector('button[type="submit"]');
       button.disabled=true;status.textContent='Validating and importing snapshot…';
       fetch('/wiki/snapshot/import',{method:'POST',body:new FormData(form)})
