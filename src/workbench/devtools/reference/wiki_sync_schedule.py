@@ -8,7 +8,7 @@ import sqlite3
 import threading
 import time
 from datetime import datetime, timezone, timedelta
-from . import wiki_bulk_jobs
+from . import wiki_bulk_jobs, wiki_sync_coordination
 
 _LOCK = threading.Lock()
 _STARTED = False
@@ -69,8 +69,9 @@ def tick(db, now=None):
         if config["next_due"] and datetime.fromisoformat(config["next_due"])>now:
             return {"status":"not_due"}
         # Never overlap a running import or quietly replace a paused job.
-        if wiki_bulk_jobs._RUNNING:
-            return {"status":"busy"}
+        coordination=wiki_sync_coordination.scheduler_can_start()
+        if not coordination["allowed"]:
+            return {"status":"busy","running":coordination["running"]}
         prior = config.get("last_job_id")
         if prior:
             with wiki_bulk_jobs._connect(db) as con:
