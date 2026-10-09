@@ -22,7 +22,12 @@ def _api_get(params: dict) -> dict:
     url = f"{API_URL}?{urllib.parse.urlencode(params)}"
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(req, timeout=30) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+        data = json.loads(resp.read().decode("utf-8"))
+        if not isinstance(data, dict):
+            raise RuntimeError("BG Wiki API returned a non-object response")
+        if data.get("error"):
+            raise RuntimeError("BG Wiki API error: " + str(data["error"])[:400])
+        return data
 
 
 def _page_to_row(page: dict) -> dict | None:
