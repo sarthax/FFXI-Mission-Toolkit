@@ -46,6 +46,27 @@
   {% if title %}<a class="chip" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab={{ tab }}">Clear search</a>{% endif %}
 </form>
 
+<details class="wiki-section" id="wiki-snapshot-box">
+<summary>Portable Wiki snapshots — export or import cached articles</summary>
+<div class="body">
+<p class="muted">Export cached Wiki pages as portable compressed JSONL. Imports validate the archive before merging into the existing cache; previous revisions are retained.</p>
+<form id="wiki-snapshot-export" class="wiki-actions" action="/wiki/snapshot/export" method="get">
+<label for="wiki-snapshot-source">Source</label>
+<select id="wiki-snapshot-source" name="source">
+<option value="all">All Wiki sources</option><option value="BGWiki">BG Wiki</option>
+<option value="FFXIclopedia">FFXIclopedia</option><option value="WikiWikiJP">Japanese Wiki</option>
+</select>
+<button type="submit">Download snapshot</button>
+</form>
+<form id="wiki-snapshot-import" class="wiki-actions" enctype="multipart/form-data">
+<label for="wiki-snapshot-file">Import snapshot</label>
+<input id="wiki-snapshot-file" type="file" name="file" accept=".gz,.jsonl.gz" required>
+<button type="submit">Validate and import</button>
+</form>
+<div id="wiki-snapshot-status" class="muted" role="status"></div>
+</div>
+</details>
+
 <section class="wiki-section" id="wiki-cache-panel" aria-label="Local Wiki cache health">
   <div class="body">
     <div class="wiki-actions" style="margin:9px 0">
@@ -725,6 +746,27 @@
     form.addEventListener('submit',function(event){event.preventDefault();msg.textContent='Starting crawl…';post('start',new FormData(form)).then(function(){msg.textContent='Crawl queued';refresh();}).catch(function(e){msg.textContent=e.message;});});
     document.getElementById('wiki-jp-bulk-refresh').addEventListener('click',refresh);
     refresh();
+  })();
+  (function(){
+    var form=document.getElementById('wiki-snapshot-import'),status=document.getElementById('wiki-snapshot-status');
+    if(!form)return;
+    form.addEventListener('submit',function(event){
+      event.preventDefault();
+      var button=form.querySelector('button[type="submit"]');
+      button.disabled=true;status.textContent='Validating and importing snapshot…';
+      fetch('/wiki/snapshot/import',{method:'POST',body:new FormData(form)})
+        .then(function(response){return response.json().then(function(data){
+          if(!response.ok)throw Error(data.error||'HTTP '+response.status);
+          return data;
+        });})
+        .then(function(data){
+          var result=data.result||{};
+          status.textContent='Import complete: '+(result.pages||0)+' pages; '+(result.inserted||0)+' new, '+(result.updated||0)+' updated, '+(result.unchanged||0)+' unchanged.';
+          var refresh=document.getElementById('wiki-cache-refresh');if(refresh)refresh.click();
+        })
+        .catch(function(error){status.textContent='Snapshot import failed: '+error.message;})
+        .finally(function(){button.disabled=false;});
+    });
   })();
   var f=document.getElementById('scrape-form'),box=document.getElementById('scrape-jobs'),timer=null;
   function show(message){var node=document.createElement('div');node.className='warn';node.textContent=message;box.prepend(node);}
