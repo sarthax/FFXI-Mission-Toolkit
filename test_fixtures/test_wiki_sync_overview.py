@@ -47,6 +47,18 @@ def main():
                         ('{"bad":"shape"}',))
         assert overview._verified_checkpoint(db,"FFXIclopedia","fx")=="invalid-checkpoint"
         assert overview._verified_checkpoint(db,"BGWiki","missing")=="verify-archive"
+        archive=Path(root)/"bg.jsonl.gz"
+        archive.write_bytes(b"original")
+        signature=f"{archive.stat().st_size}:{archive.stat().st_mtime_ns}"
+        with sqlite3.connect(db) as con:
+            con.execute("INSERT INTO wiki_bg_dump_jobs VALUES (?,?,?)",
+                        ("bg",str(archive),signature))
+        assert overview._verified_checkpoint(db,"BGWiki","bg")=="available"
+        archive.write_bytes(b"different-content")
+        assert overview._verified_checkpoint(db,"BGWiki","bg")=="archive-changed"
+        archive.unlink()
+        assert overview._verified_checkpoint(db,"BGWiki","bg")=="archive-missing"
+
     # The dashboard must route recovery warnings to source-specific controls
     # without silently issuing POST/resume requests.
     ui=(Path(__file__).resolve().parents[1]/"gui/templates/wiki.html").read_text(encoding="utf-8")
