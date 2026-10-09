@@ -159,6 +159,18 @@ def console_seller_stats(seller_id: int = Query(ge=1), days: int = Query(default
         raise HTTPException(status_code=503, detail=str(exc))
 
 
+@router.get("/auction-house/console/bundle-items.json")
+def console_bundle_items(q: str = "", limit: int = Query(default=100, ge=1, le=250)):
+    """Use Character Editor's full item catalog, not AH sellable-only items."""
+    from workbench.editors.character.item_catalog import ItemCatalogService
+    try:
+        with _context() as ctx:
+            rows = ItemCatalogService(ctx.service.connection).search(q, limit=limit)
+            return JSONResponse({"rows": [item.as_dict() for item in rows]})
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
 @router.get("/auction-house/console/item-search.json")
 def console_item_search(q: str = "", category_id: int | None = Query(default=None, ge=1), limit: int = Query(default=25, ge=1, le=250)):
     try:
