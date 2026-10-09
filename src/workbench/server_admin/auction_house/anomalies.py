@@ -29,12 +29,14 @@ def _sev(score: float, lo: float, hi: float) -> int:
 
 
 def anomalies_from(records: list[dict[str, Any]], now: int, days: int = 7, history_days: int = 60) -> dict[str, Any]:
+    if days <= 0 or history_days <= days:
+        raise ValueError("Anomaly history_days must exceed positive recent days")
     recent_from, hist_from = now - days * _DAY, now - history_days * _DAY
     sold = [r for r in records if r["sold_at"] and r["sale_price"]]
     active = [r for r in records if not r["sold_at"]]
     by_item_sales: dict[int, list[dict[str, Any]]] = defaultdict(list)
     for r in sold:
-        if r["sold_at"] >= hist_from:
+        if hist_from <= r["sold_at"] <= now:
             by_item_sales[r["item_id"]].append(r)
     out: list[dict[str, Any]] = []
 
@@ -79,7 +81,7 @@ def anomalies_from(records: list[dict[str, Any]], now: int, days: int = 7, histo
     listed: dict[int, list[int]] = defaultdict(list)
     names: dict[int, str] = {}
     for r in records:
-        if r["listed_at"] and r["listed_at"] >= hist_from:
+        if r["listed_at"] and hist_from <= r["listed_at"] <= now:
             listed[r["seller_id"]].append(r["listed_at"])
             names[r["seller_id"]] = r["seller_name"]
     for sid, ts in listed.items():
