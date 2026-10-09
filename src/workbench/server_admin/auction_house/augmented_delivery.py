@@ -21,7 +21,7 @@ from .reward_delivery import (
 )
 
 _FLAG = "FFXI_MISSION_TOOLKIT_AH_AUGMENTED_REWARD_TEST_WRITES"
-_SENDER = "AH-Admin Augment"
+_SENDER = "AH-Aug Reward"  # delivery_box.sender is varchar(15) on DSP
 
 
 def augmented_test_writes_enabled() -> bool:
