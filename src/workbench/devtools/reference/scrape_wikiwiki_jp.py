@@ -20,7 +20,13 @@ def get(title):
     url = BASE + urllib.parse.quote(title, safe="/")
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (offline reference scraper; polite)"})
     with urllib.request.urlopen(req, timeout=30) as r:
-        return r.read().decode("utf-8", "replace")
+        raw = r.read().decode("utf-8", "replace")
+    lower = raw.lower()
+    if any(marker in lower for marker in ("checking your browser", "just a moment...", "cf-chl-", "captcha", "attention required!")):
+        raise RuntimeError("WikiWikiJP returned an anti-bot challenge instead of article content")
+    if not re.search(r"<(?:html|body|main|article)\\b", raw, re.I):
+        raise RuntimeError("WikiWikiJP returned a response without recognizable HTML article markup")
+    return raw
 
 def links(page):
     out = []
