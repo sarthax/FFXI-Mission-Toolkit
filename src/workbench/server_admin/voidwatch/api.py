@@ -175,6 +175,20 @@ def warps_save(payload: dict = Body(...)):
     return _guard(go)
 
 
+@router.post("/domains/voidwatch/warps/import")
+def warps_import(payload: dict = Body(...)):
+    """Fill a warp entry from pasted server log text: kind=option ('[VWO refiner] unhandled option=...') or kind=logpos ('LOGPOS,label,zone,x,y,z,rot')."""
+    def go():
+        with _ctx() as (ctx, root, ident):
+            try:
+                return W.import_text(ctx.service.connection, str(payload.get("kind", "")), str(payload.get("id", "")), str(payload.get("text", "")), str(payload.get("by", "")))
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="Unknown warp entry %s" % exc)
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc))
+    return _guard(go)
+
+
 @router.post("/domains/voidwatch/warps/export-lua")
 def warps_export(payload: dict = Body(default={})):
     """Write scripts/globals/voidwatch_warps.lua into the DSP script checkout from the validated entries (only complete, ok entries are live)."""

@@ -87,3 +87,50 @@ def export_lua(conn, root: Path) -> dict:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8", newline="\n")
     return {"path": str(path), "entries": text.count("] = {")}
+
+
+# ---- paste imports (server log lines) -------------------------------------------------------------------------------------------------
+_OPT_RE = re.compile(r"\[VWO refiner\] unhandled option=(\d+)[^\n]*?char=(\S+)\s+zone=(\d+)")
+_POS_RE = re.compile(r"LOGPOS,([^,\n]*),(\d+),(-?[\d.]+),(-?[\d.]+),(-?[\d.]+),(\d+)")
+
+
+def parse_options(text: str) -> list:
+    """Option ids from '[VWO refiner] unhandled option=N' log lines, in order, duplicates removed. Only (destId<<16)|2 teleports are kept."""
+    seen, out = set(), []
+    for m in _OPT_RE.finditer(text):
+        o = int(m.group(1))
+        if o in seen or (o & 0xFFFF) != 2:
+            continue
+        seen.add(o)
+        out.append({"option": o, "dest_id": o >> 16, "char": m.group(2), "refiner_zone": int(m.group(3))})
+    return out
+
+
+def parse_logpos(text: str) -> list:
+    return [{"label": m.group(1), "zone_id": int(m.group(2)), "x": float(m.group(3)), "y": float(m.group(4)), "z": float(m.group(5)), "rot": int(m.group(6))}
+            for m in _POS_RE.finditer(text)]
+
+
+def import_text(conn, kind: str, wid: str, text: str, who: str = "") -> dict:
+    """Apply the FIRST parsed record of the pasted text to warp `wid`. Options must be unique across entries; logpos sets zone + x/y/z/rot."""
+    if kind == "option":
+        recs = parse_options(text)
+        if not recs:
+            raise ValueError("no '[VWO refiner] unhandled option=' teleport line found in the pasted text")
+        opt = recs[0]["option"]
+        other = next((r for r in load() if r.get("option") == opt and r["id"] != wid), None)
+        if other:
+            raise ValueError("option %d is already assigned to %s (%s)" % (opt, other["id"], other["menu"]))
+        return {"entry": save(wid, {"option": opt, "note": "option from pasted server log [C-log]"}, who), "found": len(recs)}
+    if kind == "logpos":
+        recs = parse_logpos(text)
+        if not recs:
+            raise ValueError("no LOGPOS,label,zone,x,y,z,rot line found in the pasted text")
+        r = recs[0]
+        from workbench.server_admin.synth import recipes as R
+        zr = R._rows(conn, "SELECT name FROM zone_settings WHERE zoneid=%s", (r["zone_id"],))
+        if not zr:
+            raise ValueError("unknown zone id %d" % r["zone_id"])
+        ch = {"zone": zr[0][0], "x": r["x"], "y": r["y"], "z": r["z"], "rot": r["rot"], "coord_source": "!logpos %s (in game)" % r["label"]}
+        return {"entry": save(wid, ch, who), "found": len(recs)}
+    raise ValueError("kind must be option or logpos")

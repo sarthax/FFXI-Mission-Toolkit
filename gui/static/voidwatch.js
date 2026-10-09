@@ -86,6 +86,25 @@ function backlogTable(){
    fetch('/domains/voidwatch/backlog/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:tr.dataset.id,changes:ch})}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});}).then(function(){backlogTable();}).catch(function(e){$('vw-bmsg').textContent='Save failed: '+e.message;});};});
  }).catch(function(e){el.innerHTML='<span class="muted">Backlog unavailable: '+esc(e.message)+'</span>';});
 }
+function stripPanel(wd){
+ var el=$('vw-strip');if(!el||!O)return;
+ var nm=O.nms,nb=nm.filter(function(x){return x.status==='built';}).length,nv=nm.filter(function(x){return x.validation==='validated';}).length,ni=nm.filter(function(x){return x.validation==='issue';}).length;
+ var of=(OF&&OF.officers)||[],ob=of.filter(function(x){return x.status==='built';}).length,ov=of.filter(function(x){return x.validation==='validated';}).length,og=of.reduce(function(a,x){return a+(x.gaps||[]).length;},0);
+ var noopt=wd.warps.filter(function(w){return w.option==null;}).length,nocoord=wd.warps.filter(function(w){return w.option!=null&&!w.complete;}).length,unv=wd.warps.filter(function(w){return w.complete&&w.validation!=='ok';}).length;
+ function card(t,v,sub,c){return '<div class="vwval" style="flex:1;min-width:150px;margin:0"><div class="muted">'+t+'</div><div style="font-size:1.5em;font-weight:700;color:'+c+'">'+v+'</div><div class="muted">'+sub+'</div></div>';}
+ var next=[];
+ if(ni)next.push(ni+' NM(s) with validation issues: open them from the table below.');
+ if(og)next.push(og+' gap(s) across the officer/refiner/purveyor NPCs (open each row).');
+ if(noopt)next.push(noopt+' warp destination(s) have no option id: walk the refiner menu and paste the server log lines into "Paste from server log".');
+ if(nocoord)next.push(nocoord+' warp(s) have an option but no landing zone/coordinates: stand at the landing spot, run !logpos, paste it.');
+ if(unv)next.push(unv+' warp(s) are complete but not validated: test the teleport, then mark ok so Export Lua includes them.');
+ if(nm.length-nb)next.push((nm.length-nb)+' NM(s) not built yet.');
+ el.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">'+
+  card('NMs built',nb+'/'+nm.length,nv+' validated, '+ni+' with issues',nb===nm.length?TC.ok:TC.warn)+
+  card('NPCs built',ob+'/'+of.length,ov+' validated',ob===of.length?TC.ok:TC.warn)+
+  card('Warps live',wd.ok+'/'+wd.total,wd.complete+' complete',wd.ok===wd.total?TC.ok:TC.warn)+'</div>'+
+  (next.length?'<div class="vwval" style="margin:0 0 8px"><b>Next steps</b><ul style="margin:4px 0">'+next.map(function(t){return '<li>'+esc(t)+'</li>';}).join('')+'</ul></div>':'');
+}
 function warpTable(){
  var el=$('vw-warps');if(!el)return;
  jget('/domains/voidwatch/warps.json').then(function(d){
@@ -94,8 +113,13 @@ function warpTable(){
   el.innerHTML='<h3 style="margin:8px 0 2px">Atmacite Refiner warp checklist <span class="muted">('+d.ok+' ok / '+d.complete+' complete / '+d.total+' destinations)</span></h3>'+
   '<div class="muted">Option = (destId*65536)+2 from the server log line; blank fields can be filled in here. Only complete AND ok entries are written to <span class="mono">'+esc(d.lua)+'</span>. Wiki source [W]; option [C-log]; coordinates are candidate zoneline arrival rows [DB] until validated in game.</div>'+
   '<div><input id="vw-wf" placeholder="filter (era / set / stone / zone)" value="'+esc(f)+'"> <button type="button" id="vw-wexp">Export Lua</button> <span id="vw-wmsg" class="muted"></span></div>'+
+  '<details class="vwval"><summary><b>Paste from server log</b> <span class="muted">(fills one entry from a [VWO refiner] unhandled option line or a LOGPOS line)</span></summary>'+
+  '<select id="vw-wik"><option value="option">Refiner option line</option><option value="logpos">!logpos line</option></select> into <select id="vw-wii">'+d.warps.map(function(w){return '<option value="'+w.id+'">'+w.id+' '+esc(w.set)+' '+esc(w.stone)+' '+w.tier+' - '+esc(w.menu)+(w.option==null?' (no option)':'')+'</option>';}).join('')+'</select> <button type="button" id="vw-wigo">Import</button><br>'+
+  '<textarea id="vw-wit" rows="3" style="width:100%" class="mono" placeholder="paste the log line(s); the first match is used"></textarea></details>'+
   '<div class="table-wrap"><table><thead><tr><th>Era</th><th>Set</th><th>Needs</th><th>Menu entry</th><th>Landing zone</th><th>Option</th><th>x</th><th>y</th><th>z</th><th>rot</th><th>Landing note [W]</th><th class="vwc1">Status</th><th class="vwc2">Validation</th><th>Note</th><th></th></tr></thead><tbody>'+
   L.map(function(w){return '<tr data-id="'+w.id+'"><td>'+esc(w.era)+'</td><td>'+esc(w.set)+'</td><td>'+esc(w.stone)+' '+w.tier+'</td><td>'+esc(w.menu)+'</td><td>'+inp(w,'zone',150)+(w.zone_id==null&&w.zone?' <span style="color:#c0392b">?id</span>':w.zone_id!=null?' <span class="muted">'+w.zone_id+'</span>':'')+'</td><td>'+inp(w,'option',80)+'</td><td>'+inp(w,'x',70)+'</td><td>'+inp(w,'y',60)+'</td><td>'+inp(w,'z',70)+'</td><td>'+inp(w,'rot',36)+'</td><td>'+inp(w,'landing_note',200)+'</td><td class="vwc1">'+vchip(w.complete?'complete':'incomplete')+'</td><td class="vwc2">'+vsel(w.validation,d.states,'validation')+'</td><td>'+inp(w,'note',140)+'</td><td><button type="button" class="vww">Save</button></td></tr>';}).join('')+'</tbody></table></div>';
+  $('vw-wigo').onclick=function(){fetch('/domains/voidwatch/warps/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind:$('vw-wik').value,id:$('vw-wii').value,text:$('vw-wit').value})}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});}).then(function(){warpTable();}).catch(function(e){$('vw-wmsg').textContent='Import failed: '+e.message;});};
+  stripPanel(d);
   $('vw-wf').onchange=function(){el.dataset.f=this.value;warpTable();};
   $('vw-wexp').onclick=function(){fetch('/domains/voidwatch/warps/export-lua',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});}).then(function(j){$('vw-wmsg').textContent='Wrote '+j.entries+' live entries to '+j.path;}).catch(function(e){$('vw-wmsg').textContent='Export failed: '+e.message;});};
   Array.prototype.forEach.call(el.querySelectorAll('.vww'),function(b){b.onclick=function(){var tr=b.closest('tr'),ch={};Array.prototype.forEach.call(tr.querySelectorAll('[data-k]'),function(i){ch[i.dataset.k]=i.value;});

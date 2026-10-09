@@ -32,3 +32,18 @@ def test_officer_zone_validation_rollup(tmp_path, monkeypatch):
     assert O.validation_status(O.load_validation()[O.OFFICERS[0]["id"]], z) == "validated"
     O.save_zone_validation(O.OFFICERS[0]["id"], z[1], {**all_ok, "position": "issue"}, "off")
     assert O.validation_status(O.load_validation()[O.OFFICERS[0]["id"]], z) == "issue"
+
+
+def test_parse_option_lines_keep_only_teleports_and_dedupe():
+    from workbench.server_admin.voidwatch import warps as W
+    txt = ("[08/Oct] [16:04:41][LUA Script] [VWO refiner] unhandled option=3670018 (0x380002) char=Gwendy zone=235\n"
+           "[16:05:00][LUA Script] [VWO refiner] unhandled option=3670018 (0x380002) char=Gwendy zone=235\n"
+           "[16:06:00][LUA Script] [VWO refiner] unhandled option=7 (0x7) char=Gwendy zone=235\n")
+    recs = W.parse_options(txt)
+    assert [r["option"] for r in recs] == [3670018] and recs[0]["dest_id"] == 56
+
+
+def test_parse_logpos():
+    from workbench.server_admin.voidwatch import warps as W
+    r = W.parse_logpos("12:00 LOGPOS,gate,235,10.5,-2.0,33.25,64\n")
+    assert r == [{"label": "gate", "zone_id": 235, "x": 10.5, "y": -2.0, "z": 33.25, "rot": 64}]

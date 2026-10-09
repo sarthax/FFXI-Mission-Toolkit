@@ -19,6 +19,7 @@ th.vwc1,td.vwc1,th.vwc2,td.vwc2{width:120px;min-width:120px;white-space:nowrap}.
 <section id="vw-tracker">
 <h2>Voidwatch paths &amp; progression <span class="chip">live DSP data</span> <a class="chip" href="/domains/voidwatch/overview.json" target="_blank">json</a></h2>
 <div id="vw-srv" class="muted"></div>
+<div id="vw-strip"></div>
 <div id="vw-graph" style="overflow-x:auto"></div>
 <div id="vw-unas" class="muted"></div>
 <p class="muted">Each box is a path/tier with its NM count; click one to filter the table. Solid arrows are tier advances, dashed arcs the City-to-White unlock. Advance rules are [W] BG Wiki digest, reference only; "?" means the method is not recorded. NM path/tier/abyssite come from data/voidwatch/nm_tracker.json.</p>
@@ -39,7 +40,7 @@ th.vwc1,td.vwc1,th.vwc2,td.vwc2{width:120px;min-width:120px;white-space:nowrap}.
 <p class="muted">Click an NM for its full dossier. Voidstone KIs are ids 1539-1544. Rift Y is the DB value (inverted axis).</p>
 <div id="vw-detail" hidden><div style="text-align:right"><button id="vw-close" type="button">Close</button></div><div id="vw-dbody"></div></div>
 </section>
-<script src="/static/voidwatch.js?v=14"></script>
+<script src="/static/voidwatch.js?v=15"></script>
 {% endif %}
 
 {% if d.archetype == "system.salvage" %}
