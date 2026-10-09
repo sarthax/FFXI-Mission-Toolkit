@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 282,
+  "route_count": 285,
   "routes": [
     {
       "method": "GET",
@@ -2255,6 +2255,30 @@
     {
       "method": "GET",
       "path": "/wiki/diagnose",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/wiki/bulk/summary",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/wiki/bulk/schedule",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/wiki/bulk/schedule",
       "home": "Tools",
       "section": "Research > References",
       "role": "data",
