@@ -297,3 +297,45 @@ def test_invalid_import_is_atomic(tmp_path, field, value):
     with pytest.raises(ValueError): ingest_ashita_packets(con, cid, src, 'bad.jsonl')
     assert con.execute('SELECT COUNT(*) FROM capture_raw_packets').fetchone()[0] == 0
     con.close()
+
+def test_two_independent_ashita_instances_preserve_packet_source_isolation(tmp_path):
+    left_dir = tmp_path / 'left'
+    right_dir = tmp_path / 'right'
+    left_dir.mkdir(); right_dir.mkdir()
+    left = runtime(left_dir); right = runtime(right_dir)
+    left.execute('command("/wblive start client-left"); command("/wblive packets start event_emote")')
+    right.execute('party.server_id=789; party.name="Other"; entities[1].name="Other"; party.zone=101; entities[1].zone=101; command("/wblive start client-right"); command("/wblive packets start event_emote")')
+    left.execute('events.packet_in({id=0x034,size=4,data="AAAA",injected=false,blocked=false})')
+    right.execute('events.packet_in({id=0x034,size=4,data="BBBB",injected=false,blocked=false})')
+    left_packet, = left_dir.glob('packets-*')
+    right_packet, = right_dir.glob('packets-*')
+    left_row, = parse_observations(left_packet.read_bytes())
+    right_row, = parse_observations(right_packet.read_bytes())
+    assert left_row[0]['client_id'] == 'client-left'
+    assert right_row[0]['client_id'] == 'client-right'
+    assert left_row[0]['raw_hex'] == '41414141'
+    assert right_row[0]['raw_hex'] == '42424242'
+    assert left_row[0]['zone_id'] == 100
+    assert right_row[0]['zone_id'] == 101
+    right_before = right_packet.read_bytes()
+    left.execute('command("/wblive stop")')
+    right.execute('clock=101; events.d3d_present(); events.packet_in({id=0x034,size=4,data="CCCC",injected=false,blocked=false})')
+    assert len(parse_observations(right_packet.read_bytes())) == 2
+    assert right_packet.read_bytes() != right_before
+    assert len(parse_observations(left_packet.read_bytes())) == 1
+
+
+def test_independent_instance_failure_cannot_stop_peer_packet_stream(tmp_path):
+    one = tmp_path / 'one'; two = tmp_path / 'two'
+    one.mkdir(); two.mkdir()
+    left = runtime(one); right = runtime(two)
+    left.execute('command("/wblive start one"); command("/wblive packets start event_emote")')
+    right.execute('command("/wblive start two"); command("/wblive packets start event_emote")')
+    left.execute('party.server_id=456; command("/wblive packets status")')
+    assert 'Packets inactive.' in left.globals().messages[len(left.globals().messages)]
+    right.execute('events.packet_in({id=0x034,size=4,data="LIVE",injected=false,blocked=false})')
+    packet, = two.glob('packets-*')
+    assert len(parse_observations(packet.read_bytes())) == 1
+    right.execute('command("/wblive packets status")')
+    assert 'Packets active' in right.globals().messages[len(right.globals().messages)]
+
