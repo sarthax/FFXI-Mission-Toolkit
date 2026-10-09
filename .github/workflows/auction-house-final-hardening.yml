@@ -23,6 +23,6 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install toolkit and test dependencies
-        run: python -m pip install --disable-pip-version-check -e . pytest fastapi jinja2
+        run: python -m pip install --disable-pip-version-check -e . pytest fastapi jinja2 pyyaml pillow mwparserfromhell
       - name: Run AH interruption, schedule, and augment regressions
         run: python -m pytest -q tests/test_auction_house_final_hardening.py
