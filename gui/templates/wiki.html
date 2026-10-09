@@ -138,7 +138,7 @@
 <details class="wiki-section" id="wiki-sync-overview">
 <summary>Wiki synchronization — all sources</summary>
 <div class="body">
-<p class="muted">Source-aware synchronization status. FFXIclopedia supports scheduled recent changes; BG Wiki imports a local dump; Japanese Wiki crawls a selected subtree.</p>
+<p class="muted">Source-aware synchronization status. Inspect incomplete jobs, their errors, and recovery requirements here. Resume only from the source-specific controls after checking the underlying archive or remote access issue.</p>
 <button type="button" id="wiki-sync-overview-refresh">Refresh all source statuses</button>
 <div id="wiki-sync-overview-results" role="status" class="muted">Open this panel to inspect synchronization health.</div>
 </div>
@@ -733,8 +733,35 @@
               source.attention.map(function(job){return job.id+' ('+job.state+')';}).join(', ');
             row.appendChild(warning);
           }
+          (source.recovery||[]).forEach(function(job){
+            var detail=document.createElement('div');detail.className='muted';
+            var requirement=job.checkpoint==='verify-archive'
+              ?'Verify the original local compressed archive has not changed before resuming.'
+              :job.checkpoint==='available'
+                ?'Pending pages recorded; review the previous error before resuming.'
+                :job.checkpoint==='unverified'
+                  ?'Checkpoint not verified here; inspect the source job before resuming.'
+                  :'No pending checkpoint confirmed; inspect the source job.';
+            detail.textContent=job.id+' · '+job.state+' · '+requirement+
+              (job.error?' · Last error: '+job.error:'');
+            row.appendChild(detail);
+          });
+          var controls={FFXIclopedia:'wiki-bulk-box',BGWiki:'wiki-bg-bulk-box',WikiWikiJP:'wiki-jp-bulk-box'};
+          if(source.needs_attention&&controls[source.source]){
+            var link=document.createElement('a');link.className='chip';
+            link.href='#'+controls[source.source];link.textContent='Review '+source.source+' job controls';
+            link.addEventListener('click',function(){
+              var target=document.getElementById(controls[source.source]);
+              if(target)target.open=true;
+            });
+            row.appendChild(link);
+          }
           output.appendChild(row);
         });
+        if(data.notice){
+          var note=document.createElement('p');note.className='muted';
+          note.textContent=data.notice;output.appendChild(note);
+        }
       }).catch(function(error){output.textContent='Unable to load Wiki sync status: '+error.message;});
     }
     document.getElementById('wiki-sync-overview-refresh').addEventListener('click',update);
