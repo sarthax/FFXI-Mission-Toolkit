@@ -1052,7 +1052,7 @@
   var tb=document.getElementById('tr-btn');
   if(tb){tb.addEventListener('click',function(){var o=document.getElementById('tr-out');o.hidden=false;o.textContent='Translating...';
     fetch('/wiki/translate?source='+encodeURIComponent(tb.dataset.source)+'&title='+encodeURIComponent(tb.dataset.title)).then(function(r){return r.json();}).then(function(d){
-      if(d.status==='OK'){o.className='';o.style.whiteSpace='pre-wrap';o.textContent='[machine translation, unverified]\\n'+d.text;}
+      if(d.status==='OK'){o.className='';o.style.whiteSpace='pre-wrap';o.textContent='[machine translation, unverified]\n'+d.text;}
       else if(d.status==='NO_ENGINE'){o.textContent='No translation engine configured. Set WIKI_TRANSLATE_CMD (a command that reads Japanese on stdin and prints English) and restart.';}
       else{o.textContent='Translation failed: '+(d.error||d.status);}});});}
 })();
