@@ -24,7 +24,7 @@ def _deliver(registry, identity, token, *, now, valid=True):
         kind = BridgeKind.OBSERVATION if valid else BridgeKind.COMMAND
         envelope = BridgeEnvelope(1, lane, kind, identity.client_id,
                                   identity.session_id, identity.generation,
-                                  1, None, json.dumps(payload).encode())
+                                  1, "probe" if not valid else None, json.dumps(payload).encode())
         send(left, envelope)
         left.shutdown(socket.SHUT_WR)
         return receive_session(right, registry, now=now)
