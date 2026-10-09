@@ -95,3 +95,16 @@ def test_bg_reverse_index_stays_searchable_without_page_import():
                 ("absolutevirtue","Absolute Virtue","https://www.bg-wiki.com/ffxi/Absolute_Virtue"))
     rows=wiki_document.search_pages(con,"Absolute Virtue")
     assert any(r["source_id"]=="BGWiki" and r["title"]=="Absolute Virtue" for r in rows)
+
+
+def test_source_filter_is_applied_before_global_result_cap():
+    con=_con()
+    for i in range(85):
+        con.execute("INSERT INTO reference_wiki_pages VALUES(?,?,?,?,?,?,?,?)",
+                    ("BGWiki",str(i),f"Sample item {i}",f"sample item {i}","","","","h"))
+    con.execute("INSERT INTO reference_wiki_pages VALUES(?,?,?,?,?,?,?,?)",
+                ("WikiWikiJP","target","特別な項目","特別な項目","","","sample item","h"))
+    rows=wiki_document.search_pages(con,"sample item",limit=10,source_id="WikiWikiJP")
+    assert len(rows)==1, rows
+    assert rows[0]["page_id"]=="target"
+    assert all(row["source_id"]=="WikiWikiJP" for row in rows)

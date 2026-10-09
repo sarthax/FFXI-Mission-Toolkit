@@ -42,6 +42,7 @@ DEFAULTS = {
     "llm_default_model": "qwen2.5-coder:7b",
     "ah_legacy_test_writes": "0",
     "ah_dsp_myisam_test_writes": "0",
+    "ah_augmented_reward_test_writes": "0",
     "ah_preview_ttl_seconds": "300",
     "live_client_source": "disabled",
     "live_client_feed_file": "",
@@ -54,6 +55,7 @@ DEFAULTS = {
 AH_FLAGS = {
     "ah_legacy_test_writes": "FFXI_MISSION_TOOLKIT_AH_LEGACY_TEST_WRITES",
     "ah_dsp_myisam_test_writes": "FFXI_MISSION_TOOLKIT_AH_DSP_MYISAM_TEST_WRITES",
+    "ah_augmented_reward_test_writes": "FFXI_MISSION_TOOLKIT_AH_AUGMENTED_REWARD_TEST_WRITES",
     "ah_preview_ttl_seconds": "FFXI_MISSION_TOOLKIT_AH_PREVIEW_TTL_SECONDS",
 }
 

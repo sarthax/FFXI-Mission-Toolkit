@@ -7,6 +7,7 @@ translation is a display-time step (see translate_cached) and never alters the s
 from __future__ import annotations
 import hashlib, os, sqlite3, subprocess, tempfile, threading, time, urllib.parse, uuid
 from datetime import datetime, timezone
+from pathlib import Path
 
 from . import wiki_document
 
@@ -178,8 +179,29 @@ def _run(job: dict, main_db: str) -> None:
         finally:
             con.close()
 
+        # Confirm the imported article is discoverable in the main cache before
+        # declaring a successful scrape. The check is read-only and source-scoped.
+        con = sqlite3.connect(Path(main_db).resolve().as_uri() + "?mode=ro", uri=True, timeout=5)
+        try:
+            missing = []
+            for item in fetched:
+                row = item["row"]
+                if not con.execute(
+                    "SELECT 1 FROM reference_wiki_pages WHERE source_id=? AND page_id=? AND title=? LIMIT 1",
+                    (row[0], row[1], row[2]),
+                ).fetchone():
+                    missing.append(f"{row[0]}:{row[2]}")
+            job["verified_pages"] = len(fetched) - len(missing)
+            job["expected_pages"] = len(fetched)
+            if missing:
+                job["state"] = "partial"
+                job["error"] = "Imported pages absent from main cache: " + ", ".join(missing[:5])
+                log("post-import verification failed: " + job["error"])
+                return
+        finally:
+            con.close()
         job["state"] = "done"
-        log("merged into main DB with structured document blocks")
+        log(f"verified {job['verified_pages']} page(s) in main cache; structured document blocks saved")
     except Exception as exc:  # a job must never raise into the server
         job["state"] = "error"
         job["error"] = str(exc)
@@ -206,6 +228,37 @@ def start_job(url: str, main_db) -> dict:
 def recent_jobs(n: int = 8) -> list[dict]:
     with _LOCK:
         return list(JOBS.values())[-n:][::-1]
+
+
+def cache_health(main_db) -> dict:
+    """Read-only diagnostics: never create a database or change its schema."""
+    from pathlib import Path
+    path = Path(main_db).resolve()
+    if not path.is_file():
+        return {"database_exists": False, "database_path": str(path), "sources": {}, "tables": []}
+    con = sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=5)
+    try:
+        tables = {row[0] for row in con.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        )}
+        sources = {}
+        if "reference_wiki_pages" in tables:
+            sources = {name: count for name, count in con.execute(
+                "SELECT source_id, COUNT(*) FROM reference_wiki_pages GROUP BY source_id"
+            )}
+        if "wiki_pages" in tables:
+            sources["BGWiki_dump_index"] = con.execute("SELECT COUNT(*) FROM wiki_pages").fetchone()[0]
+        return {
+            "database_exists": True, "database_path": str(path),
+            "sources": sources,
+            "tables": sorted(t for t in tables if t.startswith(("reference_wiki_", "wiki_pages"))),
+            "structured_documents": con.execute("SELECT COUNT(*) FROM reference_wiki_documents").fetchone()[0]
+                if "reference_wiki_documents" in tables else None,
+            "structured_blocks": con.execute("SELECT COUNT(*) FROM reference_wiki_blocks").fetchone()[0]
+                if "reference_wiki_blocks" in tables else None,
+        }
+    finally:
+        con.close()
 
 
 def translate_cached(con: sqlite3.Connection, source_id: str, page_id: str, page_hash: str, text: str) -> dict:

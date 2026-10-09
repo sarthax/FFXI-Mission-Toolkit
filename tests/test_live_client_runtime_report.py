@@ -48,6 +48,44 @@ def test_context_transitions_and_irregular_sample_intervals(tmp_path):
     assert report['context_transitions'][0]['to_instance'] == 'other-instance'
 
 
+def test_gap_counts_distinguish_cross_zone_from_same_zone(tmp_path):
+    frames = [json.loads(line) for line in CAPTURE.read_text().splitlines()[:4]]
+    # The declared exporter cadence is one second; retain both source contexts.
+    frames[1]['observed_at'] += 2
+    frames[2]['observed_at'] += 2
+    frames[3]['observed_at'] += 4
+    frames[3]['position']['zone_id'] = 51
+    path = tmp_path / 'gap-context.jsonl'
+    path.write_text(''.join(json.dumps(frame) + '\n' for frame in frames))
+    gaps = recording_report(path)['recording']['gap_summary']
+    assert gaps['count'] == 2
+    assert gaps['same_zone_gap_count'] == 1
+    assert gaps['cross_zone_gap_count'] == 1
+    assert gaps['observed_excess_interval_seconds'] == 4
+    assert gaps['same_zone_excess_interval_seconds'] == 2
+    assert gaps['cross_zone_excess_interval_seconds'] == 2
+    assert [gap['excess_interval_seconds'] for gap in gaps['gaps']] == [2, 2]
+    assert gaps['cause_verified'] is False
+    assert gaps['interpolated_frames'] == 0
+
+
+def test_gap_instance_context_separates_known_changes_from_unknown(tmp_path):
+    frames = [json.loads(line) for line in CAPTURE.read_text().splitlines()[:4]]
+    for index, frame in enumerate(frames):
+        frame['observed_at'] += index * 2
+    frames[0]['instance_hint'] = 'instance-a'
+    frames[1]['instance_hint'] = 'instance-b'
+    frames[2]['instance_hint'] = None
+    frames[3]['instance_hint'] = 'instance-c'
+    path = tmp_path / 'instance-gaps.jsonl'
+    path.write_text(''.join(json.dumps(frame) + '\n' for frame in frames))
+    gaps = recording_report(path)['recording']['gap_summary']
+    assert gaps['count'] == 3
+    assert gaps['known_instance_change_gap_count'] == 1
+    assert gaps['unknown_instance_context_gap_count'] == 2
+    assert gaps['cause_verified'] is False
+
+
 def test_malformed_recordings_limits_and_invalid_pe_are_rejected(tmp_path):
     path = tmp_path / 'bad.jsonl'; path.write_text('{}\n')
     with pytest.raises(ValueError):

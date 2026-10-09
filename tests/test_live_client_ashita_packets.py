@@ -95,11 +95,33 @@ def test_telemetry_stop_restart_binds_new_packet_file(tmp_path):
 
 def test_file_bound_fails_closed(tmp_path):
     lua = runtime(tmp_path); start(lua)
-    lua.execute('packet={id=0x034,size=1024,data=string.rep("A",1024),injected=false,blocked=false}; for i=1,2100 do clock=100+i; events.packet_in(packet) end; command("/wblive packets status")')
+    lua.execute('packet={id=0x034,size=1024,data=string.rep("A",1024),injected=false,blocked=false}; for i=1,2100 do clock=100+i; events.d3d_present(); events.packet_in(packet) end; command("/wblive packets status")')
     path, = tmp_path.glob('packets-*')
     assert 0 < path.stat().st_size <= 4*1024*1024
     assert len(parse_observations(path.read_bytes())) < 2100
     assert 'Packets inactive' in lua.globals().messages[len(lua.globals().messages)]
+
+
+def test_packet_start_rejects_stale_telemetry_without_creating_file(tmp_path):
+    lua = runtime(tmp_path)
+    lua.execute('command("/wblive start packet-a"); clock=106; command("/wblive packets start event_emote")')
+    assert not list(tmp_path.glob('packets-*'))
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert any('telemetry context stale' in message for message in messages)
+    lua.execute('events.d3d_present(); command("/wblive packets start event_emote")')
+    assert len(list(tmp_path.glob('packets-*'))) == 1
+
+
+def test_packet_export_stops_if_telemetry_context_is_stale(tmp_path):
+    lua = runtime(tmp_path); start(lua); event(lua)
+    lua.execute('events.packet_in(packet)')
+    path, = tmp_path.glob('packets-*')
+    before = path.read_bytes()
+    lua.execute('clock=106; events.packet_in(packet); command("/wblive packets status")')
+    assert path.read_bytes() == before
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert any('telemetry context stale' in message for message in messages)
+    assert 'Packets inactive' in messages[-1]
 
 
 def test_folder_ingest_unknown_opcode_provenance_and_invalid_tail_are_isolated(tmp_path):

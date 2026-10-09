@@ -30,6 +30,13 @@ function M.new(options)
         integer(value.zone_id, 1, 65535)
         return value
     end
+    local function fresh_context(now)
+        local current = context()
+        local telemetry_time = integer(current.last_observed_at, 0, 4102444800)
+        assert(now >= telemetry_time, 'system clock moved backwards')
+        assert(now - telemetry_time <= 5, 'telemetry context stale; restart packet observation after fresh telemetry')
+        return current
+    end
     local function sample(e, direction)
         if not handle or not profile[direction][e.id] then return end
         local ok, err = pcall(function()
@@ -37,8 +44,7 @@ function M.new(options)
             assert(not second or now >= second, 'system clock moved backwards')
             if second ~= now then second, count = now, 0 end
             if count >= 10 then dropped = integer(dropped+1, 0, 4294967295); return end
-            local current = context()
-            assert(now >= integer(current.last_observed_at, 0, 4102444800), 'system clock moved backwards')
+            local current = fresh_context(now)
             local size = integer(e.size, 4, 1024)
             assert(type(e.data) == 'string' and #e.data == size, 'original packet size mismatch')
             assert(type(e.injected) == 'boolean' and type(e.blocked) == 'boolean', 'packet hook flags unavailable')
@@ -64,7 +70,7 @@ function M.new(options)
         if action ~= 'start' or mode ~= 'event_emote' then options.message('Use packets start event_emote, packets stop or packets status.'); return end
         if handle then options.message('Stop packet observation before starting another.'); return end
         local ok, err = pcall(function()
-            local current = context()
+            local current = fresh_context(integer(os.time(), 0, 4102444800))
             local path = options.directory .. '/packets-' .. current.source_recording .. '.jsonl'
             assert(not options.exists(path), 'packet file already exists; start a fresh telemetry recording')
             handle = assert(io.open(path, 'wb'))

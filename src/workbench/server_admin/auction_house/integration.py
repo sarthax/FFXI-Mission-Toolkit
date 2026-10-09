@@ -31,6 +31,7 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
     from .preset_api import router as auction_house_preset_api_router
     from .preset_ui import router as auction_house_preset_ui_router
     from .reward_api import router as auction_house_reward_api_router
+    from .reward_schedule_worker import start_schedule_worker
     from .reward_history_api import router as auction_house_reward_history_api_router
     from .reward_history_ui import router as auction_house_reward_history_ui_router
     from .reward_ui import router as auction_house_reward_ui_router
@@ -76,6 +77,10 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
             if key not in existing_routes:
                 root_router.routes.append(route)
                 existing_routes.add(key)
+
+    # One daemon per toolkit host. Each due schedule is claimed in SQLite before
+    # execution, so multiple hosts cannot send the same schedule twice.
+    start_schedule_worker()
 
     workspaces = []
     for workspace in gui_shell.WORKSPACES:

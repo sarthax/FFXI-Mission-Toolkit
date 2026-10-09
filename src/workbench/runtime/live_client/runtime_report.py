@@ -58,9 +58,64 @@ def entity_observation_summary(frames) -> dict:
             'total_observations': total,
             'observations_with_reported_server_id': reported,
             'observations_without_reported_server_id': total - reported,
+            'raw_field_coverage': {field: sum(getattr(entity, field) is not None
+                                            for frame in frames for entity in frame.entities)
+                                   for field in ('raw_entity_type', 'raw_spawn_flags', 'raw_status')},
+            'observations_with_target_roles': sum(bool(entity.target_roles)
+                                                 for frame in frames for entity in frame.entities),
             'target_roles_verified': False,
             'complete_inventory_verified': False,
             'server_identity_verified': False}
+
+
+def recording_gap_summary(snapshots) -> dict:
+    """Describe observed gaps against declared exporter cadence, never infer causes."""
+    exporters = {'ashita-v4-api-experimental', 'windower-api-experimental'}
+    gaps, count, classified = [], 0, 0
+    cross_zone_gaps = same_zone_gaps = 0
+    known_instance_change_gaps = unknown_instance_context_gaps = 0
+    observed_excess_seconds = cross_zone_excess_seconds = same_zone_excess_seconds = 0
+    for number, (before, after) in enumerate(zip(snapshots, snapshots[1:]), 2):
+        if (before.adapter not in exporters or
+                (before.client_id, before.adapter, before.version) !=
+                (after.client_id, after.adapter, after.version)):
+            continue
+        classified += 1
+        interval = after.observed_at - before.observed_at
+        if interval <= 1:
+            continue
+        count += 1
+        excess_seconds = interval - 1
+        observed_excess_seconds += excess_seconds
+        if before.instance_hint is None or after.instance_hint is None:
+            unknown_instance_context_gaps += 1
+        elif before.instance_hint != after.instance_hint:
+            known_instance_change_gaps += 1
+        if before.position.zone_id != after.position.zone_id:
+            cross_zone_gaps += 1
+            cross_zone_excess_seconds += excess_seconds
+        else:
+            same_zone_gaps += 1
+            same_zone_excess_seconds += excess_seconds
+        if len(gaps) < 1000:
+            gaps.append({'from_frame': number-1, 'to_frame': number,
+                         'interval_seconds': interval, 'expected_interval_seconds': 1,
+                         'excess_interval_seconds': excess_seconds,
+                         'from_zone': before.position.zone_id, 'to_zone': after.position.zone_id,
+                         'from_instance': before.instance_hint, 'to_instance': after.instance_hint})
+    return {'count': count, 'cross_zone_gap_count': cross_zone_gaps,
+            'same_zone_gap_count': same_zone_gaps,
+            'known_instance_change_gap_count': known_instance_change_gaps,
+            'unknown_instance_context_gap_count': unknown_instance_context_gaps,
+            'observed_excess_interval_seconds': observed_excess_seconds,
+            'cross_zone_excess_interval_seconds': cross_zone_excess_seconds,
+            'same_zone_excess_interval_seconds': same_zone_excess_seconds,
+            'gaps': gaps, 'detail_limit': 1000,
+            'details_truncated': count > len(gaps),
+            'classified_intervals': classified,
+            'unclassified_intervals': max(0, len(snapshots)-1-classified),
+            'basis': 'declared Ashita/Windower exporter one-second cadence',
+            'cause_verified': False, 'interpolated_frames': 0}
 
 
 def recording_report(path: Path, *, game_version: str | None = None,
@@ -106,6 +161,7 @@ def recording_report(path: Path, *, game_version: str | None = None,
                           'reported_client_versions': sorted({s.version for s in snapshots}),
                           'zone_frame_counts': {str(k): v for k, v in sorted(zones.items())},
                           'frame_intervals': [{'seconds': k, 'count': v} for k, v in sorted(deltas.items())],
+                          'gap_summary': recording_gap_summary(snapshots),
                           'context_transitions': transitions, 'raw_axis_ranges_by_zone': ranges,
                           'frames_with_entities': sum(bool(f.entities) for f in frames),
                           'distinct_entity_observations': len({(f.snapshot.adapter, f.snapshot.version,

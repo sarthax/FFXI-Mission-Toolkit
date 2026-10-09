@@ -159,6 +159,8 @@ def get_campaign(campaign_id: str, *, path: Path | str = _DEFAULT_PATH) -> dict[
     out["completed_count"] = sum(1 for r in out["recipients"] if r["status"] == "committed")
     out["failed_count"] = sum(1 for r in out["recipients"] if r["status"] == "failed")
     out["retry_integrity"] = retry_integrity(out)
+    out["reconciliation_required"] = bool(out["retry_integrity"]["issues"])
+    out["reconciliation_issues"] = out["retry_integrity"]["issues"]
     return out
 
 

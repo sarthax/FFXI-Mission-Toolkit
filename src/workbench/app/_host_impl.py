@@ -5622,9 +5622,7 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
     wiki_claim_compare.init_db(con)
     wiki_document.init_db(con)
     if q.strip():
-        search_results = wiki_document.search_pages(con, q.strip(), limit=60)
-        if source and source != "all":
-            search_results = [row for row in search_results if row["source_id"] == source]
+        search_results = wiki_document.search_pages(con, q.strip(), limit=60, source_id=source)
     if title:
         if source == "all":
             source = wiki_evidence.SOURCE_BG
@@ -5730,6 +5728,11 @@ async def wiki_scrape_url(request: Request):
     except ValueError as exc:
         return JSONResponse({"error": str(exc)}, status_code=400)
     return {"job": job}
+
+
+@app.get("/wiki/cache-health")
+def wiki_cache_health():
+    return wiki_jobs.cache_health(DB_PATH)
 
 
 @app.get("/wiki/jobs")
@@ -8895,6 +8898,7 @@ async def settings_save(request: Request):
         "llm_default_model": form.get("llm_default_model", "").strip() or settings_mod.DEFAULTS["llm_default_model"],
         "ah_legacy_test_writes": "1" if form.get("ah_legacy_test_writes") else "0",
         "ah_dsp_myisam_test_writes": "1" if form.get("ah_dsp_myisam_test_writes") else "0",
+        "ah_augmented_reward_test_writes": "1" if form.get("ah_augmented_reward_test_writes") else "0",
         "ah_preview_ttl_seconds": (form.get("ah_preview_ttl_seconds", "").strip()
                                    if form.get("ah_preview_ttl_seconds", "").strip().isdigit()
                                    else settings_mod.DEFAULTS["ah_preview_ttl_seconds"]),

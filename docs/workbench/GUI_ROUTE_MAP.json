@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 264,
+  "route_count": 265,
   "routes": [
     {
       "method": "GET",
@@ -2114,6 +2114,14 @@
       "home": "Tools",
       "section": "Research > References",
       "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/wiki/cache-health",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "data",
       "disposition": "KEEP"
     }
   ]

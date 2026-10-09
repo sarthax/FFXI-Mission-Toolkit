@@ -50,6 +50,10 @@ def normalize_items(items: list[dict[str, Any]]) -> list[dict[str, int]]:
     out: list[dict[str, int]] = []
     seen: set[int] = set()
     for raw in items:
+        if not isinstance(raw, dict):
+            raise RewardTemplateError("Every reward row must be an item object")
+        if any(key in raw for key in ("augments", "extra", "custom_stats", "augment_template")):
+            raise RewardTemplateError("Augmented reward items require a verified server serializer; no plain-item substitution")
         item_id = int(raw.get("item_id") or 0)
         quantity = int(raw.get("quantity") or 0)
         if item_id <= 0 or quantity <= 0:

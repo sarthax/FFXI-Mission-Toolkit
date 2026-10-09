@@ -30,15 +30,23 @@ PRESETS = {
 def api(**p):
     p["format"] = "json"
     req = urllib.request.Request(API + "?" + urllib.parse.urlencode(p), headers={"User-Agent": UA})
+    last_error = None
     for attempt in range(5):
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
                 data = json.loads(r.read().decode("utf-8"))
+            if not isinstance(data, dict):
+                raise RuntimeError("FFXIclopedia API returned a non-object response")
+            if data.get("error"):
+                raise RuntimeError("FFXIclopedia API error: " + str(data["error"])[:400])
             time.sleep(DELAY)
             return data
         except Exception as e:
-            print(f"  api retry {attempt+1}: {e}", file=sys.stderr); time.sleep(5 * (attempt + 1))
-    raise RuntimeError("API failed")
+            last_error = e
+            print(f"  api retry {attempt+1}: {e}", file=sys.stderr)
+            if attempt < 4:
+                time.sleep(5 * (attempt + 1))
+    raise RuntimeError(f"FFXIclopedia API failed after 5 attempts: {last_error}") from last_error
 
 def paged(**p):
     cont = {}

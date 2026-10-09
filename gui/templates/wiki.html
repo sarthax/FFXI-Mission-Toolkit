@@ -53,6 +53,7 @@
     <input type="text" name="url" style="min-width:380px;flex:1" placeholder="https://www.bg-wiki.com/ffxi/Lord_Asag  |  https://ffxiclopedia.fandom.com/wiki/...  |  https://wikiwiki.jp/ffxi/...">
     <button type="submit">Scrape</button>
   </form>
+  <p><a class="chip" href="/wiki/cache-health" target="_blank" rel="noopener">Check local Wiki cache health (read-only)</a></p>
   <p class="muted">Pages download into a private temp database and merge into the main one in a short transaction, so other tools keep working. Japanese text is stored exactly as published.</p>
   <div id="scrape-jobs">
   {% for j in jobs %}<div class="muted job-row" data-job="{{ j.id }}">{{ j.source }} · {{ j.title }} — {{ j.state }}</div>{% endfor %}
@@ -545,13 +546,45 @@
 <script>
 (function(){
   var f=document.getElementById('scrape-form'),box=document.getElementById('scrape-jobs'),timer=null;
-  function paint(jobs){box.innerHTML=jobs.map(function(j){return '<div class="muted job-row">'+j.source+' · '+j.title+' — <b>'+j.state+'</b>'+(j.error?' · '+j.error:'')+'</div>';}).join('');
-    return jobs.some(function(j){return ['queued','fetching','merging'].indexOf(j.state)>=0;});}
-  function poll(){fetch('/wiki/jobs').then(function(r){return r.json();}).then(function(d){if(paint(d.jobs)){timer=setTimeout(poll,2000);}else{timer=null;}});}
-  if(f){f.addEventListener('submit',function(e){e.preventDefault();
-    fetch('/wiki/scrape',{method:'POST',body:new FormData(f)}).then(function(r){return r.json();}).then(function(d){
-      if(d.error){box.insertAdjacentHTML('afterbegin','<div class="warn">'+d.error+'</div>');return;}
-      f.reset();if(!timer)poll();});});}
+  function show(message){var node=document.createElement('div');node.className='warn';node.textContent=message;box.prepend(node);}
+  function paint(jobs){
+    box.replaceChildren();
+    jobs.forEach(function(j){
+      var node=document.createElement('div');node.className='muted job-row';
+      node.textContent=(j.source||'?')+' · '+(j.title||'?')+' — '+(j.state||'unknown')+(j.error?' · '+j.error:'');
+      if(Array.isArray(j.log) && j.log.length){
+        var details=document.createElement('details'), summary=document.createElement('summary'), pre=document.createElement('pre');
+        summary.textContent='Job log ('+j.log.length+' entries)';
+        pre.textContent=j.log.join('\\n');
+        details.appendChild(summary);details.appendChild(pre);node.appendChild(details);
+      }
+      if(j.state==='done'){
+        var link=document.createElement('a');
+        link.className='chip';
+        link.href='/wiki?title='+encodeURIComponent(j.title||'')+'&source='+encodeURIComponent(j.source||'')+'&tab=browse';
+        link.textContent='Open cached page';node.appendChild(link);
+      }
+      box.appendChild(node);
+    });
+    return jobs.some(function(j){return ['queued','fetching','merging'].indexOf(j.state)>=0;});
+  }
+  function poll(){
+    fetch('/wiki/jobs',{cache:'no-store'}).then(function(r){if(!r.ok)throw Error('Job status HTTP '+r.status);return r.json();})
+      .then(function(d){if(!Array.isArray(d.jobs))throw Error('Invalid job response');if(paint(d.jobs)){timer=setTimeout(poll,2000);}else{timer=null;}})
+      .catch(function(err){timer=null;show('Cannot check scrape progress: '+err.message);});
+  }
+  if(f){f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var button=f.querySelector('button[type="submit"]');
+    if(button)button.disabled=true;
+    box.textContent='Submitting scrape request...';
+    fetch('/wiki/scrape',{method:'POST',body:new FormData(f)})
+      .then(function(r){return r.text().then(function(body){var result;try{result=JSON.parse(body);}catch(_){throw Error('HTTP '+r.status+': '+body.slice(0,220));}if(!r.ok)throw Error(result.error||result.detail||'HTTP '+r.status);return result;});})
+      .then(function(d){if(d.error)throw Error(d.error);if(!d.job||!d.job.id)throw Error('Scrape job was not accepted');f.reset();box.textContent='Scrape job queued: '+d.job.source+' · '+d.job.title;if(!timer)poll();})
+      .catch(function(err){box.textContent='';show('Scrape request failed: '+err.message);})
+      .finally(function(){if(button)button.disabled=false;});
+  });}
+  if(box && box.querySelector('.job-row')) poll();
   var tb=document.getElementById('tr-btn');
   if(tb){tb.addEventListener('click',function(){var o=document.getElementById('tr-out');o.hidden=false;o.textContent='Translating...';
     fetch('/wiki/translate?source='+encodeURIComponent(tb.dataset.source)+'&title='+encodeURIComponent(tb.dataset.title)).then(function(r){return r.json();}).then(function(d){

@@ -2,6 +2,14 @@
 
 This is the authoritative operator summary for the Auction House administration module.
 
+## Current operational assessment — 2026-10-08
+
+The project owner reports that the unified Auction House interface is **clean and stable when run against DSP**. Core DSP administration is implemented and operator-tested at module level; this is not a claim of individually documented runtime results for every executor.
+
+Recently merged: Inbox account-wide recipient selection (#749), MyISAM operator recovery guidance (#743), retry environment and outcome integrity protections (#740/#747), accurate recent-window snapshots and baselines (#754/#756), future-window anomaly filtering (#758), anomaly evidence quality (#760), and repeated-listing analytics caching (#762).
+
+**Remaining work is mostly validation and resilience**, not another first-pass module build: accumulate and verify real multi-day snapshot history; optionally document a concise DSP per-operation test matrix; improve diagnostics for interrupted non-atomic MyISAM actions and reward campaigns; validate Topaz independently. LSB broad writes need a runnable LSB Test environment. Forecasting, augmented rewards, scheduling/cohort tooling and production permissions are optional/conditional and should not be described as missing DSP basics.
+
 ## Capability model
 
 The module is deliberately split between broad read-only administration and narrowly scoped DSP/Topaz Test-environment executors. A scoped Test executor being available does **not** mean Auction House writes are globally enabled.
