@@ -4489,7 +4489,8 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
         if primary_dsp:
             match = resolve_dsp_key_item(dsp_root, row["name"])
             status = ("clean" if match["server_id"] == row["keyitem_id"] else "drifted") if match["status"] == "name_verified" else ("unavailable" if match["status"] in {"unavailable", "ambiguous"} else "missing")
-            return {"status": status, "id_match": None,
+            return {"status": status,
+                    "id_match": match["symbol"] if status == "clean" else None,
                     "name_match": (match["server_id"], match["symbol"])
                     if match["status"] == "name_verified" else None}
         return ingest_global_tables.resolve_keyitem_readiness(con, row["keyitem_id"], row["name"])
