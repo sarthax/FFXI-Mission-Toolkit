@@ -74,6 +74,10 @@ function M.new(options)
     local function command(action, mode)
         if action == 'stop' then stop('Packet export stopped.'); return end
         if action == 'status' then
+            if handle then
+                local ok, err = pcall(function() fresh_context(integer(os.time(), 0, 4102444800)) end)
+                if not ok then stop('Packet export stopped: '..tostring(err)) end
+            end
             options.message(handle and ('Packets active; '..sequence..' observations, '..dropped..' rate-limit drops (unverified).')
                 or ('Packets inactive.' .. (last_stop_counts and (' Previous export: '..last_stop_counts.observations
                     ..' observations, '..last_stop_counts.rate_drops..' rate-limit drops (unverified).') or '')
