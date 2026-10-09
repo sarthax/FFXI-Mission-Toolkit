@@ -46,10 +46,19 @@ def inspect_dsp_key_item_catalog(root: str | Path) -> dict:
     except OSError:
         return {"status": "unavailable", "entries": 0, "ambiguous_names": 0,
                 "message": "DSP key-item source could not be read."}
+    by_id: dict[int, set[str]] = {}
+    for values in records.values():
+        for symbol, server_id in values:
+            by_id.setdefault(server_id, set()).add(symbol)
+    duplicate_ids = {number: sorted(names) for number, names in by_id.items() if len(names) > 1}
+    ambiguous = sorted(name for name, values in records.items() if len(values) > 1)
     return {"status": "ready", "source_path": source.relative_to(root).as_posix(),
             "entries": sum(len(v) for v in records.values()),
             "unique_names": sum(len(v) == 1 for v in records.values()),
-            "ambiguous_names": sum(len(v) > 1 for v in records.values()),
+            "ambiguous_names": len(ambiguous),
+            "ambiguous_samples": ambiguous[:10],
+            "duplicate_numeric_ids": len(duplicate_ids),
+            "duplicate_id_samples": sorted(duplicate_ids)[:10],
             "message": "DSP enum catalog loaded from selected checkout."}
 
 
