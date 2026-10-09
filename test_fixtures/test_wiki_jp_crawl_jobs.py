@@ -61,6 +61,20 @@ def main():
         assert selected==["Test_100%", "Test_100%/Child"],selected
         crawler._RUNNING.clear()
 
+    # HTTP access failures are visible in counters and must retain the queue.
+    import urllib.error
+    with tempfile.TemporaryDirectory() as folder:
+        db=Path(folder)/"http.db"
+        with patch.object(crawler.threading.Thread,"start"):
+            job=crawler.start(db,"Blocked",50)
+        error=urllib.error.HTTPError("https://example.invalid",429,"Too Many Requests",{},None)
+        with patch.object(crawler.jp,"get",side_effect=error):
+            crawler._worker(str(db),job)
+        result=crawler.status(db)[0]
+        assert result["state"]=="error" and result["failed"]==1,result
+        assert result["processed"]==0 and result["pending"]==1,result
+        assert "HTTP 429" in result["last_error"],result
+
     print("Japanese Wiki checkpointed crawl: PASS")
 
 
