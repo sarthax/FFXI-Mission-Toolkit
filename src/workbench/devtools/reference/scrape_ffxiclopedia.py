@@ -75,7 +75,17 @@ def fetch(titles):
                 titles="|".join(titles[i:i+40]))
         for pg in r["query"]["pages"].values():
             rev = (pg.get("revisions") or [None])[0]
-            if rev: yield pg["pageid"], pg["title"], rev.get("revid"), rev.get("timestamp"), rev["slots"]["main"]["*"]
+            if not rev:
+                continue
+            slot = (rev.get("slots") or {}).get("main") or {}
+            content = slot.get("*")
+            if content is None:
+                content = slot.get("content")
+            if content is None:
+                content = rev.get("*", rev.get("content"))
+            if content is None:
+                raise RuntimeError(f"FFXIclopedia revision text unavailable for {pg.get('title')}: main slot missing")
+            yield pg["pageid"], pg["title"], rev.get("revid"), rev.get("timestamp"), content
 
 def changed_titles(con):
     since = con.execute("SELECT MAX(revision_timestamp) FROM reference_wiki_pages WHERE source_id=?", (SOURCE_ID,)).fetchone()[0]
