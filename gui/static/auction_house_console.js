@@ -389,6 +389,7 @@
         else if (x === 'buy-sel') bulk('admin_buy', ch, 'selected'); else if (x === 'ret-sel') bulk('return_to_seller', ch, 'selected');
         else if (x === 'buy-all') bulk('admin_buy', v, sc); else if (x === 'ret-all') bulk('return_to_seller', v, sc);
         else if (x === 'topoff') opts.topoff && opts.topoff();
+        else if (x === 'send-inbox') opts.onInbox && opts.onInbox();
       }
     };
     draw();
@@ -403,7 +404,12 @@
       const [d, h] = await Promise.all([req('/auction-house/console/listings.json?item_id=' + id + '&limit=5000'),
         req('/auction-house/items/' + id + '/history.json?limit=50').catch(() => ({rows: []}))]);
       detail(el, '<button class="b" data-ah-favorite="item" data-id="' + id + '" data-name="' + esc(it.item_name) + '" type="button">' + (watch.some(x=>x.kind==='item'&&x.id===id)?'★ Favorited':'☆ Favorite') + '</button><div class="ahc-item-hero"><img class="ahc-item-hero-icon" src="/itemedit/' + id + '/icon.png" alt="" onerror="this.style.display=\'none\'"><div class="ahc-item-hero-copy"><b>' + esc(nm(it.item_name)) + '</b><small>#' + id + ' · ' + esc(it.category_path || '') + '</small><div class="ahc-item-hero-meta">Stack ' + fmt(it.stack_size) + ' · ' + fmt(it.listings || 0) + ' active · ' + fmt(it.seller_count || 0) + ' sellers</div><div class="ahc-item-hero-links"><a href="/itembrowser?q=' + encodeURIComponent(it.item_name) + '#' + id + '" target="_blank" rel="noopener">Item Browser ↗</a><a href="/itemedit#' + id + '" target="_blank" rel="noopener">Edit item ↗</a></div></div></div><details class="ahc-item-facts"><summary>Item &amp; market details</summary><div>Low: ' + fmt(it.min_price) + 'g · Median: ' + fmt(it.median_price) + 'g · High: ' + fmt(it.max_price) + 'g</div><div>Item ID: ' + id + ' · Stack size: ' + fmt(it.stack_size) + ' · Category: ' + esc(it.category_path || 'Uncategorised') + '</div></details>',
-        d.rows, {seller: true, sales: h.rows || [], scope: nm(it.item_name), extra: '<button class="b pri" data-x="topoff">Top off…</button>',
+        d.rows, {seller: true, sales: h.rows || [], scope: nm(it.item_name), extra: '<button class="b pri" data-x="topoff">Top off…</button><button class="b" data-x="send-inbox">Add to Inbox bundle</button>',
+          onInbox: () => {
+            const saved = state.bundle.find(x => x.item_id === id);
+            if (saved) saved.quantity++; else state.bundle.push({item_id:id,name:it.item_name,quantity:1});
+            drawBundle(); tab('inbox'); toast(nm(it.item_name) + ' added to reward bundle');
+          },
           topoff: () => { addRestock({item_id: id, item_name: it.item_name, target: Math.max(it.listings + 1, 5), price: Math.round(it.min_price || it.avg_sale || 100), stack: false}); tab('restock'); }});
     } catch (e) { el.innerHTML = '<div class="ahc-empty">' + esc(e.message) + '</div>'; }
   }
