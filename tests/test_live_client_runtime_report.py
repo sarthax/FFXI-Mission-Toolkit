@@ -61,6 +61,10 @@ def test_gap_counts_distinguish_cross_zone_from_same_zone(tmp_path):
     assert gaps['count'] == 2
     assert gaps['same_zone_gap_count'] == 1
     assert gaps['cross_zone_gap_count'] == 1
+    assert gaps['observed_excess_interval_seconds'] == 4
+    assert gaps['same_zone_excess_interval_seconds'] == 2
+    assert gaps['cross_zone_excess_interval_seconds'] == 2
+    assert [gap['excess_interval_seconds'] for gap in gaps['gaps']] == [2, 2]
     assert gaps['cause_verified'] is False
     assert gaps['interpolated_frames'] == 0
 
