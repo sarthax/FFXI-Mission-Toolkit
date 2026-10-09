@@ -52,7 +52,7 @@
   <span class="muted ki-help">Search names, inspect missing/drifted enum mappings, and follow recorded capture observations. This page does not edit character ownership.</span>
 </div>
 <form class="search wb-filter-row" method="get">
-  <input type="text" name="q" value="{{ q }}" placeholder="Search by key-item name (e.g. Zeruhn)" aria-label="Search key items">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search key-item name or client ID (e.g. Zeruhn or 123)" aria-label="Search key items">
   <label for="ki-global-readiness">Server readiness</label>
   <select name="readiness" id="ki-global-readiness">
     {% for value, label in [('all','All statuses'),('clean','Clean'),('drifted','Drifted'),('wrong_name','Wrong name at ID'),('missing','Missing')] %}
@@ -63,7 +63,7 @@
 </form>
 <p class="muted">Server readiness filters all matching records before pagination. The quick filters below affect only the loaded page.</p>
 {% if not q %}
-<div class="nodata"><strong>Find a key item</strong><p>Enter a key-item name to inspect the client description, server mapping, and capture evidence. For server character ownership changes, use Character Editor.</p></div>
+<div class="nodata"><strong>Find a key item</strong><p>Enter a key-item name or exact client ID to inspect the client description, server mapping, and capture evidence. For server character ownership changes, use Character Editor.</p></div>
 {% else %}
 <div class="ki-status-help" aria-label="Readiness status definitions">
   <span><span class="pill exists">clean</span> same identity at this ID</span>
