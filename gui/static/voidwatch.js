@@ -5,7 +5,7 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return
 function num(n){return n==null?'?':Number(n).toLocaleString();}
 function jget(u){return fetch(u).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});});}
 function load(){
- jget('/domains/voidwatch/officers.json').catch(function(){return {officers:[],areas:[],states:[]};}).then(function(o){OF=o;return jget('/domains/voidwatch/overview.json');}).then(function(d){O=d;offTable();$('vw-srv').textContent='Server: '+d.server.name+' ('+d.server.environment+') '+d.server.root;graph();table();})
+ jget('/domains/voidwatch/officers.json').catch(function(){return {officers:[],areas:[],states:[]};}).then(function(o){OF=o;return jget('/domains/voidwatch/overview.json');}).then(function(d){O=d;offTable();warpTable();$('vw-srv').textContent='Server: '+d.server.name+' ('+d.server.environment+') '+d.server.root;graph();table();})
  .catch(function(e){$('vw-sum').innerHTML='<b style="color:#c0392b">'+esc(e.message)+'</b>';});
 }
 function bucket(p,t){return O.nms.filter(function(x){return x.path===p&&x.tier===t;});}
@@ -67,6 +67,22 @@ function openNm(name){
  jget('/domains/voidwatch/nm.json?name='+encodeURIComponent(name)).then(detail).catch(function(e){$('vw-dbody').innerHTML='<b style="color:#c0392b">'+esc(e.message)+'</b>';});
 }
 function itemName(d,id){return d.items[id]?d.items[id].replace(/_/g,' '):'item '+id;}
+function warpTable(){
+ var el=$('vw-warps');if(!el)return;
+ jget('/domains/voidwatch/warps.json').then(function(d){
+  var f=el.dataset.f||'';var L=d.warps.filter(function(w){return !f||(w.era+' '+w.set+' '+w.stone+' '+w.menu).toLowerCase().indexOf(f.toLowerCase())>=0;});
+  var inp=function(w,k,wd){return '<input data-k="'+k+'" value="'+esc(w[k]==null?'':w[k])+'" style="width:'+wd+'px" class="mono">';};
+  el.innerHTML='<h3 style="margin:8px 0 2px">Atmacite Refiner warp checklist <span class="muted">('+d.ok+' ok / '+d.complete+' complete / '+d.total+' destinations)</span></h3>'+
+  '<div class="muted">Option = (destId*65536)+2 from the server log line; blank fields can be filled in here. Only complete AND ok entries are written to <span class="mono">'+esc(d.lua)+'</span>. Wiki source [W]; option [C-log]; coordinates are candidate zoneline arrival rows [DB] until validated in game.</div>'+
+  '<div><input id="vw-wf" placeholder="filter (era / set / stone / zone)" value="'+esc(f)+'"> <button type="button" id="vw-wexp">Export Lua</button> <span id="vw-wmsg" class="muted"></span></div>'+
+  '<div class="table-wrap"><table><thead><tr><th>Era</th><th>Set</th><th>Needs</th><th>Menu entry</th><th>Landing zone</th><th>Option</th><th>x</th><th>y</th><th>z</th><th>rot</th><th>Landing note [W]</th><th>Validation</th><th>Note</th><th></th></tr></thead><tbody>'+
+  L.map(function(w){return '<tr data-id="'+w.id+'"><td>'+esc(w.era)+'</td><td>'+esc(w.set)+'</td><td>'+esc(w.stone)+' '+w.tier+'</td><td>'+esc(w.menu)+'</td><td>'+inp(w,'zone',150)+(w.zone_id==null&&w.zone?' <span style="color:#c0392b">?id</span>':w.zone_id!=null?' <span class="muted">'+w.zone_id+'</span>':'')+'</td><td>'+inp(w,'option',80)+'</td><td>'+inp(w,'x',70)+'</td><td>'+inp(w,'y',60)+'</td><td>'+inp(w,'z',70)+'</td><td>'+inp(w,'rot',36)+'</td><td>'+inp(w,'landing_note',200)+'</td><td><select data-k="validation">'+d.states.map(function(st){return '<option'+(st===w.validation?' selected':'')+'>'+st+'</option>';}).join('')+'</select></td><td>'+inp(w,'note',140)+'</td><td><button type="button" class="vww">Save</button></td></tr>';}).join('')+'</tbody></table></div>';
+  $('vw-wf').onchange=function(){el.dataset.f=this.value;warpTable();};
+  $('vw-wexp').onclick=function(){fetch('/domains/voidwatch/warps/export-lua',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});}).then(function(j){$('vw-wmsg').textContent='Wrote '+j.entries+' live entries to '+j.path;}).catch(function(e){$('vw-wmsg').textContent='Export failed: '+e.message;});};
+  Array.prototype.forEach.call(el.querySelectorAll('.vww'),function(b){b.onclick=function(){var tr=b.closest('tr'),ch={};Array.prototype.forEach.call(tr.querySelectorAll('[data-k]'),function(i){ch[i.dataset.k]=i.value;});
+   fetch('/domains/voidwatch/warps/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:tr.dataset.id,changes:ch})}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});}).then(function(){warpTable();}).catch(function(e){$('vw-wmsg').textContent='Save failed: '+e.message;});};});
+ }).catch(function(e){el.innerHTML='<span class="muted">Warp checklist unavailable: '+esc(e.message)+'</span>';});
+}
 function offTable(){
  var el=$('vw-off');if(!el)return;var L=OF.officers;
  if(!L.length){el.innerHTML='<span class="muted">Officer data unavailable.</span>';return;}

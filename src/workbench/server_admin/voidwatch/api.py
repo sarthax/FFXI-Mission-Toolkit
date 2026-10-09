@@ -12,6 +12,7 @@ from . import details as D
 from . import drops as Dr
 from . import edits as E
 from . import officers as Of
+from . import warps as W
 
 router = APIRouter(tags=["Voidwatch"])
 
@@ -142,4 +143,31 @@ def edit(payload: dict = Body(...)):
             if not gate.ready:
                 raise HTTPException(status_code=409, detail="Write blocked: " + "; ".join(i.message for i in gate.issues if i.blocking))
             return {"applied": True, "rows": E.apply(conn, p, str(payload.get("by", ""))), **p}
+    return _guard(go)
+
+
+@router.get("/domains/voidwatch/warps.json")
+def warps_json():
+    def go():
+        with _ctx() as (ctx, root, ident):
+            return W.overview(ctx.service.connection)
+    return _guard(go)
+
+
+@router.post("/domains/voidwatch/warps/save")
+def warps_save(payload: dict = Body(...)):
+    def go():
+        try:
+            return W.save(str(payload.get("id", "")), payload.get("changes") or {}, str(payload.get("by", "")))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+    return _guard(go)
+
+
+@router.post("/domains/voidwatch/warps/export-lua")
+def warps_export(payload: dict = Body(default={})):
+    """Write scripts/globals/voidwatch_warps.lua into the DSP script checkout from the validated entries (only complete, ok entries are live)."""
+    def go():
+        with _ctx() as (ctx, root, ident):
+            return W.export_lua(ctx.service.connection, root)
     return _guard(go)
