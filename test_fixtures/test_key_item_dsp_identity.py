@@ -137,7 +137,7 @@ def test_dsp_catalog_reports_reused_numeric_ids_and_ambiguous_names(tmp_path: Pa
     assert health["ambiguous_names"] == 1
     assert health["duplicate_numeric_ids"] == 1
     assert health["duplicate_id_samples"] == [1]
-    assert health["ambiguous_samples"] == ["third key"]
+    assert health["ambiguous_samples"] == ["thirdkey"]
 
 
 def test_dsp_catalog_diagnostics_render_only_bounded_examples():
