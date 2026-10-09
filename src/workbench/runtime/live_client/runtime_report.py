@@ -65,7 +65,11 @@ def entity_observation_summary(frames) -> dict:
 
 def recording_report(path: Path, *, game_version: str | None = None,
                      binaries: list[Path] | None = None,
-                     packet_observations: Path | None = None) -> dict:
+                     packet_observations: Path | None = None,
+                     capture_database: Path | None = None, capture_id: int | None = None) -> dict:
+    if ((capture_database is None) != (capture_id is None)
+            or (capture_database is not None and packet_observations is None)):
+        raise ValueError('Capture lookup requires packet observations, database and capture ID together')
     data = bounded_bytes(path, 16 * 1024 * 1024)
     lines = [line for line in data.splitlines() if line.strip()]
     if not lines:
@@ -115,11 +119,13 @@ def recording_report(path: Path, *, game_version: str | None = None,
                            'coordinate_transform_verified': False, 'supports_game_writes': False,
                            'lifecycle_verified': False}}
     if packet_observations is not None:
-        report['packet_evidence'] = packet_evidence_report(packet_observations, Path(path).stem, frames)
+        report['packet_evidence'] = packet_evidence_report(packet_observations, Path(path).stem, frames,
+                                                         capture_database=capture_database, capture_id=capture_id)
     return report
 
 
-def packet_evidence_report(path: Path, recording_label: str, frames) -> dict:
+def packet_evidence_report(path: Path, recording_label: str, frames, *,
+                           capture_database: Path | None = None, capture_id: int | None = None) -> dict:
     """Exact source/time candidates only; reuse Capture validation without decoding."""
     from workbench.captures.ashita_packet_ingest import MAX_BYTES, parse_observations
 
@@ -151,7 +157,7 @@ def packet_evidence_report(path: Path, recording_label: str, frames) -> dict:
                                    'telemetry_frame': matches[0], 'observed_at': row['observed_at'],
                                    'zone_id': row['zone_id'], 'direction': row['direction'],
                                    'reported_opcode': row['opcode'], 'dropped_before': row['dropped_before']})
-    return {'filename': Path(path).name, 'sha256': hashlib.sha256(data).hexdigest(),
+    evidence = {'filename': Path(path).name, 'sha256': hashlib.sha256(data).hexdigest(),
             'size_bytes': len(data), 'packets': len(rows),
             'classification_counts': dict(sorted(counts.items())), 'candidates': candidates,
             'candidate_limit': 1000,
@@ -161,6 +167,10 @@ def packet_evidence_report(path: Path, recording_label: str, frames) -> dict:
             'clock_alignment_verified': False, 'server_identity_verified': False,
             'packet_semantics_verified': False, 'causal_relationship_verified': False,
             'wire_verified': False}
+    if capture_database is not None:
+        from .capture_evidence import attach_capture_locators
+        attach_capture_locators(evidence, rows, capture_database, capture_id)
+    return evidence
 
 
 def main(argv=None) -> int:
@@ -170,10 +180,13 @@ def main(argv=None) -> int:
     parser.add_argument('--binary', type=Path, action='append', default=[], help='Optional EXE/DLL metadata only; repeatable')
     parser.add_argument('--output', type=Path, help='New report file; existing reports are never overwritten')
     parser.add_argument('--packet-observations', type=Path, help='Stopped Ashita packet JSONL; exact-time research candidates only')
+    parser.add_argument('--capture-database', type=Path, help='Existing Toolkit Capture SQLite database, opened read-only')
+    parser.add_argument('--capture-id', type=int, help='Explicit Capture ID for source-hash/span-qualified packet links')
     args = parser.parse_args(argv)
     try:
         report = recording_report(args.recording, game_version=args.game_version, binaries=args.binary,
-                                  packet_observations=args.packet_observations)
+                                  packet_observations=args.packet_observations,
+                                  capture_database=args.capture_database, capture_id=args.capture_id)
         text = json.dumps(report, indent=2) + '\n'
         if args.output:
             with args.output.open('x', encoding='utf-8') as stream:
