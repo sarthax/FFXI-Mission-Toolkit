@@ -20,6 +20,37 @@
   function toast(msg) { const t = $('ahcToast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 4000); }
   function debounce(fn, ms = 250) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 
+  /* Browser-local navigation preferences only. Never store preview tokens,
+     recipients, confirmation strings, or uncommitted write plans. */
+  const WORKSPACE_KEY = 'ffxi.ah.workspace.v1';
+  const workspaceFields = ['itQ','itStatus','seQ','seSort','buQ','buSort','buDays','arMin'];
+  let savedWorkspace = {};
+  try { savedWorkspace = JSON.parse(localStorage.getItem(WORKSPACE_KEY) || '{}') || {}; } catch (_) {}
+  const saveWorkspace = debounce(() => {
+    try {
+      const filters = {};
+      workspaceFields.forEach(id => { if ($(id)) filters[id] = $(id).value; });
+      localStorage.setItem(WORKSPACE_KEY, JSON.stringify({
+        tab: location.hash.slice(1), filters, item: state.selItem,
+        seller: state.selSeller, category: state.cat || ''
+      }));
+    } catch (_) { /* private browsing / storage disabled */ }
+  }, 180);
+  workspaceFields.forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    if (savedWorkspace.filters && Object.prototype.hasOwnProperty.call(savedWorkspace.filters, id)) {
+      const value = savedWorkspace.filters[id];
+      if (el.tagName === 'SELECT' && !Array.from(el.options).some(o => o.value === value)) return;
+      el.value = value;
+    }
+    el.addEventListener('change', saveWorkspace);
+    el.addEventListener('input', saveWorkspace);
+  });
+  root.addEventListener('click', e => {
+    if (e.target.closest('#itTree [data-c], #itList [data-id], #seList [data-id], #ahcTabs [data-t]'))
+      saveWorkspace();
+  });
   /* ---------- tabs & embedded tools ---------- */
   const TOOLS = {economy: ['Economy Intelligence', '/auction-house/economy'], listings: ['Listing Manager', '/auction-house/listing-manager'],
     seeder: ['Player listing & market history', '/auction-house/seeder'],
@@ -138,6 +169,10 @@
     $('ahcFresh').textContent = 'loading…';
     try {
       state.agg = await req('/auction-house/console/aggregate.json');
+      if (!hasInitialItem && !state.initialItemLoaded && savedWorkspace.item && Number.isSafeInteger(+savedWorkspace.item)) {
+        state.initialItemLoaded = true;
+        Promise.resolve().then(() => showItem(+savedWorkspace.item));
+      }
       if (hasInitialItem && !state.initialItemLoaded) {
         state.initialItemLoaded = true;
         tab('items');
@@ -298,7 +333,7 @@
 
   async function showItem(id, keep) {
     const it = state.agg.items.find(i => i.item_id === id) || itemPool().find(i => i.item_id === id), el = $('itDetail');
-    state.selItem = id; if (it && !keep && !inCat(it.category_path, state.cat)) state.cat = it.category_path; drawItems();
+    state.selItem = id; saveWorkspace(); if (it && !keep && !inCat(it.category_path, state.cat)) state.cat = it.category_path; drawItems();
     if (!it) { el.innerHTML = '<div class="ahc-empty">Item #' + id + ' is not an Auction House item.</div>'; return; }
     if (!keep) el.innerHTML = '<div class="ahc-empty">Loading…</div>';
     try {
@@ -321,7 +356,7 @@
   $('seQ').addEventListener('input', debounce(drawSellers, 120)); $('seSort').addEventListener('change', drawSellers);
   $('seList').addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (tr) showSeller(+tr.dataset.id); });
   async function showSeller(id, keep) {
-    state.selSeller = id; drawSellers();
+    state.selSeller = id; saveWorkspace(); drawSellers();
     const s = state.agg.sellers.find(x => x.seller_id === id), el = $('seDetail');
     if (!s) { el.innerHTML = '<div class="ahc-empty">Seller #' + id + ' has no active listings.</div>'; return; }
     if (!keep) el.innerHTML = '<div class="ahc-empty">Loading…</div>';
@@ -1095,7 +1130,11 @@
   loadCats(); loadPresets(); loadDefault();
   drawRestock(); drawBundle(); drawChips();
   loadEnv(); loadTpls(); loadAll();
-  { const h = location.hash.slice(1); tab(TOOLS[h] || $('p-' + h) ? h : 'economy'); }
+  { const h = location.hash.slice(1);
+    const savedTab = savedWorkspace.tab;
+    const preferred = h && h !== 'economy' ? h : savedTab;
+    tab(preferred && (TOOLS[preferred] || $('p-' + preferred)) ? preferred : 'economy');
+  }
   window.ahcOpen = (k, id, cat) => { if (cat != null) { state.cat = cat; drawItems(); } if (id) return k === 'items' ? showItem(id) : showSeller(id); };
 })();
 
