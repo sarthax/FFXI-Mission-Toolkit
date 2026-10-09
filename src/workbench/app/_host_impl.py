@@ -4473,7 +4473,7 @@ KEYITEMS_PAGE_SIZE = 100
 
 @app.get("/keyitems", response_class=HTMLResponse)
 def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all"):
-    if readiness not in {"all", "clean", "drifted", "wrong_name", "missing"}:
+    if readiness not in {"all", "clean", "drifted", "wrong_name", "missing", "unavailable"}:
         readiness = "all"
     from workbench.runtime.legacy_settings import get_active_server_identity
     from workbench.devtools.features.key_item_dsp_identity import resolve_dsp_key_item
@@ -4488,7 +4488,7 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
     def primary_readiness(row):
         if primary_dsp:
             match = resolve_dsp_key_item(dsp_root, row["name"])
-            status = ("clean" if match["server_id"] == row["keyitem_id"] else "drifted") if match["status"] == "name_verified" else "missing"
+            status = ("clean" if match["server_id"] == row["keyitem_id"] else "drifted") if match["status"] == "name_verified" else ("unavailable" if match["status"] in {"unavailable", "ambiguous"} else "missing")
             return {"status": status, "id_match": None,
                     "name_match": (match["server_id"], match["symbol"])
                     if match["status"] == "name_verified" else None}
