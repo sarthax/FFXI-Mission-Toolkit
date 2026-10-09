@@ -637,6 +637,10 @@ def search_pages(con, query: str, limit: int = 40, source_id: str = "all") -> li
     init_db(con); q=normalize_search(query)
     if not q: return []
     like=f"%{q}%"; found={}
+    scoped = source_id not in ("", "all", None)
+    source_sql = " AND source_id=?" if scoped else ""
+    qualified_sql = " AND p.source_id=?" if scoped else ""
+    source_args = (source_id,) if scoped else ()
 
     def add(source,page,title,reason,snippet=None,score=0):
         if source_id not in ("", "all", None) and source != source_id:
@@ -648,12 +652,12 @@ def search_pages(con, query: str, limit: int = 40, source_id: str = "all") -> li
         row["score"]=max(row["score"],score)
 
     for r in con.execute("""SELECT source_id,page_id,title FROM reference_wiki_pages
-      WHERE lower(title) LIKE ? OR lower(norm_title) LIKE ? LIMIT ?""",(like,like,limit*3)):
+      WHERE (lower(title) LIKE ? OR lower(norm_title) LIKE ?)""" + source_sql + " LIMIT ?",(like,like,*source_args,limit*3)):
         add(*r,"title",score=100 if normalize_search(r[2])==q else 80)
     # BG Wiki's full offline dump is indexed separately; keep it searchable without
     # copying every page into reference_wiki_pages.
     has_bg_index=con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='wiki_pages'").fetchone()
-    if has_bg_index:
+    if has_bg_index and source_id in ("", "all", None, "BGWiki"):
         compact=re.sub(r"[^a-z0-9]","",q)
         for r in con.execute("""SELECT title,url FROM wiki_pages
           WHERE lower(title) LIKE ? OR norm_title LIKE ? LIMIT ?""",(like,f"%{compact}%",limit*3)):
@@ -662,23 +666,23 @@ def search_pages(con, query: str, limit: int = 40, source_id: str = "all") -> li
       FROM reference_wiki_topics t
       JOIN reference_wiki_topic_pages p ON p.topic_id=t.topic_id
       LEFT JOIN reference_wiki_pages w ON w.source_id=p.source_id AND w.page_id=p.page_id
-      WHERE t.norm_title LIKE ? LIMIT ?""",(like,limit*3)):
+      WHERE t.norm_title LIKE ?""" + qualified_sql + " LIMIT ?",(like,*source_args,limit*3)):
         add(r[0],r[1],r[2] or r[3],"canonical topic",r[3],95)
     for r in con.execute("""SELECT a.source_id,a.page_id,p.title,a.alias FROM reference_wiki_aliases a
       JOIN reference_wiki_pages p ON p.source_id=a.source_id AND p.page_id=a.page_id
-      WHERE a.norm_alias LIKE ? LIMIT ?""",(like,limit*3)):
+      WHERE a.norm_alias LIKE ?""" + qualified_sql + " LIMIT ?",(like,*source_args,limit*3)):
         add(r[0],r[1],r[2],"alias",r[3],90)
     for r in con.execute("""SELECT b.source_id,b.page_id,p.title,b.text FROM reference_wiki_blocks b
       JOIN reference_wiki_pages p ON p.source_id=b.source_id AND p.page_id=b.page_id
-      WHERE lower(COALESCE(b.text,'')) LIKE ? LIMIT ?""",(like,limit*3)):
+      WHERE lower(COALESCE(b.text,'')) LIKE ?""" + qualified_sql + " LIMIT ?",(like,*source_args,limit*3)):
         add(r[0],r[1],r[2],"structured text",(r[3] or "")[:220],55)
     for r in con.execute("""SELECT source_id,page_id,title,page_text FROM reference_wiki_pages
-      WHERE lower(COALESCE(page_text,'')) LIKE ? LIMIT ?""",(like,limit*3)):
+      WHERE lower(COALESCE(page_text,'')) LIKE ?""" + source_sql + " LIMIT ?",(like,*source_args,limit*3)):
         add(r[0],r[1],r[2],"page text",(r[3] or "")[:220],35)
     has_tr=con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='reference_wiki_translations'").fetchone()
     if has_tr:
         for r in con.execute("""SELECT t.source_id,t.page_id,p.title,t.translated FROM reference_wiki_translations t
           JOIN reference_wiki_pages p ON p.source_id=t.source_id AND p.page_id=t.page_id
-          WHERE t.target_lang='en' AND lower(t.translated) LIKE ? LIMIT ?""",(like,limit*3)):
+          WHERE t.target_lang='en' AND lower(t.translated) LIKE ?""" + qualified_sql + " LIMIT ?",(like,*source_args,limit*3)):
             add(r[0],r[1],r[2],"machine English",(r[3] or "")[:220],65)
     return sorted(found.values(),key=lambda x:(-x["score"],normalize_search(x["title"]),x["source_id"]))[:max(1,min(limit,100))]
