@@ -20,3 +20,12 @@ def test_key_items_search_and_pagination_preserve_global_filter():
     assert 'name="readiness" value="{{ readiness_filter }}"' in page
     assert page.count("readiness={{ readiness_filter|urlencode }}") == 2
     assert "filters all matching records before pagination" in page
+
+
+def test_key_items_search_supports_exact_numeric_ids():
+    host = Path("src/workbench/app/_host_impl.py").read_text(encoding="utf-8")
+    section = host.split('def keyitems(request: Request, q:', 1)[1].split('@app.get("/keyitems/lua-references.json")', 1)[0]
+    assert "q.isascii() and q.isdecimal()" in section
+    assert '(name LIKE ? OR keyitem_id = ?)' in section
+    assert '(*args, KEYITEMS_PAGE_SIZE, offset)' in section
+    assert 'predicate + " ORDER BY name"' in section
