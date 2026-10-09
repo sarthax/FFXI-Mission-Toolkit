@@ -240,8 +240,8 @@ Classifications apply to individual functions, not entire providers: **runtime v
 | Player XYZ/heading/zone — implemented, runtime verified within supplied sample | Strict telemetry, file feed, replay/path/waypoint models | One-second explicit sampling, party zone and identity rechecks | IEntity local position/heading; IParty zone | Disk identity helper only | Keep existing exporter/decoder; transforms remain missing | 121 frames/120 seconds, zone 50, stairs; zoning, heading units and loaded build still pending |
 | Observation providers — implemented, offline | ObservationSource.observe, TelemetryProducer, feed and optional frame-provider router; source/version in snapshots | Original Ashita and Windower entry points share helpers | Published manager interfaces | No process source | Existing abstractions accept future sources; do not add competing schema/registry | Per-provider compatibility and lifecycle |
 | Independent recording/session identity — implemented, offline | Registry generations, duplicate client IDs, replace/unload, stale-token rejection | Explicit unique exporter IDs and fresh bounded files | One addon per injected client | No OS discovery | Retain registry; actual two-client evidence missing | Two clients, restart, zoning/logout/unload |
-| Entity enumeration/index/name/XYZ/heading — implemented, offline | Decoded entity model, table, raw-plane markers, scope/truncation | Opt-in slots 0..2303, cap 32, target first, nil/blank/player exclusions and identity rechecks | Pinned petinfo/chamcham examples and IEntity | No native enumeration | Do not reimplement scan; not a complete census or despawn detector | Populated zone, slot churn, performance, bounds |
-| Reported server ID — implemented, offline | Separate optional ID; no automatic server identity promotion | Optional GetServerId, zero/missing unknown | IEntity uint32 server ID | None | Independent selected-server ID validation missing; never equate index and SQL ID | Compare known NPC/mob/player IDs and slot reuse |
+| Entity enumeration/index/name/XYZ — runtime observed in supplied bounded samples; heading remains separately unverified | Decoded entity model, table, raw-plane markers, scope/truncation | Opt-in slots 0..2303, cap 32, target first, nil/blank/player exclusions and identity rechecks | Pinned petinfo/chamcham examples and IEntity | No native enumeration | Do not reimplement scan; not a complete census or despawn detector | Supplied 30-frame zone 235 and 24-frame zone 107 inventory samples accepted; slot reuse, performance and cap/truncation still pending |
+| Reported server ID — runtime observed as nonzero values; server identity unverified | Separate optional ID; no automatic server identity promotion | Optional GetServerId, zero/missing unknown | IEntity uint32 server ID | None | Independent selected-server ID validation missing; never equate index and SQL ID | 1,035 nonzero ID observations accepted; compare known NPC/mob/player IDs and slot reuse |
 | Raw entity type/status/spawn flags — upstream only at reconciliation baseline | No preserved raw fields yet; kind remains unknown | Not sampled yet | IEntity GetType uint8; GetStatus/GetSpawnFlags uint32 | None | Highest-value additive entity slice; no enum/semantic guesses | Getter availability, bounds, meanings and transitions |
 | Target/subtarget designation — partial | Entities exist, roles not retained | Index 0 observed, not distinguished when subtarget active | targets.lua: active subtarget is slot 0, original target slot 1; GetIsSubTargetActive | None | Add explicit roles only when role API available; retain unknown legacy roles | Normal target, subtarget, same-slot roles, changing target |
 | Validity/staleness — partial | Finite/schema/time/client checks; last-good feed preserved | Player/zone/entity/name/known-ID rechecks; rejected samples stop | API availability and entity existence checks | No process lifetime validation | Keep rejection guards; raw status is not verified liveness; absence is not despawn | Logout/unload/disappearance/replacement and restart |
@@ -268,6 +268,49 @@ Keep telemetry v1, decoder, registry, feeds, session generations and recorded UI
 5. Develop native process identity/standalone reads and individual authorized controls only where Ashita lacks a supported interface. No copied offsets, auto-attachment, writable profile or restoration guarantee is justified now.
 
 No completed functionality is superseded. Ashita supersedes the *need to implement a second memory reader for API-accessible observations*, not the independent native fallback or future verified control work. Minimap behavior is reference evidence, not a new export/provider or competing Toolkit UI.
+
+### Supplied bounded inventory runtime evidence
+
+Two operator-supplied Ashita telemetry recordings validate completely:
+
+| Source | Frames / duration | Zone | Entities per frame | Total observations | Distinct slot/ID identities | Inventory-set changes |
+| --- | --- | --- | --- | --- | --- | --- |
+| telemetry-test-a-1791514258-1.jsonl | 30 / 29 seconds | 235 | 19–21 | 613 | 21 | 2 |
+| telemetry-test-b-1791514491-1.jsonl | 24 / 23 seconds | 107 | 11–20 | 422 | 20 | 6 |
+
+Original SHA-256: A `1555cec54d9f99c3c945e36033b5f9066240fb8f363cc399a4d7e930f1722395`;
+B `f5b7e5688154b86ddb28b43f8aa6c00d2353b565cd0e8619b86c30d173093a4e`.
+Both declare bounded_loaded_entities, one-second cadence, no truncation and nonzero
+server IDs for every entity observation. Raw player XYZ/heading changes are present.
+These files extend actual runtime observation evidence to populated zones and entity
+inventory; matching server catalog identities and complete enumeration are unverified.
+Changing inventory sets do not prove spawn/despawn: loading, range and other causes
+remain possible. Neither file contains zoning, overlapping live sessions, slot reuse,
+instance hints, raw entity type/status/spawn flags, explicit target roles or packet data.
+The records still declare unverified-ashita-v4-api; loaded build/compatibility, logout,
+disconnect/restart, target/subtarget semantics, cap behavior and packet fidelity remain
+pending. Separate recordings in different zones do not establish an observed transition.
+
+Operator-reported sequence: one client, test A login/walking in Bastok Markets,
+zoning toward North Gustaberg, target selection/combat and logout; test B relogin,
+walking in North Gustaberg, then Bastok Mines/Zeruhn Mines and combat. The file
+coverage above does not capture those zone transitions, combat actions or lifecycle
+boundaries. Current exporter behavior closes the file on any sampling validation
+failure (including inactive party, unavailable entities or mixed zone/identity),
+prints Export stopped, and requires explicit restart. The supplied test-B screenshot confirms export started, then stopped at
+workbench_observation.lua:85 with player identity mismatch before the Bastok Mines
+and Zeruhn Mines messages. Repeated addon-load attempts reported already loaded;
+these were not an initial load failure. The guard requires an available player entity
+and agreement between its name and the party name. The screenshot identifies the
+failed guard, not whether transient zoning data or another discrepancy caused it. Selecting targets is not evidence of target-role
+export because neither file contains target_roles. No concurrent-client test occurred.
+
+Regression fixtures anonymize client/character/entity names and shift timestamps while
+preserving cadence, coordinates, indexes, reported IDs, duplicate-name relationships and
+inventory changes. Fixture hashes therefore differ from the original source hashes above.
+Cloud tests exercise strict decoding, projection, report boundaries and independent replay;
+independent replay is not proof of simultaneous connected game clients. No native controls,
+coordinate transforms, graph relations or packet interpretations are promoted by this evidence.
 
 ### Entity slice implementation follow-up
 
