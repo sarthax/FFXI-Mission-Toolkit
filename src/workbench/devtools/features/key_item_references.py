@@ -52,6 +52,8 @@ def discover_key_item_references(
     root = Path(server_root).resolve()
     scripts = root / "scripts"
     result = {
+        "operation_counts": {"require": 0, "grant": 0, "remove": 0},
+        "matched_scripts": 0,
         "symbol": symbol, "lineage": lineage, "source_root": str(root),
         "references": [], "scanned_files": 0, "truncated": False,
         "limitations": [
@@ -67,7 +69,12 @@ def discover_key_item_references(
     permitted = set(_ALLOWED_NAMESPACES[lineage]) if lineage else {
         value for values in _ALLOWED_NAMESPACES.values() for value in values
     }
+    matched_paths: set[str] = set()
     for path in sorted(scripts.rglob("*.lua")):
+        # A symlinked script must never escape the selected checkout.
+        if not path.resolve().is_relative_to(root):
+            result["limitations"].append("A Lua symlink outside the selected checkout was skipped.")
+            continue
         if result["scanned_files"] >= max_files:
             result["truncated"] = True
             break
@@ -86,6 +93,10 @@ def discover_key_item_references(
                             result["truncated"] = True
                             return result
                         api = match.group("api").split(":")[-1].split(".")[-1]
+                        relative_path = path.relative_to(root).as_posix()
+                        matched_paths.add(relative_path)
+                        result["operation_counts"][_OPERATION[api]] += 1
+                        result["matched_scripts"] = len(matched_paths)
                         result["references"].append({
                             "operation": _OPERATION[api],
                             "api": api,
