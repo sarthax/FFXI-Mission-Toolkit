@@ -87,6 +87,8 @@ def preview_local_recovery(con: sqlite3.Connection, *, sample_limit: int = 12) -
         if not row:
             continue
         source_format,raw_source=row
+        import hashlib
+        source_hash=hashlib.sha256(raw_source.encode("utf-8")).hexdigest()
         _,_,blocks=build_blocks({"page_id":page["page_id"]},
                                  source_format=source_format,raw_source=raw_source)
         counts={}
@@ -96,6 +98,7 @@ def preview_local_recovery(con: sqlite3.Connection, *, sample_limit: int = 12) -
         previews.append({"source":page["source"],"page_id":page["page_id"],
                          "existing_legacy_blocks":page["legacy_blocks"],
                          "preview_block_count":len(blocks),
+                         "source_hash":source_hash,
                          "preview_block_types":counts,
                          "requires_confirmation":True,
                          "applied":False})
@@ -127,6 +130,10 @@ def apply_local_recovery(con: sqlite3.Connection, *, source: str, page_id: str,
             source_format=row[0],raw_source=row[1])
         if not blocks or all(b.get("block_type")=="legacy_text" for b in blocks):
             raise ValueError("Preview produced no structured recovery")
+        # Force store_document to replace legacy blocks even if raw hash/parser
+        # match the retained document metadata.
+        con.execute("DELETE FROM reference_wiki_blocks WHERE source_id=? AND page_id=?",
+                    (source,page_id))
         wiki_document.store_document(con,source_id=source,page_id=page_id,
             source_format=row[0],raw_source=row[1],blocks=blocks)
         con.commit()
