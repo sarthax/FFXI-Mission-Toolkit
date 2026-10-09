@@ -69,3 +69,27 @@ def test_dsp_primary_display_does_not_mislabel_dsp_as_lsb():
     assert 'Topaz readiness (reference)' in page
     assert 'this ID maps to a different enum in the selected source' in page
     assert 'this id is really something else in LSB' not in page
+
+
+def test_uploaded_dsp_semicolon_style_catalog(tmp_path: Path):
+    """Real DSP keyitems.lua uses top-level assignments ending in semicolons."""
+    from workbench.devtools.features.key_item_dsp_identity import _enum_records
+    file = tmp_path / "scripts" / "globals" / "keyitems.lua"
+    file.parent.mkdir(parents=True)
+    file.write_text(
+        "-- KEYITEMS IDS\n"
+        "ZERUHN_REPORT = 1;\n"
+        "AIRSHIP_PASS = 8;\n"
+        "MOGHANCEMENT_MANDRAGORA_MANIA = 543; -- tentative name\n"
+        "MAP_OF_ESCHA_ZITAH = 2307,\n"
+        "MYSTERIOUS_AMULET = 579;\n"
+        "MYSTERIOUS_AMULET = 708;\n", encoding="utf-8"
+    )
+    _enum_records.cache_clear()
+    assert resolve_dsp_key_item(tmp_path, "Zeruhn Report")["server_id"] == 1
+    assert resolve_dsp_key_item(tmp_path, "Airship Pass")["symbol"] == "AIRSHIP_PASS"
+    assert resolve_dsp_key_item(tmp_path, "Moghancement Mandragora Mania")["server_id"] == 543
+    assert resolve_dsp_key_item(tmp_path, "Map of Escha Zitah")["server_id"] == 2307
+    ambiguous = resolve_dsp_key_item(tmp_path, "Mysterious Amulet")
+    assert ambiguous["status"] == "ambiguous"
+    assert ambiguous["symbol"] is None
