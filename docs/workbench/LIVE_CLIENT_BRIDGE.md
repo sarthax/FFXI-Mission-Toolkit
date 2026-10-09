@@ -703,3 +703,18 @@ The live status chip shows observed coordinates, heading in reported radians,
 and optional entity counts/truncation to aid comparison with the game client.
 These are *display diagnostics*, not evidence that axes and heading orientation
 have been calibrated against a live Windows zone.
+
+
+### Windows 3D live-alignment validation
+
+In the 3D Zone Viewer, enable **Live Ashita position**, select the same client
+ID as the running Ashita addon, and choose **Focus player** while in orbit
+mode to center the current fresh marker. **Bridge setup** opens the local
+receiver console in a separate browser tab. **Copy diagnostics** writes a
+small JSON snapshot to the browser clipboard with client ID, zone, observed
+raw XYZ/heading, projected viewer XYZ, adapter and observation/entity metadata.
+It does not export credentials, chat, capture recordings, account information
+or a player movement path. Inspect the marker against a known landmark and
+compare forward-facing direction in the game; send the copied diagnostics and
+a screenshot if axis or heading alignment is incorrect. Neither button sends
+movement commands. The clipboard button needs browser clipboard permission.
