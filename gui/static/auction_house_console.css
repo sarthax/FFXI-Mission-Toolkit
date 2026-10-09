@@ -123,3 +123,22 @@ a.lk{color:var(--ac,#4aa3ff);text-decoration:none;cursor:pointer}a.lk:hover{text
 .pz-kind{font-size:10px;text-transform:uppercase;padding:1px 6px;border-radius:9px;background:#8883;margin-right:6px}.pz-catlist{max-height:170px;overflow:auto;border:1px solid var(--bd);border-radius:6px;padding:4px 8px;columns:2}.pz-catlist label{display:flex;flex-direction:row;gap:4px;font-size:12px;break-inside:avoid}
 
 .pz-catlist{columns:unset!important;max-height:240px}.pz-grp{margin-bottom:6px}.pz-gh{font-size:12px}.pz-c{margin-left:18px}.pz-itres{max-height:150px;overflow:auto}.pz-ir{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:2px 0;border-bottom:1px solid var(--bd)}.pz-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pz-chips{display:flex;flex-wrap:wrap;gap:4px;min-height:24px}.pz-chip{background:#8883;border-radius:10px;padding:1px 8px;font-size:12px}.pz-chip a{text-decoration:none;margin-left:3px}
+
+
+/* AH Items: compact icon-led identity, hover detail without extra table columns. */
+.ahc .ahc-item-cell{display:flex;align-items:center;gap:8px;min-width:0}
+.ahc .ahc-item-cell>span{min-width:0}
+.ahc .ahc-item-icon{height:32px;width:32px;flex:none;object-fit:contain;image-rendering:auto}
+.ahc .ahc-item-hero{display:flex;align-items:center;gap:12px;min-width:0}
+.ahc .ahc-item-hero-icon{width:54px;height:54px;flex:none;object-fit:contain}
+.ahc .ahc-item-hero-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ahc .ahc-item-hero-copy>b{font-size:1.08em}
+.ahc .ahc-item-hero-copy>small{color:var(--muted,#999);overflow-wrap:anywhere}
+.ahc .ahc-item-hero-meta{font-size:12px;opacity:.85}
+.ahc .ahc-item-hero-links{display:flex;flex-wrap:wrap;gap:12px;font-size:12px}
+.ahc .ahc-item-hero-links a{text-decoration:underline;text-underline-offset:2px}
+.ahc .ahc-item-facts{font-size:12px;margin:7px 0 0;padding:7px 0;border-top:1px solid var(--border,#555)}
+.ahc .ahc-item-facts summary{cursor:pointer;font-weight:600}
+.ahc .ahc-item-facts>div{margin-top:5px;line-height:1.45}
+.ahc #itList tr[data-id]:hover .ahc-item-icon{transform:scale(1.12)}
+.ahc #itList .ahc-item-icon{transition:transform .12s ease}

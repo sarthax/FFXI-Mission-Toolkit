@@ -37,6 +37,11 @@
     if (name === 'arbitrage' && !state.arb && window.loadArb) window.loadArb();
   }
   window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (TOOLS[h] || $('p-' + h)) tab(h); });
+  // Item Browser already links to /auction-house?item=<id>. Honor that
+  // deep link after the aggregate loads, without requiring a second click.
+  const initialItemId = Number(new URLSearchParams(location.search).get('item'));
+  const hasInitialItem = Number.isSafeInteger(initialItemId) && initialItemId > 0;
+
   $('ahcTabs').addEventListener('click', e => { if (e.target.dataset.t) tab(e.target.dataset.t); });
 
   /* ---------- action drawer (single guarded confirm path) ---------- */
@@ -133,6 +138,11 @@
     $('ahcFresh').textContent = 'loading…';
     try {
       state.agg = await req('/auction-house/console/aggregate.json');
+      if (hasInitialItem && !state.initialItemLoaded) {
+        state.initialItemLoaded = true;
+        tab('items');
+        Promise.resolve().then(() => showItem(initialItemId));
+      }
       $('ahcFresh').textContent = 'updated ' + new Date().toLocaleTimeString();
     } catch (e) { $('ahcFresh').textContent = 'failed: ' + e.message; return; }
     state.catalog = null; if ($('itStatus').value !== 'active') await ensureCatalog();
@@ -183,7 +193,7 @@
     rows.sort((a, b) => (k === 'name' ? nm(a.item_name).toLowerCase().localeCompare(nm(b.item_name).toLowerCase()) : ((a[k] ?? -1) - (b[k] ?? -1))) * dir);
     $('itCatLbl').textContent = (state.cat || 'All items') + ' · ' + fmt(rows.length);
     $('itList').innerHTML = rows.length ? '<table><thead><tr>' + IT_COLS.concat($('itStatus').value === 'active' ? [] : IT_EXTRA).map(c => '<th class="' + c[2] + ' srt" data-s="' + c[1] + '">' + c[0] + (k === c[1] ? (dir > 0 ? ' ▲' : ' ▼') : '') + '</th>').join('') + '</tr></thead><tbody>' +
-      rows.slice(0, 800).map(i => '<tr class="clk' + (i.item_id === state.selItem ? ' sel' : '') + '" data-id="' + i.item_id + '"><td><b>' + esc(nm(i.item_name)) + '</b> <small>#' + i.item_id + '</small></td><td class="n">' + i.listings + '</td><td class="n">' + fmt(i.min_price) + '</td><td class="n">' + fmt(i.median_price) + '</td><td class="n">' + fmt(i.max_price) + '</td><td class="n">' + i.seller_count + '</td><td class="n">' + days(i.oldest_days) + '</td>' + ($('itStatus').value === 'active' ? '' : '<td class="n">' + (i.sales ?? 0) + '</td><td class="n">' + fmt(i.avg_sale) + '</td>') + '</tr>').join('') + '</tbody></table>' : '<div class="ahc-empty">No items in this view.</div>';
+      rows.slice(0, 800).map(i => '<tr class="clk' + (i.item_id === state.selItem ? ' sel' : '') + '" data-id="' + i.item_id + '" title="' + esc(nm(i.item_name) + ' | #' + i.item_id + ' | ' + (i.category_path || 'Uncategorised') + ' | Stack ' + (i.stack_size || 1) + ' | ' + (i.listings || 0) + ' active listings | Low ' + (i.min_price ?? '—') + 'g / Median ' + (i.median_price ?? '—') + 'g') + '"><td><span class="ahc-item-cell"><img class="ahc-item-icon" loading="lazy" src="/itemedit/' + i.item_id + '/icon.png" alt="" onerror="this.style.display=\'none\'"><span><b>' + esc(nm(i.item_name)) + '</b> <small>#' + i.item_id + '</small></span></span></td><td class="n">' + i.listings + '</td><td class="n">' + fmt(i.min_price) + '</td><td class="n">' + fmt(i.median_price) + '</td><td class="n">' + fmt(i.max_price) + '</td><td class="n">' + i.seller_count + '</td><td class="n">' + days(i.oldest_days) + '</td>' + ($('itStatus').value === 'active' ? '' : '<td class="n">' + (i.sales ?? 0) + '</td><td class="n">' + fmt(i.avg_sale) + '</td>') + '</tr>').join('') + '</tbody></table>' : '<div class="ahc-empty">No items in this view.</div>';
   }
   $('itList').addEventListener('click', e => {
     const th = e.target.closest('th[data-s]');
@@ -283,7 +293,7 @@
     try {
       const [d, h] = await Promise.all([req('/auction-house/console/listings.json?item_id=' + id + '&limit=5000'),
         req('/auction-house/items/' + id + '/history.json?limit=50').catch(() => ({rows: []}))]);
-      detail(el, '<b>' + esc(nm(it.item_name)) + '</b> <small>#' + id + ' · ' + esc(it.category_path || '') + ' · stack ' + it.stack_size + ' · ' + it.seller_count + ' seller(s) · low ' + fmt(it.min_price) + 'g · median ' + fmt(it.median_price) + 'g · high ' + fmt(it.max_price) + 'g</small>',
+      detail(el, '<div class="ahc-item-hero"><img class="ahc-item-hero-icon" src="/itemedit/' + id + '/icon.png" alt="" onerror="this.style.display=\'none\'"><div class="ahc-item-hero-copy"><b>' + esc(nm(it.item_name)) + '</b><small>#' + id + ' · ' + esc(it.category_path || '') + '</small><div class="ahc-item-hero-meta">Stack ' + fmt(it.stack_size) + ' · ' + fmt(it.listings || 0) + ' active · ' + fmt(it.seller_count || 0) + ' sellers</div><div class="ahc-item-hero-links"><a href="/itembrowser?q=' + encodeURIComponent(it.item_name) + '#' + id + '" target="_blank" rel="noopener">Item Browser ↗</a><a href="/itemedit#' + id + '" target="_blank" rel="noopener">Edit item ↗</a></div></div></div><details class="ahc-item-facts"><summary>Item &amp; market details</summary><div>Low: ' + fmt(it.min_price) + 'g · Median: ' + fmt(it.median_price) + 'g · High: ' + fmt(it.max_price) + 'g</div><div>Item ID: ' + id + ' · Stack size: ' + fmt(it.stack_size) + ' · Category: ' + esc(it.category_path || 'Uncategorised') + '</div></details>',
         d.rows, {seller: true, sales: h.rows || [], scope: nm(it.item_name), extra: '<button class="b pri" data-x="topoff">Top off…</button>',
           topoff: () => { addRestock({item_id: id, item_name: it.item_name, target: Math.max(it.listings + 1, 5), price: Math.round(it.min_price || it.avg_sale || 100), stack: false}); tab('restock'); }});
     } catch (e) { el.innerHTML = '<div class="ahc-empty">' + esc(e.message) + '</div>'; }
