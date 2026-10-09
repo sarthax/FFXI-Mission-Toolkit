@@ -120,3 +120,27 @@ def test_lua_source_cache_invalidation(tmp_path: Path):
     os.utime(target, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1000000000))
     third = discover_key_item_references(tmp_path, "TEST_KEY", lineage="lsb")
     assert [r["operation"] for r in third["references"]] == ["remove"]
+
+
+def test_lua_symbol_index_reuses_parsing_and_refreshes_after_edit(tmp_path: Path):
+    from workbench.devtools.features.key_item_references import _indexed_lua_lines
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    target = scripts / "many.lua"
+    target.write_text(
+        "player:addKeyItem(xi.keyItem.TEST_KEY)\n"
+        "player:hasKeyItem(xi.keyItem.OTHER_KEY)\n", encoding="utf-8"
+    )
+    _indexed_lua_lines.cache_clear()
+    one = discover_key_item_references(tmp_path, "TEST_KEY", lineage="lsb")
+    hits = _indexed_lua_lines.cache_info().hits
+    two = discover_key_item_references(tmp_path, "OTHER_KEY", lineage="lsb")
+    assert _indexed_lua_lines.cache_info().hits > hits
+    assert [r["operation"] for r in one["references"]] == ["grant"]
+    assert [r["operation"] for r in two["references"]] == ["require"]
+    target.write_text("player:delKeyItem(xi.keyItem.TEST_KEY)\n", encoding="utf-8")
+    import os
+    stat = target.stat()
+    os.utime(target, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1000000000))
+    updated = discover_key_item_references(tmp_path, "TEST_KEY", lineage="lsb")
+    assert [r["operation"] for r in updated["references"]] == ["remove"]
