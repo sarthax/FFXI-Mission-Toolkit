@@ -5719,6 +5719,45 @@ async def wiki_recovery_apply(request: Request):
     return RedirectResponse(redirect_base + "&recovery_result=applied", status_code=303)
 
 
+@app.get("/wiki/bulk/jobs")
+def wiki_bulk_status():
+    from workbench.devtools.reference import wiki_bulk_jobs
+    return {"jobs": wiki_bulk_jobs.status(DB_PATH)}
+
+
+@app.post("/wiki/bulk/start")
+async def wiki_bulk_start(request: Request):
+    from workbench.devtools.reference import wiki_bulk_jobs
+    form = await request.form()
+    try:
+        job_id = wiki_bulk_jobs.start(DB_PATH, int(form.get("limit") or 50))
+        return {"job_id": job_id}
+    except (ValueError, TypeError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
+@app.post("/wiki/bulk/pause")
+async def wiki_bulk_pause(request: Request):
+    from workbench.devtools.reference import wiki_bulk_jobs
+    form = await request.form()
+    try:
+        wiki_bulk_jobs.pause(DB_PATH, str(form.get("job_id") or ""))
+        return {"status": "pausing"}
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
+@app.post("/wiki/bulk/resume")
+async def wiki_bulk_resume(request: Request):
+    from workbench.devtools.reference import wiki_bulk_jobs
+    form = await request.form()
+    try:
+        wiki_bulk_jobs.resume(DB_PATH, str(form.get("job_id") or ""))
+        return {"status": "queued"}
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
 @app.post("/wiki/scrape")
 async def wiki_scrape_url(request: Request):
     form = await request.form()
