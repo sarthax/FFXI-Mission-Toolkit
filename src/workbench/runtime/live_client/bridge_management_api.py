@@ -5,7 +5,8 @@ them. Provisioning reveals a local secret only in the direct POST response.
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Query
+from .viewer import viewer_projection
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
@@ -144,6 +145,27 @@ setInterval(poll,1500);setInterval(refreshClients,5000);refreshClients();poll();
     @router.get("/clients")
     def clients() -> dict:
         return {"clients": manager.clients()}
+
+    @router.get("/projection")
+    def projection(
+        client_id: str = Query(min_length=1, max_length=64, pattern=r"^[a-zA-Z0-9_-]+$"),
+        zone_id: int = Query(ge=1, le=65535),
+        instance_hint: str | None = Query(default=None, min_length=1, max_length=200),
+    ) -> dict:
+        """Live-only spatial projection; never show stale or wrong-zone markers."""
+        state = manager.status(client_id)
+        if not state["connected"]:
+            return {"visible": False, "player": None, "entities": [],
+                    "reason": "receiver_disconnected_or_stale"}
+        feed = manager.feeds.feed(client_id)
+        frame = feed._latest if feed else None
+        if frame is None:
+            return {"visible": False, "player": None, "entities": [],
+                    "reason": "no_live_observation"}
+        return viewer_projection(
+            frame, zone_id=zone_id, client_id=client_id,
+            instance_hint=instance_hint,
+        )
 
     @router.get("/status/{client_id}")
     def status(client_id: str) -> dict:
