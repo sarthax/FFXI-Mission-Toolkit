@@ -135,6 +135,17 @@
   </form>
   <div id="wiki-bulk-notice" class="muted" role="status"></div>
   <div id="wiki-bulk-summary" class="muted" role="status">Synchronization history is loading…</div>
+  <details id="wiki-sync-schedule-panel">
+    <summary>Automatic FFXIclopedia incremental refresh (opt-in)</summary>
+    <form id="wiki-sync-schedule-form" class="wiki-actions">
+      <label><input type="checkbox" name="enabled"> Enable automatic refresh while Toolkit is running</label>
+      <label>Interval <select name="interval_hours"><option value="6">6 hours</option><option value="12">12 hours</option><option value="24" selected>24 hours</option><option value="48">48 hours</option><option value="168">Weekly</option></select></label>
+      <label>Batch <select name="page_limit"><option value="50">50 pages</option><option value="250">250 pages</option></select></label>
+      <button type="submit">Save schedule</button>
+    </form>
+    <div id="wiki-sync-schedule-state" role="status" class="muted"></div>
+    <p class="muted">Disabled by default. Uses an existing timestamped FFXIclopedia cache; requires Toolkit server to stay running. Never bypasses remote access restrictions.</p>
+  </details>
   <div id="wiki-bulk-jobs"></div>
 </div>
 </details>
@@ -683,6 +694,29 @@
       var payload=new FormData();payload.set('job_id',id);
       send('/wiki/bulk/'+action,payload).then(function(){refresh();}).catch(function(e){notice.textContent=e.message;});
     }
+    var scheduleForm=document.getElementById('wiki-sync-schedule-form');
+    var scheduleState=document.getElementById('wiki-sync-schedule-state');
+    function loadSchedule(){
+      fetch('/wiki/bulk/schedule',{cache:'no-store'}).then(function(r){
+        if(!r.ok)throw Error('HTTP '+r.status);
+        return r.json();
+      }).then(function(value){
+        scheduleForm.elements.enabled.checked=Boolean(value.enabled);
+        scheduleForm.elements.interval_hours.value=String(value.interval_hours);
+        scheduleForm.elements.page_limit.value=String(value.page_limit);
+        scheduleState.textContent='Next due: '+(value.next_due||'Disabled')+
+          (value.last_error?' · Last error: '+value.last_error:'');
+      }).catch(function(e){scheduleState.textContent='Schedule unavailable: '+e.message;});
+    }
+    scheduleForm.addEventListener('submit',function(event){
+      event.preventDefault();
+      var button=scheduleForm.querySelector('button[type="submit"]');button.disabled=true;
+      send('/wiki/bulk/schedule',new FormData(scheduleForm)).then(function(){
+        loadSchedule();
+      }).catch(function(e){scheduleState.textContent='Schedule update failed: '+e.message;})
+        .finally(function(){button.disabled=false;});
+    });
+    loadSchedule();
     function refreshSummary(){
       var output=document.getElementById('wiki-bulk-summary');
       fetch('/wiki/bulk/summary',{cache:'no-store'}).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json();}).then(function(data){
