@@ -54,3 +54,69 @@ def export_snapshot(database, destination, source="all"):
         con.close()
         if tmp is not None:
             tmp.unlink(missing_ok=True)
+
+
+def import_snapshot(database, snapshot):
+    """Validate the entire portable snapshot before merging any page.
+
+    Preserves existing revisions through the shared history-aware Wiki merge.
+    This importer does not contact remote Wikis.
+    """
+    from . import wiki_jobs, wiki_document
+    path=Path(snapshot).resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"Wiki snapshot not found: {path}")
+    target=Path(database).resolve()
+    if not target.is_file():
+        raise FileNotFoundError(f"Toolkit database not found: {target}")
+    temp=None
+    count=0
+    try:
+        with tempfile.NamedTemporaryFile(prefix="wiki_snapshot_stage_",suffix=".db",delete=False) as output:
+            temp=Path(output.name)
+        with sqlite3.connect(temp) as staging:
+            staging.execute(wiki_jobs._PAGES_DDL)
+            with gzip.open(path,"rt",encoding="utf-8") as stream:
+                header=json.loads(next(stream))
+                if (header.get("type")!="manifest" or
+                    header.get("format")!="ffxi-wiki-snapshot" or
+                    header.get("version")!=VERSION or
+                    header.get("source") not in (*SOURCES,"all")):
+                    raise ValueError("Unrecognized Wiki snapshot manifest/version")
+                for line in stream:
+                    item=json.loads(line)
+                    if item.get("type")!="page" or not isinstance(item.get("data"),dict):
+                        raise ValueError("Invalid Wiki snapshot record")
+                    page=item["data"]
+                    columns=("source_id","page_id","title","norm_title","revision_id",
+                             "revision_timestamp","page_text","page_hash")
+                    if any(k not in page for k in columns) or page["source_id"] not in SOURCES:
+                        raise ValueError("Invalid Wiki page fields or source")
+                    if header["source"]!="all" and page["source_id"]!=header["source"]:
+                        raise ValueError("Snapshot page source does not match manifest")
+                    if not all(isinstance(page[k],str) for k in ("source_id","page_id","title","norm_title","page_text","page_hash")):
+                        raise ValueError("Wiki snapshot text fields must be strings")
+                    if hashlib.sha256(page["page_text"].encode("utf-8")).hexdigest()!=page["page_hash"]:
+                        raise ValueError("Wiki snapshot page hash mismatch")
+                    staging.execute("INSERT INTO reference_wiki_pages VALUES(?,?,?,?,?,?,?,?)",
+                                    tuple(page[k] for k in columns))
+                    count+=1
+        if not count:
+            return {"pages":0,"inserted":0,"updated":0,"unchanged":0}
+        changes=wiki_jobs._merge(str(target),str(temp),lambda _:None)
+        # Project retained raw text into structured documents, without refetching.
+        with sqlite3.connect(str(target),timeout=30) as con, sqlite3.connect(temp) as staging:
+            for source,page_id,title,text in staging.execute(
+                "SELECT source_id,page_id,title,page_text FROM reference_wiki_pages"
+            ):
+                page={"page_id":page_id,"title":title,"page_text":text}
+                projected_id,fmt,blocks=wiki_document.build_blocks(
+                    page,source_format="mediawiki" if source!="WikiWikiJP" else "text",
+                    raw_source=text)
+                wiki_document.store_document(con,source_id=source,page_id=projected_id,
+                                            source_format=fmt,raw_source=text,blocks=blocks)
+                wiki_document.ensure_title_alias(con,source,projected_id,title)
+        return {"pages":count,**changes}
+    finally:
+        if temp is not None:
+            temp.unlink(missing_ok=True)
