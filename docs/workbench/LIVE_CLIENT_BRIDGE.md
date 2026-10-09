@@ -426,3 +426,7 @@ Optional imported context is validated but remains unverified; lack of a boundar
 hint cannot establish continuity, physical instance identity or collision-free travel.
 These raw paths are suitable evidence for later calibrated map/navmesh analysis,
 not validated routes. No game or server writes are performed.
+
+### Live Client waypoint recording isolation — 2026-10-09
+
+Saved waypoint captures now retain the Toolkit recording generation. Raw comparisons exclude older or unknown generations, including replacement with an identical recording under the same session ID. Export/import preserves this context; seeking and restarting the original recording keep its waypoints comparable. Older waypoints remain available for management and export, but must be recaptured for comparison. Regression coverage uses the supplied anonymized Ashita recording. This is recording consistency validation, not Windows compatibility or coordinate calibration.

@@ -14,12 +14,16 @@ def recording_context(registry, session_id: str, expected_frame=None) -> dict:
     replay = registry._clients.get(session_id)
     if replay is None or not replay.position:
         return {}
+    generation = registry._generations.get(session_id)
     points = replay.path_points(max_points=1)
     if (not points or registry._clients.get(session_id) is not replay
+            or generation is None or generation[0] is not replay
+            or registry._generations.get(session_id) is not generation
             or (expected_frame is not None and replay.feed._latest is not expected_frame)
             or replay.position != points[0]['frame']):
         raise ValueError('observation changed; refresh waypoint comparison or capture')
-    return {'recorded_frame': points[0]['frame'], 'recorded_segment': points[0]['segment']}
+    return {'recorded_frame': points[0]['frame'], 'recorded_segment': points[0]['segment'],
+            'session_generation': generation[1]}
 
 
 def capture_waypoint(frame, session_id: str, name: str, entity_index: int | None = None,
