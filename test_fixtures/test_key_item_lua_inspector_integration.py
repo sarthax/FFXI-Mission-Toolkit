@@ -23,3 +23,12 @@ def test_key_item_inspector_renders_source_evidence_safely():
     assert "location.textContent =" in template
     assert "generation !== luaGeneration" in template
     assert "selectedRecord.id" in template
+
+
+def test_key_item_lua_inspector_operation_filters_and_copy_paths():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert 'id="ki-lua-operation"' in page
+    assert "displayLuaReferences()" in page
+    assert "ref.operation === selected" in page
+    assert "Copy location" in page
+    assert "copyValue(location.textContent)" in page
