@@ -2,6 +2,25 @@
 
 Scope: `src/workbench/server_admin/auction_house/`, relevant feature documentation, and `ROADMAP_CURRENT.md`. Baseline: `main` at `32a4e6452a192ec465b69642a7b9611497857d10`. No application-code changes in this audit.
 
+## Completion reconciliation — current main (2026-10-08)
+
+The initial AH-01–AH-16 checklist below is retained as an **audit baseline**, not a live unchecked task board. Use these updated statuses:
+
+| ID | Current status | What remains |
+| --- | --- | --- |
+| AH-01 | Partial — overall DSP validated by operator | Optional concise per-operation DSP smoke evidence; do not downgrade successful DSP use |
+| AH-02 | Updated in current roadmap/status | Refresh operator documentation when new runtime evidence appears |
+| AH-03 | Partial — PR #743 merged | Read-only recovery guidance exists; crash-persistent journal/reconciliation not implemented, MyISAM cannot be crash-atomic |
+| AH-04 | Substantially addressed — PRs #740/#747 merged | Guarded failed-recipient retry and outcome integrity exist; interrupted in-flight delivery evidence is not fully durable |
+| AH-05 | Open | Independent Topaz Test execution evidence |
+| AH-06 | Deferred | Runnable LSB Test server and lineage-specific guarded execution contracts |
+| AH-07 | Complete for Inbox — PR #749 merged | Other account-wide admin filters only if needed |
+| AH-08 | Partial — PRs #754/#756 merged | Validate multi-day real-world supply/sell-through comparison; no need to recreate existing deltas |
+| AH-09 | Ongoing | Expand targeted edge-case coverage with real runtime evidence |
+| AH-10–AH-16 | Optional/conditional | Forecasting, custom item extras, cohorts/scheduling, production authorization, vendor-loop fixes, Synth inputs, coordinated bridge retirement |
+
+**Newly completed analytics:** PR #758 rejects future activity in anomaly windows; #760 adds evidence sample quality; #762 caches per-item median and evidence count calculations. These are merged, not outstanding TODOs. There is no evidence in this audit of a missing core DSP AH management tab. Distinguish backend/CI implementation from feature-level runtime verification.
+
 ## Evidence and status convention
 
 - **Implemented:** inspectable implementation or documented UI/API capability; not a claim that every branch is runtime-tested.
