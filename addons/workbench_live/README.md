@@ -284,3 +284,47 @@ modify packets, or open another packet file. A fresh telemetry sample does not
 make the old packet file reusable; explicitly stop and start a **new telemetry
 recording** before opening a new packet stream. A healthy status response
 indicates only matching local observation context, not proven wire fidelity.
+
+
+## Optional authenticated localhost telemetry sender — experimental
+
+Copy `workbench_bridge.lua` beside the other addon files. This module is
+**inactive by default**; it does not affect normal JSONL recording. For a local
+Windows test, the operator must first explicitly start the Toolkit's opt-in
+`BridgeListener`, issue a matching `PeerIdentity` and token in its
+`LocalPeerRegistry`, and keep that listener accepting connections. The Toolkit
+does not currently expose a GUI or automatic provisioning for this operation.
+
+Create a private, **untracked** `workbench_bridge_settings.lua` in the addon
+folder, with an explicitly chosen unique session and generation and the token
+issued by the Toolkit:
+```lua
+local socket = require('socket')
+return {
+    enabled = true, host = '127.0.0.1', port = 12345,
+    session_id = 'session-a', generation = 'generation-a',
+    token = '<paste the locally issued secret>',
+    connect = function(host, port)
+        local peer = assert(socket.tcp())
+        peer:settimeout(0.1)
+        local ok, err = peer:connect(host, port)
+        if not ok then peer:close(); error(err) end
+        return peer
+    end,
+}
+```
+Use the actual ephemeral listener port instead of 12345. Do not check in the
+token or share the configuration. Start `/wblive start ashita-a inventory`,
+then `/wblive bridge start`; stop with `/wblive bridge stop` or normal
+`/wblive stop`. `/wblive bridge status` shows the local sender state.
+
+After every successful durable telemetry JSONL flush, the optional sender
+opens a short, bounded localhost connection, authenticates and sends one
+original telemetry frame using the Python bridge envelope format, then closes
+for the receiver's EOF-batch semantics. Connection failures do not interrupt
+the on-disk recording; the sender disables itself and prints a diagnostic.
+The one-frame-per-connection design is **experimental**, not a validated
+low-latency streaming solution; the Toolkit listener requires an external
+explicit accept loop and the socket APIs have not yet been exercised in real
+Ashita v4 on Windows. Movement commands, incoming command dispatch and
+packet/capture streaming over this sender remain unsupported.
