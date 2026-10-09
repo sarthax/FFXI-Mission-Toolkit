@@ -145,3 +145,14 @@ def test_dsp_catalog_diagnostics_render_only_bounded_examples():
     assert "dsp_catalog_health.duplicate_numeric_ids" in page
     assert "dsp_catalog_health.ambiguous_samples[:5]" in page
     assert "dsp_catalog_health.duplicate_id_samples[:5]" in page
+
+
+def test_dsp_numeric_id_collision_prevents_false_clean_identity(tmp_path: Path):
+    source = tmp_path / "scripts" / "globals" / "keyitems.lua"
+    source.parent.mkdir(parents=True)
+    source.write_text("FIRST_KEY = 88;\nSECOND_KEY = 88;\n", encoding="utf-8")
+    first = resolve_dsp_key_item(tmp_path, "First Key")
+    second = resolve_dsp_key_item(tmp_path, "Second Key")
+    assert first["status"] == "ambiguous" and first["symbol"] is None
+    assert second["status"] == "ambiguous" and second["symbol"] is None
+    assert first["conflicting_symbols"] == ["SECOND_KEY"]
