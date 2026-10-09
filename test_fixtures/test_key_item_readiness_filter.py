@@ -49,3 +49,11 @@ def test_filtered_catalog_defers_description_load_until_page():
     assert 'page_ids = [row["keyitem_id"] for row in candidates[' in route
     assert 'WHERE keyitem_id IN (" + placeholders + ") ORDER BY name' in route
     assert 'if page_ids:' in route
+
+
+def test_unfiltered_catalog_clamps_requested_page():
+    host = Path("src/workbench/app/_host_impl.py").read_text(encoding="utf-8")
+    route = host.split('def keyitems(request: Request, q:', 1)[1].split('@app.get("/keyitems/lua-references.json")', 1)[0]
+    unfiltered = route.split('    else:\n        total = con.execute(', 1)[1].split('    topaz_ready =', 1)[0]
+    assert 'page = min(page, total_pages)' in unfiltered
+    assert 'offset = (page - 1) * KEYITEMS_PAGE_SIZE' in unfiltered
