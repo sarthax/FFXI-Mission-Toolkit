@@ -42,3 +42,20 @@ def test_missing_scripts_directory_is_explicit(tmp_path: Path):
     result = discover_key_item_references(tmp_path, "TEST_KEY")
     assert result["references"] == []
     assert result["limitations"]
+
+
+def test_key_item_discovery_respects_lineage_namespace(tmp_path: Path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "mixed.lua").write_text(
+        "player:addKeyItem(xi.keyItem.TEST_KEY)\n"
+        "player:addKeyItem(tpz.ki.TEST_KEY)\n", encoding="utf-8"
+    )
+    lsb = discover_key_item_references(tmp_path, "TEST_KEY", lineage="lsb")
+    topaz = discover_key_item_references(tmp_path, "TEST_KEY", lineage="topaz")
+    assert len(lsb["references"]) == 1
+    assert len(topaz["references"]) == 1
+    assert "xi.keyItem" in lsb["references"][0]["source_text"]
+    assert "tpz.ki" in topaz["references"][0]["source_text"]
+    with pytest.raises(ValueError):
+        discover_key_item_references(tmp_path, "TEST_KEY", lineage="unverified")
