@@ -100,12 +100,18 @@ setInterval(poll,1500);poll();
         except (RuntimeError, ValueError) as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 
+    @router.get("/clients")
+    def clients() -> dict:
+        return {"clients": manager.clients()}
+
     @router.get("/status/{client_id}")
     def status(client_id: str) -> dict:
         if not 0 < len(client_id) <= 64 or not client_id.replace("_", "").replace("-", "").isalnum():
             raise HTTPException(status_code=422, detail="invalid client ID")
         result = manager.status(client_id)
         snapshot = result.pop("snapshot", None)
+        frame = manager.feeds.feed(client_id)
+        frame = frame._latest if frame else None
         if snapshot is None:
             result["snapshot"] = None
         else:
@@ -116,6 +122,14 @@ setInterval(poll,1500);poll();
                 "observed_at": snapshot.observed_at,
                 "zone_id": pos.zone_id, "x": pos.x, "y": pos.y, "z": pos.z,
                 "heading": pos.heading,
+                "entities": [
+                    {"client_index": entity.client_index, "name": entity.name,
+                     "kind": entity.kind,
+                     "zone_id": entity.position.zone_id,
+                     "x": entity.position.x, "y": entity.position.y,
+                     "z": entity.position.z}
+                    for entity in (frame.entities if frame else ())
+                ],
             }
         return result
 
