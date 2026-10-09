@@ -160,8 +160,13 @@
         <div class="ahc-card">
           <h3>Item bundle</h3>
           <div class="ahc-bar"><select id="ibTpl" style="flex:1"><option value="">Ad hoc bundle</option></select><input id="ibName" placeholder="template name" style="flex:1"></div>
-          <input id="ibItemQ" placeholder="search item name or id to add" autocomplete="off">
+          <div class="ahc-bar"><input id="ibItemQ" type="search" placeholder="Search items by name or ID…" autocomplete="off" style="flex:1"><button class="b" id="ibItemBrowse" type="button" aria-expanded="false" aria-controls="ibItemBrowser">Browse items</button></div>
           <div class="ahc-sug" id="ibSug" hidden></div>
+          <div id="ibItemBrowser" class="ahc-card" hidden style="margin:8px 0">
+            <div class="ahc-bar"><input id="ibItemFilter" type="search" placeholder="Filter items by name or ID…" style="flex:1"><select id="ibItemCategory" aria-label="Auction House category"><option value="">All categories</option></select></div>
+            <div class="ahc-bar"><small id="ibItemCount" class="mut" aria-live="polite">Search or select a category to browse items.</small></div>
+            <div id="ibItemChoices" class="ahc-scroll" style="max-height:260px"></div>
+          </div>
           <div class="ahc-bar"><input id="ibGil" type="number" min="1" max="999999999" placeholder="gil amount" style="flex:1"><button class="b" id="ibGilAdd" type="button">Add gil</button></div>
           <div class="ahc-scroll"><table><thead><tr><th>Item</th><th class="n">Qty</th><th></th></tr></thead><tbody id="ibRows"></tbody></table></div>
           <div class="ahc-bar"><button class="b" id="ibSave" type="button">Save template</button><button class="b" id="ibDel" type="button">Delete template</button></div>
@@ -206,6 +211,6 @@
   </aside>
   <div class="ahc-toast" id="ahcToast"></div>
 </div>
-<script src="/static/auction_house_console.js?v=20261008c"></script>
+<script src="/static/auction_house_console.js?v=20261009bundle"></script>
 <script src="/static/auction_house_augment_picker.js?v=20261009a"></script>
 {% endblock %}
