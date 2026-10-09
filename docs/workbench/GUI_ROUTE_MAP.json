@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 277,
+  "route_count": 279,
   "routes": [
     {
       "method": "GET",
@@ -2215,6 +2215,22 @@
     {
       "method": "POST",
       "path": "/wiki/bulk/jp/resume",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/wiki/snapshot/export",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/wiki/snapshot/import",
       "home": "Tools",
       "section": "Research > References",
       "role": "data",
