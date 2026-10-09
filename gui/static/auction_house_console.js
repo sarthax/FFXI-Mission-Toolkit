@@ -400,8 +400,48 @@
   }
   $('rsRows').addEventListener('input', e => { const t = e.target, i = t.dataset.i; if (i == null) return; state.restock[i][t.dataset.k] = t.dataset.k === 'stack' ? t.checked : +t.value; state.rsPlan = null; });
   $('rsRows').addEventListener('click', e => { if (e.target.dataset.rm) { state.restock.splice(+e.target.dataset.rm, 1); state.rsPlan = null; drawRestock(); } });
-  picker($('rsItemQ'), $('rsSug'), '/auction-house/console/item-search.json?q=', r => itemRow(r),
-    r => { const id = Array.isArray(r) ? r[0] : (r.item_id ?? r.id), name = Array.isArray(r) ? r[1] : (r.name || r.item_name); addRestock({item_id: id, item_name: name, target: 5, price: 100, stack: false}); });
+  const ahPickRow = r => {
+    const id = Number(r.item_id ?? r.id), name = nm(r.name || r.item_name || ('Item #' + id));
+    const hint = r.category_path || 'AH item';
+    return '<span class="ahc-item-cell"><img class="ahc-item-icon" src="/itemedit/' + id + '/icon.png" loading="lazy" alt="" onerror="this.style.display=\'none\'">' +
+      '<span><b>' + esc(name) + '</b><small> #' + id + ' · ' + esc(hint) + '</small></span></span>';
+  };
+  // Shared bounded browse UI for Restock/Cleanup. Always select a real item ID,
+  // rather than turning a partial search string into a mutation criterion.
+  function ahBrowse(button, panel, input, results, count, onSelect) {
+    let version = 0, last = [];
+    async function load() {
+      const q = input.value.trim(), mine = ++version;
+      count.textContent = 'Searching…';
+      try {
+        const data = await req('/auction-house/console/item-search.json?q=' + encodeURIComponent(q) + '&limit=100');
+        if (mine !== version || panel.hidden) return;
+        last = data.rows || [];
+        count.textContent = last.length + ' item(s) shown · refine the search for more';
+        results.innerHTML = last.map((r,i) => '<button type="button" class="b" data-i="' + i + '" style="display:block;width:100%;text-align:left;margin:3px 0">' +
+          ahPickRow(r) + '</button>').join('') || '<div class="mut">No items found.</div>';
+      } catch(e) { if (mine === version) { count.textContent = 'Search unavailable'; results.textContent = e.message; } }
+    }
+    button.addEventListener('click', () => {
+      panel.hidden = !panel.hidden;
+      button.setAttribute('aria-expanded', String(!panel.hidden));
+      if (!panel.hidden) load();
+    });
+    input.addEventListener('input', debounce(load, 180));
+    results.addEventListener('click', e => {
+      const target = e.target.closest('button[data-i]'); if (!target) return;
+      const item = last[Number(target.dataset.i)]; if (!item) return;
+      onSelect(item);
+      panel.hidden = true;
+      button.setAttribute('aria-expanded', 'false');
+    });
+  }
+  const restockPick = r => {
+    addRestock({item_id: Number(r.item_id ?? r.id), item_name: r.name || r.item_name, target:5, price:100, stack:false});
+    $('rsItemQ').value = ''; $('rsSug').hidden = true;
+  };
+  picker($('rsItemQ'), $('rsSug'), '/auction-house/console/item-search.json?q=', ahPickRow, restockPick);
+  ahBrowse($('rsBrowse'), $('rsBrowseBox'), $('rsBrowseQ'), $('rsBrowseRows'), $('rsBrowseCount'), restockPick);
   req('/auction-house/categories.json').then(d => { $('rsCat').innerHTML += (d.rows || []).map(r => '<option value="' + r.category_id + '">' + esc(r.path || r.label || 'Category ' + r.category_id) + ' (' + (r.item_count || 0) + ')</option>').join(''); }).catch(() => {});
   $('rsCatAdd').addEventListener('click', async () => {
     const cat = $('rsCat').value; if (!cat) return toast('Choose a category');
@@ -909,10 +949,18 @@
   }
   cuSearch($('cuSellerQ'), $('cuSellerSug'), '/auction-house/console/characters.json?include_sellers=1&limit=25&q=', r => esc(r.char_name) + ' <small>#' + r.char_id + (r.source === 'auction-only' ? ' · AH seller' : '') + '</small>',
     r => { $('cuSellerId').value = r.char_id; $('cuSellerName').value = ''; $('cuSellerQ').value = r.char_name + ' #' + r.char_id; $('cuSellerQ').dataset.picked = $('cuSellerQ').value; });
-  cuSearch($('cuItemQ'), $('cuItemSug'), '/auction-house/console/item-search.json?q=', r => itemRow(r),
-    r => { const id = Array.isArray(r) ? r[0] : (r.item_id ?? r.id), name = Array.isArray(r) ? r[1] : (r.name || r.item_name); $('cuItemId').value = id; $('cuItemQ').value = nm(name) + ' #' + id; $('cuItemQ').dataset.picked = $('cuItemQ').value; });
+  const cleanupPick = r => {
+    const id = Number(r.item_id ?? r.id), name = nm(r.name || r.item_name);
+    $('cuItemId').value = String(id);
+    $('cuItemQ').value = name + ' #' + id;
+    $('cuItemQ').dataset.picked = $('cuItemQ').value;
+    $('cuSelectedItem').innerHTML = itemIdentity(id, name, r.category_path || 'Selected cleanup filter');
+    $('cuItemSug').hidden = true;
+  };
+  cuSearch($('cuItemQ'), $('cuItemSug'), '/auction-house/console/item-search.json?q=', ahPickRow, cleanupPick);
+  ahBrowse($('cuBrowse'), $('cuBrowseBox'), $('cuBrowseQ'), $('cuBrowseRows'), $('cuBrowseCount'), cleanupPick);
   $('cuSellerQ').addEventListener('input', () => { if ($('cuSellerQ').value !== $('cuSellerQ').dataset.picked) $('cuSellerId').value = ''; });
-  $('cuItemQ').addEventListener('input', () => { if ($('cuItemQ').value !== $('cuItemQ').dataset.picked) $('cuItemId').value = ''; });
+  $('cuItemQ').addEventListener('input', () => { if ($('cuItemQ').value !== $('cuItemQ').dataset.picked) { $('cuItemId').value = ''; $('cuSelectedItem').textContent = ''; } });
   // translate the visible search boxes into the criteria the API wants
   function cuSyncFields() {
     const sq = $('cuSellerQ').value.trim(), iq = $('cuItemQ').value.trim();
@@ -924,6 +972,7 @@
     $('cuSellerQ').dataset.picked = $('cuItemQ').dataset.picked = '';
     $('cuSellerQ').value = $('cuSellerName').value || ($('cuSellerId').value ? '#' + $('cuSellerId').value : '');
     $('cuItemQ').value = $('cuItemId').value ? '#' + $('cuItemId').value : '';
+    $('cuSelectedItem').textContent = $('cuItemId').value ? 'Selected item #' + $('cuItemId').value : '';
   }
 
   /* ---------- buyers tab ---------- */
