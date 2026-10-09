@@ -15,6 +15,7 @@ from .reward_schedules import create_schedule, list_schedules, cancel_schedule
 from .reward_attempt_journal import get_attempt, list_attempts
 from .recovery_journal import list_cases
 from .augmented_rewards import inspect_augmented_reward
+from .augmented_delivery import preview_augmented_delivery, execute_augmented_delivery
 from .reward_delivery import execute_reward_delivery, preview_reward_delivery
 from .reward_templates import (
     RewardTemplateError,
@@ -111,6 +112,42 @@ def reward_attempt_detail(replay_id: str):
 @router.get("/myisam-recovery.json")
 def myisam_recovery_cases():
     return JSONResponse({"rows": list_cases()})
+
+
+@router.post("/augments/delivery-preview.json")
+def augmented_delivery_preview_api(payload: dict = Body(...)):
+    try:
+        with _context() as ctx:
+            report = preview_augmented_delivery(
+                service=ctx.service, environment=get_active_server_identity(),
+                server_root=get_active_server_root(),
+                character_id=int(payload.get("character_id") or 0),
+                item_id=int(payload.get("item_id") or 0),
+                augments=list(payload.get("augments") or []),
+            )
+        return JSONResponse(report)
+    except (LegacyTestExecutionBlocked, ValueError, TypeError) as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+
+
+@router.post("/augments/delivery-execute.json")
+def augmented_delivery_execute_api(payload: dict = Body(...)):
+    try:
+        with _context() as ctx:
+            result = execute_augmented_delivery(
+                service=ctx.service, environment=get_active_server_identity(),
+                server_root=get_active_server_root(),
+                character_id=int(payload.get("character_id") or 0),
+                item_id=int(payload.get("item_id") or 0),
+                augments=list(payload.get("augments") or []),
+                preview_token=str(payload.get("preview_token") or ""),
+                preview_id=str(payload.get("preview_id") or ""),
+                replay_id=str(payload.get("replay_id") or ""),
+                confirmation=str(payload.get("confirmation") or ""),
+            )
+        return JSONResponse(result)
+    except (LegacyTestExecutionBlocked, ValueError, TypeError) as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
 
 
 @router.get("/augments/catalog.json")
