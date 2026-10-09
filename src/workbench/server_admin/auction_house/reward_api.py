@@ -112,15 +112,32 @@ def myisam_recovery_cases():
     return JSONResponse({"rows": list_cases()})
 
 
+@router.get("/augments/catalog.json")
+def augmented_reward_catalog():
+    """Read verified augment IDs/effects from the active server's source files."""
+    from workbench.editors.character.equipment_augments import augment_catalog
+    root = get_active_server_root()
+    if root is None:
+        raise HTTPException(status_code=409, detail="Select an active server with an augment catalog")
+    catalog = augment_catalog(root)
+    return JSONResponse(catalog)
+
+
 @router.post("/augments/inspect.json")
 def augmented_reward_inspection(payload: dict = Body(...)):
     try:
         environment = get_active_server_identity()
-        return JSONResponse(inspect_augmented_reward(
-            family=str(environment.get("family") or ""),
-            item_id=int(payload.get("item_id") or 0),
-            augments=list(payload.get("augments") or []),
-        ))
+        item_id = int(payload.get("item_id") or 0)
+        with _context() as ctx:
+            if not ctx.service.item_snapshot(item_id):
+                raise LegacyTestExecutionBlocked("Item does not exist in active server data")
+            preview = inspect_augmented_reward(
+                family=str(environment.get("family") or ""),
+                item_id=item_id,
+                augments=list(payload.get("augments") or []),
+                server_root=get_active_server_root(),
+            )
+        return JSONResponse(preview)
     except (LegacyTestExecutionBlocked, ValueError, TypeError) as exc:
         raise HTTPException(status_code=409, detail=str(exc))
 
