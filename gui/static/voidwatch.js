@@ -5,7 +5,7 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return
 function num(n){return n==null?'?':Number(n).toLocaleString();}
 function jget(u){return fetch(u).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});});}
 function load(){
- jget('/domains/voidwatch/officers.json').catch(function(){return {officers:[],areas:[],states:[]};}).then(function(o){OF=o;return jget('/domains/voidwatch/overview.json');}).then(function(d){O=d;offTable();npcFix();warpTable();$('vw-srv').textContent='Server: '+d.server.name+' ('+d.server.environment+') '+d.server.root;graph();table();})
+ jget('/domains/voidwatch/officers.json').catch(function(){return {officers:[],areas:[],states:[]};}).then(function(o){OF=o;return jget('/domains/voidwatch/overview.json');}).then(function(d){O=d;offTable();npcFix();backlogTable();warpTable();$('vw-srv').textContent='Server: '+d.server.name+' ('+d.server.environment+') '+d.server.root;graph();table();})
  .catch(function(e){$('vw-sum').innerHTML='<b style="color:#c0392b">'+esc(e.message)+'</b>';});
 }
 function bucket(p,t){return O.nms.filter(function(x){return x.path===p&&x.tier===t;});}
@@ -67,6 +67,21 @@ function openNm(name){
  jget('/domains/voidwatch/nm.json?name='+encodeURIComponent(name)).then(detail).catch(function(e){$('vw-dbody').innerHTML='<b style="color:#c0392b">'+esc(e.message)+'</b>';});
 }
 function itemName(d,id){return d.items[id]?d.items[id].replace(/_/g,' '):'item '+id;}
+function backlogTable(){
+ var el=$('vw-backlog');if(!el)return;
+ jget('/domains/voidwatch/backlog.json').then(function(d){
+  var BC={missing:'#c0392b',partial:'#d68910',done:'#1e9e6a',hold:'#888'};var f=el.dataset.f||'';
+  var L=d.items.filter(function(x){return !f||x.status===f;});
+  el.innerHTML='<h3 style="margin:8px 0 2px">Voidwatch systems backlog <span class="muted">('+d.states.map(function(s){return d.counts[s]+' '+s;}).join(' / ')+')</span></h3>'+
+  '<div class="muted">Refiner, atmacites, lights/weakness and rewards: systems around the NMs. Evidence tags: C capture, V client, W/F/J/B sources, H hypothesis, D design guess.</div>'+
+  '<div><select id="vw-bf"><option value="">All</option>'+d.states.map(function(s){return '<option'+(s===f?' selected':'')+'>'+s+'</option>';}).join('')+'</select> <span id="vw-bmsg" class="muted"></span></div>'+
+  '<div class="table-wrap"><table><thead><tr><th>Area</th><th>Item</th><th>Status</th><th>Ev.</th><th>Detail</th><th>Note</th><th></th></tr></thead><tbody>'+
+  L.map(function(x){return '<tr data-id="'+x.id+'"><td>'+esc(x.area)+'</td><td>'+esc(x.title)+'</td><td><select data-k="status" style="color:'+BC[x.status]+'">'+d.states.map(function(s){return '<option'+(s===x.status?' selected':'')+'>'+s+'</option>';}).join('')+'</select></td><td class="mono">'+esc(x.evidence)+'</td><td>'+esc(x.detail)+'</td><td><input data-k="note" value="'+esc(x.note)+'" style="width:160px"></td><td><button type="button" class="vwb">Save</button></td></tr>';}).join('')+'</tbody></table></div>';
+  $('vw-bf').onchange=function(){el.dataset.f=this.value;backlogTable();};
+  Array.prototype.forEach.call(el.querySelectorAll('.vwb'),function(b){b.onclick=function(){var tr=b.closest('tr'),ch={};Array.prototype.forEach.call(tr.querySelectorAll('[data-k]'),function(i){ch[i.dataset.k]=i.value;});
+   fetch('/domains/voidwatch/backlog/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:tr.dataset.id,changes:ch})}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});}).then(function(){backlogTable();}).catch(function(e){$('vw-bmsg').textContent='Save failed: '+e.message;});};});
+ }).catch(function(e){el.innerHTML='<span class="muted">Backlog unavailable: '+esc(e.message)+'</span>';});
+}
 function warpTable(){
  var el=$('vw-warps');if(!el)return;
  jget('/domains/voidwatch/warps.json').then(function(d){

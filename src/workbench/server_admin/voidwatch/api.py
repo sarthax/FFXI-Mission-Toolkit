@@ -13,6 +13,7 @@ from . import drops as Dr
 from . import edits as E
 from . import npcfix as Nf
 from . import officers as Of
+from . import backlog as Bk
 from . import warps as W
 
 router = APIRouter(tags=["Voidwatch"])
@@ -220,3 +221,19 @@ def npcfix(payload: dict = Body(...)):
                 raise HTTPException(status_code=409, detail="Write blocked: " + "; ".join(i.message for i in gate.issues if i.blocking))
             return {"applied": True, "rows": Nf.apply(conn, p, str(payload.get("by", ""))), **p}
     return _guard(go)
+
+
+@router.get("/domains/voidwatch/backlog.json")
+def backlog_json():
+    return _guard(lambda: Bk.overview())
+
+
+@router.post("/domains/voidwatch/backlog/save")
+def backlog_save(payload: dict = Body(...)):
+    def go():
+        try:
+            return Bk.save(str(payload.get("id", "")), payload.get("changes") or {}, str(payload.get("by", "")))
+        except (ValueError, KeyError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+    return _guard(go)
+
