@@ -545,3 +545,15 @@ not a launched service: it has no secret delivery, multi-frame stream lifecycle,
 Ashita hookup, capture persistence, command dispatch, or movement writes.
 A production localhost service must protect the bearer-token distribution and
 connection ownership, impose timeouts, and fail closed on session changes.
+
+
+### Authenticated bounded multi-frame reception
+
+The opt-in `receive_session` helper now accepts multiple framed observations
+and capture events on a single previously authenticated local socket, checks
+peer lease and generation before each message, enforces per-lane sequencing,
+rejects inbound control commands and fails on truncated frames. The caller
+sets the maximum batch size and owns socket timeout/lifecycle. No persistent
+listener process, Ashita-side connector, capture persistence, or game write
+executor has been enabled. The batch is returned only on normal EOF or
+an explicit frame cap; callers must not treat this as a streaming service.
