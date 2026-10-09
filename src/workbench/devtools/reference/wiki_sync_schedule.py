@@ -43,8 +43,10 @@ def settings(db):
         row=con.execute("""SELECT enabled,interval_hours,page_limit,next_due,
                            last_attempt,last_job_id,last_error FROM wiki_sync_schedule
                            WHERE source='FFXIclopedia'""").fetchone()
-    return dict(zip(("enabled","interval_hours","page_limit","next_due",
+    result=dict(zip(("enabled","interval_hours","page_limit","next_due",
                      "last_attempt","last_job_id","last_error"),row))
+    result["recoverable"]=wiki_bulk_jobs.latest_recoverable(db,job_id=result["last_job_id"]) if result["last_job_id"] else None
+    return result
 
 def configure(db, *, enabled, interval_hours=24, page_limit=50):
     if type(enabled) is not bool or interval_hours not in (6,12,24,48,168) or page_limit not in (50,250):
