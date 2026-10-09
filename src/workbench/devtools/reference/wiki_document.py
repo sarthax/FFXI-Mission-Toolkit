@@ -633,12 +633,14 @@ def page_topic(con, source_id: str, page_id: str) -> dict | None:
     return {"topic_id":row[0],"canonical_title":row[1],"members":members}
 
 
-def search_pages(con, query: str, limit: int = 40) -> list[dict]:
+def search_pages(con, query: str, limit: int = 40, source_id: str = "all") -> list[dict]:
     init_db(con); q=normalize_search(query)
     if not q: return []
     like=f"%{q}%"; found={}
 
     def add(source,page,title,reason,snippet=None,score=0):
+        if source_id not in ("", "all", None) and source != source_id:
+            return
         key=(str(source),str(page))
         row=found.setdefault(key,{"source_id":source,"page_id":str(page),"title":title,"reasons":[],"snippet":snippet,"score":0})
         if reason not in row["reasons"]: row["reasons"].append(reason)
