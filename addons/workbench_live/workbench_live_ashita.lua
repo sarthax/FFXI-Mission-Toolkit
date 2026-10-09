@@ -42,6 +42,8 @@ ashita.events.register('command', 'workbench_live_command', function(e)
 end)
 ashita.events.register('d3d_present', 'workbench_live_sample', function()
     exporter.sample()
-    if not exporter.context() then packets.stop('Packet export stopped: telemetry inactive or paused; restart explicitly after fresh telemetry.') end
+    if packets.active() and not exporter.context() then
+        packets.stop('Packet export stopped: telemetry inactive or paused; restart explicitly after fresh telemetry.')
+    end
 end)
 ashita.events.register('unload', 'workbench_live_unload', function() packets.stop(); exporter.stop() end)
