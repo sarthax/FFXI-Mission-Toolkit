@@ -4560,8 +4560,9 @@ def keyitems_lua_references(keyitem_id: int, lineage: str = "lsb"):
     """Read-only source citations for a selected client catalog key item."""
     from fastapi import HTTPException
     from workbench.devtools.features.key_item_references import discover_key_item_references
+    from workbench.devtools.features.key_item_dsp_identity import resolve_dsp_key_item
 
-    if lineage not in {"lsb", "topaz"}:
+    if lineage not in {"lsb", "topaz", "dsp"}:
         raise HTTPException(status_code=400, detail="This index currently supports only LSB and Topaz reference identities")
     con = get_con()
     try:
@@ -4569,11 +4570,31 @@ def keyitems_lua_references(keyitem_id: int, lineage: str = "lsb"):
                            (keyitem_id,)).fetchall()
         if len(item) != 1:
             raise HTTPException(status_code=404, detail="Key item ID not uniquely present in client catalog")
-        table = "keyitems_ours" if lineage == "lsb" else "topaz_keyitems"
-        ready = ingest_global_tables.resolve_keyitem_readiness(
-            con, keyitem_id, item[0]["name"], table=table)
+        if lineage == "dsp":
+            ready = None
+            client_name = item[0]["name"]
+        else:
+            table = "keyitems_ours" if lineage == "lsb" else "topaz_keyitems"
+            ready = ingest_global_tables.resolve_keyitem_readiness(
+                con, keyitem_id, item[0]["name"], table=table)
     finally:
         con.close()
+
+    if lineage == "dsp":
+        root = settings_mod.get_dsp_root()
+        if not root:
+            return {"keyitem_id": keyitem_id, "lineage": "dsp", "readiness": "unavailable",
+                    "references": [], "message": "Configure a DSP source checkout first."}
+        identity = resolve_dsp_key_item(root, client_name)
+        if identity["status"] != "name_verified":
+            return {"keyitem_id": keyitem_id, "lineage": "dsp", "readiness": identity["status"],
+                    "references": [], "message": identity["message"]}
+        result = discover_key_item_references(root, identity["symbol"], lineage="dsp",
+                                              max_matches=200, max_files=25000)
+        result.update({"keyitem_id": keyitem_id, "readiness": "name_verified",
+                       "server_id": identity["server_id"],
+                       "identity_source": identity["source_path"]})
+        return result
 
     status = ready.get("status")
     match = ready.get("id_match") if status == "clean" else (
