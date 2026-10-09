@@ -555,7 +555,8 @@
         -629
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: full (group [0])."
   },
   {
     "name": "Isarukitsck",
@@ -586,7 +587,8 @@
         -358
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: full (group [0])."
   },
   {
     "name": "Fjalar",
@@ -617,7 +619,8 @@
         0
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: full (group [0])."
   },
   {
     "name": "Abununnu",
@@ -648,7 +651,8 @@
         125
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: full (group [0])."
   },
   {
     "name": "Tsui-Goab",
@@ -679,7 +683,8 @@
         -313
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: full (group [0])."
   },
   {
     "name": "Dimgruzub",
@@ -710,7 +715,8 @@
         273.9
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13837])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13837]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13837])."
   },
   {
     "name": "Vanasarvik",
@@ -741,7 +747,8 @@
         -63.6
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13830])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13830]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13830])."
   },
   {
     "name": "Yalungur",
@@ -772,7 +779,8 @@
         -85.5
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group []).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
   },
   {
     "name": "Morta",
@@ -803,7 +811,8 @@
         393
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13651])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13651]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13651])."
   },
   {
     "name": "Brekekekex",
@@ -834,7 +843,8 @@
         -748
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group []).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
   },
   {
     "name": "Kholomodumo",
@@ -896,7 +906,8 @@
         520
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13814])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13814]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13814])."
   },
   {
     "name": "Taweret",
@@ -927,7 +938,8 @@
         -42
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13824])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13824]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13824])."
   },
   {
     "name": "Ushumgal",
@@ -958,7 +970,8 @@
         -42
       ]
     ],
-    "gaps": "DSP mob data: none (group [])."
+    "gaps": "DSP mob data: none (group []).",
+    "voidwatch_research_note": "Indigo I. Script+SQL (group 18227, pool 6820, skill list 1180) in place; untested in game. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified."
   },
   {
     "name": "Cetus",
@@ -1020,7 +1033,8 @@
         285
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13724])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13724]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13724])."
   },
   {
     "name": "Melancholic Moira",
@@ -1082,7 +1096,8 @@
         -270
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13757])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13757]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13757])."
   },
   {
     "name": "Akupara",
@@ -1113,7 +1128,8 @@
         520
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13729])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13729]).",
+    "voidwatch_research_note": "Jade III. Script+SQL (group 13729, pool 4684, skill list 1178) in place; message ids text-checked. Spawn positions need !checknav; untested in game. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified."
   },
   {
     "name": "Gugalanna",
@@ -1144,7 +1160,8 @@
         -290
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13780])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13780]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13780])."
   },
   {
     "name": "Cherufe",
@@ -1175,7 +1192,8 @@
         -42
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13825])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13825]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13825])."
   },
   {
     "name": "Bhishani",
@@ -1206,7 +1224,8 @@
         -640
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group []).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
   },
   {
     "name": "Gwynn Ap Nudd",
@@ -1237,7 +1256,8 @@
         -400
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group []).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
   },
   {
     "name": "Murk-veined Baneberry",
@@ -1268,7 +1288,8 @@
         492
       ]
     ],
-    "gaps": "DSP mob data: none (group [])."
+    "gaps": "DSP mob data: none (group []).",
+    "voidwatch_research_note": "Indigo III. Script+SQL (group 14089, pool 5312, skill list 1182) in place; untested in game. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified."
   },
   {
     "name": "Yatagarasu",
@@ -1299,7 +1320,8 @@
         -270
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13755])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13755]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13755])."
   },
   {
     "name": "Rw Nw Prt M Hrw",
@@ -1330,7 +1352,8 @@
         560
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group []).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
   },
   {
     "name": "Goji",
@@ -1361,7 +1384,8 @@
         -290
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13779])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13779]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13779])."
   },
   {
     "name": "Cath Palug",
@@ -1392,7 +1416,8 @@
         -130
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13732])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13732]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13732])."
   },
   {
     "name": "Mimic King",
@@ -1423,7 +1448,8 @@
         -36
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [13736])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [13736]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: full (group [13736])."
   },
   {
     "name": "Holy Moly",
@@ -1454,7 +1480,8 @@
         -365
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group []).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
   },
   {
     "name": "Sabotender Campeador",
@@ -1485,7 +1512,8 @@
         327
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group []).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
   },
   {
     "name": "Neith",
@@ -1516,7 +1544,8 @@
         -20
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group []).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
   },
   {
     "name": "Laidly Laurence",
@@ -1547,7 +1576,8 @@
         -60
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group []).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
   },
   {
     "name": "Nympha Eunomia",
@@ -1578,7 +1608,8 @@
         377
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13759])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13759]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13759])."
   },
   {
     "name": "Tangaroa",
@@ -1609,7 +1640,8 @@
         5
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [13820])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [13820]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: full (group [13820])."
   },
   {
     "name": "Giltine",
@@ -1640,7 +1672,8 @@
         140
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13818])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13818]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13818])."
   },
   {
     "name": "Uptala",
@@ -1671,7 +1704,8 @@
         280
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13739])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13739]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13739])."
   },
   {
     "name": "Qilin",
@@ -1702,7 +1736,8 @@
         -68
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13746])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13746]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13746])."
   },
   {
     "name": "Akvan",
@@ -1733,7 +1768,8 @@
         95
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13803])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13803]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13803])."
   },
   {
     "name": "Celaeno",
@@ -1764,7 +1800,8 @@
         -164
       ]
     ],
-    "gaps": "DSP mob data: none (group [])."
+    "gaps": "DSP mob data: none (group []).",
+    "voidwatch_research_note": "Indigo IV. Script+SQL (group 18228, pool 6890, skill list 1183) in place; untested in game. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified."
   },
   {
     "name": "Voidwrought",
@@ -1795,7 +1832,8 @@
         760
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group []).",
+    "voidwatch_research_note": "Jade IV. Script+SQL (group 18226, pool 7058, skill list 1179) in place; message ids text-checked. Ids/spawn positions need !checknav; abyssite KI link missing; untested in game. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified."
   },
   {
     "name": "Lorbulcrud",
@@ -1826,7 +1864,8 @@
         -20
       ]
     ],
-    "gaps": "DSP mob data: none (group [])."
+    "gaps": "DSP mob data: none (group []).",
+    "voidwatch_research_note": "Indigo II. Script+SQL (group 14088, pool 5311, skill list 1181) in place; untested in game. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified."
   },
   {
     "name": "Mellonia",
@@ -1857,7 +1896,8 @@
         377
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13754])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13754]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: partial (group [13754])."
   },
   {
     "name": "Roly-Poly",
@@ -1888,7 +1928,8 @@
         180
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group []).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
   },
   {
     "name": "Malleator Maurok",
@@ -1919,7 +1960,8 @@
         -130
       ]
     ],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group []).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. DSP mob data: none (group [])."
   },
   {
     "name": "Asb",
@@ -2045,7 +2087,8 @@
     "ki_name": "",
     "status": "not built",
     "rifts": [],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. Zone id missing from roster. DSP mob data: full (group [13819])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. Zone id missing from roster. DSP mob data: full (group [13819]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. Zone id missing from roster. DSP mob data: full (group [13819])."
   },
   {
     "name": "Kalasutrax",
@@ -2057,7 +2100,8 @@
     "ki_name": "",
     "status": "not built",
     "rifts": [],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. Zone id missing from roster. DSP mob data: partial (group [13750])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. Zone id missing from roster. DSP mob data: partial (group [13750]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. Zone id missing from roster. DSP mob data: partial (group [13750])."
   },
   {
     "name": "Pil",
@@ -2069,6 +2113,7 @@
     "ki_name": "",
     "status": "not built",
     "rifts": [],
-    "gaps": "Abyssite path/tier not extracted from wiki roster. Zone id missing from roster. DSP mob data: partial (group [11011])."
+    "gaps": "Abyssite path/tier not extracted from wiki roster. Zone id missing from roster. DSP mob data: partial (group [11011]).",
+    "voidwatch_research_note": "Path/tier from wikiwiki.jp route steps [J]; abyssite KI not linked. Zone id missing from roster. DSP mob data: partial (group [11011])."
   }
 ]
