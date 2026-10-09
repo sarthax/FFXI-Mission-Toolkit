@@ -70,6 +70,31 @@ def status(db):
     return [dict(zip(names, row)) for row in rows]
 
 
+
+def dump_refresh_status(db, dump_path):
+    """Compare the configured local archive with prior import signatures, offline."""
+    path=Path(dump_path).resolve()
+    if not path.is_file():
+        return {"available":False,"path":str(path),"changed":False,
+                "reason":"Local BG dump not found"}
+    signature=_signature(path)
+    with _db(db) as con:
+        latest=con.execute("""SELECT id,state,dump_signature,processed,imported,skipped,
+                updated_at FROM wiki_bg_dump_jobs WHERE dump_path=?
+                ORDER BY updated_at DESC LIMIT 1""",(str(path),)).fetchone()
+        matching=con.execute("""SELECT id,state FROM wiki_bg_dump_jobs
+                WHERE dump_path=? AND dump_signature=? ORDER BY updated_at DESC LIMIT 1""",
+                (str(path),signature)).fetchone()
+    return {"available":True,"path":str(path),"signature":signature,
+            "changed":bool(latest and latest[2]!=signature),
+            "never_imported":latest is None,
+            "latest":dict(zip(("id","state","signature","processed","imported",
+                               "skipped","updated_at"),latest)) if latest else None,
+            "matching":dict(zip(("id","state"),matching)) if matching else None,
+            "reason":("No previous import" if latest is None else
+                      "Archive changed since previous import" if latest[2]!=signature
+                      else "Archive matches previous import")}
+
 def start(db, dump_path, limit=50, auto_continue=False):
     if limit not in (50, 250):
         raise ValueError("Batch size must be 50 or 250")
