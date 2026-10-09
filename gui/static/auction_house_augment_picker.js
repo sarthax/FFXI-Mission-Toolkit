@@ -135,6 +135,54 @@
     draft.forEach(a => { a.id = 0; a.value = 0; });
     $('ibAugItemResults').hidden = true; render();
   });
+  let savedConfigs = [];
+  async function refreshSaved() {
+    const data = await json('/auction-house/rewards/augments/saved.json');
+    savedConfigs = data.rows || [];
+    const previous = $('ibAugSaved').value;
+    $('ibAugSaved').innerHTML = '<option value="">Saved augmented rewards…</option>' +
+      savedConfigs.map((x,i) => '<option value="' + i + '">' + esc(x.name) + ' · #' + x.item_id +
+        ' (' + esc(x.family.toUpperCase()) + ')</option>').join('');
+    if (previous && savedConfigs[Number(previous)]) $('ibAugSaved').value = previous;
+  }
+  $('ibAugLoad').addEventListener('click', () => {
+    const config = savedConfigs[Number($('ibAugSaved').value)];
+    if (!config || $('ibAugSaved').value === '') return;
+    chosen = {item_id:config.item_id, item_name:'Item #' + config.item_id};
+    $('ibAugItemSearch').value = chosen.item_name;
+    draft.forEach((a,i) => {const next=config.augments[i] || {id:0,value:0};a.id=next.id;a.value=next.value;});
+    render();
+    $('ibAugResult').textContent = 'Loaded saved configuration. Inspect to verify against the active server.';
+  });
+  $('ibAugSave').addEventListener('click', async () => {
+    try {
+      if (!chosen?.item_id || !draft.some(a => a.id)) throw Error('Select an item and at least one augment');
+      const name = window.prompt('Configuration name (1–120 characters):', chosen.item_name || 'Augmented reward');
+      if (name == null) return;
+      const response = await fetch('/auction-house/rewards/augments/save.json', {
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name, item_id:chosen.item_id, augments:draft.filter(a=>a.id)})
+      });
+      const data = await response.json().catch(()=>({}));
+      if (!response.ok) throw Error(data.detail || 'Save failed');
+      await refreshSaved();
+      const idx = savedConfigs.findIndex(x=>x.id===data.id);
+      if (idx>=0) $('ibAugSaved').value=String(idx);
+      $('ibAugResult').textContent='Saved ' + data.name + '. Delivery remains Test-gated.';
+    } catch(e) { $('ibAugResult').textContent=e.message; }
+  });
+  $('ibAugDelete').addEventListener('click', async () => {
+    const config=savedConfigs[Number($('ibAugSaved').value)];
+    if (!config || $('ibAugSaved').value === '' || !window.confirm('Delete saved augmented reward "'+config.name+'"?')) return;
+    try {
+      const response=await fetch('/auction-house/rewards/augments/delete.json', {
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:config.id})
+      });
+      if(!response.ok)throw Error('Delete failed');
+      await refreshSaved();
+    } catch(e){ $('ibAugResult').textContent=e.message; }
+  });
+  refreshSaved().catch(e => {$('ibAugResult').textContent='Saved catalog unavailable: '+e.message;});
   json('/auction-house/rewards/augments/catalog.json')
     .then(data => { normalizeCatalog(data.rows || []); render(); })
     .catch(e => { $('ibAugSlots').textContent = 'Augment catalog unavailable: ' + e.message; });
