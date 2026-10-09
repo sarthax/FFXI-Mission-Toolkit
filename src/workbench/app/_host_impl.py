@@ -4473,65 +4473,64 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
     rows = []
     total = 0
     total_pages = 1
-    if True:  # Browse the first page when no search is supplied.
-        q = q.strip()
-        numeric_id = int(q) if len(q) <= 18 and q.isascii() and q.isdecimal() else None
-        predicate = "(name LIKE ? OR keyitem_id = ?)" if numeric_id is not None else "name LIKE ?"
-        args = (f"%{q}%", numeric_id) if numeric_id is not None else (f"%{q}%",)
-        page = max(1, page)
+    q = q.strip()
+    numeric_id = int(q) if len(q) <= 18 and q.isascii() and q.isdecimal() else None
+    predicate = "(name LIKE ? OR keyitem_id = ?)" if numeric_id is not None else "name LIKE ?"
+    args = (f"%{q}%", numeric_id) if numeric_id is not None else (f"%{q}%",)
+    page = max(1, page)
+    offset = (page - 1) * KEYITEMS_PAGE_SIZE
+    if readiness != "all":
+        # Exact full-catalog filtering is applied before pagination.
+        # Preserve cross-lineage identity guards from the normal page path.
+        candidates = con.execute(
+            "SELECT keyitem_id, name, plural, description FROM key_items WHERE " + predicate + " ORDER BY name",
+            args,
+        ).fetchall()
+        candidates = [row for row in candidates if ingest_global_tables.resolve_keyitem_readiness(
+            con, row["keyitem_id"], row["name"])["status"] == readiness]
+        total = len(candidates)
+        total_pages = max(1, (total + KEYITEMS_PAGE_SIZE - 1) // KEYITEMS_PAGE_SIZE)
+        page = min(page, total_pages)
         offset = (page - 1) * KEYITEMS_PAGE_SIZE
-        if readiness != "all":
-            # Exact full-catalog filtering is applied before pagination.
-            # Preserve cross-lineage identity guards from the normal page path.
-            candidates = con.execute(
-                "SELECT keyitem_id, name, plural, description FROM key_items WHERE " + predicate + " ORDER BY name",
-                args,
-            ).fetchall()
-            candidates = [row for row in candidates if ingest_global_tables.resolve_keyitem_readiness(
-                con, row["keyitem_id"], row["name"])["status"] == readiness]
-            total = len(candidates)
-            total_pages = max(1, (total + KEYITEMS_PAGE_SIZE - 1) // KEYITEMS_PAGE_SIZE)
-            page = min(page, total_pages)
-            offset = (page - 1) * KEYITEMS_PAGE_SIZE
-            ki_rows = candidates[offset:offset + KEYITEMS_PAGE_SIZE]
-        else:
-            total = con.execute(
-                "SELECT COUNT(*) FROM key_items WHERE " + predicate, args
-            ).fetchone()[0]
-            total_pages = max(1, (total + KEYITEMS_PAGE_SIZE - 1) // KEYITEMS_PAGE_SIZE)
-            ki_rows = con.execute(
-                "SELECT keyitem_id, name, plural, description FROM key_items WHERE " + predicate +
-                " ORDER BY name LIMIT ? OFFSET ?",
-                (*args, KEYITEMS_PAGE_SIZE, offset),
-            ).fetchall()
-        topaz_ready = backport_enabled()
-        for r in ki_rows:
-            item_readiness = ingest_global_tables.resolve_keyitem_readiness(con, r["keyitem_id"], r["name"])
-            # Backport-module-only extra check -- skipped entirely (no query run) when the user
-            # has no Topaz/DSP checkout configured, so the core module's page stays fast for a
-            # typical LSB-only user.
-            topaz_readiness = (
-                ingest_global_tables.resolve_keyitem_readiness(
-                    con, r["keyitem_id"], r["name"], table="topaz_keyitems"
-                ) if topaz_ready else None
-            )
-            # Joined by NAME, not id -- capture_ki_events.keyitem_id is whatever real id the
-            # client itself reported live, which is exactly what's known to drift from
-            # key_items.keyitem_id (this row's own readiness check above proves it: e.g. "map of
-            # Ilrusi Atoll" is id 2763 in key_items but the client-observed real id is 1869).
-            # Name is the one field both sources get from real client text, so it's the
-            # reliable join key here, not either id.
-            capture_events = con.execute(
-                """SELECT capture_id, event_type, x, y, z, zone_name FROM capture_ki_events
-                   WHERE LOWER(keyitem_name) = LOWER(?)""" + _rq_exclude(con) + " ORDER BY capture_id",
-                (r["name"],),
-            ).fetchall()
-            rows.append({
-                "keyitem_id": r["keyitem_id"], "name": r["name"], "plural": r["plural"],
-                "description": r["description"], "readiness": item_readiness,
-                "topaz_readiness": topaz_readiness,
-                "capture_events": capture_events,
-            })
+        ki_rows = candidates[offset:offset + KEYITEMS_PAGE_SIZE]
+    else:
+        total = con.execute(
+            "SELECT COUNT(*) FROM key_items WHERE " + predicate, args
+        ).fetchone()[0]
+        total_pages = max(1, (total + KEYITEMS_PAGE_SIZE - 1) // KEYITEMS_PAGE_SIZE)
+        ki_rows = con.execute(
+            "SELECT keyitem_id, name, plural, description FROM key_items WHERE " + predicate +
+            " ORDER BY name LIMIT ? OFFSET ?",
+            (*args, KEYITEMS_PAGE_SIZE, offset),
+        ).fetchall()
+    topaz_ready = backport_enabled()
+    for r in ki_rows:
+        item_readiness = ingest_global_tables.resolve_keyitem_readiness(con, r["keyitem_id"], r["name"])
+        # Backport-module-only extra check -- skipped entirely (no query run) when the user
+        # has no Topaz/DSP checkout configured, so the core module's page stays fast for a
+        # typical LSB-only user.
+        topaz_readiness = (
+            ingest_global_tables.resolve_keyitem_readiness(
+                con, r["keyitem_id"], r["name"], table="topaz_keyitems"
+            ) if topaz_ready else None
+        )
+        # Joined by NAME, not id -- capture_ki_events.keyitem_id is whatever real id the
+        # client itself reported live, which is exactly what's known to drift from
+        # key_items.keyitem_id (this row's own readiness check above proves it: e.g. "map of
+        # Ilrusi Atoll" is id 2763 in key_items but the client-observed real id is 1869).
+        # Name is the one field both sources get from real client text, so it's the
+        # reliable join key here, not either id.
+        capture_events = con.execute(
+            """SELECT capture_id, event_type, x, y, z, zone_name FROM capture_ki_events
+               WHERE LOWER(keyitem_name) = LOWER(?)""" + _rq_exclude(con) + " ORDER BY capture_id",
+            (r["name"],),
+        ).fetchall()
+        rows.append({
+            "keyitem_id": r["keyitem_id"], "name": r["name"], "plural": r["plural"],
+            "description": r["description"], "readiness": item_readiness,
+            "topaz_readiness": topaz_readiness,
+            "capture_events": capture_events,
+        })
     con.close()
     return templates.TemplateResponse(request, "keyitems.html", {
         "q": q, "rows": rows, "page": page, "total": total, "total_pages": total_pages,
