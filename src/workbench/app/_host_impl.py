@@ -5731,7 +5731,7 @@ async def wiki_bg_dump_start(request: Request):
     from workbench.devtools.reference.scrape_bg_wiki import DUMP_PATH
     form = await request.form()
     try:
-        return {"job_id": wiki_bg_dump_jobs.start(DB_PATH, DUMP_PATH, int(form.get("limit") or 50))}
+        return {"job_id": wiki_bg_dump_jobs.start(DB_PATH, DUMP_PATH, int(form.get("limit") or 50), auto_continue=str(form.get("auto_continue") or "").lower() in ("1", "true", "on"))}
     except (ValueError, TypeError, OSError) as exc:
         return JSONResponse({"error": str(exc)}, status_code=400)
 
