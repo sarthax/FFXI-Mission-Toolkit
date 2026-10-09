@@ -52,6 +52,21 @@ def audit(con: sqlite3.Connection, *, sample_limit: int = 12) -> dict:
                    COUNT(*) DESC,source_id,page_id LIMIT ?
         """, (max(0,min(sample_limit,100)),)).fetchall()
     ]
+    # Inspect only locally retained source text. A usable raw document can be
+    # reparsed offline; missing/flattened originals require selective recovery.
+    has_documents = bool(con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='reference_wiki_documents'"
+    ).fetchone())
+    for page in recovery_candidates:
+        row = con.execute("""
+          SELECT source_format,raw_source FROM reference_wiki_documents
+          WHERE source_id=? AND page_id=?
+        """, (page["source"],page["page_id"])).fetchone() if has_documents else None
+        format_name = str(row[0] or "").lower() if row else ""
+        usable = bool(row and row[1] and str(row[1]).strip()
+                      and format_name in {"mediawiki","html"})
+        page["recovery_action"] = "REPARSE_LOCAL_SOURCE" if usable else "SELECTIVE_SOURCE_FETCH"
+        page["source_format"] = format_name or None
     return {"status": "OK", "sources": sources, "samples": samples,
             "recovery_candidates": recovery_candidates}
 
