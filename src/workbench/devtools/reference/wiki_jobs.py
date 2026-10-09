@@ -193,9 +193,25 @@ def _run(job: dict, main_db: str) -> None:
                     missing.append(f"{row[0]}:{row[2]}")
             job["verified_pages"] = len(fetched) - len(missing)
             job["expected_pages"] = len(fetched)
-            if missing:
+            # A row in SQLite alone is not sufficient: the user's next action
+            # is searching for the title, then opening its Browse view.
+            unsearchable = []
+            for item in fetched:
+                row = item["row"]
+                if f"{row[0]}:{row[2]}" in missing:
+                    continue
+                hits = wiki_document.search_pages(con, row[2], source_id=row[0])
+                if not any(str(hit["page_id"]) == str(row[1])
+                           and hit["source_id"] == row[0] for hit in hits):
+                    unsearchable.append(f"{row[0]}:{row[2]}")
+            if missing or unsearchable:
                 job["state"] = "partial"
-                job["error"] = "Imported pages absent from main cache: " + ", ".join(missing[:5])
+                details = []
+                if missing:
+                    details.append("not stored: " + ", ".join(missing[:5]))
+                if unsearchable:
+                    details.append("stored but not searchable: " + ", ".join(unsearchable[:5]))
+                job["error"] = "; ".join(details)
                 log("post-import verification failed: " + job["error"])
                 return
         finally:
