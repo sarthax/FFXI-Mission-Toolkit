@@ -209,6 +209,17 @@
     const cls = pct > 50 ? 'hi' : pct > 15 ? 'mid' : pct < -15 ? 'lo' : 'ok';
     return '<span class="mk ' + cls + '" title="Price vs the median of recent sales">' + (pct > 0 ? '+' : '') + Math.round(pct) + '%</span>';
   }
+  // Compact shared item identity: internal AH navigation plus external browser/editor.
+  const itemIdentity = (id, name, hint = '') => {
+    const key = Number(id), title = nm(name || ('Item #' + key));
+    if (!Number.isSafeInteger(key) || key <= 0) return esc(title);
+    const more = hint ? ' · ' + hint : '';
+    const browse = '/itembrowser?q=' + encodeURIComponent(String(name || '')) + '#' + key;
+    return '<span class="ahc-item-cell ahc-item-ref" title="' + esc(title + ' (#' + key + ')' + more) + '">' +
+      '<img class="ahc-item-icon" src="/itemedit/' + key + '/icon.png" loading="lazy" alt="" onerror="this.style.display=\'none\'">' +
+      '<span>' + link('item', key, title) + '<small> #' + key + '</small></span>' +
+      '<a class="ahc-item-out" target="_blank" rel="noopener" href="' + esc(browse) + '" title="Open in Item Browser" aria-label="Open ' + esc(title) + ' in Item Browser">↗</a></span>';
+  };
   const link = (kind, id, text) => '<a href="#" class="lk" data-' + kind + '="' + id + '">' + esc(text) + '</a>';
   function goBack() { const b = state.back; state.back = null; if (!b) return; tab(b.tab); b.tab === 'items' ? showItem(b.id) : showSeller(b.id); }
   const backBtn = () => state.back ? '<button class="b" data-x="back">← Back to ' + esc(state.back.label) + '</button> ' : '';
@@ -221,7 +232,7 @@
       const sl = opts.sellerSales; if (!sl) return '';
       return '<div class="ahc-sales"><div class="ahc-sh"><b>Recent sales</b> <span class="mut">' + sl.length + ' shown</span></div>' +
         (sl.length ? '<div class="ahc-sbody"><table><thead><tr><th>Sold</th><th>Item</th><th class="n">Price</th><th class="n">Asked</th><th>Buyer</th></tr></thead><tbody>' +
-        sl.map(x => '<tr><td>' + esc(new Date(x.sold_at * 1000).toISOString().replace('T', ' ').slice(0, 16)) + '</td><td>' + link('item', x.item_id, nm(x.item_name)) + (x.stack ? ' <small>(stack)</small>' : '') + '</td><td class="n">' + fmt(x.sale_price) + 'g</td><td class="n">' + fmt(x.asking_price) + 'g</td><td>' + esc(x.buyer_name || '—') + '</td></tr>').join('') +
+        sl.map(x => '<tr><td>' + esc(new Date(x.sold_at * 1000).toISOString().replace('T', ' ').slice(0, 16)) + '</td><td>' + itemIdentity(x.item_id, x.item_name, (x.stack ? 'Stack' : 'Single') + ' · sold ' + fmt(x.sale_price) + 'g') + (x.stack ? ' <small>(stack)</small>' : '') + '</td><td class="n">' + fmt(x.sale_price) + 'g</td><td class="n">' + fmt(x.asking_price) + 'g</td><td>' + esc(x.buyer_name || '—') + '</td></tr>').join('') +
         '</tbody></table></div>' : '<div class="ahc-empty" style="padding:8px">No sales by this seller in the window.</div>') + '</div>';
     };
     const salesHtml = () => {
@@ -252,7 +263,7 @@
       const v = vis(), filtered = v.length !== rows.length;
       body.innerHTML = '<table><thead><tr><th><input type="checkbox" class="all"></th><th>#</th>' + (opts.item ? '<th>Item</th>' : '') + (opts.seller ? '<th>Seller</th>' : '') +
         '<th class="n">Qty</th><th class="n">Price</th>' + (showMk ? '<th class="n" title="Asking price vs the median of recent sales">Markup</th>' : '') + '<th class="n">Age</th><th></th></tr></thead><tbody>' + v.map(r => '<tr><td><input type="checkbox" data-a="' + r.auction_id + '"' + (sel.has(r.auction_id) ? ' checked' : '') + '></td><td>' + r.auction_id + '</td>' +
-        (opts.item ? '<td>' + link('item', r.item_id, nm(r.item_name)) + '</td>' : '') + (opts.seller ? '<td>' + link('seller', r.seller_id, r.seller_name || '#' + r.seller_id) + '</td>' : '') +
+        (opts.item ? '<td>' + itemIdentity(r.item_id, r.item_name, 'Ask ' + fmt(r.asking_price) + 'g') + '</td>' : '') + (opts.seller ? '<td>' + link('seller', r.seller_id, r.seller_name || '#' + r.seller_id) + '</td>' : '') +
         '<td class="n">' + r.quantity + '</td><td class="n">' + fmt(r.asking_price) + 'g</td>' + (showMk ? '<td class="n">' + markupChip(mkOf(r)) + '</td>' : '') + '<td class="n">' + days(ageOf(r)) + '</td><td><button class="b" data-buy="' + r.auction_id + '">Buy</button> <button class="b" data-ret="' + r.auction_id + '">Return</button> <button class="b" data-pbuy="' + r.auction_id + '">Buy as…</button></td></tr>').join('') + '</tbody></table>' +
         (v.length ? '' : '<div class="ahc-empty">No listings match the filters.</div>');
       const ch = [...sel].map(id => rows.find(r => r.auction_id === id)).filter(Boolean), lbl = filtered ? ' (filtered)' : '';
@@ -944,7 +955,7 @@
           '<div class="ahc-acts"><button class="b" data-x="refund-sel"' + (chosen.length ? '' : ' disabled') + '>Refund selected overpay (' + fmt(sum) + 'g)</button><button class="b" data-x="refund-all"' + (over.length ? '' : ' disabled') + '>Refund all overpaid (' + fmt(over.reduce((s, r) => s + r.overpaid_by, 0)) + 'g)</button><button class="b" data-x="pick-over"' + (over.length ? '' : ' disabled') + '>Select overpaid</button></div>' +
           '<div class="ahc-sales"><div class="ahc-sh"><b>Top items</b> <span class="mut">' + d.top_items.map(i => esc(nm(i.item_name)) + ' ×' + i.count).slice(0, 5).join(', ') + '</span></div><div class="ahc-sh"><b>Top sellers</b> <span class="mut">' + d.top_sellers.map(s => esc(s.seller_name || '#' + s.seller_id) + ' ×' + s.count).slice(0, 5).join(', ') + '</span></div></div>' +
           '<div class="ahc-scroll"><table><thead><tr><th><input type="checkbox" class="all"></th><th>Bought</th><th>Item</th><th>Seller</th><th class="n">Paid</th><th class="n">Median</th><th class="n">Markup</th></tr></thead><tbody>' +
-          d.rows.map(r => '<tr><td>' + (r.overpaid_by > 0 && r.markup_pct != null ? '<input type="checkbox" data-a="' + r.auction_id + '"' + (sel.has(r.auction_id) ? ' checked' : '') + '>' : '') + '</td><td>' + esc(fmtTime(r.sold_at)) + '</td><td>' + link('item', r.item_id, nm(r.item_name)) + (r.stack ? ' <small>(stack)</small>' : '') + '</td><td>' + link('seller', r.seller_id, r.seller_name || '#' + r.seller_id) +
+          d.rows.map(r => '<tr><td>' + (r.overpaid_by > 0 && r.markup_pct != null ? '<input type="checkbox" data-a="' + r.auction_id + '"' + (sel.has(r.auction_id) ? ' checked' : '') + '>' : '') + '</td><td>' + esc(fmtTime(r.sold_at)) + '</td><td>' + itemIdentity(r.item_id, r.item_name, (r.stack ? 'Stack' : 'Single') + ' · paid ' + fmt(r.price) + 'g') + '</td><td>' + link('seller', r.seller_id, r.seller_name || '#' + r.seller_id) +
             '</td><td class="n">' + fmt(r.price) + 'g</td><td class="n">' + (r.median == null ? '—' : fmt(r.median) + 'g') + '</td><td class="n">' + markupChip(r.markup_pct) + '</td></tr>').join('') + '</tbody></table></div>';
       };
       el.onclick = e => {
