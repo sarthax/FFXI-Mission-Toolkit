@@ -55,6 +55,7 @@ DEFAULTS = {
 AH_FLAGS = {
     "ah_legacy_test_writes": "FFXI_MISSION_TOOLKIT_AH_LEGACY_TEST_WRITES",
     "ah_dsp_myisam_test_writes": "FFXI_MISSION_TOOLKIT_AH_DSP_MYISAM_TEST_WRITES",
+    "ah_augmented_reward_test_writes": "FFXI_MISSION_TOOLKIT_AH_AUGMENTED_REWARD_TEST_WRITES",
     "ah_preview_ttl_seconds": "FFXI_MISSION_TOOLKIT_AH_PREVIEW_TTL_SECONDS",
 }
 
