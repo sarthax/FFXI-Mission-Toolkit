@@ -104,7 +104,7 @@ def _merge(main_db: str, tmp_db: str, log) -> dict:
                     existing = con.execute("""SELECT source_id,page_id,title,norm_title,
                       revision_id,revision_timestamp,page_text,page_hash
                       FROM reference_wiki_pages WHERE source_id=? AND page_id=?""", row[:2]).fetchone()
-                    if existing and existing[-1] == row[-1]:
+                    if existing and existing[2:] == row[2:]:
                         changes["unchanged"] += 1
                         continue
                     if existing:
