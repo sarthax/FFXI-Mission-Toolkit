@@ -40,11 +40,12 @@
       <li>Add database-level apply/rollback and later approval/apply/rollback GUI without weakening existing review gates.</li>
     </ul>
   </div>
-  <div class="req-box"><strong>Auction House administration and Economy BI <span class="pill match">2026-10-05</span></strong>
+  <div class="req-box"><strong>Auction House administration and Economy BI <span class="pill match">2026-10-09 · core DSP complete</span></strong>
     <ul>
-      <li>Done: single hub, settings-backed write flags, action drawer with Close button, gil in Inbox, Economy Intelligence (KPI deltas, activity chart, price movers, queues), daily supply snapshots, baselines, admin-impact overlay, Test-data seeding in the Seeder tab.</li>
-      <li>Next: Items and Sellers strengthening pass; supply/sell-through KPI deltas once snapshots accumulate; live write tests on a real Test server; "all characters on this account" filter.</li>
-      <li>Deferred: anomaly detection and forecasting (needs weeks of snapshot history).</li>
+      <li><strong>Implemented:</strong> unified hub, Economy BI/anomalies/snapshots, Items/Buyers/Sellers, Test-gated Restock/Cleanup/Admin Buy/Return, Inbox bundles, history, seller/reward seeding and presets.</li>
+      <li><strong>Final QOL merged:</strong> icons, item hover/details, circular Item Browser/Editor navigation, improved Restock/Cleanup/Inbox pickers, local saved tabs/filters, item/seller favorites, contextual quick actions and CSV exports; shared AH item-picker foundation.</li>
+      <li><strong>Recovery and rewards:</strong> MyISAM interruption journal, per-recipient Inbox reconciliation, Test-only one-time scheduled campaigns, source-backed custom augment previews and saved named augmented reward configurations.</li>
+      <li><strong>Maintenance / acceptance:</strong> user-confirmed stable DSP module; new interruption, scheduler and augmented Mog pickup paths still need individual disposable-DSP Test checks. Multi-day analytics evidence and Topaz Test parity remain. Experimental augment sending is disabled by default; broad LSB/Live writes remain blocked.</li>
     </ul>
   </div>
   <div class="req-box"><strong>Product features outside the recent Workbench scope that are still open:</strong>

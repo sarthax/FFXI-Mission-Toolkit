@@ -741,26 +741,34 @@ def find_bg_page(title_query: str) -> dict | None:
 
 
 def find_reference_page(con: sqlite3.Connection, source_id: str, title_query: str) -> dict | None:
+    """Prefer imported cache records and exact identities over the offline BG dump.
+
+    Wiki search links may carry a page ID, while manual Browse uses a title.
+    Both must resolve to the same imported page and structured block identity.
+    """
     init_db(con)
-    if source_id == SOURCE_BG:
-        found = find_bg_page(title_query)
-        if found:
-            return found
-    norm = _norm(title_from_query(title_query))
+    title = title_from_query(title_query)
+    norm = _norm(title)
     if source_id == SOURCE_WIKIWIKI_JP:
-        norm = title_from_query(title_query)  # JP titles have no a-z0-9 form; the scraper stores the raw title
+        norm = title
     row = con.execute(
         """SELECT source_id,page_id,title,revision_id,revision_timestamp,page_text,page_hash
-           FROM reference_wiki_pages WHERE source_id=? AND norm_title=? LIMIT 1""",
-        (source_id, norm),
+           FROM reference_wiki_pages
+           WHERE source_id=? AND
+             (page_id=? OR norm_title=? OR lower(title)=lower(?))
+           ORDER BY CASE WHEN page_id=? THEN 0 WHEN lower(title)=lower(?) THEN 1 ELSE 2 END
+           LIMIT 1""",
+        (source_id, str(title_query), norm, title, str(title_query), title),
     ).fetchone()
-    if not row:
-        return None
-    return {
-        "source_id": row[0], "page_id": row[1], "title": row[2], "revision_id": row[3],
-        "revision_timestamp": row[4], "page_text": row[5], "page_hash": row[6],
-        "url": None,
-    }
+    if row:
+        return {
+            "source_id": row[0], "page_id": row[1], "title": row[2],
+            "revision_id": row[3], "revision_timestamp": row[4],
+            "page_text": row[5], "page_hash": row[6], "url": None,
+        }
+    if source_id == SOURCE_BG:
+        return find_bg_page(title)
+    return None
 
 
 def ingest_page(con: sqlite3.Connection, source_id: str, title_query: str) -> dict:

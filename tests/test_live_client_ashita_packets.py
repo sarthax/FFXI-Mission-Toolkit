@@ -102,6 +102,69 @@ def test_file_bound_fails_closed(tmp_path):
     assert 'Packets inactive' in lua.globals().messages[len(lua.globals().messages)]
 
 
+def test_rate_limited_packets_still_validate_telemetry_lifecycle(tmp_path):
+    lua = runtime(tmp_path); start(lua); event(lua)
+    lua.execute('for i=1,11 do events.packet_in(packet) end')
+    path, = tmp_path.glob('packets-*')
+    assert len(path.read_text().splitlines()) == 10
+    before = path.read_bytes()
+    lua.execute('clock=106; events.packet_in(packet); command("/wblive packets status")')
+    assert path.read_bytes() == before
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'Packets inactive.' in messages[-1]
+    assert 'telemetry context stale' in messages[-1]
+
+
+def test_inactive_packet_status_retains_last_export_counts(tmp_path):
+    lua = runtime(tmp_path); start(lua); event(lua)
+    lua.execute('for i=1,12 do events.packet_in(packet) end; command("/wblive packets stop"); command("/wblive packets status")')
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'Packets inactive.' in messages[-1]
+    assert 'Previous export: 10 observations, 2 rate-limit drops' in messages[-1]
+    lua.execute('command("/wblive stop"); clock=101; command("/wblive start fresh"); command("/wblive packets start event_emote"); command("/wblive packets status")')
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'Packets active' in messages[-1]
+    assert 'Previous export:' not in messages[-1]
+
+
+def test_status_detects_stale_telemetry_without_packet_callbacks(tmp_path):
+    lua = runtime(tmp_path); start(lua)
+    packet, = tmp_path.glob('packets-*')
+    lua.execute('clock=106; command("/wblive packets status")')
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'Packets inactive.' in messages[-1]
+    assert 'telemetry context stale' in messages[-1]
+    assert packet.read_bytes() == b''
+    lua.execute('command("/wblive packets status")')
+    assert 'Packets inactive.' in lua.globals().messages[len(lua.globals().messages)]
+    lua.execute('events.d3d_present(); command("/wblive packets start event_emote"); command("/wblive packets status")')
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'packet file already exists' in '\\n'.join(messages)
+    assert 'Packets inactive.' in messages[-1]
+
+
+def test_status_detects_identity_change_without_packet_callbacks(tmp_path):
+    lua = runtime(tmp_path); start(lua)
+    lua.execute('party.server_id=456; command("/wblive packets status")')
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'Packets inactive.' in messages[-1]
+    assert 'packet player identity changed' in messages[-1]
+
+
+def test_packet_status_retains_stop_reason_and_clears_on_restart(tmp_path):
+    lua = runtime(tmp_path); start(lua); event(lua)
+    lua.execute('clock=106; events.packet_in(packet); command("/wblive packets status")')
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'Packets inactive.' in messages[-1]
+    assert 'telemetry context stale' in messages[-1]
+    lua.execute('events.d3d_present(); command("/wblive start another")')
+    # Existing telemetry must be explicitly stopped before starting a new recording.
+    lua.execute('command("/wblive stop"); command("/wblive start another"); command("/wblive packets start event_emote"); command("/wblive packets status")')
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'Packets active' in messages[-1]
+    assert 'Last stop:' not in messages[-1]
+
+
 def test_packet_start_rejects_stale_telemetry_without_creating_file(tmp_path):
     lua = runtime(tmp_path)
     lua.execute('command("/wblive start packet-a"); clock=106; command("/wblive packets start event_emote")')
@@ -179,6 +242,25 @@ def test_packet_zone_transition_and_mid_sample_change(tmp_path):
     assert path.read_bytes() == before
 
 
+def test_packet_mid_callback_identity_change_rejects_append(tmp_path):
+    lua = runtime(tmp_path); start(lua); event(lua)
+    path, = tmp_path.glob('packets-*')
+    lua.execute('''
+        calls=0
+        function party:GetMemberZone(slot)
+            calls=calls+1
+            if calls == 2 then self.server_id=456 end
+            return self.zone
+        end
+        events.packet_in(packet)
+        command("/wblive packets status")
+    ''')
+    assert path.read_bytes() == b''
+    assert 'Packets inactive' in lua.globals().messages[len(lua.globals().messages)]
+    assert any('packet player identity changed' in lua.globals().messages[i]
+               for i in range(1, len(lua.globals().messages)+1))
+
+
 def test_database_error_rolls_back_all_new_packet_rows(tmp_path, monkeypatch):
     from workbench.captures import ashita_packet_ingest
     lua = runtime(tmp_path); start(lua); e = event(lua)
@@ -215,3 +297,45 @@ def test_invalid_import_is_atomic(tmp_path, field, value):
     with pytest.raises(ValueError): ingest_ashita_packets(con, cid, src, 'bad.jsonl')
     assert con.execute('SELECT COUNT(*) FROM capture_raw_packets').fetchone()[0] == 0
     con.close()
+
+
+def test_two_independent_ashita_instances_preserve_packet_source_isolation(tmp_path):
+    left_dir = tmp_path / 'left'
+    right_dir = tmp_path / 'right'
+    left_dir.mkdir(); right_dir.mkdir()
+    left = runtime(left_dir); right = runtime(right_dir)
+    left.execute('command("/wblive start client-left"); command("/wblive packets start event_emote")')
+    right.execute('party.server_id=789; party.name="Other"; entities[1].name="Other"; party.zone=101; entities[1].zone=101; command("/wblive start client-right"); command("/wblive packets start event_emote")')
+    left.execute('events.packet_in({id=0x034,size=4,data="AAAA",injected=false,blocked=false})')
+    right.execute('events.packet_in({id=0x034,size=4,data="BBBB",injected=false,blocked=false})')
+    left_packet, = left_dir.glob('packets-*')
+    right_packet, = right_dir.glob('packets-*')
+    left_row, = parse_observations(left_packet.read_bytes())
+    right_row, = parse_observations(right_packet.read_bytes())
+    assert left_row[0]['client_id'] == 'client-left'
+    assert right_row[0]['client_id'] == 'client-right'
+    assert left_row[0]['raw_hex'] == '41414141'
+    assert right_row[0]['raw_hex'] == '42424242'
+    assert left_row[0]['zone_id'] == 100
+    assert right_row[0]['zone_id'] == 101
+    right_before = right_packet.read_bytes()
+    left.execute('command("/wblive stop")')
+    right.execute('clock=101; events.d3d_present(); events.packet_in({id=0x034,size=4,data="CCCC",injected=false,blocked=false})')
+    assert len(parse_observations(right_packet.read_bytes())) == 2
+    assert right_packet.read_bytes() != right_before
+    assert len(parse_observations(left_packet.read_bytes())) == 1
+
+
+def test_independent_instance_failure_cannot_stop_peer_packet_stream(tmp_path):
+    one = tmp_path / 'one'; two = tmp_path / 'two'
+    one.mkdir(); two.mkdir()
+    left = runtime(one); right = runtime(two)
+    left.execute('command("/wblive start one"); command("/wblive packets start event_emote")')
+    right.execute('command("/wblive start two"); command("/wblive packets start event_emote")')
+    left.execute('party.server_id=456; command("/wblive packets status")')
+    assert 'Packets inactive.' in left.globals().messages[len(left.globals().messages)]
+    right.execute('events.packet_in({id=0x034,size=4,data="LIVE",injected=false,blocked=false})')
+    packet, = two.glob('packets-*')
+    assert len(parse_observations(packet.read_bytes())) == 1
+    right.execute('command("/wblive packets status")')
+    assert 'Packets active' in right.globals().messages[len(right.globals().messages)]

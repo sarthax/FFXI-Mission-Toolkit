@@ -2,6 +2,12 @@
 
 Scope: `src/workbench/server_admin/auction_house/`, relevant feature documentation, and `ROADMAP_CURRENT.md`. Baseline: `main` at `32a4e6452a192ec465b69642a7b9611497857d10`. No application-code changes in this audit.
 
+## Maintenance reconciliation — 2026-10-09
+
+This file is the preserved October 8 gap-audit baseline. **Do not treat unchecked historical entries below as the live backlog.** The current authoritative status is [AUCTION_HOUSE_CAPABILITY_STATUS.md](AUCTION_HOUSE_CAPABILITY_STATUS.md) and the AH section of [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md). Core DSP management and the planned final QOL package are implemented and merged (#786, #787, #792, #795, #797, #802, #808, #812, #814, #815, #816).
+
+AH-03/04 diagnostics now include persistent MyISAM interruption cases and recipient-level Inbox attempt journaling; AH-07 account selection is implemented. AH-08 analytics deltas exist, but real multi-day evidence still needs collection. One-time scheduled Test rewards and reusable augment configuration presets are implemented. Augmented Mog sending remains **disabled by default, DSP Test-only and not in-game pickup-verified**. Individual new Test executor acceptance, Topaz runtime parity and runnable LSB writes remain outstanding; AH is otherwise in maintenance mode.
+
 ## Completion reconciliation — current main (2026-10-08)
 
 The initial AH-01–AH-16 checklist below is retained as an **audit baseline**, not a live unchecked task board. Use these updated statuses:

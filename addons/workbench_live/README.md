@@ -271,3 +271,80 @@ stops safely; the current APIs cannot distinguish every loading/logout condition
 and an unobserved logout boundary cannot be ruled out. Do not treat this mode as
 verified continuous capture or compatibility. Use the zoning/logout procedure in
 [Windows handoff](../../docs/workbench/LIVE_CLIENT_WINDOWS_HANDOFF.md).
+
+### Passive packet status health
+
+`/wblive packets status` now checks the active packet stream's telemetry
+freshness and source identity even when no allowlisted packet callbacks have
+arrived. If the telemetry is stale (more than five seconds since its last accepted
+sample), unavailable/paused, or the source identity changed, the packet stream
+stops safely and retains a diagnostic stop reason and previous counts. This
+status check does not sample or restart telemetry, recover a paused export,
+modify packets, or open another packet file. A fresh telemetry sample does not
+make the old packet file reusable; explicitly stop and start a **new telemetry
+recording** before opening a new packet stream. A healthy status response
+indicates only matching local observation context, not proven wire fidelity.
+
+
+## Optional authenticated localhost telemetry sender — experimental
+
+Copy `workbench_bridge.lua` beside the other addon files. This module is
+**inactive by default**; it does not affect normal JSONL recording. For a local
+Windows test, the operator must first explicitly start the Toolkit's opt-in
+`BridgeListener`, issue a matching `PeerIdentity` and token in its
+`LocalPeerRegistry`, and keep that listener accepting connections. The Toolkit
+does not currently expose a GUI or automatic provisioning for this operation.
+
+Create a private, **untracked** `workbench_bridge_settings.lua` in the addon
+folder, with an explicitly chosen unique session and generation and the token
+issued by the Toolkit:
+```lua
+local socket = require('socket')
+return {
+    enabled = true, host = '127.0.0.1', port = 12345,
+    session_id = 'session-a', generation = 'generation-a',
+    token = '<paste the locally issued secret>',
+    connect = function(host, port)
+        local peer = assert(socket.tcp())
+        peer:settimeout(0.1)
+        local ok, err = peer:connect(host, port)
+        if not ok then peer:close(); error(err) end
+        return peer
+    end,
+}
+```
+Use the actual ephemeral listener port instead of 12345. Do not check in the
+token or share the configuration. Start `/wblive start ashita-a inventory`,
+then `/wblive bridge start`; stop with `/wblive bridge stop` or normal
+`/wblive stop`. `/wblive bridge status` shows the local sender state.
+
+After every successful durable telemetry JSONL flush, the optional sender
+opens a short, bounded localhost connection, authenticates and sends one
+original telemetry frame using the Python bridge envelope format, then closes
+for the receiver's EOF-batch semantics. Connection failures do not interrupt
+the on-disk recording; the sender disables itself and prints a diagnostic.
+The one-frame-per-connection design is **experimental**, not a validated
+low-latency streaming solution; the Toolkit listener requires an external
+explicit accept loop and the socket APIs have not yet been exercised in real
+Ashita v4 on Windows. Movement commands, incoming command dispatch and
+packet/capture streaming over this sender remain unsupported.
+
+
+## Direct telemetry without JSONL recordings (experimental)
+
+The Ashita entry point now supports `/wblive live start <instance-id>`,
+`/wblive live status` and `/wblive live stop`. Include
+`workbench_live_direct.lua` and `workbench_bridge.lua` alongside the existing
+addon modules. After explicitly provisioning `workbench_bridge_settings.lua`
+and starting the Toolkit-side listener, run `/wblive live start ashita-a`.
+This mode uses the same strict in-game observation mapper but transmits
+position/target snapshots without opening a telemetry JSONL recording. It
+samples at most once per second, stops safely on disconnection or identity
+change, and permits a bounded 30-second transient zoning recovery (two coherent
+destination samples). It is separate from the original durable
+`/wblive start ...` recording command and requires the bridge to be ready.
+
+**Still not plug-and-play:** Token provisioning and the receiving Python
+listener/accept loop are manual. No normal Toolkit GUI exposes this data yet,
+and there are no game writes. The client network API needs Windows validation.
+Use an authorized local test session only.

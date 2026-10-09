@@ -468,3 +468,176 @@ and [commands/limits](../../addons/workbench_live/README.md#optional-passive-pac
 This is cloud/synthetic validation; Windows hooks, performance, final wire fidelity
 and clock/event correlation remain unverified. Next add qualified research evidence
 joins through existing services, keeping native controls and calibration separate.
+
+
+## Unified Live Client Bridge — movement control + research capture (approved direction, 2026-10-09)
+
+**Priority:** Promote bidirectional, low-latency Live Client development control and canonical research capture to a shared architectural milestone. The intended outcome is direct interaction with an authorized running FFXI client: observe live XYZ/heading/entities, move or guide the player toward a Toolkit-selected location, and record correlated research evidence. This is **not** path-file replay or a second Capture subsystem.
+
+**Current reality:** Ashita observation, bounded JSONL, passive event/emote hook samples, playback, and canonical Capture ingestion exist with limited runtime and synthetic evidence. Native movement writes, verified control profiles, an operational bidirectional transport, full capture profiles, and real paired Windows evidence are **not yet implemented/validated**. Existing action enums are contracts, not active controls. Preserve the no-write fail-closed default until an authorized, version-verified adapter is tested.
+
+### Shared architecture and ownership
+
+- **Client providers:** Original Ashita v4 addon/API adapter first; retain Windower compatibility and evaluate existing Ashita plugins/addons, Packeteer, PacketViewer/CaptureSuite, NPCLogger, EventView and ActionView as *reference or ingest providers*, subject to actual APIs, provenance, compatibility and licensing. Optional native Windows adapter is independent and requires verified build/process identity. Do not assume an external tool exposes a writable interface merely because it captures logs.
+- **Local bridge:** Versioned bidirectional localhost protocol with explicit selected client/session identity, request IDs, acknowledgments, capabilities, heartbeat/liveness, monotonic sequencing, bounded queues, retry/timeout semantics, reconnect generations and readback. Separate high-priority movement/stop/control traffic from backpressured research streams. Preserve source file/archive provenance and never silently bridge across clients or zones.
+- **Live development:** Real-time XYZ/heading/target/entity observation; authorized nudge/precise XYZ movement as the first verified write; waypoint/entity destination and feedback-guided travel subsequently; calibrated 2D/3D map integration, movement progress, navmesh/height diagnostics and reviewed NPC/mob placement proposals.
+- **Research Capture:** Profile-driven event/CSID, NPC interactions, combat/action, entity state, inventory, movement and packet observations, as supported by real source interfaces. Bounded original bytes and hook stage, direction, flags, timestamps/clock basis, drop/gap counts, source identity and hashes. Stream or batch through the **existing canonical Capture ingress and storage**. Reuse Packet Viewer, decoder, manual/bulk decode, Capture Query, Entity Browser, Feature Trace, evidence locators and cross-capture search. Do not create competing packet interpretation/UI/database or infer server IDs, causes or wire fidelity from timestamp proximity.
+- **Sessions:** A single selected research session may associate telemetry, commands/acknowledgments, packet streams, server environment, and original capture sources using explicit provenance. Preserve uncertainty and source boundaries. Read-only observations and placement proposals must never implicitly write game memory or server DB.
+
+### Implementation batches and acceptance gates
+
+1. **Provider/reference inventory and interface contract:** Audit installed/published Ashita v4 addon/plugin capture and control interfaces plus the Toolkit's existing Capture formats. Document what each can observe, execute, and export, version limitations and license obligations. Define typed bridge envelopes and compatible source IDs without replacing telemetry v1 or current capture adapters.
+2. **Bidirectional transport MVP:** Localhost bridge, read-only live telemetry plus simulated command request/ack/reject, client selection, liveness and restart. Enforce bounded buffers, backpressure on capture data, isolated high-priority stop commands, authorization and generation matching. CI with synthetic two-client/disconnect cases, then Windows roundtrip measurement; durable JSONL fallback remains usable.
+3. **Unified passive research collection:** Add vetted capture-provider registrations and selectable bounded profiles, loss/error metrics, explicit recording start/stop and validated import into canonical Capture. Compare producer-reported packet data to independent authorized evidence. Preserve source hashes/raw bytes and stage; never change packets or make unverified opcode/cause claims.
+4. **First genuine client movement:** Identify supported Ashita control API or justify independent native adapter; verify executable/module and live session. Implement one tightly bounded development-only XYZ nudge/position operation with preconditions, audit, readback, rejection/correction detection and kill switch. Prove on authorized DSP/Topaz test client; replay adapters stay read-only.
+5. **Assisted navigation + spatial UI:** Exact-position, waypoint and NPC/entity destinations; feedback-loop travel with progress and interrupt/obstruction detection rather than blind path playback; calibrated Zone Editor 2D/3D marker/camera and navmesh route review. Separate client-local position changes from server-accepted movement.
+6. **Correlated development/research workflows:** Toolkit-triggered *Locate → Move → Record Interaction → Inspect Capture/CSID/Feature Trace* with explicit evidence links, selected server/zone/instance context, timebase qualifications and uncertainty. No automatic SQL edits.
+7. **Advanced controlled utilities and hardening:** Evaluate speed, elevation, collision/visibility controls and temporary restoration individually only with supported adapters and versioned readback. Test zoning, logout/relogin, client crash, unsupported builds, two clients, capture overload, process replacement and safe teardown on Windows.
+
+**Milestone for original Tako-style goal:** An authorized user selects a destination in the Toolkit, issues Move, observes the **actual running character** approach it with live status and stop/recovery, and can record the resulting interaction into the existing Capture research pipeline. Report each capability separately as contract, synthetic-tested, Windows-tested or verified supported; do not equate a replay or matching packet timestamp with successful control.
+
+**Parallel-work boundaries:** Do not displace current Wiki, Auction House or unrelated refactor work. Implement in isolated PRs, CI green before merging; controls remain disabled for unsupported clients or unverified sessions.
+
+
+### 2026-10-09 bridge mailbox foundation
+
+The transport-neutral `bridge_protocol.py` and bounded `bridge_mailbox.py`
+define isolated client/session/generation envelopes, prioritized control,
+telemetry and capture queues, and explicit capture overflow accounting.
+A reject-only simulated client verifies command request/response matching without
+enabling writes. **These are in-memory components, not a localhost socket or
+Ashita-connected bidirectional bridge.** Next implement a local authenticated
+endpoint and client-side adapter, retaining independent queue budgets, safe
+stop commands, heartbeat/disconnect handling and recording provenance.
+
+### Framed loopback transport foundation
+
+The opt-in `bridge_loopback.py` provides bounded length-prefixed JSON/base64
+envelopes over IPv4 loopback TCP, with strict decoding and connection EOF checks.
+Real socket tests cover two sequential local clients, fragmented reads and
+disconnects. It is **not** an authenticated running service, background listener,
+Ashita adapter, or functioning client-command executor. Do not expose it to
+remote interfaces; complete authentication, generation verification, timeouts
+and lifecycle ownership in a future broker before enabling real control.
+
+
+### Local peer credential and lifecycle registry (2026-10-09)
+
+`bridge_peers.py` now provides an explicit, opt-in peer registry with 256-bit
+random bearer tokens, expiring leases, constant-time token comparison,
+client/session/generation matching, token rotation on client replacement and
+independent revocation. Tests cover expiry, renewal, stale generations and
+two separate clients. This is an **in-memory authentication primitive**;
+there is no Ashita peer, session handshake, automatic secret delivery,
+authenticated TCP listener or game-write capability yet. Future service work
+must authenticate every connection before accepting messages; protect token
+distribution and local configuration, enforce reconnect timeouts and revoke on
+disconnect/process replacement. Loopback-only binding is not itself sufficient
+authentication.
+
+### Authenticated one-frame loopback handshake
+
+`bridge_handshake.py` now verifies an explicitly provisioned peer token,
+client/session/generation and lease before accepting a single framed observation.
+Socket-level tests cover rejection of stale/wrong tokens, identity substitution,
+expired sessions, and partial handshakes. This is an **opt-in test primitive**,
+not a launched service: it has no secret delivery, multi-frame stream lifecycle,
+Ashita hookup, capture persistence, command dispatch, or movement writes.
+A production localhost service must protect the bearer-token distribution and
+connection ownership, impose timeouts, and fail closed on session changes.
+
+
+### Authenticated bounded multi-frame reception
+
+The opt-in `receive_session` helper now accepts multiple framed observations
+and capture events on a single previously authenticated local socket, checks
+peer lease and generation before each message, enforces per-lane sequencing,
+rejects inbound control commands and fails on truncated frames. The caller
+sets the maximum batch size and owns socket timeout/lifecycle. No persistent
+listener process, Ashita-side connector, capture persistence, or game write
+executor has been enabled. The batch is returned only on normal EOF or
+an explicit frame cap; callers must not treat this as a streaming service.
+
+
+### Opt-in local receiver (2026-10-09)
+
+`bridge_listener.py` composes the loopback socket, authenticated stream reader
+and per-client priority mailbox into an **explicitly started**, bounded receiver.
+It tests local clients and refuses untrusted peers before enqueuing. The caller
+owns the listener lifetime, token provisioning and the choice to consume
+received observations. This is **not yet a background service**: each
+`accept_batch` handles one connection until clean EOF or the configured frame
+limit. No Ashita peer, live GUI stream, canonical Capture ingest or movement
+command execution has been attached. Queue overflow is a rejection or an
+explicit capture drop, not a claim of lossless collection.
+
+
+### Authenticated envelope to canonical telemetry decoder
+
+`bridge_telemetry.py` validates read-only telemetry observations received in
+the existing bridge message format, binds the payload client ID to the envelope,
+and reuses `decode_frame` rather than inventing another observation schema.
+Synthetic tests cover valid position data, forged client IDs, malformed
+telemetry, wrong lane and all-or-nothing batch validation. This is a validated
+decode seam, **not** an Ashita TCP sender or an automatically consumed live GUI
+feed. The next integration needs an Ashita-side transport adapter, bounded
+live streaming and UI/feed registration with the existing client registry.
+
+
+### Simulated end-to-end localhost read-only feed (2026-10-09)
+
+`bridge_live_feeds.py` now hands off decoded authenticated TCP telemetry to
+the existing `TelemetryFeedAdapter` without replay files. It preserves
+per-client session/generation boundaries, rejects stale/nonmonotonic timestamps,
+and keeps capture envelopes in separate listener mailboxes rather than treating
+packet evidence as telemetry. Tests exercise a real loopback socket, multiple
+frames, a capture-lane envelope, stale frames and an authenticated generation
+replacement. The feed remains read-only (`supports_writes=False`).
+
+**Not yet shipped:** An Ashita-side network sender, ongoing asynchronous socket
+service, live GUI polling of this receiver, direct canonical Capture persistence
+or active movement controls. The test caller explicitly operates the listener;
+it is not started by the normal Toolkit application. Windows FFXI verification
+and capture-versus-wire fidelity are still required.
+
+
+### Explicit managed receiver for no-log Live Client telemetry
+
+`ManagedLiveReceiver` in `bridge_managed.py` adds a bounded background
+localhost accept worker, one-step client provisioning with generated session,
+generation and short-lived local bearer credential, per-client latest snapshot,
+age and connection status, and explicit shutdown. It accepts the existing
+Ashita bridge wire format and updates `TelemetryFeedAdapter` without any
+JSONL recording. Real TCP synthetic tests cover provisioning, observation,
+stale credential replacement and shutdown.
+
+This is a **backend foundation, not yet an activated GUI service**. Start it
+explicitly from the Toolkit Python environment and call `provision(client_id)`
+to obtain the connection details needed by the Ashita-side private settings
+file. Never log or publish the provisioned token. Current credentials expire
+after one hour and require new provisioning for extended sessions. The worker
+stops cleanly and does not discover game processes, write client memory or
+change the Capture subsystem. Next: connect start/stop/provision/status to
+Toolkit GUI and simplify credentials delivery to the local Ashita addon.
+
+
+### Toolkit GUI-managed local bridge (unverified Windows runtime)
+
+The Toolkit host now explicitly registers `/live-client/bridge/console`,
+linked from the **Client → Live Client** page. On the **same Windows PC**
+running Ashita, use the console to **Start receiver**, **Configure client**
+to provision session and token, then inspect a polled read-only status of
+zone, XYZ, heading, character, source version and freshness. **Stop receiver**
+tears down the managed localhost service. POST controls require a same-origin,
+local browser; no game process control is enabled. Routes are inactive until
+the user presses Start.
+
+The generated connection credentials must still be placed in a private
+`workbench_bridge_settings.lua` next to the addon. The experimental
+`/wblive live start <same-client-id>` command sends observations directly
+without JSONL and requires `workbench_live_direct.lua`. GUI credential
+provisioning rotates the client's session/token; restart the Ashita sender
+with updated settings if you reprovision. Never share bridge tokens, and do
+not expose the Toolkit management console over a remote connection. The
+normal Live Client replay console remains available unchanged. Windows
+Ashita end-to-end validation is still outstanding.

@@ -20,6 +20,100 @@
   function toast(msg) { const t = $('ahcToast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 4000); }
   function debounce(fn, ms = 250) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 
+  /* Browser-local navigation preferences only. Never store preview tokens,
+     recipients, confirmation strings, or uncommitted write plans. */
+  const WORKSPACE_KEY = 'ffxi.ah.workspace.v1';
+  const workspaceFields = ['itQ','itStatus','seQ','seSort','buQ','buSort','buDays','arMin'];
+  let savedWorkspace = {};
+  try { savedWorkspace = JSON.parse(localStorage.getItem(WORKSPACE_KEY) || '{}') || {}; } catch (_) {}
+  const saveWorkspace = debounce(() => {
+    try {
+      const filters = {};
+      workspaceFields.forEach(id => { if ($(id)) filters[id] = $(id).value; });
+      localStorage.setItem(WORKSPACE_KEY, JSON.stringify({
+        tab: location.hash.slice(1), filters, item: state.selItem,
+        seller: state.selSeller, category: state.cat || ''
+      }));
+    } catch (_) { /* private browsing / storage disabled */ }
+  }, 180);
+  workspaceFields.forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    if (savedWorkspace.filters && Object.prototype.hasOwnProperty.call(savedWorkspace.filters, id)) {
+      const value = savedWorkspace.filters[id];
+      if (el.tagName === 'SELECT' && !Array.from(el.options).some(o => o.value === value)) return;
+      el.value = value;
+    }
+    el.addEventListener('change', saveWorkspace);
+    el.addEventListener('input', saveWorkspace);
+  });
+  root.addEventListener('click', e => {
+    if (e.target.closest('#itTree [data-c], #itList [data-id], #seList [data-id], #ahcTabs [data-t]'))
+      saveWorkspace();
+  });
+  /* CSV exports are read-only and contain only the rows already rendered
+     in the browser; spreadsheet-formula cells are neutralized. */
+  function exportCsv(filename, rows) {
+    if (!rows.length) return toast('No rows to export');
+    const keys = Object.keys(rows[0]).filter(k => !/token|secret|password|confirmation/i.test(k));
+    const cell = v => {
+      const raw = v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v);
+      const clean = /^[\t\r\n ]*[=+@-]/.test(raw) ? "'" + raw : raw;
+      return '"' + clean.replace(/"/g, '""') + '"';
+    };
+    const csv = [keys.map(cell).join(','), ...rows.map(r => keys.map(k => cell(r[k])).join(','))].join('\r\n');
+    const blob = new Blob(['\uFEFF', csv], {type:'text/csv;charset=utf-8'});
+    const href = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = href; a.download = filename; a.click();
+    setTimeout(() => URL.revokeObjectURL(href), 1000);
+  }
+  root.addEventListener('click', e => {
+    const el = e.target.closest('[data-ah-export]');
+    if (!el) return;
+    const mode = el.dataset.ahExport, timestamp = new Date().toISOString().slice(0,10);
+    const rows = mode === 'items' ? (state.agg?.items || []) :
+      mode === 'sellers' ? (state.agg?.sellers || []) :
+      mode === 'restock' ? state.restock :
+      mode === 'cleanup' ? (state.cuRows || []) : [];
+    exportCsv('ah-' + mode + '-' + timestamp + '.csv', rows);
+  });
+  /* Private browser-local shortcuts; not a server-side alert or write action. */
+  const WATCH_KEY = 'ffxi.ah.watchlist.v1';
+  let watch = [];
+  try { const saved = JSON.parse(localStorage.getItem(WATCH_KEY) || '[]');
+    if (Array.isArray(saved)) watch = saved.filter(x => ['item','seller'].includes(x.kind) &&
+      Number.isSafeInteger(x.id) && x.id > 0 && typeof x.name === 'string').slice(0, 100);
+  } catch (_) {}
+  function paintWatch() {
+    $('ahWatchEntries').innerHTML = watch.map((x,i) =>
+      '<button class="b" type="button" data-watch-open="' + i + '">' + (x.kind === 'item' ? '📦 ' : '👤 ') +
+      esc(x.name) + ' #' + x.id + '</button><button class="b" data-watch-remove="' + i + '" title="Unfavorite" type="button">×</button>').join('') ||
+      '<small class="mut">Open an item or seller and select ☆ Favorite to pin it here.</small>';
+  }
+  function setWatch(kind,id,name) {
+    if (!Number.isSafeInteger(+id) || +id <= 0) return;
+    const at = watch.findIndex(x => x.kind === kind && x.id === +id);
+    if (at >= 0) watch.splice(at,1);
+    else if (watch.length < 100) watch.push({kind,id:+id,name:String(name).slice(0,100)});
+    try { localStorage.setItem(WATCH_KEY, JSON.stringify(watch)); } catch (_) {}
+    paintWatch();
+    root.querySelectorAll('[data-ah-favorite]').forEach(el => {
+      const match = watch.some(x => x.kind === el.dataset.ahFavorite && x.id === +el.dataset.id);
+      el.textContent = match ? '★ Favorited' : '☆ Favorite';
+    });
+  }
+  root.addEventListener('click', e => {
+    const remove = e.target.closest('[data-watch-remove]');
+    if (remove) { watch.splice(+remove.dataset.watchRemove,1); try{localStorage.setItem(WATCH_KEY,JSON.stringify(watch));}catch(_){} paintWatch(); return; }
+    const open = e.target.closest('[data-watch-open]');
+    if (open) { const x=watch[+open.dataset.watchOpen]; if (x) { tab(x.kind==='item'?'items':'sellers'); x.kind==='item'?showItem(x.id):showSeller(x.id); } return; }
+    const btn = e.target.closest('[data-ah-favorite]');
+    if (btn) { e.stopPropagation(); setWatch(btn.dataset.ahFavorite,+btn.dataset.id,btn.dataset.name); }
+  });
+  $('ahWatchClear').addEventListener('click', () => {
+    watch=[]; try{localStorage.removeItem(WATCH_KEY);}catch(_){} paintWatch();
+  });
+  paintWatch();
   /* ---------- tabs & embedded tools ---------- */
   const TOOLS = {economy: ['Economy Intelligence', '/auction-house/economy'], listings: ['Listing Manager', '/auction-house/listing-manager'],
     seeder: ['Player listing & market history', '/auction-house/seeder'],
@@ -37,6 +131,11 @@
     if (name === 'arbitrage' && !state.arb && window.loadArb) window.loadArb();
   }
   window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (TOOLS[h] || $('p-' + h)) tab(h); });
+  // Item Browser already links to /auction-house?item=<id>. Honor that
+  // deep link after the aggregate loads, without requiring a second click.
+  const initialItemId = Number(new URLSearchParams(location.search).get('item'));
+  const hasInitialItem = Number.isSafeInteger(initialItemId) && initialItemId > 0;
+
   $('ahcTabs').addEventListener('click', e => { if (e.target.dataset.t) tab(e.target.dataset.t); });
 
   /* ---------- action drawer (single guarded confirm path) ---------- */
@@ -133,6 +232,15 @@
     $('ahcFresh').textContent = 'loading…';
     try {
       state.agg = await req('/auction-house/console/aggregate.json');
+      if (!hasInitialItem && !state.initialItemLoaded && savedWorkspace.item && Number.isSafeInteger(+savedWorkspace.item)) {
+        state.initialItemLoaded = true;
+        Promise.resolve().then(() => showItem(+savedWorkspace.item));
+      }
+      if (hasInitialItem && !state.initialItemLoaded) {
+        state.initialItemLoaded = true;
+        tab('items');
+        Promise.resolve().then(() => showItem(initialItemId));
+      }
       $('ahcFresh').textContent = 'updated ' + new Date().toLocaleTimeString();
     } catch (e) { $('ahcFresh').textContent = 'failed: ' + e.message; return; }
     state.catalog = null; if ($('itStatus').value !== 'active') await ensureCatalog();
@@ -183,7 +291,7 @@
     rows.sort((a, b) => (k === 'name' ? nm(a.item_name).toLowerCase().localeCompare(nm(b.item_name).toLowerCase()) : ((a[k] ?? -1) - (b[k] ?? -1))) * dir);
     $('itCatLbl').textContent = (state.cat || 'All items') + ' · ' + fmt(rows.length);
     $('itList').innerHTML = rows.length ? '<table><thead><tr>' + IT_COLS.concat($('itStatus').value === 'active' ? [] : IT_EXTRA).map(c => '<th class="' + c[2] + ' srt" data-s="' + c[1] + '">' + c[0] + (k === c[1] ? (dir > 0 ? ' ▲' : ' ▼') : '') + '</th>').join('') + '</tr></thead><tbody>' +
-      rows.slice(0, 800).map(i => '<tr class="clk' + (i.item_id === state.selItem ? ' sel' : '') + '" data-id="' + i.item_id + '"><td><b>' + esc(nm(i.item_name)) + '</b> <small>#' + i.item_id + '</small></td><td class="n">' + i.listings + '</td><td class="n">' + fmt(i.min_price) + '</td><td class="n">' + fmt(i.median_price) + '</td><td class="n">' + fmt(i.max_price) + '</td><td class="n">' + i.seller_count + '</td><td class="n">' + days(i.oldest_days) + '</td>' + ($('itStatus').value === 'active' ? '' : '<td class="n">' + (i.sales ?? 0) + '</td><td class="n">' + fmt(i.avg_sale) + '</td>') + '</tr>').join('') + '</tbody></table>' : '<div class="ahc-empty">No items in this view.</div>';
+      rows.slice(0, 800).map(i => '<tr class="clk' + (i.item_id === state.selItem ? ' sel' : '') + '" data-id="' + i.item_id + '" title="' + esc(nm(i.item_name) + ' | #' + i.item_id + ' | ' + (i.category_path || 'Uncategorised') + ' | Stack ' + (i.stack_size || 1) + ' | ' + (i.listings || 0) + ' active listings | Low ' + (i.min_price ?? '—') + 'g / Median ' + (i.median_price ?? '—') + 'g') + '"><td><span class="ahc-item-cell"><img class="ahc-item-icon" loading="lazy" src="/itemedit/' + i.item_id + '/icon.png" alt="" onerror="this.style.display=\'none\'"><span><b>' + esc(nm(i.item_name)) + '</b> <small>#' + i.item_id + '</small></span></span></td><td class="n">' + i.listings + '</td><td class="n">' + fmt(i.min_price) + '</td><td class="n">' + fmt(i.median_price) + '</td><td class="n">' + fmt(i.max_price) + '</td><td class="n">' + i.seller_count + '</td><td class="n">' + days(i.oldest_days) + '</td>' + ($('itStatus').value === 'active' ? '' : '<td class="n">' + (i.sales ?? 0) + '</td><td class="n">' + fmt(i.avg_sale) + '</td>') + '</tr>').join('') + '</tbody></table>' : '<div class="ahc-empty">No items in this view.</div>';
   }
   $('itList').addEventListener('click', e => {
     const th = e.target.closest('th[data-s]');
@@ -199,6 +307,17 @@
     const cls = pct > 50 ? 'hi' : pct > 15 ? 'mid' : pct < -15 ? 'lo' : 'ok';
     return '<span class="mk ' + cls + '" title="Price vs the median of recent sales">' + (pct > 0 ? '+' : '') + Math.round(pct) + '%</span>';
   }
+  // Compact shared item identity: internal AH navigation plus external browser/editor.
+  const itemIdentity = (id, name, hint = '') => {
+    const key = Number(id), title = nm(name || ('Item #' + key));
+    if (!Number.isSafeInteger(key) || key <= 0) return esc(title);
+    const more = hint ? ' · ' + hint : '';
+    const browse = '/itembrowser?q=' + encodeURIComponent(String(name || '')) + '#' + key;
+    return '<span class="ahc-item-cell ahc-item-ref" title="' + esc(title + ' (#' + key + ')' + more) + '">' +
+      '<img class="ahc-item-icon" src="/itemedit/' + key + '/icon.png" loading="lazy" alt="" onerror="this.style.display=\'none\'">' +
+      '<span>' + link('item', key, title) + '<small> #' + key + '</small></span>' +
+      '<a class="ahc-item-out" target="_blank" rel="noopener" href="' + esc(browse) + '" title="Open in Item Browser" aria-label="Open ' + esc(title) + ' in Item Browser">↗</a></span>';
+  };
   const link = (kind, id, text) => '<a href="#" class="lk" data-' + kind + '="' + id + '">' + esc(text) + '</a>';
   function goBack() { const b = state.back; state.back = null; if (!b) return; tab(b.tab); b.tab === 'items' ? showItem(b.id) : showSeller(b.id); }
   const backBtn = () => state.back ? '<button class="b" data-x="back">← Back to ' + esc(state.back.label) + '</button> ' : '';
@@ -211,7 +330,7 @@
       const sl = opts.sellerSales; if (!sl) return '';
       return '<div class="ahc-sales"><div class="ahc-sh"><b>Recent sales</b> <span class="mut">' + sl.length + ' shown</span></div>' +
         (sl.length ? '<div class="ahc-sbody"><table><thead><tr><th>Sold</th><th>Item</th><th class="n">Price</th><th class="n">Asked</th><th>Buyer</th></tr></thead><tbody>' +
-        sl.map(x => '<tr><td>' + esc(new Date(x.sold_at * 1000).toISOString().replace('T', ' ').slice(0, 16)) + '</td><td>' + link('item', x.item_id, nm(x.item_name)) + (x.stack ? ' <small>(stack)</small>' : '') + '</td><td class="n">' + fmt(x.sale_price) + 'g</td><td class="n">' + fmt(x.asking_price) + 'g</td><td>' + esc(x.buyer_name || '—') + '</td></tr>').join('') +
+        sl.map(x => '<tr><td>' + esc(new Date(x.sold_at * 1000).toISOString().replace('T', ' ').slice(0, 16)) + '</td><td>' + itemIdentity(x.item_id, x.item_name, (x.stack ? 'Stack' : 'Single') + ' · sold ' + fmt(x.sale_price) + 'g') + (x.stack ? ' <small>(stack)</small>' : '') + '</td><td class="n">' + fmt(x.sale_price) + 'g</td><td class="n">' + fmt(x.asking_price) + 'g</td><td>' + esc(x.buyer_name || '—') + '</td></tr>').join('') +
         '</tbody></table></div>' : '<div class="ahc-empty" style="padding:8px">No sales by this seller in the window.</div>') + '</div>';
     };
     const salesHtml = () => {
@@ -242,7 +361,7 @@
       const v = vis(), filtered = v.length !== rows.length;
       body.innerHTML = '<table><thead><tr><th><input type="checkbox" class="all"></th><th>#</th>' + (opts.item ? '<th>Item</th>' : '') + (opts.seller ? '<th>Seller</th>' : '') +
         '<th class="n">Qty</th><th class="n">Price</th>' + (showMk ? '<th class="n" title="Asking price vs the median of recent sales">Markup</th>' : '') + '<th class="n">Age</th><th></th></tr></thead><tbody>' + v.map(r => '<tr><td><input type="checkbox" data-a="' + r.auction_id + '"' + (sel.has(r.auction_id) ? ' checked' : '') + '></td><td>' + r.auction_id + '</td>' +
-        (opts.item ? '<td>' + link('item', r.item_id, nm(r.item_name)) + '</td>' : '') + (opts.seller ? '<td>' + link('seller', r.seller_id, r.seller_name || '#' + r.seller_id) + '</td>' : '') +
+        (opts.item ? '<td>' + itemIdentity(r.item_id, r.item_name, 'Ask ' + fmt(r.asking_price) + 'g') + '</td>' : '') + (opts.seller ? '<td>' + link('seller', r.seller_id, r.seller_name || '#' + r.seller_id) + '</td>' : '') +
         '<td class="n">' + r.quantity + '</td><td class="n">' + fmt(r.asking_price) + 'g</td>' + (showMk ? '<td class="n">' + markupChip(mkOf(r)) + '</td>' : '') + '<td class="n">' + days(ageOf(r)) + '</td><td><button class="b" data-buy="' + r.auction_id + '">Buy</button> <button class="b" data-ret="' + r.auction_id + '">Return</button> <button class="b" data-pbuy="' + r.auction_id + '">Buy as…</button></td></tr>').join('') + '</tbody></table>' +
         (v.length ? '' : '<div class="ahc-empty">No listings match the filters.</div>');
       const ch = [...sel].map(id => rows.find(r => r.auction_id === id)).filter(Boolean), lbl = filtered ? ' (filtered)' : '';
@@ -270,6 +389,7 @@
         else if (x === 'buy-sel') bulk('admin_buy', ch, 'selected'); else if (x === 'ret-sel') bulk('return_to_seller', ch, 'selected');
         else if (x === 'buy-all') bulk('admin_buy', v, sc); else if (x === 'ret-all') bulk('return_to_seller', v, sc);
         else if (x === 'topoff') opts.topoff && opts.topoff();
+        else if (x === 'send-inbox') opts.onInbox && opts.onInbox();
       }
     };
     draw();
@@ -277,14 +397,19 @@
 
   async function showItem(id, keep) {
     const it = state.agg.items.find(i => i.item_id === id) || itemPool().find(i => i.item_id === id), el = $('itDetail');
-    state.selItem = id; if (it && !keep && !inCat(it.category_path, state.cat)) state.cat = it.category_path; drawItems();
+    state.selItem = id; saveWorkspace(); if (it && !keep && !inCat(it.category_path, state.cat)) state.cat = it.category_path; drawItems();
     if (!it) { el.innerHTML = '<div class="ahc-empty">Item #' + id + ' is not an Auction House item.</div>'; return; }
     if (!keep) el.innerHTML = '<div class="ahc-empty">Loading…</div>';
     try {
       const [d, h] = await Promise.all([req('/auction-house/console/listings.json?item_id=' + id + '&limit=5000'),
         req('/auction-house/items/' + id + '/history.json?limit=50').catch(() => ({rows: []}))]);
-      detail(el, '<b>' + esc(nm(it.item_name)) + '</b> <small>#' + id + ' · ' + esc(it.category_path || '') + ' · stack ' + it.stack_size + ' · ' + it.seller_count + ' seller(s) · low ' + fmt(it.min_price) + 'g · median ' + fmt(it.median_price) + 'g · high ' + fmt(it.max_price) + 'g</small>',
-        d.rows, {seller: true, sales: h.rows || [], scope: nm(it.item_name), extra: '<button class="b pri" data-x="topoff">Top off…</button>',
+      detail(el, '<button class="b" data-ah-favorite="item" data-id="' + id + '" data-name="' + esc(it.item_name) + '" type="button">' + (watch.some(x=>x.kind==='item'&&x.id===id)?'★ Favorited':'☆ Favorite') + '</button><div class="ahc-item-hero"><img class="ahc-item-hero-icon" src="/itemedit/' + id + '/icon.png" alt="" onerror="this.style.display=\'none\'"><div class="ahc-item-hero-copy"><b>' + esc(nm(it.item_name)) + '</b><small>#' + id + ' · ' + esc(it.category_path || '') + '</small><div class="ahc-item-hero-meta">Stack ' + fmt(it.stack_size) + ' · ' + fmt(it.listings || 0) + ' active · ' + fmt(it.seller_count || 0) + ' sellers</div><div class="ahc-item-hero-links"><a href="/itembrowser?q=' + encodeURIComponent(it.item_name) + '#' + id + '" target="_blank" rel="noopener">Item Browser ↗</a><a href="/itemedit#' + id + '" target="_blank" rel="noopener">Edit item ↗</a></div></div></div><details class="ahc-item-facts"><summary>Item &amp; market details</summary><div>Low: ' + fmt(it.min_price) + 'g · Median: ' + fmt(it.median_price) + 'g · High: ' + fmt(it.max_price) + 'g</div><div>Item ID: ' + id + ' · Stack size: ' + fmt(it.stack_size) + ' · Category: ' + esc(it.category_path || 'Uncategorised') + '</div></details>',
+        d.rows, {seller: true, sales: h.rows || [], scope: nm(it.item_name), extra: '<button class="b pri" data-x="topoff">Top off…</button><button class="b" data-x="send-inbox">Add to Inbox bundle</button>',
+          onInbox: () => {
+            const saved = state.bundle.find(x => x.item_id === id);
+            if (saved) saved.quantity++; else state.bundle.push({item_id:id,name:it.item_name,quantity:1});
+            drawBundle(); tab('inbox'); toast(nm(it.item_name) + ' added to reward bundle');
+          },
           topoff: () => { addRestock({item_id: id, item_name: it.item_name, target: Math.max(it.listings + 1, 5), price: Math.round(it.min_price || it.avg_sale || 100), stack: false}); tab('restock'); }});
     } catch (e) { el.innerHTML = '<div class="ahc-empty">' + esc(e.message) + '</div>'; }
   }
@@ -300,7 +425,7 @@
   $('seQ').addEventListener('input', debounce(drawSellers, 120)); $('seSort').addEventListener('change', drawSellers);
   $('seList').addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (tr) showSeller(+tr.dataset.id); });
   async function showSeller(id, keep) {
-    state.selSeller = id; drawSellers();
+    state.selSeller = id; saveWorkspace(); drawSellers();
     const s = state.agg.sellers.find(x => x.seller_id === id), el = $('seDetail');
     if (!s) { el.innerHTML = '<div class="ahc-empty">Seller #' + id + ' has no active listings.</div>'; return; }
     if (!keep) el.innerHTML = '<div class="ahc-empty">Loading…</div>';
@@ -310,7 +435,7 @@
       d.rows.sort((a, b) => a.item_name.localeCompare(b.item_name) || a.asking_price - b.asking_price);
       const kpi = st ? ' · ' + st.sales + ' sold / ' + fmt(st.gil) + 'g in ' + st.days + 'd · sell-through ' + (st.sell_through == null ? '—' : st.sell_through + '%') +
         (st.median_hours_to_sale != null ? ' · median ' + st.median_hours_to_sale + 'h to sell' : '') : '';
-      detail(el, '<b>' + esc(s.seller_name || '#' + id) + '</b> <small>#' + id + ' · ' + s.listings + ' listing(s) · ' + s.item_count + ' item(s) · ' + fmt(s.value) + 'g asking' + kpi + '</small>',
+      detail(el, '<button class="b" data-ah-favorite="seller" data-id="' + id + '" data-name="' + esc(s.seller_name || '#' + id) + '" type="button">' + (watch.some(x=>x.kind==='seller'&&x.id===id)?'★ Favorited':'☆ Favorite') + '</button><b>' + esc(s.seller_name || '#' + id) + '</b> <small>#' + id + ' · ' + s.listings + ' listing(s) · ' + s.item_count + ' item(s) · ' + fmt(s.value) + 'g asking' + kpi + '</small>',
         d.rows, {item: true, scope: s.seller_name || '#' + id, sellerSales: st && st.recent, refs: st && st.refs});
     } catch (e) { el.innerHTML = '<div class="ahc-empty">' + esc(e.message) + '</div>'; }
   }
@@ -373,14 +498,55 @@
   function drawRestock() {
     $('rsRows').innerHTML = state.restock.map((r, i) => {
       const cur = (state.agg && state.agg.items.find(x => x.item_id === r.item_id)) || {};
-      return '<tr><td>' + esc(nm(r.item_name)) + '<br><small>#' + r.item_id + '</small></td><td class="n">' + (cur.listings || 0) + '</td><td class="n"><input type="number" min="1" data-k="target" data-i="' + i + '" value="' + r.target + '"></td><td class="n"><input type="number" min="1" data-k="price" data-i="' + i + '" value="' + r.price + '"></td>' +
+      return '<tr><td>' + itemIdentity(r.item_id, r.item_name, 'Restock target ' + r.target + ' at ' + fmt(r.price) + 'g') + '</td><td class="n">' + (cur.listings || 0) + '</td><td class="n"><input type="number" min="1" data-k="target" data-i="' + i + '" value="' + r.target + '"></td><td class="n"><input type="number" min="1" data-k="price" data-i="' + i + '" value="' + r.price + '"></td>' +
         '<td><input type="checkbox" data-k="stack" data-i="' + i + '"' + (r.stack ? ' checked' : '') + '></td><td><button class="b" data-rm="' + i + '">✕</button></td></tr>';
     }).join('') || '<tr><td colspan="6" class="ahc-empty">Search for items above, or use “Top off…” from an item.</td></tr>';
   }
   $('rsRows').addEventListener('input', e => { const t = e.target, i = t.dataset.i; if (i == null) return; state.restock[i][t.dataset.k] = t.dataset.k === 'stack' ? t.checked : +t.value; state.rsPlan = null; });
   $('rsRows').addEventListener('click', e => { if (e.target.dataset.rm) { state.restock.splice(+e.target.dataset.rm, 1); state.rsPlan = null; drawRestock(); } });
-  picker($('rsItemQ'), $('rsSug'), '/auction-house/console/item-search.json?q=', r => itemRow(r),
-    r => { const id = Array.isArray(r) ? r[0] : (r.item_id ?? r.id), name = Array.isArray(r) ? r[1] : (r.name || r.item_name); addRestock({item_id: id, item_name: name, target: 5, price: 100, stack: false}); });
+  const ahPickRow = r => {
+    const id = Number(r.item_id ?? r.id), name = nm(r.name || r.item_name || ('Item #' + id));
+    const hint = r.category_path || 'AH item';
+    return '<span class="ahc-item-cell"><img class="ahc-item-icon" src="/itemedit/' + id + '/icon.png" loading="lazy" alt="" onerror="this.style.display=\'none\'">' +
+      '<span><b>' + esc(name) + '</b><small> #' + id + ' · ' + esc(hint) + '</small></span></span>';
+  };
+  // Shared bounded browse UI for Restock/Cleanup. Always select a real item ID,
+  // rather than turning a partial search string into a mutation criterion.
+  function ahBrowse(button, panel, input, results, count, onSelect) {
+    let version = 0, last = [];
+    async function load() {
+      const q = input.value.trim(), mine = ++version;
+      count.textContent = 'Searching…';
+      try {
+        const data = await req('/auction-house/console/item-search.json?q=' + encodeURIComponent(q) + '&limit=100');
+        if (mine !== version || panel.hidden) return;
+        last = data.rows || [];
+        count.textContent = last.length + ' item(s) shown · refine the search for more';
+        results.innerHTML = last.map((r,i) => '<button type="button" class="b" data-i="' + i + '" style="display:block;width:100%;text-align:left;margin:3px 0">' +
+          ahPickRow(r) + '</button>').join('') || '<div class="mut">No items found.</div>';
+      } catch(e) { if (mine === version) { count.textContent = 'Search unavailable'; results.textContent = e.message; } }
+    }
+    button.addEventListener('click', () => {
+      panel.hidden = !panel.hidden;
+      button.setAttribute('aria-expanded', String(!panel.hidden));
+      if (!panel.hidden) load();
+    });
+    input.addEventListener('input', debounce(load, 180));
+    results.addEventListener('click', e => {
+      const target = e.target.closest('button[data-i]'); if (!target) return;
+      const item = last[Number(target.dataset.i)]; if (!item) return;
+      onSelect(item);
+      panel.hidden = true;
+      button.setAttribute('aria-expanded', 'false');
+    });
+  }
+  const restockPick = r => {
+    addRestock({item_id: Number(r.item_id ?? r.id), item_name: r.name || r.item_name, target:5, price:100, stack:false});
+    $('rsItemQ').value = ''; $('rsSug').hidden = true;
+  };
+  WorkbenchItemPicker.bind({input:$('rsItemQ'),results:$('rsSug'),
+    endpoint:'/auction-house/console/item-search.json?q=',request:req,onSelect:restockPick});
+  ahBrowse($('rsBrowse'), $('rsBrowseBox'), $('rsBrowseQ'), $('rsBrowseRows'), $('rsBrowseCount'), restockPick);
   req('/auction-house/categories.json').then(d => { $('rsCat').innerHTML += (d.rows || []).map(r => '<option value="' + r.category_id + '">' + esc(r.path || r.label || 'Category ' + r.category_id) + ' (' + (r.item_count || 0) + ')</option>').join(''); }).catch(() => {});
   $('rsCatAdd').addEventListener('click', async () => {
     const cat = $('rsCat').value; if (!cat) return toast('Choose a category');
@@ -406,7 +572,7 @@
 
   /* ---------- inbox tab ---------- */
   function drawBundle() {
-    $('ibRows').innerHTML = state.bundle.map((b, i) => '<tr><td>' + esc(nm(b.name)) + ' <small>#' + b.item_id + '</small></td><td class="n"><input type="number" min="1" data-i="' + i + '" value="' + b.quantity + '"></td><td><button class="b" data-rm="' + i + '">✕</button></td></tr>').join('') || '<tr><td colspan="3" class="ahc-empty">Search for items to build a bundle, or pick a template.</td></tr>';
+    $('ibRows').innerHTML = state.bundle.map((b, i) => '<tr><td><span style="display:flex;align-items:center;gap:7px"><img src="/character-editor/client-cache/icons/' + b.item_id + '.png" width="28" height="28" alt="" loading="lazy" onerror="this.style.display=\'none\'"><span>' + esc(nm(b.name)) + ' <small>#' + b.item_id + '</small></span></span></td><td class="n"><input type="number" min="1" data-i="' + i + '" value="' + b.quantity + '"></td><td><button class="b" data-rm="' + i + '">✕</button></td></tr>').join('') || '<tr><td colspan="3" class="ahc-empty">Search for items to build a bundle, or pick a template.</td></tr>';
   }
   const drawChips = () => ibPick.draw();
   $('ibRows').addEventListener('input', e => { if (e.target.dataset.i != null) state.bundle[e.target.dataset.i].quantity = Math.max(1, +e.target.value || 1); });
@@ -418,9 +584,84 @@
     if (ex) ex.quantity = Math.min(999999999, ex.quantity + amt); else state.bundle.push({item_id: 65535, name: 'Gil', quantity: amt});
     $('ibGil').value = ''; drawBundle();
   });
-  picker($('ibItemQ'), $('ibSug'), '/auction-house/console/item-search.json?q=', r => itemRow(r), r => {
-    const id = Array.isArray(r) ? r[0] : (r.item_id ?? r.id), name = Array.isArray(r) ? r[1] : (r.name || r.item_name);
-    const ex = state.bundle.find(b => b.item_id === id); if (ex) ex.quantity++; else state.bundle.push({item_id: id, name, quantity: 1}); drawBundle(); });
+  /* Inbox item chooser uses the shared server item search and Character Editor icon cache.
+     Keep the existing bundle/preview state; no changes to protected reward execution. */
+  const ibIcon = id => '/character-editor/client-cache/icons/' + Number(id) + '.png';
+  const ibItemRow = r => WorkbenchItemPicker.rowHtml(r);
+  const ibAddItem = r => {
+    const id = Number(r.item_id ?? r.id), name = String(r.name || r.item_name);
+    if (!Number.isInteger(id) || id <= 0) return;
+    const existing = state.bundle.find(x => x.item_id === id);
+    if (existing) existing.quantity++; else state.bundle.push({item_id:id, name, quantity:1});
+    drawBundle(); toast('Added ' + nm(name));
+  };
+  let ibSearchVersion = 0, ibResults = [];
+  const ibSearch = debounce(async () => {
+    const q = $('ibItemQ').value.trim(), version = ++ibSearchVersion;
+    if (q.length < 2 && !/^\d+$/.test(q)) { $('ibSug').hidden = true; return; }
+    try {
+      const data = await req('/auction-house/console/bundle-items.json?q=' + encodeURIComponent(q) + '&limit=40');
+      if (version !== ibSearchVersion) return;
+      ibResults = data.rows || [];
+      $('ibSug').innerHTML = ibResults.map((r,i) =>
+        '<div data-i="' + i + '" style="display:flex;align-items:center;gap:8px">' + ibItemRow(r) + '</div>').join('') ||
+        '<div class="mut">No matching items.</div>';
+      $('ibSug').hidden = false;
+    } catch (e) { if (version === ibSearchVersion) { $('ibSug').textContent = e.message; $('ibSug').hidden = false; } }
+  }, 180);
+  $('ibItemQ').addEventListener('input', () => { ibSearchVersion++; ibSearch(); });
+  $('ibSug').addEventListener('click', e => {
+    const choice = e.target.closest('[data-i]'); if (!choice) return;
+    ibAddItem(ibResults[Number(choice.dataset.i)]);
+    $('ibSug').hidden = true; $('ibItemQ').value = ''; $('ibItemQ').focus();
+  });
+  $('ibItemQ').addEventListener('keydown', e => {
+    if (e.key === 'Escape') $('ibSug').hidden = true;
+    if (e.key === 'Enter' && !$('ibSug').hidden && ibResults.length) {
+      e.preventDefault(); const q = $('ibItemQ').value.toLowerCase().trim();
+      const best = ibResults.find(r => String(r.item_id) === q || String(r.name || '').toLowerCase() === q) || ibResults[0];
+      ibAddItem(best); $('ibSug').hidden = true; $('ibItemQ').value = '';
+    }
+  });
+  let ibBrowseVersion = 0, ibBrowseRows = [];
+  async function ibLoadBrowse() {
+    const category = $('ibItemCategory').value, q = $('ibItemFilter').value.trim(), version = ++ibBrowseVersion;
+    const params = new URLSearchParams({q, limit:'100'});
+    if (category) params.set('category_id', category);
+    $('ibItemCount').textContent = 'Loading matching items…';
+    try {
+      const data = await req((category ? '/auction-house/console/item-search.json?' : '/auction-house/console/bundle-items.json?') + params);
+      if (version !== ibBrowseVersion) return;
+      ibBrowseRows = data.rows || [];
+      $('ibItemCount').textContent = ibBrowseRows.length + ' shown (up to 100); refine search to find more.';
+      $('ibItemChoices').innerHTML = ibBrowseRows.map((r,i) =>
+        '<button class="b" type="button" data-i="' + i +
+        '" style="width:100%;display:flex;align-items:center;gap:10px;text-align:left;margin:2px 0">' +
+        ibItemRow(r) + '<span style="margin-left:auto">Add +</span></button>').join('') ||
+        '<p class="mut">No items found. Try another category or search term.</p>';
+    } catch (e) { if (version === ibBrowseVersion) { $('ibItemChoices').textContent = e.message; $('ibItemCount').textContent = 'Search unavailable'; } }
+  }
+  $('ibItemChoices').addEventListener('click', e => {
+    const button = e.target.closest('[data-i]'); if (button) ibAddItem(ibBrowseRows[Number(button.dataset.i)]);
+  });
+  $('ibItemBrowse').addEventListener('click', async () => {
+    const open = $('ibItemBrowser').hidden;
+    $('ibItemBrowser').hidden = !open;
+    $('ibItemBrowse').setAttribute('aria-expanded', String(open));
+    if (open) {
+      if ($('ibItemCategory').options.length === 1) {
+        try {
+          const d = await req('/auction-house/categories.json');
+          $('ibItemCategory').innerHTML += (d.rows || []).map(r =>
+            '<option value="' + Number(r.category_id) + '">' + esc(r.path || r.label || 'Category '+r.category_id) +
+            ' (' + Number(r.item_count || 0) + ')</option>').join('');
+        } catch (e) { toast('Categories unavailable: ' + e.message); }
+      }
+      ibLoadBrowse();
+    }
+  });
+  $('ibItemFilter').addEventListener('input', debounce(ibLoadBrowse, 180));
+  $('ibItemCategory').addEventListener('change', ibLoadBrowse);
   async function loadTpls() {
     try {
       state.tpls = (await req('/auction-house/rewards/templates.json')).rows || [];
@@ -430,7 +671,7 @@
   $('ibTpl').addEventListener('change', async () => {
     const t = state.tpls.find(x => x.template_id === $('ibTpl').value); if (!t) return;
     $('ibName').value = t.name; state.bundle = t.items.map(i => ({item_id: i.item_id, name: '#' + i.item_id, quantity: i.quantity})); drawBundle();
-    state.bundle.forEach(async b => { try { const d = await req('/auction-house/console/item-search.json?q=' + b.item_id); const r = (d.rows || []).find(x => (Array.isArray(x) ? x[0] : (x.item_id ?? x.id)) === b.item_id); if (r) { b.name = Array.isArray(r) ? r[1] : (r.name || r.item_name); drawBundle(); } } catch (e) {} });
+    state.bundle.forEach(async b => { try { const d = await req('/auction-house/console/bundle-items.json?q=' + b.item_id); const r = (d.rows || []).find(x => (Array.isArray(x) ? x[0] : (x.item_id ?? x.id)) === b.item_id); if (r) { b.name = Array.isArray(r) ? r[1] : (r.name || r.item_name); drawBundle(); } } catch (e) {} });
   });
   const bundleItems = () => state.bundle.map(b => ({item_id: b.item_id, quantity: b.quantity}));
   $('ibSave').addEventListener('click', async () => {
@@ -808,10 +1049,19 @@
   }
   cuSearch($('cuSellerQ'), $('cuSellerSug'), '/auction-house/console/characters.json?include_sellers=1&limit=25&q=', r => esc(r.char_name) + ' <small>#' + r.char_id + (r.source === 'auction-only' ? ' · AH seller' : '') + '</small>',
     r => { $('cuSellerId').value = r.char_id; $('cuSellerName').value = ''; $('cuSellerQ').value = r.char_name + ' #' + r.char_id; $('cuSellerQ').dataset.picked = $('cuSellerQ').value; });
-  cuSearch($('cuItemQ'), $('cuItemSug'), '/auction-house/console/item-search.json?q=', r => itemRow(r),
-    r => { const id = Array.isArray(r) ? r[0] : (r.item_id ?? r.id), name = Array.isArray(r) ? r[1] : (r.name || r.item_name); $('cuItemId').value = id; $('cuItemQ').value = nm(name) + ' #' + id; $('cuItemQ').dataset.picked = $('cuItemQ').value; });
+  const cleanupPick = r => {
+    const id = Number(r.item_id ?? r.id), name = nm(r.name || r.item_name);
+    $('cuItemId').value = String(id);
+    $('cuItemQ').value = name + ' #' + id;
+    $('cuItemQ').dataset.picked = $('cuItemQ').value;
+    $('cuSelectedItem').innerHTML = itemIdentity(id, name, r.category_path || 'Selected cleanup filter');
+    $('cuItemSug').hidden = true;
+  };
+  WorkbenchItemPicker.bind({input:$('cuItemQ'),results:$('cuItemSug'),
+    endpoint:'/auction-house/console/item-search.json?q=',request:req,onSelect:cleanupPick});
+  ahBrowse($('cuBrowse'), $('cuBrowseBox'), $('cuBrowseQ'), $('cuBrowseRows'), $('cuBrowseCount'), cleanupPick);
   $('cuSellerQ').addEventListener('input', () => { if ($('cuSellerQ').value !== $('cuSellerQ').dataset.picked) $('cuSellerId').value = ''; });
-  $('cuItemQ').addEventListener('input', () => { if ($('cuItemQ').value !== $('cuItemQ').dataset.picked) $('cuItemId').value = ''; });
+  $('cuItemQ').addEventListener('input', () => { if ($('cuItemQ').value !== $('cuItemQ').dataset.picked) { $('cuItemId').value = ''; $('cuSelectedItem').textContent = ''; } });
   // translate the visible search boxes into the criteria the API wants
   function cuSyncFields() {
     const sq = $('cuSellerQ').value.trim(), iq = $('cuItemQ').value.trim();
@@ -823,6 +1073,7 @@
     $('cuSellerQ').dataset.picked = $('cuItemQ').dataset.picked = '';
     $('cuSellerQ').value = $('cuSellerName').value || ($('cuSellerId').value ? '#' + $('cuSellerId').value : '');
     $('cuItemQ').value = $('cuItemId').value ? '#' + $('cuItemId').value : '';
+    $('cuSelectedItem').textContent = $('cuItemId').value ? 'Selected item #' + $('cuItemId').value : '';
   }
 
   /* ---------- buyers tab ---------- */
@@ -854,7 +1105,7 @@
           '<div class="ahc-acts"><button class="b" data-x="refund-sel"' + (chosen.length ? '' : ' disabled') + '>Refund selected overpay (' + fmt(sum) + 'g)</button><button class="b" data-x="refund-all"' + (over.length ? '' : ' disabled') + '>Refund all overpaid (' + fmt(over.reduce((s, r) => s + r.overpaid_by, 0)) + 'g)</button><button class="b" data-x="pick-over"' + (over.length ? '' : ' disabled') + '>Select overpaid</button></div>' +
           '<div class="ahc-sales"><div class="ahc-sh"><b>Top items</b> <span class="mut">' + d.top_items.map(i => esc(nm(i.item_name)) + ' ×' + i.count).slice(0, 5).join(', ') + '</span></div><div class="ahc-sh"><b>Top sellers</b> <span class="mut">' + d.top_sellers.map(s => esc(s.seller_name || '#' + s.seller_id) + ' ×' + s.count).slice(0, 5).join(', ') + '</span></div></div>' +
           '<div class="ahc-scroll"><table><thead><tr><th><input type="checkbox" class="all"></th><th>Bought</th><th>Item</th><th>Seller</th><th class="n">Paid</th><th class="n">Median</th><th class="n">Markup</th></tr></thead><tbody>' +
-          d.rows.map(r => '<tr><td>' + (r.overpaid_by > 0 && r.markup_pct != null ? '<input type="checkbox" data-a="' + r.auction_id + '"' + (sel.has(r.auction_id) ? ' checked' : '') + '>' : '') + '</td><td>' + esc(fmtTime(r.sold_at)) + '</td><td>' + link('item', r.item_id, nm(r.item_name)) + (r.stack ? ' <small>(stack)</small>' : '') + '</td><td>' + link('seller', r.seller_id, r.seller_name || '#' + r.seller_id) +
+          d.rows.map(r => '<tr><td>' + (r.overpaid_by > 0 && r.markup_pct != null ? '<input type="checkbox" data-a="' + r.auction_id + '"' + (sel.has(r.auction_id) ? ' checked' : '') + '>' : '') + '</td><td>' + esc(fmtTime(r.sold_at)) + '</td><td>' + itemIdentity(r.item_id, r.item_name, (r.stack ? 'Stack' : 'Single') + ' · paid ' + fmt(r.price) + 'g') + '</td><td>' + link('seller', r.seller_id, r.seller_name || '#' + r.seller_id) +
             '</td><td class="n">' + fmt(r.price) + 'g</td><td class="n">' + (r.median == null ? '—' : fmt(r.median) + 'g') + '</td><td class="n">' + markupChip(r.markup_pct) + '</td></tr>').join('') + '</tbody></table></div>';
       };
       el.onclick = e => {
@@ -945,7 +1196,11 @@
   loadCats(); loadPresets(); loadDefault();
   drawRestock(); drawBundle(); drawChips();
   loadEnv(); loadTpls(); loadAll();
-  { const h = location.hash.slice(1); tab(TOOLS[h] || $('p-' + h) ? h : 'economy'); }
+  { const h = location.hash.slice(1);
+    const savedTab = savedWorkspace.tab;
+    const preferred = h && h !== 'economy' ? h : savedTab;
+    tab(preferred && (TOOLS[preferred] || $('p-' + preferred)) ? preferred : 'economy');
+  }
   window.ahcOpen = (k, id, cat) => { if (cat != null) { state.cat = cat; drawItems(); } if (id) return k === 'items' ? showItem(id) : showSeller(id); };
 })();
 

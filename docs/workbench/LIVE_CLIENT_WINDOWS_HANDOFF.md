@@ -203,3 +203,49 @@ require explicit restart; record long-zone timeout behavior and populated normal
 packet fidelity is a separate paired telemetry/packet test. A runtime report now shows
 bounded gap details and raw diagnostic-field coverage; neither metrics nor successful
 zone transitions establish a supported build or complete lifecycle compatibility.
+
+## Paired telemetry and packet acceptance checklist
+
+On an authorized Windows Ashita v4 client with the four current addon Lua files:
+
+1. Fully log in and run `/wblive start paired-a inventory-zoning`; record
+   `/wblive status` and the exact loaded game/Ashita/addon revisions.
+2. Run `/wblive packets start event_emote`; verify `/wblive packets status`
+   shows active. Trigger a known emote and a known NPC event. Record the action,
+   direction and time independently; do not infer opcode meanings from labels.
+3. Run `/wblive packets stop` followed by `/wblive packets status`, then
+   `/wblive stop`. Preserve the original telemetry and packet JSONL filenames.
+4. Generate an offline runtime report using the existing command with
+   `--packet-observations <packet-file.jsonl>`. If the packets have already
+   been imported into Capture, optionally supply both `--capture-database`
+   and `--capture-id`; this only checks the explicitly selected Capture.
+5. Inspect `packet_evidence.offline_acceptance` for counts of unique exact
+   context candidates, unmatched/ambiguous rows, whether candidate details
+   were truncated, and the final hook-reported rate-limit drop counter.
+   These checks detect *offline correspondence*, not wire fidelity.
+6. Repeat with a zone transition and then a logout/relogin. A stopped packet
+   stream never auto-resumes; create distinct telemetry and packet files for
+   the new session. Record exact stop messages and any paused intervals.
+
+For a meaningful packet-fidelity claim, separately obtain an independent
+authorized capture of the same known action and compare payload length, byte
+content, direction, timestamp basis and hook flags, documenting any differences.
+Packet hook bytes are not automatically equivalent to transmitted wire bytes.
+Do not upload character names, account IDs, private chat or unrelated network
+traffic without redacting them in a reproducible copy; preserve source hashes
+separately. No code in the report performs independent wire verification.
+
+
+## Two-instance packet isolation acceptance
+
+If two authorized Ashita client instances are available, give each a distinct
+`/wblive start <id> inventory` ID and separate addon output directory.
+In each instance start `/wblive packets start event_emote`, generate a distinct
+known emote, and preserve both packet and telemetry files. Confirm each packet
+file declares only its intended source client ID, original recording stem,
+zone and opcode observations. Stop or log out in instance A, then verify B
+continues exporting independently. Restart A only with a fresh telemetry
+recording and distinct file. Never compare same-name client slots as verified
+server identities. These are manual Windows acceptance steps; the repository
+tests use two separate synthetic Lua runtimes and cannot establish actual
+simultaneous Ashita compatibility.

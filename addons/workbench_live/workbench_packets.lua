@@ -12,13 +12,20 @@ local function quote(value, limit)
 end
 function M.new(options)
     local handle, source, sequence, bytes, second, count, dropped = nil, nil, 0, 0, nil, 0, 0
+    local last_stop_reason, last_stop_counts
     -- Only the pinned example's emote IDs and Toolkit's existing event opcode.
     -- No chat/login/lobby/all-opcode profile or packet payload interpretation.
     local profile = {incoming={[0x034]=true,[0x05A]=true}, outgoing={[0x05D]=true}}
     local function stop(reason)
-        if handle then pcall(function() handle:close() end) end
+        if handle then
+            last_stop_counts = {observations=sequence, rate_drops=dropped}
+            pcall(function() handle:close() end)
+        end
         handle, source = nil, nil
-        if reason then options.message(reason) end
+        if reason then
+            last_stop_reason = reason
+            options.message(reason)
+        end
     end
     local function context()
         local value = assert(options.context(), 'start telemetry before packet observation')
@@ -43,8 +50,8 @@ function M.new(options)
             local now = integer(os.time(), 0, 4102444800)
             assert(not second or now >= second, 'system clock moved backwards')
             if second ~= now then second, count = now, 0 end
-            if count >= 10 then dropped = integer(dropped+1, 0, 4294967295); return end
             local current = fresh_context(now)
+            if count >= 10 then dropped = integer(dropped+1, 0, 4294967295); return end
             local size = integer(e.size, 4, 1024)
             assert(type(e.data) == 'string' and #e.data == size, 'original packet size mismatch')
             assert(type(e.injected) == 'boolean' and type(e.blocked) == 'boolean', 'packet hook flags unavailable')
@@ -57,7 +64,9 @@ function M.new(options)
                 .. ',"size":' .. size .. ',"raw_hex":' .. quote(raw, 2048)
                 .. ',"hook_stage":"addon_callback_original","is_injected":' .. tostring(e.injected)
                 .. ',"is_blocked":' .. tostring(e.blocked) .. ',"dropped_before":' .. dropped .. '}\n'
-            assert(context().zone_id == current.zone_id, 'packet zone changed while sampling')
+            local final = fresh_context(now)
+            assert(final.zone_id == current.zone_id and final.last_observed_at == current.last_observed_at,
+                   'packet telemetry context changed while sampling')
             assert(#line <= 4096 and bytes + #line <= 4*1024*1024 and sequence < 10000, 'packet export limit reached')
             assert(handle:write(line), 'unable to write packets'); assert(handle:flush(), 'unable to flush packets')
             sequence, bytes, count = sequence+1, bytes+#line, count+1
@@ -66,7 +75,17 @@ function M.new(options)
     end
     local function command(action, mode)
         if action == 'stop' then stop('Packet export stopped.'); return end
-        if action == 'status' then options.message(handle and ('Packets active; '..sequence..' observations, '..dropped..' rate-limit drops (unverified).') or 'Packets inactive.'); return end
+        if action == 'status' then
+            if handle then
+                local ok, err = pcall(function() fresh_context(integer(os.time(), 0, 4102444800)) end)
+                if not ok then stop('Packet export stopped: '..tostring(err)) end
+            end
+            options.message(handle and ('Packets active; '..sequence..' observations, '..dropped..' rate-limit drops (unverified).')
+                or ('Packets inactive.' .. (last_stop_counts and (' Previous export: '..last_stop_counts.observations
+                    ..' observations, '..last_stop_counts.rate_drops..' rate-limit drops (unverified).') or '')
+                    .. (last_stop_reason and (' Last stop: '..last_stop_reason) or '')))
+            return
+        end
         if action ~= 'start' or mode ~= 'event_emote' then options.message('Use packets start event_emote, packets stop or packets status.'); return end
         if handle then options.message('Stop packet observation before starting another.'); return end
         local ok, err = pcall(function()
@@ -75,10 +94,11 @@ function M.new(options)
             assert(not options.exists(path), 'packet file already exists; start a fresh telemetry recording')
             handle = assert(io.open(path, 'wb'))
             source, sequence, bytes, second, count, dropped = current, 0, 0, nil, 0, 0
+            last_stop_reason, last_stop_counts = nil, nil
             options.message('Passive packet observations: '..path..'. Hook bytes are not verified wire traffic.')
         end)
         if not ok then stop('Unable to start packets: '..tostring(err)) end
     end
-    return {command=command, sample=sample, stop=stop}
+    return {command=command, sample=sample, stop=stop, active=function() return handle ~= nil end}
 end
 return M

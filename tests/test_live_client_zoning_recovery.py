@@ -66,6 +66,11 @@ def test_pause_stops_packet_stream_and_does_not_automatically_restart_it(tmp_pat
     lua.execute('command("/wblive packets start event_emote")')
     packet, = tmp_path.glob('packets-*')
     pause(lua)
+    lua.execute('command("/wblive packets status")')
+    assert 'telemetry inactive or paused' in lua.globals().messages[len(lua.globals().messages)]
+    message_count = len(lua.globals().messages)
+    lua.execute('events.d3d_present(); events.d3d_present()')
+    assert len(lua.globals().messages) == message_count
     lua.execute('clock=102; entities[1].name="Hero"; events.d3d_present(); clock=103; events.d3d_present(); events.packet_in({id=0x034,size=4,data="ABCD",injected=false,blocked=false})')
     assert len(path.read_text().splitlines()) == 2
     assert packet.read_bytes() == b''
@@ -84,3 +89,25 @@ def test_explicit_stop_unload_and_restart_preserve_paused_file(tmp_path):
     assert path.read_bytes() == original
     assert len(list(tmp_path.glob('telemetry-*'))) == 2
     assert 'Not exporting' in lua.globals().messages[len(lua.globals().messages)]
+
+def test_packet_restart_after_zoning_needs_new_telemetry_file(tmp_path):
+    lua, telemetry = start(tmp_path)
+    lua.execute('command("/wblive packets start event_emote")')
+    packet, = tmp_path.glob('packets-*')
+    lua.execute('events.packet_in({id=0x034,size=4,data="ABCD",injected=false,blocked=false})')
+    before = packet.read_bytes()
+    pause(lua)
+    lua.execute('clock=102; party.zone=101; entities[1].name="Hero"; events.d3d_present(); clock=103; events.d3d_present()')
+    assert len(telemetry.read_text().splitlines()) == 2
+    lua.execute('command("/wblive packets start event_emote")')
+    assert packet.read_bytes() == before
+    assert len(list(tmp_path.glob('packets-*'))) == 1
+    lua.execute('command("/wblive stop"); clock=104; command("/wblive start after-zone inventory-zoning"); command("/wblive packets start event_emote")')
+    packet_files = list(tmp_path.glob('packets-*'))
+    assert len(packet_files) == 2
+    assert packet.read_bytes() == before
+    lua.execute('events.packet_in({id=0x034,size=4,data="EFGH",injected=false,blocked=false})')
+    new_packet, = [p for p in packet_files if p != packet]
+    assert len(new_packet.read_text().splitlines()) == 1
+    assert packet.read_bytes() == before
+

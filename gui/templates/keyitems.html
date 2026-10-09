@@ -1,6 +1,7 @@
 {% extends "workbench_page.html" %}
 {% block title %}Key Items{% endblock %}
 {% block page_archetype %}browser{% endblock %}
+{% block shell_mode %}dense{% endblock %}
 {% block page_class %}keyitems-page{% endblock %}
 {% block page_heading %}Key Items{% endblock %}
 {% block page_status %}<span class="wb-readonly-badge">Read only</span>{% endblock %}
@@ -10,37 +11,121 @@
 {% if total_pages > 1 %}
 <form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;">
   <input type="hidden" name="q" value="{{ q }}">
+  <input type="hidden" name="readiness" value="{{ readiness_filter }}">
   {% if page > 1 %}
-  <a class="chip" href="/keyitems?q={{ q }}&page={{ page - 1 }}">&larr; prev</a>
+  <a class="chip" href="/keyitems?q={{ q|urlencode }}&readiness={{ readiness_filter|urlencode }}&page={{ page - 1 }}">&larr; prev</a>
   {% endif %}
   <span class="muted">page</span>
   <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
   <span class="muted">of {{ total_pages }}</span>
   <button type="submit">Go</button>
   {% if page < total_pages %}
-  <a class="chip" href="/keyitems?q={{ q }}&page={{ page + 1 }}">next &rarr;</a>
+  <a class="chip" href="/keyitems?q={{ q|urlencode }}&readiness={{ readiness_filter|urlencode }}&page={{ page + 1 }}">next &rarr;</a>
   {% endif %}
 </form>
 {% endif %}
 {% endmacro %}
 
 {% block page_body %}
+<style>
+.keyitems-page .ki-intro{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.keyitems-page .ki-help{font-size:12px;max-width:82ch}
+.keyitems-page .ki-name{font-weight:600}
+.keyitems-page .ki-description{max-width:440px;white-space:normal;line-height:1.4}
+.keyitems-page .ki-description details{margin-top:4px}
+.keyitems-page .ki-description summary{cursor:pointer;color:var(--accent,#68a7e0)}
+.keyitems-page .ki-status-help{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px;font-size:12px}
+.keyitems-page .ki-table th{position:sticky;top:0}
+.keyitems-page .ki-table td{vertical-align:top}
+.keyitems-page .ki-table tbody tr:hover{background:rgba(128,128,128,.07)}
+.keyitems-page .ki-inspector{border:1px solid var(--border-color,#58616b);border-radius:8px;padding:14px;margin:12px 0}
+.keyitems-page .ki-inspector[hidden]{display:none}
+.keyitems-page .ki-inspector-header{display:flex;justify-content:space-between;align-items:start;gap:12px}
+.keyitems-page .ki-inspector-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:10px}
+.keyitems-page .ki-inspector-section{min-width:0;overflow-wrap:anywhere}
+.keyitems-page .ki-inspector-section h4{margin:4px 0}
+.keyitems-page .ki-inspector-section p{white-space:pre-wrap}
+.keyitems-page .ki-item-row[aria-selected="true"]{outline:2px solid var(--accent,#68a7e0);outline-offset:-2px}
+.keyitems-page .ki-select{white-space:nowrap}
+</style>
+<div class="ki-intro">
+  <span class="chip">Client ↔ server key-item reference</span>
+  <span class="muted ki-help">Search names, inspect missing/drifted enum mappings, and follow recorded capture observations. This page does not edit character ownership.</span>
+</div>
 <form class="search wb-filter-row" method="get">
-  <input type="text" name="q" value="{{ q }}" placeholder="search by name, e.g. Zeruhn">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search key-item name or client ID (e.g. Zeruhn or 123)" aria-label="Search key items">
+  <label for="ki-global-readiness">Server readiness</label>
+  <select name="readiness" id="ki-global-readiness">
+    {% for value, label in [('all','All statuses'),('clean','Clean'),('drifted','Drifted'),('wrong_name','Wrong name at ID'),('missing','Missing')] %}
+    <option value="{{ value }}"{% if readiness_filter == value %} selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
   <button type="submit">Search</button>
 </form>
-{% if q %}
-<div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} result(s)</strong><span class="muted">for "{{ q }}"</span><span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
+<p class="muted">Server readiness filters all matching records before pagination. The quick filters below affect only the loaded page.</p>
+<div class="ki-status-help" aria-label="Readiness status definitions">
+  <span><span class="pill exists">clean</span> same identity at this ID</span>
+  <span><span class="pill gap">drifted</span> name exists at a different server ID</span>
+  <span><span class="pill mismatch">wrong name</span> ID belongs to another key item</span>
+  <span><span class="pill mismatch">missing</span> no matching enum found</span>
+</div>
+<div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} result(s)</strong>{% if q %}<span class="muted">for "{{ q }}"</span>{% else %}<span class="muted">Browse all key items</span>{% endif %}<span class="chip">Server status: {{ readiness_filter }}</span><span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
 {{ pager() }}
-<div class="table-wrap"><table>
-  <tr><th>id</th><th>name</th><th>readiness</th><th>enum / scripting constant</th><th>description</th>
+<div class="ki-intro" style="margin:10px 0">
+  <label for="ki-status-filter">Show mapping status</label>
+  <select id="ki-status-filter" aria-label="Filter visible key items by mapping status">
+    <option value="all">All statuses on this page</option>
+    <option value="clean">Clean</option>
+    <option value="drifted">Drifted</option>
+    <option value="wrong_name">Wrong name at ID</option>
+    <option value="missing">Missing</option>
+  </select>
+  <label for="ki-page-filter">Find in current page</label>
+  <input id="ki-page-filter" type="search" placeholder="Name, ID or description" aria-label="Filter current results">
+  <span id="ki-visible-count" class="muted" role="status"></span>
+</div>
+<section id="ki-inspector" class="ki-inspector" aria-label="Selected key item" hidden>
+  <div class="ki-inspector-header">
+    <div><h3 id="ki-inspector-title" style="margin:0"></h3><span id="ki-inspector-id" class="muted mono"></span></div>
+    <button type="button" id="ki-inspector-close" aria-label="Close key-item details">Close</button>
+  </div>
+  <div class="ki-inspector-grid">
+    <div class="ki-inspector-section"><h4>Client description</h4><p id="ki-inspector-description"></p></div>
+    <div class="ki-inspector-section"><h4>LSB mapping</h4><div id="ki-inspector-lsb"></div></div>
+    <div class="ki-inspector-section"><h4>Topaz mapping</h4><div id="ki-inspector-topaz"></div></div>
+    <div class="ki-inspector-section"><h4>Recorded evidence</h4><div id="ki-inspector-evidence"></div></div>
+  </div>
+  <div class="ki-intro" style="margin-top:14px">
+    <button type="button" id="ki-copy-id">Copy client ID</button>
+    <button type="button" id="ki-copy-name">Copy name</button>
+    <a href="/features/trace" id="ki-feature-link" class="chip">Search Feature Trace</a>
+    <a href="/wiki" id="ki-wiki-link" class="chip">Search Wiki</a>
+    <a href="/character-editor" class="chip">Character Editor</a>
+    <span id="ki-copy-result" role="status" class="muted"></span>
+  </div>
+  <section class="ki-inspector-section" aria-label="Lua source references">
+    <h4>Lua dependencies</h4>
+    <label for="ki-lineage">Source lineage</label>
+    <select id="ki-lineage"><option value="lsb">LSB</option>{% if backport_enabled() %}<option value="topaz">Topaz</option>{% endif %}</select>
+    <span id="ki-lua-status" class="muted" role="status"></span>
+    <label for="ki-lua-operation">Operation</label>
+    <select id="ki-lua-operation"><option value="all">All</option><option value="require">Requires</option><option value="grant">Grants</option><option value="remove">Removes</option></select>
+    <p id="ki-lua-summary" class="muted" role="status"></p>
+    <details id="ki-lua-limitations"><summary>Evidence limitations</summary><ul id="ki-lua-limitations-list"></ul></details>
+    <div id="ki-lua-results"></div>
+  </section>
+  <p class="muted" style="margin-bottom:0">Feature Trace and Wiki searches use the selected display name; search results are evidence candidates, not verified server-identity matches. Identifiers may differ by server lineage. Verify the mapping before using a numeric ID in scripts.</p>
+</section>
+<div class="table-wrap"><table class="ki-table">
+  <tr><th>Details</th><th>id</th><th>name</th><th>readiness</th><th>enum / scripting constant</th><th>description</th>
     {% if backport_enabled() %}<th>Topaz readiness (backport)</th><th>Topaz enum constant</th>{% endif %}
   </tr>
   {% for r in rows %}
   {% set rd = r.readiness %}
-  <tr>
-    <td class="mono">{{ r.keyitem_id }}</td>
-    <td>{{ r.name }}</td>
+  <tr class="ki-item-row" data-ki-status="{{ rd.status }}" data-ki-text="{{ (r.keyitem_id|string ~ ' ' ~ r.name ~ ' ' ~ (r.description or ''))|lower|e }}">
+    <td><button type="button" class="ki-select" aria-label="Inspect {{ r.name }} key item">Inspect</button></td>
+    <td class="mono" id="ki-{{ r.keyitem_id }}">{{ r.keyitem_id }}</td>
+    <td><span class="ki-name">{{ r.name }}</span></td>
     <td>
       {% if rd.status == "clean" %}<span class="pill exists">clean</span>
       {% elif rd.status == "drifted" %}<span class="pill gap">drifted</span>
@@ -58,7 +143,14 @@
         <span class="muted">not implemented</span>
       {% endif %}
     </td>
-    <td>{{ r.description[:120] }}</td>
+    <td class="ki-description">
+      {% if r.description %}
+        {% if r.description|length > 120 %}
+        <span>{{ r.description[:120] }}…</span>
+        <details><summary>Full description</summary><div>{{ r.description }}</div></details>
+        {% else %}{{ r.description }}{% endif %}
+      {% else %}<span class="muted">No client description available</span>{% endif %}
+    </td>
     {% if r.topaz_readiness %}
     {% set trd = r.topaz_readiness %}
     <td>
@@ -83,9 +175,9 @@
     {% endif %}
   </tr>
   {% if r.capture_events %}
-  <tr>
+  <tr class="ki-evidence-row">
     <td></td>
-    <td colspan="{{ 6 if backport_enabled() else 4 }}">
+    <td colspan="{{ 7 if backport_enabled() else 5 }}">
       <span class="muted">observed in real captures:</span>
       {% for ev in r.capture_events %}
       <a class="chip mono" href="/captures/{{ ev.capture_id }}" title="{{ ev.zone_name }} ({{ '%.1f'|format(ev.x) }}, {{ '%.1f'|format(ev.y) }}, {{ '%.1f'|format(ev.z) }})">#{{ ev.capture_id }} {{ ev.event_type }} @ {{ ev.zone_name }}</a>
@@ -96,5 +188,163 @@
   {% endfor %}
 </table></div>
 {{ pager() }}
-{% endif %}
+<script>
+(function () {
+  const status = document.getElementById('ki-status-filter');
+  const search = document.getElementById('ki-page-filter');
+  const count = document.getElementById('ki-visible-count');
+  if (!status || !search || !count) return;
+  const rows = Array.from(document.querySelectorAll('.ki-table .ki-item-row'));
+  const inspector = document.getElementById('ki-inspector');
+  const setText = (id, value) => { document.getElementById(id).textContent = value; };
+  function copyCell(targetId, cell) {
+    const target = document.getElementById(targetId);
+    target.replaceChildren();
+    if (cell) target.append(cell.cloneNode(true));
+    else target.textContent = 'Not available in this index.';
+  }
+  let selectedRecord = null;
+  async function copyValue(value) {
+    const output = document.getElementById('ki-copy-result');
+    try {
+      if (!navigator.clipboard || !window.isSecureContext) throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(value);
+      output.textContent = 'Copied to clipboard.';
+    } catch (_) {
+      output.textContent = 'Clipboard unavailable; select the value in the inspector to copy.';
+    }
+  }
+  document.getElementById('ki-copy-id').addEventListener('click', () => {
+    if (selectedRecord) copyValue(selectedRecord.id);
+  });
+  document.getElementById('ki-copy-name').addEventListener('click', () => {
+    if (selectedRecord) copyValue(selectedRecord.name);
+  });
+  let luaGeneration = 0;
+  let luaRefs = [];
+  function displayLuaReferences() {
+    const results = document.getElementById('ki-lua-results');
+    const selected = document.getElementById('ki-lua-operation').value;
+    const refs = luaRefs.filter(ref => selected === 'all' || ref.operation === selected);
+    const list = document.createElement('ul');
+    for (const ref of refs) {
+      const item = document.createElement('li');
+      const label = document.createElement('strong');
+      label.textContent = String(ref.operation || 'reference') + ' · ';
+      const location = document.createElement('code');
+      location.textContent = String(ref.source_path || '') + ':' + String(ref.source_line || '');
+      const copy = document.createElement('button');
+      copy.type = 'button';
+      copy.textContent = 'Copy location';
+      copy.addEventListener('click', () => copyValue(location.textContent));
+      const excerpt = document.createElement('pre');
+      excerpt.textContent = String(ref.source_text || '');
+      excerpt.style.whiteSpace = 'pre-wrap';
+      item.append(label, location, copy, excerpt);
+      list.append(item);
+    }
+    results.replaceChildren(list);
+  }
+  document.getElementById('ki-lua-operation').addEventListener('change', displayLuaReferences);
+  async function loadLua() {
+    const generation = ++luaGeneration;
+    const status = document.getElementById('ki-lua-status');
+    const results = document.getElementById('ki-lua-results');
+    results.replaceChildren();
+    luaRefs = [];
+    document.getElementById('ki-lua-summary').textContent = '';
+    document.getElementById('ki-lua-limitations').hidden = true;
+    if (!selectedRecord) return;
+    status.textContent = 'Finding explicit source references…';
+    try {
+      const params = new URLSearchParams({keyitem_id: selectedRecord.id, lineage: document.getElementById('ki-lineage').value});
+      const response = await fetch('/keyitems/lua-references.json?' + params.toString());
+      if (!response.ok) throw new Error('Source lookup unavailable (' + response.status + ')');
+      const data = await response.json();
+      if (generation !== luaGeneration) return;
+      const refs = Array.isArray(data.references) ? data.references : [];
+      status.textContent = data.message || (refs.length + ' references across ' + (data.matched_scripts || 0) +
+        ' scripts; scanned ' + (data.scanned_files || 0) + (data.truncated ? ' (truncated)' : ''));
+      const counts = data.operation_counts || {};
+      document.getElementById('ki-lua-summary').textContent =
+        'Requires: ' + (counts.require || 0) + ' · Grants: ' + (counts.grant || 0) +
+        ' · Removes: ' + (counts.remove || 0);
+      const limitations = Array.isArray(data.limitations) ? data.limitations : [];
+      const limitationList = document.getElementById('ki-lua-limitations-list');
+      limitationList.replaceChildren();
+      for (const message of limitations) {
+        const line = document.createElement('li');
+        line.textContent = String(message);
+        limitationList.append(line);
+      }
+      document.getElementById('ki-lua-limitations').hidden = limitations.length === 0;
+      luaRefs = refs;
+      displayLuaReferences();
+    } catch (error) {
+      if (generation === luaGeneration) status.textContent = String(error.message || error);
+    }
+  }
+  document.getElementById('ki-lineage').addEventListener('change', loadLua);
+  function inspect(row) {
+    const cells = row.cells;
+    rows.forEach(item => item.removeAttribute('aria-selected'));
+    row.setAttribute('aria-selected', 'true');
+    selectedRecord = {id: cells[1].textContent.trim(), name: cells[2].textContent.trim()};
+    document.getElementById('ki-feature-link').href = '/features/trace?' + new URLSearchParams({q: selectedRecord.name});
+    document.getElementById('ki-wiki-link').href = '/wiki?' + new URLSearchParams({q: selectedRecord.name});
+    setText('ki-copy-result', '');
+    setText('ki-inspector-title', selectedRecord.name);
+    setText('ki-inspector-id', 'Client reference ID: ' + cells[1].textContent.trim());
+    const fullDescription = cells[5].querySelector('details div');
+    setText('ki-inspector-description', (fullDescription || cells[5]).textContent.trim());
+    const lsb = document.createElement('div');
+    lsb.append(cells[3].cloneNode(true), document.createTextNode(' — '), cells[4].cloneNode(true));
+    document.getElementById('ki-inspector-lsb').replaceChildren(lsb);
+    const topaz = document.getElementById('ki-inspector-topaz');
+    topaz.replaceChildren();
+    if (cells.length > 6) {
+      topaz.append(cells[6].cloneNode(true), document.createTextNode(' — '), cells[7].cloneNode(true));
+    } else topaz.textContent = 'Topaz comparison not enabled.';
+    const evidence = row.nextElementSibling;
+    const evidenceTarget = document.getElementById('ki-inspector-evidence');
+    evidenceTarget.replaceChildren();
+    if (evidence && evidence.classList.contains('ki-evidence-row')) {
+      evidenceTarget.append(evidence.cells[1].cloneNode(true));
+    } else evidenceTarget.textContent = 'No capture evidence linked to this item.';
+    inspector.hidden = false;
+    loadLua();
+    inspector.scrollIntoView({block:'nearest',behavior:'smooth'});
+  }
+  rows.forEach(row => row.querySelector('.ki-select').addEventListener('click', () => inspect(row)));
+  document.getElementById('ki-inspector-close').addEventListener('click', () => {
+    inspector.hidden = true;
+    selectedRecord = null;
+    luaGeneration++;
+    rows.forEach(item => item.removeAttribute('aria-selected'));
+  });
+  function applyFilters() {
+    const term = search.value.trim().toLocaleLowerCase();
+    let visible = 0;
+    for (const row of rows) {
+      const matches = (status.value === 'all' || row.dataset.kiStatus === status.value)
+        && (!term || (row.dataset.kiText || '').includes(term));
+      row.hidden = !matches;
+      const evidence = row.nextElementSibling;
+      if (evidence && evidence.classList.contains('ki-evidence-row')) evidence.hidden = !matches;
+      if (matches) visible++;
+    }
+    count.textContent = visible + ' of ' + rows.length + ' results visible on this page';
+    const selected = rows.find(row => row.getAttribute('aria-selected') === 'true');
+    if (selected && selected.hidden) {
+      selected.removeAttribute('aria-selected');
+      inspector.hidden = true;
+      selectedRecord = null;
+      luaGeneration++;
+    }
+  }
+  status.addEventListener('change', applyFilters);
+  search.addEventListener('input', applyFilters);
+  applyFilters();
+})();
+</script>
 {% endblock %}

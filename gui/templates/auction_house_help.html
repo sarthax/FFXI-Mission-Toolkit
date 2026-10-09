@@ -10,6 +10,20 @@
   {% include "_auction_house_nav.html" %}
 
   <section class="panel">
+    <h2>Current status — core DSP complete / maintenance mode (October 9, 2026)</h2>
+    <p>The project owner reports stable DSP operation. All planned core administration and final QOL implementations are merged, including item icons, cross-links, saved browser-local filters and favorites, CSV exports, shared AH item search, and contextual Add-to-Inbox actions. Individual new recovery/scheduled-send/augment execution paths still require controlled DSP Test acceptance.</p>
+    <ul>
+      <li><strong>Items / Sellers / Buyers:</strong> icon-backed references, hover facts, Item Browser and Item Editor links, history and market information. Item Browser opens selected AH items via <code>/auction-house?item=ID</code>.</li>
+      <li><strong>Restock / Cleanup / Inbox:</strong> searchable item selection, browse panels, item icons and standard guarded previews. The shared picker foundation is in AH; Character Editor is not yet migrated to the same JS component.</li>
+      <li><strong>Workspace &amp; exports:</strong> remembered non-sensitive tabs/filters/item and seller selection, local item/seller favorites, and read-only CSV exports for Items, Sellers, Restock and Cleanup. Local preferences stay in this browser.</li>
+      <li><strong>Recovery:</strong> durable MyISAM case evidence and per-recipient Inbox attempt records. Pending/in-flight outcomes require manual investigation; neither journal authorizes automatic repair or retry.</li>
+      <li><strong>Schedules:</strong> one-time named Test-profile rewards only, revalidated at execution, cancellable before claiming, with review-required outcomes on uncertainty. No unattended automatic retries.</li>
+      <li><strong>Augmented rewards:</strong> up to four validated augment slots, saved named configurations and encoding previews. Experimental one-recipient DSP Test mail writes are <strong>off by default</strong>; confirm augment survival after Mog pickup before treating this as verified.</li>
+    </ul>
+    <p><strong>Remaining acceptance:</strong> controlled DSP Test interruption cases, scheduler send/cancel tests, augmented-item pickup, multi-day snapshots, then separate Topaz testing. LSB writes and Live writes remain out of scope.</p>
+  </section>
+
+  <section class="panel">
     <h2>Capability model</h2>
     <p>The Auction House module is not globally write-enabled. It combines broad read-only administration with narrowly scoped DSP/Topaz <strong>Test-environment</strong> executors. Live environments remain blocked.</p>
     <table class="cap-table"><thead><tr><th>Area</th><th>Status</th><th>Notes</th></tr></thead><tbody>
@@ -87,7 +101,7 @@
     <ul>
       <li>No unrestricted or Live write mode.</li>
       <li>No automatic background cleanup or recurring mutation.</li>
-      <li>No augmented/custom reward-item <code>extra</code> payload generation until DSP/Topaz serialization is proven.</li>
+      <li>Augmented item-extra encoding/preview is implemented for verified source-backed augment IDs. Experimental DSP Test-only mail delivery requires a separate opt-in and in-game pickup/augment-persistence acceptance; Topaz/LSB augmented writes are not enabled.</li>
       <li>No fabricated audit history for mutations that occurred before execution-event recording was added.</li>
       <li>LSB execution remains deferred until a runnable LSB Test environment exists.</li>
     </ul>

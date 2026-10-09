@@ -7,7 +7,7 @@
 {% block page_status %}<span class="wb-write-badge">Operational console: guarded DSP/Topaz Test-only mutations; Live writes remain blocked</span>{% endblock %}
 {% block page_help %}Unified Auction House operations console for economy, items, sellers, buyers, restock, arbitrage, cleanup, presets, inbox, and linked tools. Existing preview tokens, typed confirmations, environment gates, replay protection, and fail-closed safety behavior remain unchanged.{% endblock %}
 {% block page_body %}
-<link rel="stylesheet" href="/static/auction_house_console.css?v=20261005k">
+<link rel="stylesheet" href="/static/auction_house_console.css?v=20261009item">
 <div class="ahc" id="ahConsole">
   <div class="ahc-top">
     <span id="ahcEnv" class="ahc-chip">checking…</span>
@@ -41,6 +41,8 @@
     </details>
   </div>
 
+  <details class="ahc-card" id="ahWatchPanel" style="margin:7px 10px"><summary><strong>★ Watchlist</strong> <small class="mut">Favorite items and sellers · stored in this browser</small></summary><div id="ahWatchEntries" class="ahc-bar" style="flex-wrap:wrap"></div><button class="b" id="ahWatchClear" type="button">Clear watchlist</button></details>
+
   <div class="ahc-body">
 
     <section class="ahc-pane" id="p-items">
@@ -48,7 +50,7 @@
         <div class="ahc-col"><header><b>Categories</b></header><div class="ahc-scroll ahc-tree" id="itTree"></div></div>
         <div class="ahc-col">
           <header><input id="itQ" type="search" placeholder="Filter items…" style="flex:1"><select id="itStatus" title="Which items to show"><option value="active">Active listings</option><option value="unlisted">Unlisted</option><option value="all">All AH items</option></select><small class="mut" id="itCatLbl"></small></header>
-          <div class="ahc-scroll" id="itList"></div>
+          <div class="ahc-bar"><button class="b" data-ah-export="items" type="button">Export item summary CSV</button></div><div class="ahc-scroll" id="itList"></div>
         </div>
         <div class="ahc-col" id="itDetail"><div class="ahc-empty">Pick a category, then an item, to see and manage every listing for it.</div></div>
       </div>
@@ -58,7 +60,7 @@
       <div class="ahc-split">
         <div class="ahc-col">
           <header><input id="seQ" type="search" placeholder="Filter sellers…" style="flex:1"><select id="seSort"><option value="listings">Listings</option><option value="value">Value</option><option value="oldest_days">Oldest</option><option value="name">Name</option></select></header>
-          <div class="ahc-scroll" id="seList"></div>
+          <div class="ahc-bar"><button class="b" data-ah-export="sellers" type="button">Export seller summary CSV</button></div><div class="ahc-scroll" id="seList"></div>
         </div>
         <div class="ahc-col" id="seDetail"><div class="ahc-empty">Select a seller to see everything they have posted.</div></div>
       </div>
@@ -83,14 +85,14 @@
           <div class="mut" id="rsPresetInfo" style="font-size:12px"></div>
           <label>Seller characters <small class="mut" id="rsSellerHint">listings are spread across everyone you pick</small></label>
           <div class="ahc-charpick" id="rsChars"></div>
-          <label>Add item <input id="rsItemQ" placeholder="search item name or id" autocomplete="off"></label>
-          <div class="ahc-sug" id="rsSug" hidden></div>
+          <label>Add item</label><div class="ahc-bar"><input id="rsItemQ" type="search" placeholder="Search item name or ID…" autocomplete="off" style="flex:1"><button class="b" id="rsBrowse" type="button" aria-expanded="false">Browse items</button></div>
+          <div class="ahc-sug" id="rsSug" hidden></div><div id="rsBrowseBox" class="ahc-card" hidden><div class="ahc-bar"><input id="rsBrowseQ" type="search" placeholder="Filter auction-eligible items…" style="flex:1"></div><small class="mut" id="rsBrowseCount"></small><div class="ahc-scroll" id="rsBrowseRows" style="max-height:250px"></div></div>
           <div class="ahc-bar"><label>Or add a whole category <select id="rsCat"><option value="">Choose category…</option></select></label>
             <label>Price <input id="rsCatPrice" type="number" min="1" placeholder="blank = avg sale" style="width:110px"></label>
             <label>Target <input id="rsCatTarget" type="number" min="1" value="3" style="width:60px"></label>
             <label>Max items <input id="rsCatLimit" type="number" min="1" max="50" value="50" style="width:60px"></label>
             <button class="b" id="rsCatAdd" type="button">Add category items</button></div>
-          <div class="ahc-scroll"><table><thead><tr><th>Item</th><th class="n">Now</th><th class="n">Target listings</th><th class="n">Price</th><th>Stack</th><th></th></tr></thead><tbody id="rsRows"></tbody></table></div>
+          <div class="ahc-bar"><button class="b" data-ah-export="restock" type="button">Export restock CSV</button></div><div class="ahc-scroll"><table><thead><tr><th>Item</th><th class="n">Now</th><th class="n">Target listings</th><th class="n">Price</th><th>Stack</th><th></th></tr></thead><tbody id="rsRows"></tbody></table></div>
           <div class="ahc-bar ahc-bar-bottom"><button class="b pri" id="rsPreview" type="button">Preview restock</button><small>Synthetic supply — no inventory removed, no fee charged. Target = total active listings wanted for the item.</small></div>
         </div>
         <div class="ahc-card"><h3>Plan</h3><div class="ahc-scroll" id="rsPlan"><div class="ahc-empty">Preview shows current stock vs target and how many listings will be created.</div></div></div>
@@ -120,8 +122,8 @@
             <label class="wide">Seller <input id="cuSellerQ" placeholder="search seller name or id (blank = any seller)" autocomplete="off"><input id="cuSellerId" type="hidden"><input id="cuSellerName" type="hidden"></label>
             <div class="ahc-sug wide" id="cuSellerSug" hidden></div>
             <label>Category <select id="cuCategory"><option value="">Any category</option></select></label>
-            <label>Item <input id="cuItemQ" placeholder="search item name or id" autocomplete="off"><input id="cuItemId" type="hidden"></label>
-            <div class="ahc-sug wide" id="cuItemSug" hidden></div>
+            <label>Item <input id="cuItemQ" type="search" placeholder="Search item name or ID" autocomplete="off"><input id="cuItemId" type="hidden"></label>
+            <div class="ahc-sug wide" id="cuItemSug" hidden></div><div class="wide"><button class="b" id="cuBrowse" type="button" aria-expanded="false">Browse items…</button><div id="cuSelectedItem" class="mut" aria-live="polite"></div><div id="cuBrowseBox" class="ahc-card" hidden><input id="cuBrowseQ" type="search" placeholder="Filter auction-eligible items…" style="width:100%"><small class="mut" id="cuBrowseCount"></small><div class="ahc-scroll" id="cuBrowseRows" style="max-height:250px"></div></div></div>
             <label>Min price <input id="cuMinPrice" type="number" min="0"></label>
             <label>Max price <input id="cuMaxPrice" type="number" min="0"></label>
             <label>Older than (days) <input id="cuAgeDays" type="number" min="0" step="0.1" value="30"></label>
@@ -133,7 +135,7 @@
         <div class="ahc-card">
           <h3>Targets <small class="mut" id="cuSummary"></small></h3>
           <div class="ahc-bar"><button class="b" id="cuBuy" type="button" disabled>Admin Buy all</button><button class="b" id="cuReturn" type="button" disabled>Return all</button><small id="cuAction" class="mut"></small></div>
-          <div class="ahc-scroll" id="cuRows"><div class="ahc-empty">Set rules and preview to see exactly which listings match.</div></div>
+          <div class="ahc-bar"><button class="b" data-ah-export="cleanup" type="button">Export preview CSV</button></div><div class="ahc-scroll" id="cuRows"><div class="ahc-empty">Set rules and preview to see exactly which listings match.</div></div>
         </div>
       </div>
     </section>
@@ -160,8 +162,13 @@
         <div class="ahc-card">
           <h3>Item bundle</h3>
           <div class="ahc-bar"><select id="ibTpl" style="flex:1"><option value="">Ad hoc bundle</option></select><input id="ibName" placeholder="template name" style="flex:1"></div>
-          <input id="ibItemQ" placeholder="search item name or id to add" autocomplete="off">
+          <div class="ahc-bar"><input id="ibItemQ" type="search" placeholder="Search items by name or ID…" autocomplete="off" style="flex:1"><button class="b" id="ibItemBrowse" type="button" aria-expanded="false" aria-controls="ibItemBrowser">Browse items</button></div>
           <div class="ahc-sug" id="ibSug" hidden></div>
+          <div id="ibItemBrowser" class="ahc-card" hidden style="margin:8px 0">
+            <div class="ahc-bar"><input id="ibItemFilter" type="search" placeholder="Filter items by name or ID…" style="flex:1"><select id="ibItemCategory" aria-label="Auction House category"><option value="">All categories</option></select></div>
+            <div class="ahc-bar"><small id="ibItemCount" class="mut" aria-live="polite">Search or select a category to browse items.</small></div>
+            <div id="ibItemChoices" class="ahc-scroll" style="max-height:260px"></div>
+          </div>
           <div class="ahc-bar"><input id="ibGil" type="number" min="1" max="999999999" placeholder="gil amount" style="flex:1"><button class="b" id="ibGilAdd" type="button">Add gil</button></div>
           <div class="ahc-scroll"><table><thead><tr><th>Item</th><th class="n">Qty</th><th></th></tr></thead><tbody id="ibRows"></tbody></table></div>
           <div class="ahc-bar"><button class="b" id="ibSave" type="button">Save template</button><button class="b" id="ibDel" type="button">Delete template</button></div>
@@ -182,8 +189,15 @@
         </div>
         <div class="ahc-card">
           <h3>Custom augmented item preview</h3>
-          <small>Research-only preview: encode up to four augment ID/value pairs defined by the active server. Mog delivery is blocked until its augmented-item transfer is verified.</small>
-          <div class="ahc-bar"><input id="ibAugItemId" type="number" min="1" placeholder="Item ID" style="flex:1"><input id="ibAugPairs" placeholder="Augment ID:value, ID:value" style="flex:2"></div>
+          <small>Select equipment, then choose up to four bonuses by stat name and amount, as in Character Editor. Delivery is experimental and DSP Test-only.</small>
+          <div class="ahc-bar"><select id="ibAugSaved" style="flex:1"><option value="">Saved augmented rewards…</option></select><button class="b" id="ibAugLoad" type="button">Load</button><button class="b" id="ibAugSave" type="button">Save as…</button><button class="b" id="ibAugDelete" type="button">Delete</button></div>
+          <div class="ahc-bar"><input id="ibAugItemSearch" type="search" placeholder="Search equipment by name or item ID…" autocomplete="off" style="flex:1"><button class="b" id="ibAugClear" type="button">Clear</button></div>
+          <div id="ibAugItemResults" class="ahc-sug" style="position:static;max-height:210px;overflow:auto" hidden></div>
+          <div id="ibAugChosen" class="ahc-card" style="display:none;margin:8px 0"></div>
+          <div class="ahc-bar"><input id="ibAugStatSearch" type="search" placeholder="Filter augment stats, effects, or combined bonuses…" style="flex:1"></div>
+          <div id="ibAugSlots"></div>
+          <div id="ibAugSummary" class="mut" aria-live="polite">Choose an item and up to four augments.</div>
+          <div hidden><input id="ibAugItemId" type="number"><input id="ibAugPairs"></div>
           <div class="ahc-bar"><button class="b" id="ibAugInspect" type="button">Inspect custom augment</button><button class="b" id="ibAugSendPreview" type="button">Preview DSP Test mail</button><a href="/auction-house/rewards/augments/catalog.json" target="_blank" rel="noopener">Available augment IDs</a></div>
           <pre id="ibAugResult" style="white-space:pre-wrap;overflow:auto;max-height:260px;font-size:11px"></pre>
         </div>
@@ -200,5 +214,7 @@
   </aside>
   <div class="ahc-toast" id="ahcToast"></div>
 </div>
-<script src="/static/auction_house_console.js?v=20261008c"></script>
+<script src="/static/workbench_item_picker.js?v=20261009a"></script>
+<script src="/static/auction_house_console.js?v=20261009watch2"></script>
+<script src="/static/auction_house_augment_picker.js?v=20261009saved"></script>
 {% endblock %}

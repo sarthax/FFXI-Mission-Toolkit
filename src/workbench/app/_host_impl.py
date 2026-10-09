@@ -161,6 +161,12 @@ def render_live_client_console(request: Request, style: str, body: str):
     })
 
 app.include_router(create_replay_console_router(render_live_client_console))
+# Opt-in local Live Bridge management; disabled until explicitly started in UI.
+from workbench.runtime.live_client.bridge_managed import ManagedLiveReceiver
+from workbench.runtime.live_client.bridge_management_api import create_bridge_management_router
+live_client_bridge_manager = ManagedLiveReceiver()
+app.include_router(create_bridge_management_router(live_client_bridge_manager))
+
 from workbench.runtime.live_client.setup_api import create_recording_upload_router
 app.include_router(create_recording_upload_router(REPO_ROOT / "data" / "live_client_recordings", live_client_replay_registry))
 from workbench.runtime.live_client.waypoint_library import WaypointLibrary
@@ -4466,55 +4472,132 @@ KEYITEMS_PAGE_SIZE = 100
 
 
 @app.get("/keyitems", response_class=HTMLResponse)
-def keyitems(request: Request, q: str = "", page: int = 1):
+def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all"):
+    if readiness not in {"all", "clean", "drifted", "wrong_name", "missing"}:
+        readiness = "all"
     con = get_con()
     rows = []
     total = 0
     total_pages = 1
-    if q:
-        page = max(1, page)
+    q = q.strip()
+    numeric_id = int(q) if len(q) <= 18 and q.isascii() and q.isdecimal() else None
+    predicate = "(name LIKE ? OR keyitem_id = ?)" if numeric_id is not None else "name LIKE ?"
+    args = (f"%{q}%", numeric_id) if numeric_id is not None else (f"%{q}%",)
+    page = max(1, page)
+    offset = (page - 1) * KEYITEMS_PAGE_SIZE
+    if readiness != "all":
+        # Exact full-catalog filtering is applied before pagination.
+        # Preserve cross-lineage identity guards from the normal page path.
+        candidates = con.execute(
+            "SELECT keyitem_id, name FROM key_items WHERE " + predicate + " ORDER BY name",
+            args,
+        ).fetchall()
+        candidates = [row for row in candidates if ingest_global_tables.resolve_keyitem_readiness(
+            con, row["keyitem_id"], row["name"])["status"] == readiness]
+        total = len(candidates)
+        total_pages = max(1, (total + KEYITEMS_PAGE_SIZE - 1) // KEYITEMS_PAGE_SIZE)
+        page = min(page, total_pages)
         offset = (page - 1) * KEYITEMS_PAGE_SIZE
+        page_ids = [row["keyitem_id"] for row in candidates[offset:offset + KEYITEMS_PAGE_SIZE]]
+        if page_ids:
+            placeholders = ",".join("?" for _ in page_ids)
+            ki_rows = con.execute(
+                "SELECT keyitem_id, name, plural, description FROM key_items "
+                "WHERE keyitem_id IN (" + placeholders + ") ORDER BY name",
+                page_ids,
+            ).fetchall()
+        else:
+            ki_rows = []
+    else:
         total = con.execute(
-            "SELECT COUNT(*) FROM key_items WHERE name LIKE ?", (f"%{q}%",)
+            "SELECT COUNT(*) FROM key_items WHERE " + predicate, args
         ).fetchone()[0]
         total_pages = max(1, (total + KEYITEMS_PAGE_SIZE - 1) // KEYITEMS_PAGE_SIZE)
+        page = min(page, total_pages)
+        offset = (page - 1) * KEYITEMS_PAGE_SIZE
         ki_rows = con.execute(
-            "SELECT keyitem_id, name, plural, description FROM key_items WHERE name LIKE ? "
-            "ORDER BY name LIMIT ? OFFSET ?",
-            (f"%{q}%", KEYITEMS_PAGE_SIZE, offset),
+            "SELECT keyitem_id, name, plural, description FROM key_items WHERE " + predicate +
+            " ORDER BY name LIMIT ? OFFSET ?",
+            (*args, KEYITEMS_PAGE_SIZE, offset),
         ).fetchall()
-        topaz_ready = backport_enabled()
-        for r in ki_rows:
-            readiness = ingest_global_tables.resolve_keyitem_readiness(con, r["keyitem_id"], r["name"])
-            # Backport-module-only extra check -- skipped entirely (no query run) when the user
-            # has no Topaz/DSP checkout configured, so the core module's page stays fast for a
-            # typical LSB-only user.
-            topaz_readiness = (
-                ingest_global_tables.resolve_keyitem_readiness(
-                    con, r["keyitem_id"], r["name"], table="topaz_keyitems"
-                ) if topaz_ready else None
-            )
-            # Joined by NAME, not id -- capture_ki_events.keyitem_id is whatever real id the
-            # client itself reported live, which is exactly what's known to drift from
-            # key_items.keyitem_id (this row's own readiness check above proves it: e.g. "map of
-            # Ilrusi Atoll" is id 2763 in key_items but the client-observed real id is 1869).
-            # Name is the one field both sources get from real client text, so it's the
-            # reliable join key here, not either id.
-            capture_events = con.execute(
-                """SELECT capture_id, event_type, x, y, z, zone_name FROM capture_ki_events
-                   WHERE LOWER(keyitem_name) = LOWER(?)""" + _rq_exclude(con) + " ORDER BY capture_id",
-                (r["name"],),
-            ).fetchall()
-            rows.append({
-                "keyitem_id": r["keyitem_id"], "name": r["name"], "plural": r["plural"],
-                "description": r["description"], "readiness": readiness,
-                "topaz_readiness": topaz_readiness,
-                "capture_events": capture_events,
-            })
+    topaz_ready = backport_enabled()
+    for r in ki_rows:
+        item_readiness = ingest_global_tables.resolve_keyitem_readiness(con, r["keyitem_id"], r["name"])
+        # Backport-module-only extra check -- skipped entirely (no query run) when the user
+        # has no Topaz/DSP checkout configured, so the core module's page stays fast for a
+        # typical LSB-only user.
+        topaz_readiness = (
+            ingest_global_tables.resolve_keyitem_readiness(
+                con, r["keyitem_id"], r["name"], table="topaz_keyitems"
+            ) if topaz_ready else None
+        )
+        # Joined by NAME, not id -- capture_ki_events.keyitem_id is whatever real id the
+        # client itself reported live, which is exactly what's known to drift from
+        # key_items.keyitem_id (this row's own readiness check above proves it: e.g. "map of
+        # Ilrusi Atoll" is id 2763 in key_items but the client-observed real id is 1869).
+        # Name is the one field both sources get from real client text, so it's the
+        # reliable join key here, not either id.
+        capture_events = con.execute(
+            """SELECT capture_id, event_type, x, y, z, zone_name FROM capture_ki_events
+               WHERE LOWER(keyitem_name) = LOWER(?)""" + _rq_exclude(con) + " ORDER BY capture_id",
+            (r["name"],),
+        ).fetchall()
+        rows.append({
+            "keyitem_id": r["keyitem_id"], "name": r["name"], "plural": r["plural"],
+            "description": r["description"], "readiness": item_readiness,
+            "topaz_readiness": topaz_readiness,
+            "capture_events": capture_events,
+        })
     con.close()
     return templates.TemplateResponse(request, "keyitems.html", {
         "q": q, "rows": rows, "page": page, "total": total, "total_pages": total_pages,
+        "readiness_filter": readiness,
     })
+
+
+@app.get("/keyitems/lua-references.json")
+def keyitems_lua_references(keyitem_id: int, lineage: str = "lsb"):
+    """Read-only source citations for a selected client catalog key item."""
+    from fastapi import HTTPException
+    from workbench.devtools.features.key_item_references import discover_key_item_references
+
+    if lineage not in {"lsb", "topaz"}:
+        raise HTTPException(status_code=400, detail="This index currently supports only LSB and Topaz reference identities")
+    con = get_con()
+    try:
+        item = con.execute("SELECT name FROM key_items WHERE keyitem_id = ? LIMIT 2",
+                           (keyitem_id,)).fetchall()
+        if len(item) != 1:
+            raise HTTPException(status_code=404, detail="Key item ID not uniquely present in client catalog")
+        table = "keyitems_ours" if lineage == "lsb" else "topaz_keyitems"
+        ready = ingest_global_tables.resolve_keyitem_readiness(
+            con, keyitem_id, item[0]["name"], table=table)
+    finally:
+        con.close()
+
+    status = ready.get("status")
+    match = ready.get("id_match") if status == "clean" else (
+        ready.get("name_match") if status == "drifted" else None
+    )
+    symbol = match[1] if isinstance(match, (list, tuple)) else match
+    if status not in {"clean", "drifted"} or not symbol:
+        return {"keyitem_id": keyitem_id, "lineage": lineage, "readiness": status,
+                "references": [], "scanned_files": 0, "matched_scripts": 0,
+                "truncated": False,
+                "message": "A verified enum identity is unavailable for this server lineage."}
+
+    from workbench.devtools.indexing import build_lsb_index
+    root = {"lsb": build_lsb_index.LSB_ROOT,
+            "topaz": settings_mod.get_topaz_root()}[lineage]
+    if not root:
+        return {"keyitem_id": keyitem_id, "lineage": lineage, "readiness": status,
+                "symbol": symbol, "references": [], "scanned_files": 0,
+                "matched_scripts": 0, "truncated": False,
+                "message": "No server source checkout configured for this lineage."}
+    result = discover_key_item_references(root, str(symbol), lineage=lineage,
+                                          max_matches=200, max_files=25000)
+    result.update({"keyitem_id": keyitem_id, "readiness": status})
+    return result
 
 
 ZONE_BROWSE_PAGE_SIZE = 100
@@ -5719,6 +5802,182 @@ async def wiki_recovery_apply(request: Request):
     return RedirectResponse(redirect_base + "&recovery_result=applied", status_code=303)
 
 
+@app.get("/wiki/bulk/jp/schedule")
+def wiki_jp_schedule_status():
+    from workbench.devtools.reference import wiki_jp_refresh_schedule
+    return wiki_jp_refresh_schedule.settings(DB_PATH)
+
+
+@app.post("/wiki/bulk/jp/schedule")
+async def wiki_jp_schedule_update(request: Request):
+    from workbench.devtools.reference import wiki_jp_refresh_schedule
+    form=await request.form()
+    try:
+        return wiki_jp_refresh_schedule.configure(
+            DB_PATH,enabled=str(form.get("enabled") or "").lower() in ("on","1","true"),
+            seed=form.get("seed") or "",
+            interval_hours=int(form.get("interval_hours") or 168),
+            page_limit=int(form.get("page_limit") or 50))
+    except (ValueError,TypeError) as exc:
+        return JSONResponse({"error":str(exc)},status_code=400)
+
+
+@app.get("/wiki/bulk/jp/jobs")
+def wiki_jp_crawl_status():
+    from workbench.devtools.reference import wiki_jp_crawl_jobs
+    return {"jobs": wiki_jp_crawl_jobs.status(DB_PATH)}
+
+
+@app.post("/wiki/bulk/jp/start")
+async def wiki_jp_crawl_start(request: Request):
+    from workbench.devtools.reference import wiki_jp_crawl_jobs
+    form = await request.form()
+    try:
+        return {"job_id": wiki_jp_crawl_jobs.start(DB_PATH, form.get("seed") or "", int(form.get("limit") or 50), mode=str(form.get("mode") or "crawl"))}
+    except (ValueError, TypeError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
+@app.post("/wiki/bulk/jp/pause")
+async def wiki_jp_crawl_pause(request: Request):
+    from workbench.devtools.reference import wiki_jp_crawl_jobs
+    form = await request.form()
+    wiki_jp_crawl_jobs.pause(DB_PATH, str(form.get("job_id") or ""))
+    return {"status": "pausing"}
+
+
+@app.post("/wiki/bulk/jp/resume")
+async def wiki_jp_crawl_resume(request: Request):
+    from workbench.devtools.reference import wiki_jp_crawl_jobs
+    form = await request.form()
+    try:
+        wiki_jp_crawl_jobs.resume(DB_PATH, str(form.get("job_id") or ""))
+        return {"status": "queued"}
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
+@app.get("/wiki/bulk/bg/dump-status")
+def wiki_bg_dump_change_status():
+    from workbench.devtools.reference import wiki_bg_dump_jobs
+    from workbench.devtools.reference.scrape_bg_wiki import DUMP_PATH
+    return wiki_bg_dump_jobs.dump_refresh_status(DB_PATH, DUMP_PATH)
+
+
+@app.get("/wiki/bulk/bg/jobs")
+def wiki_bg_dump_status():
+    from workbench.devtools.reference import wiki_bg_dump_jobs
+    return {"jobs": wiki_bg_dump_jobs.status(DB_PATH)}
+
+
+@app.post("/wiki/bulk/bg/start")
+async def wiki_bg_dump_start(request: Request):
+    from workbench.devtools.reference import wiki_bg_dump_jobs
+    from workbench.devtools.reference.scrape_bg_wiki import DUMP_PATH
+    form = await request.form()
+    try:
+        return {"job_id": wiki_bg_dump_jobs.start(DB_PATH, DUMP_PATH, int(form.get("limit") or 50), auto_continue=str(form.get("auto_continue") or "").lower() in ("1", "true", "on"))}
+    except (ValueError, TypeError, OSError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
+@app.post("/wiki/bulk/bg/pause")
+async def wiki_bg_dump_pause(request: Request):
+    from workbench.devtools.reference import wiki_bg_dump_jobs
+    form = await request.form()
+    wiki_bg_dump_jobs.pause(DB_PATH, str(form.get("job_id") or ""))
+    return {"status": "pausing"}
+
+
+@app.post("/wiki/bulk/bg/resume")
+async def wiki_bg_dump_resume(request: Request):
+    from workbench.devtools.reference import wiki_bg_dump_jobs
+    form = await request.form()
+    try:
+        wiki_bg_dump_jobs.resume(DB_PATH, str(form.get("job_id") or ""))
+        return {"status": "queued"}
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
+@app.get("/wiki/bulk/jobs")
+def wiki_bulk_status():
+    from workbench.devtools.reference import wiki_bulk_jobs
+    return {"jobs": wiki_bulk_jobs.status(DB_PATH)}
+
+
+@app.on_event("startup")
+def wiki_scheduler_startup():
+    from workbench.devtools.reference import wiki_sync_schedule
+    wiki_sync_schedule.start_background(DB_PATH)
+    from workbench.devtools.reference import wiki_jp_refresh_schedule
+    wiki_jp_refresh_schedule.start_background(DB_PATH)
+
+
+@app.get("/wiki/bulk/schedule")
+def wiki_bulk_schedule_settings():
+    from workbench.devtools.reference import wiki_sync_schedule
+    return wiki_sync_schedule.settings(DB_PATH)
+
+
+@app.post("/wiki/bulk/schedule")
+async def wiki_bulk_schedule_config(request: Request):
+    from workbench.devtools.reference import wiki_sync_schedule
+    form = await request.form()
+    try:
+        enabled = str(form.get("enabled") or "").lower() in ("true", "on", "1")
+        return wiki_sync_schedule.configure(
+            DB_PATH, enabled=enabled, interval_hours=int(form.get("interval_hours") or 24),
+            page_limit=int(form.get("page_limit") or 50))
+    except (ValueError, TypeError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
+@app.get("/wiki/bulk/overview")
+def wiki_bulk_overview():
+    from workbench.devtools.reference import wiki_sync_overview
+    return wiki_sync_overview.overview(DB_PATH)
+
+
+@app.get("/wiki/bulk/summary")
+def wiki_bulk_sync_summary():
+    from workbench.devtools.reference import wiki_bulk_jobs
+    return wiki_bulk_jobs.sync_summary(DB_PATH)
+
+
+@app.post("/wiki/bulk/start")
+async def wiki_bulk_start(request: Request):
+    from workbench.devtools.reference import wiki_bulk_jobs
+    form = await request.form()
+    try:
+        job_id = wiki_bulk_jobs.start(DB_PATH, int(form.get("limit") or 50), mode=str(form.get("mode") or "missing"))
+        return {"job_id": job_id}
+    except (ValueError, TypeError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
+@app.post("/wiki/bulk/pause")
+async def wiki_bulk_pause(request: Request):
+    from workbench.devtools.reference import wiki_bulk_jobs
+    form = await request.form()
+    try:
+        wiki_bulk_jobs.pause(DB_PATH, str(form.get("job_id") or ""))
+        return {"status": "pausing"}
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
+@app.post("/wiki/bulk/resume")
+async def wiki_bulk_resume(request: Request):
+    from workbench.devtools.reference import wiki_bulk_jobs
+    form = await request.form()
+    try:
+        wiki_bulk_jobs.resume(DB_PATH, str(form.get("job_id") or ""))
+        return {"status": "queued"}
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
 @app.post("/wiki/scrape")
 async def wiki_scrape_url(request: Request):
     form = await request.form()
@@ -5728,6 +5987,94 @@ async def wiki_scrape_url(request: Request):
     except ValueError as exc:
         return JSONResponse({"error": str(exc)}, status_code=400)
     return {"job": job}
+
+
+@app.get("/wiki/snapshot/export")
+def wiki_snapshot_download(source: str = "all"):
+    """Generate a portable archive in a private temporary directory."""
+    from workbench.devtools.reference import wiki_snapshot
+    if source not in (*wiki_snapshot.SOURCES, "all"):
+        return JSONResponse({"error": "Invalid Wiki source"}, status_code=400)
+    directory = Path(tempfile.mkdtemp(prefix="wiki_snapshot_"))
+    destination = directory / f"wiki-{source}.jsonl.gz"
+    try:
+        wiki_snapshot.export_snapshot(DB_PATH, destination, source)
+    except (ValueError, OSError, sqlite3.Error) as exc:
+        shutil.rmtree(directory, ignore_errors=True)
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    from starlette.background import BackgroundTask
+    return FileResponse(str(destination), media_type="application/gzip",
+                        filename=destination.name,
+                        background=BackgroundTask(shutil.rmtree, str(directory), ignore_errors=True))
+
+
+@app.post("/wiki/snapshot/preview")
+async def wiki_snapshot_preview(file: UploadFile = File(...)):
+    """Read-only comparison; temporary upload is deleted after validation."""
+    from workbench.devtools.reference import wiki_snapshot
+    if not (file.filename or "").lower().endswith(".jsonl.gz"):
+        return JSONResponse({"error": "Choose a .jsonl.gz Wiki snapshot"}, status_code=400)
+    path = None
+    try:
+        with tempfile.NamedTemporaryFile(prefix="wiki_preview_", suffix=".jsonl.gz", delete=False) as target:
+            path = Path(target.name)
+            total = 0
+            while True:
+                chunk = await file.read(1024 * 1024)
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > 64 * 1024 * 1024:
+                    raise ValueError("Snapshot upload exceeds 64 MiB limit")
+                target.write(chunk)
+        return {"preview": wiki_snapshot.preview_snapshot(DB_PATH, path)}
+    except (ValueError, OSError, sqlite3.Error, EOFError, KeyError, TypeError, StopIteration) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    finally:
+        await file.close()
+        if path:
+            path.unlink(missing_ok=True)
+
+
+@app.post("/wiki/snapshot/import")
+async def wiki_snapshot_upload(request: Request, file: UploadFile = File(...)):
+    """Validate a small local archive before importing; no arbitrary file paths."""
+    from workbench.devtools.reference import wiki_snapshot
+    if not (file.filename or "").lower().endswith(".jsonl.gz"):
+        return JSONResponse({"error": "Choose a .jsonl.gz Wiki snapshot"}, status_code=400)
+    path = None
+    try:
+        with tempfile.NamedTemporaryFile(prefix="wiki_upload_", suffix=".jsonl.gz", delete=False) as target:
+            path = Path(target.name)
+            total = 0
+            while True:
+                part = await file.read(1024 * 1024)
+                if not part:
+                    break
+                total += len(part)
+                if total > 64 * 1024 * 1024:
+                    raise ValueError("Snapshot upload exceeds 64 MiB limit")
+                target.write(part)
+        result = wiki_snapshot.import_snapshot(DB_PATH, path)
+        return {"result": result}
+    except (ValueError, OSError, sqlite3.Error, EOFError, KeyError, TypeError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    finally:
+        await file.close()
+        if path:
+            path.unlink(missing_ok=True)
+
+
+@app.get("/wiki/diagnose")
+def wiki_diagnose_title(title: str):
+    """Diagnose missing search results against the actual configured database."""
+    con = get_con()
+    try:
+        return wiki_document.diagnose_title(con, title)
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    finally:
+        con.close()
 
 
 @app.get("/wiki/cache-health")

@@ -213,8 +213,20 @@ def packet_evidence_report(path: Path, recording_label: str, frames, *,
                                    'telemetry_frame': matches[0], 'observed_at': row['observed_at'],
                                    'zone_id': row['zone_id'], 'direction': row['direction'],
                                    'reported_opcode': row['opcode'], 'dropped_before': row['dropped_before']})
+    matched = counts['exact_label_source_zone_time_candidate']
+    unmatched = len(rows) - matched
+    # Readiness is for offline review only, never a statement about wire fidelity.
+    acceptance = {'packet_rows_checked': len(rows),
+                  'exact_context_candidates': matched,
+                  'unmatched_or_ambiguous_rows': unmatched,
+                  'all_rows_have_unique_context_candidate': bool(rows) and unmatched == 0,
+                  'candidate_details_complete': matched <= 1000,
+                  'reported_rate_drops_at_last_row': rows[-1][0]['dropped_before'] if rows else None,
+                  'runtime_packet_fidelity_verified': False,
+                  'independent_capture_comparison_performed': False}
     evidence = {'filename': Path(path).name, 'sha256': hashlib.sha256(data).hexdigest(),
             'size_bytes': len(data), 'packets': len(rows),
+            'offline_acceptance': acceptance,
             'classification_counts': dict(sorted(counts.items())), 'candidates': candidates,
             'candidate_limit': 1000,
             'candidates_truncated': counts['exact_label_source_zone_time_candidate'] > len(candidates),
