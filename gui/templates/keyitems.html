@@ -97,6 +97,13 @@
     <a href="/character-editor" class="chip">Character Editor</a>
     <span id="ki-copy-result" role="status" class="muted"></span>
   </div>
+  <section class="ki-inspector-section" aria-label="Lua source references">
+    <h4>Lua dependencies</h4>
+    <label for="ki-lineage">Source lineage</label>
+    <select id="ki-lineage"><option value="lsb">LSB</option>{% if backport_enabled() %}<option value="topaz">Topaz</option>{% endif %}</select>
+    <span id="ki-lua-status" class="muted" role="status"></span>
+    <div id="ki-lua-results"></div>
+  </section>
   <p class="muted" style="margin-bottom:0">Feature Trace and Wiki searches use the selected display name; search results are evidence candidates, not verified server-identity matches. Identifiers may differ by server lineage. Verify the mapping before using a numeric ID in scripts.</p>
 </section>
 <div class="table-wrap"><table class="ki-table">
@@ -203,6 +210,42 @@
   document.getElementById('ki-copy-name').addEventListener('click', () => {
     if (selectedRecord) copyValue(selectedRecord.name);
   });
+  let luaGeneration = 0;
+  async function loadLua() {
+    const generation = ++luaGeneration;
+    const status = document.getElementById('ki-lua-status');
+    const results = document.getElementById('ki-lua-results');
+    results.replaceChildren();
+    if (!selectedRecord) return;
+    status.textContent = 'Finding explicit source references…';
+    try {
+      const params = new URLSearchParams({keyitem_id: selectedRecord.id, lineage: document.getElementById('ki-lineage').value});
+      const response = await fetch('/keyitems/lua-references.json?' + params.toString());
+      if (!response.ok) throw new Error('Source lookup unavailable (' + response.status + ')');
+      const data = await response.json();
+      if (generation !== luaGeneration) return;
+      const refs = Array.isArray(data.references) ? data.references : [];
+      status.textContent = data.message || (refs.length + ' references across ' + (data.matched_scripts || 0) +
+        ' scripts; scanned ' + (data.scanned_files || 0) + (data.truncated ? ' (truncated)' : ''));
+      const list = document.createElement('ul');
+      for (const ref of refs) {
+        const item = document.createElement('li');
+        const label = document.createElement('strong');
+        label.textContent = String(ref.operation || 'reference') + ' · ';
+        const location = document.createElement('code');
+        location.textContent = String(ref.source_path || '') + ':' + String(ref.source_line || '');
+        const excerpt = document.createElement('pre');
+        excerpt.textContent = String(ref.source_text || '');
+        excerpt.style.whiteSpace = 'pre-wrap';
+        item.append(label, location, excerpt);
+        list.append(item);
+      }
+      results.replaceChildren(list);
+    } catch (error) {
+      if (generation === luaGeneration) status.textContent = String(error.message || error);
+    }
+  }
+  document.getElementById('ki-lineage').addEventListener('change', loadLua);
   function inspect(row) {
     const cells = row.cells;
     rows.forEach(item => item.removeAttribute('aria-selected'));
@@ -230,12 +273,14 @@
       evidenceTarget.append(evidence.cells[1].cloneNode(true));
     } else evidenceTarget.textContent = 'No capture evidence linked to this item.';
     inspector.hidden = false;
+    loadLua();
     inspector.scrollIntoView({block:'nearest',behavior:'smooth'});
   }
   rows.forEach(row => row.querySelector('.ki-select').addEventListener('click', () => inspect(row)));
   document.getElementById('ki-inspector-close').addEventListener('click', () => {
     inspector.hidden = true;
     selectedRecord = null;
+    luaGeneration++;
     rows.forEach(item => item.removeAttribute('aria-selected'));
   });
   function applyFilters() {
