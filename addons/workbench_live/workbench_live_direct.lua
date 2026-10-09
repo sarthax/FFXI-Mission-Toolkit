@@ -3,9 +3,9 @@
 local observation = require('workbench_observation')
 local M = {}
 function M.new(options)
-    local client_id, identity, last_attempt, paused, stable_zone, stable_count
+    local client_id, identity, last_attempt, paused, stable_zone, stable_count, reconnect_since
     local function stop(reason)
-        client_id, identity, last_attempt, paused, stable_zone, stable_count = nil, nil, nil, nil, nil, 0
+        client_id, identity, last_attempt, paused, stable_zone, stable_count, reconnect_since = nil, nil, nil, nil, nil, 0, nil
         if options.stop_bridge then options.stop_bridge() end
         if reason and options.message then options.message(reason) end
     end
@@ -19,7 +19,7 @@ function M.new(options)
         local source = frame.source_identity or frame.character
         if type(source) ~= 'string' or #source == 0 then return false, 'invalid player identity' end
         if not options.start_bridge(id) then return false, 'bridge connection not configured' end
-        client_id, identity, last_attempt, paused, stable_zone, stable_count = id, source, nil, nil, nil, 0
+        client_id, identity, last_attempt, paused, stable_zone, stable_count, reconnect_since = id, source, nil, nil, nil, 0, nil
         return true
     end
     local function sample()
@@ -53,8 +53,19 @@ function M.new(options)
             if stable_count < 2 then return end
             paused, stable_zone, stable_count = nil, nil, 0
         end
-        if not options.send(client_id, observation.encode(result)) then
-            stop('Live telemetry stopped: bridge disconnected')
+        local encoded = observation.encode(result)
+        if not options.send(client_id, encoded) then
+            reconnect_since = reconnect_since or now
+            if now - reconnect_since > 15 then
+                stop('Live telemetry stopped: bridge reconnect timed out; reconfigure if credentials expired')
+                return
+            end
+            -- Reuse only the same explicit local session/credentials. Never change identity.
+            if options.start_bridge(client_id) then
+                if options.send(client_id, encoded) then reconnect_since = nil end
+            end
+        else
+            reconnect_since = nil
         end
     end
     return {start=start, sample=sample, stop=stop, active=function() return client_id ~= nil end}

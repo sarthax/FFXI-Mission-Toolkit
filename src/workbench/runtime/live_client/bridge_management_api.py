@@ -44,6 +44,7 @@ label{display:block}</style>
 <button onclick="action('stop')">Stop receiver</button>
 <p>Provisioning creates a new session and invalidates earlier connection credentials.
 Keep the displayed configuration private.</p>
+<button id="downloadConfig" onclick="downloadConfig()" disabled>Download Ashita settings</button>
 <pre id="config" aria-live="polite"></pre>
 <h2>Live dashboard</h2>
 <div id="health" role="status">Waiting for telemetry</div>
@@ -54,13 +55,14 @@ Keep the displayed configuration private.</p>
 const root='/live-client/bridge/';
 const client=()=>document.getElementById('client').value;
 const statusEl=document.getElementById('status');
+let privateConfig='';
 async function request(path,data){const opts={method:'POST',headers:{'Content-Type':'application/json'}};
  if(data)opts.body=JSON.stringify(data);
  const response=await fetch(root+path,opts);const result=await response.json();
  if(!response.ok)throw Error(result.detail||response.status);
  return result;}
 async function action(name){try{const result=await request(name);statusEl.textContent=JSON.stringify(result,null,2);
- if(name==='stop')document.getElementById('config').textContent='';}
+ if(name==='stop'){privateConfig='';document.getElementById('config').textContent='';document.getElementById('downloadConfig').disabled=true;}}
  catch(error){statusEl.textContent=String(error)}}
 async function provision(){try{const value=client();
  if(!/^[a-zA-Z0-9_-]{1,64}$/.test(value))throw Error('Invalid client ID');
@@ -78,8 +80,15 @@ async function provision(){try{const value=client();
  +'    local ok, err = peer:connect(host, port)\\n'
  +'    if not ok then peer:close(); error(err) end\\n'
  +'    return peer\\n  end,\\n}\\n';
+ privateConfig=lua;
+ document.getElementById('downloadConfig').disabled=false;
  document.getElementById('config').textContent='Save locally as addons/workbench_live/workbench_bridge_settings.lua (private):\\n\\n'+lua;
  }catch(error){statusEl.textContent=String(error)}}
+function downloadConfig(){if(!privateConfig)return;
+ const blob=new Blob([privateConfig],{type:'text/plain;charset=utf-8'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');
+ a.href=url;a.download='workbench_bridge_settings.lua';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function metric(label,value){const node=document.createElement('div');node.style.border='1px solid #aaa';
  node.style.padding='0.75rem';node.style.borderRadius='0.5rem';
  const heading=document.createElement('small');heading.textContent=label;
