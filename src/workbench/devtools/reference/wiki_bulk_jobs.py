@@ -70,6 +70,40 @@ def sync_summary(db):
             "latest": dict(zip(("mode","state","processed","imported","failed","updated_at"),latest)) if latest else None}
 
 
+
+def recover_interrupted(db):
+    """At startup mark abandoned jobs as interrupted without running network work."""
+    with _LOCK:
+        if _RUNNING:
+            return 0
+        with _connect(db) as con:
+            result=con.execute("""UPDATE wiki_bulk_jobs SET state='interrupted',
+              updated_at=CURRENT_TIMESTAMP
+              WHERE state IN ('queued','discovering','running','pausing')""")
+            return result.rowcount
+
+
+def latest_recoverable(db, *, job_id=None):
+    """Only restart jobs with a committed pending-page checkpoint."""
+    with _connect(db) as con:
+        if job_id:
+            rows=con.execute("""SELECT id,mode,state,pending_json,processed FROM wiki_bulk_jobs
+                                WHERE id=?""",(job_id,)).fetchall()
+        else:
+            rows=con.execute("""SELECT id,mode,state,pending_json,processed FROM wiki_bulk_jobs
+                                WHERE state='interrupted' ORDER BY updated_at DESC LIMIT 1""").fetchall()
+    for ident,mode,state,pending_raw,processed in rows:
+        if state != 'interrupted' or not pending_raw:
+            continue
+        try:
+            pending=json.loads(pending_raw)
+        except (ValueError,TypeError):
+            continue
+        if isinstance(pending,list) and pending and all(isinstance(t,str) for t in pending):
+            return {"job_id":ident,"mode":mode,"pending":len(pending),"processed":processed}
+    return None
+
+
 def start(db, limit=50, mode="missing"):
     if limit not in (50, 250):
         raise ValueError("Batch size must be 50 or 250")
