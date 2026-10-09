@@ -64,7 +64,8 @@ def entity_observation_summary(frames) -> dict:
 
 
 def recording_report(path: Path, *, game_version: str | None = None,
-                     binaries: list[Path] | None = None) -> dict:
+                     binaries: list[Path] | None = None,
+                     packet_observations: Path | None = None) -> dict:
     data = bounded_bytes(path, 16 * 1024 * 1024)
     lines = [line for line in data.splitlines() if line.strip()]
     if not lines:
@@ -93,7 +94,7 @@ def recording_report(path: Path, *, game_version: str | None = None,
             span = zone.setdefault(axis, {'min': value, 'max': value})
             span['min'] = min(span['min'], value)
             span['max'] = max(span['max'], value)
-    return {'schema_version': 1, 'kind': 'live_client_runtime_report',
+    report = {'schema_version': 1, 'kind': 'live_client_runtime_report',
             'recording': {'filename': Path(path).name, 'sha256': hashlib.sha256(data).hexdigest(),
                           'size_bytes': len(data), 'client_id': client_id,
                           'frames': len(frames), 'duration_seconds': snapshots[-1].observed_at-snapshots[0].observed_at,
@@ -113,6 +114,53 @@ def recording_report(path: Path, *, game_version: str | None = None,
             'validation': {'all_frames_decoded': True, 'build_verified': False,
                            'coordinate_transform_verified': False, 'supports_game_writes': False,
                            'lifecycle_verified': False}}
+    if packet_observations is not None:
+        report['packet_evidence'] = packet_evidence_report(packet_observations, Path(path).stem, frames)
+    return report
+
+
+def packet_evidence_report(path: Path, recording_label: str, frames) -> dict:
+    """Exact source/time candidates only; reuse Capture validation without decoding."""
+    from workbench.captures.ashita_packet_ingest import MAX_BYTES, parse_observations
+
+    data = bounded_bytes(path, MAX_BYTES)
+    rows = parse_observations(data)
+    # Never interpolate across gaps, zones, instances, restarts, or clock changes.
+    index = {}
+    for number, frame in enumerate(frames, 1):
+        s = frame.snapshot
+        key = (s.client_id, s.adapter, s.version, s.position.zone_id, s.observed_at)
+        index.setdefault(key, []).append(number)
+    counts = Counter()
+    candidates = []
+    for row, line, start, end in rows:
+        if row['source_recording'] != recording_label:
+            counts['source_label_mismatch'] += 1
+            continue
+        key = (row['client_id'], row['adapter'], row['client_version'], row['zone_id'], row['observed_at'])
+        matches = index.get(key, [])
+        if not matches:
+            counts['no_exact_source_zone_time_frame'] += 1
+        elif len(matches) != 1:
+            counts['ambiguous_frame'] += 1
+        else:
+            counts['exact_label_source_zone_time_candidate'] += 1
+            if len(candidates) < 1000:
+                candidates.append({'packet_sequence': row['sequence'], 'packet_line': line,
+                                   'packet_start_offset': start, 'packet_end_offset': end,
+                                   'telemetry_frame': matches[0], 'observed_at': row['observed_at'],
+                                   'zone_id': row['zone_id'], 'direction': row['direction'],
+                                   'reported_opcode': row['opcode'], 'dropped_before': row['dropped_before']})
+    return {'filename': Path(path).name, 'sha256': hashlib.sha256(data).hexdigest(),
+            'size_bytes': len(data), 'packets': len(rows),
+            'classification_counts': dict(sorted(counts.items())), 'candidates': candidates,
+            'candidate_limit': 1000,
+            'candidates_truncated': counts['exact_label_source_zone_time_candidate'] > len(candidates),
+            'source_binding': 'declared_recording_filename_stem',
+            'instance_identity_available': False, 'recording_identity_verified': False,
+            'clock_alignment_verified': False, 'server_identity_verified': False,
+            'packet_semantics_verified': False, 'causal_relationship_verified': False,
+            'wire_verified': False}
 
 
 def main(argv=None) -> int:
@@ -121,9 +169,11 @@ def main(argv=None) -> int:
     parser.add_argument('--game-version', help='Operator-reported version, not independently verified')
     parser.add_argument('--binary', type=Path, action='append', default=[], help='Optional EXE/DLL metadata only; repeatable')
     parser.add_argument('--output', type=Path, help='New report file; existing reports are never overwritten')
+    parser.add_argument('--packet-observations', type=Path, help='Stopped Ashita packet JSONL; exact-time research candidates only')
     args = parser.parse_args(argv)
     try:
-        report = recording_report(args.recording, game_version=args.game_version, binaries=args.binary)
+        report = recording_report(args.recording, game_version=args.game_version, binaries=args.binary,
+                                  packet_observations=args.packet_observations)
         text = json.dumps(report, indent=2) + '\n'
         if args.output:
             with args.output.open('x', encoding='utf-8') as stream:

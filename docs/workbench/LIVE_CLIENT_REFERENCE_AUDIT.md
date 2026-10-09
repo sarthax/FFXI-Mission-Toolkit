@@ -314,3 +314,17 @@ Next: runtime packet/telemetry correlation evidence and source/time/zone/ID-qual
 research links through existing Capture/Feature Trace services. Further diagnostic
 profiles, calibration and native controls remain independent future work. See the
 [addon instructions](../../addons/workbench_live/README.md#optional-passive-packet-observations-ashita-only).
+
+### Paired offline temporal evidence (cloud-tested)
+
+The runtime-report CLI now optionally reads a stopped packet JSONL using the canonical
+Capture adapter's strict validator. It emits bounded exact label/source/zone/time
+candidates with packet line/byte and telemetry-frame locators, plus both source hashes.
+This supplements the existing Capture importer and recording reports; it replaces no
+provider, schema, decoder, replay, UI or identity service. It does not join entities by
+client index or server ID, infer packet semantics, interpolate across missing frames,
+create Feature Trace relationships or promote declared labels into verified identities.
+Same-time ambiguity remains unmatched, and instance/clock/wire/causal verification is
+explicitly absent. Paired Windows exports and reviewed Capture/Feature Trace UI links
+remain future work. The supplied player-only runtime recording still establishes only
+its previously documented observation coverage.
