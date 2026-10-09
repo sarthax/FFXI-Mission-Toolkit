@@ -63,8 +63,8 @@ def test_schedules_reject_unknown_or_unapproved_profiles(tmp_path):
     with pytest.raises(RewardTemplateError, match="named DSP/Topaz"):
         create_schedule(**base, environment={**ENV, "environment": "live"}, confirmation=ENV["name"])
     with pytest.raises(RewardTemplateError, match="frozen"):
-        create_schedule(**base, environment=ENV, confirmation=ENV["name"],
-                        recipient_mode="all")
+        create_schedule(**{**base, "recipient_mode": "all"},
+                        environment=ENV, confirmation=ENV["name"])
 
 
 def test_environment_binding_rejects_other_server():
