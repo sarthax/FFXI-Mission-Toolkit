@@ -8,6 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 import re
 from functools import lru_cache
+from collections import defaultdict
 
 _ALLOWED_NAMESPACES = {
     "lsb": ("xi.keyItem",),
@@ -38,6 +39,20 @@ def _read_lua_lines(path: str, mtime_ns: int, size: int) -> tuple[str, ...]:
     """
     with open(path, encoding="utf-8", errors="replace") as stream:
         return tuple(stream)
+
+
+@lru_cache(maxsize=512)
+def _indexed_lua_lines(path: str, mtime_ns: int, size: int) -> dict[str, tuple[tuple[int, str, str, str], ...]]:
+    """Index literal enum symbols once for each cached version of a Lua file."""
+    symbols: dict[str, list[tuple[int, str, str, str]]] = defaultdict(list)
+    for number, raw in enumerate(_read_lua_lines(path, mtime_ns, size), 1):
+        code = raw.split("--", 1)[0]
+        for match in _CALL.finditer(code):
+            api = match.group("api").split(":")[-1].split(".")[-1]
+            symbols[match.group("symbol")].append((
+                number, raw.strip(), match.group("namespace"), api,
+            ))
+    return {key: tuple(value) for key, value in symbols.items()}
 
 
 def discover_key_item_references(
@@ -93,33 +108,27 @@ def discover_key_item_references(
         result["scanned_files"] += 1
         try:
             info = path.stat()
-            for line_no, raw in enumerate(
-                _read_lua_lines(str(path), info.st_mtime_ns, info.st_size), 1
-            ):
-                # Conservative line scan; text in Lua strings may still need review.
-                code = raw.split("--", 1)[0]
-                if symbol not in code:
+            for line_no, source_text, namespace, api in _indexed_lua_lines(
+                str(path), info.st_mtime_ns, info.st_size
+            ).get(symbol, ()):
+                if namespace not in permitted:
                     continue
-                for match in _CALL.finditer(code):
-                    if match.group("symbol") != symbol or match.group("namespace") not in permitted:
-                        continue
-                    if len(result["references"]) >= max_matches:
-                        result["truncated"] = True
-                        return result
-                    api = match.group("api").split(":")[-1].split(".")[-1]
-                    relative_path = path.relative_to(root).as_posix()
-                    matched_paths.add(relative_path)
-                    result["operation_counts"][_OPERATION[api]] += 1
-                    result["matched_scripts"] = len(matched_paths)
-                    result["references"].append({
-                        "operation": _OPERATION[api],
-                        "api": api,
-                        "namespace": match.group("namespace"),
-                        "source_path": path.relative_to(root).as_posix(),
-                        "source_line": line_no,
-                        "source_text": raw.strip(),
-                        "symbol": symbol,
-                    })
+                if len(result["references"]) >= max_matches:
+                    result["truncated"] = True
+                    return result
+                relative_path = path.relative_to(root).as_posix()
+                matched_paths.add(relative_path)
+                result["operation_counts"][_OPERATION[api]] += 1
+                result["matched_scripts"] = len(matched_paths)
+                result["references"].append({
+                    "operation": _OPERATION[api],
+                    "api": api,
+                    "namespace": namespace,
+                    "source_path": relative_path,
+                    "source_line": line_no,
+                    "source_text": source_text,
+                    "symbol": symbol,
+                })
         except OSError:
             result["limitations"].append("One or more Lua files could not be read.")
     return result
