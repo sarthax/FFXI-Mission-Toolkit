@@ -7,6 +7,7 @@ translation is a display-time step (see translate_cached) and never alters the s
 from __future__ import annotations
 import hashlib, os, sqlite3, subprocess, tempfile, threading, time, urllib.parse, uuid
 from datetime import datetime, timezone
+from pathlib import Path
 
 from . import wiki_document
 
@@ -178,8 +179,29 @@ def _run(job: dict, main_db: str) -> None:
         finally:
             con.close()
 
+        # Confirm the imported article is discoverable in the main cache before
+        # declaring a successful scrape. The check is read-only and source-scoped.
+        con = sqlite3.connect(Path(main_db).resolve().as_uri() + "?mode=ro", uri=True, timeout=5)
+        try:
+            missing = []
+            for item in fetched:
+                row = item["row"]
+                if not con.execute(
+                    "SELECT 1 FROM reference_wiki_pages WHERE source_id=? AND page_id=? AND title=? LIMIT 1",
+                    (row[0], row[1], row[2]),
+                ).fetchone():
+                    missing.append(f"{row[0]}:{row[2]}")
+            job["verified_pages"] = len(fetched) - len(missing)
+            job["expected_pages"] = len(fetched)
+            if missing:
+                job["state"] = "partial"
+                job["error"] = "Imported pages absent from main cache: " + ", ".join(missing[:5])
+                log("post-import verification failed: " + job["error"])
+                return
+        finally:
+            con.close()
         job["state"] = "done"
-        log("merged into main DB with structured document blocks")
+        log(f"verified {job['verified_pages']} page(s) in main cache; structured document blocks saved")
     except Exception as exc:  # a job must never raise into the server
         job["state"] = "error"
         job["error"] = str(exc)
