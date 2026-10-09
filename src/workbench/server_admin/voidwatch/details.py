@@ -136,6 +136,7 @@ def nm_detail(conn, active_root, nm: str) -> dict:
         pool["skills"] = [dict(zip(["id", "name", "anim", "aoe", "distance", "flag", "param", "sc1", "sc2", "sc3"], s)) for s in sk]
         sp = _rows_dict(conn, "SELECT l.spell_id,COALESCE(sl.name,''),l.min_level,l.max_level FROM mob_spell_lists l LEFT JOIN spell_list sl ON sl.spellid=l.spell_id WHERE l.spell_list_id=%s ORDER BY l.spell_id", (int(pool["spellList"] or 0),)) if pool["spellList"] else []
         pool["spells"] = [dict(zip(["id", "name", "min", "max"], s)) for s in sp]
+        pool["spell_list_pools"] = int(_rows_dict(conn, "SELECT COUNT(*) FROM mob_pools WHERE spellList=%s", (int(pool["spellList"]),))[0]["COUNT(*)"]) if pool["spellList"] else 0
         fam = _rows_dict(conn, "SELECT " + ",".join("`%s`" % k for k in FAM_COLS + RES) + " FROM mob_family_system WHERE familyid=%s", (int(pool["familyid"]),))
         if fam:
             keys = FAM_COLS + RES
