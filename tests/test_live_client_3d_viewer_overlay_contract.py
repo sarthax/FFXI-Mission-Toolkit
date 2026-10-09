@@ -41,3 +41,16 @@ def test_live_entity_pool_reuses_geometry_and_cleans_heading():
     assert "arrow.line.geometry.dispose()" in content
     assert "arrow.cone.geometry.dispose()" in content
     assert "data.entities_truncated" in content
+
+
+def test_live_alignment_controls_require_fresh_observation_and_report_transform():
+    content = (Path(__file__).resolve().parents[1] / "gui/templates/zone_view3d.html").read_text(encoding="utf-8")
+    assert 'id="ashita-live-focus"' in content
+    assert 'id="ashita-live-copy"' in content
+    assert 'href="/live-client/bridge/console"' in content
+    assert "if (!liveToggle.checked || !lastLivePosition || flyModeOn)" in content
+    assert "controls.target.copy(lastLivePosition)" in content
+    assert "raw_position: {x:position.x,y:position.y,z:position.z,heading:position.heading}" in content
+    assert "viewer_position: {x:current.x,y:current.y,z:current.z}" in content
+    assert "await navigator.clipboard.writeText(JSON.stringify(lastLiveDiagnostic, null, 2))" in content
+    assert "lastLiveDiagnostic = null" in content
