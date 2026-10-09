@@ -235,7 +235,7 @@ def _run(job: dict, main_db: str) -> None:
                 row = item["row"]
                 if f"{row[0]}:{row[2]}" in missing:
                     continue
-                hits = wiki_document.search_pages(con, row[2], source_id=row[0])
+                hits = wiki_document.search_pages(con, row[2], source_id=row[0], initialize=False)
                 if not any(str(hit["page_id"]) == str(row[1])
                            and hit["source_id"] == row[0] for hit in hits):
                     unsearchable.append(f"{row[0]}:{row[2]}")
