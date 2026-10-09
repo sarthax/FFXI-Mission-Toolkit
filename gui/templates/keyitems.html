@@ -36,6 +36,15 @@
 .keyitems-page .ki-table th{position:sticky;top:0}
 .keyitems-page .ki-table td{vertical-align:top}
 .keyitems-page .ki-table tbody tr:hover{background:rgba(128,128,128,.07)}
+.keyitems-page .ki-inspector{border:1px solid var(--border-color,#58616b);border-radius:8px;padding:14px;margin:12px 0}
+.keyitems-page .ki-inspector[hidden]{display:none}
+.keyitems-page .ki-inspector-header{display:flex;justify-content:space-between;align-items:start;gap:12px}
+.keyitems-page .ki-inspector-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:10px}
+.keyitems-page .ki-inspector-section{min-width:0;overflow-wrap:anywhere}
+.keyitems-page .ki-inspector-section h4{margin:4px 0}
+.keyitems-page .ki-inspector-section p{white-space:pre-wrap}
+.keyitems-page .ki-item-row[aria-selected="true"]{outline:2px solid var(--accent,#68a7e0);outline-offset:-2px}
+.keyitems-page .ki-select{white-space:nowrap}
 </style>
 <div class="ki-intro">
   <span class="chip">Client ↔ server key-item reference</span>
@@ -69,13 +78,27 @@
   <input id="ki-page-filter" type="search" placeholder="Name, ID or description" aria-label="Filter current results">
   <span id="ki-visible-count" class="muted" role="status"></span>
 </div>
+<section id="ki-inspector" class="ki-inspector" aria-label="Selected key item" hidden>
+  <div class="ki-inspector-header">
+    <div><h3 id="ki-inspector-title" style="margin:0"></h3><span id="ki-inspector-id" class="muted mono"></span></div>
+    <button type="button" id="ki-inspector-close" aria-label="Close key-item details">Close</button>
+  </div>
+  <div class="ki-inspector-grid">
+    <div class="ki-inspector-section"><h4>Client description</h4><p id="ki-inspector-description"></p></div>
+    <div class="ki-inspector-section"><h4>LSB mapping</h4><div id="ki-inspector-lsb"></div></div>
+    <div class="ki-inspector-section"><h4>Topaz mapping</h4><div id="ki-inspector-topaz"></div></div>
+    <div class="ki-inspector-section"><h4>Recorded evidence</h4><div id="ki-inspector-evidence"></div></div>
+  </div>
+  <p class="muted" style="margin-bottom:0">Identifiers may differ by server lineage. Verify the mapping before using a numeric ID in scripts.</p>
+</section>
 <div class="table-wrap"><table class="ki-table">
-  <tr><th>id</th><th>name</th><th>readiness</th><th>enum / scripting constant</th><th>description</th>
+  <tr><th>Details</th><th>id</th><th>name</th><th>readiness</th><th>enum / scripting constant</th><th>description</th>
     {% if backport_enabled() %}<th>Topaz readiness (backport)</th><th>Topaz enum constant</th>{% endif %}
   </tr>
   {% for r in rows %}
   {% set rd = r.readiness %}
   <tr class="ki-item-row" data-ki-status="{{ rd.status }}" data-ki-text="{{ (r.keyitem_id|string ~ ' ' ~ r.name ~ ' ' ~ (r.description or ''))|lower|e }}">
+    <td><button type="button" class="ki-select" aria-label="Inspect {{ r.name }} key item">Inspect</button></td>
     <td class="mono" id="ki-{{ r.keyitem_id }}">{{ r.keyitem_id }}</td>
     <td><span class="ki-name">{{ r.name }}</span></td>
     <td>
@@ -129,7 +152,7 @@
   {% if r.capture_events %}
   <tr class="ki-evidence-row">
     <td></td>
-    <td colspan="{{ 6 if backport_enabled() else 4 }}">
+    <td colspan="{{ 7 if backport_enabled() else 5 }}">
       <span class="muted">observed in real captures:</span>
       {% for ev in r.capture_events %}
       <a class="chip mono" href="/captures/{{ ev.capture_id }}" title="{{ ev.zone_name }} ({{ '%.1f'|format(ev.x) }}, {{ '%.1f'|format(ev.y) }}, {{ '%.1f'|format(ev.z) }})">#{{ ev.capture_id }} {{ ev.event_type }} @ {{ ev.zone_name }}</a>
@@ -147,6 +170,44 @@
   const count = document.getElementById('ki-visible-count');
   if (!status || !search || !count) return;
   const rows = Array.from(document.querySelectorAll('.ki-table .ki-item-row'));
+  const inspector = document.getElementById('ki-inspector');
+  const setText = (id, value) => { document.getElementById(id).textContent = value; };
+  function copyCell(targetId, cell) {
+    const target = document.getElementById(targetId);
+    target.replaceChildren();
+    if (cell) target.append(cell.cloneNode(true));
+    else target.textContent = 'Not available in this index.';
+  }
+  function inspect(row) {
+    const cells = row.cells;
+    rows.forEach(item => item.removeAttribute('aria-selected'));
+    row.setAttribute('aria-selected', 'true');
+    setText('ki-inspector-title', cells[2].textContent.trim());
+    setText('ki-inspector-id', 'Client reference ID: ' + cells[1].textContent.trim());
+    const fullDescription = cells[5].querySelector('details div');
+    setText('ki-inspector-description', (fullDescription || cells[5]).textContent.trim());
+    const lsb = document.createElement('div');
+    lsb.append(cells[3].cloneNode(true), document.createTextNode(' — '), cells[4].cloneNode(true));
+    document.getElementById('ki-inspector-lsb').replaceChildren(lsb);
+    const topaz = document.getElementById('ki-inspector-topaz');
+    topaz.replaceChildren();
+    if (cells.length > 6) {
+      topaz.append(cells[6].cloneNode(true), document.createTextNode(' — '), cells[7].cloneNode(true));
+    } else topaz.textContent = 'Topaz comparison not enabled.';
+    const evidence = row.nextElementSibling;
+    const evidenceTarget = document.getElementById('ki-inspector-evidence');
+    evidenceTarget.replaceChildren();
+    if (evidence && evidence.classList.contains('ki-evidence-row')) {
+      evidenceTarget.append(evidence.cells[1].cloneNode(true));
+    } else evidenceTarget.textContent = 'No capture evidence linked to this item.';
+    inspector.hidden = false;
+    inspector.scrollIntoView({block:'nearest',behavior:'smooth'});
+  }
+  rows.forEach(row => row.querySelector('.ki-select').addEventListener('click', () => inspect(row)));
+  document.getElementById('ki-inspector-close').addEventListener('click', () => {
+    inspector.hidden = true;
+    rows.forEach(item => item.removeAttribute('aria-selected'));
+  });
   function applyFilters() {
     const term = search.value.trim().toLocaleLowerCase();
     let visible = 0;
