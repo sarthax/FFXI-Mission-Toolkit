@@ -5719,6 +5719,26 @@ async def wiki_recovery_apply(request: Request):
     return RedirectResponse(redirect_base + "&recovery_result=applied", status_code=303)
 
 
+@app.get("/wiki/bulk/jp/schedule")
+def wiki_jp_schedule_status():
+    from workbench.devtools.reference import wiki_jp_refresh_schedule
+    return wiki_jp_refresh_schedule.settings(DB_PATH)
+
+
+@app.post("/wiki/bulk/jp/schedule")
+async def wiki_jp_schedule_update(request: Request):
+    from workbench.devtools.reference import wiki_jp_refresh_schedule
+    form=await request.form()
+    try:
+        return wiki_jp_refresh_schedule.configure(
+            DB_PATH,enabled=str(form.get("enabled") or "").lower() in ("on","1","true"),
+            seed=form.get("seed") or "",
+            interval_hours=int(form.get("interval_hours") or 168),
+            page_limit=int(form.get("page_limit") or 50))
+    except (ValueError,TypeError) as exc:
+        return JSONResponse({"error":str(exc)},status_code=400)
+
+
 @app.get("/wiki/bulk/jp/jobs")
 def wiki_jp_crawl_status():
     from workbench.devtools.reference import wiki_jp_crawl_jobs
@@ -5807,6 +5827,8 @@ def wiki_bulk_status():
 def wiki_scheduler_startup():
     from workbench.devtools.reference import wiki_sync_schedule
     wiki_sync_schedule.start_background(DB_PATH)
+    from workbench.devtools.reference import wiki_jp_refresh_schedule
+    wiki_jp_refresh_schedule.start_background(DB_PATH)
 
 
 @app.get("/wiki/bulk/schedule")

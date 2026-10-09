@@ -103,6 +103,18 @@
 <button type="submit">Start Japanese job</button>
 <button type="button" id="wiki-jp-bulk-refresh">Refresh</button>
 </form>
+<details id="wiki-jp-schedule-panel">
+<summary>Scheduled Japanese Wiki cached-page refresh (opt-in)</summary>
+<form id="wiki-jp-schedule-form" class="wiki-actions">
+<label><input type="checkbox" name="enabled"> Enable</label>
+<input type="text" name="seed" required placeholder="Cached Japanese subtree path">
+<label>Interval <select name="interval_hours"><option value="24">Daily</option><option value="48">Every 2 days</option><option value="168">Weekly</option></select></label>
+<label>Batch <select name="page_limit"><option value="50">50</option><option value="250">250</option></select></label>
+<button type="submit">Save Japanese refresh schedule</button>
+</form>
+<div id="wiki-jp-schedule-status" class="muted" role="status"></div>
+<p class="muted">Disabled by default. Refreshes only cached pages in the selected subtree. Errors or interruptions stop automatic progression until reviewed.</p>
+</details>
 <div id="wiki-jp-bulk-message" role="status" class="muted"></div>
 <div id="wiki-jp-bulk-results"></div>
 </div>
@@ -811,6 +823,28 @@
     }
     check();
     document.getElementById('wiki-bg-bulk-refresh').addEventListener('click',check);
+  })();
+  (function(){
+    var form=document.getElementById('wiki-jp-schedule-form');
+    if(!form)return;
+    var status=document.getElementById('wiki-jp-schedule-status');
+    function reload(){
+      fetch('/wiki/bulk/jp/schedule',{cache:'no-store'}).then(function(r){return r.json();})
+        .then(function(v){
+          form.elements.enabled.checked=!!v.enabled;
+          form.elements.seed.value=v.seed||'';
+          form.elements.interval_hours.value=String(v.interval_hours);
+          form.elements.page_limit.value=String(v.page_limit);
+          status.textContent='Next due: '+(v.next_due||'Disabled')+(v.last_error?' · '+v.last_error:'');
+        }).catch(function(e){status.textContent='Schedule unavailable: '+e.message;});
+    }
+    form.addEventListener('submit',function(e){
+      e.preventDefault();
+      fetch('/wiki/bulk/jp/schedule',{method:'POST',body:new FormData(form)})
+       .then(function(r){return r.json().then(function(v){if(!r.ok)throw Error(v.error||'Save failed');return v;});})
+       .then(reload).catch(function(e){status.textContent=e.message;});
+    });
+    reload();
   })();
   (function(){
     var form=document.getElementById('wiki-bg-bulk-form');if(!form)return;
