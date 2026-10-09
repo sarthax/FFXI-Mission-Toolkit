@@ -337,16 +337,20 @@ Operator summary: `AUCTION_HOUSE_CAPABILITY_STATUS.md`. Economy detail: `AUCTION
 - [x] Buyers tab (`buyers.json`, `buyer.json`; `buyer_stats.py`, unit-tested): per-buyer spend, overpaid purchases vs item median (>=50%), gil refund of the overpay via the rewards flow. Buyers keyed by name (DSP sold rows have no buyer id); refund needs a `chars` row.
 - [x] "Buy as..." (player purchase) folded into Items/Sellers listing rows; Listing Manager kept only as a legacy view.
 - [x] Fixed the confirm drawer (missing `dwConfName` element) that blocked Buy/Return/Restock/refund drawers from opening.
-- [~] DSP runtime validation: project owner confirms successful **live DSP testing** of Auction House administration; existing DSP MyISAM listing test is documented separately. The exact per-operation verified matrix is not yet captured, so do not reopen completed tests or imply every operation is individually verified.
+- [~] DSP runtime validation: project owner confirms Auction House is **clean and stable against DSP**, with successful runtime testing; existing DSP MyISAM listing test is documented separately. The exact per-operation verified matrix is not yet captured, so do not reopen completed tests or imply every operation is individually verified.
 - [~] Snapshot-based supply/sell-through comparisons depend on multiple dated observations; current prior-period activity/KPI trends and supply snapshot comparisons already exist. Validate multi-day behavior, rather than reimplementing the deltas.
 - [x] Anomaly detection exists (price shifts, volume spikes, mispriced listings, seller floods); forecasting is a distinct optional enhancement dependent on sufficient authentic history.
-- [ ] Inbox / admin "all characters on this account" selection using verified account linkage.
-- [ ] Targeted DSP MyISAM crash-window/recovery UX audit and reward fan-out partial/retry UX audit (preserve existing Test gates).
+- [x] Inbox "all characters on selected account" recipient mode with a one-character anchor, verified account linkage, bounded preview, and GUI selector (PR #749). Broader account-based filters outside Inbox remain optional.
+- [x] Read-only DSP MyISAM recovery guidance surfaced in listing/purchase readiness (PR #743); non-transactional crash windows **remain** and automatic crash recovery is not supported.
+- [x] Reward campaign retry safety: original-environment binding, per-recipient outcome integrity, failed-only retry preview and guarded conflicts on incomplete results (PRs #740, #747). This is not a durable in-flight delivery journal.
+- [x] Analytics correctness/performance: future timestamps excluded from 7-day snapshots and anomaly event windows; per-metric baseline sample counts and nonnegative lower bounds; anomaly evidence sample quality; cached per-item medians/evidence counts (PRs #754, #756, #758, #760, #762).
 - [ ] Dedicated Topaz TEST validation; DSP test evidence does not establish Topaz parity.
 - [~] LSB read/preview/policy support exists; broader LSB write workflows remain deferred pending runnable LSB Test evidence.
 - [ ] Optional augmented `extra` Inbox delivery only after DSP/Topaz serialization proof; production-write authorization remains separately out of scope.
 
-**Auction House feature audit / actionable TODO:** [`AUCTION_HOUSE_GAP_AUDIT_TODO_2026-10-08.md`](AUCTION_HOUSE_GAP_AUDIT_TODO_2026-10-08.md). This distinguishes implemented, user-tested, intentionally gated, environment-unverified, and optional enhancement work.
+**Remaining AH release work (prioritized, as of 2026-10-08):** (1) multi-day real snapshot comparison/evidence and operator smoke matrix on DSP; (2) failed or interrupted MyISAM and Inbox operator diagnostics beyond the current read-only guidance; (3) independently test Topaz; (4) evaluate broader LSB guarded writes only with a runnable LSB Test server. Forecasting, augmented Inbox item payloads, production-write permissions, and broader cohort scheduling are **optional extensions**, not missing core DSP administration.
+
+**Auction House feature audit / actionable TODO (updated completion reconciliation below):** [`AUCTION_HOUSE_GAP_AUDIT_TODO_2026-10-08.md`](AUCTION_HOUSE_GAP_AUDIT_TODO_2026-10-08.md). This distinguishes implemented, user-tested, intentionally gated, environment-unverified, and optional enhancement work.
 
 ---
 
