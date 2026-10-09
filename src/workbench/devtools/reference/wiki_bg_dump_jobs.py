@@ -210,8 +210,13 @@ def _worker(db, job_id):
                         _import_row(db,record)
                         _update(db,job_id,imported=_counter(db,job_id,"imported")+1)
                 except Exception as exc:
-                    _update(db,job_id,failed=_counter(db,job_id,"failed")+1,
+                    # The source row has not been imported. Keep its cursor for
+                    # explicit operator recovery instead of silently skipping
+                    # it and marking a partial archive as successfully synced.
+                    _update(db,job_id,state="error",
+                            failed=_counter(db,job_id,"failed")+1,
                             last_error=f"Record {index+1}: {exc}"[:400])
+                    return
                 processed+=1
                 _update(db,job_id,cursor=index+1,processed=processed)
         _update(db,job_id,state="completed")
