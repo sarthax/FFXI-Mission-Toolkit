@@ -558,7 +558,7 @@
         pre.textContent=j.log.join('\\n');
         details.appendChild(summary);details.appendChild(pre);node.appendChild(details);
       }
-      if(j.state==='done' || j.state==='not_found'){
+      if(j.state==='done'){
         var link=document.createElement('a');
         link.className='chip';
         link.href='/wiki?title='+encodeURIComponent(j.title||'')+'&source='+encodeURIComponent(j.source||'')+'&tab=browse';
