@@ -13,7 +13,7 @@ ADDON = Path(__file__).resolve().parents[1] / "addons" / "workbench_live"
 
 def test_opt_in_ashita_bridge_sends_compatible_authenticated_frames():
     lua = pytest.importorskip("lupa.lua51").LuaRuntime(unpack_returned_tuples=True, encoding=None)
-    lua.globals().addon_dir = str(ADDON) + "/"
+    lua.globals().addon_dir = (str(ADDON) + "/").encode("utf-8")
     lua.execute('''
         package.path = addon_dir .. '?.lua;' .. package.path
         output = {}
