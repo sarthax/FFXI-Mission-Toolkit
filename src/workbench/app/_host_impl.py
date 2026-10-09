@@ -4475,11 +4475,25 @@ KEYITEMS_PAGE_SIZE = 100
 def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all"):
     if readiness not in {"all", "clean", "drifted", "wrong_name", "missing"}:
         readiness = "all"
+    from workbench.runtime.legacy_settings import get_active_server_identity
+    from workbench.devtools.features.key_item_dsp_identity import resolve_dsp_key_item
+    active = get_active_server_identity()
+    primary_dsp = active.get("family") == "dsp"
+    dsp_root = active.get("server_root") if primary_dsp else None
     con = get_con()
     rows = []
     total = 0
     total_pages = 1
     q = q.strip()
+    def primary_readiness(row):
+        if primary_dsp:
+            match = resolve_dsp_key_item(dsp_root, row["name"])
+            status = {"name_verified": "clean", "ambiguous": "wrong_name",
+                      "missing": "missing", "unavailable": "missing"}[match["status"]]
+            return {"status": status, "id_match": None,
+                    "name_match": (match["server_id"], match["symbol"])
+                    if match["status"] == "name_verified" else None}
+        return ingest_global_tables.resolve_keyitem_readiness(con, row["keyitem_id"], row["name"])
     numeric_id = int(q) if len(q) <= 18 and q.isascii() and q.isdecimal() else None
     predicate = "(name LIKE ? OR keyitem_id = ?)" if numeric_id is not None else "name LIKE ?"
     args = (f"%{q}%", numeric_id) if numeric_id is not None else (f"%{q}%",)
@@ -4492,8 +4506,7 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
             "SELECT keyitem_id, name FROM key_items WHERE " + predicate + " ORDER BY name",
             args,
         ).fetchall()
-        candidates = [row for row in candidates if ingest_global_tables.resolve_keyitem_readiness(
-            con, row["keyitem_id"], row["name"])["status"] == readiness]
+        candidates = [row for row in candidates if primary_readiness(row)["status"] == readiness]
         total = len(candidates)
         total_pages = max(1, (total + KEYITEMS_PAGE_SIZE - 1) // KEYITEMS_PAGE_SIZE)
         page = min(page, total_pages)
@@ -4522,7 +4535,7 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
         ).fetchall()
     topaz_ready = backport_enabled()
     for r in ki_rows:
-        item_readiness = ingest_global_tables.resolve_keyitem_readiness(con, r["keyitem_id"], r["name"])
+        item_readiness = primary_readiness(r)
         # Backport-module-only extra check -- skipped entirely (no query run) when the user
         # has no Topaz/DSP checkout configured, so the core module's page stays fast for a
         # typical LSB-only user.
@@ -4551,7 +4564,7 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
     con.close()
     return templates.TemplateResponse(request, "keyitems.html", {
         "q": q, "rows": rows, "page": page, "total": total, "total_pages": total_pages,
-        "readiness_filter": readiness,
+        "readiness_filter": readiness, "active_server": active, "primary_dsp": primary_dsp,
     })
 
 
