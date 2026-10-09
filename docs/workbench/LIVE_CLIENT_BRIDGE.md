@@ -534,3 +534,14 @@ must authenticate every connection before accepting messages; protect token
 distribution and local configuration, enforce reconnect timeouts and revoke on
 disconnect/process replacement. Loopback-only binding is not itself sufficient
 authentication.
+
+### Authenticated one-frame loopback handshake
+
+`bridge_handshake.py` now verifies an explicitly provisioned peer token,
+client/session/generation and lease before accepting a single framed observation.
+Socket-level tests cover rejection of stale/wrong tokens, identity substitution,
+expired sessions, and partial handshakes. This is an **opt-in test primitive**,
+not a launched service: it has no secret delivery, multi-frame stream lifecycle,
+Ashita hookup, capture persistence, command dispatch, or movement writes.
+A production localhost service must protect the bearer-token distribution and
+connection ownership, impose timeouts, and fail closed on session changes.
