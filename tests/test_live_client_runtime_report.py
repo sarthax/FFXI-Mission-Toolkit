@@ -147,3 +147,71 @@ def test_zero_and_absent_server_ids_both_remain_unknown(tmp_path):
     recording = recording_report(path)['recording']
     assert recording['distinct_entity_observations'] == 1
     assert recording['entity_observation_summary']['observations_without_reported_server_id'] == 2
+
+
+def packet_file(tmp_path, **changes):
+    row = dict(schema_version=1, kind='ashita_packet_observation', profile='event_emote',
+               hook_stage='addon_callback_original', client_id='ashita-runtime-sample',
+               source_recording=CAPTURE.stem, adapter='ashita-v4-api-experimental',
+               client_version='unverified-ashita-v4-api', sequence=1, observed_at=1000,
+               dropped_before=0, zone_id=50, opcode=0x1ff, size=4, raw_hex='00000000',
+               direction='incoming', is_injected=False, is_blocked=False)
+    row.update(changes)
+    path = tmp_path / 'packets.jsonl'
+    path.write_text(json.dumps(row)+'\n')
+    return path
+
+
+def test_packet_report_preserves_locators_and_unknown_semantics(tmp_path):
+    path = packet_file(tmp_path)
+    evidence = recording_report(CAPTURE, packet_observations=path)['packet_evidence']
+    assert evidence['sha256'] == hashlib.sha256(path.read_bytes()).hexdigest()
+    assert evidence['classification_counts'] == {'exact_label_source_zone_time_candidate': 1}
+    candidate, = evidence['candidates']
+    assert candidate['telemetry_frame'] == 1 and candidate['packet_line'] == 1
+    assert candidate['reported_opcode'] == 0x1ff
+    assert candidate['packet_start_offset'] == 0 and candidate['packet_end_offset'] == path.stat().st_size
+    assert all(value is False for key, value in evidence.items() if key.endswith('_verified'))
+    assert evidence['instance_identity_available'] is False
+
+
+@pytest.mark.parametrize('change,classification', [
+    ({'source_recording': 'different-recording'}, 'source_label_mismatch'),
+    ({'client_id': 'other-client'}, 'no_exact_source_zone_time_frame'),
+    ({'adapter': 'other-provider'}, 'no_exact_source_zone_time_frame'),
+    ({'client_version': 'other-version'}, 'no_exact_source_zone_time_frame'),
+    ({'zone_id': 51}, 'no_exact_source_zone_time_frame'),
+    ({'observed_at': 999}, 'no_exact_source_zone_time_frame'),
+])
+def test_packet_candidates_do_not_cross_source_context_or_time(tmp_path, change, classification):
+    report = recording_report(CAPTURE, packet_observations=packet_file(tmp_path, **change))
+    assert report['packet_evidence']['candidates'] == []
+    assert report['packet_evidence']['classification_counts'] == {classification: 1}
+
+
+def test_packet_report_rejects_incomplete_source_before_output(tmp_path):
+    path = packet_file(tmp_path); path.write_bytes(path.read_bytes().rstrip(b'\n'))
+    output = tmp_path / 'report.json'
+    with pytest.raises(SystemExit):
+        main([str(CAPTURE), '--packet-observations', str(path), '--output', str(output)])
+    assert not output.exists()
+
+
+def test_packet_report_bounds_candidates_without_losing_counts(tmp_path):
+    path = packet_file(tmp_path)
+    row = json.loads(path.read_text())
+    path.write_text(''.join(json.dumps(row | {'sequence': n})+'\n' for n in range(1, 1003)))
+    evidence = recording_report(CAPTURE, packet_observations=path)['packet_evidence']
+    assert len(evidence['candidates']) == 1000 and evidence['candidates_truncated'] is True
+    assert evidence['classification_counts']['exact_label_source_zone_time_candidate'] == 1002
+
+
+def test_duplicate_time_frames_remain_ambiguous_even_with_different_instances(tmp_path):
+    from workbench.runtime.live_client.runtime_report import packet_evidence_report
+    from dataclasses import replace
+    replay = load_recorded_bytes(CAPTURE.read_bytes(), client_id='ashita-runtime-sample')
+    frame = replay.advance()
+    other = replace(frame, snapshot=replace(frame.snapshot, instance_hint='different-instance'))
+    evidence = packet_evidence_report(packet_file(tmp_path), CAPTURE.stem, [frame, other])
+    assert evidence['classification_counts'] == {'ambiguous_frame': 1}
+    assert evidence['candidates'] == []

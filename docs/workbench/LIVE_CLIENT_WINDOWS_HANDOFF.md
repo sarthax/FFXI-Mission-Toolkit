@@ -132,3 +132,23 @@ flags with an independent capture; do not assume final wire delivery or blocking
 Verify excluded chat/opcodes, bounded-rate/drop reporting, source stop/unload,
 restart into a new file, and two-client isolation when available. Existing Capture
 import and decoder are the cloud analysis path; packet writes are not enabled.
+
+### Offline packet/telemetry evidence candidates
+
+After stopping both exports, add `--packet-observations "C:\path\to\packets-telemetry-....jsonl"`
+to the runtime report command. Preserve the telemetry filename: packet `source_recording`
+refers to its filename stem. Renaming or anonymizing either source can prevent matches.
+The existing Capture source validator checks the complete packet file (4 MiB/10,000
+records maximum). No Capture database is created or changed, and no competing decoder
+is introduced; upload that same packet file to Capture for canonical packet inspection.
+
+Candidates require an exact declared recording label, client ID, adapter, reported
+version, zone and timestamp, with exactly one eligible telemetry frame. Gaps and
+ambiguous frames are left unmatched; there is no interpolation. The report retains
+packet line/byte offsets and telemetry frame numbers, hashes both supplied byte
+snapshots, counts unmatched observations, and limits candidate details to 1,000 entries.
+These are temporal research candidates only. Filename labels do not prove recording
+identity, packet timestamps have one-second resolution, packet instance identity is
+absent, and clocks, server IDs, wire contents, opcode meanings and causal relationships
+remain unverified. The original player recording has no accompanying packet export;
+this report path is cloud-tested synthetically and still needs paired Windows evidence.
