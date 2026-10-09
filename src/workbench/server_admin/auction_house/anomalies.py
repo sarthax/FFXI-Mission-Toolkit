@@ -61,11 +61,14 @@ def anomalies_from(records: list[dict[str, Any]], now: int, days: int = 7, histo
                             "value": len(recent), "baseline": round(expected, 1), "change_pct": None,
                             "detail": f"{len(recent)} sales in {days}d where about {expected:.1f} would be typical."})
 
+    # Compute the reference price once per item, not once for every active
+    # listing. Popular items may have thousands of simultaneous listings.
+    listing_medians = {
+        iid: median(int(x["sale_price"]) for x in rows)
+        for iid, rows in by_item_sales.items() if len(rows) >= MIN_HISTORY_SALES
+    }
     for r in active:
-        hist = [int(x["sale_price"]) for x in by_item_sales.get(r["item_id"], [])]
-        if len(hist) < MIN_HISTORY_SALES:
-            continue
-        base = median(hist)
+        base = listing_medians.get(r["item_id"])
         if not base:
             continue
         ratio = int(r["asking_price"]) / base
