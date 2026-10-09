@@ -102,6 +102,16 @@ def test_file_bound_fails_closed(tmp_path):
     assert 'Packets inactive' in lua.globals().messages[len(lua.globals().messages)]
 
 
+def test_packet_start_rejects_stale_telemetry_without_creating_file(tmp_path):
+    lua = runtime(tmp_path)
+    lua.execute('command("/wblive start packet-a"); clock=106; command("/wblive packets start event_emote")')
+    assert not list(tmp_path.glob('packets-*'))
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert any('telemetry context stale' in message for message in messages)
+    lua.execute('events.d3d_present(); command("/wblive packets start event_emote")')
+    assert len(list(tmp_path.glob('packets-*'))) == 1
+
+
 def test_packet_export_stops_if_telemetry_context_is_stale(tmp_path):
     lua = runtime(tmp_path); start(lua); event(lua)
     lua.execute('events.packet_in(packet)')
