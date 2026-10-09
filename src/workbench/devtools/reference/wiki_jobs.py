@@ -260,7 +260,7 @@ def _run(job: dict, main_db: str) -> None:
         job["state"] = "error"
         job["error"] = str(exc)
         job["error_code"], job["guidance"] = _failure_guidance(exc, phase)
-        log(f"error ({job[\'error_code\']}): {exc}")
+        log("error (" + job["error_code"] + "): " + str(exc))
     finally:
         if job["state"] != "error" and os.path.exists(tmp):
             try:
