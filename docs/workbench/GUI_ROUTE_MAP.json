@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 281,
+  "route_count": 282,
   "routes": [
     {
       "method": "GET",
@@ -433,6 +433,14 @@
       "home": "Server",
       "section": "Items & Key Items",
       "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/keyitems/lua-references.json",
+      "home": "Server",
+      "section": "Items & Key Items",
+      "role": "api",
       "disposition": "KEEP"
     },
     {
