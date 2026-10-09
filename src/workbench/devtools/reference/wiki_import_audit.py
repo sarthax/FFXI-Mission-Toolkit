@@ -95,7 +95,20 @@ def preview_local_recovery(con: sqlite3.Connection, *, sample_limit: int = 12) -
         for block in blocks:
             kind=block.get("block_type") or "unknown"
             counts[kind]=counts.get(kind,0)+1
-        previews.append({"source":page["source"],"page_id":page["page_id"],
+        current=con.execute("""SELECT block_type,source_locator FROM reference_wiki_blocks
+          WHERE source_id=? AND page_id=?""",
+          (page["source"],page["page_id"])).fetchall()
+        existing=block_structure_summary([
+            {"block_type":kind,"source_locator":locator} for kind,locator in current
+        ])
+        proposed=block_structure_summary(blocks)
+        differences={kind:proposed["types"].get(kind,0)-existing["types"].get(kind,0)
+                     for kind in sorted(set(existing["types"]) | set(proposed["types"]))
+                     if proposed["types"].get(kind,0)!=existing["types"].get(kind,0)}
+        previews.append({"existing_structure":existing,"proposed_structure":proposed,
+                         "block_type_deltas":differences,
+                         "source_locator_delta":proposed["with_source_locator"]-existing["with_source_locator"],
+                         "source":page["source"],"page_id":page["page_id"],
                          "existing_legacy_blocks":page["legacy_blocks"],
                          "preview_block_count":len(blocks),
                          "source_hash":source_hash,

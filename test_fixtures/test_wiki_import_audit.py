@@ -28,6 +28,10 @@ def main():
     assert len(preview)==1,preview
     assert preview[0]["page_id"]=="old"
     assert preview[0]["preview_block_count"]>0
+    assert preview[0]["existing_structure"]["types"]=={"legacy_text":1}
+    assert preview[0]["proposed_structure"]["blocks"]==preview[0]["preview_block_count"]
+    assert preview[0]["block_type_deltas"]["legacy_text"]==-1
+    assert preview[0]["source_locator_delta"]>=0
     assert preview[0]["requires_confirmation"] is True and preview[0]["applied"] is False
     assert con.execute("SELECT COUNT(*) FROM reference_wiki_blocks").fetchone()[0]==4
 
