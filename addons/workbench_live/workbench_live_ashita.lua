@@ -6,11 +6,15 @@ addon.version = '0.4.0-experimental'
 addon.desc = 'Read-only observation export; client build unverified.'
 require('common')
 local observation = require('workbench_observation')
+local bridge_config_ok, bridge_config = pcall(require, 'workbench_bridge_settings')
+local bridge = require('workbench_bridge').new(bridge_config_ok and bridge_config or {enabled=false})
+
 local exporter = require('workbench_export').new({
     directory = addon.path,
     exists = ashita.fs.exists,
     message = function(text) print('Workbench Live: ' .. text) end,
     supports_inventory = true,
+    on_frame = function(id, line) bridge.observe(id, line) end,
     capture = function(id, now, inventory) return observation.capture_ashita(AshitaCore, GetEntity, id, now, inventory) end,
 })
 local packets = require('workbench_packets').new({
@@ -37,7 +41,16 @@ ashita.events.register('command', 'workbench_live_command', function(e)
     if args[1] ~= '/wblive' then return end
     e.blocked = true
     if args[2] == 'packets' then packets.command(args[3], args[4]); return end
-    if args[2] == 'stop' then packets.stop() end
+    if args[2] == 'bridge' then
+        if args[3] == 'stop' then bridge.stop()
+        elseif args[3] == 'start' then
+            local context = exporter.context()
+            if context then bridge.start(context.client_id) else print('Workbench Live: start telemetry before bridge') end
+        elseif args[3] == 'status' then print('Workbench Live: Bridge '..(bridge.active() and 'active' or 'inactive'))
+        else print('Workbench Live: use bridge start, bridge stop or bridge status') end
+        return
+    end
+    if args[2] == 'stop' then packets.stop(); bridge.stop() end
     exporter.command(args[2], args[3], args[4])
 end)
 ashita.events.register('d3d_present', 'workbench_live_sample', function()
@@ -46,4 +59,4 @@ ashita.events.register('d3d_present', 'workbench_live_sample', function()
         packets.stop('Packet export stopped: telemetry inactive or paused; restart explicitly after fresh telemetry.')
     end
 end)
-ashita.events.register('unload', 'workbench_live_unload', function() packets.stop(); exporter.stop() end)
+ashita.events.register('unload', 'workbench_live_unload', function() packets.stop(); bridge.stop(); exporter.stop() end)
