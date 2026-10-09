@@ -5,7 +5,7 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return
 function num(n){return n==null?'?':Number(n).toLocaleString();}
 function jget(u){return fetch(u).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});});}
 function load(){
- jget('/domains/voidwatch/officers.json').catch(function(){return {officers:[],areas:[],states:[]};}).then(function(o){OF=o;return jget('/domains/voidwatch/overview.json');}).then(function(d){O=d;offTable();warpTable();$('vw-srv').textContent='Server: '+d.server.name+' ('+d.server.environment+') '+d.server.root;graph();table();})
+ jget('/domains/voidwatch/officers.json').catch(function(){return {officers:[],areas:[],states:[]};}).then(function(o){OF=o;return jget('/domains/voidwatch/overview.json');}).then(function(d){O=d;offTable();npcFix();warpTable();$('vw-srv').textContent='Server: '+d.server.name+' ('+d.server.environment+') '+d.server.root;graph();table();})
  .catch(function(e){$('vw-sum').innerHTML='<b style="color:#c0392b">'+esc(e.message)+'</b>';});
 }
 function bucket(p,t){return O.nms.filter(function(x){return x.path===p&&x.tier===t;});}
@@ -211,3 +211,28 @@ document.addEventListener('DOMContentLoaded',function(){
  load();
 });
 })();
+
+function npcFix(){
+ var el=$('vw-npcfix');if(!el)return;
+ function post(b){return fetch('/domains/voidwatch/npcfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});});}
+ jget('/domains/voidwatch/npcfix.json').then(function(d){
+  var h='<h3 style="margin:8px 0 2px">NPC row fixes <span class="muted">(npc_list; dry-run first, apply is behind the write gate and logged)</span></h3>';
+  d.fixes.forEach(function(f,i){
+   h+='<div class="vwval"><b>'+esc(f.title)+'</b> '+(f.done?'<span class="chip">done</span>':'')+'<div class="muted">'+esc(f.evidence)+'</div>'+(f.done?'':'<pre class="mono vwsql">'+esc(f.plan_result?f.plan_result.sql:'')+'</pre><button type="button" data-fix="'+i+'">Dry-run</button> <button type="button" data-fixgo="'+i+'" hidden>Apply</button>')+'<pre class="mono vwfres" data-r="'+i+'" style="white-space:pre-wrap"></pre></div>';
+  });
+  h+='<div class="vwval"><b>Open questions (need in-game data)</b><ul>'+d.open.map(function(t){return '<li>'+esc(t)+'</li>';}).join('')+'</ul></div>';
+  h+='<div class="vwval"><b>Add / delete a row</b><br><select id="nf-npc">'+d.names.map(function(n){return '<option>'+n+'</option>';}).join('')+'</select> zone <input id="nf-zone" placeholder="Qufim_Island" size="18"> x <input id="nf-x" size="7"> y <input id="nf-y" size="7"> z <input id="nf-z" size="7"> rot <input id="nf-rot" size="4"> <button type="button" id="nf-ins">Dry-run insert</button><br>delete npcid <input id="nf-del" size="10"> <button type="button" id="nf-delb">Dry-run delete</button> <button type="button" id="nf-go" hidden>Apply last plan</button><pre id="nf-res" class="mono" style="white-space:pre-wrap"></pre></div>';
+  h+='<div class="vwval"><label>Write confirmation <input id="nf-conf" placeholder="active profile name (only needed to Apply)" style="width:60%"></label></div>';
+  el.innerHTML=h;
+  var last=null;
+  function show(node,j){node.textContent=(j.applied?'APPLIED ('+j.rows+' row)\n':'DRY RUN\n')+j.sql+'\n'+(j.warnings||[]).join('\n');}
+  function run(b,node,goBtn){b.dry_run=true;post(b).then(function(j){last=b;show(node,j);goBtn.hidden=false;}).catch(function(e){goBtn.hidden=true;node.textContent='Refused: '+e.message;});}
+  function apply(node,goBtn){var b=Object.assign({},last,{dry_run:false,confirmation:$('nf-conf').value});post(b).then(function(j){show(node,j);goBtn.hidden=true;npcFix();}).catch(function(e){node.textContent='Apply failed: '+e.message;});}
+  el.querySelectorAll('[data-fix]').forEach(function(btn){var i=+btn.dataset.fix,node=el.querySelector('[data-r="'+i+'"]'),go=el.querySelector('[data-fixgo="'+i+'"]');
+   btn.onclick=function(){run(Object.assign({},d.fixes[i].plan),node,go);};go.onclick=function(){apply(node,go);};});
+  var res=$('nf-res'),gob=$('nf-go');
+  $('nf-ins').onclick=function(){run({kind:'insert',npc:$('nf-npc').value,zone:$('nf-zone').value.trim(),x:$('nf-x').value,y:$('nf-y').value,z:$('nf-z').value,rot:$('nf-rot').value},res,gob);};
+  $('nf-delb').onclick=function(){run({kind:'delete',npcid:$('nf-del').value},res,gob);};
+  gob.onclick=function(){apply(res,gob);};
+ }).catch(function(e){el.innerHTML='<p class="muted">NPC fixes unavailable: '+esc(e.message)+'</p>';});
+}

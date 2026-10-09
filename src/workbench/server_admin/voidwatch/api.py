@@ -11,6 +11,7 @@ from workbench.server_admin.auction_house.factory import open_auction_house
 from . import details as D
 from . import drops as Dr
 from . import edits as E
+from . import npcfix as Nf
 from . import officers as Of
 from . import warps as W
 
@@ -179,4 +180,43 @@ def warps_export(payload: dict = Body(default={})):
     def go():
         with _ctx() as (ctx, root, ident):
             return W.export_lua(ctx.service.connection, root)
+    return _guard(go)
+
+
+@router.get("/domains/voidwatch/npcfix.json")
+def npcfix_json():
+    def go():
+        with _ctx() as (ctx, root, ident):
+            return Nf.overview(ctx.service.connection)
+    return _guard(go)
+
+
+@router.post("/domains/voidwatch/npcfix")
+def npcfix(payload: dict = Body(...)):
+    """Plan (dry_run, default) or apply one Voidwatch npc_list fix (update / delete / insert) behind the Test-profile write gate."""
+    from workbench.server_admin.auction_house.legacy_test_executor import evaluate_legacy_test_write_gate
+
+    def go():
+        with _ctx() as (ctx, root, ident):
+            conn = ctx.service.connection
+            kind = str(payload.get("kind", ""))
+            try:
+                if kind == "update":
+                    p = Nf.plan_update(conn, int(payload.get("npcid")), payload.get("changes") or {})
+                elif kind == "delete":
+                    p = Nf.plan_delete(conn, int(payload.get("npcid")))
+                elif kind == "insert":
+                    p = Nf.plan_insert(conn, str(payload.get("npc", "")), str(payload.get("zone", "")),
+                                       payload.get("x"), payload.get("y"), payload.get("z"), payload.get("rot"))
+                else:
+                    raise Nf.FixError("kind must be update, delete or insert")
+            except (Nf.FixError, TypeError, ValueError) as exc:
+                raise HTTPException(status_code=400, detail=str(exc))
+            if payload.get("dry_run", True):
+                return {"applied": False, **p}
+            gate = evaluate_legacy_test_write_gate(environment=ident, schema_family_hint=ctx.service.schema.family_hint,
+                                                   confirmation=str(payload.get("confirmation") or ""), feature_enabled=None)
+            if not gate.ready:
+                raise HTTPException(status_code=409, detail="Write blocked: " + "; ".join(i.message for i in gate.issues if i.blocking))
+            return {"applied": True, "rows": Nf.apply(conn, p, str(payload.get("by", ""))), **p}
     return _guard(go)
