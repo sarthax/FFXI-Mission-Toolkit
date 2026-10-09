@@ -1,7 +1,7 @@
 """Durable, operator-approved reward schedule definitions.
 
-Scheduling never authorizes game writes: a due schedule requires a fresh
-recipient/item preview and named Test profile confirmation at execution time.
+An operator explicitly approves a Test-only schedule with the named profile.
+At execution time the worker rechecks the same profile and all Test write gates.
 """
 from __future__ import annotations
 
@@ -54,19 +54,23 @@ def _connect(path):
 
 
 def create_schedule(*, due_utc: str, environment: dict, recipient_mode: str,
-                    character_ids: list[int], items: list[dict], path=_DEFAULT) -> dict:
+                    character_ids: list[int], items: list[dict], confirmation: str, path=_DEFAULT) -> dict:
     due = _utc(due_utc)
     if due <= datetime.now(timezone.utc):
         raise RewardTemplateError("Scheduled time must be in the future")
     mode = str(recipient_mode).lower()
-    if mode not in {"selected", "account", "all"}:
-        raise RewardTemplateError("Unsupported recipient mode")
+    if mode != "selected":
+        raise RewardTemplateError("Scheduled campaigns require a frozen selected-recipient set")
     ids = sorted({int(i) for i in character_ids})
     if any(i <= 0 for i in ids) or (mode == "selected" and not ids) or (mode == "account" and len(ids) != 1):
         raise RewardTemplateError("Invalid scheduled character selection")
     if len(ids) > 5000:
         raise RewardTemplateError("Schedule exceeds recipient cap")
     normalized = normalize_items(items)
+    if len(ids) * len(normalized) > 50000:
+        raise RewardTemplateError("Schedule exceeds delivery-row cap")
+    if str(confirmation or "") != str(environment.get("name") or ""):
+        raise RewardTemplateError("Exact named Test profile confirmation is required")
     # Bind a future operator approval to the same named Test environment.
     if str(environment.get("environment") or "").lower() != "test" or not environment.get("name") or str(environment.get("family") or "").lower() not in {"dsp", "topaz"}:
         raise RewardTemplateError("Only a named DSP/Topaz Test environment can stage rewards")
@@ -91,7 +95,7 @@ def get_schedule(schedule_id: str, *, path=_DEFAULT) -> dict:
         "character_ids": json.loads(row["character_ids_json"]),
         "items": json.loads(row["items_json"]),
         "created_utc": row["created_utc"], "updated_utc": row["updated_utc"],
-        "execution_policy": "manual_preview_and_fresh_test_confirmation",
+        "execution_policy": "operator_approved_test_once_revalidated_on_due_no_auto_retry",
     }
 
 
