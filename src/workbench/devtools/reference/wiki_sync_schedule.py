@@ -66,9 +66,28 @@ def tick(db, now=None):
             return {"status":"disabled"}
         if config["next_due"] and datetime.fromisoformat(config["next_due"])>now:
             return {"status":"not_due"}
-        # Avoid overlap with any local running page batch.
+        # Never overlap a running import or quietly replace a paused job.
         if wiki_bulk_jobs._RUNNING:
             return {"status":"busy"}
+        prior = config.get("last_job_id")
+        if prior:
+            with wiki_bulk_jobs._connect(db) as con:
+                row=con.execute("SELECT state,last_error FROM wiki_bulk_jobs WHERE id=?",(prior,)).fetchone()
+            if row and row[0] in ("paused","pausing","error"):
+                return {"status":"needs_attention","job_id":prior,"state":row[0]}
+            if row and row[0]=="interrupted":
+                checkpoint=wiki_bulk_jobs.latest_recoverable(db,job_id=prior)
+                if checkpoint:
+                    try:
+                        wiki_bulk_jobs.resume(db,prior)
+                    except ValueError as exc:
+                        return {"status":"busy","error":str(exc)}
+                    with _db(db) as con:
+                        con.execute("""UPDATE wiki_sync_schedule SET last_attempt=?,last_error=NULL,
+                            next_due=? WHERE source='FFXIclopedia'""",
+                            (_format(now),_format(now+timedelta(hours=config["interval_hours"]))))
+                    return {"status":"resumed","job_id":prior}
+                return {"status":"needs_attention","job_id":prior,"state":"no_checkpoint"}
         next_due=_format(now+timedelta(hours=config["interval_hours"]))
         try:
             job_id=wiki_bulk_jobs.start(db,config["page_limit"],mode="changed")
@@ -90,6 +109,9 @@ def start_background(db):
         if _STARTED:
             return
         _STARTED=True
+    # State reconciliation is not a network operation; never auto-resume an
+    # interrupted job until its persisted next-due time and checkpoint pass.
+    wiki_bulk_jobs.recover_interrupted(db)
     def runner():
         while True:
             try:
