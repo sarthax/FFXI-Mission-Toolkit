@@ -40,3 +40,12 @@ def test_catalog_browses_when_query_is_empty():
     page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
     assert "Browse all key items" in page
     assert "{% if not q %}" not in page
+
+
+def test_filtered_catalog_defers_description_load_until_page():
+    host = Path("src/workbench/app/_host_impl.py").read_text(encoding="utf-8")
+    route = host.split('def keyitems(request: Request, q:', 1)[1].split('@app.get("/keyitems/lua-references.json")', 1)[0]
+    assert 'SELECT keyitem_id, name FROM key_items WHERE ' in route
+    assert 'page_ids = [row["keyitem_id"] for row in candidates[' in route
+    assert 'WHERE keyitem_id IN (" + placeholders + ") ORDER BY name' in route
+    assert 'if page_ids:' in route
