@@ -633,8 +633,10 @@ def page_topic(con, source_id: str, page_id: str) -> dict | None:
     return {"topic_id":row[0],"canonical_title":row[1],"members":members}
 
 
-def search_pages(con, query: str, limit: int = 40, source_id: str = "all") -> list[dict]:
-    init_db(con); q=normalize_search(query)
+def search_pages(con, query: str, limit: int = 40, source_id: str = "all", *, initialize: bool = True) -> list[dict]:
+    if initialize:
+        init_db(con)
+    q=normalize_search(query)
     if not q: return []
     like=f"%{q}%"; found={}
     scoped = source_id not in ("", "all", None)
