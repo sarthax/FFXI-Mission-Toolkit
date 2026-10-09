@@ -5,7 +5,7 @@
 {% block page_class %}keyitems-page{% endblock %}
 {% block page_heading %}Key Items{% endblock %}
 {% block page_status %}<span class="wb-readonly-badge">Read only</span>{% endblock %}
-{% block page_help %}Client key-item names and descriptions cross-referenced against server enums, scripting constants, readiness, optional Topaz backport state, and observed capture evidence.{% endblock %}
+{% block page_help %}Active server key-item mappings (DSP when selected), plus reference LSB/Topaz data. Client key-item names and descriptions cross-referenced against server enums, scripting constants, readiness, optional Topaz backport state, and observed capture evidence.{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -49,14 +49,16 @@
 .keyitems-page .ki-select{white-space:nowrap}
 </style>
 <div class="ki-intro">
-  <span class="chip">Client ↔ server key-item reference</span>
+  <span class="chip">Active server: {{ active_server.name }} ({{ active_server.family|upper }})</span>
+  <span class="muted">{{ active_server.server_root }}</span>
+  {% if primary_dsp %}<span class="chip">DSP checkout is primary</span>{% else %}<span class="chip">LSB indexed reference is primary</span>{% endif %}
   <span class="muted ki-help">Search names, inspect missing/drifted enum mappings, and follow recorded capture observations. This page does not edit character ownership.</span>
 </div>
 <form class="search wb-filter-row" method="get">
   <input type="text" name="q" value="{{ q }}" placeholder="Search key-item name or client ID (e.g. Zeruhn or 123)" aria-label="Search key items">
   <label for="ki-global-readiness">Server readiness</label>
   <select name="readiness" id="ki-global-readiness">
-    {% for value, label in [('all','All statuses'),('clean','Clean'),('drifted','Drifted'),('wrong_name','Wrong name at ID'),('missing','Missing')] %}
+    {% for value, label in [('all','All statuses'),('clean','Clean'),('drifted','Drifted'),('wrong_name','Wrong name at ID'),('missing','Missing'),('unavailable','Source unavailable')] %}
     <option value="{{ value }}"{% if readiness_filter == value %} selected{% endif %}>{{ label }}</option>
     {% endfor %}
   </select>
@@ -78,7 +80,7 @@
     <option value="clean">Clean</option>
     <option value="drifted">Drifted</option>
     <option value="wrong_name">Wrong name at ID</option>
-    <option value="missing">Missing</option>
+    <option value="missing">Missing</option><option value="unavailable">Source unavailable</option>
   </select>
   <label for="ki-page-filter">Find in current page</label>
   <input id="ki-page-filter" type="search" placeholder="Name, ID or description" aria-label="Filter current results">
@@ -91,7 +93,7 @@
   </div>
   <div class="ki-inspector-grid">
     <div class="ki-inspector-section"><h4>Client description</h4><p id="ki-inspector-description"></p></div>
-    <div class="ki-inspector-section"><h4>LSB mapping</h4><div id="ki-inspector-lsb"></div></div>
+    <div class="ki-inspector-section"><h4>{{ "Active DSP mapping" if primary_dsp else "LSB mapping" }}</h4><div id="ki-inspector-lsb"></div></div>
     <div class="ki-inspector-section"><h4>Topaz mapping</h4><div id="ki-inspector-topaz"></div></div>
     <div class="ki-inspector-section"><h4>Recorded evidence</h4><div id="ki-inspector-evidence"></div></div>
   </div>
@@ -106,7 +108,7 @@
   <section class="ki-inspector-section" aria-label="Lua source references">
     <h4>Lua dependencies</h4>
     <label for="ki-lineage">Source lineage</label>
-    <select id="ki-lineage"><option value="lsb">LSB</option>{% if backport_enabled() %}<option value="topaz">Topaz</option>{% endif %}</select>
+    <select id="ki-lineage">{% if primary_dsp %}<option value="dsp">DSP (active)</option>{% endif %}<option value="lsb">LSB (reference)</option>{% if backport_enabled() %}<option value="topaz">Topaz</option>{% endif %}{% if not primary_dsp %}<option value="dsp">DSP (requires active DSP profile)</option>{% endif %}</select>
     <span id="ki-lua-status" class="muted" role="status"></span>
     <label for="ki-lua-operation">Operation</label>
     <select id="ki-lua-operation"><option value="all">All</option><option value="require">Requires</option><option value="grant">Grants</option><option value="remove">Removes</option></select>
@@ -118,7 +120,7 @@
 </section>
 <div class="table-wrap"><table class="ki-table">
   <tr><th>Details</th><th>id</th><th>name</th><th>readiness</th><th>enum / scripting constant</th><th>description</th>
-    {% if backport_enabled() %}<th>Topaz readiness (backport)</th><th>Topaz enum constant</th>{% endif %}
+    {% if backport_enabled() %}<th>Topaz readiness (reference)</th><th>Topaz reference constant</th>{% endif %}
   </tr>
   {% for r in rows %}
   {% set rd = r.readiness %}
@@ -130,17 +132,17 @@
       {% if rd.status == "clean" %}<span class="pill exists">clean</span>
       {% elif rd.status == "drifted" %}<span class="pill gap">drifted</span>
       {% elif rd.status == "wrong_name" %}<span class="pill mismatch">wrong name at this id</span>
-      {% else %}<span class="pill mismatch">missing</span>{% endif %}
+      {% elif rd.status == "unavailable" %}<span class="pill gap">source unavailable</span>{% else %}<span class="pill mismatch">missing</span>{% endif %}
     </td>
     <td class="mono">
       {% if rd.status == "clean" %}
-        xi.keyItem.{{ rd.id_match }}
+        {{ "tpz.ki" if primary_dsp else "xi.keyItem" }}.{{ rd.id_match }}
       {% elif rd.status == "drifted" %}
-        xi.keyItem.{{ rd.name_match[1] }} <span class="muted">(real id {{ rd.name_match[0] }}, not {{ r.keyitem_id }})</span>
+        {{ "tpz.ki" if primary_dsp else "xi.keyItem" }}.{{ rd.name_match[1] }} <span class="muted">(real id {{ rd.name_match[0] }}, not {{ r.keyitem_id }})</span>
       {% elif rd.status == "wrong_name" %}
-        xi.keyItem.{{ rd.id_match }} <span class="muted">(this id is really something else in LSB)</span>
+        {{ "tpz.ki" if primary_dsp else "xi.keyItem" }}.{{ rd.id_match }} <span class="muted">(this ID maps to a different enum in the selected source)</span>
       {% else %}
-        <span class="muted">not implemented</span>
+        <span class="muted">{{ "DSP enum unavailable or not matched" if primary_dsp else "not implemented" }}</span>
       {% endif %}
     </td>
     <td class="ki-description">

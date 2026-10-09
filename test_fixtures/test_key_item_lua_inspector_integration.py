@@ -6,7 +6,7 @@ def test_key_item_lua_route_is_read_only_and_identity_guarded():
     host = Path("src/workbench/app/_host_impl.py").read_text(encoding="utf-8")
     section = host.split('@app.get("/keyitems/lua-references.json")', 1)[1].split("ZONE_BROWSE_PAGE_SIZE", 1)[0]
     assert "def keyitems_lua_references(" in section
-    assert 'if lineage not in {"lsb", "topaz"}' in section
+    assert 'if lineage not in {"lsb", "topaz", "dsp"}' in section
     assert "resolve_keyitem_readiness(" in section
     assert 'status not in {"clean", "drifted"}' in section
     assert "discover_key_item_references(" in section
