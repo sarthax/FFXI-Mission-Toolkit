@@ -30,7 +30,8 @@ def main():
             raise AssertionError("unbounded batch was accepted")
     ui=(Path(__file__).resolve().parents[1]/"gui/templates/wiki.html").read_text(encoding="utf-8")
     assert 'id="wiki-bulk-start"' in ui
-    assert "/wiki/bulk/start" in ui and "/wiki/bulk/resume" not in ui or "wiki/bulk/'+action" in ui
+    assert "/wiki/bulk/start" in ui
+    assert "wiki/bulk/'+action" in ui
     print("Wiki batch checkpoints: PASS")
 
 
