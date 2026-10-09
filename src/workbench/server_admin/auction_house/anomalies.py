@@ -96,6 +96,13 @@ def anomalies_from(records: list[dict[str, Any]], now: int, days: int = 7, histo
                         "value": recent_n, "baseline": round(expected, 1), "change_pct": None,
                         "detail": f"Posted {recent_n} listings in {days}d where about {expected:.1f} is usual for them."})
 
+    seller_samples = {
+        sid: (
+            sum(ts >= recent_from for ts in times),
+            sum(ts < recent_from for ts in times),
+        )
+        for sid, times in listed.items()
+    }
     # Cache sample counts per item; repeated active listings share the same
     # evidence window and should not rescan the full transaction history.
     item_samples = {
@@ -124,9 +131,7 @@ def anomalies_from(records: list[dict[str, Any]], now: int, days: int = 7, histo
                 "note": "Evidence quality reflects sample size, not severity or proof of manipulation.",
             }
         elif kind == "seller_flood":
-            seller_times = listed[finding["seller_id"]]
-            recent_count = sum(ts >= recent_from for ts in seller_times)
-            earlier_count = len(seller_times) - recent_count
+            recent_count, earlier_count = seller_samples[finding["seller_id"]]
             finding["evidence"] = {
                 "quality": "strong" if earlier_count >= 20 else "limited",
                 "historical_listings": earlier_count, "recent_listings": recent_count,
