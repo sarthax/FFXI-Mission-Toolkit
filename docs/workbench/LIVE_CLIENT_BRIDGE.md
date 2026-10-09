@@ -599,3 +599,23 @@ service, live GUI polling of this receiver, direct canonical Capture persistence
 or active movement controls. The test caller explicitly operates the listener;
 it is not started by the normal Toolkit application. Windows FFXI verification
 and capture-versus-wire fidelity are still required.
+
+
+### Explicit managed receiver for no-log Live Client telemetry
+
+`ManagedLiveReceiver` in `bridge_managed.py` adds a bounded background
+localhost accept worker, one-step client provisioning with generated session,
+generation and short-lived local bearer credential, per-client latest snapshot,
+age and connection status, and explicit shutdown. It accepts the existing
+Ashita bridge wire format and updates `TelemetryFeedAdapter` without any
+JSONL recording. Real TCP synthetic tests cover provisioning, observation,
+stale credential replacement and shutdown.
+
+This is a **backend foundation, not yet an activated GUI service**. Start it
+explicitly from the Toolkit Python environment and call `provision(client_id)`
+to obtain the connection details needed by the Ashita-side private settings
+file. Never log or publish the provisioned token. Current credentials expire
+after one hour and require new provisioning for extended sessions. The worker
+stops cleanly and does not discover game processes, write client memory or
+change the Capture subsystem. Next: connect start/stop/provision/status to
+Toolkit GUI and simplify credentials delivery to the local Ashita addon.
