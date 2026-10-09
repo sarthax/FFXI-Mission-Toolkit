@@ -1,0 +1,146 @@
+{
+ "Belphoebe": {
+  "areas": {
+   "drops": "untested",
+   "hp": "untested",
+   "ingame": "untested",
+   "model": "ok",
+   "rift": "ok",
+   "skills": "ok",
+   "spawns": "ok",
+   "spells": "untested",
+   "weakness": "untested"
+  },
+  "by": "",
+  "note": "",
+  "updated": "2026-10-08T11:00:59"
+ },
+ "Cottus": {
+  "areas": {
+   "drops": "untested",
+   "hp": "untested",
+   "ingame": "untested",
+   "model": "ok",
+   "rift": "ok",
+   "skills": "untested",
+   "spawns": "ok",
+   "spells": "untested",
+   "weakness": "untested"
+  },
+  "by": "",
+  "note": "",
+  "updated": "2026-10-08T11:00:19"
+ },
+ "Hahava": {
+  "areas": {
+   "drops": "untested",
+   "hp": "untested",
+   "ingame": "untested",
+   "model": "ok",
+   "rift": "ok",
+   "skills": "untested",
+   "spawns": "ok",
+   "spells": "untested",
+   "weakness": "untested"
+  },
+  "by": "",
+  "note": "",
+  "updated": "2026-10-08T11:01:20"
+ },
+ "Kholomodumo": {
+  "areas": {
+   "drops": "untested",
+   "hp": "untested",
+   "ingame": "untested",
+   "model": "ok",
+   "rift": "ok",
+   "skills": "untested",
+   "spawns": "ok",
+   "spells": "untested",
+   "weakness": "untested"
+  },
+  "by": "",
+  "note": "",
+  "updated": "2026-10-08T11:01:08"
+ },
+ "Krabimanjaro": {
+  "areas": {
+   "drops": "untested",
+   "hp": "untested",
+   "ingame": "untested",
+   "model": "ok",
+   "rift": "ok",
+   "skills": "untested",
+   "spawns": "ok",
+   "spells": "untested",
+   "weakness": "untested"
+  },
+  "by": "",
+  "note": "",
+  "updated": "2026-10-08T11:00:43"
+ },
+ "Lancing Lamorak": {
+  "areas": {
+   "drops": "untested",
+   "hp": "untested",
+   "ingame": "untested",
+   "model": "ok",
+   "rift": "ok",
+   "skills": "untested",
+   "spawns": "ok",
+   "spells": "untested",
+   "weakness": "untested"
+  },
+  "by": "",
+  "note": "",
+  "updated": "2026-10-08T11:02:59"
+ },
+ "Pancimanci": {
+  "areas": {
+   "drops": "untested",
+   "hp": "issue",
+   "ingame": "untested",
+   "model": "ok",
+   "rift": "ok",
+   "skills": "untested",
+   "spawns": "ok",
+   "spells": "untested",
+   "weakness": "untested"
+  },
+  "by": "",
+  "note": "",
+  "updated": "2026-10-08T11:02:22"
+ },
+ "Sallow Seymour": {
+  "areas": {
+   "drops": "untested",
+   "hp": "untested",
+   "ingame": "untested",
+   "model": "ok",
+   "rift": "ok",
+   "skills": "untested",
+   "spawns": "ok",
+   "spells": "untested",
+   "weakness": "untested"
+  },
+  "by": "",
+  "note": "",
+  "updated": "2026-10-08T11:02:02"
+ },
+ "Sarimanok": {
+  "areas": {
+   "drops": "untested",
+   "hp": "untested",
+   "ingame": "untested",
+   "model": "ok",
+   "rift": "ok",
+   "skills": "untested",
+   "spawns": "ok",
+   "spells": "untested",
+   "weakness": "untested"
+  },
+  "by": "",
+  "note": "",
+  "updated": "2026-10-08T11:00:30"
+ }
+}
