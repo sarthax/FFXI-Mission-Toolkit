@@ -4523,8 +4523,8 @@ def keyitems_lua_references(keyitem_id: int, lineage: str = "lsb"):
     from fastapi import HTTPException
     from workbench.devtools.features.key_item_references import discover_key_item_references
 
-    if lineage not in {"lsb", "topaz", "dsp"}:
-        raise HTTPException(status_code=400, detail="Unsupported server lineage")
+    if lineage not in {"lsb", "topaz"}:
+        raise HTTPException(status_code=400, detail="This index currently supports only LSB and Topaz reference identities")
     con = get_con()
     try:
         item = con.execute("SELECT name FROM key_items WHERE keyitem_id = ? LIMIT 2",
@@ -4550,8 +4550,7 @@ def keyitems_lua_references(keyitem_id: int, lineage: str = "lsb"):
 
     from workbench.devtools.indexing import build_lsb_index
     root = {"lsb": build_lsb_index.LSB_ROOT,
-            "topaz": settings_mod.get_topaz_root(),
-            "dsp": settings_mod.get_dsp_root()}[lineage]
+            "topaz": settings_mod.get_topaz_root()}[lineage]
     if not root:
         return {"keyitem_id": keyitem_id, "lineage": lineage, "readiness": status,
                 "symbol": symbol, "references": [], "scanned_files": 0,
