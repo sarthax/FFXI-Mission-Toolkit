@@ -61,10 +61,11 @@
 <details class="wiki-section" id="wiki-bg-bulk-box">
 <summary>BG Wiki — Import local compressed dump in batches</summary>
 <div class="body">
-<p class="muted">Reads the existing local bg-wiki.jsonl.gz snapshot without network requests. Imports at most 50 or 250 records per batch into the shared Wiki cache, retaining the dump unchanged. Pause and resume are checkpointed in SQLite.</p>
+<p class="muted">Reads the existing local bg-wiki.jsonl.gz snapshot without network requests. Imports 50 or 250 records per bounded run, or continues through the snapshot when explicitly enabled, into the shared Wiki cache, retaining the dump unchanged. Pause and resume are checkpointed in SQLite.</p>
 <form id="wiki-bg-bulk-form" class="wiki-actions">
 <label for="wiki-bg-bulk-limit">Pages per batch</label>
 <select id="wiki-bg-bulk-limit" name="limit"><option value="50">50</option><option value="250">250</option></select>
+<label><input type="checkbox" name="auto_continue" value="1"> Automatically continue through the entire dump</label>
 <button type="submit">Import from BG dump</button>
 <button type="button" id="wiki-bg-bulk-refresh">Refresh progress</button>
 </form>
