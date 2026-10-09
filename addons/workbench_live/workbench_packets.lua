@@ -38,7 +38,9 @@ function M.new(options)
             if second ~= now then second, count = now, 0 end
             if count >= 10 then dropped = integer(dropped+1, 0, 4294967295); return end
             local current = context()
-            assert(now >= integer(current.last_observed_at, 0, 4102444800), 'system clock moved backwards')
+            local telemetry_time = integer(current.last_observed_at, 0, 4102444800)
+            assert(now >= telemetry_time, 'system clock moved backwards')
+            assert(now - telemetry_time <= 5, 'telemetry context stale; restart packet observation after fresh telemetry')
             local size = integer(e.size, 4, 1024)
             assert(type(e.data) == 'string' and #e.data == size, 'original packet size mismatch')
             assert(type(e.injected) == 'boolean' and type(e.blocked) == 'boolean', 'packet hook flags unavailable')
