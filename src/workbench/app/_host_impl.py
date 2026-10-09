@@ -5648,6 +5648,10 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         status=review_status if review_status in ("pending", "dismissed") else "all")
         if tab == "review" and source != "all" else [])
     review_has_more = len(review_window) > 50
+    recovery_preview = []
+    if tab == "recovery":
+        from workbench.devtools.reference.wiki_import_audit import preview_local_recovery
+        recovery_preview = preview_local_recovery(con, sample_limit=12)
     review_queue = review_window[:50]
     if tab == "review" and review_status in ("pending", "dismissed"):
         review_queue = [entry for entry in review_queue if entry[review_status]]
@@ -5664,8 +5668,9 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         "available_sources": available_sources,
         "comparison": comparison,
         "error": error,
-        "tab": tab if tab in ("browse", "evidence", "review") else "browse",
+        "tab": tab if tab in ("browse", "evidence", "review", "recovery") else "browse",
         "review_queue": review_queue,
+        "recovery_preview": recovery_preview,
         "review_page": review_page,
         "review_origin": review_origin,
         "review_result": review_result if review_result in ("approved", "dismissed") else "",

@@ -85,6 +85,28 @@
 {% elif review_result == 'dismissed' %}
 <div class="notice">Topic suggestion dismissed. The review queue has been refreshed.</div>
 {% endif %}
+{% if tab == 'recovery' %}
+<section class="wiki-section">
+  <h3>Local Wiki structure recovery — preview only</h3>
+  <p class="muted">These are retained-source previews, not applied changes. No scraping or database modifications occur here. The guarded single-page recovery command remains separate.</p>
+  {% if recovery_preview %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Source / page ID</th><th>Existing blocks</th><th>Proposed blocks</th><th>Block-type changes</th><th>Source locators</th></tr></thead>
+    <tbody>
+    {% for entry in recovery_preview %}
+    <tr>
+      <td>{{ entry.source }} / {{ entry.page_id }}</td>
+      <td>{{ entry.existing_structure.blocks }}</td>
+      <td>{{ entry.proposed_structure.blocks }}</td>
+      <td><pre>{{ entry.block_type_deltas }}</pre></td>
+      <td>{{ entry.existing_structure.with_source_locator }} → {{ entry.proposed_structure.with_source_locator }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<p class="muted">No locally reparsable legacy-only pages were found in this limited preview.</p>{% endif %}
+</section>
+{% endif %}
 {% if tab == 'review' %}
 <section class="wiki-section">
   <h3>Multilingual topic review queue</h3>
@@ -120,6 +142,7 @@
 {% if tab == 'browse' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=browse"><b>Browse</b></a>
   <a class="chip {% if tab == 'evidence' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=evidence"><b>Evidence workflow</b></a>
   <a class="chip {% if tab == 'review' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=review"><b>Topic review queue</b></a>
+  <a class="chip {% if tab == 'recovery' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=recovery"><b>Recovery preview</b></a>
   <span class="sp"></span>
   <span class="muted">Open site:</span>
   {% for l in site_links %}<a class="chip" href="{{ l.page or l.home }}" target="_blank" rel="noopener">{{ l.label }}{% if l.page %} ↗ page{% else %} ↗{% endif %}</a>{% endfor %}
