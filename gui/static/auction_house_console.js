@@ -512,6 +512,37 @@
       $('ibAugResult').textContent = JSON.stringify(preview, null, 2);
     } catch (e) { $('ibAugResult').textContent = e.message; }
   });
+  $('ibAugSendPreview').addEventListener('click', async () => {
+    try {
+      if (state.recips.length !== 1) throw new Error('Select exactly one Inbox recipient for experimental augmented Test mail');
+      const item_id = Number($('ibAugItemId').value);
+      const parts = $('ibAugPairs').value.split(',').map(x => x.trim()).filter(Boolean);
+      if (!Number.isInteger(item_id) || item_id <= 0 || parts.length < 1 || parts.length > 4)
+        throw new Error('Provide an item ID and 1–4 augment ID:value pairs');
+      const augments = parts.map(v => {
+        const bits = v.split(':').map(t => Number(t.trim()));
+        if (bits.length !== 2 || !bits.every(Number.isInteger)) throw new Error('Use numeric augment ID:value pairs');
+        return {id: bits[0], value: bits[1]};
+      });
+      const body = {character_id: state.recips[0].char_id, item_id, augments};
+      const preview = await req('/auction-house/rewards/augments/delivery-preview.json', body);
+      $('ibAugResult').textContent = JSON.stringify(preview, null, 2);
+      if (!preview.write_feature_enabled) {
+        return toast('Augmented DSP Test writes disabled by default; inspect preview, then explicitly enable experimental Test flag');
+      }
+      drawer({title: 'Experimental DSP Test augmented item', label: 'Send one augmented item',
+        html: '<p>Recipient: <b>' + esc(preview.recipient.char_name) +
+          '</b>. Item: <b>' + esc(preview.item_name || '#' + item_id) +
+          '</b>. This Test-only send writes exact item-extra bytes. You must verify Mog pickup and augments in-game.</p>' +
+          '<pre>' + esc(JSON.stringify(preview.augments, null, 2)) + '</pre>',
+        run: async conf => {
+          const result = await req('/auction-house/rewards/augments/delivery-execute.json',
+            {...body, preview_token: preview.preview_token, preview_id: preview.preview_id,
+             replay_id: preview.replay_id, confirmation: conf});
+          return '<pre>' + esc(JSON.stringify(result, null, 2)) + '</pre>';
+        }});
+    } catch (e) { $('ibAugResult').textContent = e.message; toast(e.message); }
+  });
   loadSchedules().catch(e => { $('ibSchedules').textContent = e.message; });
 
   /* ---------- presets (shared by Restock, Cleanup and the Presets tab) ---------- */
