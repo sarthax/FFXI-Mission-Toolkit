@@ -406,7 +406,7 @@
 
   /* ---------- inbox tab ---------- */
   function drawBundle() {
-    $('ibRows').innerHTML = state.bundle.map((b, i) => '<tr><td>' + esc(nm(b.name)) + ' <small>#' + b.item_id + '</small></td><td class="n"><input type="number" min="1" data-i="' + i + '" value="' + b.quantity + '"></td><td><button class="b" data-rm="' + i + '">✕</button></td></tr>').join('') || '<tr><td colspan="3" class="ahc-empty">Search for items to build a bundle, or pick a template.</td></tr>';
+    $('ibRows').innerHTML = state.bundle.map((b, i) => '<tr><td><span style="display:flex;align-items:center;gap:7px"><img src="/character-editor/client-cache/icons/' + b.item_id + '.png" width="28" height="28" alt="" loading="lazy" onerror="this.style.display=\\'none\\'"><span>' + esc(nm(b.name)) + ' <small>#' + b.item_id + '</small></span></span></td><td class="n"><input type="number" min="1" data-i="' + i + '" value="' + b.quantity + '"></td><td><button class="b" data-rm="' + i + '">✕</button></td></tr>').join('') || '<tr><td colspan="3" class="ahc-empty">Search for items to build a bundle, or pick a template.</td></tr>';
   }
   const drawChips = () => ibPick.draw();
   $('ibRows').addEventListener('input', e => { if (e.target.dataset.i != null) state.bundle[e.target.dataset.i].quantity = Math.max(1, +e.target.value || 1); });
@@ -418,9 +418,89 @@
     if (ex) ex.quantity = Math.min(999999999, ex.quantity + amt); else state.bundle.push({item_id: 65535, name: 'Gil', quantity: amt});
     $('ibGil').value = ''; drawBundle();
   });
-  picker($('ibItemQ'), $('ibSug'), '/auction-house/console/item-search.json?q=', r => itemRow(r), r => {
-    const id = Array.isArray(r) ? r[0] : (r.item_id ?? r.id), name = Array.isArray(r) ? r[1] : (r.name || r.item_name);
-    const ex = state.bundle.find(b => b.item_id === id); if (ex) ex.quantity++; else state.bundle.push({item_id: id, name, quantity: 1}); drawBundle(); });
+  /* Inbox item chooser uses the shared server item search and Character Editor icon cache.
+     Keep the existing bundle/preview state; no changes to protected reward execution. */
+  const ibIcon = id => '/character-editor/client-cache/icons/' + Number(id) + '.png';
+  const ibItemRow = r => {
+    const id = Number(r.item_id ?? r.id), name = String(r.name || r.item_name || ('Item #' + id));
+    return '<img src="' + ibIcon(id) + '" width="32" height="32" loading="lazy" alt="" onerror="this.style.display=\\'none\\'"> ' +
+      '<span><strong>' + esc(nm(name)) + '</strong> <small>#' + id + ' · ' + esc(r.category_path || 'Uncategorised') +
+      (r.stack_size > 1 ? ' · stacks to ' + Number(r.stack_size) : '') + '</small></span>';
+  };
+  const ibAddItem = r => {
+    const id = Number(r.item_id ?? r.id), name = String(r.name || r.item_name);
+    if (!Number.isInteger(id) || id <= 0) return;
+    const existing = state.bundle.find(x => x.item_id === id);
+    if (existing) existing.quantity++; else state.bundle.push({item_id:id, name, quantity:1});
+    drawBundle(); toast('Added ' + nm(name));
+  };
+  let ibSearchVersion = 0, ibResults = [];
+  const ibSearch = debounce(async () => {
+    const q = $('ibItemQ').value.trim(), version = ++ibSearchVersion;
+    if (q.length < 2 && !/^\\d+$/.test(q)) { $('ibSug').hidden = true; return; }
+    try {
+      const data = await req('/auction-house/console/item-search.json?q=' + encodeURIComponent(q) + '&limit=40');
+      if (version !== ibSearchVersion) return;
+      ibResults = data.rows || [];
+      $('ibSug').innerHTML = ibResults.map((r,i) =>
+        '<div data-i="' + i + '" style="display:flex;align-items:center;gap:8px">' + ibItemRow(r) + '</div>').join('') ||
+        '<div class="mut">No matching items.</div>';
+      $('ibSug').hidden = false;
+    } catch (e) { if (version === ibSearchVersion) { $('ibSug').textContent = e.message; $('ibSug').hidden = false; } }
+  }, 180);
+  $('ibItemQ').addEventListener('input', () => { ibSearchVersion++; ibSearch(); });
+  $('ibSug').addEventListener('click', e => {
+    const choice = e.target.closest('[data-i]'); if (!choice) return;
+    ibAddItem(ibResults[Number(choice.dataset.i)]);
+    $('ibSug').hidden = true; $('ibItemQ').value = ''; $('ibItemQ').focus();
+  });
+  $('ibItemQ').addEventListener('keydown', e => {
+    if (e.key === 'Escape') $('ibSug').hidden = true;
+    if (e.key === 'Enter' && !$('ibSug').hidden && ibResults.length) {
+      e.preventDefault(); const q = $('ibItemQ').value.toLowerCase().trim();
+      const best = ibResults.find(r => String(r.item_id) === q || String(r.name || '').toLowerCase() === q) || ibResults[0];
+      ibAddItem(best); $('ibSug').hidden = true; $('ibItemQ').value = '';
+    }
+  });
+  let ibBrowseVersion = 0, ibBrowseRows = [];
+  async function ibLoadBrowse() {
+    const category = $('ibItemCategory').value, q = $('ibItemFilter').value.trim(), version = ++ibBrowseVersion;
+    const params = new URLSearchParams({q, limit:'100'});
+    if (category) params.set('category_id', category);
+    $('ibItemCount').textContent = 'Loading matching items…';
+    try {
+      const data = await req('/auction-house/console/item-search.json?' + params);
+      if (version !== ibBrowseVersion) return;
+      ibBrowseRows = data.rows || [];
+      $('ibItemCount').textContent = ibBrowseRows.length + ' shown (up to 100); refine search to find more.';
+      $('ibItemChoices').innerHTML = ibBrowseRows.map((r,i) =>
+        '<button class="b" type="button" data-i="' + i +
+        '" style="width:100%;display:flex;align-items:center;gap:10px;text-align:left;margin:2px 0">' +
+        ibItemRow(r) + '<span style="margin-left:auto">Add +</span></button>').join('') ||
+        '<p class="mut">No items found. Try another category or search term.</p>';
+    } catch (e) { if (version === ibBrowseVersion) { $('ibItemChoices').textContent = e.message; $('ibItemCount').textContent = 'Search unavailable'; } }
+  }
+  $('ibItemChoices').addEventListener('click', e => {
+    const button = e.target.closest('[data-i]'); if (button) ibAddItem(ibBrowseRows[Number(button.dataset.i)]);
+  });
+  $('ibItemBrowse').addEventListener('click', async () => {
+    const open = $('ibItemBrowser').hidden;
+    $('ibItemBrowser').hidden = !open;
+    $('ibItemBrowse').setAttribute('aria-expanded', String(open));
+    if (open) {
+      if ($('ibItemCategory').options.length === 1) {
+        try {
+          const d = await req('/auction-house/categories.json');
+          $('ibItemCategory').innerHTML += (d.rows || []).map(r =>
+            '<option value="' + Number(r.category_id) + '">' + esc(r.path || r.label || 'Category '+r.category_id) +
+            ' (' + Number(r.item_count || 0) + ')</option>').join('');
+        } catch (e) { toast('Categories unavailable: ' + e.message); }
+      }
+      ibLoadBrowse();
+    }
+  });
+  $('ibItemFilter').addEventListener('input', debounce(ibLoadBrowse, 180));
+  $('ibItemCategory').addEventListener('change', ibLoadBrowse);
   async function loadTpls() {
     try {
       state.tpls = (await req('/auction-house/rewards/templates.json')).rows || [];
