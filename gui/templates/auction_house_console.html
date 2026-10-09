@@ -182,8 +182,14 @@
         </div>
         <div class="ahc-card">
           <h3>Custom augmented item preview</h3>
-          <small>Research-only preview: encode up to four augment ID/value pairs defined by the active server. Mog delivery is blocked until its augmented-item transfer is verified.</small>
-          <div class="ahc-bar"><input id="ibAugItemId" type="number" min="1" placeholder="Item ID" style="flex:1"><input id="ibAugPairs" placeholder="Augment ID:value, ID:value" style="flex:2"></div>
+          <small>Select equipment, then choose up to four bonuses by stat name and amount, as in Character Editor. Delivery is experimental and DSP Test-only.</small>
+          <div class="ahc-bar"><input id="ibAugItemSearch" type="search" placeholder="Search equipment by name or item ID…" autocomplete="off" style="flex:1"><button class="b" id="ibAugClear" type="button">Clear</button></div>
+          <div id="ibAugItemResults" class="ahc-sug" style="position:static;max-height:210px;overflow:auto" hidden></div>
+          <div id="ibAugChosen" class="ahc-card" style="display:none;margin:8px 0"></div>
+          <div class="ahc-bar"><input id="ibAugStatSearch" type="search" placeholder="Filter augment stats, effects, or combined bonuses…" style="flex:1"></div>
+          <div id="ibAugSlots"></div>
+          <div id="ibAugSummary" class="mut" aria-live="polite">Choose an item and up to four augments.</div>
+          <div hidden><input id="ibAugItemId" type="number"><input id="ibAugPairs"></div>
           <div class="ahc-bar"><button class="b" id="ibAugInspect" type="button">Inspect custom augment</button><button class="b" id="ibAugSendPreview" type="button">Preview DSP Test mail</button><a href="/auction-house/rewards/augments/catalog.json" target="_blank" rel="noopener">Available augment IDs</a></div>
           <pre id="ibAugResult" style="white-space:pre-wrap;overflow:auto;max-height:260px;font-size:11px"></pre>
         </div>
@@ -201,4 +207,5 @@
   <div class="ahc-toast" id="ahcToast"></div>
 </div>
 <script src="/static/auction_house_console.js?v=20261008c"></script>
+<script src="/static/auction_house_augment_picker.js?v=20261009a"></script>
 {% endblock %}
