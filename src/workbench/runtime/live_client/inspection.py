@@ -18,7 +18,7 @@ def inspect_recording(path: str) -> dict:
     if len(first) > 65536:
         raise ValueError("first frame exceeds size limit")
     try:
-        frame = json.loads(first.decode("utf-8"))
+        frame = json.loads(first.decode("utf-8-sig"))
         client_id = frame["client_id"]
     except (UnicodeError, ValueError, TypeError, KeyError) as exc:
         raise ValueError("invalid first recording frame") from exc

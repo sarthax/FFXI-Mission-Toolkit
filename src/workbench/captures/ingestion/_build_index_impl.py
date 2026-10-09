@@ -63,6 +63,7 @@ from pathlib import Path
 import entity_profile
 from workbench.core.services import capture_integrity
 from workbench.core.services import raw_packet_ingest
+from workbench.captures import ashita_packet_ingest
 from workbench.core.services import capture_chat
 from workbench.core.services import pcap_ingest
 
@@ -1033,6 +1034,12 @@ def sniff_text_format(text: str) -> str | None:
     so this looks at the first real content instead. Order matters: check the more specific
     signatures before the more generic ones."""
     head = text[:4000]
+    try:
+        first = json.loads(head.splitlines()[0])
+        if isinstance(first, dict) and first.get('kind') == 'ashita_packet_observation':
+            return 'ashita_packets'
+    except (ValueError, IndexError):
+        pass
     if re.search(r'\[(?:S->C|C->S)\].*PacketId:\s*[0-9A-Fa-f]{1,4}', head, re.IGNORECASE):
         return "packeteer"
     if re.search(r'^(Incoming|Outgoing) Packet: 0x', head, re.MULTILINE):
@@ -1149,7 +1156,9 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
             else:
                 fmt = sniff_text_format(text)
             src = SingleFileSource(filename, data)
-            if fmt == "packeteer":
+            if fmt == "ashita_packets":
+                rows = ashita_packet_ingest.ingest_ashita_packets(con, capture_id, src, filename)
+            elif fmt == "packeteer":
                 rows = raw_packet_ingest.ingest_packeteer(con, capture_id, src, filename)
             elif fmt == "windower_logger":
                 rows = ingest_windower_logger(con, capture_id, src, filename)
@@ -3324,11 +3333,14 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         if relname in matched_names:
             continue
         fmt = _capture_source_format(src, relname)
-        if fmt not in {"packetdb", "packeteer", "pcap", "pcapng"}:
+        if fmt not in {"ashita_packets", "packetdb", "packeteer", "pcap", "pcapng"}:
             continue
         matched_names.add(relname)
         try:
-            if fmt == "packetdb":
+            if fmt == "ashita_packets":
+                rows = ashita_packet_ingest.ingest_ashita_packets(con, capture_id, src, relname)
+                counts["raw_packets"] += rows
+            elif fmt == "packetdb":
                 rows = raw_packet_ingest.ingest_packetdb(con, capture_id, src, relname)
                 counts["raw_packets"] += rows
             elif fmt == "packeteer":
@@ -3524,7 +3536,7 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
             detected = sniff_csv_format(src.read_text(relname))
             if detected:
                 return detected
-        elif lower.endswith((".log", ".txt", ".lua")):
+        elif lower.endswith((".log", ".txt", ".lua", ".jsonl")):
             detected = sniff_text_format(src.read_text(relname))
             if detected:
                 return detected
@@ -3537,7 +3549,7 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
 REBUILDABLE_CAPTURE_FORMATS = {
     "eventview", "idview_simple", "eventview_session_simple", "eventview_session_raw",
     "kitrack", "hptrack", "actionview_simple", "caplog", "windower_logger", "packetlogger",
-    "packetdb", "packeteer", "pcap", "pcapng",
+    "ashita_packets", "packetdb", "packeteer", "pcap", "pcapng",
     "npclogger_db", "actionview_db", "levelrange_db",
     "npclogger_lua", "pathlog_csv", "pc_pathlog_csv", "widescan", "attackdelay",
 } | AUX_STRUCTURED_FORMATS
@@ -3764,7 +3776,9 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
         con.execute("SAVEPOINT capture_rebuild")
         try:
             deleted = _delete_exact_source_rows(con, capture_id, filename)
-            if fmt == "packetdb":
+            if fmt == "ashita_packets":
+                result = ashita_packet_ingest.ingest_ashita_packets(con, capture_id, src, filename)
+            elif fmt == "packetdb":
                 result = raw_packet_ingest.ingest_packetdb(con, capture_id, src, filename)
             elif fmt == "packeteer":
                 result = raw_packet_ingest.ingest_packeteer(con, capture_id, src, filename)

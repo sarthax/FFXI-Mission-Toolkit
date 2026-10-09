@@ -1,0 +1,66 @@
+name: Live Client Regression
+
+on:
+  push:
+    branches:
+      - 'feature/live-client-replay-integration'
+      - 'feature/live-client-ashita-observations'
+    paths:
+      - 'src/workbench/runtime/live_client/**'
+      - 'addons/workbench_live/**'
+      - 'src/workbench/app/_host_impl.py'
+      - 'gui/templates/live_client_console.html'
+      - 'src/workbench/gui_shell.py'
+      - 'tests/test_live_client_*.py'
+      - 'tests/fixtures/live_client/**'
+      - '.github/workflows/live-client-regression.yml'
+  pull_request:
+    paths:
+      - 'src/workbench/runtime/live_client/**'
+      - 'addons/workbench_live/**'
+      - 'src/workbench/app/_host_impl.py'
+      - 'gui/templates/live_client_console.html'
+      - 'src/workbench/gui_shell.py'
+      - 'tests/test_live_client_*.py'
+      - 'tests/fixtures/live_client/**'
+      - '.github/workflows/live-client-regression.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install offline regression dependencies
+        run: python -m pip install -e . pytest fastapi httpx python-multipart uvicorn playwright jinja2 lupa pefile
+      - name: Verify required Lua 5.1 test runtime
+        run: python -c 'from lupa.lua51 import LuaRuntime; assert LuaRuntime().eval("_VERSION") == "Lua 5.1"'
+      - name: Install Chromium for browser regression
+        run: python -m playwright install --with-deps chromium
+      - name: Run Live Client contracts and recording regressions
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python -m pytest -q tests/test_live_client_*.py --junitxml=/tmp/live-client-tests.xml
+      - name: Annotate failed Live Client tests
+        if: failure()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          report = Path('/tmp/live-client-tests.xml')
+          if report.exists():
+              for case in ET.parse(report).iter('testcase'):
+                  for tag in ('failure', 'error'):
+                      failure = case.find(tag)
+                      if failure is not None:
+                          message = case.get('name', 'test') + ': ' + failure.get('message', 'failed')[:1000] + '\n' + (failure.text or '')[-2500:]
+                          message = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+                          print('::error title=Live Client regression::' + message)
+          PY

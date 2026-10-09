@@ -20,6 +20,7 @@ from workbench.editors.character.session_state import detect_online_state
 
 from .dsp_myisam_listing import _MYISAM_FLAG, dsp_myisam_test_writes_enabled
 from .legacy_test_executor import LegacyTestExecutionBlocked, evaluate_legacy_test_write_gate
+from .recovery_guidance import myisam_recovery_guidance
 from .player_purchase import _GIL_ITEM_ID, _delivery_columns, probe_player_purchase_engines
 from .write_probe import probe_write_readiness
 
@@ -46,6 +47,7 @@ def dsp_myisam_purchase_readiness(*, service, environment: dict[str, Any]) -> di
         "blockers": blockers,
         "atomic": False,
         "crash_window": True,
+        "recovery_guidance": myisam_recovery_guidance("player_purchase"),
     }
 
 

@@ -45,9 +45,11 @@ def _day(ts: int) -> str:
 def summarize(records: list[dict[str, Any]], now: int) -> dict[str, Any]:
     """Pure: supply and sell-through figures from loaded AH records."""
     week = now - 7 * 86400
+    # Exclude future-dated events from rolling-window metrics. Imported records
+    # can carry clock-skewed timestamps, but should not inflate current activity.
     active = [r for r in records if not r["sold_at"]]
-    sold = [r for r in records if r["sold_at"] and r["sold_at"] >= week]
-    listed = [r for r in records if r["listed_at"] >= week]
+    sold = [r for r in records if r["sold_at"] and week <= r["sold_at"] <= now]
+    listed = [r for r in records if week <= r["listed_at"] <= now]
     cats: dict[int, dict[str, int]] = defaultdict(lambda: {"active": 0, "active_gil": 0, "sales_7d": 0})
     items: dict[int, dict[str, Any]] = {}
     for r in active:
@@ -113,13 +115,13 @@ def baselines_from_series(series: list[dict[str, Any]], window: int = 28) -> dic
     for k in _BASELINE_METRICS:
         vals = [r[k] for r in prior if r.get(k) is not None]
         cur = latest.get(k)
-        m: dict[str, Any] = {"latest": cur, "baseline": None, "low": None, "high": None, "deviation_pct": None, "status": "building"}
+        m: dict[str, Any] = {"latest": cur, "baseline": None, "low": None, "high": None, "deviation_pct": None, "status": "building", "history_points": len(vals), "points_needed": max(0, BASELINE_MIN_POINTS - len(vals))}
         if len(vals) >= BASELINE_MIN_POINTS and cur is not None:
             from statistics import median
             base = median(vals)
             mad = median(abs(v - base) for v in vals)
             spread = max(mad * 2, abs(base) * 0.05)  # floor so a perfectly flat history is not hair-trigger
-            m.update(baseline=round(base, 1), low=round(base - spread, 1), high=round(base + spread, 1),
+            m.update(baseline=round(base, 1), low=round(max(0, base - spread), 1), high=round(base + spread, 1),
                      deviation_pct=round((cur - base) / base * 100, 1) if base else None,
                      status="high" if cur > base + spread else "low" if cur < base - spread else "normal")
         out["metrics"][k] = m

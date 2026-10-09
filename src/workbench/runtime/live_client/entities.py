@@ -29,6 +29,10 @@ class EntityObservation:
     observed_at: float
     server_entity_id: int | None = None
     instance_hint: str | None = None
+    raw_entity_type: int | None = None
+    raw_spawn_flags: int | None = None
+    raw_status: int | None = None
+    target_roles: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.client_id or not 0 <= self.client_index <= 65535:
@@ -37,6 +41,14 @@ class EntityObservation:
             raise ValueError("invalid server entity ID")
         if not isfinite(self.observed_at):
             raise ValueError("invalid observation time")
+        for field, high in (("raw_entity_type", 255), ("raw_spawn_flags", 0xFFFFFFFF), ("raw_status", 0xFFFFFFFF)):
+            value = getattr(self, field)
+            if value is not None and (type(value) is not int or not 0 <= value <= high):
+                raise ValueError("invalid raw entity field " + field)
+        if (not isinstance(self.target_roles, tuple) or len(self.target_roles) > 2
+                or any(role not in ("target", "subtarget") for role in self.target_roles)
+                or len(set(self.target_roles)) != len(self.target_roles)):
+            raise ValueError("invalid target roles")
 
 
 def overlay_observations(observations: Iterable[EntityObservation], *,

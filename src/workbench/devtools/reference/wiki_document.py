@@ -48,6 +48,22 @@ def init_db(con: sqlite3.Connection) -> None:
     CREATE INDEX IF NOT EXISTS idx_reference_wiki_topic_page
       ON reference_wiki_topic_pages(source_id,page_id);
     """)
+    con.execute("""CREATE TABLE IF NOT EXISTS reference_wiki_topic_dismissals(
+      source_id TEXT NOT NULL,page_id TEXT NOT NULL,topic_id TEXT NOT NULL,
+      dismissed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY(source_id,page_id,topic_id))""")
+    con.commit()
+
+
+def dismiss_topic_suggestion(con, *, source_id: str, page_id: str, topic_id: str) -> None:
+    """Hide a suggested topic for one page; never unlink existing topics."""
+    init_db(con)
+    if page_topic(con,source_id,page_id):
+        raise ValueError("Page already has a topic link")
+    if not any(x["topic_id"]==topic_id for x in suggest_topic_links(con,source_id=source_id,page_id=page_id)):
+        raise ValueError("Topic is not a current suggestion")
+    con.execute("""INSERT OR IGNORE INTO reference_wiki_topic_dismissals
+      (source_id,page_id,topic_id) VALUES (?,?,?)""",(source_id,str(page_id),topic_id))
     con.commit()
 
 
@@ -112,7 +128,8 @@ def mediawiki_blocks(page_id: str, wikitext: str) -> list[dict]:
             for cell in re.split(r"!!|\|\|", line[1:]):
                 raw_cell=cell.strip()
                 clean = str(mwparserfromhell.parse(raw_cell).strip_code(normalize=True, collapse=True)).strip()
-                emit(kind, clean, metadata={"raw_value":raw_cell, "review_only":True})
+                emit(kind, clean, metadata={"raw_value":raw_cell, "review_only":True},
+                     source_locator=f"block:{page_id}:table-cell:{ordinal + 1}")
             continue
         lm = re.match(r"^\s*([*#;:]+)\s*(.*)$", line)
         if lm:
@@ -308,6 +325,55 @@ def stored_blocks(con, source_id: str, page_id: str) -> list[dict]:
 
 
 
+def template_field_review_links(raw_value: str) -> list[dict]:
+    """Expose explicit MediaWiki source links as review evidence, not graph edges."""
+    links=[]
+    for match in re.finditer(r"\[\[([^\[\]]+)\]\]",raw_value or ""):
+        target=match.group(1).split("|",1)[0].strip()
+        if not target or target.startswith(("#",":")) or ":" in target:
+            continue
+        lookup_title=target.split("#",1)[0].replace("_"," ").strip()
+        if not lookup_title:
+            continue
+        if target not in [link["target"] for link in links]:
+            links.append({"target":target,"lookup_title":lookup_title,
+                          "normalized_title":normalize_search(lookup_title),
+                          "source_markup":match.group(0),"review_only":True})
+        if len(links)>=25:
+            break
+    return links
+
+
+def resolve_reviewed_template_links(con, links: list[dict]) -> list[dict]:
+    """Annotate explicit links only when exactly one reviewed topic resolves.
+
+    No topic membership, claim, or graph data is written.
+    """
+    init_db(con)
+    resolved=[]
+    for link in links:
+        result=dict(link)
+        norm=link.get("normalized_title") or normalize_search(link.get("lookup_title") or "")
+        matches=con.execute("""
+          SELECT DISTINCT t.topic_id,t.canonical_title
+          FROM reference_wiki_topics t
+          WHERE t.norm_title=?
+          UNION
+          SELECT DISTINCT t.topic_id,t.canonical_title
+          FROM reference_wiki_aliases a
+          JOIN reference_wiki_topic_pages p ON p.source_id=a.source_id AND p.page_id=a.page_id
+          JOIN reference_wiki_topics t ON t.topic_id=p.topic_id
+          WHERE a.norm_alias=? AND a.alias_type IN ('MANUAL','CANONICAL_TOPIC')
+            AND a.provenance NOT LIKE '%MACHINE%'
+        """,(norm,norm)).fetchall() if norm else []
+        result["resolution"]="UNIQUE_REVIEWED_TOPIC" if len(matches)==1 else ("AMBIGUOUS" if matches else "UNRESOLVED")
+        result["topic_id"]=matches[0][0] if len(matches)==1 else None
+        result["canonical_title"]=matches[0][1] if len(matches)==1 else None
+        result["review_only"]=True
+        resolved.append(result)
+    return resolved
+
+
 def presentation_groups(blocks: list[dict]) -> list[dict]:
     """Group the structural stream into renderer-friendly sections/lists/tables."""
     sections=[{"title":"Overview","level":1,"content":[]}]
@@ -330,7 +396,30 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
             current["content"].append({"type":"list","items":items}); continue
         if kind=="template_field":
             metadata=b.get("metadata") or {}
-            current["content"].append({"type":"definition","term":str(metadata.get("template") or "Template")+": "+str(metadata.get("field") or "Field"),"definition":b.get("text") or ""})
+            field_name=str(metadata.get("field") or "Field")
+            field_class=normalize_search(field_name)
+            # Only literal named fields are eligible. These hints never become
+            # claims or graph edges without subsequent evidence-backed review.
+            typed_fields={
+                "drops":"DROPS","drop":"DROPS","loot":"DROPS","戦利品":"DROPS","ドロップ":"DROPS",
+                "reward":"REWARDS","rewards":"REWARDS","報酬":"REWARDS",
+                "location":"LOCATION","zone":"LOCATION","場所":"LOCATION","エリア":"LOCATION",
+                "requirements":"REQUIRES","prerequisites":"REQUIRES","必要条件":"REQUIRES","参加条件":"REQUIRES",
+                "spawn conditions":"SPAWN_CONDITIONS","spawn condition":"SPAWN_CONDITIONS",
+                "spawn":"SPAWN_CONDITIONS","pop conditions":"SPAWN_CONDITIONS",
+                "出現条件":"SPAWN_CONDITIONS","ポップ条件":"SPAWN_CONDITIONS",
+                "quest":"QUEST","quests":"QUEST","mission":"QUEST","missions":"QUEST",
+                "クエスト":"QUEST","ミッション":"QUEST",
+                "notorious monster":"NM_IDENTITY","nm":"NM_IDENTITY","nm name":"NM_IDENTITY",
+                "ノートリアスモンスター":"NM_IDENTITY",
+            }
+            candidate=({"field_type":typed_fields[field_class],"field":field_name,
+                        "value":b.get("text") or "","value_raw":metadata.get("raw_value"),
+                        "source_locator":b.get("source_locator"),"review_only":True,
+                        "source_links":template_field_review_links(str(metadata.get("raw_value") or ""))}
+                       if field_class in typed_fields and (b.get("text") or "").strip() else None)
+            current["content"].append({"type":"definition","term":str(metadata.get("template") or "Template")+": "+field_name,
+                                       "definition":b.get("text") or "","field_candidate":candidate})
             i+=1; continue
         if kind=="definition_term":
             term=b.get("text") or ""; definition=""
@@ -345,7 +434,9 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
                     if row: rows.append(row); row=[]
                 elif tk in {"table_cell","table_header_cell"}:
                     headers=headers or tk=="table_header_cell"
-                    row.append({"text":tb.get("text") or "","header":tk=="table_header_cell"})
+                    row.append({"text":tb.get("text") or "","header":tk=="table_header_cell",
+                                "source_locator":tb.get("source_locator"),
+                                "raw_value":(tb.get("metadata") or {}).get("raw_value")})
                 i+=1
             if row: rows.append(row)
             # A heading and an explicit first-column label make a useful
@@ -363,7 +454,10 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
                 value=cells[1]["text"].strip()
                 if value:
                     candidates.append({"row_index":row_index,"field":cells[0]["text"],
-                                       "value":value,"review_only":True})
+                                       "value":value,"review_only":True,
+                                       "value_source_locator":cells[1].get("source_locator"),
+                                       "value_raw":cells[1].get("raw_value"),
+                                       "field_source_locator":cells[0].get("source_locator")})
             current["content"].append({"type":"table","rows":rows,"has_headers":headers,
                                        "field_candidates":candidates})
             i+=1; continue
@@ -411,6 +505,118 @@ def link_topic(con, *, source_id: str, page_id: str, canonical_title: str, metho
               language="en",alias_type="CANONICAL_TOPIC",provenance=method)
     con.commit()
     return {"topic_id":topic_id,"canonical_title":canonical_title}
+
+
+
+def suggest_topic_links(con, *, source_id: str, page_id: str, limit: int = 20) -> list[dict]:
+    """Suggest existing reviewed topics by exact title/alias match; never write links.
+
+    This is a deterministic review queue, not a translation system. In
+    particular, generated translations are not considered topic evidence.
+    """
+    init_db(con)
+    page=con.execute(
+        "SELECT title FROM reference_wiki_pages WHERE source_id=? AND page_id=?",
+        (source_id,str(page_id)),
+    ).fetchone()
+    if not page or page_topic(con,source_id,str(page_id)):
+        return []
+    norm=normalize_search(page[0])
+    if not norm:
+        return []
+    # Only user/reviewer-established aliases count. Exclude machine-produced
+    # text and aliases attached to the source page itself.
+    rows=con.execute("""
+      SELECT DISTINCT t.topic_id,t.canonical_title,a.source_id,a.page_id
+      FROM reference_wiki_aliases a
+      JOIN reference_wiki_topic_pages p
+        ON p.source_id=a.source_id AND p.page_id=a.page_id
+      JOIN reference_wiki_topics t ON t.topic_id=p.topic_id
+      WHERE a.norm_alias=? AND a.alias_type IN ('MANUAL','CANONICAL_TOPIC')
+        AND a.provenance NOT LIKE '%MACHINE%'
+        AND NOT (a.source_id=? AND a.page_id=?)
+      ORDER BY t.canonical_title,t.topic_id
+    """,(norm,source_id,str(page_id))).fetchall()
+    topics={}
+    for topic_id,title,matched_source,matched_page in rows:
+        if con.execute("SELECT 1 FROM reference_wiki_topic_dismissals WHERE source_id=? AND page_id=? AND topic_id=?",
+                       (source_id,str(page_id),topic_id)).fetchone():
+            continue
+        item=topics.setdefault(topic_id,{"topic_id":topic_id,"canonical_title":title,
+            "match_method":"EXACT_REVIEWED_ALIAS","review_only":True,"supporting_pages":[]})
+        matched_title=con.execute(
+            "SELECT title FROM reference_wiki_pages WHERE source_id=? AND page_id=?",
+            (matched_source,str(matched_page)),
+        ).fetchone()
+        item["supporting_pages"].append({"source_id":matched_source,"page_id":str(matched_page),
+                                         "title":matched_title[0] if matched_title else None})
+    return list(topics.values())[:max(0,min(limit,100))]
+
+
+def topic_review_queue(con, *, source_id: str, limit: int = 50, offset: int = 0, matching_only: bool = False, status: str = "all") -> list[dict]:
+    """Read-only bounded queue of pages with pending or dismissed topic suggestions.
+
+    Dismissed entries remain visible for audit but never reappear as pending.
+    """
+    init_db(con)
+    pages=con.execute("""
+      SELECT w.page_id,w.title
+      FROM reference_wiki_pages w
+      WHERE w.source_id=?
+        AND NOT EXISTS (
+          SELECT 1 FROM reference_wiki_topic_pages p
+          WHERE p.source_id=w.source_id AND p.page_id=w.page_id
+        )
+      ORDER BY w.title,w.page_id LIMIT ? OFFSET ?
+    """,(source_id,max(0,min(limit,200)),max(0,offset))).fetchall()
+    if status not in ("all", "pending", "dismissed"):
+        raise ValueError("Invalid review queue status")
+    if matching_only:
+        # SQL narrows the scan to pages having possible reviewed-alias matches
+        # or an explicit dismissal. The existing suggestion function remains
+        # authoritative for final review-only filtering.
+        pages=con.execute("""
+          SELECT w.page_id,w.title
+          FROM reference_wiki_pages w
+          WHERE w.source_id=?
+            AND NOT EXISTS (
+              SELECT 1 FROM reference_wiki_topic_pages p
+              WHERE p.source_id=w.source_id AND p.page_id=w.page_id
+            )
+            AND (
+              (? IN ('all','dismissed') AND EXISTS (SELECT 1 FROM reference_wiki_topic_dismissals d
+                      WHERE d.source_id=w.source_id AND d.page_id=w.page_id))
+              OR (? IN ('all','pending') AND EXISTS (
+                SELECT 1 FROM reference_wiki_aliases a
+                JOIN reference_wiki_topic_pages p
+                  ON p.source_id=a.source_id AND p.page_id=a.page_id
+                WHERE a.norm_alias=w.norm_title
+                  AND a.alias_type IN ('MANUAL','CANONICAL_TOPIC')
+                  AND a.provenance NOT LIKE '%MACHINE%'
+                  AND NOT (a.source_id=w.source_id AND a.page_id=w.page_id)
+                  AND NOT EXISTS (SELECT 1 FROM reference_wiki_topic_dismissals d
+                    WHERE d.source_id=w.source_id AND d.page_id=w.page_id AND d.topic_id=p.topic_id)
+              ))
+            )
+          ORDER BY w.title,w.page_id LIMIT ? OFFSET ?
+        """,(source_id,status,status,max(0,min(limit,200)),max(0,offset))).fetchall()
+    queue=[]
+    for page_id,title in pages:
+        pending=suggest_topic_links(con,source_id=source_id,page_id=str(page_id))
+        dismissed=[{"topic_id":t,"canonical_title":label}
+          for t,label in con.execute("""
+            SELECT d.topic_id,COALESCE(t.canonical_title,'[missing topic]')
+            FROM reference_wiki_topic_dismissals d
+            LEFT JOIN reference_wiki_topics t ON t.topic_id=d.topic_id
+            WHERE d.source_id=? AND d.page_id=?
+            ORDER BY t.canonical_title,d.topic_id
+          """,(source_id,str(page_id))).fetchall()]
+        if (status=="pending" and not pending) or (status=="dismissed" and not dismissed):
+            continue
+        if pending or dismissed:
+            queue.append({"source_id":source_id,"page_id":str(page_id),"title":title,
+                          "pending":pending,"dismissed":dismissed})
+    return queue
 
 
 def page_topic(con, source_id: str, page_id: str) -> dict | None:

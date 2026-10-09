@@ -45,6 +45,28 @@ class PathSample:
     observed_at: float
     position: Position
     client_id: str
+    instance_hint: Optional[str] = None
+    adapter: Optional[str] = None
+    client_version: Optional[str] = None
+    session_id: Optional[str] = None
+    session_generation: Optional[str] = None
+    recorded_segment: Optional[int] = None
+    observation_scope: str = "unspecified"
+    entities_truncated: bool = False
+
+    def __post_init__(self):
+        if type(self.observed_at) not in (int, float) or not isfinite(self.observed_at):
+            raise ValueError("invalid observation timestamp")
+        if not isinstance(self.client_id, str) or not self.client_id.strip() or len(self.client_id) > 200:
+            raise ValueError("invalid client id")
+        for name in ("instance_hint", "adapter", "client_version", "session_id", "session_generation"):
+            value = getattr(self, name)
+            if value is not None and (not isinstance(value, str) or not value.strip() or len(value) > 200):
+                raise ValueError("invalid path context " + name)
+        if self.recorded_segment is not None and (type(self.recorded_segment) is not int or self.recorded_segment < 0):
+            raise ValueError("invalid recorded segment")
+        if self.observation_scope not in ("unspecified", "selected_targets", "bounded_loaded_entities") or type(self.entities_truncated) is not bool:
+            raise ValueError("invalid entity observation scope")
 
 
 class DevelopmentAction(str, Enum):

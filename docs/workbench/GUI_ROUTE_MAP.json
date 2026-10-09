@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 262,
+  "route_count": 264,
   "routes": [
     {
       "method": "GET",
@@ -1830,6 +1830,14 @@
     },
     {
       "method": "POST",
+      "path": "/wiki/topic/dismiss",
+      "home": "Tools",
+      "section": "Wiki Compiler",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
       "path": "/wiki/map",
       "home": "Tools",
       "section": "Wiki Compiler",
@@ -2098,6 +2106,14 @@
       "home": "Tools",
       "section": "Research > References",
       "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/wiki/recovery/apply",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "mutation",
       "disposition": "KEEP"
     }
   ]

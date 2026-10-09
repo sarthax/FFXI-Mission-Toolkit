@@ -444,7 +444,9 @@
     const mode = document.querySelector('input[name=ibMode]:checked').value;
     if (!state.bundle.length) return toast('Add items to the bundle');
     if (mode === 'selected' && !state.recips.length) return toast('Select recipients (or choose All characters)');
-    const body = {recipient_mode: mode, character_ids: state.recips.map(r => r.char_id), items: bundleItems(), template_id: $('ibTpl').value || null};
+    if (mode === 'account' && state.recips.length !== 1) return toast('For account delivery, select exactly one anchor character');
+    const ids = mode === 'account' ? [state.recips[0].char_id] : (mode === 'all' ? [] : state.recips.map(r => r.char_id));
+    const body = {recipient_mode: mode, character_ids: ids, items: bundleItems(), template_id: $('ibTpl').value || null};
     try {
       const d = (await req('/auction-house/rewards/preview.json', body)).preview;
       drawer({title: 'Send ' + d.item_count + ' item(s) to ' + d.recipient_count + ' character(s)', label: 'Deliver',

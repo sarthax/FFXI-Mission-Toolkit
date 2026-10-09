@@ -147,21 +147,26 @@ try:
     _live_client_settings = settings_mod.get_all(_live_client_settings_con)
 finally:
     _live_client_settings_con.close()
-if (_live_client_settings.get("live_client_source") == "file_feed"
-        and _live_client_settings.get("live_client_auto_connect") == "1"):
-    from workbench.runtime.live_client.file_bridge import FileTelemetryBridge
-    _feed_path = _live_client_settings.get("live_client_feed_file", "").strip()
-    _feed_client = _live_client_settings.get("live_client_feed_client", "").strip()
-    if _feed_path and _feed_client:
-        live_client_replay_registry.add_feed(
-            _feed_client, FileTelemetryBridge(Path(_feed_path), _feed_client))
-else:
-    register_configured_replay(live_client_replay_registry,
-                               effective_replay_configuration(_live_client_settings, os.environ))
+from workbench.runtime.live_client.startup import initialize_live_client
+live_client_startup_error = initialize_live_client(
+    live_client_replay_registry, _live_client_settings, os.environ)
+if live_client_startup_error:
+    print("[Live Client] " + live_client_startup_error)
 app.include_router(create_registry_router(live_client_replay_registry))
-app.include_router(create_replay_console_router())
+def render_live_client_console(request: Request, style: str, body: str):
+    # Both fragments come exclusively from the repository-owned console renderer.
+    return templates.TemplateResponse(request, "live_client_console.html", {
+        "request": request, "console_style": style, "console_body": body,
+        "startup_error": live_client_startup_error,
+    })
+
+app.include_router(create_replay_console_router(render_live_client_console))
 from workbench.runtime.live_client.setup_api import create_recording_upload_router
-app.include_router(create_recording_upload_router(REPO_ROOT / "data" / "live_client_recordings"))
+app.include_router(create_recording_upload_router(REPO_ROOT / "data" / "live_client_recordings", live_client_replay_registry))
+from workbench.runtime.live_client.waypoint_library import WaypointLibrary
+from workbench.runtime.live_client.waypoint_library_api import create_waypoint_library_router
+app.include_router(create_waypoint_library_router(
+    WaypointLibrary(REPO_ROOT / "data" / "live_client_waypoints" / "library.db"), live_client_replay_registry))
 
 @app.post("/live-client/inspect-recording")
 async def live_client_inspect_recording(request: Request):
@@ -5529,6 +5534,59 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
 
     visible_blocks = [b for b in blocks if not (b.get("metadata") or {}).get("hidden")]
     groups = wiki_document.presentation_groups(visible_blocks)
+    for section in groups:
+        for item in section.get("content", []):
+            candidate=item.get("field_candidate")
+            if candidate and candidate.get("source_links"):
+                candidate["source_links"]=wiki_document.resolve_reviewed_template_links(
+                    con,candidate["source_links"])
+                for link in candidate["source_links"]:
+                    # Toolkit entity hints are read-only and require exactly one
+                    # resolved client/server reference. Do not create graph edges.
+                    matches=wiki_evidence.resolve_subject(con,link.get("lookup_title") or "")
+                    # Only named source fields with a reliable target domain may
+                    # propose a typed identity; conditions are prose, not entities.
+                    allowed_domains={
+                        "DROPS":{"item","key_item"},
+                        "REWARDS":{"item","key_item"},
+                        "LOCATION":{"zone"},
+                        "NM_IDENTITY":{"entity"},
+                    }.get(candidate.get("field_type"))
+                    if allowed_domains is None:
+                        matches=[]
+                        link["entity_resolution"]="NOT_APPLICABLE"
+                    else:
+                        matches=[m for m in matches if m.get("target_domain") in allowed_domains]
+                    identities={(m.get("target_domain"),m.get("target_table"),str(m.get("target_key")))
+                                for m in matches if m.get("target_table") and m.get("target_key") is not None}
+                    link["entity_candidates"]=[
+                        {"domain":m.get("target_domain"),"table":m.get("target_table"),
+                         "key":str(m.get("target_key")),"label":m.get("target_label") or "",
+                         "method":m.get("mapping_method") or "UNKNOWN"}
+                        for m in matches if m.get("target_table") and m.get("target_key") is not None
+                    ][:10]
+                    link["entity_candidate_count"]=len(identities)
+                    link["entity_candidate_lines"]="\n".join(
+                        f"{m['label']} ({m['domain']} / {m['table']} / {m['key']}) via {m['method']}"
+                        for m in link["entity_candidates"]
+                    ) or "No compatible entity candidates"
+                    if len(identities)==1:
+                        domain,table,key=next(iter(identities))
+                        link["entity_resolution"]="UNIQUE_ENTITY_HINT"
+                        link["entity_target"]={"domain":domain,"table":table,"key":key,
+                                               "trace_query":("entity:"+key if domain=="entity" else key)}
+                        # Direct node navigation is allowed only when the
+                        # Feature Trace catalog recognizes this exact row.
+                        exact_node=f"catalog:{table}:{key}"
+                        try:
+                            confirmed_node=feature_trace.node_info(con,exact_node,con)
+                        except (ValueError,KeyError,sqlite3.Error):
+                            confirmed_node=None
+                        if confirmed_node and str(confirmed_node.get("node_id"))==exact_node:
+                            link["entity_target"]["trace_node"]=exact_node
+                    else:
+                        link["entity_resolution"]=("AMBIGUOUS" if identities else "UNRESOLVED") if allowed_domains is not None else "NOT_APPLICABLE"
+                        link["entity_target"]=None
     topic = wiki_document.page_topic(con, source, page_id)
     degraded = any((b.get("metadata") or {}).get("degraded") for b in visible_blocks)
     return {
@@ -5548,11 +5606,12 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
         "persisted_structure": persisted_structure,
         "degraded_structure": degraded,
         "topic": topic,
+        "topic_suggestions": ([] if topic else wiki_document.suggest_topic_links(con, source_id=source, page_id=page_id)),
     }
 
 
 @app.get("/wiki", response_class=HTMLResponse)
-def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = "", tab: str = "browse", q: str = ""):
+def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = "", tab: str = "browse", q: str = "", review_status: str = "all", review_page: int = 1, review_origin: bool = False, review_result: str = "", recovery_page: int = 1, recovery_result: str = ""):
     report = None
     evidence = None
     comparison = None
@@ -5582,6 +5641,27 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         {"id": wiki_evidence.SOURCE_FFXICLOPEDIA, "label": "FFXIclopedia", "available": _have(wiki_evidence.SOURCE_FFXICLOPEDIA)},
         {"id": wiki_evidence.SOURCE_WIKIWIKI_JP, "label": "FFXI Wiki (Japanese)", "available": _have(wiki_evidence.SOURCE_WIKIWIKI_JP)},
     ]
+    review_page = max(1, min(review_page, 10000))
+    review_offset = (review_page - 1) * 50
+    review_window = (wiki_document.topic_review_queue(
+        con, source_id=source, limit=51, offset=review_offset, matching_only=True,
+        status=review_status if review_status in ("pending", "dismissed") else "all")
+        if tab == "review" and source != "all" else [])
+    review_has_more = len(review_window) > 50
+    recovery_page = max(1, min(recovery_page, 10000))
+    recovery_preview = []
+    recovery_total = 0
+    recovery_has_more = False
+    if tab == "recovery":
+        from workbench.devtools.reference.wiki_import_audit import audit, preview_local_recovery
+        recovery_offset = (recovery_page - 1) * 12
+        recovery_summary = audit(con, sample_limit=12, recovery_offset=recovery_offset)
+        recovery_total = recovery_summary.get("recovery_total", 0)
+        recovery_has_more = recovery_summary.get("recovery_has_more", False)
+        recovery_preview = preview_local_recovery(con, sample_limit=12, recovery_offset=recovery_offset)
+    review_queue = review_window[:50]
+    if tab == "review" and review_status in ("pending", "dismissed"):
+        review_queue = [entry for entry in review_queue if entry[review_status]]
     con.close()
     site_links = [{"label": v["label"], "home": v["home"], "page": wiki_jobs.page_url(k, title) if title else None}
                   for k, v in wiki_jobs.SITES.items()]
@@ -5595,11 +5675,50 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         "available_sources": available_sources,
         "comparison": comparison,
         "error": error,
-        "tab": tab if tab in ("browse", "evidence") else "browse",
+        "tab": tab if tab in ("browse", "evidence", "review", "recovery") else "browse",
+        "review_queue": review_queue,
+        "recovery_preview": recovery_preview,
+        "recovery_page": recovery_page,
+        "recovery_total": recovery_total,
+        "recovery_has_more": recovery_has_more,
+        "recovery_result": recovery_result if recovery_result in ("applied", "failed") else "",
+        "review_page": review_page,
+        "review_origin": review_origin,
+        "review_result": review_result if review_result in ("approved", "dismissed") else "",
+        "review_has_more": review_has_more,
+        "review_status": review_status if review_status in ("all", "pending", "dismissed") else "all",
         "page_view": page_view,
         "site_links": site_links,
         "jobs": wiki_jobs.recent_jobs(),
     })
+
+
+@app.post("/wiki/recovery/apply")
+async def wiki_recovery_apply(request: Request):
+    """Guarded single-page offline recovery; source hash is rechecked in transaction."""
+    from workbench.devtools.reference.wiki_import_audit import apply_local_recovery
+    form = await request.form()
+    source = str(form.get("source") or "").strip()
+    page_id = str(form.get("page_id") or "").strip()
+    expected = str(form.get("source_hash") or "").strip()
+    confirmed = str(form.get("confirm") or "") == "yes"
+    try:
+        page = int(form.get("recovery_page") or 1)
+    except (ValueError, TypeError):
+        page = 1
+    page = max(1, min(page, 10000))
+    redirect_base = f"/wiki?tab=recovery&recovery_page={page}"
+    if not confirmed or not source or not page_id or len(expected) != 64:
+        return RedirectResponse(redirect_base + "&recovery_result=failed", status_code=303)
+    con = get_con()
+    try:
+        apply_local_recovery(con, source=source, page_id=page_id,
+                             expected_raw_hash=expected, confirm=True)
+    except (ValueError, sqlite3.Error):
+        return RedirectResponse(redirect_base + "&recovery_result=failed", status_code=303)
+    finally:
+        con.close()
+    return RedirectResponse(redirect_base + "&recovery_result=applied", status_code=303)
 
 
 @app.post("/wiki/scrape")
@@ -5645,6 +5764,12 @@ async def wiki_link_topic(request: Request):
         if not page:
             raise ValueError(f"{source}: page not found for {title!r}")
         page_id = str(page.get("pageid") or page.get("page_id") or page.get("title") or title)
+        suggested_topic_id = (form.get("suggested_topic_id") or "").strip()
+        if suggested_topic_id:
+            matches = wiki_document.suggest_topic_links(con, source_id=source, page_id=page_id)
+            if not any(item["topic_id"] == suggested_topic_id and item["canonical_title"] == canonical_title
+                       for item in matches):
+                raise ValueError("Suggested topic no longer matches reviewed aliases; reload and review.")
         wiki_document.link_topic(
             con,
             source_id=source,
@@ -5656,9 +5781,50 @@ async def wiki_link_topic(request: Request):
         error = str(exc)
     finally:
         con.close()
-    suffix = f"?title={quote(title)}&source={quote(source)}&tab=browse"
+    review_page_raw = (form.get("review_page") or "").strip()
+    review_status = (form.get("review_status") or "all").strip()
+    if review_page_raw.isdecimal() and review_status in ("all", "pending", "dismissed") and not error:
+        review_page = max(1, min(int(review_page_raw), 10000))
+        suffix = f"?source={quote(source)}&tab=review&review_status={review_status}&review_page={review_page}"
+    else:
+        suffix = f"?title={quote(title)}&source={quote(source)}&tab=browse"
     if error:
         suffix += f"&error={quote(error)}"
+    else:
+        suffix += "&review_result=approved"
+    return RedirectResponse("/wiki" + suffix, status_code=303)
+
+
+@app.post("/wiki/topic/dismiss", response_class=HTMLResponse)
+async def wiki_dismiss_topic(request: Request):
+    """Explicitly dismiss one unlinked page's currently proposed topic."""
+    form = await request.form()
+    title = (form.get("title") or "").strip()
+    source = (form.get("source") or wiki_evidence.SOURCE_BG).strip()
+    topic_id = (form.get("suggested_topic_id") or "").strip()
+    error = ""
+    con = get_con()
+    try:
+        page = wiki_evidence.find_reference_page(con, source, title)
+        if not page:
+            raise ValueError("Wiki page not found")
+        page_id = str(page.get("pageid") or page.get("page_id") or page.get("title") or title)
+        wiki_document.dismiss_topic_suggestion(con, source_id=source, page_id=page_id, topic_id=topic_id)
+    except ValueError as exc:
+        error = str(exc)
+    finally:
+        con.close()
+    review_page_raw = (form.get("review_page") or "").strip()
+    review_status = (form.get("review_status") or "all").strip()
+    if review_page_raw.isdecimal() and review_status in ("all", "pending", "dismissed") and not error:
+        review_page = max(1, min(int(review_page_raw), 10000))
+        suffix = f"?source={quote(source)}&tab=review&review_status={review_status}&review_page={review_page}"
+    else:
+        suffix = f"?title={quote(title)}&source={quote(source)}&tab=browse"
+    if error:
+        suffix += f"&error={quote(error)}"
+    else:
+        suffix += "&review_result=dismissed"
     return RedirectResponse("/wiki" + suffix, status_code=303)
 
 

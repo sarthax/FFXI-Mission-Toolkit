@@ -42,6 +42,8 @@ def _position(data: dict) -> Position:
 class TelemetryFrame:
     snapshot: ClientSnapshot
     entities: tuple[EntityObservation, ...]
+    observation_scope: str = "unspecified"
+    entities_truncated: bool = False
 
 
 def decode_frame(payload: dict, *, max_entities: int = 4096) -> TelemetryFrame:
@@ -76,6 +78,9 @@ def decode_frame(payload: dict, *, max_entities: int = 4096) -> TelemetryFrame:
         hint = row.get("instance_hint", instance_hint)
         if hint is not None:
             hint = _string(hint)
+        roles = row.get("target_roles", [])
+        if not isinstance(roles, list) or any(not isinstance(role, str) for role in roles):
+            raise ValueError("invalid target roles")
         entities.append(EntityObservation(
             client_id=client_id,
             client_index=_integer(row["client_index"], high=65535),
@@ -85,5 +90,15 @@ def decode_frame(payload: dict, *, max_entities: int = 4096) -> TelemetryFrame:
             observed_at=observed_at,
             server_entity_id=server_id,
             instance_hint=hint,
+            raw_entity_type=row.get("raw_entity_type"),
+            raw_spawn_flags=row.get("raw_spawn_flags"),
+            raw_status=row.get("raw_status"),
+            target_roles=tuple(roles),
         ))
-    return TelemetryFrame(snapshot, tuple(entities))
+    scope = payload.get("observation_scope", "unspecified")
+    truncated = payload.get("entities_truncated", False)
+    if scope not in ("unspecified", "selected_targets", "bounded_loaded_entities") or type(truncated) is not bool:
+        raise ValueError("invalid entity observation scope")
+    if scope == "bounded_loaded_entities" and len(entities) > 32:
+        raise ValueError("bounded inventory exceeds 32 entities")
+    return TelemetryFrame(snapshot, tuple(entities), scope, truncated)

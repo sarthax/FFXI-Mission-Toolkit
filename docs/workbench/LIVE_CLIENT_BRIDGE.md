@@ -1,7 +1,9 @@
 # Live Client Development Bridge — Roadmap and Resume Guide
 
-Status: **foundation in progress** on [PR #663](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/663), branch `feature/live-client-foundation`.
-First recorded: 2026-10-07. Do not describe future items below as shipped.
+Status: **recorded sessions integrated; partial Ashita v4 runtime evidence received**.
+Foundation: [PR #663](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/663).
+First recorded: 2026-10-07. Dated entries below record historical progress; consult
+the latest milestone for current validation limits.
 
 ## Goal
 Provide native Toolkit-controlled development interaction with an authorized running FFXI client, independent of the Project Tako executable. Integrate live in-game positions and entities with Zone Editor, 2D/3D spatial viewers, capture provenance, spawn placement and navmesh investigation. Development should be achievable using GitHub cloud editing/CI; runtime client validation requires a Windows FFXI session.
@@ -10,7 +12,7 @@ Provide native Toolkit-controlled development interaction with an authorized run
 - User-provided Project Tako installations: `Project-Tako.7z` (original) and `Project-Tako.zip` (updated with maps/config/plugins). These are conversation attachments, not checked into the repository.
 - Reference repos: https://github.com/ProjectTako/Clipper and https://github.com/ProjectTako/ProjectTako.
 - Do **not** embed Project Tako executable as the product architecture, merely forward commands to it, or copy licensed code without review.
-- Favor a toolkit-managed Windows-side adapter plus transport-neutral Python orchestration.
+- Favor the original Ashita observation provider plus transport-neutral Python orchestration; preserve native standalone access and controls as independent future paths.
 - Do not assume offsets, signatures, navmesh availability, or instance map identity without evidence.
 - Process-memory writes are disabled until authorized development session, verified client version, and adapter support. Public-server evasion is out of scope.
 - Keep work isolated from ongoing GUI refactor and Auction House development.
@@ -21,9 +23,9 @@ Provide native Toolkit-controlled development interaction with an authorized run
 - `src/workbench/runtime/live_client/waypoints.py`: JSON waypoint/path serialization and parsing.
 - `src/workbench/runtime/live_client/spatial.py`: same-zone nearby destinations, per-client/per-zone path splitting, preview-only NPC/mob placement candidates.
 - `tests/test_live_client_contracts.py`, `tests/test_live_client_service.py`, `tests/test_live_client_spatial.py`: offline regression coverage.
-These modules are not wired to the GUI and do not attach to or control FFXI yet.
+At the #663 foundation milestone these modules were not GUI-wired. Later milestones below integrate replay/UI and experimental addon observations; native process attachment and game controls remain unimplemented.
 
-## Development roadmap (ordered)
+## Original development roadmap (historical order; current sequence below)
 1. **Adapter/read telemetry:** enumerate running FFXI sessions; version-compatible zone/instance hint, XYZ, heading, character, target and entity observations; explicit disconnected/unverified states; no write operations.
 2. **Spatial UI integration:** view selected client location in 2D/3D Zone Viewer, position/heading readout, camera following, version and health indication. Reuse shared shell and Zone Editor positioning conventions.
 3. **Waypoints:** searchable named destinations by zone and instance hint; import validated Tako records; capture current location; categories/favorites; export/import and profile selection.
@@ -46,7 +48,7 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 1. Inspect newest `main`, open PRs, CI status, and the actual head of PR #663; rebase/reconcile before editing any shared surface.
 2. Run or inspect regression for all three live-client test modules. Do not claim tests have passed for latest commit until workflow completes.
 3. Review adapter contracts and find existing game-facing addon or telemetry interfaces before inventing signatures.
-4. Implement the next *isolated* slice: client discovery/read-only telemetry interface + fixtures and tests. Follow with limited Zone Viewer attachment through existing service patterns.
+4. Use the latest reconciled capability matrix below to choose the next isolated slice. Existing observation providers/replay are authoritative; passive Capture integration is next, with native discovery and calibrated Zone Viewer attachment separate.
 5. Keep documentation status truthful, commit on `feature/live-client-foundation` or successor branch, and update this file plus roadmap at each milestone.
 6. Where only GitHub cloud is available, use GitHub PR and Actions; defer actual in-game compatibility claims to an authorized Windows client test.
 
@@ -200,3 +202,269 @@ These modules are not wired to the GUI and do not attach to or control FFXI yet.
 - Added `tests/test_live_client_windows_identity.py` using synthetic executable fixtures only. No actual FFXI binaries or digests are bundled or approved.
 - This is a **prerequisite, not an implemented memory adapter**. Correctly matched on-disk executable identity alone does not verify a running process or memory layout. A future adapter must additionally verify the target process instance, image identity, pointer validity, schema and offset provenance, and fail closed on mismatch.
 - No process handles, memory operations, or game writes are present. Actual Windows/FFXI validation is still outstanding.
+
+## Cloud recording sessions and playback controls
+
+- Direct console uploads now receive independent recording session IDs. Recordings containing the same embedded client ID can be loaded together and compared; telemetry identity remains validated against the embedded ID.
+- The console supports play/pause, 0.25–4× observed-time playback, one-based frame seeking/timeline scrubbing, previous/restart, replacement and unloading without a restart or Settings edits. Playback pauses when changing sessions or hiding the page, and stops at the end or on request failure.
+- Replacement validates the complete candidate before replacing the selected replay. Invalid uploads, missing sessions and attempts to replace a file feed preserve the existing session. Unloading releases the in-memory session; managed uploaded recording files remain available locally.
+- Comparison displays each selected recording's observed coordinates, zone and timestamp independently. It does not align time, calibrate coordinates or infer shared instance identity.
+- Added dedicated `Live Client Regression` CI with offline API/contracts and a real Chromium console test. Cloud testing uses synthetic telemetry; it does not establish compatibility with Windows or a running FFXI client.
+- PR #687 is incorporated into the replay integration branch with review corrections: exact trace bounds, independent zone visits and explicit instance discontinuities. Its remote merge status and GitHub CI remain unconfirmed until GitHub API access is available. Relative X/Z traces do not imply calibrated map transforms.
+- Remaining work: shared-shell integration, calibrated map overlays, verified native telemetry adapters and explicitly authorized development controls. No memory offsets, supported client builds or game write capabilities have been added by this milestone.
+
+## Shared Workbench page and native research follow-up
+
+- The host now renders the console inside `workbench_page.html`, with a fluid page width and a Client → Live Client navigation entry. The isolated router keeps its standalone rendering for contract tests.
+- Browser regression exercises the shared-shell page, duplicate identities, playback/pause/speed, seek, independent comparison, replacement, unload and segmented X/Z traces. Trace axes use a common scale and do not join zone/instance discontinuities.
+- Optional startup-source failures remain visible on the page; opening a recording is independent of Settings. Existing startup configuration remains supported rather than removing users' saved sources.
+- [Native source research](LIVE_CLIENT_NATIVE_RESEARCH.md) records immutable upstream revisions, licensing observations and requirements for genuine Windows/FFXI validation. No native build is declared supported and no game write adapter is enabled.
+
+## Experimental framework observation sources
+
+- PR #687 and replay/UI PR #691 are merged. Recorded-session and shared Workbench regression checks passed; Windows/FFXI support remains incomplete.
+- `addons/workbench_live/` contains original, explicit-start read-only Ashita v4 and Windower observation exporters with bounded JSONL output. Ashita is the selected real-runtime validation target. No memory offsets, OS process detector, supported-build allowlist or game write functions are provided.
+- Lua 5.1 cloud tests exercise actual addon code with synthetic interfaces, JSONL-to-`FileTelemetryBridge` ingestion, identity/zone transitions, invalid fields, missing SDK functions, clock reversal, logout/unload and independent sources. They do not establish real-client compatibility.
+- [Addon installation and Windows acceptance procedure](../../addons/workbench_live/README.md) distinguishes cloud JSONL upload from same-host live file-feed testing. Verify the actual Ashita major version and framework/game/module identity before claiming support.
+
+## Authorized Ashita recording and raw-coordinate trace planes
+
+- After the PR #698 conditional entity-zone correction, the user reported successful
+  recording and supplied a 121-frame, 120-second capture in zone 50. Every frame
+  passed the strict loader and file-feed decoder; 35 frames observe eight distinct
+  selected targets. This is real source evidence rather than a synthetic SDK run.
+- An anonymized regression fixture preserves all coordinates, headings and target
+  transitions while replacing names/indices and shifting timestamps. Tests cover
+  replay seeking/rewinding, bounded polling, target observations and Chromium UI.
+- The console exposes raw X/Y, X/Z and Y/Z trace planes, with a per-session choice
+  and an initial X/Y view for the experimental Ashita source. It preserves numeric
+  data, uniform scale and zone/instance segment boundaries. Source and reported
+  client version are displayed; entity details keep unknown server IDs explicit.
+- The user reported game version `30191204_1`, stairs traversal and no zone change.
+  Subsequently supplied Ashita-cli.exe/Ashita.dll report PE version `4.0.0.2`;
+  hashes are retained as supplied-file evidence, not running-process verification. Next
+  acceptance evidence: verified build identity, zone/logout and
+  reconnect behavior, concurrent-client isolation, independent axis/heading
+  verification and same-host polling. Calibrated map overlays, automatic process
+  discovery and writable development actions remain incomplete.
+
+## Read-only observation downloads
+
+- Enter a waypoint name and use **Download player waypoint**, or **Download
+  waypoint** on an observed entity row, to capture the current raw observation
+  as a portable `live_client_waypoints` JSON document. Downloads include source,
+  reported version, session/client identity and observation provenance; unknown
+  server IDs remain unknown. Names are required and bounded to 200 characters.
+- **Download path to current frame** exports every recorded sample up to the
+  current replay cursor (at most 10,000), preserving numeric position/heading,
+  timestamps, zone IDs, client identity and per-frame instance hints. It does not
+  export the downsampled display trace or future frames. Seek backward for a prefix.
+- GET-only download routes reject missing/unobserved sessions and targets absent
+  from the current frame. File feeds can provide a latest-observation waypoint,
+  but cannot export historical paths. Downloading pauses browser playback and
+  does not advance the source, modify host files, change SQL or command the game.
+- The existing portable waypoint/path parsers accept these documents. Persistent
+  waypoint library management is described below; calibrated Zone Editor placement, writable warp/
+  speed controls and live network transport are still separate development work.
+- Runtime-backed API and real Chromium tests exercise player/target/path downloads,
+  source isolation, raw values, cursor preservation and zone/instance metadata.
+
+## Runtime report and Windows test-agent handoff
+
+- `python -m workbench.runtime.live_client.runtime_report` produces bounded JSON
+  evidence from a strict immutable recording snapshot, with matching SHA-256,
+  frame cadence, per-zone raw axis ranges, target counts and context transitions.
+  Optional EXE/DLL inputs add PE version resources and hashes using pefile, without
+  executing/loading binaries. Existing output reports are not overwritten.
+- Supplied Ashita files report `4.0.0.2`; derived metadata is tracked separately
+  from the anonymized capture. No binary, supported-build allowlist or new memory
+  adapter is added. Running identity, lifecycle and coordinate calibration remain
+  unverified until the corresponding acceptance evidence is reviewed.
+- [Windows/Codex test handoff](LIVE_CLIENT_WINDOWS_HANDOFF.md) explains local CLI
+  access, report generation and remaining zone/logout/multiple-client tests.
+  Local Codex is a separate session; this cloud chat has no Windows remote shell.
+
+## Persistent waypoint library
+
+- **Save player to library** and entity-row **Save to library** capture the current
+  named raw observation without moving the client or advancing playback. Capture
+  retains source/session/client identity, observed timestamp, instance hint and
+  unknown server identity. Browser playback pauses before capture.
+- The Live Client page lists saved waypoints, with case-insensitive name search
+  and an optional zone filter. Rename or delete individual entries; duplicate
+  names/coordinates remain independent entries. Unknown instance hints stay unknown.
+- Download the whole library as portable `live_client_waypoints` JSON. Import
+  that document or a previously downloaded player/target waypoint to append
+  validated entries. All rows are validated before insertion; malformed imports
+  and capacity failures preserve the current library. Empty imports are a no-op.
+- Toolkit persistence lives in the ignored `data/live_client_waypoints/library.db`,
+  separate from server SQL and the main toolkit database. It survives page reload,
+  recording unload and host restart. SQLite transactions serialize concurrent
+  mutations. GET on a new library does not create storage.
+- Limits: 1 MiB per uploaded JSON document, at most 1,000 stored points, 200-character
+  names/source labels, finite numeric raw positions and integer zone IDs. Imported
+  provenance is filtered and never promotes version or coordinate verification.
+- Mutations require same-origin browser requests; absent observations/targets and
+  storage errors produce useful errors. Corrupt storage is not reset automatically.
+  Library data never becomes a supported-build allowlist, warp destination action,
+  calibrated map overlay or implicit Zone Editor mutation.
+- Runtime-backed API tests and real Chromium validate capture, persistence, filters,
+  rename/delete, portable round-trips, invalid-import isolation and origin guards.
+  Actual Windows lifecycle tests remain deferred; local Codex is not required.
+
+## Raw waypoint comparison
+
+Choose a saved waypoint in the movement trace to see straight-line 3D distance
+and XYZ differences from the current observation. Enable **Show waypoints** to
+plot up to 100 comparable points, with a dashed difference line for the selected
+point. XY, XZ and YZ views preserve raw coordinates; units, instance identity,
+map transforms and navigable routes remain unverified. No movement is issued.
+
+Comparison requires the same recording session, source adapter, embedded client
+identity, reported version, zone, instance hint and recorded visit segment. A
+return to a zone starts a separate segment even when its instance hint is unknown.
+Recordings with identical client IDs remain separate. Capture now stores the
+recorded frame and visit segment; older imports remain manageable but must be
+recaptured for comparison. Unload/reload creates a new session and excludes saved
+points from the previous session. File-feed captures remain supported, but their
+visit context is unknown, so they are excluded from this recording comparison.
+
+The read-only `/live-client/waypoints/relative` API reports comparable points and
+exclusion reasons. It rejects stale observation timestamps and context changes
+during capture/comparison; the browser suppresses overlays when the trace cursor
+has changed. Numeric differences outside the finite range are excluded. Tests
+use the supplied anonymized Ashita recording, synthetic return visits, duplicate
+client IDs and Chromium. These checks do not validate Windows client lifecycle,
+coordinate calibration or game writes.
+
+## 2026-10-08 reference audit and implementation decision
+
+[Tako / Clipper reference audit](LIVE_CLIENT_REFERENCE_AUDIT.md) reconciles current
+capabilities, pinned sources, Clipper GPL/LGPL discrepancy and unavailable archives.
+Prefer bounded Ashita loaded-entity observations next, followed by runtime identity
+and transform evidence. Existing replay/library work is reused. Native controls,
+calibrated overlays, editor placement callbacks and live navmesh validation remain
+incomplete; no old signature profile or historical map count establishes support.
+
+## Ashita reuse and target identity follow-up
+
+The bridge uses Ashita's published APIs rather than duplicating its minimap or
+memory reader. Selected targets now optionally carry reported server IDs,
+separate from memory indexes, with target-change sampling guards. This extension
+is cloud-tested, not yet Windows-tested; the existing supplied capture contains
+no server IDs. Full loaded-entity enumeration remains pending verified bounds and
+runtime behavior. Packet integration should reuse existing Capture ingestion,
+correlation and `workbench.packets.decode`; no packet writes are implemented.
+See the [reference audit follow-up](LIVE_CLIENT_REFERENCE_AUDIT.md#ashita-minimap-and-packet-reuse-follow-up).
+
+## Experimental bounded Ashita inventory
+
+An explicit `/wblive start <unique-instance-id> inventory` mode now reuses published
+entity getters and Ashita's own 0–2303 enumeration examples. It records at most 32
+named observations with selected-target priority, omits player/duplicates/blank
+names and reports truncation in JSONL and the Toolkit UI. Default start retains
+selected-target behavior. Invalid or changing observations fail closed; kinds,
+instances and runtime build remain unverified. No client writes or new minimap
+implementation. See [addon usage and remaining runtime tests](../../addons/workbench_live/README.md#experimental-bounded-ashita-inventory).
+
+## Entity observation inspection
+
+The Live Client table filters the current observed subset by case-insensitive name,
+client index or reported server ID (decimal/`0x` hexadecimal). Duplicate names stay
+separate by index; missing server IDs remain unknown. Choose observed order or
+raw distance from the player. Distances are straight-line XYZ differences in
+unverified source units, not routes; out-of-range numeric differences are labeled.
+Filtering/order are local presentation operations and do not seek or poll telemetry.
+Capture actions remain attached to the corresponding entity index. Inventory scope
+and truncation warnings remain visible even when no rows match a filter; filters
+cannot recover observations omitted by the exporter cap. Browser tests cover these
+behaviors without claiming Windows client or coordinate compatibility.
+
+## Inventory-aware offline diagnostics
+
+Runtime reports now preserve declared entity observation scope and summarize
+truncation, count distribution and reported server-ID coverage. Distinct observation
+counts include source/version/zone/instance/index/reported-ID/name context; zero and
+absent IDs both stay unknown. Legacy scope is unspecified. These metrics describe
+supplied frames, not verified entity identity, target roles or world completeness.
+Use the existing [runtime report command](LIVE_CLIENT_WINDOWS_HANDOFF.md#produce-an-offline-runtime-report)
+for both inventory and historical recordings.
+
+## Displayed-observation capture guard
+
+Projection responses include an opaque `observation_token` for immutable frame
+contents and the registry's session generation. The console sends it when saving
+or downloading player/entity waypoints and recorded paths. Seek, feed updates,
+changed entity observations or recording replacement invalidate stale captures,
+including replacements with identical displayed values. Entity-row actions retain
+their own displayed token across table refreshes. HTTP 409 asks the user
+to refresh; rejected library captures preserve existing storage. Filtering does
+not invalidate an otherwise unchanged observation. Path export rechecks after
+collecting samples. Existing API callers may omit the optional token for backward
+compatibility; the console requires it and checks its displayed session selection.
+
+This token checks observation consistency, not authentication, verified server
+identity, native compatibility or game-write authorization. The existing origin
+and read-only boundaries remain separate. Tests cover replay/feed/session changes,
+slot identity changes and actual browser refresh/retry without moving the client.
+
+## Portable path context and discontinuities
+
+Each exported path sample retains raw XYZ/heading, timestamp and client ID plus
+instance hint, adapter/reported version, Toolkit session/generation, recorded
+segment and entity observation scope/truncation. Portable parsing and serialization
+round-trip that context; legacy samples default to unknown source/session/instance
+and unspecified observation scope. Capturing through `LiveClientSession` retains
+snapshot instance/source/version without inventing registry or inventory metadata.
+
+Path splitting preserves changes in zone, client, known/unknown instance context,
+source/version, session/generation or recorded segment, and non-increasing sample
+times. Replay trace and export segment numbers also account for source/version
+changes. Returning to a zone does not reconnect segments across the intervening
+visit. A generation identifies a Toolkit registration, not a verified game process.
+Optional imported context is validated but remains unverified; lack of a boundary
+hint cannot establish continuity, physical instance identity or collision-free travel.
+These raw paths are suitable evidence for later calibrated map/navmesh analysis,
+not validated routes. No game or server writes are performed.
+
+### Live Client waypoint recording isolation — 2026-10-09
+
+Saved waypoint captures now retain the Toolkit recording generation. Raw comparisons exclude older or unknown generations, including replacement with an identical recording under the same session ID. Export/import preserves this context; seeking and restarting the original recording keep its waypoints comparable. Older waypoints remain available for management and export, but must be recaptured for comparison. Regression coverage uses the supplied anonymized Ashita recording. This is recording consistency validation, not Windows compatibility or coordinate calibration.
+
+### Live Client recorded entity trace markers — 2026-10-09
+
+The recorded trace optionally shows up to 100 current entity observations as purple squares in X/Y, X/Z or Y/Z. Hover details preserve literal names, client indexes, reported server IDs (or unknown) and raw XYZ. Bounds include displayed markers; source observation scope and truncation remain visible. Markers match the player instance hint and clear on frames without entities. The console binds trace collection to its displayed observation token, rejecting seek/replacement or collection-time changes instead of combining an old projection with a new path. Existing trace API clients may omit the token. Cloud/browser validation includes the supplied anonymized Ashita recording; calibrated zone maps, identity verification and live Windows testing remain pending.
+
+Overlapping browser trace requests also discard superseded responses, preventing an older refresh from appending duplicate geometry to a newer plot. A browser regression deliberately delivers responses out of order and fails without the response guards. CI now exposes concise failing assertions through annotations when full log downloads are unavailable.
+
+## Ashita capability reconciliation and raw entity state — 2026-10-09
+
+See the [capability gap matrix and current sequence](LIVE_CLIENT_REFERENCE_AUDIT.md#reconciliation-with-ashita-capability-research--2026-10-09),
+which incorporates PR #753 without replacing existing providers, feeds, schema,
+sessions, recordings, playback, waypoints, paths, raw spatial views or write gates.
+The existing addon now preserves optional raw entity type, spawn flags and status,
+and source-reported target/subtarget roles, through telemetry v1 and the existing
+entity table. Missing fields/role APIs remain unknown; kinds and instance identity
+are not inferred. Guards recheck observed identity and target mode/index around
+sampling, and retain last-good data on invalid output. Existing inventory bounds,
+rate limits, file/line caps and explicit lifecycle remain authoritative.
+
+This entity slice has synthetic Lua, decoder/feed/replay/projection/browser and
+stale-token tests; Windows evidence is still pending. Nothing operational is
+superseded. Next: pin passive Lua packet hook byte/provenance semantics and add
+an optional bounded source adapter to canonical Capture, followed by qualified
+research joins. Native attachment/control and calibrated maps remain separate.
+
+### Passive Ashita packet source / canonical Capture — 2026-10-09
+
+A separately enabled event/emote profile in the existing addon records original
+hook-buffer bytes with source/time/zone/sequence and hook-time flags under strict
+rate/size/count limits. Capture Add Files, folder/archive ingestion and normal
+source rebuild use the existing canonical raw rows, locators, decoder and UI.
+No new game write, packet mutation or competing decoding infrastructure is added.
+
+See [pinned evidence and fidelity boundaries](LIVE_CLIENT_REFERENCE_AUDIT.md#passive-ashita-packet-source--canonical-capture--2026-10-09)
+and [commands/limits](../../addons/workbench_live/README.md#optional-passive-packet-observations-ashita-only).
+This is cloud/synthetic validation; Windows hooks, performance, final wire fidelity
+and clock/event correlation remain unverified. Next add qualified research evidence
+joins through existing services, keeping native controls and calibration separate.

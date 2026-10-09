@@ -168,8 +168,8 @@
         </div>
         <div class="ahc-card">
           <h3>Recipients</h3>
-          <div class="ahc-bar"><label style="flex-direction:row;gap:4px"><input type="radio" name="ibMode" value="selected" checked> Selected</label><label style="flex-direction:row;gap:4px"><input type="radio" name="ibMode" value="all"> All characters</label></div>
-          <div class="ahc-charpick" id="ibChars"></div>
+          <div class="ahc-bar"><label style="flex-direction:row;gap:4px"><input type="radio" name="ibMode" value="selected" checked> Selected</label><label style="flex-direction:row;gap:4px"><input type="radio" name="ibMode" value="all"> All characters</label><label style="flex-direction:row;gap:4px"><input type="radio" name="ibMode" value="account"> All characters on selected account</label></div>
+          <div class="ahc-charpick" id="ibChars"></div><small id="ibAccountHint">For account mode, select exactly one character as the account anchor.</small>
           <div class="ahc-bar"><button class="b pri" id="ibPreview" type="button">Preview delivery</button></div>
           <small>Items are delivered to each character's delivery box (Mog). Preview is required before sending.</small>
         </div>
@@ -186,5 +186,5 @@
   </aside>
   <div class="ahc-toast" id="ahcToast"></div>
 </div>
-<script src="/static/auction_house_console.js?v=20261005s"></script>
+<script src="/static/auction_house_console.js?v=20261008a"></script>
 {% endblock %}

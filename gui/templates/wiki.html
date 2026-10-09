@@ -79,19 +79,98 @@
 </div>
 {% endif %}
 
+{% if review_result == 'approved' %}
+<div class="notice">Topic link approved. The review queue has been refreshed.</div>
+{% elif review_result == 'dismissed' %}
+<div class="notice">Topic suggestion dismissed. The review queue has been refreshed.</div>
+{% endif %}
 <div class="wiki-actions dense-toolbar" style="margin:6px 0">
   <a class="chip {% if tab == 'browse' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=browse"><b>Browse</b></a>
   <a class="chip {% if tab == 'evidence' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=evidence"><b>Evidence workflow</b></a>
+  <a class="chip {% if tab == 'review' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=review"><b>Topic review queue</b></a>
+  <a class="chip {% if tab == 'recovery' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=recovery"><b>Recovery preview</b></a>
   <span class="sp"></span>
   <span class="muted">Open site:</span>
   {% for l in site_links %}<a class="chip" href="{{ l.page or l.home }}" target="_blank" rel="noopener">{{ l.label }}{% if l.page %} ↗ page{% else %} ↗{% endif %}</a>{% endfor %}
 </div>
+
+{% if tab == 'recovery' %}
+<section class="wiki-section">
+  <h3>Local Wiki structure recovery — guarded one-page apply</h3>
+  <p class="muted">These are retained-source previews, not applied changes. No scraping or database modifications occur here. Applying a page requires explicit confirmation and revalidates its source hash and legacy-only status before committing.</p>
+  <div class="wiki-actions dense-toolbar">
+    <span class="muted">{{ recovery_total }} legacy-only candidate pages · recovery page {{ recovery_page }} · up to 12 candidates per page</span>
+    {% if recovery_page > 1 %}<a class="chip" href="/wiki?source={{ source|urlencode }}&tab=recovery&recovery_page={{ recovery_page - 1 }}">← Previous 12</a>{% endif %}
+    {% if recovery_has_more %}<a class="chip" href="/wiki?source={{ source|urlencode }}&tab=recovery&recovery_page={{ recovery_page + 1 }}">Next 12 →</a>{% endif %}
+  </div>
+  {% if recovery_result == 'applied' %}<div class="notice">One Wiki page recovered and validated. The candidate list has been refreshed.</div>{% elif recovery_result == 'failed' %}<div class="warn">Recovery rejected; refresh this page and review the source before retrying.</div>{% endif %}
+  {% if recovery_preview %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Source / page ID</th><th>Existing blocks</th><th>Proposed blocks</th><th>Block-type changes</th><th>Source locators</th><th>Guarded apply</th></tr></thead>
+    <tbody>
+    {% for entry in recovery_preview %}
+    <tr>
+      <td>{{ entry.source }} / {{ entry.page_id }}</td>
+      <td>{{ entry.existing_structure.blocks }}</td>
+      <td>{{ entry.proposed_structure.blocks }}</td>
+      <td><pre>{{ entry.block_type_deltas }}</pre></td>
+      <td>{{ entry.existing_structure.with_source_locator }} → {{ entry.proposed_structure.with_source_locator }}</td>
+      <td>{% if entry.can_apply %}<form method="post" action="/wiki/recovery/apply">
+        <input type="hidden" name="source" value="{{ entry.source }}">
+        <input type="hidden" name="page_id" value="{{ entry.page_id }}">
+        <input type="hidden" name="source_hash" value="{{ entry.source_hash }}">
+        <input type="hidden" name="recovery_page" value="{{ recovery_page }}">
+        <label><input type="checkbox" name="confirm" value="yes" required> Confirm one-page recovery</label>
+        <button type="submit">Apply this page</button>
+      </form>{% else %}<span class="muted">Unavailable: no structured blocks from retained source</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<p class="muted">No locally reparsable legacy-only pages were found in this limited preview.</p>{% endif %}
+</section>
+{% endif %}
+{% if tab == 'review' %}
+<section class="wiki-section">
+  <h3>Multilingual topic review queue</h3>
+  <div class="wiki-actions dense-toolbar">
+    <span class="muted">Show:</span>
+    {% for state, label in [('all', 'All'), ('pending', 'Pending'), ('dismissed', 'Dismissed')] %}
+    <a class="chip {% if review_status == state %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=review&review_status={{ state }}&review_page=1">{{ label }}</a>
+    {% endfor %}
+  </div>
+  <p class="muted">This page: {{ review_queue|length }} source articles · {{ review_queue|selectattr("pending")|list|length }} with pending suggestions · {{ review_queue|selectattr("dismissed")|list|length }} with dismissed suggestions. Counts apply only to the current page.</p>
+  <p class="muted">Read-only overview. Each page shows up to 50 source articles with potential review candidates. Dismissed candidates remain auditable; open a source page to review pending topics.</p>
+  <div class="wiki-actions dense-toolbar">
+    {% if review_page > 1 %}<a class="chip" href="/wiki?source={{ source|urlencode }}&tab=review&review_status={{ review_status }}&review_page={{ review_page - 1 }}">← Previous 50</a>{% endif %}
+    <span class="muted">Review candidate page {{ review_page }}</span>
+    {% if review_has_more %}<a class="chip" href="/wiki?source={{ source|urlencode }}&tab=review&review_status={{ review_status }}&review_page={{ review_page + 1 }}">Next 50 →</a>{% endif %}
+  </div>
+  {% if review_queue %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Source page</th><th>Pending topics</th><th>Dismissed topics</th></tr></thead>
+    <tbody>
+    {% for entry in review_queue %}
+      <tr>
+        <td><a href="/wiki?source={{ entry.source_id|urlencode }}&title={{ entry.title|urlencode }}&tab=browse&review_status={{ review_status }}&review_page={{ review_page }}&review_origin=1">{{ entry.title }}</a><div class="muted">{{ entry.pending|length }} pending · {{ entry.dismissed|length }} dismissed</div></td>
+        <td>{% for item in entry.pending %}<div><strong>{{ item.canonical_title }}</strong> <span class="muted">({{ item.match_method }})</span> {% for proof in item.supporting_pages %}{% if proof.title %}<a class="chip" href="/wiki?source={{ proof.source_id|urlencode }}&title={{ proof.title|urlencode }}&tab=browse" target="_blank" rel="noopener">{{ proof.source_id }} ↗</a>{% else %}<span class="muted">{{ proof.source_id }} / {{ proof.page_id }}</span>{% endif %}{% endfor %}</div>{% else %}<span class="muted">None</span>{% endfor %}</td>
+        <td>{% for item in entry.dismissed %}<div>{{ item.canonical_title }}</div>{% else %}<span class="muted">None</span>{% endfor %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<p class="muted">No pending or dismissed topic suggestions found in the selected source's review window.</p>{% endif %}
+</section>
+{% endif %}
 
 {% if tab == 'browse' %}
 {% if title and not page_view and not report %}
 <div class="warn">No stored {{ source }} page matches {{ title|e }}. Paste its URL in the scrape box above to fetch it.</div>
 {% endif %}
 {% if page_view %}
+{% if review_origin %}
+<a class="chip" href="/wiki?source={{ source|urlencode }}&tab=review&review_status={{ review_status }}&review_page={{ review_page }}">← Back to topic review queue</a>
+{% endif %}
 <div class="dense-toolbar" style="margin:8px 0 5px">
   <strong>{{ page_view.title }}</strong>
   {% if page_view.timestamp %}<span class="muted">rev {{ page_view.revision or '' }} · {{ page_view.timestamp }}</span>{% endif %}
@@ -123,6 +202,42 @@
     <button type="submit">{% if page_view.topic %}Update topic{% else %}Link English topic{% endif %}</button>
   </form>
 </div>
+{% if not page_view.topic and page_view.topic_suggestions %}
+<details class="wiki-topic-suggestions">
+  <summary>Suggested multilingual topics ({{ page_view.topic_suggestions|length }}) — review only</summary>
+  <p class="muted">Exact matches to existing reviewed aliases. Suggestions do not link pages automatically. Review the supporting pages before entering a canonical topic above.</p>
+  {% for suggestion in page_view.topic_suggestions %}
+  <div class="wiki-definition">
+    <strong>{{ suggestion.canonical_title }}</strong>
+    <div>
+      <span class="muted">{{ suggestion.match_method }}</span>
+      {% for proof in suggestion.supporting_pages %}
+        {% if proof.title %}
+        <a class="chip" href="/wiki?source={{ proof.source_id|urlencode }}&title={{ proof.title|urlencode }}&tab=browse" target="_blank" rel="noopener">{{ proof.source_id }}: {{ proof.title }}</a>
+        {% else %}<span class="chip">{{ proof.source_id }} / {{ proof.page_id }}</span>{% endif %}
+      {% endfor %}
+      <form method="post" action="/wiki/topic" class="wiki-actions" style="margin:5px 0 0">
+        <input type="hidden" name="title" value="{{ title }}">
+        <input type="hidden" name="source" value="{{ source }}">
+        <input type="hidden" name="review_page" value="{{ review_page }}">
+        <input type="hidden" name="review_status" value="{{ review_status }}">
+        <input type="hidden" name="canonical_title" value="{{ suggestion.canonical_title }}">
+        <input type="hidden" name="suggested_topic_id" value="{{ suggestion.topic_id }}">
+        <button type="submit">Approve and link topic</button>
+      </form>
+      <form method="post" action="/wiki/topic/dismiss" class="wiki-actions" style="margin:5px 0 0">
+        <input type="hidden" name="title" value="{{ title }}">
+        <input type="hidden" name="source" value="{{ source }}">
+        <input type="hidden" name="review_page" value="{{ review_page }}">
+        <input type="hidden" name="review_status" value="{{ review_status }}">
+        <input type="hidden" name="suggested_topic_id" value="{{ suggestion.topic_id }}">
+        <button type="submit">Dismiss suggestion</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</details>
+{% endif %}
 {% if page_view.degraded_structure %}
 <div class="warn">This page came from the legacy flattened import. It is readable here, but original tables/links cannot be reconstructed until this page is selectively re-scraped.</div>
 {% elif page_view.persisted_structure %}
@@ -147,6 +262,25 @@
       <ul class="wiki-list">{% for li in item.items %}<li>{{ li.text }}</li>{% endfor %}</ul>
     {% elif item.type == 'definition' %}
       <dl class="wiki-definition"><dt>{{ item.term }}</dt><dd>{{ item.definition }}</dd></dl>
+      {% if item.field_candidate %}
+      <details class="wiki-field-review">
+        <summary>Review {{ item.field_candidate.field_type }} template field — reference only</summary>
+        <p class="muted">This extracted field is a review candidate, not a verified gameplay relationship.</p>
+        <div>Original: <code>{{ item.field_candidate.value_raw or item.field_candidate.value }}</code></div>
+        <div class="muted">Source: {{ item.field_candidate.source_locator }}</div>
+        {% if item.field_candidate.source_links %}
+        <div class="muted">Explicit source links (review only):</div>
+        {% for link in item.field_candidate.source_links %}
+        <div><code>{{ link.source_markup }}</code> → {{ link.target }} <span class="muted">[{{ link.resolution }}{% if link.canonical_title %}: {{ link.canonical_title }}{% endif %}]</span></div>
+        <div class="muted">Toolkit entity: {{ link.entity_resolution }}{% if link.entity_target %} ({{ link.entity_target.domain }} · {{ link.entity_target.table }} · {{ link.entity_target.key }}) — {% if link.entity_target.trace_node %}<a href="/features/trace?q={{ link.entity_target.trace_node|urlencode }}">Open exact indexed Feature Trace node</a>{% else %}<a href="/features/trace?q={{ link.entity_target.trace_query|urlencode }}">Search Feature Trace for this ID</a>{% endif %}{% endif %} — review hint only; search is not a verified mapping</div>
+        <details class="wiki-entity-evidence">
+          <summary>Inspect entity candidates ({{ link.entity_candidate_count }}) — evidence only</summary>
+          <pre>{{ link.entity_candidate_lines }}</pre>
+        </details>
+        {% endfor %}
+        {% endif %}
+      </details>
+      {% endif %}
     {% elif item.type == 'table' %}
       <div class="table-wrap"><table>
       {% for row in item.rows %}<tr>
@@ -161,7 +295,15 @@
         <p class="muted">These values were extracted from explicit table labels. They are not verified gameplay facts or approved Feature Trace relationships.</p>
         <dl class="wiki-definition">
           {% for candidate in item.field_candidates %}
-            <dt>{{ candidate.field }}</dt><dd>{{ candidate.value }}</dd>
+            <dt>{{ candidate.field }}</dt>
+            <dd>{{ candidate.value }}
+              <details class="wiki-candidate-source">
+                <summary>Source cell</summary>
+                {% if candidate.value_raw %}<div class="mono">Original: <code>{{ candidate.value_raw }}</code></div>{% endif %}
+                {% if candidate.value_source_locator %}<div class="mono">Value: {{ candidate.value_source_locator }}</div>{% endif %}
+                {% if candidate.field_source_locator %}<div class="mono">Field: {{ candidate.field_source_locator }}</div>{% endif %}
+              </details>
+            </dd>
           {% endfor %}
         </dl>
       </details>
