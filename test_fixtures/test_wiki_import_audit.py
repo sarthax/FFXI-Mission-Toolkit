@@ -14,6 +14,9 @@ def main():
       ("BG Wiki","en-item","template_field","section:drops:template:1:field:1"),
     ])
     report=audit(con,sample_limit=2)
+    assert report["recovery_total"]==1
+    assert report["recovery_has_more"] is False
+    assert audit(con,sample_limit=0)["recovery_has_more"] is True
     jp=next(s for s in report["sources"] if s["source"]=="WikiWikiJP")
     assert jp=={"source":"WikiWikiJP","pages_with_blocks":2,"blocks":3,"template_fields":1,"degraded_blocks":1},jp
     assert report["recovery_candidates"]==[{"source":"WikiWikiJP","page_id":"old","legacy_blocks":1,
@@ -36,6 +39,7 @@ def main():
     assert con.execute("SELECT COUNT(*) FROM reference_wiki_blocks").fetchone()[0]==4
 
     assert audit(con,sample_limit=1,recovery_offset=1)["recovery_candidates"]==[]
+    assert audit(con,sample_limit=1,recovery_offset=1)["recovery_has_more"] is False
     assert audit(con,sample_limit=1,recovery_offset=0)["recovery_candidates"][0]["page_id"]=="old"
     assert preview_local_recovery(con,sample_limit=1,recovery_offset=1)==[]
     assert len(report["samples"])==2
