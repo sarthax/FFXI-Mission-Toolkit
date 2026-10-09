@@ -18,7 +18,7 @@ def observation(identity):
 def exchange(registry, identity, token, message=None, now=10):
     left, right = socket.socketpair()
     try:
-        left.sendall(bytes((0, 5)) + b'bad')
+        left.sendall(make_hello(identity, token))
         send(left, message or observation(identity))
         return accept_one(right, registry, now=now)
     finally:
@@ -71,7 +71,7 @@ def test_incomplete_handshake_fails_closed():
     peers = LocalPeerRegistry()
     left, right = socket.socketpair()
     try:
-        left.sendall(b'\\x00\\x05bad')
+        left.sendall(bytes((0, 5)) + b'bad')
         left.close()
         with pytest.raises(ConnectionError):
             accept_one(right, peers)
