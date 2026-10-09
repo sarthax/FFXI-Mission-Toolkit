@@ -121,6 +121,14 @@
 <div id="wiki-bg-bulk-results" class="wiki-search-results"></div>
 </div>
 </details>
+<details class="wiki-section" id="wiki-sync-overview">
+<summary>Wiki synchronization — all sources</summary>
+<div class="body">
+<p class="muted">Source-aware synchronization status. FFXIclopedia supports scheduled recent changes; BG Wiki imports a local dump; Japanese Wiki crawls a selected subtree.</p>
+<button type="button" id="wiki-sync-overview-refresh">Refresh all source statuses</button>
+<div id="wiki-sync-overview-results" role="status" class="muted">Open this panel to inspect synchronization health.</div>
+</div>
+</details>
 <details class="wiki-section" id="wiki-bulk-box">
 <summary>Bulk Wiki scrape — FFXIclopedia (bounded batch)</summary>
 <div class="body">
@@ -683,6 +691,41 @@
     cacheBtn.addEventListener('click',updateWikiCache);
     updateWikiCache();
   }
+  (function(){
+    var panel=document.getElementById('wiki-sync-overview'), output=document.getElementById('wiki-sync-overview-results');
+    if(!panel||!output)return;
+    function update(){
+      output.textContent='Loading synchronization status…';
+      fetch('/wiki/bulk/overview',{cache:'no-store'}).then(function(r){
+        return r.json().then(function(data){if(!r.ok)throw Error(data.error||'HTTP '+r.status);return data;});
+      }).then(function(data){
+        output.replaceChildren();
+        (data.sources||[]).forEach(function(source){
+          var row=document.createElement('div');row.className='wiki-kpi';
+          var latest=source.latest;
+          var text=document.createElement('div');
+          text.textContent=source.source+' — '+source.capability+
+            (latest?' · Last: '+latest.state+' ('+(latest.processed||0)+' processed)':' · No runs');
+          row.appendChild(text);
+          if(source.schedule){
+            var scheduled=document.createElement('div');scheduled.className='muted';
+            scheduled.textContent='Scheduled: '+(source.schedule.enabled?'Enabled':'Disabled')+
+              (source.schedule.next_due?' · Next due '+source.schedule.next_due:'');
+            row.appendChild(scheduled);
+          }
+          if(source.attention&&source.attention.length){
+            var warning=document.createElement('div');warning.className='warn';
+            warning.textContent=source.attention.length+' recent jobs need attention: '+
+              source.attention.map(function(job){return job.id+' ('+job.state+')';}).join(', ');
+            row.appendChild(warning);
+          }
+          output.appendChild(row);
+        });
+      }).catch(function(error){output.textContent='Unable to load Wiki sync status: '+error.message;});
+    }
+    document.getElementById('wiki-sync-overview-refresh').addEventListener('click',update);
+    panel.addEventListener('toggle',function(){if(panel.open)update();});
+  })();
   (function(){
     var panel=document.getElementById('wiki-bulk-box'), form=document.getElementById('wiki-bulk-start');
     if(!panel||!form)return;
