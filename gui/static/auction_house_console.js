@@ -544,7 +544,8 @@
     addRestock({item_id: Number(r.item_id ?? r.id), item_name: r.name || r.item_name, target:5, price:100, stack:false});
     $('rsItemQ').value = ''; $('rsSug').hidden = true;
   };
-  picker($('rsItemQ'), $('rsSug'), '/auction-house/console/item-search.json?q=', ahPickRow, restockPick);
+  WorkbenchItemPicker.bind({input:$('rsItemQ'),results:$('rsSug'),
+    endpoint:'/auction-house/console/item-search.json?q=',request:req,onSelect:restockPick});
   ahBrowse($('rsBrowse'), $('rsBrowseBox'), $('rsBrowseQ'), $('rsBrowseRows'), $('rsBrowseCount'), restockPick);
   req('/auction-house/categories.json').then(d => { $('rsCat').innerHTML += (d.rows || []).map(r => '<option value="' + r.category_id + '">' + esc(r.path || r.label || 'Category ' + r.category_id) + ' (' + (r.item_count || 0) + ')</option>').join(''); }).catch(() => {});
   $('rsCatAdd').addEventListener('click', async () => {
@@ -586,12 +587,7 @@
   /* Inbox item chooser uses the shared server item search and Character Editor icon cache.
      Keep the existing bundle/preview state; no changes to protected reward execution. */
   const ibIcon = id => '/character-editor/client-cache/icons/' + Number(id) + '.png';
-  const ibItemRow = r => {
-    const id = Number(r.item_id ?? r.id), name = String(r.name || r.item_name || ('Item #' + id));
-    return '<img src="' + ibIcon(id) + '" width="32" height="32" loading="lazy" alt="" onerror="this.style.display=\'none\'"> ' +
-      '<span><strong>' + esc(nm(name)) + '</strong> <small>#' + id + ' · ' + esc(r.category_path || (r.item_type == null ? 'Server catalog' : 'Type '+r.item_type)) +
-      (r.stack_size > 1 ? ' · stacks to ' + Number(r.stack_size) : '') + '</small></span>';
-  };
+  const ibItemRow = r => WorkbenchItemPicker.rowHtml(r);
   const ibAddItem = r => {
     const id = Number(r.item_id ?? r.id), name = String(r.name || r.item_name);
     if (!Number.isInteger(id) || id <= 0) return;
@@ -1061,7 +1057,8 @@
     $('cuSelectedItem').innerHTML = itemIdentity(id, name, r.category_path || 'Selected cleanup filter');
     $('cuItemSug').hidden = true;
   };
-  cuSearch($('cuItemQ'), $('cuItemSug'), '/auction-house/console/item-search.json?q=', ahPickRow, cleanupPick);
+  WorkbenchItemPicker.bind({input:$('cuItemQ'),results:$('cuItemSug'),
+    endpoint:'/auction-house/console/item-search.json?q=',request:req,onSelect:cleanupPick});
   ahBrowse($('cuBrowse'), $('cuBrowseBox'), $('cuBrowseQ'), $('cuBrowseRows'), $('cuBrowseCount'), cleanupPick);
   $('cuSellerQ').addEventListener('input', () => { if ($('cuSellerQ').value !== $('cuSellerQ').dataset.picked) $('cuSellerId').value = ''; });
   $('cuItemQ').addEventListener('input', () => { if ($('cuItemQ').value !== $('cuItemQ').dataset.picked) { $('cuItemId').value = ''; $('cuSelectedItem').textContent = ''; } });
