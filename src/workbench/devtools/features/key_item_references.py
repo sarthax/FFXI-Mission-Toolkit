@@ -29,7 +29,7 @@ _OPERATION = {
 }
 
 
-@lru_cache(maxsize=16384)
+@lru_cache(maxsize=512)
 def _read_lua_lines(path: str, mtime_ns: int, size: int) -> tuple[str, ...]:
     """Cache immutable file content until its metadata changes.
 
