@@ -93,7 +93,9 @@ setInterval(poll,1500);poll();
             raise HTTPException(status_code=422, detail="invalid client ID")
         result = manager.status(client_id)
         snapshot = result.pop("snapshot", None)
-        if snapshot is not None:
+        if snapshot is None:
+            result["snapshot"] = None
+        else:
             pos = snapshot.position
             result["snapshot"] = {
                 "client_id": snapshot.client_id, "character": snapshot.character,
