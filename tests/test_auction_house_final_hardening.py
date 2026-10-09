@@ -119,3 +119,52 @@ def test_augment_codec_preview_is_not_an_unverified_mail_write(monkeypatch):
         reject_unverified_augmented_bundle([
             {"item_id": 123, "quantity": 1, "augments": [{"id": 7, "value": 2}]},
         ])
+
+
+
+def test_augmented_write_flag_is_off_by_default(monkeypatch):
+    from workbench.server_admin.auction_house.augmented_delivery import (
+        augmented_test_writes_enabled, _verify_dsp_mail_source,
+    )
+    monkeypatch.delenv("FFXI_MISSION_TOOLKIT_AH_AUGMENTED_REWARD_TEST_WRITES", raising=False)
+    assert not augmented_test_writes_enabled()
+
+
+def test_augmented_dsp_mail_source_requires_extra_readback(tmp_path):
+    from workbench.server_admin.auction_house.augmented_delivery import _verify_dsp_mail_source
+    from workbench.server_admin.auction_house.legacy_test_executor import LegacyTestExecutionBlocked
+    src = tmp_path / "src" / "map"
+    src.mkdir(parents=True)
+    code = src / "packet_system.cpp"
+    code.write_text("FROM delivery_box WHERE charid\nmemcpy(PItem->m_extra, extra\n")
+    with pytest.raises(LegacyTestExecutionBlocked, match="not source verified"):
+        _verify_dsp_mail_source(tmp_path)
+    code.write_text(
+        "FROM delivery_box WHERE charid\nmemcpy(PItem->m_extra, extra\n"
+        "charutils::AddItem(PChar, LOC_INVENTORY, itemutils::GetItem(PItem)\n"
+    )
+    assert _verify_dsp_mail_source(tmp_path) is None
+
+
+def test_augmented_preview_fingerprint_binds_specific_encoded_instance(monkeypatch):
+    from workbench.server_admin.auction_house import augmented_delivery as ad
+    monkeypatch.setattr(ad, "_verify_dsp_mail_source", lambda root: None)
+    monkeypatch.setattr(ad, "_resolve_recipients", lambda service, **kwargs:
+                        [{"char_id": 7, "char_name": "Buyer"}])
+    monkeypatch.setattr(ad, "inspect_augmented_reward",
+                        lambda **kwargs: {"encoded_inventory_extra_hex":
+                                          "07" * 24 if kwargs["augments"][0]["value"] == 1 else "08" * 24,
+                                          "requested_augments": kwargs["augments"]})
+    class FakeService:
+        def item_snapshot(self, item_id):
+            return {"name": "Test Sword", "stack_size": 1}
+    a = ad.preview_augmented_delivery(
+        service=FakeService(), environment=ENV, server_root="/source",
+        character_id=7, item_id=123, augments=[{"id": 7, "value": 1}],
+    )
+    b = ad.preview_augmented_delivery(
+        service=FakeService(), environment=ENV, server_root="/source",
+        character_id=7, item_id=123, augments=[{"id": 7, "value": 2}],
+    )
+    assert a["preview_token"] != b["preview_token"]
+    assert a["quantity"] == 1
