@@ -72,6 +72,7 @@ def recording_gap_summary(snapshots) -> dict:
     """Describe observed gaps against declared exporter cadence, never infer causes."""
     exporters = {'ashita-v4-api-experimental', 'windower-api-experimental'}
     gaps, count, classified = [], 0, 0
+    cross_zone_gaps = same_zone_gaps = 0
     for number, (before, after) in enumerate(zip(snapshots, snapshots[1:]), 2):
         if (before.adapter not in exporters or
                 (before.client_id, before.adapter, before.version) !=
@@ -82,12 +83,18 @@ def recording_gap_summary(snapshots) -> dict:
         if interval <= 1:
             continue
         count += 1
+        if before.position.zone_id != after.position.zone_id:
+            cross_zone_gaps += 1
+        else:
+            same_zone_gaps += 1
         if len(gaps) < 1000:
             gaps.append({'from_frame': number-1, 'to_frame': number,
                          'interval_seconds': interval, 'expected_interval_seconds': 1,
                          'from_zone': before.position.zone_id, 'to_zone': after.position.zone_id,
                          'from_instance': before.instance_hint, 'to_instance': after.instance_hint})
-    return {'count': count, 'gaps': gaps, 'detail_limit': 1000,
+    return {'count': count, 'cross_zone_gap_count': cross_zone_gaps,
+            'same_zone_gap_count': same_zone_gaps,
+            'gaps': gaps, 'detail_limit': 1000,
             'details_truncated': count > len(gaps),
             'classified_intervals': classified,
             'unclassified_intervals': max(0, len(snapshots)-1-classified),

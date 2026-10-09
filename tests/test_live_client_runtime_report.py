@@ -48,6 +48,23 @@ def test_context_transitions_and_irregular_sample_intervals(tmp_path):
     assert report['context_transitions'][0]['to_instance'] == 'other-instance'
 
 
+def test_gap_counts_distinguish_cross_zone_from_same_zone(tmp_path):
+    frames = [json.loads(line) for line in CAPTURE.read_text().splitlines()[:4]]
+    # The declared exporter cadence is one second; retain both source contexts.
+    frames[1]['observed_at'] += 2
+    frames[2]['observed_at'] += 2
+    frames[3]['observed_at'] += 4
+    frames[3]['position']['zone_id'] = 51
+    path = tmp_path / 'gap-context.jsonl'
+    path.write_text(''.join(json.dumps(frame) + '\n' for frame in frames))
+    gaps = recording_report(path)['recording']['gap_summary']
+    assert gaps['count'] == 2
+    assert gaps['same_zone_gap_count'] == 1
+    assert gaps['cross_zone_gap_count'] == 1
+    assert gaps['cause_verified'] is False
+    assert gaps['interpolated_frames'] == 0
+
+
 def test_malformed_recordings_limits_and_invalid_pe_are_rejected(tmp_path):
     path = tmp_path / 'bad.jsonl'; path.write_text('{}\n')
     with pytest.raises(ValueError):
