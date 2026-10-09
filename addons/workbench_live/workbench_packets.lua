@@ -47,8 +47,8 @@ function M.new(options)
             local now = integer(os.time(), 0, 4102444800)
             assert(not second or now >= second, 'system clock moved backwards')
             if second ~= now then second, count = now, 0 end
-            if count >= 10 then dropped = integer(dropped+1, 0, 4294967295); return end
             local current = fresh_context(now)
+            if count >= 10 then dropped = integer(dropped+1, 0, 4294967295); return end
             local size = integer(e.size, 4, 1024)
             assert(type(e.data) == 'string' and #e.data == size, 'original packet size mismatch')
             assert(type(e.injected) == 'boolean' and type(e.blocked) == 'boolean', 'packet hook flags unavailable')
