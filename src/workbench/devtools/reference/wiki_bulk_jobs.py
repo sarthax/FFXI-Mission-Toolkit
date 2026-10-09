@@ -114,15 +114,20 @@ def _worker(db, job_id):
             # Incremental jobs fetch changed titles even if already cached.
             if mode == "changed":
                 with _connect(db) as read_con:
-                    titles = fx.changed_titles(read_con)
-                    candidates = list(titles)
+                    candidates = fx.changed_titles(read_con)
+                    for title in candidates:
+                        if title not in pending:
+                            pending.append(title)
+                        if len(pending) >= limit:
+                            break
             else:
-                candidates = fx.all_titles()
-            for title in candidates:
-                if mode == "changed" or title not in cached:
-                    pending.append(title)
-                if len(pending) >= limit:
-                    break
+                for title in fx.all_titles():
+                    if title not in cached:
+                        pending.append(title)
+                    if len(pending) >= limit:
+                        break
+            # Discovery checkpoints before any page imports.
+            _change(db, job_id, pending_json=json.dumps(pending), discovered=len(pending))
             _change(db, job_id, pending_json=json.dumps(pending), discovered=len(pending))
         _change(db, job_id, state="running")
         while pending:
