@@ -4473,7 +4473,7 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
     rows = []
     total = 0
     total_pages = 1
-    if q:
+    if True:  # Browse the first page when no search is supplied.
         q = q.strip()
         numeric_id = int(q) if len(q) <= 18 and q.isascii() and q.isdecimal() else None
         predicate = "(name LIKE ? OR keyitem_id = ?)" if numeric_id is not None else "name LIKE ?"
