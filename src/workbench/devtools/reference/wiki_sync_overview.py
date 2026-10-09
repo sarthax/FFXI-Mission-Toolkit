@@ -4,7 +4,40 @@ Keep source behavior explicit: BG imports local archives; JP crawls a selected
 subtree; FFXIclopedia supports changed-page refresh. No implicit network runs.
 """
 from __future__ import annotations
+import json
+import sqlite3
+from pathlib import Path
 from . import wiki_bulk_jobs, wiki_bg_dump_jobs, wiki_jp_crawl_jobs, wiki_sync_schedule
+
+def _verified_checkpoint(db, source, job_id):
+    """Inspect persisted queue metadata without launching a worker or fetching pages."""
+    table={"FFXIclopedia":"wiki_bulk_jobs","BGWiki":"wiki_bg_dump_jobs",
+           "WikiWikiJP":"wiki_jp_crawl_jobs"}[source]
+    try:
+        with sqlite3.connect(str(db),timeout=5) as con:
+            if source=="BGWiki":
+                row=con.execute(
+                    "SELECT dump_path,dump_signature FROM wiki_bg_dump_jobs WHERE id=?",
+                    (job_id,)).fetchone()
+                if not row:
+                    return "verify-archive"
+                path=Path(row[0])
+                if not path.is_file():
+                    return "archive-missing"
+                stat=path.stat()
+                return ("available" if f"{stat.st_size}:{stat.st_mtime_ns}"==row[1]
+                        else "archive-changed")
+            field="pending_json" if source=="FFXIclopedia" else "queue_json"
+            row=con.execute(f"SELECT {field} FROM {table} WHERE id=?",(job_id,)).fetchone()
+            if row is None:
+                return "unverified"
+            values=json.loads(row[0])
+            if not isinstance(values,list) or not all(isinstance(x,str) for x in values):
+                return "invalid-checkpoint"
+            return "available" if values else "empty-checkpoint"
+    except (sqlite3.Error,OSError,ValueError,TypeError):
+        return "unverified"
+
 
 def overview(db):
     ffx=wiki_bulk_jobs.status(db)
@@ -27,15 +60,15 @@ def overview(db):
             state=job.get("state")
             if state not in ("error","interrupted","paused"):
                 continue
-            pending=job.get("pending")
-            if source=="FFXIclopedia":
-                # Status does not expose pending_json, so avoid asserting
-                # a resumable checkpoint when one has not been verified.
-                checkpoint="unverified"
-            elif source=="BGWiki":
+            checkpoint=_verified_checkpoint(db,source,job["id"])
+            # Older test stubs and legacy installations may expose only
+            # status metadata; never infer a verified checkpoint from them.
+            if checkpoint=="unverified" and source=="BGWiki":
                 checkpoint="verify-archive"
-            else:
-                checkpoint="available" if isinstance(pending,int) and pending>0 else "empty-or-unknown"
+            if checkpoint=="unverified" and source=="WikiWikiJP":
+                pending=job.get("pending")
+                checkpoint=("available" if isinstance(pending,int) and pending>0
+                            else "empty-or-unknown")
             recovery.append({"id":job["id"],"state":state,
                              "checkpoint":checkpoint,"error":job.get("last_error")})
         return {"source":source,"capability":capability,"latest":current,
