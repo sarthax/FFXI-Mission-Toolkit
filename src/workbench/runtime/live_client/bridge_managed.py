@@ -25,6 +25,7 @@ class ManagedLiveReceiver:
     _lock: threading.RLock = field(default_factory=threading.RLock, init=False, repr=False)
     _last_received: dict[str, float] = field(default_factory=dict, init=False, repr=False)
     _last_error: str | None = field(default=None, init=False)
+    _known_clients: set[str] = field(default_factory=set, init=False, repr=False)
 
     def __post_init__(self):
         self.listener = BridgeListener(self.peers, port=self.port, timeout=2)
@@ -47,6 +48,7 @@ class ManagedLiveReceiver:
                 raise RuntimeError("start receiver first")
             identity = PeerIdentity(client_id, secrets.token_hex(12), secrets.token_hex(12))
             token = self.peers.issue(identity)
+            self._known_clients.add(client_id)
             self.feeds.forget(client_id)
             self._last_received.pop(client_id, None)
             return {"host": "127.0.0.1", "port": self.listener._server.getsockname()[1],
@@ -74,6 +76,10 @@ class ManagedLiveReceiver:
                 with self._lock:
                     self._last_error = type(exc).__name__
 
+    def clients(self) -> tuple[str, ...]:
+        with self._lock:
+            return tuple(sorted(self._known_clients))
+
     def status(self, client_id: str) -> dict[str, object]:
         with self._lock:
             feed = self.feeds.feed(client_id)
@@ -96,6 +102,7 @@ class ManagedLiveReceiver:
             self.feeds = BridgeLiveFeeds(self.listener)
             self._thread = None
             self._last_received.clear()
+            self._known_clients.clear()
             self._last_error = None
 
     def __enter__(self):

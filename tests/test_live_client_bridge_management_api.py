@@ -40,3 +40,24 @@ def test_bad_client_and_cross_origin_provision_rejected():
     assert client.post("/live-client/bridge/provision",
                        json={"client_id": "bad id"},
                        headers={"origin": "http://testserver"}).status_code == 422
+
+
+def test_dashboard_lists_provisioned_clients_and_displays_health_fields():
+    manager = ManagedLiveReceiver()
+    app = FastAPI()
+    app.include_router(create_bridge_management_router(manager))
+    client = TestClient(app)
+    origin = {"origin": "http://testserver"}
+    try:
+        manager.start()
+        manager.provision("ashita-b")
+        manager.provision("ashita-a")
+        assert client.get("/live-client/bridge/clients").json() == {
+            "clients": ["ashita-a", "ashita-b"]
+        }
+        html = client.get("/live-client/bridge/console")
+        assert html.status_code == 200
+        for label in ("Live dashboard", "Nearby observed entities", "Technical details"):
+            assert label in html.text
+    finally:
+        manager.stop()

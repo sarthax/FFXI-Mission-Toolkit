@@ -38,14 +38,18 @@ button,input{font:inherit;padding:.5rem;margin:.25rem}pre{white-space:pre-wrap;o
 label{display:block}</style>
 <h1>Live Client — Direct Telemetry</h1>
 <p>Local read-only connection. No recording files or game writes.</p>
-<label>Ashita client ID <input id="client" value="ashita-a" pattern="[a-zA-Z0-9_-]+"></label>
+<label>Ashita client ID <input id="client" value="ashita-a" list="clients" pattern="[a-zA-Z0-9_-]+"></label><datalist id="clients"></datalist>
 <button onclick="action('start')">Start receiver</button>
 <button onclick="provision()">Configure client</button>
 <button onclick="action('stop')">Stop receiver</button>
 <p>Provisioning creates a new session and invalidates earlier connection credentials.
 Keep the displayed configuration private.</p>
 <pre id="config" aria-live="polite"></pre>
-<h2>Live Status</h2><pre id="status" aria-live="polite">Not connected</pre>
+<h2>Live dashboard</h2>
+<div id="health" role="status">Waiting for telemetry</div>
+<div id="metrics" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin:1rem 0"></div>
+<h3>Nearby observed entities</h3><div id="entities">No observations yet</div>
+<details><summary>Technical details</summary><pre id="status" aria-live="polite">Not connected</pre></details>
 <script>
 const root='/live-client/bridge/';
 const client=()=>document.getElementById('client').value;
@@ -76,11 +80,39 @@ async function provision(){try{const value=client();
  +'    return peer\\n  end,\\n}\\n';
  document.getElementById('config').textContent='Save locally as addons/workbench_live/workbench_bridge_settings.lua (private):\\n\\n'+lua;
  }catch(error){statusEl.textContent=String(error)}}
+function metric(label,value){const node=document.createElement('div');node.style.border='1px solid #aaa';
+ node.style.padding='0.75rem';node.style.borderRadius='0.5rem';
+ const heading=document.createElement('small');heading.textContent=label;
+ const content=document.createElement('div');content.style.fontSize='1.25rem';content.textContent=String(value);
+ node.append(heading,content);return node;}
+function render(data){const health=document.getElementById('health');
+ health.textContent=!data.running?'Receiver stopped':data.connected?'Connected — live telemetry':
+ data.snapshot?'Stale — last known observation':'Waiting for client';
+ const metrics=document.getElementById('metrics');metrics.replaceChildren();
+ const snap=data.snapshot;const fields=snap?[
+ ['Character',snap.character],['Zone',snap.zone_id],
+ ['X',Number(snap.x).toFixed(3)],['Y',Number(snap.y).toFixed(3)],
+ ['Z',Number(snap.z).toFixed(3)],['Heading',Number(snap.heading).toFixed(3)],
+ ['Last update',data.age_seconds===null?'—':Number(data.age_seconds).toFixed(1)+'s'],
+ ['Adapter',snap.adapter]]:[['Connection',data.running?'Waiting':'Stopped']];
+ for(const [label,value] of fields)metrics.appendChild(metric(label,value));
+ const entities=document.getElementById('entities');entities.replaceChildren();
+ const observed=snap&&Array.isArray(snap.entities)?snap.entities:[];
+ if(!observed.length){entities.textContent='No entity observations in current frame';return}
+ const list=document.createElement('ul');for(const entity of observed){
+ const item=document.createElement('li');
+ item.textContent=(entity.name||'Unnamed')+' · index '+entity.client_index+' · '+entity.x.toFixed(2)+', '+entity.y.toFixed(2)+', '+entity.z.toFixed(2);
+ list.appendChild(item);}entities.appendChild(list);}
 async function poll(){const value=client();if(!/^[a-zA-Z0-9_-]{1,64}$/.test(value))return;
  try{const response=await fetch(root+'status/'+encodeURIComponent(value));
- if(response.ok)statusEl.textContent=JSON.stringify(await response.json(),null,2);
+ if(response.ok){const data=await response.json();statusEl.textContent=JSON.stringify(data,null,2);render(data)}
  }catch(error){statusEl.textContent=String(error)}}
-setInterval(poll,1500);poll();
+async function refreshClients(){try{const response=await fetch(root+'clients');
+ if(!response.ok)return;const result=await response.json();
+ const list=document.getElementById('clients');list.replaceChildren();
+ for(const id of result.clients||[]){const option=document.createElement('option');option.value=id;list.appendChild(option);}
+ }catch(error){}}
+setInterval(poll,1500);setInterval(refreshClients,5000);refreshClients();poll();
 </script></html>""")
 
     @router.post("/start")
@@ -100,12 +132,18 @@ setInterval(poll,1500);poll();
         except (RuntimeError, ValueError) as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 
+    @router.get("/clients")
+    def clients() -> dict:
+        return {"clients": manager.clients()}
+
     @router.get("/status/{client_id}")
     def status(client_id: str) -> dict:
         if not 0 < len(client_id) <= 64 or not client_id.replace("_", "").replace("-", "").isalnum():
             raise HTTPException(status_code=422, detail="invalid client ID")
         result = manager.status(client_id)
         snapshot = result.pop("snapshot", None)
+        frame = manager.feeds.feed(client_id)
+        frame = frame._latest if frame else None
         if snapshot is None:
             result["snapshot"] = None
         else:
@@ -116,6 +154,14 @@ setInterval(poll,1500);poll();
                 "observed_at": snapshot.observed_at,
                 "zone_id": pos.zone_id, "x": pos.x, "y": pos.y, "z": pos.z,
                 "heading": pos.heading,
+                "entities": [
+                    {"client_index": entity.client_index, "name": entity.name,
+                     "kind": entity.kind,
+                     "zone_id": entity.position.zone_id,
+                     "x": entity.position.x, "y": entity.position.y,
+                     "z": entity.position.z}
+                    for entity in (frame.entities if frame else ())
+                ],
             }
         return result
 
