@@ -582,3 +582,20 @@ telemetry, wrong lane and all-or-nothing batch validation. This is a validated
 decode seam, **not** an Ashita TCP sender or an automatically consumed live GUI
 feed. The next integration needs an Ashita-side transport adapter, bounded
 live streaming and UI/feed registration with the existing client registry.
+
+
+### Simulated end-to-end localhost read-only feed (2026-10-09)
+
+`bridge_live_feeds.py` now hands off decoded authenticated TCP telemetry to
+the existing `TelemetryFeedAdapter` without replay files. It preserves
+per-client session/generation boundaries, rejects stale/nonmonotonic timestamps,
+and keeps capture envelopes in separate listener mailboxes rather than treating
+packet evidence as telemetry. Tests exercise a real loopback socket, multiple
+frames, a capture-lane envelope, stale frames and an authenticated generation
+replacement. The feed remains read-only (`supports_writes=False`).
+
+**Not yet shipped:** An Ashita-side network sender, ongoing asynchronous socket
+service, live GUI polling of this receiver, direct canonical Capture persistence
+or active movement controls. The test caller explicitly operates the listener;
+it is not started by the normal Toolkit application. Windows FFXI verification
+and capture-versus-wire fidelity are still required.
