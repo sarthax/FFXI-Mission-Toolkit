@@ -234,7 +234,12 @@ def execute_dsp_myisam_test_player_purchase(
         connection.commit()
         in_txn = False
         if journal_case_id:
-            set_case_status(journal_case_id, "completed_non_atomic")
+            try:
+                set_case_status(journal_case_id, "completed_non_atomic")
+            except Exception:
+                # The InnoDB commit has succeeded. Do not enter the exception
+                # compensation path merely because local journaling failed.
+                pass
         return {
             "status": "committed_non_atomic",
             "operation": "player_purchase",
