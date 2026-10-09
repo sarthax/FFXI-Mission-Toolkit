@@ -29,6 +29,14 @@ def main():
     assert "tab=recovery" in ui
     assert "Local Wiki structure recovery — preview only" in ui
     assert "entry.block_type_deltas" in ui
+    assert '@app.post("/wiki/recovery/apply")' in host
+    assert 'apply_local_recovery(con,source=source,page_id=page_id,' in host
+    assert 'confirmed = str(form.get("confirm") or "") == "yes"' in host
+    assert 'recovery_result=failed' in host
+    assert 'recovery_result=applied' in host
+    assert 'method="post" action="/wiki/recovery/apply"' in ui
+    assert 'name="source_hash" value="{{ entry.source_hash }}"' in ui
+    assert 'name="confirm" value="yes" required' in ui
     print("Wiki topic review queue UI regression: PASS")
 
 if __name__=="__main__":
