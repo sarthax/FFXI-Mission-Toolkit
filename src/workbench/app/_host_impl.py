@@ -4507,6 +4507,8 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
             "SELECT COUNT(*) FROM key_items WHERE " + predicate, args
         ).fetchone()[0]
         total_pages = max(1, (total + KEYITEMS_PAGE_SIZE - 1) // KEYITEMS_PAGE_SIZE)
+        page = min(page, total_pages)
+        offset = (page - 1) * KEYITEMS_PAGE_SIZE
         ki_rows = con.execute(
             "SELECT keyitem_id, name, plural, description FROM key_items WHERE " + predicate +
             " ORDER BY name LIMIT ? OFFSET ?",
