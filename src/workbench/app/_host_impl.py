@@ -4502,7 +4502,7 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
             ).fetchall()
         topaz_ready = backport_enabled()
         for r in ki_rows:
-            readiness = ingest_global_tables.resolve_keyitem_readiness(con, r["keyitem_id"], r["name"])
+            item_readiness = ingest_global_tables.resolve_keyitem_readiness(con, r["keyitem_id"], r["name"])
             # Backport-module-only extra check -- skipped entirely (no query run) when the user
             # has no Topaz/DSP checkout configured, so the core module's page stays fast for a
             # typical LSB-only user.
@@ -4524,7 +4524,7 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
             ).fetchall()
             rows.append({
                 "keyitem_id": r["keyitem_id"], "name": r["name"], "plural": r["plural"],
-                "description": r["description"], "readiness": readiness,
+                "description": r["description"], "readiness": item_readiness,
                 "topaz_readiness": topaz_readiness,
                 "capture_events": capture_events,
             })
