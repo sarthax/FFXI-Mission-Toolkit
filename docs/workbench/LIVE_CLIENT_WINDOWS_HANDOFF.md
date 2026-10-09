@@ -194,3 +194,12 @@ imports remain ambiguous; absent or changed evidence has no link. Missing databa
 unsupported schemas and bounded lookup timeouts fail before report output.
 An imported-packet link proves stored source correspondence only; it does not
 verify runtime client identity, packet semantics, clocks, instances or causality.
+
+Successful Test D now establishes four recovered zone transitions in one recording,
+with five-second gaps matching supplied pause/resume messages. The first failed run
+remains unresolved. Next Windows acceptance: observed logout/relogin must stop and
+require explicit restart; record long-zone timeout behavior and populated normal
+ target/subtarget roles. Preserve exact stop messages and version evidence. Passive
+packet fidelity is a separate paired telemetry/packet test. A runtime report now shows
+bounded gap details and raw diagnostic-field coverage; neither metrics nor successful
+zone transitions establish a supported build or complete lifecycle compatibility.

@@ -242,8 +242,8 @@ Classifications apply to individual functions, not entire providers: **runtime v
 | Independent recording/session identity — implemented, offline | Registry generations, duplicate client IDs, replace/unload, stale-token rejection | Explicit unique exporter IDs and fresh bounded files | One addon per injected client | No OS discovery | Retain registry; actual two-client evidence missing | Two clients, restart, zoning/logout/unload |
 | Entity enumeration/index/name/XYZ — runtime observed in supplied bounded samples; heading remains separately unverified | Decoded entity model, table, raw-plane markers, scope/truncation | Opt-in slots 0..2303, cap 32, target first, nil/blank/player exclusions and identity rechecks | Pinned petinfo/chamcham examples and IEntity | No native enumeration | Do not reimplement scan; not a complete census or despawn detector | Supplied 30-frame zone 235 and 24-frame zone 107 inventory samples accepted; slot reuse, performance and cap/truncation still pending |
 | Reported server ID — runtime observed as nonzero values; server identity unverified | Separate optional ID; no automatic server identity promotion | Optional GetServerId, zero/missing unknown | IEntity uint32 server ID | None | Independent selected-server ID validation missing; never equate index and SQL ID | 1,035 nonzero ID observations accepted; compare known NPC/mob/player IDs and slot reuse |
-| Raw entity type/status/spawn flags — upstream only at reconciliation baseline | No preserved raw fields yet; kind remains unknown | Not sampled yet | IEntity GetType uint8; GetStatus/GetSpawnFlags uint32 | None | Highest-value additive entity slice; no enum/semantic guesses | Getter availability, bounds, meanings and transitions |
-| Target/subtarget designation — partial | Entities exist, roles not retained | Index 0 observed, not distinguished when subtarget active | targets.lua: active subtarget is slot 0, original target slot 1; GetIsSubTargetActive | None | Add explicit roles only when role API available; retain unknown legacy roles | Normal target, subtarget, same-slot roles, changing target |
+| Raw entity type/status/spawn flags — implemented; runtime export observed, semantics unverified | Optional raw fields and diagnostic coverage; kind remains unknown | Published getters sampled when available | IEntity GetType uint8; GetStatus/GetSpawnFlags uint32 | None | Highest-value additive entity slice; no enum/semantic guesses | Getter availability, bounds, meanings and transitions |
+| Target/subtarget designation — implemented, offline; populated roles not runtime verified | Optional roles retained without kind inference | Target/subtarget mode distinguishes slots when getter available | targets.lua: active subtarget is slot 0, original target slot 1; GetIsSubTargetActive | None | Add explicit roles only when role API available; retain unknown legacy roles | Normal target, subtarget, same-slot roles, changing target |
 | Validity/staleness — partial | Finite/schema/time/client checks; last-good feed preserved | Player/zone/entity/name/known-ID rechecks; rejected samples stop | API availability and entity existence checks | No process lifetime validation | Keep rejection guards; raw status is not verified liveness; absence is not despawn | Logout/unload/disappearance/replacement and restart |
 | Replay/UI/waypoint/path tooling — implemented, offline | Playback/speed/seek/compare; persistence, generation guards, full path export and raw trace planes | Supplies existing v1 frames | No replacement UI needed | Provider-neutral | Retain all work; no second console or minimap implementation | Existing log exercises replay; actual same-host live polling pending |
 | Loaded framework/client compatibility — partial | Bounded runtime report, supplied-file PE metadata and caller-provided executable digest manifest | Reports explicitly unverified API version | SDK interface/version evidence only | Disk hashing only; no process/module attachment | Add actual loaded-module/PID lifetime evidence later; no invented allowlist | Loaded build, bitness, hashes, unsupported/disconnect behavior |
@@ -270,6 +270,26 @@ zoning, inactive party during loading, logout/relogin and loaded compatibility r
 unverified. This is not a claim that every transition can recover or that unobserved
 logout boundaries can be detected. The supplied single-zone runtime files and identity
 mismatch screenshot motivated this bounded, explicitly enabled Windows test package.
+
+### Successful zoning and raw-diagnostic runtime evidence
+
+Test D (`telemetry-test-d-1791520250-1.jsonl`, SHA-256
+`1df2daac46365fc7e4d081457f7f257007073b5b780a5be6c2617ca3e610ea1d`)
+validates 131 frames over 146 seconds. Visits are 52 → 51 → 52 → 48 → 52
+(Bhaflau Thickets/Wajaom Woodlands/Al Zahbi), with transitions at frames 25, 62,
+91 and 100. Each has a five-second interval; the supplied screenshot shows matching
+pause/resume cycles. This establishes bounded recovery in the tested session, not
+supported-build compatibility, absence of unobserved lifecycle boundaries or resolution
+of the first failed run. All 623 entity observations have nonzero reported IDs and raw
+type/status/spawn flags; all target-role lists are empty. Raw codes remain uninterpreted,
+server/instance identity is unknown, and populated target roles remain pending.
+
+Anonymized fixture D preserves timing gaps, visits, names' equality relationships,
+indexes, reported IDs and raw diagnostics. Report gap details are bounded to 1,000,
+with total counts retained, and use only declared one-second Ashita/Windower exporters
+without inferring cadence across source/version changes. Gaps do not prove their cause
+from JSONL alone. Replay regressions verify separate returning-zone visits even when
+trace downsampling omits intermediate zones. Generic lifecycle/build flags remain false.
 
 ### Provider decision and next sequence
 
