@@ -134,6 +134,7 @@
     <button type="button" id="wiki-bulk-refresh">Refresh status</button>
   </form>
   <div id="wiki-bulk-notice" class="muted" role="status"></div>
+  <div id="wiki-bulk-summary" class="muted" role="status">Synchronization history is loading…</div>
   <div id="wiki-bulk-jobs"></div>
 </div>
 </details>
@@ -682,7 +683,18 @@
       var payload=new FormData();payload.set('job_id',id);
       send('/wiki/bulk/'+action,payload).then(function(){refresh();}).catch(function(e){notice.textContent=e.message;});
     }
+    function refreshSummary(){
+      var output=document.getElementById('wiki-bulk-summary');
+      fetch('/wiki/bulk/summary',{cache:'no-store'}).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json();}).then(function(data){
+        var history=data.last_success||{};
+        output.textContent=['missing','changed'].map(function(mode){
+          var item=history[mode];
+          return (mode==='changed'?'Changed-page refresh':'Missing-page import')+': '+(item?item.at+' ('+item.runs+' completed runs)':'No completed runs');
+        }).join(' · ');
+      }).catch(function(error){output.textContent='Synchronization history unavailable: '+error.message;});
+    }
     function refresh(){
+      refreshSummary();
       fetch('/wiki/bulk/jobs',{cache:'no-store'}).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json();}).then(function(data){
         holder.replaceChildren();
         (data.jobs||[]).forEach(function(job){

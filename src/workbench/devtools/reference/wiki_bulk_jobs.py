@@ -22,7 +22,7 @@ _DDL = """CREATE TABLE IF NOT EXISTS wiki_bulk_jobs(
     page_limit INTEGER NOT NULL, discovered INTEGER NOT NULL DEFAULT 0,
     processed INTEGER NOT NULL DEFAULT 0, imported INTEGER NOT NULL DEFAULT 0,
     failed INTEGER NOT NULL DEFAULT 0, pending_json TEXT NOT NULL DEFAULT '[]',
-    last_error TEXT, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"""
+    last_error TEXT, started_at TEXT, completed_at TEXT, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"""
 
 
 def _connect(db):
@@ -31,6 +31,10 @@ def _connect(db):
     con.execute(_DDL)
     if 'mode' not in {r[1] for r in con.execute('PRAGMA table_info(wiki_bulk_jobs)')}:
         con.execute("ALTER TABLE wiki_bulk_jobs ADD COLUMN mode TEXT NOT NULL DEFAULT 'missing'")
+    columns = {r[1] for r in con.execute("PRAGMA table_info(wiki_bulk_jobs)")}
+    for column in ("started_at", "completed_at"):
+        if column not in columns:
+            con.execute(f"ALTER TABLE wiki_bulk_jobs ADD COLUMN {column} TEXT")
     con.commit()
     return con
 
@@ -48,9 +52,22 @@ def status(db):
         if not _RUNNING:
             con.execute("UPDATE wiki_bulk_jobs SET state='interrupted' WHERE state IN ('queued','discovering','running','pausing')")
         rows = con.execute("""SELECT id,source,state,mode,page_limit,discovered,processed,imported,failed,last_error
-            FROM wiki_bulk_jobs ORDER BY updated_at DESC LIMIT 8""").fetchall()
-    cols = ("id","source","state","mode","page_limit","discovered","processed","imported","failed","last_error")
+            ,started_at,completed_at FROM wiki_bulk_jobs ORDER BY updated_at DESC LIMIT 8""").fetchall()
+    cols = ("id","source","state","mode","page_limit","discovered","processed","imported","failed","last_error","started_at","completed_at")
     return [dict(zip(cols, row)) for row in rows]
+
+
+def sync_summary(db):
+    """Persisted per-mode outcomes; never infer success from an incomplete run."""
+    with _connect(db) as con:
+        rows = con.execute("""SELECT mode, MAX(completed_at), COUNT(*)
+                              FROM wiki_bulk_jobs WHERE state='completed'
+                              GROUP BY mode""").fetchall()
+        latest = con.execute("""SELECT mode,state,processed,imported,failed,updated_at
+                                FROM wiki_bulk_jobs ORDER BY updated_at DESC LIMIT 1""").fetchone()
+    return {"last_success": {mode: {"at": completed, "runs": count}
+                             for mode,completed,count in rows},
+            "latest": dict(zip(("mode","state","processed","imported","failed","updated_at"),latest)) if latest else None}
 
 
 def start(db, limit=50, mode="missing"):
@@ -99,6 +116,8 @@ def resume(db, job_id):
 def _worker(db, job_id):
     try:
         from . import scrape_ffxiclopedia as fx
+        with _connect(db) as con:
+            con.execute("UPDATE wiki_bulk_jobs SET started_at=COALESCE(started_at,CURRENT_TIMESTAMP) WHERE id=?", (job_id,))
         with _connect(db) as con:
             row = con.execute("SELECT page_limit,pending_json,processed,mode FROM wiki_bulk_jobs WHERE id=?",
                               (job_id,)).fetchone()
@@ -156,7 +175,7 @@ def _worker(db, job_id):
             if pending:
                 time.sleep(2)
         else:
-            _change(db, job_id, state="completed")
+            _change(db, job_id, state="completed", completed_at=time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime()))
     except Exception as exc:
         _change(db, job_id, state="error", last_error=str(exc)[:400])
     finally:
