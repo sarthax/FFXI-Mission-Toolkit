@@ -69,6 +69,23 @@ def test_gap_counts_distinguish_cross_zone_from_same_zone(tmp_path):
     assert gaps['interpolated_frames'] == 0
 
 
+def test_gap_instance_context_separates_known_changes_from_unknown(tmp_path):
+    frames = [json.loads(line) for line in CAPTURE.read_text().splitlines()[:4]]
+    for index, frame in enumerate(frames):
+        frame['observed_at'] += index * 2
+    frames[0]['instance_hint'] = 'instance-a'
+    frames[1]['instance_hint'] = 'instance-b'
+    frames[2]['instance_hint'] = None
+    frames[3]['instance_hint'] = 'instance-c'
+    path = tmp_path / 'instance-gaps.jsonl'
+    path.write_text(''.join(json.dumps(frame) + '\n' for frame in frames))
+    gaps = recording_report(path)['recording']['gap_summary']
+    assert gaps['count'] == 3
+    assert gaps['known_instance_change_gap_count'] == 1
+    assert gaps['unknown_instance_context_gap_count'] == 2
+    assert gaps['cause_verified'] is False
+
+
 def test_malformed_recordings_limits_and_invalid_pe_are_rejected(tmp_path):
     path = tmp_path / 'bad.jsonl'; path.write_text('{}\n')
     with pytest.raises(ValueError):
