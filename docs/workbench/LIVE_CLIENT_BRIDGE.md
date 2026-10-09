@@ -509,3 +509,13 @@ enabling writes. **These are in-memory components, not a localhost socket or
 Ashita-connected bidirectional bridge.** Next implement a local authenticated
 endpoint and client-side adapter, retaining independent queue budgets, safe
 stop commands, heartbeat/disconnect handling and recording provenance.
+
+### Framed loopback transport foundation
+
+The opt-in `bridge_loopback.py` provides bounded length-prefixed JSON/base64
+envelopes over IPv4 loopback TCP, with strict decoding and connection EOF checks.
+Real socket tests cover two sequential local clients, fragmented reads and
+disconnects. It is **not** an authenticated running service, background listener,
+Ashita adapter, or functioning client-command executor. Do not expose it to
+remote interfaces; complete authentication, generation verification, timeouts
+and lifecycle ownership in a future broker before enabling real control.
