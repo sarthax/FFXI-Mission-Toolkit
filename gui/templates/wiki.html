@@ -739,9 +739,17 @@
               ?'Verify the original local compressed archive has not changed before resuming.'
               :job.checkpoint==='available'
                 ?'Pending pages recorded; review the previous error before resuming.'
-                :job.checkpoint==='unverified'
-                  ?'Checkpoint not verified here; inspect the source job before resuming.'
-                  :'No pending checkpoint confirmed; inspect the source job.';
+                :job.checkpoint==='archive-missing'
+                  ?'Original BG archive is missing; restore it before resuming.'
+                  :job.checkpoint==='archive-changed'
+                    ?'BG archive changed since checkpoint; start a new import.'
+                    :job.checkpoint==='invalid-checkpoint'
+                      ?'Stored queue is invalid; do not resume until repaired.'
+                      :job.checkpoint==='empty-checkpoint'
+                        ?'No queued pages remain in this checkpoint.'
+                        :job.checkpoint==='unverified'
+                          ?'Checkpoint not verified here; inspect the source job before resuming.'
+                          :'No pending checkpoint confirmed; inspect the source job.';
             detail.textContent=job.id+' · '+job.state+' · '+requirement+
               (job.error?' · Last error: '+job.error:'');
             row.appendChild(detail);
