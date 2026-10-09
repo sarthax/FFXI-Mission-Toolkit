@@ -641,3 +641,29 @@ with updated settings if you reprovision. Never share bridge tokens, and do
 not expose the Toolkit management console over a remote connection. The
 normal Live Client replay console remains available unchanged. Windows
 Ashita end-to-end validation is still outstanding.
+
+
+### Sliding authenticated receiver lease
+
+Successfully accepted authenticated telemetry batches now renew the current
+local bridge token lease without changing the session ID, generation or token.
+A continuously active Ashita sender therefore no longer reaches the original
+one-hour idle expiry. This is an **idle** timeout, not unlimited authorization:
+expired tokens, rejected/control-only messages, and malformed batches must not
+renew authorization. Reprovisioning, explicit stop and host restart still
+invalidate the existing session and require updated private Ashita settings.
+This behavior is regression tested with deterministic lease times; full
+long-duration Ashita/Windows testing remains necessary.
+
+### Live spatial viewer projection endpoint (integration adapter)
+
+GET `/live-client/bridge/projection?client_id=ashita-a&zone_id=235`
+provides the *existing* `viewer_projection` marker format for authenticated
+live Ashita snapshots, with zone, selected client, and optional instance-hint
+matching. If the receiver is stopped, the source is stale (more than five
+seconds), or a different zone/instance was requested, markers are hidden
+rather than reusing old coordinates. The endpoint is read-only and requires
+no JSONL file. This makes live observations consumable by Zone Viewer clients;
+the Zone Viewer's JavaScript is not yet automatically configured to poll
+this source. Continue to treat raw Ashita axes as uncalibrated until
+validated against the selected map/instance.

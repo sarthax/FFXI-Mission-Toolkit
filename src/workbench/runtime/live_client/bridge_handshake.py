@@ -74,6 +74,8 @@ def receive_session(sock: socket.socket, peers: LocalPeerRegistry, *,
         except socket.timeout:
             raise TimeoutError("bridge session timed out") from None
         if not first:
+            if messages and not peers.refresh(identity, hello["token"], now=now):
+                raise PermissionError("bridge peer lease expired before completed batch")
             return messages
         size = int.from_bytes(first + read_exact(sock, 3), "big")
         from .bridge_loopback import MAX_FRAME, decode
@@ -90,4 +92,6 @@ def receive_session(sock: socket.socket, peers: LocalPeerRegistry, *,
         last_sequence[message.lane] = message.sequence
         messages.append(message)
     # Reaching the limit never waits for peer EOF.
+    if messages and not peers.refresh(identity, hello["token"], now=now):
+        raise PermissionError("bridge peer lease expired before completed batch")
     return messages
