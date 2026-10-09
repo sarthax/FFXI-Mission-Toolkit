@@ -59,6 +59,12 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   Zone meshes run 30-75MB and take a real parse (up to a minute) -- or run
   <code class="chip">py -3 -m workbench.devtools.spatial.build_visual_cache {{ zoneid }}</code> from a terminal instead.</div>
 {% else %}
+<div id="ashita-live-controls" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:5px 0;padding:6px;border:1px solid var(--border);border-radius:6px;">
+  <label><input id="ashita-live-toggle" type="checkbox"> Live Ashita position (read only)</label>
+  <label>Client ID <input id="ashita-live-client" value="ashita-a" list="ashita-live-clients" style="width:120px"></label>
+  <datalist id="ashita-live-clients"></datalist>
+  <span id="ashita-live-status" class="chip mono" role="status">Off</span>
+</div>
 <div class="dense-toolbar" style="margin-bottom:6px; flex-wrap:wrap;">
   <label class="muted" for="tod-slider">Time of day</label>
   <input type="range" id="tod-slider" min="0" max="24" step="0.1" value="12" style="width:220px;">
@@ -183,6 +189,68 @@ fetch(`/zoneplot/${ZONEID}/data.json`).then(r => r.json()).then(d => {
 }).catch(() => {});
 
 const scene = new THREE.Scene();
+// Optional ephemeral Ashita position marker. Coordinate mapping follows existing spawn markers.
+const liveToggle = document.getElementById('ashita-live-toggle');
+const liveClient = document.getElementById('ashita-live-client');
+const liveStatus = document.getElementById('ashita-live-status');
+let liveMarker = null;
+async function refreshLiveClients() {
+  try {
+    const response = await fetch('/live-client/bridge/clients');
+    if (!response.ok) return;
+    const body = await response.json();
+    const list = document.getElementById('ashita-live-clients');
+    list.replaceChildren();
+    for (const id of body.clients || []) {
+      const option = document.createElement('option'); option.value = id; list.appendChild(option);
+    }
+  } catch (_) {}
+}
+function clearLiveMarker() {
+  if (!liveMarker) return;
+  liveMarker.parent.remove(liveMarker);
+  liveMarker.geometry.dispose();
+  liveMarker.material.dispose();
+  liveMarker = null;
+}
+async function pollAshitaPosition() {
+  if (!liveToggle.checked) { clearLiveMarker(); liveStatus.textContent = 'Off'; return; }
+  const clientId = liveClient.value.trim();
+  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(clientId)) {
+    clearLiveMarker(); liveStatus.textContent = 'Invalid client ID'; return;
+  }
+  try {
+    const url = '/live-client/bridge/projection?client_id=' + encodeURIComponent(clientId) + '&zone_id=' + ZONEID;
+    const response = await fetch(url, {cache: 'no-store'});
+    if (!response.ok) throw Error('HTTP ' + response.status);
+    const data = await response.json();
+    if (!data.visible || !data.player || !data.player.position) {
+      clearLiveMarker(); liveStatus.textContent = 'No fresh matching-zone telemetry'; return;
+    }
+    const position = data.player.position;
+    if (![position.x, position.y, position.z].every(Number.isFinite)) {
+      clearLiveMarker(); liveStatus.textContent = 'Invalid position'; return;
+    }
+    if (!liveMarker) {
+      liveMarker = new THREE.Mesh(
+        new THREE.SphereGeometry(2.5, 12, 8),
+        new THREE.MeshBasicMaterial({color: 0x18f2be, depthTest: false}));
+      liveMarker.renderOrder = 20;
+      scene.add(liveMarker);
+    }
+    liveMarker.position.set(position.x, position.z, -position.y);
+    liveStatus.textContent = (data.player.character || clientId) + ' · live · ' +
+      position.x.toFixed(1) + ', ' + position.y.toFixed(1) + ', ' + position.z.toFixed(1);
+  } catch (error) {
+    clearLiveMarker(); liveStatus.textContent = 'Live unavailable: ' + error.message;
+  }
+}
+liveToggle.addEventListener('change', pollAshitaPosition);
+liveClient.addEventListener('change', () => { clearLiveMarker(); pollAshitaPosition(); });
+refreshLiveClients();
+setInterval(refreshLiveClients, 10000);
+setInterval(pollAshitaPosition, 1500);
+
 scene.background = new THREE.Color(0x0a0d10);
 scene.fog = new THREE.FogExp2(0x0a0d10, 0.0025);
 
