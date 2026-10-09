@@ -37,8 +37,8 @@ def _char_columns(connection) -> tuple[str, str]:
 
 def _resolve_recipients(service, *, mode: str, character_ids: list[int] | None) -> list[dict[str, Any]]:
     mode = str(mode or "").strip().lower()
-    if mode not in {"selected", "all"}:
-        raise LegacyTestExecutionBlocked("recipient mode must be selected or all")
+    if mode not in {"selected", "all", "account"}:
+        raise LegacyTestExecutionBlocked("recipient mode must be selected, all, or account")
     id_col, name_col = _char_columns(service.connection)
     cursor = service.connection.cursor()
     try:
@@ -47,6 +47,30 @@ def _resolve_recipients(service, *, mode: str, character_ids: list[int] | None) 
                 f"SELECT `{id_col}`,`{name_col}` FROM `chars` WHERE `{id_col}`>0 "
                 f"ORDER BY `{id_col}` ASC LIMIT %s",
                 (_MAX_RECIPIENTS + 1,),
+            )
+        elif mode == "account":
+            # One existing character is an account anchor; never accept a client-supplied
+            # account ID without first verifying the database relationship.
+            anchors = list(character_ids or [])
+            if len(anchors) != 1 or int(anchors[0]) <= 0:
+                raise LegacyTestExecutionBlocked("Account mode requires exactly one positive anchor character ID")
+            cursor.execute("DESCRIBE `chars`")
+            cols = {str(row[0]) for row in (cursor.fetchall() or [])}
+            acc_col = next((name for name in ("accid", "account_id", "accountId") if name in cols), None)
+            if not acc_col:
+                raise LegacyTestExecutionBlocked("Account-linked recipient selection is not verified for this chars schema")
+            cursor.execute(
+                f"SELECT `{acc_col}` FROM `chars` WHERE `{id_col}`=%s",
+                (int(anchors[0]),),
+            )
+            anchor = cursor.fetchone()
+            if not anchor or anchor[0] is None or int(anchor[0]) <= 0:
+                raise LegacyTestExecutionBlocked("Anchor character has no verified account linkage")
+            cursor.execute(
+                f"SELECT `{id_col}`,`{name_col}` FROM `chars` "
+                f"WHERE `{acc_col}`=%s AND `{id_col}`>0 "
+                f"ORDER BY `{id_col}` ASC LIMIT %s",
+                (int(anchor[0]), _MAX_RECIPIENTS + 1),
             )
         else:
             ids = sorted({int(value) for value in (character_ids or []) if int(value) > 0})
@@ -63,7 +87,7 @@ def _resolve_recipients(service, *, mode: str, character_ids: list[int] | None) 
         rows = [{"char_id": int(row[0]), "char_name": str(row[1] or "")} for row in (cursor.fetchall() or [])]
     finally:
         cursor.close()
-    if mode == "all" and len(rows) > _MAX_RECIPIENTS:
+    if mode in {"all", "account"} and len(rows) > _MAX_RECIPIENTS:
         raise LegacyTestExecutionBlocked(
             f"All-character delivery exceeds the {_MAX_RECIPIENTS}-recipient safety limit; use selected batches"
         )
