@@ -7,10 +7,23 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
+from functools import lru_cache
 
 from workbench.client.dat.global_tables import normalize_name
 
 _ENUM_LINE = re.compile(r"^\s*([A-Z][A-Z0-9_]*)\s*=\s*(\d+)\s*,?\s*(?:--.*)?$")
+
+
+@lru_cache(maxsize=8)
+def _enum_records(path: str, mtime_ns: int, size: int) -> dict[str, tuple[tuple[str, int], ...]]:
+    catalog: dict[str, list[tuple[str, int]]] = {}
+    with open(path, encoding="utf-8", errors="replace") as stream:
+        for line in stream:
+            match = _ENUM_LINE.fullmatch(line.rstrip("\r\n"))
+            if match:
+                key = normalize_name(match.group(1).replace("_", " "))
+                catalog.setdefault(key, []).append((match.group(1), int(match.group(2))))
+    return {key: tuple(values) for key, values in catalog.items()}
 
 
 def resolve_dsp_key_item(root: str | Path, client_name: str) -> dict:
@@ -25,13 +38,9 @@ def resolve_dsp_key_item(root: str | Path, client_name: str) -> dict:
                 "message": "Expected exactly one DSP key-item enum source file."}
     source = existing[0]
     expected = normalize_name(str(client_name or ""))
-    matches: list[tuple[str, int]] = []
     try:
-        with source.open(encoding="utf-8", errors="replace") as stream:
-            for line in stream:
-                match = _ENUM_LINE.fullmatch(line.rstrip("\r\n"))
-                if match and normalize_name(match.group(1).replace("_", " ")) == expected:
-                    matches.append((match.group(1), int(match.group(2))))
+        info = source.stat()
+        matches = _enum_records(str(source), info.st_mtime_ns, info.st_size).get(expected, ())
     except OSError:
         return {"status": "unavailable", "symbol": None,
                 "message": "DSP enum file could not be read."}
