@@ -2,13 +2,15 @@
 
 This is the authoritative operator summary for the Auction House administration module.
 
-## Current operational assessment — 2026-10-08
+## Current operational assessment — 2026-10-09
 
-The project owner reports that the unified Auction House interface is **clean and stable when run against DSP**. Core DSP administration is implemented and operator-tested at module level; this is not a claim of individually documented runtime results for every executor.
+**Core DSP administration: feature-complete / maintenance mode.** The project owner has tested the unified Auction House UI against DSP and reports it clean and stable. This is not a claim that every recently merged Test-only executor has completed an individual local acceptance run.
 
-Recently merged: Inbox account-wide recipient selection (#749), MyISAM operator recovery guidance (#743), retry environment and outcome integrity protections (#740/#747), accurate recent-window snapshots and baselines (#754/#756), future-window anomaly filtering (#758), anomaly evidence quality (#760), and repeated-listing analytics caching (#762).
+**Final implementation packages merged:** non-atomic DSP MyISAM pre-write recovery journal and operator cases, per-recipient interrupted Mog delivery journal, one-time named Test-profile reward scheduling, and experimental source-checked custom augmented Mog rewards (#786); Character Editor-style augment and item selection (#787, #792); item detail icons, hover information and circular Item Browser / Editor links (#795); Buyers, Sellers, Restock and Cleanup item-search/navigation (#797); remembered safe workspace state (#802), read-only CSV exports (#808), browser-local item/seller favorites (#812), contextual Add-to-Inbox action (#814), named reusable augmented configuration catalog (#815), and shared Workbench item-picker foundation (#816).
 
-**Remaining work is mostly validation and resilience**, not another first-pass module build: accumulate and verify real multi-day snapshot history; optionally document a concise DSP per-operation test matrix; improve diagnostics for interrupted non-atomic MyISAM actions and reward campaigns; validate Topaz independently. LSB broad writes need a runnable LSB Test environment. Forecasting, augmented rewards, scheduling/cohort tooling and production permissions are optional/conditional and should not be described as missing DSP basics.
+**Operating boundaries:** scheduled reward campaigns are one-time and Test-only, with no automatic retry after uncertain execution. The augment configuration library saves definitions, not permission to deliver; custom augmented mail delivery is DSP Test-only, disabled by default, and requires a verified in-game Mog pickup/augment-persistence test before broader acceptance. The new shared item-picker is integrated into AH Restock/Cleanup/Inbox but not yet migrated across Character Editor. MyISAM interruption cases are diagnostic, not atomic rollback or automatic repair.
+
+**Remaining acceptance/maintenance:** verify new MyISAM and Inbox interruption reporting, one-time scheduled sends, custom augmented-item pickup on disposable DSP Test; accumulate multi-day live snapshot evidence; independently validate Topaz; defer broader LSB writes until a runnable LSB Test exists. Production writes remain blocked.
 
 ## Capability model
 
@@ -55,9 +57,15 @@ LSB schemas/source remain useful reference evidence, but current runnable write 
 
 Live writes remain blocked. Scoped Test execution never enables unrestricted or Live mutation.
 
-## Reward limitations
+## Reward, schedule and augment boundaries
 
-Reward bundles support ordinary item delivery. Augmented/custom `extra` payload generation remains intentionally unsupported until DSP/Topaz item-extra serialization is proven.
+Ordinary item/gil bundles, account-wide recipient selection, saved templates, reward history, replay protection, interrupted-recipient evidence, and a searchable Inbox item catalog are implemented. One-time scheduled campaigns are operator-approved for a named DSP/Topaz Test environment and recheck gates at execution; cancellation and review-required states never bypass the standard approval flow.
+
+Custom item augmentation supports source-backed ID/value selection (up to four slots), named saved configurations, encoding preview, and a separate disabled-by-default, one-recipient **DSP Test-only** mail executor. No unverified extra payload is silently converted into a plain item. A real pickup test on the configured DSP server must confirm augments persist before wider delivery use.
+
+## Navigation and exports
+
+The unified hub includes icon-backed item selection and details, compact hover facts, two-way deep links with Item Browser and Item Editor, shared AH pickers in Restock/Cleanup/Inbox, browser-local favorites and remembered navigation/filter state, quick Add-to-Inbox action, and read-only CSV export in Items, Sellers, Restock and Cleanup. These are UI features; they do not change write authorization.
 
 ## Audit boundary
 
