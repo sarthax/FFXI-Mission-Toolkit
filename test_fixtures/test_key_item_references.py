@@ -22,6 +22,8 @@ def test_scoped_key_item_discovery_and_source_lines(tmp_path: Path):
     assert [r["source_line"] for r in result["references"]] == [1, 2, 5]
     assert result["references"][0]["source_path"] == "scripts/zones/Test/npcs/Test.lua"
     assert result["truncated"] is False
+    assert result["matched_scripts"] == 1
+    assert result["operation_counts"] == {"require": 1, "grant": 2, "remove": 0}
 
 
 def test_key_item_discovery_limits_and_validation(tmp_path: Path):
@@ -76,3 +78,24 @@ def test_per_call_namespace_and_legacy_constant_form(tmp_path: Path):
     assert [r["operation"] for r in topaz["references"]] == ["remove", "grant"]
     assert [r["namespace"] for r in topaz["references"]] == ["tpz.ki", "tpz.keyItem"]
     assert all(r["source_line"] < 4 for r in topaz["references"])
+
+
+def test_missing_checkout_has_empty_summary(tmp_path: Path):
+    result = discover_key_item_references(tmp_path, "TEST_KEY", lineage="lsb")
+    assert result["matched_scripts"] == 0
+    assert result["operation_counts"] == {"require": 0, "grant": 0, "remove": 0}
+
+
+def test_external_symlink_is_not_scanned(tmp_path: Path):
+    checkout = tmp_path / "checkout"
+    scripts = checkout / "scripts"
+    scripts.mkdir(parents=True)
+    outside = tmp_path / "outside.lua"
+    outside.write_text("player:addKeyItem(xi.keyItem.TEST_KEY)\n", encoding="utf-8")
+    try:
+        (scripts / "alias.lua").symlink_to(outside)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks unavailable")
+    result = discover_key_item_references(checkout, "TEST_KEY", lineage="lsb")
+    assert result["references"] == []
+    assert any("symlink" in limitation for limitation in result["limitations"])
