@@ -192,33 +192,21 @@ def _worker(db, job_id):
             subjob = {"id": uuid.uuid4().hex[:10], "source": "FFXIclopedia", "title": title,
                       "state": "queued", "log": [], "error": None}
             wiki_jobs._run(subjob, db)
-            # Preserve the pending page on access/rate-limit failures. Such
-            # responses are not completed imports and must not be silently lost.
-            failure_text = str(subjob.get("error") or "").lower()
-            access_failure = subjob.get("state") == "error" and any(
-                marker in failure_text for marker in (
-                    "429", "rate limit", "too many requests",
-                    "captcha", "challenge", "403", "access denied",
-                )
-            )
-            if access_failure:
-                _change(db, job_id, state="error",
-                        last_error=(f"{title}: {subjob.get('error') or 'Access restricted'}")[:400])
+            # A failed page is not processed. Keep the full checkpoint, not
+            # just rate-limit failures, so a partial run cannot report success.
+            if subjob["state"] != "done":
+                with _connect(db) as con:
+                    failures=con.execute("SELECT failed FROM wiki_bulk_jobs WHERE id=?",(job_id,)).fetchone()[0]
+                _change(db,job_id,state="error",failed=failures+1,
+                        last_error=f"{title}: {subjob.get('error') or subjob['state']}"[:400])
                 break
-            # Save the queue after each page, so a restart never discards progress.
+            # The page is fully committed by the per-page importer.
             pending.pop(0)
-            fields = {"pending_json": json.dumps(pending), "processed": processed + 1}
-            processed += 1
-            if subjob["state"] == "done":
-                with _connect(db) as con:
-                    n = con.execute("SELECT imported FROM wiki_bulk_jobs WHERE id=?", (job_id,)).fetchone()[0]
-                fields["imported"] = n + 1
-            else:
-                with _connect(db) as con:
-                    n = con.execute("SELECT failed FROM wiki_bulk_jobs WHERE id=?", (job_id,)).fetchone()[0]
-                fields["failed"] = n + 1
-                fields["last_error"] = f"{title}: {subjob.get('error') or subjob['state']}"[:400]
-            _change(db, job_id, **fields)
+            processed+=1
+            with _connect(db) as con:
+                imported=con.execute("SELECT imported FROM wiki_bulk_jobs WHERE id=?",(job_id,)).fetchone()[0]
+            _change(db,job_id,pending_json=json.dumps(pending),processed=processed,
+                    imported=imported+1,last_error=None)
             if pending:
                 time.sleep(2)
         else:
