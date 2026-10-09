@@ -92,12 +92,12 @@
   <div class="ki-intro" style="margin-top:14px">
     <button type="button" id="ki-copy-id">Copy client ID</button>
     <button type="button" id="ki-copy-name">Copy name</button>
-    <a href="/features/trace" class="chip">Feature Trace</a>
-    <a href="/wiki" class="chip">Wiki Research</a>
+    <a href="/features/trace" id="ki-feature-link" class="chip">Search Feature Trace</a>
+    <a href="/wiki" id="ki-wiki-link" class="chip">Search Wiki</a>
     <a href="/character-editor" class="chip">Character Editor</a>
     <span id="ki-copy-result" role="status" class="muted"></span>
   </div>
-  <p class="muted" style="margin-bottom:0">Research links open their modules; they do not automatically identify a corresponding server key item. Identifiers may differ by server lineage. Verify the mapping before using a numeric ID in scripts.</p>
+  <p class="muted" style="margin-bottom:0">Feature Trace and Wiki searches use the selected display name; search results are evidence candidates, not verified server-identity matches. Identifiers may differ by server lineage. Verify the mapping before using a numeric ID in scripts.</p>
 </section>
 <div class="table-wrap"><table class="ki-table">
   <tr><th>Details</th><th>id</th><th>name</th><th>readiness</th><th>enum / scripting constant</th><th>description</th>
@@ -208,6 +208,8 @@
     rows.forEach(item => item.removeAttribute('aria-selected'));
     row.setAttribute('aria-selected', 'true');
     selectedRecord = {id: cells[1].textContent.trim(), name: cells[2].textContent.trim()};
+    document.getElementById('ki-feature-link').href = '/features/trace?' + new URLSearchParams({q: selectedRecord.name});
+    document.getElementById('ki-wiki-link').href = '/wiki?' + new URLSearchParams({q: selectedRecord.name});
     setText('ki-copy-result', '');
     setText('ki-inspector-title', selectedRecord.name);
     setText('ki-inspector-id', 'Client reference ID: ' + cells[1].textContent.trim());
@@ -248,6 +250,12 @@
       if (matches) visible++;
     }
     count.textContent = visible + ' of ' + rows.length + ' results visible on this page';
+    const selected = rows.find(row => row.getAttribute('aria-selected') === 'true');
+    if (selected && selected.hidden) {
+      selected.removeAttribute('aria-selected');
+      inspector.hidden = true;
+      selectedRecord = null;
+    }
   }
   status.addEventListener('change', applyFilters);
   search.addEventListener('input', applyFilters);
