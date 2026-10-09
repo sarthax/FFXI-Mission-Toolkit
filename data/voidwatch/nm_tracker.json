@@ -1,2074 +1,2074 @@
 [
- {
-  "name": "Cottus",
-  "zone": "East Ronfaure (S)",
-  "zone_id": 81,
-  "path": "Crimson",
-  "tier": "I",
-  "ki_id": 366,
-  "ki_name": "Crimson Stratum Abyssite",
-  "status": "built",
-  "rifts": [
-   [
-    17109850,
-    288.0,
-    -61.0,
-    368.0
-   ],
-   [
-    17109851,
-    183.0,
-    -20.0,
-    -315.0
-   ],
-   [
-    17109852,
-    434.0,
-    -51.0,
-    315.0
-   ]
-  ],
-  "gaps": "Zone [S]: DSP [S]-zone support unchecked. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Pancimanci",
-  "zone": "West Sarutabaruta (S)",
-  "zone_id": 95,
-  "path": "Jade",
-  "tier": "I",
-  "ki_id": 374,
-  "ki_name": "Jade Stratum Abyssite",
-  "status": "built",
-  "rifts": [
-   [
-    17167319,
-    120.0,
-    4.0,
-    -440.0
-   ],
-   [
-    17167320,
-    -441.0,
-    4.0,
-    -357.0
-   ],
-   [
-    17167321,
-    0.0,
-    -28.0,
-    560.0
-   ]
-  ],
-  "gaps": "Zone [S]: DSP [S]-zone support unchecked. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Lancing Lamorak",
-  "zone": "West Ronfaure",
-  "zone_id": 100,
-  "path": "White",
-  "tier": "IV",
-  "ki_id": 1450,
-  "ki_name": "White Stratum Abyssite IV",
-  "status": "built",
-  "rifts": [
-   [
-    17187587,
-    -360.0,
-    -50.5,
-    270.0
-   ],
-   [
-    17187588,
-    -320.0,
-    -10.0,
-    -360.0
-   ],
-   [
-    17187589,
-    -340.0,
-    -29.8,
-    -40.0
-   ]
-  ],
-  "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Sarimanok",
-  "zone": "East Ronfaure",
-  "zone_id": 101,
-  "path": "Crimson",
-  "tier": "I",
-  "ki_id": 366,
-  "ki_name": "Crimson Stratum Abyssite",
-  "status": "built",
-  "rifts": [
-   [
-    17191577,
-    288.0,
-    -61.0,
-    368.0
-   ],
-   [
-    17191578,
-    183.0,
-    -20.0,
-    -315.0
-   ],
-   [
-    17191579,
-    434.0,
-    -51.0,
-    315.0
-   ]
-  ],
-  "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Stachysaurus",
-  "zone": "La Theine Plateau",
-  "zone_id": 102,
-  "path": "White",
-  "tier": "V",
-  "ki_id": 1451,
-  "ki_name": "White Stratum Abyssite V",
-  "status": "built",
-  "rifts": [
-   [
-    17195690,
-    640.0,
-    32.0,
-    1.0
-   ],
-   [
-    17195691,
-    -440.0,
-    -8.0,
-    440.0
-   ],
-   [
-    17195692,
-    200.0,
-    32.0,
-    -600.0
-   ]
-  ],
-  "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Ig-Alima",
-  "zone": "Valkurm Dunes",
-  "zone_id": 103,
-  "path": "White",
-  "tier": "VI",
-  "ki_id": 1452,
-  "ki_name": "White Stratum Abyssite VI",
-  "status": "built",
-  "rifts": [
-   [
-    17199764,
-    720.0,
-    -8.1,
-    195.0
-   ],
-   [
-    17199765,
-    650.0,
-    0.3,
-    0.0
-   ],
-   [
-    17199766,
-    -75.0,
-    -0.3,
-    -45.0
-   ]
-  ],
-  "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Belphoebe",
-  "zone": "Jugner Forest",
-  "zone_id": 104,
-  "path": "Crimson",
-  "tier": "III",
-  "ki_id": 368,
-  "ki_name": "Crimson Stratum Abyssite III",
-  "status": "built",
-  "rifts": [
-   [
-    17203939,
-    78.0,
-    0.0,
-    118.0
-   ],
-   [
-    17203940,
-    263.0,
-    0.0,
-    553.0
-   ],
-   [
-    17203941,
-    -325.0,
-    0.0,
-    -124.0
-   ]
-  ],
-  "gaps": "Fixed: scripts moved to Jugner_Forest (zone 104) in commit ec40fe67bb; unpushed. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Sallow Seymour",
-  "zone": "North Gustaberg",
-  "zone_id": 106,
-  "path": "Indigo",
-  "tier": "I",
-  "ki_id": 370,
-  "ki_name": "Indigo Stratum Abyssite",
-  "status": "built",
-  "rifts": [
-   [
-    17212116,
-    798.0,
-    0.0,
-    440.0
-   ],
-   [
-    17212117,
-    558.0,
-    -10.0,
-    603.0
-   ],
-   [
-    17212118,
-    -322.0,
-    40.0,
-    -42.0
-   ]
-  ],
-  "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Virvatuli",
-  "zone": "West Sarutabaruta",
-  "zone_id": 115,
-  "path": "Jade",
-  "tier": "I",
-  "ki_id": 374,
-  "ki_name": "Jade Stratum Abyssite",
-  "status": "built",
-  "rifts": [
-   [
-    17248944,
-    120.0,
-    4.0,
-    -440.0
-   ],
-   [
-    17248945,
-    -441.0,
-    4.0,
-    -357.0
-   ],
-   [
-    17248946,
-    0.0,
-    -28.0,
-    560.0
-   ]
-  ],
-  "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Smierc",
-  "zone": "Tahrongi Canyon",
-  "zone_id": 117,
-  "path": "White",
-  "tier": "V",
-  "ki_id": 1451,
-  "ki_name": "White Stratum Abyssite V",
-  "status": "built",
-  "rifts": [
-   [
-    17257088,
-    205.0,
-    15.7,
-    -680.0
-   ],
-   [
-    17257089,
-    200.0,
-    -24.0,
-    -160.0
-   ],
-   [
-    17257090,
-    360.0,
-    24.0,
-    280.0
-   ]
-  ],
-  "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Botulus Rex",
-  "zone": "Buburimu Peninsula",
-  "zone_id": 118,
-  "path": "White",
-  "tier": "VI",
-  "ki_id": 1452,
-  "ki_name": "White Stratum Abyssite VI",
-  "status": "built",
-  "rifts": [
-   [
-    17261219,
-    80.0,
-    0.0,
-    -195.0
-   ],
-   [
-    17261220,
-    360.0,
-    0.0,
-    -240.0
-   ],
-   [
-    17261221,
-    -360.0,
-    -8.0,
-    -200.0
-   ]
-  ],
-  "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Lord Asag",
-  "zone": "Meriphataud Mountains",
-  "zone_id": 119,
-  "path": "Jade",
-  "tier": "III",
-  "ki_id": 376,
-  "ki_name": "Jade Stratum Abyssite III",
-  "status": "built",
-  "rifts": [
-   [
-    17265315,
-    200.0,
-    0.0,
-    -520.0
-   ],
-   [
-    17265316,
-    -282.0,
-    16.0,
-    602.0
-   ],
-   [
-    17265317,
-    -520.0,
-    16.0,
-    520.0
-   ]
-  ],
-  "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Aello",
-  "zone": "Ru'Aun Gardens",
-  "zone_id": 130,
-  "path": "Ashen",
-  "tier": "III",
-  "ki_id": 1449,
-  "ki_name": "Ashen Stratum Abyssite III",
-  "status": "built",
-  "rifts": [
-   [
-    17310111,
-    377.0,
-    -40.0,
-    246.0
-   ],
-   [
-    17310112,
-    -117.0,
-    -40.0,
-    436.0
-   ],
-   [
-    17310113,
-    94.0,
-    -40.2,
-    -459.0
-   ]
-  ],
-  "gaps": "Skills in SQL, no mobskill Lua (Kaleidoscopic Fury commented out); 3 handmaiden adds; 1 of 3 mob rows partial. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Hahava",
-  "zone": "King Ranperre's Tomb",
-  "zone_id": 190,
-  "path": "Crimson",
-  "tier": "IV",
-  "ki_id": 369,
-  "ki_name": "Crimson Stratum Abyssite IV",
-  "status": "built",
-  "rifts": [
-   [
-    17555961,
-    -115.0,
-    9.0,
-    60.0
-   ],
-   [
-    17555962,
-    -121.0,
-    7.5,
-    -361.0
-   ],
-   [
-    17555963,
-    -59.0,
-    8.0,
-    154.0
-   ]
-  ],
-  "gaps": "Skills in SQL but no mobskill Lua. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Krabimanjaro",
-  "zone": "Ordelle's Caves",
-  "zone_id": 193,
-  "path": "Crimson",
-  "tier": "II",
-  "ki_id": 367,
-  "ki_name": "Crimson Stratum Abyssite II",
-  "status": "built",
-  "rifts": [
-   [
-    17568198,
-    -200.0,
-    32.0,
-    -2.0
-   ],
-   [
-    17568199,
-    -112.0,
-    0.0,
-    230.0
-   ],
-   [
-    17568200,
-    -150.0,
-    -27.5,
-    -200.0
-   ]
-  ],
-  "gaps": "Skills + spells Lua present. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Ogbunabali",
-  "zone": "Maze of Shakhrami",
-  "zone_id": 198,
-  "path": "Jade",
-  "tier": "II",
-  "ki_id": 375,
-  "ki_name": "Jade Stratum Abyssite II",
-  "status": "built",
-  "rifts": [
-   [
-    17588782,
-    134.0,
-    20.0,
-    -89.0
-   ],
-   [
-    17588783,
-    -5.0,
-    20.0,
-    160.0
-   ],
-   [
-    17588784,
-    -285.0,
-    0.0,
-    -114.0
-   ]
-  ],
-  "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Ildebrann",
-  "zone": "Ifrit's Cauldron",
-  "zone_id": 205,
-  "path": "Ashen",
-  "tier": "I",
-  "ki_id": 1447,
-  "ki_name": "Ashen Stratum Abyssite",
-  "status": "built",
-  "rifts": [
-   [
-    17617261,
-    -269.0,
-    3.6,
-    -169.0
-   ],
-   [
-    17617262,
-    -125.0,
-    3.6,
-    170.0
-   ],
-   [
-    17617263,
-    9.0,
-    3.8,
-    290.0
-   ]
-  ],
-  "gaps": "Any Ashen tier; Hraun Dragon pets share spawn rows. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
- },
- {
-  "name": "Bismarck",
-  "zone": "Bibiki Bay - Purgonorgo Isle",
-  "zone_id": 4,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    16793967,
-    -643.0,
-    0.3,
-    -655.0
-   ],
-   [
-    16793968,
-    -275.0,
-    0.3,
-    -920.0
-   ],
-   [
-    16793969,
-    -120.0,
-    0.3,
-    -629.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
- },
- {
-  "name": "Isarukitsck",
-  "zone": "Uleguerand Range",
-  "zone_id": 5,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    16798144,
-    -141.0,
-    -19.0,
-    -325.0
-   ],
-   [
-    16798145,
-    -220.0,
-    -41.0,
-    -503.0
-   ],
-   [
-    16798146,
-    295.0,
-    0.0,
-    -358.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
- },
- {
-  "name": "Fjalar",
-  "zone": "Attohwa Chasm",
-  "zone_id": 7,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    16806376,
-    40.0,
-    -4.0,
-    -119.0
-   ],
-   [
-    16806377,
-    361.0,
-    21.0,
-    222.0
-   ],
-   [
-    16806378,
-    0.0,
-    0.0,
-    0.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
- },
- {
-  "name": "Abununnu",
-  "zone": "Lufaise Meadows",
-  "zone_id": 24,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    16875910,
-    -406.0,
-    -8.0,
-    44.0
-   ],
-   [
-    16875911,
-    -69.0,
-    -7.0,
-    -193.0
-   ],
-   [
-    16875912,
-    -234.0,
-    -15.0,
-    125.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
- },
- {
-  "name": "Tsui-Goab",
-  "zone": "Misareaux Coast",
-  "zone_id": 25,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    16879989,
-    443.0,
-    -15.0,
-    126.0
-   ],
-   [
-    16879990,
-    267.0,
-    -15.0,
-    222.0
-   ],
-   [
-    16879991,
-    517.0,
-    15.0,
-    -313.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
- },
- {
-  "name": "Dimgruzub",
-  "zone": "Arrapago Reef",
-  "zone_id": 54,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    16999060,
-    548.0,
-    -7.6,
-    80.0
-   ],
-   [
-    16999061,
-    346.3,
-    -2.2,
-    113.8
-   ],
-   [
-    16999062,
-    386.3,
-    -2.2,
-    273.9
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13837])."
- },
- {
-  "name": "Vanasarvik",
-  "zone": "Mount Zhayolm",
-  "zone_id": 61,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17027619,
-    902.8,
-    -15.9,
-    336.3
-   ],
-   [
-    17027620,
-    463.1,
-    -15.8,
-    -62.1
-   ],
-   [
-    17027621,
-    776.0,
-    -15.8,
-    -63.6
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13830])."
- },
- {
-  "name": "Yalungur",
-  "zone": "Mamook",
-  "zone_id": 65,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17044052,
-    319.6,
-    -3.2,
-    -183.2
-   ],
-   [
-    17044053,
-    182.6,
-    14.4,
-    -195.0
-   ],
-   [
-    17044054,
-    62.2,
-    -3.7,
-    -85.5
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
- },
- {
-  "name": "Morta",
-  "zone": "Aydeewa Subterrane",
-  "zone_id": 68,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17056470,
-    280.0,
-    1.7,
-    396.0
-   ],
-   [
-    17056471,
-    -153.0,
-    8.7,
-    44.0
-   ],
-   [
-    17056472,
-    437.0,
-    -26.0,
-    393.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13651])."
- },
- {
-  "name": "Brekekekex",
-  "zone": "Caedarva Mire",
-  "zone_id": 79,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17101345,
-    242.9,
-    -4.5,
-    -491.4
-   ],
-   [
-    17101346,
-    269.5,
-    -4.5,
-    -732.2
-   ],
-   [
-    17101347,
-    -314.6,
-    -4.3,
-    -748.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
- },
- {
-  "name": "Kholomodumo",
-  "zone": "Jugner Forest (S)",
-  "zone_id": 82,
-  "path": "Crimson",
-  "tier": "III",
-  "ki_id": 368,
-  "ki_name": "Crimson Stratum Abyssite III",
-  "status": "built",
-  "rifts": [
-   [
-    17114040,
-    78.0,
-    0.0,
-    118.0
-   ],
-   [
-    17114041,
-    275.0,
-    0.0,
-    564.0
-   ],
-   [
-    17114042,
-    -325.0,
-    0.0,
-    -124.0
-   ]
-  ],
-  "gaps": "Zone [S]: Cottus precedent, no Zone.lua hooks needed. Spawn row 1 was (0,0,0) -> rift-1 position [D], needs !checknav. Meteor missing; Armor/Amnesic/Ecliptic damage values [D]; no spell list; untested in game. See docs/voidwatch/UNIMPLEMENTED.md."
- },
- {
-  "name": "Gaunab",
-  "zone": "Vunkerl Inlet (S)",
-  "zone_id": 83,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17118042,
-    -277.0,
-    -40.2,
-    -726.0
-   ],
-   [
-    17118043,
-    -155.0,
-    -32.1,
-    115.0
-   ],
-   [
-    17118044,
-    -400.0,
-    -32.0,
-    520.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13814])."
- },
- {
-  "name": "Taweret",
-  "zone": "Batallia Downs (S)",
-  "zone_id": 84,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17122255,
-    80.0,
-    8.0,
-    -280.0
-   ],
-   [
-    17122256,
-    276.0,
-    8.3,
-    -390.0
-   ],
-   [
-    17122257,
-    -320.0,
-    -16.0,
-    -42.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13824])."
- },
- {
-  "name": "Ushumgal",
-  "zone": "North Gustaberg (S)",
-  "zone_id": 88,
-  "path": "Indigo",
-  "tier": "I",
-  "ki_id": 370,
-  "ki_name": "Indigo Stratum Abyssite",
-  "status": "not built",
-  "rifts": [
-   [
-    17138606,
-    798.0,
-    0.0,
-    440.0
-   ],
-   [
-    17138607,
-    558.0,
-    -10.0,
-    603.0
-   ],
-   [
-    17138608,
-    -322.0,
-    40.0,
-    -42.0
-   ]
-  ],
-  "gaps": "DSP mob data: none (group [])."
- },
- {
-  "name": "Cetus",
-  "zone": "Grauberg (S)",
-  "zone_id": 89,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17142618,
-    -510.0,
-    32.1,
-    -795.0
-   ],
-   [
-    17142619,
-    -80.0,
-    -7.3,
-    -385.0
-   ],
-   [
-    17142620,
-    72.0,
-    -47.7,
-    285.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
- },
- {
-  "name": "Ocythoe",
-  "zone": "Grauberg (S)",
-  "zone_id": 89,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17142618,
-    -510.0,
-    32.1,
-    -795.0
-   ],
-   [
-    17142619,
-    -80.0,
-    -7.3,
-    -385.0
-   ],
-   [
-    17142620,
-    72.0,
-    -47.7,
-    285.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13724])."
- },
- {
-  "name": "Melancholic Moira",
-  "zone": "Pashhow Marshlands (S)",
-  "zone_id": 90,
-  "path": "Indigo",
-  "tier": "III",
-  "ki_id": 372,
-  "ki_name": "Indigo Stratum Abyssite III",
-  "status": "built",
-  "rifts": [
-   [
-    17146651,
-    -420.0,
-    24.1,
-    -230.0
-   ],
-   [
-    17146652,
-    250.0,
-    24.2,
-    92.0
-   ],
-   [
-    17146653,
-    552.0,
-    24.5,
-    492.0
-   ]
-  ],
-  "gaps": "Skills are forum/LSB guesses (capture showed no TP moves); EBB not built; see UNIMPLEMENTED.md"
- },
- {
-  "name": "Agathos",
-  "zone": "Rolanberry Fields (S)",
-  "zone_id": 91,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17150836,
-    -360.0,
-    8.0,
-    279.0
-   ],
-   [
-    17150837,
-    -435.0,
-    -7.9,
-    15.0
-   ],
-   [
-    17150838,
-    -630.0,
-    -23.8,
-    -270.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13757])."
- },
- {
-  "name": "Akupara",
-  "zone": "Meriphataud Mountains (S)",
-  "zone_id": 97,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17175422,
-    200.0,
-    0.0,
-    -520.0
-   ],
-   [
-    17175423,
-    -282.0,
-    16.0,
-    602.0
-   ],
-   [
-    17175424,
-    -520.0,
-    16.0,
-    520.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13729])."
- },
- {
-  "name": "Gugalanna",
-  "zone": "Sauromugue Champaign (S)",
-  "zone_id": 98,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17179516,
-    -245.0,
-    7.8,
-    245.0
-   ],
-   [
-    17179517,
-    80.0,
-    32.0,
-    323.0
-   ],
-   [
-    17179518,
-    500.0,
-    8.2,
-    -290.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13780])."
- },
- {
-  "name": "Cherufe",
-  "zone": "Batallia Downs",
-  "zone_id": 105,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17207930,
-    80.0,
-    8.0,
-    -280.0
-   ],
-   [
-    17207931,
-    276.0,
-    8.3,
-    -390.0
-   ],
-   [
-    17207932,
-    -320.0,
-    -16.0,
-    -42.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13825])."
- },
- {
-  "name": "Bhishani",
-  "zone": "South Gustaberg",
-  "zone_id": 107,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17216194,
-    605.0,
-    -0.5,
-    -520.0
-   ],
-   [
-    17216195,
-    400.0,
-    -0.0,
-    -240.0
-   ],
-   [
-    17216196,
-    250.0,
-    -0.0,
-    -640.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
- },
- {
-  "name": "Gwynn Ap Nudd",
-  "zone": "Konschtat Highlands",
-  "zone_id": 108,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17220179,
-    -125.0,
-    72.0,
-    720.0
-   ],
-   [
-    17220180,
-    395.0,
-    0.0,
-    0.0
-   ],
-   [
-    17220181,
-    200.0,
-    -24.0,
-    -400.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
- },
- {
-  "name": "Murk-veined Baneberry",
-  "zone": "Pashhow Marshlands",
-  "zone_id": 109,
-  "path": "Indigo",
-  "tier": "III",
-  "ki_id": 372,
-  "ki_name": "Indigo Stratum Abyssite III",
-  "status": "not built",
-  "rifts": [
-   [
-    17224369,
-    -420.0,
-    24.1,
-    -230.0
-   ],
-   [
-    17224370,
-    250.0,
-    24.2,
-    92.0
-   ],
-   [
-    17224371,
-    552.0,
-    24.5,
-    492.0
-   ]
-  ],
-  "gaps": "DSP mob data: none (group [])."
- },
- {
-  "name": "Yatagarasu",
-  "zone": "Rolanberry Fields",
-  "zone_id": 110,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17228387,
-    -360.0,
-    8.0,
-    279.0
-   ],
-   [
-    17228388,
-    -435.0,
-    -7.9,
-    15.0
-   ],
-   [
-    17228389,
-    -630.0,
-    -23.8,
-    -270.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13755])."
- },
- {
-  "name": "Rw Nw Prt M Hrw",
-  "zone": "East Sarutabaruta",
-  "zone_id": 116,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17253085,
-    -120.0,
-    -4.9,
-    -415.0
-   ],
-   [
-    17253086,
-    40.0,
-    -12.0,
-    280.0
-   ],
-   [
-    17253087,
-    240.0,
-    -24.0,
-    560.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
- },
- {
-  "name": "Goji",
-  "zone": "Sauromugue Champaign",
-  "zone_id": 120,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17269272,
-    -245.0,
-    7.8,
-    245.0
-   ],
-   [
-    17269273,
-    80.0,
-    32.0,
-    323.0
-   ],
-   [
-    17269274,
-    500.0,
-    8.2,
-    -290.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13779])."
- },
- {
-  "name": "Cath Palug",
-  "zone": "The Sanctuary of Zi'Tah",
-  "zone_id": 121,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17273429,
-    -275.0,
-    0.2,
-    46.0
-   ],
-   [
-    17273430,
-    -90.0,
-    0.6,
-    -312.0
-   ],
-   [
-    17273431,
-    -400.0,
-    0.3,
-    -130.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13732])."
- },
- {
-  "name": "Mimic King",
-  "zone": "Ro'Maeve",
-  "zone_id": 122,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17277249,
-    114.0,
-    -8.0,
-    47.0
-   ],
-   [
-    17277250,
-    -114.0,
-    -8.0,
-    44.0
-   ],
-   [
-    17277251,
-    46.0,
-    -4.0,
-    -36.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [13736])."
- },
- {
-  "name": "Holy Moly",
-  "zone": "Yuhtunga Jungle",
-  "zone_id": 123,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17281667,
-    -242.0,
-    0.6,
-    405.0
-   ],
-   [
-    17281668,
-    280.0,
-    4.6,
-    215.0
-   ],
-   [
-    17281669,
-    -335.0,
-    17.0,
-    -365.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
- },
- {
-  "name": "Sabotender Campeador",
-  "zone": "Western Altepa Desert",
-  "zone_id": 125,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17289808,
-    554.0,
-    0.7,
-    260.0
-   ],
-   [
-    17289809,
-    -228.0,
-    -1.0,
-    -498.0
-   ],
-   [
-    17289810,
-    -170.0,
-    0.0,
-    327.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
- },
- {
-  "name": "Neith",
-  "zone": "Temple of Uggalepih",
-  "zone_id": 159,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17429022,
-    180.1,
-    0.0,
-    -65.0
-   ],
-   [
-    17429023,
-    263.0,
-    0.0,
-    55.0
-   ],
-   [
-    17429024,
-    -148.0,
-    1.5,
-    -20.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
- },
- {
-  "name": "Laidly Laurence",
-  "zone": "Garlaige Citadel (S)",
-  "zone_id": 164,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17449563,
-    -260.0,
-    -0.1,
-    -20.0
-   ],
-   [
-    17449564,
-    -180.0,
-    -0.1,
-    140.0
-   ],
-   [
-    17449565,
-    -60.0,
-    0.0,
-    -60.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
- },
- {
-  "name": "Nympha Eunomia",
-  "zone": "Crawlers' Nest (S)",
-  "zone_id": 171,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17478162,
-    55.0,
-    -0.4,
-    260.0
-   ],
-   [
-    17478163,
-    -193.0,
-    -0.2,
-    197.0
-   ],
-   [
-    17478164,
-    -137.0,
-    -0.3,
-    377.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13759])."
- },
- {
-  "name": "Tangaroa",
-  "zone": "Kuftal Tunnel",
-  "zone_id": 174,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17490319,
-    -40.0,
-    0.5,
-    50.0
-   ],
-   [
-    17490320,
-    136.0,
-    19.7,
-    -130.0
-   ],
-   [
-    17490321,
-    130.0,
-    0.0,
-    5.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [13820])."
- },
- {
-  "name": "Giltine",
-  "zone": "The Eldieme Necropolis (S)",
-  "zone_id": 175,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17494782,
-    -2.0,
-    1.0,
-    43.0
-   ],
-   [
-    17494783,
-    42.0,
-    -15.0,
-    322.0
-   ],
-   [
-    17494784,
-    180.0,
-    -0.2,
-    140.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13818])."
- },
- {
-  "name": "Uptala",
-  "zone": "Ve'Lugannon Palace",
-  "zone_id": 177,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17502700,
-    -119.0,
-    0.6,
-    -384.0
-   ],
-   [
-    17502701,
-    379.0,
-    0.6,
-    39.0
-   ],
-   [
-    17502702,
-    -342.0,
-    0.6,
-    280.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13739])."
- },
- {
-  "name": "Qilin",
-  "zone": "The Shrine of Ru'Avitau",
-  "zone_id": 178,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17506820,
-    -68.0,
-    -15.4,
-    68.0
-   ],
-   [
-    17506821,
-    68.0,
-    -15.4,
-    68.0
-   ],
-   [
-    17506822,
-    -68.0,
-    -15.4,
-    -68.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13746])."
- },
- {
-  "name": "Akvan",
-  "zone": "Lower Delkfutt's Tower",
-  "zone_id": 184,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17531226,
-    421.0,
-    16.4,
-    -20.0
-   ],
-   [
-    17531227,
-    388.0,
-    -16.0,
-    121.0
-   ],
-   [
-    17531228,
-    505.0,
-    -32.0,
-    95.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13803])."
- },
- {
-  "name": "Celaeno",
-  "zone": "Dangruf Wadi",
-  "zone_id": 191,
-  "path": "Indigo",
-  "tier": "IV",
-  "ki_id": 373,
-  "ki_name": "Indigo Stratum Abyssite IV",
-  "status": "not built",
-  "rifts": [
-   [
-    17559929,
-    -253.0,
-    4.0,
-    505.0
-   ],
-   [
-    17559930,
-    -107.0,
-    4.1,
-    187.0
-   ],
-   [
-    17559931,
-    -157.0,
-    4.0,
-    -164.0
-   ]
-  ],
-  "gaps": "DSP mob data: none (group [])."
- },
- {
-  "name": "Voidwrought",
-  "zone": "Outer Horutoto Ruins",
-  "zone_id": 194,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17572303,
-    -260.0,
-    0.0,
-    740.0
-   ],
-   [
-    17572304,
-    -380.0,
-    0.0,
-    740.0
-   ],
-   [
-    17572305,
-    -480.0,
-    0.0,
-    760.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
- },
- {
-  "name": "Lorbulcrud",
-  "zone": "Gusgen Mines",
-  "zone_id": 196,
-  "path": "Indigo",
-  "tier": "II",
-  "ki_id": 371,
-  "ki_name": "Indigo Stratum Abyssite II",
-  "status": "not built",
-  "rifts": [
-   [
-    17580410,
-    40.0,
-    -11.0,
-    436.0
-   ],
-   [
-    17580411,
-    -115.0,
-    -60.0,
-    -100.0
-   ],
-   [
-    17580412,
-    160.0,
-    -39.8,
-    -20.0
-   ]
-  ],
-  "gaps": "DSP mob data: none (group [])."
- },
- {
-  "name": "Mellonia",
-  "zone": "Crawlers' Nest",
-  "zone_id": 197,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17584498,
-    55.0,
-    -0.4,
-    260.0
-   ],
-   [
-    17584499,
-    -193.0,
-    -0.2,
-    197.0
-   ],
-   [
-    17584500,
-    -137.0,
-    -0.3,
-    377.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13754])."
- },
- {
-  "name": "Roly-Poly",
-  "zone": "Garlaige Citadel",
-  "zone_id": 200,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17596859,
-    -340.0,
-    0.0,
-    220.0
-   ],
-   [
-    17596860,
-    -260.0,
-    0.0,
-    380.0
-   ],
-   [
-    17596861,
-    -140.0,
-    0.0,
-    180.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
- },
- {
-  "name": "Malleator Maurok",
-  "zone": "Quicksand Caves",
-  "zone_id": 208,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17629764,
-    -85.0,
-    0.0,
-    -40.0
-   ],
-   [
-    17629765,
-    75.0,
-    0.0,
-    -200.0
-   ],
-   [
-    17629766,
-    40.0,
-    0.0,
-    -130.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
- },
- {
-  "name": "Asb",
-  "zone": "Provenance",
-  "zone_id": 222,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17686642,
-    -638.0,
-    -18.9,
-    -535.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [11007])."
- },
- {
-  "name": "Provenance Watcher",
-  "zone": "Provenance",
-  "zone_id": 222,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17686642,
-    -638.0,
-    -18.9,
-    -535.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [10989])."
- },
- {
-  "name": "Rukh",
-  "zone": "Provenance",
-  "zone_id": 222,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17686642,
-    -638.0,
-    -18.9,
-    -535.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [11006])."
- },
- {
-  "name": "Sarbaz",
-  "zone": "Provenance",
-  "zone_id": 222,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17686642,
-    -638.0,
-    -18.9,
-    -535.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [11008])."
- },
- {
-  "name": "Shah",
-  "zone": "Provenance",
-  "zone_id": 222,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17686642,
-    -638.0,
-    -18.9,
-    -535.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [11010])."
- },
- {
-  "name": "Wazir",
-  "zone": "Provenance",
-  "zone_id": 222,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [
-   [
-    17686642,
-    -638.0,
-    -18.9,
-    -535.0
-   ]
-  ],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [11009])."
- },
- {
-  "name": "Gasha",
-  "zone": "The Eldieme Necropolis",
-  "zone_id": null,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. Zone id missing from roster. DSP mob data: full (group [13819])."
- },
- {
-  "name": "Kalasutrax",
-  "zone": "Fort Karugo-Narugo (S)",
-  "zone_id": null,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. Zone id missing from roster. DSP mob data: partial (group [13750])."
- },
- {
-  "name": "Pil",
-  "zone": "Behemoth's Dominion/Provenance",
-  "zone_id": null,
-  "path": "",
-  "tier": "",
-  "ki_id": null,
-  "ki_name": "",
-  "status": "not built",
-  "rifts": [],
-  "gaps": "Abyssite path/tier not extracted from wiki roster. Zone id missing from roster. DSP mob data: partial (group [11011])."
- }
+  {
+    "name": "Cottus",
+    "zone": "East Ronfaure (S)",
+    "zone_id": 81,
+    "path": "Crimson",
+    "tier": "I",
+    "ki_id": 366,
+    "ki_name": "Crimson Stratum Abyssite",
+    "status": "built",
+    "rifts": [
+      [
+        17109850,
+        288,
+        -61,
+        368
+      ],
+      [
+        17109851,
+        183,
+        -20,
+        -315
+      ],
+      [
+        17109852,
+        434,
+        -51,
+        315
+      ]
+    ],
+    "gaps": "Zone [S]: DSP [S]-zone support unchecked. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Pancimanci",
+    "zone": "West Sarutabaruta (S)",
+    "zone_id": 95,
+    "path": "Jade",
+    "tier": "I",
+    "ki_id": 374,
+    "ki_name": "Jade Stratum Abyssite",
+    "status": "built",
+    "rifts": [
+      [
+        17167319,
+        120,
+        4,
+        -440
+      ],
+      [
+        17167320,
+        -441,
+        4,
+        -357
+      ],
+      [
+        17167321,
+        0,
+        -28,
+        560
+      ]
+    ],
+    "gaps": "Zone [S]: DSP [S]-zone support unchecked. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Lancing Lamorak",
+    "zone": "West Ronfaure",
+    "zone_id": 100,
+    "path": "White",
+    "tier": "IV",
+    "ki_id": 1450,
+    "ki_name": "White Stratum Abyssite IV",
+    "status": "built",
+    "rifts": [
+      [
+        17187587,
+        -360,
+        -50.5,
+        270
+      ],
+      [
+        17187588,
+        -320,
+        -10,
+        -360
+      ],
+      [
+        17187589,
+        -340,
+        -29.8,
+        -40
+      ]
+    ],
+    "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Sarimanok",
+    "zone": "East Ronfaure",
+    "zone_id": 101,
+    "path": "Crimson",
+    "tier": "I",
+    "ki_id": 366,
+    "ki_name": "Crimson Stratum Abyssite",
+    "status": "built",
+    "rifts": [
+      [
+        17191577,
+        288,
+        -61,
+        368
+      ],
+      [
+        17191578,
+        183,
+        -20,
+        -315
+      ],
+      [
+        17191579,
+        434,
+        -51,
+        315
+      ]
+    ],
+    "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Stachysaurus",
+    "zone": "La Theine Plateau",
+    "zone_id": 102,
+    "path": "White",
+    "tier": "V",
+    "ki_id": 1451,
+    "ki_name": "White Stratum Abyssite V",
+    "status": "built",
+    "rifts": [
+      [
+        17195690,
+        640,
+        32,
+        1
+      ],
+      [
+        17195691,
+        -440,
+        -8,
+        440
+      ],
+      [
+        17195692,
+        200,
+        32,
+        -600
+      ]
+    ],
+    "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Ig-Alima",
+    "zone": "Valkurm Dunes",
+    "zone_id": 103,
+    "path": "White",
+    "tier": "VI",
+    "ki_id": 1452,
+    "ki_name": "White Stratum Abyssite VI",
+    "status": "built",
+    "rifts": [
+      [
+        17199764,
+        720,
+        -8.1,
+        195
+      ],
+      [
+        17199765,
+        650,
+        0.3,
+        0
+      ],
+      [
+        17199766,
+        -75,
+        -0.3,
+        -45
+      ]
+    ],
+    "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Belphoebe",
+    "zone": "Jugner Forest",
+    "zone_id": 104,
+    "path": "Crimson",
+    "tier": "III",
+    "ki_id": 368,
+    "ki_name": "Crimson Stratum Abyssite III",
+    "status": "built",
+    "rifts": [
+      [
+        17203939,
+        78,
+        0,
+        118
+      ],
+      [
+        17203940,
+        263,
+        0,
+        553
+      ],
+      [
+        17203941,
+        -325,
+        0,
+        -124
+      ]
+    ],
+    "gaps": "Fixed: scripts moved to Jugner_Forest (zone 104) in commit ec40fe67bb; unpushed. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Sallow Seymour",
+    "zone": "North Gustaberg",
+    "zone_id": 106,
+    "path": "Indigo",
+    "tier": "I",
+    "ki_id": 370,
+    "ki_name": "Indigo Stratum Abyssite",
+    "status": "built",
+    "rifts": [
+      [
+        17212116,
+        798,
+        0,
+        440
+      ],
+      [
+        17212117,
+        558,
+        -10,
+        603
+      ],
+      [
+        17212118,
+        -322,
+        40,
+        -42
+      ]
+    ],
+    "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Virvatuli",
+    "zone": "West Sarutabaruta",
+    "zone_id": 115,
+    "path": "Jade",
+    "tier": "I",
+    "ki_id": 374,
+    "ki_name": "Jade Stratum Abyssite",
+    "status": "built",
+    "rifts": [
+      [
+        17248944,
+        120,
+        4,
+        -440
+      ],
+      [
+        17248945,
+        -441,
+        4,
+        -357
+      ],
+      [
+        17248946,
+        0,
+        -28,
+        560
+      ]
+    ],
+    "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Smierc",
+    "zone": "Tahrongi Canyon",
+    "zone_id": 117,
+    "path": "White",
+    "tier": "V",
+    "ki_id": 1451,
+    "ki_name": "White Stratum Abyssite V",
+    "status": "built",
+    "rifts": [
+      [
+        17257088,
+        205,
+        15.7,
+        -680
+      ],
+      [
+        17257089,
+        200,
+        -24,
+        -160
+      ],
+      [
+        17257090,
+        360,
+        24,
+        280
+      ]
+    ],
+    "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Botulus Rex",
+    "zone": "Buburimu Peninsula",
+    "zone_id": 118,
+    "path": "White",
+    "tier": "VI",
+    "ki_id": 1452,
+    "ki_name": "White Stratum Abyssite VI",
+    "status": "built",
+    "rifts": [
+      [
+        17261219,
+        80,
+        0,
+        -195
+      ],
+      [
+        17261220,
+        360,
+        0,
+        -240
+      ],
+      [
+        17261221,
+        -360,
+        -8,
+        -200
+      ]
+    ],
+    "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Lord Asag",
+    "zone": "Meriphataud Mountains",
+    "zone_id": 119,
+    "path": "Jade",
+    "tier": "III",
+    "ki_id": 376,
+    "ki_name": "Jade Stratum Abyssite III",
+    "status": "built",
+    "rifts": [
+      [
+        17265315,
+        200,
+        0,
+        -520
+      ],
+      [
+        17265316,
+        -282,
+        16,
+        602
+      ],
+      [
+        17265317,
+        -520,
+        16,
+        520
+      ]
+    ],
+    "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Aello",
+    "zone": "Ru'Aun Gardens",
+    "zone_id": 130,
+    "path": "Ashen",
+    "tier": "III",
+    "ki_id": 1449,
+    "ki_name": "Ashen Stratum Abyssite III",
+    "status": "built",
+    "rifts": [
+      [
+        17310111,
+        377,
+        -40,
+        246
+      ],
+      [
+        17310112,
+        -117,
+        -40,
+        436
+      ],
+      [
+        17310113,
+        94,
+        -40.2,
+        -459
+      ]
+    ],
+    "gaps": "Skills in SQL, no mobskill Lua (Kaleidoscopic Fury commented out); 3 handmaiden adds; 1 of 3 mob rows partial. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Hahava",
+    "zone": "King Ranperre's Tomb",
+    "zone_id": 190,
+    "path": "Crimson",
+    "tier": "IV",
+    "ki_id": 369,
+    "ki_name": "Crimson Stratum Abyssite IV",
+    "status": "built",
+    "rifts": [
+      [
+        17555961,
+        -115,
+        9,
+        60
+      ],
+      [
+        17555962,
+        -121,
+        7.5,
+        -361
+      ],
+      [
+        17555963,
+        -59,
+        8,
+        154
+      ]
+    ],
+    "gaps": "Skills in SQL but no mobskill Lua. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Krabimanjaro",
+    "zone": "Ordelle's Caves",
+    "zone_id": 193,
+    "path": "Crimson",
+    "tier": "II",
+    "ki_id": 367,
+    "ki_name": "Crimson Stratum Abyssite II",
+    "status": "built",
+    "rifts": [
+      [
+        17568198,
+        -200,
+        32,
+        -2
+      ],
+      [
+        17568199,
+        -112,
+        0,
+        230
+      ],
+      [
+        17568200,
+        -150,
+        -27.5,
+        -200
+      ]
+    ],
+    "gaps": "Skills + spells Lua present. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Ogbunabali",
+    "zone": "Maze of Shakhrami",
+    "zone_id": 198,
+    "path": "Jade",
+    "tier": "II",
+    "ki_id": 375,
+    "ki_name": "Jade Stratum Abyssite II",
+    "status": "built",
+    "rifts": [
+      [
+        17588782,
+        134,
+        20,
+        -89
+      ],
+      [
+        17588783,
+        -5,
+        20,
+        160
+      ],
+      [
+        17588784,
+        -285,
+        0,
+        -114
+      ]
+    ],
+    "gaps": "Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Ildebrann",
+    "zone": "Ifrit's Cauldron",
+    "zone_id": 205,
+    "path": "Ashen",
+    "tier": "I",
+    "ki_id": 1447,
+    "ki_name": "Ashen Stratum Abyssite",
+    "status": "built",
+    "rifts": [
+      [
+        17617261,
+        -269,
+        3.6,
+        -169
+      ],
+      [
+        17617262,
+        -125,
+        3.6,
+        170
+      ],
+      [
+        17617263,
+        9,
+        3.8,
+        290
+      ]
+    ],
+    "gaps": "Any Ashen tier; Hraun Dragon pets share spawn rows. Shared: Pyxis item pool is a placeholder; weakness/stagger simplified; rift params[0] and clearance range unverified; untested in game."
+  },
+  {
+    "name": "Bismarck",
+    "zone": "Bibiki Bay - Purgonorgo Isle",
+    "zone_id": 4,
+    "path": "Hyacinth",
+    "tier": "II",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        16793967,
+        -643,
+        0.3,
+        -655
+      ],
+      [
+        16793968,
+        -275,
+        0.3,
+        -920
+      ],
+      [
+        16793969,
+        -120,
+        0.3,
+        -629
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
+  },
+  {
+    "name": "Isarukitsck",
+    "zone": "Uleguerand Range",
+    "zone_id": 5,
+    "path": "Hyacinth",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        16798144,
+        -141,
+        -19,
+        -325
+      ],
+      [
+        16798145,
+        -220,
+        -41,
+        -503
+      ],
+      [
+        16798146,
+        295,
+        0,
+        -358
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
+  },
+  {
+    "name": "Fjalar",
+    "zone": "Attohwa Chasm",
+    "zone_id": 7,
+    "path": "Hyacinth",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        16806376,
+        40,
+        -4,
+        -119
+      ],
+      [
+        16806377,
+        361,
+        21,
+        222
+      ],
+      [
+        16806378,
+        0,
+        0,
+        0
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
+  },
+  {
+    "name": "Abununnu",
+    "zone": "Lufaise Meadows",
+    "zone_id": 24,
+    "path": "Hyacinth",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        16875910,
+        -406,
+        -8,
+        44
+      ],
+      [
+        16875911,
+        -69,
+        -7,
+        -193
+      ],
+      [
+        16875912,
+        -234,
+        -15,
+        125
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
+  },
+  {
+    "name": "Tsui-Goab",
+    "zone": "Misareaux Coast",
+    "zone_id": 25,
+    "path": "Hyacinth",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        16879989,
+        443,
+        -15,
+        126
+      ],
+      [
+        16879990,
+        267,
+        -15,
+        222
+      ],
+      [
+        16879991,
+        517,
+        15,
+        -313
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [0])."
+  },
+  {
+    "name": "Dimgruzub",
+    "zone": "Arrapago Reef",
+    "zone_id": 54,
+    "path": "Amber",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        16999060,
+        548,
+        -7.6,
+        80
+      ],
+      [
+        16999061,
+        346.3,
+        -2.2,
+        113.8
+      ],
+      [
+        16999062,
+        386.3,
+        -2.2,
+        273.9
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13837])."
+  },
+  {
+    "name": "Vanasarvik",
+    "zone": "Mount Zhayolm",
+    "zone_id": 61,
+    "path": "Amber",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17027619,
+        902.8,
+        -15.9,
+        336.3
+      ],
+      [
+        17027620,
+        463.1,
+        -15.8,
+        -62.1
+      ],
+      [
+        17027621,
+        776,
+        -15.8,
+        -63.6
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13830])."
+  },
+  {
+    "name": "Yalungur",
+    "zone": "Mamook",
+    "zone_id": 65,
+    "path": "Amber",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17044052,
+        319.6,
+        -3.2,
+        -183.2
+      ],
+      [
+        17044053,
+        182.6,
+        14.4,
+        -195
+      ],
+      [
+        17044054,
+        62.2,
+        -3.7,
+        -85.5
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  },
+  {
+    "name": "Morta",
+    "zone": "Aydeewa Subterrane",
+    "zone_id": 68,
+    "path": "Amber",
+    "tier": "II",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17056470,
+        280,
+        1.7,
+        396
+      ],
+      [
+        17056471,
+        -153,
+        8.7,
+        44
+      ],
+      [
+        17056472,
+        437,
+        -26,
+        393
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13651])."
+  },
+  {
+    "name": "Brekekekex",
+    "zone": "Caedarva Mire",
+    "zone_id": 79,
+    "path": "Amber",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17101345,
+        242.9,
+        -4.5,
+        -491.4
+      ],
+      [
+        17101346,
+        269.5,
+        -4.5,
+        -732.2
+      ],
+      [
+        17101347,
+        -314.6,
+        -4.3,
+        -748
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  },
+  {
+    "name": "Kholomodumo",
+    "zone": "Jugner Forest (S)",
+    "zone_id": 82,
+    "path": "Crimson",
+    "tier": "III",
+    "ki_id": 368,
+    "ki_name": "Crimson Stratum Abyssite III",
+    "status": "built",
+    "rifts": [
+      [
+        17114040,
+        78,
+        0,
+        118
+      ],
+      [
+        17114041,
+        275,
+        0,
+        564
+      ],
+      [
+        17114042,
+        -325,
+        0,
+        -124
+      ]
+    ],
+    "gaps": "Zone [S]: Cottus precedent, no Zone.lua hooks needed. Spawn row 1 was (0,0,0) -> rift-1 position [D], needs !checknav. Meteor missing; Armor/Amnesic/Ecliptic damage values [D]; no spell list; untested in game. See docs/voidwatch/UNIMPLEMENTED.md."
+  },
+  {
+    "name": "Gaunab",
+    "zone": "Vunkerl Inlet (S)",
+    "zone_id": 83,
+    "path": "White",
+    "tier": "VI",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17118042,
+        -277,
+        -40.2,
+        -726
+      ],
+      [
+        17118043,
+        -155,
+        -32.1,
+        115
+      ],
+      [
+        17118044,
+        -400,
+        -32,
+        520
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13814])."
+  },
+  {
+    "name": "Taweret",
+    "zone": "Batallia Downs (S)",
+    "zone_id": 84,
+    "path": "White",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17122255,
+        80,
+        8,
+        -280
+      ],
+      [
+        17122256,
+        276,
+        8.3,
+        -390
+      ],
+      [
+        17122257,
+        -320,
+        -16,
+        -42
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13824])."
+  },
+  {
+    "name": "Ushumgal",
+    "zone": "North Gustaberg (S)",
+    "zone_id": 88,
+    "path": "Indigo",
+    "tier": "I",
+    "ki_id": 370,
+    "ki_name": "Indigo Stratum Abyssite",
+    "status": "not built",
+    "rifts": [
+      [
+        17138606,
+        798,
+        0,
+        440
+      ],
+      [
+        17138607,
+        558,
+        -10,
+        603
+      ],
+      [
+        17138608,
+        -322,
+        40,
+        -42
+      ]
+    ],
+    "gaps": "DSP mob data: none (group [])."
+  },
+  {
+    "name": "Cetus",
+    "zone": "Grauberg (S)",
+    "zone_id": 89,
+    "path": "",
+    "tier": "",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17142618,
+        -510,
+        32.1,
+        -795
+      ],
+      [
+        17142619,
+        -80,
+        -7.3,
+        -385
+      ],
+      [
+        17142620,
+        72,
+        -47.7,
+        285
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  },
+  {
+    "name": "Ocythoe",
+    "zone": "Grauberg (S)",
+    "zone_id": 89,
+    "path": "White",
+    "tier": "VI",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17142618,
+        -510,
+        32.1,
+        -795
+      ],
+      [
+        17142619,
+        -80,
+        -7.3,
+        -385
+      ],
+      [
+        17142620,
+        72,
+        -47.7,
+        285
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13724])."
+  },
+  {
+    "name": "Melancholic Moira",
+    "zone": "Pashhow Marshlands (S)",
+    "zone_id": 90,
+    "path": "Indigo",
+    "tier": "III",
+    "ki_id": 372,
+    "ki_name": "Indigo Stratum Abyssite III",
+    "status": "built",
+    "rifts": [
+      [
+        17146651,
+        -420,
+        24.1,
+        -230
+      ],
+      [
+        17146652,
+        250,
+        24.2,
+        92
+      ],
+      [
+        17146653,
+        552,
+        24.5,
+        492
+      ]
+    ],
+    "gaps": "Skills are forum/LSB guesses (capture showed no TP moves); EBB not built; see UNIMPLEMENTED.md"
+  },
+  {
+    "name": "Agathos",
+    "zone": "Rolanberry Fields (S)",
+    "zone_id": 91,
+    "path": "White",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17150836,
+        -360,
+        8,
+        279
+      ],
+      [
+        17150837,
+        -435,
+        -7.9,
+        15
+      ],
+      [
+        17150838,
+        -630,
+        -23.8,
+        -270
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13757])."
+  },
+  {
+    "name": "Akupara",
+    "zone": "Meriphataud Mountains (S)",
+    "zone_id": 97,
+    "path": "Jade",
+    "tier": "III",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17175422,
+        200,
+        0,
+        -520
+      ],
+      [
+        17175423,
+        -282,
+        16,
+        602
+      ],
+      [
+        17175424,
+        -520,
+        16,
+        520
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13729])."
+  },
+  {
+    "name": "Gugalanna",
+    "zone": "Sauromugue Champaign (S)",
+    "zone_id": 98,
+    "path": "White",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17179516,
+        -245,
+        7.8,
+        245
+      ],
+      [
+        17179517,
+        80,
+        32,
+        323
+      ],
+      [
+        17179518,
+        500,
+        8.2,
+        -290
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13780])."
+  },
+  {
+    "name": "Cherufe",
+    "zone": "Batallia Downs",
+    "zone_id": 105,
+    "path": "White",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17207930,
+        80,
+        8,
+        -280
+      ],
+      [
+        17207931,
+        276,
+        8.3,
+        -390
+      ],
+      [
+        17207932,
+        -320,
+        -16,
+        -42
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13825])."
+  },
+  {
+    "name": "Bhishani",
+    "zone": "South Gustaberg",
+    "zone_id": 107,
+    "path": "White",
+    "tier": "IV",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17216194,
+        605,
+        -0.5,
+        -520
+      ],
+      [
+        17216195,
+        400,
+        0,
+        -240
+      ],
+      [
+        17216196,
+        250,
+        0,
+        -640
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  },
+  {
+    "name": "Gwynn Ap Nudd",
+    "zone": "Konschtat Highlands",
+    "zone_id": 108,
+    "path": "White",
+    "tier": "V",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17220179,
+        -125,
+        72,
+        720
+      ],
+      [
+        17220180,
+        395,
+        0,
+        0
+      ],
+      [
+        17220181,
+        200,
+        -24,
+        -400
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  },
+  {
+    "name": "Murk-veined Baneberry",
+    "zone": "Pashhow Marshlands",
+    "zone_id": 109,
+    "path": "Indigo",
+    "tier": "III",
+    "ki_id": 372,
+    "ki_name": "Indigo Stratum Abyssite III",
+    "status": "not built",
+    "rifts": [
+      [
+        17224369,
+        -420,
+        24.1,
+        -230
+      ],
+      [
+        17224370,
+        250,
+        24.2,
+        92
+      ],
+      [
+        17224371,
+        552,
+        24.5,
+        492
+      ]
+    ],
+    "gaps": "DSP mob data: none (group [])."
+  },
+  {
+    "name": "Yatagarasu",
+    "zone": "Rolanberry Fields",
+    "zone_id": 110,
+    "path": "White",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17228387,
+        -360,
+        8,
+        279
+      ],
+      [
+        17228388,
+        -435,
+        -7.9,
+        15
+      ],
+      [
+        17228389,
+        -630,
+        -23.8,
+        -270
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13755])."
+  },
+  {
+    "name": "Rw Nw Prt M Hrw",
+    "zone": "East Sarutabaruta",
+    "zone_id": 116,
+    "path": "White",
+    "tier": "IV",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17253085,
+        -120,
+        -4.9,
+        -415
+      ],
+      [
+        17253086,
+        40,
+        -12,
+        280
+      ],
+      [
+        17253087,
+        240,
+        -24,
+        560
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  },
+  {
+    "name": "Goji",
+    "zone": "Sauromugue Champaign",
+    "zone_id": 120,
+    "path": "White",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17269272,
+        -245,
+        7.8,
+        245
+      ],
+      [
+        17269273,
+        80,
+        32,
+        323
+      ],
+      [
+        17269274,
+        500,
+        8.2,
+        -290
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13779])."
+  },
+  {
+    "name": "Cath Palug",
+    "zone": "The Sanctuary of Zi'Tah",
+    "zone_id": 121,
+    "path": "Ashen",
+    "tier": "II",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17273429,
+        -275,
+        0.2,
+        46
+      ],
+      [
+        17273430,
+        -90,
+        0.6,
+        -312
+      ],
+      [
+        17273431,
+        -400,
+        0.3,
+        -130
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13732])."
+  },
+  {
+    "name": "Mimic King",
+    "zone": "Ro'Maeve",
+    "zone_id": 122,
+    "path": "Ashen",
+    "tier": "II",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17277249,
+        114,
+        -8,
+        47
+      ],
+      [
+        17277250,
+        -114,
+        -8,
+        44
+      ],
+      [
+        17277251,
+        46,
+        -4,
+        -36
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [13736])."
+  },
+  {
+    "name": "Holy Moly",
+    "zone": "Yuhtunga Jungle",
+    "zone_id": 123,
+    "path": "Ashen",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17281667,
+        -242,
+        0.6,
+        405
+      ],
+      [
+        17281668,
+        280,
+        4.6,
+        215
+      ],
+      [
+        17281669,
+        -335,
+        17,
+        -365
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  },
+  {
+    "name": "Sabotender Campeador",
+    "zone": "Western Altepa Desert",
+    "zone_id": 125,
+    "path": "Ashen",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17289808,
+        554,
+        0.7,
+        260
+      ],
+      [
+        17289809,
+        -228,
+        -1,
+        -498
+      ],
+      [
+        17289810,
+        -170,
+        0,
+        327
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  },
+  {
+    "name": "Neith",
+    "zone": "Temple of Uggalepih",
+    "zone_id": 159,
+    "path": "Ashen",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17429022,
+        180.1,
+        0,
+        -65
+      ],
+      [
+        17429023,
+        263,
+        0,
+        55
+      ],
+      [
+        17429024,
+        -148,
+        1.5,
+        -20
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  },
+  {
+    "name": "Laidly Laurence",
+    "zone": "Garlaige Citadel (S)",
+    "zone_id": 164,
+    "path": "White",
+    "tier": "II",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17449563,
+        -260,
+        -0.1,
+        -20
+      ],
+      [
+        17449564,
+        -180,
+        -0.1,
+        140
+      ],
+      [
+        17449565,
+        -60,
+        0,
+        -60
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  },
+  {
+    "name": "Nympha Eunomia",
+    "zone": "Crawlers' Nest (S)",
+    "zone_id": 171,
+    "path": "White",
+    "tier": "II",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17478162,
+        55,
+        -0.4,
+        260
+      ],
+      [
+        17478163,
+        -193,
+        -0.2,
+        197
+      ],
+      [
+        17478164,
+        -137,
+        -0.3,
+        377
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13759])."
+  },
+  {
+    "name": "Tangaroa",
+    "zone": "Kuftal Tunnel",
+    "zone_id": 174,
+    "path": "Ashen",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17490319,
+        -40,
+        0.5,
+        50
+      ],
+      [
+        17490320,
+        136,
+        19.7,
+        -130
+      ],
+      [
+        17490321,
+        130,
+        0,
+        5
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: full (group [13820])."
+  },
+  {
+    "name": "Giltine",
+    "zone": "The Eldieme Necropolis (S)",
+    "zone_id": 175,
+    "path": "White",
+    "tier": "II",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17494782,
+        -2,
+        1,
+        43
+      ],
+      [
+        17494783,
+        42,
+        -15,
+        322
+      ],
+      [
+        17494784,
+        180,
+        -0.2,
+        140
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13818])."
+  },
+  {
+    "name": "Uptala",
+    "zone": "Ve'Lugannon Palace",
+    "zone_id": 177,
+    "path": "Ashen",
+    "tier": "III",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17502700,
+        -119,
+        0.6,
+        -384
+      ],
+      [
+        17502701,
+        379,
+        0.6,
+        39
+      ],
+      [
+        17502702,
+        -342,
+        0.6,
+        280
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13739])."
+  },
+  {
+    "name": "Qilin",
+    "zone": "The Shrine of Ru'Avitau",
+    "zone_id": 178,
+    "path": "Ashen",
+    "tier": "III",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17506820,
+        -68,
+        -15.4,
+        68
+      ],
+      [
+        17506821,
+        68,
+        -15.4,
+        68
+      ],
+      [
+        17506822,
+        -68,
+        -15.4,
+        -68
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13746])."
+  },
+  {
+    "name": "Akvan",
+    "zone": "Lower Delkfutt's Tower",
+    "zone_id": 184,
+    "path": "White",
+    "tier": "III",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17531226,
+        421,
+        16.4,
+        -20
+      ],
+      [
+        17531227,
+        388,
+        -16,
+        121
+      ],
+      [
+        17531228,
+        505,
+        -32,
+        95
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13803])."
+  },
+  {
+    "name": "Celaeno",
+    "zone": "Dangruf Wadi",
+    "zone_id": 191,
+    "path": "Indigo",
+    "tier": "IV",
+    "ki_id": 373,
+    "ki_name": "Indigo Stratum Abyssite IV",
+    "status": "not built",
+    "rifts": [
+      [
+        17559929,
+        -253,
+        4,
+        505
+      ],
+      [
+        17559930,
+        -107,
+        4.1,
+        187
+      ],
+      [
+        17559931,
+        -157,
+        4,
+        -164
+      ]
+    ],
+    "gaps": "DSP mob data: none (group [])."
+  },
+  {
+    "name": "Voidwrought",
+    "zone": "Outer Horutoto Ruins",
+    "zone_id": 194,
+    "path": "Jade",
+    "tier": "IV",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17572303,
+        -260,
+        0,
+        740
+      ],
+      [
+        17572304,
+        -380,
+        0,
+        740
+      ],
+      [
+        17572305,
+        -480,
+        0,
+        760
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  },
+  {
+    "name": "Lorbulcrud",
+    "zone": "Gusgen Mines",
+    "zone_id": 196,
+    "path": "Indigo",
+    "tier": "II",
+    "ki_id": 371,
+    "ki_name": "Indigo Stratum Abyssite II",
+    "status": "not built",
+    "rifts": [
+      [
+        17580410,
+        40,
+        -11,
+        436
+      ],
+      [
+        17580411,
+        -115,
+        -60,
+        -100
+      ],
+      [
+        17580412,
+        160,
+        -39.8,
+        -20
+      ]
+    ],
+    "gaps": "DSP mob data: none (group [])."
+  },
+  {
+    "name": "Mellonia",
+    "zone": "Crawlers' Nest",
+    "zone_id": 197,
+    "path": "White",
+    "tier": "II",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17584498,
+        55,
+        -0.4,
+        260
+      ],
+      [
+        17584499,
+        -193,
+        -0.2,
+        197
+      ],
+      [
+        17584500,
+        -137,
+        -0.3,
+        377
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [13754])."
+  },
+  {
+    "name": "Roly-Poly",
+    "zone": "Garlaige Citadel",
+    "zone_id": 200,
+    "path": "White",
+    "tier": "II",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17596859,
+        -340,
+        0,
+        220
+      ],
+      [
+        17596860,
+        -260,
+        0,
+        380
+      ],
+      [
+        17596861,
+        -140,
+        0,
+        180
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  },
+  {
+    "name": "Malleator Maurok",
+    "zone": "Quicksand Caves",
+    "zone_id": 208,
+    "path": "Ashen",
+    "tier": "I",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17629764,
+        -85,
+        0,
+        -40
+      ],
+      [
+        17629765,
+        75,
+        0,
+        -200
+      ],
+      [
+        17629766,
+        40,
+        0,
+        -130
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: none (group [])."
+  },
+  {
+    "name": "Asb",
+    "zone": "Provenance",
+    "zone_id": 222,
+    "path": "",
+    "tier": "",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17686642,
+        -638,
+        -18.9,
+        -535
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [11007])."
+  },
+  {
+    "name": "Provenance Watcher",
+    "zone": "Provenance",
+    "zone_id": 222,
+    "path": "",
+    "tier": "",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17686642,
+        -638,
+        -18.9,
+        -535
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [10989])."
+  },
+  {
+    "name": "Rukh",
+    "zone": "Provenance",
+    "zone_id": 222,
+    "path": "",
+    "tier": "",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17686642,
+        -638,
+        -18.9,
+        -535
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [11006])."
+  },
+  {
+    "name": "Sarbaz",
+    "zone": "Provenance",
+    "zone_id": 222,
+    "path": "",
+    "tier": "",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17686642,
+        -638,
+        -18.9,
+        -535
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [11008])."
+  },
+  {
+    "name": "Shah",
+    "zone": "Provenance",
+    "zone_id": 222,
+    "path": "",
+    "tier": "",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17686642,
+        -638,
+        -18.9,
+        -535
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [11010])."
+  },
+  {
+    "name": "Wazir",
+    "zone": "Provenance",
+    "zone_id": 222,
+    "path": "",
+    "tier": "",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [
+      [
+        17686642,
+        -638,
+        -18.9,
+        -535
+      ]
+    ],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. DSP mob data: partial (group [11009])."
+  },
+  {
+    "name": "Gasha",
+    "zone": "The Eldieme Necropolis",
+    "zone_id": null,
+    "path": "White",
+    "tier": "II",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. Zone id missing from roster. DSP mob data: full (group [13819])."
+  },
+  {
+    "name": "Kalasutrax",
+    "zone": "Fort Karugo-Narugo (S)",
+    "zone_id": null,
+    "path": "White",
+    "tier": "VI",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. Zone id missing from roster. DSP mob data: partial (group [13750])."
+  },
+  {
+    "name": "Pil",
+    "zone": "Behemoth's Dominion/Provenance",
+    "zone_id": null,
+    "path": "White",
+    "tier": "III",
+    "ki_id": null,
+    "ki_name": "",
+    "status": "not built",
+    "rifts": [],
+    "gaps": "Abyssite path/tier not extracted from wiki roster. Zone id missing from roster. DSP mob data: partial (group [11011])."
+  }
 ]
