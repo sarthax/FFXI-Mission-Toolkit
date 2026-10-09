@@ -5916,6 +5916,18 @@ async def wiki_snapshot_upload(request: Request, file: UploadFile = File(...)):
             path.unlink(missing_ok=True)
 
 
+@app.get("/wiki/diagnose")
+def wiki_diagnose_title(title: str):
+    """Diagnose missing search results against the actual configured database."""
+    con = get_con()
+    try:
+        return wiki_document.diagnose_title(con, title)
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    finally:
+        con.close()
+
+
 @app.get("/wiki/cache-health")
 def wiki_cache_health():
     return wiki_jobs.cache_health(DB_PATH)
