@@ -89,7 +89,15 @@
     <div class="ki-inspector-section"><h4>Topaz mapping</h4><div id="ki-inspector-topaz"></div></div>
     <div class="ki-inspector-section"><h4>Recorded evidence</h4><div id="ki-inspector-evidence"></div></div>
   </div>
-  <p class="muted" style="margin-bottom:0">Identifiers may differ by server lineage. Verify the mapping before using a numeric ID in scripts.</p>
+  <div class="ki-intro" style="margin-top:14px">
+    <button type="button" id="ki-copy-id">Copy client ID</button>
+    <button type="button" id="ki-copy-name">Copy name</button>
+    <a href="/features/trace" class="chip">Feature Trace</a>
+    <a href="/wiki" class="chip">Wiki Research</a>
+    <a href="/character-editor" class="chip">Character Editor</a>
+    <span id="ki-copy-result" role="status" class="muted"></span>
+  </div>
+  <p class="muted" style="margin-bottom:0">Research links open their modules; they do not automatically identify a corresponding server key item. Identifiers may differ by server lineage. Verify the mapping before using a numeric ID in scripts.</p>
 </section>
 <div class="table-wrap"><table class="ki-table">
   <tr><th>Details</th><th>id</th><th>name</th><th>readiness</th><th>enum / scripting constant</th><th>description</th>
@@ -178,11 +186,30 @@
     if (cell) target.append(cell.cloneNode(true));
     else target.textContent = 'Not available in this index.';
   }
+  let selectedRecord = null;
+  async function copyValue(value) {
+    const output = document.getElementById('ki-copy-result');
+    try {
+      if (!navigator.clipboard || !window.isSecureContext) throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(value);
+      output.textContent = 'Copied to clipboard.';
+    } catch (_) {
+      output.textContent = 'Clipboard unavailable; select the value in the inspector to copy.';
+    }
+  }
+  document.getElementById('ki-copy-id').addEventListener('click', () => {
+    if (selectedRecord) copyValue(selectedRecord.id);
+  });
+  document.getElementById('ki-copy-name').addEventListener('click', () => {
+    if (selectedRecord) copyValue(selectedRecord.name);
+  });
   function inspect(row) {
     const cells = row.cells;
     rows.forEach(item => item.removeAttribute('aria-selected'));
     row.setAttribute('aria-selected', 'true');
-    setText('ki-inspector-title', cells[2].textContent.trim());
+    selectedRecord = {id: cells[1].textContent.trim(), name: cells[2].textContent.trim()};
+    setText('ki-copy-result', '');
+    setText('ki-inspector-title', selectedRecord.name);
     setText('ki-inspector-id', 'Client reference ID: ' + cells[1].textContent.trim());
     const fullDescription = cells[5].querySelector('details div');
     setText('ki-inspector-description', (fullDescription || cells[5]).textContent.trim());
@@ -206,6 +233,7 @@
   rows.forEach(row => row.querySelector('.ki-select').addEventListener('click', () => inspect(row)));
   document.getElementById('ki-inspector-close').addEventListener('click', () => {
     inspector.hidden = true;
+    selectedRecord = null;
     rows.forEach(item => item.removeAttribute('aria-selected'));
   });
   function applyFilters() {
