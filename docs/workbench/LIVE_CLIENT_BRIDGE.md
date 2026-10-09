@@ -680,3 +680,15 @@ when toggled off. The display uses the existing spawn-marker axis convention;
 alignment on client meshes still requires in-game visual validation. It
 does not write game state, change camera controls, capture files, or server
 entities. Refreshing the page resets the toggle to off.
+
+
+### Live 3D overlay controls — heading, nearby entities and follow
+
+The 3D Zone Viewer live panel now includes separately opt-in nearby entity
+markers (up to 100 current observed entities), a player heading arrow when
+available and an orbit-camera **Follow player** checkbox. Camera follow does
+not run in fly mode, and the marker/entity overlay remains disabled unless
+**Live Ashita position** is enabled. Stale observations and wrong-zone
+snapshots remove markers; overlapping asynchronous polls cannot restore
+outdated data. Heading and client-to-mesh coordinate alignment still require
+verification on the Windows FFXI client. No game position writes are made.
