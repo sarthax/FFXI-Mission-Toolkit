@@ -50,7 +50,7 @@ def status(db):
 
 def start(db,seed,limit=50):
     seed=str(seed).strip().strip("/")
-    if not seed or seed.startswith(("http:", "https:", ".")) or "?" in seed or "\\\" in seed or ".." in seed.split("/"):
+    if not seed or seed.startswith(("http:", "https:", ".")) or "?" in seed or ".." in seed.split("/"):
         raise ValueError("Enter a Japanese Wiki page path, not a URL or query string")
     if limit not in (50,250):
         raise ValueError("Batch size must be 50 or 250")
