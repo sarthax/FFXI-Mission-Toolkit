@@ -13,10 +13,10 @@ def main():
     with tempfile.TemporaryDirectory() as directory:
         dump=Path(directory)/"bg-wiki.jsonl.gz"
         db=Path(directory)/"toolkit.db"
-        records=[{"title":"Medusa","pageid":101,"wikitext":"== Medusa ==\\nTest","revid":4,
+        records=[{"title":"Medusa","pageid":101,"wikitext":"== Medusa ==\nTest","revid":4,
                   "timestamp":"2026-10-09T00:00:00Z"}]
         with gzip.open(dump,"wt",encoding="utf-8") as file:
-            for row in records:file.write(json.dumps(row)+"\\n")
+            for row in records:file.write(json.dumps(row)+"\n")
         original=dump.read_bytes()
         with patch.object(jobs.threading.Thread,"start"):
             job=jobs.start(db,dump,limit=50)
@@ -45,9 +45,9 @@ def main():
         dump=Path(directory)/"mixed.jsonl.gz"
         db=Path(directory)/"mixed.db"
         with gzip.open(dump,"wt",encoding="utf-8") as file:
-            file.write(json.dumps({"title":"Medusa","pageid":101,"wikitext":"valid"})+"\\n")
-            file.write(json.dumps({"title":"Broken","pageid":102})+"\\n")
-            file.write(json.dumps({"title":"Following","pageid":103,"wikitext":"valid"})+"\\n")
+            file.write(json.dumps({"title":"Medusa","pageid":101,"wikitext":"valid"})+"\n")
+            file.write(json.dumps({"title":"Broken","pageid":102})+"\n")
+            file.write(json.dumps({"title":"Following","pageid":103,"wikitext":"valid"})+"\n")
         with patch.object(jobs.threading.Thread,"start"):
             job=jobs.start(db,dump,limit=50)
         jobs._worker(str(db),job)
