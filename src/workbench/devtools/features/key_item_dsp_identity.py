@@ -26,6 +26,33 @@ def _enum_records(path: str, mtime_ns: int, size: int) -> dict[str, tuple[tuple[
     return {key: tuple(values) for key, values in catalog.items()}
 
 
+def inspect_dsp_key_item_catalog(root: str | Path) -> dict:
+    """Report read-only source health; never assume a client/server ID match."""
+    if not root:
+        return {"status": "unconfigured", "entries": 0, "ambiguous_names": 0,
+                "message": "No DSP source checkout configured."}
+    root = Path(root).resolve()
+    candidates = (root / "scripts/globals/keyitems.lua",
+                  root / "scripts/globals/key_items.lua")
+    existing = [path for path in candidates if path.is_file() and
+                path.resolve().is_relative_to(root)]
+    if len(existing) != 1:
+        return {"status": "unavailable", "entries": 0, "ambiguous_names": 0,
+                "message": "Expected exactly one DSP scripts/globals/keyitems.lua source."}
+    source = existing[0]
+    try:
+        st = source.stat()
+        records = _enum_records(str(source), st.st_mtime_ns, st.st_size)
+    except OSError:
+        return {"status": "unavailable", "entries": 0, "ambiguous_names": 0,
+                "message": "DSP key-item source could not be read."}
+    return {"status": "ready", "source_path": source.relative_to(root).as_posix(),
+            "entries": sum(len(v) for v in records.values()),
+            "unique_names": sum(len(v) == 1 for v in records.values()),
+            "ambiguous_names": sum(len(v) > 1 for v in records.values()),
+            "message": "DSP enum catalog loaded from selected checkout."}
+
+
 def resolve_dsp_key_item(root: str | Path, client_name: str) -> dict:
     root = Path(root).resolve()
     candidates = (
