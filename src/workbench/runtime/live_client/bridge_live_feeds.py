@@ -6,10 +6,8 @@ service, or Capture database mutation is performed.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-import json
-
 from .bridge_listener import BridgeListener
-from .bridge_protocol import BridgeLane, BridgeKind
+from .bridge_protocol import BridgeLane
 from .bridge_telemetry import decode_bridge_telemetry
 from .feed import TelemetryFeedAdapter
 from .telemetry import TelemetryFrame
