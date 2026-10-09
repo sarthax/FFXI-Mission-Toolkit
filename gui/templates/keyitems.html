@@ -5,7 +5,7 @@
 {% block page_class %}keyitems-page{% endblock %}
 {% block page_heading %}Key Items{% endblock %}
 {% block page_status %}<span class="wb-readonly-badge">Read only</span>{% endblock %}
-{% block page_help %}Client key-item names and descriptions cross-referenced against server enums, scripting constants, readiness, optional Topaz backport state, and observed capture evidence.{% endblock %}
+{% block page_help %}Active server key-item mappings (DSP when selected), plus reference LSB/Topaz data. Client key-item names and descriptions cross-referenced against server enums, scripting constants, readiness, optional Topaz backport state, and observed capture evidence.{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -49,7 +49,9 @@
 .keyitems-page .ki-select{white-space:nowrap}
 </style>
 <div class="ki-intro">
-  <span class="chip">Client ↔ server key-item reference</span>
+  <span class="chip">Active server: {{ active_server.name }} ({{ active_server.family|upper }})</span>
+  <span class="muted">{{ active_server.server_root }}</span>
+  {% if primary_dsp %}<span class="chip">DSP checkout is primary</span>{% else %}<span class="chip">LSB indexed reference is primary</span>{% endif %}
   <span class="muted ki-help">Search names, inspect missing/drifted enum mappings, and follow recorded capture observations. This page does not edit character ownership.</span>
 </div>
 <form class="search wb-filter-row" method="get">
@@ -91,7 +93,7 @@
   </div>
   <div class="ki-inspector-grid">
     <div class="ki-inspector-section"><h4>Client description</h4><p id="ki-inspector-description"></p></div>
-    <div class="ki-inspector-section"><h4>LSB mapping</h4><div id="ki-inspector-lsb"></div></div>
+    <div class="ki-inspector-section"><h4>{{ "Active DSP mapping" if primary_dsp else "LSB mapping" }}</h4><div id="ki-inspector-lsb"></div></div>
     <div class="ki-inspector-section"><h4>Topaz mapping</h4><div id="ki-inspector-topaz"></div></div>
     <div class="ki-inspector-section"><h4>Recorded evidence</h4><div id="ki-inspector-evidence"></div></div>
   </div>
@@ -106,7 +108,7 @@
   <section class="ki-inspector-section" aria-label="Lua source references">
     <h4>Lua dependencies</h4>
     <label for="ki-lineage">Source lineage</label>
-    <select id="ki-lineage"><option value="lsb">LSB</option>{% if backport_enabled() %}<option value="topaz">Topaz</option>{% endif %}<option value="dsp">DSP (verified source)</option></select>
+    <select id="ki-lineage">{% if primary_dsp %}<option value="dsp">DSP (active)</option>{% endif %}<option value="lsb">LSB (reference)</option>{% if backport_enabled() %}<option value="topaz">Topaz</option>{% endif %}{% if not primary_dsp %}<option value="dsp">DSP (requires active DSP profile)</option>{% endif %}</select>
     <span id="ki-lua-status" class="muted" role="status"></span>
     <label for="ki-lua-operation">Operation</label>
     <select id="ki-lua-operation"><option value="all">All</option><option value="require">Requires</option><option value="grant">Grants</option><option value="remove">Removes</option></select>
