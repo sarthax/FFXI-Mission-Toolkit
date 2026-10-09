@@ -394,7 +394,7 @@
   function drawRestock() {
     $('rsRows').innerHTML = state.restock.map((r, i) => {
       const cur = (state.agg && state.agg.items.find(x => x.item_id === r.item_id)) || {};
-      return '<tr><td>' + esc(nm(r.item_name)) + '<br><small>#' + r.item_id + '</small></td><td class="n">' + (cur.listings || 0) + '</td><td class="n"><input type="number" min="1" data-k="target" data-i="' + i + '" value="' + r.target + '"></td><td class="n"><input type="number" min="1" data-k="price" data-i="' + i + '" value="' + r.price + '"></td>' +
+      return '<tr><td>' + itemIdentity(r.item_id, r.item_name, 'Restock target ' + r.target + ' at ' + fmt(r.price) + 'g') + '</td><td class="n">' + (cur.listings || 0) + '</td><td class="n"><input type="number" min="1" data-k="target" data-i="' + i + '" value="' + r.target + '"></td><td class="n"><input type="number" min="1" data-k="price" data-i="' + i + '" value="' + r.price + '"></td>' +
         '<td><input type="checkbox" data-k="stack" data-i="' + i + '"' + (r.stack ? ' checked' : '') + '></td><td><button class="b" data-rm="' + i + '">✕</button></td></tr>';
     }).join('') || '<tr><td colspan="6" class="ahc-empty">Search for items above, or use “Top off…” from an item.</td></tr>';
   }
