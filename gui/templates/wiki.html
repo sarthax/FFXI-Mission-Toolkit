@@ -69,6 +69,17 @@
 </div>
 </details>
 
+<details class="wiki-section" id="wiki-title-diagnostics">
+<summary>Diagnose missing Wiki pages</summary>
+<div class="body">
+<form id="wiki-diagnose-form" class="wiki-actions">
+<input type="text" name="title" required placeholder="Page title, e.g. Medusa" maxlength="180">
+<button type="submit">Check local cache and search</button>
+</form>
+<div id="wiki-diagnose-results" class="muted" role="status"></div>
+</div>
+</details>
+
 <section class="wiki-section" id="wiki-cache-panel" aria-label="Local Wiki cache health">
   <div class="body">
     <div class="wiki-actions" style="margin:9px 0">
@@ -795,6 +806,29 @@
         })
         .catch(function(error){status.textContent='Snapshot import failed: '+error.message;})
         .finally(function(){button.disabled=false;});
+    });
+  })();
+  (function(){
+    var form=document.getElementById('wiki-diagnose-form');
+    if(!form)return;
+    var output=document.getElementById('wiki-diagnose-results');
+    form.addEventListener('submit',function(e){
+      e.preventDefault();
+      output.textContent='Checking the configured toolkit Wiki cache…';
+      fetch('/wiki/diagnose?title='+encodeURIComponent(new FormData(form).get('title')))
+        .then(function(r){return r.json().then(function(v){if(!r.ok)throw Error(v.error||'HTTP '+r.status);return v;});})
+        .then(function(data){
+          output.replaceChildren();
+          (data.sources||[]).forEach(function(source){
+            var line=document.createElement('div');
+            var summary=source.pages.map(function(page){return page.title+' ('+page.text_chars+' chars, '+page.blocks+' blocks; '+(page.searchable?'searchable':'NOT searchable')+')';}).join('; ');
+            line.textContent=source.source+': '+(summary||'No exact cached title')+' · '+source.search_hits+' search hits';
+            output.appendChild(line);
+          });
+          if(data.offline_bg_titles.length){
+            var line=document.createElement('div');line.textContent='BG offline index: '+data.offline_bg_titles.join(', ');output.appendChild(line);
+          }
+        }).catch(function(err){output.textContent='Diagnostic failed: '+err.message;});
     });
   })();
   var f=document.getElementById('scrape-form'),box=document.getElementById('scrape-jobs'),timer=null;

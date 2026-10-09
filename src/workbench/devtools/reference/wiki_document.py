@@ -686,3 +686,44 @@ def search_pages(con, query: str, limit: int = 40, source_id: str = "all") -> li
           WHERE t.target_lang='en' AND lower(t.translated) LIKE ?""" + qualified_sql + " LIMIT ?",(like,*source_args,limit*3)):
             add(r[0],r[1],r[2],"machine English",(r[3] or "")[:220],65)
     return sorted(found.values(),key=lambda x:(-x["score"],normalize_search(x["title"]),x["source_id"]))[:max(1,min(limit,100))]
+
+
+def diagnose_title(con: sqlite3.Connection, title: str) -> dict:
+    """Explain where a cached Wiki title is present and whether search sees it.
+
+    Uses the already opened toolkit DB. Does not fetch pages or alter cache rows.
+    """
+    query=(title or "").strip()
+    if not query:
+        raise ValueError("Enter a Wiki title")
+    if len(query)>180:
+        raise ValueError("Wiki title is too long")
+    init_db(con)
+    needle=normalize_search(query)
+    sources=("BGWiki","FFXIclopedia","WikiWikiJP")
+    checks=[]
+    for source in sources:
+        pages=con.execute("""SELECT page_id,title,COALESCE(length(page_text),0)
+            FROM reference_wiki_pages
+            WHERE source_id=? AND (lower(title)=? OR lower(norm_title)=?)
+            LIMIT 5""",(source,needle,needle)).fetchall()
+        matches=search_pages(con,query,limit=100,source_id=source)
+        matched_ids={str(row["page_id"]) for row in matches}
+        entries=[]
+        for page_id,page_title,chars in pages:
+            doc=con.execute("""SELECT 1 FROM reference_wiki_documents
+                WHERE source_id=? AND page_id=? LIMIT 1""",(source,str(page_id))).fetchone()
+            blocks=con.execute("""SELECT COUNT(*) FROM reference_wiki_blocks
+                WHERE source_id=? AND page_id=?""",(source,str(page_id))).fetchone()[0]
+            entries.append({"page_id":str(page_id),"title":page_title,"text_chars":chars,
+                            "structured":bool(doc),"blocks":blocks,
+                            "searchable":str(page_id) in matched_ids})
+        checks.append({"source":source,"cached":len(entries),"pages":entries,
+                       "search_hits":len(matches)})
+    has_dump=con.execute("""SELECT 1 FROM sqlite_master
+        WHERE type='table' AND name='wiki_pages'""").fetchone()
+    dump_matches=[]
+    if has_dump:
+        dump_matches=[row[0] for row in con.execute(
+            "SELECT title FROM wiki_pages WHERE lower(title)=? LIMIT 5",(needle,))]
+    return {"query":query,"sources":checks,"offline_bg_titles":dump_matches}

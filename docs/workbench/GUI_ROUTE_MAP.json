@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 280,
+  "route_count": 281,
   "routes": [
     {
       "method": "GET",
@@ -2239,6 +2239,14 @@
     {
       "method": "POST",
       "path": "/wiki/snapshot/preview",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/wiki/diagnose",
       "home": "Tools",
       "section": "Research > References",
       "role": "data",
