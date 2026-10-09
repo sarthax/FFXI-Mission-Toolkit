@@ -73,6 +73,7 @@ def recording_gap_summary(snapshots) -> dict:
     exporters = {'ashita-v4-api-experimental', 'windower-api-experimental'}
     gaps, count, classified = [], 0, 0
     cross_zone_gaps = same_zone_gaps = 0
+    known_instance_change_gaps = unknown_instance_context_gaps = 0
     observed_excess_seconds = cross_zone_excess_seconds = same_zone_excess_seconds = 0
     for number, (before, after) in enumerate(zip(snapshots, snapshots[1:]), 2):
         if (before.adapter not in exporters or
@@ -86,6 +87,10 @@ def recording_gap_summary(snapshots) -> dict:
         count += 1
         excess_seconds = interval - 1
         observed_excess_seconds += excess_seconds
+        if before.instance_hint is None or after.instance_hint is None:
+            unknown_instance_context_gaps += 1
+        elif before.instance_hint != after.instance_hint:
+            known_instance_change_gaps += 1
         if before.position.zone_id != after.position.zone_id:
             cross_zone_gaps += 1
             cross_zone_excess_seconds += excess_seconds
@@ -100,6 +105,8 @@ def recording_gap_summary(snapshots) -> dict:
                          'from_instance': before.instance_hint, 'to_instance': after.instance_hint})
     return {'count': count, 'cross_zone_gap_count': cross_zone_gaps,
             'same_zone_gap_count': same_zone_gaps,
+            'known_instance_change_gap_count': known_instance_change_gaps,
+            'unknown_instance_context_gap_count': unknown_instance_context_gaps,
             'observed_excess_interval_seconds': observed_excess_seconds,
             'cross_zone_excess_interval_seconds': cross_zone_excess_seconds,
             'same_zone_excess_interval_seconds': same_zone_excess_seconds,
