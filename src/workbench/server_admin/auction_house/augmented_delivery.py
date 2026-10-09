@@ -8,7 +8,6 @@ per-recipient journal. In-game pickup still requires operator acceptance.
 from __future__ import annotations
 
 from hashlib import sha256
-import os
 from pathlib import Path
 from uuid import uuid4
 
@@ -25,7 +24,8 @@ _SENDER = "AH-Aug Reward"  # delivery_box.sender is varchar(15) on DSP
 
 
 def augmented_test_writes_enabled() -> bool:
-    return str(os.getenv(_FLAG, "")).strip().lower() in {"1", "true", "yes", "on"}
+    from workbench.runtime import settings_store
+    return settings_store.get_ah_flag("ah_augmented_reward_test_writes").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _verify_dsp_mail_source(server_root) -> None:
