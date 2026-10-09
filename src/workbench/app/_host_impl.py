@@ -5821,6 +5821,12 @@ async def wiki_bulk_schedule_config(request: Request):
         return JSONResponse({"error": str(exc)}, status_code=400)
 
 
+@app.get("/wiki/bulk/overview")
+def wiki_bulk_overview():
+    from workbench.devtools.reference import wiki_sync_overview
+    return wiki_sync_overview.overview(DB_PATH)
+
+
 @app.get("/wiki/bulk/summary")
 def wiki_bulk_sync_summary():
     from workbench.devtools.reference import wiki_bulk_jobs
