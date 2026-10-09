@@ -209,6 +209,17 @@
     const cls = pct > 50 ? 'hi' : pct > 15 ? 'mid' : pct < -15 ? 'lo' : 'ok';
     return '<span class="mk ' + cls + '" title="Price vs the median of recent sales">' + (pct > 0 ? '+' : '') + Math.round(pct) + '%</span>';
   }
+  // Compact shared item identity: internal AH navigation plus external browser/editor.
+  const itemIdentity = (id, name, hint = '') => {
+    const key = Number(id), title = nm(name || ('Item #' + key));
+    if (!Number.isSafeInteger(key) || key <= 0) return esc(title);
+    const more = hint ? ' · ' + hint : '';
+    const browse = '/itembrowser?q=' + encodeURIComponent(String(name || '')) + '#' + key;
+    return '<span class="ahc-item-cell ahc-item-ref" title="' + esc(title + ' (#' + key + ')' + more) + '">' +
+      '<img class="ahc-item-icon" src="/itemedit/' + key + '/icon.png" loading="lazy" alt="" onerror="this.style.display=\'none\'">' +
+      '<span>' + link('item', key, title) + '<small> #' + key + '</small></span>' +
+      '<a class="ahc-item-out" target="_blank" rel="noopener" href="' + esc(browse) + '" title="Open in Item Browser" aria-label="Open ' + esc(title) + ' in Item Browser">↗</a></span>';
+  };
   const link = (kind, id, text) => '<a href="#" class="lk" data-' + kind + '="' + id + '">' + esc(text) + '</a>';
   function goBack() { const b = state.back; state.back = null; if (!b) return; tab(b.tab); b.tab === 'items' ? showItem(b.id) : showSeller(b.id); }
   const backBtn = () => state.back ? '<button class="b" data-x="back">← Back to ' + esc(state.back.label) + '</button> ' : '';
@@ -221,7 +232,7 @@
       const sl = opts.sellerSales; if (!sl) return '';
       return '<div class="ahc-sales"><div class="ahc-sh"><b>Recent sales</b> <span class="mut">' + sl.length + ' shown</span></div>' +
         (sl.length ? '<div class="ahc-sbody"><table><thead><tr><th>Sold</th><th>Item</th><th class="n">Price</th><th class="n">Asked</th><th>Buyer</th></tr></thead><tbody>' +
-        sl.map(x => '<tr><td>' + esc(new Date(x.sold_at * 1000).toISOString().replace('T', ' ').slice(0, 16)) + '</td><td>' + link('item', x.item_id, nm(x.item_name)) + (x.stack ? ' <small>(stack)</small>' : '') + '</td><td class="n">' + fmt(x.sale_price) + 'g</td><td class="n">' + fmt(x.asking_price) + 'g</td><td>' + esc(x.buyer_name || '—') + '</td></tr>').join('') +
+        sl.map(x => '<tr><td>' + esc(new Date(x.sold_at * 1000).toISOString().replace('T', ' ').slice(0, 16)) + '</td><td>' + itemIdentity(x.item_id, x.item_name, (x.stack ? 'Stack' : 'Single') + ' · sold ' + fmt(x.sale_price) + 'g') + (x.stack ? ' <small>(stack)</small>' : '') + '</td><td class="n">' + fmt(x.sale_price) + 'g</td><td class="n">' + fmt(x.asking_price) + 'g</td><td>' + esc(x.buyer_name || '—') + '</td></tr>').join('') +
         '</tbody></table></div>' : '<div class="ahc-empty" style="padding:8px">No sales by this seller in the window.</div>') + '</div>';
     };
     const salesHtml = () => {
@@ -252,7 +263,7 @@
       const v = vis(), filtered = v.length !== rows.length;
       body.innerHTML = '<table><thead><tr><th><input type="checkbox" class="all"></th><th>#</th>' + (opts.item ? '<th>Item</th>' : '') + (opts.seller ? '<th>Seller</th>' : '') +
         '<th class="n">Qty</th><th class="n">Price</th>' + (showMk ? '<th class="n" title="Asking price vs the median of recent sales">Markup</th>' : '') + '<th class="n">Age</th><th></th></tr></thead><tbody>' + v.map(r => '<tr><td><input type="checkbox" data-a="' + r.auction_id + '"' + (sel.has(r.auction_id) ? ' checked' : '') + '></td><td>' + r.auction_id + '</td>' +
-        (opts.item ? '<td>' + link('item', r.item_id, nm(r.item_name)) + '</td>' : '') + (opts.seller ? '<td>' + link('seller', r.seller_id, r.seller_name || '#' + r.seller_id) + '</td>' : '') +
+        (opts.item ? '<td>' + itemIdentity(r.item_id, r.item_name, 'Ask ' + fmt(r.asking_price) + 'g') + '</td>' : '') + (opts.seller ? '<td>' + link('seller', r.seller_id, r.seller_name || '#' + r.seller_id) + '</td>' : '') +
         '<td class="n">' + r.quantity + '</td><td class="n">' + fmt(r.asking_price) + 'g</td>' + (showMk ? '<td class="n">' + markupChip(mkOf(r)) + '</td>' : '') + '<td class="n">' + days(ageOf(r)) + '</td><td><button class="b" data-buy="' + r.auction_id + '">Buy</button> <button class="b" data-ret="' + r.auction_id + '">Return</button> <button class="b" data-pbuy="' + r.auction_id + '">Buy as…</button></td></tr>').join('') + '</tbody></table>' +
         (v.length ? '' : '<div class="ahc-empty">No listings match the filters.</div>');
       const ch = [...sel].map(id => rows.find(r => r.auction_id === id)).filter(Boolean), lbl = filtered ? ' (filtered)' : '';
@@ -383,14 +394,54 @@
   function drawRestock() {
     $('rsRows').innerHTML = state.restock.map((r, i) => {
       const cur = (state.agg && state.agg.items.find(x => x.item_id === r.item_id)) || {};
-      return '<tr><td>' + esc(nm(r.item_name)) + '<br><small>#' + r.item_id + '</small></td><td class="n">' + (cur.listings || 0) + '</td><td class="n"><input type="number" min="1" data-k="target" data-i="' + i + '" value="' + r.target + '"></td><td class="n"><input type="number" min="1" data-k="price" data-i="' + i + '" value="' + r.price + '"></td>' +
+      return '<tr><td>' + itemIdentity(r.item_id, r.item_name, 'Restock target ' + r.target + ' at ' + fmt(r.price) + 'g') + '</td><td class="n">' + (cur.listings || 0) + '</td><td class="n"><input type="number" min="1" data-k="target" data-i="' + i + '" value="' + r.target + '"></td><td class="n"><input type="number" min="1" data-k="price" data-i="' + i + '" value="' + r.price + '"></td>' +
         '<td><input type="checkbox" data-k="stack" data-i="' + i + '"' + (r.stack ? ' checked' : '') + '></td><td><button class="b" data-rm="' + i + '">✕</button></td></tr>';
     }).join('') || '<tr><td colspan="6" class="ahc-empty">Search for items above, or use “Top off…” from an item.</td></tr>';
   }
   $('rsRows').addEventListener('input', e => { const t = e.target, i = t.dataset.i; if (i == null) return; state.restock[i][t.dataset.k] = t.dataset.k === 'stack' ? t.checked : +t.value; state.rsPlan = null; });
   $('rsRows').addEventListener('click', e => { if (e.target.dataset.rm) { state.restock.splice(+e.target.dataset.rm, 1); state.rsPlan = null; drawRestock(); } });
-  picker($('rsItemQ'), $('rsSug'), '/auction-house/console/item-search.json?q=', r => itemRow(r),
-    r => { const id = Array.isArray(r) ? r[0] : (r.item_id ?? r.id), name = Array.isArray(r) ? r[1] : (r.name || r.item_name); addRestock({item_id: id, item_name: name, target: 5, price: 100, stack: false}); });
+  const ahPickRow = r => {
+    const id = Number(r.item_id ?? r.id), name = nm(r.name || r.item_name || ('Item #' + id));
+    const hint = r.category_path || 'AH item';
+    return '<span class="ahc-item-cell"><img class="ahc-item-icon" src="/itemedit/' + id + '/icon.png" loading="lazy" alt="" onerror="this.style.display=\'none\'">' +
+      '<span><b>' + esc(name) + '</b><small> #' + id + ' · ' + esc(hint) + '</small></span></span>';
+  };
+  // Shared bounded browse UI for Restock/Cleanup. Always select a real item ID,
+  // rather than turning a partial search string into a mutation criterion.
+  function ahBrowse(button, panel, input, results, count, onSelect) {
+    let version = 0, last = [];
+    async function load() {
+      const q = input.value.trim(), mine = ++version;
+      count.textContent = 'Searching…';
+      try {
+        const data = await req('/auction-house/console/item-search.json?q=' + encodeURIComponent(q) + '&limit=100');
+        if (mine !== version || panel.hidden) return;
+        last = data.rows || [];
+        count.textContent = last.length + ' item(s) shown · refine the search for more';
+        results.innerHTML = last.map((r,i) => '<button type="button" class="b" data-i="' + i + '" style="display:block;width:100%;text-align:left;margin:3px 0">' +
+          ahPickRow(r) + '</button>').join('') || '<div class="mut">No items found.</div>';
+      } catch(e) { if (mine === version) { count.textContent = 'Search unavailable'; results.textContent = e.message; } }
+    }
+    button.addEventListener('click', () => {
+      panel.hidden = !panel.hidden;
+      button.setAttribute('aria-expanded', String(!panel.hidden));
+      if (!panel.hidden) load();
+    });
+    input.addEventListener('input', debounce(load, 180));
+    results.addEventListener('click', e => {
+      const target = e.target.closest('button[data-i]'); if (!target) return;
+      const item = last[Number(target.dataset.i)]; if (!item) return;
+      onSelect(item);
+      panel.hidden = true;
+      button.setAttribute('aria-expanded', 'false');
+    });
+  }
+  const restockPick = r => {
+    addRestock({item_id: Number(r.item_id ?? r.id), item_name: r.name || r.item_name, target:5, price:100, stack:false});
+    $('rsItemQ').value = ''; $('rsSug').hidden = true;
+  };
+  picker($('rsItemQ'), $('rsSug'), '/auction-house/console/item-search.json?q=', ahPickRow, restockPick);
+  ahBrowse($('rsBrowse'), $('rsBrowseBox'), $('rsBrowseQ'), $('rsBrowseRows'), $('rsBrowseCount'), restockPick);
   req('/auction-house/categories.json').then(d => { $('rsCat').innerHTML += (d.rows || []).map(r => '<option value="' + r.category_id + '">' + esc(r.path || r.label || 'Category ' + r.category_id) + ' (' + (r.item_count || 0) + ')</option>').join(''); }).catch(() => {});
   $('rsCatAdd').addEventListener('click', async () => {
     const cat = $('rsCat').value; if (!cat) return toast('Choose a category');
@@ -898,10 +949,18 @@
   }
   cuSearch($('cuSellerQ'), $('cuSellerSug'), '/auction-house/console/characters.json?include_sellers=1&limit=25&q=', r => esc(r.char_name) + ' <small>#' + r.char_id + (r.source === 'auction-only' ? ' · AH seller' : '') + '</small>',
     r => { $('cuSellerId').value = r.char_id; $('cuSellerName').value = ''; $('cuSellerQ').value = r.char_name + ' #' + r.char_id; $('cuSellerQ').dataset.picked = $('cuSellerQ').value; });
-  cuSearch($('cuItemQ'), $('cuItemSug'), '/auction-house/console/item-search.json?q=', r => itemRow(r),
-    r => { const id = Array.isArray(r) ? r[0] : (r.item_id ?? r.id), name = Array.isArray(r) ? r[1] : (r.name || r.item_name); $('cuItemId').value = id; $('cuItemQ').value = nm(name) + ' #' + id; $('cuItemQ').dataset.picked = $('cuItemQ').value; });
+  const cleanupPick = r => {
+    const id = Number(r.item_id ?? r.id), name = nm(r.name || r.item_name);
+    $('cuItemId').value = String(id);
+    $('cuItemQ').value = name + ' #' + id;
+    $('cuItemQ').dataset.picked = $('cuItemQ').value;
+    $('cuSelectedItem').innerHTML = itemIdentity(id, name, r.category_path || 'Selected cleanup filter');
+    $('cuItemSug').hidden = true;
+  };
+  cuSearch($('cuItemQ'), $('cuItemSug'), '/auction-house/console/item-search.json?q=', ahPickRow, cleanupPick);
+  ahBrowse($('cuBrowse'), $('cuBrowseBox'), $('cuBrowseQ'), $('cuBrowseRows'), $('cuBrowseCount'), cleanupPick);
   $('cuSellerQ').addEventListener('input', () => { if ($('cuSellerQ').value !== $('cuSellerQ').dataset.picked) $('cuSellerId').value = ''; });
-  $('cuItemQ').addEventListener('input', () => { if ($('cuItemQ').value !== $('cuItemQ').dataset.picked) $('cuItemId').value = ''; });
+  $('cuItemQ').addEventListener('input', () => { if ($('cuItemQ').value !== $('cuItemQ').dataset.picked) { $('cuItemId').value = ''; $('cuSelectedItem').textContent = ''; } });
   // translate the visible search boxes into the criteria the API wants
   function cuSyncFields() {
     const sq = $('cuSellerQ').value.trim(), iq = $('cuItemQ').value.trim();
@@ -913,6 +972,7 @@
     $('cuSellerQ').dataset.picked = $('cuItemQ').dataset.picked = '';
     $('cuSellerQ').value = $('cuSellerName').value || ($('cuSellerId').value ? '#' + $('cuSellerId').value : '');
     $('cuItemQ').value = $('cuItemId').value ? '#' + $('cuItemId').value : '';
+    $('cuSelectedItem').textContent = $('cuItemId').value ? 'Selected item #' + $('cuItemId').value : '';
   }
 
   /* ---------- buyers tab ---------- */
@@ -944,7 +1004,7 @@
           '<div class="ahc-acts"><button class="b" data-x="refund-sel"' + (chosen.length ? '' : ' disabled') + '>Refund selected overpay (' + fmt(sum) + 'g)</button><button class="b" data-x="refund-all"' + (over.length ? '' : ' disabled') + '>Refund all overpaid (' + fmt(over.reduce((s, r) => s + r.overpaid_by, 0)) + 'g)</button><button class="b" data-x="pick-over"' + (over.length ? '' : ' disabled') + '>Select overpaid</button></div>' +
           '<div class="ahc-sales"><div class="ahc-sh"><b>Top items</b> <span class="mut">' + d.top_items.map(i => esc(nm(i.item_name)) + ' ×' + i.count).slice(0, 5).join(', ') + '</span></div><div class="ahc-sh"><b>Top sellers</b> <span class="mut">' + d.top_sellers.map(s => esc(s.seller_name || '#' + s.seller_id) + ' ×' + s.count).slice(0, 5).join(', ') + '</span></div></div>' +
           '<div class="ahc-scroll"><table><thead><tr><th><input type="checkbox" class="all"></th><th>Bought</th><th>Item</th><th>Seller</th><th class="n">Paid</th><th class="n">Median</th><th class="n">Markup</th></tr></thead><tbody>' +
-          d.rows.map(r => '<tr><td>' + (r.overpaid_by > 0 && r.markup_pct != null ? '<input type="checkbox" data-a="' + r.auction_id + '"' + (sel.has(r.auction_id) ? ' checked' : '') + '>' : '') + '</td><td>' + esc(fmtTime(r.sold_at)) + '</td><td>' + link('item', r.item_id, nm(r.item_name)) + (r.stack ? ' <small>(stack)</small>' : '') + '</td><td>' + link('seller', r.seller_id, r.seller_name || '#' + r.seller_id) +
+          d.rows.map(r => '<tr><td>' + (r.overpaid_by > 0 && r.markup_pct != null ? '<input type="checkbox" data-a="' + r.auction_id + '"' + (sel.has(r.auction_id) ? ' checked' : '') + '>' : '') + '</td><td>' + esc(fmtTime(r.sold_at)) + '</td><td>' + itemIdentity(r.item_id, r.item_name, (r.stack ? 'Stack' : 'Single') + ' · paid ' + fmt(r.price) + 'g') + '</td><td>' + link('seller', r.seller_id, r.seller_name || '#' + r.seller_id) +
             '</td><td class="n">' + fmt(r.price) + 'g</td><td class="n">' + (r.median == null ? '—' : fmt(r.median) + 'g') + '</td><td class="n">' + markupChip(r.markup_pct) + '</td></tr>').join('') + '</tbody></table></div>';
       };
       el.onclick = e => {
