@@ -267,6 +267,9 @@ def test_packet_report_bounds_candidates_without_losing_counts(tmp_path):
     evidence = recording_report(CAPTURE, packet_observations=path)['packet_evidence']
     assert len(evidence['candidates']) == 1000 and evidence['candidates_truncated'] is True
     assert evidence['classification_counts']['exact_label_source_zone_time_candidate'] == 1002
+    assert evidence['offline_acceptance']['packet_rows_checked'] == 1002
+    assert evidence['offline_acceptance']['exact_context_candidates'] == 1002
+    assert evidence['offline_acceptance']['candidate_details_complete'] is False
 
 
 def test_duplicate_time_frames_remain_ambiguous_even_with_different_instances(tmp_path):
