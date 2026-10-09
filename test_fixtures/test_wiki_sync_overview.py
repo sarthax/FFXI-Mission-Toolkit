@@ -27,5 +27,14 @@ def main():
         assert result["sources"][1]["recovery"][0]["checkpoint"]=="verify-archive"
         assert result["sources"][2]["recovery"][0]["checkpoint"]=="available"
         assert "scheduled" not in result["notice"].split("Japanese Wiki")[0]
+    # The dashboard must route recovery warnings to source-specific controls
+    # without silently issuing POST/resume requests.
+    ui=(Path(__file__).resolve().parents[1]/"gui/templates/wiki.html").read_text(encoding="utf-8")
+    for target in ("wiki-bulk-box","wiki-bg-bulk-box","wiki-jp-bulk-box"):
+        assert target in ui
+    assert "source.recovery||[]" in ui
+    assert "Review '+source.source+' job controls" in ui
+    assert "Verify the original local compressed archive" in ui
+    assert "Checkpoint not verified here" in ui
     print("Wiki unified sync overview: PASS")
 if __name__=="__main__": main()
