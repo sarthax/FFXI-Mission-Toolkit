@@ -271,3 +271,16 @@ stops safely; the current APIs cannot distinguish every loading/logout condition
 and an unobserved logout boundary cannot be ruled out. Do not treat this mode as
 verified continuous capture or compatibility. Use the zoning/logout procedure in
 [Windows handoff](../../docs/workbench/LIVE_CLIENT_WINDOWS_HANDOFF.md).
+
+### Passive packet status health
+
+`/wblive packets status` now checks the active packet stream's telemetry
+freshness and source identity even when no allowlisted packet callbacks have
+arrived. If the telemetry is stale (more than five seconds since its last accepted
+sample), unavailable/paused, or the source identity changed, the packet stream
+stops safely and retains a diagnostic stop reason and previous counts. This
+status check does not sample or restart telemetry, recover a paused export,
+modify packets, or open another packet file. A fresh telemetry sample does not
+make the old packet file reusable; explicitly stop and start a **new telemetry
+recording** before opening a new packet stream. A healthy status response
+indicates only matching local observation context, not proven wire fidelity.

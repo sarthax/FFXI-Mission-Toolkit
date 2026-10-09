@@ -127,6 +127,30 @@ def test_inactive_packet_status_retains_last_export_counts(tmp_path):
     assert 'Previous export:' not in messages[-1]
 
 
+def test_status_detects_stale_telemetry_without_packet_callbacks(tmp_path):
+    lua = runtime(tmp_path); start(lua)
+    packet, = tmp_path.glob('packets-*')
+    lua.execute('clock=106; command("/wblive packets status")')
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'Packets inactive.' in messages[-1]
+    assert 'telemetry context stale' in messages[-1]
+    assert packet.read_bytes() == b''
+    lua.execute('command("/wblive packets status")')
+    assert 'Packets inactive.' in lua.globals().messages[len(lua.globals().messages)]
+    lua.execute('events.d3d_present(); command("/wblive packets start event_emote"); command("/wblive packets status")')
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'packet file already exists' in '\\n'.join(messages)
+    assert 'Packets inactive.' in messages[-1]
+
+
+def test_status_detects_identity_change_without_packet_callbacks(tmp_path):
+    lua = runtime(tmp_path); start(lua)
+    lua.execute('party.server_id=456; command("/wblive packets status")')
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'Packets inactive.' in messages[-1]
+    assert 'packet player identity changed' in messages[-1]
+
+
 def test_packet_status_retains_stop_reason_and_clears_on_restart(tmp_path):
     lua = runtime(tmp_path); start(lua); event(lua)
     lua.execute('clock=106; events.packet_in(packet); command("/wblive packets status")')
