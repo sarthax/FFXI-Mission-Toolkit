@@ -262,6 +262,7 @@ def execute_dsp_myisam_test_player_listing(
                 pass
         return {
             "status": "committed_non_atomic",
+            "recovery_case_id": journal_case_id,
             "operation": "player_listing",
             "execution_mode": "dsp_myisam_compensating",
             "test_only": True,
@@ -320,7 +321,7 @@ def execute_dsp_myisam_test_player_listing(
             try:
                 set_case_status(
                     journal_case_id,
-                    "compensated" if compensation_attempted and compensation_ok else "recovery_required",
+                    "recovery_required",
                     details={"auction_id": auction_id, "compensation_attempted": compensation_attempted,
                              "compensation_ok": compensation_ok, "error": str(original_exc)[:500]},
                 )
