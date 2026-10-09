@@ -297,9 +297,12 @@ walking in North Gustaberg, then Bastok Mines/Zeruhn Mines and combat. The file
 coverage above does not capture those zone transitions, combat actions or lifecycle
 boundaries. Current exporter behavior closes the file on any sampling validation
 failure (including inactive party, unavailable entities or mixed zone/identity),
-prints Export stopped, and requires explicit restart. This could explain the missing
-post-zone frames, but the exact stop condition needs the runtime message; no cause
-is inferred from these files alone. Selecting targets is not evidence of target-role
+prints Export stopped, and requires explicit restart. The supplied test-B screenshot confirms export started, then stopped at
+workbench_observation.lua:85 with player identity mismatch before the Bastok Mines
+and Zeruhn Mines messages. Repeated addon-load attempts reported already loaded;
+these were not an initial load failure. The guard requires an available player entity
+and agreement between its name and the party name. The screenshot identifies the
+failed guard, not whether transient zoning data or another discrepancy caused it. Selecting targets is not evidence of target-role
 export because neither file contains target_roles. No concurrent-client test occurred.
 
 Regression fixtures anonymize client/character/entity names and shift timestamps while

@@ -246,3 +246,9 @@ is not exporting, capture the exact Workbench Live stop message and explicitly r
 `/wblive start <unique-id> inventory` again once the player is fully available.
 Keep each preserved file and the messages before/after the transition. This is
 manual recovery guidance, not validated automatic resume or uninterrupted zoning.
+
+The test-B screenshot confirms the addon was already loaded, export started, and
+`workbench_observation.lua:85: player identity mismatch` stopped further samples
+before later-zone messages. “Addon is already loaded” reflects a duplicate load
+attempt, not failure of the active exporter. The identity guard must remain intact;
+the underlying cause needs a stable post-zone retry and observed identity evidence.
