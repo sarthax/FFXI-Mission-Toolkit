@@ -19,6 +19,10 @@ VALIDATION = REPO_ROOT / "data" / "voidwatch" / "officer_validation.json"
 AREAS = [["npc", "NPC spawns (all zones)"], ["menu", "Menu / purchases / teleports"], ["model", "Model / name / position"], ["script", "Script / dialog"], ["keyitem", "Key item grant"],
          ["quest", "Quest flag / progression"], ["upgrade", "Abyssite upgrade turn-in"], ["ingame", "In-game test"]]
 
+# Per-zone validation: every (npc, zone) location is checked on its own against the retail position/behaviour [user request 2026-10-08].
+ZONE_AREAS = [["spawn", "Exists / spawns"], ["position", "Position + rotation match retail"], ["name", "Name / model"], ["script", "Script / dialog"],
+              ["menu", "Menu / function"], ["ingame", "In-game test"]]
+
 # role: start = hands out the first Stratum Abyssite; sub = sub-quest NPC (Ashen path). zones are DSP zone_settings names.
 OFFICERS = [
     {"id": "crimson", "name": "Voidwatch Officer - San d'Oria", "npc": "Voidwatch_Officer", "zones": ["Southern_San_dOria", "Southern_San_dOria_[S]"], "grid": "F-9 / L-9 (S)",
@@ -116,13 +120,48 @@ def load_validation() -> dict:
         return {}
 
 
-def validation_status(rec) -> str:
+def validation_status(rec, zones=None) -> str:
+    """With zones given (list of zone names), the overall status is the roll-up of the per-zone records; otherwise the legacy whole-NPC areas."""
+    if zones:
+        sts = [zone_status(((rec or {}).get("zones") or {}).get(z)) for z in zones]
+        if "issue" in sts:
+            return "issue"
+        if all(x == "validated" for x in sts):
+            return "validated"
+        return "partial" if any(x in ("validated", "partial") for x in sts) else "unvalidated"
     vals = [((rec or {}).get("areas", {})).get(k, "untested") for k, _ in AREAS]
     if "issue" in vals:
         return "issue"
     if all(v in ("ok", "n/a") for v in vals):
         return "validated"
     return "partial" if "ok" in vals else "unvalidated"
+
+
+def _status(vals) -> str:
+    if "issue" in vals:
+        return "issue"
+    if all(v in ("ok", "n/a") for v in vals):
+        return "validated"
+    return "partial" if "ok" in vals else "unvalidated"
+
+
+def zone_status(zrec) -> str:
+    return _status([((zrec or {}).get("areas", {})).get(k, "untested") for k, _ in ZONE_AREAS])
+
+
+def save_zone_validation(oid: str, zone: str, areas: dict, note: str, who: str = "") -> dict:
+    o = next((q for q in OFFICERS if q["id"] == oid), None)
+    if o is None or zone not in o["zones"]:
+        raise KeyError("%s/%s" % (oid, zone))
+    clean = {k: (areas.get(k) if areas.get(k) in D.STATES else "untested") for k, _ in ZONE_AREAS}
+    data = load_validation()
+    rec = data.setdefault(oid, {"areas": {}, "note": "", "updated": "", "by": ""})
+    rec.setdefault("zones", {})[zone] = {"areas": clean, "note": note[:2000], "updated": datetime.datetime.now().isoformat(timespec="seconds"), "by": who}
+    VALIDATION.parent.mkdir(parents=True, exist_ok=True)
+    tmp = VALIDATION.with_suffix(".tmp")
+    tmp.write_text(json.dumps(data, indent=1, sort_keys=True), encoding="utf-8")
+    tmp.replace(VALIDATION)
+    return rec["zones"][zone]
 
 
 def save_validation(oid: str, areas: dict, note: str, who: str = "") -> dict:
@@ -193,6 +232,10 @@ def overview(conn, active_root) -> dict:
         if o["ki"] and ki_id is None:
             gaps.append("key item %s not in keyitems.lua" % o["ki"])
         rec = val.get(o["id"]) or {"areas": {}, "note": "", "updated": "", "by": ""}
+        for z in zrows:
+            zr = (rec.get("zones") or {}).get(z["zone"]) or {"areas": {}, "note": "", "updated": "", "by": ""}
+            z["validation_rec"] = zr
+            z["validation"] = zone_status(zr)
         out.append({**o, "status": status, "zones_live": zrows, "ki_id": ki_id, "gaps": gaps,
-                    "validation": validation_status(rec), "validation_rec": rec, "role_label": ROLE_LABEL.get(o["role"], o["role"]), "impl_note": IMPL.get(o["id"], ""), "slice": SLICE if IMPL.get(o["id"], "").find("Not built") < 0 else ""})
-    return {"areas": AREAS, "states": D.STATES, "officers": out}
+                    "validation": validation_status(rec, o["zones"]), "validation_rec": rec, "role_label": ROLE_LABEL.get(o["role"], o["role"]), "impl_note": IMPL.get(o["id"], ""), "slice": SLICE if IMPL.get(o["id"], "").find("Not built") < 0 else ""})
+    return {"areas": AREAS, "zone_areas": ZONE_AREAS, "states": D.STATES, "officers": out}

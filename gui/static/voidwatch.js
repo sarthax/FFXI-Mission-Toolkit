@@ -5,7 +5,7 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return
 function num(n){return n==null?'?':Number(n).toLocaleString();}
 function jget(u){return fetch(u).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});});}
 function load(){
- jget('/domains/voidwatch/officers.json').catch(function(){return {officers:[],areas:[],states:[]};}).then(function(o){OF=o;return jget('/domains/voidwatch/overview.json');}).then(function(d){O=d;offTable();$('vw-srv').textContent='Server: '+d.server.name+' ('+d.server.environment+') '+d.server.root;graph();table();})
+ jget('/domains/voidwatch/officers.json').catch(function(){return {officers:[],areas:[],states:[]};}).then(function(o){OF=o;return jget('/domains/voidwatch/overview.json');}).then(function(d){O=d;offTable();npcFix();warpTable();$('vw-srv').textContent='Server: '+d.server.name+' ('+d.server.environment+') '+d.server.root;graph();table();})
  .catch(function(e){$('vw-sum').innerHTML='<b style="color:#c0392b">'+esc(e.message)+'</b>';});
 }
 function bucket(p,t){return O.nms.filter(function(x){return x.path===p&&x.tier===t;});}
@@ -67,6 +67,22 @@ function openNm(name){
  jget('/domains/voidwatch/nm.json?name='+encodeURIComponent(name)).then(detail).catch(function(e){$('vw-dbody').innerHTML='<b style="color:#c0392b">'+esc(e.message)+'</b>';});
 }
 function itemName(d,id){return d.items[id]?d.items[id].replace(/_/g,' '):'item '+id;}
+function warpTable(){
+ var el=$('vw-warps');if(!el)return;
+ jget('/domains/voidwatch/warps.json').then(function(d){
+  var f=el.dataset.f||'';var L=d.warps.filter(function(w){return !f||(w.era+' '+w.set+' '+w.stone+' '+w.menu).toLowerCase().indexOf(f.toLowerCase())>=0;});
+  var inp=function(w,k,wd){return '<input data-k="'+k+'" value="'+esc(w[k]==null?'':w[k])+'" style="width:'+wd+'px" class="mono">';};
+  el.innerHTML='<h3 style="margin:8px 0 2px">Atmacite Refiner warp checklist <span class="muted">('+d.ok+' ok / '+d.complete+' complete / '+d.total+' destinations)</span></h3>'+
+  '<div class="muted">Option = (destId*65536)+2 from the server log line; blank fields can be filled in here. Only complete AND ok entries are written to <span class="mono">'+esc(d.lua)+'</span>. Wiki source [W]; option [C-log]; coordinates are candidate zoneline arrival rows [DB] until validated in game.</div>'+
+  '<div><input id="vw-wf" placeholder="filter (era / set / stone / zone)" value="'+esc(f)+'"> <button type="button" id="vw-wexp">Export Lua</button> <span id="vw-wmsg" class="muted"></span></div>'+
+  '<div class="table-wrap"><table><thead><tr><th>Era</th><th>Set</th><th>Needs</th><th>Menu entry</th><th>Landing zone</th><th>Option</th><th>x</th><th>y</th><th>z</th><th>rot</th><th>Landing note [W]</th><th>Validation</th><th>Note</th><th></th></tr></thead><tbody>'+
+  L.map(function(w){return '<tr data-id="'+w.id+'"><td>'+esc(w.era)+'</td><td>'+esc(w.set)+'</td><td>'+esc(w.stone)+' '+w.tier+'</td><td>'+esc(w.menu)+'</td><td>'+inp(w,'zone',150)+(w.zone_id==null&&w.zone?' <span style="color:#c0392b">?id</span>':w.zone_id!=null?' <span class="muted">'+w.zone_id+'</span>':'')+'</td><td>'+inp(w,'option',80)+'</td><td>'+inp(w,'x',70)+'</td><td>'+inp(w,'y',60)+'</td><td>'+inp(w,'z',70)+'</td><td>'+inp(w,'rot',36)+'</td><td>'+inp(w,'landing_note',200)+'</td><td><select data-k="validation">'+d.states.map(function(st){return '<option'+(st===w.validation?' selected':'')+'>'+st+'</option>';}).join('')+'</select></td><td>'+inp(w,'note',140)+'</td><td><button type="button" class="vww">Save</button></td></tr>';}).join('')+'</tbody></table></div>';
+  $('vw-wf').onchange=function(){el.dataset.f=this.value;warpTable();};
+  $('vw-wexp').onclick=function(){fetch('/domains/voidwatch/warps/export-lua',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});}).then(function(j){$('vw-wmsg').textContent='Wrote '+j.entries+' live entries to '+j.path;}).catch(function(e){$('vw-wmsg').textContent='Export failed: '+e.message;});};
+  Array.prototype.forEach.call(el.querySelectorAll('.vww'),function(b){b.onclick=function(){var tr=b.closest('tr'),ch={};Array.prototype.forEach.call(tr.querySelectorAll('[data-k]'),function(i){ch[i.dataset.k]=i.value;});
+   fetch('/domains/voidwatch/warps/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:tr.dataset.id,changes:ch})}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});}).then(function(){warpTable();}).catch(function(e){$('vw-wmsg').textContent='Save failed: '+e.message;});};});
+ }).catch(function(e){el.innerHTML='<span class="muted">Warp checklist unavailable: '+esc(e.message)+'</span>';});
+}
 function offTable(){
  var el=$('vw-off');if(!el)return;var L=OF.officers;
  if(!L.length){el.innerHTML='<span class="muted">Officer data unavailable.</span>';return;}
@@ -82,16 +98,21 @@ function openOfficer(id){
  $('vw-detail').hidden=false;$('vw-detail').scrollIntoView({behavior:'smooth',block:'nearest'});
  var va=x.validation_rec,h='<h3 style="margin:0">'+esc(x.name)+' <span class="chip">'+esc(x.status)+'</span> <span class="chip">'+esc(x.path)+' path</span> <span class="chip">'+esc(x.role_label||x.role)+'</span></h3>';
  h+='<div class="muted">Source: ffxiclopedia Voidwatch Ops [W]. '+(x.quest?'Quest: '+esc(x.quest)+'. ':'')+esc(x.note||'')+'</div>';
- h+='<div class="vwval"><b>Validation</b> '+vchip(x.validation)+' <span class="muted">'+(va.updated?'last saved '+esc(va.updated):'never saved')+'</span><div class="vwvgrid">'+OF.areas.map(function(a){var cv=(va.areas||{})[a[0]]||'untested';return '<label>'+esc(a[1])+' <select data-a="'+a[0]+'" class="vwsel">'+OF.states.map(function(st){return '<option'+(st===cv?' selected':'')+'>'+st+'</option>';}).join('')+'</select></label>';}).join('')+'</div><textarea id="vw-note" rows="2" placeholder="Notes" style="width:100%">'+esc(va.note||'')+'</textarea><div><button type="button" id="vw-save">Save validation</button> <button type="button" id="vw-allok">Mark all ok</button> <span id="vw-saved" class="muted"></span></div></div>';
  h+=x.impl_note?'<div class="vwc vwc-warn"><b>Build status:</b> '+esc(x.impl_note)+(x.slice?' <span class="muted">['+esc(x.slice)+']</span>':'')+'</div>':'';
  h+=x.gaps.length?x.gaps.map(function(g){return '<div class="vwc vwc-warn">GAP: '+esc(g)+'</div>';}).join(''):'<div class="vwc vwc-ok">No gaps found.</div>';
  h+='<h4>Key item</h4><div class="mono">'+(x.ki?esc(x.ki)+' = '+(x.ki_id==null?'not defined':x.ki_id)+' (this server keyitems.lua; ids drift from the client, verify with id_bridge before relying on it)':'none (sub-quest NPC)')+'</div>';
- h+='<h4>Zones</h4>'+x.zones_live.map(function(z){return '<div><b>'+esc(z.zone)+'</b> <span class="muted">zone '+(z.zone_id==null?'?':z.zone_id)+'</span><div class="mono">'+(z.npcs.length?z.npcs.map(function(n){return '#'+n.npcid+' "'+esc(n.display)+'" at ('+n.x+', '+n.y+', '+n.z+') rot '+n.rot+' flag '+n.flag;}).join('<br>'):'<span style="color:#c0392b">no npc_list row</span>')+'</div><div class="mono">'+(z.script?esc(z.script):'<span style="color:#c0392b">no script</span>')+'</div></div>';}).join('');
+ h+='<h4>Zones <span class="muted">(each location is validated on its own; overall roll-up: </span>'+vchip(x.validation)+'<span class="muted">)</span></h4>'+x.zones_live.map(function(z){var zr=z.validation_rec||{};
+  return '<div class="vwval" data-zone="'+esc(z.zone)+'"><b>'+esc(z.zone)+'</b> <span class="muted">zone '+(z.zone_id==null?'?':z.zone_id)+'</span> '+vchip(z.validation)+' <span class="muted">'+(zr.updated?'saved '+esc(zr.updated):'never saved')+'</span>'+
+  '<div class="mono">'+(z.npcs.length?z.npcs.map(function(n){return '#'+n.npcid+' "'+esc(n.display)+'" at ('+n.x+', '+n.y+', '+n.z+') rot '+n.rot+' flag '+n.flag;}).join('<br>'):'<span style="color:#c0392b">no npc_list row</span>')+'</div>'+
+  '<div class="mono">'+(z.script?esc(z.script):'<span style="color:#c0392b">no script</span>')+'</div>'+
+  '<div class="vwvgrid">'+OF.zone_areas.map(function(a){var cv=(zr.areas||{})[a[0]]||'untested';return '<label>'+esc(a[1])+' <select data-a="'+a[0]+'" class="vwzsel">'+OF.states.map(function(st){return '<option'+(st===cv?' selected':'')+'>'+st+'</option>';}).join('')+'</select></label>';}).join('')+'</div>'+
+  '<input class="vwznote" placeholder="Notes (observed position, issues)" value="'+esc(zr.note||'')+'" style="width:100%"><button type="button" class="vwzall">Mark all ok</button> <button type="button" class="vwzsave">Save this zone</button> <span class="vwzmsg muted"></span></div>';}).join('');
  $('vw-dbody').innerHTML=h;
- $('vw-allok').onclick=function(){Array.prototype.forEach.call(document.querySelectorAll('.vwsel'),function(e){e.value='ok';});};
- $('vw-save').onclick=function(){var ar={};Array.prototype.forEach.call(document.querySelectorAll('.vwsel'),function(e){ar[e.dataset.a]=e.value;});
-  fetch('/domains/voidwatch/officer-validation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:x.id,areas:ar,note:$('vw-note').value})}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});}).then(function(j){
-   x.validation=j.status;x.validation_rec=j;$('vw-saved').textContent='Saved: '+j.status;offTable();if(O)graph();}).catch(function(e){$('vw-saved').textContent='Save failed: '+e.message;});};
+ Array.prototype.forEach.call(document.querySelectorAll('#vw-dbody .vwval[data-zone]'),function(box){
+  box.querySelector('.vwzall').onclick=function(){Array.prototype.forEach.call(box.querySelectorAll('.vwzsel'),function(e){e.value='ok';});};
+  box.querySelector('.vwzsave').onclick=function(){var ar={};Array.prototype.forEach.call(box.querySelectorAll('.vwzsel'),function(e){ar[e.dataset.a]=e.value;});
+   fetch('/domains/voidwatch/officer-zone-validation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:x.id,zone:box.dataset.zone,areas:ar,note:box.querySelector('.vwznote').value})}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});}).then(function(){
+    return jget('/domains/voidwatch/officers.json');}).then(function(o){OF=o;offTable();if(O)graph();openOfficer(x.id);}).catch(function(err){box.querySelector('.vwzmsg').textContent='Save failed: '+err.message;});};});
 }
 function nmKey(n){return n.replace(/[\s\-']+/g,'_');}
 function bj(o){return esc(JSON.stringify(o));}
@@ -140,7 +161,7 @@ function detail(d){
   if(p.family)h+='<div><b>Family base</b>'+kv(p.family,[['HP','HP'],['STR','STR'],['DEX','DEX'],['VIT','VIT'],['AGI','AGI'],['INT','INT'],['MND','MND'],['CHR','CHR'],['ATT','ATT'],['DEF','DEF'],['ACC','ACC'],['EVA','EVA']])+'</div>';
   h+='</div>';
   h+='<h4>Skills ('+p.skills.length+')</h4>'+(p.skills.length?'<div class="table-wrap"><table><tr><th>id</th><th>name</th><th>AoE</th><th>range</th><th>flag</th><th>param</th><th>SC</th></tr>'+p.skills.map(function(k){return '<tr><td>'+k.id+'</td><td>'+esc(k.name)+'</td><td>'+k.aoe+'</td><td>'+k.distance+'</td><td>'+k.flag+'</td><td>'+k.param+'</td><td>'+[k.sc1,k.sc2,k.sc3].join('/')+'</td></tr>';}).join('')+'</table></div>':'<span class="muted">none</span>');
-  h+='<h4>Spells ('+p.spells.length+')</h4>'+(p.spells.length?'<div class="table-wrap"><table><tr><th>id</th><th>name</th><th>levels</th></tr>'+p.spells.map(function(k){return '<tr><td>'+k.id+'</td><td>'+esc(k.name)+'</td><td>'+k.min+'-'+k.max+'</td></tr>';}).join('')+'</table></div>':'<span class="muted">none (spellList '+p.spellList+')</span>');
+  h+='<h4>Spells ('+p.spells.length+')</h4>'+(p.spell_list_pools>50?'<div class="vwval" style="border-color:#c0392b"><b>Generic list:</b> spell list '+p.spellList+' is shared by '+p.spell_list_pools+' mob pools (DSP default caster list), not specific to this NM. If this NM should not cast, set mob_pools.spellList=0 for poolid '+p.poolid+': <code>UPDATE mob_pools SET spellList=0 WHERE poolid='+p.poolid+';</code></div>':'')+(p.spells.length?'<div class="table-wrap"><table><tr><th>id</th><th>name</th><th>levels</th></tr>'+p.spells.map(function(k){return '<tr><td>'+k.id+'</td><td>'+esc(k.name)+'</td><td>'+k.min+'-'+k.max+'</td></tr>';}).join('')+'</table></div>':'<span class="muted">none (spellList '+p.spellList+')</span>');
   if(p.mods.length)h+='<h4>Pool mods</h4><div class="mono">'+p.mods.map(function(m){return (m.is_mob_mod?'mobmod ':'mod ')+m.modid+' = '+m.value;}).join('<br>')+'</div>';
  });
  h+='<h4>Drops <span class="muted">(script + overrides in voidwatch_drops.lua; not mob_droplist)</span></h4><div id="vw-drops" class="muted">Loading drops...</div><pre id="vw-dres" class="mono" style="white-space:pre-wrap"></pre><div id="vw-dapply"></div>';
@@ -189,4 +210,28 @@ document.addEventListener('DOMContentLoaded',function(){
  $('vw-close').addEventListener('click',function(){$('vw-detail').hidden=true;});
  load();
 });
+function npcFix(){
+ var el=$('vw-npcfix');if(!el)return;
+ function post(b){return fetch('/domains/voidwatch/npcfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});});}
+ jget('/domains/voidwatch/npcfix.json').then(function(d){
+  var h='<h3 style="margin:8px 0 2px">NPC row fixes <span class="muted">(npc_list; dry-run first, apply is behind the write gate and logged)</span></h3>';
+  d.fixes.forEach(function(f,i){
+   h+='<div class="vwval"><b>'+esc(f.title)+'</b> '+(f.done?'<span class="chip">done</span>':'')+'<div class="muted">'+esc(f.evidence)+'</div>'+(f.done?'':'<pre class="mono vwsql">'+esc(f.plan_result?f.plan_result.sql:'')+'</pre><button type="button" data-fix="'+i+'">Dry-run</button> <button type="button" data-fixgo="'+i+'" hidden>Apply</button>')+'<pre class="mono vwfres" data-r="'+i+'" style="white-space:pre-wrap"></pre></div>';
+  });
+  h+='<div class="vwval"><b>Open questions (need in-game data)</b><ul>'+d.open.map(function(t){return '<li>'+esc(t)+'</li>';}).join('')+'</ul></div>';
+  h+='<div class="vwval"><b>Add / delete a row</b><br><select id="nf-npc">'+d.names.map(function(n){return '<option>'+n+'</option>';}).join('')+'</select> zone <input id="nf-zone" placeholder="Qufim_Island" size="18"> x <input id="nf-x" size="7"> y <input id="nf-y" size="7"> z <input id="nf-z" size="7"> rot <input id="nf-rot" size="4"> <button type="button" id="nf-ins">Dry-run insert</button><br>delete npcid <input id="nf-del" size="10"> <button type="button" id="nf-delb">Dry-run delete</button> <button type="button" id="nf-go" hidden>Apply last plan</button><pre id="nf-res" class="mono" style="white-space:pre-wrap"></pre></div>';
+  h+='<div class="vwval"><label>Write confirmation <input id="nf-conf" placeholder="active profile name (only needed to Apply)" style="width:60%"></label></div>';
+  el.innerHTML=h;
+  var last=null;
+  function show(node,j){node.textContent=(j.applied?'APPLIED ('+j.rows+' row)\n':'DRY RUN\n')+j.sql+'\n'+(j.warnings||[]).join('\n');}
+  function run(b,node,goBtn){b.dry_run=true;post(b).then(function(j){last=b;show(node,j);goBtn.hidden=false;}).catch(function(e){goBtn.hidden=true;node.textContent='Refused: '+e.message;});}
+  function apply(node,goBtn){var b=Object.assign({},last,{dry_run:false,confirmation:$('nf-conf').value});post(b).then(function(j){show(node,j);goBtn.hidden=true;npcFix();}).catch(function(e){node.textContent='Apply failed: '+e.message;});}
+  el.querySelectorAll('[data-fix]').forEach(function(btn){var i=+btn.dataset.fix,node=el.querySelector('[data-r="'+i+'"]'),go=el.querySelector('[data-fixgo="'+i+'"]');
+   btn.onclick=function(){run(Object.assign({},d.fixes[i].plan),node,go);};go.onclick=function(){apply(node,go);};});
+  var res=$('nf-res'),gob=$('nf-go');
+  $('nf-ins').onclick=function(){run({kind:'insert',npc:$('nf-npc').value,zone:$('nf-zone').value.trim(),x:$('nf-x').value,y:$('nf-y').value,z:$('nf-z').value,rot:$('nf-rot').value},res,gob);};
+  $('nf-delb').onclick=function(){run({kind:'delete',npcid:$('nf-del').value},res,gob);};
+  gob.onclick=function(){apply(res,gob);};
+ }).catch(function(e){el.innerHTML='<p class="muted">NPC fixes unavailable: '+esc(e.message)+'</p>';});
+}
 })();
