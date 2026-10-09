@@ -162,6 +162,18 @@ def test_recording_controls_in_browser(tmp_path):
             playwright.expect(page.locator('#entity-rows tr')).to_have_count(1)
             playwright.expect(page.locator('#entity-rows td').nth(0)).to_have_text(target['name'])
             playwright.expect(page.locator('#entity-rows td').nth(3)).to_have_text('Unknown')
+            playwright.expect(page.locator('#trace .entity-marker')).to_have_count(0)
+            page.locator('#show-entities').check()
+            playwright.expect(page.locator('#trace .entity-marker')).to_have_count(1)
+            playwright.expect(page.locator('#trace-entities-status')).to_contain_text('1 of 1 current entity observations')
+            assert target['name'] in page.locator('#trace .entity-marker title').text_content()
+            assert 'server ID unknown' in page.locator('#trace .entity-marker title').text_content()
+            for plane in ('xy', 'xz', 'yz'):
+                page.locator('#trace-plane').select_option(plane)
+                playwright.expect(page.locator('#trace .entity-marker')).to_have_count(1)
+                x, y = page.locator('#trace .entity-marker').evaluate('el=>[Number(el.getAttribute("x")),Number(el.getAttribute("y"))]')
+                assert 0 <= x <= 600 and 0 <= y <= 280
+            assert registry._clients[runtime_session].position == target_frame
             with page.expect_download() as pending:
                 page.locator('#entity-rows').get_by_role('button', name='Download waypoint', exact=True).click()
             target_document = json.loads(Path(pending.value.path()).read_text())
@@ -214,6 +226,8 @@ def test_recording_controls_in_browser(tmp_path):
             page.locator('#timeline').evaluate('(el,n)=>{el.value=String(n);el.dispatchEvent(new Event("change",{bubbles:true}));}', empty_frame)
             playwright.expect(page.locator('#entity-rows tr')).to_have_count(0)
             playwright.expect(page.locator('#entity-status')).to_have_text('No entity observations in this frame.')
+            playwright.expect(page.locator('#trace .entity-marker')).to_have_count(0)
+            playwright.expect(page.locator('#trace-entities-status')).to_contain_text('0 of 0 current entity observations')
             # Exercise bounded inventory inspection without altering playback.
             inventory = {**frames[0], 'client_id': 'inventory-ui',
                          'position': {'zone_id': 100, 'x': 1e308, 'y': 0, 'z': 0},
@@ -267,6 +281,24 @@ def test_recording_controls_in_browser(tmp_path):
             page.locator('#save-player').click()
             playwright.expect(page.locator('#library-status')).to_contain_text('saved waypoints match')
             assert len(library.entries()) == len(before)+1
+            bounded = {**inventory, 'client_id': 'bounded-spatial', 'observation_scope': 'unspecified',
+                       'position': {'zone_id': 100, 'x': 0, 'y': 0, 'z': 0},
+                       'entities': [
+                           {'client_index': i, 'name': '<img src=x onerror=alert(1)>',
+                            'position': {'zone_id': 100, 'x': i, 'y': i, 'z': 0}}
+                           for i in range(101)] + [
+                           {'client_index': 102, 'name': 'Other instance', 'instance_hint': 'elsewhere',
+                            'position': {'zone_id': 100, 'x': 999999, 'y': 0, 'z': 0}}]}
+            page.locator('#recording').set_input_files({'name': 'bounded.jsonl', 'mimeType': 'application/x-ndjson',
+                'buffer': (json.dumps(bounded)+'\n').encode()})
+            page.locator('#open-recording').click()
+            playwright.expect(page.locator('#trace .entity-marker')).to_have_count(100)
+            playwright.expect(page.locator('#trace-entities-status')).to_contain_text('100 of 102')
+            assert '<img src=x onerror=alert(1)>' in page.locator('#trace .entity-marker title').first.text_content()
+            assert page.locator('#trace img').count() == 0
+            assert 'Other instance' not in page.locator('#trace').text_content()
+            page.locator('#show-entities').uncheck()
+            playwright.expect(page.locator('#trace .entity-marker')).to_have_count(0)
             assert not errors
             browser.close()
     finally:

@@ -57,6 +57,38 @@ def test_seek_rejects_stale_player_download_path_and_library_capture(tmp_path):
     assert library.entries()[0]['provenance']['observed_at'] == 1001
 
 
+def test_trace_rejects_seek_and_identical_recording_replacement(tmp_path):
+    client, registry, session, replay, library = setup(tmp_path)
+    token = projection(client, session)
+    params = {'client_id': session, 'observation_token': token}
+    response = client.get('/live-client/replay/trace', params=params)
+    assert response.status_code == 200
+    assert response.json()['points'][-1]['frame'] == 1
+    replay.seek(2)
+    assert client.get('/live-client/replay/trace', params=params).status_code == 409
+    replay.restart()
+    replacement = load_recorded_frames(CAPTURE, client_id='ashita-runtime-sample')
+    replacement.advance()
+    registry.add_recording(replacement, label='Replacement', replace_session=session)
+    assert client.get('/live-client/replay/trace', params=params).status_code == 409
+    params['observation_token'] = projection(client, session)
+    assert client.get('/live-client/replay/trace', params=params).status_code == 200
+
+
+def test_trace_rejects_cursor_change_during_collection(tmp_path, monkeypatch):
+    client, registry, session, replay, library = setup(tmp_path)
+    token = projection(client, session)
+    original = replay.path_points
+    def changed(**kwargs):
+        points = original(**kwargs)
+        replay.seek(2)
+        return points
+    monkeypatch.setattr(replay, 'path_points', changed)
+    response = client.get('/live-client/replay/trace',
+                          params={'client_id': session, 'observation_token': token})
+    assert response.status_code == 409
+
+
 def test_identical_replacement_invalidates_generation_and_cross_session_token(tmp_path):
     client, registry, session, replay, library = setup(tmp_path)
     token = projection(client, session)

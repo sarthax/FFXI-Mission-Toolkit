@@ -47,6 +47,8 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:.5rem;bo
 <div style="overflow:auto"><table><thead><tr><th>Name</th><th>Kind</th><th>Client index</th><th>Server ID</th><th>Raw XYZ</th><th>Raw distance</th><th>Capture</th></tr></thead><tbody id="entity-rows"></tbody></table></div></section>
 <section><h2>Recorded position trace</h2><label for="trace-plane">Trace plane </label><select id="trace-plane"><option value="xz">X/Z</option><option value="xy">X/Y</option><option value="yz">Y/Z</option></select><p id="trace-status">Select a recording to view its observed movement.</p>
 <label><input type="checkbox" id="show-waypoints"> Show saved waypoint markers (up to 100)</label>
+<label><input type="checkbox" id="show-entities"> Show current entity observations (up to 100)</label>
+<p id="trace-entities-status">Entity markers hidden.</p>
 <label for="relative-waypoint">Compare saved waypoint </label><select id="relative-waypoint"><option value="">Choose a comparable waypoint</option></select>
 <p id="relative-status" role="status">Select a recorded session to compare saved positions.</p>
 <svg id="trace" viewBox="0 0 600 280" style="width:100%;background:#101720;border:1px solid #414a58" role="img" aria-label="Recorded positions in current zone"></svg>
@@ -65,7 +67,7 @@ const tracePlanes=new Map();
 const relativeSelections=new Map();
 let entityProjection=null,displayedSession=null;
 const controls=['step','poll','previous','restart','play','timeline','unload','replace','capture-player','save-player','export-path'];
-function reset(){entityProjection=null;displayedSession=null;for(const id of ['character','zone','xyz','heading','observed','entities','source','version'])show(id,'—');document.getElementById('trace').replaceChildren();document.getElementById('entity-rows').replaceChildren();document.getElementById('relative-waypoint').replaceChildren(new Option('Choose a comparable waypoint',''));show('relative-status','Select a recorded session to compare saved positions.');show('entity-status','No entity observations.');show('trace-status','Select a recorded session.');}
+function reset(){entityProjection=null;displayedSession=null;for(const id of ['character','zone','xyz','heading','observed','entities','source','version'])show(id,'—');document.getElementById('trace').replaceChildren();document.getElementById('entity-rows').replaceChildren();document.getElementById('relative-waypoint').replaceChildren(new Option('Choose a comparable waypoint',''));show('relative-status','Select a recorded session to compare saved positions.');show('entity-status','No entity observations.');show('trace-status','Select a recorded session.');show('trace-entities-status','Entity markers hidden.');}
 function showEntities(data){entityProjection=data;renderEntities();}
 function renderEntities(){
  const body=document.getElementById('entity-rows');body.replaceChildren();
@@ -120,10 +122,11 @@ async function relativeWaypoints(clientId,observedAt){
   return data;
  }catch(error){show('relative-status','Waypoint comparison unavailable: '+error.message);return {waypoints:[]};}
 }
-async function drawTrace(clientId,zoneId,instanceHint,comparison={waypoints:[]}){
+async function drawTrace(clientId,zoneId,instanceHint,comparison,observation){
  const svg=document.getElementById('trace');svg.replaceChildren();
- const result=await fetch('/live-client/replay/trace?'+new URLSearchParams({client_id:clientId,max_points:'500'}),{cache:'no-store'});
- if(!result.ok){show('trace-status','Trace only available for recorded sessions.');return;}
+ show('trace-entities-status','Entity markers hidden.');
+ const result=await fetch('/live-client/replay/trace?'+new URLSearchParams({client_id:clientId,max_points:'500',observation_token:observation.observation_token}),{cache:'no-store'});
+ if(!result.ok){show('trace-status',result.status===409?'Observation changed; refresh the trace.':'Trace only available for recorded sessions.');return;}
  const all=(await result.json()).points||[];
  if(comparison.recorded_frame!=null&&all.at(-1)?.frame!==comparison.recorded_frame){show('trace-status','Recording changed; refresh waypoint comparison.');return;}
  const waypoints=comparison.waypoints;
@@ -133,7 +136,9 @@ async function drawTrace(clientId,zoneId,instanceHint,comparison={waypoints:[]})
  const selected=waypoints.find(entry=>entry.id===document.getElementById('relative-waypoint').value);
  const markers=document.getElementById('show-waypoints').checked?waypoints.slice(0,100):[];
  if(selected&&!markers.some(entry=>entry.id===selected.id)&&document.getElementById('show-waypoints').checked){markers.pop();markers.push(selected);}
- const bounds=points.concat(markers.map(entry=>entry.position));
+ const eligibleEntities=observation.entities.filter(entry=>(entry.instance_hint??null)===(instanceHint??null));
+ const entityMarkers=document.getElementById('show-entities').checked?eligibleEntities.slice(0,100):[];
+ const bounds=points.concat(markers.map(entry=>entry.position),entityMarkers.map(entry=>entry.position));
  const minH=Math.min(...bounds.map(p=>p[horizontal])),maxH=Math.max(...bounds.map(p=>p[horizontal]));
  const minV=Math.min(...bounds.map(p=>p[vertical])),maxV=Math.max(...bounds.map(p=>p[vertical]));
  const rangeH=maxH-minH,rangeV=maxV-minV;
@@ -149,6 +154,12 @@ async function drawTrace(clientId,zoneId,instanceHint,comparison={waypoints:[]})
   line.setAttribute('fill','none');line.setAttribute('stroke','#58a6ff');line.setAttribute('stroke-width','2');svg.append(line);
  }
  const current=coords[coords.length-1];const dot=document.createElementNS(ns,'circle');dot.setAttribute('cx',current.x);dot.setAttribute('cy',current.y);dot.setAttribute('r','6');dot.setAttribute('fill','#fb923c');svg.append(dot);
+ for(const entry of entityMarkers){
+  const p=project(entry.position),marker=document.createElementNS(ns,'rect');
+  marker.setAttribute('class','entity-marker');marker.setAttribute('x',p.x-4);marker.setAttribute('y',p.y-4);marker.setAttribute('width','8');marker.setAttribute('height','8');marker.setAttribute('fill','#c084fc');
+  const title=document.createElementNS(ns,'title');title.textContent=entry.name+' · client index '+entry.client_index+' · server ID '+(entry.server_entity_id??'unknown')+' · raw XYZ '+[entry.position.x,entry.position.y,entry.position.z].join(', ');marker.append(title);svg.append(marker);
+ }
+ if(document.getElementById('show-entities').checked)show('trace-entities-status',entityMarkers.length+' of '+observation.entities.length+' current entity observations shown; scope '+(observation.observation_scope||'unknown')+(observation.entities_truncated?' (source truncated).':'.')+' Purple squares are observed positions; identity, instance and map coordinates remain unverified.');
  for(const entry of markers){
   const p=project(entry.position),marker=document.createElementNS(ns,'circle');
   marker.setAttribute('class','waypoint-marker');marker.setAttribute('cx',p.x);marker.setAttribute('cy',p.y);marker.setAttribute('r','5');marker.setAttribute('fill','#3fb950');
@@ -197,7 +208,7 @@ async function refresh(){
  document.getElementById('trace-plane').value=tracePlanes.get(client.value)||
   (data.adapter==='ashita-v4-api-experimental'?'xy':'xz');
  const nearby=await relativeWaypoints(client.value,data.observed_at);
- await drawTrace(client.value,data.zone_id,data.instance_hint,nearby);
+ await drawTrace(client.value,data.zone_id,data.instance_hint,nearby,data);
  const other=rows.find(r=>r.client_id===compare.value);
  if(other&&other.observed){
   const second=await projection(other),q=second.player?.position;
@@ -325,6 +336,7 @@ document.getElementById('trace-plane').addEventListener('change',event=>{
 document.getElementById('entity-search').addEventListener('input',renderEntities);
 document.getElementById('entity-sort').addEventListener('change',renderEntities);
 document.getElementById('show-waypoints').addEventListener('change',()=>{pause();safeRefresh();});
+document.getElementById('show-entities').addEventListener('change',()=>{pause();safeRefresh();});
 document.getElementById('relative-waypoint').addEventListener('change',event=>{
  pause();if(client.value)relativeSelections.set(client.value,event.target.value);safeRefresh();
 });
