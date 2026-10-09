@@ -38,7 +38,7 @@ button,input{font:inherit;padding:.5rem;margin:.25rem}pre{white-space:pre-wrap;o
 label{display:block}</style>
 <h1>Live Client — Direct Telemetry</h1>
 <p>Local read-only connection. No recording files or game writes.</p>
-<label>Ashita client ID <input id="client" value="ashita-a" pattern="[a-zA-Z0-9_-]+"></label>
+<label>Ashita client ID <input id="client" value="ashita-a" list="clients" pattern="[a-zA-Z0-9_-]+"></label><datalist id="clients"></datalist>
 <button onclick="action('start')">Start receiver</button>
 <button onclick="provision()">Configure client</button>
 <button onclick="action('stop')">Stop receiver</button>
@@ -107,7 +107,12 @@ async function poll(){const value=client();if(!/^[a-zA-Z0-9_-]{1,64}$/.test(valu
  try{const response=await fetch(root+'status/'+encodeURIComponent(value));
  if(response.ok){const data=await response.json();statusEl.textContent=JSON.stringify(data,null,2);render(data)}
  }catch(error){statusEl.textContent=String(error)}}
-setInterval(poll,1500);poll();
+async function refreshClients(){try{const response=await fetch(root+'clients');
+ if(!response.ok)return;const result=await response.json();
+ const list=document.getElementById('clients');list.replaceChildren();
+ for(const id of result.clients||[]){const option=document.createElement('option');option.value=id;list.appendChild(option);}
+ }catch(error){}}
+setInterval(poll,1500);setInterval(refreshClients,5000);refreshClients();poll();
 </script></html>""")
 
     @router.post("/start")
