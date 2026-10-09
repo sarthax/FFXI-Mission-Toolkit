@@ -51,6 +51,11 @@ def status(db):
                  imported=r[5],failed=r[6],mode=r[7],last_error=r[8],pending=len(json.loads(r[9]))) for r in rows]
 
 
+def _in_subtree(title, seed):
+    """Match the seed itself or descendants separated by a path slash."""
+    return title == seed or title.startswith(seed + "/")
+
+
 def start(db,seed,limit=50,mode="crawl"):
     seed=str(seed).strip().strip("/")
     if not seed or seed.startswith(("http:", "https:", ".")) or "?" in seed or ".." in seed.split("/"):
@@ -68,8 +73,8 @@ def start(db,seed,limit=50,mode="crawl"):
                 if not con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='reference_wiki_pages'").fetchone():
                     raise ValueError("Import Japanese Wiki pages before refreshing them")
                 titles=[r[0] for r in con.execute(
-                    "SELECT title FROM reference_wiki_pages WHERE source_id='WikiWikiJP' AND (title=? OR title LIKE ?) ORDER BY title LIMIT ?",
-                    (seed,seed+"/%",limit)).fetchall()]
+                    "SELECT title FROM reference_wiki_pages WHERE source_id='WikiWikiJP' AND (title=? OR title LIKE ? ESCAPE '^' ) ORDER BY title LIMIT ?",
+                    (seed,seed.replace("^", "^^").replace("%", "^%").replace("_", "^_")+"/%",limit)).fetchall()]
                 if not titles:
                     raise ValueError("No cached Japanese Wiki pages match this seed")
             else:
@@ -153,7 +158,7 @@ def _worker(db,ident):
                 imported+=1
                 if mode == "crawl":
                     for linked in jp.links(raw):
-                        if linked.startswith(seed) and linked not in seen and linked not in queue:
+                        if _in_subtree(linked, seed) and linked not in seen and linked not in queue:
                             queue.append(linked)
             except urllib.error.HTTPError as exc:
                 # Explicit rate limits/challenges require manual resume, not bypass.

@@ -35,6 +35,32 @@ def main():
         def read(self): return b"<html><body>valid Wiki article</body></html>"
     with patch.object(crawler.jp.urllib.request,"urlopen",return_value=Response()):
         assert "valid Wiki article" in crawler.jp.get("Medusa")
+    # Exact subtree boundaries: prefix siblings must never be traversed.
+    assert crawler._in_subtree("Medusa", "Medusa")
+    assert crawler._in_subtree("Medusa/Abilities", "Medusa")
+    assert not crawler._in_subtree("MedusaExtra", "Medusa")
+    assert not crawler._in_subtree("Medusa_Extra", "Medusa")
+
+    # SQLite LIKE metacharacters in a seed must remain literal, not wildcards.
+    with tempfile.TemporaryDirectory() as folder:
+        db=Path(folder)/"refresh.db"
+        with sqlite3.connect(db) as con:
+            con.execute("""CREATE TABLE reference_wiki_pages (
+                source_id TEXT,page_id TEXT,title TEXT,norm_title TEXT,
+                revision_id TEXT,revision_timestamp TEXT,page_text TEXT,page_hash TEXT)""")
+            for title in ("Test_100%", "Test_100%/Child", "TestX100%",
+                          "Test_1000/Child", "Test_100%Extra"):
+                con.execute("INSERT INTO reference_wiki_pages VALUES (?,?,?,?,?,?,?,?)",
+                            ("WikiWikiJP",title,title,title,"","","text","digest"))
+        with patch.object(crawler.threading.Thread,"start"):
+            job=crawler.start(db,"Test_100%",50,mode="refresh")
+        with sqlite3.connect(db) as con:
+            selected=__import__("json").loads(con.execute(
+                "SELECT queue_json FROM wiki_jp_crawl_jobs WHERE id=?",(job,)
+            ).fetchone()[0])
+        assert selected==["Test_100%", "Test_100%/Child"],selected
+        crawler._RUNNING.clear()
+
     print("Japanese Wiki checkpointed crawl: PASS")
 
 
