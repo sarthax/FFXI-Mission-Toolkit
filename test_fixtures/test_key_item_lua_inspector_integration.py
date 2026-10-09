@@ -32,3 +32,13 @@ def test_key_item_lua_inspector_operation_filters_and_copy_paths():
     assert "ref.operation === selected" in page
     assert "Copy location" in page
     assert "copyValue(location.textContent)" in page
+
+
+def test_lua_reference_rollups_and_limitations_are_presented_safely():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert 'id="ki-lua-summary"' in page
+    assert 'id="ki-lua-limitations-list"' in page
+    assert "data.operation_counts || {}" in page
+    assert "line.textContent = String(message)" in page
+    assert "limitations.length === 0" in page
+    assert "generation !== luaGeneration" in page
