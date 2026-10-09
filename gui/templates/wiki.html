@@ -705,7 +705,9 @@
         scheduleForm.elements.interval_hours.value=String(value.interval_hours);
         scheduleForm.elements.page_limit.value=String(value.page_limit);
         scheduleState.textContent='Next due: '+(value.next_due||'Disabled')+
-          (value.last_error?' · Last error: '+value.last_error:'');
+          (value.last_error?' · Last error: '+value.last_error:'')+
+          (value.recoverable?' · Interrupted batch '+value.recoverable.job_id+
+          ': '+value.recoverable.pending+' queued pages; will resume when due':'');
       }).catch(function(e){scheduleState.textContent='Schedule unavailable: '+e.message;});
     }
     scheduleForm.addEventListener('submit',function(event){
