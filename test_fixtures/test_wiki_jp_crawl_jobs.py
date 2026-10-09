@@ -15,7 +15,7 @@ def main():
         assert crawler.status(db)[0]["state"]=="interrupted"
         with patch.object(crawler.threading.Thread,"start"):
             crawler.resume(db,job)
-        page='<html><body><div id="body"><h2>情報</h2>日本語本文</div><a href="/ffxi/ヴォイドウォッチ/試験">link</a></body></html>'
+        page='<html><body><div id="body"><h2>情報</h2>日本語本文</div></body></html>'
         with patch.object(crawler.jp,"get",return_value=page), patch.object(crawler,"time") as timing:
             crawler._worker(str(db),job)
         result=crawler.status(db)[0]
