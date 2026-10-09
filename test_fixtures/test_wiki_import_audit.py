@@ -35,6 +35,9 @@ def main():
     assert preview[0]["requires_confirmation"] is True and preview[0]["applied"] is False
     assert con.execute("SELECT COUNT(*) FROM reference_wiki_blocks").fetchone()[0]==4
 
+    assert audit(con,sample_limit=1,recovery_offset=1)["recovery_candidates"]==[]
+    assert audit(con,sample_limit=1,recovery_offset=0)["recovery_candidates"][0]["page_id"]=="old"
+    assert preview_local_recovery(con,sample_limit=1,recovery_offset=1)==[]
     assert len(report["samples"])==2
     assert report["samples"][0]["template_fields"]==1
     assert report["samples"][0]["source_locators"]==1
