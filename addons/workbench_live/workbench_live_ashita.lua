@@ -8,6 +8,13 @@ require('common')
 local observation = require('workbench_observation')
 local bridge_config_ok, bridge_config = pcall(require, 'workbench_bridge_settings')
 local bridge = require('workbench_bridge').new(bridge_config_ok and bridge_config or {enabled=false})
+local direct = require('workbench_live_direct').new({
+    capture = function(id, now) return observation.capture_ashita(AshitaCore, GetEntity, id, now, false) end,
+    start_bridge = function(id) return bridge.start(id) end,
+    stop_bridge = function() bridge.stop() end,
+    send = function(id, frame) return bridge.observe(id, frame) end,
+    message = function(msg) print('Workbench Live: ' .. msg) end,
+})
 
 local exporter = require('workbench_export').new({
     directory = addon.path,
@@ -40,6 +47,16 @@ ashita.events.register('command', 'workbench_live_command', function(e)
     for token in e.command:gmatch('%S+') do table.insert(args, token) end
     if args[1] ~= '/wblive' then return end
     e.blocked = true
+    if args[2] == 'live' then
+        if args[3] == 'start' then
+            if exporter.context() then print('Workbench Live: stop JSONL export first'); return end
+            local ok, err = direct.start(args[4])
+            print(ok and 'Workbench Live: direct live telemetry started (no recording)' or ('Workbench Live: '..tostring(err)))
+        elseif args[3] == 'stop' then direct.stop('Direct live telemetry stopped')
+        elseif args[3] == 'status' then print('Workbench Live: direct telemetry '..(direct.active() and 'active' or 'inactive'))
+        else print('Workbench Live: use live start <id>, live stop, live status') end
+        return
+    end
     if args[2] == 'packets' then packets.command(args[3], args[4]); return end
     if args[2] == 'bridge' then
         if args[3] == 'stop' then bridge.stop()
@@ -50,13 +67,14 @@ ashita.events.register('command', 'workbench_live_command', function(e)
         else print('Workbench Live: use bridge start, bridge stop or bridge status') end
         return
     end
-    if args[2] == 'stop' then packets.stop(); bridge.stop() end
+    if args[2] == 'stop' then packets.stop(); direct.stop(); bridge.stop() end
     exporter.command(args[2], args[3], args[4])
 end)
 ashita.events.register('d3d_present', 'workbench_live_sample', function()
     exporter.sample()
+    direct.sample()
     if packets.active() and not exporter.context() then
         packets.stop('Packet export stopped: telemetry inactive or paused; restart explicitly after fresh telemetry.')
     end
 end)
-ashita.events.register('unload', 'workbench_live_unload', function() packets.stop(); bridge.stop(); exporter.stop() end)
+ashita.events.register('unload', 'workbench_live_unload', function() packets.stop(); direct.stop(); bridge.stop(); exporter.stop() end)
