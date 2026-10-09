@@ -197,6 +197,7 @@ jobs:
           python test_fixtures/test_wiki_bg_dump_freshness.py
           python test_fixtures/test_wiki_sync_schedule.py
           python test_fixtures/test_wiki_schedule_recovery.py
+          python test_fixtures/test_wiki_sync_coordination.py
           python test_fixtures/test_wiki_sync_overview.py
           python test_fixtures/test_wiki_bulk_rate_limit_checkpoint.py
           python test_fixtures/test_wiki_link_safety.py
