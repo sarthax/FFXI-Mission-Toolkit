@@ -406,7 +406,7 @@
 
   /* ---------- inbox tab ---------- */
   function drawBundle() {
-    $('ibRows').innerHTML = state.bundle.map((b, i) => '<tr><td><span style="display:flex;align-items:center;gap:7px"><img src="/character-editor/client-cache/icons/' + b.item_id + '.png" width="28" height="28" alt="" loading="lazy" onerror="this.style.display=\\'none\\'"><span>' + esc(nm(b.name)) + ' <small>#' + b.item_id + '</small></span></span></td><td class="n"><input type="number" min="1" data-i="' + i + '" value="' + b.quantity + '"></td><td><button class="b" data-rm="' + i + '">✕</button></td></tr>').join('') || '<tr><td colspan="3" class="ahc-empty">Search for items to build a bundle, or pick a template.</td></tr>';
+    $('ibRows').innerHTML = state.bundle.map((b, i) => '<tr><td><span style="display:flex;align-items:center;gap:7px"><img src="/character-editor/client-cache/icons/' + b.item_id + '.png" width="28" height="28" alt="" loading="lazy" onerror="this.style.display=\'none\'"><span>' + esc(nm(b.name)) + ' <small>#' + b.item_id + '</small></span></span></td><td class="n"><input type="number" min="1" data-i="' + i + '" value="' + b.quantity + '"></td><td><button class="b" data-rm="' + i + '">✕</button></td></tr>').join('') || '<tr><td colspan="3" class="ahc-empty">Search for items to build a bundle, or pick a template.</td></tr>';
   }
   const drawChips = () => ibPick.draw();
   $('ibRows').addEventListener('input', e => { if (e.target.dataset.i != null) state.bundle[e.target.dataset.i].quantity = Math.max(1, +e.target.value || 1); });
@@ -423,7 +423,7 @@
   const ibIcon = id => '/character-editor/client-cache/icons/' + Number(id) + '.png';
   const ibItemRow = r => {
     const id = Number(r.item_id ?? r.id), name = String(r.name || r.item_name || ('Item #' + id));
-    return '<img src="' + ibIcon(id) + '" width="32" height="32" loading="lazy" alt="" onerror="this.style.display=\\'none\\'"> ' +
+    return '<img src="' + ibIcon(id) + '" width="32" height="32" loading="lazy" alt="" onerror="this.style.display=\'none\'"> ' +
       '<span><strong>' + esc(nm(name)) + '</strong> <small>#' + id + ' · ' + esc(r.category_path || 'Uncategorised') +
       (r.stack_size > 1 ? ' · stacks to ' + Number(r.stack_size) : '') + '</small></span>';
   };
@@ -437,7 +437,7 @@
   let ibSearchVersion = 0, ibResults = [];
   const ibSearch = debounce(async () => {
     const q = $('ibItemQ').value.trim(), version = ++ibSearchVersion;
-    if (q.length < 2 && !/^\\d+$/.test(q)) { $('ibSug').hidden = true; return; }
+    if (q.length < 2 && !/^\d+$/.test(q)) { $('ibSug').hidden = true; return; }
     try {
       const data = await req('/auction-house/console/item-search.json?q=' + encodeURIComponent(q) + '&limit=40');
       if (version !== ibSearchVersion) return;
