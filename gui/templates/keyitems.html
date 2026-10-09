@@ -10,15 +10,16 @@
 {% if total_pages > 1 %}
 <form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;">
   <input type="hidden" name="q" value="{{ q }}">
+  <input type="hidden" name="readiness" value="{{ readiness_filter }}">
   {% if page > 1 %}
-  <a class="chip" href="/keyitems?q={{ q|urlencode }}&page={{ page - 1 }}">&larr; prev</a>
+  <a class="chip" href="/keyitems?q={{ q|urlencode }}&readiness={{ readiness_filter|urlencode }}&page={{ page - 1 }}">&larr; prev</a>
   {% endif %}
   <span class="muted">page</span>
   <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
   <span class="muted">of {{ total_pages }}</span>
   <button type="submit">Go</button>
   {% if page < total_pages %}
-  <a class="chip" href="/keyitems?q={{ q|urlencode }}&page={{ page + 1 }}">next &rarr;</a>
+  <a class="chip" href="/keyitems?q={{ q|urlencode }}&readiness={{ readiness_filter|urlencode }}&page={{ page + 1 }}">next &rarr;</a>
   {% endif %}
 </form>
 {% endif %}
@@ -52,8 +53,15 @@
 </div>
 <form class="search wb-filter-row" method="get">
   <input type="text" name="q" value="{{ q }}" placeholder="Search by key-item name (e.g. Zeruhn)" aria-label="Search key items">
+  <label for="ki-global-readiness">Server readiness</label>
+  <select name="readiness" id="ki-global-readiness">
+    {% for value, label in [('all','All statuses'),('clean','Clean'),('drifted','Drifted'),('wrong_name','Wrong name at ID'),('missing','Missing')] %}
+    <option value="{{ value }}"{% if readiness_filter == value %} selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
   <button type="submit">Search</button>
 </form>
+<p class="muted">Server readiness filters all matching records before pagination. The quick filters below affect only the loaded page.</p>
 {% if not q %}
 <div class="nodata"><strong>Find a key item</strong><p>Enter a key-item name to inspect the client description, server mapping, and capture evidence. For server character ownership changes, use Character Editor.</p></div>
 {% else %}
@@ -63,7 +71,7 @@
   <span><span class="pill mismatch">wrong name</span> ID belongs to another key item</span>
   <span><span class="pill mismatch">missing</span> no matching enum found</span>
 </div>
-<div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} result(s)</strong><span class="muted">for "{{ q }}"</span><span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
+<div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} result(s)</strong><span class="muted">for "{{ q }}"</span><span class="chip">Server status: {{ readiness_filter }}</span><span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
 {{ pager() }}
 <div class="ki-intro" style="margin:10px 0">
   <label for="ki-status-filter">Show mapping status</label>
