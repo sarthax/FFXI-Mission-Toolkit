@@ -11,7 +11,7 @@ from functools import lru_cache
 
 from workbench.client.dat.global_tables import normalize_name
 
-_ENUM_LINE = re.compile(r"^\s*([A-Z][A-Z0-9_]*)\s*=\s*(\d+)\s*,?\s*(?:--.*)?$")
+_ENUM_LINE = re.compile(r"^\s*([A-Z][A-Z0-9_]*)\s*=\s*(\d+)\s*[;,]?\s*(?:--.*)?$")
 
 
 @lru_cache(maxsize=8)
