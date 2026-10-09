@@ -18,7 +18,7 @@ def observation(identity):
 def exchange(registry, identity, token, message=None, now=10):
     left, right = socket.socketpair()
     try:
-        left.sendall(make_hello(identity, token))
+        left.sendall(bytes((0, 5)) + b'bad')
         send(left, message or observation(identity))
         return accept_one(right, registry, now=now)
     finally:
