@@ -51,6 +51,43 @@
     if (e.target.closest('#itTree [data-c], #itList [data-id], #seList [data-id], #ahcTabs [data-t]'))
       saveWorkspace();
   });
+  /* Private browser-local shortcuts; not a server-side alert or write action. */
+  const WATCH_KEY = 'ffxi.ah.watchlist.v1';
+  let watch = [];
+  try { const saved = JSON.parse(localStorage.getItem(WATCH_KEY) || '[]');
+    if (Array.isArray(saved)) watch = saved.filter(x => ['item','seller'].includes(x.kind) &&
+      Number.isSafeInteger(x.id) && x.id > 0 && typeof x.name === 'string').slice(0, 100);
+  } catch (_) {}
+  function paintWatch() {
+    $('ahWatchEntries').innerHTML = watch.map((x,i) =>
+      '<button class="b" type="button" data-watch-open="' + i + '">' + (x.kind === 'item' ? '📦 ' : '👤 ') +
+      esc(x.name) + ' #' + x.id + '</button><button class="b" data-watch-remove="' + i + '" title="Unfavorite" type="button">×</button>').join('') ||
+      '<small class="mut">Open an item or seller and select ☆ Favorite to pin it here.</small>';
+  }
+  function setWatch(kind,id,name) {
+    if (!Number.isSafeInteger(+id) || +id <= 0) return;
+    const at = watch.findIndex(x => x.kind === kind && x.id === +id);
+    if (at >= 0) watch.splice(at,1);
+    else if (watch.length < 100) watch.push({kind,id:+id,name:String(name).slice(0,100)});
+    try { localStorage.setItem(WATCH_KEY, JSON.stringify(watch)); } catch (_) {}
+    paintWatch();
+    root.querySelectorAll('[data-ah-favorite]').forEach(el => {
+      const match = watch.some(x => x.kind === el.dataset.ahFavorite && x.id === +el.dataset.id);
+      el.textContent = match ? '★ Favorited' : '☆ Favorite';
+    });
+  }
+  root.addEventListener('click', e => {
+    const remove = e.target.closest('[data-watch-remove]');
+    if (remove) { watch.splice(+remove.dataset.watchRemove,1); try{localStorage.setItem(WATCH_KEY,JSON.stringify(watch));}catch(_){} paintWatch(); return; }
+    const open = e.target.closest('[data-watch-open]');
+    if (open) { const x=watch[+open.dataset.watchOpen]; if (x) { tab(x.kind==='item'?'items':'sellers'); x.kind==='item'?showItem(x.id):showSeller(x.id); } return; }
+    const btn = e.target.closest('[data-ah-favorite]');
+    if (btn) { e.stopPropagation(); setWatch(btn.dataset.ahFavorite,+btn.dataset.id,btn.dataset.name); }
+  });
+  $('ahWatchClear').addEventListener('click', () => {
+    watch=[]; try{localStorage.removeItem(WATCH_KEY);}catch(_){} paintWatch();
+  });
+  paintWatch();
   /* ---------- tabs & embedded tools ---------- */
   const TOOLS = {economy: ['Economy Intelligence', '/auction-house/economy'], listings: ['Listing Manager', '/auction-house/listing-manager'],
     seeder: ['Player listing & market history', '/auction-house/seeder'],
@@ -339,7 +376,7 @@
     try {
       const [d, h] = await Promise.all([req('/auction-house/console/listings.json?item_id=' + id + '&limit=5000'),
         req('/auction-house/items/' + id + '/history.json?limit=50').catch(() => ({rows: []}))]);
-      detail(el, '<div class="ahc-item-hero"><img class="ahc-item-hero-icon" src="/itemedit/' + id + '/icon.png" alt="" onerror="this.style.display=\'none\'"><div class="ahc-item-hero-copy"><b>' + esc(nm(it.item_name)) + '</b><small>#' + id + ' · ' + esc(it.category_path || '') + '</small><div class="ahc-item-hero-meta">Stack ' + fmt(it.stack_size) + ' · ' + fmt(it.listings || 0) + ' active · ' + fmt(it.seller_count || 0) + ' sellers</div><div class="ahc-item-hero-links"><a href="/itembrowser?q=' + encodeURIComponent(it.item_name) + '#' + id + '" target="_blank" rel="noopener">Item Browser ↗</a><a href="/itemedit#' + id + '" target="_blank" rel="noopener">Edit item ↗</a></div></div></div><details class="ahc-item-facts"><summary>Item &amp; market details</summary><div>Low: ' + fmt(it.min_price) + 'g · Median: ' + fmt(it.median_price) + 'g · High: ' + fmt(it.max_price) + 'g</div><div>Item ID: ' + id + ' · Stack size: ' + fmt(it.stack_size) + ' · Category: ' + esc(it.category_path || 'Uncategorised') + '</div></details>',
+      detail(el, '<button class="b" data-ah-favorite="item" data-id="' + id + '" data-name="' + esc(it.item_name) + '" type="button">' + (watch.some(x=>x.kind==='item'&&x.id===id)?'★ Favorited':'☆ Favorite') + '</button><div class="ahc-item-hero"><img class="ahc-item-hero-icon" src="/itemedit/' + id + '/icon.png" alt="" onerror="this.style.display=\'none\'"><div class="ahc-item-hero-copy"><b>' + esc(nm(it.item_name)) + '</b><small>#' + id + ' · ' + esc(it.category_path || '') + '</small><div class="ahc-item-hero-meta">Stack ' + fmt(it.stack_size) + ' · ' + fmt(it.listings || 0) + ' active · ' + fmt(it.seller_count || 0) + ' sellers</div><div class="ahc-item-hero-links"><a href="/itembrowser?q=' + encodeURIComponent(it.item_name) + '#' + id + '" target="_blank" rel="noopener">Item Browser ↗</a><a href="/itemedit#' + id + '" target="_blank" rel="noopener">Edit item ↗</a></div></div></div><details class="ahc-item-facts"><summary>Item &amp; market details</summary><div>Low: ' + fmt(it.min_price) + 'g · Median: ' + fmt(it.median_price) + 'g · High: ' + fmt(it.max_price) + 'g</div><div>Item ID: ' + id + ' · Stack size: ' + fmt(it.stack_size) + ' · Category: ' + esc(it.category_path || 'Uncategorised') + '</div></details>',
         d.rows, {seller: true, sales: h.rows || [], scope: nm(it.item_name), extra: '<button class="b pri" data-x="topoff">Top off…</button>',
           topoff: () => { addRestock({item_id: id, item_name: it.item_name, target: Math.max(it.listings + 1, 5), price: Math.round(it.min_price || it.avg_sale || 100), stack: false}); tab('restock'); }});
     } catch (e) { el.innerHTML = '<div class="ahc-empty">' + esc(e.message) + '</div>'; }
@@ -366,7 +403,7 @@
       d.rows.sort((a, b) => a.item_name.localeCompare(b.item_name) || a.asking_price - b.asking_price);
       const kpi = st ? ' · ' + st.sales + ' sold / ' + fmt(st.gil) + 'g in ' + st.days + 'd · sell-through ' + (st.sell_through == null ? '—' : st.sell_through + '%') +
         (st.median_hours_to_sale != null ? ' · median ' + st.median_hours_to_sale + 'h to sell' : '') : '';
-      detail(el, '<b>' + esc(s.seller_name || '#' + id) + '</b> <small>#' + id + ' · ' + s.listings + ' listing(s) · ' + s.item_count + ' item(s) · ' + fmt(s.value) + 'g asking' + kpi + '</small>',
+      detail(el, '<button class="b" data-ah-favorite="seller" data-id="' + id + '" data-name="' + esc(s.seller_name || '#' + id) + '" type="button">' + (watch.some(x=>x.kind==='seller'&&x.id===id)?'★ Favorited':'☆ Favorite') + '</button><b>' + esc(s.seller_name || '#' + id) + '</b> <small>#' + id + ' · ' + s.listings + ' listing(s) · ' + s.item_count + ' item(s) · ' + fmt(s.value) + 'g asking' + kpi + '</small>',
         d.rows, {item: true, scope: s.seller_name || '#' + id, sellerSales: st && st.recent, refs: st && st.refs});
     } catch (e) { el.innerHTML = '<div class="ahc-empty">' + esc(e.message) + '</div>'; }
   }
