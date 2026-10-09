@@ -250,6 +250,14 @@ def test_recording_controls_in_browser(tmp_path):
             playwright.expect(page.locator('#entity-rows tr').nth(0).locator('td').nth(7)).to_have_text('2147483649')
             playwright.expect(page.locator('#entity-rows tr').nth(0).locator('td').nth(8)).to_have_text('4294967295')
             playwright.expect(page.locator('#entity-rows tr').nth(0).locator('td').nth(9)).to_have_text('subtarget, target')
+            research = page.locator('#entity-rows tr').nth(0).locator('td').nth(11)
+            playwright.expect(research.get_by_role('link', name='Capture ID search', exact=True)).to_have_attribute('href', '/captures/search?module=entities&q=123')
+            playwright.expect(research.get_by_role('link', name='Feature Trace ID search', exact=True)).to_have_attribute('href', '/features/trace?q=123')
+            playwright.expect(research.get_by_role('link', name='Entity ID search', exact=True)).to_have_attribute('href', '/entity?q=123')
+            assert research.locator('a').count() == 3
+            assert 'zone 100' in research.locator('a').first.get_attribute('title')
+            assert 'Unverified' in research.locator('a').first.get_attribute('title')
+            playwright.expect(page.locator('#entity-rows tr').nth(1).locator('td').nth(11)).to_have_text('No reported server ID')
             inspection_session = page.locator('#client').input_value()
             page.locator('#entity-sort').select_option('distance')
             playwright.expect(page.locator('#entity-rows tr').nth(0).locator('td').nth(2)).to_have_text('10')
@@ -262,8 +270,10 @@ def test_recording_controls_in_browser(tmp_path):
             playwright.expect(page.locator('#entity-rows td').nth(2)).to_have_text('10')
             page.locator('#entity-search').fill('0xB')
             playwright.expect(page.locator('#entity-rows td').nth(2)).to_have_text('11')
+            assert page.locator('#entity-rows a').count() == 0
             page.locator('#entity-search').fill('no match')
             playwright.expect(page.locator('#entity-rows tr')).to_have_count(0)
+            assert page.locator('#entity-rows a').count() == 0
             playwright.expect(page.locator('#entity-status')).to_contain_text('0 of 3')
             playwright.expect(page.locator('#entity-status')).to_contain_text('truncated.')
             page.locator('#entity-search').fill('')
