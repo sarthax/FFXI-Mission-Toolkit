@@ -39,6 +39,15 @@ def audit(con: sqlite3.Connection, *, sample_limit: int = 12, recovery_offset: i
                    source_id,page_id LIMIT ?
         """, (max(0, min(sample_limit, 100)),)).fetchall()
     ]
+    # Count eligible legacy-only pages independently of the bounded page window.
+    recovery_total = con.execute("""
+          SELECT COUNT(*) FROM (
+            SELECT 1 FROM reference_wiki_blocks
+            GROUP BY source_id,page_id
+            HAVING SUM(CASE WHEN block_type='legacy_text' THEN 1 ELSE 0 END)>0
+               AND SUM(CASE WHEN block_type NOT IN ('legacy_text') THEN 1 ELSE 0 END)=0
+          )
+        """).fetchone()[0]
     # Rank pages which have only flattened legacy content; prioritize Japanese
     # sources for selective recovery without requesting or changing source data.
     recovery_candidates = [
@@ -69,7 +78,10 @@ def audit(con: sqlite3.Connection, *, sample_limit: int = 12, recovery_offset: i
         page["recovery_action"] = "REPARSE_LOCAL_SOURCE" if usable else "SELECTIVE_SOURCE_FETCH"
         page["source_format"] = format_name or None
     return {"status": "OK", "sources": sources, "samples": samples,
-            "recovery_candidates": recovery_candidates}
+            "recovery_candidates": recovery_candidates,
+            "recovery_total": recovery_total,
+            "recovery_offset": recovery_offset,
+            "recovery_has_more": recovery_offset + len(recovery_candidates) < recovery_total}
 
 
 
