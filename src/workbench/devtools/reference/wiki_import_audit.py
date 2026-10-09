@@ -106,6 +106,19 @@ def preview_local_recovery(con: sqlite3.Connection, *, sample_limit: int = 12) -
 
 
 
+
+def block_structure_summary(blocks: list[dict]) -> dict:
+    """Summarize parser output without treating links as verified references."""
+    types={}
+    located=0
+    for block in blocks:
+        kind=block.get("block_type") or "unknown"
+        types[kind]=types.get(kind,0)+1
+        located+=bool(block.get("source_locator"))
+    return {"blocks":len(blocks),"types":types,"with_source_locator":located}
+
+
+
 def apply_local_recovery(con: sqlite3.Connection, *, source: str, page_id: str,
                          expected_raw_hash: str, confirm: bool = False) -> dict:
     """Apply one local-source reparse; reject stale/unsafe/unpreviewed requests."""
@@ -146,8 +159,17 @@ def apply_local_recovery(con: sqlite3.Connection, *, source: str, page_id: str,
             b.get("section_path"),b.get("text"),b.get("target"),
             json.dumps(b.get("metadata") or {},ensure_ascii=False,sort_keys=True),
             b.get("source_locator")) for b in blocks])
+        persisted=con.execute("""SELECT block_type,source_locator FROM reference_wiki_blocks
+          WHERE source_id=? AND page_id=? ORDER BY ordinal""",(source,page_id)).fetchall()
+        expected=block_structure_summary(blocks)
+        actual=block_structure_summary([
+            {"block_type":kind,"source_locator":locator} for kind,locator in persisted
+        ])
+        if expected!=actual:
+            raise ValueError("Recovered structure does not match preview; rolling back")
         con.commit()
-        return {"source":source,"page_id":page_id,"applied":True,"blocks":len(blocks)}
+        return {"source":source,"page_id":page_id,"applied":True,
+                "validation":"PASSED","structure":actual}
     except Exception:
         con.rollback()
         raise
