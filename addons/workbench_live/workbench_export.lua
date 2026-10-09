@@ -19,6 +19,7 @@ function M.new(options)
         assert(handle:write(line), 'unable to write telemetry')
         assert(handle:flush(), 'unable to flush telemetry')
         bytes, last_time, last_frame = bytes + #line, now, frame
+        if options.on_frame then pcall(options.on_frame, client_id, line) end
     end
     local function sample()
         if not handle then return end
