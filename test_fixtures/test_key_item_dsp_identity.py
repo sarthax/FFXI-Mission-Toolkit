@@ -93,3 +93,29 @@ def test_uploaded_dsp_semicolon_style_catalog(tmp_path: Path):
     ambiguous = resolve_dsp_key_item(tmp_path, "Mysterious Amulet")
     assert ambiguous["status"] == "ambiguous"
     assert ambiguous["symbol"] is None
+
+
+def test_dsp_catalog_health_reports_missing_and_duplicate_names(tmp_path: Path):
+    from workbench.devtools.features.key_item_dsp_identity import inspect_dsp_key_item_catalog
+    assert inspect_dsp_key_item_catalog(tmp_path)["status"] == "unavailable"
+    file = tmp_path / "scripts" / "globals" / "keyitems.lua"
+    file.parent.mkdir(parents=True)
+    file.write_text(
+        "ZERUHN_REPORT = 1;\n"
+        "AIRSHIP_PASS = 8;\n"
+        "AIRSHIP_PASS = 99; -- duplicate constant\n", encoding="utf-8"
+    )
+    result = inspect_dsp_key_item_catalog(tmp_path)
+    assert result["status"] == "ready"
+    assert result["entries"] == 3
+    assert result["unique_names"] == 1
+    assert result["ambiguous_names"] == 1
+    assert result["source_path"] == "scripts/globals/keyitems.lua"
+
+
+def test_key_items_page_shows_active_dsp_catalog_health():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert "dsp_catalog_health.entries" in page
+    assert "dsp_catalog_health.ambiguous_names" in page
+    host = Path("src/workbench/app/_host_impl.py").read_text(encoding="utf-8")
+    assert '"dsp_catalog_health": dsp_catalog_health' in host
