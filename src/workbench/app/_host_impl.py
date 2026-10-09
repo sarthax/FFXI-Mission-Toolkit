@@ -5840,6 +5840,54 @@ async def wiki_scrape_url(request: Request):
     return {"job": job}
 
 
+@app.get("/wiki/snapshot/export")
+def wiki_snapshot_download(source: str = "all"):
+    """Generate a portable archive in a private temporary directory."""
+    from workbench.devtools.reference import wiki_snapshot
+    if source not in (*wiki_snapshot.SOURCES, "all"):
+        return JSONResponse({"error": "Invalid Wiki source"}, status_code=400)
+    directory = Path(tempfile.mkdtemp(prefix="wiki_snapshot_"))
+    destination = directory / f"wiki-{source}.jsonl.gz"
+    try:
+        wiki_snapshot.export_snapshot(DB_PATH, destination, source)
+    except (ValueError, OSError, sqlite3.Error) as exc:
+        shutil.rmtree(directory, ignore_errors=True)
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    from starlette.background import BackgroundTask
+    return FileResponse(str(destination), media_type="application/gzip",
+                        filename=destination.name,
+                        background=BackgroundTask(shutil.rmtree, str(directory), ignore_errors=True))
+
+
+@app.post("/wiki/snapshot/import")
+async def wiki_snapshot_upload(request: Request, file: UploadFile = File(...)):
+    """Validate a small local archive before importing; no arbitrary file paths."""
+    from workbench.devtools.reference import wiki_snapshot
+    if not (file.filename or "").lower().endswith(".jsonl.gz"):
+        return JSONResponse({"error": "Choose a .jsonl.gz Wiki snapshot"}, status_code=400)
+    path = None
+    try:
+        with tempfile.NamedTemporaryFile(prefix="wiki_upload_", suffix=".jsonl.gz", delete=False) as target:
+            path = Path(target.name)
+            total = 0
+            while True:
+                part = await file.read(1024 * 1024)
+                if not part:
+                    break
+                total += len(part)
+                if total > 64 * 1024 * 1024:
+                    raise ValueError("Snapshot upload exceeds 64 MiB limit")
+                target.write(part)
+        result = wiki_snapshot.import_snapshot(DB_PATH, path)
+        return {"result": result}
+    except (ValueError, OSError, sqlite3.Error, EOFError, KeyError, TypeError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    finally:
+        await file.close()
+        if path:
+            path.unlink(missing_ok=True)
+
+
 @app.get("/wiki/cache-health")
 def wiki_cache_health():
     return wiki_jobs.cache_health(DB_PATH)
