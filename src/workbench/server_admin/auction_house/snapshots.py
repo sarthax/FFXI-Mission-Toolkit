@@ -45,9 +45,11 @@ def _day(ts: int) -> str:
 def summarize(records: list[dict[str, Any]], now: int) -> dict[str, Any]:
     """Pure: supply and sell-through figures from loaded AH records."""
     week = now - 7 * 86400
+    # Exclude future-dated events from rolling-window metrics. Imported records
+    # can carry clock-skewed timestamps, but should not inflate current activity.
     active = [r for r in records if not r["sold_at"]]
-    sold = [r for r in records if r["sold_at"] and r["sold_at"] >= week]
-    listed = [r for r in records if r["listed_at"] >= week]
+    sold = [r for r in records if r["sold_at"] and week <= r["sold_at"] <= now]
+    listed = [r for r in records if week <= r["listed_at"] <= now]
     cats: dict[int, dict[str, int]] = defaultdict(lambda: {"active": 0, "active_gil": 0, "sales_7d": 0})
     items: dict[int, dict[str, Any]] = {}
     for r in active:
