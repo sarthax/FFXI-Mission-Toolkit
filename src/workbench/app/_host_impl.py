@@ -5730,7 +5730,7 @@ async def wiki_jp_crawl_start(request: Request):
     from workbench.devtools.reference import wiki_jp_crawl_jobs
     form = await request.form()
     try:
-        return {"job_id": wiki_jp_crawl_jobs.start(DB_PATH, form.get("seed") or "", int(form.get("limit") or 50))}
+        return {"job_id": wiki_jp_crawl_jobs.start(DB_PATH, form.get("seed") or "", int(form.get("limit") or 50), mode=str(form.get("mode") or "crawl"))}
     except (ValueError, TypeError) as exc:
         return JSONResponse({"error": str(exc)}, status_code=400)
 
