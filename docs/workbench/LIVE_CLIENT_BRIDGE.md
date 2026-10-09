@@ -557,3 +557,16 @@ sets the maximum batch size and owns socket timeout/lifecycle. No persistent
 listener process, Ashita-side connector, capture persistence, or game write
 executor has been enabled. The batch is returned only on normal EOF or
 an explicit frame cap; callers must not treat this as a streaming service.
+
+
+### Opt-in local receiver (2026-10-09)
+
+`bridge_listener.py` composes the loopback socket, authenticated stream reader
+and per-client priority mailbox into an **explicitly started**, bounded receiver.
+It tests local clients and refuses untrusted peers before enqueuing. The caller
+owns the listener lifetime, token provisioning and the choice to consume
+received observations. This is **not yet a background service**: each
+`accept_batch` handles one connection until clean EOF or the configured frame
+limit. No Ashita peer, live GUI stream, canonical Capture ingest or movement
+command execution has been attached. Queue overflow is a rejection or an
+explicit capture drop, not a claim of lossless collection.
