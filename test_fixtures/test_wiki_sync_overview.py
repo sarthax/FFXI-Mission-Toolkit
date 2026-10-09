@@ -35,6 +35,7 @@ def main():
         with sqlite3.connect(db) as con:
             con.execute("CREATE TABLE wiki_bulk_jobs(id TEXT,pending_json TEXT)")
             con.execute("CREATE TABLE wiki_jp_crawl_jobs(id TEXT,queue_json TEXT)")
+            con.execute("CREATE TABLE wiki_bg_dump_jobs(id TEXT,dump_path TEXT,dump_signature TEXT)")
             con.execute("INSERT INTO wiki_bulk_jobs VALUES (?,?)",
                         ("fx",json.dumps(["Medusa"])))
             con.execute("INSERT INTO wiki_jp_crawl_jobs VALUES (?,?)",
