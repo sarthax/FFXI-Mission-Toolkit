@@ -55,7 +55,7 @@ def test_incomplete_second_frame_rejects_partial_batch():
     try:
         left.sendall(make_hello(identity, token))
         send(left, msg(identity, 1))
-        left.sendall(b'\\x00')
+        left.sendall(bytes((0,)))
         left.shutdown(socket.SHUT_WR)
         with pytest.raises(ConnectionError):
             receive_session(right, peers, now=11)
