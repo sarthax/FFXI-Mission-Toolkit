@@ -4476,10 +4476,11 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
     if readiness not in {"all", "clean", "drifted", "wrong_name", "missing", "unavailable"}:
         readiness = "all"
     from workbench.runtime.legacy_settings import get_active_server_identity
-    from workbench.devtools.features.key_item_dsp_identity import resolve_dsp_key_item
+    from workbench.devtools.features.key_item_dsp_identity import resolve_dsp_key_item, inspect_dsp_key_item_catalog
     active = get_active_server_identity()
     primary_dsp = active.get("family") == "dsp"
     dsp_root = active.get("server_root") if primary_dsp else None
+    dsp_catalog_health = inspect_dsp_key_item_catalog(dsp_root) if primary_dsp else None
     con = get_con()
     rows = []
     total = 0
@@ -4564,7 +4565,7 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
     con.close()
     return templates.TemplateResponse(request, "keyitems.html", {
         "q": q, "rows": rows, "page": page, "total": total, "total_pages": total_pages,
-        "readiness_filter": readiness, "active_server": active, "primary_dsp": primary_dsp,
+        "readiness_filter": readiness, "active_server": active, "primary_dsp": primary_dsp, "dsp_catalog_health": dsp_catalog_health,
     })
 
 
