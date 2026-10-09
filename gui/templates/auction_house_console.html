@@ -190,6 +190,7 @@
         <div class="ahc-card">
           <h3>Custom augmented item preview</h3>
           <small>Select equipment, then choose up to four bonuses by stat name and amount, as in Character Editor. Delivery is experimental and DSP Test-only.</small>
+          <div class="ahc-bar"><select id="ibAugSaved" style="flex:1"><option value="">Saved augmented rewards…</option></select><button class="b" id="ibAugLoad" type="button">Load</button><button class="b" id="ibAugSave" type="button">Save as…</button><button class="b" id="ibAugDelete" type="button">Delete</button></div>
           <div class="ahc-bar"><input id="ibAugItemSearch" type="search" placeholder="Search equipment by name or item ID…" autocomplete="off" style="flex:1"><button class="b" id="ibAugClear" type="button">Clear</button></div>
           <div id="ibAugItemResults" class="ahc-sug" style="position:static;max-height:210px;overflow:auto" hidden></div>
           <div id="ibAugChosen" class="ahc-card" style="display:none;margin:8px 0"></div>
@@ -214,5 +215,5 @@
   <div class="ahc-toast" id="ahcToast"></div>
 </div>
 <script src="/static/auction_house_console.js?v=20261009watch2"></script>
-<script src="/static/auction_house_augment_picker.js?v=20261009a"></script>
+<script src="/static/auction_house_augment_picker.js?v=20261009saved"></script>
 {% endblock %}
