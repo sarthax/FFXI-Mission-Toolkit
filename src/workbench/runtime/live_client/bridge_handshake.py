@@ -82,6 +82,8 @@ def receive_session(sock: socket.socket, peers: LocalPeerRegistry, *,
         message = decode(read_exact(sock, size))
         if not peers.accepts(message, hello["token"], now=now):
             raise PermissionError("bridge peer identity changed or lease expired")
+        if message.lane.value == "control":
+            raise PermissionError("inbound control messages are not enabled")
         previous = last_sequence.get(message.lane, -1)
         if message.sequence <= previous:
             raise ValueError("nonmonotonic bridge stream sequence")
