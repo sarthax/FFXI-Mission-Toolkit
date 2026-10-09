@@ -58,9 +58,9 @@ class ManagedLiveReceiver:
         self.listener._server.settimeout(0.3)
         while not self._stopping.is_set():
             try:
-                with self._lock:
-                    frames = self.feeds.accept_and_update()
-                    if frames:
+                frames = self.feeds.accept_and_update()
+                if frames:
+                    with self._lock:
                         self._last_received[frames[-1].snapshot.client_id] = time.monotonic()
                         self._last_error = None
             except TimeoutError:
