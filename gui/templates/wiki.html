@@ -552,6 +552,18 @@
     jobs.forEach(function(j){
       var node=document.createElement('div');node.className='muted job-row';
       node.textContent=(j.source||'?')+' · '+(j.title||'?')+' — '+(j.state||'unknown')+(j.error?' · '+j.error:'');
+      if(Array.isArray(j.log) && j.log.length){
+        var details=document.createElement('details'), summary=document.createElement('summary'), pre=document.createElement('pre');
+        summary.textContent='Job log ('+j.log.length+' entries)';
+        pre.textContent=j.log.join('\\n');
+        details.appendChild(summary);details.appendChild(pre);node.appendChild(details);
+      }
+      if(j.state==='done' || j.state==='not_found'){
+        var link=document.createElement('a');
+        link.className='chip';
+        link.href='/wiki?title='+encodeURIComponent(j.title||'')+'&source='+encodeURIComponent(j.source||'')+'&tab=browse';
+        link.textContent='Open cached page';node.appendChild(link);
+      }
       box.appendChild(node);
     });
     return jobs.some(function(j){return ['queued','fetching','merging'].indexOf(j.state)>=0;});
@@ -572,6 +584,7 @@
       .catch(function(err){box.textContent='';show('Scrape request failed: '+err.message);})
       .finally(function(){if(button)button.disabled=false;});
   });}
+  if(box && box.querySelector('.job-row')) poll();
   var tb=document.getElementById('tr-btn');
   if(tb){tb.addEventListener('click',function(){var o=document.getElementById('tr-out');o.hidden=false;o.textContent='Translating...';
     fetch('/wiki/translate?source='+encodeURIComponent(tb.dataset.source)+'&title='+encodeURIComponent(tb.dataset.title)).then(function(r){return r.json();}).then(function(d){
