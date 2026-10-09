@@ -201,6 +201,9 @@ const liveEntitiesGroup = new THREE.Group();
 scene.add(liveEntitiesGroup);
 let lastLivePosition = null;
 let lastLiveRequest = 0;
+const liveEntityGeometry = new THREE.SphereGeometry(1.5, 8, 6);
+const liveEntityMaterial = new THREE.MeshBasicMaterial({color: 0xf5a35c, depthTest: false});
+const liveEntityPool = [];
 let liveMarker = null;
 async function refreshLiveClients() {
   try {
@@ -215,16 +218,19 @@ async function refreshLiveClients() {
   } catch (_) {}
 }
 function clearLiveEntities() {
-  for (const child of [...liveEntitiesGroup.children]) {
-    liveEntitiesGroup.remove(child);
-    child.geometry.dispose(); child.material.dispose();
-  }
+  for (const child of liveEntityPool) child.visible = false;
 }
 function clearLiveMarker() {
   lastLivePosition = null;
   clearLiveEntities();
   if (!liveMarker) return;
   liveMarker.parent.remove(liveMarker);
+  // ArrowHelper owns several Three.js geometry and material resources.
+  const arrow = liveMarker.userData.direction;
+  if (arrow) {
+    arrow.line.geometry.dispose(); arrow.line.material.dispose();
+    arrow.cone.geometry.dispose(); arrow.cone.material.dispose();
+  }
   liveMarker.geometry.dispose();
   liveMarker.material.dispose();
   liveMarker = null;
@@ -277,20 +283,29 @@ async function pollAshitaPosition() {
       controls.update();
     }
     clearLiveEntities();
+    let entityCount = 0;
     if (liveEntitiesToggle.checked && Array.isArray(data.entities)) {
       for (const entity of data.entities.slice(0, 100)) {
         const point = entity.position;
         if (!point || ![point.x, point.y, point.z].every(Number.isFinite)) continue;
-        const marker = new THREE.Mesh(new THREE.SphereGeometry(1.5, 8, 6),
-          new THREE.MeshBasicMaterial({color: 0xf5a35c, depthTest: false}));
+        let marker = liveEntityPool[entityCount];
+        if (!marker) {
+          marker = new THREE.Mesh(liveEntityGeometry, liveEntityMaterial);
+          marker.renderOrder = 19;
+          liveEntitiesGroup.add(marker);
+          liveEntityPool.push(marker);
+        }
         marker.position.set(point.x, -point.y, -point.z);
-        marker.renderOrder = 19;
         marker.userData.liveName = entity.name || '';
-        liveEntitiesGroup.add(marker);
+        marker.visible = true;
+        entityCount++;
       }
     }
     liveStatus.textContent = (data.player.character || clientId) + ' · live · ' +
-      position.x.toFixed(1) + ', ' + position.y.toFixed(1) + ', ' + position.z.toFixed(1);
+      position.x.toFixed(1) + ', ' + position.y.toFixed(1) + ', ' + position.z.toFixed(1) +
+      (liveEntitiesToggle.checked ? ' · entities ' + entityCount +
+       (data.entities_truncated ? '+' : '') : '') +
+      (Number.isFinite(position.heading) ? ' · heading ' + position.heading.toFixed(3) : '');
   } catch (error) {
     if (requestId !== lastLiveRequest) return;
     clearLiveMarker(); liveStatus.textContent = 'Live unavailable: ' + error.message;

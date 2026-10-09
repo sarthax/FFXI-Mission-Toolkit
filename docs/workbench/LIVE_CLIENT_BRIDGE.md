@@ -692,3 +692,14 @@ not run in fly mode, and the marker/entity overlay remains disabled unless
 snapshots remove markers; overlapping asynchronous polls cannot restore
 outdated data. Heading and client-to-mesh coordinate alignment still require
 verification on the Windows FFXI client. No game position writes are made.
+
+
+### 3D overlay performance and Windows comparison
+
+The live entity overlay reuses a bounded marker pool rather than rebuilding
+meshes on each 1.5-second poll. Hidden markers are reused for later observations,
+and removing the player marker also releases its heading arrow resources.
+The live status chip shows observed coordinates, heading in reported radians,
+and optional entity counts/truncation to aid comparison with the game client.
+These are *display diagnostics*, not evidence that axes and heading orientation
+have been calibrated against a live Windows zone.
