@@ -25,10 +25,9 @@ local function length_prefix(n, bytes)
     return table.concat(out)
 end
 function M.new(options)
-    local socket, source, sequence = nil, nil, 0
+    local source, sequence = nil, 0
     local function close()
-        if socket then pcall(function() socket:close() end) end
-        socket, source, sequence = nil, nil, 0
+        source, sequence = nil, 0
     end
     local function start(client_id)
         close()
@@ -42,21 +41,14 @@ function M.new(options)
             local token=options.token
             assert(type(token)=='string' and #token>=32 and #token<=256 and token:match('^[%w_-]+$'), 'invalid bridge token')
             local id=json_string(client_id)
-            local connect=assert(options.connect, 'missing socket connector')
-            local peer=assert(connect(options.host,port))
-            assert(peer:settimeout(0.1), 'unable to set short network timeout')
-            local hello='{"client_id":'..id..',"session_id":'..session..',"generation":'..generation..',"token":"'..token..'"}'
-            assert(#hello <= 1024, 'bridge hello too large')
-            local hello_wire=length_prefix(#hello,2)..hello
-            local sent, send_err=peer:send(hello_wire)
-            assert(sent == #hello_wire, send_err or 'partial bridge handshake send')
-            socket, source = peer, client_id
+            assert(type(options.connect)=='function', 'missing socket connector')
+            source = client_id
         end)
         if not ok then close(); if options.message then options.message('Bridge offline: '..tostring(err)) end; return false end
         return true
     end
     local function observe(client_id, json)
-        if not socket then return false end
+        if not source then return false end
         local ok, err=pcall(function()
             assert(client_id == source, 'bridge source changed')
             assert(type(json)=='string' and #json<=65536, 'invalid bridge telemetry size')
@@ -69,12 +61,23 @@ function M.new(options)
                 ..',"request_id":null,"payload_base64":"'..b64(line)..'"}'
             assert(#body<=96*1024, 'bridge frame exceeds limit')
             local frame_wire=length_prefix(#body,4)..body
-            local sent, send_err=socket:send(frame_wire)
-            assert(sent == #frame_wire, send_err or 'partial bridge telemetry send')
+            local peer=assert(options.connect(options.host,options.port))
+            local transferred, transfer_err=pcall(function()
+                assert(peer:settimeout(0.1), 'unable to set short network timeout')
+                local hello='{"client_id":'..json_string(source)..',"session_id":'..json_string(options.session_id)
+                    ..',"generation":'..json_string(options.generation)..',"token":"'..options.token..'"}'
+                local hello_wire=length_prefix(#hello,2)..hello
+                local hs, herr=peer:send(hello_wire)
+                assert(hs==#hello_wire,herr or 'partial bridge handshake send')
+                local fs, ferr=peer:send(frame_wire)
+                assert(fs==#frame_wire,ferr or 'partial bridge telemetry send')
+            end)
+            pcall(function() peer:close() end)
+            assert(transferred,transfer_err)
         end)
         if not ok then close(); if options.message then options.message('Bridge disconnected: '..tostring(err)) end; return false end
         return true
     end
-    return {start=start, observe=observe, stop=close, active=function() return socket~=nil end}
+    return {start=start, observe=observe, stop=close, active=function() return source~=nil end}
 end
 return M
