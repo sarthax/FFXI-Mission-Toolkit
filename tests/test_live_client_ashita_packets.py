@@ -102,6 +102,19 @@ def test_file_bound_fails_closed(tmp_path):
     assert 'Packets inactive' in lua.globals().messages[len(lua.globals().messages)]
 
 
+def test_rate_limited_packets_still_validate_telemetry_lifecycle(tmp_path):
+    lua = runtime(tmp_path); start(lua); event(lua)
+    lua.execute('for i=1,11 do events.packet_in(packet) end')
+    path, = tmp_path.glob('packets-*')
+    assert len(path.read_text().splitlines()) == 10
+    before = path.read_bytes()
+    lua.execute('clock=106; events.packet_in(packet); command("/wblive packets status")')
+    assert path.read_bytes() == before
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'Packets inactive.' in messages[-1]
+    assert 'telemetry context stale' in messages[-1]
+
+
 def test_packet_status_retains_stop_reason_and_clears_on_restart(tmp_path):
     lua = runtime(tmp_path); start(lua); event(lua)
     lua.execute('clock=106; events.packet_in(packet); command("/wblive packets status")')
