@@ -641,3 +641,16 @@ with updated settings if you reprovision. Never share bridge tokens, and do
 not expose the Toolkit management console over a remote connection. The
 normal Live Client replay console remains available unchanged. Windows
 Ashita end-to-end validation is still outstanding.
+
+
+### Sliding authenticated receiver lease
+
+Successfully accepted authenticated telemetry batches now renew the current
+local bridge token lease without changing the session ID, generation or token.
+A continuously active Ashita sender therefore no longer reaches the original
+one-hour idle expiry. This is an **idle** timeout, not unlimited authorization:
+expired tokens, rejected/control-only messages, and malformed batches must not
+renew authorization. Reprovisioning, explicit stop and host restart still
+invalidate the existing session and require updated private Ashita settings.
+This behavior is regression tested with deterministic lease times; full
+long-duration Ashita/Windows testing remains necessary.
