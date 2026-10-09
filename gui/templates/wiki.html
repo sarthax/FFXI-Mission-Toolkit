@@ -58,6 +58,20 @@
     <p class="muted">These are pages already stored in the toolkit's local database. The BG offline index is counted separately; it does not imply the page has been imported into structured Wiki documents.</p>
   </div>
 </section>
+<details class="wiki-section" id="wiki-bulk-box">
+<summary>Bulk Wiki scrape — FFXIclopedia (bounded batch)</summary>
+<div class="body">
+  <p class="muted">Import up to 50 or 250 missing FFXIclopedia pages into the existing local Wiki cache. Progress is saved in SQLite after every page. Pause or resume the job after restarting the toolkit. The process runs only while the local toolkit server is running.</p>
+  <form id="wiki-bulk-start" class="wiki-actions">
+    <label for="wiki-bulk-limit">Pages this batch</label>
+    <select id="wiki-bulk-limit" name="limit"><option value="50">50</option><option value="250">250</option></select>
+    <button type="submit">Start batch</button>
+    <button type="button" id="wiki-bulk-refresh">Refresh status</button>
+  </form>
+  <div id="wiki-bulk-notice" class="muted" role="status"></div>
+  <div id="wiki-bulk-jobs"></div>
+</div>
+</details>
 <details class="wiki-section" id="scrape-box">
 <summary>Scrape a wiki page by URL <span class="muted">(runs in the background, no LLM)</span></summary>
 <div class="body">
@@ -592,6 +606,40 @@
     cacheBtn.addEventListener('click',updateWikiCache);
     updateWikiCache();
   }
+  (function(){
+    var panel=document.getElementById('wiki-bulk-box'), form=document.getElementById('wiki-bulk-start');
+    if(!panel||!form)return;
+    var holder=document.getElementById('wiki-bulk-jobs'), notice=document.getElementById('wiki-bulk-notice');
+    function send(path,data){
+      return fetch(path,{method:'POST',body:data}).then(function(r){return r.json().then(function(v){if(!r.ok)throw Error(v.error||'HTTP '+r.status);return v;});});
+    }
+    function request(action,id){
+      var payload=new FormData();payload.set('job_id',id);
+      send('/wiki/bulk/'+action,payload).then(function(){refresh();}).catch(function(e){notice.textContent=e.message;});
+    }
+    function refresh(){
+      fetch('/wiki/bulk/jobs',{cache:'no-store'}).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json();}).then(function(data){
+        holder.replaceChildren();
+        (data.jobs||[]).forEach(function(job){
+          var row=document.createElement('div');row.className='wiki-kpi';
+          var info=document.createElement('div');
+          info.textContent=job.source+' — '+job.state+' | '+job.processed+'/'+job.discovered+' processed | '+job.imported+' imported, '+job.failed+' failed';
+          row.appendChild(info);
+          if(job.last_error){var err=document.createElement('div');err.className='warn';err.textContent=job.last_error;row.appendChild(err);}
+          var action=job.state==='running'||job.state==='discovering'||job.state==='queued'?'pause':
+            (['paused','interrupted','error'].indexOf(job.state)>=0?'resume':null);
+          if(action){var btn=document.createElement('button');btn.type='button';btn.textContent=action==='pause'?'Pause':'Resume';btn.addEventListener('click',function(){request(action,job.id);});row.appendChild(btn);}
+          holder.appendChild(row);
+        });
+      }).catch(function(e){notice.textContent='Batch status unavailable: '+e.message;});
+    }
+    form.addEventListener('submit',function(e){
+      e.preventDefault();notice.textContent='Starting batch…';
+      send('/wiki/bulk/start',new FormData(form)).then(function(v){notice.textContent='Batch queued: '+v.job_id;refresh();}).catch(function(err){notice.textContent=err.message;});
+    });
+    document.getElementById('wiki-bulk-refresh').addEventListener('click',refresh);
+    refresh();
+  })();
   var f=document.getElementById('scrape-form'),box=document.getElementById('scrape-jobs'),timer=null;
   function show(message){var node=document.createElement('div');node.className='warn';node.textContent=message;box.prepend(node);}
   function paint(jobs){
