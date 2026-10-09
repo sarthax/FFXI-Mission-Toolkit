@@ -193,6 +193,7 @@ jobs:
           python test_fixtures/test_wiki_idempotent_documents.py
           python test_fixtures/test_wiki_page_history.py
           python test_fixtures/test_wiki_bg_metadata_refresh.py
+          python test_fixtures/test_wiki_bg_dump_freshness.py
           python test_fixtures/test_wiki_sync_schedule.py
           python test_fixtures/test_wiki_schedule_recovery.py
           python test_fixtures/test_wiki_sync_overview.py
