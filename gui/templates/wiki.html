@@ -88,10 +88,11 @@
 {% if tab == 'recovery' %}
 <section class="wiki-section">
   <h3>Local Wiki structure recovery — preview only</h3>
-  <p class="muted">These are retained-source previews, not applied changes. No scraping or database modifications occur here. The guarded single-page recovery command remains separate.</p>
+  <p class="muted">These are retained-source previews, not applied changes. No scraping or database modifications occur here. Applying one page requires explicit confirmation and rechecks the previewed source hash; changes are validated before commit.</p>
+  {% if recovery_result == 'applied' %}<div class="notice">Local Wiki page recovery applied and validated.</div>{% elif recovery_result == 'failed' %}<div class="warn">Recovery was rejected. Refresh the preview and verify confirmation and source hash.</div>{% endif %}
   {% if recovery_preview %}
   <div class="table-wrap"><table>
-    <thead><tr><th>Source / page ID</th><th>Existing blocks</th><th>Proposed blocks</th><th>Block-type changes</th><th>Source locators</th></tr></thead>
+    <thead><tr><th>Source / page ID</th><th>Existing blocks</th><th>Proposed blocks</th><th>Block-type changes</th><th>Source locators</th><th>Guarded apply</th></tr></thead>
     <tbody>
     {% for entry in recovery_preview %}
     <tr>
@@ -100,6 +101,13 @@
       <td>{{ entry.proposed_structure.blocks }}</td>
       <td><pre>{{ entry.block_type_deltas }}</pre></td>
       <td>{{ entry.existing_structure.with_source_locator }} → {{ entry.proposed_structure.with_source_locator }}</td>
+      <td><form method="post" action="/wiki/recovery/apply">
+        <input type="hidden" name="source" value="{{ entry.source }}">
+        <input type="hidden" name="page_id" value="{{ entry.page_id }}">
+        <input type="hidden" name="source_hash" value="{{ entry.source_hash }}">
+        <label><input type="checkbox" name="confirm" value="yes" required> Confirm one-page recovery</label>
+        <button type="submit">Apply this page</button>
+      </form></td>
     </tr>
     {% endfor %}
     </tbody>
