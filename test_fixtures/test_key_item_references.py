@@ -144,3 +144,22 @@ def test_lua_symbol_index_reuses_parsing_and_refreshes_after_edit(tmp_path: Path
     os.utime(target, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1000000000))
     updated = discover_key_item_references(tmp_path, "TEST_KEY", lineage="lsb")
     assert [r["operation"] for r in updated["references"]] == ["remove"]
+
+
+def test_dsp_direct_global_key_item_symbols_are_scoped_to_dsp(tmp_path: Path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "npc.lua").write_text(
+        "if player:hasKeyItem(ZERUHN_REPORT) then\n"
+        "    player:addKeyItem(ZERUHN_REPORT)\n"
+        "    player:delKeyItem(ZERUHN_REPORT)\n"
+        "    npcUtil.giveKeyItem(player, ZERUHN_REPORT)\n"
+        "    player:addKeyItem(tpz.ki.ZERUHN_REPORT)\n"
+        "end\n", encoding="utf-8"
+    )
+    dsp = discover_key_item_references(tmp_path, "ZERUHN_REPORT", lineage="dsp")
+    assert dsp["operation_counts"] == {"require": 1, "grant": 3, "remove": 1}
+    assert {r["namespace"] for r in dsp["references"]} == {"dsp.global", "tpz.ki"}
+    assert discover_key_item_references(tmp_path, "ZERUHN_REPORT", lineage="lsb")["references"] == []
+    topaz = discover_key_item_references(tmp_path, "ZERUHN_REPORT", lineage="topaz")
+    assert len(topaz["references"]) == 1

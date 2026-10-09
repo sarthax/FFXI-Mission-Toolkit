@@ -13,13 +13,13 @@ from collections import defaultdict
 _ALLOWED_NAMESPACES = {
     "lsb": ("xi.keyItem",),
     "topaz": ("tpz.ki", "tpz.keyItem"),
-    "dsp": ("tpz.ki", "tpz.keyItem"),
+    "dsp": ("tpz.ki", "tpz.keyItem", "dsp.global"),
 }
 _CALL = re.compile(
     r"(?P<api>\b(?:player:(?:hasKeyItem|addKeyItem|delKeyItem)|"
     r"npcUtil\.giveKeyItem))\s*\(\s*"
     r"(?:(?:player\s*,\s*)?)"
-    r"(?P<namespace>xi\.keyItem|tpz\.ki|tpz\.keyItem)\."
+    r"(?:(?P<namespace>xi\.keyItem|tpz\.ki|tpz\.keyItem)\.)?"
     r"(?P<symbol>[A-Z][A-Z0-9_]*)\b"
 )
 _OPERATION = {
@@ -50,7 +50,7 @@ def _indexed_lua_lines(path: str, mtime_ns: int, size: int) -> dict[str, tuple[t
         for match in _CALL.finditer(code):
             api = match.group("api").split(":")[-1].split(".")[-1]
             symbols[match.group("symbol")].append((
-                number, raw.strip(), match.group("namespace"), api,
+                number, raw.strip(), match.group("namespace") or "dsp.global", api,
             ))
     return {key: tuple(value) for key, value in symbols.items()}
 
