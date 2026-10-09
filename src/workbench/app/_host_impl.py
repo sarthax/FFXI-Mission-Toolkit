@@ -4483,7 +4483,7 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
         # Exact full-catalog filtering is applied before pagination.
         # Preserve cross-lineage identity guards from the normal page path.
         candidates = con.execute(
-            "SELECT keyitem_id, name, plural, description FROM key_items WHERE " + predicate + " ORDER BY name",
+            "SELECT keyitem_id, name FROM key_items WHERE " + predicate + " ORDER BY name",
             args,
         ).fetchall()
         candidates = [row for row in candidates if ingest_global_tables.resolve_keyitem_readiness(
@@ -4492,7 +4492,16 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
         total_pages = max(1, (total + KEYITEMS_PAGE_SIZE - 1) // KEYITEMS_PAGE_SIZE)
         page = min(page, total_pages)
         offset = (page - 1) * KEYITEMS_PAGE_SIZE
-        ki_rows = candidates[offset:offset + KEYITEMS_PAGE_SIZE]
+        page_ids = [row["keyitem_id"] for row in candidates[offset:offset + KEYITEMS_PAGE_SIZE]]
+        if page_ids:
+            placeholders = ",".join("?" for _ in page_ids)
+            ki_rows = con.execute(
+                "SELECT keyitem_id, name, plural, description FROM key_items "
+                "WHERE keyitem_id IN (" + placeholders + ") ORDER BY name",
+                page_ids,
+            ).fetchall()
+        else:
+            ki_rows = []
     else:
         total = con.execute(
             "SELECT COUNT(*) FROM key_items WHERE " + predicate, args
