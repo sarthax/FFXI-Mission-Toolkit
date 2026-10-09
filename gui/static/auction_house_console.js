@@ -41,7 +41,7 @@
     if (!el) return;
     if (savedWorkspace.filters && Object.prototype.hasOwnProperty.call(savedWorkspace.filters, id)) {
       const value = savedWorkspace.filters[id];
-      if ([...el.options || []].length && ![...el.options].some(o => o.value === value)) return;
+      if (el.tagName === 'SELECT' && !Array.from(el.options).some(o => o.value === value)) return;
       el.value = value;
     }
     el.addEventListener('change', saveWorkspace);
@@ -1133,7 +1133,7 @@
   { const h = location.hash.slice(1);
     const savedTab = savedWorkspace.tab;
     const preferred = h && h !== 'economy' ? h : savedTab;
-    tab(TOOLS[preferred] || $('p-' + preferred) ? preferred : 'economy');
+    tab(preferred && (TOOLS[preferred] || $('p-' + preferred)) ? preferred : 'economy');
   }
   window.ahcOpen = (k, id, cat) => { if (cat != null) { state.cat = cat; drawItems(); } if (id) return k === 'items' ? showItem(id) : showSeller(id); };
 })();
