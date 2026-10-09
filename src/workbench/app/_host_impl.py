@@ -4517,6 +4517,52 @@ def keyitems(request: Request, q: str = "", page: int = 1):
     })
 
 
+@app.get("/keyitems/lua-references.json")
+def keyitems_lua_references(keyitem_id: int, lineage: str = "lsb"):
+    """Read-only source citations for a selected client catalog key item."""
+    from fastapi import HTTPException
+    from workbench.devtools.features.key_item_references import discover_key_item_references
+
+    if lineage not in {"lsb", "topaz", "dsp"}:
+        raise HTTPException(status_code=400, detail="Unsupported server lineage")
+    con = get_con()
+    try:
+        item = con.execute("SELECT name FROM key_items WHERE keyitem_id = ? LIMIT 2",
+                           (keyitem_id,)).fetchall()
+        if len(item) != 1:
+            raise HTTPException(status_code=404, detail="Key item ID not uniquely present in client catalog")
+        table = "keyitems_ours" if lineage == "lsb" else "topaz_keyitems"
+        ready = ingest_global_tables.resolve_keyitem_readiness(
+            con, keyitem_id, item[0]["name"], table=table)
+    finally:
+        con.close()
+
+    status = ready.get("status")
+    match = ready.get("id_match") if status == "clean" else (
+        ready.get("name_match") if status == "drifted" else None
+    )
+    symbol = match[1] if isinstance(match, (list, tuple)) else match
+    if status not in {"clean", "drifted"} or not symbol:
+        return {"keyitem_id": keyitem_id, "lineage": lineage, "readiness": status,
+                "references": [], "scanned_files": 0, "matched_scripts": 0,
+                "truncated": False,
+                "message": "A verified enum identity is unavailable for this server lineage."}
+
+    from workbench.devtools.indexing import build_lsb_index
+    root = {"lsb": build_lsb_index.LSB_ROOT,
+            "topaz": settings_mod.get_topaz_root(),
+            "dsp": settings_mod.get_dsp_root()}[lineage]
+    if not root:
+        return {"keyitem_id": keyitem_id, "lineage": lineage, "readiness": status,
+                "symbol": symbol, "references": [], "scanned_files": 0,
+                "matched_scripts": 0, "truncated": False,
+                "message": "No server source checkout configured for this lineage."}
+    result = discover_key_item_references(root, str(symbol), lineage=lineage,
+                                          max_matches=200, max_files=25000)
+    result.update({"keyitem_id": keyitem_id, "readiness": status})
+    return result
+
+
 ZONE_BROWSE_PAGE_SIZE = 100
 
 
