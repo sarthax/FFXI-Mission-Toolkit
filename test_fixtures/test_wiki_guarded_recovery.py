@@ -32,7 +32,10 @@ def main():
         assert con.execute("SELECT block_type FROM reference_wiki_blocks").fetchall()==[("legacy_text",)]
     result=apply_local_recovery(con,source=source,page_id=page,
                                 expected_raw_hash=preview[0]["source_hash"],confirm=True)
-    assert result["applied"] and result["blocks"]>1
+    assert result["applied"] and result["validation"]=="PASSED"
+    assert result["structure"]["blocks"]>1
+    assert result["structure"]["types"].get("heading",0)>=1
+    assert result["structure"]["with_source_locator"]>=1
     assert con.execute("SELECT count(*) FROM reference_wiki_blocks WHERE block_type='legacy_text'").fetchone()[0]==0
     assert con.execute("SELECT raw_source FROM reference_wiki_documents").fetchone()[0]==raw
     try:
