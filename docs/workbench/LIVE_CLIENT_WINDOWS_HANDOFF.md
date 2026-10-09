@@ -234,3 +234,18 @@ Packet hook bytes are not automatically equivalent to transmitted wire bytes.
 Do not upload character names, account IDs, private chat or unrelated network
 traffic without redacting them in a reproducible copy; preserve source hashes
 separately. No code in the report performs independent wire verification.
+
+
+## Two-instance packet isolation acceptance
+
+If two authorized Ashita client instances are available, give each a distinct
+`/wblive start <id> inventory` ID and separate addon output directory.
+In each instance start `/wblive packets start event_emote`, generate a distinct
+known emote, and preserve both packet and telemetry files. Confirm each packet
+file declares only its intended source client ID, original recording stem,
+zone and opcode observations. Stop or log out in instance A, then verify B
+continues exporting independently. Restart A only with a fresh telemetry
+recording and distinct file. Never compare same-name client slots as verified
+server identities. These are manual Windows acceptance steps; the repository
+tests use two separate synthetic Lua runtimes and cannot establish actual
+simultaneous Ashita compatibility.
