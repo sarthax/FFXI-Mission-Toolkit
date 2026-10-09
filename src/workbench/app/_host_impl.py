@@ -4466,7 +4466,9 @@ KEYITEMS_PAGE_SIZE = 100
 
 
 @app.get("/keyitems", response_class=HTMLResponse)
-def keyitems(request: Request, q: str = "", page: int = 1):
+def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all"):
+    if readiness not in {"all", "clean", "drifted", "wrong_name", "missing"}:
+        readiness = "all"
     con = get_con()
     rows = []
     total = 0
@@ -4474,15 +4476,30 @@ def keyitems(request: Request, q: str = "", page: int = 1):
     if q:
         page = max(1, page)
         offset = (page - 1) * KEYITEMS_PAGE_SIZE
-        total = con.execute(
-            "SELECT COUNT(*) FROM key_items WHERE name LIKE ?", (f"%{q}%",)
-        ).fetchone()[0]
-        total_pages = max(1, (total + KEYITEMS_PAGE_SIZE - 1) // KEYITEMS_PAGE_SIZE)
-        ki_rows = con.execute(
-            "SELECT keyitem_id, name, plural, description FROM key_items WHERE name LIKE ? "
-            "ORDER BY name LIMIT ? OFFSET ?",
-            (f"%{q}%", KEYITEMS_PAGE_SIZE, offset),
-        ).fetchall()
+        if readiness != "all":
+            # Exact full-catalog filtering is applied before pagination.
+            # Preserve cross-lineage identity guards from the normal page path.
+            candidates = con.execute(
+                "SELECT keyitem_id, name, plural, description FROM key_items WHERE name LIKE ? ORDER BY name",
+                (f"%{q}%",),
+            ).fetchall()
+            candidates = [row for row in candidates if ingest_global_tables.resolve_keyitem_readiness(
+                con, row["keyitem_id"], row["name"])["status"] == readiness]
+            total = len(candidates)
+            total_pages = max(1, (total + KEYITEMS_PAGE_SIZE - 1) // KEYITEMS_PAGE_SIZE)
+            page = min(page, total_pages)
+            offset = (page - 1) * KEYITEMS_PAGE_SIZE
+            ki_rows = candidates[offset:offset + KEYITEMS_PAGE_SIZE]
+        else:
+            total = con.execute(
+                "SELECT COUNT(*) FROM key_items WHERE name LIKE ?", (f"%{q}%",)
+            ).fetchone()[0]
+            total_pages = max(1, (total + KEYITEMS_PAGE_SIZE - 1) // KEYITEMS_PAGE_SIZE)
+            ki_rows = con.execute(
+                "SELECT keyitem_id, name, plural, description FROM key_items WHERE name LIKE ? "
+                "ORDER BY name LIMIT ? OFFSET ?",
+                (f"%{q}%", KEYITEMS_PAGE_SIZE, offset),
+            ).fetchall()
         topaz_ready = backport_enabled()
         for r in ki_rows:
             readiness = ingest_global_tables.resolve_keyitem_readiness(con, r["keyitem_id"], r["name"])
@@ -4514,6 +4531,7 @@ def keyitems(request: Request, q: str = "", page: int = 1):
     con.close()
     return templates.TemplateResponse(request, "keyitems.html", {
         "q": q, "rows": rows, "page": page, "total": total, "total_pages": total_pages,
+        "readiness_filter": readiness,
     })
 
 
