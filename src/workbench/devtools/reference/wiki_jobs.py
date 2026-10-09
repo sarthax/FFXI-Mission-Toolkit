@@ -5,7 +5,7 @@ with a busy timeout, so other tools are not blocked. Page text is stored verbati
 translation is a display-time step (see translate_cached) and never alters the stored evidence.
 """
 from __future__ import annotations
-import hashlib, os, sqlite3, subprocess, tempfile, threading, time, urllib.parse, uuid
+import hashlib, os, sqlite3, subprocess, tempfile, threading, time, urllib.parse, urllib.error, uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -154,6 +154,24 @@ def _merge(main_db: str, tmp_db: str, log) -> dict:
     raise RuntimeError("main DB stayed locked; scraped page kept in " + tmp_db)
 
 
+def _failure_guidance(exc: Exception, phase: str) -> tuple[str, str]:
+    """Classify scrape failures without hiding the underlying exception."""
+    if isinstance(exc, urllib.error.HTTPError):
+        status = exc.code
+        if status in (403, 429, 503):
+            return "source_access", f"Source returned HTTP {status}; review access or rate limits and retry later."
+        return "source_http", f"Source returned HTTP {status}; check the source page or API."
+    if isinstance(exc, (urllib.error.URLError, TimeoutError, ConnectionError)):
+        return "network", "Cannot reach the source; check network access and retry."
+    if isinstance(exc, sqlite3.Error):
+        return "cache_database", "Local cache database operation failed; check storage and schema."
+    if phase == "fetching":
+        return "source_import", "Source fetch or parse failed; inspect the job log."
+    if phase == "merging":
+        return "cache_import", "Cache import or structure verification failed; inspect the job log."
+    return "unknown", "Scrape failed; inspect the job log."
+
+
 def _run(job: dict, main_db: str) -> None:
     def log(m):
         job["log"].append(f"{datetime.now():%H:%M:%S} {m}")
@@ -162,7 +180,8 @@ def _run(job: dict, main_db: str) -> None:
         job["state"] = "fetching"
         fetched = _fetch(job["source"], job["title"], log)
         if not fetched:
-            job.update(state="not_found", result=0)
+            job.update(state="not_found", result=0,
+                       guidance="The source returned no matching page; check the title and source URL.")
             log("page not found at source")
             return
         rows = [item["row"] for item in fetched]
@@ -228,6 +247,8 @@ def _run(job: dict, main_db: str) -> None:
                 if unsearchable:
                     details.append("stored but not searchable: " + ", ".join(unsearchable[:5]))
                 job["error"] = "; ".join(details)
+                job["error_code"] = "cache_verification"
+                job["guidance"] = "Page was fetched but not fully searchable; inspect cache health and job log."
                 log("post-import verification failed: " + job["error"])
                 return
         finally:
@@ -235,9 +256,11 @@ def _run(job: dict, main_db: str) -> None:
         job["state"] = "done"
         log(f"verified {job['verified_pages']} page(s) in main cache; structured document blocks saved")
     except Exception as exc:  # a job must never raise into the server
+        phase = job.get("state", "unknown")
         job["state"] = "error"
         job["error"] = str(exc)
-        log(f"error: {exc}")
+        job["error_code"], job["guidance"] = _failure_guidance(exc, phase)
+        log(f"error ({job[\'error_code\']}): {exc}")
     finally:
         if job["state"] != "error" and os.path.exists(tmp):
             try:
