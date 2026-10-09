@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from fastapi import APIRouter, Body, HTTPException, Query
 from fastapi.responses import JSONResponse
 
-from workbench.runtime.legacy_settings import get_active_server_root
+from workbench.runtime.legacy_settings import get_active_server_identity, get_active_server_root
 
 from .factory import open_auction_house
 from .legacy_test_executor import LegacyTestExecutionBlocked
@@ -48,11 +48,29 @@ def campaign_detail(campaign_id: str):
         raise HTTPException(status_code=503, detail=str(exc))
 
 
+def validate_retry_environment(source: dict, active: dict) -> None:
+    """Never carry a campaign retry into another named server environment.
+
+    Stable profile identity is required; missing or mismatched evidence fails closed.
+    This is a comparison guard, not a substitute for execution-time Test gates.
+    """
+    keys = ("name", "family", "environment")
+    for key in keys:
+        original = str(source.get(key) or "").strip().lower()
+        selected = str(active.get(key) or "").strip().lower()
+        if not original or not selected or original != selected:
+            raise LegacyTestExecutionBlocked(
+                "Reward retry requires the original named server environment; "
+                f"{key} is missing or changed"
+            )
+
+
 @router.post("/{campaign_id}/retry-preview.json")
 def campaign_retry_preview(campaign_id: str, payload: dict = Body(default={})):
     """Preview a retry for failed recipients only; never include prior successful recipients."""
     try:
         campaign = get_campaign(campaign_id)
+        validate_retry_environment(campaign.get("environment") or {}, get_active_server_identity())
         failed_ids = failed_recipient_ids(campaign_id)
         if not failed_ids:
             raise LegacyTestExecutionBlocked("This campaign has no failed recipients to retry")
