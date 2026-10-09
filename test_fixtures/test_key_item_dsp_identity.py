@@ -61,3 +61,11 @@ def test_dsp_enum_uses_metadata_cached_catalog(tmp_path: Path):
     second = resolve_dsp_key_item(tmp_path, "Second Key")
     assert first["server_id"] == 75 and second["server_id"] == 76
     assert _enum_records.cache_info().hits > hits
+
+
+def test_dsp_primary_display_does_not_mislabel_dsp_as_lsb():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert 'DSP checkout is primary' in page
+    assert 'Topaz readiness (reference)' in page
+    assert 'this ID maps to a different enum in the selected source' in page
+    assert 'this id is really something else in LSB' not in page
