@@ -2,9 +2,24 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from urllib.parse import urlencode
 
 from .entities import overlay_observations
 from .telemetry import TelemetryFrame
+
+
+def entity_research_links(server_entity_id: int | None) -> list[dict]:
+    """Search existing research views; never resolve identity from a client slot."""
+    if type(server_entity_id) is not int or not 1 <= server_entity_id <= 0xFFFFFFFF:
+        return []
+    query = str(server_entity_id)
+    return [{'label': label, 'href': path + '?' + urlencode(parameters),
+             'basis': 'reported_server_id', 'identity_verified': False}
+            for label, path, parameters in (
+                ('Capture ID search', '/captures/search', {'module': 'entities', 'q': query}),
+                ('Entity ID search', '/entity', {'q': query}),
+                ('Feature Trace ID search', '/features/trace', {'q': query}),
+            )]
 
 
 def viewer_projection(frame: TelemetryFrame, *, zone_id: int,
@@ -41,6 +56,7 @@ def viewer_projection(frame: TelemetryFrame, *, zone_id: int,
              "instance_hint": item.instance_hint,
              "raw_entity_type": item.raw_entity_type, "raw_spawn_flags": item.raw_spawn_flags,
              "raw_status": item.raw_status, "target_roles": list(item.target_roles),
+             "research_links": entity_research_links(item.server_entity_id),
              "observed_at": item.observed_at}
             for item in observations
         ],

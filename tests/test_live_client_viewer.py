@@ -48,3 +48,21 @@ class ViewerProjectionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_research_searches_use_reported_server_id_without_type_or_slot_guessing():
+    from workbench.runtime.live_client.viewer import entity_research_links
+    from urllib.parse import urlparse, parse_qs
+    for absent in (None, 0, -1, True, '123', 0x100000000):
+        assert entity_research_links(absent) == []
+    for server_id in (123, 0xffffffff):
+        links = entity_research_links(server_id)
+        assert len(links) == 3
+        assert [urlparse(link['href']).path for link in links] == ['/captures/search', '/entity', '/features/trace']
+        for link in links:
+            assert parse_qs(urlparse(link['href']).query)['q'] == [str(server_id)]
+            assert link['basis'] == 'reported_server_id' and link['identity_verified'] is False
+    projection = viewer_projection(decode_frame(payload()), zone_id=100, client_id='client-a')
+    assert projection['entities'][0]['research_links'] == entity_research_links(123)
+    assert projection['entities'][1]['research_links'] == []
+    assert all('q=7' not in link['href'] for link in projection['entities'][0]['research_links'])

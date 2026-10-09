@@ -44,7 +44,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:.5rem;bo
 <section><h2>Entity observations</h2><label for="entity-search">Search names or IDs </label><input id="entity-search" maxlength="200" placeholder="Name, decimal ID or 0x index">
 <label for="entity-sort">Order </label><select id="entity-sort"><option value="observed">Observed order</option><option value="distance">Raw distance from player</option></select>
 <p>Distances use unverified raw units and do not describe navigable routes. Filters apply only to this frame's observed subset.</p><p id="entity-status">No entity observations.</p>
-<div style="overflow:auto"><table><thead><tr><th>Name</th><th>Kind</th><th>Client index</th><th>Server ID</th><th>Raw XYZ</th><th>Raw distance</th><th>Raw type</th><th>Raw spawn flags</th><th>Raw status</th><th>Target roles</th><th>Capture</th></tr></thead><tbody id="entity-rows"></tbody></table></div></section>
+<div style="overflow:auto"><table><thead><tr><th>Name</th><th>Kind</th><th>Client index</th><th>Server ID</th><th>Raw XYZ</th><th>Raw distance</th><th>Raw type</th><th>Raw spawn flags</th><th>Raw status</th><th>Target roles</th><th>Capture</th><th>Research searches</th></tr></thead><tbody id="entity-rows"></tbody></table></div><p>Research searches use the reported server ID only. Results are candidates across indexed sources; matching zone, instance and identity require review.</p></section>
 <section><h2>Recorded position trace</h2><label for="trace-plane">Trace plane </label><select id="trace-plane"><option value="xz">X/Z</option><option value="xy">X/Y</option><option value="yz">Y/Z</option></select><p id="trace-status">Select a recording to view its observed movement.</p>
 <label><input type="checkbox" id="show-waypoints"> Show saved waypoint markers (up to 100)</label>
 <label><input type="checkbox" id="show-entities"> Show current entity observations (up to 100)</label>
@@ -91,7 +91,16 @@ function renderEntities(){
   const cell=document.createElement('td'),button=document.createElement('button');
   button.type='button';button.textContent='Download waypoint';button.addEventListener('click',()=>exportObservation('waypoint',entity.client_index,captureContext));
   const save=document.createElement('button');save.type='button';save.textContent='Save to library';save.addEventListener('click',()=>saveWaypoint(entity.client_index,captureContext));
-  cell.append(button,save);row.append(cell);body.append(row);
+  cell.append(button,save);row.append(cell);
+  const research=document.createElement('td');
+  for(const item of entity.research_links||[]){
+   const link=document.createElement('a');link.textContent=item.label;link.href=item.href;
+   link.target='_blank';link.rel='noopener noreferrer';
+   link.title='Unverified reported server ID '+entity.server_entity_id+'; client '+entityProjection.client_id+', adapter '+entityProjection.adapter+', zone '+p.zone_id+', instance '+(entity.instance_hint??'unknown')+', observed '+entity.observed_at+'. Search results require review.';
+   research.append(link,document.createElement('br'));
+  }
+  if(!research.childNodes.length)research.textContent='No reported server ID';
+  row.append(research);body.append(row);
  }
  let status=entities.length?matches.length+' of '+entities.length+' observed entities match; client indices are not server IDs.':'No entity observations in this frame.';
  if(entityProjection.observation_scope==='bounded_loaded_entities')status+=' Bounded loaded-entity observation (up to 32); '+(entityProjection.entities_truncated?'truncated.':'no truncation reported.')+' Kinds and instance identity remain unverified.';

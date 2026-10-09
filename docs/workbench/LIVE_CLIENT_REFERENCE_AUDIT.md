@@ -328,3 +328,17 @@ Same-time ambiguity remains unmatched, and instance/clock/wire/causal verificati
 explicitly absent. Paired Windows exports and reviewed Capture/Feature Trace UI links
 remain future work. The supplied player-only runtime recording still establishes only
 its previously documented observation coverage.
+
+### Existing research view handoffs (cloud-tested)
+
+Live Client entity rows now offer Capture entity evidence, Entity Browser and Feature
+Trace ID searches when a nonzero server ID was explicitly observed. Queries use that
+reported ID only, never client slots, names, guessed raw entity types or invented graph
+nodes. Existing destination resolvers and decoders remain authoritative. Links open in
+another tab so playback remains available; tooltips retain source client/adapter,
+observed zone/instance/time, and identify the search as unverified. Results can come
+from other indexed contexts and require identity, zone and instance review. Unknown
+IDs expose no links, and entity filtering/frame refresh removes obsolete rows.
+This is a research navigation handoff, not a verified entity join, packet/frame binding
+or new Feature Trace relation. Synthetic projection/browser tests cover these paths;
+Windows ID observations and catalog/runtime identity agreement remain pending.
