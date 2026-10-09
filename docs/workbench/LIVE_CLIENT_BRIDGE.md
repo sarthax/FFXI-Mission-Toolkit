@@ -667,3 +667,16 @@ no JSONL file. This makes live observations consumable by Zone Viewer clients;
 the Zone Viewer's JavaScript is not yet automatically configured to poll
 this source. Continue to treat raw Ashita axes as uncalibrated until
 validated against the selected map/instance.
+
+
+### Optional 3D Zone Viewer marker
+
+The **3D Zone Viewer** now offers an opt-in **Live Ashita position**
+toggle with client selection. It polls the managed bridge's read-only
+spatial projection for the viewer's current zone every 1.5 seconds and
+draws a distinct ephemeral player marker. The marker disappears if the
+client is stale, disconnected, in another zone or invalid, and is removed
+when toggled off. The display uses the existing spawn-marker axis convention;
+alignment on client meshes still requires in-game visual validation. It
+does not write game state, change camera controls, capture files, or server
+entities. Refreshing the page resets the toggle to off.
