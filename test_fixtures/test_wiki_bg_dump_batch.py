@@ -68,6 +68,35 @@ def main():
         assert repeated["cursor"]==1,repeated
         assert repeated["processed"]==1,repeated
 
+    # Archive replacement must be rejected before a resumed worker is launched.
+    with tempfile.TemporaryDirectory() as directory:
+        dump=Path(directory)/"source.jsonl.gz"
+        db=Path(directory)/"source.db"
+        with gzip.open(dump,"wt",encoding="utf-8") as stream:
+            stream.write(json.dumps({"title":"Medusa","pageid":101,"wikitext":"valid"})+"\\n")
+        with patch.object(jobs.threading.Thread,"start"):
+            job=jobs.start(db,dump,limit=50)
+        jobs._RUNNING.clear()
+        jobs.status(db)
+        with gzip.open(dump,"wt",encoding="utf-8") as stream:
+            stream.write(json.dumps({"title":"Changed","pageid":101,"wikitext":"different"})+"\\n")
+        with patch.object(jobs.threading.Thread,"start") as launch:
+            try:
+                jobs.resume(db,job)
+            except ValueError as exc:
+                assert "changed" in str(exc).lower(),exc
+            else:
+                raise AssertionError("Changed archive was accepted")
+            launch.assert_not_called()
+        assert jobs.status(db)[0]["state"]=="interrupted"
+        dump.unlink()
+        try:
+            jobs.resume(db,job)
+        except ValueError as exc:
+            assert "missing" in str(exc).lower(),exc
+        else:
+            raise AssertionError("Missing archive was accepted")
+
     print("BG Wiki dump batch importer: PASS")
 
 
