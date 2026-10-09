@@ -115,14 +115,14 @@
       <td>{{ entry.proposed_structure.blocks }}</td>
       <td><pre>{{ entry.block_type_deltas }}</pre></td>
       <td>{{ entry.existing_structure.with_source_locator }} → {{ entry.proposed_structure.with_source_locator }}</td>
-      <td><form method="post" action="/wiki/recovery/apply">
+      <td>{% if entry.can_apply %}<form method="post" action="/wiki/recovery/apply">
         <input type="hidden" name="source" value="{{ entry.source }}">
         <input type="hidden" name="page_id" value="{{ entry.page_id }}">
         <input type="hidden" name="source_hash" value="{{ entry.source_hash }}">
         <input type="hidden" name="recovery_page" value="{{ recovery_page }}">
         <label><input type="checkbox" name="confirm" value="yes" required> Confirm one-page recovery</label>
         <button type="submit">Apply this page</button>
-      </form></td>
+      </form>{% else %}<span class="muted">Unavailable: no structured blocks from retained source</span>{% endif %}</td>
     </tr>
     {% endfor %}
     </tbody>
