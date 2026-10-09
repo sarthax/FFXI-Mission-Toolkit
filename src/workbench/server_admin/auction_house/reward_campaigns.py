@@ -8,6 +8,8 @@ import sqlite3
 from typing import Any
 from uuid import uuid4
 
+from .legacy_test_executor import LegacyTestExecutionBlocked
+
 _DEFAULT_PATH = Path("data/auction_house_reward_campaigns.db")
 
 
@@ -156,9 +158,49 @@ def get_campaign(campaign_id: str, *, path: Path | str = _DEFAULT_PATH) -> dict[
     ]
     out["completed_count"] = sum(1 for r in out["recipients"] if r["status"] == "committed")
     out["failed_count"] = sum(1 for r in out["recipients"] if r["status"] == "failed")
+    out["retry_integrity"] = retry_integrity(out)
     return out
+
+
+
+def retry_integrity(campaign: dict[str, Any]) -> dict[str, Any]:
+    """Report whether a saved campaign has a complete, unambiguous retry set.
+
+    Unknown or missing recipient outcomes must be reconciled manually: treating
+    them as failures could duplicate previously committed Mog deliveries.
+    """
+    recipients = list(campaign.get("recipients") or [])
+    expected = int(campaign.get("recipient_count") or 0)
+    committed = sum(r.get("status") == "committed" for r in recipients)
+    failed = sum(r.get("status") == "failed" for r in recipients)
+    unknown = len(recipients) - committed - failed
+    ids = [int(r.get("char_id") or 0) for r in recipients]
+    issues = []
+    if expected <= 0 or expected != len(recipients):
+        issues.append("recipient_outcomes_incomplete")
+    if unknown:
+        issues.append("recipient_status_unknown")
+    if any(i <= 0 for i in ids) or len(set(ids)) != len(ids):
+        issues.append("recipient_identity_invalid")
+    status = str(campaign.get("overall_status") or "").lower()
+    calculated = "completed" if failed == 0 else ("failed" if committed == 0 else "partial")
+    if status not in {"completed", "failed", "partial"} or (not issues and status != calculated):
+        issues.append("campaign_status_inconsistent")
+    return {
+        "safe_retry_preview": not issues and failed > 0,
+        "expected_recipients": expected,
+        "recorded_recipients": len(recipients),
+        "committed_recipients": committed,
+        "failed_recipients": failed,
+        "unknown_recipients": unknown,
+        "issues": issues,
+        "retry_character_ids": [int(r["char_id"]) for r in recipients if r.get("status") == "failed"] if not issues else [],
+    }
 
 
 def failed_recipient_ids(campaign_id: str, *, path: Path | str = _DEFAULT_PATH) -> list[int]:
     campaign = get_campaign(campaign_id, path=path)
-    return [int(row["char_id"]) for row in campaign["recipients"] if row["status"] == "failed"]
+    integrity = retry_integrity(campaign)
+    if integrity["issues"]:
+        raise LegacyTestExecutionBlocked("Campaign recipient outcomes require reconciliation before retry: " + ", ".join(integrity["issues"]))
+    return integrity["retry_character_ids"]
