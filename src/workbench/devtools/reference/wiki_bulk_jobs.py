@@ -128,7 +128,6 @@ def _worker(db, job_id):
                         break
             # Discovery checkpoints before any page imports.
             _change(db, job_id, pending_json=json.dumps(pending), discovered=len(pending))
-            _change(db, job_id, pending_json=json.dumps(pending), discovered=len(pending))
         _change(db, job_id, state="running")
         while pending:
             with _connect(db) as con:
