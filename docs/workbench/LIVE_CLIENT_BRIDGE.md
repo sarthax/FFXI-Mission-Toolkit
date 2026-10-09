@@ -570,3 +570,15 @@ received observations. This is **not yet a background service**: each
 limit. No Ashita peer, live GUI stream, canonical Capture ingest or movement
 command execution has been attached. Queue overflow is a rejection or an
 explicit capture drop, not a claim of lossless collection.
+
+
+### Authenticated envelope to canonical telemetry decoder
+
+`bridge_telemetry.py` validates read-only telemetry observations received in
+the existing bridge message format, binds the payload client ID to the envelope,
+and reuses `decode_frame` rather than inventing another observation schema.
+Synthetic tests cover valid position data, forged client IDs, malformed
+telemetry, wrong lane and all-or-nothing batch validation. This is a validated
+decode seam, **not** an Ashita TCP sender or an automatically consumed live GUI
+feed. The next integration needs an Ashita-side transport adapter, bounded
+live streaming and UI/feed registration with the existing client registry.
