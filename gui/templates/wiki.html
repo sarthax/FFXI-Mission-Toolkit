@@ -79,12 +79,21 @@
 </div>
 {% endif %}
 
-<div class="wiki-actions dense-toolbar" style="margin:6px 0">
-  <a class="chip {% if review_result == 'approved' %}
+{% if review_result == 'approved' %}
 <div class="notice">Topic link approved. The review queue has been refreshed.</div>
 {% elif review_result == 'dismissed' %}
 <div class="notice">Topic suggestion dismissed. The review queue has been refreshed.</div>
 {% endif %}
+<div class="wiki-actions dense-toolbar" style="margin:6px 0">
+  <a class="chip {% if tab == 'browse' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=browse"><b>Browse</b></a>
+  <a class="chip {% if tab == 'evidence' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=evidence"><b>Evidence workflow</b></a>
+  <a class="chip {% if tab == 'review' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=review"><b>Topic review queue</b></a>
+  <a class="chip {% if tab == 'recovery' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=recovery"><b>Recovery preview</b></a>
+  <span class="sp"></span>
+  <span class="muted">Open site:</span>
+  {% for l in site_links %}<a class="chip" href="{{ l.page or l.home }}" target="_blank" rel="noopener">{{ l.label }}{% if l.page %} ↗ page{% else %} ↗{% endif %}</a>{% endfor %}
+</div>
+
 {% if tab == 'recovery' %}
 <section class="wiki-section">
   <h3>Local Wiki structure recovery — preview only</h3>
@@ -138,15 +147,6 @@
   {% else %}<p class="muted">No pending or dismissed topic suggestions found in the selected source's review window.</p>{% endif %}
 </section>
 {% endif %}
-
-{% if tab == 'browse' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=browse"><b>Browse</b></a>
-  <a class="chip {% if tab == 'evidence' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=evidence"><b>Evidence workflow</b></a>
-  <a class="chip {% if tab == 'review' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=review"><b>Topic review queue</b></a>
-  <a class="chip {% if tab == 'recovery' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=recovery"><b>Recovery preview</b></a>
-  <span class="sp"></span>
-  <span class="muted">Open site:</span>
-  {% for l in site_links %}<a class="chip" href="{{ l.page or l.home }}" target="_blank" rel="noopener">{{ l.label }}{% if l.page %} ↗ page{% else %} ↗{% endif %}</a>{% endfor %}
-</div>
 
 {% if tab == 'browse' %}
 {% if title and not page_view and not report %}
