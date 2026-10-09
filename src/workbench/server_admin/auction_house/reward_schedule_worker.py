@@ -80,7 +80,8 @@ def dispatch_due_once(*, path=_DEFAULT, now: datetime | None = None) -> list[dic
         if not _claim(schedule["schedule_id"], path):
             continue
         try:
-            with open_auction_house(root) as ctx:
+            ctx = open_auction_house(root)
+            try:
                 gate = evaluate_legacy_test_write_gate(
                     environment=identity, schema_family_hint=ctx.service.schema.family_hint,
                     confirmation=str(identity.get("name") or ""),
@@ -102,6 +103,8 @@ def dispatch_due_once(*, path=_DEFAULT, now: datetime | None = None) -> list[dic
                     recipient_mode="selected", recipient_count=int(result["recipient_count"]),
                     preview_id=fresh["preview_id"], replay_id=fresh["replay_id"], result=result,
                 )
+            finally:
+                ctx.close()
             _end(schedule["schedule_id"], result["status"], path=path)
             outcomes.append({"schedule_id": schedule["schedule_id"], "status": result["status"]})
         except Exception:
