@@ -158,6 +158,19 @@ def _worker(db, job_id):
             subjob = {"id": uuid.uuid4().hex[:10], "source": "FFXIclopedia", "title": title,
                       "state": "queued", "log": [], "error": None}
             wiki_jobs._run(subjob, db)
+            # Preserve the pending page on access/rate-limit failures. Such
+            # responses are not completed imports and must not be silently lost.
+            failure_text = str(subjob.get("error") or "").lower()
+            access_failure = subjob.get("state") == "error" and any(
+                marker in failure_text for marker in (
+                    "429", "rate limit", "too many requests",
+                    "captcha", "challenge", "403", "access denied",
+                )
+            )
+            if access_failure:
+                _change(db, job_id, state="error",
+                        last_error=(f"{title}: {subjob.get('error') or 'Access restricted'}")[:400])
+                break
             # Save the queue after each page, so a restart never discards progress.
             pending.pop(0)
             fields = {"pending_json": json.dumps(pending), "processed": processed + 1}
