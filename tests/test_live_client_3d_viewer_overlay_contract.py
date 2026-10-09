@@ -11,7 +11,8 @@ def test_zone_viewer_live_overlay_is_opt_in_and_uses_safe_projection():
     assert "&zone_id=' + ZONEID" in content
     assert "if (!data.visible || !data.player || !data.player.position)" in content
     assert "clearLiveMarker(); liveStatus.textContent = 'No fresh matching-zone telemetry'" in content
-    assert "liveMarker.position.set(position.x, -position.y, -position.z)" in content
+    assert "new THREE.Vector3(position.x, -position.y, -position.z)" in content
+    assert "liveMarker.position.copy(current)" in content
     assert "setInterval(pollAshitaPosition, 1500)" in content
     assert "fetch('/live-client/bridge/clients')" in content
 
