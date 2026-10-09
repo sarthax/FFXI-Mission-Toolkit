@@ -254,7 +254,12 @@ def execute_dsp_myisam_test_player_listing(
         cursor.execute("UNLOCK TABLES")
         locked = False
         if journal_case_id:
-            set_case_status(journal_case_id, "completed_non_atomic", details={"auction_id": auction_id})
+            try:
+                set_case_status(journal_case_id, "completed_non_atomic", details={"auction_id": auction_id})
+            except Exception:
+                # Game-side writes are already done: never compensate them due to
+                # a local journal failure. Leave the case possibly interrupted.
+                pass
         return {
             "status": "committed_non_atomic",
             "operation": "player_listing",
