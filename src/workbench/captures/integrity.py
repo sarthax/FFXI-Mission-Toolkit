@@ -27,6 +27,7 @@ FORMAT_TARGETS = {
     "packetlogger": (("capture_raw_packets","block"),),
     "packetdb": (("capture_raw_packets","sqlite-row"),("capture_chat_observations","sqlite-row")),
     "packeteer": (("capture_raw_packets","block"),),
+    "ashita_packets": (("capture_raw_packets","line"),),
     "pcap": (("capture_structured_records","pcap-frame"),("capture_raw_packets","pcap-frame"),("capture_network_flows","pcap-flow"),("capture_network_ranges","pcap-tcp-range"),("capture_network_messages","pcap-tcp-message")),
     "pcapng": (("capture_structured_records","pcap-frame"),("capture_raw_packets","pcap-frame"),("capture_network_flows","pcap-flow"),("capture_network_ranges","pcap-tcp-range"),("capture_network_messages","pcap-tcp-message")),
     "caplog": (("capture_events","line"),("capture_hp_events","line"),("capture_eventview","line"),("capture_caplog_chat","line"),("capture_chat_observations","line")),
