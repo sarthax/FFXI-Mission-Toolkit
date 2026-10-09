@@ -315,6 +315,19 @@ research links through existing Capture/Feature Trace services. Further diagnost
 profiles, calibration and native controls remain independent future work. See the
 [addon instructions](../../addons/workbench_live/README.md#optional-passive-packet-observations-ashita-only).
 
+### Canonical Capture packet locators (cloud-tested)
+
+The offline runtime report optionally opens an explicitly selected existing Capture
+database/ID read-only and attaches existing packet-view links to retained temporal
+candidates. Binding requires the packet source SHA-256, exact line/byte span, a unique
+locator, and matching canonical raw bytes, direction/opcode/zone/timestamp/flags plus
+producer provenance. Capture's packet sequence and decoder remain authoritative.
+Duplicate source ownership, stale/corrupt rows and absent imports receive no links.
+Lookup uses one read transaction, bounded SQLite values/time, and no database creation,
+imports, migrations, writes or Feature Trace relations. This is exact stored-source
+correspondence, not verified runtime identity, entity/instance joins, packet semantics,
+wire data or causal correlation. Paired Windows evidence remains unavailable.
+
 ### Paired offline temporal evidence (cloud-tested)
 
 The runtime-report CLI now optionally reads a stopped packet JSONL using the canonical
@@ -328,16 +341,3 @@ Same-time ambiguity remains unmatched, and instance/clock/wire/causal verificati
 explicitly absent. Paired Windows exports and reviewed Capture/Feature Trace UI links
 remain future work. The supplied player-only runtime recording still establishes only
 its previously documented observation coverage.
-
-### Canonical Capture packet locators (cloud-tested)
-
-The offline runtime report optionally opens an explicitly selected existing Capture
-database/ID read-only and attaches existing packet-view links to retained temporal
-candidates. Binding requires the packet source SHA-256, exact line/byte span, a unique
-locator, and matching canonical raw bytes, direction/opcode/zone/timestamp/flags plus
-producer provenance. Capture's packet sequence and decoder remain authoritative.
-Duplicate source ownership, stale/corrupt rows and absent imports receive no links.
-Lookup uses one read transaction, bounded SQLite values/time, and no database creation,
-imports, migrations, writes or Feature Trace relations. This is exact stored-source
-correspondence, not verified runtime identity, entity/instance joins, packet semantics,
-wire data or causal correlation. Paired Windows evidence remains unavailable.
