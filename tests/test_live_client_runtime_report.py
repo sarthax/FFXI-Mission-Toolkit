@@ -253,3 +253,26 @@ def test_duplicate_time_frames_remain_ambiguous_even_with_different_instances(tm
     evidence = packet_evidence_report(packet_file(tmp_path), CAPTURE.stem, [frame, other])
     assert evidence['classification_counts'] == {'ambiguous_frame': 1}
     assert evidence['candidates'] == []
+
+def test_paired_packet_evidence_is_bounded_by_exact_telemetry_context(tmp_path):
+    packet = packet_file(tmp_path)
+    row = json.loads(packet.read_text())
+    rows = [
+        row,
+        row | {'sequence': 2, 'observed_at': 1001},
+        row | {'sequence': 3, 'observed_at': 1001, 'zone_id': 51},
+    ]
+    packet.write_text(''.join(json.dumps(item) + '\n' for item in rows))
+    report = recording_report(CAPTURE, packet_observations=packet)
+    evidence = report['packet_evidence']
+    assert evidence['packets'] == 3
+    assert evidence['classification_counts'] == {
+        'exact_label_source_zone_time_candidate': 2,
+        'no_exact_source_zone_time_frame': 1,
+    }
+    assert [(candidate['packet_sequence'], candidate['telemetry_frame'])
+            for candidate in evidence['candidates']] == [(1, 1), (2, 2)]
+    assert evidence['recording_identity_verified'] is False
+    assert evidence['wire_verified'] is False
+    assert evidence['causal_relationship_verified'] is False
+
