@@ -48,7 +48,7 @@
         <div class="ahc-col"><header><b>Categories</b></header><div class="ahc-scroll ahc-tree" id="itTree"></div></div>
         <div class="ahc-col">
           <header><input id="itQ" type="search" placeholder="Filter items…" style="flex:1"><select id="itStatus" title="Which items to show"><option value="active">Active listings</option><option value="unlisted">Unlisted</option><option value="all">All AH items</option></select><small class="mut" id="itCatLbl"></small></header>
-          <div class="ahc-scroll" id="itList"></div>
+          <div class="ahc-bar"><button class="b" data-ah-export="items" type="button">Export item summary CSV</button></div><div class="ahc-scroll" id="itList"></div>
         </div>
         <div class="ahc-col" id="itDetail"><div class="ahc-empty">Pick a category, then an item, to see and manage every listing for it.</div></div>
       </div>
@@ -58,7 +58,7 @@
       <div class="ahc-split">
         <div class="ahc-col">
           <header><input id="seQ" type="search" placeholder="Filter sellers…" style="flex:1"><select id="seSort"><option value="listings">Listings</option><option value="value">Value</option><option value="oldest_days">Oldest</option><option value="name">Name</option></select></header>
-          <div class="ahc-scroll" id="seList"></div>
+          <div class="ahc-bar"><button class="b" data-ah-export="sellers" type="button">Export seller summary CSV</button></div><div class="ahc-scroll" id="seList"></div>
         </div>
         <div class="ahc-col" id="seDetail"><div class="ahc-empty">Select a seller to see everything they have posted.</div></div>
       </div>
@@ -90,7 +90,7 @@
             <label>Target <input id="rsCatTarget" type="number" min="1" value="3" style="width:60px"></label>
             <label>Max items <input id="rsCatLimit" type="number" min="1" max="50" value="50" style="width:60px"></label>
             <button class="b" id="rsCatAdd" type="button">Add category items</button></div>
-          <div class="ahc-scroll"><table><thead><tr><th>Item</th><th class="n">Now</th><th class="n">Target listings</th><th class="n">Price</th><th>Stack</th><th></th></tr></thead><tbody id="rsRows"></tbody></table></div>
+          <div class="ahc-bar"><button class="b" data-ah-export="restock" type="button">Export restock CSV</button></div><div class="ahc-scroll"><table><thead><tr><th>Item</th><th class="n">Now</th><th class="n">Target listings</th><th class="n">Price</th><th>Stack</th><th></th></tr></thead><tbody id="rsRows"></tbody></table></div>
           <div class="ahc-bar ahc-bar-bottom"><button class="b pri" id="rsPreview" type="button">Preview restock</button><small>Synthetic supply — no inventory removed, no fee charged. Target = total active listings wanted for the item.</small></div>
         </div>
         <div class="ahc-card"><h3>Plan</h3><div class="ahc-scroll" id="rsPlan"><div class="ahc-empty">Preview shows current stock vs target and how many listings will be created.</div></div></div>
@@ -133,7 +133,7 @@
         <div class="ahc-card">
           <h3>Targets <small class="mut" id="cuSummary"></small></h3>
           <div class="ahc-bar"><button class="b" id="cuBuy" type="button" disabled>Admin Buy all</button><button class="b" id="cuReturn" type="button" disabled>Return all</button><small id="cuAction" class="mut"></small></div>
-          <div class="ahc-scroll" id="cuRows"><div class="ahc-empty">Set rules and preview to see exactly which listings match.</div></div>
+          <div class="ahc-bar"><button class="b" data-ah-export="cleanup" type="button">Export preview CSV</button></div><div class="ahc-scroll" id="cuRows"><div class="ahc-empty">Set rules and preview to see exactly which listings match.</div></div>
         </div>
       </div>
     </section>
@@ -211,6 +211,6 @@
   </aside>
   <div class="ahc-toast" id="ahcToast"></div>
 </div>
-<script src="/static/auction_house_console.js?v=20261009crosspick"></script>
+<script src="/static/auction_house_console.js?v=20261009csv2"></script>
 <script src="/static/auction_house_augment_picker.js?v=20261009a"></script>
 {% endblock %}

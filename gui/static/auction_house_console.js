@@ -51,6 +51,32 @@
     if (e.target.closest('#itTree [data-c], #itList [data-id], #seList [data-id], #ahcTabs [data-t]'))
       saveWorkspace();
   });
+  /* CSV exports are read-only and contain only the rows already rendered
+     in the browser; spreadsheet-formula cells are neutralized. */
+  function exportCsv(filename, rows) {
+    if (!rows.length) return toast('No rows to export');
+    const keys = Object.keys(rows[0]).filter(k => !/token|secret|password|confirmation/i.test(k));
+    const cell = v => {
+      const raw = v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v);
+      const clean = /^[\t\r\n ]*[=+@-]/.test(raw) ? "'" + raw : raw;
+      return '"' + clean.replace(/"/g, '""') + '"';
+    };
+    const csv = [keys.map(cell).join(','), ...rows.map(r => keys.map(k => cell(r[k])).join(','))].join('\r\n');
+    const blob = new Blob(['\uFEFF', csv], {type:'text/csv;charset=utf-8'});
+    const href = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = href; a.download = filename; a.click();
+    setTimeout(() => URL.revokeObjectURL(href), 1000);
+  }
+  root.addEventListener('click', e => {
+    const el = e.target.closest('[data-ah-export]');
+    if (!el) return;
+    const mode = el.dataset.ahExport, timestamp = new Date().toISOString().slice(0,10);
+    const rows = mode === 'items' ? (state.agg?.items || []) :
+      mode === 'sellers' ? (state.agg?.sellers || []) :
+      mode === 'restock' ? state.restock :
+      mode === 'cleanup' ? (state.cuRows || []) : [];
+    exportCsv('ah-' + mode + '-' + timestamp + '.csv', rows);
+  });
   /* ---------- tabs & embedded tools ---------- */
   const TOOLS = {economy: ['Economy Intelligence', '/auction-house/economy'], listings: ['Listing Manager', '/auction-house/listing-manager'],
     seeder: ['Player listing & market history', '/auction-house/seeder'],
