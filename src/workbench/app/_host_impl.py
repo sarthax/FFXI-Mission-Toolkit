@@ -8898,6 +8898,7 @@ async def settings_save(request: Request):
         "llm_default_model": form.get("llm_default_model", "").strip() or settings_mod.DEFAULTS["llm_default_model"],
         "ah_legacy_test_writes": "1" if form.get("ah_legacy_test_writes") else "0",
         "ah_dsp_myisam_test_writes": "1" if form.get("ah_dsp_myisam_test_writes") else "0",
+        "ah_augmented_reward_test_writes": "1" if form.get("ah_augmented_reward_test_writes") else "0",
         "ah_preview_ttl_seconds": (form.get("ah_preview_ttl_seconds", "").strip()
                                    if form.get("ah_preview_ttl_seconds", "").strip().isdigit()
                                    else settings_mod.DEFAULTS["ah_preview_ttl_seconds"]),

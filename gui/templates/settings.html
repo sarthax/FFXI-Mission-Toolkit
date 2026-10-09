@@ -203,6 +203,9 @@ document.getElementById('liveClientInspect').addEventListener('click', async () 
     <label><input type="checkbox" name="ah_dsp_myisam_test_writes" value="1" {% if values.ah_dsp_myisam_test_writes == "1" %}checked{% endif %}>
       <strong>Enable DSP MyISAM listing / purchase test writes</strong> -- only needed for player-backed listings and player Buy on stock DSP databases whose AH tables are MyISAM. Also requires the option above.</label>
     <div class="muted" style="margin:2px 0 10px 22px;">Overrides: <code class="chip">FFXI_MISSION_TOOLKIT_AH_DSP_MYISAM_TEST_WRITES</code> (currently from: {{ ah_env_overrides.ah_dsp_myisam_test_writes }})</div>
+    <label><input type="checkbox" name="ah_augmented_reward_test_writes" value="1" {% if values.ah_augmented_reward_test_writes == "1" %}checked{% endif %}>
+      <strong>Experimental augmented-item Mog delivery (DSP Test only)</strong> -- one recipient and a source-verified, nonstacking item. Requires the Auction House Test-write option and exact profile confirmation. Disabled by default. Confirm augment survival after Mog pickup in a disposable DSP Test environment.</label>
+    <div class="muted" style="margin:2px 0 10px 22px;">Overrides: <code class="chip">FFXI_MISSION_TOOLKIT_AH_AUGMENTED_REWARD_TEST_WRITES</code> (currently from: {{ ah_env_overrides.ah_augmented_reward_test_writes }})</div>
     <label class="muted">Preview validity (seconds, 30-86400)</label><br>
     <input type="number" name="ah_preview_ttl_seconds" min="30" max="86400" value="{{ values.ah_preview_ttl_seconds }}" style="width:120px; margin-top:6px;">
     <div class="muted" style="margin-top:2px;">Overrides: <code class="chip">FFXI_MISSION_TOOLKIT_AH_PREVIEW_TTL_SECONDS</code> (currently from: {{ ah_env_overrides.ah_preview_ttl_seconds }})</div>

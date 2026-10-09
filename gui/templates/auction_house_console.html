@@ -173,6 +173,20 @@
           <div class="ahc-bar"><button class="b pri" id="ibPreview" type="button">Preview delivery</button></div>
           <small>Items are delivered to each character's delivery box (Mog). Preview is required before sending.</small>
         </div>
+        <div class="ahc-card">
+          <h3>Scheduled Mog reward campaigns</h3>
+          <label>Delivery time (your local time) <input id="ibDueLocal" type="datetime-local" style="width:100%"></label>
+          <small>Only named DSP/Topaz Test profiles may approve a one-time schedule. Recipients are frozen at approval. When due, the toolkit rechecks the active profile, server data and write permissions. Interrupted or overdue sends require review; they never auto-retry.</small>
+          <div class="ahc-bar"><button class="b pri" id="ibSchedule" type="button">Preview & schedule</button><button class="b" id="ibSchedulesReload" type="button">Refresh campaigns</button></div>
+          <div class="ahc-scroll" id="ibSchedules"><small>Open Inbox to load scheduled campaigns.</small></div>
+        </div>
+        <div class="ahc-card">
+          <h3>Custom augmented item preview</h3>
+          <small>Research-only preview: encode up to four augment ID/value pairs defined by the active server. Mog delivery is blocked until its augmented-item transfer is verified.</small>
+          <div class="ahc-bar"><input id="ibAugItemId" type="number" min="1" placeholder="Item ID" style="flex:1"><input id="ibAugPairs" placeholder="Augment ID:value, ID:value" style="flex:2"></div>
+          <div class="ahc-bar"><button class="b" id="ibAugInspect" type="button">Inspect custom augment</button><button class="b" id="ibAugSendPreview" type="button">Preview DSP Test mail</button><a href="/auction-house/rewards/augments/catalog.json" target="_blank" rel="noopener">Available augment IDs</a></div>
+          <pre id="ibAugResult" style="white-space:pre-wrap;overflow:auto;max-height:260px;font-size:11px"></pre>
+        </div>
       </div>
     </section>
   </div>
@@ -186,5 +200,5 @@
   </aside>
   <div class="ahc-toast" id="ahcToast"></div>
 </div>
-<script src="/static/auction_house_console.js?v=20261008a"></script>
+<script src="/static/auction_house_console.js?v=20261008c"></script>
 {% endblock %}

@@ -7,6 +7,7 @@ from typing import Any
 from uuid import uuid4
 
 from .audit_ledger import ReplayAlreadyConsumed, claim_replay_once
+from .reward_attempt_journal import begin_attempt, mark_recipient, finish_attempt
 from .legacy_test_executor import LegacyTestExecutionBlocked, evaluate_legacy_test_write_gate
 from .reward_templates import normalize_items
 from .safe_return import _delivery_columns, _table_engines, _transactional
@@ -188,6 +189,10 @@ def _validate_delivery_write_path(service) -> None:
         raise LegacyTestExecutionBlocked("delivery_box schema does not match the verified DSP/Topaz delivery contract")
 
 
+class RewardDeliveryUncertain(RuntimeError):
+    """Rollback or post-state is unverified; operator reconciliation is required."""
+
+
 def _deliver_one(service, recipient: dict[str, Any], items: list[dict[str, Any]]) -> dict[str, Any]:
     connection = service.connection
     cursor = connection.cursor()
@@ -219,7 +224,12 @@ def _deliver_one(service, recipient: dict[str, Any], items: list[dict[str, Any]]
         connection.commit()
         return {"char_id": char_id, "char_name": char_name, "status": "committed", "rows": len(items)}
     except Exception:
-        connection.rollback()
+        try:
+            connection.rollback()
+        except Exception as exc:
+            raise RewardDeliveryUncertain(
+                "Delivery rollback failed; recipient outcome requires manual reconciliation"
+            ) from exc
         raise
     finally:
         cursor.close()
@@ -257,20 +267,38 @@ def execute_reward_delivery(*, service, environment: dict[str, Any], mode: str,
     except ReplayAlreadyConsumed as exc:
         raise LegacyTestExecutionBlocked("This reward preview has already been executed or claimed") from exc
 
+    # The replay token has been claimed; failure to create a durable journal
+    # aborts BEFORE any recipient database mutation.
+    begin_attempt(replay_id=str(replay_id), preview_id=str(preview_id),
+                  environment=environment, items=resolved_items, recipients=recipients)
     results: list[dict[str, Any]] = []
     committed = 0
     failed = 0
     for recipient in recipients:
+        char_id = int(recipient["char_id"])
+        # Persist in_flight before the first game DB insert. An interrupted
+        # in_flight result must never be treated as a retryable failure.
+        mark_recipient(str(replay_id), char_id, "in_flight")
         try:
             result = _deliver_one(service, recipient, resolved_items)
-            committed += 1
-            results.append(result)
+        except RewardDeliveryUncertain:
+            # Leave an explicit in_flight case for operator reconciliation.
+            # Do not claim failed/committed or attempt another recipient.
+            raise
         except Exception as exc:
+            mark_recipient(str(replay_id), char_id, "failed", str(exc))
             failed += 1
             results.append({
-                "char_id": int(recipient["char_id"]), "char_name": str(recipient["char_name"]),
+                "char_id": char_id, "char_name": str(recipient["char_name"]),
                 "status": "failed", "error": str(exc),
             })
+        else:
+            # If local journal update fails after game commit, abort; the
+            # in_flight record remains ambiguous rather than duplicating items.
+            mark_recipient(str(replay_id), char_id, "committed")
+            committed += 1
+            results.append(result)
+    finish_attempt(str(replay_id))
     return {
         "status": "completed" if failed == 0 else ("failed" if committed == 0 else "partial"),
         "operation": "reward_delivery",

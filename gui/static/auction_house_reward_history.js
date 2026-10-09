@@ -45,6 +45,42 @@
     }
   }
 
+  async function loadAttemptJournal() {
+    const data = await request('/auction-house/rewards/attempts.json');
+    const rows = data.rows || [];
+    $('rhAttempts').innerHTML = rows.length ?
+      '<table class="history-table"><thead><tr><th>Started</th><th>Status</th><th>Committed</th><th>Failed</th><th>Unknown</th><th></th></tr></thead><tbody>' +
+      rows.map((r, i) => '<tr><td>' + esc(r.created_utc) + '</td><td>' + esc(r.status) +
+        '</td><td>' + r.committed + '</td><td>' + r.failed + '</td><td>' + r.unknown +
+        '</td><td><button data-attempt="' + i + '">Inspect</button></td></tr>').join('') +
+      '</tbody></table><div id="rhAttemptDetail"></div>' : '<p class="muted">No journaled delivery attempts.</p>';
+    $('rhAttempts').querySelectorAll('[data-attempt]').forEach(b => b.addEventListener('click', async () => {
+      try {
+        const d = await request('/auction-house/rewards/attempts/' +
+          encodeURIComponent(rows[Number(b.dataset.attempt)].replay_id) + '.json');
+        $('rhAttemptDetail').innerHTML = '<pre class="preview-json">' + esc(JSON.stringify(d, null, 2)) + '</pre>';
+      } catch (e) { $('rhAttemptDetail').textContent = e.message; }
+    }));
+  }
+
+  async function loadRecoveryCases() {
+    const data = await request('/auction-house/rewards/myisam-recovery.json');
+    const rows = data.rows || [];
+    $('rhRecovery').innerHTML = rows.length ?
+      '<table class="history-table"><thead><tr><th>Created</th><th>Operation</th><th>Case state</th><th>Evidence</th></tr></thead><tbody>' +
+      rows.map(r => '<tr><td>' + esc(r.created_utc) + '</td><td>' + esc(r.operation) +
+        '</td><td>' + esc(r.status) + '</td><td><pre class="preview-json">' +
+        esc(JSON.stringify(r.evidence, null, 2)) + '</pre></td></tr>').join('') +
+      '</tbody></table>' : '<p class="muted">No unresolved MyISAM cases.</p>';
+  }
+
+  $('rhLoadAttempts').addEventListener('click', () =>
+    loadAttemptJournal().catch(e => { $('rhAttempts').textContent = e.message; }));
+  $('rhLoadRecovery').addEventListener('click', () =>
+    loadRecoveryCases().catch(e => { $('rhRecovery').textContent = e.message; }));
+  loadAttemptJournal().catch(e => { $('rhAttempts').textContent = e.message; });
+  loadRecoveryCases().catch(e => { $('rhRecovery').textContent = e.message; });
+
   $('rhLoad').addEventListener('click', () => loadHistory().catch(error => { $('rhList').innerHTML = `<pre>${esc(error.message)}</pre>`; }));
   loadHistory().catch(error => { $('rhList').innerHTML = `<pre>${esc(error.message)}</pre>`; });
 })();
