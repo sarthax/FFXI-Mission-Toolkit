@@ -619,3 +619,25 @@ after one hour and require new provisioning for extended sessions. The worker
 stops cleanly and does not discover game processes, write client memory or
 change the Capture subsystem. Next: connect start/stop/provision/status to
 Toolkit GUI and simplify credentials delivery to the local Ashita addon.
+
+
+### Toolkit GUI-managed local bridge (unverified Windows runtime)
+
+The Toolkit host now explicitly registers `/live-client/bridge/console`,
+linked from the **Client → Live Client** page. On the **same Windows PC**
+running Ashita, use the console to **Start receiver**, **Configure client**
+to provision session and token, then inspect a polled read-only status of
+zone, XYZ, heading, character, source version and freshness. **Stop receiver**
+tears down the managed localhost service. POST controls require a same-origin,
+local browser; no game process control is enabled. Routes are inactive until
+the user presses Start.
+
+The generated connection credentials must still be placed in a private
+`workbench_bridge_settings.lua` next to the addon. The experimental
+`/wblive live start <same-client-id>` command sends observations directly
+without JSONL and requires `workbench_live_direct.lua`. GUI credential
+provisioning rotates the client's session/token; restart the Ashita sender
+with updated settings if you reprovision. Never share bridge tokens, and do
+not expose the Toolkit management console over a remote connection. The
+normal Live Client replay console remains available unchanged. Windows
+Ashita end-to-end validation is still outstanding.
