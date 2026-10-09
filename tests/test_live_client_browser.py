@@ -299,6 +299,27 @@ def test_recording_controls_in_browser(tmp_path):
             assert 'Other instance' not in page.locator('#trace').text_content()
             page.locator('#show-entities').uncheck()
             playwright.expect(page.locator('#trace .entity-marker')).to_have_count(0)
+            # Deliver an older trace after the newer one. It must not append
+            # duplicate geometry to the plot or restore obsolete observations.
+            held = []
+            page.route('**/live-client/replay/trace?*', lambda route: held.append(route))
+            page.evaluate('''()=>{
+                const params=[client.value,entityProjection.zone_id,entityProjection.instance_hint,{waypoints:[]},entityProjection];
+                window.olderTrace=drawTrace(...params);window.newerTrace=drawTrace(...params);
+            }''')
+            deadline = time.monotonic()+5
+            while len(held) < 2:
+                assert time.monotonic() < deadline
+                page.wait_for_timeout(10)
+            response = json.dumps({'points': [{'frame': 1, 'segment': 0, 'zone_id': 100,
+                                              'x': 0, 'y': 0, 'z': 0}]})
+            held[1].fulfill(status=200, content_type='application/json', body=response)
+            page.evaluate('()=>window.newerTrace')
+            playwright.expect(page.locator('#trace polyline')).to_have_count(1)
+            held[0].fulfill(status=200, content_type='application/json', body=response)
+            page.evaluate('()=>window.olderTrace')
+            playwright.expect(page.locator('#trace polyline')).to_have_count(1)
+            page.unroute('**/live-client/replay/trace?*')
             assert not errors
             browser.close()
     finally:

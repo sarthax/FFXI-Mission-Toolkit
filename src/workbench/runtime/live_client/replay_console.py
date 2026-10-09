@@ -62,12 +62,12 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:.5rem;bo
 <script>
 const client=document.getElementById('client'),state=document.getElementById('state');
 const show=(id,value)=>document.getElementById(id).textContent=value;
-let rows=[],playing=false,timer=null,generation=0;
+let rows=[],playing=false,timer=null,generation=0,traceRequest=0;
 const tracePlanes=new Map();
 const relativeSelections=new Map();
 let entityProjection=null,displayedSession=null;
 const controls=['step','poll','previous','restart','play','timeline','unload','replace','capture-player','save-player','export-path'];
-function reset(){entityProjection=null;displayedSession=null;for(const id of ['character','zone','xyz','heading','observed','entities','source','version'])show(id,'—');document.getElementById('trace').replaceChildren();document.getElementById('entity-rows').replaceChildren();document.getElementById('relative-waypoint').replaceChildren(new Option('Choose a comparable waypoint',''));show('relative-status','Select a recorded session to compare saved positions.');show('entity-status','No entity observations.');show('trace-status','Select a recorded session.');show('trace-entities-status','Entity markers hidden.');}
+function reset(){traceRequest++;entityProjection=null;displayedSession=null;for(const id of ['character','zone','xyz','heading','observed','entities','source','version'])show(id,'—');document.getElementById('trace').replaceChildren();document.getElementById('entity-rows').replaceChildren();document.getElementById('relative-waypoint').replaceChildren(new Option('Choose a comparable waypoint',''));show('relative-status','Select a recorded session to compare saved positions.');show('entity-status','No entity observations.');show('trace-status','Select a recorded session.');show('trace-entities-status','Entity markers hidden.');}
 function showEntities(data){entityProjection=data;renderEntities();}
 function renderEntities(){
  const body=document.getElementById('entity-rows');body.replaceChildren();
@@ -123,11 +123,14 @@ async function relativeWaypoints(clientId,observedAt){
  }catch(error){show('relative-status','Waypoint comparison unavailable: '+error.message);return {waypoints:[]};}
 }
 async function drawTrace(clientId,zoneId,instanceHint,comparison,observation){
+ const requestId=++traceRequest;
  const svg=document.getElementById('trace');svg.replaceChildren();
  show('trace-entities-status','Entity markers hidden.');
  const result=await fetch('/live-client/replay/trace?'+new URLSearchParams({client_id:clientId,max_points:'500',observation_token:observation.observation_token}),{cache:'no-store'});
+ if(requestId!==traceRequest||client.value!==clientId)return;
  if(!result.ok){show('trace-status',result.status===409?'Observation changed; refresh the trace.':'Trace only available for recorded sessions.');return;}
  const all=(await result.json()).points||[];
+ if(requestId!==traceRequest||client.value!==clientId||entityProjection?.observation_token!==observation.observation_token)return;
  if(comparison.recorded_frame!=null&&all.at(-1)?.frame!==comparison.recorded_frame){show('trace-status','Recording changed; refresh waypoint comparison.');return;}
  const waypoints=comparison.waypoints;
  const points=all.filter(p=>p.zone_id===zoneId&&(p.instance_hint??null)===(instanceHint??null));
