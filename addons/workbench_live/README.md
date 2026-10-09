@@ -328,3 +328,23 @@ low-latency streaming solution; the Toolkit listener requires an external
 explicit accept loop and the socket APIs have not yet been exercised in real
 Ashita v4 on Windows. Movement commands, incoming command dispatch and
 packet/capture streaming over this sender remain unsupported.
+
+
+## Direct telemetry without JSONL recordings (experimental)
+
+The Ashita entry point now supports `/wblive live start <instance-id>`,
+`/wblive live status` and `/wblive live stop`. Include
+`workbench_live_direct.lua` and `workbench_bridge.lua` alongside the existing
+addon modules. After explicitly provisioning `workbench_bridge_settings.lua`
+and starting the Toolkit-side listener, run `/wblive live start ashita-a`.
+This mode uses the same strict in-game observation mapper but transmits
+position/target snapshots without opening a telemetry JSONL recording. It
+samples at most once per second, stops safely on disconnection or identity
+change, and permits a bounded 30-second transient zoning recovery (two coherent
+destination samples). It is separate from the original durable
+`/wblive start ...` recording command and requires the bridge to be ready.
+
+**Still not plug-and-play:** Token provisioning and the receiving Python
+listener/accept loop are manual. No normal Toolkit GUI exposes this data yet,
+and there are no game writes. The client network API needs Windows validation.
+Use an authorized local test session only.
