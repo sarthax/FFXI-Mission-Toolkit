@@ -28,3 +28,16 @@ def test_zone_viewer_live_heading_entities_and_follow_are_opt_in():
     assert "liveFollowToggle.checked && !flyModeOn && previous" in content
     assert "clearLiveEntities();" in content
     assert "requestId !== lastLiveRequest" in content
+
+
+def test_live_entity_pool_reuses_geometry_and_cleans_heading():
+    path = Path(__file__).resolve().parents[1] / "gui/templates/zone_view3d.html"
+    content = path.read_text(encoding="utf-8")
+    assert "const liveEntityPool = []" in content
+    assert "const liveEntityGeometry = new THREE.SphereGeometry" in content
+    assert "let marker = liveEntityPool[entityCount]" in content
+    assert "marker.visible = true" in content
+    assert "for (const child of liveEntityPool) child.visible = false" in content
+    assert "arrow.line.geometry.dispose()" in content
+    assert "arrow.cone.geometry.dispose()" in content
+    assert "data.entities_truncated" in content
