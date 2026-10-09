@@ -227,6 +227,31 @@ def test_packet_candidates_do_not_cross_source_context_or_time(tmp_path, change,
     assert report['packet_evidence']['classification_counts'] == {classification: 1}
 
 
+def test_paired_acceptance_flags_missing_context_and_source_drops(tmp_path):
+    packet = packet_file(tmp_path)
+    row = json.loads(packet.read_text())
+    packet.write_text(''.join(json.dumps(item) + '\n' for item in (
+        row,
+        row | {'sequence': 2, 'observed_at': 1001, 'dropped_before': 3},
+        row | {'sequence': 3, 'observed_at': 1001, 'zone_id': 51, 'dropped_before': 3},
+    )))
+    summary = recording_report(CAPTURE, packet_observations=packet)['packet_evidence']['offline_acceptance']
+    assert summary['packet_rows_checked'] == 3
+    assert summary['exact_context_candidates'] == 2
+    assert summary['unmatched_or_ambiguous_rows'] == 1
+    assert summary['reported_rate_drops_at_last_row'] == 3
+    assert summary['all_rows_have_unique_context_candidate'] is False
+    assert summary['candidate_details_complete'] is True
+    assert summary['runtime_packet_fidelity_verified'] is False
+    assert summary['independent_capture_comparison_performed'] is False
+
+
+def test_paired_acceptance_all_context_candidates_still_not_wire_verified(tmp_path):
+    summary = recording_report(CAPTURE, packet_observations=packet_file(tmp_path))['packet_evidence']['offline_acceptance']
+    assert summary['all_rows_have_unique_context_candidate'] is True
+    assert summary['runtime_packet_fidelity_verified'] is False
+
+
 def test_packet_report_rejects_incomplete_source_before_output(tmp_path):
     path = packet_file(tmp_path); path.write_bytes(path.read_bytes().rstrip(b'\n'))
     output = tmp_path / 'report.json'
