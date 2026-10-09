@@ -15,6 +15,7 @@ from .reward_schedules import create_schedule, list_schedules, cancel_schedule
 from .reward_attempt_journal import get_attempt, list_attempts
 from .recovery_journal import list_cases
 from .augmented_rewards import inspect_augmented_reward
+from .augmented_catalog import list_configs, save_config, delete_config
 from .augmented_delivery import preview_augmented_delivery, execute_augmented_delivery
 from .reward_delivery import execute_reward_delivery, preview_reward_delivery
 from .reward_templates import (
@@ -148,6 +149,44 @@ def augmented_delivery_execute_api(payload: dict = Body(...)):
         return JSONResponse(result)
     except (LegacyTestExecutionBlocked, ValueError, TypeError) as exc:
         raise HTTPException(status_code=409, detail=str(exc))
+
+
+@router.get("/augments/saved.json")
+def augmented_saved():
+    return JSONResponse({"rows": list_configs()})
+
+
+@router.post("/augments/save.json")
+def augmented_save(payload: dict = Body(...)):
+    try:
+        active = get_active_server_identity()
+        with _context() as ctx:
+            item_id = int(payload.get("item_id") or 0)
+            if not ctx.service.item_snapshot(item_id):
+                raise RewardTemplateError("Item is missing from active server data")
+            # Only persist configurations the existing codec can encode against
+            # the source-backed server augment catalog.
+            inspect_augmented_reward(
+                family=str(active.get("family") or ""),
+                item_id=item_id,
+                augments=list(payload.get("augments") or []),
+                server_root=get_active_server_root(),
+            )
+        return JSONResponse(save_config(
+            config_id=payload.get("id"), name=payload.get("name"),
+            item_id=item_id, augments=payload.get("augments"),
+            family=active.get("family"),
+        ))
+    except (RewardTemplateError, LegacyTestExecutionBlocked, ValueError, TypeError) as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+
+
+@router.post("/augments/delete.json")
+def augmented_delete(payload: dict = Body(...)):
+    try:
+        return JSONResponse(delete_config(str(payload.get("id") or "")))
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
 
 @router.get("/augments/catalog.json")
