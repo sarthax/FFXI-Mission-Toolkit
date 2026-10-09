@@ -131,8 +131,13 @@ def _merge(main_db: str, tmp_db: str, log) -> dict:
                         AND p.page_id=reference_wiki_translations.page_id)""")
             return changes
         except sqlite3.OperationalError as e:
+            # Schema errors, corrupt staging tables, and disk failures will not
+            # improve after repeated sleeps. Retry only transient SQLite locks.
+            if not any(marker in str(e).lower() for marker in ("database is locked", "database table is locked", "database is busy")):
+                raise
             log(f"merge retry {attempt + 1}: {e}")
-            time.sleep(5)
+            if attempt < 5:
+                time.sleep(5)
         finally:
             con.close()
     raise RuntimeError("main DB stayed locked; scraped page kept in " + tmp_db)
