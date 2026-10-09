@@ -5796,6 +5796,12 @@ def wiki_bulk_status():
     return {"jobs": wiki_bulk_jobs.status(DB_PATH)}
 
 
+@app.get("/wiki/bulk/summary")
+def wiki_bulk_sync_summary():
+    from workbench.devtools.reference import wiki_bulk_jobs
+    return wiki_bulk_jobs.sync_summary(DB_PATH)
+
+
 @app.post("/wiki/bulk/start")
 async def wiki_bulk_start(request: Request):
     from workbench.devtools.reference import wiki_bulk_jobs
