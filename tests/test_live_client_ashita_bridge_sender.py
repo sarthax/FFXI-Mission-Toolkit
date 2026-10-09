@@ -12,7 +12,7 @@ ADDON = Path(__file__).resolve().parents[1] / "addons" / "workbench_live"
 
 
 def test_opt_in_ashita_bridge_sends_compatible_authenticated_frames():
-    lua = pytest.importorskip("lupa.lua51").LuaRuntime(unpack_returned_tuples=True)
+    lua = pytest.importorskip("lupa.lua51").LuaRuntime(unpack_returned_tuples=True, encoding=None)
     lua.globals().addon_dir = str(ADDON) + "/"
     lua.execute('''
         package.path = addon_dir .. '?.lua;' .. package.path
@@ -31,7 +31,7 @@ def test_opt_in_ashita_bridge_sends_compatible_authenticated_frames():
         bridge.stop()
     ''')
     values = lua.globals().output
-    hello, wire = (values[1].encode("latin1"), values[2].encode("latin1"))
+    hello, wire = (values[1], values[2])
     assert json.loads(hello[2:])["client_id"] == "ashita-a"
     assert struct.unpack("!H", hello[:2])[0] == len(hello) - 2
     assert struct.unpack("!I", wire[:4])[0] == len(wire) - 4
