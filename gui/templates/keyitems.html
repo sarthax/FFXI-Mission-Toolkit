@@ -110,6 +110,8 @@
     <label for="ki-lineage">Source lineage</label>
     <select id="ki-lineage"><option value="lsb">LSB</option>{% if backport_enabled() %}<option value="topaz">Topaz</option>{% endif %}</select>
     <span id="ki-lua-status" class="muted" role="status"></span>
+    <label for="ki-lua-operation">Operation</label>
+    <select id="ki-lua-operation"><option value="all">All</option><option value="require">Requires</option><option value="grant">Grants</option><option value="remove">Removes</option></select>
     <div id="ki-lua-results"></div>
   </section>
   <p class="muted" style="margin-bottom:0">Feature Trace and Wiki searches use the selected display name; search results are evidence candidates, not verified server-identity matches. Identifiers may differ by server lineage. Verify the mapping before using a numeric ID in scripts.</p>
@@ -219,11 +221,37 @@
     if (selectedRecord) copyValue(selectedRecord.name);
   });
   let luaGeneration = 0;
+  let luaRefs = [];
+  function displayLuaReferences() {
+    const results = document.getElementById('ki-lua-results');
+    const selected = document.getElementById('ki-lua-operation').value;
+    const refs = luaRefs.filter(ref => selected === 'all' || ref.operation === selected);
+    const list = document.createElement('ul');
+    for (const ref of refs) {
+      const item = document.createElement('li');
+      const label = document.createElement('strong');
+      label.textContent = String(ref.operation || 'reference') + ' · ';
+      const location = document.createElement('code');
+      location.textContent = String(ref.source_path || '') + ':' + String(ref.source_line || '');
+      const copy = document.createElement('button');
+      copy.type = 'button';
+      copy.textContent = 'Copy location';
+      copy.addEventListener('click', () => copyValue(location.textContent));
+      const excerpt = document.createElement('pre');
+      excerpt.textContent = String(ref.source_text || '');
+      excerpt.style.whiteSpace = 'pre-wrap';
+      item.append(label, location, copy, excerpt);
+      list.append(item);
+    }
+    results.replaceChildren(list);
+  }
+  document.getElementById('ki-lua-operation').addEventListener('change', displayLuaReferences);
   async function loadLua() {
     const generation = ++luaGeneration;
     const status = document.getElementById('ki-lua-status');
     const results = document.getElementById('ki-lua-results');
     results.replaceChildren();
+    luaRefs = [];
     if (!selectedRecord) return;
     status.textContent = 'Finding explicit source references…';
     try {
@@ -235,20 +263,8 @@
       const refs = Array.isArray(data.references) ? data.references : [];
       status.textContent = data.message || (refs.length + ' references across ' + (data.matched_scripts || 0) +
         ' scripts; scanned ' + (data.scanned_files || 0) + (data.truncated ? ' (truncated)' : ''));
-      const list = document.createElement('ul');
-      for (const ref of refs) {
-        const item = document.createElement('li');
-        const label = document.createElement('strong');
-        label.textContent = String(ref.operation || 'reference') + ' · ';
-        const location = document.createElement('code');
-        location.textContent = String(ref.source_path || '') + ':' + String(ref.source_line || '');
-        const excerpt = document.createElement('pre');
-        excerpt.textContent = String(ref.source_text || '');
-        excerpt.style.whiteSpace = 'pre-wrap';
-        item.append(label, location, excerpt);
-        list.append(item);
-      }
-      results.replaceChildren(list);
+      luaRefs = refs;
+      displayLuaReferences();
     } catch (error) {
       if (generation === luaGeneration) status.textContent = String(error.message || error);
     }
