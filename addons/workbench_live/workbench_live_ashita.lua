@@ -22,9 +22,9 @@ local packets = require('workbench_packets').new({
         local party = AshitaCore:GetMemoryManager():GetParty()
         local active = party:GetMemberIsActive(0)
         assert(type(active) == 'number' and active > 0, 'packet source is logged out')
+        context.zone_id = party:GetMemberZone(0)
         local identity = tostring(party:GetMemberServerId(0)) .. ':' .. party:GetMemberName(0)
         assert(identity == context.source_identity, 'packet player identity changed')
-        context.zone_id = party:GetMemberZone(0)
         return context
     end,
 })

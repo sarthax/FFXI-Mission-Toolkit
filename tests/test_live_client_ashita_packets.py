@@ -242,6 +242,25 @@ def test_packet_zone_transition_and_mid_sample_change(tmp_path):
     assert path.read_bytes() == before
 
 
+def test_packet_mid_callback_identity_change_rejects_append(tmp_path):
+    lua = runtime(tmp_path); start(lua); event(lua)
+    path, = tmp_path.glob('packets-*')
+    lua.execute('''
+        calls=0
+        function party:GetMemberZone(slot)
+            calls=calls+1
+            if calls == 2 then self.server_id=456 end
+            return self.zone
+        end
+        events.packet_in(packet)
+        command("/wblive packets status")
+    ''')
+    assert path.read_bytes() == b''
+    assert 'Packets inactive' in lua.globals().messages[len(lua.globals().messages)]
+    assert any('packet player identity changed' in lua.globals().messages[i]
+               for i in range(1, len(lua.globals().messages)+1))
+
+
 def test_database_error_rolls_back_all_new_packet_rows(tmp_path, monkeypatch):
     from workbench.captures import ashita_packet_ingest
     lua = runtime(tmp_path); start(lua); e = event(lua)
