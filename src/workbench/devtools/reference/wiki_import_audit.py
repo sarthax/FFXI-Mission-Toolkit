@@ -134,8 +134,18 @@ def apply_local_recovery(con: sqlite3.Connection, *, source: str, page_id: str,
         # match the retained document metadata.
         con.execute("DELETE FROM reference_wiki_blocks WHERE source_id=? AND page_id=?",
                     (source,page_id))
-        wiki_document.store_document(con,source_id=source,page_id=page_id,
-            source_format=row[0],raw_source=row[1],blocks=blocks)
+        # Use a single transaction rather than store_document(), whose
+        # initializer and internal commit are unsuitable for guarded rollback.
+        con.execute("""UPDATE reference_wiki_documents
+          SET parser_version=?,parsed_at=CURRENT_TIMESTAMP
+          WHERE source_id=? AND page_id=?""",(wiki_document.PARSER_VERSION,source,page_id))
+        con.executemany("""INSERT INTO reference_wiki_blocks
+          (source_id,page_id,block_id,ordinal,block_type,heading_level,section_path,text,target,metadata_json,source_locator)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+          [(source,page_id,b["block_id"],b["ordinal"],b["block_type"],b.get("heading_level"),
+            b.get("section_path"),b.get("text"),b.get("target"),
+            json.dumps(b.get("metadata") or {},ensure_ascii=False,sort_keys=True),
+            b.get("source_locator")) for b in blocks])
         con.commit()
         return {"source":source,"page_id":page_id,"applied":True,"blocks":len(blocks)}
     except Exception:
