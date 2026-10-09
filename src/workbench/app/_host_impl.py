@@ -5730,6 +5730,11 @@ async def wiki_scrape_url(request: Request):
     return {"job": job}
 
 
+@app.get("/wiki/cache-health")
+def wiki_cache_health():
+    return wiki_jobs.cache_health(DB_PATH)
+
+
 @app.get("/wiki/jobs")
 def wiki_job_status():
     return {"jobs": wiki_jobs.recent_jobs()}

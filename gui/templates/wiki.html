@@ -53,6 +53,7 @@
     <input type="text" name="url" style="min-width:380px;flex:1" placeholder="https://www.bg-wiki.com/ffxi/Lord_Asag  |  https://ffxiclopedia.fandom.com/wiki/...  |  https://wikiwiki.jp/ffxi/...">
     <button type="submit">Scrape</button>
   </form>
+  <p><a class="chip" href="/wiki/cache-health" target="_blank" rel="noopener">Check local Wiki cache health (read-only)</a></p>
   <p class="muted">Pages download into a private temp database and merge into the main one in a short transaction, so other tools keep working. Japanese text is stored exactly as published.</p>
   <div id="scrape-jobs">
   {% for j in jobs %}<div class="muted job-row" data-job="{{ j.id }}">{{ j.source }} · {{ j.title }} — {{ j.state }}</div>{% endfor %}

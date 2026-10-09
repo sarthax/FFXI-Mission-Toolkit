@@ -208,6 +208,37 @@ def recent_jobs(n: int = 8) -> list[dict]:
         return list(JOBS.values())[-n:][::-1]
 
 
+def cache_health(main_db) -> dict:
+    """Read-only diagnostics: never create a database or change its schema."""
+    from pathlib import Path
+    path = Path(main_db).resolve()
+    if not path.is_file():
+        return {"database_exists": False, "database_path": str(path), "sources": {}, "tables": []}
+    con = sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=5)
+    try:
+        tables = {row[0] for row in con.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        )}
+        sources = {}
+        if "reference_wiki_pages" in tables:
+            sources = {name: count for name, count in con.execute(
+                "SELECT source_id, COUNT(*) FROM reference_wiki_pages GROUP BY source_id"
+            )}
+        if "wiki_pages" in tables:
+            sources["BGWiki_dump_index"] = con.execute("SELECT COUNT(*) FROM wiki_pages").fetchone()[0]
+        return {
+            "database_exists": True, "database_path": str(path),
+            "sources": sources,
+            "tables": sorted(t for t in tables if t.startswith(("reference_wiki_", "wiki_pages"))),
+            "structured_documents": con.execute("SELECT COUNT(*) FROM reference_wiki_documents").fetchone()[0]
+                if "reference_wiki_documents" in tables else None,
+            "structured_blocks": con.execute("SELECT COUNT(*) FROM reference_wiki_blocks").fetchone()[0]
+                if "reference_wiki_blocks" in tables else None,
+        }
+    finally:
+        con.close()
+
+
 def translate_cached(con: sqlite3.Connection, source_id: str, page_id: str, page_hash: str, text: str) -> dict:
     """Display-time translation. The stored original is never modified; results are cached by page hash and
     are machine-generated. No engine is bundled: set WIKI_TRANSLATE_CMD to a command that reads Japanese on
