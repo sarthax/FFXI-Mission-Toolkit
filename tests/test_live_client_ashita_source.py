@@ -4,8 +4,97 @@ from pathlib import Path
 import pytest
 
 from workbench.runtime.live_client.file_bridge import FileTelemetryBridge
+from workbench.runtime.live_client.recording import load_recorded_frames
+from workbench.runtime.live_client.viewer import viewer_projection
 
 ADDON = Path(__file__).resolve().parents[1] / 'addons' / 'workbench_live'
+
+
+def entity_state(lua):
+    lua.execute('''
+        function entity:GetType(index) return 237 end
+        function entity:GetSpawnFlags(index) return 2147483649 end
+        function entity:GetStatus(index) return 4294967295 end
+        target.subactive=0; target.original=43
+        function target:GetIsSubTargetActive() return self.subactive end
+        function target:GetTargetIndex(slot) return slot==0 and self.index or self.original end
+        entities[43]={name='Original',x=7,y=8,z=9,heading=1}
+    ''')
+
+
+def test_raw_fields_and_roles_survive_source_feed_replay_and_projection(tmp_path):
+    lua = runtime(tmp_path); entity_state(lua)
+    lua.execute('command("/wblive start state inventory")')
+    path, = tmp_path.glob('*.jsonl')
+    feed = FileTelemetryBridge(path, 'state'); assert feed.poll() == 1
+    first = feed.feed.entities()[0]
+    assert (first.raw_entity_type, first.raw_spawn_flags, first.raw_status) == (237, 2147483649, 4294967295)
+    assert first.target_roles == ('target',) and first.kind.value == 'unknown'
+    lua.execute('clock=101; target.subactive=1; events.d3d_present()')
+    assert feed.poll() == 1
+    sub, original = feed.feed.entities()
+    assert sub.client_index == 42 and sub.target_roles == ('subtarget',)
+    assert original.client_index == 43 and original.target_roles == ('target',)
+    replay = load_recorded_frames(path, client_id='state'); replay.seek(2)
+    projected = viewer_projection(replay.feed._latest, zone_id=100, client_id='state')
+    assert projected['entities'][0]['raw_entity_type'] == 237
+    assert projected['entities'][0]['raw_spawn_flags'] == 2147483649
+    assert projected['entities'][0]['raw_status'] == 4294967295
+    assert projected['entities'][0]['target_roles'] == ['subtarget']
+    assert replay.feed.version_verified is False
+
+
+def test_shared_target_slot_merges_roles_without_duplicate_entity(tmp_path):
+    lua = runtime(tmp_path); entity_state(lua)
+    lua.execute('target.subactive=1; target.original=42; command("/wblive start shared")')
+    path, = tmp_path.glob('*.jsonl')
+    feed = FileTelemetryBridge(path, 'shared'); assert feed.poll() == 1
+    item, = feed.feed.entities()
+    assert item.target_roles == ('subtarget', 'target')
+
+
+@pytest.mark.parametrize('failure', [
+    'function entity:GetType(index) return 256 end',
+    'function entity:GetType(index) return false end',
+    'function entity:GetSpawnFlags(index) return -1 end',
+    'function entity:GetStatus(index) return 4294967296 end',
+    'function entity:GetStatus(index) return nil end',
+    'function entity:GetStatus(index) error("unsupported getter") end',
+])
+def test_invalid_raw_getter_stops_without_appending(tmp_path, failure):
+    lua = runtime(tmp_path); entity_state(lua)
+    lua.execute('command("/wblive start state")')
+    path, = tmp_path.glob('*.jsonl'); before = path.read_bytes()
+    lua.execute(f'command("/wblive status"); clock=101; {failure}; events.d3d_present(); command("/wblive status")')
+    assert path.read_bytes() == before
+    assert 'Not exporting' in lua.globals().messages[len(lua.globals().messages)]
+
+
+@pytest.mark.parametrize('change', ['target.subactive=0', 'target.original=44', 'entities[43]=nil'])
+def test_subtarget_context_changes_reject_mixed_frame(tmp_path, change):
+    lua = runtime(tmp_path); entity_state(lua)
+    lua.execute('target.subactive=1; command("/wblive start state")')
+    path, = tmp_path.glob('*.jsonl'); before = path.read_bytes()
+    slot = 43 if change == 'entities[43]=nil' else 42
+    lua.execute('local original=entity.GetHeading; function entity:GetHeading(index) local value=original(self,index); if index=='+str(slot)+' then '+change+' end; return value end; clock=101; events.d3d_present()')
+    assert path.read_bytes() == before
+
+
+def test_optional_getters_unknown_and_restart_uses_new_file(tmp_path):
+    lua = runtime(tmp_path)
+    lua.execute('command("/wblive start legacy")')
+    path, = tmp_path.glob('*.jsonl')
+    feed = FileTelemetryBridge(path, 'legacy'); assert feed.poll() == 1
+    item, = feed.feed.entities()
+    assert item.raw_entity_type is None and item.raw_spawn_flags is None and item.raw_status is None
+    assert item.target_roles == ()
+    before = path.read_bytes()
+    lua.execute('party.active=0; clock=101; events.d3d_present(); party.active=1')
+    entity_state(lua)
+    lua.execute('command("/wblive start legacy")')
+    paths = list(tmp_path.glob('*.jsonl')); assert len(paths) == 2
+    assert path.read_bytes() == before
+    assert feed.poll() == 0
 
 
 def runtime(directory):

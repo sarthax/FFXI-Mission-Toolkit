@@ -268,3 +268,17 @@ Keep telemetry v1, decoder, registry, feeds, session generations and recorded UI
 5. Develop native process identity/standalone reads and individual authorized controls only where Ashita lacks a supported interface. No copied offsets, auto-attachment, writable profile or restoration guarantee is justified now.
 
 No completed functionality is superseded. Ashita supersedes the *need to implement a second memory reader for API-accessible observations*, not the independent native fallback or future verified control work. Minimap behavior is reference evidence, not a new export/provider or competing Toolkit UI.
+
+### Entity slice implementation follow-up
+
+The baseline raw type/status/spawn-flags and target-role gaps above now have an
+additive implementation, classified **implemented but only synthetically/offline
+tested**. IEntity raw getter widths come from pinned `4171c74c` SDK/annotations;
+target roles follow its published targets.lua get_t/get_st behavior. Missing APIs
+stay unknown. Invalid available-getter output and identity/target/context changes
+reject the frame, without claiming an atomic memory snapshot or verified liveness.
+The existing decoder/feed/replay/model/projection/entity table retains the fields;
+legacy recordings and Windower remain compatible. Existing explicit start, one-
+second cadence, 32-entity cap, 64 KiB line and 16 MiB file limits are retained.
+Windows acceptance remains required for each new field and role. No packet hook,
+new native reader, server join, calibrated placement or game write is implemented.

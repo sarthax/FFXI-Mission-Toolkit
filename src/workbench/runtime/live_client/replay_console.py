@@ -44,7 +44,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:.5rem;bo
 <section><h2>Entity observations</h2><label for="entity-search">Search names or IDs </label><input id="entity-search" maxlength="200" placeholder="Name, decimal ID or 0x index">
 <label for="entity-sort">Order </label><select id="entity-sort"><option value="observed">Observed order</option><option value="distance">Raw distance from player</option></select>
 <p>Distances use unverified raw units and do not describe navigable routes. Filters apply only to this frame's observed subset.</p><p id="entity-status">No entity observations.</p>
-<div style="overflow:auto"><table><thead><tr><th>Name</th><th>Kind</th><th>Client index</th><th>Server ID</th><th>Raw XYZ</th><th>Raw distance</th><th>Capture</th></tr></thead><tbody id="entity-rows"></tbody></table></div></section>
+<div style="overflow:auto"><table><thead><tr><th>Name</th><th>Kind</th><th>Client index</th><th>Server ID</th><th>Raw XYZ</th><th>Raw distance</th><th>Raw type</th><th>Raw spawn flags</th><th>Raw status</th><th>Target roles</th><th>Capture</th></tr></thead><tbody id="entity-rows"></tbody></table></div></section>
 <section><h2>Recorded position trace</h2><label for="trace-plane">Trace plane </label><select id="trace-plane"><option value="xz">X/Z</option><option value="xy">X/Y</option><option value="yz">Y/Z</option></select><p id="trace-status">Select a recording to view its observed movement.</p>
 <label><input type="checkbox" id="show-waypoints"> Show saved waypoint markers (up to 100)</label>
 <label><input type="checkbox" id="show-entities"> Show current entity observations (up to 100)</label>
@@ -84,7 +84,7 @@ function renderEntities(){
  });
  for(const {entity,distance} of matches){
   const row=document.createElement('tr'),p=entity.position;
-  for(const value of [entity.name||'(unnamed)',entity.kind,entity.client_index,entity.server_entity_id??'Unknown',[p.x,p.y,p.z].join(', '),Number.isFinite(distance)?distance.toFixed(3)+' raw':'Outside numeric range']){
+  for(const value of [entity.name||'(unnamed)',entity.kind,entity.client_index,entity.server_entity_id??'Unknown',[p.x,p.y,p.z].join(', '),Number.isFinite(distance)?distance.toFixed(3)+' raw':'Outside numeric range',entity.raw_entity_type??'Unknown',entity.raw_spawn_flags??'Unknown',entity.raw_status??'Unknown',entity.target_roles?.length?entity.target_roles.join(', '):'Unknown']){
    const cell=document.createElement('td');cell.textContent=String(value);row.append(cell);
   }
   const captureContext={session:displayedSession,token:entityProjection.observation_token};

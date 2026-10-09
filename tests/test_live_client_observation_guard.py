@@ -1,5 +1,6 @@
 """Displayed-frame guards reject seek, slot reuse and identical replacement."""
 import json
+import pytest
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -87,6 +88,20 @@ def test_trace_rejects_cursor_change_during_collection(tmp_path, monkeypatch):
     response = client.get('/live-client/replay/trace',
                           params={'client_id': session, 'observation_token': token})
     assert response.status_code == 409
+
+
+@pytest.mark.parametrize('field,value', [('raw_entity_type', 237), ('raw_status', 12),
+                                        ('raw_spawn_flags', 123), ('target_roles', ['target'])])
+def test_entity_diagnostic_change_at_same_timestamp_invalidates_capture(tmp_path, field, value):
+    client, registry, session, replay, library = setup(tmp_path)
+    payload = next(json.loads(line) for line in CAPTURE.read_text().splitlines()
+                   if json.loads(line)['entities'])
+    replay.feed._latest = decode_frame(payload)
+    token = projection(client, session)
+    payload['entities'][0][field] = value
+    replay.feed._latest = decode_frame(payload)
+    assert capture(client, session, token).status_code == 409
+    assert library.entries() == []
 
 
 def test_identical_replacement_invalidates_generation_and_cross_session_token(tmp_path):

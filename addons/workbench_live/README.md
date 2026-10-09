@@ -27,8 +27,9 @@ and selected-target observations remain distinct from inferred server identities
 The addon prints the new `telemetry-<id>-<time>-<suffix>.jsonl` path. The source
 labels its client version `unverified-ashita-v4-api`. Coordinates and heading
 are the SDK's raw local-position/heading values; units and map transforms require
-real verification. Only the player's current selected target is exported as an
-entity, with kind `unknown`. Missing targets produce an empty entity list.
+real verification. Selected target observations are exported with kind `unknown`; when the published
+subtarget-state getter is available, both target and subtarget are distinguished.
+Missing targets produce an empty entity list in selected-target mode.
 There is no OS process discovery, memory-layout validation or write adapter.
 Ashita v3 compatibility has not been established.
 
@@ -154,3 +155,29 @@ passed; actual enumeration bounds and behavior on your Windows client remain
 unverified. When testing later, collect an inventory recording with a selected
 NPC/mob/player and note displayed names/counts, target switching, zoning and any
 stop messages. You can perform this directly in Ashita without local Codex.
+
+### Raw entity diagnostics and target roles
+
+The existing start commands now collect optional published `IEntity:GetType`,
+`GetSpawnFlags` and `GetStatus` values as `raw_entity_type` (uint8),
+`raw_spawn_flags` and `raw_status` (uint32). Missing getters retain unknown values;
+present getters returning invalid values stop the export before the rejected frame
+is appended. Raw codes are not translated into NPC/mob/player kinds, liveness,
+death or verified spawn/despawn events. They are shown in the existing entity table.
+
+When `ITarget:GetIsSubTargetActive` is available, slot 0 is the ordinary target
+while inactive; while active it is the subtarget and slot 1 supplies the original
+target. `target_roles` retains one or both source-reported roles; overlapping
+slots produce one entity with both roles. Without that getter, the existing slot-0
+observation remains available with unknown role. Target mode/index, entity/name/
+reported-ID and player/zone checks reject mixed samples. Instance identity stays
+unknown. Target/subtarget observations precede inventory slots and share the same
+32-entity cap. No extra exporter or competing schema was introduced.
+
+These mappings are source-backed and cloud-tested, not validated on the user's
+Windows installation. The pinned APIs and reconciliation matrix are in the
+[reference audit](../../docs/workbench/LIVE_CLIENT_REFERENCE_AUDIT.md#reconciliation-with-ashita-capability-research--2026-10-09).
+For the next Windows run, record normal targeting, a subtarget selection, target
+switches and inventory near known NPCs/mobs/players; report raw values and exact
+stop messages. Keep addon revision, actual loaded framework/game build and server
+context in the test notes. Older recordings replay with unknown raw fields/roles.
