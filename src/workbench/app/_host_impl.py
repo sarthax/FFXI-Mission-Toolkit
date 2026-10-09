@@ -4488,8 +4488,7 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
     def primary_readiness(row):
         if primary_dsp:
             match = resolve_dsp_key_item(dsp_root, row["name"])
-            status = {"name_verified": "clean", "ambiguous": "wrong_name",
-                      "missing": "missing", "unavailable": "missing"}[match["status"]]
+            status = ("clean" if match["server_id"] == row["keyitem_id"] else "drifted") if match["status"] == "name_verified" else "missing"
             return {"status": status, "id_match": None,
                     "name_match": (match["server_id"], match["symbol"])
                     if match["status"] == "name_verified" else None}
@@ -4594,7 +4593,9 @@ def keyitems_lua_references(keyitem_id: int, lineage: str = "lsb"):
         con.close()
 
     if lineage == "dsp":
-        root = settings_mod.get_dsp_root()
+        from workbench.runtime.legacy_settings import get_active_server_identity
+        selected = get_active_server_identity()
+        root = selected.get("server_root") if selected.get("family") == "dsp" else None
         if not root:
             return {"keyitem_id": keyitem_id, "lineage": "dsp", "readiness": "unavailable",
                     "references": [], "message": "Configure a DSP source checkout first."}
