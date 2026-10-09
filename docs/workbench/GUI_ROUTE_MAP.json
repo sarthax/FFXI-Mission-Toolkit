@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 279,
+  "route_count": 280,
   "routes": [
     {
       "method": "GET",
@@ -2231,6 +2231,14 @@
     {
       "method": "POST",
       "path": "/wiki/snapshot/import",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/wiki/snapshot/preview",
       "home": "Tools",
       "section": "Research > References",
       "role": "data",
