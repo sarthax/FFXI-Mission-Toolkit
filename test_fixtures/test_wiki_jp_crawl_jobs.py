@@ -29,6 +29,12 @@ def main():
         with patch.object(crawler.jp,"get",side_effect=RuntimeError("challenge required")):
             crawler._worker(str(db),second)
         assert crawler.status(db)[0]["state"]=="error"
+    class Response:
+        def __enter__(self): return self
+        def __exit__(self,*args): return False
+        def read(self): return b"<html><body>valid Wiki article</body></html>"
+    with patch.object(crawler.jp.urllib.request,"urlopen",return_value=Response()):
+        assert "valid Wiki article" in crawler.jp.get("Medusa")
     print("Japanese Wiki checkpointed crawl: PASS")
 
 
