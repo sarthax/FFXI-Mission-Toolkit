@@ -652,7 +652,9 @@ def search_pages(con, query: str, limit: int = 40, source_id: str = "all") -> li
         row["score"]=max(row["score"],score)
 
     for r in con.execute("""SELECT source_id,page_id,title FROM reference_wiki_pages
-      WHERE (lower(title) LIKE ? OR lower(norm_title) LIKE ?)""" + source_sql + " LIMIT ?",(like,like,*source_args,limit*3)):
+      WHERE (lower(title) LIKE ? OR lower(norm_title) LIKE ?)""" + source_sql +
+      " ORDER BY CASE WHEN lower(title)=? OR lower(norm_title)=? THEN 0 ELSE 1 END, length(title), lower(title) LIMIT ?",
+      (like,like,*source_args,q,q,limit*3)):
         add(*r,"title",score=100 if normalize_search(r[2])==q else 80)
     # BG Wiki's full offline dump is indexed separately; keep it searchable without
     # copying every page into reference_wiki_pages.
