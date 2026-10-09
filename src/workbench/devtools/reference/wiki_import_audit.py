@@ -11,10 +11,11 @@ import sqlite3
 from pathlib import Path
 
 
-def audit(con: sqlite3.Connection, *, sample_limit: int = 12) -> dict:
+def audit(con: sqlite3.Connection, *, sample_limit: int = 12, recovery_offset: int = 0) -> dict:
     """Summarize actual persisted Wiki blocks, with bounded source-page samples."""
     if not con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='reference_wiki_blocks'").fetchone():
         return {"status": "NO_STRUCTURED_BLOCKS_TABLE", "sources": [], "samples": [], "recovery_candidates": []}
+    recovery_offset = max(0, recovery_offset)
     sources = [
         {"source": source, "pages_with_blocks": pages, "blocks": blocks,
          "template_fields": fields, "degraded_blocks": legacy}
@@ -38,6 +39,15 @@ def audit(con: sqlite3.Connection, *, sample_limit: int = 12) -> dict:
                    source_id,page_id LIMIT ?
         """, (max(0, min(sample_limit, 100)),)).fetchall()
     ]
+    # Count eligible legacy-only pages independently of the bounded page window.
+    recovery_total = con.execute("""
+          SELECT COUNT(*) FROM (
+            SELECT 1 FROM reference_wiki_blocks
+            GROUP BY source_id,page_id
+            HAVING SUM(CASE WHEN block_type='legacy_text' THEN 1 ELSE 0 END)>0
+               AND SUM(CASE WHEN block_type NOT IN ('legacy_text') THEN 1 ELSE 0 END)=0
+          )
+        """).fetchone()[0]
     # Rank pages which have only flattened legacy content; prioritize Japanese
     # sources for selective recovery without requesting or changing source data.
     recovery_candidates = [
@@ -49,8 +59,8 @@ def audit(con: sqlite3.Connection, *, sample_limit: int = 12) -> dict:
           HAVING SUM(CASE WHEN block_type='legacy_text' THEN 1 ELSE 0 END)>0
              AND SUM(CASE WHEN block_type NOT IN ('legacy_text') THEN 1 ELSE 0 END)=0
           ORDER BY CASE WHEN source_id='WikiWikiJP' THEN 0 ELSE 1 END,
-                   COUNT(*) DESC,source_id,page_id LIMIT ?
-        """, (max(0,min(sample_limit,100)),)).fetchall()
+                   COUNT(*) DESC,source_id,page_id LIMIT ? OFFSET ?
+        """, (max(0,min(sample_limit,100)), recovery_offset)).fetchall()
     ]
     # Inspect only locally retained source text. A usable raw document can be
     # reparsed offline; missing/flattened originals require selective recovery.
@@ -68,14 +78,17 @@ def audit(con: sqlite3.Connection, *, sample_limit: int = 12) -> dict:
         page["recovery_action"] = "REPARSE_LOCAL_SOURCE" if usable else "SELECTIVE_SOURCE_FETCH"
         page["source_format"] = format_name or None
     return {"status": "OK", "sources": sources, "samples": samples,
-            "recovery_candidates": recovery_candidates}
+            "recovery_candidates": recovery_candidates,
+            "recovery_total": recovery_total,
+            "recovery_offset": recovery_offset,
+            "recovery_has_more": recovery_offset + len(recovery_candidates) < recovery_total}
 
 
 
-def preview_local_recovery(con: sqlite3.Connection, *, sample_limit: int = 12) -> list[dict]:
+def preview_local_recovery(con: sqlite3.Connection, *, sample_limit: int = 12, recovery_offset: int = 0) -> list[dict]:
     """Parse retained source without storing blocks or changing imported records."""
     from workbench.devtools.reference.wiki_document import build_blocks
-    candidates=audit(con,sample_limit=sample_limit).get("recovery_candidates",[])
+    candidates=audit(con,sample_limit=sample_limit,recovery_offset=recovery_offset).get("recovery_candidates",[])
     previews=[]
     for page in candidates:
         if page["recovery_action"]!="REPARSE_LOCAL_SOURCE":
@@ -192,12 +205,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("db", type=Path, help="Existing imported Wiki SQLite database")
     parser.add_argument("--samples", type=int, default=12, help="Maximum example pages (0-100)")
+    parser.add_argument("--recovery-offset", type=int, default=0, help="Skip this many ranked recovery candidates (default 0)")
     parser.add_argument("--preview-local", action="store_true", help="Preview reparsing local retained source; never write")
     parser.add_argument("--apply-source", help="Source ID of one page to recover")
     parser.add_argument("--apply-page", help="Page ID of one page to recover")
     parser.add_argument("--expect-hash", help="SHA256 of retained original source from preview")
     parser.add_argument("--confirm-local-recovery", action="store_true", help="Explicit single-page write authorization")
     args = parser.parse_args()
+    if args.recovery_offset < 0:
+        parser.error("--recovery-offset must be nonnegative")
     applying=any((args.apply_source,args.apply_page,args.expect_hash,args.confirm_local_recovery))
     if applying and not all((args.apply_source,args.apply_page,args.expect_hash,args.confirm_local_recovery)):
         parser.error("Apply requires --apply-source --apply-page --expect-hash --confirm-local-recovery")
@@ -207,9 +223,9 @@ def main() -> None:
             result=apply_local_recovery(con,source=args.apply_source,page_id=args.apply_page,
                                         expected_raw_hash=args.expect_hash,confirm=True)
         else:
-            result=audit(con, sample_limit=args.samples)
+            result=audit(con, sample_limit=args.samples, recovery_offset=args.recovery_offset)
             if args.preview_local:
-                result["local_recovery_previews"]=preview_local_recovery(con,sample_limit=args.samples)
+                result["local_recovery_previews"]=preview_local_recovery(con,sample_limit=args.samples,recovery_offset=args.recovery_offset)
         print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

@@ -5611,7 +5611,7 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
 
 
 @app.get("/wiki", response_class=HTMLResponse)
-def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = "", tab: str = "browse", q: str = "", review_status: str = "all", review_page: int = 1, review_origin: bool = False, review_result: str = ""):
+def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = "", tab: str = "browse", q: str = "", review_status: str = "all", review_page: int = 1, review_origin: bool = False, review_result: str = "", recovery_page: int = 1):
     report = None
     evidence = None
     comparison = None
@@ -5648,10 +5648,17 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         status=review_status if review_status in ("pending", "dismissed") else "all")
         if tab == "review" and source != "all" else [])
     review_has_more = len(review_window) > 50
+    recovery_page = max(1, min(recovery_page, 10000))
     recovery_preview = []
+    recovery_total = 0
+    recovery_has_more = False
     if tab == "recovery":
-        from workbench.devtools.reference.wiki_import_audit import preview_local_recovery
-        recovery_preview = preview_local_recovery(con, sample_limit=12)
+        from workbench.devtools.reference.wiki_import_audit import audit, preview_local_recovery
+        recovery_offset = (recovery_page - 1) * 12
+        recovery_summary = audit(con, sample_limit=12, recovery_offset=recovery_offset)
+        recovery_total = recovery_summary.get("recovery_total", 0)
+        recovery_has_more = recovery_summary.get("recovery_has_more", False)
+        recovery_preview = preview_local_recovery(con, sample_limit=12, recovery_offset=recovery_offset)
     review_queue = review_window[:50]
     if tab == "review" and review_status in ("pending", "dismissed"):
         review_queue = [entry for entry in review_queue if entry[review_status]]
@@ -5671,6 +5678,9 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         "tab": tab if tab in ("browse", "evidence", "review", "recovery") else "browse",
         "review_queue": review_queue,
         "recovery_preview": recovery_preview,
+        "recovery_page": recovery_page,
+        "recovery_total": recovery_total,
+        "recovery_has_more": recovery_has_more,
         "review_page": review_page,
         "review_origin": review_origin,
         "review_result": review_result if review_result in ("approved", "dismissed") else "",
