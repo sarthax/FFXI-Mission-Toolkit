@@ -50,7 +50,7 @@ def status(db):
 
 def start(db,seed,limit=50):
     seed=str(seed).strip().strip("/")
-    if not seed or seed.startswith(("http:", "https:")) or "?" in seed:
+    if not seed or seed.startswith(("http:", "https:", ".")) or "?" in seed or "\\\" in seed or ".." in seed.split("/"):
         raise ValueError("Enter a Japanese Wiki page path, not a URL or query string")
     if limit not in (50,250):
         raise ValueError("Batch size must be 50 or 250")
@@ -120,7 +120,8 @@ def _worker(db,ident):
         queue=json.loads(queue_raw)
         seen=set(json.loads(seen_raw))
         _update(db,ident,state="running")
-        while queue and processed<limit:
+        run_target=processed+limit
+        while queue and processed<run_target:
             with _db(db) as con:
                 state=con.execute("SELECT state FROM wiki_jp_crawl_jobs WHERE id=?",(ident,)).fetchone()[0]
             if state=="pausing":
