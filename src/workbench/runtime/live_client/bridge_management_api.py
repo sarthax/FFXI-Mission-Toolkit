@@ -61,7 +61,20 @@ async function action(name){try{const result=await request(name);statusEl.textCo
 async function provision(){try{const value=client();
  if(!/^[a-zA-Z0-9_-]{1,64}$/.test(value))throw Error('Invalid client ID');
  const result=await request('provision',{client_id:value});
- document.getElementById('config').textContent='Private Ashita settings (do not share):\\n'+JSON.stringify(result,null,2);
+ const lua='-- Private workbench_bridge_settings.lua; do not commit this file.\\n'
+ +'local socket = require("socket")\\nreturn {\\n'
+ +'  enabled = true, host = "127.0.0.1",\\n'
+ +'  port = '+result.port+',\\n'
+ +'  session_id = '+JSON.stringify(result.session_id)+',\\n'
+ +'  generation = '+JSON.stringify(result.generation)+',\\n'
+ +'  token = '+JSON.stringify(result.token)+',\\n'
+ +'  connect = function(host, port)\\n'
+ +'    local peer = assert(socket.tcp())\\n'
+ +'    peer:settimeout(0.1)\\n'
+ +'    local ok, err = peer:connect(host, port)\\n'
+ +'    if not ok then peer:close(); error(err) end\\n'
+ +'    return peer\\n  end,\\n}\\n';
+ document.getElementById('config').textContent='Save locally as addons/workbench_live/workbench_bridge_settings.lua (private):\\n\\n'+lua;
  }catch(error){statusEl.textContent=String(error)}}
 async function poll(){const value=client();if(!/^[a-zA-Z0-9_-]{1,64}$/.test(value))return;
  try{const response=await fetch(root+'status/'+encodeURIComponent(value));
