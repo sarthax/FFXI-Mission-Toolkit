@@ -230,3 +230,19 @@ Cloud Lua/Capture tests do not verify these hooks on Windows. The next runtime
 trial should use a known emote and NPC event, compare original hook bytes/direction/
 length against an independent Capture source, and record framework/game/addon
 revision, source stop messages and performance. No local Codex is required.
+
+### Inventory runtime evidence and zoning stops
+
+Supplied tests A/B validate 30 frames in Bastok Markets (zone 235) and 24 in North
+Gustaberg (107), with 1,035 nonzero reported entity IDs and no reported truncation.
+One client performed additional zoning, combat, logout and relogin, but neither file
+contains those transitions or explicit target roles. Runtime export coverage improves;
+loaded-build compatibility, complete inventory, diagnostic/role fields, catalog ID
+agreement, packet fidelity and lifecycle continuity remain unverified.
+
+The current exporter stops at the first invalid/transitional sample rather than
+writing mixed or stale data. After zoning or relogin, check `/wblive status`; if it
+is not exporting, capture the exact Workbench Live stop message and explicitly run
+`/wblive start <unique-id> inventory` again once the player is fully available.
+Keep each preserved file and the messages before/after the transition. This is
+manual recovery guidance, not validated automatic resume or uninterrupted zoning.
