@@ -93,6 +93,35 @@ def anomalies_from(records: list[dict[str, Any]], now: int, days: int = 7, histo
                         "value": recent_n, "baseline": round(expected, 1), "change_pct": None,
                         "detail": f"Posted {recent_n} listings in {days}d where about {expected:.1f} is usual for them."})
 
+    # Evidence quality is separate from severity. A dramatic signal based on
+    # a handful of transactions must not be presented as high-confidence.
+    for finding in out:
+        kind = finding["kind"]
+        if kind in {"price_shift", "volume_spike", "listing_underpriced", "listing_overpriced"}:
+            history = by_item_sales.get(finding["item_id"], [])
+            recent_count = sum(r["sold_at"] >= recent_from for r in history)
+            earlier_count = len(history) - recent_count
+            if kind.startswith("listing_"):
+                reference_count = len(history)
+                quality = "strong" if reference_count >= 20 else "limited"
+            else:
+                reference_count = earlier_count
+                quality = "strong" if earlier_count >= 20 and recent_count >= 5 else "limited"
+            finding["evidence"] = {
+                "quality": quality, "historical_sales": reference_count,
+                "recent_sales": recent_count,
+                "note": "Evidence quality reflects sample size, not severity or proof of manipulation.",
+            }
+        elif kind == "seller_flood":
+            seller_times = listed[finding["seller_id"]]
+            recent_count = sum(ts >= recent_from for ts in seller_times)
+            earlier_count = len(seller_times) - recent_count
+            finding["evidence"] = {
+                "quality": "strong" if earlier_count >= 20 else "limited",
+                "historical_listings": earlier_count, "recent_listings": recent_count,
+                "note": "Evidence quality reflects sample size, not severity or proof of manipulation.",
+            }
+
     out.sort(key=lambda a: (-a["severity"], -abs(a["change_pct"] or 0)))
     counts: dict[str, int] = defaultdict(int)
     for a in out:
