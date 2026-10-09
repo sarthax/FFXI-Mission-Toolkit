@@ -46,6 +46,18 @@
   {% if title %}<a class="chip" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab={{ tab }}">Clear search</a>{% endif %}
 </form>
 
+<section class="wiki-section" id="wiki-cache-panel" aria-label="Local Wiki cache health">
+  <div class="body">
+    <div class="wiki-actions" style="margin:9px 0">
+      <b>Local Wiki cache</b>
+      <button type="button" id="wiki-cache-refresh">Refresh counts</button>
+      <span class="muted" id="wiki-cache-status" role="status">Loading cache coverage…</span>
+    </div>
+    <div class="wiki-kpis" id="wiki-cache-kpis"></div>
+    <div class="muted" id="wiki-cache-path" style="overflow-wrap:anywhere"></div>
+    <p class="muted">These are pages already stored in the toolkit's local database. The BG offline index is counted separately; it does not imply the page has been imported into structured Wiki documents.</p>
+  </div>
+</section>
 <details class="wiki-section" id="scrape-box">
 <summary>Scrape a wiki page by URL <span class="muted">(runs in the background, no LLM)</span></summary>
 <div class="body">
@@ -545,6 +557,41 @@
 {% endif %}
 <script>
 (function(){
+  var cachePanel=document.getElementById('wiki-cache-panel');
+  if(cachePanel){
+    var cacheBtn=document.getElementById('wiki-cache-refresh'),
+        cacheStatus=document.getElementById('wiki-cache-status'),
+        cacheKpis=document.getElementById('wiki-cache-kpis'),
+        cachePath=document.getElementById('wiki-cache-path');
+    function wikiCacheMetric(label,value){
+      var item=document.createElement('div'),num=document.createElement('div'),caption=document.createElement('div');
+      item.className='wiki-kpi';num.className='n';caption.className='l';
+      num.textContent=value===null||value===undefined?'Not indexed':Number(value).toLocaleString();
+      caption.textContent=label;item.appendChild(num);item.appendChild(caption);cacheKpis.appendChild(item);
+    }
+    function updateWikiCache(){
+      cacheBtn.disabled=true;cacheStatus.textContent='Reading local cache…';
+      fetch('/wiki/cache-health',{cache:'no-store'})
+        .then(function(response){if(!response.ok)throw Error('HTTP '+response.status);return response.json();})
+        .then(function(info){
+          cacheKpis.replaceChildren();
+          cachePath.textContent='Database: '+(info.database_path||'Unknown');
+          if(!info.database_exists){cacheStatus.textContent='Local database not found';return;}
+          var counts=info.sources||{};
+          ['BGWiki','FFXIclopedia','WikiWikiJP','BGWiki_dump_index'].forEach(function(key){
+            var labels={BGWiki:'BG Wiki imported',FFXIclopedia:'FFXIclopedia imported',WikiWikiJP:'Japanese Wiki imported',BGWiki_dump_index:'BG offline index'};
+            wikiCacheMetric(labels[key],counts[key]||0);
+          });
+          wikiCacheMetric('Structured documents',info.structured_documents);
+          wikiCacheMetric('Structured blocks',info.structured_blocks);
+          cacheStatus.textContent='Loaded from local database';
+        })
+        .catch(function(err){cacheStatus.textContent='Cannot read Wiki cache: '+err.message;})
+        .finally(function(){cacheBtn.disabled=false;});
+    }
+    cacheBtn.addEventListener('click',updateWikiCache);
+    updateWikiCache();
+  }
   var f=document.getElementById('scrape-form'),box=document.getElementById('scrape-jobs'),timer=null;
   function show(message){var node=document.createElement('div');node.className='warn';node.textContent=message;box.prepend(node);}
   function paint(jobs){
