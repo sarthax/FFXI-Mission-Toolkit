@@ -61,11 +61,14 @@ def anomalies_from(records: list[dict[str, Any]], now: int, days: int = 7, histo
                             "value": len(recent), "baseline": round(expected, 1), "change_pct": None,
                             "detail": f"{len(recent)} sales in {days}d where about {expected:.1f} would be typical."})
 
+    # Compute the reference price once per item, not once for every active
+    # listing. Popular items may have thousands of simultaneous listings.
+    listing_medians = {
+        iid: median(int(x["sale_price"]) for x in rows)
+        for iid, rows in by_item_sales.items() if len(rows) >= MIN_HISTORY_SALES
+    }
     for r in active:
-        hist = [int(x["sale_price"]) for x in by_item_sales.get(r["item_id"], [])]
-        if len(hist) < MIN_HISTORY_SALES:
-            continue
-        base = median(hist)
+        base = listing_medians.get(r["item_id"])
         if not base:
             continue
         ratio = int(r["asking_price"]) / base
@@ -93,16 +96,31 @@ def anomalies_from(records: list[dict[str, Any]], now: int, days: int = 7, histo
                         "value": recent_n, "baseline": round(expected, 1), "change_pct": None,
                         "detail": f"Posted {recent_n} listings in {days}d where about {expected:.1f} is usual for them."})
 
+    seller_samples = {
+        sid: (
+            sum(ts >= recent_from for ts in times),
+            sum(ts < recent_from for ts in times),
+        )
+        for sid, times in listed.items()
+    }
+    # Cache sample counts per item; repeated active listings share the same
+    # evidence window and should not rescan the full transaction history.
+    item_samples = {
+        iid: (
+            sum(r["sold_at"] >= recent_from for r in rows),
+            sum(r["sold_at"] < recent_from for r in rows),
+            len(rows),
+        )
+        for iid, rows in by_item_sales.items()
+    }
     # Evidence quality is separate from severity. A dramatic signal based on
     # a handful of transactions must not be presented as high-confidence.
     for finding in out:
         kind = finding["kind"]
         if kind in {"price_shift", "volume_spike", "listing_underpriced", "listing_overpriced"}:
-            history = by_item_sales.get(finding["item_id"], [])
-            recent_count = sum(r["sold_at"] >= recent_from for r in history)
-            earlier_count = len(history) - recent_count
+            recent_count, earlier_count, total_count = item_samples.get(finding["item_id"], (0, 0, 0))
             if kind.startswith("listing_"):
-                reference_count = len(history)
+                reference_count = total_count
                 quality = "strong" if reference_count >= 20 else "limited"
             else:
                 reference_count = earlier_count
@@ -113,9 +131,7 @@ def anomalies_from(records: list[dict[str, Any]], now: int, days: int = 7, histo
                 "note": "Evidence quality reflects sample size, not severity or proof of manipulation.",
             }
         elif kind == "seller_flood":
-            seller_times = listed[finding["seller_id"]]
-            recent_count = sum(ts >= recent_from for ts in seller_times)
-            earlier_count = len(seller_times) - recent_count
+            recent_count, earlier_count = seller_samples[finding["seller_id"]]
             finding["evidence"] = {
                 "quality": "strong" if earlier_count >= 20 else "limited",
                 "historical_listings": earlier_count, "recent_listings": recent_count,
