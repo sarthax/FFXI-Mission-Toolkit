@@ -7,7 +7,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query, Request
 
 from .registry import ReplayRegistry
-from .observation_guard import observation_token
+from .observation_guard import observation_token, require_observation
 from .viewer import viewer_projection
 from .observation_exports import create_observation_export_router
 
@@ -43,11 +43,18 @@ def create_registry_router(registry: ReplayRegistry) -> APIRouter:
 
     @router.get("/trace")
     def trace(client_id: str = Query(min_length=1, max_length=200),
-              max_points: int = Query(default=500, ge=1, le=1000)) -> dict:
+              max_points: int = Query(default=500, ge=1, le=1000),
+              observation_token: str | None = Query(default=None, min_length=64, max_length=64)) -> dict:
         replay = registry._clients.get(client_id)
         if replay is None:
             raise HTTPException(status_code=404, detail="recorded client not registered")
-        return {"client_id": client_id, "points": replay.path_points(max_points=max_points)}
+        frame = registry.frame(client_id)
+        if observation_token is not None and frame is None:
+            raise HTTPException(409, 'session has no observed frame; refresh the trace')
+        require_observation(registry, client_id, frame, observation_token)
+        points = replay.path_points(max_points=max_points)
+        require_observation(registry, client_id, frame, observation_token)
+        return {"client_id": client_id, "points": points}
 
     @router.post("/seek")
     def seek(request: Request, client_id: str = Query(min_length=1, max_length=200),
