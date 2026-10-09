@@ -5611,7 +5611,7 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
 
 
 @app.get("/wiki", response_class=HTMLResponse)
-def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = "", tab: str = "browse", q: str = "", review_status: str = "all", review_page: int = 1, review_origin: bool = False, review_result: str = ""):
+def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = "", tab: str = "browse", q: str = "", review_status: str = "all", review_page: int = 1, review_origin: bool = False, review_result: str = "", recovery_result: str = ""):
     report = None
     evidence = None
     comparison = None
@@ -5671,6 +5671,7 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         "tab": tab if tab in ("browse", "evidence", "review", "recovery") else "browse",
         "review_queue": review_queue,
         "recovery_preview": recovery_preview,
+        "recovery_result": recovery_result if recovery_result in ("applied","failed") else "",
         "review_page": review_page,
         "review_origin": review_origin,
         "review_result": review_result if review_result in ("approved", "dismissed") else "",
@@ -5709,6 +5710,30 @@ def wiki_translate(source: str, title: str):
         return wiki_jobs.translate_cached(con, source, view["page_id"], view["hash"], view["text"])
     finally:
         con.close()
+
+
+@app.post("/wiki/recovery/apply")
+async def wiki_recovery_apply(request: Request):
+    """Explicit single-page recovery with fresh source-hash and legacy-only guards."""
+    from workbench.devtools.reference.wiki_import_audit import apply_local_recovery
+    form = await request.form()
+    source = str(form.get("source") or "").strip()
+    page_id = str(form.get("page_id") or "").strip()
+    expected = str(form.get("source_hash") or "").strip()
+    confirmed = str(form.get("confirm") or "") == "yes"
+    if not confirmed or not source or not page_id or len(expected) != 64:
+        return RedirectResponse("/wiki?tab=recovery&recovery_result=failed", status_code=303)
+    con = get_con()
+    try:
+        # Previous requests may initialize the schema; never implicitly
+        # authorize unrelated writes from the recovery endpoint.
+        apply_local_recovery(con,source=source,page_id=page_id,
+                             expected_raw_hash=expected,confirm=True)
+    except (ValueError, sqlite3.Error):
+        return RedirectResponse("/wiki?tab=recovery&recovery_result=failed", status_code=303)
+    finally:
+        con.close()
+    return RedirectResponse("/wiki?tab=recovery&recovery_result=applied", status_code=303)
 
 
 @app.post("/wiki/topic", response_class=HTMLResponse)
