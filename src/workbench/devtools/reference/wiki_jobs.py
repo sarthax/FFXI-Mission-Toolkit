@@ -26,19 +26,30 @@ _PAGES_DDL = """CREATE TABLE IF NOT EXISTS reference_wiki_pages(
 
 
 def detect(url: str) -> tuple[str, str] | None:
-    """(source_id, page title) from a wiki URL, or None."""
-    p = urllib.parse.urlparse((url or "").strip())
-    host, path = p.netloc.lower(), urllib.parse.unquote(p.path)
-    title = path[6:].strip("/")
-    if not title:
+    """Identify only supported HTTPS wiki origins and article paths."""
+    try:
+        p = urllib.parse.urlsplit((url or "").strip())
+        host = (p.hostname or "").lower().rstrip(".")
+        # Reject userinfo, nonstandard ports, query/fragment routing, and
+        # lookalike domains before fetching anything from the network.
+        if (p.scheme.lower() != "https" or p.username is not None
+                or p.password is not None or p.port not in (None, 443)
+                or p.query or p.fragment):
+            return None
+    except ValueError:
         return None
-    if "bg-wiki.com" in host and path.startswith("/ffxi/"):
-        return "BGWiki", title.replace("_", " ")
-    if "ffxiclopedia" in host and path.startswith("/wiki/"):
-        return "FFXIclopedia", title.replace("_", " ")
-    if host.endswith("wikiwiki.jp") and path.startswith("/ffxi/"):
-        return "WikiWikiJP", title
-    return None
+    path = urllib.parse.unquote(p.path)
+    if host in ("www.bg-wiki.com", "bg-wiki.com") and path.startswith("/ffxi/"):
+        source, title = "BGWiki", path[len("/ffxi/"):].strip("/").replace("_", " ")
+    elif host == "ffxiclopedia.fandom.com" and path.startswith("/wiki/"):
+        source, title = "FFXIclopedia", path[len("/wiki/"):].strip("/").replace("_", " ")
+    elif host == "wikiwiki.jp" and path.startswith("/ffxi/"):
+        source, title = "WikiWikiJP", path[len("/ffxi/"):].strip("/")
+    else:
+        return None
+    if not title or title in (".", "..") or any(part in (".", "..") for part in title.split("/")):
+        return None
+    return source, title
 
 
 def page_url(source_id: str, title: str) -> str | None:
