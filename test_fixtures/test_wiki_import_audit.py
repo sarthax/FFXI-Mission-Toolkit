@@ -35,6 +35,8 @@ def main():
     assert preview[0]["proposed_structure"]["blocks"]==preview[0]["preview_block_count"]
     assert preview[0]["block_type_deltas"]["legacy_text"]==-1
     assert preview[0]["source_locator_delta"]>=0
+    assert preview[0]["can_apply"] is True
+    assert preview[0]["readiness_reason"]=="STRUCTURED_RECOVERY_READY"
     assert preview[0]["requires_confirmation"] is True and preview[0]["applied"] is False
     assert con.execute("SELECT COUNT(*) FROM reference_wiki_blocks").fetchone()[0]==4
 
