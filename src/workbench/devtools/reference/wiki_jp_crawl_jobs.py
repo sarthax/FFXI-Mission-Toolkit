@@ -16,6 +16,7 @@ _LOCK = threading.Lock()
 _RUNNING = set()
 _SCHEMA = """CREATE TABLE IF NOT EXISTS wiki_jp_crawl_jobs(
  id TEXT PRIMARY KEY, state TEXT NOT NULL, seed TEXT NOT NULL, page_limit INTEGER NOT NULL,
+ mode TEXT NOT NULL DEFAULT 'crawl',
  queue_json TEXT NOT NULL, seen_json TEXT NOT NULL DEFAULT '[]',
  processed INTEGER NOT NULL DEFAULT 0, imported INTEGER NOT NULL DEFAULT 0,
  failed INTEGER NOT NULL DEFAULT 0, last_error TEXT,
@@ -26,6 +27,8 @@ def _db(path):
     con=sqlite3.connect(str(path),timeout=30)
     con.execute("PRAGMA busy_timeout=30000")
     con.execute(_SCHEMA)
+    if 'mode' not in {r[1] for r in con.execute('PRAGMA table_info(wiki_jp_crawl_jobs)')}:
+        con.execute("ALTER TABLE wiki_jp_crawl_jobs ADD COLUMN mode TEXT NOT NULL DEFAULT 'crawl'")
     con.commit()
     return con
 
@@ -41,27 +44,39 @@ def status(db):
     with _db(db) as con:
         if not _RUNNING:
             con.execute("UPDATE wiki_jp_crawl_jobs SET state='interrupted' WHERE state IN ('queued','running','pausing')")
-        rows=con.execute("""SELECT id,state,seed,page_limit,processed,imported,failed,
+        rows=con.execute("""SELECT id,state,seed,page_limit,processed,imported,failed,mode,
                            last_error,queue_json FROM wiki_jp_crawl_jobs
                            ORDER BY updated_at DESC LIMIT 8""").fetchall()
     return [dict(id=r[0],state=r[1],seed=r[2],page_limit=r[3],processed=r[4],
-                 imported=r[5],failed=r[6],last_error=r[7],pending=len(json.loads(r[8]))) for r in rows]
+                 imported=r[5],failed=r[6],mode=r[7],last_error=r[8],pending=len(json.loads(r[9]))) for r in rows]
 
 
-def start(db,seed,limit=50):
+def start(db,seed,limit=50,mode="crawl"):
     seed=str(seed).strip().strip("/")
     if not seed or seed.startswith(("http:", "https:", ".")) or "?" in seed or ".." in seed.split("/"):
         raise ValueError("Enter a Japanese Wiki page path, not a URL or query string")
     if limit not in (50,250):
         raise ValueError("Batch size must be 50 or 250")
+    if mode not in ("crawl","refresh"):
+        raise ValueError("Invalid Japanese Wiki mode")
     with _LOCK:
         if _RUNNING:
             raise ValueError("A Japanese Wiki crawl is already running")
         ident=uuid.uuid4().hex[:12]
         with _db(db) as con:
+            if mode == "refresh":
+                if not con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='reference_wiki_pages'").fetchone():
+                    raise ValueError("Import Japanese Wiki pages before refreshing them")
+                titles=[r[0] for r in con.execute(
+                    "SELECT title FROM reference_wiki_pages WHERE source_id='WikiWikiJP' AND (title=? OR title LIKE ?) ORDER BY title LIMIT ?",
+                    (seed,seed+"/%",limit)).fetchall()]
+                if not titles:
+                    raise ValueError("No cached Japanese Wiki pages match this seed")
+            else:
+                titles=[seed]
             con.execute("""INSERT INTO wiki_jp_crawl_jobs
-                (id,state,seed,page_limit,queue_json) VALUES(?,?,?,?,?)""",
-                (ident,"queued",seed,limit,json.dumps([seed],ensure_ascii=False)))
+                (id,state,seed,page_limit,mode,queue_json) VALUES(?,?,?,?,?,?)""",
+                (ident,"queued",seed,limit,mode,json.dumps(titles,ensure_ascii=False)))
         _RUNNING.add(ident)
     threading.Thread(target=_worker,args=(str(db),ident),daemon=True).start()
     return ident
@@ -114,8 +129,8 @@ def _save_page(db,title,raw):
 def _worker(db,ident):
     try:
         with _db(db) as con:
-            seed,limit,queue_raw,seen_raw,processed,imported,failed=con.execute(
-                """SELECT seed,page_limit,queue_json,seen_json,processed,imported,failed
+            seed,limit,queue_raw,seen_raw,processed,imported,failed,mode=con.execute(
+                """SELECT seed,page_limit,queue_json,seen_json,processed,imported,failed,mode
                    FROM wiki_jp_crawl_jobs WHERE id=?""",(ident,)).fetchone()
         queue=json.loads(queue_raw)
         seen=set(json.loads(seen_raw))
@@ -136,9 +151,10 @@ def _worker(db,ident):
                 raw=jp.get(title)
                 _save_page(db,title,raw)
                 imported+=1
-                for linked in jp.links(raw):
-                    if linked.startswith(seed) and linked not in seen and linked not in queue:
-                        queue.append(linked)
+                if mode == "crawl":
+                    for linked in jp.links(raw):
+                        if linked.startswith(seed) and linked not in seen and linked not in queue:
+                            queue.append(linked)
             except urllib.error.HTTPError as exc:
                 # Explicit rate limits/challenges require manual resume, not bypass.
                 _update(db,ident,state="error",last_error=f"{title}: HTTP {exc.code}")

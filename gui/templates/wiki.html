@@ -99,7 +99,8 @@
 <form id="wiki-jp-bulk-form" class="wiki-actions">
 <input type="text" name="seed" required placeholder="Japanese Wiki page path (e.g. ヴォイドウォッチ)">
 <select name="limit"><option value="50">50 pages</option><option value="250">250 pages</option></select>
-<button type="submit">Start Japanese crawl</button>
+<label>Mode <select name="mode"><option value="crawl">Discover subtree</option><option value="refresh">Refresh cached pages in subtree</option></select></label>
+<button type="submit">Start Japanese job</button>
 <button type="button" id="wiki-jp-bulk-refresh">Refresh</button>
 </form>
 <div id="wiki-jp-bulk-message" role="status" class="muted"></div>
