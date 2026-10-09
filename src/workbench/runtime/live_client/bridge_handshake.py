@@ -50,3 +50,44 @@ def accept_one(sock: socket.socket, peers: LocalPeerRegistry, *, now: float | No
     if not peers.accepts(message, hello["token"], now=now):
         raise PermissionError("bridge peer identity changed or lease expired")
     return message
+
+
+def receive_session(sock: socket.socket, peers: LocalPeerRegistry, *,
+                    max_messages: int = 256, now: float | None = None) -> list[BridgeEnvelope]:
+    """Read an authenticated bounded batch until clean EOF; never dispatch writes.
+
+    Each message is checked against the current registry, including replacements
+    or lease expiry. A disconnect mid-frame raises and rejects the partial batch.
+    """
+    if type(max_messages) is not int or not 1 <= max_messages <= 4096:
+        raise ValueError("invalid bridge message limit")
+    hello = _read_hello(sock)
+    identity = PeerIdentity(hello["client_id"], hello["session_id"], hello["generation"])
+    if not peers.authenticate(identity, hello["token"], now=now):
+        raise PermissionError("untrusted bridge peer")
+    messages: list[BridgeEnvelope] = []
+    last_sequence: dict = {}
+    for _ in range(max_messages):
+        # A boundary EOF is normal; any partial length/body fails closed.
+        try:
+            first = sock.recv(1)
+        except socket.timeout:
+            raise TimeoutError("bridge session timed out") from None
+        if not first:
+            return messages
+        size = int.from_bytes(first + read_exact(sock, 3), "big")
+        from .bridge_loopback import MAX_FRAME, decode
+        if not 0 < size <= MAX_FRAME:
+            raise ValueError("invalid bridge frame length")
+        message = decode(read_exact(sock, size))
+        if not peers.accepts(message, hello["token"], now=now):
+            raise PermissionError("bridge peer identity changed or lease expired")
+        if message.lane.value == "control":
+            raise PermissionError("inbound control messages are not enabled")
+        previous = last_sequence.get(message.lane, -1)
+        if message.sequence <= previous:
+            raise ValueError("nonmonotonic bridge stream sequence")
+        last_sequence[message.lane] = message.sequence
+        messages.append(message)
+    # Reaching the limit never waits for peer EOF.
+    return messages
