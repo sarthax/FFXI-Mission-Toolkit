@@ -20,8 +20,28 @@ def overview(db):
                     "error":job.get("last_error")}
                    for job in jobs if job.get("state") in
                    ("error","interrupted","paused")]
+        # An interrupted/paused/error job is an operator action, not a
+        # successful synchronization. Expose conservative recovery hints.
+        recovery=[]
+        for job in jobs:
+            state=job.get("state")
+            if state not in ("error","interrupted","paused"):
+                continue
+            pending=job.get("pending")
+            if source=="FFXIclopedia":
+                # Status does not expose pending_json, so avoid asserting
+                # a resumable checkpoint when one has not been verified.
+                checkpoint="unverified"
+            elif source=="BGWiki":
+                checkpoint="verify-archive"
+            else:
+                checkpoint="available" if isinstance(pending,int) and pending>0 else "empty-or-unknown"
+            recovery.append({"id":job["id"],"state":state,
+                             "checkpoint":checkpoint,"error":job.get("last_error")})
         return {"source":source,"capability":capability,"latest":current,
-                "active":active,"attention":attention[:5],"recent":jobs}
+                "active":active,"attention":attention[:5],
+                "recovery":recovery[:5],"needs_attention":bool(attention),
+                "recent":jobs}
     return {
         "sources":[
             dict(summarize("FFXIclopedia","recent-changes-api",ffx),
@@ -31,6 +51,7 @@ def overview(db):
             dict(summarize("WikiWikiJP","targeted-subtree-crawl",jp),
                  schedule=None,history=None)
         ],
-        "notice":"Only FFXIclopedia supports scheduled changed-page refresh. "
-                 "BG Wiki uses a local dump; Japanese Wiki requires a targeted crawl."
+        "notice":"BG Wiki imports a local archive; FFXIclopedia supports changed-page refresh. "
+                 "Japanese Wiki supports bounded targeted crawl and cached-page refresh. "
+                 "Recoveries and any scheduling remain source-specific and opt-in."
     }
