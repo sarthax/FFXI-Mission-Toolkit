@@ -1,0 +1,17 @@
+{
+ "refiner_outland": {
+  "areas": {
+   "ingame": "untested",
+   "keyitem": "untested",
+   "menu": "issue",
+   "model": "untested",
+   "npc": "untested",
+   "quest": "untested",
+   "script": "untested",
+   "upgrade": "untested"
+  },
+  "by": "",
+  "note": "",
+  "updated": "2026-10-08T15:47:09"
+ }
+}
