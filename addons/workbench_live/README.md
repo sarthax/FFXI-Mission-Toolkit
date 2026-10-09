@@ -348,3 +348,19 @@ destination samples). It is separate from the original durable
 listener/accept loop are manual. No normal Toolkit GUI exposes this data yet,
 and there are no game writes. The client network API needs Windows validation.
 Use an authorized local test session only.
+
+
+### Local bridge setup download and transient reconnect
+
+From **Client → Live Client → Direct Live Bridge**, start the receiver and
+configure an Ashita client. The resulting private settings can now be
+downloaded as `workbench_bridge_settings.lua`; move the file into the
+authorized Ashita `addons/workbench_live` folder. Keep it out of version
+control. The file is generated in the local browser, not uploaded to GitHub.
+
+Direct live telemetry now attempts a bounded 15-second recovery after an
+individual TCP send fails, reusing the already-provisioned client ID, session
+and token. It does **not** auto-refresh expired credentials or connect to a new
+receiver port. Restart/configure the client when the Toolkit receiver or
+authentication lease changes. This logic is covered by synthetic Lua tests;
+the recovery itself still requires Windows validation.
