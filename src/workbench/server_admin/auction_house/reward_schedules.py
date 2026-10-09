@@ -5,6 +5,8 @@ recipient/item preview and named Test profile confirmation at execution time.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -26,6 +28,7 @@ def _utc(iso: str) -> datetime:
     return value.astimezone(timezone.utc)
 
 
+@contextmanager
 def _connect(path):
     db = Path(path)
     db.parent.mkdir(parents=True, exist_ok=True)
@@ -40,7 +43,14 @@ def _connect(path):
         created_utc TEXT NOT NULL, updated_utc TEXT NOT NULL
     )""")
     con.commit()
-    return con
+    try:
+        yield con
+        con.commit()
+    except Exception:
+        con.rollback()
+        raise
+    finally:
+        con.close()
 
 
 def create_schedule(*, due_utc: str, environment: dict, recipient_mode: str,
