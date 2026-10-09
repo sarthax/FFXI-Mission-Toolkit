@@ -12,7 +12,7 @@ Provide native Toolkit-controlled development interaction with an authorized run
 - User-provided Project Tako installations: `Project-Tako.7z` (original) and `Project-Tako.zip` (updated with maps/config/plugins). These are conversation attachments, not checked into the repository.
 - Reference repos: https://github.com/ProjectTako/Clipper and https://github.com/ProjectTako/ProjectTako.
 - Do **not** embed Project Tako executable as the product architecture, merely forward commands to it, or copy licensed code without review.
-- Favor a toolkit-managed Windows-side adapter plus transport-neutral Python orchestration.
+- Favor the original Ashita observation provider plus transport-neutral Python orchestration; preserve native standalone access and controls as independent future paths.
 - Do not assume offsets, signatures, navmesh availability, or instance map identity without evidence.
 - Process-memory writes are disabled until authorized development session, verified client version, and adapter support. Public-server evasion is out of scope.
 - Keep work isolated from ongoing GUI refactor and Auction House development.
@@ -25,7 +25,7 @@ Provide native Toolkit-controlled development interaction with an authorized run
 - `tests/test_live_client_contracts.py`, `tests/test_live_client_service.py`, `tests/test_live_client_spatial.py`: offline regression coverage.
 At the #663 foundation milestone these modules were not GUI-wired. Later milestones below integrate replay/UI and experimental addon observations; native process attachment and game controls remain unimplemented.
 
-## Development roadmap (ordered)
+## Original development roadmap (historical order; current sequence below)
 1. **Adapter/read telemetry:** enumerate running FFXI sessions; version-compatible zone/instance hint, XYZ, heading, character, target and entity observations; explicit disconnected/unverified states; no write operations.
 2. **Spatial UI integration:** view selected client location in 2D/3D Zone Viewer, position/heading readout, camera following, version and health indication. Reuse shared shell and Zone Editor positioning conventions.
 3. **Waypoints:** searchable named destinations by zone and instance hint; import validated Tako records; capture current location; categories/favorites; export/import and profile selection.
@@ -48,7 +48,7 @@ At the #663 foundation milestone these modules were not GUI-wired. Later milesto
 1. Inspect newest `main`, open PRs, CI status, and the actual head of PR #663; rebase/reconcile before editing any shared surface.
 2. Run or inspect regression for all three live-client test modules. Do not claim tests have passed for latest commit until workflow completes.
 3. Review adapter contracts and find existing game-facing addon or telemetry interfaces before inventing signatures.
-4. Implement the next *isolated* slice: client discovery/read-only telemetry interface + fixtures and tests. Follow with limited Zone Viewer attachment through existing service patterns.
+4. Use the latest reconciled capability matrix below to choose the next isolated slice. Existing observation providers/replay are authoritative; passive Capture integration is next, with native discovery and calibrated Zone Viewer attachment separate.
 5. Keep documentation status truthful, commit on `feature/live-client-foundation` or successor branch, and update this file plus roadmap at each milestone.
 6. Where only GitHub cloud is available, use GitHub PR and Actions; defer actual in-game compatibility claims to an authorized Windows client test.
 
@@ -436,3 +436,21 @@ Saved waypoint captures now retain the Toolkit recording generation. Raw compari
 The recorded trace optionally shows up to 100 current entity observations as purple squares in X/Y, X/Z or Y/Z. Hover details preserve literal names, client indexes, reported server IDs (or unknown) and raw XYZ. Bounds include displayed markers; source observation scope and truncation remain visible. Markers match the player instance hint and clear on frames without entities. The console binds trace collection to its displayed observation token, rejecting seek/replacement or collection-time changes instead of combining an old projection with a new path. Existing trace API clients may omit the token. Cloud/browser validation includes the supplied anonymized Ashita recording; calibrated zone maps, identity verification and live Windows testing remain pending.
 
 Overlapping browser trace requests also discard superseded responses, preventing an older refresh from appending duplicate geometry to a newer plot. A browser regression deliberately delivers responses out of order and fails without the response guards. CI now exposes concise failing assertions through annotations when full log downloads are unavailable.
+
+## Ashita capability reconciliation and raw entity state — 2026-10-09
+
+See the [capability gap matrix and current sequence](LIVE_CLIENT_REFERENCE_AUDIT.md#reconciliation-with-ashita-capability-research--2026-10-09),
+which incorporates PR #753 without replacing existing providers, feeds, schema,
+sessions, recordings, playback, waypoints, paths, raw spatial views or write gates.
+The existing addon now preserves optional raw entity type, spawn flags and status,
+and source-reported target/subtarget roles, through telemetry v1 and the existing
+entity table. Missing fields/role APIs remain unknown; kinds and instance identity
+are not inferred. Guards recheck observed identity and target mode/index around
+sampling, and retain last-good data on invalid output. Existing inventory bounds,
+rate limits, file/line caps and explicit lifecycle remain authoritative.
+
+This entity slice has synthetic Lua, decoder/feed/replay/projection/browser and
+stale-token tests; Windows evidence is still pending. Nothing operational is
+superseded. Next: pin passive Lua packet hook byte/provenance semantics and add
+an optional bounded source adapter to canonical Capture, followed by qualified
+research joins. Native attachment/control and calibrated maps remain separate.

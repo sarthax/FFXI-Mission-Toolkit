@@ -228,3 +228,57 @@ recording context. Source/version changes split replay trace segments as well as
 paths. Unknown legacy context stays unknown and non-increasing times break paths.
 This is cloud-validated evidence preservation; calibrated maps, navmesh traversal,
 actual runtime identity and client controls remain separate pending work.
+
+## Reconciliation with Ashita capability research — 2026-10-09
+
+Authoritative baseline: `main` at `0d6f46ba`, including [PR #753 research](ASHITA_V4_CAPABILITY_AUDIT_2026-10-08.md), entity inventory (#725), replay entity markers (#744) and waypoint generation isolation (#742). This matrix supersedes stale *current* claims in the #718 baseline above; historical evidence remains retained. No open Live Client PR was found. Remote recording-management (`1d32ec9c`) and spatial-trace (`84c3a5e0`) branch heads are already ancestors of main; no unfinished work was discarded. Wiki/Auction House branches remain outside this change.
+
+Classifications apply to individual functions, not entire providers: **runtime verified** below means only the limited supplied observation evidence; it never means a supported build. **Offline** means implemented with synthetic/cloud tests. **Partial**, **upstream only**, **native required**, and **blocked/unsupported** retain their ordinary literal meanings.
+
+| Capability / classification | Existing Toolkit | Existing Ashita addon | Published Ashita evidence | Existing native Windows work | Missing / duplication to avoid | Windows verification required |
+| --- | --- | --- | --- | --- | --- | --- |
+| Player XYZ/heading/zone — implemented, runtime verified within supplied sample | Strict telemetry, file feed, replay/path/waypoint models | One-second explicit sampling, party zone and identity rechecks | IEntity local position/heading; IParty zone | Disk identity helper only | Keep existing exporter/decoder; transforms remain missing | 121 frames/120 seconds, zone 50, stairs; zoning, heading units and loaded build still pending |
+| Observation providers — implemented, offline | ObservationSource.observe, TelemetryProducer, feed and optional frame-provider router; source/version in snapshots | Original Ashita and Windower entry points share helpers | Published manager interfaces | No process source | Existing abstractions accept future sources; do not add competing schema/registry | Per-provider compatibility and lifecycle |
+| Independent recording/session identity — implemented, offline | Registry generations, duplicate client IDs, replace/unload, stale-token rejection | Explicit unique exporter IDs and fresh bounded files | One addon per injected client | No OS discovery | Retain registry; actual two-client evidence missing | Two clients, restart, zoning/logout/unload |
+| Entity enumeration/index/name/XYZ/heading — implemented, offline | Decoded entity model, table, raw-plane markers, scope/truncation | Opt-in slots 0..2303, cap 32, target first, nil/blank/player exclusions and identity rechecks | Pinned petinfo/chamcham examples and IEntity | No native enumeration | Do not reimplement scan; not a complete census or despawn detector | Populated zone, slot churn, performance, bounds |
+| Reported server ID — implemented, offline | Separate optional ID; no automatic server identity promotion | Optional GetServerId, zero/missing unknown | IEntity uint32 server ID | None | Independent selected-server ID validation missing; never equate index and SQL ID | Compare known NPC/mob/player IDs and slot reuse |
+| Raw entity type/status/spawn flags — upstream only at reconciliation baseline | No preserved raw fields yet; kind remains unknown | Not sampled yet | IEntity GetType uint8; GetStatus/GetSpawnFlags uint32 | None | Highest-value additive entity slice; no enum/semantic guesses | Getter availability, bounds, meanings and transitions |
+| Target/subtarget designation — partial | Entities exist, roles not retained | Index 0 observed, not distinguished when subtarget active | targets.lua: active subtarget is slot 0, original target slot 1; GetIsSubTargetActive | None | Add explicit roles only when role API available; retain unknown legacy roles | Normal target, subtarget, same-slot roles, changing target |
+| Validity/staleness — partial | Finite/schema/time/client checks; last-good feed preserved | Player/zone/entity/name/known-ID rechecks; rejected samples stop | API availability and entity existence checks | No process lifetime validation | Keep rejection guards; raw status is not verified liveness; absence is not despawn | Logout/unload/disappearance/replacement and restart |
+| Replay/UI/waypoint/path tooling — implemented, offline | Playback/speed/seek/compare; persistence, generation guards, full path export and raw trace planes | Supplies existing v1 frames | No replacement UI needed | Provider-neutral | Retain all work; no second console or minimap implementation | Existing log exercises replay; actual same-host live polling pending |
+| Loaded framework/client compatibility — partial | Bounded runtime report, supplied-file PE metadata and caller-provided executable digest manifest | Reports explicitly unverified API version | SDK interface/version evidence only | Disk hashing only; no process/module attachment | Add actual loaded-module/PID lifetime evidence later; no invented allowlist | Loaded build, bitness, hashes, unsupported/disconnect behavior |
+| Standalone observation without launcher — native adapter required | Producer/feed seams ready | Requires Ashita | Does not imply external OS reader | No reader implemented | Independent explicit process selection and verified attachment | Authorized Windows process/module/lifetime validation |
+| Passive packet observations — upstream only | Canonical raw ingestion, packet schemas/decoder/correlation already exist | No packet stream/hook registered | packet_in/packet_out; exact original/modified Lua semantics still to pin | None | Add optional source adapter into Capture; no parallel decoder | Direction/byte/length/stage, injection/block labels, caps/filtering, comparison capture |
+| Entity spawn/despawn timeline — blocked for definitive events | Observed snapshots only | Bounded subsets can omit entities | Entity/packet hooks are research leads | None | Distinguish observed disappearance from proven despawn | Independent event evidence under churn/truncation |
+| Appearance/equipment/animation — upstream only | DAT/Model and Item/Equipment services available | Not exported | GetAnimation/GetLook*/inventory/resource getters | None | Add opt-in compact observations, reuse existing viewers; no assets/pointers exported | Values and timing against known actions and resources |
+| Party/player/recasts/abilities — upstream only | No Live Client diagnostic bridge | Player party identity used only | IParty/IPlayer/IRecast | None | Independently test opted-in diagnostic profiles | State availability/staleness, version and semantics |
+| Mission/key-item direct state — blocked/unsupported as a promised API | Capture/event/CSID and script evidence available | Not exported | Audit has no proven stable direct mission-flag API | None | Research per-method evidence; do not invent decoder semantics | Known event capture and independent server evidence |
+| Entity Browser/Feature Trace/Behavior/Capture joins — partial | Existing graph, dossier, packet/spatial and behavior services; no live-source join | Source identity and raw observations only | Candidate entity/packet evidence | None | Add read-only evidence adapter with source/time/zone/instance/ID uncertainty; no name-only joins | Independently confirmed server IDs and clock/event alignment |
+| Calibrated 2D/3D/Zone Editor/navmesh — partial | Raw traces/projection, placement-candidate contracts, existing Zone Editor writer and mesh tools | Raw coordinates only | Raw getters do not establish transform | None | Verified transforms, explicit selected-server/instance previews; reuse existing editor audit path | Multiple landmarks/elevation/headings and actual selected mesh |
+| Warp/nudge/speed/elevation/collision controls — native required; operationally unsupported | Action enum and fail-closed authorization/version/write-support gate only | No game writes | No supported control API proven in audit | No writable adapter/profile/audit/restore implementation | Preserve separate control boundary; no Clipper/Tako code or offsets adopted | Action-specific authorized compatibility/readback/restoration tests |
+
+### Provider decision and next sequence
+
+Keep telemetry v1, decoder, registry, feeds, session generations and recorded UI authoritative. The existing ObservationSource/TelemetryProducer and decoded-frame router are already provider-neutral. Ashita is the preferred observation provider; Windower remains an offline-tested alternative and a future native provider may emit the same contract. LiveClientAdapter/validate_action remain the separate control gate foundation, not evidence of an implemented control adapter. No central routes, navigation, Capture database or unrelated schemas need changing for entity expansion.
+
+1. Add optional raw entity type/status/spawn flags and source-reported target roles to the existing addon, entity model, decoder and projection. Missing APIs/legacy recordings remain unknown; sample rejection and output bounds stay intact.
+2. Pin passive Lua packet hook semantics, then implement a bounded explicitly enabled stream and canonical Capture ingestion adapter; preserve original/modified distinction and unknown opcodes. Reuse workbench.packets.decode and capture_raw_packets.
+3. Add source/time/ID-qualified research evidence adapters, followed by separately enabled animation/item diagnostics. Keep existing Entity Browser, Feature Trace, Behavior Inspector and editors authoritative.
+4. Obtain Windows inventory/role/lifecycle/multi-client evidence, then calibration and selected-server map/placement/navmesh integration. Useful cloud work is not blocked while those tests wait.
+5. Develop native process identity/standalone reads and individual authorized controls only where Ashita lacks a supported interface. No copied offsets, auto-attachment, writable profile or restoration guarantee is justified now.
+
+No completed functionality is superseded. Ashita supersedes the *need to implement a second memory reader for API-accessible observations*, not the independent native fallback or future verified control work. Minimap behavior is reference evidence, not a new export/provider or competing Toolkit UI.
+
+### Entity slice implementation follow-up
+
+The baseline raw type/status/spawn-flags and target-role gaps above now have an
+additive implementation, classified **implemented but only synthetically/offline
+tested**. IEntity raw getter widths come from pinned `4171c74c` SDK/annotations;
+target roles follow its published targets.lua get_t/get_st behavior. Missing APIs
+stay unknown. Invalid available-getter output and identity/target/context changes
+reject the frame, without claiming an atomic memory snapshot or verified liveness.
+The existing decoder/feed/replay/model/projection/entity table retains the fields;
+legacy recordings and Windower remain compatible. Existing explicit start, one-
+second cadence, 32-entity cap, 64 KiB line and 16 MiB file limits are retained.
+Windows acceptance remains required for each new field and role. No packet hook,
+new native reader, server join, calibrated placement or game write is implemented.

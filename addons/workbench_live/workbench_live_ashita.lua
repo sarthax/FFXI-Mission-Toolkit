@@ -2,7 +2,7 @@
 -- Experimental Ashita v4 API source. Explicit start; no offsets or game writes.
 addon.name = 'workbench_live'
 addon.author = 'FFXI Mission Toolkit contributors'
-addon.version = '0.1.0-experimental'
+addon.version = '0.2.0-experimental'
 addon.desc = 'Read-only observation export; client build unverified.'
 require('common')
 local observation = require('workbench_observation')

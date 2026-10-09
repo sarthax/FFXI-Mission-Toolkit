@@ -39,6 +39,8 @@ def viewer_projection(frame: TelemetryFrame, *, zone_id: int,
              "name": item.name, "position": asdict(item.position),
              "server_entity_id": item.server_entity_id,
              "instance_hint": item.instance_hint,
+             "raw_entity_type": item.raw_entity_type, "raw_spawn_flags": item.raw_spawn_flags,
+             "raw_status": item.raw_status, "target_roles": list(item.target_roles),
              "observed_at": item.observed_at}
             for item in observations
         ],

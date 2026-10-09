@@ -104,3 +104,19 @@ same-slot/name observations with different reported IDs without claiming distinc
 verified game entities. Missing instance identity stays unknown. Summary flags for
 target roles, complete inventory and server identity remain false. A recording with
 no truncation is not proof of complete world coverage or verified runtime support.
+
+## Entity diagnostics acceptance (addon 0.2.0-experimental)
+
+Use the existing read-only `/wblive start <unique-id> inventory` command with the
+latest addon. Capture known NPC/mob/player targets, ordinary targeting and an
+active subtarget, then switching/deselecting. Compare observed slots/names/reported
+server IDs and target roles with independent runtime evidence. Record raw type,
+status and spawn flags without assigning meanings from names or numeric guesses.
+
+Missing optional getters should yield unknown fields/roles. A present getter with
+invalid output or a source/context change must stop safely without appending the
+rejected frame. Test logout, zone loading, unload and explicit restart with a new
+file; if available, test two sources independently. Record source revision and
+actual loaded Ashita/game version. The older supplied zone-50 capture verifies
+neither these new fields nor their target-role semantics. No packet capture or
+native game-write test is enabled by this slice.

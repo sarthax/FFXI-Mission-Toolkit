@@ -162,6 +162,8 @@ def test_recording_controls_in_browser(tmp_path):
             playwright.expect(page.locator('#entity-rows tr')).to_have_count(1)
             playwright.expect(page.locator('#entity-rows td').nth(0)).to_have_text(target['name'])
             playwright.expect(page.locator('#entity-rows td').nth(3)).to_have_text('Unknown')
+            playwright.expect(page.locator('#entity-rows td').nth(6)).to_have_text('Unknown')
+            playwright.expect(page.locator('#entity-rows td').nth(9)).to_have_text('Unknown')
             playwright.expect(page.locator('#trace .entity-marker')).to_have_count(0)
             page.locator('#show-entities').check()
             playwright.expect(page.locator('#trace .entity-marker')).to_have_count(1)
@@ -232,7 +234,10 @@ def test_recording_controls_in_browser(tmp_path):
             inventory = {**frames[0], 'client_id': 'inventory-ui',
                          'position': {'zone_id': 100, 'x': 1e308, 'y': 0, 'z': 0},
                          'entities': [
-                {'client_index': 12, 'server_entity_id': 123, 'name': '<img src=x onerror=alert(1)>', 'position': {'zone_id': 100, 'x': -1e308, 'y': 0, 'z': 0}},
+                {'client_index': 12, 'server_entity_id': 123, 'name': '<img src=x onerror=alert(1)>',
+                 'raw_entity_type': 237, 'raw_spawn_flags': 2147483649, 'raw_status': 4294967295,
+                 'target_roles': ['subtarget', 'target'],
+                 'position': {'zone_id': 100, 'x': -1e308, 'y': 0, 'z': 0}},
                 {'client_index': 11, 'name': 'Same name', 'position': {'zone_id': 100, 'x': 1e308, 'y': 6, 'z': 8}},
                 {'client_index': 10, 'server_entity_id': 16780001, 'name': 'Same name', 'position': {'zone_id': 100, 'x': 1e308, 'y': 3, 'z': 4}},
             ]}
@@ -241,6 +246,10 @@ def test_recording_controls_in_browser(tmp_path):
             playwright.expect(page.locator('#entity-rows tr')).to_have_count(3)
             playwright.expect(page.locator('#entity-status')).to_contain_text('truncated.')
             assert page.locator('#entity-rows img').count() == 0
+            playwright.expect(page.locator('#entity-rows tr').nth(0).locator('td').nth(6)).to_have_text('237')
+            playwright.expect(page.locator('#entity-rows tr').nth(0).locator('td').nth(7)).to_have_text('2147483649')
+            playwright.expect(page.locator('#entity-rows tr').nth(0).locator('td').nth(8)).to_have_text('4294967295')
+            playwright.expect(page.locator('#entity-rows tr').nth(0).locator('td').nth(9)).to_have_text('subtarget, target')
             inspection_session = page.locator('#client').input_value()
             page.locator('#entity-sort').select_option('distance')
             playwright.expect(page.locator('#entity-rows tr').nth(0).locator('td').nth(2)).to_have_text('10')

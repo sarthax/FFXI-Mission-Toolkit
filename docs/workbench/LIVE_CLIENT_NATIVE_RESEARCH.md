@@ -56,3 +56,21 @@ packet correlations must reference real data rather than inferred compatibility.
 See [Tako / Clipper audit and architecture decision](LIVE_CLIENT_REFERENCE_AUDIT.md)
 for source symbols, licensing discrepancy, actual Toolkit capability classifications,
 archive availability, integration seams and independently testable backlog slices.
+
+## Ashita research reconciliation — 2026-10-09
+
+The [current capability matrix](LIVE_CLIENT_REFERENCE_AUDIT.md#reconciliation-with-ashita-capability-research--2026-10-09)
+reconciles [PR #753's capability audit](ASHITA_V4_CAPABILITY_AUDIT_2026-10-08.md)
+with actual implementation. Existing ObservationSource/TelemetryProducer, feeds,
+strict telemetry v1 and decoded-frame providers already support multiple sources;
+no replacement abstraction is needed. Prefer the original Ashita addon for API-
+accessible observations, while retaining native standalone process identity/read
+and separately authorized controls as unimplemented future paths.
+
+Additional original Lua mapping uses pinned revision `4171c74c`'s
+`plugins/sdk/Ashita.h` IEntity `GetType` (uint8), `GetSpawnFlags`/`GetStatus`
+(uint32), and `addons/libs/ffxi/targets.lua` `get_t`/`get_st`. The latter checks
+`GetIsSubTargetActive`: slot 0 is the subtarget while active, slot 1 is the
+original target; otherwise slot 0 is the target. Only published calls and behavior
+were referenced, not copied implementation, offsets or patterns. Raw numeric
+codes remain uninterpreted and optional fields require Windows validation.

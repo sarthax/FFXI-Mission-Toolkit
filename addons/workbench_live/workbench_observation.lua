@@ -90,56 +90,70 @@ function M.capture_ashita(core, get_entity, client_id, observed_at, inventory)
         position = entity_position(index), entities = {}}
     local target = assert(memory:GetTarget(), 'Ashita target interface unavailable')
     local target_index = integer(target:GetTargetIndex(0), 0, 65535)
-    if target_index ~= 0 and target_index ~= index and get_entity(target_index) ~= nil then
-        local target_name = text(entity:GetName(target_index), false)
-        -- Published IEntity server identity is distinct from the memory slot.
-        -- Older interfaces may omit the getter; zero remains unknown.
-        local target_id = nil
-        if type(entity.GetServerId) == 'function' then
-            local id = integer(entity:GetServerId(target_index), 0, 4294967295)
-            if id ~= 0 then target_id = id end
+    local subtarget_active = nil
+    if type(target.GetIsSubTargetActive) == 'function' then
+        subtarget_active = integer(target:GetIsSubTargetActive(), 0, 255)
+    end
+    local original_index = nil
+    if subtarget_active ~= nil and subtarget_active ~= 0 then
+        original_index = integer(target:GetTargetIndex(1), 0, 65535)
+    end
+    local seen, checks = {[index] = true}, {}
+    local function optional(getter, slot, high)
+        if type(entity[getter]) == 'function' then
+            return integer(entity[getter](entity, slot), 0, high)
         end
-        local target_position = entity_position(target_index)
-        assert(target:GetTargetIndex(0) == target_index and get_entity(target_index) ~= nil
-            and entity:GetName(target_index) == target_name
-            and (target_id == nil or entity:GetServerId(target_index) == target_id),
-            'target changed while sampling; restart observation explicitly')
-        table.insert(frame.entities, {client_index = target_index, server_entity_id = target_id,
-            kind = 'unknown', name = target_name, position = target_position})
+        return nil
+    end
+    local function observe(slot, role, is_target)
+        if seen[slot] then
+            if role and type(seen[slot]) == 'table' then
+                table.insert(seen[slot].target_roles, role)
+            end
+            return
+        end
+        if get_entity(slot) == nil then return end
+        local entity_name = text(entity:GetName(slot), false)
+        if not is_target and not entity_name:find('%S') then return end
+        if #frame.entities >= 32 then frame.entities_truncated = true; return end
+        local id = optional('GetServerId', slot, 4294967295)
+        local item = {client_index = slot, kind = 'unknown', name = entity_name,
+            server_entity_id = id ~= 0 and id or nil,
+            raw_entity_type = optional('GetType', slot, 255),
+            raw_spawn_flags = optional('GetSpawnFlags', slot, 4294967295),
+            raw_status = optional('GetStatus', slot, 4294967295),
+            target_roles = role and {role} or {}, position = entity_position(slot)}
+        local message = is_target and 'target changed while sampling; restart observation explicitly'
+            or 'entity changed while sampling; restart observation explicitly'
+        local function recheck()
+            assert(get_entity(slot) ~= nil and entity:GetName(slot) == entity_name
+                and (id == nil or entity:GetServerId(slot) == id), message)
+        end
+        recheck()
+        table.insert(checks, recheck)
+        seen[slot] = item
+        table.insert(frame.entities, item)
     end
     frame.observation_scope = inventory and 'bounded_loaded_entities' or 'selected_targets'
     frame.entities_truncated = false
+    if target_index ~= 0 then
+        local role = subtarget_active ~= nil and (subtarget_active ~= 0 and 'subtarget' or 'target') or nil
+        observe(target_index, role, true)
+    end
+    if original_index ~= nil and original_index ~= 0 then observe(original_index, 'target', true) end
     if inventory then
         -- Pinned Ashita petinfo/chamcham enumerate GetEntity(0..2303).
         -- 32 is a Toolkit output policy, not a game table-size claim.
-        local seen = {[index] = true}
-        for _, item in ipairs(frame.entities) do seen[item.client_index] = true end
         for slot = 0, 2303 do
-            if not seen[slot] and get_entity(slot) ~= nil then
-                local entity_name = text(entity:GetName(slot), false)
-                if entity_name:find('%S') then
-                    if #frame.entities >= 32 then frame.entities_truncated = true; break end
-                    local id = nil
-                    if type(entity.GetServerId) == 'function' then
-                        id = integer(entity:GetServerId(slot), 0, 4294967295)
-                    end
-                    local p = entity_position(slot)
-                    assert(get_entity(slot) ~= nil and entity:GetName(slot) == entity_name
-                        and (id == nil or entity:GetServerId(slot) == id),
-                        'entity changed while sampling; restart observation explicitly')
-                    table.insert(frame.entities, {client_index = slot, kind = 'unknown',
-                        name = entity_name, position = p, server_entity_id = id ~= 0 and id or nil})
-                end
-            end
+            observe(slot, nil, false)
+            if frame.entities_truncated then break end
         end
-        for _, item in ipairs(frame.entities) do
-            assert(get_entity(item.client_index) ~= nil and entity:GetName(item.client_index) == item.name
-                and (item.server_entity_id == nil or entity:GetServerId(item.client_index) == item.server_entity_id),
-                'entity changed while sampling; restart observation explicitly')
-        end
-        assert(target:GetTargetIndex(0) == target_index,
-               'target changed while sampling; restart observation explicitly')
     end
+    for _, recheck in ipairs(checks) do recheck() end
+    assert(target:GetTargetIndex(0) == target_index
+        and (subtarget_active == nil or target:GetIsSubTargetActive() == subtarget_active)
+        and (original_index == nil or target:GetTargetIndex(1) == original_index),
+        'target changed while sampling; restart observation explicitly')
     assert(party:GetMemberIsActive(0) ~= 0 and party:GetMemberServerId(0) == server_id
         and party:GetMemberTargetIndex(0) == index and party:GetMemberName(0) == name
         and party:GetMemberZone(0) == zone,
@@ -165,9 +179,18 @@ end
 function M.encode(frame)
     local entities = {}
     for _, entity in ipairs(frame.entities) do
+        local roles = {}
+        for _, role in ipairs(entity.target_roles or {}) do
+            assert(role == 'target' or role == 'subtarget', 'invalid target role')
+            table.insert(roles, quote(role))
+        end
         table.insert(entities, '{"client_index":' .. entity.client_index .. ',"kind":"unknown","name":'
             .. quote(entity.name)
             .. (entity.server_entity_id ~= nil and ',"server_entity_id":' .. integer(entity.server_entity_id, 1, 4294967295) or '')
+            .. (entity.raw_entity_type ~= nil and ',"raw_entity_type":' .. integer(entity.raw_entity_type, 0, 255) or '')
+            .. (entity.raw_spawn_flags ~= nil and ',"raw_spawn_flags":' .. integer(entity.raw_spawn_flags, 0, 4294967295) or '')
+            .. (entity.raw_status ~= nil and ',"raw_status":' .. integer(entity.raw_status, 0, 4294967295) or '')
+            .. (entity.target_roles and ',"target_roles":[' .. table.concat(roles, ',') .. ']' or '')
             .. ',"position":' .. encode_position(entity.position) .. '}')
     end
     return '{"schema_version":1,"client_id":' .. quote(frame.client_id)
