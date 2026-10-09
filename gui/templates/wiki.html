@@ -124,10 +124,12 @@
 <details class="wiki-section" id="wiki-bulk-box">
 <summary>Bulk Wiki scrape — FFXIclopedia (bounded batch)</summary>
 <div class="body">
-  <p class="muted">Import up to 50 or 250 missing FFXIclopedia pages into the existing local Wiki cache. Progress is saved in SQLite after every page. Pause or resume the job after restarting the toolkit. The process runs only while the local toolkit server is running.</p>
+  <p class="muted">Import up to 50 or 250 missing pages, or refresh changed FFXIclopedia pages from an existing timestamped cache into the existing local Wiki cache. Progress is saved in SQLite after every page. Pause or resume the job after restarting the toolkit. The process runs only while the local toolkit server is running.</p>
   <form id="wiki-bulk-start" class="wiki-actions">
     <label for="wiki-bulk-limit">Pages this batch</label>
     <select id="wiki-bulk-limit" name="limit"><option value="50">50</option><option value="250">250</option></select>
+    <label for="wiki-bulk-mode">Mode</label>
+    <select id="wiki-bulk-mode" name="mode"><option value="missing">Missing pages</option><option value="changed">Refresh recently changed pages</option></select>
     <button type="submit">Start batch</button>
     <button type="button" id="wiki-bulk-refresh">Refresh status</button>
   </form>
