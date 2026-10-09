@@ -47,8 +47,9 @@ function M.new(options)
             assert(peer:settimeout(0.1), 'unable to set short network timeout')
             local hello='{"client_id":'..id..',"session_id":'..session..',"generation":'..generation..',"token":"'..token..'"}'
             assert(#hello <= 1024, 'bridge hello too large')
-            local sent, send_err=peer:send(length_prefix(#hello,2)..hello)
-            assert(sent, send_err or 'bridge handshake send failed')
+            local hello_wire=length_prefix(#hello,2)..hello
+            local sent, send_err=peer:send(hello_wire)
+            assert(sent == #hello_wire, send_err or 'partial bridge handshake send')
             socket, source = peer, client_id
         end)
         if not ok then close(); if options.message then options.message('Bridge offline: '..tostring(err)) end; return false end
@@ -67,8 +68,9 @@ function M.new(options)
                 ..',"generation":'..json_string(options.generation)..',"sequence":'..sequence
                 ..',"request_id":null,"payload_base64":"'..b64(line)..'"}'
             assert(#body<=96*1024, 'bridge frame exceeds limit')
-            local sent, send_err=socket:send(length_prefix(#body,4)..body)
-            assert(sent, send_err or 'bridge telemetry send failed')
+            local frame_wire=length_prefix(#body,4)..body
+            local sent, send_err=socket:send(frame_wire)
+            assert(sent == #frame_wire, send_err or 'partial bridge telemetry send')
         end)
         if not ok then close(); if options.message then options.message('Bridge disconnected: '..tostring(err)) end; return false end
         return true
