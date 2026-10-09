@@ -319,6 +319,14 @@ and agreement between its name and the party name. The screenshot identifies the
 failed guard, not whether transient zoning data or another discrepancy caused it. Selecting targets is not evidence of target-role
 export because neither file contains target_roles. No concurrent-client test occurred.
 
+Capture C (`telemetry-test-c-1791515026-1.jsonl`, original SHA-256
+`2abde0db01722ed3dcf40b683c88ba45c1882d8e53dab20a44954fbe6de5e888`)
+adds 99 frames/98 seconds in Zeruhn Mines (172): 32 entities and declared truncation
+in every frame, 3,168 nonzero reported IDs and 40 distinct slot/ID identities. This
+establishes supplied output at the cap, not full census or verified ID semantics.
+Reported warp/zoning actions have no recorded destination-zone frames; continuity
+remains pending. An anonymized capped runtime fixture now supplements A/B coverage.
+
 Regression fixtures anonymize client/character/entity names and shift timestamps while
 preserving cadence, coordinates, indexes, reported IDs, duplicate-name relationships and
 inventory changes. Fixture hashes therefore differ from the original source hashes above.

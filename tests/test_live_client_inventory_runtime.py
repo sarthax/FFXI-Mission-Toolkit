@@ -11,10 +11,11 @@ from workbench.runtime.live_client.viewer import viewer_projection
 FIXTURES = Path(__file__).parent / 'fixtures/live_client'
 
 
-@pytest.mark.parametrize('label,frames,zone,total,distinct', [
-    ('a', 30, 235, 613, 21), ('b', 24, 107, 422, 20),
+@pytest.mark.parametrize('label,frames,zone,total,distinct,truncated', [
+    ('a', 30, 235, 613, 21, 0), ('b', 24, 107, 422, 20, 0),
+    ('c', 99, 172, 3168, 40, 99),
 ])
-def test_runtime_inventory_preserves_observations_and_unknown_diagnostics(label, frames, zone, total, distinct):
+def test_runtime_inventory_preserves_observations_and_unknown_diagnostics(label, frames, zone, total, distinct, truncated):
     path = FIXTURES / f'ashita_v4_inventory_runtime_{label}_anonymized.jsonl'
     report = recording_report(path)
     recording = report['recording']
@@ -26,7 +27,10 @@ def test_runtime_inventory_preserves_observations_and_unknown_diagnostics(label,
     summary = recording['entity_observation_summary']
     assert summary['scope_frame_counts'] == {'bounded_loaded_entities': frames}
     assert summary['total_observations'] == summary['observations_with_reported_server_id'] == total
-    assert summary['truncated_frames'] == summary['observations_without_reported_server_id'] == 0
+    assert summary['truncated_frames'] == truncated
+    assert summary['observations_without_reported_server_id'] == 0
+    if label == 'c':
+        assert summary['entity_count_distribution'] == [{'entities': 32, 'frames': 99}]
     assert report['validation']['build_verified'] is False
     assert summary['server_identity_verified'] is False
     replay = load_recorded_frames(path, client_id=f'ashita-inventory-runtime-{label}')
