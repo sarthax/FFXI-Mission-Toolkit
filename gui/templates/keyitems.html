@@ -39,14 +39,14 @@
 </style>
 <div class="ki-intro">
   <span class="chip">Client ↔ server key-item reference</span>
-  <span class="muted ki-help">Search names or IDs, inspect missing/drifted enum mappings, and follow recorded capture observations. This page does not edit character ownership.</span>
+  <span class="muted ki-help">Search names, inspect missing/drifted enum mappings, and follow recorded capture observations. This page does not edit character ownership.</span>
 </div>
 <form class="search wb-filter-row" method="get">
-  <input type="text" name="q" value="{{ q }}" placeholder="Search by key-item name or ID (e.g. Zeruhn)" aria-label="Search key items">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search by key-item name (e.g. Zeruhn)" aria-label="Search key items">
   <button type="submit">Search</button>
 </form>
 {% if not q %}
-<div class="nodata"><strong>Find a key item</strong><p>Enter a name or numeric ID to inspect the client description, server mapping, and capture evidence. For server character ownership changes, use Character Editor.</p></div>
+<div class="nodata"><strong>Find a key item</strong><p>Enter a key-item name to inspect the client description, server mapping, and capture evidence. For server character ownership changes, use Character Editor.</p></div>
 {% else %}
 <div class="ki-status-help" aria-label="Readiness status definitions">
   <span><span class="pill exists">clean</span> same identity at this ID</span>
@@ -64,7 +64,7 @@
   {% set rd = r.readiness %}
   <tr>
     <td class="mono" id="ki-{{ r.keyitem_id }}">{{ r.keyitem_id }}</td>
-    <td><span class="ki-name">{{ r.name }}</span><div><a class="inline" href="/keyitems?q={{ r.keyitem_id }}">Search this ID</a></div></td>
+    <td><span class="ki-name">{{ r.name }}</span></td>
     <td>
       {% if rd.status == "clean" %}<span class="pill exists">clean</span>
       {% elif rd.status == "drifted" %}<span class="pill gap">drifted</span>
