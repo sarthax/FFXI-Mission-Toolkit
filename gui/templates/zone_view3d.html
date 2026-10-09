@@ -238,7 +238,7 @@ async function pollAshitaPosition() {
       liveMarker.renderOrder = 20;
       scene.add(liveMarker);
     }
-    liveMarker.position.set(position.x, position.z, -position.y);
+    liveMarker.position.set(position.x, -position.y, -position.z);
     liveStatus.textContent = (data.player.character || clientId) + ' · live · ' +
       position.x.toFixed(1) + ', ' + position.y.toFixed(1) + ', ' + position.z.toFixed(1);
   } catch (error) {
