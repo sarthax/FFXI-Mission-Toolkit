@@ -19,7 +19,7 @@ _CALL = re.compile(
     r"(?P<api>\b(?:player:(?:hasKeyItem|addKeyItem|delKeyItem)|"
     r"npcUtil\.giveKeyItem))\s*\(\s*"
     r"(?:(?:player\s*,\s*)?)"
-    r"(?P<namespace>xi\.keyItem|tpz\.ki|tpz\.keyItem)\."
+    r"(?:(?P<namespace>xi\.keyItem|tpz\.ki|tpz\.keyItem)\.)?"
     r"(?P<symbol>[A-Z][A-Z0-9_]*)\b"
 )
 _OPERATION = {
