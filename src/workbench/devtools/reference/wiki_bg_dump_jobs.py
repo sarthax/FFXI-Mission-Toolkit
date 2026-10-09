@@ -169,12 +169,17 @@ def _worker(db, job_id):
                         raise ValueError("Missing title/pageid/wikitext in dump record")
                     with _db(db) as con:
                         exists=con.execute(
-                            """SELECT page_hash FROM reference_wiki_pages
+                            """SELECT title,norm_title,revision_id,revision_timestamp,page_hash
+                            FROM reference_wiki_pages
                             WHERE source_id='BGWiki' AND page_id=?""",(str(page_id),)
                         ).fetchone() if con.execute(
                             "SELECT 1 FROM sqlite_master WHERE type='table' AND name='reference_wiki_pages'"
                         ).fetchone() else None
-                    if exists and exists[0]==hashlib.sha256(text.encode("utf-8")).hexdigest():
+                    if exists == (
+                        title, re.sub(r"[^a-z0-9]", "", title.lower()),
+                        str(record.get("revid") or ""), record.get("timestamp") or "",
+                        hashlib.sha256(text.encode("utf-8")).hexdigest()
+                    ):
                         _update(db,job_id,skipped=_counter(db,job_id,"skipped")+1)
                     else:
                         _import_row(db,record)
