@@ -18,6 +18,7 @@ _RUNNING: set[str] = set()
 _LOCK = threading.Lock()
 _DDL = """CREATE TABLE IF NOT EXISTS wiki_bulk_jobs(
     id TEXT PRIMARY KEY, source TEXT NOT NULL, state TEXT NOT NULL,
+    mode TEXT NOT NULL DEFAULT 'missing',
     page_limit INTEGER NOT NULL, discovered INTEGER NOT NULL DEFAULT 0,
     processed INTEGER NOT NULL DEFAULT 0, imported INTEGER NOT NULL DEFAULT 0,
     failed INTEGER NOT NULL DEFAULT 0, pending_json TEXT NOT NULL DEFAULT '[]',
@@ -28,6 +29,8 @@ def _connect(db):
     con = sqlite3.connect(str(db), timeout=30)
     con.execute("PRAGMA busy_timeout=30000")
     con.execute(_DDL)
+    if 'mode' not in {r[1] for r in con.execute('PRAGMA table_info(wiki_bulk_jobs)')}:
+        con.execute("ALTER TABLE wiki_bulk_jobs ADD COLUMN mode TEXT NOT NULL DEFAULT 'missing'")
     con.commit()
     return con
 
@@ -44,22 +47,28 @@ def status(db):
     with _connect(db) as con:
         if not _RUNNING:
             con.execute("UPDATE wiki_bulk_jobs SET state='interrupted' WHERE state IN ('queued','discovering','running','pausing')")
-        rows = con.execute("""SELECT id,source,state,page_limit,discovered,processed,imported,failed,last_error
+        rows = con.execute("""SELECT id,source,state,mode,page_limit,discovered,processed,imported,failed,last_error
             FROM wiki_bulk_jobs ORDER BY updated_at DESC LIMIT 8""").fetchall()
-    cols = ("id","source","state","page_limit","discovered","processed","imported","failed","last_error")
+    cols = ("id","source","state","mode","page_limit","discovered","processed","imported","failed","last_error")
     return [dict(zip(cols, row)) for row in rows]
 
 
-def start(db, limit=50):
+def start(db, limit=50, mode="missing"):
     if limit not in (50, 250):
         raise ValueError("Batch size must be 50 or 250")
+    if mode not in ("missing", "changed"):
+        raise ValueError("Unsupported Wiki batch mode")
+    if mode == "changed":
+        with _connect(db) as con:
+            if not con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='reference_wiki_pages'").fetchone() or not con.execute("SELECT 1 FROM reference_wiki_pages WHERE source_id='FFXIclopedia' AND revision_timestamp IS NOT NULL AND revision_timestamp!='' LIMIT 1").fetchone():
+                raise ValueError("Incremental refresh needs an existing FFXIclopedia cache with revision timestamps")
     with _LOCK:
         if _RUNNING:
             raise ValueError("A Wiki batch is already running")
         job_id = uuid.uuid4().hex[:12]
         with _connect(db) as con:
-            con.execute("INSERT INTO wiki_bulk_jobs(id,source,state,page_limit) VALUES(?,?,?,?)",
-                        (job_id, "FFXIclopedia", "queued", limit))
+            con.execute("INSERT INTO wiki_bulk_jobs(id,source,state,mode,page_limit) VALUES(?,?,?,?,?)",
+                        (job_id, "FFXIclopedia", "queued", mode, limit))
         _RUNNING.add(job_id)
     threading.Thread(target=_worker, args=(str(db), job_id), daemon=True).start()
     return job_id
@@ -91,9 +100,9 @@ def _worker(db, job_id):
     try:
         from . import scrape_ffxiclopedia as fx
         with _connect(db) as con:
-            row = con.execute("SELECT page_limit,pending_json,processed FROM wiki_bulk_jobs WHERE id=?",
+            row = con.execute("SELECT page_limit,pending_json,processed,mode FROM wiki_bulk_jobs WHERE id=?",
                               (job_id,)).fetchone()
-        limit, pending_raw, processed = row
+        limit, pending_raw, processed, mode = row
         pending = json.loads(pending_raw)
         if not pending and not processed:
             _change(db, job_id, state="discovering")
@@ -102,8 +111,15 @@ def _worker(db, job_id):
                 cached = {x[0] for x in con.execute(
                     "SELECT title FROM reference_wiki_pages WHERE source_id='FFXIclopedia'"
                 )} if con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='reference_wiki_pages'").fetchone() else set()
-            for title in fx.all_titles():
-                if title not in cached:
+            # Incremental jobs fetch changed titles even if already cached.
+            if mode == "changed":
+                with _connect(db) as read_con:
+                    titles = fx.changed_titles(read_con)
+                    candidates = list(titles)
+            else:
+                candidates = fx.all_titles()
+            for title in candidates:
+                if mode == "changed" or title not in cached:
                     pending.append(title)
                 if len(pending) >= limit:
                     break
