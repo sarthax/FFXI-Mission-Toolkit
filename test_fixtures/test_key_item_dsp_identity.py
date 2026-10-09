@@ -119,3 +119,40 @@ def test_key_items_page_shows_active_dsp_catalog_health():
     assert "dsp_catalog_health.ambiguous_names" in page
     host = Path("src/workbench/app/_host_impl.py").read_text(encoding="utf-8")
     assert '"dsp_catalog_health": dsp_catalog_health' in host
+
+
+def test_dsp_catalog_reports_reused_numeric_ids_and_ambiguous_names(tmp_path: Path):
+    from workbench.devtools.features.key_item_dsp_identity import inspect_dsp_key_item_catalog
+    source = tmp_path / "scripts" / "globals" / "keyitems.lua"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "FIRST_KEY = 1;\n"
+        "SECOND_KEY = 1;\n"
+        "THIRD_KEY = 3;\n"
+        "THIRD_KEY = 4;\n", encoding="utf-8"
+    )
+    health = inspect_dsp_key_item_catalog(tmp_path)
+    assert health["entries"] == 4
+    assert health["unique_names"] == 2
+    assert health["ambiguous_names"] == 1
+    assert health["duplicate_numeric_ids"] == 1
+    assert health["duplicate_id_samples"] == [1]
+    assert health["ambiguous_samples"] == ["thirdkey"]
+
+
+def test_dsp_catalog_diagnostics_render_only_bounded_examples():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert "dsp_catalog_health.duplicate_numeric_ids" in page
+    assert "dsp_catalog_health.ambiguous_samples[:5]" in page
+    assert "dsp_catalog_health.duplicate_id_samples[:5]" in page
+
+
+def test_dsp_numeric_id_collision_prevents_false_clean_identity(tmp_path: Path):
+    source = tmp_path / "scripts" / "globals" / "keyitems.lua"
+    source.parent.mkdir(parents=True)
+    source.write_text("FIRST_KEY = 88;\nSECOND_KEY = 88;\n", encoding="utf-8")
+    first = resolve_dsp_key_item(tmp_path, "First Key")
+    second = resolve_dsp_key_item(tmp_path, "Second Key")
+    assert first["status"] == "ambiguous" and first["symbol"] is None
+    assert second["status"] == "ambiguous" and second["symbol"] is None
+    assert first["conflicting_symbols"] == ["SECOND_KEY"]

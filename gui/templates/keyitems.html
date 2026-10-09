@@ -58,7 +58,9 @@
 <div class="ki-intro" role="status" aria-label="DSP catalog health">
   <strong>DSP catalog: {{ dsp_catalog_health.status }}</strong>
   {% if dsp_catalog_health.status == "ready" %}
-  <span class="muted">{{ dsp_catalog_health.source_path }} · {{ dsp_catalog_health.entries }} definitions · {{ dsp_catalog_health.unique_names }} unique names · {{ dsp_catalog_health.ambiguous_names }} ambiguous names</span>
+  <span class="muted">{{ dsp_catalog_health.source_path }} · {{ dsp_catalog_health.entries }} definitions · {{ dsp_catalog_health.unique_names }} unique names · {{ dsp_catalog_health.ambiguous_names }} ambiguous names · {{ dsp_catalog_health.duplicate_numeric_ids }} reused numeric IDs</span>
+  {% if dsp_catalog_health.ambiguous_samples %}<span class="muted" title="{{ dsp_catalog_health.ambiguous_samples|join(', ') }}">Ambiguous name examples: {{ dsp_catalog_health.ambiguous_samples[:5]|join(', ') }}</span>{% endif %}
+  {% if dsp_catalog_health.duplicate_id_samples %}<span class="muted">Reused ID examples: {{ dsp_catalog_health.duplicate_id_samples[:5]|join(', ') }}</span>{% endif %}
   {% else %}
   <span class="muted">{{ dsp_catalog_health.message }}</span>
   {% endif %}
