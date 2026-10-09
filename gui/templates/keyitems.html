@@ -56,13 +56,26 @@
 </div>
 <div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} result(s)</strong><span class="muted">for "{{ q }}"</span><span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
 {{ pager() }}
+<div class="ki-intro" style="margin:10px 0">
+  <label for="ki-status-filter">Show mapping status</label>
+  <select id="ki-status-filter" aria-label="Filter visible key items by mapping status">
+    <option value="all">All statuses on this page</option>
+    <option value="clean">Clean</option>
+    <option value="drifted">Drifted</option>
+    <option value="wrong_name">Wrong name at ID</option>
+    <option value="missing">Missing</option>
+  </select>
+  <label for="ki-page-filter">Find in current page</label>
+  <input id="ki-page-filter" type="search" placeholder="Name, ID or description" aria-label="Filter current results">
+  <span id="ki-visible-count" class="muted" role="status"></span>
+</div>
 <div class="table-wrap"><table class="ki-table">
   <tr><th>id</th><th>name</th><th>readiness</th><th>enum / scripting constant</th><th>description</th>
     {% if backport_enabled() %}<th>Topaz readiness (backport)</th><th>Topaz enum constant</th>{% endif %}
   </tr>
   {% for r in rows %}
   {% set rd = r.readiness %}
-  <tr>
+  <tr class="ki-item-row" data-ki-status="{{ rd.status }}" data-ki-text="{{ (r.keyitem_id|string ~ ' ' ~ r.name ~ ' ' ~ (r.description or ''))|lower|e }}">
     <td class="mono" id="ki-{{ r.keyitem_id }}">{{ r.keyitem_id }}</td>
     <td><span class="ki-name">{{ r.name }}</span></td>
     <td>
@@ -114,7 +127,7 @@
     {% endif %}
   </tr>
   {% if r.capture_events %}
-  <tr>
+  <tr class="ki-evidence-row">
     <td></td>
     <td colspan="{{ 6 if backport_enabled() else 4 }}">
       <span class="muted">observed in real captures:</span>
@@ -127,5 +140,30 @@
   {% endfor %}
 </table></div>
 {{ pager() }}
+<script>
+(function () {
+  const status = document.getElementById('ki-status-filter');
+  const search = document.getElementById('ki-page-filter');
+  const count = document.getElementById('ki-visible-count');
+  if (!status || !search || !count) return;
+  const rows = Array.from(document.querySelectorAll('.ki-table .ki-item-row'));
+  function applyFilters() {
+    const term = search.value.trim().toLocaleLowerCase();
+    let visible = 0;
+    for (const row of rows) {
+      const matches = (status.value === 'all' || row.dataset.kiStatus === status.value)
+        && (!term || (row.dataset.kiText || '').includes(term));
+      row.hidden = !matches;
+      const evidence = row.nextElementSibling;
+      if (evidence && evidence.classList.contains('ki-evidence-row')) evidence.hidden = !matches;
+      if (matches) visible++;
+    }
+    count.textContent = visible + ' of ' + rows.length + ' results visible on this page';
+  }
+  status.addEventListener('change', applyFilters);
+  search.addEventListener('input', applyFilters);
+  applyFilters();
+})();
+</script>
 {% endif %}
 {% endblock %}
