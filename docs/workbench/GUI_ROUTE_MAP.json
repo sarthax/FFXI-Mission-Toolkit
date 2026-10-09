@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 285,
+  "route_count": 286,
   "routes": [
     {
       "method": "GET",
@@ -2279,6 +2279,14 @@
     {
       "method": "GET",
       "path": "/wiki/bulk/overview",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/wiki/bulk/bg/dump-status",
       "home": "Tools",
       "section": "Research > References",
       "role": "data",

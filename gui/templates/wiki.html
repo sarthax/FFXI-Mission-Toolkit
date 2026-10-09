@@ -117,6 +117,7 @@
 <button type="submit">Import from BG dump</button>
 <button type="button" id="wiki-bg-bulk-refresh">Refresh progress</button>
 </form>
+<div id="wiki-bg-dump-change" role="status" class="muted"></div>
 <div id="wiki-bg-bulk-message" role="status" class="muted"></div>
 <div id="wiki-bg-bulk-results" class="wiki-search-results"></div>
 </div>
@@ -795,6 +796,20 @@
     });
     document.getElementById('wiki-bulk-refresh').addEventListener('click',refresh);
     refresh();
+  })();
+  (function(){
+    var output=document.getElementById('wiki-bg-dump-change');
+    if(!output)return;
+    function check(){
+      fetch('/wiki/bulk/bg/dump-status',{cache:'no-store'}).then(function(r){return r.json();})
+        .then(function(v){output.textContent=!v.available?'BG archive unavailable: '+v.reason:
+          v.never_imported?'BG archive ready for initial import':
+          v.changed?'BG archive changed: start a new bounded import':
+          'BG archive unchanged · Last job: '+(v.latest?v.latest.state:'none');})
+        .catch(function(e){output.textContent='Archive check failed: '+e.message;});
+    }
+    check();
+    document.getElementById('wiki-bg-bulk-refresh').addEventListener('click',check);
   })();
   (function(){
     var form=document.getElementById('wiki-bg-bulk-form');if(!form)return;

@@ -5754,6 +5754,13 @@ async def wiki_jp_crawl_resume(request: Request):
         return JSONResponse({"error": str(exc)}, status_code=400)
 
 
+@app.get("/wiki/bulk/bg/dump-status")
+def wiki_bg_dump_change_status():
+    from workbench.devtools.reference import wiki_bg_dump_jobs
+    from workbench.devtools.reference.scrape_bg_wiki import DUMP_PATH
+    return wiki_bg_dump_jobs.dump_refresh_status(DB_PATH, DUMP_PATH)
+
+
 @app.get("/wiki/bulk/bg/jobs")
 def wiki_bg_dump_status():
     from workbench.devtools.reference import wiki_bg_dump_jobs
