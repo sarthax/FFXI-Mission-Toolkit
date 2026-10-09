@@ -4,6 +4,8 @@ No automatic retry is allowed for an in-flight/unknown result: delivery_box and
 the toolkit SQLite journal cannot commit atomically with each other.
 """
 from __future__ import annotations
+
+from contextlib import contextmanager
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -19,6 +21,7 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+@contextmanager
 def _open(path: Path | str):
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -46,7 +49,15 @@ def _open(path: Path | str):
         PRIMARY KEY(replay_id,char_id)
     );
     """)
-    return db
+    db.commit()
+    try:
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 
 def begin_attempt(*, replay_id: str, preview_id: str, environment: dict,
