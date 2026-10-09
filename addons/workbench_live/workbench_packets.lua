@@ -88,6 +88,6 @@ function M.new(options)
         end)
         if not ok then stop('Unable to start packets: '..tostring(err)) end
     end
-    return {command=command, sample=sample, stop=stop}
+    return {command=command, sample=sample, stop=stop, active=function() return handle ~= nil end}
 end
 return M
