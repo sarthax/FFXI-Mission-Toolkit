@@ -163,3 +163,30 @@ def test_dsp_direct_global_key_item_symbols_are_scoped_to_dsp(tmp_path: Path):
     assert discover_key_item_references(tmp_path, "ZERUHN_REPORT", lineage="lsb")["references"] == []
     topaz = discover_key_item_references(tmp_path, "ZERUHN_REPORT", lineage="topaz")
     assert len(topaz["references"]) == 1
+
+
+def test_dsp_lua_block_comments_do_not_create_false_dependencies(tmp_path: Path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "npc.lua").write_text(
+        "--[[\n"
+        "player:addKeyItem(ZERUHN_REPORT)\n"
+        "]]\n"
+        "player:hasKeyItem(ZERUHN_REPORT) -- inline comment\n"
+        "--[[ player:delKeyItem(ZERUHN_REPORT) ]]\n"
+        "player:addKeyItem(ZERUHN_REPORT)\n", encoding="utf-8"
+    )
+    result = discover_key_item_references(tmp_path, "ZERUHN_REPORT", lineage="dsp")
+    assert result["operation_counts"] == {"require": 1, "grant": 1, "remove": 0}
+    assert [ref["source_line"] for ref in result["references"]] == [4, 6]
+
+
+def test_dsp_block_comment_can_end_before_real_source_call(tmp_path: Path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "npc.lua").write_text(
+        "--[[ ignored player:addKeyItem(ZERUHN_REPORT) ]] player:delKeyItem(ZERUHN_REPORT)\n",
+        encoding="utf-8",
+    )
+    result = discover_key_item_references(tmp_path, "ZERUHN_REPORT", lineage="dsp")
+    assert [r["operation"] for r in result["references"]] == ["remove"]
