@@ -76,7 +76,8 @@ def resolve_dsp_key_item(root: str | Path, client_name: str) -> dict:
     expected = normalize_name(str(client_name or ""))
     try:
         info = source.stat()
-        matches = _enum_records(str(source), info.st_mtime_ns, info.st_size).get(expected, ())
+        records = _enum_records(str(source), info.st_mtime_ns, info.st_size)
+        matches = records.get(expected, ())
     except OSError:
         return {"status": "unavailable", "symbol": None,
                 "message": "DSP enum file could not be read."}
@@ -84,5 +85,14 @@ def resolve_dsp_key_item(root: str | Path, client_name: str) -> dict:
         return {"status": "ambiguous" if matches else "missing", "symbol": None,
                 "message": "DSP identity requires exactly one name-matched enum constant."}
     symbol, server_id = matches[0]
+    conflicting = sorted({
+        other_symbol
+        for key, values in records.items() if key != expected
+        for other_symbol, other_id in values if other_id == server_id
+    })
+    if conflicting:
+        return {"status": "ambiguous", "symbol": None,
+                "message": "DSP numeric ID is reused by another key-item constant.",
+                "conflicting_symbols": conflicting[:10]}
     return {"status": "name_verified", "symbol": symbol, "server_id": server_id,
             "source_path": source.relative_to(root).as_posix()}
