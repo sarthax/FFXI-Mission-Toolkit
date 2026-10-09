@@ -13,7 +13,6 @@ from workbench.runtime.legacy_settings import get_active_server_identity, get_ac
 
 from .factory import open_auction_house
 from .legacy_test_executor import evaluate_legacy_test_write_gate
-from .reward_delivery import preview_reward_delivery, execute_reward_delivery
 from .reward_campaigns import record_campaign
 from .reward_schedules import _connect, _DEFAULT, get_schedule
 
@@ -50,6 +49,9 @@ def _end(schedule_id: str, status: str, *, path=_DEFAULT) -> None:
 
 
 def dispatch_due_once(*, path=_DEFAULT, now: datetime | None = None) -> list[dict[str, Any]]:
+    # Lazy import avoids pulling the Character Editor GUI bridge into scheduler
+    # bootstrap before Auction House modules finish initializing.
+    from .reward_delivery import preview_reward_delivery, execute_reward_delivery
     now = now or datetime.now(timezone.utc)
     if now.tzinfo is None:
         raise ValueError("Scheduler clock must be timezone-aware")
