@@ -120,7 +120,7 @@
 </section>
 <div class="table-wrap"><table class="ki-table">
   <tr><th>Details</th><th>id</th><th>name</th><th>readiness</th><th>enum / scripting constant</th><th>description</th>
-    {% if backport_enabled() %}<th>Topaz readiness (backport)</th><th>Topaz enum constant</th>{% endif %}
+    {% if backport_enabled() %}<th>Topaz readiness (reference)</th><th>Topaz reference constant</th>{% endif %}
   </tr>
   {% for r in rows %}
   {% set rd = r.readiness %}
@@ -140,7 +140,7 @@
       {% elif rd.status == "drifted" %}
         {{ "tpz.ki" if primary_dsp else "xi.keyItem" }}.{{ rd.name_match[1] }} <span class="muted">(real id {{ rd.name_match[0] }}, not {{ r.keyitem_id }})</span>
       {% elif rd.status == "wrong_name" %}
-        {{ "tpz.ki" if primary_dsp else "xi.keyItem" }}.{{ rd.id_match }} <span class="muted">(this id is really something else in LSB)</span>
+        {{ "tpz.ki" if primary_dsp else "xi.keyItem" }}.{{ rd.id_match }} <span class="muted">(this ID maps to a different enum in the selected source)</span>
       {% else %}
         <span class="muted">{{ "DSP enum unavailable or not matched" if primary_dsp else "not implemented" }}</span>
       {% endif %}
