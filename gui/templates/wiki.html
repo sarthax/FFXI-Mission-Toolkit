@@ -1016,6 +1016,18 @@
     jobs.forEach(function(j){
       var node=document.createElement('div');node.className='muted job-row';
       node.textContent=(j.source||'?')+' · '+(j.title||'?')+' — '+(j.state||'unknown')+(j.error?' · '+j.error:'');
+      if(j.guidance){
+        var hint=document.createElement('div');
+        hint.className='muted';
+        hint.textContent=j.guidance;
+        node.appendChild(hint);
+      }
+      if(j.changes){
+        var counts=document.createElement('div');
+        counts.className='muted';
+        counts.textContent='Cache: '+(j.changes.inserted||0)+' inserted, '+(j.changes.updated||0)+' updated, '+(j.changes.unchanged||0)+' unchanged';
+        node.appendChild(counts);
+      }
       if(Array.isArray(j.log) && j.log.length){
         var details=document.createElement('details'), summary=document.createElement('summary'), pre=document.createElement('pre');
         summary.textContent='Job log ('+j.log.length+' entries)';
