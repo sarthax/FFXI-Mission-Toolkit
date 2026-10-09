@@ -3,7 +3,7 @@
 local observation = require('workbench_observation')
 local M = {}
 function M.new(options)
-    local handle, client_id, identity, last_time, bytes, inventory
+    local handle, client_id, identity, last_time, bytes, inventory, source_recording, last_frame
     local MAX_BYTES = 16 * 1024 * 1024
     local function stop(reason)
         if handle then pcall(function() handle:close() end) end
@@ -16,7 +16,7 @@ function M.new(options)
         assert(#line <= 65536 and bytes + #line <= MAX_BYTES, 'export size limit reached; start a new export')
         assert(handle:write(line), 'unable to write telemetry')
         assert(handle:flush(), 'unable to flush telemetry')
-        bytes, last_time = bytes + #line, now
+        bytes, last_time, last_frame = bytes + #line, now, frame
     end
     local function sample()
         if not handle then return end
@@ -51,6 +51,7 @@ function M.new(options)
             end
             assert(output, 'no unused export filename available')
             -- Launcher instances must use distinct IDs; existing exports are preserved.
+            source_recording = output:match('([^/\\]+)%.jsonl$')
             handle = assert(io.open(output, 'wb'))
             client_id, identity, last_time, bytes = id, frame.source_identity or frame.character, nil, 0
             emit(frame, now)
@@ -58,6 +59,10 @@ function M.new(options)
         end)
         if not ok then stop('Unable to start: ' .. tostring(err)) end
     end
-    return {command = command, sample = sample, stop = stop}
+    return {command = command, sample = sample, stop = stop, context = function()
+        if not handle then return nil end
+        return {client_id=client_id, source_identity=identity, source_recording=source_recording,
+                zone_id=last_frame.position.zone_id, last_observed_at=last_time}
+    end}
 end
 return M

@@ -120,3 +120,15 @@ file; if available, test two sources independently. Record source revision and
 actual loaded Ashita/game version. The older supplied zone-50 capture verifies
 neither these new fields nor their target-role semantics. No packet capture or
 native game-write test is enabled by this slice.
+
+## Passive packet acceptance (addon 0.3.0-experimental)
+
+Copy the new workbench_packets.lua helper as described in the addon README. Start
+telemetry, then separately run `/wblive packets start event_emote`. Perform a known
+emote and an NPC event; stop packets and telemetry before returning both JSONL
+files. Record actual loaded versions/source revision, commands, performance and
+exact errors. Compare direction, byte length, e.data original bytes and hook-time
+flags with an independent capture; do not assume final wire delivery or blocking.
+Verify excluded chat/opcodes, bounded-rate/drop reporting, source stop/unload,
+restart into a new file, and two-client isolation when available. Existing Capture
+import and decoder are the cloud analysis path; packet writes are not enabled.

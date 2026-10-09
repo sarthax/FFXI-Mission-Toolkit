@@ -454,3 +454,17 @@ stale-token tests; Windows evidence is still pending. Nothing operational is
 superseded. Next: pin passive Lua packet hook byte/provenance semantics and add
 an optional bounded source adapter to canonical Capture, followed by qualified
 research joins. Native attachment/control and calibrated maps remain separate.
+
+### Passive Ashita packet source / canonical Capture — 2026-10-09
+
+A separately enabled event/emote profile in the existing addon records original
+hook-buffer bytes with source/time/zone/sequence and hook-time flags under strict
+rate/size/count limits. Capture Add Files, folder/archive ingestion and normal
+source rebuild use the existing canonical raw rows, locators, decoder and UI.
+No new game write, packet mutation or competing decoding infrastructure is added.
+
+See [pinned evidence and fidelity boundaries](LIVE_CLIENT_REFERENCE_AUDIT.md#passive-ashita-packet-source--canonical-capture--2026-10-09)
+and [commands/limits](../../addons/workbench_live/README.md#optional-passive-packet-observations-ashita-only).
+This is cloud/synthetic validation; Windows hooks, performance, final wire fidelity
+and clock/event correlation remain unverified. Next add qualified research evidence
+joins through existing services, keeping native controls and calibration separate.

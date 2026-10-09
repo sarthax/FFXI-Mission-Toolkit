@@ -15,7 +15,8 @@ and selected-target observations remain distinct from inferred server identities
 
 1. In the authorized Windows/Ashita test environment, create an Ashita addon
    folder named `workbench_live`.
-2. Copy `workbench_observation.lua` and `workbench_export.lua` into that folder.
+2. Copy `workbench_observation.lua`, `workbench_export.lua` and
+   `workbench_packets.lua` into that folder.
 3. Copy **`workbench_live_ashita.lua` as `workbench_live.lua`** in that folder.
    The repository's `workbench_live.lua` is the alternative Windower entry point;
    do not use it in Ashita.
@@ -181,3 +182,51 @@ For the next Windows run, record normal targeting, a subtarget selection, target
 switches and inventory near known NPCs/mobs/players; report raw values and exact
 stop messages. Keep addon revision, actual loaded framework/game build and server
 context in the test notes. Older recordings replay with unknown raw fields/roles.
+
+### Optional passive packet observations (Ashita only)
+
+After explicitly starting telemetry, separately enable the narrow packet profile:
+
+```text
+/wblive start ashita-test-a inventory
+/wblive packets start event_emote
+/wblive packets status
+/wblive packets stop
+/wblive stop
+```
+
+This profile observes incoming `0x034` (existing Toolkit event evidence) and
+`0x05A`, and outgoing `0x05D` (the pinned Ashita example's emote packets). Other
+IDs are filtered before reading payloads; there is no all-packet/chat/login profile.
+This is not comprehensive packet/event capture. Packet enablement is independent
+of ordinary telemetry enablement, but requires its active recording identity.
+
+The addon reads only `e.data`, not modified buffers, raw pointers or chunk bytes;
+it never modifies packet events, injects or blocks packets. Direction, original
+hook bytes, hook-reported opcode/length, UTC-second timestamp, sequence, zone,
+source recording/client identity, cumulative rate drops and hook-time injected/
+blocked flags are retained. Flags and original hook bytes do not prove final wire
+traffic or final blocking; builds and opcode semantics remain unverified.
+
+Limits: 10 accepted observations per second across directions, 1024 bytes per
+packet, 4096 bytes per line, 4 MiB and 10,000 observations per packet file. Rate
+excess is dropped/count-reported; malformed observations, identity/context changes,
+backwards clocks, storage errors and file/count limits stop packet export. Telemetry
+stop/failure and addon unload also stop it. Stopping packets leaves telemetry active.
+A stopped packet file is preserved; starting another requires a fresh telemetry
+recording, preventing overwrite and stale source identity reuse.
+
+Stop capture, then upload the printed `packets-telemetry-…jsonl` file through the
+existing Capture **Add Files** workflow, or include packet files in a normal Capture
+source folder/archive. Upload `telemetry-…jsonl` separately to Live Client replay.
+Capture recognizes packet content, validates the whole bounded source, and writes
+canonical raw-packet rows with SHA-256/line/byte-offset locators. Existing Packet
+Viewer/decoder/correlation services remain authoritative. Unknown opcodes remain
+unknown, and hook-reported/header opcode or size disagreements are retained in
+source details rather than silently corrected. Normal source rebuild is supported
+when the original file remains available under existing Capture policies.
+
+Cloud Lua/Capture tests do not verify these hooks on Windows. The next runtime
+trial should use a known emote and NPC event, compare original hook bytes/direction/
+length against an independent Capture source, and record framework/game/addon
+revision, source stop messages and performance. No local Codex is required.

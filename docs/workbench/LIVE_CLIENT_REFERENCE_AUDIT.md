@@ -282,3 +282,35 @@ legacy recordings and Windower remain compatible. Existing explicit start, one-
 second cadence, 32-entity cap, 64 KiB line and 16 MiB file limits are retained.
 Windows acceptance remains required for each new field and role. No packet hook,
 new native reader, server join, calibrated placement or game write is implemented.
+
+### Passive Ashita packet source / canonical Capture — 2026-10-09
+
+The original workbench_live addon now offers a separately enabled `event_emote`
+packet profile tied to active telemetry recording identity. It observes incoming
+0x034/0x05A and outgoing 0x05D only, stores e.data original hook-buffer bytes and
+hook-time flags, and never modifies packet events or captures raw pointers/chunks.
+Bounds are 10 accepted packets/second, 1024 packet bytes, 4096 line bytes, 4 MiB
+and 10,000 records; excess-rate drops are counted. Identity/context/clock/format/
+IO failures stop safely. Telemetry stop/failure and unload close the packet stream.
+
+Existing Capture Add Files, folder/archive ingestion and source rebuild recognize
+this source through a narrow adapter into capture_raw_packets and existing source
+locators. Direction, UTC-second time, sequence, zone, source identity, raw hex,
+reported opcode/length, drops and hook-time injected/blocked flags remain evidence.
+Original/header disagreements retain both values; unknown semantics stay unknown.
+No second packet decoder, Capture schema, UI or game-write mechanism was added.
+
+Published hook-field evidence is AshitaXI/example at
+[92434ef5](https://github.com/AshitaXI/example/blob/92434ef51d464fbc5d5a8513e30ecbad60321fd6/example.lua),
+packet_in/packet_out documented argument blocks: e.data is read-only, while
+modified/raw/chunk surfaces are separate. These are reference API names/behavior;
+Toolkit implementation is original MIT code, with no copied upstream mutation.
+This slice is **implemented but only synthetically/offline tested**. Hook-time
+flags are not final blocking and hook bytes are not independently verified wire
+traffic. Actual Windows hooks, performance, packet fidelity and clock/event joins
+remain pending. The profile is deliberately narrow, not a complete event census.
+
+Next: runtime packet/telemetry correlation evidence and source/time/zone/ID-qualified
+research links through existing Capture/Feature Trace services. Further diagnostic
+profiles, calibration and native controls remain independent future work. See the
+[addon instructions](../../addons/workbench_live/README.md#optional-passive-packet-observations-ashita-only).
