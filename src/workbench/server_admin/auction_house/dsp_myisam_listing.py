@@ -17,6 +17,7 @@ from workbench.editors.character.session_state import detect_online_state
 from .config_policy import load_active_legacy_policy
 from .invariants import legacy_listing_fee
 from .legacy_test_executor import LegacyTestExecutionBlocked, evaluate_legacy_test_write_gate
+from .recovery_guidance import myisam_recovery_guidance
 from .player_listing import _GIL_ITEM_ID, probe_player_listing_engines
 
 _MYISAM_FLAG = "FFXI_MISSION_TOOLKIT_AH_DSP_MYISAM_TEST_WRITES"
@@ -52,6 +53,7 @@ def dsp_myisam_listing_readiness(*, service, environment: dict[str, Any]) -> dic
         "blockers": blockers,
         "atomic": False,
         "crash_window": True,
+        "recovery_guidance": myisam_recovery_guidance("player_listing"),
         "note": (
             "Uses explicit table locks and best-effort compensation to mirror stock DSP MyISAM listing semantics. "
             "A process/database crash between sequential writes can still require manual recovery."
