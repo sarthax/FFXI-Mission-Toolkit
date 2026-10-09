@@ -90,6 +90,10 @@ class ManagedLiveReceiver:
             thread.join(timeout=3)
         with self._lock:
             self.listener.stop()
+            # Shutdown invalidates every previously issued session/credential.
+            self.peers = LocalPeerRegistry(ttl_seconds=3600)
+            self.listener.peers = self.peers
+            self.feeds = BridgeLiveFeeds(self.listener)
             self._thread = None
             self._last_received.clear()
             self._last_error = None
