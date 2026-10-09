@@ -458,6 +458,62 @@
     } catch (e) { toast(e.message); }
   });
 
+  /* ---------- scheduled Inbox rewards and augmented-item preview ---------- */
+  async function loadSchedules() {
+    const d = await req('/auction-house/rewards/schedules.json');
+    const rows = d.rows || [];
+    $('ibSchedules').innerHTML = rows.length ? '<table><thead><tr><th>Due (local)</th><th>Status</th><th>Recipients</th><th></th></tr></thead><tbody>' +
+      rows.map((r, i) => '<tr><td>' + esc(new Date(r.due_utc).toLocaleString()) + '</td><td>' + esc(r.status) +
+        '</td><td>' + (r.character_ids || []).length + '</td><td>' +
+        (r.status === 'pending' ? '<button class="b" data-cancel="' + esc(r.schedule_id) + '">Cancel</button>' : '') +
+        '</td></tr>').join('') + '</tbody></table>' : '<small>No scheduled campaigns.</small>';
+    $('ibSchedules').querySelectorAll('[data-cancel]').forEach(b => b.addEventListener('click', async () => {
+      try { await req('/auction-house/rewards/schedules/cancel.json', {schedule_id: b.dataset.cancel}); await loadSchedules(); }
+      catch (e) { toast(e.message); }
+    }));
+  }
+  $('ibSchedulesReload').addEventListener('click', () => loadSchedules().catch(e => toast(e.message)));
+  $('ibSchedule').addEventListener('click', async () => {
+    const value = $('ibDueLocal').value, when = new Date(value);
+    if (!value || !Number.isFinite(when.getTime()) || when.getTime() <= Date.now()) return toast('Choose a future local delivery date/time');
+    if (!state.bundle.length) return toast('Add a reward item first');
+    const mode = document.querySelector('input[name=ibMode]:checked').value;
+    if (mode === 'account' && state.recips.length !== 1) return toast('Choose exactly one account anchor character');
+    if (mode === 'selected' && !state.recips.length) return toast('Choose recipients');
+    const ids = mode === 'all' ? [] : state.recips.map(r => r.char_id);
+    const body = {recipient_mode: mode, character_ids: ids, items: bundleItems(), due_utc: when.toISOString(),
+                  template_id: $('ibTpl').value || null};
+    try {
+      const d = (await req('/auction-house/rewards/preview.json', body)).preview;
+      drawer({title: 'Approve one-time Test delivery schedule', label: 'Schedule ' + d.recipient_count + ' recipients',
+        html: '<p>Due: <b>' + esc(when.toLocaleString()) + '</b></p><p>Recipients frozen at approval: <b>' +
+          d.recipient_count + '</b> · item rows: <b>' + d.delivery_rows +
+          '</b></p><p>Only the same named Test profile will run this. Failed/uncertain sends need manual review; no automatic retries.</p>',
+        run: async conf => {
+          const r = await req('/auction-house/rewards/schedules/create.json', {...body, confirmation: conf});
+          await loadSchedules();
+          return '<pre>Scheduled for ' + esc(new Date(r.due_utc).toLocaleString()) +
+            '. ID: ' + esc(r.schedule_id) + '</pre>';
+        }});
+    } catch (e) { toast(e.message); }
+  });
+  $('ibAugInspect').addEventListener('click', async () => {
+    try {
+      const item_id = Number($('ibAugItemId').value);
+      const parts = $('ibAugPairs').value.split(',').map(x => x.trim()).filter(Boolean);
+      if (!Number.isInteger(item_id) || item_id <= 0 || parts.length < 1 || parts.length > 4)
+        throw new Error('Provide an item ID and 1–4 augment ID:value pairs');
+      const augments = parts.map(v => {
+        const bits = v.split(':').map(t => Number(t.trim()));
+        if (bits.length !== 2 || !bits.every(Number.isInteger)) throw new Error('Use numeric augment ID:value pairs');
+        return {id: bits[0], value: bits[1]};
+      });
+      const preview = await req('/auction-house/rewards/augments/inspect.json', {item_id, augments});
+      $('ibAugResult').textContent = JSON.stringify(preview, null, 2);
+    } catch (e) { $('ibAugResult').textContent = e.message; }
+  });
+  loadSchedules().catch(e => { $('ibSchedules').textContent = e.message; });
+
   /* ---------- presets (shared by Restock, Cleanup and the Presets tab) ---------- */
   state.presets = []; state.cats = []; state.pzSel = null; state.pzBack = null; state.pzDraft = null; state.pzSellers = []; state.pzSellerNames = {};
   async function loadCats() { try { state.cats = (await req('/auction-house/categories.json')).rows || []; } catch (e) {} $('cuCategory').innerHTML = '<option value="">Any category</option>' + state.cats.map(r => '<option value="' + r.category_id + '">' + esc(r.path || r.label) + '</option>').join(''); }
