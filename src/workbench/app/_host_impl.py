@@ -4466,55 +4466,121 @@ KEYITEMS_PAGE_SIZE = 100
 
 
 @app.get("/keyitems", response_class=HTMLResponse)
-def keyitems(request: Request, q: str = "", page: int = 1):
+def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all"):
+    if readiness not in {"all", "clean", "drifted", "wrong_name", "missing"}:
+        readiness = "all"
     con = get_con()
     rows = []
     total = 0
     total_pages = 1
-    if q:
-        page = max(1, page)
+    q = q.strip()
+    numeric_id = int(q) if len(q) <= 18 and q.isascii() and q.isdecimal() else None
+    predicate = "(name LIKE ? OR keyitem_id = ?)" if numeric_id is not None else "name LIKE ?"
+    args = (f"%{q}%", numeric_id) if numeric_id is not None else (f"%{q}%",)
+    page = max(1, page)
+    offset = (page - 1) * KEYITEMS_PAGE_SIZE
+    if readiness != "all":
+        # Exact full-catalog filtering is applied before pagination.
+        # Preserve cross-lineage identity guards from the normal page path.
+        candidates = con.execute(
+            "SELECT keyitem_id, name, plural, description FROM key_items WHERE " + predicate + " ORDER BY name",
+            args,
+        ).fetchall()
+        candidates = [row for row in candidates if ingest_global_tables.resolve_keyitem_readiness(
+            con, row["keyitem_id"], row["name"])["status"] == readiness]
+        total = len(candidates)
+        total_pages = max(1, (total + KEYITEMS_PAGE_SIZE - 1) // KEYITEMS_PAGE_SIZE)
+        page = min(page, total_pages)
         offset = (page - 1) * KEYITEMS_PAGE_SIZE
+        ki_rows = candidates[offset:offset + KEYITEMS_PAGE_SIZE]
+    else:
         total = con.execute(
-            "SELECT COUNT(*) FROM key_items WHERE name LIKE ?", (f"%{q}%",)
+            "SELECT COUNT(*) FROM key_items WHERE " + predicate, args
         ).fetchone()[0]
         total_pages = max(1, (total + KEYITEMS_PAGE_SIZE - 1) // KEYITEMS_PAGE_SIZE)
         ki_rows = con.execute(
-            "SELECT keyitem_id, name, plural, description FROM key_items WHERE name LIKE ? "
-            "ORDER BY name LIMIT ? OFFSET ?",
-            (f"%{q}%", KEYITEMS_PAGE_SIZE, offset),
+            "SELECT keyitem_id, name, plural, description FROM key_items WHERE " + predicate +
+            " ORDER BY name LIMIT ? OFFSET ?",
+            (*args, KEYITEMS_PAGE_SIZE, offset),
         ).fetchall()
-        topaz_ready = backport_enabled()
-        for r in ki_rows:
-            readiness = ingest_global_tables.resolve_keyitem_readiness(con, r["keyitem_id"], r["name"])
-            # Backport-module-only extra check -- skipped entirely (no query run) when the user
-            # has no Topaz/DSP checkout configured, so the core module's page stays fast for a
-            # typical LSB-only user.
-            topaz_readiness = (
-                ingest_global_tables.resolve_keyitem_readiness(
-                    con, r["keyitem_id"], r["name"], table="topaz_keyitems"
-                ) if topaz_ready else None
-            )
-            # Joined by NAME, not id -- capture_ki_events.keyitem_id is whatever real id the
-            # client itself reported live, which is exactly what's known to drift from
-            # key_items.keyitem_id (this row's own readiness check above proves it: e.g. "map of
-            # Ilrusi Atoll" is id 2763 in key_items but the client-observed real id is 1869).
-            # Name is the one field both sources get from real client text, so it's the
-            # reliable join key here, not either id.
-            capture_events = con.execute(
-                """SELECT capture_id, event_type, x, y, z, zone_name FROM capture_ki_events
-                   WHERE LOWER(keyitem_name) = LOWER(?)""" + _rq_exclude(con) + " ORDER BY capture_id",
-                (r["name"],),
-            ).fetchall()
-            rows.append({
-                "keyitem_id": r["keyitem_id"], "name": r["name"], "plural": r["plural"],
-                "description": r["description"], "readiness": readiness,
-                "topaz_readiness": topaz_readiness,
-                "capture_events": capture_events,
-            })
+    topaz_ready = backport_enabled()
+    for r in ki_rows:
+        item_readiness = ingest_global_tables.resolve_keyitem_readiness(con, r["keyitem_id"], r["name"])
+        # Backport-module-only extra check -- skipped entirely (no query run) when the user
+        # has no Topaz/DSP checkout configured, so the core module's page stays fast for a
+        # typical LSB-only user.
+        topaz_readiness = (
+            ingest_global_tables.resolve_keyitem_readiness(
+                con, r["keyitem_id"], r["name"], table="topaz_keyitems"
+            ) if topaz_ready else None
+        )
+        # Joined by NAME, not id -- capture_ki_events.keyitem_id is whatever real id the
+        # client itself reported live, which is exactly what's known to drift from
+        # key_items.keyitem_id (this row's own readiness check above proves it: e.g. "map of
+        # Ilrusi Atoll" is id 2763 in key_items but the client-observed real id is 1869).
+        # Name is the one field both sources get from real client text, so it's the
+        # reliable join key here, not either id.
+        capture_events = con.execute(
+            """SELECT capture_id, event_type, x, y, z, zone_name FROM capture_ki_events
+               WHERE LOWER(keyitem_name) = LOWER(?)""" + _rq_exclude(con) + " ORDER BY capture_id",
+            (r["name"],),
+        ).fetchall()
+        rows.append({
+            "keyitem_id": r["keyitem_id"], "name": r["name"], "plural": r["plural"],
+            "description": r["description"], "readiness": item_readiness,
+            "topaz_readiness": topaz_readiness,
+            "capture_events": capture_events,
+        })
     con.close()
     return templates.TemplateResponse(request, "keyitems.html", {
         "q": q, "rows": rows, "page": page, "total": total, "total_pages": total_pages,
+        "readiness_filter": readiness,
     })
+
+
+@app.get("/keyitems/lua-references.json")
+def keyitems_lua_references(keyitem_id: int, lineage: str = "lsb"):
+    """Read-only source citations for a selected client catalog key item."""
+    from fastapi import HTTPException
+    from workbench.devtools.features.key_item_references import discover_key_item_references
+
+    if lineage not in {"lsb", "topaz"}:
+        raise HTTPException(status_code=400, detail="This index currently supports only LSB and Topaz reference identities")
+    con = get_con()
+    try:
+        item = con.execute("SELECT name FROM key_items WHERE keyitem_id = ? LIMIT 2",
+                           (keyitem_id,)).fetchall()
+        if len(item) != 1:
+            raise HTTPException(status_code=404, detail="Key item ID not uniquely present in client catalog")
+        table = "keyitems_ours" if lineage == "lsb" else "topaz_keyitems"
+        ready = ingest_global_tables.resolve_keyitem_readiness(
+            con, keyitem_id, item[0]["name"], table=table)
+    finally:
+        con.close()
+
+    status = ready.get("status")
+    match = ready.get("id_match") if status == "clean" else (
+        ready.get("name_match") if status == "drifted" else None
+    )
+    symbol = match[1] if isinstance(match, (list, tuple)) else match
+    if status not in {"clean", "drifted"} or not symbol:
+        return {"keyitem_id": keyitem_id, "lineage": lineage, "readiness": status,
+                "references": [], "scanned_files": 0, "matched_scripts": 0,
+                "truncated": False,
+                "message": "A verified enum identity is unavailable for this server lineage."}
+
+    from workbench.devtools.indexing import build_lsb_index
+    root = {"lsb": build_lsb_index.LSB_ROOT,
+            "topaz": settings_mod.get_topaz_root()}[lineage]
+    if not root:
+        return {"keyitem_id": keyitem_id, "lineage": lineage, "readiness": status,
+                "symbol": symbol, "references": [], "scanned_files": 0,
+                "matched_scripts": 0, "truncated": False,
+                "message": "No server source checkout configured for this lineage."}
+    result = discover_key_item_references(root, str(symbol), lineage=lineage,
+                                          max_matches=200, max_files=25000)
+    result.update({"keyitem_id": keyitem_id, "readiness": status})
+    return result
 
 
 ZONE_BROWSE_PAGE_SIZE = 100
