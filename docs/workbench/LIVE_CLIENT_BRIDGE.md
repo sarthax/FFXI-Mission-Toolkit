@@ -519,3 +519,18 @@ disconnects. It is **not** an authenticated running service, background listener
 Ashita adapter, or functioning client-command executor. Do not expose it to
 remote interfaces; complete authentication, generation verification, timeouts
 and lifecycle ownership in a future broker before enabling real control.
+
+
+### Local peer credential and lifecycle registry (2026-10-09)
+
+`bridge_peers.py` now provides an explicit, opt-in peer registry with 256-bit
+random bearer tokens, expiring leases, constant-time token comparison,
+client/session/generation matching, token rotation on client replacement and
+independent revocation. Tests cover expiry, renewal, stale generations and
+two separate clients. This is an **in-memory authentication primitive**;
+there is no Ashita peer, session handshake, automatic secret delivery,
+authenticated TCP listener or game-write capability yet. Future service work
+must authenticate every connection before accepting messages; protect token
+distribution and local configuration, enforce reconnect timeouts and revoke on
+disconnect/process replacement. Loopback-only binding is not itself sufficient
+authentication.
