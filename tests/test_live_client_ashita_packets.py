@@ -115,6 +115,18 @@ def test_rate_limited_packets_still_validate_telemetry_lifecycle(tmp_path):
     assert 'telemetry context stale' in messages[-1]
 
 
+def test_inactive_packet_status_retains_last_export_counts(tmp_path):
+    lua = runtime(tmp_path); start(lua); event(lua)
+    lua.execute('for i=1,12 do events.packet_in(packet) end; command("/wblive packets stop"); command("/wblive packets status")')
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'Packets inactive.' in messages[-1]
+    assert 'Previous export: 10 observations, 2 rate-limit drops' in messages[-1]
+    lua.execute('command("/wblive stop"); clock=101; command("/wblive start fresh"); command("/wblive packets start event_emote"); command("/wblive packets status")')
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'Packets active' in messages[-1]
+    assert 'Previous export:' not in messages[-1]
+
+
 def test_packet_status_retains_stop_reason_and_clears_on_restart(tmp_path):
     lua = runtime(tmp_path); start(lua); event(lua)
     lua.execute('clock=106; events.packet_in(packet); command("/wblive packets status")')
