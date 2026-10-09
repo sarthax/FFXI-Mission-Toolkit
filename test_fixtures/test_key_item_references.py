@@ -99,3 +99,24 @@ def test_external_symlink_is_not_scanned(tmp_path: Path):
     result = discover_key_item_references(checkout, "TEST_KEY", lineage="lsb")
     assert result["references"] == []
     assert any("symlink" in limitation for limitation in result["limitations"])
+
+
+def test_lua_source_cache_invalidation(tmp_path: Path):
+    from workbench.devtools.features.key_item_references import _read_lua_lines
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    target = scripts / "changing.lua"
+    target.write_text("player:addKeyItem(xi.keyItem.TEST_KEY)\n", encoding="utf-8")
+    _read_lua_lines.cache_clear()
+    first = discover_key_item_references(tmp_path, "TEST_KEY", lineage="lsb")
+    assert [r["operation"] for r in first["references"]] == ["grant"]
+    hits_before = _read_lua_lines.cache_info().hits
+    second = discover_key_item_references(tmp_path, "TEST_KEY", lineage="lsb")
+    assert second["references"] == first["references"]
+    assert _read_lua_lines.cache_info().hits > hits_before
+    target.write_text("player:delKeyItem(xi.keyItem.TEST_KEY)\n", encoding="utf-8")
+    import os
+    stat = target.stat()
+    os.utime(target, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1000000000))
+    third = discover_key_item_references(tmp_path, "TEST_KEY", lineage="lsb")
+    assert [r["operation"] for r in third["references"]] == ["remove"]
