@@ -118,6 +118,8 @@ def preview_local_recovery(con: sqlite3.Connection, *, sample_limit: int = 12, r
         differences={kind:proposed["types"].get(kind,0)-existing["types"].get(kind,0)
                      for kind in sorted(set(existing["types"]) | set(proposed["types"]))
                      if proposed["types"].get(kind,0)!=existing["types"].get(kind,0)}
+        can_apply = bool(blocks) and any(b.get("block_type") != "legacy_text" for b in blocks)
+        reason = "STRUCTURED_RECOVERY_READY" if can_apply else "NO_STRUCTURED_RECOVERY"
         previews.append({"existing_structure":existing,"proposed_structure":proposed,
                          "block_type_deltas":differences,
                          "source_locator_delta":proposed["with_source_locator"]-existing["with_source_locator"],
@@ -126,7 +128,9 @@ def preview_local_recovery(con: sqlite3.Connection, *, sample_limit: int = 12, r
                          "preview_block_count":len(blocks),
                          "source_hash":source_hash,
                          "preview_block_types":counts,
-                         "requires_confirmation":True,
+                         "can_apply":can_apply,
+                         "readiness_reason":reason,
+                         "requires_confirmation":can_apply,
                          "applied":False})
     return previews
 
