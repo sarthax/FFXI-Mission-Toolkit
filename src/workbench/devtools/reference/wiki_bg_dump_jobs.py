@@ -126,9 +126,14 @@ def resume(db, job_id):
         if _RUNNING:
             raise ValueError("A BG dump import is already running")
         with _db(db) as con:
-            row=con.execute("SELECT state FROM wiki_bg_dump_jobs WHERE id=?",(job_id,)).fetchone()
+            row=con.execute("SELECT state,dump_path,dump_signature FROM wiki_bg_dump_jobs WHERE id=?",(job_id,)).fetchone()
             if not row or row[0] not in ("paused","interrupted","error","pausing"):
                 raise ValueError("BG dump job is not resumable")
+            source=Path(row[1])
+            if not source.is_file():
+                raise ValueError("BG dump source is missing; restore the original archive before resuming")
+            if _signature(source)!=row[2]:
+                raise ValueError("BG dump changed since checkpoint; start a new batch")
             con.execute("UPDATE wiki_bg_dump_jobs SET state='queued' WHERE id=?",(job_id,))
         _RUNNING.add(job_id)
     threading.Thread(target=_worker,args=(str(db),job_id),daemon=True).start()
@@ -181,6 +186,8 @@ def _worker(db, job_id):
                 if state=="pausing":
                     _update(db,job_id,state="paused")
                     return
+                if not path.is_file() or _signature(path)!=signature:
+                    raise RuntimeError("BG dump changed or disappeared while importing; checkpoint preserved")
                 if not auto_continue and processed>=limit:
                     _update(db,job_id,state="completed")
                     return
