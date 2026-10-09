@@ -201,6 +201,7 @@ jobs:
           python test_fixtures/test_wiki_jp_refresh_schedule.py
           python test_fixtures/test_wiki_scrape_js_syntax.py
           python test_fixtures/test_wiki_scrape_origin_validation.py
+          python test_fixtures/test_wiki_scrape_diagnostics.py
           python test_fixtures/test_wiki_sync_overview.py
           python test_fixtures/test_wiki_bulk_rate_limit_checkpoint.py
           python test_fixtures/test_wiki_link_safety.py
