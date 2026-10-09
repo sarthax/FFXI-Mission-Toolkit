@@ -64,7 +64,9 @@ function M.new(options)
                 .. ',"size":' .. size .. ',"raw_hex":' .. quote(raw, 2048)
                 .. ',"hook_stage":"addon_callback_original","is_injected":' .. tostring(e.injected)
                 .. ',"is_blocked":' .. tostring(e.blocked) .. ',"dropped_before":' .. dropped .. '}\n'
-            assert(context().zone_id == current.zone_id, 'packet zone changed while sampling')
+            local final = fresh_context(now)
+            assert(final.zone_id == current.zone_id and final.last_observed_at == current.last_observed_at,
+                   'packet telemetry context changed while sampling')
             assert(#line <= 4096 and bytes + #line <= 4*1024*1024 and sequence < 10000, 'packet export limit reached')
             assert(handle:write(line), 'unable to write packets'); assert(handle:flush(), 'unable to flush packets')
             sequence, bytes, count = sequence+1, bytes+#line, count+1
