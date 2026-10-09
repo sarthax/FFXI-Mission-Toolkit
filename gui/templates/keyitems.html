@@ -110,6 +110,8 @@
     <span id="ki-lua-status" class="muted" role="status"></span>
     <label for="ki-lua-operation">Operation</label>
     <select id="ki-lua-operation"><option value="all">All</option><option value="require">Requires</option><option value="grant">Grants</option><option value="remove">Removes</option></select>
+    <p id="ki-lua-summary" class="muted" role="status"></p>
+    <details id="ki-lua-limitations"><summary>Evidence limitations</summary><ul id="ki-lua-limitations-list"></ul></details>
     <div id="ki-lua-results"></div>
   </section>
   <p class="muted" style="margin-bottom:0">Feature Trace and Wiki searches use the selected display name; search results are evidence candidates, not verified server-identity matches. Identifiers may differ by server lineage. Verify the mapping before using a numeric ID in scripts.</p>
@@ -250,6 +252,8 @@
     const results = document.getElementById('ki-lua-results');
     results.replaceChildren();
     luaRefs = [];
+    document.getElementById('ki-lua-summary').textContent = '';
+    document.getElementById('ki-lua-limitations').hidden = true;
     if (!selectedRecord) return;
     status.textContent = 'Finding explicit source references…';
     try {
@@ -261,6 +265,19 @@
       const refs = Array.isArray(data.references) ? data.references : [];
       status.textContent = data.message || (refs.length + ' references across ' + (data.matched_scripts || 0) +
         ' scripts; scanned ' + (data.scanned_files || 0) + (data.truncated ? ' (truncated)' : ''));
+      const counts = data.operation_counts || {};
+      document.getElementById('ki-lua-summary').textContent =
+        'Requires: ' + (counts.require || 0) + ' · Grants: ' + (counts.grant || 0) +
+        ' · Removes: ' + (counts.remove || 0);
+      const limitations = Array.isArray(data.limitations) ? data.limitations : [];
+      const limitationList = document.getElementById('ki-lua-limitations-list');
+      limitationList.replaceChildren();
+      for (const message of limitations) {
+        const line = document.createElement('li');
+        line.textContent = String(message);
+        limitationList.append(line);
+      }
+      document.getElementById('ki-lua-limitations').hidden = limitations.length === 0;
       luaRefs = refs;
       displayLuaReferences();
     } catch (error) {
