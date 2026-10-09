@@ -174,7 +174,7 @@
 <details class="wiki-section" id="scrape-box">
 <summary>Scrape a wiki page by URL <span class="muted">(runs in the background, no LLM)</span></summary>
 <div class="body">
-  <form id="scrape-form" class="wiki-actions" style="margin:4px 0">
+  <form id="scrape-form" method="post" action="/wiki/scrape" class="wiki-actions" style="margin:4px 0">
     <input type="text" name="url" style="min-width:380px;flex:1" placeholder="https://www.bg-wiki.com/ffxi/Lord_Asag  |  https://ffxiclopedia.fandom.com/wiki/...  |  https://wikiwiki.jp/ffxi/...">
     <button type="submit">Scrape</button>
   </form>
@@ -1009,6 +1009,10 @@
         }).catch(function(err){output.textContent='Diagnostic failed: '+err.message;});
     });
   })();
+})();
+</script>
+<script>
+(function(){
   var f=document.getElementById('scrape-form'),box=document.getElementById('scrape-jobs'),timer=null;
   function show(message){var node=document.createElement('div');node.className='warn';node.textContent=message;box.prepend(node);}
   function paint(jobs){
