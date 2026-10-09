@@ -58,6 +58,20 @@
     <p class="muted">These are pages already stored in the toolkit's local database. The BG offline index is counted separately; it does not imply the page has been imported into structured Wiki documents.</p>
   </div>
 </section>
+<details class="wiki-section" id="wiki-bg-bulk-box">
+<summary>BG Wiki — Import local compressed dump in batches</summary>
+<div class="body">
+<p class="muted">Reads the existing local bg-wiki.jsonl.gz snapshot without network requests. Imports at most 50 or 250 records per batch into the shared Wiki cache, retaining the dump unchanged. Pause and resume are checkpointed in SQLite.</p>
+<form id="wiki-bg-bulk-form" class="wiki-actions">
+<label for="wiki-bg-bulk-limit">Pages per batch</label>
+<select id="wiki-bg-bulk-limit" name="limit"><option value="50">50</option><option value="250">250</option></select>
+<button type="submit">Import from BG dump</button>
+<button type="button" id="wiki-bg-bulk-refresh">Refresh progress</button>
+</form>
+<div id="wiki-bg-bulk-message" role="status" class="muted"></div>
+<div id="wiki-bg-bulk-results" class="wiki-search-results"></div>
+</div>
+</details>
 <details class="wiki-section" id="wiki-bulk-box">
 <summary>Bulk Wiki scrape — FFXIclopedia (bounded batch)</summary>
 <div class="body">
@@ -639,6 +653,43 @@
     });
     document.getElementById('wiki-bulk-refresh').addEventListener('click',refresh);
     refresh();
+  })();
+  (function(){
+    var form=document.getElementById('wiki-bg-bulk-form');if(!form)return;
+    var results=document.getElementById('wiki-bg-bulk-results'),
+        message=document.getElementById('wiki-bg-bulk-message');
+    function post(action,params){
+      return fetch('/wiki/bulk/bg/'+action,{method:'POST',body:params}).then(function(r){
+        return r.json().then(function(v){if(!r.ok)throw Error(v.error||'HTTP '+r.status);return v;});
+      });
+    }
+    function progress(){
+      fetch('/wiki/bulk/bg/jobs',{cache:'no-store'}).then(function(r){
+        if(!r.ok)throw Error('HTTP '+r.status);return r.json();
+      }).then(function(v){
+        results.replaceChildren();
+        (v.jobs||[]).forEach(function(j){
+          var item=document.createElement('div');item.className='wiki-kpi';
+          var info=document.createElement('div');
+          info.textContent=j.state+' — '+j.processed+'/'+j.page_limit+' processed; '+j.imported+' imported, '+j.skipped+' unchanged, '+j.failed+' failed';
+          item.appendChild(info);
+          if(j.last_error){var error=document.createElement('div');error.className='warn';error.textContent=j.last_error;item.appendChild(error);}
+          var action=['queued','running'].indexOf(j.state)>=0?'pause':(['paused','interrupted','error'].indexOf(j.state)>=0?'resume':null);
+          if(action){var button=document.createElement('button');button.type='button';button.textContent=action==='pause'?'Pause':'Resume';
+            button.addEventListener('click',function(){var data=new FormData();data.set('job_id',j.id);
+              post(action,data).then(progress).catch(function(e){message.textContent=e.message;});});
+            item.appendChild(button);
+          }
+          results.appendChild(item);
+        });
+      }).catch(function(e){message.textContent='BG dump status failed: '+e.message;});
+    }
+    form.addEventListener('submit',function(e){e.preventDefault();message.textContent='Starting BG dump import…';
+      post('start',new FormData(form)).then(function(v){message.textContent='BG batch queued: '+v.job_id;progress();})
+        .catch(function(err){message.textContent=err.message;});
+    });
+    document.getElementById('wiki-bg-bulk-refresh').addEventListener('click',progress);
+    progress();
   })();
   var f=document.getElementById('scrape-form'),box=document.getElementById('scrape-jobs'),timer=null;
   function show(message){var node=document.createElement('div');node.className='warn';node.textContent=message;box.prepend(node);}
