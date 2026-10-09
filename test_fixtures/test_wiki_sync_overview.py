@@ -1,5 +1,7 @@
 """Unified Wiki status must remain source-accurate and read-only to the network."""
 import tempfile
+import json
+import sqlite3
 from pathlib import Path
 from unittest.mock import patch
 from workbench.devtools.reference import wiki_sync_overview as overview
@@ -27,6 +29,23 @@ def main():
         assert result["sources"][1]["recovery"][0]["checkpoint"]=="verify-archive"
         assert result["sources"][2]["recovery"][0]["checkpoint"]=="available"
         assert "scheduled" not in result["notice"].split("Japanese Wiki")[0]
+    # Verify real persisted queue metadata rather than a status-only hint.
+    with tempfile.TemporaryDirectory() as root:
+        db=Path(root)/"checkpoints.db"
+        with sqlite3.connect(db) as con:
+            con.execute("CREATE TABLE wiki_bulk_jobs(id TEXT,pending_json TEXT)")
+            con.execute("CREATE TABLE wiki_jp_crawl_jobs(id TEXT,queue_json TEXT)")
+            con.execute("INSERT INTO wiki_bulk_jobs VALUES (?,?)",
+                        ("fx",json.dumps(["Medusa"])))
+            con.execute("INSERT INTO wiki_jp_crawl_jobs VALUES (?,?)",
+                        ("jp",json.dumps([])))
+        assert overview._verified_checkpoint(db,"FFXIclopedia","fx")=="available"
+        assert overview._verified_checkpoint(db,"WikiWikiJP","jp")=="empty-checkpoint"
+        with sqlite3.connect(db) as con:
+            con.execute("UPDATE wiki_bulk_jobs SET pending_json=? WHERE id='fx'",
+                        ('{"bad":"shape"}',))
+        assert overview._verified_checkpoint(db,"FFXIclopedia","fx")=="invalid-checkpoint"
+        assert overview._verified_checkpoint(db,"BGWiki","missing")=="verify-archive"
     # The dashboard must route recovery warnings to source-specific controls
     # without silently issuing POST/resume requests.
     ui=(Path(__file__).resolve().parents[1]/"gui/templates/wiki.html").read_text(encoding="utf-8")
