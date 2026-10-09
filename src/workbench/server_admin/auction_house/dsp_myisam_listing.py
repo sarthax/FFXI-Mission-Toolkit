@@ -18,6 +18,7 @@ from .config_policy import load_active_legacy_policy
 from .invariants import legacy_listing_fee
 from .legacy_test_executor import LegacyTestExecutionBlocked, evaluate_legacy_test_write_gate
 from .recovery_guidance import myisam_recovery_guidance
+from .recovery_journal import begin_case, set_case_status
 from .player_listing import _GIL_ITEM_ID, probe_player_listing_engines
 
 _MYISAM_FLAG = "FFXI_MISSION_TOOLKIT_AH_DSP_MYISAM_TEST_WRITES"
@@ -140,6 +141,7 @@ def execute_dsp_myisam_test_player_listing(
 
     connection = service.connection
     cursor = connection.cursor()
+    journal_case_id: str | None = None
     auction_id: int | None = None
     item_before: tuple[int, int] | None = None
     gil_before: int | None = None
@@ -186,6 +188,12 @@ def execute_dsp_myisam_test_player_listing(
                 f"Seller already has {active_count} active listings; configured limit is {policy.list_limit}"
             )
 
+        # Persist a diagnostic case BEFORE the first non-atomic write.
+        journal_case_id = begin_case(operation="player_listing", environment=environment, evidence={
+            "seller_id": seller_id, "inventory_slot": inventory_slot, "item_id": item_id,
+            "item_quantity_before": item_before[1], "gil_before": gil_before,
+            "listing_fee": fee, "asking_price": price, "stack": stack,
+        })
         insert_fields = [a["item_id"], a["stack"], a["seller_id"]]
         params: list[Any] = [item_id, 1 if stack else 0, seller_id]
         if a.get("seller_name"):
@@ -245,6 +253,8 @@ def execute_dsp_myisam_test_player_listing(
 
         cursor.execute("UNLOCK TABLES")
         locked = False
+        if journal_case_id:
+            set_case_status(journal_case_id, "completed_non_atomic", details={"auction_id": auction_id})
         return {
             "status": "committed_non_atomic",
             "operation": "player_listing",
@@ -301,6 +311,17 @@ def execute_dsp_myisam_test_player_listing(
                 compensation_ok = True
             except Exception:
                 compensation_ok = False
+        if journal_case_id:
+            try:
+                set_case_status(
+                    journal_case_id,
+                    "compensated" if compensation_attempted and compensation_ok else "recovery_required",
+                    details={"auction_id": auction_id, "compensation_attempted": compensation_attempted,
+                             "compensation_ok": compensation_ok, "error": str(original_exc)[:500]},
+                )
+            except Exception:
+                # Leave the persistent case unresolved for operator inspection.
+                pass
         if compensation_attempted and not compensation_ok:
             raise LegacyTestExecutionBlocked(
                 f"DSP MyISAM listing failed and automatic compensation also failed; inspect seller {seller_id} and auction row {auction_id}: {original_exc}"
