@@ -5796,6 +5796,31 @@ def wiki_bulk_status():
     return {"jobs": wiki_bulk_jobs.status(DB_PATH)}
 
 
+@app.on_event("startup")
+def wiki_scheduler_startup():
+    from workbench.devtools.reference import wiki_sync_schedule
+    wiki_sync_schedule.start_background(DB_PATH)
+
+
+@app.get("/wiki/bulk/schedule")
+def wiki_bulk_schedule_settings():
+    from workbench.devtools.reference import wiki_sync_schedule
+    return wiki_sync_schedule.settings(DB_PATH)
+
+
+@app.post("/wiki/bulk/schedule")
+async def wiki_bulk_schedule_config(request: Request):
+    from workbench.devtools.reference import wiki_sync_schedule
+    form = await request.form()
+    try:
+        enabled = str(form.get("enabled") or "").lower() in ("true", "on", "1")
+        return wiki_sync_schedule.configure(
+            DB_PATH, enabled=enabled, interval_hours=int(form.get("interval_hours") or 24),
+            page_limit=int(form.get("page_limit") or 50))
+    except (ValueError, TypeError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
 @app.get("/wiki/bulk/summary")
 def wiki_bulk_sync_summary():
     from workbench.devtools.reference import wiki_bulk_jobs
