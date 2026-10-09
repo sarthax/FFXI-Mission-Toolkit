@@ -8,6 +8,8 @@ import sqlite3
 from typing import Any
 from uuid import uuid4
 
+from .legacy_test_executor import LegacyTestExecutionBlocked
+
 _DEFAULT_PATH = Path("data/auction_house_reward_campaigns.db")
 
 
@@ -200,5 +202,5 @@ def failed_recipient_ids(campaign_id: str, *, path: Path | str = _DEFAULT_PATH) 
     campaign = get_campaign(campaign_id, path=path)
     integrity = retry_integrity(campaign)
     if integrity["issues"]:
-        raise ValueError("Campaign recipient outcomes require reconciliation before retry: " + ", ".join(integrity["issues"]))
+        raise LegacyTestExecutionBlocked("Campaign recipient outcomes require reconciliation before retry: " + ", ".join(integrity["issues"]))
     return integrity["retry_character_ids"]
