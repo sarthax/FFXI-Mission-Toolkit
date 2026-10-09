@@ -7,6 +7,7 @@ translation is a display-time step (see translate_cached) and never alters the s
 from __future__ import annotations
 import hashlib, os, sqlite3, subprocess, tempfile, threading, time, urllib.parse, uuid
 from datetime import datetime, timezone
+from pathlib import Path
 
 from . import wiki_document
 
@@ -180,7 +181,7 @@ def _run(job: dict, main_db: str) -> None:
 
         # Confirm the imported article is discoverable in the main cache before
         # declaring a successful scrape. The check is read-only and source-scoped.
-        con = sqlite3.connect(f"file:{urllib.parse.quote(os.path.abspath(main_db))}?mode=ro", uri=True, timeout=5)
+        con = sqlite3.connect(Path(main_db).resolve().as_uri() + "?mode=ro", uri=True, timeout=5)
         try:
             missing = []
             for item in fetched:
