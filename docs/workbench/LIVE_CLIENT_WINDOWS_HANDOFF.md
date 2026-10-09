@@ -152,3 +152,17 @@ identity, packet timestamps have one-second resolution, packet instance identity
 absent, and clocks, server IDs, wire contents, opcode meanings and causal relationships
 remain unverified. The original player recording has no accompanying packet export;
 this report path is cloud-tested synthetically and still needs paired Windows evidence.
+
+For packets already imported into an existing Toolkit Capture, add both
+`--capture-database "C:\path\to\toolkit.sqlite" --capture-id 123` (use the actual
+Capture database and ID). This opens the explicitly selected database read-only;
+it never creates a database, imports packets, migrates schemas or changes rows.
+Only the report's retained temporal candidates are checked (maximum 1,000).
+An exact source SHA-256 plus line/byte span must identify one locator, and its
+stored raw packet bytes, hook metadata and producer provenance must match the
+same immutable supplied packet snapshot. Matching candidates include a relative
+`/captures/<id>/packets/<seq>` link to the existing Toolkit packet view. Duplicate
+imports remain ambiguous; absent or changed evidence has no link. Missing databases,
+unsupported schemas and bounded lookup timeouts fail before report output.
+An imported-packet link proves stored source correspondence only; it does not
+verify runtime client identity, packet semantics, clocks, instances or causality.
