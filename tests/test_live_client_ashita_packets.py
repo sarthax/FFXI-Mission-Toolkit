@@ -38,6 +38,8 @@ def test_explicit_passive_original_bytes_and_canonical_capture_upload(tmp_path):
     cid = bci.create_manual_capture(con, 'Ashita fixture', 'Research', None)
     result = bci.ingest_single_file(con, cid, path.name, path.read_bytes())
     assert result['error'] is None and result['rows'] == 1 and result['format'] == 'ashita_packets'
+    lineage = con.execute('SELECT target_table,locator_basis FROM capture_ingest_lineage').fetchone()
+    assert lineage == ('capture_raw_packets', 'line')
     saved = con.execute('SELECT direction,raw_hex,opcode,is_injected,is_blocked FROM capture_raw_packets').fetchone()
     assert saved == ('incoming', row['raw_hex'], '0x034', 0, 0)
     locator = con.execute("SELECT details_json FROM capture_row_locators WHERE target_table='capture_raw_packets'").fetchone()
