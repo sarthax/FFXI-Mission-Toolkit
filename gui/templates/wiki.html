@@ -58,6 +58,20 @@
     <p class="muted">These are pages already stored in the toolkit's local database. The BG offline index is counted separately; it does not imply the page has been imported into structured Wiki documents.</p>
   </div>
 </section>
+<details class="wiki-section" id="wiki-jp-bulk-box">
+<summary>Japanese Wiki — Targeted batch crawl</summary>
+<div class="body">
+<p class="muted">Crawl a named Japanese Wiki page and linked pages within its subtree. Uses polite pacing and checkpointed progress. Stops on access errors; it does not bypass site restrictions.</p>
+<form id="wiki-jp-bulk-form" class="wiki-actions">
+<input type="text" name="seed" required placeholder="Japanese Wiki page path (e.g. ヴォイドウォッチ)">
+<select name="limit"><option value="50">50 pages</option><option value="250">250 pages</option></select>
+<button type="submit">Start Japanese crawl</button>
+<button type="button" id="wiki-jp-bulk-refresh">Refresh</button>
+</form>
+<div id="wiki-jp-bulk-message" role="status" class="muted"></div>
+<div id="wiki-jp-bulk-results"></div>
+</div>
+</details>
 <details class="wiki-section" id="wiki-bg-bulk-box">
 <summary>BG Wiki — Import local compressed dump in batches</summary>
 <div class="body">
@@ -691,6 +705,26 @@
     });
     document.getElementById('wiki-bg-bulk-refresh').addEventListener('click',progress);
     progress();
+  })();
+  (function(){
+    var form=document.getElementById('wiki-jp-bulk-form');if(!form)return;
+    var output=document.getElementById('wiki-jp-bulk-results'),msg=document.getElementById('wiki-jp-bulk-message');
+    function post(action,data){return fetch('/wiki/bulk/jp/'+action,{method:'POST',body:data}).then(function(r){return r.json().then(function(j){if(!r.ok)throw Error(j.error||'HTTP '+r.status);return j;});});}
+    function refresh(){fetch('/wiki/bulk/jp/jobs',{cache:'no-store'}).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json();}).then(function(j){
+      output.replaceChildren();
+      (j.jobs||[]).forEach(function(job){
+        var container=document.createElement('div'),line=document.createElement('div');container.className='wiki-kpi';
+        line.textContent=job.seed+' — '+job.state+' · '+job.processed+' processed · '+job.imported+' imported · '+job.pending+' queued';
+        container.appendChild(line);
+        if(job.last_error){var error=document.createElement('div');error.className='warn';error.textContent=job.last_error;container.appendChild(error);}
+        var action=['running','queued'].includes(job.state)?'pause':(['paused','interrupted','error'].includes(job.state)?'resume':null);
+        if(action){var button=document.createElement('button');button.type='button';button.textContent=action==='pause'?'Pause':'Resume';button.addEventListener('click',function(){var data=new FormData();data.set('job_id',job.id);post(action,data).then(refresh).catch(function(e){msg.textContent=e.message;});});container.appendChild(button);}
+        output.appendChild(container);
+      });
+    }).catch(function(e){msg.textContent=e.message;});}
+    form.addEventListener('submit',function(event){event.preventDefault();msg.textContent='Starting crawl…';post('start',new FormData(form)).then(function(){msg.textContent='Crawl queued';refresh();}).catch(function(e){msg.textContent=e.message;});});
+    document.getElementById('wiki-jp-bulk-refresh').addEventListener('click',refresh);
+    refresh();
   })();
   var f=document.getElementById('scrape-form'),box=document.getElementById('scrape-jobs'),timer=null;
   function show(message){var node=document.createElement('div');node.className='warn';node.textContent=message;box.prepend(node);}
