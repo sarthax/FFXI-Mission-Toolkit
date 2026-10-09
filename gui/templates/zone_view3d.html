@@ -65,6 +65,9 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   <datalist id="ashita-live-clients"></datalist>
   <label><input id="ashita-live-entities" type="checkbox"> Nearby entities</label>
   <label><input id="ashita-live-follow" type="checkbox"> Follow player (orbit)</label>
+  <button type="button" id="ashita-live-focus">Focus player</button>
+  <button type="button" id="ashita-live-copy">Copy diagnostics</button>
+  <a class="inline" href="/live-client/bridge/console" target="_blank" rel="noopener">Bridge setup ↗</a>
   <span id="ashita-live-status" class="chip mono" role="status">Off</span>
 </div>
 <div class="dense-toolbar" style="margin-bottom:6px; flex-wrap:wrap;">
@@ -200,6 +203,7 @@ const liveFollowToggle = document.getElementById('ashita-live-follow');
 const liveEntitiesGroup = new THREE.Group();
 scene.add(liveEntitiesGroup);
 let lastLivePosition = null;
+let lastLiveDiagnostic = null;
 let lastLiveRequest = 0;
 const liveEntityGeometry = new THREE.SphereGeometry(1.5, 8, 6);
 const liveEntityMaterial = new THREE.MeshBasicMaterial({color: 0xf5a35c, depthTest: false});
@@ -222,6 +226,7 @@ function clearLiveEntities() {
 }
 function clearLiveMarker() {
   lastLivePosition = null;
+  lastLiveDiagnostic = null;
   clearLiveEntities();
   if (!liveMarker) return;
   liveMarker.parent.remove(liveMarker);
@@ -276,6 +281,15 @@ async function pollAshitaPosition() {
         new THREE.Vector3(Math.cos(position.heading), 0, -Math.sin(position.heading)).normalize());
     }
     lastLivePosition = current;
+    lastLiveDiagnostic = {
+      client_id: clientId, zone_id: ZONEID,
+      character: data.player.character || null,
+      raw_position: {x:position.x,y:position.y,z:position.z,heading:position.heading},
+      viewer_position: {x:current.x,y:current.y,z:current.z},
+      adapter: data.adapter, observed_at: data.observed_at,
+      entity_count: Array.isArray(data.entities) ? data.entities.length : 0,
+      entities_truncated: Boolean(data.entities_truncated)
+    };
     if (liveFollowToggle.checked && !flyModeOn && previous) {
       const delta = current.clone().sub(previous);
       camera.position.add(delta);
@@ -311,6 +325,21 @@ async function pollAshitaPosition() {
     clearLiveMarker(); liveStatus.textContent = 'Live unavailable: ' + error.message;
   }
 }
+document.getElementById('ashita-live-focus').addEventListener('click', () => {
+  if (!liveToggle.checked || !lastLivePosition || flyModeOn) {
+    liveStatus.textContent = 'Focus requires a fresh live marker and orbit mode'; return;
+  }
+  controls.target.copy(lastLivePosition);
+  camera.position.copy(lastLivePosition).add(new THREE.Vector3(25, 18, 25));
+  controls.update();
+});
+document.getElementById('ashita-live-copy').addEventListener('click', async () => {
+  if (!lastLiveDiagnostic) { liveStatus.textContent = 'No fresh telemetry to copy'; return; }
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(lastLiveDiagnostic, null, 2));
+    liveStatus.textContent = 'Copied current client/zone/coordinates for alignment testing';
+  } catch (_) { liveStatus.textContent = 'Clipboard blocked; check browser permissions'; }
+});
 liveToggle.addEventListener('change', () => { ++lastLiveRequest; pollAshitaPosition(); });
 liveEntitiesToggle.addEventListener('change', pollAshitaPosition);
 liveClient.addEventListener('change', () => { ++lastLiveRequest; clearLiveMarker(); pollAshitaPosition(); });
