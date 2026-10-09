@@ -337,10 +337,16 @@ Operator summary: `AUCTION_HOUSE_CAPABILITY_STATUS.md`. Economy detail: `AUCTION
 - [x] Buyers tab (`buyers.json`, `buyer.json`; `buyer_stats.py`, unit-tested): per-buyer spend, overpaid purchases vs item median (>=50%), gil refund of the overpay via the rewards flow. Buyers keyed by name (DSP sold rows have no buyer id); refund needs a `chars` row.
 - [x] "Buy as..." (player purchase) folded into Items/Sellers listing rows; Listing Manager kept only as a legacy view.
 - [x] Fixed the confirm drawer (missing `dwConfName` element) that blocked Buy/Return/Restock/refund drawers from opening.
-- [ ] KPI prior-period deltas for supply and sell-through (needs more than one day of snapshots).
-- [ ] Anomaly detection and forecasting (deliberately deferred until snapshot history exists).
-- [ ] Live write tests for restock, Buy, Return, MyISAM purchase and gil delivery on a real Test server.
-- [ ] "All characters on this account" filter.
+- [~] DSP runtime validation: project owner confirms successful **live DSP testing** of Auction House administration; existing DSP MyISAM listing test is documented separately. The exact per-operation verified matrix is not yet captured, so do not reopen completed tests or imply every operation is individually verified.
+- [~] Snapshot-based supply/sell-through comparisons depend on multiple dated observations; current prior-period activity/KPI trends and supply snapshot comparisons already exist. Validate multi-day behavior, rather than reimplementing the deltas.
+- [x] Anomaly detection exists (price shifts, volume spikes, mispriced listings, seller floods); forecasting is a distinct optional enhancement dependent on sufficient authentic history.
+- [ ] Inbox / admin "all characters on this account" selection using verified account linkage.
+- [ ] Targeted DSP MyISAM crash-window/recovery UX audit and reward fan-out partial/retry UX audit (preserve existing Test gates).
+- [ ] Dedicated Topaz TEST validation; DSP test evidence does not establish Topaz parity.
+- [~] LSB read/preview/policy support exists; broader LSB write workflows remain deferred pending runnable LSB Test evidence.
+- [ ] Optional augmented `extra` Inbox delivery only after DSP/Topaz serialization proof; production-write authorization remains separately out of scope.
+
+**Auction House feature audit / actionable TODO:** [`AUCTION_HOUSE_GAP_AUDIT_TODO_2026-10-08.md`](AUCTION_HOUSE_GAP_AUDIT_TODO_2026-10-08.md). This distinguishes implemented, user-tested, intentionally gated, environment-unverified, and optional enhancement work.
 
 ---
 
