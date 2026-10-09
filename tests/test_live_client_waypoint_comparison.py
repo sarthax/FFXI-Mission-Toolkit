@@ -75,6 +75,9 @@ def test_return_zone_visit_is_excluded_even_when_instance_hint_unknown(tmp_path)
 
 
 @pytest.mark.parametrize('field,value,reason', [
+    ('session_generation', None, 'recording_generation_unknown'),
+    ('session_generation', '', 'recording_generation_unknown'),
+    ('session_generation', 'another-recording', 'different_recording_generation'),
     ('adapter', 'different-api', 'different_or_unknown_source'),
     ('client_id', 'other-client', 'different_or_unknown_source'),
     ('reported_client_version', 'another-build', 'different_or_unknown_source'),
@@ -90,6 +93,34 @@ def test_imported_incompatible_or_legacy_provenance_is_not_projected(tmp_path, f
     assert result['waypoints'] == []
     assert result['excluded'][0]['reason'] == reason
     assert replay.position == 1
+
+
+def test_identical_replacement_excludes_saved_waypoints_and_allows_new_capture(tmp_path):
+    client, registry, replay, session, library = setup(tmp_path)
+    old_generation = library.entries()[0]['provenance']['session_generation']
+    exported = library.export_document()
+    library.delete(library.entries()[0]['id'])
+    library.add_document(exported)
+    assert relative(client, session).json()['waypoints'][0]['distance_raw'] == 0
+    replacement = load_recorded_frames(CAPTURE, client_id=CLIENT)
+    replacement.advance()
+    registry.add_recording(replacement, label='Identical replacement', replace_session=session)
+    result = relative(client, session).json()
+    assert result['waypoints'] == []
+    assert result['excluded'][0]['reason'] == 'different_recording_generation'
+    response = client.post('/live-client/waypoints/capture', headers=ORIGIN,
+                           params={'client_id': session, 'name': 'New recording origin'})
+    assert response.status_code == 200
+    entries = library.entries()
+    assert len(entries) == 2
+    new_entry = next(entry for entry in entries if entry['name'] == 'New recording origin')
+    assert new_entry['provenance']['session_generation'] != old_generation
+    result = relative(client, session).json()
+    assert [row['name'] for row in result['waypoints']] == ['New recording origin']
+    replacement.seek(121)
+    assert len(relative(client, session).json()['waypoints']) == 1
+    replacement.restart()
+    assert relative(client, session).json()['waypoints'][0]['distance_raw'] == 0
 
 
 def test_extreme_finite_coordinates_do_not_return_infinite_json_differences(tmp_path):

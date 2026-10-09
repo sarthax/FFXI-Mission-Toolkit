@@ -12,6 +12,13 @@ def compare_waypoints(frame, session_id: str, entries: list[dict], context: dict
             reason = 'different_zone'
         elif provenance.get('session_id') != session_id:
             reason = 'different_or_unknown_session'
+        elif (not isinstance(provenance.get('session_generation'), str)
+              or not provenance['session_generation']
+              or not isinstance(context.get('session_generation'), str)
+              or not context['session_generation']):
+            reason = 'recording_generation_unknown'
+        elif provenance['session_generation'] != context['session_generation']:
+            reason = 'different_recording_generation'
         elif (entry['source'] != snapshot.adapter or provenance.get('adapter') != snapshot.adapter
               or provenance.get('client_id') != snapshot.client_id
               or provenance.get('reported_client_version') != snapshot.version):

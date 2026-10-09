@@ -64,7 +64,7 @@ def normalize_document(document: dict) -> list[dict]:
                 raise ValueError('waypoint coordinates must be finite numbers')
             position[axis] = value
         provenance = _metadata(row.get('provenance', document.get('provenance', {})),
-            ('session_id', 'client_id', 'adapter', 'reported_client_version', 'observed_at', 'instance_hint',
+            ('session_id', 'session_generation', 'client_id', 'adapter', 'reported_client_version', 'observed_at', 'instance_hint',
              'recorded_frame', 'recorded_segment'))
         provenance.update(version_verified=False, coordinates='raw')
         observation = _metadata(row.get('observation', document.get('observation', {})),
