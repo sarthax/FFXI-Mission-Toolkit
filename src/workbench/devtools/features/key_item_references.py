@@ -17,6 +17,7 @@ def discover_key_item_references(
     *,
     max_matches: int = 250,
     max_files: int = 50000,
+    lineage: str | None = None,
 ) -> dict:
     """Return explicit grant / require / remove references with source locations.
 
@@ -26,12 +27,15 @@ def discover_key_item_references(
     symbol = str(symbol or "").strip()
     if not re.fullmatch(r"[A-Z][A-Z0-9_]*", symbol):
         raise ValueError("key-item symbol must be an uppercase enum name")
+    namespaces = {"lsb": "xi.keyItem.", "topaz": "tpz.ki.", "dsp": "tpz.ki."}
+    if lineage is not None and lineage not in namespaces:
+        raise ValueError("lineage must be lsb, topaz, or dsp")
     if max_matches < 1 or max_files < 1:
         raise ValueError("limits must be positive")
     root = Path(server_root).resolve()
     scripts = root / "scripts"
     if not scripts.is_dir():
-        return {"symbol": symbol, "source_root": str(root), "references": [],
+        return {"symbol": symbol, "lineage": lineage, "source_root": str(root), "references": [],
                 "scanned_files": 0, "truncated": False,
                 "limitations": ["No scripts directory at the selected source root."]}
     references: list[dict] = []
@@ -52,6 +56,8 @@ def discover_key_item_references(
         for ref in _line_refs(source, rel):
             if ref.state_type != "key_item" or ref.key != symbol:
                 continue
+            if lineage is not None and namespaces[lineage] + symbol not in ref.source_text:
+                continue
             if len(references) >= max_matches:
                 truncated = True
                 break
@@ -65,7 +71,7 @@ def discover_key_item_references(
         if truncated:
             break
     return {
-        "symbol": symbol, "source_root": str(root),
+        "symbol": symbol, "lineage": lineage, "source_root": str(root),
         "references": references, "scanned_files": scanned,
         "truncated": truncated,
         "limitations": [
