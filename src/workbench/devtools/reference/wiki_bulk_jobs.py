@@ -35,8 +35,6 @@ def _connect(db):
 def _change(db, job_id, **fields):
     with _connect(db) as con:
         if fields:
-            fields["updated_at"] = None
-            fields.pop("updated_at")
             sql = ", ".join(f"{field}=?" for field in fields)
             con.execute(f"UPDATE wiki_bulk_jobs SET {sql}, updated_at=CURRENT_TIMESTAMP WHERE id=?",
                         (*fields.values(), job_id))
@@ -44,6 +42,8 @@ def _change(db, job_id, **fields):
 
 def status(db):
     with _connect(db) as con:
+        if not _RUNNING:
+            con.execute("UPDATE wiki_bulk_jobs SET state='interrupted' WHERE state IN ('queued','discovering','running','pausing')")
         rows = con.execute("""SELECT id,source,state,page_limit,discovered,processed,imported,failed,last_error
             FROM wiki_bulk_jobs ORDER BY updated_at DESC LIMIT 8""").fetchall()
     cols = ("id","source","state","page_limit","discovered","processed","imported","failed","last_error")
