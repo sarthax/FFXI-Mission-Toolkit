@@ -12,6 +12,7 @@ from fastapi import APIRouter
 def install_legacy_gui_bridge(root_router: APIRouter) -> None:
     """Expose AH at root paths and add it to the Server workspace exactly once."""
     from workbench import gui_shell
+    from workbench.server_admin.voidwatch.api import router as voidwatch_router
 
     from .activity_api import router as auction_house_activity_router
     from .admin_buy_api import router as auction_house_admin_buy_router
@@ -67,6 +68,7 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
         auction_house_activity_router,
         auction_house_status_router,
         synth_router,
+        voidwatch_router,
     ):
         for route in carrier.routes:
             key = (getattr(route, "path", None), tuple(sorted(getattr(route, "methods", ()) or ())))
