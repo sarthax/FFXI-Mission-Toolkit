@@ -62,16 +62,13 @@
   <button type="submit">Search</button>
 </form>
 <p class="muted">Server readiness filters all matching records before pagination. The quick filters below affect only the loaded page.</p>
-{% if not q %}
-<div class="nodata"><strong>Find a key item</strong><p>Enter a key-item name or exact client ID to inspect the client description, server mapping, and capture evidence. For server character ownership changes, use Character Editor.</p></div>
-{% else %}
 <div class="ki-status-help" aria-label="Readiness status definitions">
   <span><span class="pill exists">clean</span> same identity at this ID</span>
   <span><span class="pill gap">drifted</span> name exists at a different server ID</span>
   <span><span class="pill mismatch">wrong name</span> ID belongs to another key item</span>
   <span><span class="pill mismatch">missing</span> no matching enum found</span>
 </div>
-<div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} result(s)</strong><span class="muted">for "{{ q }}"</span><span class="chip">Server status: {{ readiness_filter }}</span><span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
+<div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} result(s)</strong>{% if q %}<span class="muted">for "{{ q }}"</span>{% else %}<span class="muted">Browse all key items</span>{% endif %}<span class="chip">Server status: {{ readiness_filter }}</span><span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
 {{ pager() }}
 <div class="ki-intro" style="margin:10px 0">
   <label for="ki-status-filter">Show mapping status</label>
@@ -332,5 +329,4 @@
   applyFilters();
 })();
 </script>
-{% endif %}
 {% endblock %}
