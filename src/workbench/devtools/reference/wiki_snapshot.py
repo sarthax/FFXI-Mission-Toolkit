@@ -120,3 +120,39 @@ def import_snapshot(database, snapshot):
     finally:
         if temp is not None:
             temp.unlink(missing_ok=True)
+
+
+def preview_snapshot(database, snapshot):
+    """Read-only, hash-validated comparison against the destination Wiki cache."""
+    path=Path(snapshot).resolve()
+    db=Path(database).resolve()
+    if not path.is_file() or not db.is_file():
+        raise FileNotFoundError("Snapshot or toolkit database not found")
+    totals={"new":0,"updated":0,"unchanged":0}
+    sources={}
+    with sqlite3.connect(db.as_uri()+"?mode=ro",uri=True,timeout=10) as con:
+        tables={row[0] for row in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        with gzip.open(path,"rt",encoding="utf-8") as stream:
+            header=json.loads(next(stream))
+            if (header.get("type")!="manifest" or header.get("format")!="ffxi-wiki-snapshot"
+                    or header.get("version")!=VERSION or header.get("source") not in (*SOURCES,"all")):
+                raise ValueError("Invalid Wiki snapshot manifest/version")
+            for line in stream:
+                item=json.loads(line)
+                if item.get("type")!="page" or not isinstance(item.get("data"),dict):
+                    raise ValueError("Invalid snapshot page record")
+                page=item["data"]
+                source=page.get("source_id")
+                if source not in SOURCES or (header["source"]!="all" and source!=header["source"]):
+                    raise ValueError("Unexpected Wiki snapshot source")
+                if not all(isinstance(page.get(k),str) for k in ("page_id","title","norm_title","page_text","page_hash")):
+                    raise ValueError("Invalid Wiki snapshot text fields")
+                if hashlib.sha256(page["page_text"].encode("utf-8")).hexdigest()!=page["page_hash"]:
+                    raise ValueError("Wiki snapshot page hash mismatch")
+                existing=(con.execute("SELECT page_hash FROM reference_wiki_pages WHERE source_id=? AND page_id=?",
+                                      (source,page["page_id"])).fetchone()
+                          if "reference_wiki_pages" in tables else None)
+                category="new" if existing is None else ("unchanged" if existing[0]==page["page_hash"] else "updated")
+                totals[category]+=1
+                sources.setdefault(source,{"new":0,"updated":0,"unchanged":0})[category]+=1
+    return {"pages":sum(totals.values()),"totals":totals,"sources":sources}
