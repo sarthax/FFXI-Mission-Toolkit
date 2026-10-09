@@ -58,7 +58,7 @@
   <input type="text" name="q" value="{{ q }}" placeholder="Search key-item name or client ID (e.g. Zeruhn or 123)" aria-label="Search key items">
   <label for="ki-global-readiness">Server readiness</label>
   <select name="readiness" id="ki-global-readiness">
-    {% for value, label in [('all','All statuses'),('clean','Clean'),('drifted','Drifted'),('wrong_name','Wrong name at ID'),('missing','Missing')] %}
+    {% for value, label in [('all','All statuses'),('clean','Clean'),('drifted','Drifted'),('wrong_name','Wrong name at ID'),('missing','Missing'),('unavailable','Source unavailable')] %}
     <option value="{{ value }}"{% if readiness_filter == value %} selected{% endif %}>{{ label }}</option>
     {% endfor %}
   </select>
@@ -80,7 +80,7 @@
     <option value="clean">Clean</option>
     <option value="drifted">Drifted</option>
     <option value="wrong_name">Wrong name at ID</option>
-    <option value="missing">Missing</option>
+    <option value="missing">Missing</option><option value="unavailable">Source unavailable</option>
   </select>
   <label for="ki-page-filter">Find in current page</label>
   <input id="ki-page-filter" type="search" placeholder="Name, ID or description" aria-label="Filter current results">
@@ -132,17 +132,17 @@
       {% if rd.status == "clean" %}<span class="pill exists">clean</span>
       {% elif rd.status == "drifted" %}<span class="pill gap">drifted</span>
       {% elif rd.status == "wrong_name" %}<span class="pill mismatch">wrong name at this id</span>
-      {% else %}<span class="pill mismatch">missing</span>{% endif %}
+      {% elif rd.status == "unavailable" %}<span class="pill gap">source unavailable</span>{% else %}<span class="pill mismatch">missing</span>{% endif %}
     </td>
     <td class="mono">
       {% if rd.status == "clean" %}
-        xi.keyItem.{{ rd.id_match }}
+        {{ "tpz.ki" if primary_dsp else "xi.keyItem" }}.{{ rd.id_match }}
       {% elif rd.status == "drifted" %}
-        xi.keyItem.{{ rd.name_match[1] }} <span class="muted">(real id {{ rd.name_match[0] }}, not {{ r.keyitem_id }})</span>
+        {{ "tpz.ki" if primary_dsp else "xi.keyItem" }}.{{ rd.name_match[1] }} <span class="muted">(real id {{ rd.name_match[0] }}, not {{ r.keyitem_id }})</span>
       {% elif rd.status == "wrong_name" %}
-        xi.keyItem.{{ rd.id_match }} <span class="muted">(this id is really something else in LSB)</span>
+        {{ "tpz.ki" if primary_dsp else "xi.keyItem" }}.{{ rd.id_match }} <span class="muted">(this id is really something else in LSB)</span>
       {% else %}
-        <span class="muted">not implemented</span>
+        <span class="muted">{{ "DSP enum unavailable or not matched" if primary_dsp else "not implemented" }}</span>
       {% endif %}
     </td>
     <td class="ki-description">
