@@ -39,6 +39,35 @@ def main():
         result=jobs.status(db)[0]
         assert result["skipped"]==1,result
         assert result["imported"]==0,result
+    # A corrupt source record must not disappear from a checkpoint or allow
+    # a partial import to report successful completion.
+    with tempfile.TemporaryDirectory() as directory:
+        dump=Path(directory)/"mixed.jsonl.gz"
+        db=Path(directory)/"mixed.db"
+        with gzip.open(dump,"wt",encoding="utf-8") as file:
+            file.write(json.dumps({"title":"Medusa","pageid":101,"wikitext":"valid"})+"\\n")
+            file.write(json.dumps({"title":"Broken","pageid":102})+"\\n")
+            file.write(json.dumps({"title":"Following","pageid":103,"wikitext":"valid"})+"\\n")
+        with patch.object(jobs.threading.Thread,"start"):
+            job=jobs.start(db,dump,limit=50)
+        jobs._worker(str(db),job)
+        result=jobs.status(db)[0]
+        assert result["state"]=="error",result
+        assert result["cursor"]==1,result
+        assert result["processed"]==1,result
+        assert result["imported"]==1,result
+        assert result["failed"]==1,result
+        assert "Record 2" in result["last_error"],result
+        with sqlite3.connect(db) as con:
+            assert con.execute("SELECT COUNT(*) FROM reference_wiki_pages").fetchone()[0]==1
+        with patch.object(jobs.threading.Thread,"start"):
+            jobs.resume(db,job)
+        jobs._worker(str(db),job)
+        repeated=jobs.status(db)[0]
+        assert repeated["state"]=="error",repeated
+        assert repeated["cursor"]==1,repeated
+        assert repeated["processed"]==1,repeated
+
     print("BG Wiki dump batch importer: PASS")
 
 
