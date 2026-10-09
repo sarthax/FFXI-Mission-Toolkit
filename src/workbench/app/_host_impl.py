@@ -5859,6 +5859,34 @@ def wiki_snapshot_download(source: str = "all"):
                         background=BackgroundTask(shutil.rmtree, str(directory), ignore_errors=True))
 
 
+@app.post("/wiki/snapshot/preview")
+async def wiki_snapshot_preview(file: UploadFile = File(...)):
+    """Read-only comparison; temporary upload is deleted after validation."""
+    from workbench.devtools.reference import wiki_snapshot
+    if not (file.filename or "").lower().endswith(".jsonl.gz"):
+        return JSONResponse({"error": "Choose a .jsonl.gz Wiki snapshot"}, status_code=400)
+    path = None
+    try:
+        with tempfile.NamedTemporaryFile(prefix="wiki_preview_", suffix=".jsonl.gz", delete=False) as target:
+            path = Path(target.name)
+            total = 0
+            while True:
+                chunk = await file.read(1024 * 1024)
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > 64 * 1024 * 1024:
+                    raise ValueError("Snapshot upload exceeds 64 MiB limit")
+                target.write(chunk)
+        return {"preview": wiki_snapshot.preview_snapshot(DB_PATH, path)}
+    except (ValueError, OSError, sqlite3.Error, EOFError, KeyError, TypeError, StopIteration) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    finally:
+        await file.close()
+        if path:
+            path.unlink(missing_ok=True)
+
+
 @app.post("/wiki/snapshot/import")
 async def wiki_snapshot_upload(request: Request, file: UploadFile = File(...)):
     """Validate a small local archive before importing; no arbitrary file paths."""
