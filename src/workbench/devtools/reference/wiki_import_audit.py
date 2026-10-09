@@ -71,14 +71,49 @@ def audit(con: sqlite3.Connection, *, sample_limit: int = 12) -> dict:
             "recovery_candidates": recovery_candidates}
 
 
+
+def preview_local_recovery(con: sqlite3.Connection, *, sample_limit: int = 12) -> list[dict]:
+    """Parse retained source without storing blocks or changing imported records."""
+    from workbench.devtools.reference.wiki_document import build_blocks
+    candidates=audit(con,sample_limit=sample_limit).get("recovery_candidates",[])
+    previews=[]
+    for page in candidates:
+        if page["recovery_action"]!="REPARSE_LOCAL_SOURCE":
+            continue
+        row=con.execute("""
+          SELECT source_format,raw_source FROM reference_wiki_documents
+          WHERE source_id=? AND page_id=?
+        """,(page["source"],page["page_id"])).fetchone()
+        if not row:
+            continue
+        source_format,raw_source=row
+        _,_,blocks=build_blocks({"page_id":page["page_id"]},
+                                 source_format=source_format,raw_source=raw_source)
+        counts={}
+        for block in blocks:
+            kind=block.get("block_type") or "unknown"
+            counts[kind]=counts.get(kind,0)+1
+        previews.append({"source":page["source"],"page_id":page["page_id"],
+                         "existing_legacy_blocks":page["legacy_blocks"],
+                         "preview_block_count":len(blocks),
+                         "preview_block_types":counts,
+                         "requires_confirmation":True,
+                         "applied":False})
+    return previews
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("db", type=Path, help="Existing imported Wiki SQLite database")
     parser.add_argument("--samples", type=int, default=12, help="Maximum example pages (0-100)")
+    parser.add_argument("--preview-local", action="store_true", help="Preview reparsing local retained source; never write")
     args = parser.parse_args()
     uri = f"file:{args.db.resolve().as_posix()}?mode=ro"
     with sqlite3.connect(uri, uri=True) as con:
-        print(json.dumps(audit(con, sample_limit=args.samples), ensure_ascii=False, indent=2))
+        result=audit(con, sample_limit=args.samples)
+        if args.preview_local:
+            result["local_recovery_previews"]=preview_local_recovery(con,sample_limit=args.samples)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

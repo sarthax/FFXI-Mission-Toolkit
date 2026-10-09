@@ -1,6 +1,6 @@
 """In-memory samples verify read-only Wiki imported-block coverage accounting."""
 import sqlite3
-from workbench.devtools.reference.wiki_import_audit import audit
+from workbench.devtools.reference.wiki_import_audit import audit, preview_local_recovery
 
 
 def main():
@@ -24,6 +24,12 @@ def main():
     recovered=audit(con)
     assert recovered["recovery_candidates"][0]["recovery_action"]=="REPARSE_LOCAL_SOURCE"
     assert recovered["recovery_candidates"][0]["source_format"]=="mediawiki"
+    preview=preview_local_recovery(con)
+    assert len(preview)==1,preview
+    assert preview[0]["page_id"]=="old"
+    assert preview[0]["preview_block_count"]>0
+    assert preview[0]["requires_confirmation"] is True and preview[0]["applied"] is False
+    assert con.execute("SELECT COUNT(*) FROM reference_wiki_blocks").fetchone()[0]==4
 
     assert len(report["samples"])==2
     assert report["samples"][0]["template_fields"]==1
