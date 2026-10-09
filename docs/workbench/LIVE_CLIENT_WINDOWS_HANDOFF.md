@@ -133,6 +133,34 @@ Verify excluded chat/opcodes, bounded-rate/drop reporting, source stop/unload,
 restart into a new file, and two-client isolation when available. Existing Capture
 import and decoder are the cloud analysis path; packet writes are not enabled.
 
+### Zoning recovery test package — 0.4.0 experimental
+
+Replace all four Ashita Lua files together after `/wblive stop` and
+`/addon unload workbench_live`; use the Ashita entry point as `workbench_live.lua`.
+Reload `/addon load workbench_live` and start only after the player is fully available:
+
+```text
+/wblive start test-d inventory-zoning
+/wblive status
+```
+
+Walk through one ordinary zone boundary. Preserve messages and the JSONL. Expected
+successful evidence is both zones in one file. A player/entity name mismatch pauses
+rather than records; at most one retry/second, a 30-second deadline and two coherent
+original-identity samples in the same zone gate resumption. Gaps remain explicit.
+Default/`inventory` modes do not enable recovery. Inactive party, changed identity,
+invalid/unsupported API data, backwards clock, storage errors or deadline stop safely.
+If Not exporting after loading, preserve the error and explicitly start a new file.
+Do not restart while Paused or relax checks for slow zoning.
+
+Then log out normally; observed inactivity must stop export. Relogin does not restart
+stopped exports; start `test-e inventory-zoning` only after stable login. Return all
+files, exact pause/resume/stop messages, zone/action sequence and loading duration.
+Include installed addon and loaded framework/game versions. Packet streams stop on
+pause and do not auto-resume; packet tests require a fresh telemetry recording.
+Cloud tests pass, but zoning/relogin behavior and unobserved lifecycle boundaries
+remain Windows verification requirements. No game commands or writes are added.
+
 ### Offline packet/telemetry evidence candidates
 
 After stopping both exports, add `--packet-observations "C:\path\to\packets-telemetry-....jsonl"`

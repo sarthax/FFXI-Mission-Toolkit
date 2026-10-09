@@ -257,6 +257,20 @@ Classifications apply to individual functions, not entire providers: **runtime v
 | Calibrated 2D/3D/Zone Editor/navmesh — partial | Raw traces/projection, placement-candidate contracts, existing Zone Editor writer and mesh tools | Raw coordinates only | Raw getters do not establish transform | None | Verified transforms, explicit selected-server/instance previews; reuse existing editor audit path | Multiple landmarks/elevation/headings and actual selected mesh |
 | Warp/nudge/speed/elevation/collision controls — native required; operationally unsupported | Action enum and fail-closed authorization/version/write-support gate only | No game writes | No supported control API proven in audit | No writable adapter/profile/audit/restore implementation | Preserve separate control boundary; no Clipper/Tako code or offsets adopted | Action-specific authorized compatibility/readback/restoration tests |
 
+### Opt-in transition recovery test slice
+
+Ashita 0.4.0 adds `inventory-zoning`: a private tagged player-entity/name mismatch
+can pause telemetry for up to 30 seconds, sampled at most once/second. Original
+identity and same-zone agreement over two successful samples gate resume. Other
+errors, observed inactive party, identity changes, clock/storage failure and timeout
+remain fatal. Existing immediate-stop modes are retained. No rejected/interpolated
+frames, new schemas, offsets, providers or game writes; packet observation stops
+when telemetry context is paused. Synthetic regression verifies behavior; actual
+zoning, inactive party during loading, logout/relogin and loaded compatibility remain
+unverified. This is not a claim that every transition can recover or that unobserved
+logout boundaries can be detected. The supplied single-zone runtime files and identity
+mismatch screenshot motivated this bounded, explicitly enabled Windows test package.
+
 ### Provider decision and next sequence
 
 Keep telemetry v1, decoder, registry, feeds, session generations and recorded UI authoritative. The existing ObservationSource/TelemetryProducer and decoded-frame router are already provider-neutral. Ashita is the preferred observation provider; Windower remains an offline-tested alternative and a future native provider may emit the same contract. LiveClientAdapter/validate_action remain the separate control gate foundation, not evidence of an implemented control adapter. No central routes, navigation, Capture database or unrelated schemas need changing for entity expansion.
@@ -304,6 +318,14 @@ these were not an initial load failure. The guard requires an available player e
 and agreement between its name and the party name. The screenshot identifies the
 failed guard, not whether transient zoning data or another discrepancy caused it. Selecting targets is not evidence of target-role
 export because neither file contains target_roles. No concurrent-client test occurred.
+
+Capture C (`telemetry-test-c-1791515026-1.jsonl`, original SHA-256
+`2abde0db01722ed3dcf40b683c88ba45c1882d8e53dab20a44954fbe6de5e888`)
+adds 99 frames/98 seconds in Zeruhn Mines (172): 32 entities and declared truncation
+in every frame, 3,168 nonzero reported IDs and 40 distinct slot/ID identities. This
+establishes supplied output at the cap, not full census or verified ID semantics.
+Reported warp/zoning actions have no recorded destination-zone frames; continuity
+remains pending. An anonymized capped runtime fixture now supplements A/B coverage.
 
 Regression fixtures anonymize client/character/entity names and shift timestamps while
 preserving cadence, coordinates, indexes, reported IDs, duplicate-name relationships and

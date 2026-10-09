@@ -252,3 +252,22 @@ The test-B screenshot confirms the addon was already loaded, export started, and
 before later-zone messages. “Addon is already loaded” reflects a duplicate load
 attempt, not failure of the active exporter. The identity guard must remain intact;
 the underlying cause needs a stable post-zone retry and observed identity evidence.
+
+### Opt-in bounded zoning recovery — 0.4.0 experimental
+
+`/wblive start <unique-id> inventory-zoning` enables a narrow recovery experiment.
+Default and `inventory` modes retain immediate-stop behavior. Only a tagged local
+player-entity/name mismatch pauses this mode; rejected frames are never appended.
+Retries occur at most once per second for 30 seconds from the initial failure.
+Two coherent original-identity samples in the same zone resume the same recording,
+with a timestamp gap. Observed inactivity/logout, changed identity, other API/numeric
+failures, backwards clock, storage failure and timeout stop it. `/wblive status`
+distinguishes Paused, Exporting and Not exporting. Startup build-verification text
+is explicitly informational. Packet exports stop when paused and require a fresh
+telemetry export before restarting; they never auto-resume against stale context.
+
+Synthetic tests establish state handling only. An inactive party during zoning also
+stops safely; the current APIs cannot distinguish every loading/logout condition,
+and an unobserved logout boundary cannot be ruled out. Do not treat this mode as
+verified continuous capture or compatibility. Use the zoning/logout procedure in
+[Windows handoff](../../docs/workbench/LIVE_CLIENT_WINDOWS_HANDOFF.md).

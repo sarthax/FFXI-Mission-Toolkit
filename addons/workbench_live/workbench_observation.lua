@@ -1,6 +1,10 @@
 -- Copyright (c) FFXI Mission Toolkit contributors. MIT license (repository LICENSE).
 -- Pure observation mapping and JSONL encoding; no process handles or game writes.
 local M = {}
+local transition_tag = {}
+function M.is_transition_error(value)
+    return type(value) == 'table' and value.tag == transition_tag
+end
 
 local function number(value)
     assert(type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge,
@@ -82,7 +86,9 @@ function M.capture_ashita(core, get_entity, client_id, observed_at, inventory)
                 y = number(entity:GetLocalPositionY(slot)), z = number(entity:GetLocalPositionZ(slot)),
                 heading = number(entity:GetHeading(slot))}
     end
-    assert(get_entity(index) ~= nil and entity:GetName(index) == name, 'player identity mismatch')
+    if get_entity(index) == nil or entity:GetName(index) ~= name then
+        error(setmetatable({tag=transition_tag}, {__tostring=function() return 'player identity mismatch' end}), 0)
+    end
     local frame = {schema_version = 1, client_id = client_id,
         client_version = 'unverified-ashita-v4-api', character = name,
         adapter = 'ashita-v4-api-experimental', observed_at = observed_at,
