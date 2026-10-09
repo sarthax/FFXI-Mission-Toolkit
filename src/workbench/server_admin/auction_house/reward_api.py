@@ -79,6 +79,7 @@ def schedule_reward(payload: dict = Body(...)):
             environment=environment,
             # Freeze all/account membership rather than re-evaluating recipients later.
             recipient_mode="selected", character_ids=frozen_ids, items=items,
+            confirmation=str(payload.get("confirmation") or ""),
         ))
     except (RewardTemplateError, LegacyTestExecutionBlocked, ValueError, TypeError) as exc:
         raise HTTPException(status_code=409, detail=str(exc))
