@@ -106,7 +106,7 @@
   <section class="ki-inspector-section" aria-label="Lua source references">
     <h4>Lua dependencies</h4>
     <label for="ki-lineage">Source lineage</label>
-    <select id="ki-lineage"><option value="lsb">LSB</option>{% if backport_enabled() %}<option value="topaz">Topaz</option>{% endif %}</select>
+    <select id="ki-lineage"><option value="lsb">LSB</option>{% if backport_enabled() %}<option value="topaz">Topaz</option>{% endif %}<option value="dsp">DSP (verified source)</option></select>
     <span id="ki-lua-status" class="muted" role="status"></span>
     <label for="ki-lua-operation">Operation</label>
     <select id="ki-lua-operation"><option value="all">All</option><option value="require">Requires</option><option value="grant">Grants</option><option value="remove">Removes</option></select>
