@@ -131,7 +131,27 @@ def get_attempt(replay_id: str, *, path: Path | str = DEFAULT_PATH) -> dict[str,
 
 
 def list_attempts(*, path: Path | str = DEFAULT_PATH, limit=100) -> list[dict[str, Any]]:
+    """Bounded summary query; do not inflate the list with 5,000 recipient rows per campaign."""
     with _open(path) as db:
-        rows = db.execute("SELECT replay_id FROM ah_reward_attempts ORDER BY created_utc DESC LIMIT ?",
-                          (max(1, min(int(limit), 500)),)).fetchall()
-    return [get_attempt(r["replay_id"], path=path) for r in rows]
+        rows = db.execute(
+            "SELECT a.replay_id,a.created_utc,a.status,"
+            "COUNT(r.char_id) AS recipients,"
+            "SUM(CASE WHEN r.state='committed' THEN 1 ELSE 0 END) AS committed,"
+            "SUM(CASE WHEN r.state='failed' THEN 1 ELSE 0 END) AS failed,"
+            "SUM(CASE WHEN r.state IN ('pending','in_flight') THEN 1 ELSE 0 END) AS unknown "
+            "FROM ah_reward_attempts a LEFT JOIN ah_reward_attempt_recipients r "
+            "ON a.replay_id=r.replay_id GROUP BY a.replay_id "
+            "ORDER BY a.created_utc DESC LIMIT ?",
+            (max(1, min(int(limit), 500)),),
+        ).fetchall()
+    return [
+        {
+            "replay_id": r["replay_id"], "created_utc": r["created_utc"],
+            "status": r["status"], "recipients": int(r["recipients"] or 0),
+            "committed": int(r["committed"] or 0), "failed": int(r["failed"] or 0),
+            "unknown": int(r["unknown"] or 0),
+            "reconciliation_required": int(r["unknown"] or 0) > 0
+                or r["status"] == "reconciliation_required",
+        }
+        for r in rows
+    ]
