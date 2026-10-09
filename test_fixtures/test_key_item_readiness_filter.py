@@ -29,3 +29,14 @@ def test_key_items_search_supports_exact_numeric_ids():
     assert '(name LIKE ? OR keyitem_id = ?)' in section
     assert '(*args, KEYITEMS_PAGE_SIZE, offset)' in section
     assert 'predicate + " ORDER BY name"' in section
+
+
+def test_catalog_browses_when_query_is_empty():
+    host = Path("src/workbench/app/_host_impl.py").read_text(encoding="utf-8")
+    route = host.split('def keyitems(request: Request, q:', 1)[1].split('@app.get("/keyitems/lua-references.json")', 1)[0]
+    assert "q = q.strip()" in route
+    assert 'args = (f"%{q}%", numeric_id)' in route
+    assert "if q:" not in route
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert "Browse all key items" in page
+    assert "{% if not q %}" not in page
