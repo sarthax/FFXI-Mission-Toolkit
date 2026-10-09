@@ -23,6 +23,12 @@ def main():
     assert 'proof.title|urlencode' in ui
     assert 'target="_blank" rel="noopener"' in ui
     assert 'Read-only overview' in ui
+    assert 'if tab == "recovery":' in host
+    assert 'preview_local_recovery(con, sample_limit=12)' in host
+    assert '"recovery_preview": recovery_preview' in host
+    assert "tab=recovery" in ui
+    assert "Local Wiki structure recovery — preview only" in ui
+    assert "entry.block_type_deltas" in ui
     print("Wiki topic review queue UI regression: PASS")
 
 if __name__=="__main__":
