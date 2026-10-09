@@ -102,6 +102,20 @@ def test_file_bound_fails_closed(tmp_path):
     assert 'Packets inactive' in lua.globals().messages[len(lua.globals().messages)]
 
 
+def test_packet_status_retains_stop_reason_and_clears_on_restart(tmp_path):
+    lua = runtime(tmp_path); start(lua); event(lua)
+    lua.execute('clock=106; events.packet_in(packet); command("/wblive packets status")')
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'Packets inactive.' in messages[-1]
+    assert 'telemetry context stale' in messages[-1]
+    lua.execute('events.d3d_present(); command("/wblive start another")')
+    # Existing telemetry must be explicitly stopped before starting a new recording.
+    lua.execute('command("/wblive stop"); command("/wblive start another"); command("/wblive packets start event_emote"); command("/wblive packets status")')
+    messages = [lua.globals().messages[i] for i in range(1, len(lua.globals().messages) + 1)]
+    assert 'Packets active' in messages[-1]
+    assert 'Last stop:' not in messages[-1]
+
+
 def test_packet_start_rejects_stale_telemetry_without_creating_file(tmp_path):
     lua = runtime(tmp_path)
     lua.execute('command("/wblive start packet-a"); clock=106; command("/wblive packets start event_emote")')

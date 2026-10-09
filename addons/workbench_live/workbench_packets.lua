@@ -12,13 +12,17 @@ local function quote(value, limit)
 end
 function M.new(options)
     local handle, source, sequence, bytes, second, count, dropped = nil, nil, 0, 0, nil, 0, 0
+    local last_stop_reason
     -- Only the pinned example's emote IDs and Toolkit's existing event opcode.
     -- No chat/login/lobby/all-opcode profile or packet payload interpretation.
     local profile = {incoming={[0x034]=true,[0x05A]=true}, outgoing={[0x05D]=true}}
     local function stop(reason)
         if handle then pcall(function() handle:close() end) end
         handle, source = nil, nil
-        if reason then options.message(reason) end
+        if reason then
+            last_stop_reason = reason
+            options.message(reason)
+        end
     end
     local function context()
         local value = assert(options.context(), 'start telemetry before packet observation')
@@ -66,7 +70,11 @@ function M.new(options)
     end
     local function command(action, mode)
         if action == 'stop' then stop('Packet export stopped.'); return end
-        if action == 'status' then options.message(handle and ('Packets active; '..sequence..' observations, '..dropped..' rate-limit drops (unverified).') or 'Packets inactive.'); return end
+        if action == 'status' then
+            options.message(handle and ('Packets active; '..sequence..' observations, '..dropped..' rate-limit drops (unverified).')
+                or ('Packets inactive.' .. (last_stop_reason and (' Last stop: '..last_stop_reason) or '')))
+            return
+        end
         if action ~= 'start' or mode ~= 'event_emote' then options.message('Use packets start event_emote, packets stop or packets status.'); return end
         if handle then options.message('Stop packet observation before starting another.'); return end
         local ok, err = pcall(function()
@@ -75,6 +83,7 @@ function M.new(options)
             assert(not options.exists(path), 'packet file already exists; start a fresh telemetry recording')
             handle = assert(io.open(path, 'wb'))
             source, sequence, bytes, second, count, dropped = current, 0, 0, nil, 0, 0
+            last_stop_reason = nil
             options.message('Passive packet observations: '..path..'. Hook bytes are not verified wire traffic.')
         end)
         if not ok then stop('Unable to start packets: '..tostring(err)) end
