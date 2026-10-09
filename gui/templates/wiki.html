@@ -96,16 +96,17 @@
 
 {% if tab == 'recovery' %}
 <section class="wiki-section">
-  <h3>Local Wiki structure recovery — preview only</h3>
-  <p class="muted">These are retained-source previews, not applied changes. No scraping or database modifications occur here. The guarded single-page recovery command remains separate.</p>
+  <h3>Local Wiki structure recovery — guarded one-page apply</h3>
+  <p class="muted">These are retained-source previews, not applied changes. No scraping or database modifications occur here. Applying a page requires explicit confirmation and revalidates its source hash and legacy-only status before committing.</p>
   <div class="wiki-actions dense-toolbar">
     <span class="muted">{{ recovery_total }} legacy-only candidate pages · recovery page {{ recovery_page }} · up to 12 candidates per page</span>
     {% if recovery_page > 1 %}<a class="chip" href="/wiki?source={{ source|urlencode }}&tab=recovery&recovery_page={{ recovery_page - 1 }}">← Previous 12</a>{% endif %}
     {% if recovery_has_more %}<a class="chip" href="/wiki?source={{ source|urlencode }}&tab=recovery&recovery_page={{ recovery_page + 1 }}">Next 12 →</a>{% endif %}
   </div>
+  {% if recovery_result == 'applied' %}<div class="notice">One Wiki page recovered and validated. The candidate list has been refreshed.</div>{% elif recovery_result == 'failed' %}<div class="warn">Recovery rejected; refresh this page and review the source before retrying.</div>{% endif %}
   {% if recovery_preview %}
   <div class="table-wrap"><table>
-    <thead><tr><th>Source / page ID</th><th>Existing blocks</th><th>Proposed blocks</th><th>Block-type changes</th><th>Source locators</th></tr></thead>
+    <thead><tr><th>Source / page ID</th><th>Existing blocks</th><th>Proposed blocks</th><th>Block-type changes</th><th>Source locators</th><th>Guarded apply</th></tr></thead>
     <tbody>
     {% for entry in recovery_preview %}
     <tr>
@@ -114,6 +115,14 @@
       <td>{{ entry.proposed_structure.blocks }}</td>
       <td><pre>{{ entry.block_type_deltas }}</pre></td>
       <td>{{ entry.existing_structure.with_source_locator }} → {{ entry.proposed_structure.with_source_locator }}</td>
+      <td><form method="post" action="/wiki/recovery/apply">
+        <input type="hidden" name="source" value="{{ entry.source }}">
+        <input type="hidden" name="page_id" value="{{ entry.page_id }}">
+        <input type="hidden" name="source_hash" value="{{ entry.source_hash }}">
+        <input type="hidden" name="recovery_page" value="{{ recovery_page }}">
+        <label><input type="checkbox" name="confirm" value="yes" required> Confirm one-page recovery</label>
+        <button type="submit">Apply this page</button>
+      </form></td>
     </tr>
     {% endfor %}
     </tbody>
