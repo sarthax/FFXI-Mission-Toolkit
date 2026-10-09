@@ -87,6 +87,15 @@ def officer_validation(payload: dict = Body(...)):
     return _guard(go)
 
 
+@router.post("/domains/voidwatch/officer-zone-validation")
+def officer_zone_validation(payload: dict = Body(...)):
+    def go():
+        rec = Of.save_zone_validation(str(payload.get("id", "")), str(payload.get("zone", "")), payload.get("areas") or {}, str(payload.get("note", "")), str(payload.get("by", "")))
+        rec["status"] = Of.zone_status(rec)
+        return rec
+    return _guard(go)
+
+
 @router.get("/domains/voidwatch/drops.json")
 def drops_json():
     def go():
