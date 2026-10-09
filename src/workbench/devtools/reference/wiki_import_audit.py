@@ -96,7 +96,7 @@ def preview_local_recovery(con: sqlite3.Connection, *, sample_limit: int = 12) -
             kind=block.get("block_type") or "unknown"
             counts[kind]=counts.get(kind,0)+1
         current=con.execute("""SELECT block_type,source_locator FROM reference_wiki_blocks
-          WHERE source_id=? AND page_id=? ORDER BY ordinal""",
+          WHERE source_id=? AND page_id=?""",
           (page["source"],page["page_id"])).fetchall()
         existing=block_structure_summary([
             {"block_type":kind,"source_locator":locator} for kind,locator in current
