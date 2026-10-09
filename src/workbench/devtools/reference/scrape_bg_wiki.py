@@ -37,6 +37,11 @@ def _page_to_row(page: dict) -> dict | None:
     rev = revisions[0]
     title = page["title"]
     categories = [c["title"].removeprefix("Category:") for c in (page.get("categories") or [])]
+    wikitext = rev.get("content")
+    if wikitext is None:
+        wikitext = (rev.get("slots") or {}).get("main", {}).get("content")
+    if wikitext is None:
+        raise RuntimeError(f"BG Wiki revision content unavailable for {title}: check API slot/content permissions")
     return {
         "title": title,
         "pageid": page["pageid"],
@@ -45,7 +50,7 @@ def _page_to_row(page: dict) -> dict | None:
         "revid": rev.get("revid"),
         "timestamp": rev.get("timestamp"),
         "categories": categories,
-        "wikitext": rev.get("content", ""),
+        "wikitext": wikitext,
     }
 
 
@@ -60,6 +65,7 @@ def fetch_all_pages(limit: int | None = None):
             "gaplimit": BATCH_SIZE,
             "prop": "revisions|categories",
             "rvprop": "content|timestamp|ids",
+            "rvslots": "main",
             "formatversion": 2,
             "format": "json",
         }
@@ -88,6 +94,7 @@ def fetch_pages_by_title(titles: list[str]):
             "titles": "|".join(chunk),
             "prop": "revisions|categories",
             "rvprop": "content|timestamp|ids",
+            "rvslots": "main",
             "formatversion": 2,
             "format": "json",
         })
