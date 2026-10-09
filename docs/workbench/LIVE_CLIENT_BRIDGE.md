@@ -497,3 +497,15 @@ joins through existing services, keeping native controls and calibration separat
 **Milestone for original Tako-style goal:** An authorized user selects a destination in the Toolkit, issues Move, observes the **actual running character** approach it with live status and stop/recovery, and can record the resulting interaction into the existing Capture research pipeline. Report each capability separately as contract, synthetic-tested, Windows-tested or verified supported; do not equate a replay or matching packet timestamp with successful control.
 
 **Parallel-work boundaries:** Do not displace current Wiki, Auction House or unrelated refactor work. Implement in isolated PRs, CI green before merging; controls remain disabled for unsupported clients or unverified sessions.
+
+
+### 2026-10-09 bridge mailbox foundation
+
+The transport-neutral `bridge_protocol.py` and bounded `bridge_mailbox.py`
+define isolated client/session/generation envelopes, prioritized control,
+telemetry and capture queues, and explicit capture overflow accounting.
+A reject-only simulated client verifies command request/response matching without
+enabling writes. **These are in-memory components, not a localhost socket or
+Ashita-connected bidirectional bridge.** Next implement a local authenticated
+endpoint and client-side adapter, retaining independent queue budgets, safe
+stop commands, heartbeat/disconnect handling and recording provenance.
