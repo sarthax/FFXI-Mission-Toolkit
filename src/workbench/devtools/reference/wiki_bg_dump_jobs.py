@@ -25,7 +25,7 @@ _DDL = """CREATE TABLE IF NOT EXISTS wiki_bg_dump_jobs(
   dump_signature TEXT NOT NULL, page_limit INTEGER NOT NULL,
   cursor INTEGER NOT NULL DEFAULT 0, processed INTEGER NOT NULL DEFAULT 0,
   imported INTEGER NOT NULL DEFAULT 0, skipped INTEGER NOT NULL DEFAULT 0,
-  failed INTEGER NOT NULL DEFAULT 0, last_error TEXT,
+  failed INTEGER NOT NULL DEFAULT 0, auto_continue INTEGER NOT NULL DEFAULT 0, last_error TEXT,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"""
 
 
@@ -33,6 +33,9 @@ def _db(db):
     con = sqlite3.connect(str(db), timeout=30)
     con.execute("PRAGMA busy_timeout=30000")
     con.execute(_DDL)
+    columns = {row[1] for row in con.execute("PRAGMA table_info(wiki_bg_dump_jobs)")}
+    if "auto_continue" not in columns:
+        con.execute("ALTER TABLE wiki_bg_dump_jobs ADD COLUMN auto_continue INTEGER NOT NULL DEFAULT 0")
     con.commit()
     return con
 
@@ -67,7 +70,7 @@ def status(db):
     return [dict(zip(names, row)) for row in rows]
 
 
-def start(db, dump_path, limit=50):
+def start(db, dump_path, limit=50, auto_continue=False):
     if limit not in (50, 250):
         raise ValueError("Batch size must be 50 or 250")
     path = Path(dump_path).resolve()
@@ -80,8 +83,8 @@ def start(db, dump_path, limit=50):
         job_id = uuid.uuid4().hex[:12]
         with _db(db) as con:
             con.execute("""INSERT INTO wiki_bg_dump_jobs
-                (id,state,dump_path,dump_signature,page_limit) VALUES(?,?,?,?,?)""",
-                (job_id,"queued",str(path),signature,limit))
+                (id,state,dump_path,dump_signature,page_limit,auto_continue) VALUES(?,?,?,?,?,?)""",
+                (job_id,"queued",str(path),signature,limit,int(bool(auto_continue))))
         _RUNNING.add(job_id)
     threading.Thread(target=_worker,args=(str(db),job_id),daemon=True).start()
     return job_id
@@ -137,8 +140,8 @@ def _import_row(db, row):
 def _worker(db, job_id):
     try:
         with _db(db) as con:
-            path_str,signature,limit,cursor,processed=con.execute(
-                """SELECT dump_path,dump_signature,page_limit,cursor,processed
+            path_str,signature,limit,cursor,processed,auto_continue=con.execute(
+                """SELECT dump_path,dump_signature,page_limit,cursor,processed,auto_continue
                 FROM wiki_bg_dump_jobs WHERE id=?""",(job_id,)).fetchone()
         path=Path(path_str)
         if _signature(path)!=signature:
@@ -153,7 +156,7 @@ def _worker(db, job_id):
                 if state=="pausing":
                     _update(db,job_id,state="paused")
                     return
-                if processed>=limit:
+                if not auto_continue and processed>=limit:
                     _update(db,job_id,state="completed")
                     return
                 # Never progress past a malformed line without recording the failure.
