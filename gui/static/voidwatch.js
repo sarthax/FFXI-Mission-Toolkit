@@ -210,8 +210,6 @@ document.addEventListener('DOMContentLoaded',function(){
  $('vw-close').addEventListener('click',function(){$('vw-detail').hidden=true;});
  load();
 });
-})();
-
 function npcFix(){
  var el=$('vw-npcfix');if(!el)return;
  function post(b){return fetch('/domains/voidwatch/npcfix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.detail||r.status);return j;});});}
@@ -236,3 +234,4 @@ function npcFix(){
   gob.onclick=function(){apply(res,gob);};
  }).catch(function(e){el.innerHTML='<p class="muted">NPC fixes unavailable: '+esc(e.message)+'</p>';});
 }
+})();
