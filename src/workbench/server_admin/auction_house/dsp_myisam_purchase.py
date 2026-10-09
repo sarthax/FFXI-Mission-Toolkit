@@ -21,6 +21,7 @@ from workbench.editors.character.session_state import detect_online_state
 from .dsp_myisam_listing import _MYISAM_FLAG, dsp_myisam_test_writes_enabled
 from .legacy_test_executor import LegacyTestExecutionBlocked, evaluate_legacy_test_write_gate
 from .recovery_guidance import myisam_recovery_guidance
+from .recovery_journal import begin_case, set_case_status
 from .player_purchase import _GIL_ITEM_ID, _delivery_columns, probe_player_purchase_engines
 from .write_probe import probe_write_readiness
 
@@ -117,6 +118,7 @@ def execute_dsp_myisam_test_player_purchase(
 
     connection = service.connection
     cursor = connection.cursor()
+    journal_case_id: str | None = None
     gil_before: int | None = None
     gil_debited = False
     item_inserted = False
@@ -172,6 +174,11 @@ def execute_dsp_myisam_test_player_purchase(
         cursor.execute(settlement_sql, (seller_id, item_id, asking_price))
         settlement_before = int((cursor.fetchone() or (0,))[0] or 0)
 
+        journal_case_id = begin_case(operation="player_purchase", environment=environment, evidence={
+            "auction_id": auction_id, "buyer_id": buyer_id, "seller_id": seller_id,
+            "item_id": item_id, "item_quantity": quantity, "inventory_slot": free_slot,
+            "buyer_gil_before": gil_before, "asking_price": asking_price,
+        })
         # Claim the AH row first (InnoDB, still uncommitted); the buy trigger queues seller settlement.
         cursor.execute(
             f"UPDATE `auction_house` SET `{a['buyer_name']}`=%s,`{a['sale_price']}`=%s,`{a['sold_at']}`=%s "
@@ -226,6 +233,8 @@ def execute_dsp_myisam_test_player_purchase(
 
         connection.commit()
         in_txn = False
+        if journal_case_id:
+            set_case_status(journal_case_id, "completed_non_atomic")
         return {
             "status": "committed_non_atomic",
             "operation": "player_purchase",
@@ -271,6 +280,16 @@ def execute_dsp_myisam_test_player_purchase(
                 )
         except Exception:
             compensation_ok = False
+        if journal_case_id:
+            try:
+                set_case_status(
+                    journal_case_id,
+                    "compensated" if compensation_ok else "recovery_required",
+                    details={"auction_id": auction_id, "compensation_ok": compensation_ok,
+                             "error": str(original_exc)[:500]},
+                )
+            except Exception:
+                pass
         if not compensation_ok:
             raise LegacyTestExecutionBlocked(
                 f"DSP MyISAM purchase failed and automatic compensation also failed; inspect buyer {buyer_id} "
