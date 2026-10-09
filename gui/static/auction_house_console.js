@@ -424,7 +424,7 @@
   const ibItemRow = r => {
     const id = Number(r.item_id ?? r.id), name = String(r.name || r.item_name || ('Item #' + id));
     return '<img src="' + ibIcon(id) + '" width="32" height="32" loading="lazy" alt="" onerror="this.style.display=\'none\'"> ' +
-      '<span><strong>' + esc(nm(name)) + '</strong> <small>#' + id + ' · ' + esc(r.category_path || 'Uncategorised') +
+      '<span><strong>' + esc(nm(name)) + '</strong> <small>#' + id + ' · ' + esc(r.category_path || (r.item_type == null ? 'Server catalog' : 'Type '+r.item_type)) +
       (r.stack_size > 1 ? ' · stacks to ' + Number(r.stack_size) : '') + '</small></span>';
   };
   const ibAddItem = r => {
@@ -439,7 +439,7 @@
     const q = $('ibItemQ').value.trim(), version = ++ibSearchVersion;
     if (q.length < 2 && !/^\d+$/.test(q)) { $('ibSug').hidden = true; return; }
     try {
-      const data = await req('/auction-house/console/item-search.json?q=' + encodeURIComponent(q) + '&limit=40');
+      const data = await req('/auction-house/console/bundle-items.json?q=' + encodeURIComponent(q) + '&limit=40');
       if (version !== ibSearchVersion) return;
       ibResults = data.rows || [];
       $('ibSug').innerHTML = ibResults.map((r,i) =>
@@ -469,7 +469,7 @@
     if (category) params.set('category_id', category);
     $('ibItemCount').textContent = 'Loading matching items…';
     try {
-      const data = await req('/auction-house/console/item-search.json?' + params);
+      const data = await req((category ? '/auction-house/console/item-search.json?' : '/auction-house/console/bundle-items.json?') + params);
       if (version !== ibBrowseVersion) return;
       ibBrowseRows = data.rows || [];
       $('ibItemCount').textContent = ibBrowseRows.length + ' shown (up to 100); refine search to find more.';
@@ -510,7 +510,7 @@
   $('ibTpl').addEventListener('change', async () => {
     const t = state.tpls.find(x => x.template_id === $('ibTpl').value); if (!t) return;
     $('ibName').value = t.name; state.bundle = t.items.map(i => ({item_id: i.item_id, name: '#' + i.item_id, quantity: i.quantity})); drawBundle();
-    state.bundle.forEach(async b => { try { const d = await req('/auction-house/console/item-search.json?q=' + b.item_id); const r = (d.rows || []).find(x => (Array.isArray(x) ? x[0] : (x.item_id ?? x.id)) === b.item_id); if (r) { b.name = Array.isArray(r) ? r[1] : (r.name || r.item_name); drawBundle(); } } catch (e) {} });
+    state.bundle.forEach(async b => { try { const d = await req('/auction-house/console/bundle-items.json?q=' + b.item_id); const r = (d.rows || []).find(x => (Array.isArray(x) ? x[0] : (x.item_id ?? x.id)) === b.item_id); if (r) { b.name = Array.isArray(r) ? r[1] : (r.name || r.item_name); drawBundle(); } } catch (e) {} });
   });
   const bundleItems = () => state.bundle.map(b => ({item_id: b.item_id, quantity: b.quantity}));
   $('ibSave').addEventListener('click', async () => {
