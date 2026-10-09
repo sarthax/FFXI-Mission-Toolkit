@@ -161,8 +161,11 @@ def _worker(db,ident):
                         if _in_subtree(linked, seed) and linked not in seen and linked not in queue:
                             queue.append(linked)
             except urllib.error.HTTPError as exc:
-                # Explicit rate limits/challenges require manual resume, not bypass.
-                _update(db,ident,state="error",last_error=f"{title}: HTTP {exc.code}")
+                # Keep the current page queued and report failed attempts.
+                # Challenges/rate limits always require explicit manual resume.
+                failed+=1
+                _update(db,ident,state="error",failed=failed,
+                        last_error=f"{title}: HTTP {exc.code}"[:400])
                 return
             except Exception as exc:
                 failed+=1
