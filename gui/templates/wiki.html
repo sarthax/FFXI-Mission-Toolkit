@@ -89,6 +89,11 @@
 <section class="wiki-section">
   <h3>Local Wiki structure recovery — preview only</h3>
   <p class="muted">These are retained-source previews, not applied changes. No scraping or database modifications occur here. The guarded single-page recovery command remains separate.</p>
+  <div class="wiki-actions dense-toolbar">
+    <span class="muted">{{ recovery_total }} legacy-only candidate pages · recovery page {{ recovery_page }} · up to 12 candidates per page</span>
+    {% if recovery_page > 1 %}<a class="chip" href="/wiki?source={{ source|urlencode }}&tab=recovery&recovery_page={{ recovery_page - 1 }}">← Previous 12</a>{% endif %}
+    {% if recovery_has_more %}<a class="chip" href="/wiki?source={{ source|urlencode }}&tab=recovery&recovery_page={{ recovery_page + 1 }}">Next 12 →</a>{% endif %}
+  </div>
   {% if recovery_preview %}
   <div class="table-wrap"><table>
     <thead><tr><th>Source / page ID</th><th>Existing blocks</th><th>Proposed blocks</th><th>Block-type changes</th><th>Source locators</th></tr></thead>
