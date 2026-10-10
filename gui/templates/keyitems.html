@@ -148,11 +148,11 @@
     </td>
     <td class="mono">
       {% if rd.status == "clean" %}
-        {{ "tpz.ki" if primary_dsp else "xi.keyItem" }}.{{ rd.id_match }}
+        {% if primary_dsp %}{{ rd.id_match }}{% else %}xi.keyItem.{{ rd.id_match }}{% endif %}
       {% elif rd.status == "drifted" %}
-        {{ "tpz.ki" if primary_dsp else "xi.keyItem" }}.{{ rd.name_match[1] }} <span class="muted">(real id {{ rd.name_match[0] }}, not {{ r.keyitem_id }})</span>
+        {% if primary_dsp %}{{ rd.name_match[1] }}{% else %}xi.keyItem.{{ rd.name_match[1] }}{% endif %} <span class="muted">(real id {{ rd.name_match[0] }}, not {{ r.keyitem_id }})</span>
       {% elif rd.status == "wrong_name" %}
-        {{ "tpz.ki" if primary_dsp else "xi.keyItem" }}.{{ rd.id_match }} <span class="muted">(this ID maps to a different enum in the selected source)</span>
+        {% if primary_dsp %}{{ rd.id_match }}{% else %}xi.keyItem.{{ rd.id_match }}{% endif %} <span class="muted">(this ID maps to a different enum in the selected source)</span>
       {% else %}
         <span class="muted">{{ "DSP enum unavailable or not matched" if primary_dsp else "not implemented" }}</span>
       {% endif %}
