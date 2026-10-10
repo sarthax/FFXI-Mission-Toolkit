@@ -84,3 +84,17 @@ def test_new_authenticated_generation_replaces_old_feed():
         run_batch(receiver,address,following,new_token,[frame(following,1,50)],now=13)
         assert receiver.feed("ashita-1").snapshot().observed_at == 50
         assert receiver.feed("ashita-1").supports_writes is False
+
+
+def test_telemetry_queue_is_drained_so_feed_survives_more_than_queue_limit():
+    """Regression: undrained 128-frame telemetry queue raised BufferError and froze the live feed."""
+    peers = LocalPeerRegistry(ttl_seconds=3600)
+    identity = PeerIdentity("ashita-1","run-1","generation-1")
+    token = peers.issue(identity, now=10)
+    with BridgeListener(peers) as listener:
+        receiver = BridgeLiveFeeds(listener)
+        address = listener._server.getsockname()
+        for sequence in range(1, 301):
+            run_batch(receiver, address, identity, token, [frame(identity, sequence, 100 + sequence)])
+        assert receiver.feed("ashita-1").snapshot().position.x == 300
+        assert listener.mailbox("ashita-1").pending(BridgeLane.TELEMETRY) == 0
