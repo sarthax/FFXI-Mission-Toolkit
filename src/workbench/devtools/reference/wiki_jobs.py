@@ -326,6 +326,20 @@ def translate_cached(con: sqlite3.Connection, source_id: str, page_id: str, page
                     (source_id, page_id, page_hash)).fetchone()
     if r:
         return {"status": "OK", "text": r[0], "engine": r[1], "created_at": r[2]}
+    # Explicit local Ollama opt-in; preserve the legacy command translator as fallback.
+    from . import wiki_ollama_translate
+    model = wiki_ollama_translate.configured_model()
+    if model:
+        try:
+            result = wiki_ollama_translate.translate(text, model=model)
+        except Exception as exc:
+            return {"status": "ERROR", "error": f"Local Ollama unavailable: {exc}"}
+        if result["status"] != "OK":
+            return result
+        con.execute("INSERT OR REPLACE INTO reference_wiki_translations VALUES(?,?,?,?,?,?,?)",
+                    (source_id, page_id, page_hash, "en", result["text"], result["engine"], datetime.now(timezone.utc).isoformat()))
+        con.commit()
+        return result
     cmd = os.environ.get("WIKI_TRANSLATE_CMD")
     if not cmd:
         return {"status": "NO_ENGINE"}
