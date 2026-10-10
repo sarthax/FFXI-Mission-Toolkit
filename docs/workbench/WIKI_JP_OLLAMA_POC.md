@@ -16,10 +16,14 @@ The model uses Ollama's local `http://127.0.0.1:11434/api/generate` endpoint. No
 - The initial model call handles excerpts up to **5,000 characters**. Longer pages report an explicit error; they need structural block/chunk translation in the next slice.
 - A small reviewed terminology starter glossary is applied in the prompt. Future work should load canonical aliases and client DAT identity data.
 - Numeric omissions are flagged as warnings; translations are still **unverified**. Translation of page content does not promote wiki reference claims into server truth.
-- The existing translation table allows one English result per page revision/hash. Switching Ollama models forces a fresh result, rather than retaining parallel model variants. The next iteration should use a model/glossary/prompt-version keyed translation table.
+- Structured pages now use `reference_wiki_block_translations`, keyed by source/page/block, source text hash, model, and glossary/prompt policy fingerprint. Different models coexist, and successful blocks survive interruptions. The existing page-level table remains for legacy command translations; unstructured Ollama fallback currently has no reusable block cache.
 - The UI does not yet display per-paragraph bilingual alignment, numeric warnings, or background queue progress. These belong to the follow-up Wiki translation workflow.
 - Scraping, cache ingestion, and structure extraction are deliberately unchanged.
 
 ## Offline smoke tests
 
 Run `python tests/legacy/test_wiki_ollama_translate.py`. It mocks Ollama responses, checks cache reuse, original-content preservation, numeric warnings and local-endpoint restrictions. A live model integration test requires a local Ollama installation and cached Japanese article.
+
+## Second slice: cache regression tests
+
+Run `python tests/legacy/test_wiki_translation_cache.py`. This tests same-model reuse, model changes, edited-block invalidation, hidden links, and interrupted-page recovery without Ollama. Live model/GUI validation and CI remain necessary.
