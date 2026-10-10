@@ -242,7 +242,11 @@
         Promise.resolve().then(() => showItem(initialItemId));
       }
       $('ahcFresh').textContent = 'updated ' + new Date().toLocaleTimeString();
-    } catch (e) { $('ahcFresh').textContent = 'failed: ' + e.message; return; }
+    } catch (e) {
+      $('ahcFresh').textContent = 'failed: ' + e.message;
+      $('seList').innerHTML = '<div class="ahc-empty">Seller data failed to load: ' + esc(e.message) + '</div>';
+      return;
+    }
     state.catalog = null; if ($('itStatus').value !== 'active') await ensureCatalog();
     drawItems(); drawSellers();
     if (state.selItem) showItem(state.selItem, true);
@@ -416,13 +420,29 @@
 
   /* ---------- sellers tab ---------- */
   function drawSellers() {
+    const source = state.agg && Array.isArray(state.agg.sellers) ? state.agg.sellers : null;
+    if (!source) {
+      $('seList').innerHTML = '<div class="ahc-empty">Seller data unavailable. Refresh Auction House to retry.</div>';
+      return;
+    }
     const q = $('seQ').value.trim().toLowerCase(), key = $('seSort').value;
-    let rows = state.agg.sellers.filter(s => !q || (s.seller_name || '').toLowerCase().includes(q) || String(s.seller_id) === q);
-    rows = key === 'name' ? sorted(rows.map(r => ({...r, item_name: r.seller_name})), 'name') : sorted(rows, key);
+    let rows = source.filter(s => !q || String(s.seller_name || '').toLowerCase().includes(q) ||
+      String(s.seller_id) === q || ('#' + s.seller_id) === q);
+    rows = key === 'name' ? sorted(rows.map(r => ({...r, item_name: r.seller_name || ''})), 'name') : sorted(rows, key);
     $('seList').innerHTML = rows.length ? '<table><tbody>' + rows.slice(0, 600).map(s => '<tr class="clk' + (s.seller_id === state.selSeller ? ' sel' : '') + '" data-id="' + s.seller_id + '"><td><b>' + esc(s.seller_name || '#' + s.seller_id) +
-      '</b><br><small>#' + s.seller_id + ' · ' + s.item_count + ' item(s) · oldest ' + days(s.oldest_days) + '</small></td><td class="n">' + s.listings + '×<br><small>' + fmt(s.value) + 'g</small></td></tr>').join('') + '</tbody></table>' : '<div class="ahc-empty">No sellers match.</div>';
+      '</b><br><small>#' + s.seller_id + ' · ' + s.item_count + ' item(s) · oldest ' + days(s.oldest_days) + '</small></td><td class="n">' + s.listings + '×<br><small>' + fmt(s.value) + 'g</small></td></tr>').join('') + '</tbody></table>' : '<div class="ahc-empty">' + (source.length
+      ? 'No sellers match this filter. Clear search or change sorting.'
+      : 'No active sellers in the current environment.') + '</div>';
   }
   $('seQ').addEventListener('input', debounce(drawSellers, 120)); $('seSort').addEventListener('change', drawSellers);
+  $('seReset').addEventListener('click', () => {
+    $('seQ').value = '';
+    $('seSort').value = 'listings';
+    state.selSeller = null;
+    $('seDetail').innerHTML = '<div class="ahc-empty">Select a seller to view their listings.</div>';
+    saveWorkspace();
+    if (state.agg) drawSellers(); else loadAll();
+  });
   $('seList').addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (tr) showSeller(+tr.dataset.id); });
   async function showSeller(id, keep) {
     state.selSeller = id; saveWorkspace(); drawSellers();
