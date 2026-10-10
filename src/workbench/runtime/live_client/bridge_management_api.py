@@ -81,7 +81,7 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
         require_same_origin(request)
         try:
             return apply_ashita_upgrade(selection.ashita_root, selection.expected)
-        except (ValueError, OSError) as exc:
+        except (ValueError, OSError, RuntimeError) as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 
     @router.post("/start")
