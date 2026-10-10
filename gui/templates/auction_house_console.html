@@ -59,7 +59,7 @@
     <section class="ahc-pane" id="p-sellers">
       <div class="ahc-split">
         <div class="ahc-col">
-          <header><input id="seQ" type="search" placeholder="Filter sellers…" style="flex:1"><select id="seSort"><option value="listings">Listings</option><option value="value">Value</option><option value="oldest_days">Oldest</option><option value="name">Name</option></select></header>
+          <header><input id="seQ" type="search" placeholder="Filter seller name or ID…" style="flex:1"><button class="b" id="seReset" type="button" title="Clear saved seller filters and restore all active sellers">Reset</button><select id="seSort"><option value="listings">Listings</option><option value="value">Value</option><option value="oldest_days">Oldest</option><option value="name">Name</option></select></header>
           <div class="ahc-bar"><button class="b" data-ah-export="sellers" type="button">Export seller summary CSV</button></div><div class="ahc-scroll" id="seList"></div>
         </div>
         <div class="ahc-col" id="seDetail"><div class="ahc-empty">Select a seller to see everything they have posted.</div></div>
