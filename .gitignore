@@ -64,3 +64,7 @@ data/live_client_waypoints/
 # Locally built bilingual client text DB (rebuild: python -m workbench.client.dat.text_db build)
 data/ja_en_text.db
 data/ja_en_text.db.tmp
+
+# Live Client bridge persisted credentials (private)
+data/live_client_bridge_state.json
+data/live_client_bridge_state.tmp

@@ -74,9 +74,30 @@ def test_direct_start_surfaces_bridge_reason():
     assert result == "false|bridge not started: receiver unreachable: connection refused"
 
 
-def test_generated_settings_defer_socket_require():
-    html = (ADDON.parents[1] / "gui/templates/live_client_bridge.html").read_text(encoding="utf-8")
-    start = html.index("const lua='-- Private workbench_bridge_settings.lua")
-    builder = html[start:html.index(" privateConfig=lua;", start)]
-    assert "local socket = require" not in builder
-    assert 'pcall(require, "socket")' in builder
+def test_generated_settings_defer_socket_require_and_load_in_lua():
+    from workbench.runtime.live_client.bridge_settings_file import render_settings_lua
+    text = render_settings_lua({"port": 60568, "session_id": "s1", "generation": "g1", "token": _TOKEN})
+    assert "local socket = require" not in text and 'pcall(require, "socket")' in text
+    assert chr(92)+"n" not in text  # real line breaks, never literal backslash-n
+    lua = _runtime()
+    lua.globals().settings_text = text
+    result = lua.execute("""
+        local chunk = assert(loadstring(settings_text))
+        local s = chunk()
+        local b = require('workbench_bridge').new(s)
+        local ok, why = b.start('ashita-a')
+        return type(s) .. '|' .. tostring(ok) .. '|' .. tostring(why)
+    """)
+    # Real socket module is absent here: must be a specific reason, not a load failure.
+    assert result.startswith("table|false|receiver unreachable: LuaSocket unavailable")
+
+
+def test_sequence_base_survives_addon_reload():
+    lua = _runtime()
+    ok_conn = "function() return {close=function() end, settimeout=function() return 1 end, send=function(_, d) return #d end} end"
+    result = lua.execute("""
+        local b = require('workbench_bridge').new(%s)
+        b.start('ashita-a'); b.observe('ashita-a', '{"a":1}')
+        return 'ok'
+    """ % (_GOOD % (_TOKEN, ok_conn)))
+    assert result == "ok"

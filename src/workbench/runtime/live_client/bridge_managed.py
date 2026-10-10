@@ -12,12 +12,15 @@ import time
 from .bridge_listener import BridgeListener
 from .bridge_live_feeds import BridgeLiveFeeds
 from .bridge_peers import LocalPeerRegistry, PeerIdentity
+from .bridge_state import BridgeState
+from pathlib import Path
 
 
 @dataclass
 class ManagedLiveReceiver:
     port: int = 0
-    peers: LocalPeerRegistry = field(default_factory=lambda: LocalPeerRegistry(ttl_seconds=3600))
+    state_path: Path | None = None  # opt-in persistence of port + credentials
+    peers: LocalPeerRegistry = field(default=None)
     listener: BridgeListener = field(init=False)
     feeds: BridgeLiveFeeds = field(init=False)
     _thread: threading.Thread | None = field(default=None, init=False, repr=False)
@@ -27,7 +30,21 @@ class ManagedLiveReceiver:
     _last_error: str | None = field(default=None, init=False)
     _known_clients: set[str] = field(default_factory=set, init=False, repr=False)
 
+    _state: BridgeState | None = field(default=None, init=False, repr=False)
+
+    def _new_peers(self) -> LocalPeerRegistry:
+        # Persisted credentials get a 7-day idle lease (refreshed on every batch).
+        if self._state is not None:
+            return LocalPeerRegistry(ttl_seconds=7 * 86400, max_ttl_seconds=7 * 86400)
+        return LocalPeerRegistry(ttl_seconds=3600)
+
     def __post_init__(self):
+        if self.state_path is not None:
+            self._state = BridgeState(self.state_path)
+            if self.port == 0 and self._state.port:
+                self.port = self._state.port
+        if self.peers is None:
+            self.peers = self._new_peers()
         self.listener = BridgeListener(self.peers, port=self.port, timeout=2)
         self.feeds = BridgeLiveFeeds(self.listener)
 
@@ -35,22 +52,72 @@ class ManagedLiveReceiver:
         with self._lock:
             if self._thread is not None:
                 raise RuntimeError("receiver already started")
-            address = self.listener.start()
+            try:
+                address = self.listener.start()
+            except OSError:
+                if not self.listener.port:
+                    raise
+                # Saved port is taken; fall back to a fresh one (settings get rewritten).
+                self.listener.port = 0
+                address = self.listener.start()
+            if self._state is not None:
+                if self._state.port != address[1]:
+                    self._state.port = address[1]
+                    self._state.save()
+                for client_id, c in self._state.clients.items():
+                    self.peers.restore(PeerIdentity(client_id, c["session_id"], c["generation"]), c["token"])
+                    self._known_clients.add(client_id)
             self._stopping.clear()
             self._thread = threading.Thread(target=self._serve, name="workbench-live-receiver", daemon=True)
             self._thread.start()
             return address
 
-    def provision(self, client_id: str) -> dict[str, object]:
-        """Explicitly provision a client; keep the returned secret local."""
+    @property
+    def running(self) -> bool:
+        return self._thread is not None
+
+    def remembered_ashita_root(self) -> str | None:
+        return self._state.ashita_root if self._state else None
+
+    def remember_ashita_root(self, root: str) -> None:
+        if self._state is not None and self._state.ashita_root != root:
+            self._state.ashita_root = root
+            self._state.save()
+
+    def reset_credentials(self, client_id: str | None = None) -> None:
+        with self._lock:
+            if self._state is not None:
+                self._state.forget(client_id)
+            targets = [client_id] if client_id else list(self._known_clients)
+            for target in targets:
+                self.peers.revoke(target)
+                self._known_clients.discard(target)
+                self.feeds.forget(target)
+                self._last_received.pop(target, None)
+
+    def provision(self, client_id: str, *, reuse: bool = False) -> dict[str, object]:
+        """Explicitly provision a client; keep the returned secret local.
+
+        reuse=True returns the persisted credentials unchanged when they exist.
+        """
         with self._lock:
             if self._thread is None:
                 raise RuntimeError("start receiver first")
+            port = self.listener._server.getsockname()[1]
+            saved = self._state.clients.get(client_id) if self._state else None
+            if reuse and saved:
+                self.peers.restore(PeerIdentity(client_id, saved["session_id"], saved["generation"]), saved["token"])
+                self._known_clients.add(client_id)
+                return {"host": "127.0.0.1", "port": port, "client_id": client_id, **saved}
             identity = PeerIdentity(client_id, secrets.token_hex(12), secrets.token_hex(12))
             token = self.peers.issue(identity)
             self._known_clients.add(client_id)
             self.feeds.forget(client_id)
             self._last_received.pop(client_id, None)
+            if self._state is not None:
+                self._state.clients[client_id] = {"session_id": identity.session_id,
+                                                  "generation": identity.generation, "token": token}
+                self._state.save()
             return {"host": "127.0.0.1", "port": self.listener._server.getsockname()[1],
                     "client_id": identity.client_id, "session_id": identity.session_id,
                     "generation": identity.generation, "token": token}
@@ -97,7 +164,7 @@ class ManagedLiveReceiver:
         with self._lock:
             self.listener.stop()
             # Shutdown invalidates every previously issued session/credential.
-            self.peers = LocalPeerRegistry(ttl_seconds=3600)
+            self.peers = self._new_peers()
             self.listener.peers = self.peers
             self.feeds = BridgeLiveFeeds(self.listener)
             self._thread = None

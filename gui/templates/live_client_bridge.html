@@ -31,14 +31,14 @@
  <h2>Direct Live Bridge</h2>
  <p class="muted">Local, read-only Ashita telemetry. No recording files or game writes.</p>
  <div class="lc-actions"><label>Ashita client ID <input id="client" value="ashita-a" list="clients" pattern="[a-zA-Z0-9_-]+"></label><datalist id="clients"></datalist>
- <button type="button" onclick="action('start')">Start receiver</button>
- <button type="button" onclick="provision()">Configure client</button>
- <button type="button" onclick="action('stop')">Stop receiver</button></div>
- <p class="muted">Configuring a client replaces its active credentials. Keep settings private and reload the Ashita addon after changes.</p>
+ <button type="button" id="quickStart" onclick="quickStart(false)">Start receiver</button>
+ <button type="button" onclick="action('stop')">Stop receiver</button>
+ <button type="button" onclick="quickStart(true)">Regenerate credentials</button></div>
+ <p class="muted">Start receiver is one step: it reuses saved credentials and port (so restarts need no reconfiguration) and writes the settings file into your Ashita addon folder (set the folder under "Install Ashita addon" once; it is remembered). Regenerate credentials revokes the old ones. Existing credentials were revoked. Settings are private.</p>
  <button type="button" id="downloadConfig" onclick="downloadConfig()" disabled>Download Ashita settings</button>
  <button type="button" id="copyLiveCommand">Copy Ashita start command</button>
  <p id="bridge-action-message" role="status" class="muted" aria-live="polite">Start receiver, then configure and download settings for your Ashita addon.</p>
- <ol class="muted"><li>Start receiver and configure the selected client.</li><li>Download the settings file and place it in Ashita's <code>addons/workbench_live/</code> folder.</li><li>Reload the addon, then run <code id="liveStartCommand">/wblive live start ashita-a</code> in game.</li></ol>
+ <ol class="muted"><li>Click Start receiver.</li><li>If the Ashita folder is not set yet, enter it below once (or download the settings file manually).</li><li>Reload the addon only if the settings changed, then run <code id="liveStartCommand">/wblive live start ashita-a</code> in game.</li></ol>
  <details><summary>Private configuration (do not share)</summary><pre id="config" aria-live="polite"></pre></details>
 </section>
 <section class="lc-panel">
@@ -175,30 +175,25 @@ async function request(path,data){const opts={method:'POST',headers:{'Content-Ty
 async function action(name){try{const result=await request(name);statusEl.textContent=JSON.stringify(result,null,2);
  if(name==='stop'){clearPrivateConfig();actionMessage.textContent='Receiver stopped. Existing credentials are no longer valid.';}else{actionMessage.textContent='Receiver started. Configure the selected client to connect Ashita.';}}
  catch(error){actionMessage.textContent=String(error)}}
-async function provision(){try{const value=client();
+async function quickStart(regenerate){try{const value=client();
  if(!/^[a-zA-Z0-9_-]{1,64}$/.test(value))throw Error('Invalid client ID');
- const result=await request('provision',{client_id:value});
- const lua='-- Private workbench_bridge_settings.lua; do not commit this file.\n'
- +'return {\n'
- +'  enabled = true, host = "127.0.0.1",\n'
- +'  port = '+result.port+',\n'
- +'  session_id = '+JSON.stringify(result.session_id)+',\n'
- +'  generation = '+JSON.stringify(result.generation)+',\n'
- +'  token = '+JSON.stringify(result.token)+',\n'
- +'  connect = function(host, port)\n'
- +'    local loaded, socket = pcall(require, "socket")\n'
- +'    if not loaded or type(socket) ~= "table" or type(socket.tcp) ~= "function" then error("LuaSocket unavailable in this Ashita runtime") end\n'
- +'    local peer = assert(socket.tcp())\n'
- +'    peer:settimeout(0.1)\n'
- +'    local ok, err = peer:connect(host, port)\n'
- +'    if not ok then peer:close(); error(err) end\n'
- +'    return peer\n  end,\n}\n';
- privateConfig=lua;
- provisionedClient=value;
- document.getElementById('downloadConfig').disabled=false;
- actionMessage.textContent='New private credentials created. Download them and reload the Ashita addon. Existing credentials were revoked.';
- document.getElementById('config').textContent='Save locally as addons/workbench_live/workbench_bridge_settings.lua (private):\\n\\n'+lua;
+ const body={client_id:value,regenerate:!!regenerate};
+ if(installRootInput.value.trim())body.ashita_root=installRootInput.value.trim();
+ const result=await request('quick-start',body);
+ statusEl.textContent=JSON.stringify({running:result.running,port:result.port,client_id:result.client_id,settings_written:result.settings_written,settings_changed:result.settings_changed},null,2);
+ if(result.settings_written){
+  clearPrivateConfig();
+  actionMessage.textContent='Receiver running on port '+result.port+'. '+(result.settings_changed?'Settings file updated: run /addon reload workbench_live, then ':'Settings already current: ')+result.command+'.';
+ }else{
+  privateConfig=result.settings_lua;provisionedClient=value;
+  document.getElementById('downloadConfig').disabled=false;
+  actionMessage.textContent='Receiver running. '+(result.settings_error?result.settings_error+' ':'Set the Ashita folder below to write settings automatically, or ')+'download the settings file manually.';
+  document.getElementById('config').textContent='Save locally as addons/workbench_live/workbench_bridge_settings.lua (private):\n\n'+privateConfig;
+ }
  }catch(error){actionMessage.textContent=String(error)}}
+try{const saved=localStorage.getItem('wb-ashita-root');if(saved)installRootInput.value=saved;}catch(_){}
+installRootInput.addEventListener('change',()=>{try{localStorage.setItem('wb-ashita-root',installRootInput.value.trim())}catch(_){}});
+fetch(root+'state').then(r=>r.json()).then(d=>{if(d.ashita_root&&!installRootInput.value)installRootInput.value=d.ashita_root}).catch(()=>{});
 function downloadConfig(){if(!privateConfig || provisionedClient!==client())return;
  const blob=new Blob([privateConfig],{type:'text/plain;charset=utf-8'});
  const url=URL.createObjectURL(blob);const a=document.createElement('a');

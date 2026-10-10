@@ -57,6 +57,9 @@ function M.new(options, notify, load_error)
             assert(probe, 'receiver unreachable: '..(tostring(perr):gsub('^.-:%d+: ','')))
             pcall(function() perr:close() end)
             source = client_id
+            -- Credentials persist across addon reloads, so the receiver must see
+            -- strictly increasing sequences; a wall-clock base guarantees that.
+            sequence = math.floor(os.time() * 1000)
         end)
         if not ok then close(); return fail((tostring(err):gsub('^.-:%d+: ',''))) end
         return true
