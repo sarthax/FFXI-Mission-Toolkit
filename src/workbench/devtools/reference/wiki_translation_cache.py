@@ -7,7 +7,7 @@ import sqlite3
 
 from . import wiki_ollama_translate as engine
 
-VERSION = "wiki-jp-block-v2-quality"
+VERSION = "wiki-jp-block-v3-reviewed-glossary"
 DDL = """CREATE TABLE IF NOT EXISTS reference_wiki_block_translations (
  source_id TEXT NOT NULL, page_id TEXT NOT NULL, block_id TEXT NOT NULL,
  source_hash TEXT NOT NULL, model TEXT NOT NULL, policy_hash TEXT NOT NULL,
@@ -16,8 +16,8 @@ DDL = """CREATE TABLE IF NOT EXISTS reference_wiki_block_translations (
  PRIMARY KEY(source_id,page_id,block_id,source_hash,model,policy_hash,target_lang))"""
 
 
-def policy_hash() -> str:
-    payload = json.dumps({"version": VERSION, "glossary": engine.GLOSSARY},
+def policy_hash(glossary: dict | None = None) -> str:
+    payload = json.dumps({"version": VERSION, "glossary": glossary or engine.GLOSSARY},
                          ensure_ascii=False, sort_keys=True)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
@@ -45,7 +45,10 @@ def translate_cached_blocks(con: sqlite3.Connection, *, source_id: str,
     if not blocks or len(blocks) > max_blocks:
         return {"status": "ERROR", "error": "Invalid or excessive block count"}
     con.execute(DDL)
-    policy = policy_hash()
+    from .wiki_translation_glossary import reviewed_glossary
+    glossary = dict(engine.GLOSSARY)
+    glossary.update(reviewed_glossary(con))
+    policy = policy_hash(glossary)
     output, warnings, misses = [], [], 0
     for block in blocks:
         kind = block.get("block_type", "")
@@ -66,7 +69,7 @@ def translate_cached_blocks(con: sqlite3.Connection, *, source_id: str,
             translated, issue_list = hit[0], json.loads(hit[1])
         else:
             try:
-                result = engine.translate(original, model=model)
+                result = engine.translate(original, model=model, glossary=glossary)
             except Exception as exc:
                 return {"status": "ERROR", "error": "Ollama failed on " + block_id + ": " + str(exc)}
             if result.get("status") != "OK":
