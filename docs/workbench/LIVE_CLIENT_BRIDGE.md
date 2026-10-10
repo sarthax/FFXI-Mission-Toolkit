@@ -746,3 +746,16 @@ zones inside the game, retain credentials in URLs, or write server state.
 Only the client and follow-zone preferences survive the page navigation;
 other visualization toggles reset to their defaults. If zoning interrupts
 direct telemetry, the view stays on the current zone until the feed resumes.
+
+
+### Spatial comparison controls
+
+The 3D viewer retains the selected axis preview and a separate heading
+rotation preview (0, 90, 180 or 270 degrees) when **Follow zone changes**
+navigates to a new zone. Values are carried as allowlisted nonsecret URL
+parameters only for explicitly enabled live viewing. Both preview controls
+are diagnostic tools; none of their settings is accepted as a verified
+Ashita-to-mesh transform until compared with known Windows landmarks and
+orientation. Copy diagnostics includes the chosen preview for reproducible
+screenshots. The preview affects only drawn markers/heading and never game
+memory or server state.

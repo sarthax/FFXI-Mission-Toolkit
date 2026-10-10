@@ -76,4 +76,15 @@ def test_opt_in_auto_zone_navigation_requires_fresh_same_client_status():
     assert "Number.isInteger(zone)" in content
     assert "location.assign('/zones/' + zone + '/view3d?'" in content
     assert "liveQuery.get('live') === '1'" in content
-    assert "new URLSearchParams({live:'1',client:clientId,autozone:'1'})" in content
+    assert "new URLSearchParams({live:'1',client:clientId,autozone:'1',axes:liveAxes.value,heading:liveHeading.value})" in content
+
+
+def test_axis_and_heading_previews_survive_opt_in_zone_navigation():
+    content = (Path(__file__).resolve().parents[1] / "gui/templates/zone_view3d.html").read_text(encoding="utf-8")
+    assert "const liveAxisOptions = new Set(['legacy','xyz','xzy','x-z-y'])" in content
+    assert "liveAxisOptions.has(liveQuery.get('axes'))" in content
+    assert "['0','90','180','270'].includes(liveQuery.get('heading'))" in content
+    assert "axes:liveAxes.value,heading:liveHeading.value" in content
+    assert 'id="ashita-live-heading"' in content
+    assert "heading_preview_degrees: Number(liveHeading.value)" in content
+    assert "liveHeading.addEventListener('change', pollAshitaPosition)" in content
