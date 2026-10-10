@@ -773,3 +773,14 @@ itself, or includes bridge credentials. It keeps at most two snapshots in
 browser memory and resets the pair when the selected client or observed zone
 changes; it does not automatically gather movement trails. The comparison
 is evidence for later calibration, not a permanent axis correction.
+
+
+### Copyable receiver health
+
+The Direct Live Bridge dashboard now explains stopped, waiting, stale and
+connected states and provides **Copy safe health report** for Windows field
+diagnosis. The short report contains only selected client ID, running and
+connected flags, observed age (or null), zone and adapter metadata. It does
+not include the private Lua configuration, tokens, session secrets, nearby
+entity names, or a recording. This report can be shared when investigating
+zoning interruptions. An age of zero is never inferred for absent telemetry.
