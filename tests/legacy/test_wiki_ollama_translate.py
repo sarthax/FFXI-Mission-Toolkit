@@ -49,6 +49,26 @@ def test_refuse_nonlocal_and_oversize():
     assert wiki_ollama_translate.translate("A" * 5001, model="test")["status"] == "ERROR"
 
 
+def test_structured_translation_preserves_block_id_and_skips_hidden_links():
+    blocks = [
+        {"block_id": "heading-1", "ordinal": 1, "block_type": "heading", "text": "報酬"},
+        {"block_id": "link-1", "ordinal": 2, "block_type": "link", "text": "内部リンク", "target": "Foo"},
+        {"block_id": "table-1", "ordinal": 3, "block_type": "table_cell", "text": "100 ギル"},
+    ]
+    with patch.object(wiki_ollama_translate.urllib.request, "urlopen", return_value=FakeResponse()) as send:
+        result = wiki_ollama_translate.translate_blocks(blocks, model="test")
+    assert result["status"] == "OK"
+    assert len(result["blocks"]) == 2
+    assert [b["block_id"] for b in result["blocks"]] == ["heading-1", "table-1"]
+    assert send.call_count == 2
+
+
+def test_structured_translation_fails_closed_on_oversize():
+    result = wiki_ollama_translate.translate_blocks(
+        [{"block_id": "long", "block_type": "paragraph", "text": "あ" * 5001}], model="test")
+    assert result["status"] == "ERROR"
+
+
 if __name__ == "__main__":
     for key, test in sorted(globals().items()):
         if key.startswith("test_"):
