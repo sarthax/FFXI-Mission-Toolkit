@@ -366,7 +366,7 @@ mark.ct-term::after{content:"]";opacity:.6}
   {% if page_view.timestamp %}<span class="muted">rev {{ page_view.revision or '' }} · {{ page_view.timestamp }}</span>{% endif %}
   <span class="sp"></span>
   {% if page_view.url %}<a class="chip" href="{{ page_view.url }}" target="_blank" rel="noopener">Open source page ↗</a>{% endif %}
-  {% if page_view.is_ja %}<label>Model <select class="wiki-tr-model" aria-label="Ollama translation model"></select></label><button type="button" id="ct-toggle" data-source="{{ source }}" data-title="{{ title }}" title="Highlight official client terms (auto-translate phrases and item names) in the Japanese text">Highlight client terms</button><button type="button" id="tr-btn" data-source="{{ source }}" data-title="{{ title }}">Translate to English (machine)</button>{% endif %}
+  {% if page_view.is_ja %}<label>Model <select class="wiki-tr-model" aria-label="Ollama translation model"></select></label><button type="button" id="ct-toggle" data-source="{{ source }}" data-title="{{ title }}" title="Highlight official client terms (auto-translate phrases and item names) in the Japanese text">Highlight client terms</button><button type="button" id="ct-lang" hidden title="Swap highlighted terms between the Japanese text and the client's English">Show terms in English</button><button type="button" id="tr-btn" data-source="{{ source }}" data-title="{{ title }}">Translate to English (machine)</button>{% endif %}
 </div>
 {% if page_view.is_ja %}
 <details id="ct-panel" hidden><summary id="ct-summary">Client terms</summary><div id="ct-list" class="table-wrap"></div></details>
@@ -1228,14 +1228,21 @@ mark.ct-term::after{content:"]";opacity:.6}
         var frag=document.createDocumentFragment(),pos=0;
         spans.forEach(function(sp){
           if(sp.s>pos)frag.appendChild(document.createTextNode(text.slice(pos,sp.s)));
-          var m=document.createElement('mark');m.className='ct-term';m.textContent=text.slice(sp.s,sp.e);m.title=label(sp.t);
+          var m=document.createElement('mark');m.className='ct-term';m.textContent=text.slice(sp.s,sp.e);m.title=label(sp.t);m.dataset.ja=m.textContent;m.dataset.en=sp.t.entries[0].en;
           frag.appendChild(m);pos=sp.e;
         });
         if(pos<text.length)frag.appendChild(document.createTextNode(text.slice(pos)));
         node.parentNode.replaceChild(frag,node);
       });
     }
-    function clear(){document.querySelectorAll('mark.ct-term').forEach(function(m){m.replaceWith(document.createTextNode(m.textContent));});article.normalize();}
+    var langBtn=document.getElementById('ct-lang'),english=false;
+    function setLang(en){
+      english=en;
+      document.querySelectorAll('mark.ct-term').forEach(function(m){m.textContent=en?m.dataset.en:m.dataset.ja;});
+      langBtn.textContent=en?'Show terms in Japanese':'Show terms in English';
+    }
+    langBtn.addEventListener('click',function(){setLang(!english);});
+    function clear(){setLang(false);langBtn.hidden=true;document.querySelectorAll('mark.ct-term').forEach(function(m){m.replaceWith(document.createTextNode(m.textContent));});article.normalize();}
     function render(){
       list.replaceChildren();
       var tbl=document.createElement('table');tbl.className='ct-results';
@@ -1254,7 +1261,7 @@ mark.ct-term::after{content:"]";opacity:.6}
       var go=terms?Promise.resolve():fetch('/wiki/client-terms/annotate?source='+encodeURIComponent(btn.dataset.source)+'&title='+encodeURIComponent(btn.dataset.title))
         .then(function(r){return r.json().then(function(d){if(!r.ok)throw Error(d.error||d.status||('HTTP '+r.status));return d;});})
         .then(function(d){if(d.status==='NO_DB')throw Error('Client text database not found (data/ja_en_text.db)');terms=d.terms;});
-      go.then(function(){highlight();render();on=true;btn.textContent='Hide client terms';})
+      go.then(function(){highlight();render();on=true;btn.textContent='Hide client terms';langBtn.hidden=false;})
         .catch(function(e){alert('Client term matching failed: '+e.message);btn.textContent='Highlight client terms';})
         .finally(function(){btn.disabled=false;});
     });
