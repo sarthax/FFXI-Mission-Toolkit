@@ -48,3 +48,53 @@ def translate(text: str, *, model: str, url: str = _DEFAULT_URL,
 
 def configured_model() -> str:
     return os.environ.get("WIKI_TRANSLATE_OLLAMA_MODEL", "").strip()
+
+
+# Only visible textual blocks are translated; links/structural separators remain intact.
+_TRANSLATABLE = frozenset({"heading", "paragraph", "list_item", "definition",
+                          "definition_term", "table_header_cell", "table_cell",
+                          "template_field", "legacy_text"})
+
+
+def translate_blocks(blocks: list[dict], *, model: str,
+                     max_chars: int = 5000, max_blocks: int = 500) -> dict:
+    """Translate per source block while preserving structural order and identities.
+
+    Never translates hidden source links or fabricated fields. A failed block
+    aborts the page so partial results are not cached as complete translations.
+    """
+    if len(blocks) > max_blocks:
+        return {"status": "ERROR", "error": "Too many blocks for a single synchronous translation"}
+    if not blocks:
+        return {"status": "ERROR", "error": "No structured blocks found"}
+    translated, warnings = [], []
+    for block in blocks:
+        kind = block.get("block_type", "")
+        original = block.get("text") or ""
+        if kind not in _TRANSLATABLE or not original.strip():
+            continue
+        # Oversized cells/paragraphs are not silently truncated.
+        if len(original) > max_chars:
+            return {"status": "ERROR", "error": "Block exceeds limit: " + str(block.get("block_id"))}
+        result = translate(original, model=model, max_chars=max_chars)
+        if result["status"] != "OK":
+            return {"status": "ERROR", "error": "Block translation failed: " + str(block.get("block_id")) + ": " + str(result.get("error"))}
+        translated.append({"block_id": block.get("block_id"), "ordinal": block.get("ordinal"),
+                           "block_type": kind, "original": original, "text": result["text"],
+                           "section_path": block.get("section_path"),
+                           "source_locator": block.get("source_locator")})
+        warnings.extend(str(block.get("block_id")) + ": " + w for w in result.get("warnings", []))
+    if not translated:
+        return {"status": "ERROR", "error": "No translatable text blocks"}
+    display = []
+    for b in translated:
+        text = b["text"]
+        if b["block_type"] == "heading":
+            text = "\\n## " + text + "\\n"
+        elif b["block_type"] == "list_item":
+            text = "- " + text
+        elif b["block_type"] in {"table_header_cell", "table_cell"}:
+            text = "| " + text + " |"
+        display.append(text)
+    return {"status": "OK", "text": "\\n".join(display), "blocks": translated,
+            "engine": "ollama:" + model, "unverified": True, "warnings": warnings}
