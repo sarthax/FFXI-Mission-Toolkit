@@ -77,3 +77,14 @@ def test_bridge_console_uses_workbench_shell_and_module_tabs():
     template = (Path(__file__).resolve().parents[1] / "gui/templates/live_client_bridge.html").read_text()
     assert '{% extends "workbench_page.html" %}' in template
     assert "const root='/live-client/bridge/'" in template
+
+
+def test_operator_setup_feedback_and_safe_live_zone_link():
+    from pathlib import Path
+    template = (Path(__file__).resolve().parents[1] / "gui/templates/live_client_bridge.html").read_text(encoding="utf-8")
+    assert 'id="bridge-action-message"' in template
+    assert 'id="liveZoneLink"' in template
+    assert "if(data.connected && Number.isInteger(zone) && zone>=1 && zone<=65535)" in template
+    assert "zoneLink.removeAttribute('href')" in template
+    assert "reload the ashita addon" in template.lower()
+    assert "Existing credentials were revoked." in template
