@@ -42,3 +42,13 @@ def test_lua_reference_rollups_and_limitations_are_presented_safely():
     assert "line.textContent = String(message)" in page
     assert "limitations.length === 0" in page
     assert "generation !== luaGeneration" in page
+
+
+def test_key_item_lua_references_link_to_feature_trace_safely():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert "const fileName = parts[parts.length - 1] || path;" in page
+    assert "new URLSearchParams({q: fileName})" in page
+    assert "search.href = '/features/trace?'" in page
+    assert "context.textContent = ' · ' + kind + ' · ' + fileName" in page
+    assert "excerpt.textContent = String(ref.source_text || '')" in page
+    assert "location.textContent = String(ref.source_path || '')" in page
