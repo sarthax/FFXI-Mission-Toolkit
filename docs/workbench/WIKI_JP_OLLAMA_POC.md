@@ -39,3 +39,9 @@ python -m workbench.devtools.reference.wiki_translation_batch_cli PATH_TO_WIKI_D
 ```
 
 The CLI runs in the foreground; closing it interrupts the worker. Cancellation through `cancel(job_id)` requires invoking the service in the same running application process. HTTP routes and GUI batch controls are **not yet connected** and must not be presented as available. The next slice should wire guarded POST start/cancel/retry endpoints and GET status, then add progress polling to the Wiki translation tab. Before enabling large runs, verify concurrency and rate limiting with local Ollama. Offline contract test: `python tests/legacy/test_wiki_translation_batch.py`.
+
+## Fourth slice: Wiki Translation tab
+
+The Wiki page now includes a **Translation** tab, with 10/50 cached-page batch starts, 4-second status polling, persisted job progress, cancellation requests, and retry-failures actions. Routes: `GET /wiki/translation/jobs` and `POST /wiki/translation/start`, `/retry`, `/cancel`. Source imports and wiki evidence are untouched. The batch worker runs inside the toolkit process; cancellation is cooperative and takes effect between pages, and work interrupted by a toolkit restart stays interrupted until explicitly retried. A page may take substantial time on a local CPU-only model. Live validation and CI are pending.
+
+Offline UI contract test: `python test_fixtures/test_wiki_translation_batch_ui.py`.
