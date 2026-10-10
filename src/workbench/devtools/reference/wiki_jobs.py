@@ -326,7 +326,7 @@ def translate_cached(con: sqlite3.Connection, source_id: str, page_id: str, page
                     (source_id, page_id, page_hash)).fetchone()
     from . import wiki_ollama_translate
     model = wiki_ollama_translate.configured_model()
-    if r and (not model or r[1] == "ollama:" + model):
+    if r and not model:
         return {"status": "OK", "text": r[0], "engine": r[1], "created_at": r[2]}
     # Explicit local Ollama opt-in; preserve the legacy command translator as fallback.
     if model:
@@ -335,15 +335,18 @@ def translate_cached(con: sqlite3.Connection, source_id: str, page_id: str, page
             # instead of sending whole long articles through a single prompt.
             has_blocks = con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='reference_wiki_blocks'").fetchone()
             blocks = wiki_document.stored_blocks(con, source_id, page_id) if has_blocks else []
-            result = (wiki_ollama_translate.translate_blocks(blocks, model=model)
-                      if blocks else wiki_ollama_translate.translate(text, model=model))
+            if blocks:
+                from . import wiki_translation_cache
+                result = wiki_translation_cache.translate_cached_blocks(
+                    con, source_id=source_id, page_id=page_id, blocks=blocks, model=model)
+            else:
+                result = wiki_ollama_translate.translate(text, model=model)
         except Exception as exc:
             return {"status": "ERROR", "error": f"Local Ollama unavailable: {exc}"}
         if result["status"] != "OK":
             return result
-        con.execute("INSERT OR REPLACE INTO reference_wiki_translations VALUES(?,?,?,?,?,?,?)",
-                    (source_id, page_id, page_hash, "en", result["text"], result["engine"], datetime.now(timezone.utc).isoformat()))
-        con.commit()
+        # Block cache is authoritative for model-specific translation drafts;
+        # keep legacy page-level cache for old command translation only.
         return result
     cmd = os.environ.get("WIKI_TRANSLATE_CMD")
     if not cmd:
