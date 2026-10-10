@@ -285,7 +285,14 @@
       const group = document.createElement('details');
       group.open = grouped.size <= 3;
       const heading = document.createElement('summary');
-      heading.textContent = path + ' · ' + items.length + ' reference(s)';
+      const scopedRefs = refs.filter(ref => String(ref.source_path || 'Unknown Lua file') === path);
+      const counts = {require: 0, grant: 0, remove: 0};
+      for (const ref of scopedRefs) {
+        if (Object.prototype.hasOwnProperty.call(counts, ref.operation)) counts[ref.operation]++;
+      }
+      const operations = Object.entries(counts).filter(([, count]) => count > 0)
+        .map(([operation, count]) => operation + ': ' + count).join(' · ');
+      heading.textContent = path + ' · ' + items.length + ' reference(s)' + (operations ? ' · ' + operations : '');
       const entries = document.createElement('ul');
       entries.append(...items);
       group.append(heading, entries);
