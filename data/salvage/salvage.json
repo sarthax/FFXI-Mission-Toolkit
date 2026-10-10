@@ -974,7 +974,7 @@
    "id": "registry",
    "name": "Instance registry (instance_list)",
    "status": "partial",
-   "note": "Salvage I rows live in Topaz (ids 62, 65, 68, 71). Salvage II rows (64, 67, 70, 73) are commented placeholders; ids 63/66/69/72 are held spare. Source: sql/instance_list.sql, docs/project-memory/18-instance-id-master-list.md.",
+   "note": "Salvage I rows live in Topaz (ids 62, 65, 68, 71). Salvage II rows (64, 67, 70, 73) are commented placeholders; ids 63/66/69/72 are held spare. Source: sql/instance_list.sql, docs/project-memory/18-instance-id-master-list.md. DSP: Salvage I rows 62/65/68/71 are shipped by the salvage-<zone>-v2 slices (merged to valhalla main 2026-10-09, base slice salvage-base-v1).",
    "needs": [
     "Salvage II captures",
     "decision on spare ids"
@@ -994,7 +994,7 @@
    "id": "floors",
    "name": "Floor / stage progression",
    "status": "partial",
-   "note": "Zhayolm and Arrapago/Bhaflau instance files model stages and door unsealing. Silver Sea ports only entry, failure and exit; LSB has no stage or door progression for it and none was invented.",
+   "note": "Zhayolm and Arrapago/Bhaflau instance files model stages and door unsealing. Silver Sea ports only entry, failure and exit; LSB has no stage or door progression for it and none was invented. DSP ports keep the same limits: Bhaflau Empathic_Flan is not ported (DSP has no TAKE_DAMAGE event), so its Dormant_Rampart reveal is only partly functional.",
    "needs": [
     "Silver Sea floor doors _240..",
     "captures of each floor"
@@ -1023,7 +1023,7 @@
    "id": "mobs",
    "name": "Mob and NM roster",
    "status": "partial",
-   "note": "Mob scripts counted from the live tree. Spawn points, pools and drop lists are not verified against captures.",
+   "note": "Mob scripts counted from the live tree. Spawn points, pools and drop lists are not verified against captures. DSP slices carry mob_groups/spawn points/instance_entities per zone; every live spawn row, group, pool and droplist is carried, including pool-0 groups and (0,0,0) placeholder mobs (the loader skips those until they are positioned or given a pool).",
    "needs": [
     "drop rates (FFXIDB)",
     "NM spawn conditions"
@@ -1048,6 +1048,16 @@
     "floor-by-floor positions from capture 228",
     "Salvage II instance ids/rows"
    ]
+  },
+  {
+   "id": "dsp_port",
+   "name": "DSP port (valhalla main)",
+   "status": "partial",
+   "note": "Merged 2026-10-09: salvage-base (salvage.lua, gears/rampart mixins, C++ dependency manifest + verify_base.py) and salvage-zhayolm/silversea/bhaflau/arrapago v2, each independent on the base. Untested in-game. Not ported: Topaz weapon_break/qutrub mixins (no CRITICAL_TAKE event), Empathic_Flan (no TAKE_DAMAGE), Archaic_Gear is melee-only (ATTACKED).",
+   "needs": [
+    "in-game test of each zone (docs/slices/*/TEST_PLAN.md)",
+    "decision on adding CRITICAL_TAKE/TAKE_DAMAGE/COMBAT_TICK engine events"
+   ]
   }
  ],
  "rewards": [],
@@ -1067,6 +1077,7 @@
   "What is the full Pathos set and cell-removal rule per zone, confirmed from captures?",
   "What do Mrohk Sahjuuli's events 0x03C9 / 0x03CD do (capture 228)? Role is still unverified.",
   "Do captures exist for every floor of every Salvage I zone?",
-  "instance_entities for instances 12, 62 and 71 exist only in the live DB; instance 80 has 18 file rows not yet live. Needs a decision on writing the SQL file (see audit)."
+  "Instance 80 has 18 instance_entities rows in the Topaz file that are not live. Instances 62/65/68/71 are now covered by the DSP slices; Topaz C:\topaz\\sql\\instance_entities.sql was not confirmed to hold the 62/71 rows.",
+  "Should DSP gain CRITICAL_TAKE, TAKE_DAMAGE and COMBAT_TICK listener events so Empathic_Flan and the weapon-break mixins can be ported?"
  ]
 }
