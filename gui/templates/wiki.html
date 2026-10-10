@@ -234,7 +234,16 @@
 <div class="notice">Topic suggestion dismissed. The review queue has been refreshed.</div>
 {% endif %}
 <div class="wiki-actions dense-toolbar" style="margin:6px 0">
-  <a class="chip {% if tab == 'translation' %}
+  <a class="chip {% if tab == 'browse' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=browse"><b>Browse</b></a>
+  <a class="chip {% if tab == 'evidence' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=evidence"><b>Evidence workflow</b></a>
+  <a class="chip {% if tab == 'translation' %}active{% endif %}" href="/wiki?source=WikiWikiJP&tab=translation"><b>Translation</b></a>
+  <a class="chip {% if tab == 'review' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=review"><b>Topic review queue</b></a>
+  <a class="chip {% if tab == 'recovery' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=recovery"><b>Recovery preview</b></a>
+  <span class="sp"></span>
+  <span class="muted">Open site:</span>
+  {% for l in site_links %}<a class="chip" href="{{ l.page or l.home }}" target="_blank" rel="noopener">{{ l.label }}{% if l.page %} ↗ page{% else %} ↗{% endif %}</a>{% endfor %}
+</div>
+{% if tab == 'translation' %}
 <section class="wiki-section" aria-label="Japanese Wiki translation jobs">
   <div class="body">
     <h3>Japanese Wiki translation batches</h3>
@@ -249,16 +258,6 @@
   </div>
 </section>
 {% endif %}
-
-{% if tab == 'browse' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=browse"><b>Browse</b></a>
-  <a class="chip {% if tab == 'evidence' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=evidence"><b>Evidence workflow</b></a>
-  <a class="chip {% if tab == 'translation' %}active{% endif %}" href="/wiki?source=WikiWikiJP&tab=translation"><b>Translation</b></a>
-  <a class="chip {% if tab == 'review' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=review"><b>Topic review queue</b></a>
-  <a class="chip {% if tab == 'recovery' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=recovery"><b>Recovery preview</b></a>
-  <span class="sp"></span>
-  <span class="muted">Open site:</span>
-  {% for l in site_links %}<a class="chip" href="{{ l.page or l.home }}" target="_blank" rel="noopener">{{ l.label }}{% if l.page %} ↗ page{% else %} ↗{% endif %}</a>{% endfor %}
-</div>
 
 {% if tab == 'recovery' %}
 <section class="wiki-section">
@@ -1024,6 +1023,13 @@
         output.appendChild(container);
       });
     }).catch(function(e){msg.textContent=e.message;});}
+    form.addEventListener('submit',function(event){event.preventDefault();msg.textContent='Starting crawl…';post('start',new FormData(form)).then(function(){msg.textContent='Crawl queued';refresh();}).catch(function(e){msg.textContent=e.message;});});
+    document.getElementById('wiki-jp-bulk-refresh').addEventListener('click',refresh);
+    refresh();
+  })();
+  (function(){
+    var form=document.getElementById('wiki-snapshot-import'),status=document.getElementById('wiki-snapshot-status');
+    if(!form)return;
     var previewBtn=document.getElementById('wiki-snapshot-preview-btn'),
         previewOutput=document.getElementById('wiki-snapshot-preview-result');
     var previewFingerprint=null;
@@ -1049,13 +1055,6 @@
         .catch(function(error){previewFingerprint=null;status.textContent='Preview failed: '+error.message;})
         .finally(function(){previewBtn.disabled=false;});
     });
-    form.addEventListener('submit',function(event){event.preventDefault();msg.textContent='Starting crawl…';post('start',new FormData(form)).then(function(){msg.textContent='Crawl queued';refresh();}).catch(function(e){msg.textContent=e.message;});});
-    document.getElementById('wiki-jp-bulk-refresh').addEventListener('click',refresh);
-    refresh();
-  })();
-  (function(){
-    var form=document.getElementById('wiki-snapshot-import'),status=document.getElementById('wiki-snapshot-status');
-    if(!form)return;
     form.addEventListener('submit',function(event){
       event.preventDefault();
       if(previewFingerprint!==fingerprint(selectedFile())){status.textContent='Preview this file before importing.';return;}

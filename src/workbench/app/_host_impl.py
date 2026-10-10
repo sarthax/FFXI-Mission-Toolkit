@@ -5804,7 +5804,7 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         "available_sources": available_sources,
         "comparison": comparison,
         "error": error,
-        "tab": tab if tab in ("browse", "evidence", "review", "recovery") else "browse",
+        "tab": tab if tab in ("browse", "evidence", "translation", "review", "recovery") else "browse",
         "review_queue": review_queue,
         "recovery_preview": recovery_preview,
         "recovery_page": recovery_page,
