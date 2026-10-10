@@ -23,6 +23,10 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
     if templates is None:
         templates = Jinja2Templates(directory=str(Path(__file__).resolve().parents[4] / "gui" / "templates"))
         templates.env.globals["current_theme"] = lambda: "light"
+        templates.env.globals["shell_context"] = lambda _request: {
+            "workspaces": [], "sections": [], "active_home": False,
+            "snapshot_context": None, "brand": {"enabled": False}
+        }
     router = APIRouter(prefix="/live-client/bridge", tags=["Live Client Bridge"])
 
     def require_same_origin(request: Request) -> None:
