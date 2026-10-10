@@ -11205,6 +11205,56 @@ def voidwatch_tracker_json():
     return Response(f.read_text(encoding="utf-8"), media_type="application/json")
 
 
+@app.get("/domains/campaign/overview.json")
+def campaign_overview_json():
+    from workbench.domains import campaign as camp
+    return JSONResponse(camp.overview())
+
+
+@app.post("/domains/campaign/rebuild")
+def campaign_rebuild():
+    from workbench.domains import campaign as camp
+    camp.rebuild()
+    return JSONResponse({"ok": True})
+
+
+@app.post("/domains/campaign/mark")
+async def campaign_mark(request: Request):
+    from workbench.domains import campaign as camp
+    b = await request.json()
+    try:
+        return JSONResponse(camp.mark(str(b.get("kind", "")), str(b.get("id", "")), str(b.get("state", "")), str(b.get("note", ""))))
+    except KeyError as ex:
+        raise HTTPException(status_code=404, detail=str(ex))
+    except ValueError as ex:
+        raise HTTPException(status_code=400, detail=str(ex))
+
+
+@app.get("/domains/salvage/overview.json")
+def salvage_overview_json():
+    from workbench.domains import salvage as slv
+    return JSONResponse(slv.overview())
+
+
+@app.post("/domains/salvage/rebuild")
+def salvage_rebuild():
+    from workbench.domains import salvage as slv
+    slv.rebuild()
+    return JSONResponse({"ok": True})
+
+
+@app.post("/domains/salvage/mark")
+async def salvage_mark(request: Request):
+    from workbench.domains import salvage as slv
+    b = await request.json()
+    try:
+        return JSONResponse(slv.mark(str(b.get("kind", "")), str(b.get("id", "")), str(b.get("state", "")), str(b.get("note", ""))))
+    except KeyError as ex:
+        raise HTTPException(status_code=404, detail=str(ex))
+    except ValueError as ex:
+        raise HTTPException(status_code=400, detail=str(ex))
+
+
 @app.get("/domains/{key}", response_class=HTMLResponse)
 def domain_detail_page(request: Request, key: str):
     from workbench.domains import service as dsvc

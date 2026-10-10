@@ -1,0 +1,22 @@
+{
+  "campaign": {
+    "label": "Campaign Operations",
+    "archetype": "system.campaign",
+    "summary": "Wings of the Goddess Campaign: ops overseers, Sigil NPCs, the Ops menu, 246 op missions, Campaign Battles, evaluation/promotion, voting and rewards. This workspace maps all research so far onto a graph and lists, with a status and a validation mark per item. Unknowns stay marked unknown.",
+    "wiki": {
+      "categories": ["Campaign", "Campaign Ops", "Campaign NPC", "Campaign Battle NPCs"],
+      "templates": ["Campaign Header", "Campaign Ops"],
+      "headings": ["Walkthrough", "Objective", "Unit Requirement", "Allied Notes"]
+    },
+    "children": [],
+    "entities": [
+      {"kind": "Ops overseer / Sigil / news NPCs", "fields": ["name", "zone", "grid", "wire id", "DSP id", "events"],
+       "server_globs": ["sql/npc_list.sql", "scripts/zones/*/npcs/Rasdinice.lua", "scripts/zones/*/npcs/Hieronymus.lua", "scripts/zones/*/npcs/Emhi_Tchaoryo.lua"], "edit": "/zoneplot"},
+      {"kind": "Ops menu events", "fields": ["csid", "params", "reply masks"],
+       "server_globs": ["scripts/globals/campaign.lua"], "edit": null},
+      {"kind": "Operations (missions)", "fields": ["name", "nation", "category", "min medal", "giver", "requirements", "cost", "result"],
+       "server_globs": ["sql/campaign_map.sql", "sql/campaign_nation.sql", "scripts/globals/campaign.lua"], "edit": null}
+    ],
+    "compare": "Each mission, NPC and menu event is tracked with a build status and a validation mark; compare against captures before marking anything ok."
+  }
+}

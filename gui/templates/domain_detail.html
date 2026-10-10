@@ -43,7 +43,43 @@ th.vwc1,td.vwc1,th.vwc2,td.vwc2{width:120px;min-width:120px;white-space:nowrap}.
 <script src="/static/voidwatch.js?v=15"></script>
 {% endif %}
 
+{% if d.archetype == "system.campaign" %}
+<style>
+.cpcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}.cpcard{border:1px solid var(--border,#444);border-radius:8px;padding:8px}.cpbar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:#8883;margin:4px 0 0}.cpbar span{display:block;height:100%}
+.cpst{font-weight:600;min-width:70px;text-align:center}.cptabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.cpact{font-weight:700;outline:2px solid currentColor}.cpfilters{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}.cpfilters input{flex:1;min-width:180px}
+.cprow{cursor:pointer}.cprow:hover{background:#8881}#cp-detail{border:1px solid var(--border,#444);border-radius:8px;padding:12px;margin:12px 0}.vwkv td{padding:1px 8px 1px 0;vertical-align:top}
+</style>
+<section id="cp-root">
+<h2>Campaign map &amp; status <a class="chip" href="/domains/campaign/overview.json" target="_blank">json</a> <button type="button" id="cp-rebuild" class="chip">Rebuild from research</button></h2>
+<div id="cp-sum" class="muted"></div>
+<div id="cp-strip" class="cpcards"></div>
+<div class="muted" style="margin:6px 0">Colours: <span class="chip cpst" style="border-color:#1e9e6a;color:#1e9e6a">done/built</span> <span class="chip cpst" style="border-color:#d68910;color:#d68910">partial</span> <span class="chip cpst" style="border-color:#c0392b;color:#c0392b">not built</span> <span class="chip cpst" style="border-color:#888;color:#888">unknown</span> &middot; dot in a graph box = validation mark &middot; dashed box = status unknown. Click a box or a row for its dossier; click a mission category to filter the mission list.</div>
+<div id="cp-graph" style="overflow-x:auto"></div>
+<div id="cp-detail" hidden></div>
+<div id="cp-lists"></div>
+<p class="muted">Sources: docs/campaign (OPS_NPC_EVENTS, ID_CHECK, TRACKER, missions_enriched.tsv), the tagged captures in this database, and data/campaign/curation.json. Missions are wiki-derived and unverified until marked ok.</p>
+</section>
+<script src="/static/campaign.js?v=1"></script>
+{% endif %}
+
 {% if d.archetype == "system.salvage" %}
+<style>
+.cpcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}.cpcard{border:1px solid var(--border,#444);border-radius:8px;padding:8px}.cpbar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:#8883;margin:4px 0 0}.cpbar span{display:block;height:100%}
+.cpst{font-weight:600;min-width:70px;text-align:center}.cptabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.cpact{font-weight:700;outline:2px solid currentColor}
+.cprow{cursor:pointer}.cprow:hover{background:#8881}#sv-detail{border:1px solid var(--border,#444);border-radius:8px;padding:12px;margin:12px 0}.vwkv td{padding:1px 8px 1px 0;vertical-align:top}
+</style>
+<section id="sv-root">
+<h2>Salvage map &amp; status <a class="chip" href="/domains/salvage/overview.json" target="_blank">json</a> <button type="button" id="sv-rebuild" class="chip">Rescan sources</button></h2>
+<div id="sv-sum" class="muted"></div>
+<div id="sv-strip" class="cpcards"></div>
+<div class="muted" style="margin:6px 0">Colours: <span class="chip cpst" style="border-color:#1e9e6a;color:#1e9e6a">done/built</span> <span class="chip cpst" style="border-color:#d68910;color:#d68910">partial</span> <span class="chip cpst" style="border-color:#c0392b;color:#c0392b">not built</span> <span class="chip cpst" style="border-color:#888;color:#888">unknown</span> &middot; dot in a graph box = validation mark &middot; dashed box = status unknown. Click a box or a row for its dossier. T / D / L = live Topaz / DSP target / LandSandBoat reference.</div>
+<div id="sv-graph" style="overflow-x:auto"></div>
+<div id="sv-detail" hidden></div>
+<div id="sv-lists"></div>
+<p class="muted">Sources: sql/instance_list.sql, instance_entities.sql and scripts/zones/*_Remnants in each tree, the tagged captures in this database, and data/salvage/curation.json. Counts are read from files; unknowns stay unknown.</p>
+</section>
+<script src="/static/salvage_domain.js?v=1"></script>
+<details style="margin-top:14px"><summary><b>Capture reconstruction workspace</b> (load one capture to see entities, doors and events)</summary>
 <style>
 #salvage-reconstruction-workspace{margin:14px 0 24px}.sr-toolbar{display:flex;gap:8px;align-items:end;flex-wrap:wrap;padding:10px;border:1px solid var(--border,#444);border-radius:8px}.sr-toolbar label{display:grid;gap:4px}.sr-toolbar input{min-width:150px}.sr-grid{display:grid;grid-template-columns:minmax(220px,.75fr) minmax(420px,1.6fr) minmax(300px,1fr);gap:10px;margin-top:10px}.sr-pane{border:1px solid var(--border,#444);border-radius:8px;padding:10px;min-width:0}.sr-pane h3{margin:0 0 8px}.sr-stack{display:grid;gap:8px}.sr-ready{display:flex;justify-content:space-between;gap:8px;padding:7px 8px;border:1px solid var(--border,#444);border-radius:6px}.sr-ready span{font-family:monospace}.sr-ready-for-review span,.sr-ok{font-weight:700}.sr-card{padding:8px;border:1px solid var(--border,#444);border-radius:6px;margin:6px 0}.sr-svg{width:100%;min-height:360px;border:1px solid var(--border,#444);border-radius:6px}.sr-map-bg{fill:transparent}.sr-player-path{fill:none;stroke:currentColor;stroke-width:2;opacity:.7}.sr-region rect{fill:none;stroke:currentColor;stroke-width:1.5;stroke-dasharray:8 5;opacity:.45}.sr-region text{fill:currentColor;font-size:11px;opacity:.8}.sr-entity-mark{fill:currentColor}.sr-door-mark{fill:currentColor;stroke:currentColor}.sr-interactive-mark{fill:transparent;stroke:currentColor;stroke-width:2}.sr-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.9em;margin-top:5px}.sr-empty{padding:12px}.sr-tabs details{border-top:1px solid var(--border,#444);padding:7px 0}.sr-tabs details:first-child{border-top:0}.sr-tabs summary{cursor:pointer;font-weight:700}.sr-tabs .table-wrap{max-height:360px;overflow:auto}.sr-status{margin-left:auto}.sr-handoffs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}@media(max-width:1100px){.sr-grid{grid-template-columns:1fr}.sr-svg{min-height:300px}}
 </style>
@@ -80,6 +116,7 @@ th.vwc1,td.vwc1,th.vwc2,td.vwc2{width:120px;min-width:120px;white-space:nowrap}.
   </div>
 </section>
 <script src="/static/salvage_reconstruction.js"></script>
+</details>
 {% endif %}
 
 {% if d.pipeline %}

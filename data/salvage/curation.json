@@ -1,0 +1,23 @@
+{
+  "systems": [
+    {"id": "registry", "name": "Instance registry (instance_list)", "status": "partial", "note": "Salvage I rows live in Topaz (ids 62, 65, 68, 71). Salvage II rows (64, 67, 70, 73) are commented placeholders; ids 63/66/69/72 are held spare. Source: sql/instance_list.sql, docs/project-memory/18-instance-id-master-list.md.", "needs": ["Salvage II captures", "decision on spare ids"]},
+    {"id": "pathos", "name": "Pathos restrictions", "status": "partial", "note": "Silver Sea instance applies ENCUMBRANCE_I, OBLIVISCENCE, OMERTA, IMPAIRMENT, DEBILITATION on entry and removal rules are per-zone. Whether the full retail Pathos list and cell items are built is unverified.", "needs": ["per-floor Pathos list", "cell item/drop source evidence"]},
+    {"id": "floors", "name": "Floor / stage progression", "status": "partial", "note": "Zhayolm and Arrapago/Bhaflau instance files model stages and door unsealing. Silver Sea ports only entry, failure and exit; LSB has no stage or door progression for it and none was invented.", "needs": ["Silver Sea floor doors _240..", "captures of each floor"]},
+    {"id": "doors", "name": "Doors and telepads", "status": "partial", "note": "Door npcs exist per zone (Zhayolm _210.., Arrapago _220.., Bhaflau _230.., Silver Sea none). Telepad csids are derived per zone and must come from captured events.", "needs": ["observed csids per telepad", "door-to-floor mapping"]},
+    {"id": "slotsocket", "name": "Slot / Socket / Armoury Crate", "status": "partial", "note": "Slot, Socket and Armoury_Crate npc scripts exist in all four zones. Per-zone local values differ, so they cannot be centralised.", "needs": ["capture check of slot/socket mechanics"]},
+    {"id": "mobs", "name": "Mob and NM roster", "status": "partial", "note": "Mob scripts counted from the live tree. Spawn points, pools and drop lists are not verified against captures.", "needs": ["drop rates (FFXIDB)", "NM spawn conditions"]},
+    {"id": "extraction", "name": "Completion and extraction", "status": "unknown", "note": "Instance completion/failure hooks are listed per track. How retail extraction and the post-run reward flow work is not yet captured.", "needs": ["exit/extraction capture"]},
+    {"id": "salvage2", "name": "Salvage II (_ii variants)", "status": "not built", "note": "No server content. One capture exists (Silver Sea Remnants, Salvage II) plus a Staging Point prep capture.", "needs": ["capture analysis", "wiki/forum cross-reference"]}
+  ],
+  "npcs": [
+    {"id": "mrohk_sahjuuli", "name": "Mrohk Sahjuuli", "zone": "Aht Urhgan Whitegate / Alzadaal Undersea Ruins", "role": "unknown", "status": "unknown", "note": "Name appears in capture 228's label only; role not verified."}
+  ],
+  "rewards": [],
+  "open_questions": [
+    "What are the Salvage II instance ids actually needed, and are the held spares (63/66/69/72) used?",
+    "Which Silver Sea floors and doors exist in retail? Only entry/failure/exit is implemented.",
+    "What is the full Pathos set and cell-removal rule per zone, confirmed from captures?",
+    "What does Mrohk Sahjuuli do (capture 228)?",
+    "Do captures exist for every floor of every Salvage I zone?"
+  ]
+}

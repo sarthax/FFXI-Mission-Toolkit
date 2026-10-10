@@ -1,0 +1,1054 @@
+{
+ "zones": [
+  {
+   "id": "zhayolm",
+   "name": "Zhayolm Remnants",
+   "folder": "Zhayolm_Remnants",
+   "info": {
+    "topaz": {
+     "zone_lua": true,
+     "ids_lua": true,
+     "instance_files": [
+      "zhayolm_remnants.lua"
+     ],
+     "hooks": [
+      "afterInstanceRegister",
+      "onInstanceCreated",
+      "onInstanceTimeUpdate",
+      "onInstanceFailure",
+      "onInstanceComplete"
+     ],
+     "uses_doors": true,
+     "uses_regions": true,
+     "mobs": [
+      "Archaic_Chariot",
+      "Archaic_Gear",
+      "Archaic_Gears",
+      "Archaic_Rampart",
+      "Battleclad_Chariot",
+      "Bull_Bugard",
+      "Draco_Lizard",
+      "First_Rampart",
+      "Fourth_Rampart",
+      "Greater_Manticore",
+      "Jakko",
+      "Mamool_Ja_Bounder",
+      "Mamool_Ja_Mimicker",
+      "Mamool_Ja_Savant",
+      "Mamool_Ja_Sophist",
+      "Mamool_Ja_Spearman",
+      "Mamool_Ja_Strapper",
+      "Mamool_Ja_Zenist",
+      "Mamool_Jas_Lizard",
+      "Mamool_Jas_Wyvern",
+      "Mindgazer",
+      "Poroggo_Gent",
+      "Poroggo_Madame",
+      "Puk",
+      "Rogue_Marid",
+      "Second_Rampart",
+      "Slime_Mold",
+      "Third_Rampart",
+      "Torama",
+      "Vagrant_Lindwurm",
+      "Wajaom_Tiger",
+      "Wyvern",
+      "Ziz"
+     ],
+     "npcs": [
+      "Armoury_Crate",
+      "Slot",
+      "Socket",
+      "_210",
+      "_211",
+      "_212",
+      "_213",
+      "_214",
+      "_215",
+      "_216",
+      "_217",
+      "_218",
+      "_219",
+      "_21a",
+      "_21b",
+      "_21c",
+      "_21d",
+      "_21e",
+      "_21f",
+      "_21g",
+      "_21i"
+     ]
+    },
+    "dsp": {
+     "zone_lua": true,
+     "ids_lua": true,
+     "instance_files": [],
+     "hooks": [],
+     "uses_doors": false,
+     "uses_regions": false,
+     "mobs": [
+      "Battleclad_Chariot"
+     ],
+     "npcs": []
+    },
+    "lsb": {
+     "zone_lua": true,
+     "ids_lua": true,
+     "instance_files": [
+      "zhayolm_remnants.lua"
+     ],
+     "hooks": [
+      "afterInstanceRegister",
+      "onInstanceCreated",
+      "onInstanceTimeUpdate",
+      "onInstanceFailure",
+      "onInstanceComplete",
+      "onInstanceProgressUpdate"
+     ],
+     "uses_doors": true,
+     "uses_regions": false,
+     "mobs": [
+      "Archaic_Chariot",
+      "Archaic_Gear",
+      "Archaic_Gears",
+      "Archaic_Rampart",
+      "Battleclad_Chariot",
+      "Bull_Bugard",
+      "Draco_Lizard",
+      "First_Rampart",
+      "Fourth_Rampart",
+      "Greater_Manticore",
+      "Jakko",
+      "Mamool_Ja_Bounder",
+      "Mamool_Ja_Mimicker",
+      "Mamool_Ja_Savant",
+      "Mamool_Ja_Sophist",
+      "Mamool_Ja_Spearman",
+      "Mamool_Ja_Strapper",
+      "Mamool_Ja_Zenist",
+      "Poroggo_Gent",
+      "Poroggo_Madame",
+      "Puk",
+      "Rogue_Marid",
+      "Second_Rampart",
+      "Third_Rampart",
+      "Vagrant_Lindwurm",
+      "Wyvern",
+      "Ziz"
+     ],
+     "npcs": [
+      "Armoury_Crate",
+      "Slot",
+      "Socket",
+      "_210",
+      "_211",
+      "_212",
+      "_213",
+      "_214",
+      "_215",
+      "_216",
+      "_217",
+      "_218",
+      "_219",
+      "_21a",
+      "_21b",
+      "_21c",
+      "_21d",
+      "_21e",
+      "_21f",
+      "_21g",
+      "_21i"
+     ]
+    }
+   },
+   "captures": 3,
+   "status": "partial"
+  },
+  {
+   "id": "arrapago",
+   "name": "Arrapago Remnants",
+   "folder": "Arrapago_Remnants",
+   "info": {
+    "topaz": {
+     "zone_lua": true,
+     "ids_lua": true,
+     "instance_files": [
+      "arrapago_remnants.lua"
+     ],
+     "hooks": [
+      "afterInstanceRegister",
+      "onInstanceCreated",
+      "onInstanceTimeUpdate",
+      "onInstanceFailure",
+      "onInstanceComplete",
+      "onInstanceProgressUpdate"
+     ],
+     "uses_doors": true,
+     "uses_regions": true,
+     "mobs": [
+      "Acrolith",
+      "Archaic_Chariot",
+      "Archaic_Gear",
+      "Archaic_Gears",
+      "Archaic_Rampart",
+      "Archaic_Rampart_1",
+      "Archaic_Rampart_2",
+      "Archaic_Rampart_3",
+      "Armored_Chariot",
+      "Chigoe_Stinger",
+      "Demonic_Pugil",
+      "Demonic_Rose",
+      "Deviate_Bhoot",
+      "Devil_Manta",
+      "Draugars_Wyvern",
+      "Flytrap",
+      "Gespenst",
+      "Goobbue_Wanderer",
+      "Khimaira",
+      "Khrysokhimaira_Elder",
+      "Korrigan",
+      "Lamia_Dancer",
+      "Lamia_Dartist",
+      "Lamia_Fatedealer",
+      "Lamia_Graverobber",
+      "Lamia_Spoliator",
+      "Lamias_Elemental",
+      "Leech",
+      "Merrow_Chantress",
+      "Merrow_Icedancer",
+      "Merrow_Kabukidancer",
+      "Merrow_Shadowdancer",
+      "Migrant_Russula",
+      "Mourioche",
+      "Nipper",
+      "Orobon",
+      "Princess_Pudding",
+      "Psycheflayer",
+      "Qiqirn_Astrologer",
+      "Qiqirn_Mine",
+      "Qiqirn_Treasure_Hunter",
+      "Qutrub",
+      "Qutrub_Devourer",
+      "Reserve_Draugar",
+      "Sabotender_Maestro",
+      "Seasonal_Treant",
+      "Staggering_Sapling",
+      "TH_Qiqirn_Mine",
+      "Vile_Wahzil",
+      "Vulture"
+     ],
+     "npcs": [
+      "Armoury_Crate",
+      "Slot",
+      "Socket",
+      "_220",
+      "_221",
+      "_222",
+      "_223",
+      "_224",
+      "_225",
+      "_226",
+      "_227",
+      "_228",
+      "_229",
+      "_22a",
+      "_22b",
+      "_22c",
+      "_22d",
+      "_22e",
+      "_22f",
+      "_22g",
+      "_22h",
+      "_22i"
+     ]
+    },
+    "dsp": {
+     "zone_lua": true,
+     "ids_lua": true,
+     "instance_files": [
+      "arrapago_remnants.lua"
+     ],
+     "hooks": [
+      "afterInstanceRegister",
+      "onInstanceCreated",
+      "onInstanceTimeUpdate",
+      "onInstanceFailure",
+      "onInstanceComplete",
+      "onInstanceProgressUpdate"
+     ],
+     "uses_doors": false,
+     "uses_regions": true,
+     "mobs": [
+      "Armored_Chariot",
+      "Lamia_Dancer",
+      "Lamia_Dartist",
+      "Lamia_Fatedealer",
+      "Lamia_Graverobber",
+      "MerrowIce_dancer",
+      "Merrow_Chantress",
+      "Merrow_Kabukidancer",
+      "Merrow_Shadowdancer"
+     ],
+     "npcs": [
+      "_220",
+      "_221",
+      "_222",
+      "_223",
+      "_224",
+      "_225",
+      "_226",
+      "_227",
+      "_228"
+     ]
+    },
+    "lsb": {
+     "zone_lua": true,
+     "ids_lua": true,
+     "instance_files": [
+      "arrapago_remnants.lua"
+     ],
+     "hooks": [
+      "afterInstanceRegister",
+      "onInstanceCreated",
+      "onInstanceTimeUpdate",
+      "onInstanceFailure",
+      "onInstanceComplete",
+      "onInstanceProgressUpdate"
+     ],
+     "uses_doors": false,
+     "uses_regions": false,
+     "mobs": [
+      "Archaic_Gear",
+      "Archaic_Gears",
+      "Archaic_Rampart_1",
+      "Archaic_Rampart_2",
+      "Archaic_Rampart_3",
+      "Armored_Chariot",
+      "Lamia_Dancer",
+      "Lamia_Dartist",
+      "Lamia_Fatedealer",
+      "Lamia_Graverobber",
+      "Merrow_Chantress",
+      "Merrow_Icedancer",
+      "Merrow_Kabukidancer",
+      "Merrow_Shadowdancer",
+      "Princess_Pudding",
+      "Qiqirn_Astrologer",
+      "Qiqirn_Mine",
+      "Qiqirn_Treasure_Hunter",
+      "Qutrub",
+      "Vile_Wahzil"
+     ],
+     "npcs": [
+      "Armoury_Crate",
+      "Slot",
+      "Socket",
+      "_220",
+      "_221",
+      "_222",
+      "_223",
+      "_224",
+      "_225",
+      "_226",
+      "_227",
+      "_228",
+      "_229",
+      "_22a",
+      "_22b",
+      "_22c",
+      "_22d",
+      "_22e",
+      "_22f",
+      "_22g"
+     ]
+    }
+   },
+   "captures": 2,
+   "status": "partial"
+  },
+  {
+   "id": "bhaflau",
+   "name": "Bhaflau Remnants",
+   "folder": "Bhaflau_Remnants",
+   "info": {
+    "topaz": {
+     "zone_lua": true,
+     "ids_lua": true,
+     "instance_files": [
+      "bhaflau_remnants.lua"
+     ],
+     "hooks": [
+      "afterInstanceRegister",
+      "onInstanceCreated",
+      "onInstanceTimeUpdate",
+      "onInstanceFailure",
+      "onInstanceComplete"
+     ],
+     "uses_doors": true,
+     "uses_regions": true,
+     "mobs": [
+      "Archaic_Chariot",
+      "Archaic_Gear",
+      "Archaic_Gears",
+      "Bifrons",
+      "Black_Pudding",
+      "Carmine_Eruca",
+      "Chigoe",
+      "Colibri",
+      "Empathic_Flan",
+      "Flux_Flan",
+      "Gate_Widow",
+      "Hunting_Wasp",
+      "Long-Bowed_Chariot",
+      "Mad_Bomber",
+      "Peryton",
+      "Reactionary_Rampart",
+      "Sulfur_Scorpion",
+      "Tragopan",
+      "Troll_Cameist",
+      "Troll_Engraver",
+      "Troll_Gemologist",
+      "Troll_Ironworker",
+      "Troll_Lapidarist",
+      "Troll_Smelter",
+      "Troll_Stoneworker",
+      "Wamouracampa",
+      "Wandering_Wamoura"
+     ],
+     "npcs": [
+      "Armoury_Crate",
+      "Dormant_Rampart",
+      "Slot",
+      "Socket",
+      "_230",
+      "_231",
+      "_232",
+      "_233",
+      "_234",
+      "_235",
+      "_236",
+      "_237",
+      "_238",
+      "_239",
+      "_23a",
+      "_23b",
+      "_23c",
+      "_23d",
+      "_23e",
+      "_23f",
+      "_23g",
+      "_23h",
+      "_23i",
+      "_23j",
+      "_23k",
+      "_23l",
+      "_23m",
+      "_23n",
+      "_23o",
+      "_23p",
+      "_23q",
+      "_23r",
+      "_23s",
+      "_23t",
+      "_23u",
+      "_23v",
+      "_23w",
+      "_23x",
+      "_23y"
+     ]
+    },
+    "dsp": {
+     "zone_lua": true,
+     "ids_lua": true,
+     "instance_files": [],
+     "hooks": [],
+     "uses_doors": false,
+     "uses_regions": false,
+     "mobs": [
+      "Colibri",
+      "Long-Bowed_Chariot"
+     ],
+     "npcs": []
+    },
+    "lsb": {
+     "zone_lua": true,
+     "ids_lua": true,
+     "instance_files": [
+      "bhaflau_remnants.lua"
+     ],
+     "hooks": [
+      "afterInstanceRegister",
+      "onInstanceCreated",
+      "onInstanceTimeUpdate",
+      "onInstanceFailure",
+      "onInstanceComplete",
+      "onInstanceProgressUpdate"
+     ],
+     "uses_doors": true,
+     "uses_regions": false,
+     "mobs": [
+      "Archaic_Chariot",
+      "Archaic_Gear",
+      "Archaic_Gears",
+      "Bifrons",
+      "Black_Pudding",
+      "Carmine_Eruca",
+      "Chigoe",
+      "Colibri",
+      "Empathic_Flan",
+      "Flux_Flan",
+      "Hunting_Wasp",
+      "Long-Bowed_Chariot",
+      "Mad_Bomber",
+      "Reactionary_Rampart",
+      "Sulfur_Scorpion",
+      "Tragopan",
+      "Troll_Cameist",
+      "Troll_Engraver",
+      "Troll_Gemologist",
+      "Troll_Ironworker",
+      "Troll_Lapidarist",
+      "Troll_Smelter",
+      "Troll_Stoneworker",
+      "Trolls_Automaton",
+      "Wamouracampa",
+      "Wandering_Wamoura"
+     ],
+     "npcs": [
+      "Armoury_Crate",
+      "Dormant_Rampart",
+      "Slot",
+      "Socket",
+      "_230",
+      "_231",
+      "_232",
+      "_233",
+      "_234",
+      "_235",
+      "_236",
+      "_237",
+      "_238",
+      "_239",
+      "_23a",
+      "_23b",
+      "_23c",
+      "_23d",
+      "_23e",
+      "_23f",
+      "_23g",
+      "_23h",
+      "_23i",
+      "_23j",
+      "_23k",
+      "_23l",
+      "_23m",
+      "_23n",
+      "_23o",
+      "_23p",
+      "_23q",
+      "_23r",
+      "_23s",
+      "_23t",
+      "_23u",
+      "_23v",
+      "_23x"
+     ]
+    }
+   },
+   "captures": 5,
+   "status": "partial"
+  },
+  {
+   "id": "silver_sea",
+   "name": "Silver Sea Remnants",
+   "folder": "Silver_Sea_Remnants",
+   "info": {
+    "topaz": {
+     "zone_lua": true,
+     "ids_lua": true,
+     "instance_files": [
+      "silver_sea_remnants.lua"
+     ],
+     "hooks": [
+      "afterInstanceRegister",
+      "onInstanceCreated",
+      "onInstanceTimeUpdate",
+      "onInstanceFailure",
+      "onInstanceComplete"
+     ],
+     "uses_doors": true,
+     "uses_regions": false,
+     "mobs": [
+      "Apkallu",
+      "Archaic_Rampart",
+      "Ashu_Talif_Crew",
+      "Gakke",
+      "Imp",
+      "Long-Armed_Chariot",
+      "Orobon",
+      "Qiqirn"
+     ],
+     "npcs": [
+      "Armoury_Crate",
+      "Slot",
+      "Socket"
+     ]
+    },
+    "dsp": {
+     "zone_lua": true,
+     "ids_lua": true,
+     "instance_files": [],
+     "hooks": [],
+     "uses_doors": false,
+     "uses_regions": false,
+     "mobs": [
+      "Long-Armed_Chariot"
+     ],
+     "npcs": []
+    },
+    "lsb": {
+     "zone_lua": true,
+     "ids_lua": true,
+     "instance_files": [
+      "silver_sea_remnants.lua"
+     ],
+     "hooks": [
+      "afterInstanceRegister",
+      "onInstanceCreated",
+      "onInstanceTimeUpdate",
+      "onInstanceFailure",
+      "onInstanceComplete",
+      "onInstanceProgressUpdate"
+     ],
+     "uses_doors": false,
+     "uses_regions": false,
+     "mobs": [
+      "Long-Armed_Chariot"
+     ],
+     "npcs": []
+    }
+   },
+   "captures": 9,
+   "status": "partial"
+  }
+ ],
+ "tracks": [
+  {
+   "id": "zhayolm_i",
+   "zone": "zhayolm",
+   "name": "Zhayolm Remnants I",
+   "level": "I",
+   "status": "partial",
+   "dsp_status": "unknown",
+   "instance_name": "zhayolm_remnants",
+   "topaz_instance_id": 62,
+   "topaz_row_live": true,
+   "dsp_instance_id": null,
+   "lsb_instance_id": 7300,
+   "time_limit": 100,
+   "topaz_entities": null,
+   "hooks": [
+    "afterInstanceRegister",
+    "onInstanceCreated",
+    "onInstanceTimeUpdate",
+    "onInstanceFailure",
+    "onInstanceComplete"
+   ],
+   "mob_scripts": 33,
+   "npc_scripts": 21,
+   "captures": 3
+  },
+  {
+   "id": "zhayolm_ii",
+   "zone": "zhayolm",
+   "name": "Zhayolm Remnants II",
+   "level": "II",
+   "status": "not built",
+   "dsp_status": "not built",
+   "instance_name": "zhayolm_remnants_ii",
+   "topaz_instance_id": 64,
+   "topaz_row_live": false,
+   "dsp_instance_id": null,
+   "lsb_instance_id": 7301,
+   "time_limit": 100,
+   "topaz_entities": null,
+   "hooks": [],
+   "mob_scripts": 0,
+   "npc_scripts": 0,
+   "captures": 0
+  },
+  {
+   "id": "arrapago_i",
+   "zone": "arrapago",
+   "name": "Arrapago Remnants I",
+   "level": "I",
+   "status": "partial",
+   "dsp_status": "partial",
+   "instance_name": "arrapago_remnants",
+   "topaz_instance_id": 65,
+   "topaz_row_live": true,
+   "dsp_instance_id": null,
+   "lsb_instance_id": 7400,
+   "time_limit": 100,
+   "topaz_entities": 298,
+   "hooks": [
+    "afterInstanceRegister",
+    "onInstanceCreated",
+    "onInstanceTimeUpdate",
+    "onInstanceFailure",
+    "onInstanceComplete",
+    "onInstanceProgressUpdate"
+   ],
+   "mob_scripts": 50,
+   "npc_scripts": 22,
+   "captures": 2
+  },
+  {
+   "id": "arrapago_ii",
+   "zone": "arrapago",
+   "name": "Arrapago Remnants II",
+   "level": "II",
+   "status": "not built",
+   "dsp_status": "not built",
+   "instance_name": "arrapago_remnants_ii",
+   "topaz_instance_id": 67,
+   "topaz_row_live": false,
+   "dsp_instance_id": null,
+   "lsb_instance_id": 7401,
+   "time_limit": 100,
+   "topaz_entities": null,
+   "hooks": [],
+   "mob_scripts": 0,
+   "npc_scripts": 0,
+   "captures": 0
+  },
+  {
+   "id": "bhaflau_i",
+   "zone": "bhaflau",
+   "name": "Bhaflau Remnants I",
+   "level": "I",
+   "status": "partial",
+   "dsp_status": "unknown",
+   "instance_name": "bhaflau_remnants",
+   "topaz_instance_id": 68,
+   "topaz_row_live": true,
+   "dsp_instance_id": null,
+   "lsb_instance_id": 7500,
+   "time_limit": 100,
+   "topaz_entities": 334,
+   "hooks": [
+    "afterInstanceRegister",
+    "onInstanceCreated",
+    "onInstanceTimeUpdate",
+    "onInstanceFailure",
+    "onInstanceComplete"
+   ],
+   "mob_scripts": 27,
+   "npc_scripts": 39,
+   "captures": 5
+  },
+  {
+   "id": "bhaflau_ii",
+   "zone": "bhaflau",
+   "name": "Bhaflau Remnants II",
+   "level": "II",
+   "status": "not built",
+   "dsp_status": "not built",
+   "instance_name": "bhaflau_remnants_ii",
+   "topaz_instance_id": 70,
+   "topaz_row_live": false,
+   "dsp_instance_id": null,
+   "lsb_instance_id": 7501,
+   "time_limit": 100,
+   "topaz_entities": null,
+   "hooks": [],
+   "mob_scripts": 0,
+   "npc_scripts": 0,
+   "captures": 0
+  },
+  {
+   "id": "silver_sea_i",
+   "zone": "silver_sea",
+   "name": "Silver Sea Remnants I",
+   "level": "I",
+   "status": "partial",
+   "dsp_status": "unknown",
+   "instance_name": "silver_sea_remnants",
+   "topaz_instance_id": 71,
+   "topaz_row_live": true,
+   "dsp_instance_id": null,
+   "lsb_instance_id": 7600,
+   "time_limit": 100,
+   "topaz_entities": null,
+   "hooks": [
+    "afterInstanceRegister",
+    "onInstanceCreated",
+    "onInstanceTimeUpdate",
+    "onInstanceFailure",
+    "onInstanceComplete"
+   ],
+   "mob_scripts": 8,
+   "npc_scripts": 3,
+   "captures": 8
+  },
+  {
+   "id": "silver_sea_ii",
+   "zone": "silver_sea",
+   "name": "Silver Sea Remnants II",
+   "level": "II",
+   "status": "not built",
+   "dsp_status": "not built",
+   "instance_name": "silver_sea_remnants_ii",
+   "topaz_instance_id": 73,
+   "topaz_row_live": false,
+   "dsp_instance_id": null,
+   "lsb_instance_id": 7601,
+   "time_limit": 100,
+   "topaz_entities": null,
+   "hooks": [],
+   "mob_scripts": 0,
+   "npc_scripts": 0,
+   "captures": 1
+  }
+ ],
+ "captures": [
+  {
+   "id": 1,
+   "label": "Arrapago Remnants Run 1",
+   "zone": "arrapago",
+   "mission": "Arrapago Remnants",
+   "salvage2": false
+  },
+  {
+   "id": 5,
+   "label": "Bhaflau Remnants 1",
+   "zone": "bhaflau",
+   "mission": "Bhaflau Remnants",
+   "salvage2": false
+  },
+  {
+   "id": 222,
+   "label": "Arrapago Remnants",
+   "zone": "arrapago",
+   "mission": null,
+   "salvage2": false
+  },
+  {
+   "id": 223,
+   "label": "Bhaflau Remnants :: actionview",
+   "zone": "bhaflau",
+   "mission": null,
+   "salvage2": false
+  },
+  {
+   "id": 224,
+   "label": "Bhaflau Remnants :: eventview",
+   "zone": "bhaflau",
+   "mission": null,
+   "salvage2": false
+  },
+  {
+   "id": 225,
+   "label": "Bhaflau Remnants :: hptrack",
+   "zone": "bhaflau",
+   "mission": null,
+   "salvage2": false
+  },
+  {
+   "id": 226,
+   "label": "Bhaflau Remnants :: npclogger",
+   "zone": "bhaflau",
+   "mission": null,
+   "salvage2": false
+  },
+  {
+   "id": 227,
+   "label": "CapFFXI - Nyzul Staging Point (Salvage Prep) + NM - Oupire",
+   "zone": null,
+   "mission": null,
+   "salvage2": false
+  },
+  {
+   "id": 228,
+   "label": "CapFFXI - Salvage II - Silver Sea Remnants +NPC - Mrohk Sahjuuli",
+   "zone": "silver_sea",
+   "mission": null,
+   "salvage2": true
+  },
+  {
+   "id": 241,
+   "label": "Zhayolm part 3",
+   "zone": "zhayolm",
+   "mission": "Zhayolm Remnants",
+   "salvage2": false
+  },
+  {
+   "id": 242,
+   "label": "Salvage-Zhaylom",
+   "zone": "zhayolm",
+   "mission": "Zhayolm Remnants",
+   "salvage2": false
+  },
+  {
+   "id": 243,
+   "label": "Salavge - Silver Seas Floor 1 - West Path",
+   "zone": "silver_sea",
+   "mission": "Silver Sea Remnants",
+   "salvage2": false
+  },
+  {
+   "id": 244,
+   "label": "Salavge - Silver Seas Floor 2 - SE Path",
+   "zone": "silver_sea",
+   "mission": "Silver Sea Remnants",
+   "salvage2": false
+  },
+  {
+   "id": 245,
+   "label": "Salavge - Silver Seas Floor 3 - South Path",
+   "zone": "silver_sea",
+   "mission": "Silver Sea Remnants",
+   "salvage2": false
+  },
+  {
+   "id": 246,
+   "label": "Salavge - Silver Seas Floor 4 - West Path",
+   "zone": "silver_sea",
+   "mission": "Silver Sea Remnants",
+   "salvage2": false
+  },
+  {
+   "id": 247,
+   "label": "Salvage - Silver Seas - East-SE-East",
+   "zone": "silver_sea",
+   "mission": "Silver Sea Remnants",
+   "salvage2": false
+  },
+  {
+   "id": 248,
+   "label": "Salvage - Silver Seas - East-SW",
+   "zone": "silver_sea",
+   "mission": "Silver Sea Remnants",
+   "salvage2": false
+  },
+  {
+   "id": 249,
+   "label": "Salvage - Silver Seas - West-NE-West",
+   "zone": "silver_sea",
+   "mission": "Silver Sea Remnants",
+   "salvage2": false
+  },
+  {
+   "id": 250,
+   "label": "Salvage - Silver Seas - West-NW-West",
+   "zone": "silver_sea",
+   "mission": "Silver Sea Remnants",
+   "salvage2": false
+  },
+  {
+   "id": 251,
+   "label": "Zhayolm Remnants 2nd run",
+   "zone": "zhayolm",
+   "mission": "Zhayolm Remnants",
+   "salvage2": false
+  }
+ ],
+ "systems": [
+  {
+   "id": "registry",
+   "name": "Instance registry (instance_list)",
+   "status": "partial",
+   "note": "Salvage I rows live in Topaz (ids 62, 65, 68, 71). Salvage II rows (64, 67, 70, 73) are commented placeholders; ids 63/66/69/72 are held spare. Source: sql/instance_list.sql, docs/project-memory/18-instance-id-master-list.md.",
+   "needs": [
+    "Salvage II captures",
+    "decision on spare ids"
+   ]
+  },
+  {
+   "id": "pathos",
+   "name": "Pathos restrictions",
+   "status": "partial",
+   "note": "Silver Sea instance applies ENCUMBRANCE_I, OBLIVISCENCE, OMERTA, IMPAIRMENT, DEBILITATION on entry and removal rules are per-zone. Whether the full retail Pathos list and cell items are built is unverified.",
+   "needs": [
+    "per-floor Pathos list",
+    "cell item/drop source evidence"
+   ]
+  },
+  {
+   "id": "floors",
+   "name": "Floor / stage progression",
+   "status": "partial",
+   "note": "Zhayolm and Arrapago/Bhaflau instance files model stages and door unsealing. Silver Sea ports only entry, failure and exit; LSB has no stage or door progression for it and none was invented.",
+   "needs": [
+    "Silver Sea floor doors _240..",
+    "captures of each floor"
+   ]
+  },
+  {
+   "id": "doors",
+   "name": "Doors and telepads",
+   "status": "partial",
+   "note": "Door npcs exist per zone (Zhayolm _210.., Arrapago _220.., Bhaflau _230.., Silver Sea none). Telepad csids are derived per zone and must come from captured events.",
+   "needs": [
+    "observed csids per telepad",
+    "door-to-floor mapping"
+   ]
+  },
+  {
+   "id": "slotsocket",
+   "name": "Slot / Socket / Armoury Crate",
+   "status": "partial",
+   "note": "Slot, Socket and Armoury_Crate npc scripts exist in all four zones. Per-zone local values differ, so they cannot be centralised.",
+   "needs": [
+    "capture check of slot/socket mechanics"
+   ]
+  },
+  {
+   "id": "mobs",
+   "name": "Mob and NM roster",
+   "status": "partial",
+   "note": "Mob scripts counted from the live tree. Spawn points, pools and drop lists are not verified against captures.",
+   "needs": [
+    "drop rates (FFXIDB)",
+    "NM spawn conditions"
+   ]
+  },
+  {
+   "id": "extraction",
+   "name": "Completion and extraction",
+   "status": "unknown",
+   "note": "Instance completion/failure hooks are listed per track. How retail extraction and the post-run reward flow work is not yet captured.",
+   "needs": [
+    "exit/extraction capture"
+   ]
+  },
+  {
+   "id": "salvage2",
+   "name": "Salvage II (_ii variants)",
+   "status": "not built",
+   "note": "No server content. One capture exists (Silver Sea Remnants, Salvage II) plus a Staging Point prep capture.",
+   "needs": [
+    "capture analysis",
+    "wiki/forum cross-reference"
+   ]
+  }
+ ],
+ "rewards": [],
+ "npcs": [
+  {
+   "id": "mrohk_sahjuuli",
+   "name": "Mrohk Sahjuuli",
+   "zone": "Aht Urhgan Whitegate / Alzadaal Undersea Ruins",
+   "role": "unknown",
+   "status": "unknown",
+   "note": "Name appears in capture 228's label only; role not verified."
+  }
+ ],
+ "open_questions": [
+  "What are the Salvage II instance ids actually needed, and are the held spares (63/66/69/72) used?",
+  "Which Silver Sea floors and doors exist in retail? Only entry/failure/exit is implemented.",
+  "What is the full Pathos set and cell-removal rule per zone, confirmed from captures?",
+  "What does Mrohk Sahjuuli do (capture 228)?",
+  "Do captures exist for every floor of every Salvage I zone?"
+ ]
+}

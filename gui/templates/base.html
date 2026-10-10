@@ -63,7 +63,8 @@
   .shell-menu[open] > summary { background:var(--accent-soft); color:var(--accent); }
   .shell-popover {
     position:absolute; top:calc(100% + 7px); right:0; z-index:100; min-width:240px; max-width:min(480px,90vw);
-    max-height:70vh; overflow:auto; padding:7px; border:1px solid var(--border); border-radius:7px;
+    max-height:calc(100vh - var(--shell-h) - 24px); overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain;
+    scrollbar-gutter:stable; touch-action:pan-y; padding:7px; border:1px solid var(--border); border-radius:7px;
     background:var(--surface); box-shadow:0 8px 24px rgba(0,0,0,.20);
   }
   .shell-menu.section-menu .shell-popover { left:0; right:auto; min-width:260px; }
@@ -272,6 +273,9 @@
               {% else %}
               <span class="section-link planned">{{ child.label }}</span>
               {% endif %}
+              {% for sub in (child.children or []) %}
+              <a class="section-link" style="padding-left:18px" href="{{ sub.href or '#' }}">{{ sub.label }}</a>
+              {% endfor %}
             {% endfor %}
           </div>
           {% elif section.href %}

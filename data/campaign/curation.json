@@ -1,0 +1,499 @@
+{
+ "_readme": "Hand-curated Campaign facts. Every value here was taken from docs/campaign/* (OPS_NPC_EVENTS.md, ID_CHECK_2026-10-02.md, README.md, WORK_QUEUE.md) or the Fandom dump. Anything not established is null/'unknown' - never fill a gap by estimating. ev = evidence letters: C capture, D client DAT/decompile, W wiki, S server SQL/Lua. Edit this file, then run scripts/build_campaign_domain.py.",
+ "systems": [
+  {
+   "id": "enlist",
+   "label": "Enlistment / allegiance",
+   "status": "partial",
+   "ev": "CW",
+   "gaps": "Kolin-Olin (event 306) start params are live nation-state snapshots; not built.",
+   "docs": "OPS_NPC_EVENTS.md"
+  },
+  {
+   "id": "sigil",
+   "label": "Sigil NPCs",
+   "status": "partial",
+   "ev": "DW",
+   "gaps": "Windurst Sigil NPC (Mindala-Andola) sits at 0,0,0 in DSP npc_list (not placed). TextIDs swept +2 on 2026-10-02, not live-tested.",
+   "docs": "ID_CHECK_2026-10-02.md"
+  },
+  {
+   "id": "ops",
+   "label": "Campaign Ops menu",
+   "status": "partial",
+   "ev": "CD",
+   "gaps": "Menu runs with its text but does not record which op was chosen; mask/count replies not decoded; op credits do not regenerate.",
+   "docs": "OPS_NPC_EVENTS.md"
+  },
+  {
+   "id": "opsmissions",
+   "label": "Op missions (246 rows)",
+   "status": "not built",
+   "ev": "W",
+   "gaps": "No mission scripts exist in LSB, Topaz or DSP (campaign.lua only). Mission rows come from the wiki; none verified against captures yet.",
+   "docs": "TRACKER.md"
+  },
+  {
+   "id": "battle",
+   "label": "Campaign Battles",
+   "status": "unknown",
+   "ev": "C",
+   "gaps": "34 campaign-battle captures are ingested; build state of the battle engine is not recorded in the research docs. Determine whether LSB campaign_system runs a live campaign (WORK_QUEUE item 4).",
+   "docs": "WORK_QUEUE.md"
+  },
+  {
+   "id": "promotion",
+   "label": "Evaluation / promotion (rank-up)",
+   "status": "unknown",
+   "ev": "C",
+   "gaps": "12 evaluation-promotion captures are ingested but no document identifies the rank-up NPC, its csids or menu options. Needs analysis of the captures.",
+   "docs": ""
+  },
+  {
+   "id": "voting",
+   "label": "Leader / policy / strategy voting",
+   "status": "unknown",
+   "ev": "C",
+   "gaps": "4 voting captures ingested (Windurst); NPC (a capture title names Kuron Makaron) and csids not analysed.",
+   "docs": ""
+  },
+  {
+   "id": "recon",
+   "label": "Recon / news reports",
+   "status": "partial",
+   "ev": "C",
+   "gaps": "Dallus-Mallus (event 323) reports are fixed tables in captures; live nation-state values are not derivable.",
+   "docs": "OPS_NPC_EVENTS.md"
+  },
+  {
+   "id": "shop",
+   "label": "Allied Notes shops / temp items",
+   "status": "unknown",
+   "ev": "W",
+   "gaps": "Wiki item lists exist (San d'Oria / Windurst Campaign Items); shop NPCs, stock and prices not verified against the client.",
+   "docs": ""
+  },
+  {
+   "id": "teleport",
+   "label": "Field teleport (Allied Notes cost)",
+   "status": "unknown",
+   "ev": "W",
+   "gaps": "Costs are documented on the wiki only; NPC and csid not identified.",
+   "docs": ""
+  }
+ ],
+ "npcs": [
+  {
+   "id": "rasdinice",
+   "name": "Rasdinice",
+   "role": "ops overseer",
+   "system": "ops",
+   "nation": "San d'Oria",
+   "zone": "Southern San d'Oria [S]",
+   "zone_id": 80,
+   "grid": "I-9",
+   "wire_id": 17105364,
+   "dsp_id": 17105363,
+   "events": [
+    307,
+    308,
+    309,
+    310,
+    311,
+    327,
+    332,
+    165,
+    171,
+    172
+   ],
+   "status": "partial",
+   "ev": "CDS",
+   "gaps": "DSP npc_list id is -1 vs captured wire id (shift unresolved, needs user decision). Wired 307 menu, untested in game. Events 165/171/172 are bare stubs."
+  },
+  {
+   "id": "hieronymus",
+   "name": "Hieronymus",
+   "role": "ops overseer",
+   "system": "ops",
+   "nation": "Bastok",
+   "zone": "Bastok Markets [S]",
+   "zone_id": 87,
+   "grid": "E-8",
+   "wire_id": 17134087,
+   "dsp_id": 17134086,
+   "events": [
+    316,
+    317,
+    318,
+    319,
+    320,
+    321,
+    324,
+    359,
+    360
+   ],
+   "status": "partial",
+   "ev": "CDS",
+   "gaps": "Menu csid is 316 (not 307). DSP id -1 vs wire. Wired, untested in game."
+  },
+  {
+   "id": "emhi",
+   "name": "Emhi Tchaoryo",
+   "role": "ops overseer",
+   "system": "ops",
+   "nation": "Windurst",
+   "zone": "Windurst Waters [S]",
+   "zone_id": 94,
+   "grid": "H-9",
+   "wire_id": 17162835,
+   "dsp_id": 17162834,
+   "events": [
+    307,
+    308,
+    309,
+    310,
+    311,
+    322,
+    326,
+    168,
+    31,
+    32,
+    42,
+    43
+   ],
+   "status": "partial",
+   "ev": "CDS",
+   "gaps": "Wiki gives both H-9 and H-10 for this NPC (H-9 in 73 mission rows). Text ids use a different base than the other two. DSP id -1 vs wire."
+  },
+  {
+   "id": "miliart",
+   "name": "Miliart, T.K.",
+   "role": "sigil",
+   "system": "sigil",
+   "nation": "San d'Oria",
+   "zone": "Southern San d'Oria [S]",
+   "zone_id": 80,
+   "grid": "L-10",
+   "wire_id": null,
+   "dsp_id": 17105518,
+   "events": [
+    110,
+    111
+   ],
+   "status": "partial",
+   "ev": "DWS",
+   "gaps": "DSP id matches client; LSB is +1 (do not copy). Also sells Allied Notes items (stock unverified)."
+  },
+  {
+   "id": "millard",
+   "name": "Millard",
+   "role": "sigil",
+   "system": "sigil",
+   "nation": "Bastok",
+   "zone": "Bastok Markets [S]",
+   "zone_id": 87,
+   "grid": null,
+   "wire_id": null,
+   "dsp_id": 17134130,
+   "events": [
+    13,
+    14
+   ],
+   "status": "partial",
+   "ev": "DS",
+   "gaps": "Map grid not recorded."
+  },
+  {
+   "id": "mindala",
+   "name": "Mindala-Andola, C.C.",
+   "role": "sigil",
+   "system": "sigil",
+   "nation": "Windurst",
+   "zone": "Windurst Waters [S]",
+   "zone_id": 94,
+   "grid": "G-5",
+   "wire_id": null,
+   "dsp_id": 17162865,
+   "events": [
+    13,
+    14
+   ],
+   "status": "partial",
+   "ev": "DWS",
+   "gaps": "Placed at 0,0,0 in DSP npc_list - needs a real position (npclogger/captures). A second Mindala NPC (17162926) has only event 41."
+  },
+  {
+   "id": "dallus",
+   "name": "Dallus-Mallus",
+   "role": "news / recon",
+   "system": "recon",
+   "nation": "Windurst",
+   "zone": "Windurst Waters [S]",
+   "zone_id": 94,
+   "grid": null,
+   "wire_id": 17162876,
+   "dsp_id": null,
+   "events": [
+    323
+   ],
+   "status": "not built",
+   "ev": "C",
+   "gaps": "Start/update params are live nation-state snapshots (Funding/Supplies bars, ranks); not derivable."
+  },
+  {
+   "id": "kolin",
+   "name": "Kolin-Olin",
+   "role": "enlistment greeter",
+   "system": "enlist",
+   "nation": "Windurst",
+   "zone": "Windurst Waters [S]",
+   "zone_id": 94,
+   "grid": null,
+   "wire_id": 17162836,
+   "dsp_id": null,
+   "events": [
+    306
+   ],
+   "status": "not built",
+   "ev": "C",
+   "gaps": "EndPara 1073741824 = cancel. Params are nation-state snapshots."
+  },
+  {
+   "id": "waldemar",
+   "name": "Waldemar, I.M.",
+   "role": "assessment / information",
+   "system": "battle",
+   "nation": null,
+   "zone": null,
+   "zone_id": null,
+   "grid": "G-4",
+   "wire_id": null,
+   "dsp_id": null,
+   "events": [],
+   "status": "unknown",
+   "ev": "W",
+   "gaps": "Wiki lists him as an Allied Campaign Information NPC at (G-4) without naming the zone. Not checked against the client."
+  },
+  {
+   "id": "kuron",
+   "name": "Kuron Makaron",
+   "role": "voting",
+   "system": "voting",
+   "nation": "Windurst",
+   "zone": null,
+   "zone_id": null,
+   "grid": null,
+   "wire_id": null,
+   "dsp_id": null,
+   "events": [],
+   "status": "unknown",
+   "ev": "C",
+   "gaps": "Name appears only in a capture title ('Voting for leader + policy + strategy'). Verify against the capture before use."
+  },
+  {
+   "id": "promo",
+   "name": "(rank-up NPC not identified)",
+   "role": "evaluation / promotion",
+   "system": "promotion",
+   "nation": null,
+   "zone": null,
+   "zone_id": null,
+   "grid": null,
+   "wire_id": null,
+   "dsp_id": null,
+   "events": [],
+   "status": "unknown",
+   "ev": "C",
+   "gaps": "Captures titled 'Windurst Promotion', 'Failed Evaluation 1st Medal', 'Failed Evaluation but retain rank' exist. Identify the NPC and csids from them."
+  }
+ ],
+ "menus": [
+  {
+   "event": 307,
+   "npc": "rasdinice",
+   "label": "Main Ops menu (SD / Windurst)",
+   "decoded": "partial",
+   "ev": "CD",
+   "note": "p0 = Op Credits, p1 = 1 once enlisted (0 = intro), p2 = 0, p3 = 1. Slot reply masks not decoded."
+  },
+  {
+   "event": 316,
+   "npc": "hieronymus",
+   "label": "Main Ops menu (Bastok)",
+   "decoded": "partial",
+   "ev": "CD",
+   "note": "Params {1,1,0,1,1,0,0,1} in capture."
+  },
+  {
+   "event": 308,
+   "npc": "rasdinice",
+   "label": "Abandon current op",
+   "decoded": "partial",
+   "ev": "D",
+   "note": "Two yes/no prompts; yes/no handling not decoded."
+  },
+  {
+   "event": 309,
+   "npc": "rasdinice",
+   "label": "Report: op failed",
+   "decoded": "yes",
+   "ev": "D",
+   "note": "No params; result2 = 3."
+  },
+  {
+   "event": 310,
+   "npc": "rasdinice",
+   "label": "Report: op success",
+   "decoded": "partial",
+   "ev": "D",
+   "note": "Credit/reward values need a capture."
+  },
+  {
+   "event": 311,
+   "npc": "rasdinice",
+   "label": "Not authorised (no medal / not allied)",
+   "decoded": "yes",
+   "ev": "D",
+   "note": "Text only."
+  },
+  {
+   "event": 327,
+   "npc": "rasdinice",
+   "label": "Medal expired",
+   "decoded": "yes",
+   "ev": "D",
+   "note": "Text only."
+  },
+  {
+   "event": 332,
+   "npc": "rasdinice",
+   "label": "Item turn-in for Op Credits",
+   "decoded": "no",
+   "ev": "D",
+   "note": "Needs a capture (result2 6 or 7)."
+  },
+  {
+   "event": 323,
+   "npc": "dallus",
+   "label": "Recon / policy report",
+   "decoded": "partial",
+   "ev": "C",
+   "note": "EndPara 0..8 triggers 9 sequential updates; fixed tables."
+  },
+  {
+   "event": 306,
+   "npc": "kolin",
+   "label": "Enlistment greeting",
+   "decoded": "no",
+   "ev": "C",
+   "note": "Params are nation-state snapshots."
+  },
+  {
+   "event": 110,
+   "npc": "miliart",
+   "label": "Sigil (0x6E)",
+   "decoded": "yes",
+   "ev": "DS",
+   "note": "DSP matches client."
+  },
+  {
+   "event": 111,
+   "npc": "miliart",
+   "label": "Sigil (0x6F)",
+   "decoded": "yes",
+   "ev": "DS",
+   "note": "DSP matches client."
+  }
+ ],
+ "rewards": [
+  {
+   "id": "opcredits",
+   "label": "Op Credits",
+   "kind": "currency",
+   "status": "partial",
+   "ev": "WC",
+   "note": "Wiki: 1 per 24h, max 7, 1 spent per op, no refund. Server stores char var CampaignOpCredits, new player = 1; NO regeneration built.",
+   "system": "ops"
+  },
+  {
+   "id": "allied_notes",
+   "label": "Allied Notes",
+   "kind": "currency",
+   "status": "unknown",
+   "ev": "W",
+   "note": "Earned from Ops, Campaign Battles, SCNM, Copper Voucher. Earn/spend not verified against the client.",
+   "system": "battle"
+  },
+  {
+   "id": "sigil",
+   "label": "Sigil effect",
+   "kind": "buff",
+   "status": "partial",
+   "ev": "DS",
+   "note": "Cast by the Sigil NPCs.",
+   "system": "sigil"
+  },
+  {
+   "id": "medal_ribbon",
+   "label": "Ribbon line (4 levels)",
+   "kind": "medal",
+   "status": "unknown",
+   "ev": "W",
+   "note": "Bronze Ribbon of Service, Brass Ribbon of Service, Allied Ribbon of Bravery, Allied Ribbon of Glory.",
+   "system": "promotion"
+  },
+  {
+   "id": "medal_star",
+   "label": "Star line (4 levels)",
+   "kind": "medal",
+   "status": "unknown",
+   "ev": "W",
+   "note": "Bronze Star, Sterling Star, Mythril Star, Golden Star.",
+   "system": "promotion"
+  },
+  {
+   "id": "medal_emblem",
+   "label": "Emblem line (4 levels)",
+   "kind": "medal",
+   "status": "unknown",
+   "ev": "W",
+   "note": "Copper Emblem of Service, Iron Emblem of Service, Steelknight Emblem, Holyknight Emblem.",
+   "system": "promotion"
+  },
+  {
+   "id": "medal_wings",
+   "label": "Wings line (4 levels)",
+   "kind": "medal",
+   "status": "unknown",
+   "ev": "W",
+   "note": "Brass Wings of Service, Mythril Wings of Service, Wings of Integrity, Wings of Honor.",
+   "system": "promotion"
+  },
+  {
+   "id": "medal_medal",
+   "label": "Medal line (4 levels)",
+   "kind": "medal",
+   "status": "unknown",
+   "ev": "W",
+   "note": "Starlight Medal, Moonlight Medal, Dawnlight Medal, Medal of Altana.",
+   "system": "promotion"
+  },
+  {
+   "id": "allied_tags",
+   "label": "Allied Tags / temp items",
+   "kind": "item",
+   "status": "unknown",
+   "ev": "W",
+   "note": "Worn in Campaign Battles; temp items bought with Allied Notes are lost on leaving the area.",
+   "system": "battle"
+  }
+ ],
+ "quests": [],
+ "open_questions": [
+  "Medal key items are believed to be ids 924-943 but have NOT been verified: run `python id_bridge.py keyitem \"<name>\"` for each (90% drift between LSB and Topaz).",
+  "Who is the rank-up / evaluation NPC in each nation, and which csids and menu options do the promotion captures show?",
+  "Are there any Campaign quests at all? None are recorded in the research so far; do not invent any.",
+  "Does LSB campaign_system run a live campaign or only script-set values (WORK_QUEUE item 4)?",
+  "XP + Allied Notes thresholds to rank up are unknown (the wiki table asks players to submit them)."
+ ]
+}
