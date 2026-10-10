@@ -6125,6 +6125,47 @@ def wiki_job_status():
     return {"jobs": wiki_jobs.recent_jobs()}
 
 
+@app.get("/wiki/translation/jobs")
+def wiki_translation_batch_status():
+    from workbench.devtools.reference import wiki_translation_batch
+    return {"jobs": wiki_translation_batch.status(DB_PATH)}
+
+
+@app.post("/wiki/translation/start")
+async def wiki_translation_batch_start(request: Request):
+    from workbench.devtools.reference import wiki_translation_batch
+    form = await request.form()
+    try:
+        limit = int(form.get("limit") or 10)
+        job_id = wiki_translation_batch.start(DB_PATH, limit=limit)
+        return {"status": "queued", "job_id": job_id}
+    except (ValueError, TypeError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
+@app.post("/wiki/translation/retry")
+async def wiki_translation_batch_retry(request: Request):
+    from workbench.devtools.reference import wiki_translation_batch
+    form = await request.form()
+    try:
+        job_id = wiki_translation_batch.start(
+            DB_PATH, limit=int(form.get("limit") or 10),
+            retry_job=str(form.get("job_id") or ""))
+        return {"status": "queued", "job_id": job_id}
+    except (ValueError, TypeError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
+@app.post("/wiki/translation/cancel")
+async def wiki_translation_batch_cancel(request: Request):
+    from workbench.devtools.reference import wiki_translation_batch
+    form = await request.form()
+    ident = str(form.get("job_id") or "")
+    if not ident or not wiki_translation_batch.cancel(ident):
+        return JSONResponse({"error": "Job is not running in this process"}, status_code=409)
+    return {"status": "cancellation_requested", "job_id": ident}
+
+
 @app.get("/wiki/translate")
 def wiki_translate(source: str, title: str):
     """Machine translation of a stored page, display-only; the stored original is untouched."""
