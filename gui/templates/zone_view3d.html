@@ -65,6 +65,12 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   <datalist id="ashita-live-clients"></datalist>
   <label><input id="ashita-live-entities" type="checkbox"> Nearby entities</label>
   <label><input id="ashita-live-follow" type="checkbox"> Follow player (orbit)</label>
+  <label>Axis preview <select id="ashita-live-axes">
+    <option value="legacy">Legacy X,-Y,-Z</option>
+    <option value="xyz">Raw X,Y,Z</option>
+    <option value="xzy">X,Z,Y</option>
+    <option value="x-z-y">X,-Z,-Y</option>
+  </select></label>
   <button type="button" id="ashita-live-focus">Focus player</button>
   <button type="button" id="ashita-live-copy">Copy diagnostics</button>
   <a class="inline" href="/live-client/bridge/console" target="_blank" rel="noopener">Bridge setup ↗</a>
@@ -200,6 +206,13 @@ const liveClient = document.getElementById('ashita-live-client');
 const liveStatus = document.getElementById('ashita-live-status');
 const liveEntitiesToggle = document.getElementById('ashita-live-entities');
 const liveFollowToggle = document.getElementById('ashita-live-follow');
+const liveAxes = document.getElementById('ashita-live-axes');
+function projectLivePoint(p) {
+  if (liveAxes.value === 'xyz') return new THREE.Vector3(p.x,p.y,p.z);
+  if (liveAxes.value === 'xzy') return new THREE.Vector3(p.x,p.z,p.y);
+  if (liveAxes.value === 'x-z-y') return new THREE.Vector3(p.x,-p.z,-p.y);
+  return new THREE.Vector3(p.x,-p.y,-p.z);
+}
 const liveEntitiesGroup = new THREE.Group();
 scene.add(liveEntitiesGroup);
 let lastLivePosition = null;
@@ -268,7 +281,7 @@ async function pollAshitaPosition() {
       scene.add(liveMarker);
     }
     const previous = lastLivePosition;
-    const current = new THREE.Vector3(position.x, -position.y, -position.z);
+    const current = projectLivePoint(position);
     liveMarker.position.copy(current);
     // Heading uses the observed radian angle; verify its orientation against Windows game view.
     if (Number.isFinite(position.heading)) {
@@ -286,6 +299,7 @@ async function pollAshitaPosition() {
       character: data.player.character || null,
       raw_position: {x:position.x,y:position.y,z:position.z,heading:position.heading},
       viewer_position: {x:current.x,y:current.y,z:current.z},
+      axis_preview: liveAxes.value,
       adapter: data.adapter, observed_at: data.observed_at,
       entity_count: Array.isArray(data.entities) ? data.entities.length : 0,
       entities_truncated: Boolean(data.entities_truncated)
@@ -309,7 +323,7 @@ async function pollAshitaPosition() {
           liveEntitiesGroup.add(marker);
           liveEntityPool.push(marker);
         }
-        marker.position.set(point.x, -point.y, -point.z);
+        marker.position.copy(projectLivePoint(point));
         marker.userData.liveName = entity.name || '';
         marker.visible = true;
         entityCount++;
@@ -342,6 +356,7 @@ document.getElementById('ashita-live-copy').addEventListener('click', async () =
 });
 liveToggle.addEventListener('change', () => { ++lastLiveRequest; pollAshitaPosition(); });
 liveEntitiesToggle.addEventListener('change', pollAshitaPosition);
+liveAxes.addEventListener('change', () => { ++lastLiveRequest; clearLiveMarker(); pollAshitaPosition(); });
 liveClient.addEventListener('change', () => { ++lastLiveRequest; clearLiveMarker(); pollAshitaPosition(); });
 refreshLiveClients();
 setInterval(refreshLiveClients, 10000);

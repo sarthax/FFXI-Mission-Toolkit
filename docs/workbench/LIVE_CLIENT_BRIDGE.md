@@ -718,3 +718,7 @@ or a player movement path. Inspect the marker against a known landmark and
 compare forward-facing direction in the game; send the copied diagnostics and
 a screenshot if axis or heading alignment is incorrect. Neither button sends
 movement commands. The clipboard button needs browser clipboard permission.
+
+### Windows field report — zoning and uncalibrated 3D axes
+
+A real Windows DSP/Ashita test confirmed connection, position updates, player marker visibility and camera following, but reported a floating/misaligned marker, incorrect heading and telemetry stopping after zoning. The Ashita sampler now treats mid-sample zone/slot transitions as recoverable within the existing 30-second stability window. The 3D viewer offers temporary axis previews for comparing live coordinates with mesh geometry; selections are local to the page and are **not** proof of correct calibration. Heading transformation remains unverified. The viewer does not automatically navigate to a new zone: manually select/open the new zone after telemetry resumes. Longer zoning delays, logout/character changes and network issues may still require manual restart.
