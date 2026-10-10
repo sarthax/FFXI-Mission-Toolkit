@@ -90,7 +90,7 @@ def translate_blocks(blocks: list[dict], *, model: str,
     for b in translated:
         text = b["text"]
         if b["block_type"] == "heading":
-            text = "\n## " + text + "\\n"
+            text = "\n## " + text + "\n"
         elif b["block_type"] == "list_item":
             text = "- " + text
         elif b["block_type"] in {"table_header_cell", "table_cell"}:
