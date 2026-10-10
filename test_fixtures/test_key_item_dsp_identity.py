@@ -156,3 +156,10 @@ def test_dsp_numeric_id_collision_prevents_false_clean_identity(tmp_path: Path):
     assert first["status"] == "ambiguous" and first["symbol"] is None
     assert second["status"] == "ambiguous" and second["symbol"] is None
     assert first["conflicting_symbols"] == ["SECOND_KEY"]
+
+
+def test_dsp_enum_labels_use_source_constants_without_invented_tpz_namespace():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert '{% if primary_dsp %}{{ rd.id_match }}{% else %}xi.keyItem.{{ rd.id_match }}{% endif %}' in page
+    assert '{% if primary_dsp %}{{ rd.name_match[1] }}{% else %}xi.keyItem.{{ rd.name_match[1] }}{% endif %}' in page
+    assert '"tpz.ki" if primary_dsp' not in page
