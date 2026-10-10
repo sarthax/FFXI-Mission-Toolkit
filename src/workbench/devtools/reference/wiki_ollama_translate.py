@@ -36,7 +36,7 @@ def quality_warnings(source: str, translated: str, glossary: dict | None = None)
 
 def translate(text: str, *, model: str, url: str = _DEFAULT_URL,
               timeout: int = 120, max_chars: int = 5000,
-              glossary: dict | None = None) -> dict:
+              glossary: dict | None = None, num_ctx: int = 8192) -> dict:
     """Translate bounded source text via loopback Ollama; return unverified draft."""
     if not model.strip():
         raise ValueError("An explicit installed Ollama model is required")
@@ -55,7 +55,7 @@ def translate(text: str, *, model: str, url: str = _DEFAULT_URL,
         + terms + "\n\nJapanese source:\n" + text + "\n\nEnglish translation:"
     )
     payload = json.dumps({"model": model, "prompt": prompt, "stream": False,
-                          "options": {"temperature": 0}}).encode("utf-8")
+                          "options": {"temperature": 0, "num_ctx": num_ctx}}).encode("utf-8")
     req = urllib.request.Request(url, payload, headers={"Content-Type": "application/json"},
                                  method="POST")
     with urllib.request.urlopen(req, timeout=timeout) as response:
