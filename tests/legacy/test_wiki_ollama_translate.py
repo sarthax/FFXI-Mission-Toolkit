@@ -27,10 +27,10 @@ def test_model_translation_preserves_original_and_caches():
             assert one["unverified"] is True
             assert one["engine"] == "ollama:test-jp-model"
             assert one["warnings"] == []
-            assert c.execute("SELECT translated FROM reference_wiki_translations").fetchone()[0] == one["text"]
+            assert c.execute("SELECT COUNT(*) FROM reference_wiki_translations").fetchone()[0] == 0
             two = wiki_jobs.translate_cached(c, "WikiWikiJP", "abc", "sha-a", original)
             assert two["status"] == "OK"
-            assert send.call_count == 1
+            assert send.call_count == 2  # unstructured fallback is deliberately uncached
 
 
 def test_numeric_omission_warns():
