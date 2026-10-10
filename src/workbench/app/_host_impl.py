@@ -4614,8 +4614,10 @@ def keyitems_lua_references(keyitem_id: int, lineage: str = "lsb"):
         if identity["status"] != "name_verified":
             return {"keyitem_id": keyitem_id, "lineage": "dsp", "readiness": identity["status"],
                     "references": [], "message": identity["message"]}
-        result = discover_key_item_references(root, identity["symbol"], lineage="dsp",
-                                              max_matches=200, max_files=25000)
+        from workbench.devtools.features.key_item_persistent_index import query_index
+        result = query_index(root, DB_PATH.with_name("key_item_lua_refs.sqlite"),
+                             identity["symbol"], lineage="dsp",
+                             max_matches=200, max_files=25000)
         result.update({"keyitem_id": keyitem_id, "readiness": "name_verified",
                        "server_id": identity["server_id"],
                        "identity_source": identity["source_path"]})
