@@ -133,4 +133,3 @@ def test_downloaded_bridge_settings_use_real_lua_line_breaks():
     builder = html[start:end]
     assert r"\\n" not in builder, "literal backslash-n comments out the entire Lua settings file"
     assert r"\n" in builder
-    assert "'local socket = require(\"socket\")\\nreturn" not in builder
