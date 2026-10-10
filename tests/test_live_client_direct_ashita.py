@@ -128,7 +128,7 @@ def test_direct_live_zoning_pauses_then_resumes_without_reprovision():
                         } end,
                         GetEntity=function() return {} end
                     } end}
-                    return observation.capture_ashita(core, function() end, id, now, false)
+                    return observation.capture_ashita(core, function() end, id, now, false, true)
                 end
                 return {source_identity='123:Hero',character='Hero',
                     client_id=id,client_version='unverified-ashita-v4-api',
