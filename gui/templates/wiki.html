@@ -7,6 +7,11 @@
 {% block page_help %}Parses real MediaWiki links/templates and resolves them against indexed zones, NPCs, mobs, key items, and items. Wiki evidence stays reference-only until independently verified against server, client, or capture evidence.{% endblock %}
 {% block page_body %}
 <style>
+.wiki-bilingual-grid{display:grid;gap:8px;margin:10px 0}
+.wiki-bilingual-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.wiki-bilingual-cell{padding:10px;border:1px solid var(--border);border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere}
+.wiki-bilingual-cell small{display:block;color:var(--muted);margin-bottom:5px}
+@media(max-width:700px){.wiki-bilingual-row{grid-template-columns:minmax(0,1fr)}}
 .wiki-section{border:1px solid var(--border);border-radius:7px;background:var(--surface);margin:7px 0;overflow:hidden}
 .wiki-section>summary{padding:7px 9px;cursor:pointer;font-weight:600}
 .wiki-section>.body{padding:0 8px 8px}
