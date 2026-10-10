@@ -252,10 +252,23 @@
       copy.type = 'button';
       copy.textContent = 'Copy location';
       copy.addEventListener('click', () => copyValue(location.textContent));
+      const context = document.createElement('span');
+      const path = String(ref.source_path || '');
+      const parts = path.split('/');
+      const fileName = parts[parts.length - 1] || path;
+      const kind = path.includes('/npcs/') ? 'NPC script' :
+        path.includes('/missions/') ? 'Mission script' :
+        path.includes('/quests/') ? 'Quest script' :
+        path.includes('/zones/') ? 'Zone script' :
+        'Lua source';
+      context.textContent = ' · ' + kind + ' · ' + fileName;
+      const search = document.createElement('a');
+      search.textContent = 'Find in Feature Trace';
+      search.href = '/features/trace?' + new URLSearchParams({q: fileName});
       const excerpt = document.createElement('pre');
       excerpt.textContent = String(ref.source_text || '');
       excerpt.style.whiteSpace = 'pre-wrap';
-      item.append(label, location, copy, excerpt);
+      item.append(label, location, context, copy, search, excerpt);
       list.append(item);
     }
     results.replaceChildren(list);
