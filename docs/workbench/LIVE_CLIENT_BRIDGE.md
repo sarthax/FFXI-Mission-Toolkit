@@ -842,3 +842,14 @@ receiver, choose **Configure client**, download the freshly provisioned
 `/wblive live start <client ID>`. Ensure the file ends in `return { ... }`
 and is not an empty placeholder; do not paste tokens or settings into reports.
 If the dashboard remains waiting, use **Copy safe health report**.
+
+
+### Invalid downloaded settings with literal backslash-n sequences
+
+An earlier Direct Live Bridge download generator emitted literal `\\n` text
+instead of newline characters. Because its first line begins with a Lua
+`--` comment, Lua executed none of the file and `require` returned
+`true` instead of the expected settings table. Fixed in the generator.
+Update the Toolkit and reprovision/download a fresh private settings file,
+then copy it into the actual Ashita addon folder and reload. Reprovisioning
+revokes earlier credentials; never share the private settings file.

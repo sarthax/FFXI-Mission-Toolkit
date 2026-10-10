@@ -122,3 +122,14 @@ def test_client_specific_setup_command_and_private_config_invalidation():
                      "await navigator.clipboard.writeText('/wblive live start '+id)"):
         assert expected in html
     assert "if(!privateConfig || provisionedClient!==client())return;" in html
+
+
+def test_downloaded_bridge_settings_use_real_lua_line_breaks():
+    """JavaScript must emit newline characters, not literal backslash-n in Lua."""
+    from pathlib import Path
+    html = (Path(__file__).resolve().parents[1] / "gui/templates/live_client_bridge.html").read_text(encoding="utf-8")
+    start = html.index("const lua='-- Private workbench_bridge_settings.lua")
+    end = html.index(" privateConfig=lua;", start)
+    builder = html[start:end]
+    assert r"\\n" not in builder, "literal backslash-n comments out the entire Lua settings file"
+    assert r"\n" in builder
