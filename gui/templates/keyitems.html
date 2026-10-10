@@ -298,8 +298,19 @@
       const lines = [...new Set(scopedRefs.map(ref => Number(ref.source_line))
         .filter(line => Number.isInteger(line) && line > 0))].sort((a, b) => a - b);
       citations.textContent = 'Cited source lines: ' + (lines.length ? lines.join(', ') : 'none');
+      const copyEvidence = document.createElement('button');
+      copyEvidence.type = 'button';
+      copyEvidence.textContent = 'Copy script evidence';
+      copyEvidence.addEventListener('click', () => {
+        const evidence = scopedRefs.map(ref => {
+          const location = String(ref.source_path || '') + ':' + String(ref.source_line || '');
+          return '[' + String(ref.operation || 'reference') + '] ' + location +
+            '\\n' + String(ref.source_text || '');
+        }).join('\\n\\n');
+        copyValue(evidence);
+      });
       entries.append(...items);
-      group.append(heading, citations, entries);
+      group.append(heading, citations, copyEvidence, entries);
       list.append(group);
     }
     results.replaceChildren(list);
