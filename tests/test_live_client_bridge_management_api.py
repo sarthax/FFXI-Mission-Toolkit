@@ -88,3 +88,11 @@ def test_operator_setup_feedback_and_safe_live_zone_link():
     assert "zoneLink.removeAttribute('href')" in template
     assert "reload the ashita addon" in template.lower()
     assert "Existing credentials were revoked." in template
+
+
+def test_live_bridge_zone_link_preserves_selected_client_and_explicit_opt_in():
+    from pathlib import Path
+    template = (Path(__file__).resolve().parents[1] / "gui/templates/live_client_bridge.html").read_text(encoding="utf-8")
+    assert "new URLSearchParams({live:'1',client:client(),autozone:'1'})" in template
+    assert "if(data.connected && Number.isInteger(zone) && zone>=1 && zone<=65535)" in template
+    assert "zoneLink.removeAttribute('href')" in template
