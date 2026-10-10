@@ -36,7 +36,7 @@ def quality_warnings(source: str, translated: str, glossary: dict | None = None)
 
 def translate(text: str, *, model: str, url: str = _DEFAULT_URL,
               timeout: int | None = None, max_chars: int = 5000,
-              glossary: dict | None = None, num_ctx: int = 8192) -> dict:
+              glossary: dict | None = None, num_ctx: int | None = None) -> dict:
     """Translate bounded source text via loopback Ollama; return unverified draft."""
     if not model.strip():
         raise ValueError("An explicit installed Ollama model is required")
@@ -57,6 +57,8 @@ def translate(text: str, *, model: str, url: str = _DEFAULT_URL,
         "Do not add facts, explanations, or commentary. Use these glossary terms:\n"
         + terms + "\n\nJapanese source:\n" + text + "\n\nEnglish translation:"
     )
+    if num_ctx is None:
+        num_ctx = auto_num_ctx(prompt, len(text))
     payload = json.dumps({"model": model, "prompt": prompt, "stream": False,
                           "keep_alive": "30m",
                           "options": {"temperature": 0, "num_ctx": num_ctx}}).encode("utf-8")
@@ -70,7 +72,22 @@ def translate(text: str, *, model: str, url: str = _DEFAULT_URL,
             "unverified": True, "warnings": quality_warnings(text, translated, glossary)}
 
 
-def split_text(text: str, limit: int = 3500) -> list[str]:
+def auto_num_ctx(prompt: str, source_len: int) -> int:
+    """Smallest context that fits prompt + reply. A big KV cache spills a 12 GB GPU into RAM and
+    slows every call, so size it to the request (1 token per char is a safe over-estimate)."""
+    need = len(prompt) + max(512, int(source_len * 1.5))
+    return min(8192, max(2048, -(-need // 1024) * 1024))
+
+
+_JP = re.compile("[぀-ヿ㐀-鿿ｦ-ﾟ]")
+
+
+def has_japanese(text: str) -> bool:
+    """False for numbers/ASCII-only cells, which need no model call."""
+    return bool(_JP.search(text))
+
+
+def split_text(text: str, limit: int = 2000) -> list[str]:
     """Split on line breaks, then Japanese/ASCII sentence ends, packing pieces up to `limit` chars."""
     pieces: list[str] = []
     for line in text.splitlines():

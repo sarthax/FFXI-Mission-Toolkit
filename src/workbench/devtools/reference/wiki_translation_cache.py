@@ -55,7 +55,7 @@ def translate_cached_blocks(con: sqlite3.Connection, *, source_id: str,
         from .wiki_translation_client_terms import default_terms
         client_terms = default_terms()
     policy = policy_hash(glossary, client_terms.snapshot_id)
-    output, warnings, misses = [], [], 0
+    output, warnings, misses, skipped = [], [], 0, 0
     expanded = []
     for block in blocks:
         text = block.get("text") or ""
@@ -74,6 +74,14 @@ def translate_cached_blocks(con: sqlite3.Connection, *, source_id: str,
         block_id = str(block.get("block_id") or "")
         if not block_id:
             return {"status": "ERROR", "error": "Source block has no identifier"}
+        if not engine.has_japanese(original):
+            # Numbers / ASCII-only cells: nothing to translate, skip the model call.
+            output.append({"block_id": block_id, "ordinal": block.get("ordinal"),
+                           "block_type": kind, "original": original, "text": original,
+                           "section_path": block.get("section_path"),
+                           "source_locator": block.get("source_locator")})
+            skipped += 1
+            continue
         digest = hashlib.sha256(original.encode("utf-8")).hexdigest()
         args = (source_id, str(page_id), block_id, digest, model, policy, "en")
         hit = con.execute("""SELECT translated,warnings_json FROM reference_wiki_block_translations
@@ -105,4 +113,4 @@ def translate_cached_blocks(con: sqlite3.Connection, *, source_id: str,
         return {"status": "ERROR", "error": "No translatable blocks"}
     return {"status": "OK", "text": render(output), "blocks": output,
             "engine": "ollama:" + model, "unverified": True, "warnings": warnings,
-            "cache_hits": len(output) - misses, "cache_misses": misses}
+            "cache_hits": len(output) - misses - skipped, "skipped_no_japanese": skipped, "cache_misses": misses}
