@@ -129,7 +129,16 @@ ZONE_VISUAL_DIR = TOOLS_ROOT / "gui" / "static" / "zone_visual"
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 
-app = FastAPI(title="Mission Toolkit GUI")
+from contextlib import asynccontextmanager
+
+
+@asynccontextmanager
+async def _lifespan(_app):
+    wiki_scheduler_startup()  # defined further down; resolved at startup time
+    yield
+
+
+app = FastAPI(title="Mission Toolkit GUI", lifespan=_lifespan)
 app.include_router(character_editor_router)
 from workbench.client.animlab.router import router as animlab_router
 app.include_router(animlab_router)
@@ -5954,7 +5963,6 @@ def wiki_bulk_status():
     return {"jobs": wiki_bulk_jobs.status(DB_PATH)}
 
 
-@app.on_event("startup")
 def wiki_scheduler_startup():
     from workbench.devtools.reference import wiki_sync_schedule
     wiki_sync_schedule.start_background(DB_PATH)
