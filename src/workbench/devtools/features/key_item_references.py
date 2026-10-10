@@ -13,13 +13,13 @@ from collections import defaultdict
 _ALLOWED_NAMESPACES = {
     "lsb": ("xi.keyItem",),
     "topaz": ("tpz.ki", "tpz.keyItem"),
-    "dsp": ("tpz.ki", "tpz.keyItem"),
+    "dsp": ("tpz.ki", "tpz.keyItem", "dsp.global"),
 }
 _CALL = re.compile(
     r"(?P<api>\b(?:player:(?:hasKeyItem|addKeyItem|delKeyItem)|"
     r"npcUtil\.giveKeyItem))\s*\(\s*"
     r"(?:(?:player\s*,\s*)?)"
-    r"(?P<namespace>xi\.keyItem|tpz\.ki|tpz\.keyItem)\."
+    r"(?:(?P<namespace>xi\.keyItem|tpz\.ki|tpz\.keyItem)\.)?"
     r"(?P<symbol>[A-Z][A-Z0-9_]*)\b"
 )
 _OPERATION = {
@@ -45,12 +45,38 @@ def _read_lua_lines(path: str, mtime_ns: int, size: int) -> tuple[str, ...]:
 def _indexed_lua_lines(path: str, mtime_ns: int, size: int) -> dict[str, tuple[tuple[int, str, str, str], ...]]:
     """Index literal enum symbols once for each cached version of a Lua file."""
     symbols: dict[str, list[tuple[int, str, str, str]]] = defaultdict(list)
+    in_block_comment = False
     for number, raw in enumerate(_read_lua_lines(path, mtime_ns, size), 1):
-        code = raw.split("--", 1)[0]
+        # Strip Lua --[[...]] blocks, including blocks spanning multiple lines.
+        # Keep all source line numbers unchanged for navigation.
+        code_parts = []
+        remaining = raw
+        while remaining:
+            if in_block_comment:
+                end = remaining.find("]]")
+                if end < 0:
+                    remaining = ""
+                    break
+                remaining = remaining[end + 2:]
+                in_block_comment = False
+                continue
+            line_comment = remaining.find("--")
+            block_comment = remaining.find("--[[")
+            if block_comment >= 0 and (line_comment < 0 or block_comment == line_comment):
+                code_parts.append(remaining[:block_comment])
+                remaining = remaining[block_comment + 4:]
+                in_block_comment = True
+            elif line_comment >= 0:
+                code_parts.append(remaining[:line_comment])
+                break
+            else:
+                code_parts.append(remaining)
+                break
+        code = "".join(code_parts)
         for match in _CALL.finditer(code):
             api = match.group("api").split(":")[-1].split(".")[-1]
             symbols[match.group("symbol")].append((
-                number, raw.strip(), match.group("namespace"), api,
+                number, raw.strip(), match.group("namespace") or "dsp.global", api,
             ))
     return {key: tuple(value) for key, value in symbols.items()}
 

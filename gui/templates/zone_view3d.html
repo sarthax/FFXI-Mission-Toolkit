@@ -59,6 +59,17 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   Zone meshes run 30-75MB and take a real parse (up to a minute) -- or run
   <code class="chip">py -3 -m workbench.devtools.spatial.build_visual_cache {{ zoneid }}</code> from a terminal instead.</div>
 {% else %}
+<div id="ashita-live-controls" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:5px 0;padding:6px;border:1px solid var(--border);border-radius:6px;">
+  <label><input id="ashita-live-toggle" type="checkbox"> Live Ashita position (read only)</label>
+  <label>Client ID <input id="ashita-live-client" value="ashita-a" list="ashita-live-clients" style="width:120px"></label>
+  <datalist id="ashita-live-clients"></datalist>
+  <label><input id="ashita-live-entities" type="checkbox"> Nearby entities</label>
+  <label><input id="ashita-live-follow" type="checkbox"> Follow player (orbit)</label>
+  <button type="button" id="ashita-live-focus">Focus player</button>
+  <button type="button" id="ashita-live-copy">Copy diagnostics</button>
+  <a class="inline" href="/live-client/bridge/console" target="_blank" rel="noopener">Bridge setup ↗</a>
+  <span id="ashita-live-status" class="chip mono" role="status">Off</span>
+</div>
 <div class="dense-toolbar" style="margin-bottom:6px; flex-wrap:wrap;">
   <label class="muted" for="tod-slider">Time of day</label>
   <input type="range" id="tod-slider" min="0" max="24" step="0.1" value="12" style="width:220px;">
@@ -183,6 +194,159 @@ fetch(`/zoneplot/${ZONEID}/data.json`).then(r => r.json()).then(d => {
 }).catch(() => {});
 
 const scene = new THREE.Scene();
+// Optional ephemeral Ashita position marker. Coordinate mapping follows existing spawn markers.
+const liveToggle = document.getElementById('ashita-live-toggle');
+const liveClient = document.getElementById('ashita-live-client');
+const liveStatus = document.getElementById('ashita-live-status');
+const liveEntitiesToggle = document.getElementById('ashita-live-entities');
+const liveFollowToggle = document.getElementById('ashita-live-follow');
+const liveEntitiesGroup = new THREE.Group();
+scene.add(liveEntitiesGroup);
+let lastLivePosition = null;
+let lastLiveDiagnostic = null;
+let lastLiveRequest = 0;
+const liveEntityGeometry = new THREE.SphereGeometry(1.5, 8, 6);
+const liveEntityMaterial = new THREE.MeshBasicMaterial({color: 0xf5a35c, depthTest: false});
+const liveEntityPool = [];
+let liveMarker = null;
+async function refreshLiveClients() {
+  try {
+    const response = await fetch('/live-client/bridge/clients');
+    if (!response.ok) return;
+    const body = await response.json();
+    const list = document.getElementById('ashita-live-clients');
+    list.replaceChildren();
+    for (const id of body.clients || []) {
+      const option = document.createElement('option'); option.value = id; list.appendChild(option);
+    }
+  } catch (_) {}
+}
+function clearLiveEntities() {
+  for (const child of liveEntityPool) child.visible = false;
+}
+function clearLiveMarker() {
+  lastLivePosition = null;
+  lastLiveDiagnostic = null;
+  clearLiveEntities();
+  if (!liveMarker) return;
+  liveMarker.parent.remove(liveMarker);
+  // ArrowHelper owns several Three.js geometry and material resources.
+  const arrow = liveMarker.userData.direction;
+  if (arrow) {
+    arrow.line.geometry.dispose(); arrow.line.material.dispose();
+    arrow.cone.geometry.dispose(); arrow.cone.material.dispose();
+  }
+  liveMarker.geometry.dispose();
+  liveMarker.material.dispose();
+  liveMarker = null;
+}
+async function pollAshitaPosition() {
+  if (!liveToggle.checked) { clearLiveMarker(); liveStatus.textContent = 'Off'; return; }
+  const clientId = liveClient.value.trim();
+  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(clientId)) {
+    clearLiveMarker(); liveStatus.textContent = 'Invalid client ID'; return;
+  }
+  const requestId = ++lastLiveRequest;
+  try {
+    const url = '/live-client/bridge/projection?client_id=' + encodeURIComponent(clientId) + '&zone_id=' + ZONEID;
+    const response = await fetch(url, {cache: 'no-store'});
+    if (!response.ok) throw Error('HTTP ' + response.status);
+    const data = await response.json();
+    if (requestId !== lastLiveRequest || !liveToggle.checked || clientId !== liveClient.value.trim()) return;
+    if (!data.visible || !data.player || !data.player.position) {
+      clearLiveMarker(); liveStatus.textContent = 'No fresh matching-zone telemetry'; return;
+    }
+    const position = data.player.position;
+    if (![position.x, position.y, position.z].every(Number.isFinite)) {
+      clearLiveMarker(); liveStatus.textContent = 'Invalid position'; return;
+    }
+    if (!liveMarker) {
+      liveMarker = new THREE.Mesh(
+        new THREE.SphereGeometry(2.5, 12, 8),
+        new THREE.MeshBasicMaterial({color: 0x18f2be, depthTest: false}));
+      liveMarker.renderOrder = 20;
+      scene.add(liveMarker);
+    }
+    const previous = lastLivePosition;
+    const current = new THREE.Vector3(position.x, -position.y, -position.z);
+    liveMarker.position.copy(current);
+    // Heading uses the observed radian angle; verify its orientation against Windows game view.
+    if (Number.isFinite(position.heading)) {
+      if (!liveMarker.userData.direction) {
+        const direction = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 7, 0xffd65e);
+        liveMarker.add(direction);
+        liveMarker.userData.direction = direction;
+      }
+      liveMarker.userData.direction.setDirection(
+        new THREE.Vector3(Math.cos(position.heading), 0, -Math.sin(position.heading)).normalize());
+    }
+    lastLivePosition = current;
+    lastLiveDiagnostic = {
+      client_id: clientId, zone_id: ZONEID,
+      character: data.player.character || null,
+      raw_position: {x:position.x,y:position.y,z:position.z,heading:position.heading},
+      viewer_position: {x:current.x,y:current.y,z:current.z},
+      adapter: data.adapter, observed_at: data.observed_at,
+      entity_count: Array.isArray(data.entities) ? data.entities.length : 0,
+      entities_truncated: Boolean(data.entities_truncated)
+    };
+    if (liveFollowToggle.checked && !flyModeOn && previous) {
+      const delta = current.clone().sub(previous);
+      camera.position.add(delta);
+      controls.target.add(delta);
+      controls.update();
+    }
+    clearLiveEntities();
+    let entityCount = 0;
+    if (liveEntitiesToggle.checked && Array.isArray(data.entities)) {
+      for (const entity of data.entities.slice(0, 100)) {
+        const point = entity.position;
+        if (!point || ![point.x, point.y, point.z].every(Number.isFinite)) continue;
+        let marker = liveEntityPool[entityCount];
+        if (!marker) {
+          marker = new THREE.Mesh(liveEntityGeometry, liveEntityMaterial);
+          marker.renderOrder = 19;
+          liveEntitiesGroup.add(marker);
+          liveEntityPool.push(marker);
+        }
+        marker.position.set(point.x, -point.y, -point.z);
+        marker.userData.liveName = entity.name || '';
+        marker.visible = true;
+        entityCount++;
+      }
+    }
+    liveStatus.textContent = (data.player.character || clientId) + ' · live · ' +
+      position.x.toFixed(1) + ', ' + position.y.toFixed(1) + ', ' + position.z.toFixed(1) +
+      (liveEntitiesToggle.checked ? ' · entities ' + entityCount +
+       (data.entities_truncated ? '+' : '') : '') +
+      (Number.isFinite(position.heading) ? ' · heading ' + position.heading.toFixed(3) : '');
+  } catch (error) {
+    if (requestId !== lastLiveRequest) return;
+    clearLiveMarker(); liveStatus.textContent = 'Live unavailable: ' + error.message;
+  }
+}
+document.getElementById('ashita-live-focus').addEventListener('click', () => {
+  if (!liveToggle.checked || !lastLivePosition || flyModeOn) {
+    liveStatus.textContent = 'Focus requires a fresh live marker and orbit mode'; return;
+  }
+  controls.target.copy(lastLivePosition);
+  camera.position.copy(lastLivePosition).add(new THREE.Vector3(25, 18, 25));
+  controls.update();
+});
+document.getElementById('ashita-live-copy').addEventListener('click', async () => {
+  if (!lastLiveDiagnostic) { liveStatus.textContent = 'No fresh telemetry to copy'; return; }
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(lastLiveDiagnostic, null, 2));
+    liveStatus.textContent = 'Copied current client/zone/coordinates for alignment testing';
+  } catch (_) { liveStatus.textContent = 'Clipboard blocked; check browser permissions'; }
+});
+liveToggle.addEventListener('change', () => { ++lastLiveRequest; pollAshitaPosition(); });
+liveEntitiesToggle.addEventListener('change', pollAshitaPosition);
+liveClient.addEventListener('change', () => { ++lastLiveRequest; clearLiveMarker(); pollAshitaPosition(); });
+refreshLiveClients();
+setInterval(refreshLiveClients, 10000);
+setInterval(pollAshitaPosition, 1500);
+
 scene.background = new THREE.Color(0x0a0d10);
 scene.fog = new THREE.FogExp2(0x0a0d10, 0.0025);
 

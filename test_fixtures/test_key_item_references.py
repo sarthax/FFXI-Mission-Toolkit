@@ -144,3 +144,49 @@ def test_lua_symbol_index_reuses_parsing_and_refreshes_after_edit(tmp_path: Path
     os.utime(target, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1000000000))
     updated = discover_key_item_references(tmp_path, "TEST_KEY", lineage="lsb")
     assert [r["operation"] for r in updated["references"]] == ["remove"]
+
+
+def test_dsp_direct_global_key_item_symbols_are_scoped_to_dsp(tmp_path: Path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "npc.lua").write_text(
+        "if player:hasKeyItem(ZERUHN_REPORT) then\n"
+        "    player:addKeyItem(ZERUHN_REPORT)\n"
+        "    player:delKeyItem(ZERUHN_REPORT)\n"
+        "    npcUtil.giveKeyItem(player, ZERUHN_REPORT)\n"
+        "    player:addKeyItem(tpz.ki.ZERUHN_REPORT)\n"
+        "end\n", encoding="utf-8"
+    )
+    dsp = discover_key_item_references(tmp_path, "ZERUHN_REPORT", lineage="dsp")
+    assert dsp["operation_counts"] == {"require": 1, "grant": 3, "remove": 1}
+    assert {r["namespace"] for r in dsp["references"]} == {"dsp.global", "tpz.ki"}
+    assert discover_key_item_references(tmp_path, "ZERUHN_REPORT", lineage="lsb")["references"] == []
+    topaz = discover_key_item_references(tmp_path, "ZERUHN_REPORT", lineage="topaz")
+    assert len(topaz["references"]) == 1
+
+
+def test_dsp_lua_block_comments_do_not_create_false_dependencies(tmp_path: Path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "npc.lua").write_text(
+        "--[[\n"
+        "player:addKeyItem(ZERUHN_REPORT)\n"
+        "]]\n"
+        "player:hasKeyItem(ZERUHN_REPORT) -- inline comment\n"
+        "--[[ player:delKeyItem(ZERUHN_REPORT) ]]\n"
+        "player:addKeyItem(ZERUHN_REPORT)\n", encoding="utf-8"
+    )
+    result = discover_key_item_references(tmp_path, "ZERUHN_REPORT", lineage="dsp")
+    assert result["operation_counts"] == {"require": 1, "grant": 1, "remove": 0}
+    assert [ref["source_line"] for ref in result["references"]] == [4, 6]
+
+
+def test_dsp_block_comment_can_end_before_real_source_call(tmp_path: Path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "npc.lua").write_text(
+        "--[[ ignored player:addKeyItem(ZERUHN_REPORT) ]] player:delKeyItem(ZERUHN_REPORT)\n",
+        encoding="utf-8",
+    )
+    result = discover_key_item_references(tmp_path, "ZERUHN_REPORT", lineage="dsp")
+    assert [r["operation"] for r in result["references"]] == ["remove"]

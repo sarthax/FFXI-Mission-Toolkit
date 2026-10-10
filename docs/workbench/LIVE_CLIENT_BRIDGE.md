@@ -667,3 +667,54 @@ no JSONL file. This makes live observations consumable by Zone Viewer clients;
 the Zone Viewer's JavaScript is not yet automatically configured to poll
 this source. Continue to treat raw Ashita axes as uncalibrated until
 validated against the selected map/instance.
+
+
+### Optional 3D Zone Viewer marker
+
+The **3D Zone Viewer** now offers an opt-in **Live Ashita position**
+toggle with client selection. It polls the managed bridge's read-only
+spatial projection for the viewer's current zone every 1.5 seconds and
+draws a distinct ephemeral player marker. The marker disappears if the
+client is stale, disconnected, in another zone or invalid, and is removed
+when toggled off. The display uses the existing spawn-marker axis convention;
+alignment on client meshes still requires in-game visual validation. It
+does not write game state, change camera controls, capture files, or server
+entities. Refreshing the page resets the toggle to off.
+
+
+### Live 3D overlay controls — heading, nearby entities and follow
+
+The 3D Zone Viewer live panel now includes separately opt-in nearby entity
+markers (up to 100 current observed entities), a player heading arrow when
+available and an orbit-camera **Follow player** checkbox. Camera follow does
+not run in fly mode, and the marker/entity overlay remains disabled unless
+**Live Ashita position** is enabled. Stale observations and wrong-zone
+snapshots remove markers; overlapping asynchronous polls cannot restore
+outdated data. Heading and client-to-mesh coordinate alignment still require
+verification on the Windows FFXI client. No game position writes are made.
+
+
+### 3D overlay performance and Windows comparison
+
+The live entity overlay reuses a bounded marker pool rather than rebuilding
+meshes on each 1.5-second poll. Hidden markers are reused for later observations,
+and removing the player marker also releases its heading arrow resources.
+The live status chip shows observed coordinates, heading in reported radians,
+and optional entity counts/truncation to aid comparison with the game client.
+These are *display diagnostics*, not evidence that axes and heading orientation
+have been calibrated against a live Windows zone.
+
+
+### Windows 3D live-alignment validation
+
+In the 3D Zone Viewer, enable **Live Ashita position**, select the same client
+ID as the running Ashita addon, and choose **Focus player** while in orbit
+mode to center the current fresh marker. **Bridge setup** opens the local
+receiver console in a separate browser tab. **Copy diagnostics** writes a
+small JSON snapshot to the browser clipboard with client ID, zone, observed
+raw XYZ/heading, projected viewer XYZ, adapter and observation/entity metadata.
+It does not export credentials, chat, capture recordings, account information
+or a player movement path. Inspect the marker against a known landmark and
+compare forward-facing direction in the game; send the copied diagnostics and
+a screenshot if axis or heading alignment is incorrect. Neither button sends
+movement commands. The clipboard button needs browser clipboard permission.
