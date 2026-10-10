@@ -14,6 +14,26 @@ GLOSSARY = {"だいじなもの": "key item", "ミッション": "mission",
             "魔法": "magic", "エリア": "area", "獣人": "beastman"}
 
 
+# Deterministic translation checks: warnings never certify a translation as correct.
+_IDENTIFIERS = re.compile(r"(?<![A-Za-z0-9_])(?:0x[0-9a-fA-F]+|[A-Z][A-Z0-9_]{2,})(?![A-Za-z0-9_])")
+
+
+def quality_warnings(source: str, translated: str) -> list[str]:
+    warnings = []
+    missing_numbers = sorted(set(_NUMBERS.findall(source)) - set(_NUMBERS.findall(translated)))
+    if missing_numbers:
+        warnings.append("Numeric tokens missing: " + ", ".join(missing_numbers))
+    missing_ids = sorted(set(_IDENTIFIERS.findall(source)) - set(_IDENTIFIERS.findall(translated)))
+    if missing_ids:
+        warnings.append("Identifiers missing: " + ", ".join(missing_ids))
+    if len(source) > 100 and len(translated.strip()) < max(12, len(source) // 20):
+        warnings.append("Translation unusually short; review for omissions")
+    for jp, en in GLOSSARY.items():
+        if jp in source and en.casefold() not in translated.casefold():
+            warnings.append("Glossary term not found: " + en)
+    return warnings
+
+
 def translate(text: str, *, model: str, url: str = _DEFAULT_URL,
               timeout: int = 120, max_chars: int = 5000) -> dict:
     """Translate bounded source text via loopback Ollama; return unverified draft."""
@@ -41,9 +61,8 @@ def translate(text: str, *, model: str, url: str = _DEFAULT_URL,
         translated = json.load(response).get("response", "").strip()
     if not translated:
         return {"status": "ERROR", "error": "Model returned no translation"}
-    missing = sorted(set(_NUMBERS.findall(text)) - set(_NUMBERS.findall(translated)))
     return {"status": "OK", "text": translated, "engine": "ollama:" + model,
-            "unverified": True, "warnings": ["Numeric tokens missing: " + ", ".join(missing)] if missing else []}
+            "unverified": True, "warnings": quality_warnings(text, translated)}
 
 
 def configured_model() -> str:
