@@ -5813,7 +5813,7 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         "available_sources": available_sources,
         "comparison": comparison,
         "error": error,
-        "tab": tab if tab in ("browse", "evidence", "translation", "review", "recovery") else "browse",
+        "tab": tab if tab in ("browse", "evidence", "translation", "terms", "review", "recovery") else "browse",
         "review_queue": review_queue,
         "recovery_preview": recovery_preview,
         "recovery_page": recovery_page,
@@ -6182,6 +6182,26 @@ async def wiki_translation_batch_cancel(request: Request):
     if not ident or not wiki_translation_batch.cancel(ident):
         return JSONResponse({"error": "Job is not running in this process"}, status_code=409)
     return {"status": "cancellation_requested", "job_id": ident}
+
+
+@app.get("/wiki/client-terms/search")
+def wiki_client_terms_search(q: str = "", limit: int = 50):
+    from workbench.devtools.reference import wiki_client_term_index
+    return wiki_client_term_index.search(q, limit=max(1, min(limit, 200)))
+
+
+@app.get("/wiki/client-terms/annotate")
+def wiki_client_terms_annotate(source: str, title: str):
+    """Client (auto-translate / item) terms found in a stored page; display-only."""
+    from workbench.devtools.reference import wiki_client_term_index
+    con = get_con()
+    try:
+        view = _wiki_page_view(con, source, title)
+        if not view:
+            return JSONResponse({"status": "NOT_FOUND"}, status_code=404)
+        return wiki_client_term_index.match(view["text"])
+    finally:
+        con.close()
 
 
 @app.get("/wiki/translate/models")

@@ -2326,6 +2326,22 @@
     },
     {
       "method": "GET",
+      "path": "/wiki/client-terms/search",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/wiki/client-terms/annotate",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
       "path": "/wiki/translate/models",
       "home": "Tools",
       "section": "Research > References",

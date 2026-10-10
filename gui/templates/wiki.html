@@ -8,6 +8,11 @@
 {% block page_body %}
 <style>
 .wiki-bilingual-grid{display:grid;gap:8px;margin:10px 0}
+mark.ct-term{background:rgba(120,180,255,.22);color:inherit;border-radius:3px;padding:0 1px;cursor:help}
+mark.ct-term::before{content:"[";opacity:.6}
+mark.ct-term::after{content:"]";opacity:.6}
+.ct-results td,.ct-results th{padding:4px 8px;text-align:left;vertical-align:top}
+.ct-kind{font-size:.8em;opacity:.7}
 .wiki-bilingual-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
 .wiki-bilingual-cell{padding:10px;border:1px solid var(--border);border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere}
 .wiki-bilingual-cell small{display:block;color:var(--muted);margin-bottom:5px}
@@ -237,6 +242,7 @@
   <a class="chip {% if tab == 'browse' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=browse"><b>Browse</b></a>
   <a class="chip {% if tab == 'evidence' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=evidence"><b>Evidence workflow</b></a>
   <a class="chip {% if tab == 'translation' %}active{% endif %}" href="/wiki?source=WikiWikiJP&tab=translation"><b>Translation</b></a>
+  <a class="chip {% if tab == 'terms' %}active{% endif %}" href="/wiki?source=WikiWikiJP&tab=terms"><b>Client terms</b></a>
   <a class="chip {% if tab == 'review' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=review"><b>Topic review queue</b></a>
   <a class="chip {% if tab == 'recovery' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=recovery"><b>Recovery preview</b></a>
   <span class="sp"></span>
@@ -258,6 +264,25 @@
   </div>
 </section>
 {% endif %}
+
+{% if tab == 'terms' %}
+<section class="wiki-section" aria-label="Client term search">
+  <div class="body">
+    <h3>Client term search</h3>
+    <p class="muted">Official in-game text from your own FFXI install: auto-translate phrases, item names and zones, paired English / Japanese. Type either language (or kana), then jump to the Japanese Wiki pages containing the term.</p>
+    <form id="ct-form" class="wiki-actions" autocomplete="off">
+      <input type="search" id="ct-q" placeholder="e.g. Home Point, ホームポイント, メデューサ" style="min-width:300px" autofocus>
+      <button type="submit">Search</button>
+    </form>
+    <div id="ct-status" class="muted" role="status" aria-live="polite"></div>
+    <div class="table-wrap"><table class="ct-results" id="ct-table" hidden>
+      <thead><tr><th>English</th><th>Japanese</th><th>Type</th><th>Category</th><th>JP Wiki</th></tr></thead>
+      <tbody id="ct-body"></tbody>
+    </table></div>
+  </div>
+</section>
+{% endif %}
+
 
 {% if tab == 'recovery' %}
 <section class="wiki-section">
@@ -341,9 +366,10 @@
   {% if page_view.timestamp %}<span class="muted">rev {{ page_view.revision or '' }} · {{ page_view.timestamp }}</span>{% endif %}
   <span class="sp"></span>
   {% if page_view.url %}<a class="chip" href="{{ page_view.url }}" target="_blank" rel="noopener">Open source page ↗</a>{% endif %}
-  {% if page_view.is_ja %}<label>Model <select class="wiki-tr-model" aria-label="Ollama translation model"></select></label><button type="button" id="tr-btn" data-source="{{ source }}" data-title="{{ title }}">Translate to English (machine)</button>{% endif %}
+  {% if page_view.is_ja %}<label>Model <select class="wiki-tr-model" aria-label="Ollama translation model"></select></label><button type="button" id="ct-toggle" data-source="{{ source }}" data-title="{{ title }}" title="Highlight official client terms (auto-translate phrases and item names) in the Japanese text">Highlight client terms</button><button type="button" id="tr-btn" data-source="{{ source }}" data-title="{{ title }}">Translate to English (machine)</button>{% endif %}
 </div>
 {% if page_view.is_ja %}
+<details id="ct-panel" hidden><summary id="ct-summary">Client terms</summary><div id="ct-list" class="table-wrap"></div></details>
 <div id="tr-out" class="warn" hidden role="status" aria-live="polite"></div>
 <div id="tr-bilingual" hidden aria-label="Japanese and English aligned wiki sections">
   <div class="dense-toolbar"><strong>Machine translation — unverified</strong><span id="tr-meta" class="muted"></span></div>
@@ -1154,6 +1180,85 @@
       .finally(function(){if(button)button.disabled=false;});
   });}
   if(box && box.querySelector('.job-row')) poll();
+  (function(){
+    var form=document.getElementById('ct-form');if(!form)return;
+    var qIn=document.getElementById('ct-q'),statusEl=document.getElementById('ct-status');
+    var table=document.getElementById('ct-table'),body=document.getElementById('ct-body');
+    function cell(tr,text){var td=document.createElement('td');td.textContent=text||'';tr.appendChild(td);return td;}
+    function run(q){
+      statusEl.textContent='Searching...';
+      fetch('/wiki/client-terms/search?q='+encodeURIComponent(q)+'&limit=100').then(function(r){return r.json();}).then(function(d){
+        body.replaceChildren();
+        if(d.status==='NO_DB'){statusEl.textContent='Client text database not found (data/ja_en_text.db).';table.hidden=true;return;}
+        d.results.forEach(function(r){
+          var tr=document.createElement('tr');cell(tr,r.en);cell(tr,r.ja+(r.kana?'  ('+r.kana+')':''));
+          cell(tr,r.kind).className='ct-kind';cell(tr,r.category);
+          var td=document.createElement('td');
+          if(r.ja){var a=document.createElement('a');a.className='chip';a.textContent='Search JP Wiki';
+            a.href='/wiki?source=WikiWikiJP&tab=browse&q='+encodeURIComponent(r.ja);td.appendChild(a);}
+          tr.appendChild(td);body.appendChild(tr);
+        });
+        table.hidden=!d.results.length;
+        statusEl.textContent=d.results.length?(d.results.length+' result(s)'+(d.truncated?' - showing the first 100; refine the search':'')):'No matches.';
+      }).catch(function(e){statusEl.textContent='Search failed: '+e.message;});
+    }
+    form.addEventListener('submit',function(e){e.preventDefault();if(qIn.value.trim())run(qIn.value.trim());});
+  })();
+  (function(){
+    var btn=document.getElementById('ct-toggle');if(!btn)return;
+    var panel=document.getElementById('ct-panel'),list=document.getElementById('ct-list'),summary=document.getElementById('ct-summary');
+    var article=document.querySelector('.wiki-article'),terms=null,on=false;
+    function label(t){return t.entries.map(function(e){return e.en+(e.category?' ('+e.category+')':'');}).join(' / ');}
+    function highlight(){
+      var sorted=terms.slice().sort(function(a,b){return b.ja.length-a.ja.length;});
+      var walker=document.createTreeWalker(article,NodeFilter.SHOW_TEXT),nodes=[],n;
+      while((n=walker.nextNode())){if(!n.parentNode.closest('mark.ct-term'))nodes.push(n);}
+      nodes.forEach(function(node){
+        var text=node.nodeValue,taken=[],spans=[];
+        sorted.forEach(function(t){
+          var from=0,i;
+          while((i=text.indexOf(t.ja,from))>=0){
+            var end=i+t.ja.length;
+            if(!taken.some(function(r){return i<r[1]&&end>r[0];})){taken.push([i,end]);spans.push({s:i,e:end,t:t});}
+            from=end;
+          }
+        });
+        if(!spans.length)return;
+        spans.sort(function(a,b){return a.s-b.s;});
+        var frag=document.createDocumentFragment(),pos=0;
+        spans.forEach(function(sp){
+          if(sp.s>pos)frag.appendChild(document.createTextNode(text.slice(pos,sp.s)));
+          var m=document.createElement('mark');m.className='ct-term';m.textContent=text.slice(sp.s,sp.e);m.title=label(sp.t);
+          frag.appendChild(m);pos=sp.e;
+        });
+        if(pos<text.length)frag.appendChild(document.createTextNode(text.slice(pos)));
+        node.parentNode.replaceChild(frag,node);
+      });
+    }
+    function clear(){document.querySelectorAll('mark.ct-term').forEach(function(m){m.replaceWith(document.createTextNode(m.textContent));});article.normalize();}
+    function render(){
+      list.replaceChildren();
+      var tbl=document.createElement('table');tbl.className='ct-results';
+      terms.forEach(function(t){
+        var tr=document.createElement('tr');
+        [t.ja,label(t),'x'+t.count].forEach(function(x){var td=document.createElement('td');td.textContent=x;tr.appendChild(td);});
+        tbl.appendChild(tr);
+      });
+      list.appendChild(tbl);
+      summary.textContent=terms.length?('Client terms found: '+terms.length):'No client terms found in this page';
+      panel.hidden=false;
+    }
+    btn.addEventListener('click',function(){
+      if(on){clear();panel.hidden=true;btn.textContent='Highlight client terms';on=false;return;}
+      btn.disabled=true;btn.textContent='Matching...';
+      var go=terms?Promise.resolve():fetch('/wiki/client-terms/annotate?source='+encodeURIComponent(btn.dataset.source)+'&title='+encodeURIComponent(btn.dataset.title))
+        .then(function(r){return r.json().then(function(d){if(!r.ok)throw Error(d.error||d.status||('HTTP '+r.status));return d;});})
+        .then(function(d){if(d.status==='NO_DB')throw Error('Client text database not found (data/ja_en_text.db)');terms=d.terms;});
+      go.then(function(){highlight();render();on=true;btn.textContent='Hide client terms';})
+        .catch(function(e){alert('Client term matching failed: '+e.message);btn.textContent='Highlight client terms';})
+        .finally(function(){btn.disabled=false;});
+    });
+  })();
   (function(){
     var sels=document.querySelectorAll('.wiki-tr-model');if(!sels.length)return;
     function fill(d){sels.forEach(function(s){
