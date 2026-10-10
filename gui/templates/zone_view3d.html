@@ -733,8 +733,7 @@ function refreshCaptureSpatialResults() {
   const search = document.getElementById('capture-spatial-search');
   const results = document.getElementById('capture-spatial-results');
   const summary = document.getElementById('capture-spatial-summary');
-  if (!CAPTURE_SPATIAL_URL || !search || !results || !summary) return;
-  const q = search.value || '';
+  const q = search ? search.value || '' : '';
   const visibleKinds = new Set(Array.from(document.querySelectorAll('#spawn-visibility input[data-spawn-kind]:checked'), el => el.dataset.spawnKind));
   spawnEntities = spawnEntitiesAll.filter(e => visibleKinds.has(e.k || 'c') && captureEntityMatches(e, q));
   hoveredSpawnId = null;
@@ -742,7 +741,8 @@ function refreshCaptureSpatialResults() {
   buildSpawnMarkers();
   const count = document.getElementById('spawn-visibility-count');
   if (count) count.textContent = `${spawnEntities.length}/${spawnEntitiesAll.length} shown`;
-  summary.textContent = `${spawnEntities.length}/${spawnEntitiesAll.length} entities`;
+  if (summary) summary.textContent = `${spawnEntities.length}/${spawnEntitiesAll.length} entities`;
+  if (!results) return;
   results.innerHTML = '';
   for (const e of spawnEntities.slice(0, 250)) {
     const row = document.createElement('div');
