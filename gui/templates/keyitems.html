@@ -262,13 +262,20 @@
         path.includes('/zones/') ? 'Zone script' :
         'Lua source';
       context.textContent = ' · ' + kind + ' · ' + fileName;
+      const relations = [];
+      const segment = path.match(/\/(missions|quests|npcs|zones)\/([^/]+)\//);
+      if (segment) {
+        const scope = document.createElement('span');
+        scope.textContent = ' · ' + segment[1] + ': ' + segment[2];
+        relations.push(scope);
+      }
       const search = document.createElement('a');
       search.textContent = 'Find in Feature Trace';
       search.href = '/features/trace?' + new URLSearchParams({q: fileName});
       const excerpt = document.createElement('pre');
       excerpt.textContent = String(ref.source_text || '');
       excerpt.style.whiteSpace = 'pre-wrap';
-      item.append(label, location, context, copy, search, excerpt);
+      item.append(label, location, context, ...relations, copy, search, excerpt);
       list.append(item);
     }
     results.replaceChildren(list);

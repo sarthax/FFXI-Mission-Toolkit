@@ -52,3 +52,12 @@ def test_key_item_lua_references_link_to_feature_trace_safely():
     assert "context.textContent = ' · ' + kind + ' · ' + fileName" in page
     assert "excerpt.textContent = String(ref.source_text || '')" in page
     assert "location.textContent = String(ref.source_path || '')" in page
+
+
+def test_key_item_source_scope_is_derived_from_actual_script_path():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert "const relations = [];" in page
+    assert "const segment = path.match(" in page
+    assert "(missions|quests|npcs|zones)" in page
+    assert "segment[2]" in page
+    assert "item.append(label, location, context, ...relations, copy, search, excerpt)" in page
