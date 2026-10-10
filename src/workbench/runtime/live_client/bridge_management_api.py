@@ -13,6 +13,16 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from .bridge_managed import ManagedLiveReceiver
+from .ashita_install import (preview as preview_ashita_addon, install_missing as install_ashita_addon,
+                             preview_upgrade as preview_ashita_upgrade, upgrade_with_backup as apply_ashita_upgrade)
+
+
+class AshitaInstallSelection(BaseModel):
+    ashita_root: str = Field(min_length=1, max_length=2048)
+
+
+class AshitaInstallConfirmation(AshitaInstallSelection):
+    expected: dict
 
 
 class ClientSelection(BaseModel):
@@ -41,6 +51,38 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
         if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
             raise HTTPException(status_code=403, detail="bridge setup requires local browser")
         return templates.TemplateResponse(request, "live_client_bridge.html")
+
+    @router.post("/installer/preview")
+    def installer_preview(request: Request, selection: AshitaInstallSelection) -> dict:
+        require_same_origin(request)
+        try:
+            return preview_ashita_addon(selection.ashita_root)
+        except (ValueError, OSError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @router.post("/installer/apply")
+    def installer_apply(request: Request, selection: AshitaInstallConfirmation) -> dict:
+        require_same_origin(request)
+        try:
+            return install_ashita_addon(selection.ashita_root, selection.expected)
+        except (ValueError, OSError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    @router.post("/installer/upgrade-preview")
+    def installer_upgrade_preview(request: Request, selection: AshitaInstallSelection) -> dict:
+        require_same_origin(request)
+        try:
+            return preview_ashita_upgrade(selection.ashita_root)
+        except (ValueError, OSError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @router.post("/installer/upgrade-apply")
+    def installer_upgrade_apply(request: Request, selection: AshitaInstallConfirmation) -> dict:
+        require_same_origin(request)
+        try:
+            return apply_ashita_upgrade(selection.ashita_root, selection.expected)
+        except (ValueError, OSError, RuntimeError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
 
     @router.post("/start")
     def start(request: Request) -> dict:

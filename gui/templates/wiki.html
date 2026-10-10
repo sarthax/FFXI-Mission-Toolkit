@@ -12,6 +12,12 @@
 .wiki-bilingual-cell{padding:10px;border:1px solid var(--border);border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere}
 .wiki-bilingual-cell small{display:block;color:var(--muted);margin-bottom:5px}
 @media(max-width:700px){.wiki-bilingual-row{grid-template-columns:minmax(0,1fr)}}
+.wiki-workspace-tabs{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:0;z-index:3;padding:8px 0;background:var(--surface)}
+.wiki-workspace-tabs button[aria-selected="true"]{border-color:var(--accent);font-weight:700;background:var(--surface-2)}
+.wiki-workspace-pane[hidden]{display:none}
+.wiki-workspace-pane>.wiki-section{margin:5px 0 10px}
+.wiki-workspace-pane>details.wiki-section>summary{display:none}
+.wiki-workspace-pane>details.wiki-section>.body{padding:9px}
 .wiki-section{border:1px solid var(--border);border-radius:7px;background:var(--surface);margin:7px 0;overflow:hidden}
 .wiki-section>summary{padding:7px 9px;cursor:pointer;font-weight:600}
 .wiki-section>.body{padding:0 8px 8px}
@@ -51,6 +57,18 @@
   {% if title %}<a class="chip" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab={{ tab }}">Clear search</a>{% endif %}
 </form>
 
+<nav class="wiki-workspace-tabs" id="wiki-workspace-tabs" aria-label="Wiki tools">
+  <button type="button" data-wiki-pane="scrape" aria-selected="true">Scrape page</button>
+  <button type="button" data-wiki-pane="batch" aria-selected="false">Batch imports</button>
+  <button type="button" data-wiki-pane="monitor" aria-selected="false">Sync &amp; health</button>
+  <button type="button" data-wiki-pane="utilities" aria-selected="false">Snapshots &amp; diagnostics</button>
+</nav>
+<div id="wiki-workspace-panels" class="wiki-workspace-panels" aria-live="off">
+  <section id="wiki-pane-scrape" class="wiki-workspace-pane" aria-label="Scrape page"></section>
+  <section id="wiki-pane-batch" class="wiki-workspace-pane" aria-label="Batch imports" hidden></section>
+  <section id="wiki-pane-monitor" class="wiki-workspace-pane" aria-label="Synchronization and health" hidden></section>
+  <section id="wiki-pane-utilities" class="wiki-workspace-pane" aria-label="Snapshots and diagnostics" hidden></section>
+</div>
 <details class="wiki-section" id="wiki-snapshot-box">
 <summary>Portable Wiki snapshots — export or import cached articles</summary>
 <div class="body">
@@ -693,6 +711,52 @@
 {% endif %}
 {% endif %}
 {% endif %}
+<script>
+(function(){
+  // Relocate existing server-rendered controls; retain their IDs, forms, APIs
+  // and JavaScript listeners. No duplicate widgets or synthetic requests.
+  var map={
+    scrape:['scrape-box'],
+    batch:['wiki-jp-bulk-box','wiki-bg-bulk-box','wiki-bulk-box'],
+    monitor:['wiki-cache-panel','wiki-sync-overview'],
+    utilities:['wiki-snapshot-box','wiki-title-diagnostics']
+  };
+  var bar=document.getElementById('wiki-workspace-tabs');
+  if(!bar)return;
+  Object.keys(map).forEach(function(group){
+    var pane=document.getElementById('wiki-pane-'+group);
+    map[group].forEach(function(id){
+      var section=document.getElementById(id);
+      if(section&&pane){pane.appendChild(section);if(section.tagName==='DETAILS')section.open=true;}
+    });
+  });
+  function select(group){
+    if(!Object.prototype.hasOwnProperty.call(map,group))group='scrape';
+    Object.keys(map).forEach(function(key){
+      var pane=document.getElementById('wiki-pane-'+key);
+      if(pane)pane.hidden=key!==group;
+    });
+    bar.querySelectorAll('[data-wiki-pane]').forEach(function(button){
+      button.setAttribute('aria-selected',String(button.dataset.wikiPane===group));
+    });
+  }
+  bar.addEventListener('click',function(event){
+    var button=event.target.closest('[data-wiki-pane]');
+    if(button)select(button.dataset.wikiPane);
+  });
+  document.addEventListener('click',function(event){
+    var anchor=event.target.closest('a[href^="#wiki-"]');
+    if(!anchor)return;
+    Object.keys(map).some(function(key){
+      if(map[key].some(function(id){return anchor.getAttribute('href')==='#'+id;})){
+        select(key);return true;
+      }
+      return false;
+    });
+  });
+  select('scrape');
+})();
+</script>
 <script>
 (function(){
   var cachePanel=document.getElementById('wiki-cache-panel');

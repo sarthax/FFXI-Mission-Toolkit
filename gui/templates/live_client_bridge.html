@@ -36,13 +36,29 @@
  <button type="button" onclick="action('stop')">Stop receiver</button></div>
  <p class="muted">Configuring a client replaces its active credentials. Keep settings private and reload the Ashita addon after changes.</p>
  <button type="button" id="downloadConfig" onclick="downloadConfig()" disabled>Download Ashita settings</button>
+ <button type="button" id="copyLiveCommand">Copy Ashita start command</button>
  <p id="bridge-action-message" role="status" class="muted" aria-live="polite">Start receiver, then configure and download settings for your Ashita addon.</p>
- <ol class="muted"><li>Start receiver and configure the selected client.</li><li>Download settings into Ashita's <code>addons/workbench_live/</code> folder.</li><li>Reload the Ashita addon, then type <code>/wblive live start ashita-a</code> (using your chosen client ID).</li></ol>
+ <ol class="muted"><li>Start receiver and configure the selected client.</li><li>Download the settings file and place it in Ashita's <code>addons/workbench_live/</code> folder.</li><li>Reload the addon, then run <code id="liveStartCommand">/wblive live start ashita-a</code> in game.</li></ol>
  <details><summary>Private configuration (do not share)</summary><pre id="config" aria-live="polite"></pre></details>
+</section>
+<section class="lc-panel">
+ <h2>Install Ashita addon locally</h2>
+ <p class="muted">Optional: use only on the Windows PC running Ashita and the Toolkit. Preview before creating files. Existing addon files are never overwritten; credentials remain separate.</p>
+ <label>Ashita root folder <input id="ashita-install-root" style="max-width:min(100%,660px);width:560px" placeholder="C:\\Ashita" autocomplete="off"></label>
+ <div class="lc-actions">
+ <button type="button" id="ashita-install-preview">Preview addon files</button>
+ <button type="button" id="ashita-install-apply" disabled>Install missing files</button>
+ <button type="button" id="ashita-upgrade-preview">Preview backup upgrade</button>
+ <button type="button" id="ashita-upgrade-apply" disabled>Backup and replace addon files</button>
+ </div>
+ <div id="ashita-install-status" role="status" aria-live="polite" class="muted">No installation requested.</div>
+ <pre id="ashita-install-result"></pre>
 </section>
 <section class="lc-panel">
  <h2>Live dashboard</h2>
  <div id="health" role="status">Waiting for telemetry</div>
+ <p class="muted" id="bridge-health-hint" aria-live="polite">Start the receiver and connect your Ashita addon.</p>
+ <button type="button" id="bridge-copy-health">Copy safe health report</button>
  <a id="liveZoneLink" class="chip" style="display:none" href="#" rel="noopener">Open current zone in 3D Viewer ↗</a>
  <div id="metrics"></div>
  <h3>Nearby observed entities</h3><div id="entities">No observations yet</div>
@@ -51,18 +67,113 @@
 </div>
 <script>
 const root='/live-client/bridge/';
-const client=()=>document.getElementById('client').value;
+const installRootInput=document.getElementById('ashita-install-root');
+const installStatus=document.getElementById('ashita-install-status');
+const installResult=document.getElementById('ashita-install-result');
+const installApply=document.getElementById('ashita-install-apply');
+let installerPreview=null;
+let upgradePreview=null;
+const upgradeApply=document.getElementById('ashita-upgrade-apply');
+installRootInput.addEventListener('input',()=>{
+  installerPreview=null;installApply.disabled=true;upgradePreview=null;upgradeApply.disabled=true;
+  installStatus.textContent='Path changed. Preview again.';
+  installResult.textContent='';
+});
+document.getElementById('ashita-upgrade-preview').addEventListener('click',async()=>{
+  upgradePreview=null;upgradeApply.disabled=true;installApply.disabled=true;installerPreview=null;
+  try {
+    const result=await request('installer/upgrade-preview',{ashita_root:installRootInput.value});
+    upgradePreview=result;
+    installResult.textContent=result.files.map(f=>f.action+' · '+f.name).join('\n');
+    const count=result.files.filter(f=>f.action==='replace_with_backup').length;
+    installStatus.textContent='Upgrade preview: '+count+' existing file(s) will be backed up before replacement. Private settings are untouched.';
+    upgradeApply.disabled=false;
+  }catch(error){installStatus.textContent=String(error);}
+});
+upgradeApply.addEventListener('click',async()=>{
+  if(!upgradePreview)return;
+  if(!confirm('Back up and replace the differing Workbench Live addon files in '+upgradePreview.target+'? Do not proceed while the addon is running.'))return;
+  upgradeApply.disabled=true;
+  try {
+    const result=await request('installer/upgrade-apply',{ashita_root:installRootInput.value,expected:upgradePreview});
+    installStatus.textContent='Updated '+result.updated.length+' file(s). Backup: '+(result.backup_directory||'none required')+'. Reload the addon manually.';
+    upgradePreview=null;
+  }catch(error){upgradePreview=null;installStatus.textContent=String(error);}
+});
+document.getElementById('ashita-install-preview').addEventListener('click',async()=>{
+  installerPreview=null;installApply.disabled=true;installResult.textContent='';
+  try {
+    const response=await request('installer/preview',{ashita_root:installRootInput.value});
+    installerPreview=response;
+    installResult.textContent=response.files.map(f=>f.action+' · '+f.name).join('\n');
+    installStatus.textContent=response.can_install?
+      'Ready: creates missing files only. Private settings are untouched.':
+      'Blocked: existing addon files differ. Back up or reconcile manually.';
+    installApply.disabled=!response.can_install;
+  }catch(error){installStatus.textContent=String(error);}
+});
+installApply.addEventListener('click',async()=>{
+  if(!installerPreview || !installerPreview.can_install)return;
+  if(!confirm('Create missing Workbench Live addon files in '+installerPreview.target+'? Existing files and private settings will not be replaced.'))return;
+  installApply.disabled=true;
+  try {
+    const result=await request('installer/apply',{ashita_root:installRootInput.value,expected:installerPreview});
+    installStatus.textContent='Installed '+result.created.length+' missing addon files. Reload the Ashita addon manually.';
+    installerPreview=null;
+  }catch(error){installStatus.textContent=String(error);installerPreview=null;}
+});
+const clientInput=document.getElementById('client');
+const client=()=>clientInput.value.trim();
 const statusEl=document.getElementById('status');
 let privateConfig='';
+let provisionedClient=null;
+function clearPrivateConfig() {
+  privateConfig=''; provisionedClient=null;
+  document.getElementById('config').textContent='';
+  document.getElementById('downloadConfig').disabled=true;
+}
+function updateLiveCommand() {
+  const id=client();
+  document.getElementById('liveStartCommand').textContent =
+    /^[a-zA-Z0-9_-]{1,64}$/.test(id) ? '/wblive live start '+id : 'Enter a valid client ID';
+}
+clientInput.addEventListener('input', () => {
+  if (provisionedClient !== null && provisionedClient !== client()) {
+    clearPrivateConfig();
+    actionMessage.textContent='Client changed. Configure this client before downloading credentials.';
+  }
+  safeHealthReport=null; zoneLink.removeAttribute('href'); zoneLink.style.display='none';
+  updateLiveCommand();
+});
+document.getElementById('copyLiveCommand').addEventListener('click', async () => {
+  const id=client();
+  if(!/^[a-zA-Z0-9_-]{1,64}$/.test(id)) {
+    actionMessage.textContent='Enter a valid client ID first'; return;
+  }
+  try {
+    await navigator.clipboard.writeText('/wblive live start '+id);
+    actionMessage.textContent='Ashita start command copied.';
+  } catch (_) { actionMessage.textContent='Clipboard blocked; copy the visible command instead.'; }
+});
+updateLiveCommand();
 const actionMessage=document.getElementById('bridge-action-message');
 const zoneLink=document.getElementById('liveZoneLink');
+const healthHint=document.getElementById('bridge-health-hint');
+let safeHealthReport=null;
+document.getElementById('bridge-copy-health').addEventListener('click', async () => {
+  if (!safeHealthReport) {actionMessage.textContent='No connection status received yet';return;}
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(safeHealthReport,null,2));
+    actionMessage.textContent='Copied health summary without credentials or private settings';
+  } catch (_) {actionMessage.textContent='Clipboard blocked; check browser permissions';}
+});
 async function request(path,data){const opts={method:'POST',headers:{'Content-Type':'application/json'}};
  if(data)opts.body=JSON.stringify(data);
  const response=await fetch(root+path,opts);const result=await response.json();
  if(!response.ok)throw Error(result.detail||response.status);
  return result;}
 async function action(name){try{const result=await request(name);statusEl.textContent=JSON.stringify(result,null,2);
- if(name==='stop'){privateConfig='';document.getElementById('config').textContent='';document.getElementById('downloadConfig').disabled=true;actionMessage.textContent='Receiver stopped. Existing credentials are no longer valid.';}else{actionMessage.textContent='Receiver started. Configure the selected client to connect Ashita.';}}
+ if(name==='stop'){clearPrivateConfig();actionMessage.textContent='Receiver stopped. Existing credentials are no longer valid.';}else{actionMessage.textContent='Receiver started. Configure the selected client to connect Ashita.';}}
  catch(error){actionMessage.textContent=String(error)}}
 async function provision(){try{const value=client();
  if(!/^[a-zA-Z0-9_-]{1,64}$/.test(value))throw Error('Invalid client ID');
@@ -81,11 +192,12 @@ async function provision(){try{const value=client();
  +'    if not ok then peer:close(); error(err) end\\n'
  +'    return peer\\n  end,\\n}\\n';
  privateConfig=lua;
+ provisionedClient=value;
  document.getElementById('downloadConfig').disabled=false;
  actionMessage.textContent='New private credentials created. Download them and reload the Ashita addon. Existing credentials were revoked.';
  document.getElementById('config').textContent='Save locally as addons/workbench_live/workbench_bridge_settings.lua (private):\\n\\n'+lua;
  }catch(error){actionMessage.textContent=String(error)}}
-function downloadConfig(){if(!privateConfig)return;
+function downloadConfig(){if(!privateConfig || provisionedClient!==client())return;
  const blob=new Blob([privateConfig],{type:'text/plain;charset=utf-8'});
  const url=URL.createObjectURL(blob);const a=document.createElement('a');
  a.href=url;a.download='workbench_bridge_settings.lua';a.click();
@@ -101,10 +213,22 @@ function render(data){const health=document.getElementById('health');
  data.snapshot?'Stale — last known observation':'Waiting for client';
  const metrics=document.getElementById('metrics');metrics.replaceChildren();
  const snap=data.snapshot;
+ healthHint.textContent = !data.running ? 'Start receiver to accept localhost telemetry.' :
+   !data.connected ? (snap ? 'Last observation is stale. Check /wblive live status and reconfigure only if credentials expired.' :
+   'Waiting for Ashita. Verify the addon is loaded and /wblive live start was issued.') :
+   'Receiving fresh telemetry. Zone changes should resume after the Ashita transition stabilizes.';
+ safeHealthReport = {
+   client_id: client(),
+   receiver_running: Boolean(data.running),
+   connected: Boolean(data.connected),
+   observation_age_seconds: data.age_seconds !== null && data.age_seconds !== undefined && Number.isFinite(Number(data.age_seconds)) ? Number(data.age_seconds) : null,
+   zone_id: snap && Number.isInteger(Number(snap.zone_id)) ? Number(snap.zone_id) : null,
+   adapter: snap ? snap.adapter : null
+ };
  const zone= snap && Number(snap.zone_id);
  if(data.connected && Number.isInteger(zone) && zone>=1 && zone<=65535){
-   zoneLink.href='/zones/'+zone+'/view3d'; zoneLink.style.display='';
-   zoneLink.textContent='Open zone '+zone+' in 3D Viewer ↗';
+   zoneLink.href='/zones/'+zone+'/view3d?'+new URLSearchParams({live:'1',client:client(),autozone:'1'}).toString(); zoneLink.style.display='';
+   zoneLink.textContent='Open live 3D Viewer · zone '+zone+' ↗';
  }else{zoneLink.removeAttribute('href');zoneLink.style.display='none';}
  const fields=snap?[
  ['Character',snap.character],['Zone',snap.zone_id],

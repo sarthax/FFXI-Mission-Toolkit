@@ -4491,7 +4491,15 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
         if primary_dsp:
             match = resolve_dsp_key_item(dsp_root, row["name"])
             status = ("clean" if match["server_id"] == row["keyitem_id"] else "drifted") if match["status"] == "name_verified" else ("unavailable" if match["status"] in {"unavailable", "ambiguous"} else "missing")
-            return {"status": status,
+            reason = (
+                "Unique DSP source constant and numeric ID agree with the client."
+                if status == "clean" else
+                "Unique DSP source constant matched by normalized name; numeric IDs differ."
+                if status == "drifted" else
+                match.get("message", "DSP source identity cannot be verified.")
+            )
+            return {"status": status, "reason": reason,
+                    "identity_source": match.get("source_path"),
                     "id_match": match["symbol"] if status == "clean" else None,
                     "name_match": (match["server_id"], match["symbol"])
                     if match["status"] == "name_verified" else None}
@@ -4606,8 +4614,10 @@ def keyitems_lua_references(keyitem_id: int, lineage: str = "lsb"):
         if identity["status"] != "name_verified":
             return {"keyitem_id": keyitem_id, "lineage": "dsp", "readiness": identity["status"],
                     "references": [], "message": identity["message"]}
-        result = discover_key_item_references(root, identity["symbol"], lineage="dsp",
-                                              max_matches=200, max_files=25000)
+        from workbench.devtools.features.key_item_persistent_index import query_index
+        result = query_index(root, DB_PATH.with_name("key_item_lua_refs.sqlite"),
+                             identity["symbol"], lineage="dsp",
+                             max_matches=200, max_files=25000)
         result.update({"keyitem_id": keyitem_id, "readiness": "name_verified",
                        "server_id": identity["server_id"],
                        "identity_source": identity["source_path"]})
