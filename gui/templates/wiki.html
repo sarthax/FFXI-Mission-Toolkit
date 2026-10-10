@@ -249,6 +249,16 @@ mark.ct-term::after{content:"]";opacity:.6}
   <span class="muted">Open site:</span>
   {% for l in site_links %}<a class="chip" href="{{ l.page or l.home }}" target="_blank" rel="noopener">{{ l.label }}{% if l.page %} ↗ page{% else %} ↗{% endif %}</a>{% endfor %}
 </div>
+<details class="wiki-section" style="margin:8px 0"><summary><strong>How to use the Japanese Wiki tools</strong></summary>
+  <div class="body">
+    <ul>
+      <li><b>Client terms tab:</b> search a game term in English, Japanese or kana; use <i>Search JP Wiki</i> to find pages that use it.</li>
+      <li><b>Highlight client terms</b> (on a Japanese page): brackets official game terms; hover for English or click <i>Show terms in English</i>.</li>
+      <li><b>Translate to English (machine):</b> pick a Model first. Long pages are chunked; the first run loads the model and is slower. Results are cached drafts, never evidence.</li>
+      <li><b>Translation tab:</b> run batches over cached pages. Speed tips: smaller models are faster; table cells without Japanese are skipped automatically.</li>
+    </ul>
+  </div>
+</details>
 {% if tab == 'translation' %}
 <section class="wiki-section" aria-label="Japanese Wiki translation jobs">
   <div class="body">

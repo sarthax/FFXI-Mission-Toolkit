@@ -94,6 +94,13 @@
 <p>Use <a class="zonelink" href="/packages">Packages</a> after tracing the feature and its dependency scope. Review scope and readiness before applying changes. Legacy Backport Package tooling remains available but is labeled as legacy in the navigation.</p>
 </details>
 
+<details><summary><strong>Read a Japanese wiki page and translate it</strong></summary>
+<p>Open <a class="zonelink" href="/wiki?source=WikiWikiJP&tab=browse">Wiki</a> and pick a WikiWikiJP page. <strong>Highlight client terms</strong> brackets every official game term (auto-translate phrases, item names); hover for the English, or press <strong>Show terms in English</strong> to swap them inline. <strong>Translate to English (machine)</strong> translates the whole page with your local Ollama model (choose it in the Model dropdown; first use is slower while the model loads). Translations are drafts: game-specific names can be wrong, so confirm them against Client terms.</p>
+</details>
+<details><summary><strong>Look up a game term in English and Japanese</strong></summary>
+<p>Wiki &rarr; <strong>Client terms</strong>. Type English, Japanese or kana; each result shows both languages, category and type, and <strong>Search JP Wiki</strong> finds pages using that Japanese term. Needs <code>data/ja_en_text.db</code>.</p>
+</details>
+
 <h2>Data &amp; indexes</h2>
 <p>The <a class="zonelink" href="/">Home / Project</a> page's <strong>Data &amp; Tools</strong> section shows which local sources are populated and provides the supported rebuild/install controls. Rebuild an index after its underlying server/client source changes. A zero or missing index can mean “not configured/not built,” not “the game data does not exist.”</p>
 <p>Source paths and environment configuration live in <a class="zonelink" href="/settings">Settings</a>. The context bar at the top of the GUI reports the project/source/target/client context the Workbench can actually establish; <strong>UNKNOWN</strong> is intentionally different from guessing a snapshot or build identity.</p>
