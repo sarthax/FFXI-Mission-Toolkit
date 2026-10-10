@@ -31,7 +31,5 @@ def reviewed_glossary(con: sqlite3.Connection, *, limit: int = 300) -> dict[str,
         if not any("\u3040" <= c <= "\u9fff" for c in ja):
             continue
         possible.setdefault(ja, set()).add(en)
-    return {ja: next(iter(values)) for ja, values in sorted(possible.items())
-            if len(values) == 1 for _ in (0,) } if len(possible) <= limit else dict(
-            list((ja, next(iter(values))) for ja, values in sorted(possible.items())
-                 if len(values) == 1)[:limit])
+    accepted = [(ja, next(iter(values))) for ja, values in sorted(possible.items()) if len(values) == 1]
+    return dict(accepted[:limit])
