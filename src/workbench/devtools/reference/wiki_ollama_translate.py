@@ -7,7 +7,7 @@ import re
 import urllib.request
 
 _DEFAULT_URL = "http://127.0.0.1:11434/api/generate"
-_NUMBERS = re.compile(r"(?<![\w])\d+(?:[.,]\d+)*(?![\w])")
+_NUMBERS = re.compile(r"(?<![0-9])\d+(?:[.,]\d+)*(?![0-9])")
 # Curated starter terms; extend from reviewed aliases/client identifiers, not model guesses.
 GLOSSARY = {"だいじなもの": "key item", "ミッション": "mission",
             "クエスト": "quest", "ノートリアスモンスター": "Notorious Monster",
