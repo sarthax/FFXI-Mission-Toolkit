@@ -324,11 +324,11 @@ def translate_cached(con: sqlite3.Connection, source_id: str, page_id: str, page
       target_lang TEXT, translated TEXT, engine TEXT, created_at TEXT, PRIMARY KEY(source_id,page_id,page_hash,target_lang))""")
     r = con.execute("SELECT translated,engine,created_at FROM reference_wiki_translations WHERE source_id=? AND page_id=? AND page_hash=? AND target_lang='en'",
                     (source_id, page_id, page_hash)).fetchone()
-    if r:
-        return {"status": "OK", "text": r[0], "engine": r[1], "created_at": r[2]}
-    # Explicit local Ollama opt-in; preserve the legacy command translator as fallback.
     from . import wiki_ollama_translate
     model = wiki_ollama_translate.configured_model()
+    if r and (not model or r[1] == "ollama:" + model):
+        return {"status": "OK", "text": r[0], "engine": r[1], "created_at": r[2]}
+    # Explicit local Ollama opt-in; preserve the legacy command translator as fallback.
     if model:
         try:
             result = wiki_ollama_translate.translate(text, model=model)
