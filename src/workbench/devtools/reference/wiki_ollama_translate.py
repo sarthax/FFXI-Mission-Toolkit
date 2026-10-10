@@ -35,11 +35,14 @@ def quality_warnings(source: str, translated: str, glossary: dict | None = None)
 
 
 def translate(text: str, *, model: str, url: str = _DEFAULT_URL,
-              timeout: int = 120, max_chars: int = 5000,
+              timeout: int | None = None, max_chars: int = 5000,
               glossary: dict | None = None, num_ctx: int = 8192) -> dict:
     """Translate bounded source text via loopback Ollama; return unverified draft."""
     if not model.strip():
         raise ValueError("An explicit installed Ollama model is required")
+    if timeout is None:
+        # Cold model load plus a long chunk can exceed two minutes on a 12 GB GPU.
+        timeout = int(os.environ.get("WIKI_TRANSLATE_TIMEOUT", "600") or 600)
     # Do not permit arbitrary remote endpoints via configuration on this PoC.
     if url not in {_DEFAULT_URL, "http://localhost:11434/api/generate"}:
         raise ValueError("Only loopback Ollama is allowed")
@@ -55,6 +58,7 @@ def translate(text: str, *, model: str, url: str = _DEFAULT_URL,
         + terms + "\n\nJapanese source:\n" + text + "\n\nEnglish translation:"
     )
     payload = json.dumps({"model": model, "prompt": prompt, "stream": False,
+                          "keep_alive": "30m",
                           "options": {"temperature": 0, "num_ctx": num_ctx}}).encode("utf-8")
     req = urllib.request.Request(url, payload, headers={"Content-Type": "application/json"},
                                  method="POST")
