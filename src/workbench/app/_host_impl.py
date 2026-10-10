@@ -4491,7 +4491,15 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
         if primary_dsp:
             match = resolve_dsp_key_item(dsp_root, row["name"])
             status = ("clean" if match["server_id"] == row["keyitem_id"] else "drifted") if match["status"] == "name_verified" else ("unavailable" if match["status"] in {"unavailable", "ambiguous"} else "missing")
-            return {"status": status,
+            reason = (
+                "Unique DSP source constant and numeric ID agree with the client."
+                if status == "clean" else
+                "Unique DSP source constant matched by normalized name; numeric IDs differ."
+                if status == "drifted" else
+                match.get("message", "DSP source identity cannot be verified.")
+            )
+            return {"status": status, "reason": reason,
+                    "identity_source": match.get("source_path"),
                     "id_match": match["symbol"] if status == "clean" else None,
                     "name_match": (match["server_id"], match["symbol"])
                     if match["status"] == "name_verified" else None}
