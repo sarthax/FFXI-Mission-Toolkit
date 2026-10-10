@@ -647,6 +647,8 @@
    "lsb_instance_id": 7300,
    "time_limit": 100,
    "topaz_entities": null,
+   "live_db_entities": 709,
+   "sql_db_mismatch": true,
    "hooks": [
     "afterInstanceRegister",
     "onInstanceCreated",
@@ -672,6 +674,8 @@
    "lsb_instance_id": 7301,
    "time_limit": 100,
    "topaz_entities": null,
+   "live_db_entities": null,
+   "sql_db_mismatch": false,
    "hooks": [],
    "mob_scripts": 0,
    "npc_scripts": 0,
@@ -691,6 +695,8 @@
    "lsb_instance_id": 7400,
    "time_limit": 100,
    "topaz_entities": 298,
+   "live_db_entities": 298,
+   "sql_db_mismatch": false,
    "hooks": [
     "afterInstanceRegister",
     "onInstanceCreated",
@@ -717,6 +723,8 @@
    "lsb_instance_id": 7401,
    "time_limit": 100,
    "topaz_entities": null,
+   "live_db_entities": null,
+   "sql_db_mismatch": false,
    "hooks": [],
    "mob_scripts": 0,
    "npc_scripts": 0,
@@ -736,6 +744,8 @@
    "lsb_instance_id": 7500,
    "time_limit": 100,
    "topaz_entities": 334,
+   "live_db_entities": 334,
+   "sql_db_mismatch": false,
    "hooks": [
     "afterInstanceRegister",
     "onInstanceCreated",
@@ -761,6 +771,8 @@
    "lsb_instance_id": 7501,
    "time_limit": 100,
    "topaz_entities": null,
+   "live_db_entities": null,
+   "sql_db_mismatch": false,
    "hooks": [],
    "mob_scripts": 0,
    "npc_scripts": 0,
@@ -780,6 +792,8 @@
    "lsb_instance_id": 7600,
    "time_limit": 100,
    "topaz_entities": null,
+   "live_db_entities": 848,
+   "sql_db_mismatch": true,
    "hooks": [
     "afterInstanceRegister",
     "onInstanceCreated",
@@ -805,6 +819,8 @@
    "lsb_instance_id": 7601,
    "time_limit": 100,
    "topaz_entities": null,
+   "live_db_entities": null,
+   "sql_db_mismatch": false,
    "hooks": [],
    "mob_scripts": 0,
    "npc_scripts": 0,
@@ -1025,11 +1041,12 @@
   {
    "id": "salvage2",
    "name": "Salvage II (_ii variants)",
-   "status": "not built",
-   "note": "No server content. One capture exists (Silver Sea Remnants, Salvage II) plus a Staging Point prep capture.",
+   "status": "partial",
+   "note": "No server content. Capture 228 (Silver Sea Remnants, Salvage II) has 124 NPC entries in-zone plus events from Gilded Doors (0x012C), Gilded Gateway (0x019A), Runic Lamp (0x01F4), Runic Portal (0x0075), Damisha, Zasshal, Sharin-Garin and Mrohk Sahjuuli. Meanings are not decoded yet.",
    "needs": [
-    "capture analysis",
-    "wiki/forum cross-reference"
+    "decode the event ids with explore_event.py",
+    "floor-by-floor positions from capture 228",
+    "Salvage II instance ids/rows"
    ]
   }
  ],
@@ -1038,17 +1055,18 @@
   {
    "id": "mrohk_sahjuuli",
    "name": "Mrohk Sahjuuli",
-   "zone": "Aht Urhgan Whitegate / Alzadaal Undersea Ruins",
+   "zone": "Aht Urhgan Whitegate",
    "role": "unknown",
-   "status": "unknown",
-   "note": "Name appears in capture 228's label only; role not verified."
+   "status": "partial",
+   "note": "Capture 228: entity 16982637 at (23, 0, -88) in Whitegate. 45 event packets with him: event 0x03C9 (1 incoming, option 2 outgoing) and 0x03CD (9 incoming, option 0 each). What the menus do is not decoded; role unverified."
   }
  ],
  "open_questions": [
   "What are the Salvage II instance ids actually needed, and are the held spares (63/66/69/72) used?",
   "Which Silver Sea floors and doors exist in retail? Only entry/failure/exit is implemented.",
   "What is the full Pathos set and cell-removal rule per zone, confirmed from captures?",
-  "What does Mrohk Sahjuuli do (capture 228)?",
-  "Do captures exist for every floor of every Salvage I zone?"
+  "What do Mrohk Sahjuuli's events 0x03C9 / 0x03CD do (capture 228)? Role is still unverified.",
+  "Do captures exist for every floor of every Salvage I zone?",
+  "instance_entities for instances 12, 62 and 71 exist only in the live DB; instance 80 has 18 file rows not yet live. Needs a decision on writing the SQL file (see audit)."
  ]
 }

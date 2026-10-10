@@ -58,6 +58,21 @@ def entity_counts(tree: Path) -> dict:
     return out
 
 
+def live_entity_counts() -> dict:
+    """instance_entities counts from the live Topaz DB (credentials from conf/map.conf); {} if unreachable."""
+    try:
+        import mysql.connector
+        cfg = read(TREES["topaz"] / "conf" / "map.conf")
+        g = lambda k: re.search(r"^" + k + r":\s*(.+)$", cfg, re.M).group(1).strip()
+        c = mysql.connector.connect(host=g("mysql_host"), port=int(g("mysql_port")), user=g("mysql_login"),
+                                    password=g("mysql_password"), database=g("mysql_database"), connection_timeout=4)
+        q = c.cursor()
+        q.execute("select instanceid, count(*) from instance_entities group by instanceid")
+        return {int(i): int(n) for i, n in q.fetchall()}
+    except Exception:
+        return {}
+
+
 def inst_info(tree: Path, folder: str, stem: str) -> dict:
     d = tree / "scripts" / "zones" / folder
     inst = d / "instances"
@@ -102,6 +117,7 @@ def main() -> None:
     cur = json.loads(read(CUR) or "{}")
     rows = {k: instance_rows(t) for k, t in TREES.items()}
     ents = {k: entity_counts(t) for k, t in TREES.items()}
+    live = live_entity_counts()
     caps = captures()
     zones, tracks = [], []
     for zk, folder, stem, wiki in ZONES:
@@ -133,6 +149,8 @@ def main() -> None:
                 "lsb_instance_id": r["lsb"]["id"] if r["lsb"] else None,
                 "time_limit": r["topaz"]["time_limit"] if r["topaz"] else None,
                 "topaz_entities": ents["topaz"].get(tid) if tid is not None else None,
+                "live_db_entities": live.get(tid) if (live and tid is not None) else None,
+                "sql_db_mismatch": bool(live and tid is not None and roman == "I" and live.get(tid, 0) != ents["topaz"].get(tid, 0)),
                 "hooks": t["hooks"] if roman == "I" else [],
                 "mob_scripts": len(t["mobs"]) if roman == "I" else 0,
                 "npc_scripts": len(t["npcs"]) if roman == "I" else 0,
