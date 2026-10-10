@@ -24,11 +24,26 @@ _MAX_ROWS = 500
 _STOCK = re.compile(r"stock\s*=\s*\{(.*?)\}", re.S)
 
 
+_STOCK_OPEN = re.compile(r"stock\s*=\s*\{")
+
+
+def _stock_blocks(text: str) -> list[str]:
+    """Bodies of every `stock = { ... }` table, brace-balanced so nested tables do not truncate the list."""
+    blocks: list[str] = []
+    for m in _STOCK_OPEN.finditer(text):
+        depth, pos = 1, m.end()
+        while pos < len(text) and depth:
+            depth += {"{": 1, "}": -1}.get(text[pos], 0)
+            pos += 1
+        blocks.append(text[m.end():pos - 1 if depth == 0 else pos])
+    return blocks
+
+
 def _dsp_stock_offers(text: str) -> list[tuple[int, int]]:
     """DSP static shops: `stock = {0xITEM, price[, nationflag], ...}` passed to showShop (pairs) or showNationShop (triples)."""
     stride = 3 if "showNationShop" in text and "showShop(" not in text else 2
     out: list[tuple[int, int]] = []
-    for block in _STOCK.findall(text):
+    for block in _stock_blocks(text):
         nums = [int(x, 16) if x.lower().startswith("0x") else int(x) for x in re.findall(r"0[xX][0-9a-fA-F]+|\d+", re.sub(r"--[^\n]*", "", block))]
         for n in range(0, len(nums) - stride + 1, stride):
             if nums[n] and nums[n + 1]:

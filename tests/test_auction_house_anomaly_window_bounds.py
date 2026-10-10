@@ -21,7 +21,7 @@ def test_future_sales_cannot_inflate_volume_or_price_anomaly():
 
 def test_future_listings_cannot_trigger_seller_flood():
     earlier = [sale(1, NOW - 15 * DAY)]
-    future = [dict(sale(2, NOW + i + 1), sold_at=0) for i in range(20)]
+    future = [dict(sale(2, NOW + i + 1), sold_at=0, listed_at=NOW + i + 1) for i in range(20)]
     result = anomalies_from(earlier + future, NOW)
     assert not any(f["kind"] == "seller_flood" for f in result["findings"])
 

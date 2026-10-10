@@ -8,6 +8,7 @@ Nothing here writes; `build_sql` only produces statements and `apply_sql` is cal
 """
 from __future__ import annotations
 
+import logging
 import time
 from pathlib import Path
 from typing import Any
@@ -17,6 +18,10 @@ INGREDIENTS = tuple(f"Ingredient{n}" for n in range(1, 9))
 RESULTS = ("Result", "ResultHQ1", "ResultHQ2", "ResultHQ3")
 QTYS = ("ResultQty", "ResultHQ1Qty", "ResultHQ2Qty", "ResultHQ3Qty")
 FLAVORS = ("dsp", "topaz", "lsb")
+
+# Max producer recipes explored per item; real data tops out at 10, the bound only limits recursion cost.
+_MAX_PRODUCERS = 16
+_log = logging.getLogger(__name__)
 
 _AVAIL_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
 
@@ -142,52 +147,59 @@ def get_recipe(conn, recipe_id: int) -> dict[str, Any] | None:
 
 # ---------------------------------------------------------------- availability
 def _sources(conn, root: Path | str | None) -> dict[str, Any]:
-    key = f"{root}"
+    key = f"{root}|{getattr(conn, 'database', '')}|{id(conn)}"
     hit = _AVAIL_CACHE.get(key)
     if hit and time.time() - hit[0] < 120:
         return hit[1]
     from workbench.server_admin.auction_house.arbitrage import scan_vendor_prices
 
+    errors: list[str] = []
     vendors: dict[int, dict[str, Any]] = dict(scan_vendor_prices(root)["items"]) if root else {}
     try:
         for r in _rows(conn, "SELECT guildid,itemid,min_price FROM guild_shops"):
             iid = int(r[1])
             if iid not in vendors or int(r[2]) < vendors[iid]["price"]:
                 vendors[iid] = {"price": int(r[2]), "vendor": f"Guild #{int(r[0])}", "zone": "", "kind": "GUILD"}
-    except Exception:
-        pass
+    except Exception as exc:
+        errors.append(f"guild_shops: {exc}")
     # A drop only counts when the chain droplist -> mob group -> spawn point exists (zone is encoded in mobid bits 12-23).
     drops: dict[int, dict[str, Any]] = {}
     any_drop: set[int] = set()
     try:
-        any_drop = {int(r[0]) for r in _rows(conn, "SELECT DISTINCT itemId FROM mob_droplist")}
+        # Rate-0 rows are placeholders that never drop, so they must not make an item look obtainable.
+        rate_col = next((c for c in ("itemRate", "dropRate") if _rows(conn, "SHOW COLUMNS FROM mob_droplist LIKE %s", (c,))), None)
+        live = f" WHERE `{rate_col}`>0" if rate_col else ""
+        live_d = f" AND d.`{rate_col}`>0" if rate_col else ""
+        any_drop = {int(r[0]) for r in _rows(conn, f"SELECT DISTINCT itemId FROM mob_droplist{live}")}
         for r in _rows(conn, "SELECT d.itemId, p.name, g.zoneid, COUNT(*) FROM mob_droplist d JOIN mob_groups g ON g.dropid=d.dropId "
                              "JOIN mob_pools p ON p.poolid=g.poolid JOIN mob_spawn_points sp ON sp.groupid=g.groupid AND ((sp.mobid>>12)&4095)=g.zoneid "
-                             "GROUP BY d.itemId, p.name, g.zoneid ORDER BY d.itemId, COUNT(*) DESC"):
+                             f"WHERE 1=1{live_d} GROUP BY d.itemId, p.name, g.zoneid ORDER BY d.itemId, COUNT(*) DESC"):
             e = drops.setdefault(int(r[0]), {"mobs": 0, "sample": []})
             e["mobs"] += 1
             if len(e["sample"]) < 3:
                 e["sample"].append({"mob": str(r[1] or ""), "zone_id": int(r[2])})
-    except Exception:
-        pass
+    except Exception as exc:
+        errors.append(f"drops: {exc}")
     bcnm: set[int] = set()
     try:
         bcnm = {int(r[0]) for r in _rows(conn, "SELECT DISTINCT l.itemId FROM bcnm_loot l JOIN bcnm_info i ON i.lootDropId=l.LootDropId")}
-    except Exception:
-        pass
+    except Exception as exc:
+        errors.append(f"bcnm: {exc}")
     ah: dict[int, dict[str, int]] = {}
     try:
         for r in _rows(conn, "SELECT itemid,COUNT(*),MIN(price) FROM auction_house WHERE sell_date=0 AND stack=0 GROUP BY itemid"):
             ah[int(r[0])] = {"count": int(r[1]), "min": int(r[2])}
-    except Exception:
-        pass
+    except Exception as exc:
+        errors.append(f"auction_house: {exc}")
     cols = table_columns(conn)
     where = "`Desynth`=0" if "Desynth" in cols else "`Type`=1"
     crafted: dict[int, list[int]] = {}
     for r in _rows(conn, f"SELECT `ID`,`Result`,`ResultHQ1`,`ResultHQ2`,`ResultHQ3` FROM `synth_recipes` WHERE {where}"):
         for iid in {int(x) for x in r[1:] if x}:
             crafted.setdefault(iid, []).append(int(r[0]))
-    out = {"vendors": vendors, "drops": drops, "orphan_drops": any_drop - set(drops), "bcnm": bcnm, "ah": ah, "crafted": crafted, "cols": cols, "scripts": {}, "scripts_root": root}
+    out = {"vendors": vendors, "drops": drops, "orphan_drops": any_drop - set(drops), "bcnm": bcnm, "ah": ah, "crafted": crafted, "cols": cols, "scripts": {}, "scripts_root": root, "errors": errors}
+    if errors:
+        _log.warning("synth availability sources degraded: %s", "; ".join(errors))
     _AVAIL_CACHE[key] = (time.time(), out)
     return out
 
@@ -286,7 +298,7 @@ class Availability:
         d = self.direct(item_id)
         ok = bool(d["vendor"] or d["drops"] or d["bcnm"] or d["engine"])
         if not ok and item_id not in _stack:
-            for rid in d["recipes"][:6]:
+            for rid in d["recipes"][:_MAX_PRODUCERS]:
                 rc = self.recipes.get(rid)
                 if rc and all(self.obtainable(i, (*_stack, item_id)) for i in [rc["crystal"], *rc["ingredients"]] if i):
                     ok = True
@@ -302,7 +314,7 @@ class Availability:
         d = self.direct(item_id)
         ok = self.obtainable(item_id) or bool(d["scripts"])
         if not ok and item_id not in _stack:
-            for rid in d["recipes"][:6]:
+            for rid in d["recipes"][:_MAX_PRODUCERS]:
                 rc = self.recipes.get(rid)
                 if rc and all(self.soft(i, (*_stack, item_id)) for i in [rc["crystal"], *rc["ingredients"]] if i):
                     ok = True
