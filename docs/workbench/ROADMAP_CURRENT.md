@@ -226,6 +226,7 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Capture 2D/3D viewer routes and Zone Editor handoffs are covered by live-app route regressions.
 - [x] Standalone 3D viewer identifies client DAT versus cached OBJ mesh source and surfaces recoverable load failures with retry controls; visual verification on local FFXI DATs remains pending.
 - [x] Standalone 3D viewer can toggle mob/NPC/door/captured spawn markers with shared search and marker-count feedback; visual smoke test pending.
+- [x] Standalone 3D viewer provides read-only camera XYZ/view-heading diagnostics, go-to XYZ, and page-session save/restore viewpoints. Coordinates use existing viewer transform; local visual acceptance remains pending.
 - [x] Model catalog failures from unrecognized gear-slot indices no longer abort the complete catalog.
 - [x] Nyzul Editor preserves explicit DSP/Topaz legacy-layout handling while routing modern LandSandBoat checkouts through the native adapter.
 - [x] Native modern-LSB Nyzul adapter parses `floor_generation.lua`, current objective/layout selection, YAML-backed entity tables, native boss/Rampart positions, shared spawn pools, and fail-closed unsupported mappings; merged in PR #544.
