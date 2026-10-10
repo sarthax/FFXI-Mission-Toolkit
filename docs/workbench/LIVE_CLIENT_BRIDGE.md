@@ -718,3 +718,14 @@ or a player movement path. Inspect the marker against a known landmark and
 compare forward-facing direction in the game; send the copied diagnostics and
 a screenshot if axis or heading alignment is incorrect. Neither button sends
 movement commands. The clipboard button needs browser clipboard permission.
+
+
+### Live Bridge operator workflow
+
+The themed Direct Live Bridge page includes short setup steps, persistent
+action feedback independent of telemetry polling, and a read-only link to the
+selected client's currently connected zone in the 3D Viewer. The zone shortcut
+appears only for fresh connected telemetry with a valid numeric zone ID and
+never attempts to move the character or switch zones in game. Downloading
+new client settings still revokes earlier provisioning; copy the private file
+to the explicitly chosen Ashita addon directory and reload that addon.
