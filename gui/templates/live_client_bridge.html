@@ -1,0 +1,121 @@
+{% extends "workbench_page.html" %}
+{% block title %}Direct Live Bridge{% endblock %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_width %}fluid{% endblock %}
+{% block page_class %}live-bridge-page{% endblock %}
+{% block page_heading %}Live Client{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Direct telemetry · Read-only</span>{% endblock %}
+{% block page_help %}Explicit localhost Ashita bridge. Telemetry only: no recordings or game-state writes. Reprovisioning invalidates existing credentials; protect the downloaded Lua settings file.{% endblock %}
+{% block page_body %}
+<style>
+.lc-bridge{width:100%;min-width:0;display:grid;gap:14px;padding:12px}
+.lc-bridge .lc-tabs{display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:10px}
+.lc-bridge .lc-tabs [aria-current=page]{background:var(--surface,transparent);font-weight:700;border-bottom:2px solid var(--accent,#6cc)}
+.lc-bridge .lc-panel{background:var(--surface,transparent);border:1px solid var(--border);border-radius:8px;padding:14px;min-width:0}
+.lc-bridge .lc-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.lc-bridge button,.lc-bridge input{font:inherit}
+.lc-bridge label{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lc-bridge input{max-width:200px}
+.lc-bridge pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:340px;overflow:auto;color:var(--text,inherit)}
+.lc-bridge #metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.lc-bridge #metrics>div{background:var(--bg,transparent);border-color:var(--border)!important}
+.lc-bridge #health{font-weight:700}
+</style>
+<div class="lc-bridge">
+<nav class="lc-tabs" aria-label="Live Client module">
+  <a href="/live-client" class="chip">Recordings &amp; replay</a>
+  <a href="/live-client/bridge/console" class="chip" aria-current="page">Direct Live Bridge</a>
+  <a href="/settings" class="chip">Settings</a>
+</nav>
+<section class="lc-panel">
+ <h2>Direct Live Bridge</h2>
+ <p class="muted">Local, read-only Ashita telemetry. No recording files or game writes.</p>
+ <div class="lc-actions"><label>Ashita client ID <input id="client" value="ashita-a" list="clients" pattern="[a-zA-Z0-9_-]+"></label><datalist id="clients"></datalist>
+ <button type="button" onclick="action('start')">Start receiver</button>
+ <button type="button" onclick="provision()">Configure client</button>
+ <button type="button" onclick="action('stop')">Stop receiver</button></div>
+ <p class="muted">Configuring a client replaces its active credentials. Keep settings private and reload the Ashita addon after changes.</p>
+ <button type="button" id="downloadConfig" onclick="downloadConfig()" disabled>Download Ashita settings</button>
+ <details><summary>Private configuration (do not share)</summary><pre id="config" aria-live="polite"></pre></details>
+</section>
+<section class="lc-panel">
+ <h2>Live dashboard</h2>
+ <div id="health" role="status">Waiting for telemetry</div>
+ <div id="metrics"></div>
+ <h3>Nearby observed entities</h3><div id="entities">No observations yet</div>
+ <details><summary>Technical details</summary><pre id="status" aria-live="polite">Not connected</pre></details>
+</section>
+</div>
+<script>
+const root='/live-client/bridge/';
+const client=()=>document.getElementById('client').value;
+const statusEl=document.getElementById('status');
+let privateConfig='';
+async function request(path,data){const opts={method:'POST',headers:{'Content-Type':'application/json'}};
+ if(data)opts.body=JSON.stringify(data);
+ const response=await fetch(root+path,opts);const result=await response.json();
+ if(!response.ok)throw Error(result.detail||response.status);
+ return result;}
+async function action(name){try{const result=await request(name);statusEl.textContent=JSON.stringify(result,null,2);
+ if(name==='stop'){privateConfig='';document.getElementById('config').textContent='';document.getElementById('downloadConfig').disabled=true;}}
+ catch(error){statusEl.textContent=String(error)}}
+async function provision(){try{const value=client();
+ if(!/^[a-zA-Z0-9_-]{1,64}$/.test(value))throw Error('Invalid client ID');
+ const result=await request('provision',{client_id:value});
+ const lua='-- Private workbench_bridge_settings.lua; do not commit this file.\\n'
+ +'local socket = require("socket")\\nreturn {\\n'
+ +'  enabled = true, host = "127.0.0.1",\\n'
+ +'  port = '+result.port+',\\n'
+ +'  session_id = '+JSON.stringify(result.session_id)+',\\n'
+ +'  generation = '+JSON.stringify(result.generation)+',\\n'
+ +'  token = '+JSON.stringify(result.token)+',\\n'
+ +'  connect = function(host, port)\\n'
+ +'    local peer = assert(socket.tcp())\\n'
+ +'    peer:settimeout(0.1)\\n'
+ +'    local ok, err = peer:connect(host, port)\\n'
+ +'    if not ok then peer:close(); error(err) end\\n'
+ +'    return peer\\n  end,\\n}\\n';
+ privateConfig=lua;
+ document.getElementById('downloadConfig').disabled=false;
+ document.getElementById('config').textContent='Save locally as addons/workbench_live/workbench_bridge_settings.lua (private):\\n\\n'+lua;
+ }catch(error){statusEl.textContent=String(error)}}
+function downloadConfig(){if(!privateConfig)return;
+ const blob=new Blob([privateConfig],{type:'text/plain;charset=utf-8'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');
+ a.href=url;a.download='workbench_bridge_settings.lua';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function metric(label,value){const node=document.createElement('div');node.style.border='1px solid #aaa';
+ node.style.padding='0.75rem';node.style.borderRadius='0.5rem';
+ const heading=document.createElement('small');heading.textContent=label;
+ const content=document.createElement('div');content.style.fontSize='1.25rem';content.textContent=String(value);
+ node.append(heading,content);return node;}
+function render(data){const health=document.getElementById('health');
+ health.textContent=!data.running?'Receiver stopped':data.connected?'Connected — live telemetry':
+ data.snapshot?'Stale — last known observation':'Waiting for client';
+ const metrics=document.getElementById('metrics');metrics.replaceChildren();
+ const snap=data.snapshot;const fields=snap?[
+ ['Character',snap.character],['Zone',snap.zone_id],
+ ['X',Number(snap.x).toFixed(3)],['Y',Number(snap.y).toFixed(3)],
+ ['Z',Number(snap.z).toFixed(3)],['Heading',Number(snap.heading).toFixed(3)],
+ ['Last update',data.age_seconds===null?'—':Number(data.age_seconds).toFixed(1)+'s'],
+ ['Adapter',snap.adapter]]:[['Connection',data.running?'Waiting':'Stopped']];
+ for(const [label,value] of fields)metrics.appendChild(metric(label,value));
+ const entities=document.getElementById('entities');entities.replaceChildren();
+ const observed=snap&&Array.isArray(snap.entities)?snap.entities:[];
+ if(!observed.length){entities.textContent='No entity observations in current frame';return}
+ const list=document.createElement('ul');for(const entity of observed){
+ const item=document.createElement('li');
+ item.textContent=(entity.name||'Unnamed')+' · index '+entity.client_index+' · '+entity.x.toFixed(2)+', '+entity.y.toFixed(2)+', '+entity.z.toFixed(2);
+ list.appendChild(item);}entities.appendChild(list);}
+async function poll(){const value=client();if(!/^[a-zA-Z0-9_-]{1,64}$/.test(value))return;
+ try{const response=await fetch(root+'status/'+encodeURIComponent(value));
+ if(response.ok){const data=await response.json();statusEl.textContent=JSON.stringify(data,null,2);render(data)}
+ }catch(error){statusEl.textContent=String(error)}}
+async function refreshClients(){try{const response=await fetch(root+'clients');
+ if(!response.ok)return;const result=await response.json();
+ const list=document.getElementById('clients');list.replaceChildren();
+ for(const id of result.clients||[]){const option=document.createElement('option');option.value=id;list.appendChild(option);}
+ }catch(error){}}
+setInterval(poll,1500);setInterval(refreshClients,5000);refreshClients();poll();
+</script>
+{% endblock %}
