@@ -718,3 +718,111 @@ or a player movement path. Inspect the marker against a known landmark and
 compare forward-facing direction in the game; send the copied diagnostics and
 a screenshot if axis or heading alignment is incorrect. Neither button sends
 movement commands. The clipboard button needs browser clipboard permission.
+
+### Windows field report — zoning and uncalibrated 3D axes
+
+A real Windows DSP/Ashita test confirmed connection, position updates, player marker visibility and camera following, but reported a floating/misaligned marker, incorrect heading and telemetry stopping after zoning. The Ashita sampler now treats mid-sample zone/slot transitions as recoverable within the existing 30-second stability window. The 3D viewer offers temporary axis previews for comparing live coordinates with mesh geometry; selections are local to the page and are **not** proof of correct calibration. Heading transformation remains unverified. The viewer does not automatically navigate to a new zone: manually select/open the new zone after telemetry resumes. Longer zoning delays, logout/character changes and network issues may still require manual restart.
+
+### Live Bridge operator workflow
+
+The themed Direct Live Bridge page includes short setup steps, persistent
+operator-action feedback independent of telemetry polling, and a read-only
+link to the selected client's currently connected zone in the 3D Viewer.
+The shortcut appears only with fresh, valid connected telemetry. It does not
+move the game character, perform writes or change zones automatically.
+Downloaded private credentials still require installation into the Ashita
+addon directory and an explicit addon reload.
+
+
+### Optional follow-zone 3D viewer navigation
+
+After enabling **Live Ashita position**, the viewer can optionally enable
+**Follow zone changes**. When the current zone no longer matches fresh live
+telemetry, the viewer checks the selected client's connected status and
+navigates to that zone's 3D viewer. It retains the selected client ID and
+re-enables live viewing on the destination page only through explicit opt-in
+query parameters. It does not follow stale/disconnected/invalid data, change
+zones inside the game, retain credentials in URLs, or write server state.
+Only the client and follow-zone preferences survive the page navigation;
+other visualization toggles reset to their defaults. If zoning interrupts
+direct telemetry, the view stays on the current zone until the feed resumes.
+
+
+### Spatial comparison controls
+
+The 3D viewer retains the selected axis preview and a separate heading
+rotation preview (0, 90, 180 or 270 degrees) when **Follow zone changes**
+navigates to a new zone. Values are carried as allowlisted nonsecret URL
+parameters only for explicitly enabled live viewing. Both preview controls
+are diagnostic tools; none of their settings is accepted as a verified
+Ashita-to-mesh transform until compared with known Windows landmarks and
+orientation. Copy diagnostics includes the chosen preview for reproducible
+screenshots. The preview affects only drawn markers/heading and never game
+memory or server state.
+
+
+### Two-point Windows alignment diagnosis
+
+With a connected Ashita character in the appropriate 3D zone, select an
+axis preview and choose **Mark alignment point** near a recognizable landmark.
+Move a short, known direction and mark a second point. **Copy two-point
+comparison** exports only those two manually selected raw observations, their
+selected render previews, and XYZ differences to the local clipboard. The
+button never starts packet capture, writes a recording, accesses game memory
+itself, or includes bridge credentials. It keeps at most two snapshots in
+browser memory and resets the pair when the selected client or observed zone
+changes; it does not automatically gather movement trails. The comparison
+is evidence for later calibration, not a permanent axis correction.
+
+
+### Copyable receiver health
+
+The Direct Live Bridge dashboard now explains stopped, waiting, stale and
+connected states and provides **Copy safe health report** for Windows field
+diagnosis. The short report contains only selected client ID, running and
+connected flags, observed age (or null), zone and adapter metadata. It does
+not include the private Lua configuration, tokens, session secrets, nearby
+entity names, or a recording. This report can be shared when investigating
+zoning interruptions. An age of zero is never inferred for absent telemetry.
+
+
+### Guided multi-client setup safety
+
+The Bridge console displays the exact `/wblive live start <client ID>`
+command for the currently selected valid client and provides **Copy Ashita
+start command**. Switching client ID clears any previously displayed private
+Lua settings and disables its download until the new client is explicitly
+provisioned. This prevents accidentally downloading a prior client's active
+secret while operating multiple test clients. The browser still downloads a
+file; it cannot install or reload Ashita addons automatically.
+
+### Guarded local Ashita addon installation
+
+In Direct Live Bridge, enter the full existing Ashita installation root (the
+directory containing `addons`), then **Preview addon files**. Review the six
+expected Ashita Lua addon files. **Install missing files** requires explicit
+browser confirmation and a matching unchanged preview. The Toolkit copies the
+Ashita entry point `workbench_live_ashita.lua` as `workbench_live.lua`, not
+the Windower variant. Existing files, including changed addon source files,
+are never replaced. The installer does not create or modify
+`workbench_bridge_settings.lua`, load the addon into the game, move the
+character, or connect to Ashita automatically. To upgrade an existing addon,
+inspect and back up the directory manually before replacing files. Runs only
+from a local same-origin browser; use the Windows machine hosting Ashita.
+
+
+### Opt-in backup-and-upgrade
+
+After installing the Ashita addon locally, use **Preview backup upgrade** to
+inspect differing addon files and **Backup and replace addon files** only after
+explicit browser confirmation. The upgrader verifies the exact preview, saves
+prior versions in a uniquely named sibling `workbench_live_backup_*`
+directory, verifies each backup hash, then installs current repository copies.
+It never replaces `workbench_bridge_settings.lua` and does not load or unload
+Ashita. Unload the addon before upgrades. If a filesystem error interrupts an
+upgrade, backup files remain for manual recovery; installation is not
+transactional across all files.
+
+### Upgrade interruption recovery
+
+An interrupted local upgrade now reports its sibling backup directory in the error response when available. Before each replacement the installer rechecks the target and source hashes, and rejects symlink/non-file replacements during staging. Verified backups are retained for manual recovery. This is not a multi-file atomic upgrade; unload Ashita first and inspect the backup plus installed files before retrying an interrupted upgrade.

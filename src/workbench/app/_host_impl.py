@@ -165,7 +165,7 @@ app.include_router(create_replay_console_router(render_live_client_console))
 from workbench.runtime.live_client.bridge_managed import ManagedLiveReceiver
 from workbench.runtime.live_client.bridge_management_api import create_bridge_management_router
 live_client_bridge_manager = ManagedLiveReceiver()
-app.include_router(create_bridge_management_router(live_client_bridge_manager))
+
 
 from workbench.runtime.live_client.setup_api import create_recording_upload_router
 app.include_router(create_recording_upload_router(REPO_ROOT / "data" / "live_client_recordings", live_client_replay_registry))
@@ -647,6 +647,7 @@ def current_theme() -> str:
 
 
 templates.env.globals["current_theme"] = current_theme
+app.include_router(create_bridge_management_router(live_client_bridge_manager, templates))
 
 
 def backport_enabled() -> bool:
@@ -4490,7 +4491,15 @@ def keyitems(request: Request, q: str = "", page: int = 1, readiness: str = "all
         if primary_dsp:
             match = resolve_dsp_key_item(dsp_root, row["name"])
             status = ("clean" if match["server_id"] == row["keyitem_id"] else "drifted") if match["status"] == "name_verified" else ("unavailable" if match["status"] in {"unavailable", "ambiguous"} else "missing")
-            return {"status": status,
+            reason = (
+                "Unique DSP source constant and numeric ID agree with the client."
+                if status == "clean" else
+                "Unique DSP source constant matched by normalized name; numeric IDs differ."
+                if status == "drifted" else
+                match.get("message", "DSP source identity cannot be verified.")
+            )
+            return {"status": status, "reason": reason,
+                    "identity_source": match.get("source_path"),
                     "id_match": match["symbol"] if status == "clean" else None,
                     "name_match": (match["server_id"], match["symbol"])
                     if match["status"] == "name_verified" else None}
@@ -4605,8 +4614,10 @@ def keyitems_lua_references(keyitem_id: int, lineage: str = "lsb"):
         if identity["status"] != "name_verified":
             return {"keyitem_id": keyitem_id, "lineage": "dsp", "readiness": identity["status"],
                     "references": [], "message": identity["message"]}
-        result = discover_key_item_references(root, identity["symbol"], lineage="dsp",
-                                              max_matches=200, max_files=25000)
+        from workbench.devtools.features.key_item_persistent_index import query_index
+        result = query_index(root, DB_PATH.with_name("key_item_lua_refs.sqlite"),
+                             identity["symbol"], lineage="dsp",
+                             max_matches=200, max_files=25000)
         result.update({"keyitem_id": keyitem_id, "readiness": "name_verified",
                        "server_id": identity["server_id"],
                        "identity_source": identity["source_path"]})
@@ -6122,6 +6133,47 @@ def wiki_cache_health():
 @app.get("/wiki/jobs")
 def wiki_job_status():
     return {"jobs": wiki_jobs.recent_jobs()}
+
+
+@app.get("/wiki/translation/jobs")
+def wiki_translation_batch_status():
+    from workbench.devtools.reference import wiki_translation_batch
+    return {"jobs": wiki_translation_batch.status(DB_PATH)}
+
+
+@app.post("/wiki/translation/start")
+async def wiki_translation_batch_start(request: Request):
+    from workbench.devtools.reference import wiki_translation_batch
+    form = await request.form()
+    try:
+        limit = int(form.get("limit") or 10)
+        job_id = wiki_translation_batch.start(DB_PATH, limit=limit)
+        return {"status": "queued", "job_id": job_id}
+    except (ValueError, TypeError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
+@app.post("/wiki/translation/retry")
+async def wiki_translation_batch_retry(request: Request):
+    from workbench.devtools.reference import wiki_translation_batch
+    form = await request.form()
+    try:
+        job_id = wiki_translation_batch.start(
+            DB_PATH, limit=int(form.get("limit") or 10),
+            retry_job=str(form.get("job_id") or ""))
+        return {"status": "queued", "job_id": job_id}
+    except (ValueError, TypeError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+
+@app.post("/wiki/translation/cancel")
+async def wiki_translation_batch_cancel(request: Request):
+    from workbench.devtools.reference import wiki_translation_batch
+    form = await request.form()
+    ident = str(form.get("job_id") or "")
+    if not ident or not wiki_translation_batch.cancel(ident):
+        return JSONResponse({"error": "Job is not running in this process"}, status_code=409)
+    return {"status": "cancellation_requested", "job_id": ident}
 
 
 @app.get("/wiki/translate")

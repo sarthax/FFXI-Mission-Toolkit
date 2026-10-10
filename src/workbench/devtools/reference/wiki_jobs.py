@@ -81,7 +81,10 @@ def _fetch(source_id: str, title: str, log) -> list[dict]:
         return out
     if source_id == "BGWiki":
         from . import scrape_bg_wiki as bg
-        from ._wiki_evidence_impl import _norm
+        # Go through the wiki_evidence adapter: the impl does bare `import wiki_lookup`, which only
+        # resolves while the adapter has aliased it, so importing the impl directly fails.
+        import importlib
+        _norm = importlib.import_module("workbench.devtools.reference.wiki_evidence")._norm
         log("fetching BG Wiki page via API")
         out = []
         for r in bg.fetch_pages_by_title([title]):
@@ -324,8 +327,30 @@ def translate_cached(con: sqlite3.Connection, source_id: str, page_id: str, page
       target_lang TEXT, translated TEXT, engine TEXT, created_at TEXT, PRIMARY KEY(source_id,page_id,page_hash,target_lang))""")
     r = con.execute("SELECT translated,engine,created_at FROM reference_wiki_translations WHERE source_id=? AND page_id=? AND page_hash=? AND target_lang='en'",
                     (source_id, page_id, page_hash)).fetchone()
-    if r:
+    from . import wiki_ollama_translate
+    model = wiki_ollama_translate.configured_model()
+    if r and not model:
         return {"status": "OK", "text": r[0], "engine": r[1], "created_at": r[2]}
+    # Explicit local Ollama opt-in; preserve the legacy command translator as fallback.
+    if model:
+        try:
+            # Reuse the Wiki structured blocks (headings, paragraphs and table cells)
+            # instead of sending whole long articles through a single prompt.
+            has_blocks = con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='reference_wiki_blocks'").fetchone()
+            blocks = wiki_document.stored_blocks(con, source_id, page_id) if has_blocks else []
+            if blocks:
+                from . import wiki_translation_cache
+                result = wiki_translation_cache.translate_cached_blocks(
+                    con, source_id=source_id, page_id=page_id, blocks=blocks, model=model)
+            else:
+                result = wiki_ollama_translate.translate(text, model=model)
+        except Exception as exc:
+            return {"status": "ERROR", "error": f"Local Ollama unavailable: {exc}"}
+        if result["status"] != "OK":
+            return result
+        # Block cache is authoritative for model-specific translation drafts;
+        # keep legacy page-level cache for old command translation only.
+        return result
     cmd = os.environ.get("WIKI_TRANSLATE_CMD")
     if not cmd:
         return {"status": "NO_ENGINE"}

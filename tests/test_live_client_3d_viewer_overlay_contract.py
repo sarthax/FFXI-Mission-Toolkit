@@ -10,8 +10,9 @@ def test_zone_viewer_live_overlay_is_opt_in_and_uses_safe_projection():
     assert "/live-client/bridge/projection?client_id=" in content
     assert "&zone_id=' + ZONEID" in content
     assert "if (!data.visible || !data.player || !data.player.position)" in content
-    assert "clearLiveMarker(); liveStatus.textContent = 'No fresh matching-zone telemetry'" in content
-    assert "new THREE.Vector3(position.x, -position.y, -position.z)" in content
+    assert "liveStatus.textContent = 'No fresh matching-zone telemetry'" in content
+    assert "if (liveAutoZoneToggle.checked) await checkLiveZone(clientId, requestId)" in content
+    assert "const current = projectLivePoint(position)" in content
     assert "liveMarker.position.copy(current)" in content
     assert "setInterval(pollAshitaPosition, 1500)" in content
     assert "fetch('/live-client/bridge/clients')" in content
@@ -54,3 +55,48 @@ def test_live_alignment_controls_require_fresh_observation_and_report_transform(
     assert "viewer_position: {x:current.x,y:current.y,z:current.z}" in content
     assert "await navigator.clipboard.writeText(JSON.stringify(lastLiveDiagnostic, null, 2))" in content
     assert "lastLiveDiagnostic = null" in content
+
+
+def test_axis_preview_is_explicit_and_applies_to_entities():
+    content = (Path(__file__).resolve().parents[1] / "gui/templates/zone_view3d.html").read_text(encoding="utf-8")
+    assert 'id="ashita-live-axes"' in content
+    assert "function projectLivePoint(p)" in content
+    assert "marker.position.copy(projectLivePoint(point))" in content
+    assert "axis_preview: liveAxes.value" in content
+    assert "liveAxes.addEventListener('change'" in content
+
+
+def test_opt_in_auto_zone_navigation_requires_fresh_same_client_status():
+    content = (Path(__file__).resolve().parents[1] / "gui/templates/zone_view3d.html").read_text(encoding="utf-8")
+    assert 'id="ashita-live-autozone" type="checkbox"' in content
+    assert "liveAutoZoneToggle.checked" in content
+    assert "status.connected || !status.snapshot" in content
+    assert "requestId !== lastLiveRequest" in content
+    assert "zone === ZONEID" in content
+    assert "Number.isInteger(zone)" in content
+    assert "location.assign('/zones/' + zone + '/view3d?'" in content
+    assert "liveQuery.get('live') === '1'" in content
+    assert "new URLSearchParams({live:'1',client:clientId,autozone:'1',axes:liveAxes.value,heading:liveHeading.value})" in content
+
+
+def test_axis_and_heading_previews_survive_opt_in_zone_navigation():
+    content = (Path(__file__).resolve().parents[1] / "gui/templates/zone_view3d.html").read_text(encoding="utf-8")
+    assert "const liveAxisOptions = new Set(['legacy','xyz','xzy','x-z-y'])" in content
+    assert "liveAxisOptions.has(liveQuery.get('axes'))" in content
+    assert "['0','90','180','270'].includes(liveQuery.get('heading'))" in content
+    assert "axes:liveAxes.value,heading:liveHeading.value" in content
+    assert 'id="ashita-live-heading"' in content
+    assert "heading_preview_degrees: Number(liveHeading.value)" in content
+    assert "liveHeading.addEventListener('change', pollAshitaPosition)" in content
+
+
+def test_two_point_alignment_diagnostics_are_manual_bounded_and_not_recorded():
+    html = (Path(__file__).resolve().parents[1] / "gui/templates/zone_view3d.html").read_text(encoding="utf-8")
+    for token in ('id="ashita-live-sample"', 'id="ashita-live-copy-points"',
+                  "if (!liveToggle.checked || !lastLiveDiagnostic)",
+                  "if (liveAlignmentSamples.length > 2) liveAlignmentSamples.shift()",
+                  "if (liveAlignmentSamples.length !== 2)",
+                  "liveAlignmentSamples[0].zone_id !== point.zone_id",
+                  "delta_raw:{x:diff('x'),y:diff('y'),z:diff('z')}",
+                  "await navigator.clipboard.writeText(JSON.stringify(payload, null, 2))"):
+        assert token in html

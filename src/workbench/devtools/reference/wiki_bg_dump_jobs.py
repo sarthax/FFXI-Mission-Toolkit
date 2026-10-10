@@ -6,6 +6,7 @@ batch runner and retains the original compressed snapshot for portability.
 from __future__ import annotations
 
 import gzip
+from contextlib import closing
 import hashlib
 import json
 import os
@@ -151,11 +152,11 @@ def _import_row(db, row):
     try:
         with tempfile.NamedTemporaryFile(prefix="wiki_bg_batch_",suffix=".db",delete=False) as t:
             temp_name=t.name
-        with sqlite3.connect(temp_name) as con:
+        with closing(sqlite3.connect(temp_name)) as con, con:
             con.execute(wiki_jobs._PAGES_DDL)
             con.execute("INSERT INTO reference_wiki_pages VALUES(?,?,?,?,?,?,?,?)",page)
         wiki_jobs._merge(str(db),temp_name,lambda _:None)
-        with sqlite3.connect(str(db),timeout=30) as con:
+        with closing(sqlite3.connect(str(db),timeout=30)) as con, con:
             document={"page_id":page_id,"title":title,"page_text":text}
             parsed_id,source_format,blocks=wiki_document.build_blocks(
                 document,source_format="mediawiki",raw_source=text)

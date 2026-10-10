@@ -145,14 +145,15 @@
       {% elif rd.status == "drifted" %}<span class="pill gap">drifted</span>
       {% elif rd.status == "wrong_name" %}<span class="pill mismatch">wrong name at this id</span>
       {% elif rd.status == "unavailable" %}<span class="pill gap">source unavailable</span>{% else %}<span class="pill mismatch">missing</span>{% endif %}
+      {% if primary_dsp and rd.reason %}<div class="muted ki-mapping-reason" title="{{ rd.reason }}">{{ rd.reason }}{% if rd.identity_source %} · {{ rd.identity_source }}{% endif %}</div>{% endif %}
     </td>
     <td class="mono">
       {% if rd.status == "clean" %}
-        {{ "tpz.ki" if primary_dsp else "xi.keyItem" }}.{{ rd.id_match }}
+        {% if primary_dsp %}{{ rd.id_match }}{% else %}xi.keyItem.{{ rd.id_match }}{% endif %}
       {% elif rd.status == "drifted" %}
-        {{ "tpz.ki" if primary_dsp else "xi.keyItem" }}.{{ rd.name_match[1] }} <span class="muted">(real id {{ rd.name_match[0] }}, not {{ r.keyitem_id }})</span>
+        {% if primary_dsp %}{{ rd.name_match[1] }}{% else %}xi.keyItem.{{ rd.name_match[1] }}{% endif %} <span class="muted">(real id {{ rd.name_match[0] }}, not {{ r.keyitem_id }})</span>
       {% elif rd.status == "wrong_name" %}
-        {{ "tpz.ki" if primary_dsp else "xi.keyItem" }}.{{ rd.id_match }} <span class="muted">(this ID maps to a different enum in the selected source)</span>
+        {% if primary_dsp %}{{ rd.id_match }}{% else %}xi.keyItem.{{ rd.id_match }}{% endif %} <span class="muted">(this ID maps to a different enum in the selected source)</span>
       {% else %}
         <span class="muted">{{ "DSP enum unavailable or not matched" if primary_dsp else "not implemented" }}</span>
       {% endif %}
@@ -240,7 +241,8 @@
     const results = document.getElementById('ki-lua-results');
     const selected = document.getElementById('ki-lua-operation').value;
     const refs = luaRefs.filter(ref => selected === 'all' || ref.operation === selected);
-    const list = document.createElement('ul');
+    const list = document.createElement('div');
+    const grouped = new Map();
     for (const ref of refs) {
       const item = document.createElement('li');
       const label = document.createElement('strong');
@@ -251,11 +253,54 @@
       copy.type = 'button';
       copy.textContent = 'Copy location';
       copy.addEventListener('click', () => copyValue(location.textContent));
+      const context = document.createElement('span');
+      const path = String(ref.source_path || '');
+      const parts = path.split('/');
+      const fileName = parts[parts.length - 1] || path;
+      const kind = path.includes('/npcs/') ? 'NPC script' :
+        path.includes('/missions/') ? 'Mission script' :
+        path.includes('/quests/') ? 'Quest script' :
+        path.includes('/zones/') ? 'Zone script' :
+        'Lua source';
+      context.textContent = ' · ' + kind + ' · ' + fileName;
+      const relations = [];
+      const segment = path.match(/\/(missions|quests|npcs|zones)\/([^/]+)\//);
+      if (segment) {
+        const scope = document.createElement('span');
+        scope.textContent = ' · ' + segment[1] + ': ' + segment[2];
+        relations.push(scope);
+      }
+      const search = document.createElement('a');
+      search.textContent = 'Find in Feature Trace';
+      search.href = '/features/trace?' + new URLSearchParams({q: fileName});
       const excerpt = document.createElement('pre');
       excerpt.textContent = String(ref.source_text || '');
       excerpt.style.whiteSpace = 'pre-wrap';
-      item.append(label, location, copy, excerpt);
-      list.append(item);
+      item.append(label, location, context, ...relations, copy, search, excerpt);
+      const key = String(ref.source_path || 'Unknown Lua file');
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(item);
+    }
+    for (const [path, items] of grouped) {
+      const group = document.createElement('details');
+      group.open = grouped.size <= 3;
+      const heading = document.createElement('summary');
+      const scopedRefs = refs.filter(ref => String(ref.source_path || 'Unknown Lua file') === path);
+      const counts = {require: 0, grant: 0, remove: 0};
+      for (const ref of scopedRefs) {
+        if (Object.prototype.hasOwnProperty.call(counts, ref.operation)) counts[ref.operation]++;
+      }
+      const operations = Object.entries(counts).filter(([, count]) => count > 0)
+        .map(([operation, count]) => operation + ': ' + count).join(' · ');
+      heading.textContent = path + ' · ' + items.length + ' reference(s)' + (operations ? ' · ' + operations : '');
+      const entries = document.createElement('ul');
+      const citations = document.createElement('p');
+      const lines = [...new Set(scopedRefs.map(ref => Number(ref.source_line))
+        .filter(line => Number.isInteger(line) && line > 0))].sort((a, b) => a - b);
+      citations.textContent = 'Cited source lines: ' + (lines.length ? lines.join(', ') : 'none');
+      entries.append(...items);
+      group.append(heading, citations, entries);
+      list.append(group);
     }
     results.replaceChildren(list);
   }

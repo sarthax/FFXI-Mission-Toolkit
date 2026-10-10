@@ -156,3 +156,29 @@ def test_dsp_numeric_id_collision_prevents_false_clean_identity(tmp_path: Path):
     assert first["status"] == "ambiguous" and first["symbol"] is None
     assert second["status"] == "ambiguous" and second["symbol"] is None
     assert first["conflicting_symbols"] == ["SECOND_KEY"]
+
+
+def test_dsp_enum_labels_use_source_constants_without_invented_tpz_namespace():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert '{% if primary_dsp %}{{ rd.id_match }}{% else %}xi.keyItem.{{ rd.id_match }}{% endif %}' in page
+    assert '{% if primary_dsp %}{{ rd.name_match[1] }}{% else %}xi.keyItem.{{ rd.name_match[1] }}{% endif %}' in page
+    assert '"tpz.ki" if primary_dsp' not in page
+
+
+def test_dsp_mapping_reason_is_visible_without_guessing_aliases():
+    host = Path("src/workbench/app/_host_impl.py").read_text(encoding="utf-8")
+    browse = host.split("def keyitems(request: Request", 1)[1].split('@app.get("/keyitems/lua-references.json")', 1)[0]
+    assert '"reason": reason' in browse
+    assert '"identity_source": match.get("source_path")' in browse
+    assert "numeric IDs differ" in browse
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert "rd.reason" in page
+    assert "rd.identity_source" in page
+
+
+def test_dsp_matching_does_not_infer_unverified_near_name_alias(tmp_path: Path):
+    source = tmp_path / "scripts" / "globals" / "keyitems.lua"
+    source.parent.mkdir(parents=True)
+    source.write_text("LETTER_TO_THE_CONSULS_SANDORIA = 5;\n", encoding="utf-8")
+    assert resolve_dsp_key_item(tmp_path, "Letter to the Consuls San Dorien")["status"] == "missing"
+    assert resolve_dsp_key_item(tmp_path, "Letter to the Consuls Sandoria")["status"] == "name_verified"

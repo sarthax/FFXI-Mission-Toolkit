@@ -7,6 +7,17 @@
 {% block page_help %}Parses real MediaWiki links/templates and resolves them against indexed zones, NPCs, mobs, key items, and items. Wiki evidence stays reference-only until independently verified against server, client, or capture evidence.{% endblock %}
 {% block page_body %}
 <style>
+.wiki-bilingual-grid{display:grid;gap:8px;margin:10px 0}
+.wiki-bilingual-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.wiki-bilingual-cell{padding:10px;border:1px solid var(--border);border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere}
+.wiki-bilingual-cell small{display:block;color:var(--muted);margin-bottom:5px}
+@media(max-width:700px){.wiki-bilingual-row{grid-template-columns:minmax(0,1fr)}}
+.wiki-workspace-tabs{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:0;z-index:3;padding:8px 0;background:var(--surface)}
+.wiki-workspace-tabs button[aria-selected="true"]{border-color:var(--accent);font-weight:700;background:var(--surface-2)}
+.wiki-workspace-pane[hidden]{display:none}
+.wiki-workspace-pane>.wiki-section{margin:5px 0 10px}
+.wiki-workspace-pane>details.wiki-section>summary{display:none}
+.wiki-workspace-pane>details.wiki-section>.body{padding:9px}
 .wiki-section{border:1px solid var(--border);border-radius:7px;background:var(--surface);margin:7px 0;overflow:hidden}
 .wiki-section>summary{padding:7px 9px;cursor:pointer;font-weight:600}
 .wiki-section>.body{padding:0 8px 8px}
@@ -46,6 +57,18 @@
   {% if title %}<a class="chip" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab={{ tab }}">Clear search</a>{% endif %}
 </form>
 
+<nav class="wiki-workspace-tabs" id="wiki-workspace-tabs" aria-label="Wiki tools">
+  <button type="button" data-wiki-pane="scrape" aria-selected="true">Scrape page</button>
+  <button type="button" data-wiki-pane="batch" aria-selected="false">Batch imports</button>
+  <button type="button" data-wiki-pane="monitor" aria-selected="false">Sync &amp; health</button>
+  <button type="button" data-wiki-pane="utilities" aria-selected="false">Snapshots &amp; diagnostics</button>
+</nav>
+<div id="wiki-workspace-panels" class="wiki-workspace-panels" aria-live="off">
+  <section id="wiki-pane-scrape" class="wiki-workspace-pane" aria-label="Scrape page"></section>
+  <section id="wiki-pane-batch" class="wiki-workspace-pane" aria-label="Batch imports" hidden></section>
+  <section id="wiki-pane-monitor" class="wiki-workspace-pane" aria-label="Synchronization and health" hidden></section>
+  <section id="wiki-pane-utilities" class="wiki-workspace-pane" aria-label="Snapshots and diagnostics" hidden></section>
+</div>
 <details class="wiki-section" id="wiki-snapshot-box">
 <summary>Portable Wiki snapshots — export or import cached articles</summary>
 <div class="body">
@@ -174,7 +197,7 @@
 <details class="wiki-section" id="scrape-box">
 <summary>Scrape a wiki page by URL <span class="muted">(runs in the background, no LLM)</span></summary>
 <div class="body">
-  <form id="scrape-form" class="wiki-actions" style="margin:4px 0">
+  <form id="scrape-form" method="post" action="/wiki/scrape" class="wiki-actions" style="margin:4px 0">
     <input type="text" name="url" style="min-width:380px;flex:1" placeholder="https://www.bg-wiki.com/ffxi/Lord_Asag  |  https://ffxiclopedia.fandom.com/wiki/...  |  https://wikiwiki.jp/ffxi/...">
     <button type="submit">Scrape</button>
   </form>
@@ -211,8 +234,24 @@
 <div class="notice">Topic suggestion dismissed. The review queue has been refreshed.</div>
 {% endif %}
 <div class="wiki-actions dense-toolbar" style="margin:6px 0">
-  <a class="chip {% if tab == 'browse' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=browse"><b>Browse</b></a>
+  <a class="chip {% if tab == 'translation' %}
+<section class="wiki-section" aria-label="Japanese Wiki translation jobs">
+  <div class="body">
+    <h3>Japanese Wiki translation batches</h3>
+    <p class="muted">Translate cached WikiWikiJP pages using the locally configured Ollama model. No network scraping. Translation drafts never overwrite Japanese source evidence.</p>
+    <form id="wiki-translation-batch-form" class="wiki-actions">
+      <label>Batch size <select name="limit"><option value="10">10 pages</option><option value="50">50 pages</option></select></label>
+      <button type="submit">Start translation</button>
+    </form>
+    <div id="wiki-translation-feedback" role="status" aria-live="polite" class="muted"></div>
+    <div id="wiki-translation-job-list" class="table-wrap"></div>
+  </div>
+</section>
+{% endif %}
+
+{% if tab == 'browse' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=browse"><b>Browse</b></a>
   <a class="chip {% if tab == 'evidence' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=evidence"><b>Evidence workflow</b></a>
+  <a class="chip {% if tab == 'translation' %}active{% endif %}" href="/wiki?source=WikiWikiJP&tab=translation"><b>Translation</b></a>
   <a class="chip {% if tab == 'review' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=review"><b>Topic review queue</b></a>
   <a class="chip {% if tab == 'recovery' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=recovery"><b>Recovery preview</b></a>
   <span class="sp"></span>
@@ -305,7 +344,11 @@
   {% if page_view.is_ja %}<button type="button" id="tr-btn" data-source="{{ source }}" data-title="{{ title }}">Translate to English (machine)</button>{% endif %}
 </div>
 {% if page_view.is_ja %}
-<div id="tr-out" class="warn" hidden></div>
+<div id="tr-out" class="warn" hidden role="status" aria-live="polite"></div>
+<div id="tr-bilingual" hidden aria-label="Japanese and English aligned wiki sections">
+  <div class="dense-toolbar"><strong>Machine translation — unverified</strong><span id="tr-meta" class="muted"></span></div>
+  <div id="tr-aligned" class="wiki-bilingual-grid"></div>
+</div>
 <p class="muted">Japanese original shown below, stored verbatim. Translations are machine-generated, cached separately, and never ingested as evidence.</p>
 {% endif %}
 
@@ -670,6 +713,52 @@
 {% endif %}
 <script>
 (function(){
+  // Relocate existing server-rendered controls; retain their IDs, forms, APIs
+  // and JavaScript listeners. No duplicate widgets or synthetic requests.
+  var map={
+    scrape:['scrape-box'],
+    batch:['wiki-jp-bulk-box','wiki-bg-bulk-box','wiki-bulk-box'],
+    monitor:['wiki-cache-panel','wiki-sync-overview'],
+    utilities:['wiki-snapshot-box','wiki-title-diagnostics']
+  };
+  var bar=document.getElementById('wiki-workspace-tabs');
+  if(!bar)return;
+  Object.keys(map).forEach(function(group){
+    var pane=document.getElementById('wiki-pane-'+group);
+    map[group].forEach(function(id){
+      var section=document.getElementById(id);
+      if(section&&pane){pane.appendChild(section);if(section.tagName==='DETAILS')section.open=true;}
+    });
+  });
+  function select(group){
+    if(!Object.prototype.hasOwnProperty.call(map,group))group='scrape';
+    Object.keys(map).forEach(function(key){
+      var pane=document.getElementById('wiki-pane-'+key);
+      if(pane)pane.hidden=key!==group;
+    });
+    bar.querySelectorAll('[data-wiki-pane]').forEach(function(button){
+      button.setAttribute('aria-selected',String(button.dataset.wikiPane===group));
+    });
+  }
+  bar.addEventListener('click',function(event){
+    var button=event.target.closest('[data-wiki-pane]');
+    if(button)select(button.dataset.wikiPane);
+  });
+  document.addEventListener('click',function(event){
+    var anchor=event.target.closest('a[href^="#wiki-"]');
+    if(!anchor)return;
+    Object.keys(map).some(function(key){
+      if(map[key].some(function(id){return anchor.getAttribute('href')==='#'+id;})){
+        select(key);return true;
+      }
+      return false;
+    });
+  });
+  select('scrape');
+})();
+</script>
+<script>
+(function(){
   var cachePanel=document.getElementById('wiki-cache-panel');
   if(cachePanel){
     var cacheBtn=document.getElementById('wiki-cache-refresh'),
@@ -1009,6 +1098,10 @@
         }).catch(function(err){output.textContent='Diagnostic failed: '+err.message;});
     });
   })();
+})();
+</script>
+<script>
+(function(){
   var f=document.getElementById('scrape-form'),box=document.getElementById('scrape-jobs'),timer=null;
   function show(message){var node=document.createElement('div');node.className='warn';node.textContent=message;box.prepend(node);}
   function paint(jobs){
@@ -1061,12 +1154,81 @@
       .finally(function(){if(button)button.disabled=false;});
   });}
   if(box && box.querySelector('.job-row')) poll();
+  var batchForm=document.getElementById('wiki-translation-batch-form');
+  if(batchForm){
+    var feedback=document.getElementById('wiki-translation-feedback');
+    var results=document.getElementById('wiki-translation-job-list');
+    function requestJob(path,data){
+      return fetch(path,{method:'POST',body:data}).then(function(response){
+        return response.json().then(function(value){
+          if(!response.ok)throw Error(value.error||value.detail||'HTTP '+response.status);
+          return value;
+        });
+      });
+    }
+    function showJobs(){
+      fetch('/wiki/translation/jobs').then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json();})
+        .then(function(data){
+          results.replaceChildren();
+          (data.jobs||[]).forEach(function(j){
+            var line=document.createElement('div');line.className='wiki-translation-job-row';
+            var info=document.createElement('span');
+            info.textContent=j.id+' · '+j.model+' · '+j.state+' · completed '+j.completed+' · failed '+j.failed+' · remaining '+j.remaining;
+            line.appendChild(info);
+            function action(label,path){
+              var btn=document.createElement('button');btn.type='button';btn.textContent=label;
+              btn.addEventListener('click',function(){
+                var form=new FormData();form.append('job_id',j.id);form.append('limit','10');
+                btn.disabled=true;
+                requestJob(path,form).then(function(){feedback.textContent=label+' requested';showJobs();})
+                .catch(function(e){feedback.textContent=e.message;}).finally(function(){btn.disabled=false;});
+              });line.appendChild(btn);
+            }
+            if(j.state==='running'||j.state==='queued')action('Cancel','/wiki/translation/cancel');
+            if((j.state==='finished'||j.state==='cancelled'||j.state==='interrupted')&&j.failed>0)action('Retry failures','/wiki/translation/retry');
+            results.appendChild(line);
+          });
+          if(!(data.jobs||[]).length)results.textContent='No translation batches yet.';
+        }).catch(function(e){feedback.textContent='Status error: '+e.message;});
+    }
+    batchForm.addEventListener('submit',function(e){
+      e.preventDefault();var btn=batchForm.querySelector('button[type=submit]');
+      btn.disabled=true;feedback.textContent='Starting translation batch…';
+      requestJob('/wiki/translation/start',new FormData(batchForm))
+        .then(function(d){feedback.textContent='Queued '+d.job_id;showJobs();})
+        .catch(function(e){feedback.textContent='Unable to start: '+e.message;})
+        .finally(function(){btn.disabled=false;});
+    });
+    showJobs();setInterval(showJobs,4000);
+  }
   var tb=document.getElementById('tr-btn');
-  if(tb){tb.addEventListener('click',function(){var o=document.getElementById('tr-out');o.hidden=false;o.textContent='Translating...';
-    fetch('/wiki/translate?source='+encodeURIComponent(tb.dataset.source)+'&title='+encodeURIComponent(tb.dataset.title)).then(function(r){return r.json();}).then(function(d){
-      if(d.status==='OK'){o.className='';o.style.whiteSpace='pre-wrap';o.textContent='[machine translation, unverified]\n'+d.text;}
-      else if(d.status==='NO_ENGINE'){o.textContent='No translation engine configured. Set WIKI_TRANSLATE_CMD (a command that reads Japanese on stdin and prints English) and restart.';}
-      else{o.textContent='Translation failed: '+(d.error||d.status);}});});}
+  if(tb){tb.addEventListener('click',function(){
+    var output=document.getElementById('tr-out'), panel=document.getElementById('tr-bilingual');
+    var aligned=document.getElementById('tr-aligned'), meta=document.getElementById('tr-meta');
+    panel.hidden=true;output.hidden=false;output.textContent='Translating cached article…';tb.disabled=true;
+    fetch('/wiki/translate?source='+encodeURIComponent(tb.dataset.source)+'&title='+encodeURIComponent(tb.dataset.title))
+      .then(function(r){return r.json().then(function(d){if(!r.ok)throw Error(d.error||d.detail||'HTTP '+r.status);return d;});})
+      .then(function(d){
+        if(d.status!=='OK')throw Error(d.status==='NO_ENGINE'?'No engine configured. Set WIKI_TRANSLATE_OLLAMA_MODEL or WIKI_TRANSLATE_CMD.':(d.error||d.status));
+        if(!Array.isArray(d.blocks)||!d.blocks.length){output.textContent='[machine translation, unverified]\\n'+d.text;return;}
+        aligned.replaceChildren();
+        d.blocks.forEach(function(b){
+          var row=document.createElement('div');row.className='wiki-bilingual-row';
+          var jp=document.createElement('div'),en=document.createElement('div');
+          jp.className='wiki-bilingual-cell';en.className='wiki-bilingual-cell';
+          var heading=document.createElement('small');heading.textContent=(b.block_type||'text')+' · original';
+          var english=document.createElement('small');english.textContent='English · machine draft';
+          var original=document.createElement('div'),translated=document.createElement('div');
+          original.textContent=b.original||'';translated.textContent=b.text||'';
+          jp.append(heading,original);en.append(english,translated);row.append(jp,en);aligned.appendChild(row);
+        });
+        meta.textContent=d.blocks.length+' aligned blocks · '+(d.engine||'local translation');
+        panel.hidden=false;
+        output.hidden=!(d.warnings&&d.warnings.length);
+        if(!output.hidden)output.textContent='Review warnings: '+d.warnings.join('; ');
+      }).catch(function(e){output.hidden=false;output.textContent='Translation failed: '+e.message;})
+      .finally(function(){tb.disabled=false;});
+  });}
 })();
 </script>
 {% endblock %}
