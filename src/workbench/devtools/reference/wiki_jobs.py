@@ -331,7 +331,12 @@ def translate_cached(con: sqlite3.Connection, source_id: str, page_id: str, page
     # Explicit local Ollama opt-in; preserve the legacy command translator as fallback.
     if model:
         try:
-            result = wiki_ollama_translate.translate(text, model=model)
+            # Reuse the Wiki structured blocks (headings, paragraphs and table cells)
+            # instead of sending whole long articles through a single prompt.
+            has_blocks = con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='reference_wiki_blocks'").fetchone()
+            blocks = wiki_document.stored_blocks(con, source_id, page_id) if has_blocks else []
+            result = (wiki_ollama_translate.translate_blocks(blocks, model=model)
+                      if blocks else wiki_ollama_translate.translate(text, model=model))
         except Exception as exc:
             return {"status": "ERROR", "error": f"Local Ollama unavailable: {exc}"}
         if result["status"] != "OK":
