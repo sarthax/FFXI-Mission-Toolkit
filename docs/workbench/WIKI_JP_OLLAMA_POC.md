@@ -45,3 +45,7 @@ The CLI runs in the foreground; closing it interrupts the worker. Cancellation t
 The Wiki page now includes a **Translation** tab, with 10/50 cached-page batch starts, 4-second status polling, persisted job progress, cancellation requests, and retry-failures actions. Routes: `GET /wiki/translation/jobs` and `POST /wiki/translation/start`, `/retry`, `/cancel`. Source imports and wiki evidence are untouched. The batch worker runs inside the toolkit process; cancellation is cooperative and takes effect between pages, and work interrupted by a toolkit restart stays interrupted until explicitly retried. A page may take substantial time on a local CPU-only model. Live validation and CI are pending.
 
 Offline UI contract test: `python test_fixtures/test_wiki_translation_batch_ui.py`.
+
+## Fifth slice: conservative translation quality checks
+
+The local translation adapter now reports warnings for missing numeric tokens, hex/uppercase identifier strings, missing starter-glossary equivalents, and suspiciously short translated outputs. These are review hints, not reliable judgments of Japanese translation accuracy; reviewed glossary/alias ingestion remains future work. Cache policy version `wiki-jp-block-v2-quality` invalidates prior block drafts so new warnings are populated on retranslation. Offline checks: `python tests/legacy/test_wiki_translation_quality.py`. CI/live tests have not been executed in this session.
