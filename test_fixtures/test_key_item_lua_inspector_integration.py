@@ -79,3 +79,11 @@ def test_key_item_lua_group_summary_shows_operation_breakdown():
     assert "Object.prototype.hasOwnProperty.call(counts, ref.operation)" in page
     assert "const operations = Object.entries(counts)" in page
     assert "operation + ': ' + count" in page
+
+
+def test_key_item_lua_group_cites_exact_line_numbers():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert "new Set(scopedRefs.map(ref => Number(ref.source_line))" in page
+    assert "Number.isInteger(line) && line > 0" in page
+    assert "lines.join(', ')" in page
+    assert "group.append(heading, citations, entries);" in page

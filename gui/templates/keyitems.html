@@ -294,8 +294,12 @@
         .map(([operation, count]) => operation + ': ' + count).join(' · ');
       heading.textContent = path + ' · ' + items.length + ' reference(s)' + (operations ? ' · ' + operations : '');
       const entries = document.createElement('ul');
+      const citations = document.createElement('p');
+      const lines = [...new Set(scopedRefs.map(ref => Number(ref.source_line))
+        .filter(line => Number.isInteger(line) && line > 0))].sort((a, b) => a - b);
+      citations.textContent = 'Cited source lines: ' + (lines.length ? lines.join(', ') : 'none');
       entries.append(...items);
-      group.append(heading, entries);
+      group.append(heading, citations, entries);
       list.append(group);
     }
     results.replaceChildren(list);
