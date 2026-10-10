@@ -71,3 +71,11 @@ def test_key_item_references_group_by_source_without_losing_evidence():
     assert "heading.textContent = path + ' · ' + items.length + ' reference(s)';" in page
     assert "entries.append(...items);" in page
     assert "group.open = grouped.size <= 3;" in page
+
+
+def test_key_item_lua_group_summary_shows_operation_breakdown():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert "const counts = {require: 0, grant: 0, remove: 0};" in page
+    assert "Object.prototype.hasOwnProperty.call(counts, ref.operation)" in page
+    assert "const operations = Object.entries(counts)" in page
+    assert "operation + ': ' + count" in page
