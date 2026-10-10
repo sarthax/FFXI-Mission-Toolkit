@@ -7,7 +7,7 @@ import sqlite3
 
 from . import wiki_ollama_translate as engine
 
-VERSION = "wiki-jp-block-v1"
+VERSION = "wiki-jp-block-v2-quality"
 DDL = """CREATE TABLE IF NOT EXISTS reference_wiki_block_translations (
  source_id TEXT NOT NULL, page_id TEXT NOT NULL, block_id TEXT NOT NULL,
  source_hash TEXT NOT NULL, model TEXT NOT NULL, policy_hash TEXT NOT NULL,
