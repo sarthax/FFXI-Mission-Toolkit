@@ -18,7 +18,7 @@ GLOSSARY = {"だいじなもの": "key item", "ミッション": "mission",
 _IDENTIFIERS = re.compile(r"(?<![A-Za-z0-9_])(?:0x[0-9a-fA-F]+|[A-Z][A-Z0-9_]{2,})(?![A-Za-z0-9_])")
 
 
-def quality_warnings(source: str, translated: str) -> list[str]:
+def quality_warnings(source: str, translated: str, glossary: dict | None = None) -> list[str]:
     warnings = []
     missing_numbers = sorted(set(_NUMBERS.findall(source)) - set(_NUMBERS.findall(translated)))
     if missing_numbers:
@@ -28,14 +28,15 @@ def quality_warnings(source: str, translated: str) -> list[str]:
         warnings.append("Identifiers missing: " + ", ".join(missing_ids))
     if len(source) > 100 and len(translated.strip()) < max(12, len(source) // 20):
         warnings.append("Translation unusually short; review for omissions")
-    for jp, en in GLOSSARY.items():
+    for jp, en in (glossary or GLOSSARY).items():
         if jp in source and en.casefold() not in translated.casefold():
             warnings.append("Glossary term not found: " + en)
     return warnings
 
 
 def translate(text: str, *, model: str, url: str = _DEFAULT_URL,
-              timeout: int = 120, max_chars: int = 5000) -> dict:
+              timeout: int = 120, max_chars: int = 5000,
+              glossary: dict | None = None) -> dict:
     """Translate bounded source text via loopback Ollama; return unverified draft."""
     if not model.strip():
         raise ValueError("An explicit installed Ollama model is required")
@@ -46,7 +47,7 @@ def translate(text: str, *, model: str, url: str = _DEFAULT_URL,
         return {"status": "ERROR", "error": "Empty source"}
     if len(text) > max_chars:
         return {"status": "ERROR", "error": "Source exceeds translation limit; chunk first"}
-    terms = "\n".join(f"{jp} = {en}" for jp, en in GLOSSARY.items())
+    terms = "\n".join(f"{jp} = {en}" for jp, en in (glossary or GLOSSARY).items())
     prompt = (
         "Translate this Final Fantasy XI Japanese wiki excerpt into natural English. "
         "Preserve numbers, item IDs, names, list formatting, and uncertainty. "
@@ -62,7 +63,7 @@ def translate(text: str, *, model: str, url: str = _DEFAULT_URL,
     if not translated:
         return {"status": "ERROR", "error": "Model returned no translation"}
     return {"status": "OK", "text": translated, "engine": "ollama:" + model,
-            "unverified": True, "warnings": quality_warnings(text, translated)}
+            "unverified": True, "warnings": quality_warnings(text, translated, glossary)}
 
 
 def configured_model() -> str:
