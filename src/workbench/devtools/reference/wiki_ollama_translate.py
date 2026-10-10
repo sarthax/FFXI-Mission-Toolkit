@@ -66,6 +66,29 @@ def translate(text: str, *, model: str, url: str = _DEFAULT_URL,
             "unverified": True, "warnings": quality_warnings(text, translated, glossary)}
 
 
+def split_text(text: str, limit: int = 3500) -> list[str]:
+    """Split on line breaks, then Japanese/ASCII sentence ends, packing pieces up to `limit` chars."""
+    pieces: list[str] = []
+    for line in text.splitlines():
+        if len(line) <= limit:
+            pieces.append(line)
+            continue
+        for sent in re.split(r"(?<=[。！？!?\.])", line):
+            while len(sent) > limit:
+                pieces.append(sent[:limit])
+                sent = sent[limit:]
+            pieces.append(sent)
+    chunks, cur = [], ""
+    for piece in pieces:
+        if cur and len(cur) + len(piece) + 1 > limit:
+            chunks.append(cur)
+            cur = ""
+        cur = cur + "\n" + piece if cur else piece
+    if cur:
+        chunks.append(cur)
+    return [c for c in chunks if c.strip()]
+
+
 def configured_model() -> str:
     """Env var wins (explicit override); otherwise the model saved from the Wiki page."""
     env = os.environ.get("WIKI_TRANSLATE_OLLAMA_MODEL", "").strip()

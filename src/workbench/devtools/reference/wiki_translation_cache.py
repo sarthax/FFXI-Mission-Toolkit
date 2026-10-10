@@ -56,7 +56,15 @@ def translate_cached_blocks(con: sqlite3.Connection, *, source_id: str,
         client_terms = default_terms()
     policy = policy_hash(glossary, client_terms.snapshot_id)
     output, warnings, misses = [], [], 0
+    expanded = []
     for block in blocks:
+        text = block.get("text") or ""
+        if len(text) > 5000 and block.get("block_type", "") in engine._TRANSLATABLE:
+            for i, part in enumerate(engine.split_text(text), 1):
+                expanded.append({**block, "text": part, "block_id": f"{block.get('block_id')}#{i}"})
+        else:
+            expanded.append(block)
+    for block in expanded:
         kind = block.get("block_type", "")
         original = block.get("text") or ""
         if kind not in engine._TRANSLATABLE or not original.strip():

@@ -342,8 +342,16 @@ def translate_cached(con: sqlite3.Connection, source_id: str, page_id: str, page
                 from . import wiki_translation_cache
                 result = wiki_translation_cache.translate_cached_blocks(
                     con, source_id=source_id, page_id=page_id, blocks=blocks, model=model)
-            else:
+            elif len(text) <= 5000:
                 result = wiki_ollama_translate.translate(text, model=model)
+            else:
+                # Long unstructured page: translate in chunks through the block cache.
+                from . import wiki_translation_cache
+                chunks = wiki_ollama_translate.split_text(text)
+                result = wiki_translation_cache.translate_cached_blocks(
+                    con, source_id=source_id, page_id=page_id, model=model, blocks=[
+                        {"block_id": f"text#{i}", "ordinal": i, "block_type": "paragraph", "text": c}
+                        for i, c in enumerate(chunks, 1)])
         except Exception as exc:
             return {"status": "ERROR", "error": f"Local Ollama unavailable: {exc}"}
         if result["status"] != "OK":
