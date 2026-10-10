@@ -108,3 +108,43 @@ def test_transient_bridge_failure_retries_without_recording_or_identity_reset():
         assert(direct.active())
         assert(sends==3)
     """)
+
+
+def test_direct_live_zoning_pauses_then_resumes_without_reprovision():
+    lua = pytest.importorskip("lupa.lua51").LuaRuntime(unpack_returned_tuples=True)
+    lua.globals().addon_dir = str(ADDON) + "/"
+    lua.execute("""
+        package.path = addon_dir .. '?.lua;' .. package.path
+        local observation = require('workbench_observation')
+        local tick, zone, sends = 100, 235, 0
+        os.time = function() return tick end
+        local transitioning = false
+        local direct = require('workbench_live_direct').new({
+            capture=function(id, now)
+                if transitioning then
+                    local core = {GetMemoryManager=function() return {
+                        GetParty=function() return {
+                            GetMemberIsActive=function() return 0 end
+                        } end,
+                        GetEntity=function() return {} end
+                    } end}
+                    return observation.capture_ashita(core, function() end, id, now, false)
+                end
+                return {source_identity='123:Hero',character='Hero',
+                    client_id=id,client_version='unverified-ashita-v4-api',
+                    adapter='ashita-v4-api-experimental', schema_version=1,
+                    observed_at=now, position={zone_id=zone,x=1,y=2,z=3,heading=0}, entities={}}
+            end,
+            start_bridge=function() return true end,
+            stop_bridge=function() end,
+            send=function() sends=sends+1; return true end,
+        })
+        assert(direct.start('ashita-a'))
+        direct.sample()
+        transitioning=true; tick=101; direct.sample()
+        assert(direct.active())
+        transitioning=false;zone=107; tick=102; direct.sample()
+        assert(direct.active() and sends==1)
+        tick=103; direct.sample()
+        assert(direct.active() and sends==2)
+    """)
