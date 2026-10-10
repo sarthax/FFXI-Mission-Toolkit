@@ -87,3 +87,12 @@ def test_key_item_lua_group_cites_exact_line_numbers():
     assert "Number.isInteger(line) && line > 0" in page
     assert "lines.join(', ')" in page
     assert "group.append(heading, citations, entries);" in page
+
+
+def test_key_item_script_evidence_can_be_copied_with_exact_citations():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert "copyEvidence.textContent = 'Copy script evidence';" in page
+    assert "const evidence = scopedRefs.map(ref => {" in page
+    assert "String(ref.source_path || '') + ':' + String(ref.source_line || '')" in page
+    assert "String(ref.source_text || '')" in page
+    assert "group.append(heading, citations, copyEvidence, entries);" in page
