@@ -81,7 +81,10 @@ def _fetch(source_id: str, title: str, log) -> list[dict]:
         return out
     if source_id == "BGWiki":
         from . import scrape_bg_wiki as bg
-        from ._wiki_evidence_impl import _norm
+        # Go through the wiki_evidence adapter: the impl does bare `import wiki_lookup`, which only
+        # resolves while the adapter has aliased it, so importing the impl directly fails.
+        import importlib
+        _norm = importlib.import_module("workbench.devtools.reference.wiki_evidence")._norm
         log("fetching BG Wiki page via API")
         out = []
         for r in bg.fetch_pages_by_title([title]):
