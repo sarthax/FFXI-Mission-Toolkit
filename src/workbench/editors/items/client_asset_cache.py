@@ -137,7 +137,6 @@ def _source_health(root: Path, namespace: Path) -> tuple[list[dict[str, Any]], i
     for row in rows:
         by_path.setdefault(str(row["source_rom_path"]), []).append(row)
     result: list[dict[str, Any]] = []
-    known_ids: set[int] = set()
     for source in sources:
         fresh = stale = 0
         for row in by_path.get(source.rom_path, []):
@@ -148,7 +147,6 @@ def _source_health(root: Path, namespace: Path) -> tuple[list[dict[str, Any]], i
             expected = _source_with_index(source, item_id - source.base_id)
             if _row_is_fresh(row, expected, namespace):
                 fresh += 1
-                known_ids.add(item_id)
             else:
                 stale += 1
         result.append({
@@ -165,10 +163,8 @@ def _source_health(root: Path, namespace: Path) -> tuple[list[dict[str, Any]], i
             "size": source.size,
             "mtime_ns": source.mtime_ns,
         })
-    orphaned = sum(
-        1 for row in rows
-        if str(row["source_rom_path"]) not in {src.rom_path for src in sources}
-    )
+    known_paths = {src.rom_path for src in sources}
+    orphaned = sum(1 for row in rows if str(row["source_rom_path"]) not in known_paths)
     return result, orphaned
 
 
