@@ -145,6 +145,7 @@
       {% elif rd.status == "drifted" %}<span class="pill gap">drifted</span>
       {% elif rd.status == "wrong_name" %}<span class="pill mismatch">wrong name at this id</span>
       {% elif rd.status == "unavailable" %}<span class="pill gap">source unavailable</span>{% else %}<span class="pill mismatch">missing</span>{% endif %}
+      {% if primary_dsp and rd.reason %}<div class="muted ki-mapping-reason" title="{{ rd.reason }}">{{ rd.reason }}{% if rd.identity_source %} · {{ rd.identity_source }}{% endif %}</div>{% endif %}
     </td>
     <td class="mono">
       {% if rd.status == "clean" %}
