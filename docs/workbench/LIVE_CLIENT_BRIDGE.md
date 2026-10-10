@@ -722,3 +722,13 @@ movement commands. The clipboard button needs browser clipboard permission.
 ### Windows field report — zoning and uncalibrated 3D axes
 
 A real Windows DSP/Ashita test confirmed connection, position updates, player marker visibility and camera following, but reported a floating/misaligned marker, incorrect heading and telemetry stopping after zoning. The Ashita sampler now treats mid-sample zone/slot transitions as recoverable within the existing 30-second stability window. The 3D viewer offers temporary axis previews for comparing live coordinates with mesh geometry; selections are local to the page and are **not** proof of correct calibration. Heading transformation remains unverified. The viewer does not automatically navigate to a new zone: manually select/open the new zone after telemetry resumes. Longer zoning delays, logout/character changes and network issues may still require manual restart.
+
+### Live Bridge operator workflow
+
+The themed Direct Live Bridge page includes short setup steps, persistent
+operator-action feedback independent of telemetry polling, and a read-only
+link to the selected client's currently connected zone in the 3D Viewer.
+The shortcut appears only with fresh, valid connected telemetry. It does not
+move the game character, perform writes or change zones automatically.
+Downloaded private credentials still require installation into the Ashita
+addon directory and an explicit addon reload.

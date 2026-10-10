@@ -36,11 +36,14 @@
  <button type="button" onclick="action('stop')">Stop receiver</button></div>
  <p class="muted">Configuring a client replaces its active credentials. Keep settings private and reload the Ashita addon after changes.</p>
  <button type="button" id="downloadConfig" onclick="downloadConfig()" disabled>Download Ashita settings</button>
+ <p id="bridge-action-message" role="status" class="muted" aria-live="polite">Start receiver, then configure and download settings for your Ashita addon.</p>
+ <ol class="muted"><li>Start receiver and configure the selected client.</li><li>Download settings into Ashita's <code>addons/workbench_live/</code> folder.</li><li>Reload the Ashita addon, then type <code>/wblive live start ashita-a</code> (using your chosen client ID).</li></ol>
  <details><summary>Private configuration (do not share)</summary><pre id="config" aria-live="polite"></pre></details>
 </section>
 <section class="lc-panel">
  <h2>Live dashboard</h2>
  <div id="health" role="status">Waiting for telemetry</div>
+ <a id="liveZoneLink" class="chip" style="display:none" href="#" rel="noopener">Open current zone in 3D Viewer ↗</a>
  <div id="metrics"></div>
  <h3>Nearby observed entities</h3><div id="entities">No observations yet</div>
  <details><summary>Technical details</summary><pre id="status" aria-live="polite">Not connected</pre></details>
@@ -51,14 +54,16 @@ const root='/live-client/bridge/';
 const client=()=>document.getElementById('client').value;
 const statusEl=document.getElementById('status');
 let privateConfig='';
+const actionMessage=document.getElementById('bridge-action-message');
+const zoneLink=document.getElementById('liveZoneLink');
 async function request(path,data){const opts={method:'POST',headers:{'Content-Type':'application/json'}};
  if(data)opts.body=JSON.stringify(data);
  const response=await fetch(root+path,opts);const result=await response.json();
  if(!response.ok)throw Error(result.detail||response.status);
  return result;}
 async function action(name){try{const result=await request(name);statusEl.textContent=JSON.stringify(result,null,2);
- if(name==='stop'){privateConfig='';document.getElementById('config').textContent='';document.getElementById('downloadConfig').disabled=true;}}
- catch(error){statusEl.textContent=String(error)}}
+ if(name==='stop'){privateConfig='';document.getElementById('config').textContent='';document.getElementById('downloadConfig').disabled=true;actionMessage.textContent='Receiver stopped. Existing credentials are no longer valid.';}else{actionMessage.textContent='Receiver started. Configure the selected client to connect Ashita.';}}
+ catch(error){actionMessage.textContent=String(error)}}
 async function provision(){try{const value=client();
  if(!/^[a-zA-Z0-9_-]{1,64}$/.test(value))throw Error('Invalid client ID');
  const result=await request('provision',{client_id:value});
@@ -77,12 +82,14 @@ async function provision(){try{const value=client();
  +'    return peer\\n  end,\\n}\\n';
  privateConfig=lua;
  document.getElementById('downloadConfig').disabled=false;
+ actionMessage.textContent='New private credentials created. Download them and reload the Ashita addon. Existing credentials were revoked.';
  document.getElementById('config').textContent='Save locally as addons/workbench_live/workbench_bridge_settings.lua (private):\\n\\n'+lua;
- }catch(error){statusEl.textContent=String(error)}}
+ }catch(error){actionMessage.textContent=String(error)}}
 function downloadConfig(){if(!privateConfig)return;
  const blob=new Blob([privateConfig],{type:'text/plain;charset=utf-8'});
  const url=URL.createObjectURL(blob);const a=document.createElement('a');
  a.href=url;a.download='workbench_bridge_settings.lua';a.click();
+ actionMessage.textContent='Settings downloaded. Move the file into the Ashita addon folder, reload the addon, and start direct telemetry.';
  setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function metric(label,value){const node=document.createElement('div');node.style.border='1px solid #aaa';
  node.style.padding='0.75rem';node.style.borderRadius='0.5rem';
@@ -93,7 +100,13 @@ function render(data){const health=document.getElementById('health');
  health.textContent=!data.running?'Receiver stopped':data.connected?'Connected — live telemetry':
  data.snapshot?'Stale — last known observation':'Waiting for client';
  const metrics=document.getElementById('metrics');metrics.replaceChildren();
- const snap=data.snapshot;const fields=snap?[
+ const snap=data.snapshot;
+ const zone= snap && Number(snap.zone_id);
+ if(data.connected && Number.isInteger(zone) && zone>=1 && zone<=65535){
+   zoneLink.href='/zones/'+zone+'/view3d'; zoneLink.style.display='';
+   zoneLink.textContent='Open zone '+zone+' in 3D Viewer ↗';
+ }else{zoneLink.removeAttribute('href');zoneLink.style.display='none';}
+ const fields=snap?[
  ['Character',snap.character],['Zone',snap.zone_id],
  ['X',Number(snap.x).toFixed(3)],['Y',Number(snap.y).toFixed(3)],
  ['Z',Number(snap.z).toFixed(3)],['Heading',Number(snap.heading).toFixed(3)],
