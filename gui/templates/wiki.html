@@ -216,8 +216,24 @@
 <div class="notice">Topic suggestion dismissed. The review queue has been refreshed.</div>
 {% endif %}
 <div class="wiki-actions dense-toolbar" style="margin:6px 0">
-  <a class="chip {% if tab == 'browse' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=browse"><b>Browse</b></a>
+  <a class="chip {% if tab == 'translation' %}
+<section class="wiki-section" aria-label="Japanese Wiki translation jobs">
+  <div class="body">
+    <h3>Japanese Wiki translation batches</h3>
+    <p class="muted">Translate cached WikiWikiJP pages using the locally configured Ollama model. No network scraping. Translation drafts never overwrite Japanese source evidence.</p>
+    <form id="wiki-translation-batch-form" class="wiki-actions">
+      <label>Batch size <select name="limit"><option value="10">10 pages</option><option value="50">50 pages</option></select></label>
+      <button type="submit">Start translation</button>
+    </form>
+    <div id="wiki-translation-feedback" role="status" aria-live="polite" class="muted"></div>
+    <div id="wiki-translation-job-list" class="table-wrap"></div>
+  </div>
+</section>
+{% endif %}
+
+{% if tab == 'browse' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=browse"><b>Browse</b></a>
   <a class="chip {% if tab == 'evidence' %}active{% endif %}" href="/wiki?title={{ title|urlencode }}&source={{ source|urlencode }}&tab=evidence"><b>Evidence workflow</b></a>
+  <a class="chip {% if tab == 'translation' %}active{% endif %}" href="/wiki?source=WikiWikiJP&tab=translation"><b>Translation</b></a>
   <a class="chip {% if tab == 'review' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=review"><b>Topic review queue</b></a>
   <a class="chip {% if tab == 'recovery' %}active{% endif %}" href="/wiki?source={{ source|urlencode }}&tab=recovery"><b>Recovery preview</b></a>
   <span class="sp"></span>
@@ -1074,6 +1090,53 @@
       .finally(function(){if(button)button.disabled=false;});
   });}
   if(box && box.querySelector('.job-row')) poll();
+  var batchForm=document.getElementById('wiki-translation-batch-form');
+  if(batchForm){
+    var feedback=document.getElementById('wiki-translation-feedback');
+    var results=document.getElementById('wiki-translation-job-list');
+    function requestJob(path,data){
+      return fetch(path,{method:'POST',body:data}).then(function(response){
+        return response.json().then(function(value){
+          if(!response.ok)throw Error(value.error||value.detail||'HTTP '+response.status);
+          return value;
+        });
+      });
+    }
+    function showJobs(){
+      fetch('/wiki/translation/jobs').then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json();})
+        .then(function(data){
+          results.replaceChildren();
+          (data.jobs||[]).forEach(function(j){
+            var line=document.createElement('div');line.className='wiki-translation-job-row';
+            var info=document.createElement('span');
+            info.textContent=j.id+' · '+j.model+' · '+j.state+' · completed '+j.completed+' · failed '+j.failed+' · remaining '+j.remaining;
+            line.appendChild(info);
+            function action(label,path){
+              var btn=document.createElement('button');btn.type='button';btn.textContent=label;
+              btn.addEventListener('click',function(){
+                var form=new FormData();form.append('job_id',j.id);form.append('limit','10');
+                btn.disabled=true;
+                requestJob(path,form).then(function(){feedback.textContent=label+' requested';showJobs();})
+                .catch(function(e){feedback.textContent=e.message;}).finally(function(){btn.disabled=false;});
+              });line.appendChild(btn);
+            }
+            if(j.state==='running'||j.state==='queued')action('Cancel','/wiki/translation/cancel');
+            if((j.state==='finished'||j.state==='cancelled'||j.state==='interrupted')&&j.failed>0)action('Retry failures','/wiki/translation/retry');
+            results.appendChild(line);
+          });
+          if(!(data.jobs||[]).length)results.textContent='No translation batches yet.';
+        }).catch(function(e){feedback.textContent='Status error: '+e.message;});
+    }
+    batchForm.addEventListener('submit',function(e){
+      e.preventDefault();var btn=batchForm.querySelector('button[type=submit]');
+      btn.disabled=true;feedback.textContent='Starting translation batch…';
+      requestJob('/wiki/translation/start',new FormData(batchForm))
+        .then(function(d){feedback.textContent='Queued '+d.job_id;showJobs();})
+        .catch(function(e){feedback.textContent='Unable to start: '+e.message;})
+        .finally(function(){btn.disabled=false;});
+    });
+    showJobs();setInterval(showJobs,4000);
+  }
   var tb=document.getElementById('tr-btn');
   if(tb){tb.addEventListener('click',function(){
     var output=document.getElementById('tr-out'), panel=document.getElementById('tr-bilingual');
