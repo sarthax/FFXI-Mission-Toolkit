@@ -27,3 +27,15 @@ Run `python tests/legacy/test_wiki_ollama_translate.py`. It mocks Ollama respons
 ## Second slice: cache regression tests
 
 Run `python tests/legacy/test_wiki_translation_cache.py`. This tests same-model reuse, model changes, edited-block invalidation, hidden links, and interrupted-page recovery without Ollama. Live model/GUI validation and CI remain necessary.
+
+## Third slice: explicit cached-page batch service
+
+`wiki_translation_batch.py` adds SQLite-persisted run status, completed/failed counts, remaining-page checkpoints, cached-block reuse, and in-process cancellation. It selects only cached `WikiWikiJP` pages (10 or 50 per run) and never issues wiki scraping requests. Failed pages are recorded for retry; a stopped job can be retried using `retry_job` with the same selected Ollama model. Interrupted process state is detected when status is queried and does not automatically resume.
+
+For a short local smoke run with the toolkit Python environment and running Ollama, set `WIKI_TRANSLATE_OLLAMA_MODEL` and run:
+
+```powershell
+python -m workbench.devtools.reference.wiki_translation_batch_cli PATH_TO_WIKI_DB start --limit 10
+```
+
+The CLI runs in the foreground; closing it interrupts the worker. Cancellation through `cancel(job_id)` requires invoking the service in the same running application process. HTTP routes and GUI batch controls are **not yet connected** and must not be presented as available. The next slice should wire guarded POST start/cancel/retry endpoints and GET status, then add progress polling to the Wiki translation tab. Before enabling large runs, verify concurrency and rate limiting with local Ollama. Offline contract test: `python tests/legacy/test_wiki_translation_batch.py`.
