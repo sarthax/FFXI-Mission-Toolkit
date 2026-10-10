@@ -784,3 +784,14 @@ connected flags, observed age (or null), zone and adapter metadata. It does
 not include the private Lua configuration, tokens, session secrets, nearby
 entity names, or a recording. This report can be shared when investigating
 zoning interruptions. An age of zero is never inferred for absent telemetry.
+
+
+### Guided multi-client setup safety
+
+The Bridge console displays the exact `/wblive live start <client ID>`
+command for the currently selected valid client and provides **Copy Ashita
+start command**. Switching client ID clears any previously displayed private
+Lua settings and disables its download until the new client is explicitly
+provisioned. This prevents accidentally downloading a prior client's active
+secret while operating multiple test clients. The browser still downloads a
+file; it cannot install or reload Ashita addons automatically.
