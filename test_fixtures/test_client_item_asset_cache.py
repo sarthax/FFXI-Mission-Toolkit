@@ -56,6 +56,9 @@ def test_lazy_item_cache_and_source_invalidation(tmp_path, monkeypatch):
     assert status["cached_rows"] == 2
     assert status["total_records"] == 2
     assert status["complete"] is True
+    assert status["fresh_rows"] == 2
+    assert status["stale_rows"] == 0
+    assert status["missing_rows"] == 0
     assert status["total_bytes"] > 0
 
     cleared = cache.clear_cache()
@@ -87,3 +90,37 @@ def test_client_cache_routes_and_inventory_lazy_contract():
     assert "/character-editor/client-cache" in settings
     assert "build-source" in settings
     assert "data/client_asset_cache/" in ignore
+
+
+def test_cache_status_detects_changed_dat_missing_icon_and_orphan(tmp_path, monkeypatch):
+    client = tmp_path / "client"
+    dat_path = client / "ROM" / "1.DAT"
+    dat_path.parent.mkdir(parents=True)
+    dat_path.write_bytes(b"source")
+    monkeypatch.setattr(cache, "CACHE_ROOT", tmp_path / "cache")
+    monkeypatch.setattr(cache.dat_tools, "ffxi_dir", lambda: str(client))
+    monkeypatch.setattr(cache.dat_tools, "ITEM_DATS", [("Test", 100, 0, "ROM/1.DAT", "")])
+    monkeypatch.setattr(cache.dat_tools, "record_count", lambda path: 2)
+    monkeypatch.setattr(cache.dat_tools, "read_client_item", lambda item_id: SimpleNamespace(id=item_id, icon_data=b"icon"))
+    monkeypatch.setattr(cache.dat_tools, "item_to_dict", lambda item: {"id": item.id})
+    monkeypatch.setattr(cache.dat_tools, "bitmap_a_to_png", lambda _: b"PNG")
+
+    entry = cache.ensure_item(100)
+    initial = cache.cache_status()
+    assert (initial["fresh_rows"], initial["missing_rows"]) == (1, 1)
+    assert initial["complete"] is False
+    entry.icon_path.unlink()
+    missing_icon = cache.cache_status()
+    assert missing_icon["stale_rows"] == 1
+    assert missing_icon["fresh_rows"] == 0
+    cache.ensure_item(100)
+    dat_path.write_bytes(b"modified-source")
+    changed = cache.cache_status()
+    assert changed["stale_rows"] == 1
+    assert changed["sources"][0]["fresh_count"] == 0
+    cache.build_source("Test")
+    assert cache.cache_status()["complete"] is True
+    dat_path.unlink()
+    orphaned = cache.cache_status()
+    assert orphaned["orphaned_rows"] == 2
+    assert orphaned["complete"] is False
