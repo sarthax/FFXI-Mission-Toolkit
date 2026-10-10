@@ -1,12 +1,5 @@
 {% extends "workbench_page.html" %}
-{% block title %}Wiki Compiler<style>
-.wiki-bilingual-grid{display:grid;gap:8px;margin:10px 0}
-.wiki-bilingual-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
-.wiki-bilingual-cell{padding:10px;border:1px solid var(--border);border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere}
-.wiki-bilingual-cell small{display:block;color:var(--muted);margin-bottom:5px}
-@media(max-width:700px){.wiki-bilingual-row{grid-template-columns:minmax(0,1fr)}}
-</style>
-{% endblock %}
+{% block title %}Wiki Compiler{% endblock %}
 {% block page_archetype %}workbench{% endblock %}
 {% block page_class %}wiki-compiler-page{% endblock %}
 {% block page_heading %}Wiki Compiler{% endblock %}
