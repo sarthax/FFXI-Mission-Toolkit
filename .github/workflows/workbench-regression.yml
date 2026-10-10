@@ -205,6 +205,7 @@ jobs:
           python test_fixtures/test_wiki_scrape_diagnostics.py
           python test_fixtures/test_wiki_scrape_readonly_verification.py
           python test_fixtures/test_wiki_sync_overview.py
+          python test_fixtures/test_wiki_workspace_tabs.py
           python test_fixtures/test_wiki_bulk_rate_limit_checkpoint.py
           python test_fixtures/test_wiki_link_safety.py
           python test_fixtures/test_dual_wiki_claim_alignment.py

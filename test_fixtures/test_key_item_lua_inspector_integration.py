@@ -42,3 +42,32 @@ def test_lua_reference_rollups_and_limitations_are_presented_safely():
     assert "line.textContent = String(message)" in page
     assert "limitations.length === 0" in page
     assert "generation !== luaGeneration" in page
+
+
+def test_key_item_lua_references_link_to_feature_trace_safely():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert "const fileName = parts[parts.length - 1] || path;" in page
+    assert "new URLSearchParams({q: fileName})" in page
+    assert "search.href = '/features/trace?'" in page
+    assert "context.textContent = ' · ' + kind + ' · ' + fileName" in page
+    assert "excerpt.textContent = String(ref.source_text || '')" in page
+    assert "location.textContent = String(ref.source_path || '')" in page
+
+
+def test_key_item_source_scope_is_derived_from_actual_script_path():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert "const relations = [];" in page
+    assert "const segment = path.match(" in page
+    assert "(missions|quests|npcs|zones)" in page
+    assert "segment[2]" in page
+    assert "item.append(label, location, context, ...relations, copy, search, excerpt)" in page
+
+
+def test_key_item_references_group_by_source_without_losing_evidence():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert "const grouped = new Map();" in page
+    assert "grouped.get(key).push(item);" in page
+    assert "for (const [path, items] of grouped)" in page
+    assert "heading.textContent = path + ' · ' + items.length + ' reference(s)';" in page
+    assert "entries.append(...items);" in page
+    assert "group.open = grouped.size <= 3;" in page
