@@ -160,10 +160,14 @@ def _sources(conn, root: Path | str | None) -> dict[str, Any]:
     drops: dict[int, dict[str, Any]] = {}
     any_drop: set[int] = set()
     try:
-        any_drop = {int(r[0]) for r in _rows(conn, "SELECT DISTINCT itemId FROM mob_droplist")}
+        # Rate-0 rows are placeholders that never drop, so they must not make an item look obtainable.
+        rate_col = next((c for c in ("itemRate", "dropRate") if _rows(conn, "SHOW COLUMNS FROM mob_droplist LIKE %s", (c,))), None)
+        live = f" WHERE `{rate_col}`>0" if rate_col else ""
+        live_d = f" AND d.`{rate_col}`>0" if rate_col else ""
+        any_drop = {int(r[0]) for r in _rows(conn, f"SELECT DISTINCT itemId FROM mob_droplist{live}")}
         for r in _rows(conn, "SELECT d.itemId, p.name, g.zoneid, COUNT(*) FROM mob_droplist d JOIN mob_groups g ON g.dropid=d.dropId "
                              "JOIN mob_pools p ON p.poolid=g.poolid JOIN mob_spawn_points sp ON sp.groupid=g.groupid AND ((sp.mobid>>12)&4095)=g.zoneid "
-                             "GROUP BY d.itemId, p.name, g.zoneid ORDER BY d.itemId, COUNT(*) DESC"):
+                             f"WHERE 1=1{live_d} GROUP BY d.itemId, p.name, g.zoneid ORDER BY d.itemId, COUNT(*) DESC"):
             e = drops.setdefault(int(r[0]), {"mobs": 0, "sample": []})
             e["mobs"] += 1
             if len(e["sample"]) < 3:
