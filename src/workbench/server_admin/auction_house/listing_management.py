@@ -10,10 +10,6 @@ _bt = lambda c: f"`{c}`"
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from workbench.editors.character.adapters.inventory import build_basic_insert_plan, inspect_inventory_contract
-from workbench.editors.character.inventory_slots import inspect_slots
-from workbench.editors.character.schema import discover_character_schema
-from workbench.editors.character.session_state import detect_online_state
 
 from .categories import category_metadata
 from .legacy_test_executor import LegacyTestExecutionBlocked, evaluate_legacy_test_write_gate
@@ -161,6 +157,10 @@ def execute_legacy_test_return_to_seller(
             raise LegacyTestExecutionBlocked("Item or seller state could not be verified")
         quantity = max(1, int(item.get("stack_size") or 1)) if current["stack"] else 1
 
+        from workbench.editors.character.adapters.inventory import build_basic_insert_plan, inspect_inventory_contract
+        from workbench.editors.character.inventory_slots import inspect_slots
+        from workbench.editors.character.schema import discover_character_schema
+        from workbench.editors.character.session_state import detect_online_state
         char_schema = discover_character_schema(connection)
         family = str(environment.get("family") or "").strip().lower()
         inventory_contract = inspect_inventory_contract(char_schema, family)
