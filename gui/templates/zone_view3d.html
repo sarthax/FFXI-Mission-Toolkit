@@ -72,6 +72,7 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
     <option value="xzy">X,Z,Y</option>
     <option value="x-z-y">X,-Z,-Y</option>
   </select></label>
+  <label>Heading preview <select id="ashita-live-heading"><option value="0">0°</option><option value="90">+90°</option><option value="180">180°</option><option value="270">+270°</option></select></label>
   <button type="button" id="ashita-live-focus">Focus player</button>
   <button type="button" id="ashita-live-copy">Copy diagnostics</button>
   <a class="inline" href="/live-client/bridge/console" target="_blank" rel="noopener">Bridge setup ↗</a>
@@ -215,9 +216,13 @@ if (liveQuery.get('live') === '1' && /^[a-zA-Z0-9_-]{1,64}$/.test(liveQuery.get(
   liveAutoZoneToggle.checked = liveQuery.get('autozone') === '1';
 }
 const liveAxes = document.getElementById('ashita-live-axes');
+const liveHeading = document.getElementById('ashita-live-heading');
 const liveAxisOptions = new Set(['legacy','xyz','xzy','x-z-y']);
 if (liveQuery.get('live') === '1' && liveAxisOptions.has(liveQuery.get('axes'))) {
   liveAxes.value = liveQuery.get('axes');
+}
+if (liveQuery.get('live') === '1' && ['0','90','180','270'].includes(liveQuery.get('heading'))) {
+  liveHeading.value = liveQuery.get('heading');
 }
 function projectLivePoint(p) {
   if (liveAxes.value === 'xyz') return new THREE.Vector3(p.x,p.y,p.z);
@@ -274,7 +279,7 @@ async function checkLiveZone(clientId, requestId) {
         clientId !== liveClient.value.trim() || !status.connected || !status.snapshot) return;
     const zone = Number(status.snapshot.zone_id);
     if (!Number.isInteger(zone) || zone < 1 || zone > 65535 || zone === ZONEID) return;
-    const next = new URLSearchParams({live:'1',client:clientId,autozone:'1',axes:liveAxes.value});
+    const next = new URLSearchParams({live:'1',client:clientId,autozone:'1',axes:liveAxes.value,heading:liveHeading.value});
     location.assign('/zones/' + zone + '/view3d?' + next.toString());
   } catch (_) { /* Stay on current map if receiver is unavailable. */ }
 }
@@ -319,7 +324,8 @@ async function pollAshitaPosition() {
         liveMarker.userData.direction = direction;
       }
       liveMarker.userData.direction.setDirection(
-        projectLivePoint({x:Math.cos(position.heading),y:Math.sin(position.heading),z:0}).normalize());
+        new THREE.Vector3(Math.cos(position.heading + Number(liveHeading.value) * Math.PI / 180), 0,
+          -Math.sin(position.heading + Number(liveHeading.value) * Math.PI / 180)).normalize());
     }
     lastLivePosition = current;
     lastLiveDiagnostic = {
@@ -328,7 +334,7 @@ async function pollAshitaPosition() {
       raw_position: {x:position.x,y:position.y,z:position.z,heading:position.heading},
       viewer_position: {x:current.x,y:current.y,z:current.z},
       axis_preview: liveAxes.value,
-      heading_preview: 'axis-projected-XY-unit-vector',
+      heading_preview_degrees: Number(liveHeading.value),
       adapter: data.adapter, observed_at: data.observed_at,
       entity_count: Array.isArray(data.entities) ? data.entities.length : 0,
       entities_truncated: Boolean(data.entities_truncated)
@@ -387,6 +393,7 @@ liveToggle.addEventListener('change', () => { ++lastLiveRequest; pollAshitaPosit
 liveEntitiesToggle.addEventListener('change', pollAshitaPosition);
 liveAutoZoneToggle.addEventListener('change', pollAshitaPosition);
 liveAxes.addEventListener('change', () => { ++lastLiveRequest; clearLiveMarker(); pollAshitaPosition(); });
+liveHeading.addEventListener('change', pollAshitaPosition);
 liveClient.addEventListener('change', () => { ++lastLiveRequest; clearLiveMarker(); pollAshitaPosition(); });
 refreshLiveClients();
 setInterval(refreshLiveClients, 10000);
