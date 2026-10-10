@@ -19,8 +19,10 @@ class ClientSelection(BaseModel):
     client_id: str = Field(min_length=1, max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
 
 
-def create_bridge_management_router(manager: ManagedLiveReceiver) -> APIRouter:
-    templates = Jinja2Templates(directory=str(Path(__file__).resolve().parents[4] / "gui" / "templates"))
+def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jinja2Templates | None = None) -> APIRouter:
+    if templates is None:
+        templates = Jinja2Templates(directory=str(Path(__file__).resolve().parents[4] / "gui" / "templates"))
+        templates.env.globals["current_theme"] = lambda: "light"
     router = APIRouter(prefix="/live-client/bridge", tags=["Live Client Bridge"])
 
     def require_same_origin(request: Request) -> None:
