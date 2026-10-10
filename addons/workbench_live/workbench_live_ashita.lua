@@ -7,7 +7,15 @@ addon.desc = 'Read-only observation export; client build unverified.'
 require('common')
 local observation = require('workbench_observation')
 local bridge_config_ok, bridge_config = pcall(require, 'workbench_bridge_settings')
-local bridge = require('workbench_bridge').new(bridge_config_ok and bridge_config or {enabled=false})
+-- Lua require() returns true for a module that does not return a table.
+-- Treat malformed/legacy settings as disabled, never index a Boolean.
+local bridge_options = {enabled=false}
+if bridge_config_ok and type(bridge_config) == 'table' then
+    bridge_options = bridge_config
+else
+    print('Workbench Live: bridge settings missing or invalid; download fresh workbench_bridge_settings.lua from Direct Live Bridge.')
+end
+local bridge = require('workbench_bridge').new(bridge_options)
 local direct = require('workbench_live_direct').new({
     capture = function(id, now) return observation.capture_ashita(AshitaCore, GetEntity, id, now, false, true) end,
     start_bridge = function(id) return bridge.start(id) end,

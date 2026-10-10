@@ -25,6 +25,9 @@ local function length_prefix(n, bytes)
     return table.concat(out)
 end
 function M.new(options)
+    -- Even if an older entry point passes Lua require()'s true sentinel,
+    -- never throw from the addon command callback.
+    if type(options) ~= 'table' then options = {enabled=false} end
     local source, sequence = nil, 0
     local function close()
         source, sequence = nil, 0
