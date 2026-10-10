@@ -1,5 +1,12 @@
 {% extends "workbench_page.html" %}
-{% block title %}Wiki Compiler{% endblock %}
+{% block title %}Wiki Compiler<style>
+.wiki-bilingual-grid{display:grid;gap:8px;margin:10px 0}
+.wiki-bilingual-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.wiki-bilingual-cell{padding:10px;border:1px solid var(--border);border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere}
+.wiki-bilingual-cell small{display:block;color:var(--muted);margin-bottom:5px}
+@media(max-width:700px){.wiki-bilingual-row{grid-template-columns:minmax(0,1fr)}}
+</style>
+{% endblock %}
 {% block page_archetype %}workbench{% endblock %}
 {% block page_class %}wiki-compiler-page{% endblock %}
 {% block page_heading %}Wiki Compiler{% endblock %}
@@ -305,7 +312,11 @@
   {% if page_view.is_ja %}<button type="button" id="tr-btn" data-source="{{ source }}" data-title="{{ title }}">Translate to English (machine)</button>{% endif %}
 </div>
 {% if page_view.is_ja %}
-<div id="tr-out" class="warn" hidden></div>
+<div id="tr-out" class="warn" hidden role="status" aria-live="polite"></div>
+<div id="tr-bilingual" hidden aria-label="Japanese and English aligned wiki sections">
+  <div class="dense-toolbar"><strong>Machine translation — unverified</strong><span id="tr-meta" class="muted"></span></div>
+  <div id="tr-aligned" class="wiki-bilingual-grid"></div>
+</div>
 <p class="muted">Japanese original shown below, stored verbatim. Translations are machine-generated, cached separately, and never ingested as evidence.</p>
 {% endif %}
 
@@ -1066,11 +1077,33 @@
   });}
   if(box && box.querySelector('.job-row')) poll();
   var tb=document.getElementById('tr-btn');
-  if(tb){tb.addEventListener('click',function(){var o=document.getElementById('tr-out');o.hidden=false;o.textContent='Translating...';
-    fetch('/wiki/translate?source='+encodeURIComponent(tb.dataset.source)+'&title='+encodeURIComponent(tb.dataset.title)).then(function(r){return r.json();}).then(function(d){
-      if(d.status==='OK'){o.className='';o.style.whiteSpace='pre-wrap';o.textContent='[machine translation, unverified]\n'+d.text;}
-      else if(d.status==='NO_ENGINE'){o.textContent='No translation engine configured. Set WIKI_TRANSLATE_CMD (a command that reads Japanese on stdin and prints English) and restart.';}
-      else{o.textContent='Translation failed: '+(d.error||d.status);}});});}
+  if(tb){tb.addEventListener('click',function(){
+    var output=document.getElementById('tr-out'), panel=document.getElementById('tr-bilingual');
+    var aligned=document.getElementById('tr-aligned'), meta=document.getElementById('tr-meta');
+    panel.hidden=true;output.hidden=false;output.textContent='Translating cached article…';tb.disabled=true;
+    fetch('/wiki/translate?source='+encodeURIComponent(tb.dataset.source)+'&title='+encodeURIComponent(tb.dataset.title))
+      .then(function(r){return r.json().then(function(d){if(!r.ok)throw Error(d.error||d.detail||'HTTP '+r.status);return d;});})
+      .then(function(d){
+        if(d.status!=='OK')throw Error(d.status==='NO_ENGINE'?'No engine configured. Set WIKI_TRANSLATE_OLLAMA_MODEL or WIKI_TRANSLATE_CMD.':(d.error||d.status));
+        if(!Array.isArray(d.blocks)||!d.blocks.length){output.textContent='[machine translation, unverified]\\n'+d.text;return;}
+        aligned.replaceChildren();
+        d.blocks.forEach(function(b){
+          var row=document.createElement('div');row.className='wiki-bilingual-row';
+          var jp=document.createElement('div'),en=document.createElement('div');
+          jp.className='wiki-bilingual-cell';en.className='wiki-bilingual-cell';
+          var heading=document.createElement('small');heading.textContent=(b.block_type||'text')+' · original';
+          var english=document.createElement('small');english.textContent='English · machine draft';
+          var original=document.createElement('div'),translated=document.createElement('div');
+          original.textContent=b.original||'';translated.textContent=b.text||'';
+          jp.append(heading,original);en.append(english,translated);row.append(jp,en);aligned.appendChild(row);
+        });
+        meta.textContent=d.blocks.length+' aligned blocks · '+(d.engine||'local translation');
+        panel.hidden=false;
+        output.hidden=!(d.warnings&&d.warnings.length);
+        if(!output.hidden)output.textContent='Review warnings: '+d.warnings.join('; ');
+      }).catch(function(e){output.hidden=false;output.textContent='Translation failed: '+e.message;})
+      .finally(function(){tb.disabled=false;});
+  });}
 })();
 </script>
 {% endblock %}
