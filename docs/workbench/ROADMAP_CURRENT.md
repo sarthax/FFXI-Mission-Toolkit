@@ -1,13 +1,24 @@
 # Current Workbench Roadmap
 
 Status: ACTIVE REWORK  
-Last fully reconciled against merged PR and branch history: **2026-10-06**  
+Last fully reconciled against merged PR and branch history: **2026-10-06** (full-repository sweep); targeted Key Items / AH / Live Client / Synth docs audit **2026-10-10**  
 Authoritative repository: `sarthax/FFXI-Mission-Toolkit`  
 Authoritative branch: `main`
 
 This is the authoritative current planning and capability inventory for the Mission Toolkit / Workbench. It is organized by durable capability, not by the chronological order of individual pull requests.
 
 `ROADMAP.md` remains the historical implementation ledger. `AUDIT_STATUS.md` remains a historical/implementation audit log. When older status text conflicts with this file, use this file plus merged `main` history.
+
+## 2026-10-10 targeted module documentation reconciliation
+
+**Scope and evidence:** Key Items code and merged PRs #868, #875, #880, #881, #883, #889, #891, #896, #899, #900, #902, #905, #910 and #911; existing Auction House status/help, Live Client bridge guide and Synth UI/API. This targeted update **does not supersede** the October 6 repository-wide baseline for unreviewed modules.
+
+- [x] **Key Items (DSP-first read-only research):** active DSP bare source constants, normalized-name/ID readiness, collision protection, health diagnostics, per-item decision explanations, static Lua require/grant/remove references, persistent incremental SQLite cache, per-file source/operation/line evidence, Feature Trace search handoff and copyable citation bundles. See `docs/workbench/KEY_ITEMS_GUIDE.md`.
+- [~] **Key Items pending:** local DSP source/runtime acceptance; evidence-backed alias reconciliation; broader verified dynamic/helper call coverage; exact Feature Trace source-line/entity linkage; indexing performance/freshness instrumentation. CI validates implementation contracts, **not** a user's live DSP install.
+- [x] **Auction House DSP core:** existing authoritative status and integrated help already document browse/transactions/economy/rewards, player actions and scoped Test-write safety. Preserve maintenance designation and explicit Test-profile/write gates; no new write capability is asserted here. See `docs/workbench/AUCTION_HOUSE_CAPABILITY_STATUS.md` and `/auction-house/help`.
+- [~] **Live Client:** documented Ashita-side bridge, managed local receiver, replay/waypoints and 3D spatial alignment diagnostics on `main`. Live Windows read/write compatibility and map coordinate calibration still require environment-specific testing. See `docs/workbench/LIVE_CLIENT_BRIDGE.md`; synthetic CI does not prove in-game operation.
+- [~] **Synth & Crafting:** `/synth` recipe browse/audit/preview workflows and legacy schema adapters are present; distinguish source-based recipe/ingredient auditing from verified in-game crafting and guard Test-only mutation paths. Usage is summarized in `/auction-house/help` and the module UI; dedicated operator validation remains.
+- [ ] **Cross-module documentation discipline:** on every functional PR update this file, the relevant module guide, in-tool help, and GUI roadmap summary. Reconcile the historical `ROADMAP.md` only as a dated ledger, not by rewriting old entries.
 
 ## Status rules
 
