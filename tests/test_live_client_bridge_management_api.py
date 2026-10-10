@@ -61,3 +61,19 @@ def test_dashboard_lists_provisioned_clients_and_displays_health_fields():
             assert label in html.text
     finally:
         manager.stop()
+
+
+def test_bridge_console_uses_workbench_shell_and_module_tabs():
+    from pathlib import Path
+    manager = ManagedLiveReceiver()
+    app = FastAPI()
+    app.include_router(create_bridge_management_router(manager))
+    html = TestClient(app).get("/live-client/bridge/console")
+    assert html.status_code == 200
+    for expected in ("wb-page-frame", "Recordings &amp; replay", "Direct Live Bridge",
+                     "aria-current=\"page\"", "Live dashboard", "Download Ashita settings"):
+        assert expected in html.text
+    assert "<!doctype html><html" not in html.text.lower() or "wb-page-frame" in html.text
+    template = (Path(__file__).resolve().parents[1] / "gui/templates/live_client_bridge.html").read_text()
+    assert '{% extends "workbench_page.html" %}' in template
+    assert "const root='/live-client/bridge/'" in template
