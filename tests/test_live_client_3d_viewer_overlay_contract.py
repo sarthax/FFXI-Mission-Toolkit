@@ -11,7 +11,7 @@ def test_zone_viewer_live_overlay_is_opt_in_and_uses_safe_projection():
     assert "&zone_id=' + ZONEID" in content
     assert "if (!data.visible || !data.player || !data.player.position)" in content
     assert "clearLiveMarker(); liveStatus.textContent = 'No fresh matching-zone telemetry'" in content
-    assert "new THREE.Vector3(position.x, -position.y, -position.z)" in content
+    assert "const current = projectLivePoint(position)" in content
     assert "liveMarker.position.copy(current)" in content
     assert "setInterval(pollAshitaPosition, 1500)" in content
     assert "fetch('/live-client/bridge/clients')" in content
@@ -54,3 +54,12 @@ def test_live_alignment_controls_require_fresh_observation_and_report_transform(
     assert "viewer_position: {x:current.x,y:current.y,z:current.z}" in content
     assert "await navigator.clipboard.writeText(JSON.stringify(lastLiveDiagnostic, null, 2))" in content
     assert "lastLiveDiagnostic = null" in content
+
+
+def test_axis_preview_is_explicit_and_applies_to_entities():
+    content = (Path(__file__).resolve().parents[1] / "gui/templates/zone_view3d.html").read_text(encoding="utf-8")
+    assert 'id="ashita-live-axes"' in content
+    assert "function projectLivePoint(p)" in content
+    assert "marker.position.copy(projectLivePoint(point))" in content
+    assert "axis_preview: liveAxes.value" in content
+    assert "liveAxes.addEventListener('change'" in content
