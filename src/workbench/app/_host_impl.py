@@ -165,7 +165,7 @@ app.include_router(create_replay_console_router(render_live_client_console))
 from workbench.runtime.live_client.bridge_managed import ManagedLiveReceiver
 from workbench.runtime.live_client.bridge_management_api import create_bridge_management_router
 live_client_bridge_manager = ManagedLiveReceiver()
-app.include_router(create_bridge_management_router(live_client_bridge_manager))
+app.include_router(create_bridge_management_router(live_client_bridge_manager, templates))
 
 from workbench.runtime.live_client.setup_api import create_recording_upload_router
 app.include_router(create_recording_upload_router(REPO_ROOT / "data" / "live_client_recordings", live_client_replay_registry))
