@@ -49,3 +49,7 @@ Offline UI contract test: `python test_fixtures/test_wiki_translation_batch_ui.p
 ## Fifth slice: conservative translation quality checks
 
 The local translation adapter now reports warnings for missing numeric tokens, hex/uppercase identifier strings, missing starter-glossary equivalents, and suspiciously short translated outputs. These are review hints, not reliable judgments of Japanese translation accuracy; reviewed glossary/alias ingestion remains future work. Cache policy version `wiki-jp-block-v2-quality` invalidates prior block drafts so new warnings are populated on retranslation. Offline checks: `python tests/legacy/test_wiki_translation_quality.py`. CI/live tests have not been executed in this session.
+
+## Sixth slice: reviewed wiki terminology
+
+The translation block service now combines its starter terminology with unambiguous, explicitly MANUAL/REVIEWED Japanese page links to canonical English Wiki topics. Unreviewed machine-derived and automatic links are excluded. Only terms appearing in the source block enter the model prompt. The versioned cache fingerprint covers the current glossary; changing reviewed mappings causes regenerated drafts. This is a conservative Wiki-reviewed glossary foundation, **not yet** a client-DAT-wide official name dictionary. Verify it with `python tests/legacy/test_wiki_translation_glossary.py`. Run the complete CI suite and local Ollama smoke tests before merging.
