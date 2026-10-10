@@ -34,7 +34,7 @@ def create_bridge_management_router(manager: ManagedLiveReceiver) -> APIRouter:
     def console(request: Request) -> HTMLResponse:
         if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
             raise HTTPException(status_code=403, detail="bridge setup requires local browser")
-        return templates.TemplateResponse("live_client_bridge.html", {"request": request})
+        return templates.TemplateResponse(request, "live_client_bridge.html")
 
     @router.post("/start")
     def start(request: Request) -> dict:
