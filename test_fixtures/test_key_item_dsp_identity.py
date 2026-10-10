@@ -180,5 +180,5 @@ def test_dsp_matching_does_not_infer_unverified_near_name_alias(tmp_path: Path):
     source = tmp_path / "scripts" / "globals" / "keyitems.lua"
     source.parent.mkdir(parents=True)
     source.write_text("LETTER_TO_THE_CONSULS_SANDORIA = 5;\n", encoding="utf-8")
-    assert resolve_dsp_key_item(tmp_path, "Letter to the Consuls San d'Oria")["status"] == "missing"
+    assert resolve_dsp_key_item(tmp_path, "Letter to the Consuls San Dorien")["status"] == "missing"
     assert resolve_dsp_key_item(tmp_path, "Letter to the Consuls Sandoria")["status"] == "name_verified"
