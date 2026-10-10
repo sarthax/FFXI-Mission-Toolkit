@@ -28,3 +28,7 @@ This is a **targeted** source-and-documentation audit, not an assertion that eve
 - Synth dedicated help, recipe audit false-positive analysis and DSP/Topaz/LSB Test write compatibility.
 - Key Items real DSP checkout data, unexpected alias/ID drift cases, persistent-index scaling and exact Feature Trace deep links.
 - Broader modules (Wiki/Japanese translation, captures, Zone Editor, protocol work) need separate recency and help-page reconciliation.
+
+## CI reconciliation
+
+Revalidated after the Campaign/Salvage GUI route-inventory correction merged to `main` (PR #915). This documentation work does not modify the route inventory or server write paths.
