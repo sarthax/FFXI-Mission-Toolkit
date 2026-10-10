@@ -795,3 +795,17 @@ Lua settings and disables its download until the new client is explicitly
 provisioned. This prevents accidentally downloading a prior client's active
 secret while operating multiple test clients. The browser still downloads a
 file; it cannot install or reload Ashita addons automatically.
+
+### Guarded local Ashita addon installation
+
+In Direct Live Bridge, enter the full existing Ashita installation root (the
+directory containing `addons`), then **Preview addon files**. Review the six
+expected Ashita Lua addon files. **Install missing files** requires explicit
+browser confirmation and a matching unchanged preview. The Toolkit copies the
+Ashita entry point `workbench_live_ashita.lua` as `workbench_live.lua`, not
+the Windower variant. Existing files, including changed addon source files,
+are never replaced. The installer does not create or modify
+`workbench_bridge_settings.lua`, load the addon into the game, move the
+character, or connect to Ashita automatically. To upgrade an existing addon,
+inspect and back up the directory manually before replacing files. Runs only
+from a local same-origin browser; use the Windows machine hosting Ashita.
