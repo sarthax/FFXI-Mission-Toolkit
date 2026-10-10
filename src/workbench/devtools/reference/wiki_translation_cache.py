@@ -69,7 +69,7 @@ def translate_cached_blocks(con: sqlite3.Connection, *, source_id: str,
             translated, issue_list = hit[0], json.loads(hit[1])
         else:
             try:
-                result = engine.translate(original, model=model, glossary=glossary)
+                result = engine.translate(original, model=model, glossary={k: v for k, v in glossary.items() if k in original})
             except Exception as exc:
                 return {"status": "ERROR", "error": "Ollama failed on " + block_id + ": " + str(exc)}
             if result.get("status") != "OK":
