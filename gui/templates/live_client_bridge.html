@@ -36,8 +36,9 @@
  <button type="button" onclick="action('stop')">Stop receiver</button></div>
  <p class="muted">Configuring a client replaces its active credentials. Keep settings private and reload the Ashita addon after changes.</p>
  <button type="button" id="downloadConfig" onclick="downloadConfig()" disabled>Download Ashita settings</button>
+ <button type="button" id="copyLiveCommand">Copy Ashita start command</button>
  <p id="bridge-action-message" role="status" class="muted" aria-live="polite">Start receiver, then configure and download settings for your Ashita addon.</p>
- <ol class="muted"><li>Start receiver and configure the selected client.</li><li>Download settings into Ashita's <code>addons/workbench_live/</code> folder.</li><li>Reload the Ashita addon, then type <code>/wblive live start ashita-a</code> (using your chosen client ID).</li></ol>
+ <ol class="muted"><li>Start receiver and configure the selected client.</li><li>Download the settings file and place it in Ashita's <code>addons/workbench_live/</code> folder.</li><li>Reload the addon, then run <code id="liveStartCommand">/wblive live start ashita-a</code> in game.</li></ol>
  <details><summary>Private configuration (do not share)</summary><pre id="config" aria-live="polite"></pre></details>
 </section>
 <section class="lc-panel">
@@ -53,9 +54,40 @@
 </div>
 <script>
 const root='/live-client/bridge/';
-const client=()=>document.getElementById('client').value;
+const clientInput=document.getElementById('client');
+const client=()=>clientInput.value.trim();
 const statusEl=document.getElementById('status');
 let privateConfig='';
+let provisionedClient=null;
+function clearPrivateConfig() {
+  privateConfig=''; provisionedClient=null;
+  document.getElementById('config').textContent='';
+  document.getElementById('downloadConfig').disabled=true;
+}
+function updateLiveCommand() {
+  const id=client();
+  document.getElementById('liveStartCommand').textContent =
+    /^[a-zA-Z0-9_-]{1,64}$/.test(id) ? '/wblive live start '+id : 'Enter a valid client ID';
+}
+clientInput.addEventListener('input', () => {
+  if (provisionedClient !== null && provisionedClient !== client()) {
+    clearPrivateConfig();
+    actionMessage.textContent='Client changed. Configure this client before downloading credentials.';
+  }
+  safeHealthReport=null; zoneLink.removeAttribute('href'); zoneLink.style.display='none';
+  updateLiveCommand();
+});
+document.getElementById('copyLiveCommand').addEventListener('click', async () => {
+  const id=client();
+  if(!/^[a-zA-Z0-9_-]{1,64}$/.test(id)) {
+    actionMessage.textContent='Enter a valid client ID first'; return;
+  }
+  try {
+    await navigator.clipboard.writeText('/wblive live start '+id);
+    actionMessage.textContent='Ashita start command copied.';
+  } catch (_) { actionMessage.textContent='Clipboard blocked; copy the visible command instead.'; }
+});
+updateLiveCommand();
 const actionMessage=document.getElementById('bridge-action-message');
 const zoneLink=document.getElementById('liveZoneLink');
 const healthHint=document.getElementById('bridge-health-hint');
@@ -73,7 +105,7 @@ async function request(path,data){const opts={method:'POST',headers:{'Content-Ty
  if(!response.ok)throw Error(result.detail||response.status);
  return result;}
 async function action(name){try{const result=await request(name);statusEl.textContent=JSON.stringify(result,null,2);
- if(name==='stop'){privateConfig='';document.getElementById('config').textContent='';document.getElementById('downloadConfig').disabled=true;actionMessage.textContent='Receiver stopped. Existing credentials are no longer valid.';}else{actionMessage.textContent='Receiver started. Configure the selected client to connect Ashita.';}}
+ if(name==='stop'){clearPrivateConfig();actionMessage.textContent='Receiver stopped. Existing credentials are no longer valid.';}else{actionMessage.textContent='Receiver started. Configure the selected client to connect Ashita.';}}
  catch(error){actionMessage.textContent=String(error)}}
 async function provision(){try{const value=client();
  if(!/^[a-zA-Z0-9_-]{1,64}$/.test(value))throw Error('Invalid client ID');
@@ -92,11 +124,12 @@ async function provision(){try{const value=client();
  +'    if not ok then peer:close(); error(err) end\\n'
  +'    return peer\\n  end,\\n}\\n';
  privateConfig=lua;
+ provisionedClient=value;
  document.getElementById('downloadConfig').disabled=false;
  actionMessage.textContent='New private credentials created. Download them and reload the Ashita addon. Existing credentials were revoked.';
  document.getElementById('config').textContent='Save locally as addons/workbench_live/workbench_bridge_settings.lua (private):\\n\\n'+lua;
  }catch(error){actionMessage.textContent=String(error)}}
-function downloadConfig(){if(!privateConfig)return;
+function downloadConfig(){if(!privateConfig || provisionedClient!==client())return;
  const blob=new Blob([privateConfig],{type:'text/plain;charset=utf-8'});
  const url=URL.createObjectURL(blob);const a=document.createElement('a');
  a.href=url;a.download='workbench_bridge_settings.lua';a.click();

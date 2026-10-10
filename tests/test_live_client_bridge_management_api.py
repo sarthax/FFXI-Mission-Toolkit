@@ -110,3 +110,15 @@ def test_bridge_safe_health_report_excludes_private_settings_and_handles_unknown
     assert "await navigator.clipboard.writeText(JSON.stringify(safeHealthReport,null,2))" in html
     block = html.split('safeHealthReport = {', 1)[1].split('};', 1)[0]
     assert 'token' not in block and 'session_id' not in block and 'privateConfig' not in block
+
+
+def test_client_specific_setup_command_and_private_config_invalidation():
+    from pathlib import Path
+    html = (Path(__file__).resolve().parents[1] / "gui/templates/live_client_bridge.html").read_text(encoding="utf-8")
+    for expected in ("id=\"copyLiveCommand\"", "id=\"liveStartCommand\"",
+                     "function clearPrivateConfig()", "function updateLiveCommand()",
+                     "clientInput.addEventListener('input'", "provisionedClient !== client()",
+                     "clearPrivateConfig();", "provisionedClient=value;",
+                     "await navigator.clipboard.writeText('/wblive live start '+id)"):
+        assert expected in html
+    assert "if(!privateConfig || provisionedClient!==client())return;" in html
