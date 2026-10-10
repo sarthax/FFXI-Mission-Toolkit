@@ -46,6 +46,28 @@ PARSER_LABELS = {
 }
 PREVIEW_ITEMS = 25
 
+def parser_capabilities() -> dict:
+    """Report this installation's actual callable decoders, not guessed DAT support.
+
+    The registry is the Inspector's known API surface; an installed binding may expose
+    fewer methods. Presence is not evidence that any particular DAT will parse.
+    """
+    installed = xi_tinkerer is not None
+    rows = [{
+        "parser": name,
+        "label": PARSER_LABELS.get(name, name),
+        "tool_kind": PARSER_TOOL_KIND.get(name, "generic"),
+        "available": bool(installed and callable(getattr(xi_tinkerer, name, None))),
+    } for name in PARSERS]
+    return {
+        "bindings_installed": installed,
+        "registered_count": len(rows),
+        "available_count": sum(1 for row in rows if row["available"]),
+        "parsers": rows,
+        "note": "Parser availability does not verify support for an individual DAT; inspect a file to establish evidence.",
+    }
+
+
 BLOCK_TYPE_LABELS = {
     32: "Texture",
     41: "Skeleton",
@@ -324,8 +346,17 @@ def _inspect_path(
     data = path.read_bytes()
     matches, rejected = [], []
     for name in PARSERS:
+        parser = getattr(xi_tinkerer, name, None)
+        if not callable(parser):
+            rejected.append({
+                "parser": name,
+                "label": PARSER_LABELS.get(name, name),
+                "reason": "Decoder not available in the installed xi-tinkerer bindings",
+                "unavailable": True,
+            })
+            continue
         try:
-            parsed = getattr(xi_tinkerer, name)(str(path))
+            parsed = parser(str(path))
             matches.append({
                 "parser": name,
                 "label": PARSER_LABELS.get(name, name),
@@ -365,6 +396,7 @@ def _inspect_path(
         "family": context["family"],
         "zone_id": context["zone_id"],
         "classification": classification,
+        "parser_capabilities": parser_capabilities(),
         "section_scan": section_scan,
         "matches": matches,
         "rejected": rejected,
