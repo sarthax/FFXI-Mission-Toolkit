@@ -215,6 +215,7 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
   - source DAT size/mtime validation and selective regeneration;
   - cache clear returns automatically to lazy extraction.
 - [x] Character inventory uses the cache-backed icon path and defers icon URLs for collapsed containers.
+- [x] Client item cache health reports per-DAT fresh/stale/missing records, orphaned rows and missing icons; complete status requires current source signatures rather than counting obsolete rows. Settings surfaces repair needs without eager extraction.
 - [~] Extend the generic Client Asset Cache concept beyond item metadata/icons to additional reusable models/textures/maps/assets only where parser semantics are proven.
 
 # 9. Zone Editor / spatial viewers

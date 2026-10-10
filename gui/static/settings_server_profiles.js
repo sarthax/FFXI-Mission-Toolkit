@@ -220,8 +220,8 @@
   async function refreshCache() {
     try {
       const j = await call('/status.json');
-      summary.innerHTML = `<strong>${j.cached_rows}/${j.total_records}</strong> records cached · <strong>${j.available_rows}</strong> real item records · <strong>${fmtBytes(j.total_bytes)}</strong> on disk ${j.complete ? '<span class="chip">COMPLETE</span>' : '<span class="chip">LAZY</span>'}<div class="mono muted" style="margin-top:4px">${j.client_root || ''}</div>`;
-      sourcesBox.innerHTML = (j.sources||[]).map(s => `<div style="display:flex;gap:8px;align-items:center;margin:3px 0"><span style="min-width:120px">${s.category}</span><span class="chip">${s.cached_count}/${s.record_count}</span><span class="mono muted">${s.rom_path}</span></div>`).join('');
+      summary.innerHTML = `<strong>${j.fresh_rows}/${j.total_records}</strong> fresh records · <strong>${j.stale_rows}</strong> stale · <strong>${j.orphaned_rows}</strong> orphaned · <strong>${j.available_rows}</strong> extracted items · <strong>${fmtBytes(j.total_bytes)}</strong> on disk ${j.complete ? '<span class="chip">COMPLETE</span>' : '<span class="chip">NEEDS BUILD</span>'}<div class="mono muted" style="margin-top:4px">${j.client_root || ''}</div>`;
+      sourcesBox.innerHTML = (j.sources||[]).map(s => `<div style="display:flex;gap:8px;align-items:center;margin:3px 0"><span style="min-width:120px">${s.category}</span><span class="chip">${s.fresh_count}/${s.record_count} fresh</span>${s.stale_count ? `<span class="chip">${s.stale_count} stale</span>` : ''}<span class="mono muted">${s.rom_path}</span></div>`).join('');
       return j;
     } catch (e) {
       summary.textContent = `Cache unavailable: ${e.message}`;

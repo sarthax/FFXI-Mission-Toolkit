@@ -121,28 +121,56 @@ def _source_rows(root: Path | None = None) -> list[SourceRecord]:
     return rows
 
 
-def list_sources() -> list[dict[str, Any]]:
-    root = _client_root()
+def _source_health(root: Path, namespace: Path) -> tuple[list[dict[str, Any]], int]:
+    """Audit stored rows against current source signatures without extracting DATs."""
+    sources = _source_rows(root)
     con = _connect(root)
     try:
-        cached_by_source = {
-            str(row["source_rom_path"]): int(row["n"])
-            for row in con.execute("SELECT source_rom_path, COUNT(*) AS n FROM item_cache GROUP BY source_rom_path")
-        }
+        rows = con.execute(
+            "SELECT item_id, source_rom_path, source_size, source_mtime_ns, "
+            "record_index, icon_file FROM item_cache"
+        ).fetchall()
     finally:
         con.close()
-    return [{
-        "category": row.category,
-        "base_id": row.base_id,
-        "item_type": row.item_type,
-        "rom_path": row.rom_path,
-        "path": str(row.path),
-        "record_count": row.record_count,
-        "cached_count": cached_by_source.get(row.rom_path, 0),
-        "size": row.size,
-        "mtime_ns": row.mtime_ns,
-    } for row in _source_rows(root)]
 
+    by_path: dict[str, list[sqlite3.Row]] = {}
+    for row in rows:
+        by_path.setdefault(str(row["source_rom_path"]), []).append(row)
+    result: list[dict[str, Any]] = []
+    for source in sources:
+        fresh = stale = 0
+        for row in by_path.get(source.rom_path, []):
+            item_id = int(row["item_id"])
+            if not source.base_id <= item_id < source.base_id + source.record_count:
+                stale += 1
+                continue
+            expected = _source_with_index(source, item_id - source.base_id)
+            if _row_is_fresh(row, expected, namespace):
+                fresh += 1
+            else:
+                stale += 1
+        result.append({
+            "category": source.category,
+            "base_id": source.base_id,
+            "item_type": source.item_type,
+            "rom_path": source.rom_path,
+            "path": str(source.path),
+            "record_count": source.record_count,
+            "cached_count": len(by_path.get(source.rom_path, [])),
+            "fresh_count": fresh,
+            "stale_count": stale,
+            "missing_count": max(0, source.record_count - fresh),
+            "size": source.size,
+            "mtime_ns": source.mtime_ns,
+        })
+    known_paths = {src.rom_path for src in sources}
+    orphaned = sum(1 for row in rows if str(row["source_rom_path"]) not in known_paths)
+    return result, orphaned
+
+
+def list_sources() -> list[dict[str, Any]]:
+    root = _client_root()
+    return _source_health(root, _namespace(root))[0]
 
 def _source_for_item(item_id: int, root: Path | None = None) -> SourceRecord | None:
     value = int(item_id)
@@ -341,17 +369,23 @@ def cache_status() -> dict[str, Any]:
         con.close()
     icon_bytes = sum(path.stat().st_size for path in (namespace / "icons").glob("*.png") if path.is_file())
     index_bytes = _index_path(root).stat().st_size if _index_path(root).is_file() else 0
-    sources = list_sources()
+    sources, orphaned = _source_health(root, namespace)
     total_records = sum(int(source["record_count"]) for source in sources)
     cached = int(row["rows"] or 0) if row else 0
+    fresh = sum(int(source["fresh_count"]) for source in sources)
+    stale = sum(int(source["stale_count"]) for source in sources)
     return {
         "client_root": str(root),
         "client_key": _client_key(root),
         "cache_root": str(namespace),
         "cached_rows": cached,
+        "fresh_rows": fresh,
+        "stale_rows": stale,
+        "orphaned_rows": orphaned,
+        "missing_rows": max(0, total_records - fresh),
         "available_rows": int(row["available"] or 0) if row else 0,
         "total_records": total_records,
-        "complete": bool(total_records and cached >= total_records),
+        "complete": bool(total_records and fresh == total_records and not stale and not orphaned),
         "icon_bytes": icon_bytes,
         "index_bytes": index_bytes,
         "total_bytes": icon_bytes + index_bytes,
