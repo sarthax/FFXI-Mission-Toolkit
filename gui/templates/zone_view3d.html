@@ -113,6 +113,16 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   <div id="capture-spatial-results" class="mono" style="width:100%;max-height:150px;overflow:auto;border:1px solid var(--border);border-radius:6px;padding:4px;font-size:11px;"></div>
 </div>
 {% endif %}
+<div id="zone3d-navigation" class="dense-toolbar" style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:7px 0;" aria-label="Read-only camera navigation">
+  <span id="zone3d-camera-readout" class="chip mono" role="status">Camera position: —</span>
+  <label>X <input id="zone3d-goto-x" type="number" step="any" style="width:86px"></label>
+  <label>Y <input id="zone3d-goto-y" type="number" step="any" style="width:86px"></label>
+  <label>Z <input id="zone3d-goto-z" type="number" step="any" style="width:86px"></label>
+  <button type="button" id="zone3d-goto">Go to XYZ</button>
+  <button type="button" id="zone3d-save-view">Save view</button>
+  <button type="button" id="zone3d-restore-view" disabled>Restore view</button>
+  <span id="zone3d-nav-feedback" class="muted" role="status" aria-live="polite"></span>
+</div>
 <div id="viewer-container" style="width:100%; height:640px; border:1px solid var(--border); border-radius:8px; background:#0a0d10; position:relative;">
   <div id="viewer-loading" class="muted" role="status" aria-live="polite" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Loading mesh&hellip;</div>
   <div id="viewer-mesh-source" class="chip mono" role="status" style="display:none;position:absolute;top:10px;right:10px;z-index:3;"></div>
@@ -1064,6 +1074,61 @@ function buildLiveZoneGroup(zoneData) {
   return group;
 }
 
+// Navigation uses the same display transform as existing spawn markers (x, -y, -z).
+// The panel's XYZ values refer to original FFXI coordinates, never server DB writes.
+const cameraReadout = document.getElementById('zone3d-camera-readout');
+const navFeedback = document.getElementById('zone3d-nav-feedback');
+let savedCameraView = null;
+const cameraFields = ['x', 'y', 'z'].map(axis => document.getElementById('zone3d-goto-' + axis));
+function cameraGameXYZ() {
+  return [camera.position.x, -camera.position.y, -camera.position.z];
+}
+function updateCameraReadout() {
+  const [x, y, z] = cameraGameXYZ();
+  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+  const heading = (Math.atan2(forward.x, -forward.z) * 180 / Math.PI + 360) % 360;
+  const cardinal = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(heading / 45) % 8];
+  cameraReadout.textContent = `Camera X ${x.toFixed(1)} · Y ${y.toFixed(1)} · Z ${z.toFixed(1)} · view ${cardinal} (${heading.toFixed(0)}°)`;
+}
+document.getElementById('zone3d-goto').addEventListener('click', () => {
+  if (cameraFields.some(field => field.value.trim() === '')) {
+    navFeedback.textContent = 'Enter X, Y and Z.';
+    return;
+  }
+  const values = cameraFields.map(field => Number(field.value));
+  if (!values.every(Number.isFinite)) {
+    navFeedback.textContent = 'XYZ must be finite numbers.';
+    return;
+  }
+  const destination = new THREE.Vector3(values[0], -values[1], -values[2]);
+  if (flyModeOn) {
+    camera.position.copy(destination);
+  } else {
+    const delta = destination.clone().sub(controls.target);
+    controls.target.copy(destination);
+    camera.position.add(delta);
+    controls.update();
+  }
+  navFeedback.textContent = 'Camera moved (viewer only).';
+});
+document.getElementById('zone3d-save-view').addEventListener('click', () => {
+  savedCameraView = {
+    position: camera.position.clone(),
+    quaternion: camera.quaternion.clone(),
+    target: controls.target.clone(),
+  };
+  document.getElementById('zone3d-restore-view').disabled = false;
+  navFeedback.textContent = 'View saved for this page session.';
+});
+document.getElementById('zone3d-restore-view').addEventListener('click', () => {
+  if (!savedCameraView) return;
+  camera.position.copy(savedCameraView.position);
+  camera.quaternion.copy(savedCameraView.quaternion);
+  controls.target.copy(savedCameraView.target);
+  controls.update();
+  navFeedback.textContent = 'Saved view restored.';
+});
+
 function onZoneMeshReady(obj) {
   scene.add(obj);
   loadingEl.hidden = true;
@@ -1229,6 +1294,7 @@ function animate() {
     const t = clock.getElapsedTime();
     for (const m of waterMaterials) m.uniforms.time.value = t;
   }
+  updateCameraReadout();
   renderer.render(scene, camera);
 }
 animate();
