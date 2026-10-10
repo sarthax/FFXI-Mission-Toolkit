@@ -120,19 +120,33 @@ def upgrade_with_backup(ashita_root: str, expected: dict) -> dict:
                 continue
         if backup is None:
             raise ValueError("Could not reserve a unique backup directory")
-        for row in replaced:
-            original = addon / row["name"]
-            with (backup / row["name"]).open("xb") as handle:
-                handle.write(original.read_bytes())
-            if hashlib.sha256((backup / row["name"]).read_bytes()).hexdigest() != row["current_sha256"]:
-                raise ValueError("Backup verification failed; originals unchanged")
+        try:
+            for row in replaced:
+                original = addon / row["name"]
+                # Revalidate prior to each backup; stale inputs must never be
+                # installed or reported as safely backed up.
+                if original.is_symlink() or not original.is_file():
+                    raise ValueError("Addon changed before backup")
+                payload = original.read_bytes()
+                if hashlib.sha256(payload).hexdigest() != row["current_sha256"]:
+                    raise ValueError("Addon changed before backup")
+                with (backup / row["name"]).open("xb") as handle:
+                    handle.write(payload)
+                if hashlib.sha256((backup / row["name"]).read_bytes()).hexdigest() != row["current_sha256"]:
+                    raise ValueError("Backup verification failed; originals unchanged")
+        except Exception:
+            # Do not touch installed files if any backup could not be verified.
+            # Retain partial backups as evidence rather than claim completion.
+            raise
     updated = []
     try:
         for row in changed:
             destination = addon / row["name"]
             # Recheck each target before writing, never follow a new symlink.
-            if destination.is_symlink() or (destination.exists() and
-                hashlib.sha256(destination.read_bytes()).hexdigest() != row["current_sha256"]):
+            if destination.is_symlink() or (destination.exists() and not destination.is_file()):
+                raise ValueError("Unsafe addon file during upgrade")
+            current_hash = hashlib.sha256(destination.read_bytes()).hexdigest() if destination.exists() else None
+            if current_hash != row["current_sha256"]:
                 raise ValueError("Addon changed during upgrade")
             content = (SOURCE / MANIFEST[row["name"]]).read_bytes()
             if hashlib.sha256(content).hexdigest() != row["sha256"]:
@@ -145,12 +159,21 @@ def upgrade_with_backup(ashita_root: str, expected: dict) -> dict:
                 try:
                     with temporary.open("xb") as handle:
                         handle.write(content)
+                    # The target must still be the same regular file after
+                    # staging. Backups retain the original bytes for recovery.
+                    if destination.is_symlink() or not destination.is_file() or (
+                        hashlib.sha256(destination.read_bytes()).hexdigest() != row["current_sha256"]
+                    ):
+                        raise ValueError("Addon changed while staging upgrade")
                     os.replace(temporary, destination)
                 finally:
                     temporary.unlink(missing_ok=True)
             updated.append(row["name"])
-    except Exception:
-        # Backups remain intact for manual recovery on partial filesystem failure.
-        raise
+    except Exception as exc:
+        # Preserve verified backup directory for manual recovery; report it on
+        # failed partial installs so the operator can locate it immediately.
+        location = str(backup) if backup else "no backups required"
+        raise RuntimeError("Upgrade interrupted; backup directory: " + location +
+                           "; inspect installed files before retrying") from exc
     return {"target": str(addon), "updated": updated, "backup_directory": str(backup) if backup else None,
             "settings_file_untouched": True}
