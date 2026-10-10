@@ -69,13 +69,16 @@ function M.capture(ffxi, client_id, observed_at)
     return frame
 end
 
-function M.capture_ashita(core, get_entity, client_id, observed_at, inventory)
+function M.capture_ashita(core, get_entity, client_id, observed_at, inventory, allow_transition)
     text(client_id, true)
     number(observed_at)
     local memory = assert(core:GetMemoryManager(), 'Ashita memory manager unavailable')
     local party = assert(memory:GetParty(), 'Ashita party interface unavailable')
     local entity = assert(memory:GetEntity(), 'Ashita entity interface unavailable')
-    if integer(party:GetMemberIsActive(0), 0, 4294967295) == 0 then transitioning('player party slot is inactive') end
+    if integer(party:GetMemberIsActive(0), 0, 4294967295) == 0 then
+        if allow_transition then transitioning('player party slot is inactive') end
+        error('player party slot is inactive')
+    end
     local server_id = integer(party:GetMemberServerId(0), 1, 4294967295)
     local index = integer(party:GetMemberTargetIndex(0), 1, 65535)
     local name = text(party:GetMemberName(0), true)
@@ -166,7 +169,8 @@ function M.capture_ashita(core, get_entity, client_id, observed_at, inventory)
     if not (party:GetMemberIsActive(0) ~= 0 and party:GetMemberServerId(0) == server_id
         and party:GetMemberTargetIndex(0) == index and party:GetMemberName(0) == name
         and party:GetMemberZone(0) == zone) then
-        transitioning('client changed while sampling')
+        if allow_transition then transitioning('client changed while sampling') end
+        error('client changed while sampling')
     end
     return frame
 end
