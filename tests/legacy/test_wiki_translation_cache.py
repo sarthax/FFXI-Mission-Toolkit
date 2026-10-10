@@ -14,7 +14,7 @@ BLOCKS = [
 ]
 
 
-def fake(text, *, model):
+def fake(text, *, model, glossary=None):
     return {"status": "OK", "text": model + ":" + text, "warnings": []}
 
 
@@ -40,7 +40,7 @@ def test_partial_progress_is_reusable():
     db = sqlite3.connect(":memory:")
     calls = []
 
-    def fail_second(text, *, model):
+    def fail_second(text, *, model, glossary=None):
         calls.append(text)
         if len(calls) == 2:
             raise RuntimeError("simulated outage")
