@@ -822,3 +822,7 @@ It never replaces `workbench_bridge_settings.lua` and does not load or unload
 Ashita. Unload the addon before upgrades. If a filesystem error interrupts an
 upgrade, backup files remain for manual recovery; installation is not
 transactional across all files.
+
+### Upgrade interruption recovery
+
+An interrupted local upgrade now reports its sibling backup directory in the error response when available. Before each replacement the installer rechecks the target and source hashes, and rejects symlink/non-file replacements during staging. Verified backups are retained for manual recovery. This is not a multi-file atomic upgrade; unload Ashita first and inspect the backup plus installed files before retrying an interrupted upgrade.
