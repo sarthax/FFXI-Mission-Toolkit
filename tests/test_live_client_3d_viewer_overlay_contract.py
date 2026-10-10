@@ -88,3 +88,15 @@ def test_axis_and_heading_previews_survive_opt_in_zone_navigation():
     assert 'id="ashita-live-heading"' in content
     assert "heading_preview_degrees: Number(liveHeading.value)" in content
     assert "liveHeading.addEventListener('change', pollAshitaPosition)" in content
+
+
+def test_two_point_alignment_diagnostics_are_manual_bounded_and_not_recorded():
+    html = (Path(__file__).resolve().parents[1] / "gui/templates/zone_view3d.html").read_text(encoding="utf-8")
+    for token in ('id="ashita-live-sample"', 'id="ashita-live-copy-points"',
+                  "if (!liveToggle.checked || !lastLiveDiagnostic)",
+                  "if (liveAlignmentSamples.length > 2) liveAlignmentSamples.shift()",
+                  "if (liveAlignmentSamples.length !== 2)",
+                  "liveAlignmentSamples[0].zone_id !== point.zone_id",
+                  "delta_raw:{x:diff('x'),y:diff('y'),z:diff('z')}",
+                  "await navigator.clipboard.writeText(JSON.stringify(payload, null, 2))"):
+        assert token in html

@@ -759,3 +759,17 @@ Ashita-to-mesh transform until compared with known Windows landmarks and
 orientation. Copy diagnostics includes the chosen preview for reproducible
 screenshots. The preview affects only drawn markers/heading and never game
 memory or server state.
+
+
+### Two-point Windows alignment diagnosis
+
+With a connected Ashita character in the appropriate 3D zone, select an
+axis preview and choose **Mark alignment point** near a recognizable landmark.
+Move a short, known direction and mark a second point. **Copy two-point
+comparison** exports only those two manually selected raw observations, their
+selected render previews, and XYZ differences to the local clipboard. The
+button never starts packet capture, writes a recording, accesses game memory
+itself, or includes bridge credentials. It keeps at most two snapshots in
+browser memory and resets the pair when the selected client or observed zone
+changes; it does not automatically gather movement trails. The comparison
+is evidence for later calibration, not a permanent axis correction.
