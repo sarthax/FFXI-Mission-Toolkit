@@ -42,6 +42,17 @@
  <details><summary>Private configuration (do not share)</summary><pre id="config" aria-live="polite"></pre></details>
 </section>
 <section class="lc-panel">
+ <h2>Install Ashita addon locally</h2>
+ <p class="muted">Optional: use only on the Windows PC running Ashita and the Toolkit. Preview before creating files. Existing addon files are never overwritten; credentials remain separate.</p>
+ <label>Ashita root folder <input id="ashita-install-root" style="max-width:min(100%,660px);width:560px" placeholder="C:\\Ashita" autocomplete="off"></label>
+ <div class="lc-actions">
+ <button type="button" id="ashita-install-preview">Preview addon files</button>
+ <button type="button" id="ashita-install-apply" disabled>Install missing files</button>
+ </div>
+ <div id="ashita-install-status" role="status" aria-live="polite" class="muted">No installation requested.</div>
+ <pre id="ashita-install-result"></pre>
+</section>
+<section class="lc-panel">
  <h2>Live dashboard</h2>
  <div id="health" role="status">Waiting for telemetry</div>
  <p class="muted" id="bridge-health-hint" aria-live="polite">Start the receiver and connect your Ashita addon.</p>
@@ -54,6 +65,38 @@
 </div>
 <script>
 const root='/live-client/bridge/';
+const installRootInput=document.getElementById('ashita-install-root');
+const installStatus=document.getElementById('ashita-install-status');
+const installResult=document.getElementById('ashita-install-result');
+const installApply=document.getElementById('ashita-install-apply');
+let installerPreview=null;
+installRootInput.addEventListener('input',()=>{
+  installerPreview=null;installApply.disabled=true;
+  installStatus.textContent='Path changed. Preview again.';
+  installResult.textContent='';
+});
+document.getElementById('ashita-install-preview').addEventListener('click',async()=>{
+  installerPreview=null;installApply.disabled=true;installResult.textContent='';
+  try {
+    const response=await request('installer/preview',{ashita_root:installRootInput.value});
+    installerPreview=response;
+    installResult.textContent=response.files.map(f=>f.action+' · '+f.name).join('\n');
+    installStatus.textContent=response.can_install?
+      'Ready: creates missing files only. Private settings are untouched.':
+      'Blocked: existing addon files differ. Back up or reconcile manually.';
+    installApply.disabled=!response.can_install;
+  }catch(error){installStatus.textContent=String(error);}
+});
+installApply.addEventListener('click',async()=>{
+  if(!installerPreview || !installerPreview.can_install)return;
+  if(!confirm('Create missing Workbench Live addon files in '+installerPreview.target+'? Existing files and private settings will not be replaced.'))return;
+  installApply.disabled=true;
+  try {
+    const result=await request('installer/apply',{ashita_root:installRootInput.value,expected:installerPreview});
+    installStatus.textContent='Installed '+result.created.length+' missing addon files. Reload the Ashita addon manually.';
+    installerPreview=null;
+  }catch(error){installStatus.textContent=String(error);installerPreview=null;}
+});
 const clientInput=document.getElementById('client');
 const client=()=>clientInput.value.trim();
 const statusEl=document.getElementById('status');
