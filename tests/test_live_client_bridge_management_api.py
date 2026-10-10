@@ -96,3 +96,17 @@ def test_live_bridge_zone_link_preserves_selected_client_and_explicit_opt_in():
     assert "new URLSearchParams({live:'1',client:client(),autozone:'1'})" in template
     assert "if(data.connected && Number.isInteger(zone) && zone>=1 && zone<=65535)" in template
     assert "zoneLink.removeAttribute('href')" in template
+
+
+def test_bridge_safe_health_report_excludes_private_settings_and_handles_unknown_age():
+    from pathlib import Path
+    html = (Path(__file__).resolve().parents[1] / "gui/templates/live_client_bridge.html").read_text(encoding="utf-8")
+    assert 'id="bridge-health-hint"' in html
+    assert 'id="bridge-copy-health"' in html
+    assert "if (!safeHealthReport)" in html
+    assert "receiver_running: Boolean(data.running)" in html
+    assert "connected: Boolean(data.connected)" in html
+    assert "data.age_seconds !== null && data.age_seconds !== undefined" in html
+    assert "await navigator.clipboard.writeText(JSON.stringify(safeHealthReport,null,2))" in html
+    block = html.split('safeHealthReport = {', 1)[1].split('};', 1)[0]
+    assert 'token' not in block and 'session_id' not in block and 'privateConfig' not in block

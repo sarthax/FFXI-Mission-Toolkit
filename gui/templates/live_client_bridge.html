@@ -43,6 +43,8 @@
 <section class="lc-panel">
  <h2>Live dashboard</h2>
  <div id="health" role="status">Waiting for telemetry</div>
+ <p class="muted" id="bridge-health-hint" aria-live="polite">Start the receiver and connect your Ashita addon.</p>
+ <button type="button" id="bridge-copy-health">Copy safe health report</button>
  <a id="liveZoneLink" class="chip" style="display:none" href="#" rel="noopener">Open current zone in 3D Viewer ↗</a>
  <div id="metrics"></div>
  <h3>Nearby observed entities</h3><div id="entities">No observations yet</div>
@@ -56,6 +58,15 @@ const statusEl=document.getElementById('status');
 let privateConfig='';
 const actionMessage=document.getElementById('bridge-action-message');
 const zoneLink=document.getElementById('liveZoneLink');
+const healthHint=document.getElementById('bridge-health-hint');
+let safeHealthReport=null;
+document.getElementById('bridge-copy-health').addEventListener('click', async () => {
+  if (!safeHealthReport) {actionMessage.textContent='No connection status received yet';return;}
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(safeHealthReport,null,2));
+    actionMessage.textContent='Copied health summary without credentials or private settings';
+  } catch (_) {actionMessage.textContent='Clipboard blocked; check browser permissions';}
+});
 async function request(path,data){const opts={method:'POST',headers:{'Content-Type':'application/json'}};
  if(data)opts.body=JSON.stringify(data);
  const response=await fetch(root+path,opts);const result=await response.json();
@@ -101,6 +112,18 @@ function render(data){const health=document.getElementById('health');
  data.snapshot?'Stale — last known observation':'Waiting for client';
  const metrics=document.getElementById('metrics');metrics.replaceChildren();
  const snap=data.snapshot;
+ healthHint.textContent = !data.running ? 'Start receiver to accept localhost telemetry.' :
+   !data.connected ? (snap ? 'Last observation is stale. Check /wblive live status and reconfigure only if credentials expired.' :
+   'Waiting for Ashita. Verify the addon is loaded and /wblive live start was issued.') :
+   'Receiving fresh telemetry. Zone changes should resume after the Ashita transition stabilizes.';
+ safeHealthReport = {
+   client_id: client(),
+   receiver_running: Boolean(data.running),
+   connected: Boolean(data.connected),
+   observation_age_seconds: data.age_seconds !== null && data.age_seconds !== undefined && Number.isFinite(Number(data.age_seconds)) ? Number(data.age_seconds) : null,
+   zone_id: snap && Number.isInteger(Number(snap.zone_id)) ? Number(snap.zone_id) : null,
+   adapter: snap ? snap.adapter : null
+ };
  const zone= snap && Number(snap.zone_id);
  if(data.connected && Number.isInteger(zone) && zone>=1 && zone<=65535){
    zoneLink.href='/zones/'+zone+'/view3d?'+new URLSearchParams({live:'1',client:client(),autozone:'1'}).toString(); zoneLink.style.display='';
