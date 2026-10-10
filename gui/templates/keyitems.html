@@ -241,7 +241,8 @@
     const results = document.getElementById('ki-lua-results');
     const selected = document.getElementById('ki-lua-operation').value;
     const refs = luaRefs.filter(ref => selected === 'all' || ref.operation === selected);
-    const list = document.createElement('ul');
+    const list = document.createElement('div');
+    const grouped = new Map();
     for (const ref of refs) {
       const item = document.createElement('li');
       const label = document.createElement('strong');
@@ -276,7 +277,19 @@
       excerpt.textContent = String(ref.source_text || '');
       excerpt.style.whiteSpace = 'pre-wrap';
       item.append(label, location, context, ...relations, copy, search, excerpt);
-      list.append(item);
+      const key = String(ref.source_path || 'Unknown Lua file');
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(item);
+    }
+    for (const [path, items] of grouped) {
+      const group = document.createElement('details');
+      group.open = grouped.size <= 3;
+      const heading = document.createElement('summary');
+      heading.textContent = path + ' · ' + items.length + ' reference(s)';
+      const entries = document.createElement('ul');
+      entries.append(...items);
+      group.append(heading, entries);
+      list.append(group);
     }
     results.replaceChildren(list);
   }

@@ -61,3 +61,13 @@ def test_key_item_source_scope_is_derived_from_actual_script_path():
     assert "(missions|quests|npcs|zones)" in page
     assert "segment[2]" in page
     assert "item.append(label, location, context, ...relations, copy, search, excerpt)" in page
+
+
+def test_key_item_references_group_by_source_without_losing_evidence():
+    page = Path("gui/templates/keyitems.html").read_text(encoding="utf-8")
+    assert "const grouped = new Map();" in page
+    assert "grouped.get(key).push(item);" in page
+    assert "for (const [path, items] of grouped)" in page
+    assert "heading.textContent = path + ' · ' + items.length + ' reference(s)';" in page
+    assert "entries.append(...items);" in page
+    assert "group.open = grouped.size <= 3;" in page
