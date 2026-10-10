@@ -826,3 +826,19 @@ transactional across all files.
 ### Upgrade interruption recovery
 
 An interrupted local upgrade now reports its sibling backup directory in the error response when available. Before each replacement the installer rechecks the target and source hashes, and rejects symlink/non-file replacements during staging. Verified backups are retained for manual recovery. This is not a multi-file atomic upgrade; unload Ashita first and inspect the backup plus installed files before retrying an interrupted upgrade.
+
+
+### Windows reload error: Boolean has no field `enabled`
+
+If Ashita reports `Boolean type does not contain a definition for: enabled`
+during `/wblive live start`, an older or malformed
+`workbench_bridge_settings.lua` likely does not return a Lua table. Lua's
+`require` can yield `true` for a file that executes without returning a value.
+The addon now refuses invalid settings without crashing, but it will not connect
+until valid credentials are installed. Start the Toolkit's Direct Live Bridge
+receiver, choose **Configure client**, download the freshly provisioned
+`workbench_bridge_settings.lua`, and copy it into the actual Ashita
+`addons/workbench_live/` folder. Unload and reload the addon, then start
+`/wblive live start <client ID>`. Ensure the file ends in `return { ... }`
+and is not an empty placeholder; do not paste tokens or settings into reports.
+If the dashboard remains waiting, use **Copy safe health report**.
