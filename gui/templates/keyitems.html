@@ -305,8 +305,8 @@
         const evidence = scopedRefs.map(ref => {
           const location = String(ref.source_path || '') + ':' + String(ref.source_line || '');
           return '[' + String(ref.operation || 'reference') + '] ' + location +
-            '\\n' + String(ref.source_text || '');
-        }).join('\\n\\n');
+            '\n' + String(ref.source_text || '');
+        }).join('\n\n');
         copyValue(evidence);
       });
       entries.append(...items);
