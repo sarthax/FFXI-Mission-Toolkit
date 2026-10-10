@@ -2,6 +2,9 @@
 -- Pure observation mapping and JSONL encoding; no process handles or game writes.
 local M = {}
 local transition_tag = {}
+local function transitioning(reason)
+    error(setmetatable({tag=transition_tag}, {__tostring=function() return reason end}), 0)
+end
 function M.is_transition_error(value)
     return type(value) == 'table' and value.tag == transition_tag
 end
@@ -72,7 +75,7 @@ function M.capture_ashita(core, get_entity, client_id, observed_at, inventory)
     local memory = assert(core:GetMemoryManager(), 'Ashita memory manager unavailable')
     local party = assert(memory:GetParty(), 'Ashita party interface unavailable')
     local entity = assert(memory:GetEntity(), 'Ashita entity interface unavailable')
-    assert(integer(party:GetMemberIsActive(0), 0, 4294967295) ~= 0, 'player party slot is inactive')
+    if integer(party:GetMemberIsActive(0), 0, 4294967295) == 0 then transitioning('player party slot is inactive') end
     local server_id = integer(party:GetMemberServerId(0), 1, 4294967295)
     local index = integer(party:GetMemberTargetIndex(0), 1, 65535)
     local name = text(party:GetMemberName(0), true)
@@ -87,7 +90,7 @@ function M.capture_ashita(core, get_entity, client_id, observed_at, inventory)
                 heading = number(entity:GetHeading(slot))}
     end
     if get_entity(index) == nil or entity:GetName(index) ~= name then
-        error(setmetatable({tag=transition_tag}, {__tostring=function() return 'player identity mismatch' end}), 0)
+        transitioning('player identity mismatch')
     end
     local frame = {schema_version = 1, client_id = client_id,
         client_version = 'unverified-ashita-v4-api', character = name,
@@ -160,10 +163,11 @@ function M.capture_ashita(core, get_entity, client_id, observed_at, inventory)
         and (subtarget_active == nil or target:GetIsSubTargetActive() == subtarget_active)
         and (original_index == nil or target:GetTargetIndex(1) == original_index),
         'target changed while sampling; restart observation explicitly')
-    assert(party:GetMemberIsActive(0) ~= 0 and party:GetMemberServerId(0) == server_id
+    if not (party:GetMemberIsActive(0) ~= 0 and party:GetMemberServerId(0) == server_id
         and party:GetMemberTargetIndex(0) == index and party:GetMemberName(0) == name
-        and party:GetMemberZone(0) == zone,
-        'client changed while sampling; restart observation explicitly')
+        and party:GetMemberZone(0) == zone) then
+        transitioning('client changed while sampling')
+    end
     return frame
 end
 
