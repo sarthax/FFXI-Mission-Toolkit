@@ -65,6 +65,7 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   <datalist id="ashita-live-clients"></datalist>
   <label><input id="ashita-live-entities" type="checkbox"> Nearby entities</label>
   <label><input id="ashita-live-follow" type="checkbox"> Follow player (orbit)</label>
+  <label><input id="ashita-live-autozone" type="checkbox"> Follow zone changes</label>
   <label>Axis preview <select id="ashita-live-axes">
     <option value="legacy">Legacy X,-Y,-Z</option>
     <option value="xyz">Raw X,Y,Z</option>
@@ -206,6 +207,13 @@ const liveClient = document.getElementById('ashita-live-client');
 const liveStatus = document.getElementById('ashita-live-status');
 const liveEntitiesToggle = document.getElementById('ashita-live-entities');
 const liveFollowToggle = document.getElementById('ashita-live-follow');
+const liveAutoZoneToggle = document.getElementById('ashita-live-autozone');
+const liveQuery = new URLSearchParams(location.search);
+if (liveQuery.get('live') === '1' && /^[a-zA-Z0-9_-]{1,64}$/.test(liveQuery.get('client') || '')) {
+  liveClient.value = liveQuery.get('client');
+  liveToggle.checked = true;
+  liveAutoZoneToggle.checked = liveQuery.get('autozone') === '1';
+}
 const liveAxes = document.getElementById('ashita-live-axes');
 function projectLivePoint(p) {
   if (liveAxes.value === 'xyz') return new THREE.Vector3(p.x,p.y,p.z);
@@ -253,6 +261,19 @@ function clearLiveMarker() {
   liveMarker.material.dispose();
   liveMarker = null;
 }
+async function checkLiveZone(clientId, requestId) {
+  try {
+    const response = await fetch('/live-client/bridge/status/' + encodeURIComponent(clientId), {cache:'no-store'});
+    if (!response.ok) return;
+    const status = await response.json();
+    if (requestId !== lastLiveRequest || !liveToggle.checked || !liveAutoZoneToggle.checked ||
+        clientId !== liveClient.value.trim() || !status.connected || !status.snapshot) return;
+    const zone = Number(status.snapshot.zone_id);
+    if (!Number.isInteger(zone) || zone < 1 || zone > 65535 || zone === ZONEID) return;
+    const next = new URLSearchParams({live:'1',client:clientId,autozone:'1'});
+    location.assign('/zones/' + zone + '/view3d?' + next.toString());
+  } catch (_) { /* Stay on current map if receiver is unavailable. */ }
+}
 async function pollAshitaPosition() {
   if (!liveToggle.checked) { clearLiveMarker(); liveStatus.textContent = 'Off'; return; }
   const clientId = liveClient.value.trim();
@@ -267,7 +288,10 @@ async function pollAshitaPosition() {
     const data = await response.json();
     if (requestId !== lastLiveRequest || !liveToggle.checked || clientId !== liveClient.value.trim()) return;
     if (!data.visible || !data.player || !data.player.position) {
-      clearLiveMarker(); liveStatus.textContent = 'No fresh matching-zone telemetry'; return;
+      clearLiveMarker();
+      liveStatus.textContent = 'No fresh matching-zone telemetry';
+      if (liveAutoZoneToggle.checked) await checkLiveZone(clientId, requestId);
+      return;
     }
     const position = data.player.position;
     if (![position.x, position.y, position.z].every(Number.isFinite)) {
@@ -356,6 +380,7 @@ document.getElementById('ashita-live-copy').addEventListener('click', async () =
 });
 liveToggle.addEventListener('change', () => { ++lastLiveRequest; pollAshitaPosition(); });
 liveEntitiesToggle.addEventListener('change', pollAshitaPosition);
+liveAutoZoneToggle.addEventListener('change', pollAshitaPosition);
 liveAxes.addEventListener('change', () => { ++lastLiveRequest; clearLiveMarker(); pollAshitaPosition(); });
 liveClient.addEventListener('change', () => { ++lastLiveRequest; clearLiveMarker(); pollAshitaPosition(); });
 refreshLiveClients();

@@ -10,7 +10,8 @@ def test_zone_viewer_live_overlay_is_opt_in_and_uses_safe_projection():
     assert "/live-client/bridge/projection?client_id=" in content
     assert "&zone_id=' + ZONEID" in content
     assert "if (!data.visible || !data.player || !data.player.position)" in content
-    assert "clearLiveMarker(); liveStatus.textContent = 'No fresh matching-zone telemetry'" in content
+    assert "liveStatus.textContent = 'No fresh matching-zone telemetry'" in content
+    assert "if (liveAutoZoneToggle.checked) await checkLiveZone(clientId, requestId)" in content
     assert "const current = projectLivePoint(position)" in content
     assert "liveMarker.position.copy(current)" in content
     assert "setInterval(pollAshitaPosition, 1500)" in content
@@ -63,3 +64,16 @@ def test_axis_preview_is_explicit_and_applies_to_entities():
     assert "marker.position.copy(projectLivePoint(point))" in content
     assert "axis_preview: liveAxes.value" in content
     assert "liveAxes.addEventListener('change'" in content
+
+
+def test_opt_in_auto_zone_navigation_requires_fresh_same_client_status():
+    content = (Path(__file__).resolve().parents[1] / "gui/templates/zone_view3d.html").read_text(encoding="utf-8")
+    assert 'id="ashita-live-autozone" type="checkbox"' in content
+    assert "liveAutoZoneToggle.checked" in content
+    assert "status.connected || !status.snapshot" in content
+    assert "requestId !== lastLiveRequest" in content
+    assert "zone === ZONEID" in content
+    assert "Number.isInteger(zone)" in content
+    assert "location.assign('/zones/' + zone + '/view3d?'" in content
+    assert "liveQuery.get('live') === '1'" in content
+    assert "new URLSearchParams({live:'1',client:clientId,autozone:'1'})" in content

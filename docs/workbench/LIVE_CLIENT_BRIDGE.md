@@ -732,3 +732,17 @@ The shortcut appears only with fresh, valid connected telemetry. It does not
 move the game character, perform writes or change zones automatically.
 Downloaded private credentials still require installation into the Ashita
 addon directory and an explicit addon reload.
+
+
+### Optional follow-zone 3D viewer navigation
+
+After enabling **Live Ashita position**, the viewer can optionally enable
+**Follow zone changes**. When the current zone no longer matches fresh live
+telemetry, the viewer checks the selected client's connected status and
+navigates to that zone's 3D viewer. It retains the selected client ID and
+re-enables live viewing on the destination page only through explicit opt-in
+query parameters. It does not follow stale/disconnected/invalid data, change
+zones inside the game, retain credentials in URLs, or write server state.
+Only the client and follow-zone preferences survive the page navigation;
+other visualization toggles reset to their defaults. If zoning interrupts
+direct telemetry, the view stays on the current zone until the feed resumes.
