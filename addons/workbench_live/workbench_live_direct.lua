@@ -18,7 +18,8 @@ function M.new(options)
         if not ok then return false, tostring(frame) end
         local source = frame.source_identity or frame.character
         if type(source) ~= 'string' or #source == 0 then return false, 'invalid player identity' end
-        if not options.start_bridge(id) then return false, 'bridge connection not configured' end
+        local started, reason = options.start_bridge(id)
+        if not started then return false, 'bridge not started: '..tostring(reason or 'unknown reason') end
         client_id, identity, last_attempt, paused, stable_zone, stable_count, reconnect_since = id, source, nil, nil, nil, 0, nil
         return true
     end

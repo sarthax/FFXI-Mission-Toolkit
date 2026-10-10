@@ -10,15 +10,17 @@ local bridge_config_ok, bridge_config = pcall(require, 'workbench_bridge_setting
 -- Lua require() returns true for a module that does not return a table.
 -- Treat malformed/legacy settings as disabled, never index a Boolean.
 local bridge_options = {enabled=false}
+local bridge_load_error = nil
 if bridge_config_ok and type(bridge_config) == 'table' then
     bridge_options = bridge_config
 else
+    bridge_load_error = bridge_config_ok and ('returned '..type(bridge_config)..' instead of a table') or tostring(bridge_config)
     print('Workbench Live: bridge settings missing or invalid; download fresh workbench_bridge_settings.lua from Direct Live Bridge.')
 end
-local bridge = require('workbench_bridge').new(bridge_options)
+local bridge = require('workbench_bridge').new(bridge_options, function(msg) print('Workbench Live: '..msg) end, bridge_load_error)
 local direct = require('workbench_live_direct').new({
     capture = function(id, now) return observation.capture_ashita(AshitaCore, GetEntity, id, now, false, true) end,
-    start_bridge = function(id) return bridge.start(id) end,
+    start_bridge = function(id) return bridge.start(id) end,  -- returns ok, reason,
     stop_bridge = function() bridge.stop() end,
     send = function(id, frame) return bridge.observe(id, frame) end,
     message = function(msg) print('Workbench Live: ' .. msg) end,
@@ -70,7 +72,7 @@ ashita.events.register('command', 'workbench_live_command', function(e)
         if args[3] == 'stop' then bridge.stop()
         elseif args[3] == 'start' then
             local context = exporter.context()
-            if context then bridge.start(context.client_id) else print('Workbench Live: start telemetry before bridge') end
+            if context then local ok, why = bridge.start(context.client_id); if not ok then print('Workbench Live: bridge not started: '..tostring(why)) end else print('Workbench Live: start telemetry before bridge') end
         elseif args[3] == 'status' then print('Workbench Live: Bridge '..(bridge.active() and 'active' or 'inactive'))
         else print('Workbench Live: use bridge start, bridge stop or bridge status') end
         return
