@@ -67,3 +67,48 @@ def test_installer_mutation_is_local_same_origin_and_explicit(tmp_path):
     applied = http.post("/live-client/bridge/installer/apply",json={**selection,"expected":report.json()},headers=origin)
     assert applied.status_code == 200
     assert len(applied.json()["created"]) == 6
+
+
+def test_upgrade_backs_up_existing_files_and_keeps_private_settings(tmp_path):
+    from workbench.runtime.live_client.ashita_install import preview_upgrade, upgrade_with_backup
+    (tmp_path / "addons" / "workbench_live").mkdir(parents=True)
+    addon = tmp_path / "addons" / "workbench_live"
+    (addon / "workbench_live.lua").write_text("old-addon", encoding="utf-8")
+    (addon / "workbench_bridge_settings.lua").write_text("PRIVATE", encoding="utf-8")
+    plan = preview_upgrade(str(tmp_path))
+    assert plan["mode"] == "backup_upgrade"
+    assert next(x for x in plan["files"] if x["name"] == "workbench_live.lua")["action"] == "replace_with_backup"
+    result = upgrade_with_backup(str(tmp_path), plan)
+    backup = Path(result["backup_directory"])
+    assert backup.parent == addon.parent
+    assert (backup / "workbench_live.lua").read_text() == "old-addon"
+    assert "addon.name = 'workbench_live'" in (addon / "workbench_live.lua").read_text()
+    assert (addon / "workbench_bridge_settings.lua").read_text() == "PRIVATE"
+
+
+def test_upgrade_rejects_stale_preview_without_touching_existing_files(tmp_path):
+    from workbench.runtime.live_client.ashita_install import preview_upgrade, upgrade_with_backup
+    addon = tmp_path / "addons" / "workbench_live"
+    addon.mkdir(parents=True)
+    entry = addon / "workbench_live.lua"
+    entry.write_text("old")
+    plan = preview_upgrade(str(tmp_path))
+    entry.write_text("changed")
+    with pytest.raises(ValueError, match="preview changed"):
+        upgrade_with_backup(str(tmp_path), plan)
+    assert entry.read_text() == "changed"
+    assert not list(addon.parent.glob("workbench_live_backup_*"))
+
+
+def test_upgrade_routes_require_same_origin(tmp_path):
+    (tmp_path / "addons").mkdir()
+    app = FastAPI()
+    app.include_router(create_bridge_management_router(ManagedLiveReceiver()))
+    http = TestClient(app)
+    selection = {"ashita_root": str(tmp_path)}
+    assert http.post("/live-client/bridge/installer/upgrade-preview", json=selection).status_code == 403
+    origin = {"origin": "http://testserver"}
+    plan = http.post("/live-client/bridge/installer/upgrade-preview", json=selection, headers=origin)
+    assert plan.status_code == 200
+    assert http.post("/live-client/bridge/installer/upgrade-apply", json={**selection,"expected":plan.json()}).status_code == 403
+    assert http.post("/live-client/bridge/installer/upgrade-apply",json={**selection,"expected":plan.json()},headers=origin).status_code == 200

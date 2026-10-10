@@ -809,3 +809,16 @@ are never replaced. The installer does not create or modify
 character, or connect to Ashita automatically. To upgrade an existing addon,
 inspect and back up the directory manually before replacing files. Runs only
 from a local same-origin browser; use the Windows machine hosting Ashita.
+
+
+### Opt-in backup-and-upgrade
+
+After installing the Ashita addon locally, use **Preview backup upgrade** to
+inspect differing addon files and **Backup and replace addon files** only after
+explicit browser confirmation. The upgrader verifies the exact preview, saves
+prior versions in a uniquely named sibling `workbench_live_backup_*`
+directory, verifies each backup hash, then installs current repository copies.
+It never replaces `workbench_bridge_settings.lua` and does not load or unload
+Ashita. Unload the addon before upgrades. If a filesystem error interrupts an
+upgrade, backup files remain for manual recovery; installation is not
+transactional across all files.

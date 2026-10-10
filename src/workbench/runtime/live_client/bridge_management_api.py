@@ -13,7 +13,8 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from .bridge_managed import ManagedLiveReceiver
-from .ashita_install import preview as preview_ashita_addon, install_missing as install_ashita_addon
+from .ashita_install import (preview as preview_ashita_addon, install_missing as install_ashita_addon,
+                             preview_upgrade as preview_ashita_upgrade, upgrade_with_backup as apply_ashita_upgrade)
 
 
 class AshitaInstallSelection(BaseModel):
@@ -64,6 +65,22 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
         require_same_origin(request)
         try:
             return install_ashita_addon(selection.ashita_root, selection.expected)
+        except (ValueError, OSError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    @router.post("/installer/upgrade-preview")
+    def installer_upgrade_preview(request: Request, selection: AshitaInstallSelection) -> dict:
+        require_same_origin(request)
+        try:
+            return preview_ashita_upgrade(selection.ashita_root)
+        except (ValueError, OSError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @router.post("/installer/upgrade-apply")
+    def installer_upgrade_apply(request: Request, selection: AshitaInstallConfirmation) -> dict:
+        require_same_origin(request)
+        try:
+            return apply_ashita_upgrade(selection.ashita_root, selection.expected)
         except (ValueError, OSError) as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 
