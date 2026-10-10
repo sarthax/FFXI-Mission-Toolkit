@@ -112,3 +112,48 @@ def test_upgrade_routes_require_same_origin(tmp_path):
     assert plan.status_code == 200
     assert http.post("/live-client/bridge/installer/upgrade-apply", json={**selection,"expected":plan.json()}).status_code == 403
     assert http.post("/live-client/bridge/installer/upgrade-apply",json={**selection,"expected":plan.json()},headers=origin).status_code == 200
+
+
+def test_failed_upgrade_keeps_verified_original_backup_and_reports_location(tmp_path, monkeypatch):
+    import workbench.runtime.live_client.ashita_install as installer
+    addon = tmp_path / "addons" / "workbench_live"
+    addon.mkdir(parents=True)
+    entry = addon / "workbench_live.lua"
+    entry.write_text("known-old")
+    plan = installer.preview_upgrade(str(tmp_path))
+    original_replace = installer.os.replace
+
+    def fail_replace(*args):
+        raise OSError("synthetic disk error")
+    monkeypatch.setattr(installer.os, "replace", fail_replace)
+    with pytest.raises(RuntimeError, match="backup directory:"):
+        installer.upgrade_with_backup(str(tmp_path), plan)
+    monkeypatch.setattr(installer.os, "replace", original_replace)
+    assert entry.read_text() == "known-old"
+    backups = list((tmp_path / "addons").glob("workbench_live_backup_*"))
+    assert len(backups) == 1
+    assert (backups[0] / "workbench_live.lua").read_text() == "known-old"
+    assert not list(addon.glob("*.tmp"))
+
+
+def test_upgrade_does_not_replace_with_symlink_target(tmp_path, monkeypatch):
+    import workbench.runtime.live_client.ashita_install as installer
+    addon = tmp_path / "addons" / "workbench_live"
+    addon.mkdir(parents=True)
+    entry = addon / "workbench_live.lua"
+    entry.write_text("old")
+    outside = tmp_path / "outside.lua"
+    outside.write_text("safe")
+    plan = installer.preview_upgrade(str(tmp_path))
+    actual_open = installer.Path.open
+
+    def redirect_on_staging(path, mode="r", *args, **kwargs):
+        if path.parent == addon and path.suffix == ".tmp" and mode == "xb":
+            entry.unlink()
+            entry.symlink_to(outside)
+        return actual_open(path, mode, *args, **kwargs)
+
+    monkeypatch.setattr(installer.Path, "open", redirect_on_staging)
+    with pytest.raises(RuntimeError, match="backup directory"):
+        installer.upgrade_with_backup(str(tmp_path), plan)
+    assert outside.read_text() == "safe"
