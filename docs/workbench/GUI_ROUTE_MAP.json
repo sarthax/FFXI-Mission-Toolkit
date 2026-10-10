@@ -2325,6 +2325,22 @@
       "disposition": "KEEP"
     },
     {
+      "method": "GET",
+      "path": "/wiki/translate/models",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/wiki/translate/model",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
       "method": "POST",
       "path": "/wiki/translation/start",
       "home": "Tools",

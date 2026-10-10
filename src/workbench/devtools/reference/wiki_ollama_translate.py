@@ -67,7 +67,29 @@ def translate(text: str, *, model: str, url: str = _DEFAULT_URL,
 
 
 def configured_model() -> str:
-    return os.environ.get("WIKI_TRANSLATE_OLLAMA_MODEL", "").strip()
+    """Env var wins (explicit override); otherwise the model saved from the Wiki page."""
+    env = os.environ.get("WIKI_TRANSLATE_OLLAMA_MODEL", "").strip()
+    if env:
+        return env
+    try:
+        import sqlite3
+        from contextlib import closing
+        from workbench.runtime import settings_store
+        with closing(sqlite3.connect(str(settings_store.DB_PATH), timeout=10)) as con:
+            return (settings_store.get(con, "wiki_translate_model") or "").strip()
+    except Exception:
+        return ""
+
+
+def installed_models(url: str = _DEFAULT_URL, timeout: int = 5) -> list[str]:
+    """Names of models installed in the loopback Ollama, or [] if it is unreachable."""
+    if url not in {_DEFAULT_URL, "http://localhost:11434/api/generate"}:
+        raise ValueError("Only loopback Ollama is allowed")
+    try:
+        with urllib.request.urlopen(url.rsplit("/api/", 1)[0] + "/api/tags", timeout=timeout) as response:
+            return sorted(m["name"] for m in json.load(response).get("models", []))
+    except Exception:
+        return []
 
 
 # Only visible textual blocks are translated; links/structural separators remain intact.

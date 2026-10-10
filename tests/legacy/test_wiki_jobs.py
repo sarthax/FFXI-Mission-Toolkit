@@ -32,7 +32,9 @@ def test_merge_keeps_existing_rows():
 def test_translate_without_engine():
     os.environ.pop("WIKI_TRANSLATE_CMD", None)
     c = sqlite3.connect(":memory:")
-    assert wiki_jobs.translate_cached(c, "WikiWikiJP", "T", "h", "text")["status"] == "NO_ENGINE"
+    from unittest.mock import patch
+    with patch("workbench.devtools.reference.wiki_ollama_translate.configured_model", return_value=""):
+        assert wiki_jobs.translate_cached(c, "WikiWikiJP", "T", "h", "text")["status"] == "NO_ENGINE"
 
 
 if __name__ == "__main__":

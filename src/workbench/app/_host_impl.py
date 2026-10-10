@@ -6176,6 +6176,31 @@ async def wiki_translation_batch_cancel(request: Request):
     return {"status": "cancellation_requested", "job_id": ident}
 
 
+@app.get("/wiki/translate/models")
+def wiki_translate_models():
+    from workbench.devtools.reference import wiki_ollama_translate as t
+    env = os.environ.get("WIKI_TRANSLATE_OLLAMA_MODEL", "").strip()
+    installed = t.installed_models()
+    return {"models": installed, "selected": t.configured_model(), "locked_by_env": bool(env),
+            "ollama_reachable": bool(installed)}
+
+
+@app.post("/wiki/translate/model")
+async def wiki_translate_model_save(request: Request):
+    from workbench.devtools.reference import wiki_ollama_translate as t
+    if os.environ.get("WIKI_TRANSLATE_OLLAMA_MODEL", "").strip():
+        return JSONResponse({"error": "Model is fixed by WIKI_TRANSLATE_OLLAMA_MODEL; unset it to choose here"}, status_code=409)
+    model = str((await request.form()).get("model") or "").strip()
+    if model and model not in t.installed_models():
+        return JSONResponse({"error": "Model is not installed in local Ollama"}, status_code=400)
+    con = get_con()
+    try:
+        settings_mod.set_many(con, {"wiki_translate_model": model})
+    finally:
+        con.close()
+    return {"status": "OK", "selected": model}
+
+
 @app.get("/wiki/translate")
 def wiki_translate(source: str, title: str):
     """Machine translation of a stored page, display-only; the stored original is untouched."""

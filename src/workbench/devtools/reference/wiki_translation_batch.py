@@ -46,7 +46,7 @@ def start(db, *, limit=10, retry_job=None):
         raise ValueError("Batch translation limit must be 10 or 50")
     model = wiki_ollama_translate.configured_model()
     if not model:
-        raise ValueError("Configure WIKI_TRANSLATE_OLLAMA_MODEL before starting")
+        raise ValueError("Choose a translation model in the Model dropdown before starting")
     with _LOCK:
         if _RUNNING:
             raise ValueError("A translation batch is already running")

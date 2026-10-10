@@ -240,6 +240,7 @@
     <h3>Japanese Wiki translation batches</h3>
     <p class="muted">Translate cached WikiWikiJP pages using the locally configured Ollama model. No network scraping. Translation drafts never overwrite Japanese source evidence.</p>
     <form id="wiki-translation-batch-form" class="wiki-actions">
+      <label>Model <select class="wiki-tr-model" aria-label="Ollama translation model"></select></label>
       <label>Batch size <select name="limit"><option value="10">10 pages</option><option value="50">50 pages</option></select></label>
       <button type="submit">Start translation</button>
     </form>
@@ -341,7 +342,7 @@
   {% if page_view.timestamp %}<span class="muted">rev {{ page_view.revision or '' }} · {{ page_view.timestamp }}</span>{% endif %}
   <span class="sp"></span>
   {% if page_view.url %}<a class="chip" href="{{ page_view.url }}" target="_blank" rel="noopener">Open source page ↗</a>{% endif %}
-  {% if page_view.is_ja %}<button type="button" id="tr-btn" data-source="{{ source }}" data-title="{{ title }}">Translate to English (machine)</button>{% endif %}
+  {% if page_view.is_ja %}<label>Model <select class="wiki-tr-model" aria-label="Ollama translation model"></select></label><button type="button" id="tr-btn" data-source="{{ source }}" data-title="{{ title }}">Translate to English (machine)</button>{% endif %}
 </div>
 {% if page_view.is_ja %}
 <div id="tr-out" class="warn" hidden role="status" aria-live="polite"></div>
@@ -1154,6 +1155,21 @@
       .finally(function(){if(button)button.disabled=false;});
   });}
   if(box && box.querySelector('.job-row')) poll();
+  (function(){
+    var sels=document.querySelectorAll('.wiki-tr-model');if(!sels.length)return;
+    function fill(d){sels.forEach(function(s){
+      s.replaceChildren();var none=document.createElement('option');none.value='';
+      none.textContent=d.ollama_reachable?'— choose a model —':'Ollama not reachable';s.appendChild(none);
+      d.models.forEach(function(m){var o=document.createElement('option');o.value=m;o.textContent=m;s.appendChild(o);});
+      if(d.selected&&d.models.indexOf(d.selected)<0){var o=document.createElement('option');o.value=d.selected;o.textContent=d.selected+' (not installed)';s.appendChild(o);}
+      s.value=d.selected||'';s.disabled=!!d.locked_by_env;s.title=d.locked_by_env?'Fixed by WIKI_TRANSLATE_OLLAMA_MODEL':'';});}
+    function load(){fetch('/wiki/translate/models').then(function(r){return r.json();}).then(fill).catch(function(){});}
+    sels.forEach(function(s){s.addEventListener('change',function(){
+      var fd=new FormData();fd.append('model',s.value);
+      fetch('/wiki/translate/model',{method:'POST',body:fd}).then(function(r){return r.json().then(function(d){if(!r.ok)throw Error(d.error||'HTTP '+r.status);return d;});})
+        .then(load).catch(function(e){alert('Could not save model: '+e.message);load();});});});
+    load();
+  })();
   var batchForm=document.getElementById('wiki-translation-batch-form');
   if(batchForm){
     var feedback=document.getElementById('wiki-translation-feedback');
@@ -1209,7 +1225,7 @@
     fetch('/wiki/translate?source='+encodeURIComponent(tb.dataset.source)+'&title='+encodeURIComponent(tb.dataset.title))
       .then(function(r){return r.json().then(function(d){if(!r.ok)throw Error(d.error||d.detail||'HTTP '+r.status);return d;});})
       .then(function(d){
-        if(d.status!=='OK')throw Error(d.status==='NO_ENGINE'?'No engine configured. Set WIKI_TRANSLATE_OLLAMA_MODEL or WIKI_TRANSLATE_CMD.':(d.error||d.status));
+        if(d.status!=='OK')throw Error(d.status==='NO_ENGINE'?'No translation model selected. Pick one from the Model dropdown.':(d.error||d.status));
         if(!Array.isArray(d.blocks)||!d.blocks.length){output.textContent='[machine translation, unverified]\\n'+d.text;return;}
         aligned.replaceChildren();
         d.blocks.forEach(function(b){

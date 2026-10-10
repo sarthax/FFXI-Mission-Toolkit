@@ -40,6 +40,7 @@ DEFAULTS = {
     "backup_retention_count": "10",
     "llm_base_url": "http://127.0.0.1:3000",
     "llm_default_model": "qwen2.5-coder:7b",
+    "wiki_translate_model": "",
     "ah_legacy_test_writes": "0",
     "ah_dsp_myisam_test_writes": "0",
     "ah_augmented_reward_test_writes": "0",
