@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 293,
+  "route_count": 303,
   "routes": [
     {
       "method": "GET",
@@ -2377,6 +2377,54 @@
       "path": "/wiki/translation/retry",
       "home": "Tools",
       "section": "Research > References",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/domains/campaign/overview.json",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/domains/salvage/overview.json",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/domains/campaign/mark",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/domains/campaign/rebuild",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/domains/salvage/mark",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/domains/salvage/rebuild",
+      "home": "Server",
+      "section": "Domain Research",
       "role": "action",
       "disposition": "KEEP"
     }
