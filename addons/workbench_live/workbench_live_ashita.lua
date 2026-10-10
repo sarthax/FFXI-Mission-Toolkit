@@ -9,7 +9,7 @@ local observation = require('workbench_observation')
 local bridge_config_ok, bridge_config = pcall(require, 'workbench_bridge_settings')
 local bridge = require('workbench_bridge').new(bridge_config_ok and bridge_config or {enabled=false})
 local direct = require('workbench_live_direct').new({
-    capture = function(id, now) return observation.capture_ashita(AshitaCore, GetEntity, id, now, false) end,
+    capture = function(id, now) return observation.capture_ashita(AshitaCore, GetEntity, id, now, false, true) end,
     start_bridge = function(id) return bridge.start(id) end,
     stop_bridge = function() bridge.stop() end,
     send = function(id, frame) return bridge.observe(id, frame) end,
