@@ -58,6 +58,13 @@ class BridgeMailbox:
                 return self._queues[lane].popleft()
         return None
 
+    def drain(self, lane: BridgeLane) -> int:
+        """Discard already-consumed messages on one lane; returns how many."""
+        queue = self._queues[lane]
+        count = len(queue)
+        queue.clear()
+        return count
+
     def pending(self, lane: BridgeLane) -> int:
         return len(self._queues[lane])
 

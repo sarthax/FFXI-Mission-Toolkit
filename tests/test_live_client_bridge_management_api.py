@@ -125,11 +125,8 @@ def test_client_specific_setup_command_and_private_config_invalidation():
 
 
 def test_downloaded_bridge_settings_use_real_lua_line_breaks():
-    """JavaScript must emit newline characters, not literal backslash-n in Lua."""
-    from pathlib import Path
-    html = (Path(__file__).resolve().parents[1] / "gui/templates/live_client_bridge.html").read_text(encoding="utf-8")
-    start = html.index("const lua='-- Private workbench_bridge_settings.lua")
-    end = html.index(" privateConfig=lua;", start)
-    builder = html[start:end]
-    assert r"\\n" not in builder, "literal backslash-n comments out the entire Lua settings file"
-    assert r"\n" in builder
+    """Generated Lua must contain newline characters, not literal backslash-n."""
+    from workbench.runtime.live_client.bridge_settings_file import render_settings_lua
+    text = render_settings_lua({"port": 1234, "session_id": "s", "generation": "g", "token": "t" * 43})
+    assert chr(92)+"n" not in text and text.count(chr(10)) > 10
+    assert text.startswith("-- Private workbench_bridge_settings.lua")

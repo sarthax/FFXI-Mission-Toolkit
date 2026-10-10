@@ -21,8 +21,10 @@ class PeerIdentity:
 
 
 class LocalPeerRegistry:
-    def __init__(self, *, ttl_seconds: float = 30):
-        if type(ttl_seconds) not in (float, int) or not 1 <= ttl_seconds <= 3600:
+    def __init__(self, *, ttl_seconds: float = 30, max_ttl_seconds: float = 3600):
+        if max_ttl_seconds not in (3600, 7 * 86400):
+            raise ValueError("invalid peer lease cap")
+        if type(ttl_seconds) not in (float, int) or not 1 <= ttl_seconds <= max_ttl_seconds:
             raise ValueError("invalid peer lease")
         self.ttl_seconds = ttl_seconds
         self._peers: dict[str, tuple[PeerIdentity, str, float]] = {}
@@ -37,6 +39,14 @@ class LocalPeerRegistry:
         token = secrets.token_urlsafe(32)
         self._peers[identity.client_id] = (identity, token, clock + self.ttl_seconds)
         return token
+
+    def restore(self, identity: PeerIdentity, token: str, *, now: float | None = None) -> None:
+        """Re-register previously issued credentials (opt-in persisted setup)."""
+        if type(token) is not str or not 32 <= len(token) <= 256:
+            raise ValueError("invalid restored bridge token")
+        self.issue(identity, now=now)  # validates identity and clock
+        _, _, expiry = self._peers[identity.client_id]
+        self._peers[identity.client_id] = (identity, token, expiry)
 
     def authenticate(self, identity: PeerIdentity, token: str, *,
                      now: float | None = None) -> bool:

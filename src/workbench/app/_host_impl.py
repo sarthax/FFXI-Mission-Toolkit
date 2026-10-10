@@ -173,7 +173,10 @@ app.include_router(create_replay_console_router(render_live_client_console))
 # Opt-in local Live Bridge management; disabled until explicitly started in UI.
 from workbench.runtime.live_client.bridge_managed import ManagedLiveReceiver
 from workbench.runtime.live_client.bridge_management_api import create_bridge_management_router
-live_client_bridge_manager = ManagedLiveReceiver()
+from pathlib import Path as _BridgePath
+# Opt-in persistence: fixed port + credentials survive Toolkit restarts (private, gitignored).
+live_client_bridge_manager = ManagedLiveReceiver(
+    state_path=_BridgePath(__file__).resolve().parents[3] / "data" / "live_client_bridge_state.json")
 
 
 from workbench.runtime.live_client.setup_api import create_recording_upload_router
