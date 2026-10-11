@@ -23,12 +23,12 @@ def test_bounded_queue_and_flush(tmp_path):
     assert spool.health()["rejected"] == 1
     assert spool.drain() == 2
     # Producer records source loss and continues with the next sequence.
-    assert spool.enqueue(packet(3, dropped_before=1))
+    assert spool.enqueue(packet(4, dropped_before=1))
     spool.close()
     assert spool.health()["persisted"] == 3
     assert spool.health()["queued"] == 0
     rows = [json.loads(line) for path in tmp_path.glob("*.jsonl") for line in path.read_text().splitlines()]
-    assert [x["sequence"] for x in rows] == [1, 2, 3]
+    assert [x["sequence"] for x in rows] == [1, 2, 4]
 
 
 def test_reject_wrong_client(tmp_path):
