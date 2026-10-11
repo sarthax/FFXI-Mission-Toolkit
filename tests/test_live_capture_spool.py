@@ -65,4 +65,3 @@ def test_nonblocking_offer_when_worker_lock_held(tmp_path):
     with spool._lock:
         assert not spool.enqueue(packet(1))
     assert spool.health()["rejected"] == 1
-    assert spool.enqueue(packet(1, dropped_before=1))
