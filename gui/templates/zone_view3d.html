@@ -162,6 +162,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
 <div id="viewer-container" style="width:100%; height:640px; border:1px solid var(--border); border-radius:8px; background:#0a0d10; position:relative;">
   <nav id="zone3d-toolrail" aria-label="Viewer tools">
     <button type="button" data-viewer-tab="layers" aria-selected="false" title="Display layers and rendering">Layers</button>
+    <button type="button" id="zone3d-quick-find" title="Find an entity (/)">Find</button>
     <button type="button" data-viewer-tab="camera" aria-selected="false" title="Navigation and viewpoints">Camera</button>
     <button type="button" data-viewer-tab="live" aria-selected="false" title="Live Ashita overlay">Live</button>
     <button type="button" data-viewer-tab="capture" aria-selected="false" title="Capture context and entity search">Capture</button>
@@ -253,6 +254,29 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
     document.getElementById('zone3d-drawer-title').textContent = names[tab] || 'Viewer settings';
   }
   buttons.forEach(button => button.addEventListener('click', () => showTab(button.dataset.viewerTab)));
+  const quickFind = document.getElementById('zone3d-quick-find');
+  function openEntitySearch() {
+    if (panel.hidden || panel.dataset.activeTab !== 'camera') showTab('camera');
+    const focusGroup = document.getElementById('zone3d-focus-search')?.closest('details');
+    if (focusGroup) focusGroup.open = true;
+    document.getElementById('zone3d-focus-search')?.focus();
+  }
+  quickFind.addEventListener('click', openEntitySearch);
+  document.addEventListener('keydown', event => {
+    const target = event.target;
+    const typing = target instanceof HTMLElement &&
+      (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+    if (typing || event.altKey || event.ctrlKey || event.metaKey || event.repeat ||
+        document.pointerLockElement) return;
+    if (event.key === '/') {
+      event.preventDefault();
+      openEntitySearch();
+    } else if (event.key.toLowerCase() === 'f') {
+      const focusButton = document.getElementById('zone3d-focus-spawn-button');
+      if (!focusButton?.disabled) { event.preventDefault(); focusButton.click(); }
+    }
+  });
+
   document.getElementById('zone3d-hide-tools').addEventListener('click', () => {
     panel.hidden = true;
     for (const button of buttons) button.setAttribute('aria-selected', 'false');
