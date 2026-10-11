@@ -116,8 +116,36 @@ function M.new(options, notify, load_error)
                 for i=1,4 do count=count*256+header:byte(i) end
                 assert(count>0 and count<=2048, 'invalid heartbeat response size')
                 local response=assert(peer:receive(count))
-                assert(response:find('"kind":"heartbeat"',1,true), 'no heartbeat response')
-                assert(response:find('"payload_base64":"cmVhZF9vbmx5"',1,true), 'receiver not in read-only mode')
+                assert(response:find('"client_id":'..json_string(source),1,true), 'receiver identity mismatch')
+                assert(response:find('"session_id":'..json_string(options.session_id),1,true), 'receiver session mismatch')
+                assert(response:find('"generation":'..json_string(options.generation),1,true), 'receiver generation mismatch')
+                local is_probe = response:find('"kind":"command"',1,true) ~= nil
+                assert(is_probe or response:find('"kind":"heartbeat"',1,true), 'invalid control response')
+                if is_probe then
+                    assert(response:find('"payload_base64":"Y2FwYWJpbGl0aWVzX3Byb2Jl"',1,true),
+                           'unsupported control command')
+                else
+                    assert(response:find('"payload_base64":"cmVhZF9vbmx5"',1,true),
+                           'receiver not in read-only mode')
+                end
+                if is_probe then
+                    local request_id=response:match('"request_id":"([%w_.:-]+)"')
+                    assert(request_id and #request_id <= 128, 'invalid control request id')
+                    sequence = sequence + 1
+                    local reject='{"schema_version":1,"lane":"control","kind":"reject","client_id":'
+                        ..json_string(source)..',"session_id":'..json_string(options.session_id)
+                        ..',"generation":'..json_string(options.generation)..',"sequence":'..sequence
+                        ..',"request_id":'..json_string(request_id)
+                        ..',"payload_base64":"dW5zdXBwb3J0ZWRfZ2FtZV93cml0ZXM="}'
+                    local reply_peer=assert(options.connect(options.host,options.port))
+                    local sent, send_error=pcall(function()
+                        assert(reply_peer:settimeout(0.5), 'cannot set response timeout')
+                        assert(reply_peer:send(length_prefix(#hello,2)..hello), 'response handshake failed')
+                        assert(reply_peer:send(length_prefix(#reject,4)..reject), 'response frame failed')
+                    end)
+                    pcall(function() reply_peer:close() end)
+                    assert(sent,send_error)
+                end
                 assert(response:find('"client_id":'..json_string(source),1,true), 'receiver identity mismatch')
                 assert(response:find('"generation":'..json_string(options.generation),1,true), 'receiver generation mismatch')
             end)

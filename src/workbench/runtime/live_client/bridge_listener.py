@@ -12,6 +12,8 @@ from .bridge_loopback import listen
 from .bridge_peers import LocalPeerRegistry
 from .bridge_protocol import BridgeEnvelope
 from .bridge_mailbox import BridgeMailbox
+from .bridge_control_broker import ControlBroker
+from .bridge_peers import PeerIdentity
 
 
 @dataclass
@@ -20,6 +22,7 @@ class BridgeListener:
     host: str = "127.0.0.1"
     port: int = 0
     timeout: float = 2.0
+    controls: ControlBroker | None = None
     max_messages: int = 256
     _server: socket.socket | None = field(default=None, init=False, repr=False)
     _mailboxes: dict[str, BridgeMailbox] = field(default_factory=dict, init=False, repr=False)
@@ -51,9 +54,18 @@ class BridgeListener:
                 response = BridgeEnvelope(1, BridgeLane.CONTROL, BridgeKind.HEARTBEAT,
                     probe.client_id, probe.session_id, probe.generation, probe.sequence + 1,
                     None, b'read_only')
+                if self.controls is not None:
+                    pending = self.controls.next_for(PeerIdentity(probe.client_id, probe.session_id, probe.generation), now=now)
+                    if pending is not None:
+                        response = pending
                 send(connection, response)
-        # A heartbeat probe is observational; do not store it in the telemetry mailbox.
-        if len(messages) == 1 and messages[0].kind.value == 'heartbeat':
+        # Control probes and their responses are handled without telemetry queue mutation.
+        if len(messages) == 1 and messages[0].lane.value == 'control':
+            msg = messages[0]
+            if msg.kind.value in ('ack', 'reject'):
+                if self.controls is None or not self.controls.resolve(
+                    PeerIdentity(msg.client_id, msg.session_id, msg.generation), msg, now=now):
+                    raise PermissionError('unknown or stale control response')
             return messages
         # Reject the entire batch before any queue mutation if it spans identities.
         if messages:

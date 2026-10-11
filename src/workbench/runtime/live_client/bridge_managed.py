@@ -10,6 +10,7 @@ import threading
 import time
 
 from .bridge_listener import BridgeListener
+from .bridge_control_broker import ControlBroker
 from .bridge_live_feeds import BridgeLiveFeeds
 from .bridge_peers import LocalPeerRegistry, PeerIdentity
 from .bridge_state import BridgeState
@@ -22,6 +23,7 @@ class ManagedLiveReceiver:
     state_path: Path | None = None  # opt-in persistence of port + credentials
     peers: LocalPeerRegistry = field(default=None)
     listener: BridgeListener = field(init=False)
+    controls: ControlBroker = field(default_factory=ControlBroker)
     feeds: BridgeLiveFeeds = field(init=False)
     _thread: threading.Thread | None = field(default=None, init=False, repr=False)
     _stopping: threading.Event = field(default_factory=threading.Event, init=False, repr=False)
@@ -92,6 +94,7 @@ class ManagedLiveReceiver:
             for target in targets:
                 self.peers.revoke(target)
                 self._known_clients.discard(target)
+                self.controls.cancel(target)
                 self.feeds.forget(target)
                 self._last_received.pop(target, None)
 
@@ -112,6 +115,7 @@ class ManagedLiveReceiver:
             identity = PeerIdentity(client_id, secrets.token_hex(12), secrets.token_hex(12))
             token = self.peers.issue(identity)
             self._known_clients.add(client_id)
+            self.controls.cancel(client_id)
             self.feeds.forget(client_id)
             self._last_received.pop(client_id, None)
             if self._state is not None:
@@ -162,6 +166,7 @@ class ManagedLiveReceiver:
         if thread is not None:
             thread.join(timeout=3)
         with self._lock:
+            self.controls.cancel()
             self.listener.stop()
             # Shutdown invalidates every previously issued session/credential.
             self.peers = self._new_peers()

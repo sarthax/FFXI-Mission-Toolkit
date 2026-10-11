@@ -41,6 +41,12 @@ selected-target observations. If an older copy reports "entity zone does not
 match player zone", replace `workbench_observation.lua`, unload the addon with
 `/addon unload workbench_live`, and load it again before starting a fresh export.
 
+## Read-only command delivery verification
+
+With Direct Live Bridge running and live telemetry connected, queue a capability probe from the local Toolkit using `POST /live-client/bridge/control/probe` with `{"client_id":"ashita-a"}` and the normal local same-origin browser session. Then run `/wblive bridge ping` in that Ashita instance. The server sends a single allowlisted `capabilities_probe` command and the addon replies `reject` / `unsupported_game_writes` over a separate authenticated loopback connection. Check `GET /live-client/bridge/control/probe/ashita-a` for `rejected` (not executed). Requests expire after ten seconds and are never replayed to a different client or addon generation. Use the next bridge ping promptly after queuing.
+
+This is a **control transport test only**. It does not offer a movement command, access game memory, inject FFXI packets or enable any real writes.
+
 ## Read-only bridge response test
 
 With the local bridge and live addon started, run `/wblive bridge ping`. This checks an authenticated, same-socket heartbeat response from the Toolkit. No game commands, memory writes, or movement packets are enabled. This is a transport readiness check only.
