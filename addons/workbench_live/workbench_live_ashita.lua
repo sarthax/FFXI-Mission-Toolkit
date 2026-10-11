@@ -6,6 +6,7 @@ addon.version = '0.4.0-experimental'
 addon.desc = 'Read-only observation export; client build unverified.'
 require('common')
 local observation = require('workbench_observation')
+local movement_audit = require('workbench_movement_audit')
 local bridge_config_ok, bridge_config = pcall(require, 'workbench_bridge_settings')
 -- Lua require() returns true for a module that does not return a table.
 -- Treat malformed/legacy settings as disabled, never index a Boolean.
@@ -83,6 +84,14 @@ ashita.events.register('command', 'workbench_live_command', function(e)
         elseif args[3] == 'stop' then direct.stop('Direct live telemetry stopped')
         elseif args[3] == 'status' then print('Workbench Live: direct telemetry '..(direct.active() and 'active' or 'inactive'))
         else print('Workbench Live: use live start <id>, live stop, live status') end
+        return
+    end
+    if args[2] == 'movement' and args[3] == 'audit' then
+        local packet_manager = nil
+        local ok, value = pcall(function() return AshitaCore:GetPacketManager() end)
+        if ok then packet_manager = value end
+        local report = movement_audit.inspect(AshitaCore, GetEntity, packet_manager)
+        print('Workbench Live: '..movement_audit.summary(report))
         return
     end
     if args[2] == 'packets' then packets.command(args[3], args[4]); return end

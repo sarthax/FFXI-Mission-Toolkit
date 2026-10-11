@@ -17,6 +17,7 @@ MANIFEST = {
     "workbench_packets.lua": "workbench_packets.lua",
     "workbench_bridge.lua": "workbench_bridge.lua",
     "workbench_live_direct.lua": "workbench_live_direct.lua",
+    "workbench_movement_audit.lua": "workbench_movement_audit.lua",
 }
 
 

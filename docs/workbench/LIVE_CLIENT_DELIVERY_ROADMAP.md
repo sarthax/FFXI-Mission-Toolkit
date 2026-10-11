@@ -57,6 +57,8 @@ A read-only `capabilities_probe` now travels from a same-origin Toolkit request 
 
 **Acceptance:** Two-client synthetic tests show that commands cannot cross identities/zones, timed-out or stale requests cannot execute later, STOP remains available under overload, and reconnect disarms. Windows loopback latency measured without enabling actual game writes.
 
+Ashita v4 source-only capability audit: `/wblive movement audit` checks available Lua method names without executing writes, reading addresses or modifying outgoing packets. Windows results remain pending; method presence is not permission or verified functionality.
+
 ### P3 — First authorized movement action (explicit go/no-go)
 
 **B8. Capability feasibility:** Verify an Ashita v4-supported command API against actual installed version, or document why a narrowly scoped native Windows adapter is needed. Audit Project Tako/Clipper reference behavior and licenses; do not copy incompatible code. Require test client/environment ownership, exact build identity and opt-in authorization.
