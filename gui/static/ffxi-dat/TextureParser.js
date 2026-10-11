@@ -29,9 +29,11 @@ function decompressDXT1(data, width, height) {
         pal[11] = 255;
         pal[15] = 255;
       } else {
+        // DXT1 three-color mode: palette entry 3 is transparent, not opaque black.
+        // A wrong alpha=255 here produces black rectangles behind vegetation.
         for (let i = 0; i < 3; i++) pal[8 + i] = (pal[i] + pal[4 + i]) / 2 | 0;
         pal[11] = 255;
-        pal[15] = 255;
+        pal[15] = 0;
       }
       for (let py = 0; py < 4; py++) {
         for (let px = 0; px < 4; px++) {
