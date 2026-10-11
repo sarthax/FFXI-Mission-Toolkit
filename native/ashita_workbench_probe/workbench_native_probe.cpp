@@ -4,6 +4,13 @@
 #include <cstring>
 #include <cmath>
 #include <cstdio>
+#include <type_traits>
+
+// Compile-time SDK signature gate only: these methods are never invoked.
+using XYZSetter = void (IEntity::*)(uint32_t, float) const;
+static_assert(std::is_same_v<decltype(&IEntity::SetLocalPositionX), XYZSetter>);
+static_assert(std::is_same_v<decltype(&IEntity::SetLocalPositionY), XYZSetter>);
+static_assert(std::is_same_v<decltype(&IEntity::SetLocalPositionZ), XYZSetter>);
 
 class WorkbenchNativeProbe final : public IPlugin {
     IAshitaCore* core_ = nullptr;
@@ -31,7 +38,13 @@ public:
         const char* rest = command + sizeof(prefix)-1;
         while (*rest == ' ') ++rest;
         const bool position = std::strcmp(rest, "position") == 0;
-        if (*rest != '\0' && !position) return false;
+        const bool capabilities = std::strcmp(rest, "capabilities") == 0;
+        if (*rest != '\0' && !position && !capabilities) return false;
+        if (capabilities) {
+            if (core_) core_->GetChatManager()->Write(1, false,
+                "[WorkbenchNativeProbe] Native XYZ setters declared; writes=disabled; server acceptance=unverified.");
+            return true;
+        }
         if (position) {
             auto* memory = core_ ? core_->GetMemoryManager() : nullptr;
             auto* party = memory ? memory->GetParty() : nullptr;
