@@ -1036,7 +1036,9 @@ def sniff_text_format(text: str) -> str | None:
     head = text[:4000]
     try:
         first = json.loads(head.splitlines()[0])
-        if isinstance(first, dict) and first.get('schema_version') == 1 and first.get('client_id') and first.get('session_id') and first.get('raw_hex') is not None and first.get('observed_at_ns') is not None:\n            return 'native_live_capture'\n        if isinstance(first, dict) and first.get('kind') == 'ashita_packet_observation':
+        if isinstance(first, dict) and first.get('schema_version') == 1 and first.get('client_id') and first.get('session_id') and first.get('raw_hex') is not None and first.get('observed_at_ns') is not None:
+            return 'native_live_capture'
+        if isinstance(first, dict) and first.get('kind') == 'ashita_packet_observation':
             return 'ashita_packets'
     except (ValueError, IndexError):
         pass
