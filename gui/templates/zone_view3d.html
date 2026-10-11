@@ -504,13 +504,18 @@ async function checkLiveZone(clientId, requestId) {
     location.assign('/zones/' + zone + '/view3d?' + next.toString());
   } catch (_) { /* Stay on current map if receiver is unavailable. */ }
 }
+let livePollInFlight = false;
 async function pollAshitaPosition() {
+  // A high requested refresh rate must not create overlapping HTTP calls; on a
+  // slower bridge the older code could discard every response as superseded.
+  if (livePollInFlight) return;
   if (!liveToggle.checked) { clearLiveMarker(); liveStatus.textContent = 'Off'; return; }
   const clientId = liveClient.value.trim();
   if (!/^[a-zA-Z0-9_-]{1,64}$/.test(clientId)) {
     clearLiveMarker(); liveStatus.textContent = 'Invalid client ID'; return;
   }
   const requestId = ++lastLiveRequest;
+  livePollInFlight = true;
   try {
     const url = '/live-client/bridge/projection?client_id=' + encodeURIComponent(clientId) + '&zone_id=' + ZONEID;
     const response = await fetch(url, {cache: 'no-store'});
@@ -606,6 +611,8 @@ async function pollAshitaPosition() {
   } catch (error) {
     if (requestId !== lastLiveRequest) return;
     clearLiveMarker(); liveStatus.textContent = 'Live unavailable: ' + error.message;
+  } finally {
+    livePollInFlight = false;
   }
 }
 document.getElementById('ashita-live-focus').addEventListener('click', () => {
