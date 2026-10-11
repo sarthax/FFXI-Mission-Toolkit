@@ -95,3 +95,47 @@ def test_rotated_segment_gap_rolls_back():
 
 def test_rotated_segment_drop_accounting():
     assert len(parse_segments([make_row(1), make_row(3, dropped_before=1)])) == 2
+
+def test_native_manifest_bundle_discovery(tmp_path):
+    import hashlib
+    from workbench.captures.live_capture_jsonl import parse_manifest
+    root = tmp_path / "capture"
+    root.mkdir()
+    first, second = make_row(1), make_row(2)
+    for n, payload in enumerate((first, second), 1):
+        (root / f"segment-{n:06d}.jsonl").write_bytes(payload)
+    entries = [
+        dict(filename=f"segment-{n:06d}.jsonl", sha256=hashlib.sha256(payload).hexdigest(),
+             first_sequence=n, last_sequence=n)
+        for n, payload in enumerate((first, second), 1)
+    ]
+    (root / "manifest.json").write_text(json.dumps(dict(
+        schema_version=1, client_id="ashita-a", session_id="capture-1",
+        segments=entries
+    )))
+    assert len(parse_manifest((root / "manifest.json").read_bytes())[2]) == 2
+    con = sqlite3.connect(":memory:")
+    bci.init_db(con)
+    bci.ingest(con, str(root))
+    assert con.execute(
+        "SELECT COUNT(*) FROM capture_raw_packets WHERE source_format='native_live_capture'"
+    ).fetchone()[0] == 2
+
+
+def test_native_manifest_corruption_cannot_partially_import(tmp_path):
+    import hashlib
+    root = tmp_path / "capture"
+    root.mkdir()
+    payload = make_row(1)
+    (root / "segment-000001.jsonl").write_bytes(payload)
+    (root / "manifest.json").write_text(json.dumps(dict(
+        schema_version=1, client_id="ashita-a", session_id="capture-1",
+        segments=[dict(filename="segment-000001.jsonl", sha256="0" * 64,
+                       first_sequence=1, last_sequence=1)]
+    )))
+    con = sqlite3.connect(":memory:")
+    bci.init_db(con)
+    bci.ingest(con, str(root))
+    assert con.execute(
+        "SELECT COUNT(*) FROM capture_raw_packets WHERE source_format='native_live_capture'"
+    ).fetchone()[0] == 0

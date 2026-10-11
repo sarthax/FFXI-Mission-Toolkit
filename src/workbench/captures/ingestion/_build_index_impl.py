@@ -3333,6 +3333,32 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
     # FFXI UDP chunk streams.
     all_source_names = sorted(src.list_files() if subroot is None
                               else [n for n in src.list_files() if n.startswith(subroot + "/")])
+    all_source_names_set = set(all_source_names)
+    # Completed native sessions are atomic: never import their segments separately.
+    for manifest_name in sorted(name for name in all_source_names if name.rsplit("/", 1)[-1] == "manifest.json"):
+        segment_names = []
+        try:
+            manifest_data = src.read_bytes(manifest_name)
+            prefix = manifest_name.rsplit("/", 1)[0] + "/" if "/" in manifest_name else ""
+            # Mark every sibling native segment as owned before validating the
+            # manifest. A corrupt manifest must not trigger partial imports.
+            segment_names = [name for name in all_source_names if name.startswith(prefix + "segment-") and name.endswith(".jsonl") and "/" not in name[len(prefix):]]
+            matched_names.add(manifest_name)
+            matched_names.update(segment_names)
+            _, _, segment_entries = live_capture_jsonl.parse_manifest(manifest_data)
+            referenced = [prefix + entry["filename"] for entry in segment_entries]
+            if any(name not in all_source_names_set for name in referenced):
+                raise ValueError("native session is missing a referenced segment")
+            if set(referenced) != set(segment_names):
+                raise ValueError("native session contains unlisted segments")
+            rows = live_capture_jsonl.ingest_manifest(con, capture_id, src, manifest_name)
+            counts["raw_packets"] += rows
+            if result_sink is not None:
+                result_sink.append({"filename": manifest_name, "rows": rows, "error": None})
+        except (ValueError, KeyError, OSError) as exc:
+            if result_sink is not None:
+                result_sink.append({"filename": manifest_name, "rows": 0, "error": str(exc)})
+
     for relname in all_source_names:
         if relname in matched_names:
             continue
