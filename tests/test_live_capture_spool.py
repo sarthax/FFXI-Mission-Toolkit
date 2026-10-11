@@ -45,3 +45,24 @@ def test_existing_segment_is_never_overwritten(tmp_path):
         spool.drain()
     assert spool.health()["fault"] is not None
     assert (tmp_path / "segment-000001.jsonl").read_text() == "existing"
+
+def test_disk_failure_preserves_queued_packet(tmp_path, monkeypatch):
+    spool = LiveCaptureSpool(tmp_path, "ashita-a", "s1")
+    assert spool.enqueue(packet(1))
+    def fail_open():
+        raise OSError("disk unavailable")
+    monkeypatch.setattr(spool, "_open_segment", fail_open)
+    with pytest.raises(OSError):
+        spool.drain()
+    health = spool.health()
+    assert health["queued"] == 1
+    assert health["persisted"] == 0
+    assert health["fault"] == "disk unavailable"
+
+
+def test_nonblocking_offer_when_worker_lock_held(tmp_path):
+    spool = LiveCaptureSpool(tmp_path, "ashita-a", "s1")
+    with spool._lock:
+        assert not spool.enqueue(packet(1))
+    assert spool.health()["rejected"] == 1
+    assert spool.enqueue(packet(1, dropped_before=1))
