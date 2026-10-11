@@ -986,10 +986,13 @@ function buildLiveZoneGroup(zoneData) {
   const group = new THREE.Group();
   const geoMap = new Map();
   const matMap = new Map();
+  // Material/texture evidence only. Keep parser data and rendering decisions separate.
+  const materialAudit = { prefabs: zoneData.prefabs.length, built: 0, skySkipped: 0, water: 0, alphaBlend: 0, textured: 0, missingTexture: 0, invalidTexture: 0 };
 
   for (let prefabIdx = 0; prefabIdx < zoneData.prefabs.length; prefabIdx++) {
     const prefab = zoneData.prefabs[prefabIdx];
-    if (isSkyWeatherMesh(prefab)) continue;
+    if (isSkyWeatherMesh(prefab)) { materialAudit.skySkipped++; continue; }
+    materialAudit.built++;
 
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(prefab.vertices), 3));
@@ -1006,7 +1009,14 @@ function buildLiveZoneGroup(zoneData) {
 
     const tex = zoneData.textures[prefab.materialIndex];
     let texture = null;
-    if (tex) {
+    if (!tex) {
+      materialAudit.missingTexture++;
+    } else if (!Number.isInteger(tex.width) || !Number.isInteger(tex.height) ||
+               tex.width <= 0 || tex.height <= 0 || !tex.rgba ||
+               tex.rgba.length !== tex.width * tex.height * 4) {
+      materialAudit.invalidTexture++;
+    } else {
+      materialAudit.textured++;
       texture = new THREE.DataTexture(new Uint8Array(tex.rgba), tex.width, tex.height, THREE.RGBAFormat);
       texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
       texture.needsUpdate = true;
@@ -1015,11 +1025,13 @@ function buildLiveZoneGroup(zoneData) {
     }
 
     if (isWaterMesh(prefab)) {
+      materialAudit.water++;
       const waterMat = createWaterMaterial(texture);
       waterMaterials.push(waterMat);
       matMap.set(prefabIdx, waterMat);
     } else {
       const useAlpha = prefab.blending > 0;
+      if (useAlpha) materialAudit.alphaBlend++;
       const mat = new THREE.MeshBasicMaterial({
         ...(texture && { map: texture }),
         vertexColors: true, side: THREE.DoubleSide,
@@ -1087,6 +1099,7 @@ function buildLiveZoneGroup(zoneData) {
     group.add(mesh);
   }
   group.userData.transformAudit = transformAudit;
+  group.userData.materialAudit = materialAudit;
   return group;
 }
 
@@ -1264,6 +1277,11 @@ if (LIVE_PARSE_AVAILABLE) {
     const audit = group.userData.transformAudit;
     const discarded = audit.missingPrefab + audit.invalidTransform;
     showMeshSource(`Client DAT · ${audit.accepted}/${audit.total} instances · ${audit.mirrored} mirrored${discarded ? ' · ' + discarded + ' skipped' : ''}`);
+    const materials = group.userData.materialAudit;
+    console.info('[ZoneViewer] zone material audit:', materials);
+    if (materials.missingTexture || materials.invalidTexture) {
+      console.warn('[ZoneViewer] some prefab textures are missing or invalid; falling back to untextured surfaces:', materials);
+    }
     if (discarded) console.warn('[ZoneViewer] excluded unrenderable instances (no fallback transform invented):', audit);
     if (!audit.accepted) throw new Error('No valid zone instance transforms');
     onZoneMeshReady(group);
