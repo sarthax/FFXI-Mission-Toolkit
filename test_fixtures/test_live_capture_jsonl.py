@@ -37,3 +37,6 @@ class NativeLiveCaptureJsonlTests(unittest.TestCase):
     def test_reject_unknown_fields(self):
         with self.assertRaises(ValueError):
             parse_session(row(1, arbitrary="bad"))
+
+    def test_reported_drop_gap_is_accepted(self):
+        assert len(parse_session(row(1) + row(3, dropped_before=1))) == 2
