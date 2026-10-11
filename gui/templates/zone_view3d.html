@@ -503,24 +503,34 @@ secondaryFocus.addEventListener('click', () => {
   const position = secondaryPositions.get(secondarySelect.value);
   if (!position || flyModeOn) return;
   secondaryFollow.checked = false;
+  liveFollowToggle.checked = false;
   secondaryFollowLast = null;
   const point = projectLivePoint(position);
   controls.target.copy(point);
   camera.position.copy(point).add(new THREE.Vector3(25,18,25));
   controls.update();
 });
-secondaryFollow.addEventListener('change', () => { secondaryFollowLast = null; });
+secondaryFollow.addEventListener('change', () => {
+  secondaryFollowLast = null;
+  if (secondaryFollow.checked) liveFollowToggle.checked = false;
+});
 
 let knownClientIds = [];
 let secondaryPollBusy = false;
 let secondaryPollGeneration = 0;
 let sampleStartedAt = 0;
+function disposeSecondaryMarker(marker) {
+  const arrow = marker.userData.direction;
+  if (arrow) {
+    arrow.line.geometry.dispose(); arrow.line.material.dispose();
+    arrow.cone.geometry.dispose(); arrow.cone.material.dispose();
+  }
+  scene.remove(marker); marker.geometry.dispose(); marker.material.dispose();
+}
 function clearOtherClientMarkers() {
   ++secondaryPollGeneration;
   for (const marker of otherClientMarkers.values()) {
-    scene.remove(marker);
-    marker.geometry.dispose();
-    marker.material.dispose();
+    disposeSecondaryMarker(marker);
   }
   otherClientMarkers.clear();
   secondaryPositions.clear();
@@ -576,7 +586,7 @@ async function refreshOtherClientMarkers() {
     }
     for (const [id, marker] of otherClientMarkers) {
       if (!visible.has(id)) {
-        scene.remove(marker); marker.geometry.dispose(); marker.material.dispose();
+        disposeSecondaryMarker(marker);
         otherClientMarkers.delete(id);
         secondaryPositions.delete(id);
       }
