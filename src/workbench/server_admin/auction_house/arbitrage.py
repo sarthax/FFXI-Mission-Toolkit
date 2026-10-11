@@ -21,7 +21,19 @@ _CHUNK = 400
 _MAX_ROWS = 500
 
 
-_STOCK = re.compile(r"stock\s*=\s*\{(.*?)\}", re.S)
+_STOCK_OPEN = re.compile(r"stock\s*=\s*\{")
+
+
+def _stock_blocks(text: str) -> list[str]:
+    """Bodies of every `stock = { ... }` table, brace-balanced so nested tables do not truncate the list."""
+    blocks: list[str] = []
+    for m in _STOCK_OPEN.finditer(text):
+        depth, pos = 1, m.end()
+        while pos < len(text) and depth:
+            depth += {"{": 1, "}": -1}.get(text[pos], 0)
+            pos += 1
+        blocks.append(text[m.end():pos - 1 if depth == 0 else pos])
+    return blocks
 
 
 _STOCK_OPEN = re.compile(r"stock\s*=\s*\{")
