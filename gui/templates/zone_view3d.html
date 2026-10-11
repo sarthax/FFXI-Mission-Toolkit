@@ -147,7 +147,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
   <div class="muted" style="font-size:11px;">Client-local result only: confirm with <code>!logpos</code>. Arbitrary points may be outside the navmesh (<code>!checknav x y z</code>). Raising uses a smaller Y (server Y is inverted). A bookmark in another zone warps automatically once you arrive there, while the plugin is armed.</div>
 </div>
 <div id="ashita-live-controls" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:5px 0;padding:6px;border:1px solid var(--border);border-radius:6px;">
-  <label><input id="ashita-live-toggle" type="checkbox"> Live Ashita position (read only)</label>
+  <label><input id="ashita-live-toggle" type="checkbox" checked> Live Ashita position (read only)</label>
   <label>Client ID <input id="ashita-live-client" value="ashita-a" list="ashita-live-clients" style="width:120px"></label>
   <datalist id="ashita-live-clients"></datalist>
   <label>Refresh <select id="ashita-live-refresh"><option value="1000">1 Hz</option><option value="200">5 Hz</option><option value="100" selected>10 Hz</option><option value="50">20 Hz</option></select></label>
@@ -163,7 +163,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
     <option value="xzy">X,Z,Y</option>
     <option value="x-z-y" selected>Ashita → server (X,-Z,-Y) · Windows-verified</option>
   </select></label>
-  <label>Heading preview <select id="ashita-live-heading"><option value="0">0°</option><option value="90">+90°</option><option value="180" selected>180° · Windows-verified</option><option value="270">+270°</option></select></label>
+  <label>Heading preview <select id="ashita-live-heading"><option value="0" selected>0° · current default</option><option value="90">+90°</option><option value="180">180°</option><option value="270">+270°</option></select></label>
   <button type="button" id="ashita-live-focus">Focus player</button>
   <button type="button" id="ashita-live-copy">Copy diagnostics</button>
   <button type="button" id="ashita-live-sample">Mark alignment point</button>
@@ -254,6 +254,8 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
     <button type="button" data-viewer-tab="camera" aria-selected="false" title="Navigation and viewpoints">Camera</button>
     <button type="button" data-viewer-tab="live" aria-selected="false" title="Live Ashita overlay">Live</button>
     <button type="button" data-viewer-tab="warp" aria-selected="false" title="Warp, nudge, coordinates, bookmarks (dev server)">Warp</button>
+    <button type="button" id="zone3d-quick-player" title="Focus camera on live player position">Player view</button>
+    <button type="button" id="zone3d-quick-warp-target" disabled title="Warp player to selected map target (requires armed native plugin)">Warp target</button>
     <button type="button" data-viewer-tab="capture" aria-selected="false" title="Capture context and entity search">Capture</button>
     <button type="button" data-viewer-tab="diagnostics" aria-selected="false" title="Mesh and material diagnostics">Info</button>
     <button type="button" id="zone3d-hide-tools" title="Close viewer settings">Hide</button>
@@ -721,14 +723,20 @@ function highlightObservedEntity() {
   }
 }
 function updateLiveEntityPicker() {
+  // Do not destroy the active <select> every 100ms: rebuilding while the
+  // browser's menu is open resets keyboard/mouse selection to the placeholder.
   const selectedId = liveSelectedEntityId;
-  liveEntitySelect.replaceChildren(new Option('Select observed entity', ''));
-  liveObservedEntities.forEach((entity, index) => {
-    const option = new Option((entity.n || 'Unnamed') + ' [' + (entity.id ?? '?') + ']', String(index));
-    liveEntitySelect.appendChild(option);
-  });
+  const options = liveObservedEntities.map((e, i) =>
+    ({value: String(e.id ?? ''), label: (e.n || 'Unnamed') + ' [' + (e.id ?? '?') + ']', index: i}));
+  const signature = JSON.stringify(options.map(e => [e.value, e.label]));
+  if (liveEntitySelect.dataset.signature !== signature) {
+    liveEntitySelect.replaceChildren(new Option('Select observed entity', ''));
+    options.forEach(e => liveEntitySelect.appendChild(new Option(e.label, String(e.index))));
+    liveEntitySelect.dataset.signature = signature;
+  }
   const restored = selectedId ? liveObservedEntities.findIndex(e => String(e.id ?? '') === selectedId) : -1;
-  liveEntitySelect.value = restored >= 0 ? String(restored) : '';
+  if (liveEntitySelect.value !== (restored >= 0 ? String(restored) : ''))
+    liveEntitySelect.value = restored >= 0 ? String(restored) : '';
   liveEntityInspect.disabled = liveEntitySelect.value === '';
   liveEntityCount.textContent = liveObservedEntities.length + ' live entities';
   highlightObservedEntity();
@@ -778,12 +786,15 @@ async function refreshLiveClients() {
     }
   } catch (_) {}
 }
-function clearLiveEntities() {
+function clearLiveEntities(preservePicker = false) {
   for (const child of liveEntityPool) child.visible = false;
   liveObservedEntities.length = 0;
-  liveEntitySelect.replaceChildren(new Option('Select observed entity', ''));
-  liveEntityInspect.disabled = true;
-  liveEntityCount.textContent = 'No live entities';
+  if (!preservePicker) {
+    liveEntitySelect.replaceChildren(new Option('Select observed entity', ''));
+    liveSelectedEntityId = '';
+    liveEntityInspect.disabled = true;
+    liveEntityCount.textContent = 'No live entities';
+  }
   highlightObservedEntity();
 }
 function clearLiveMarker() {
@@ -904,7 +915,7 @@ async function pollAshitaPosition() {
       controls.update();
       pendingLiveZoneFocus = false;
     }
-    clearLiveEntities();
+    clearLiveEntities(true);
     let entityCount = 0;
     if (liveEntitiesToggle.checked && Array.isArray(data.entities)) {
       for (const entity of data.entities.slice(0, 100)) {
@@ -1586,6 +1597,7 @@ function nwRefreshButtons() {
   nw.el('nw-disarm').disabled = !nw.armed;
   nw.el('nw-stop').disabled = !nw.armed;
   nw.el('nw-go').disabled = !(nw.armed && nw.target);
+  nw.el('zone3d-quick-warp-target').disabled = !(nw.armed && nw.target);
   nw.el('nw-coord-warp').disabled = !nw.armed;
   document.querySelectorAll('[data-nudge]').forEach(btn => { btn.disabled = !nw.armed; });
   nw.el('nw-speed-set').disabled = !nw.armed;
@@ -1631,6 +1643,8 @@ nw.el('nw-arm').addEventListener('click', async () => {
 });
 nw.el('nw-disarm').addEventListener('click', async () => { await nwPost('disarm'); nwPoll(); });
 nw.el('nw-stop').addEventListener('click', async () => { await nwPost('stop'); nwPoll(); });
+document.getElementById('zone3d-quick-player').addEventListener('click', () => document.getElementById('ashita-live-focus').click());
+document.getElementById('zone3d-quick-warp-target').addEventListener('click', () => nw.el('nw-go').click());
 nw.el('nw-go').addEventListener('click', async () => {
   if (!nw.target) return;
   const here = nw.status ? Number(nw.status.zone) : null;
