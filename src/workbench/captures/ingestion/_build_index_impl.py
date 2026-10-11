@@ -63,7 +63,7 @@ from pathlib import Path
 import entity_profile
 from workbench.core.services import capture_integrity
 from workbench.core.services import raw_packet_ingest
-from workbench.captures import ashita_packet_ingest
+from workbench.captures import ashita_packet_ingest, live_capture_jsonl
 from workbench.core.services import capture_chat
 from workbench.core.services import pcap_ingest
 
@@ -1036,6 +1036,8 @@ def sniff_text_format(text: str) -> str | None:
     head = text[:4000]
     try:
         first = json.loads(head.splitlines()[0])
+        if isinstance(first, dict) and first.get('schema_version') == 1 and first.get('client_id') and first.get('session_id') and first.get('raw_hex') is not None and first.get('observed_at_ns') is not None:
+            return 'native_live_capture'
         if isinstance(first, dict) and first.get('kind') == 'ashita_packet_observation':
             return 'ashita_packets'
     except (ValueError, IndexError):
@@ -1156,7 +1158,9 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
             else:
                 fmt = sniff_text_format(text)
             src = SingleFileSource(filename, data)
-            if fmt == "ashita_packets":
+            if fmt == "native_live_capture":
+                rows = live_capture_jsonl.ingest_session(con, capture_id, src, filename)
+            elif fmt == "ashita_packets":
                 rows = ashita_packet_ingest.ingest_ashita_packets(con, capture_id, src, filename)
             elif fmt == "packeteer":
                 rows = raw_packet_ingest.ingest_packeteer(con, capture_id, src, filename)
@@ -3333,11 +3337,14 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         if relname in matched_names:
             continue
         fmt = _capture_source_format(src, relname)
-        if fmt not in {"ashita_packets", "packetdb", "packeteer", "pcap", "pcapng"}:
+        if fmt not in {"native_live_capture", "ashita_packets", "packetdb", "packeteer", "pcap", "pcapng"}:
             continue
         matched_names.add(relname)
         try:
-            if fmt == "ashita_packets":
+            if fmt == "native_live_capture":
+                rows = live_capture_jsonl.ingest_session(con, capture_id, src, relname)
+                counts["raw_packets"] += rows
+            elif fmt == "ashita_packets":
                 rows = ashita_packet_ingest.ingest_ashita_packets(con, capture_id, src, relname)
                 counts["raw_packets"] += rows
             elif fmt == "packetdb":
@@ -3549,7 +3556,7 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
 REBUILDABLE_CAPTURE_FORMATS = {
     "eventview", "idview_simple", "eventview_session_simple", "eventview_session_raw",
     "kitrack", "hptrack", "actionview_simple", "caplog", "windower_logger", "packetlogger",
-    "ashita_packets", "packetdb", "packeteer", "pcap", "pcapng",
+    "native_live_capture", "ashita_packets", "packetdb", "packeteer", "pcap", "pcapng",
     "npclogger_db", "actionview_db", "levelrange_db",
     "npclogger_lua", "pathlog_csv", "pc_pathlog_csv", "widescan", "attackdelay",
 } | AUX_STRUCTURED_FORMATS
@@ -3776,7 +3783,9 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
         con.execute("SAVEPOINT capture_rebuild")
         try:
             deleted = _delete_exact_source_rows(con, capture_id, filename)
-            if fmt == "ashita_packets":
+            if fmt == "native_live_capture":
+                result = live_capture_jsonl.ingest_session(con, capture_id, src, filename)
+            elif fmt == "ashita_packets":
                 result = ashita_packet_ingest.ingest_ashita_packets(con, capture_id, src, filename)
             elif fmt == "packetdb":
                 result = raw_packet_ingest.ingest_packetdb(con, capture_id, src, filename)
