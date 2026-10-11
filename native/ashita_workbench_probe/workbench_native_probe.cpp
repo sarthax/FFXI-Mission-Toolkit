@@ -2,6 +2,8 @@
 // Deliberately no game memory access, packet mutations, or network transport.
 #include "Ashita.h"
 #include <cstring>
+#include <cmath>
+#include <cstdio>
 
 class WorkbenchNativeProbe final : public IPlugin {
     IAshitaCore* core_ = nullptr;
@@ -28,7 +30,40 @@ public:
         if (std::strncmp(command, prefix, sizeof(prefix)-1) != 0) return false;
         const char* rest = command + sizeof(prefix)-1;
         while (*rest == ' ') ++rest;
-        if (*rest != '\0') return false;
+        const bool position = std::strcmp(rest, "position") == 0;
+        if (*rest != '\0' && !position) return false;
+        if (position) {
+            auto* memory = core_ ? core_->GetMemoryManager() : nullptr;
+            auto* party = memory ? memory->GetParty() : nullptr;
+            auto* entities = memory ? memory->GetEntity() : nullptr;
+            if (!party || !entities || party->GetMemberIsActive(0) == 0 ||
+                party->GetMemberServerId(0) == 0 || party->GetMemberZone(0) == 0) {
+                if (core_) core_->GetChatManager()->Write(1, false,
+                    "[WorkbenchNativeProbe] Position unavailable: no active player.");
+                return true;
+            }
+            const uint32_t index = party->GetMemberIndex(0);
+            if (index == 0 || index >= entities->GetEntityMapSize()) {
+                core_->GetChatManager()->Write(1, false,
+                    "[WorkbenchNativeProbe] Position unavailable: invalid entity index.");
+                return true;
+            }
+            const float x = entities->GetLocalPositionX(index);
+            const float y = entities->GetLocalPositionY(index);
+            const float z = entities->GetLocalPositionZ(index);
+            if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z)) {
+                core_->GetChatManager()->Write(1, false,
+                    "[WorkbenchNativeProbe] Position unavailable: nonfinite coordinate.");
+                return true;
+            }
+            char output[256];
+            std::snprintf(output, sizeof(output),
+                "[WorkbenchNativeProbe] Read-only zone=%u entity=%u XYZ=(%.3f, %.3f, %.3f)",
+                static_cast<unsigned>(party->GetMemberZone(0)), static_cast<unsigned>(index),
+                static_cast<double>(x), static_cast<double>(y), static_cast<double>(z));
+            core_->GetChatManager()->Write(1, false, output);
+            return true;
+        }
         if (core_ != nullptr)
             core_->GetChatManager()->Write(1, false,
                 "[WorkbenchNativeProbe] SDK loaded; read-only; XYZ write=disabled; packet injection=disabled.");
