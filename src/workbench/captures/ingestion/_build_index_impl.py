@@ -3333,6 +3333,29 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
     # FFXI UDP chunk streams.
     all_source_names = sorted(src.list_files() if subroot is None
                               else [n for n in src.list_files() if n.startswith(subroot + "/")])
+    # A completed native session manifest owns its rotated segments. Import it
+    # atomically instead of treating each segment as a standalone recording.
+    for manifest_name in sorted(name for name in all_source_names if name.rsplit("/", 1)[-1] == "manifest.json"):
+        try:
+            manifest_data = src.read_bytes(manifest_name)
+            if b'"segments"' not in manifest_data or b'"schema_version"' not in manifest_data:
+                continue
+            _, _, segment_entries = live_capture_jsonl.parse_manifest(manifest_data)
+            prefix = manifest_name.rsplit("/", 1)[0] + "/" if "/" in manifest_name else ""
+            segment_names = [prefix + entry["filename"] for entry in segment_entries]
+            if any(name not in all_source_names_set for name in segment_names):
+                raise ValueError("native session is missing a referenced segment")
+            matched_names.add(manifest_name)
+            matched_names.update(segment_names)
+            rows = live_capture_jsonl.ingest_manifest(con, capture_id, src, manifest_name)
+            counts["raw_packets"] += rows
+            if result_sink is not None:
+                result_sink.append({"filename": manifest_name, "rows": rows, "error": None})
+        except (ValueError, KeyError, OSError) as exc:
+            matched_names.add(manifest_name)
+            if result_sink is not None:
+                result_sink.append({"filename": manifest_name, "rows": 0, "error": str(exc)})
+
     for relname in all_source_names:
         if relname in matched_names:
             continue
