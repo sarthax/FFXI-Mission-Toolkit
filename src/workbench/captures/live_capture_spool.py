@@ -10,6 +10,7 @@ from pathlib import Path
 from threading import Lock
 import json
 import os
+import hashlib
 
 from .live_capture_contract import LiveCaptureSequence, LivePacketEnvelope
 
@@ -39,6 +40,9 @@ class LiveCaptureSpool:
         self.persisted = 0
         self.rejected = 0
         self.segments = []
+        self._ranges = []
+        self._first_seq = None
+        self._last_seq = None
 
     def enqueue(self, value: dict) -> bool:
         """Nonblocking bounded offer; caller must record false as source loss.
@@ -73,6 +77,8 @@ class LiveCaptureSpool:
         self._file = path.open("xb")
         self.segments.append(str(path))
         self._size = 0
+        self._first_seq = None
+        self._last_seq = None
 
     def drain(self, limit: int = 256) -> int:
         """Blocking disk work; invoke from a worker, NEVER a packet callback."""
@@ -97,6 +103,7 @@ class LiveCaptureSpool:
                         self._file.flush()
                         os.fsync(self._file.fileno())
                         self._file.close()
+                    self._ranges.append((self.segments[-1], self._first_seq, self._last_seq))
                     self._file = None
                     self._open_segment()
                 self._file.write(line)
@@ -105,6 +112,9 @@ class LiveCaptureSpool:
                 self._size += len(line)
                 with self._lock:
                     self._queue.popleft()
+                if self._first_seq is None:
+                    self._first_seq = current["sequence"]
+                self._last_seq = current["sequence"]
                 self.persisted += 1
                 written += 1
         except (OSError, ValueError) as exc:
@@ -125,8 +135,16 @@ class LiveCaptureSpool:
                 self._file.flush()
                 os.fsync(self._file.fileno())
                 self._file.close()
+                self._ranges.append((self.segments[-1], self._first_seq, self._last_seq))
                 self._file = None
             self._closed = True
+            if not self._fault and self._ranges:
+                entries = []
+                for name, first, last in self._ranges:
+                    entries.append({"filename": Path(name).name, "sha256": hashlib.sha256(Path(name).read_bytes()).hexdigest(), "first_sequence": first, "last_sequence": last})
+                manifest = {"schema_version": 1, "client_id": self.client_id, "session_id": self.session_id, "segments": entries}
+                with (self.directory / "manifest.json").open("x", encoding="utf-8") as stream:
+                    json.dump(manifest, stream, sort_keys=True)
 
     def health(self) -> dict:
         return {
