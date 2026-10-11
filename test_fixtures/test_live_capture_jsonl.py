@@ -40,3 +40,15 @@ class NativeLiveCaptureJsonlTests(unittest.TestCase):
 
     def test_reported_drop_gap_is_accepted(self):
         assert len(parse_session(row(1) + row(3, dropped_before=1))) == 2
+
+    def test_mixed_identity_in_later_packet_rejected(self):
+        import hashlib
+        import json
+        from workbench.captures.live_capture_jsonl import ingest_manifest
+        payload = row(1) + row(2, session_id="other")
+        manifest = json.dumps({"schema_version": 1, "client_id": "ashita-a", "session_id": "s1", "segments": [{"filename": "segment-000001.jsonl", "sha256": hashlib.sha256(payload).hexdigest(), "first_sequence": 1, "last_sequence": 2}]}).encode()
+        class Source:
+            def read_bytes(self, name):
+                return {"manifest.json": manifest, "segment-000001.jsonl": payload}[name]
+        with self.assertRaisesRegex(ValueError, "identity mismatch"):
+            ingest_manifest(None, 1, Source(), "manifest.json")
