@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from .bridge_managed import ManagedLiveReceiver
 from .bridge_mailbox import BridgeMailbox
 from .movement_control import ControlIdentity, MovementControlGate, Position
+from .native_position_compare import PositionSample, compare_native_live
 import secrets
 import time
 from .bridge_settings_file import render_settings_lua, write_settings
@@ -36,6 +37,14 @@ class QuickStart(BaseModel):
     ashita_root: str | None = Field(default=None, max_length=2048)
     regenerate: bool = False
     sample_hz: int = 10
+
+
+class NativePositionComparison(BaseModel):
+    client_id: str = Field(min_length=1, max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
+    zone_id: int = Field(ge=1, le=65535)
+    x: float
+    y: float
+    z: float
 
 
 class SimulatedNudge(BaseModel):
@@ -165,6 +174,27 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
             return manager.provision(selection.client_id)
         except (RuntimeError, ValueError) as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    @router.post("/position/compare-native")
+    def compare_native_position(request: Request, data: NativePositionComparison) -> dict:
+        """Compare operator-captured native coordinates to latest same-client telemetry."""
+        require_same_origin(request)
+        status = manager.status(data.client_id)
+        snapshot = status.get("snapshot")
+        if not status.get("connected") or snapshot is None:
+            raise HTTPException(status_code=409, detail="connected client observation required")
+        observed = snapshot.position
+        try:
+            native = PositionSample(data.zone_id, data.x, data.y, data.z, time.time())
+            live = PositionSample(observed.zone_id, observed.x, observed.y, observed.z,
+                                  snapshot.observed_at)
+            result = compare_native_live(native, live)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {"client_id": data.client_id, "mode": "read_only",
+                "native": {"zone_id": native.zone_id, "x": native.x, "y": native.y, "z": native.z},
+                "live": {"zone_id": live.zone_id, "x": live.x, "y": live.y, "z": live.z},
+                **result}
 
     @router.post("/alignment/validate")
     def validate_alignment(request: Request, payload: dict) -> dict:
