@@ -1319,6 +1319,7 @@ if (LIVE_PARSE_AVAILABLE) {
     const materials = group.userData.materialAudit;
     setMeshDiagnostics('client_dat', {
       rom_path: GEOMETRY_ROM_PATH, instances: audit, materials,
+      alias_matched_textures: zoneData.textureDiagnostics?.aliasMatchedCount || 0,
       unresolved_texture_names: zoneData.textureDiagnostics?.unresolvedNames || []
     });
     console.info('[ZoneViewer] zone material audit:', materials);
