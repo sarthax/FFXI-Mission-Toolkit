@@ -43,7 +43,7 @@ match player zone", replace `workbench_observation.lua`, unload the addon with
 
 ## Read-only command delivery verification
 
-With Direct Live Bridge running and live telemetry connected, queue a capability probe from the local Toolkit using `POST /live-client/bridge/control/probe` with `{"client_id":"ashita-a"}` and the normal local same-origin browser session. Then run `/wblive bridge ping` in that Ashita instance. The server sends a single allowlisted `capabilities_probe` command and the addon replies `reject` / `unsupported_game_writes` over a separate authenticated loopback connection. Check `GET /live-client/bridge/control/probe/ashita-a` for `rejected` (not executed). Requests expire after three seconds and are never replayed to a different client or addon generation. Use the next bridge ping promptly after queuing.
+With Direct Live Bridge running and live telemetry connected, queue a capability probe from the local Toolkit using `POST /live-client/bridge/control/probe` with `{"client_id":"ashita-a"}` and the normal local same-origin browser session. Then run `/wblive bridge ping` in that Ashita instance. The server sends a single allowlisted `capabilities_probe` command and the addon replies `reject` / `unsupported_game_writes` over a separate authenticated loopback connection. Check `GET /live-client/bridge/control/probe/ashita-a` for `rejected` (not executed). Requests expire after ten seconds and are never replayed to a different client or addon generation. Use the next bridge ping promptly after queuing.
 
 This is a **control transport test only**. It does not offer a movement command, access game memory, inject FFXI packets or enable any real writes.
 
