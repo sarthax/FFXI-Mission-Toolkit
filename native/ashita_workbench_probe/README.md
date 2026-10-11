@@ -74,3 +74,7 @@ the three-dimensional distance (default tolerance 1.5 units). Compare while
 stationary first, then after a short normal walk and stopping. This measures
 agreement of two local client readings; it does **not** prove server acceptance
 or permit game state writes.
+
+### Native XYZ setter signature gate (2026-10-11)
+
+Ashita v4-Beta public SDK `IEntity` declares `SetLocalPositionX/Y/Z(uint32_t, float) const`. The native plugin now performs compile-time signature checks and provides `/wbprobe capabilities` to report setter declaration availability. **This does not invoke a setter, establish runtime permission, or demonstrate server-accepted movement.** Confirm compilation against the installed `C:\\ValhallaXI\\Ashitav4-Beta\\plugins\\sdk` headers, then test the diagnostic on the authorized DSP test client. The existing XYZ reader and Lua telemetry comparison remain read-only.
