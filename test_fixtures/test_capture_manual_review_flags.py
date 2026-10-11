@@ -30,6 +30,7 @@ def main():
         ("empty_ingest","fixture/source.zip",1,"",'{"reason":"legacy"}',"pending"),
     )
     rq.ensure(con)
+    assert con.in_transaction is False
     cols={row[1] for row in con.execute("PRAGMA table_info(review_queue)")}
     assert "blocking" in cols,cols
     legacy=con.execute("SELECT blocking FROM review_queue WHERE kind='empty_ingest'").fetchone()
