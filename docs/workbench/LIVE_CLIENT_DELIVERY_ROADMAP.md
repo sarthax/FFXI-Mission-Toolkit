@@ -217,3 +217,10 @@ In game: `/wbprobe speed <25..400>|off|status`, `/wbprobe warp <id> <x> <y> <z>`
 **Acceptance gate:** One client produces an opt-in passive recording that imports losslessly with explicit drop accounting and no gameplay writes. Two simultaneous clients remain isolated. Reproducible Windows performance/overhead measurements precede high-volume modes.
 
 **Research:** [Third-party control and capture audit](LIVE_CLIENT_THIRD_PARTY_CONTROL_RESEARCH.md). **Scope note:** the DLL movement/write work continues independently.
+
+### 2026-10-11 — 3D Viewer live control usability corrections
+
+- Live Ashita position now defaults enabled, while preserving the existing explicit `live=1` URL client/zone/follow overrides. The **Heading preview** defaults to 0° instead of the obsolete 180° marker calibration; historical shared URLs specifying heading remain honored.
+- Observed Entity selection is preserved across rapid telemetry refreshes: the select list is reconstructed only when entity identity/labels change, so selecting and inspecting an entity remains practical at 10/20 Hz. On client loss/zone change the selection still clears.
+- Viewer toolrail has **Warp to player** (camera focus on live player, no character movement) and **Warp target** (delegates to the existing armed, zone-aware native Warp to target action). Quick warp is disabled until the native channel is armed and a map target is selected. No new write bypass or server-confirmation assertion.
+- Remaining UX acceptance: real-browser test with an open dropdown during live polling, keyboard selection, missing client, toolrail layout at narrow viewports, armed/disarmed transitions and cross-zone pending target behavior.
