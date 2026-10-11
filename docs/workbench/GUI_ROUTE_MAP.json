@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 303,
+  "route_count": 305,
   "routes": [
     {
       "method": "GET",
@@ -2426,6 +2426,22 @@
       "home": "Server",
       "section": "Domain Research",
       "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/{capture_id}/review-flags",
+      "home": "Captures",
+      "section": "Review Queue",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/{capture_id}/review-flags/{review_id}",
+      "home": "Captures",
+      "section": "Review Queue",
+      "role": "mutation",
       "disposition": "KEEP"
     }
   ]
