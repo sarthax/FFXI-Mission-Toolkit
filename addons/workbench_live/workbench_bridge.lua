@@ -95,6 +95,38 @@ function M.new(options, notify, load_error)
         if not ok then close(); last_error='telemetry send failed: '..tostring(err); if notify or options.message then (notify or options.message)('Bridge disconnected: '..tostring(err)) end; return false end
         return true
     end
-    return {start=start, observe=observe, stop=close, active=function() return source~=nil end, last_error=function() return last_error end}
+    local function ping()
+        if not source then return fail('bridge not started') end
+        local ok, err = pcall(function()
+            sequence = sequence + 1
+            local hello='{"client_id":'..json_string(source)..',"session_id":'..json_string(options.session_id)
+                ..',"generation":'..json_string(options.generation)..',"token":"'..options.token..'"}'
+            local frame='{"schema_version":1,"lane":"control","kind":"heartbeat","client_id":'
+                ..json_string(source)..',"session_id":'..json_string(options.session_id)
+                ..',"generation":'..json_string(options.generation)..',"sequence":'..sequence
+                ..',"request_id":null,"payload_base64":""}'
+            local peer=assert(options.connect(options.host,options.port))
+            local completed, error_text=pcall(function()
+                assert(peer:settimeout(0.5), 'cannot set probe timeout')
+                assert(peer:send(length_prefix(#hello,2)..hello), 'handshake failed')
+                assert(peer:send(length_prefix(#frame,4)..frame), 'heartbeat failed')
+                assert(peer:shutdown('send'), 'probe shutdown failed')
+                local header=assert(peer:receive(4))
+                local count=0
+                for i=1,4 do count=count*256+header:byte(i) end
+                assert(count>0 and count<=2048, 'invalid heartbeat response size')
+                local response=assert(peer:receive(count))
+                assert(response:find('"kind":"heartbeat"',1,true), 'no heartbeat response')
+                assert(response:find('"payload_base64":"cmVhZF9vbmx5"',1,true), 'receiver not in read-only mode')
+                assert(response:find('"client_id":'..json_string(source),1,true), 'receiver identity mismatch')
+                assert(response:find('"generation":'..json_string(options.generation),1,true), 'receiver generation mismatch')
+            end)
+            pcall(function() peer:close() end)
+            assert(completed,error_text)
+        end)
+        if not ok then return fail('read-only heartbeat failed') end
+        return true, 'authenticated read-only round-trip confirmed; no movement capability'
+    end
+    return {start=start, observe=observe, ping=ping, stop=close, active=function() return source~=nil end, last_error=function() return last_error end}
 end
 return M

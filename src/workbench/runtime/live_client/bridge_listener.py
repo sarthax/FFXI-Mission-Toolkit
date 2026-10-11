@@ -44,6 +44,17 @@ class BridgeListener:
                 raise PermissionError("non-loopback peer")
             connection.settimeout(self.timeout)
             messages = receive_session(connection, self.peers, max_messages=self.max_messages, now=now)
+            if len(messages) == 1 and messages[0].kind.value == 'heartbeat':
+                from .bridge_protocol import BridgeKind, BridgeLane
+                from .bridge_loopback import send
+                probe = messages[0]
+                response = BridgeEnvelope(1, BridgeLane.CONTROL, BridgeKind.HEARTBEAT,
+                    probe.client_id, probe.session_id, probe.generation, probe.sequence + 1,
+                    None, b'read_only')
+                send(connection, response)
+        # A heartbeat probe is observational; do not store it in the telemetry mailbox.
+        if len(messages) == 1 and messages[0].kind.value == 'heartbeat':
+            return messages
         # Reject the entire batch before any queue mutation if it spans identities.
         if messages:
             first = messages[0]

@@ -87,12 +87,13 @@ ashita.events.register('command', 'workbench_live_command', function(e)
     end
     if args[2] == 'packets' then packets.command(args[3], args[4]); return end
     if args[2] == 'bridge' then
-        if args[3] == 'stop' then bridge.stop()
+        if args[3] == 'ping' then local ok, why = bridge.ping(); print('Workbench Live: '..tostring(why))
+        elseif args[3] == 'stop' then bridge.stop()
         elseif args[3] == 'start' then
             local context = exporter.context()
             if context then local ok, why = bridge.start(context.client_id); if not ok then print('Workbench Live: bridge not started: '..tostring(why)) end else print('Workbench Live: start telemetry before bridge') end
         elseif args[3] == 'status' then print('Workbench Live: Bridge '..(bridge.active() and 'active' or 'inactive'))
-        else print('Workbench Live: use bridge start, bridge stop or bridge status') end
+        else print('Workbench Live: use bridge start, bridge ping, bridge stop or bridge status') end
         return
     end
     if args[2] == 'stop' then packets.stop(); direct.stop(); bridge.stop() end

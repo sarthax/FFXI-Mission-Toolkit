@@ -41,6 +41,10 @@ selected-target observations. If an older copy reports "entity zone does not
 match player zone", replace `workbench_observation.lua`, unload the addon with
 `/addon unload workbench_live`, and load it again before starting a fresh export.
 
+## Read-only bridge response test
+
+With the local bridge and live addon started, run `/wblive bridge ping`. This checks an authenticated, same-socket heartbeat response from the Toolkit. No game commands, memory writes, or movement packets are enabled. This is a transport readiness check only.
+
 ## Windows acceptance run
 
 Record the actual Ashita version, FFXI game/module version and module SHA-256
