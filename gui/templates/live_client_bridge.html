@@ -75,6 +75,15 @@
  <div id="alignment-feedback" role="status" aria-live="polite">No sample checked.</div>
  <pre id="alignment-result"></pre>
  </details>
+ <details class="lc-panel" id="native-position-panel">
+ <summary>Native XYZ comparison (read-only)</summary>
+ <p class="muted">While stationary, run <code>/wbprobe position</code> in Ashita. Paste the entire resulting chat line and immediately click Compare. This checks the native coordinates against the selected client's latest live telemetry; it does not control movement.</p>
+ <label for="native-position-line">Native position line</label>
+ <input id="native-position-line" style="max-width:100%;width:min(100%,740px)" maxlength="512" placeholder="[WorkbenchNativeProbe] Read-only zone=98 entity=1024 XYZ=(208.563, 242.187, 32.064)">
+ <div class="lc-actions"><button type="button" id="native-position-compare">Compare with live XYZ</button></div>
+ <div id="native-position-feedback" role="status" aria-live="polite" class="muted">No comparison yet.</div>
+ <pre id="native-position-results"></pre>
+ </details>
  <h3>Nearby observed entities</h3><div id="entities">No observations yet</div>
  <details><summary>Technical details</summary><pre id="status" aria-live="polite">Not connected</pre></details>
 </section>
@@ -96,6 +105,23 @@ probeButton.addEventListener('click',async()=>{
   if(result.request_id===queued.request_id && result.state!=='queued') probeResult.textContent='Probe '+result.state+' for '+id;
  }catch(error){probeResult.textContent='Test command unavailable: '+String(error);}
  finally{probeButton.disabled=false;}
+});
+document.getElementById('native-position-compare').addEventListener('click',async()=>{
+ const feedback=document.getElementById('native-position-feedback');
+ const output=document.getElementById('native-position-results');
+ const raw=document.getElementById('native-position-line').value.trim();
+ const match=raw.match(/Read-only zone=(\d+) entity=(\d+) XYZ=\((-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\)/);
+ if(!match){feedback.textContent='Could not parse native position line. Paste the full /wbprobe position result.';return;}
+ const id=document.getElementById('client').value.trim();
+ if(!/^[a-zA-Z0-9_-]{1,64}$/.test(id)){feedback.textContent='Invalid selected client ID';return;}
+ try{
+  const result=await request('position/compare-native',{
+   client_id:id,zone_id:Number(match[1]),x:Number(match[3]),y:Number(match[4]),z:Number(match[5])});
+  output.textContent=JSON.stringify(result,null,2);
+  feedback.textContent=result.matched?'Native and live XYZ agree within tolerance':
+   result.reason==='samples_not_synchronized'?'Live telemetry is stale or native sample was captured earlier; retry while stationary':
+   'Comparison did not match: '+result.reason;
+ }catch(error){feedback.textContent='Comparison unavailable: '+String(error);}
 });
 const alignmentInput=document.getElementById('alignment-json');
 const alignmentFeedback=document.getElementById('alignment-feedback');
