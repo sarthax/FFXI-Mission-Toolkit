@@ -84,6 +84,6 @@ class LiveCaptureSequence:
                 raise ValueError("packet sequence gap does not match reported drops")
             if packet.observed_at_ns < observed_ns or packet.dropped_before < drops:
                 raise ValueError("time or drop counter regressed")
-        elif packet.sequence != 1:
-            raise ValueError("session must begin at sequence 1")
+        elif packet.sequence != packet.dropped_before + 1:
+            raise ValueError("initial sequence must account for prior drops")
         self._last[key] = (packet.sequence, packet.observed_at_ns, packet.dropped_before)
