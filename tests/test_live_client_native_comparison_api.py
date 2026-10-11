@@ -23,7 +23,7 @@ def test_native_xyz_compare_requires_local_live_client(monkeypatch):
     assert result.json()["matched"] is True
     assert result.json()["mode"]=="read_only"
     assert client.post(url,json={**payload,"zone_id":99},headers=origin).json()["reason"]=="zone_mismatch"
-    assert client.post(url,json={**payload,"x":float("nan")},headers=origin).status_code==422
+    assert client.post(url,json={**payload,"x":"NaN"},headers=origin).status_code==422
 
 def test_live_console_has_native_comparison_control():
     template=(Path(__file__).resolve().parents[1]/"gui/templates/live_client_bridge.html").read_text()
