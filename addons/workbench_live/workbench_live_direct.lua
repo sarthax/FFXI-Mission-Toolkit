@@ -49,6 +49,7 @@ function M.new(options)
         if not ok then
             if observation.is_transition_error(result) then
                 paused, stable_zone, stable_count = paused or now, nil, 0
+                entity_last, entity_cache, entity_zone = nil, nil, nil
                 return
             end
             stop('Live telemetry stopped: '..tostring(result))
@@ -59,6 +60,7 @@ function M.new(options)
             return
         end
         if paused then
+            entity_last, entity_cache, entity_zone = nil, nil, nil
             stable_count = result.position.zone_id == stable_zone and stable_count + 1 or 1
             stable_zone = result.position.zone_id
             if stable_count < 2 then return end
