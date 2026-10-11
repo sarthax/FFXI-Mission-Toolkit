@@ -15,6 +15,7 @@ def test_passive_native_packet_queue(tmp_path):
     source = tmp_path / "packet_queue_test.cpp"
     source.write_text(r"""
 #include "passive_packet_queue.h"
+#include "native_packet_jsonl.h"
 #include <cassert>
 #include <cstdint>
 int main() {
@@ -31,6 +32,9 @@ int main() {
     assert(records.size() == 2 && records[0].sequence == 1 && records[1].sequence == 2);
     assert(records[0].raw.size() == 4 && records[0].raw[3] == 4);
     assert(records[1].direction == wb::PacketDirection::Outgoing);
+    auto json = wb::SerializePacket(records[0], "ashita-a", "session-1");
+    assert(json.find("\\\"raw_hex\\\":\\\"01020304\\\"") != std::string::npos);
+    assert(json.back() == char(10));
     assert(!queue.Offer(wb::PacketDirection::Incoming, 0x34, raw, 5));
     queue.Stop();
     assert(!queue.Offer(wb::PacketDirection::Incoming, 0x34, raw, 4));
