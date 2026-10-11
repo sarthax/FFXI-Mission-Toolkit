@@ -1165,6 +1165,12 @@ document.getElementById('zone3d-inspector-search').addEventListener('click', () 
 document.getElementById('zone3d-inspector-close').addEventListener('click', () => {
   entityInspector.hidden = true;
   selectedEntity = null;
+  if (spawnMesh) {
+    const color = new THREE.Color();
+    spawnEntities.forEach((e, index) => spawnMesh.setColorAt(index, color.set(SPAWN_COLORS[e.k] ?? 0x44cc88)));
+    if (spawnMesh.instanceColor) spawnMesh.instanceColor.needsUpdate = true;
+  }
+  updateInspectorNavigation();
 });
 
 // Hover tooltip + click-to-fly, raycast against the instanced spawn mesh each frame.
