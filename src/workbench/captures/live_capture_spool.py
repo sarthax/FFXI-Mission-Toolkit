@@ -176,8 +176,24 @@ def inspect_interrupted_session(directory: Path) -> dict:
     if manifest.exists():
         try:
             from .live_capture_jsonl import parse_manifest
-            parse_manifest(manifest.read_bytes())
-            result["status"] = "manifest_present_unverified"
+            client_id, session_id, entries = parse_manifest(manifest.read_bytes())
+            payloads = []
+            for entry in entries:
+                segment = directory / entry["filename"]
+                data = segment.read_bytes()
+                if hashlib.sha256(data).hexdigest() != entry["sha256"]:
+                    raise ValueError(f"native segment checksum mismatch: {entry['filename']}")
+                payloads.append(data)
+            from .live_capture_jsonl import parse_segments
+            parsed = parse_segments(payloads)
+            for entry, rows in zip(entries, parsed):
+                if not rows or rows[0][0].sequence != entry["first_sequence"] or rows[-1][0].sequence != entry["last_sequence"]:
+                    raise ValueError("native segment sequence range mismatch")
+                if any(packet.client_id != client_id or packet.session_id != session_id for packet, *_ in rows):
+                    raise ValueError("native segment identity mismatch")
+            result["segments"] = len(entries)
+            result["packets"] = sum(len(rows) for rows in parsed)
+            result["status"] = "verified_complete"
         except (OSError, ValueError) as exc:
             result["status"] = "invalid_manifest"
             result["errors"].append(str(exc))
