@@ -400,11 +400,9 @@ public:
             const uint32_t server_id = party->GetMemberServerId(0);
             const uint32_t capacity = entities->GetEntityMapSize();
             uint32_t index = 0;
+            // The SDK has no id->index lookup, so scan the entity map for the player's server id.
             for (uint32_t i = 1; i < capacity; ++i) {
-                if (entities->GetServerId(i) == server_id) {
-                    index = i;
-                    break;
-                }
+                if (entities->GetServerId(i) == server_id) { index = i; break; }
             }
             if (index == 0) {
                 char detail[256];
