@@ -1,6 +1,7 @@
 // SDK-independent passive packet observation queue. No disk I/O or packet mutation in Offer().
 #pragma once
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -34,6 +35,7 @@ class PassivePacketQueue {
     std::deque<PacketObservation> queue_;
     const size_t capacity_;
     const size_t max_packet_bytes_;
+    std::atomic<uint64_t> contention_drops_{0};
     bool enabled_ = false;
     uint64_t next_sequence_ = 1;
     PacketQueueHealth counters_;
@@ -47,7 +49,7 @@ public:
     bool Offer(PacketDirection direction, uint16_t opcode, const void* data, size_t length) {
         // Never wait for disk or a contended consumer on the Ashita callback thread.
         std::unique_lock<std::mutex> lock(mutex_, std::try_to_lock);
-        if (!lock.owns_lock()) return false; // contention counter cannot be safely updated here
+        if (!lock.owns_lock()) { contention_drops_.fetch_add(1, std::memory_order_relaxed); return false; }
         if (!enabled_) return false;
         if (!data || length == 0 || length > max_packet_bytes_) {
             ++counters_.rejected;
@@ -82,6 +84,8 @@ public:
     PacketQueueHealth Health() const {
         std::lock_guard<std::mutex> lock(mutex_);
         auto value = counters_;
+        value.contention_drops = contention_drops_.load(std::memory_order_relaxed);
+        value.rejected += value.contention_drops;
         value.queued = queue_.size();
         value.enabled = enabled_;
         return value;
