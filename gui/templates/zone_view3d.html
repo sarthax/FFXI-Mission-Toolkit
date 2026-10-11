@@ -4,12 +4,21 @@
 {% block page_class %}zone-view3d-page{% endblock %}
 {% block page_width %}fluid{% endblock %}
 {% block page_heading %}3D Zone Viewer{% endblock %}
-{% block page_identity %}<span class="chip mono">{{ zone_name }} ({{ zoneid }})</span>{% endblock %}
+{% block page_identity %}
+<span class="chip mono">{{ zone_name }} ({{ zoneid }})</span>
+{% if not multi and all_zones %}
+<label class="zone3d-heading-picker">Zone <select id="zone-select" aria-label="Change zone">
+{% for z in all_zones %}<option value="{{ z.zoneid }}" {% if z.zoneid == zoneid %}selected{% endif %}>{{ z.name }} ({{ z.zoneid }})</option>{% endfor %}
+</select></label>
+{% endif %}
+{% endblock %}
 {% block page_status %}{% if not live_parse_available and not obj_available %}<span class="wb-write-badge">Build cache writes local derived mesh data</span>{% else %}<span class="wb-readonly-badge">Client zone inspection</span>{% endif %}{% endblock %}
 {% block page_actions %}{% if not multi %}<a class="chip" href="/zoneplot2?zone={{ zoneid }}">Open Zone Editor ↗</a>{% endif %}{% endblock %}
 {% block page_help %}View the zone’s client visual mesh with optional capture-observed entities/paths, navmesh overlay, time-of-day controls, fly mode, and spawn context. When no live/cached mesh is available, Build cache explicitly writes local derived mesh data before rendering.{% endblock %}
 {% block page_body %}
 <style>
+  .zone3d-heading-picker{display:inline-flex;align-items:center;gap:5px;font-size:11px}
+  .zone3d-heading-picker select{max-width:260px;font-size:11px;padding:2px 4px}
   #zone3d-title{margin-bottom:6px}
   #zone3d-title .chip{font-weight:500}
   #viewer-container{height:calc(100vh - var(--shell-h) - 185px) !important;min-height:480px}
@@ -17,9 +26,9 @@
   /* Like the Zone Editor: the map occupies the workspace and settings overlay it. */
   #viewer-container{overflow:hidden}
   #zone3d-toolrail{position:absolute;top:12px;left:12px;z-index:15;display:flex;flex-direction:column;gap:5px;padding:5px;background:rgba(9,13,19,.90);border:1px solid var(--border);border-radius:8px}
-  #zone3d-toolrail button{min-width:86px;padding:6px 8px;font-size:12px;text-align:left}
+  #zone3d-toolrail button{min-width:62px;padding:5px 7px;font-size:11px;text-align:center}
   #zone3d-toolrail button[aria-selected="true"]{background:var(--accent-soft,#345);outline:1px solid var(--accent,#79a);font-weight:700}
-  #zone3d-drawer{position:absolute;top:12px;bottom:12px;left:114px;width:min(375px,calc(100% - 126px));z-index:14;overflow:auto;padding:10px;background:rgba(11,17,24,.96);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 32px #0007}
+  #zone3d-drawer{position:absolute;top:12px;bottom:12px;left:91px;width:min(375px,calc(100% - 103px));z-index:14;overflow:auto;padding:10px;background:rgba(11,17,24,.96);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 32px #0007}
   #zone3d-drawer[hidden],.zone3d-tab-pane[hidden]{display:none!important}
   #zone3d-drawer h3{font-size:14px;margin:0 0 8px}
   #zone3d-drawer .dense-toolbar,#zone3d-drawer #ashita-live-controls,#zone3d-drawer #zone3d-navigation,#zone3d-drawer #capture-spatial-controls{display:flex!important;flex-direction:column;align-items:stretch!important;gap:7px!important;flex-wrap:nowrap!important;margin:0!important;padding:4px!important}
@@ -55,20 +64,11 @@
 <p><a class="inline" href="/captures/plot?capture_id={{ capture_id }}&{% if pc %}pc=1&zone_db={{ zone_db | urlencode }}{% else %}entity_id={{ entity_id }}{% endif %}">&larr; back to 2D path plot</a></p>
 {% endif %}
 
-{% if not multi and all_zones %}
-<div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
-  <span class="muted">zone:</span>
-  <select id="zone-select">
-    {% for z in all_zones %}<option value="{{ z.zoneid }}" {% if z.zoneid == zoneid %}selected{% endif %}>{{ z.name }} ({{ z.zoneid }})</option>{% endfor %}
-  </select>
-</div>
 <script>
-document.getElementById('zone-select').addEventListener('change', (e) => {
+document.getElementById('zone-select')?.addEventListener('change', (e) => {
   window.location.href = '/zones/' + e.target.value + '/view3d';
 });
 </script>
-{% endif %}
-
 {% if not live_parse_available and not obj_available %}
 <div class="warn">No cached visual mesh for this zone yet, and live in-browser parsing isn't
   available (FFXI install path or this zone's geometry DAT is unknown).
@@ -159,7 +159,6 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
 </details>
 <div id="viewer-container" style="width:100%; height:640px; border:1px solid var(--border); border-radius:8px; background:#0a0d10; position:relative;">
   <nav id="zone3d-toolrail" aria-label="Viewer tools">
-    <button type="button" data-viewer-tab="zone" aria-selected="false" title="Zone and session controls">Zone</button>
     <button type="button" data-viewer-tab="layers" aria-selected="false" title="Display layers and rendering">Layers</button>
     <button type="button" data-viewer-tab="camera" aria-selected="false" title="Navigation and viewpoints">Camera</button>
     <button type="button" data-viewer-tab="live" aria-selected="false" title="Live Ashita overlay">Live</button>
@@ -169,7 +168,6 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   </nav>
   <aside id="zone3d-drawer" aria-label="Viewer settings" hidden>
     <h3 id="zone3d-drawer-title">Viewer settings</h3>
-    <section class="zone3d-tab-pane" data-viewer-pane="zone" hidden></section>
     <section class="zone3d-tab-pane" data-viewer-pane="layers" hidden></section>
     <section class="zone3d-tab-pane" data-viewer-pane="camera" hidden></section>
     <section class="zone3d-tab-pane" data-viewer-pane="live" hidden></section>
@@ -198,7 +196,6 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   const buttons = Array.from(document.querySelectorAll('#zone3d-toolrail [data-viewer-tab]'));
   const sections = new Map(Array.from(document.querySelectorAll('.zone3d-tab-pane'), node => [node.dataset.viewerPane, node]));
   const destinations = [
-    ['zone', 'form[action*="/zones/"]'],
     ['layers', '#spawn-visibility'],
     ['camera', '#zone3d-navigation'],
     ['live', '#ashita-live-controls'],
@@ -213,11 +210,9 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   // Move the entire group into Layers so no event bindings or controls are lost.
   const layerGroup = document.querySelector('#tod-slider')?.closest('.dense-toolbar');
   if (layerGroup) sections.get('layers').appendChild(layerGroup);
-  // Zone/capture chooser forms are context dependent and remain functional.
-  const zonePicker = document.getElementById('zone-select');
-  if (zonePicker && !sections.get('zone').contains(zonePicker)) sections.get('zone').appendChild(zonePicker.parentElement);
+  // Capture-scoped zone switching remains in the capture tools, not an empty Zone tab.
   const zoneSwitch = document.querySelector('select[name="zone_db"]')?.closest('form');
-  if (zoneSwitch) sections.get('zone').appendChild(zoneSwitch);
+  if (zoneSwitch) sections.get('capture').appendChild(zoneSwitch);
   const captureLink = document.querySelector('a[href*="/captures/plot?"]')?.closest('p');
   if (captureLink) sections.get('capture').appendChild(captureLink);
   const pathLink = document.querySelector('a[href*="/captures/plot_all?"]');
@@ -246,7 +241,7 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   makeGroup('camera', 'Position and coordinates', ['zone3d-camera-readout', 'zone3d-goto-x', 'zone3d-goto-y', 'zone3d-goto-z', 'zone3d-goto', 'zone3d-frame-zone'], true);
   makeGroup('camera', 'Saved viewpoints', ['zone3d-save-view', 'zone3d-restore-view', 'zone3d-view-name', 'zone3d-add-bookmark', 'zone3d-bookmark-list', 'zone3d-open-bookmark', 'zone3d-delete-bookmark'], true);
   makeGroup('camera', 'Entity focus', ['zone3d-focus-spawn', 'zone3d-focus-spawn-button'], true);
-  const names = {zone:'Zone',layers:'Display layers',camera:'Camera and viewpoints',live:'Live client',capture:'Capture context',diagnostics:'Diagnostics'};
+  const names = {layers:'Display layers',camera:'Camera and viewpoints',live:'Live client',capture:'Capture context',diagnostics:'Diagnostics'};
   function showTab(tab) {
     const isOpen = !panel.hidden && panel.dataset.activeTab === tab;
     panel.hidden = isOpen;
