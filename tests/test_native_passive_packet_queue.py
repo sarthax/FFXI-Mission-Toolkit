@@ -33,7 +33,7 @@ int main() {
     assert(records[0].raw.size() == 4 && records[0].raw[3] == 4);
     assert(records[1].direction == wb::PacketDirection::Outgoing);
     auto json = wb::SerializePacket(records[0], "ashita-a", "session-1");
-    assert(json.find("\\\"raw_hex\\\":\\\"01020304\\\"") != std::string::npos);
+    assert(json.find(R"("raw_hex":"01020304")") != std::string::npos);
     assert(json.back() == char(10));
     assert(!queue.Offer(wb::PacketDirection::Incoming, 0x34, raw, 5));
     queue.Stop();
