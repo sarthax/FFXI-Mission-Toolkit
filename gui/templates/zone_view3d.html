@@ -122,6 +122,14 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   <button type="button" id="zone3d-goto">Go to XYZ</button>
   <button type="button" id="zone3d-save-view">Save view</button>
   <button type="button" id="zone3d-restore-view" disabled>Restore view</button>
+  <label>View name <input id="zone3d-view-name" type="text" maxlength="60" placeholder="e.g. market entrance" style="width:145px"></label>
+  <button type="button" id="zone3d-add-bookmark">Add bookmark</button>
+  <select id="zone3d-bookmark-list" aria-label="Saved viewpoints" style="max-width:205px"><option value="">No bookmarks yet</option></select>
+  <button type="button" id="zone3d-open-bookmark" disabled>Go to bookmark</button>
+  <button type="button" id="zone3d-delete-bookmark" disabled>Delete bookmark</button>
+  <button type="button" id="zone3d-frame-zone" disabled>Frame zone</button>
+  <label>Focus spawn <select id="zone3d-focus-spawn" style="max-width:205px"><option value="">Select entity</option></select></label>
+  <button type="button" id="zone3d-focus-spawn-button" disabled>Focus</button>
   <span id="zone3d-nav-feedback" class="muted" role="status" aria-live="polite"></span>
 </div>
 <details id="zone3d-mesh-diagnostics" style="margin:8px 0;border:1px solid var(--border);border-radius:6px;padding:8px;">
@@ -800,6 +808,7 @@ function refreshCaptureSpatialResults() {
   hoveredSpawnId = null;
   spawnTooltip.style.display = 'none';
   buildSpawnMarkers();
+  refreshFocusSpawn();
   const count = document.getElementById('spawn-visibility-count');
   if (count) count.textContent = `${spawnEntities.length}/${spawnEntitiesAll.length} shown`;
   if (summary) summary.textContent = `${spawnEntities.length}/${spawnEntitiesAll.length} entities`;
@@ -1159,6 +1168,103 @@ function buildLiveZoneGroup(zoneData) {
 const cameraReadout = document.getElementById('zone3d-camera-readout');
 const navFeedback = document.getElementById('zone3d-nav-feedback');
 let savedCameraView = null;
+const namedViews = [];
+let initialCameraView = null;
+function snapshotView() {
+  return {
+    position: camera.position.clone(),
+    quaternion: camera.quaternion.clone(),
+    target: controls.target.clone()
+  };
+}
+function restoreSnapshot(view) {
+  if (!view) return;
+  flyAnim = null;
+  camera.position.copy(view.position);
+  camera.quaternion.copy(view.quaternion);
+  controls.target.copy(view.target);
+  controls.update();
+}
+function refreshViewBookmarks() {
+  const select = document.getElementById('zone3d-bookmark-list');
+  const previous = select.value;
+  select.replaceChildren();
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = namedViews.length ? 'Select viewpoint' : 'No bookmarks yet';
+  select.appendChild(placeholder);
+  namedViews.forEach((view, i) => {
+    const option = document.createElement('option');
+    option.value = String(i);
+    option.textContent = view.name;
+    select.appendChild(option);
+  });
+  select.value = namedViews.some((_, i) => String(i) === previous) ? previous : '';
+  const selected = select.value !== '';
+  document.getElementById('zone3d-open-bookmark').disabled = !selected;
+  document.getElementById('zone3d-delete-bookmark').disabled = !selected;
+}
+document.getElementById('zone3d-bookmark-list').addEventListener('change', refreshViewBookmarks);
+document.getElementById('zone3d-add-bookmark').addEventListener('click', () => {
+  const nameInput = document.getElementById('zone3d-view-name');
+  const name = nameInput.value.trim();
+  if (!name) { navFeedback.textContent = 'Enter a viewpoint name.'; return; }
+  if (namedViews.length >= 30) { navFeedback.textContent = 'Maximum 30 viewpoints per session.'; return; }
+  namedViews.push({ name, ...snapshotView() });
+  refreshViewBookmarks();
+  document.getElementById('zone3d-bookmark-list').value = String(namedViews.length - 1);
+  refreshViewBookmarks();
+  nameInput.value = '';
+  navFeedback.textContent = 'Viewpoint saved for this page session.';
+});
+document.getElementById('zone3d-open-bookmark').addEventListener('click', () => {
+  const index = document.getElementById('zone3d-bookmark-list').value;
+  if (index === '' || !namedViews[Number(index)]) return;
+  restoreSnapshot(namedViews[Number(index)]);
+  navFeedback.textContent = 'Viewpoint restored.';
+});
+document.getElementById('zone3d-delete-bookmark').addEventListener('click', () => {
+  const index = document.getElementById('zone3d-bookmark-list').value;
+  if (index === '' || !namedViews[Number(index)]) return;
+  namedViews.splice(Number(index), 1);
+  refreshViewBookmarks();
+  navFeedback.textContent = 'Viewpoint deleted.';
+});
+document.getElementById('zone3d-frame-zone').addEventListener('click', () => {
+  restoreSnapshot(initialCameraView);
+  navFeedback.textContent = 'Returned to initial zone view.';
+});
+function refreshFocusSpawn() {
+  const select = document.getElementById('zone3d-focus-spawn');
+  const previous = select.value;
+  select.replaceChildren();
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Select entity';
+  select.appendChild(placeholder);
+  spawnEntities.slice(0, 500).forEach((entity, index) => {
+    const option = document.createElement('option');
+    option.value = String(index);
+    option.textContent = `${entity.n || entity.id || '?'} [${entity.id || '?'}]`;
+    select.appendChild(option);
+  });
+  select.value = spawnEntities.some((_, i) => String(i) === previous) ? previous : '';
+  document.getElementById('zone3d-focus-spawn-button').disabled = select.value === '';
+}
+document.getElementById('zone3d-focus-spawn').addEventListener('change', () => {
+  document.getElementById('zone3d-focus-spawn-button').disabled =
+    document.getElementById('zone3d-focus-spawn').value === '';
+});
+document.getElementById('zone3d-focus-spawn-button').addEventListener('click', () => {
+  const value = document.getElementById('zone3d-focus-spawn').value;
+  if (value === '') return;
+  const entity = spawnEntities[Number(value)];
+  if (entity && [entity.x, entity.y, entity.z].every(Number.isFinite)) {
+    if (flyModeOn) exitFlyMode();
+    flyTo(new THREE.Vector3(entity.x, -entity.y, -entity.z));
+    navFeedback.textContent = `Focusing ${entity.n || entity.id}`;
+  }
+});
 const cameraFields = ['x', 'y', 'z'].map(axis => document.getElementById('zone3d-goto-' + axis));
 function cameraGameXYZ() {
   return [camera.position.x, -camera.position.y, -camera.position.z];
@@ -1192,11 +1298,7 @@ document.getElementById('zone3d-goto').addEventListener('click', () => {
   navFeedback.textContent = 'Camera moved (viewer only).';
 });
 document.getElementById('zone3d-save-view').addEventListener('click', () => {
-  savedCameraView = {
-    position: camera.position.clone(),
-    quaternion: camera.quaternion.clone(),
-    target: controls.target.clone(),
-  };
+  savedCameraView = snapshotView();
   document.getElementById('zone3d-restore-view').disabled = false;
   navFeedback.textContent = 'View saved for this page session.';
 });
@@ -1287,6 +1389,8 @@ function onZoneMeshReady(obj) {
     camera.position.set(center.x + maxDim * 0.5, center.y + maxDim * 0.4, center.z + maxDim * 0.5);
   }
   controls.update();
+  initialCameraView = snapshotView();
+  document.getElementById('zone3d-frame-zone').disabled = false;
 }
 
 function loadObjFallback() {
