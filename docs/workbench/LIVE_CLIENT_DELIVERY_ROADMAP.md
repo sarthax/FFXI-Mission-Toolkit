@@ -114,3 +114,28 @@ Each batch should ship tests, updated Toolkit help and this roadmap, source/adap
 ### Native XYZ comparison dashboard (2026-10-11)
 
 Direct Live Bridge now offers a **Native XYZ comparison (read-only)** section. With native probe loaded, run `/wbprobe position`, paste the chat line, and immediately compare against the selected client’s current live snapshot. The same-origin API rejects disconnected clients, stale telemetry and zone mismatch, and reports XYZ distance. This is a manual operator diagnostic and **not** a native streaming adapter, movement control, or independent server-side validation. Compare while stationary to avoid timestamp uncertainty.
+
+
+## Native Unified Capture — milestone (2026-10-11)
+
+**Goal:** An in-house, all-in-one live FFXI capture capability built on the existing Ashita v4 observation adapter and canonical Capture pipeline. Retain PCAP/PCAPNG and historical external-tool importers for wire-level and legacy evidence.
+
+**Existing baseline (do not recreate):** `addons/workbench_live/workbench_live_ashita.lua` already registers `packet_in`/`packet_out` and routes events to `workbench_packets.lua`. That module currently supports only the explicit `event_emote` profile (incoming `0x034`, `0x05A`; outgoing `0x05D`), 10 observations/second, 4 MiB/file, 10,000 observations, and passive original-byte JSONL. It includes rate-drop counts, injected/blocked metadata, telemetry/identity/zone checks and a manual canonical Capture importer. Tests: `tests/test_live_client_ashita_packets.py`. These constraints are intentional; **not** a full-packet capture system yet.
+
+**Increment 1 — foundation, in progress:**
+- Preserve read-only, original-byte callback behavior. No injected, blocked or modified packet writes; do not overlap the separate Ashita native DLL movement branch.
+- Define a versioned packet envelope and explicit loss/termination semantics that preserve direction, opcode, original payload, packet size, client/session, zone, sequence, hook stage, injected/blocked status, dropped-before, source recording, adapter version, and provenance. Mark hook observations as *not equivalent to wire PCAP*.
+- Extend the existing passive sampler incrementally with **opt-in bounded profiles** and robust diagnostics; maintain `event_emote` compatibility and do not enable indiscriminate all-opcode capture by default.
+- Implement/verify bounded buffering and flush/backpressure policy before raising sample rates. The current callback writes and flushes synchronously per packet: this must be assessed before enabling sustained capture. Count rate-limit drops separately from queue/full, write failures, invalid packet and context-stop reasons.
+- Expand deterministic Lua and Python tests: original vs modified data, injection flags, direction, boundaries, rate/drop counters, reconnect, zone/identity transitions, multi-client isolation and import fidelity.
+- Windows Ashita acceptance is required for real callback fidelity and sustained performance; CI alone does not establish it.
+
+**Increment 2 — unified recording:** route existing packet JSONL into canonical Capture ingest with session manifest, indexing and provenance; avoid parallel storage schema.
+
+**Increment 3 — Live Capture UI:** start/stop, profile selection, per-client health and drop metrics, live packet inspection, filters and recorded-session import.
+
+**Increment 4 — enrichment:** correlate packet streams with entity ID/XYZ, targets, action lifecycle, NPC/menu/CSID and cross-client timelines; preserve raw evidence and confidence.
+
+**Acceptance gate:** One client produces an opt-in passive recording that imports losslessly with explicit drop accounting and no gameplay writes. Two simultaneous clients remain isolated. Reproducible Windows performance/overhead measurements precede high-volume modes.
+
+**Research:** [Third-party control and capture audit](LIVE_CLIENT_THIRD_PARTY_CONTROL_RESEARCH.md). **Scope note:** the DLL movement/write work continues independently.
