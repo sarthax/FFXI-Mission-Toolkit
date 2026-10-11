@@ -103,6 +103,10 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
   <span id="ashita-live-status" class="chip mono" role="status">Off</span>
   <label><input type="checkbox" id="ashita-other-clients"> Show other clients in this zone</label>
   <span id="ashita-other-client-status" class="muted mono" role="status">Other clients off</span>
+  <label>Observed client <select id="ashita-secondary-client"><option value="">Choose visible client</option></select></label>
+  <button type="button" id="ashita-secondary-focus" disabled>Focus observed client</button>
+  <label><input id="ashita-secondary-follow" type="checkbox" disabled> Follow observed client</label>
+  <span id="ashita-secondary-detail" class="muted mono" role="status">No observed client selected</span>
   <span id="ashita-telemetry-health" class="muted mono" role="status">No samples yet</span>
 </div>
 <div class="dense-toolbar" style="margin-bottom:6px; flex-wrap:wrap;">
@@ -253,7 +257,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
     }
     sections.get(tab).appendChild(group);
   }
-  makeGroup('live', 'Live position and tracking', ['ashita-live-toggle', 'ashita-live-client', 'ashita-live-refresh', 'ashita-live-entities', 'ashita-live-follow', 'ashita-live-autozone', 'ashita-other-clients', 'ashita-other-client-status', 'ashita-telemetry-health'], true);
+  makeGroup('live', 'Live position and tracking', ['ashita-live-toggle', 'ashita-live-client', 'ashita-live-refresh', 'ashita-live-entities', 'ashita-live-follow', 'ashita-live-autozone', 'ashita-other-clients', 'ashita-other-client-status', 'ashita-secondary-client', 'ashita-secondary-focus', 'ashita-secondary-follow', 'ashita-secondary-detail', 'ashita-telemetry-health'], true);
   makeGroup('live', 'Axis and heading alignment', ['ashita-live-axes', 'ashita-live-heading', 'ashita-live-sample', 'ashita-live-copy-points', 'ashita-live-samples']);
   makeGroup('live', 'Player actions and diagnostics', ['ashita-live-focus', 'ashita-live-copy', 'ashita-live-status'], true);
   makeGroup('camera', 'Position and coordinates', ['zone3d-camera-readout', 'zone3d-goto-x', 'zone3d-goto-y', 'zone3d-goto-z', 'zone3d-goto', 'zone3d-frame-zone'], true);
@@ -475,6 +479,38 @@ const otherClientsToggle = document.getElementById('ashita-other-clients');
 const otherClientsStatus = document.getElementById('ashita-other-client-status');
 const telemetryHealth = document.getElementById('ashita-telemetry-health');
 const otherClientMarkers = new Map();
+const secondarySelect = document.getElementById('ashita-secondary-client');
+const secondaryFocus = document.getElementById('ashita-secondary-focus');
+const secondaryFollow = document.getElementById('ashita-secondary-follow');
+const secondaryDetail = document.getElementById('ashita-secondary-detail');
+const secondaryPositions = new Map();
+let secondaryFollowLast = null;
+function refreshSecondarySelection() {
+  const previous = secondarySelect.value;
+  secondarySelect.replaceChildren(new Option('Choose visible client', ''));
+  for (const id of secondaryPositions.keys()) secondarySelect.add(new Option(id, id));
+  secondarySelect.value = secondaryPositions.has(previous) ? previous : '';
+  const selected = secondaryPositions.get(secondarySelect.value);
+  secondaryFocus.disabled = !selected;
+  secondaryFollow.disabled = !selected;
+  if (!selected) { secondaryFollow.checked = false; secondaryFollowLast = null; }
+  secondaryDetail.textContent = selected ?
+    secondarySelect.value + ' · ' + [selected.x,selected.y,selected.z].map(v => v.toFixed(1)).join(', ') :
+    'No observed client selected';
+}
+secondarySelect.addEventListener('change', () => { secondaryFollowLast = null; refreshSecondarySelection(); });
+secondaryFocus.addEventListener('click', () => {
+  const position = secondaryPositions.get(secondarySelect.value);
+  if (!position || flyModeOn) return;
+  secondaryFollow.checked = false;
+  secondaryFollowLast = null;
+  const point = projectLivePoint(position);
+  controls.target.copy(point);
+  camera.position.copy(point).add(new THREE.Vector3(25,18,25));
+  controls.update();
+});
+secondaryFollow.addEventListener('change', () => { secondaryFollowLast = null; });
+
 let knownClientIds = [];
 let secondaryPollBusy = false;
 let secondaryPollGeneration = 0;
@@ -487,6 +523,8 @@ function clearOtherClientMarkers() {
     marker.material.dispose();
   }
   otherClientMarkers.clear();
+  secondaryPositions.clear();
+  refreshSecondarySelection();
   otherClientsStatus.textContent = 'Other clients off';
 }
 function renderOtherClientMarker(clientId, position) {
@@ -500,6 +538,16 @@ function renderOtherClientMarker(clientId, position) {
     otherClientMarkers.set(clientId, marker);
   }
   marker.position.copy(projectLivePoint(position));
+  if (Number.isFinite(position.heading)) {
+    if (!marker.userData.direction) {
+      marker.userData.direction = new THREE.ArrowHelper(new THREE.Vector3(1,0,0),
+        new THREE.Vector3(), 6, 0xffd65e);
+      marker.add(marker.userData.direction);
+    }
+    const angle = position.heading + Number(liveHeading.value) * Math.PI / 180;
+    marker.userData.direction.setDirection(new THREE.Vector3(Math.cos(angle),0,Math.sin(angle)).normalize());
+  } else if (marker.userData.direction) marker.userData.direction.visible = false;
+  if (marker.userData.direction) marker.userData.direction.visible = Number.isFinite(position.heading);
 }
 async function refreshOtherClientMarkers() {
   if (secondaryPollBusy || !liveToggle.checked || !otherClientsToggle.checked) return;
@@ -523,14 +571,31 @@ async function refreshOtherClientMarkers() {
       const position = data?.player?.position;
       if (!data?.visible || !position || ![position.x,position.y,position.z].every(Number.isFinite)) continue;
       visible.add(id);
+      secondaryPositions.set(id, {x:position.x,y:position.y,z:position.z,heading:position.heading});
       renderOtherClientMarker(id, position);
     }
     for (const [id, marker] of otherClientMarkers) {
       if (!visible.has(id)) {
         scene.remove(marker); marker.geometry.dispose(); marker.material.dispose();
         otherClientMarkers.delete(id);
+        secondaryPositions.delete(id);
       }
     }
+    const selected = secondaryPositions.get(secondarySelect.value);
+    if (secondaryFollow.checked && selected && !flyModeOn) {
+      const current = projectLivePoint(selected);
+      if (secondaryFollowLast) {
+        const delta = current.clone().sub(secondaryFollowLast);
+        camera.position.add(delta);
+        controls.target.add(delta);
+      } else {
+        controls.target.copy(current);
+        camera.position.copy(current).add(new THREE.Vector3(25,18,25));
+      }
+      controls.update();
+      secondaryFollowLast = current;
+    }
+    refreshSecondarySelection();
     otherClientsStatus.textContent = visible.size + ' other client(s) in zone · blue markers';
   } catch (_) {
     otherClientsStatus.textContent = 'Other client telemetry unavailable';
