@@ -82,6 +82,14 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   <span id="ashita-live-status" class="chip mono" role="status">Off</span>
 </div>
 <div class="dense-toolbar" style="margin-bottom:6px; flex-wrap:wrap;">
+  <fieldset id="spawn-visibility" style="display:flex;gap:9px;flex-wrap:wrap;align-items:center;border:1px solid var(--border);border-radius:5px;padding:4px 8px;">
+    <legend class="muted" style="font-size:11px;">Spawn markers</legend>
+    <label><input type="checkbox" data-spawn-kind="m" checked> Mobs</label>
+    <label><input type="checkbox" data-spawn-kind="n" checked> NPCs</label>
+    <label><input type="checkbox" data-spawn-kind="d" checked> Doors/props</label>
+    <label><input type="checkbox" data-spawn-kind="c" checked> Captured</label>
+    <span id="spawn-visibility-count" class="chip mono" role="status"></span>
+  </fieldset>
   <label class="muted" for="tod-slider">Time of day</label>
   <input type="range" id="tod-slider" min="0" max="24" step="0.1" value="12" style="width:220px;">
   <span id="tod-label" class="chip mono">12:00</span>
@@ -201,8 +209,6 @@ const wallMaterials = [];
 const entityDataUrl = CAPTURE_SPATIAL_URL || `/zoneplot/${ZONEID}/data.json`;
 fetch(entityDataUrl).then(r => r.json()).then(d => {
   spawnEntitiesAll = (d.entities || []).filter(e => !e.zero);
-  spawnEntities = spawnEntitiesAll.slice();
-  buildSpawnMarkers();
   refreshCaptureSpatialResults();
 }).catch(() => {});
 
@@ -727,11 +733,16 @@ function refreshCaptureSpatialResults() {
   const search = document.getElementById('capture-spatial-search');
   const results = document.getElementById('capture-spatial-results');
   const summary = document.getElementById('capture-spatial-summary');
-  if (!CAPTURE_SPATIAL_URL || !search || !results || !summary) return;
-  const q = search.value || '';
-  spawnEntities = spawnEntitiesAll.filter(e => captureEntityMatches(e, q));
+  const q = search ? search.value || '' : '';
+  const visibleKinds = new Set(Array.from(document.querySelectorAll('#spawn-visibility input[data-spawn-kind]:checked'), el => el.dataset.spawnKind));
+  spawnEntities = spawnEntitiesAll.filter(e => visibleKinds.has(e.k || 'c') && captureEntityMatches(e, q));
+  hoveredSpawnId = null;
+  spawnTooltip.style.display = 'none';
   buildSpawnMarkers();
-  summary.textContent = `${spawnEntities.length}/${spawnEntitiesAll.length} entities`;
+  const count = document.getElementById('spawn-visibility-count');
+  if (count) count.textContent = `${spawnEntities.length}/${spawnEntitiesAll.length} shown`;
+  if (summary) summary.textContent = `${spawnEntities.length}/${spawnEntitiesAll.length} entities`;
+  if (!results) return;
   results.innerHTML = '';
   for (const e of spawnEntities.slice(0, 250)) {
     const row = document.createElement('div');
@@ -747,6 +758,9 @@ function refreshCaptureSpatialResults() {
 
 const captureSpatialSearch = document.getElementById('capture-spatial-search');
 if (captureSpatialSearch) captureSpatialSearch.addEventListener('input', refreshCaptureSpatialResults);
+document.querySelectorAll('#spawn-visibility input[data-spawn-kind]').forEach(toggle => {
+  toggle.addEventListener('change', refreshCaptureSpatialResults);
+});
 
 function buildSpawnMarkers() {
   if (spawnMesh) { scene.remove(spawnMesh); spawnMesh.geometry.dispose(); spawnMesh.material.dispose(); spawnMesh = null; }
