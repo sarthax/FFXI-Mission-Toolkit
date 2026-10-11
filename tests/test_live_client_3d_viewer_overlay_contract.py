@@ -11,7 +11,7 @@ def test_zone_viewer_live_overlay_is_opt_in_and_uses_safe_projection():
     assert "&zone_id=' + ZONEID" in content
     assert "if (!data.visible || !data.player || !data.player.position)" in content
     assert "liveStatus.textContent = 'No fresh matching-zone telemetry'" in content
-    assert "if (liveAutoZoneToggle.checked) await checkLiveZone(clientId, requestId)" in content
+    assert "if (liveAutoZoneToggle.checked || liveFollowToggle.checked) await checkLiveZone(clientId, requestId)" in content
     assert "const current = projectLivePoint(position)" in content
     assert "liveMarker.position.copy(current)" in content
     assert "setInterval(pollAshitaPosition, 1500)" in content
@@ -76,7 +76,7 @@ def test_opt_in_auto_zone_navigation_requires_fresh_same_client_status():
     assert "Number.isInteger(zone)" in content
     assert "location.assign('/zones/' + zone + '/view3d?'" in content
     assert "liveQuery.get('live') === '1'" in content
-    assert "new URLSearchParams({live:'1',client:clientId,autozone:'1',axes:liveAxes.value,heading:liveHeading.value})" in content
+    assert "new URLSearchParams({live:'1',client:clientId,autozone:'1',follow:liveFollowToggle.checked?'1':'0',axes:liveAxes.value,heading:liveHeading.value})" in content
 
 
 def test_axis_and_heading_previews_survive_opt_in_zone_navigation():

@@ -853,3 +853,23 @@ instead of newline characters. Because its first line begins with a Lua
 Update the Toolkit and reprovision/download a fresh private settings file,
 then copy it into the actual Ashita addon folder and reload. Reprovisioning
 revokes earlier credentials; never share the private settings file.
+
+
+## 2026-10-10 offline two-point alignment evidence validator
+
+`workbench.runtime.live_client.alignment.evaluate_alignment` accepts the existing
+3D viewer **Copy two-point comparison** JSON structure and returns raw/viewer
+movement deltas, elapsed time, distance preservation and validation flags. It
+rejects mixed clients, zones, characters, adapters, axis/heading previews,
+nonfinite coordinates and non-increasing timestamps. Results never claim an
+axis is correct or that any game write is safe. It intentionally creates no
+new viewer controls, stores no paths and does not connect to the game.
+
+For a Windows verification, enable opt-in Live Overlay in the 3D zone viewer,
+stand still and mark point A, move along a known in-game direction without
+zoning, mark point B, then copy the two-point JSON. Run it through the helper
+or preserve it with the runtime report for offline comparison. Independently
+record the actual in-game direction, approximate distance, active client ID,
+zone and heading. A two-point displacement alone cannot prove absolute
+world position, game/server synchronization or writing capability. Movement
+commands remain disabled pending further independent validation.
