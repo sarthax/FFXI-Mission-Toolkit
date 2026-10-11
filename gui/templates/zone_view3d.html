@@ -179,6 +179,11 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
   </aside>
   <div id="zone3d-entity-inspector" hidden style="position:absolute;right:12px;bottom:12px;z-index:12;width:min(330px,calc(100% - 130px));max-height:65%;overflow:auto;background:rgba(10,15,22,.95);border:1px solid var(--border);border-radius:8px;padding:10px;">
     <div style="display:flex;justify-content:space-between;align-items:center"><strong>Entity inspection</strong><button type="button" id="zone3d-inspector-close" aria-label="Close entity inspection">×</button></div>
+    <div style="display:flex;align-items:center;gap:7px;margin:6px 0">
+      <button type="button" id="zone3d-inspector-prev" aria-label="Previous visible entity">← Prev</button>
+      <span id="zone3d-inspector-index" class="mono muted" role="status">—</span>
+      <button type="button" id="zone3d-inspector-next" aria-label="Next visible entity">Next →</button>
+    </div>
     <div id="zone3d-inspector-content" class="mono" style="font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0"></div>
     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
       <button type="button" id="zone3d-inspector-focus">Focus camera</button>
@@ -1002,6 +1007,7 @@ function refreshCaptureSpatialResults() {
     const stillKnown = spawnEntitiesAll.some(e => e === selectedEntity);
     if (stillKnown) inspectEntity(selectedEntity);
     else { selectedEntity = null; entityInspector.hidden = true; }
+    updateInspectorNavigation();
   }
   const count = document.getElementById('spawn-visibility-count');
   if (count) count.textContent = `${spawnEntities.length}/${spawnEntitiesAll.length} shown`;
@@ -1028,6 +1034,8 @@ document.querySelectorAll('#spawn-visibility input[data-spawn-kind]').forEach(to
 
 function buildSpawnMarkers() {
   if (spawnMesh) { scene.remove(spawnMesh); spawnMesh.geometry.dispose(); spawnMesh.material.dispose(); spawnMesh = null; }
+  // The current inspected entity stays visually distinct after filtering/rebuilding.
+
   if (spawnEntities.length === 0) return;
   const geom = new THREE.SphereGeometry(0.8, 10, 10);
   // depthTest:false + high renderOrder: indoor wall/roof geometry otherwise fully occludes these
@@ -1043,7 +1051,7 @@ function buildSpawnMarkers() {
     dummy.position.set(e.x, -e.y, -e.z);
     dummy.updateMatrix();
     mesh.setMatrixAt(i, dummy.matrix);
-    mesh.setColorAt(i, color.set(SPAWN_COLORS[e.k] ?? 0x44cc88));
+    mesh.setColorAt(i, color.set(e === selectedEntity ? 0xffff33 : (SPAWN_COLORS[e.k] ?? 0x44cc88)));
   });
   mesh.instanceMatrix.needsUpdate = true;
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
@@ -1055,9 +1063,38 @@ const entityInspector = document.getElementById('zone3d-entity-inspector');
 const entityInspectorContent = document.getElementById('zone3d-inspector-content');
 const entityInspectorLinks = document.getElementById('zone3d-inspector-links');
 let selectedEntity = null;
+function stepInspectedEntity(offset) {
+  if (!spawnEntities.length) return;
+  const current = spawnEntities.indexOf(selectedEntity);
+  if (current < 0) return;
+  const index = (current + offset + spawnEntities.length) % spawnEntities.length;
+  const next = spawnEntities[index];
+  inspectEntity(next);
+  if ([next.x, next.y, next.z].every(Number.isFinite)) {
+    if (flyModeOn) exitFlyMode();
+    flyTo(new THREE.Vector3(next.x, -next.y, -next.z));
+  }
+}
+document.getElementById('zone3d-inspector-prev').addEventListener('click', () => stepInspectedEntity(-1));
+document.getElementById('zone3d-inspector-next').addEventListener('click', () => stepInspectedEntity(1));
+function updateInspectorNavigation() {
+  const index = spawnEntities.indexOf(selectedEntity);
+  const available = index >= 0;
+  document.getElementById('zone3d-inspector-prev').disabled = !available || spawnEntities.length < 2;
+  document.getElementById('zone3d-inspector-next').disabled = !available || spawnEntities.length < 2;
+  document.getElementById('zone3d-inspector-index').textContent = available ?
+    `${index + 1} / ${spawnEntities.length} visible` : 'Not in visible markers';
+}
 function inspectEntity(entity) {
   if (!entity) return;
   selectedEntity = entity;
+  updateInspectorNavigation();
+  if (spawnMesh) {
+    const color = new THREE.Color();
+    spawnEntities.forEach((e, index) =>
+      spawnMesh.setColorAt(index, color.set(e === entity ? 0xffff33 : (SPAWN_COLORS[e.k] ?? 0x44cc88))));
+    if (spawnMesh.instanceColor) spawnMesh.instanceColor.needsUpdate = true;
+  }
   inspectorFeedback.textContent = '';
   const hasPosition = [entity.x, entity.y, entity.z].every(Number.isFinite);
   document.getElementById('zone3d-inspector-focus').disabled = !hasPosition;
