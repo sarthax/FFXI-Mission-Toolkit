@@ -25,9 +25,9 @@
 {% for r in rows %}{% set h = kinds.get(r.kind) %}
 <tr>
   <td>{{r.review_id}}</td>
-  <td>{{ h.label if h else r.kind }}{% if h and h.blocking %} <span title="blocking: capture held out of derived data" style="color:var(--amber)">&#9888;</span>{% endif %}{% if r.key %}<div class="muted">key {{r.key}}</div>{% endif %}</td>
+  <td>{{ h.label if h else r.kind }}{% if r.blocking %} <span title="blocking: capture held out of derived data" style="color:var(--amber)">&#9888;</span>{% endif %}{% if r.key %}<div class="muted">key {{r.key}}</div>{% endif %}</td>
   <td>{% if r.capture_id %}<a href="/captures/{{r.capture_id}}">{{r.capture_id}}</a><div class="muted">{{r.capture_label}}</div>{% else %}<div class="muted">{{r.source_path}}</div>{% endif %}</td>
-  <td>{{ r.detail.reason or '' }}
+  <td>{{ r.detail.summary or r.detail.reason or '' }}{% if r.detail.note %}<div class="muted">{{ r.detail.note }}</div>{% endif %}
     {% if r.detail.capture_zones is defined %}<div class="muted">zones in capture: {{ r.detail.capture_zones|join(', ') or '—' }}</div><div class="muted">name hint (not applied): {{ r.detail.name_hint|join(', ') or '—' }}</div>{% endif %}
     {% if r.detail.duplicate_of and r.detail.this %}<div class="muted">this: <a href="/captures/{{ r.detail.this.capture_id }}">#{{ r.detail.this.capture_id }}</a> {{ r.detail.this.label }} · tags: {{ r.detail.this.tags|join(', ') or '—' }} · post: {{ r.detail.this.post_title or '—' }}</div>
     <div class="muted">same as: <a href="/captures/{{ r.detail.duplicate_of.capture_id }}">#{{ r.detail.duplicate_of.capture_id }}</a> {{ r.detail.duplicate_of.label }} · tags: {{ r.detail.duplicate_of.tags|join(', ') or '—' }} · post: {{ r.detail.duplicate_of.post_title or '—' }}</div>{% endif %}
