@@ -123,6 +123,11 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   <button type="button" id="zone3d-restore-view" disabled>Restore view</button>
   <span id="zone3d-nav-feedback" class="muted" role="status" aria-live="polite"></span>
 </div>
+<details id="zone3d-mesh-diagnostics" style="margin:8px 0;border:1px solid var(--border);border-radius:6px;padding:8px;">
+  <summary>Mesh diagnostics <span id="zone3d-diagnostics-status" class="chip mono" role="status">Waiting for geometry</span></summary>
+  <div id="zone3d-diagnostics-content" class="mono" style="white-space:pre-wrap;font-size:12px;margin-top:8px;">No mesh parsed yet.</div>
+  <button type="button" id="zone3d-copy-diagnostics" style="margin-top:8px;" disabled>Copy diagnostics</button>
+</details>
 <div id="viewer-container" style="width:100%; height:640px; border:1px solid var(--border); border-radius:8px; background:#0a0d10; position:relative;">
   <div id="viewer-loading" class="muted" role="status" aria-live="polite" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Loading mesh&hellip;</div>
   <div id="viewer-mesh-source" class="chip mono" role="status" style="display:none;position:absolute;top:10px;right:10px;z-index:3;"></div>
@@ -187,6 +192,26 @@ function showMeshSource(label) {
   meshSourceEl.style.display = 'block';
 }
 document.getElementById('viewer-retry-mesh').addEventListener('click', () => window.location.reload());
+const meshDiagnosticsStatus = document.getElementById('zone3d-diagnostics-status');
+const meshDiagnosticsContent = document.getElementById('zone3d-diagnostics-content');
+const meshDiagnosticsCopy = document.getElementById('zone3d-copy-diagnostics');
+let meshDiagnosticsReport = null;
+function setMeshDiagnostics(kind, details = {}) {
+  meshDiagnosticsReport = { zone_id: ZONEID, source: kind, ...details };
+  meshDiagnosticsStatus.textContent = kind;
+  meshDiagnosticsContent.textContent = JSON.stringify(meshDiagnosticsReport, null, 2);
+  meshDiagnosticsCopy.disabled = false;
+}
+meshDiagnosticsCopy.addEventListener('click', () => {
+  if (!meshDiagnosticsReport) return;
+  const value = JSON.stringify(meshDiagnosticsReport, null, 2);
+  navigator.clipboard.writeText(value).then(() => {
+    meshDiagnosticsStatus.textContent = 'Copied diagnostics';
+  }).catch(() => {
+    meshDiagnosticsContent.focus?.();
+    meshDiagnosticsStatus.textContent = 'Clipboard unavailable; select report text';
+  });
+});
 
 // ---- Spawn markers (Phase 1) -- reuses zone_plot.py's existing /zoneplot/{zid}/data.json
 // live-DB query (same data the 2D top-down plotter uses), ported here as instanced spheres
@@ -1250,9 +1275,11 @@ function loadObjFallback() {
       }
     });
     showMeshSource('Cached OBJ · untextured fallback');
+    setMeshDiagnostics('cached_obj', { geometry: 'untextured legacy fallback', parser: 'OBJLoader' });
     onZoneMeshReady(obj);
   }, undefined, (err) => {
     console.error('[ZoneViewer] cached OBJ failed:', err);
+    setMeshDiagnostics('unavailable', { fallback: 'cached OBJ failed', error: String(err?.message || err) });
     showMeshError('The cached OBJ is missing or unreadable. Check the configured FFXI client and zone geometry DAT, or build the local visual cache from the Zone Editor. See browser console for technical details.');
   });
 }
@@ -1278,6 +1305,7 @@ if (LIVE_PARSE_AVAILABLE) {
     const discarded = audit.missingPrefab + audit.invalidTransform;
     showMeshSource(`Client DAT · ${audit.accepted}/${audit.total} instances · ${audit.mirrored} mirrored${discarded ? ' · ' + discarded + ' skipped' : ''}`);
     const materials = group.userData.materialAudit;
+    setMeshDiagnostics('client_dat', { rom_path: GEOMETRY_ROM_PATH, instances: audit, materials });
     console.info('[ZoneViewer] zone material audit:', materials);
     if (materials.missingTexture || materials.invalidTexture) {
       console.warn('[ZoneViewer] some prefab textures are missing or invalid; falling back to untextured surfaces:', materials);
