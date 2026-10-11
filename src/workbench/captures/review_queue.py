@@ -408,6 +408,7 @@ def exclude_sql(con, col="capture_id"):
     try:
         if not con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='review_queue'").fetchone():
             return ""
+        ensure(con)
         return (" AND %s NOT IN (SELECT capture_id FROM review_queue WHERE status='pending' "
                 "AND capture_id IS NOT NULL AND blocking=1)" % col)
     except Exception:
