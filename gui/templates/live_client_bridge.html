@@ -45,6 +45,13 @@
  <details><summary>Private configuration (do not share)</summary><pre id="config" aria-live="polite"></pre></details>
 </section>
 <section class="lc-panel">
+ <h2>Install native plugin (warp / position)</h2>
+ <p class="muted">Copies the prebuilt <code>workbench_native_probe.dll</code> into the Ashita folder entered below (an existing DLL is backed up) and creates <code>settings.ini</code> only if missing. Unload the plugin in game first if it is loaded.</p>
+ <label><input type="checkbox" id="native-allow-cmds"> Allow Toolkit file commands (enables warp control from the viewer; dev servers only)</label>
+ <div class="lc-actions"><button type="button" id="native-install-preview">Preview</button><button type="button" id="native-install-apply" disabled>Install plugin</button></div>
+ <div id="native-install-status" role="status" aria-live="polite" class="muted">Not checked.</div>
+</section>
+<section class="lc-panel">
  <h2>Install Ashita addon locally</h2>
  <p class="muted">Optional: use only on the Windows PC running Ashita and the Toolkit. Preview changes, then explicitly choose backup and replace to update existing addon files. Private settings remain separate.</p>
  <label>Ashita root folder <input id="ashita-install-root" style="max-width:min(100%,660px);width:560px" placeholder="C:\\Ashita" autocomplete="off"></label>
@@ -260,6 +267,17 @@ async function quickStart(regenerate){try{const value=client();
   document.getElementById('config').textContent='Save locally as addons/workbench_live/workbench_bridge_settings.lua (private):\n\n'+privateConfig;
  }
  }catch(error){actionMessage.textContent=String(error)}}
+let nativeSha=null;
+async function nativeInstall(kind){const st=document.getElementById('native-install-status');
+ try{const root=installRootInput.value.trim();if(!root)throw Error('Enter the Ashita folder first');
+  if(kind==='preview'){const r=await request('installer/native-preview',{ashita_root:root});
+   nativeSha=r.dll_found?r.dll_sha256:null;document.getElementById('native-install-apply').disabled=!nativeSha;
+   st.textContent=r.dll_found?('DLL '+r.dll_sha256.slice(0,12)+' ready; '+(r.target_matches?'already installed':r.target_exists?'will replace existing (backup kept)':'will be installed')+'; settings.ini '+(r.settings_exists?'exists (left unchanged)':'will be created')+'.'):r.note;}
+  else{const r=await request('installer/native-apply',{ashita_root:root,expected_sha256:nativeSha,allow_file_commands:document.getElementById('native-allow-cmds').checked});
+   st.textContent=(r.dll_copied?'DLL installed. ':'DLL already current. ')+(r.settings_written?'settings.ini created. ':'settings.ini unchanged. ')+'In game: '+r.load_command;}
+ }catch(e){st.textContent=String(e.message||e)}}
+document.getElementById('native-install-preview').addEventListener('click',()=>nativeInstall('preview'));
+document.getElementById('native-install-apply').addEventListener('click',()=>nativeInstall('apply'));
 try{const saved=localStorage.getItem('wb-ashita-root');if(saved)installRootInput.value=saved;}catch(_){}
 installRootInput.addEventListener('change',()=>{try{localStorage.setItem('wb-ashita-root',installRootInput.value.trim())}catch(_){}});
 fetch(root+'state').then(r=>r.json()).then(d=>{if(d.ashita_root&&!installRootInput.value)installRootInput.value=d.ashita_root}).catch(()=>{});

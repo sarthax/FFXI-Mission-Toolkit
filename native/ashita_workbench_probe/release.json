@@ -1,0 +1,6 @@
+{
+  "_comment": "Pinned plugin release for the Toolkit installer. Fill tag/url/sha256 after publishing the DLL as a GitHub release asset; the installer refuses any download whose SHA-256 differs.",
+  "tag": "",
+  "url": "",
+  "sha256": ""
+}

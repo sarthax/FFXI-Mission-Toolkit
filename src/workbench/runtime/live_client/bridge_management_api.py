@@ -19,6 +19,7 @@ from .movement_control import ControlIdentity, MovementControlGate, Position
 from .native_position_compare import PositionSample, compare_native_live
 import secrets
 import time
+from . import native_install
 from .bridge_settings_file import render_settings_lua, write_settings
 from .ashita_install import (preview as preview_ashita_addon, install_missing as install_ashita_addon,
                              preview_upgrade as preview_ashita_upgrade, upgrade_with_backup as apply_ashita_upgrade)
@@ -30,6 +31,13 @@ class AshitaInstallSelection(BaseModel):
 
 class AshitaInstallConfirmation(AshitaInstallSelection):
     expected: dict
+
+
+class NativeInstallApply(AshitaInstallSelection):
+    expected_sha256: str = Field(min_length=64, max_length=64)
+    allow_file_commands: bool = False
+    auto_arm: str = Field(default="", max_length=16)
+    speed_percent: int | None = Field(default=None, ge=25, le=400)
 
 
 class QuickStart(BaseModel):
@@ -96,6 +104,23 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
         require_same_origin(request)
         try:
             return install_ashita_addon(selection.ashita_root, selection.expected)
+        except (ValueError, OSError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    @router.post("/installer/native-preview")
+    def native_preview(request: Request, selection: AshitaInstallSelection) -> dict:
+        require_same_origin(request)
+        try:
+            return native_install.preview(selection.ashita_root)
+        except (ValueError, OSError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @router.post("/installer/native-apply")
+    def native_apply(request: Request, selection: NativeInstallApply) -> dict:
+        require_same_origin(request)
+        try:
+            return native_install.apply(selection.ashita_root, selection.expected_sha256,
+                                        selection.allow_file_commands, selection.auto_arm, selection.speed_percent)
         except (ValueError, OSError) as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 
