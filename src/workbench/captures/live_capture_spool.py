@@ -28,6 +28,7 @@ class LiveCaptureSpool:
         self.segment_bytes = segment_bytes
         self._queue = deque()
         self._lock = Lock()
+        self._drain_lock = Lock()
         self._sequence = LiveCaptureSequence()
         self._segment = 0
         self._size = 0
@@ -79,6 +80,8 @@ class LiveCaptureSpool:
             raise RuntimeError("spool stopped")
         if type(limit) is not int or limit < 1:
             raise ValueError("invalid drain limit")
+        if not self._drain_lock.acquire(blocking=False):
+            raise RuntimeError("concurrent drain is not supported")
         written = 0
         try:
             while written < limit:
@@ -97,17 +100,18 @@ class LiveCaptureSpool:
                     self._file = None
                     self._open_segment()
                 self._file.write(line)
+                self._file.flush()
+                os.fsync(self._file.fileno())
                 self._size += len(line)
                 with self._lock:
                     self._queue.popleft()
                 self.persisted += 1
                 written += 1
-            if self._file and written:
-                self._file.flush()
-                os.fsync(self._file.fileno())
         except (OSError, ValueError) as exc:
             self._fault = str(exc)
             raise
+        finally:
+            self._drain_lock.release()
         return written
 
     def close(self):
