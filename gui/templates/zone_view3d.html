@@ -298,6 +298,8 @@ function projectLivePoint(p) {
 const liveEntitiesGroup = new THREE.Group();
 scene.add(liveEntitiesGroup);
 let lastLivePosition = null;
+// A zone transition creates a new scene/camera. Recenter on its first fresh player position.
+let pendingLiveZoneFocus = liveToggle.checked && liveFollowToggle.checked;
 let lastLiveDiagnostic = null;
 let liveAlignmentSamples = [];
 const liveSampleCount = document.getElementById('ashita-live-samples');
@@ -406,7 +408,12 @@ async function pollAshitaPosition() {
       entity_count: Array.isArray(data.entities) ? data.entities.length : 0,
       entities_truncated: Boolean(data.entities_truncated)
     };
-    if (liveFollowToggle.checked && !flyModeOn && previous) {
+    if (pendingLiveZoneFocus && liveFollowToggle.checked && !flyModeOn) {
+      controls.target.copy(current);
+      camera.position.copy(current).add(new THREE.Vector3(25, 18, 25));
+      controls.update();
+      pendingLiveZoneFocus = false;
+    } else if (liveFollowToggle.checked && !flyModeOn && previous) {
       const delta = current.clone().sub(previous);
       camera.position.add(delta);
       controls.target.add(delta);
@@ -447,6 +454,7 @@ document.getElementById('ashita-live-focus').addEventListener('click', () => {
   }
   liveFollowToggle.checked = true;
   liveAutoZoneToggle.checked = true;
+  pendingLiveZoneFocus = false;
   controls.target.copy(lastLivePosition);
   camera.position.copy(lastLivePosition).add(new THREE.Vector3(25, 18, 25));
   controls.update();
@@ -490,6 +498,7 @@ liveAutoZoneToggle.addEventListener('change', pollAshitaPosition);
 liveAxes.addEventListener('change', () => { ++lastLiveRequest; clearLiveMarker(); pollAshitaPosition(); });
 liveHeading.addEventListener('change', pollAshitaPosition);
 liveClient.addEventListener('change', () => {
+  pendingLiveZoneFocus = liveFollowToggle.checked;
   ++lastLiveRequest; clearLiveMarker(); liveAlignmentSamples = [];
   liveSampleCount.textContent = '0/2 points'; pollAshitaPosition();
 });
