@@ -10,7 +10,7 @@ import socket
 
 from .bridge_loopback import read_exact
 from .bridge_peers import LocalPeerRegistry, PeerIdentity
-from .bridge_protocol import BridgeEnvelope
+from .bridge_protocol import BridgeEnvelope, BridgeLane, BridgeKind
 from .bridge_loopback import receive
 
 MAX_HELLO = 1024
@@ -84,13 +84,15 @@ def receive_session(sock: socket.socket, peers: LocalPeerRegistry, *,
         message = decode(read_exact(sock, size))
         if not peers.accepts(message, hello["token"], now=now):
             raise PermissionError("bridge peer identity changed or lease expired")
-        if message.lane.value == "control":
-            raise PermissionError("inbound control messages are not enabled")
+        if message.lane is BridgeLane.CONTROL and (message.kind is not BridgeKind.HEARTBEAT or message.payload or messages):
+            raise PermissionError("inbound commands are not enabled")
         previous = last_sequence.get(message.lane, -1)
         if message.sequence <= previous:
             raise ValueError("nonmonotonic bridge stream sequence")
         last_sequence[message.lane] = message.sequence
         messages.append(message)
+        if messages[0].lane is BridgeLane.CONTROL and len(messages) != 1:
+            raise PermissionError('heartbeat must be isolated')
     # Reaching the limit never waits for peer EOF.
     if messages and not peers.refresh(identity, hello["token"], now=now):
         raise PermissionError("bridge peer lease expired before completed batch")
