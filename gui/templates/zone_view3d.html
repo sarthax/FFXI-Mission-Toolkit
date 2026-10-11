@@ -1258,7 +1258,7 @@ function buildLiveZoneGroup(zoneData) {
   const geoMap = new Map();
   const matMap = new Map();
   // Material/texture evidence only. Keep parser data and rendering decisions separate.
-  const materialAudit = { prefabs: zoneData.prefabs.length, built: 0, skySkipped: 0, water: 0, alphaBlend: 0, textured: 0, missingTexture: 0, invalidTexture: 0 };
+  const materialAudit = { prefabs: zoneData.prefabs.length, built: 0, skySkipped: 0, water: 0, alphaBlend: 0, alphaCutout: 0, alphaGradient: 0, textured: 0, missingTexture: 0, invalidTexture: 0 };
 
   for (let prefabIdx = 0; prefabIdx < zoneData.prefabs.length; prefabIdx++) {
     const prefab = zoneData.prefabs[prefabIdx];
@@ -1280,6 +1280,8 @@ function buildLiveZoneGroup(zoneData) {
 
     const tex = zoneData.textures[prefab.materialIndex];
     let texture = null;
+    let alphaPixels = 0;
+    let partialAlphaPixels = 0;
     if (!tex) {
       materialAudit.missingTexture++;
     } else if (!Number.isInteger(tex.width) || !Number.isInteger(tex.height) ||
@@ -1288,6 +1290,13 @@ function buildLiveZoneGroup(zoneData) {
       materialAudit.invalidTexture++;
     } else {
       materialAudit.textured++;
+      // Client vegetation/fence textures often use binary alpha even when their MMB
+      // blending flag is zero. Three.js otherwise draws transparent texels as opaque black.
+      for (let pixel = 3; pixel < tex.rgba.length; pixel += 4) {
+        const alpha = tex.rgba[pixel];
+        if (alpha < 255) alphaPixels++;
+        if (alpha > 0 && alpha < 255) partialAlphaPixels++;
+      }
       texture = new THREE.DataTexture(new Uint8Array(tex.rgba), tex.width, tex.height, THREE.RGBAFormat);
       texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
       texture.needsUpdate = true;
@@ -1302,11 +1311,19 @@ function buildLiveZoneGroup(zoneData) {
       matMap.set(prefabIdx, waterMat);
     } else {
       const useAlpha = prefab.blending > 0;
+      const hasTextureAlpha = alphaPixels > 0;
+      const isCutout = hasTextureAlpha && partialAlphaPixels === 0;
       if (useAlpha) materialAudit.alphaBlend++;
+      if (isCutout) materialAudit.alphaCutout++;
+      else if (hasTextureAlpha) materialAudit.alphaGradient++;
       const mat = new THREE.MeshBasicMaterial({
         ...(texture && { map: texture }),
         vertexColors: true, side: THREE.DoubleSide,
-        ...(useAlpha && { alphaTest: 0.1, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+        // Cutouts discard invisible texels without sorting (grass, foliage, fences).
+        // Gradual alpha uses blending; do not make large opaque geometry transparent.
+        ...(isCutout && { alphaTest: 0.5 }),
+        ...(!isCutout && hasTextureAlpha && { transparent: true, depthWrite: false }),
+        ...(useAlpha && { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
       });
       patchHeightFogMaterial(mat);
       matMap.set(prefabIdx, mat);
