@@ -464,7 +464,7 @@ mark.ct-term::after{content:"]";opacity:.6}
     {% elif item.type == 'legacy_text' %}
       <div class="wiki-prose wiki-degraded">{{ item.text }}</div>
     {% elif item.type == 'list' %}
-      <ul class="wiki-list">{% for li in item.items %}<li>{{ li.text }}</li>{% endfor %}</ul>
+      <ul class="wiki-list">{% for li in item['items'] %}<li>{{ li.text }}</li>{% endfor %}</ul>
     {% elif item.type == 'definition' %}
       <dl class="wiki-definition"><dt>{{ item.term }}</dt><dd>{{ item.definition }}</dd></dl>
       {% if item.field_candidate %}
