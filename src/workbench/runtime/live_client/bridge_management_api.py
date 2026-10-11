@@ -13,6 +13,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from .bridge_managed import ManagedLiveReceiver
+from .bridge_settings_file import render_settings_lua, write_settings
 from .ashita_install import (preview as preview_ashita_addon, install_missing as install_ashita_addon,
                              preview_upgrade as preview_ashita_upgrade, upgrade_with_backup as apply_ashita_upgrade)
 
@@ -23,6 +24,12 @@ class AshitaInstallSelection(BaseModel):
 
 class AshitaInstallConfirmation(AshitaInstallSelection):
     expected: dict
+
+
+class QuickStart(BaseModel):
+    client_id: str = Field(default="ashita-a", min_length=1, max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
+    ashita_root: str | None = Field(default=None, max_length=2048)
+    regenerate: bool = False
 
 
 class ClientSelection(BaseModel):
@@ -92,6 +99,46 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
         except RuntimeError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         return {"running": True, "host": host, "port": port}
+
+    @router.get("/state")
+    def remembered_state(request: Request) -> dict:
+        if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
+            raise HTTPException(status_code=403, detail="bridge setup requires local browser")
+        return {"running": manager.running, "ashita_root": manager.remembered_ashita_root(),
+                "clients": manager.clients()}
+
+    @router.post("/quick-start")
+    def quick_start(request: Request, selection: QuickStart) -> dict:
+        """One step: start receiver (idempotent), reuse/issue credentials, write Ashita settings."""
+        require_same_origin(request)
+        try:
+            if not manager.running:
+                manager.start()
+            creds = manager.provision(selection.client_id, reuse=not selection.regenerate)
+            root = selection.ashita_root or manager.remembered_ashita_root()
+            result = {"running": True, "host": creds["host"], "port": creds["port"],
+                      "client_id": selection.client_id, "settings_written": False,
+                      "settings_changed": False, "command": "/wblive live start " + selection.client_id}
+            if root:
+                try:
+                    path, changed = write_settings(root, creds)
+                except (ValueError, OSError) as exc:
+                    result["settings_error"] = str(exc)
+                else:
+                    manager.remember_ashita_root(root)
+                    result.update(settings_written=True, settings_changed=changed, settings_path=str(path))
+            if not result["settings_written"]:
+                # No usable Ashita folder: hand the file back for manual download.
+                result["settings_lua"] = render_settings_lua(creds)
+            return result
+        except (RuntimeError, ValueError, OSError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    @router.post("/reset-credentials")
+    def reset_credentials(request: Request, selection: ClientSelection) -> dict:
+        require_same_origin(request)
+        manager.reset_credentials(selection.client_id)
+        return {"reset": selection.client_id}
 
     @router.post("/provision")
     def provision(request: Request, selection: ClientSelection) -> dict:

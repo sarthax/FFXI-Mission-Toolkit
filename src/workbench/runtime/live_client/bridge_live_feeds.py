@@ -43,6 +43,11 @@ class BridgeLiveFeeds:
         feed = previous[2] if previous and previous[:2] == (first.session_id, first.generation) else TelemetryFeedAdapter(first.client_id)
         # Frames were decoded once, with their provenance; no JSON re-interpretation.
         feed._latest = frames[-1]
+        # The feed keeps only the latest frame; without draining, the bounded
+        # telemetry queue fills after ~128 frames and every later batch is rejected.
+        mailbox = self.listener.mailbox(first.client_id)
+        if mailbox is not None:
+            mailbox.drain(BridgeLane.TELEMETRY)
         self._feeds[first.client_id] = (first.session_id, first.generation, feed)
         return tuple(frames)
 
