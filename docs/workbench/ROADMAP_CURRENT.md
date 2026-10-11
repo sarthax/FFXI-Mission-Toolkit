@@ -576,3 +576,11 @@ The associated format audit is in
 regressions in `test_fixtures/test_dat_parser_capability_audit.py`.
 Do not treat decoder availability as verified DAT format support, and do not bundle
 copyrighted game assets or modify the Live Client bridge as part of this audit.
+
+
+## Capture review workflow — 2026-10-10
+
+- Persistent manual missing-data, invalid/suspect-data, and follow-up review items now use the existing capture review queue.
+- Manual items are non-blocking by default; reviewers can explicitly quarantine a capture from derived/aggregate results until the item is resolved.
+- Capture Detail can create, resolve, dismiss, and review the full history; the global Review Queue shows automated and manual items together.
+- Next: automatic request fulfillment matching and tag/content-type completeness checklists using this same workflow.
