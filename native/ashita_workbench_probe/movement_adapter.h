@@ -18,6 +18,12 @@ namespace wb {
 struct Vec3 { float x = 0, y = 0, z = 0; };
 
 inline bool finite3(const Vec3& v) { return std::isfinite(v.x) && std::isfinite(v.y) && std::isfinite(v.z); }
+// Ground-plane distance. Live test 2026-10-11 (zone 98): SDK X/Y are the horizontal plane
+// (SDK Y == server z) and SDK Z is height (== server y), so autorun legs are judged on X/Y only.
+inline float dist2(const Vec3& a, const Vec3& b) {
+    const float dx = a.x - b.x, dy = a.y - b.y;
+    return std::sqrt(dx * dx + dy * dy);
+}
 inline float dist3(const Vec3& a, const Vec3& b) {
     const float dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
     return std::sqrt(dx * dx + dy * dy + dz * dz);
@@ -113,6 +119,7 @@ public:
         const float mag = std::sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
         if (mag < 0.05f) return Deny(id, "delta_too_small");
         if (mag > lim_.max_step) return Deny(id, "exceeds_max_step");
+        if (mode_ == Mode::Autorun && std::fabs(delta.z) > 0.05f) return Deny(id, "vertical_unsupported_in_autorun");
         const double now = port_.NowSeconds();
         if (now - enabled_at_ > lim_.enable_ttl) { enabled_ = false; return Deny(id, "enable_expired"); }
         if (active_) return Deny(id, "busy");
@@ -155,9 +162,9 @@ public:
             Finish(false, "state_lost");
             return;
         }
-        const float d = dist3(s.pos, cur_.target);
-        const float travelled = dist3(s.pos, cur_.before);
-        const float planned = dist3(cur_.target, cur_.before);
+        const float d = dist2(s.pos, cur_.target);
+        const float travelled = dist2(s.pos, cur_.before);
+        const float planned = dist2(cur_.target, cur_.before);
         if (d <= lim_.arrive_radius) { port_.EndAutorun(); cur_.after = s.pos; Finish(true, "arrived"); return; }
         if (travelled > planned + lim_.arrive_radius) { port_.EndAutorun(); cur_.after = s.pos; Finish(false, "overshoot"); return; }
         if (port_.NowSeconds() - started_ > lim_.autorun_timeout) { port_.EndAutorun(); cur_.after = s.pos; Finish(false, "timeout"); }

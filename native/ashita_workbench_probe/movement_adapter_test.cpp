@@ -44,6 +44,7 @@ int main() {
         CHECK(denied(a.Request("inf", {std::numeric_limits<float>::infinity(), 0, 0}), "nonfinite_delta"));
         CHECK(denied(a.Request("big", {3.5f, 0, 0}), "exceeds_max_step"));
         CHECK(denied(a.Request("tiny", {0.01f, 0, 0}), "delta_too_small"));
+        CHECK(denied(a.Request("vert", {0, 0, 1}), "vertical_unsupported_in_autorun"));
         CHECK(p.begin == 0);
     }
     {   // identity / zone / zoning / staleness
@@ -68,6 +69,11 @@ int main() {
         p.now += 2.0;
         CHECK(denied(a.Request("m1", {1, 0, 0}), "duplicate_id"));
         CHECK(a.Request("m3", {1, 0, 0}).ok);
+    }
+    {   // slope: height change must not defeat arrival
+        FakePort p; MovementAdapter a(p); a.Enable(Mode::Autorun);
+        a.Request("sl", {0, 2, 0}); p.snap.pos = {10, 21.8f, 31.5f}; a.Tick();
+        CHECK(a.last().reason == "arrived");
     }
     {   // stop, overshoot, timeout, state lost
         FakePort p; MovementAdapter a(p); a.Enable(Mode::Autorun);
