@@ -78,8 +78,10 @@ class LiveCaptureSequence:
         previous = self._last.get(key)
         if previous is not None:
             sequence, observed_ns, drops = previous
-            if packet.sequence != sequence + 1:
-                raise ValueError("missing, duplicate or out-of-order packet")
+            if packet.sequence <= sequence:
+                raise ValueError("duplicate or out-of-order packet")
+            if packet.sequence - sequence - 1 != packet.dropped_before - drops:
+                raise ValueError("packet sequence gap does not match reported drops")
             if packet.observed_at_ns < observed_ns or packet.dropped_before < drops:
                 raise ValueError("time or drop counter regressed")
         elif packet.sequence != 1:
