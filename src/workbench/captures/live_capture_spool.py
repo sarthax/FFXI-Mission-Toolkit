@@ -85,7 +85,7 @@ class LiveCaptureSpool:
                 with self._lock:
                     if not self._queue:
                         break
-                    current = self._queue.popleft()
+                    current = self._queue[0]
                 line = (json.dumps(current, separators=(",", ":"), sort_keys=True) + "\n").encode()
                 if len(line) > self.segment_bytes:
                     raise ValueError("packet exceeds segment size")
@@ -98,6 +98,8 @@ class LiveCaptureSpool:
                     self._open_segment()
                 self._file.write(line)
                 self._size += len(line)
+                with self._lock:
+                    self._queue.popleft()
                 self.persisted += 1
                 written += 1
             if self._file and written:
