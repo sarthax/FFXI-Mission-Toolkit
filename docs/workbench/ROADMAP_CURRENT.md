@@ -533,6 +533,7 @@ Overlapping browser trace requests also discard superseded responses, preventing
 
 - [x] Material alpha diagnostics moved from the full-width bar above the map into the Info drawer; label now clarifies disabling transparency is debug-only and may create expected black billboard rectangles.
 - [x] Optional click-to-inspect client DAT scenery now identifies prefab, instance, triangle count, mirroring and the matching material alpha audit; no DAT/server modifications.
+- [x] Scenery evidence inspector now captures source prefab, group instance, material alpha audit, distance, triangle count and mirrored flag; optional prefab isolation is view-only and exportable as JSON.
 - [ ] Determine whether distant vegetation uses authored LOD geometry or runtime switching from actual client DAT evidence, not only visual overlap.
 - [ ] Bastok Markets / Bastok Markets [S] missing floors/buildings remain separate unverified rendering issues.
 - [ ] Browser acceptance in affected zones with normal/default alpha (debug unchecked).
