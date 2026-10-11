@@ -930,6 +930,12 @@ function refreshCaptureSpatialResults() {
   spawnTooltip.style.display = 'none';
   buildSpawnMarkers();
   refreshFocusSpawn();
+  // Preserve the current inspection across marker filter and capture-search changes.
+  if (selectedEntity) {
+    const stillKnown = spawnEntitiesAll.some(e => e === selectedEntity);
+    if (stillKnown) inspectEntity(selectedEntity);
+    else { selectedEntity = null; entityInspector.hidden = true; }
+  }
   const count = document.getElementById('spawn-visibility-count');
   if (count) count.textContent = `${spawnEntities.length}/${spawnEntitiesAll.length} shown`;
   if (summary) summary.textContent = `${spawnEntities.length}/${spawnEntitiesAll.length} entities`;
@@ -1005,6 +1011,17 @@ function inspectEntity(entity) {
     link.textContent = 'Open Entity Inspector ↗';
     link.href = '/entity/' + encodeURIComponent(id);
     entityInspectorLinks.appendChild(link);
+    // These are the same verified destinations used by the existing entity dossier.
+    for (const [label, destination] of [
+      ['Feature Trace ↗', '/features/trace?q=' + encodeURIComponent(id)],
+      ['Capture evidence ↗', '/captures/query?table=capture_npc_entries&q=' + encodeURIComponent(id)]
+    ]) {
+      const action = document.createElement('a');
+      action.className = 'chip';
+      action.textContent = label;
+      action.href = destination;
+      entityInspectorLinks.appendChild(action);
+    }
   }
   entityInspector.hidden = false;
 }
