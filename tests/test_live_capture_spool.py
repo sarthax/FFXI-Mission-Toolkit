@@ -116,3 +116,18 @@ def test_corrupted_interrupted_session_remains_unmodified(tmp_path):
     assert result["status"] == "damaged_unfinalized"
     assert result["errors"]
     assert not (tmp_path / "manifest.json").exists()
+
+
+def test_diagnostics_verify_completed_session_and_detect_tampering(tmp_path):
+    from workbench.captures.live_capture_spool import inspect_interrupted_session
+    spool = LiveCaptureSpool(tmp_path, "ashita-a", "s1")
+    assert spool.enqueue(packet(1))
+    spool.close()
+    healthy = inspect_interrupted_session(tmp_path)
+    assert healthy["status"] == "verified_complete"
+    assert healthy["packets"] == 1
+    segment = tmp_path / "segment-000001.jsonl"
+    segment.write_bytes(segment.read_bytes() + b"tampered")
+    damaged = inspect_interrupted_session(tmp_path)
+    assert damaged["status"] == "invalid_manifest"
+    assert damaged["errors"]
