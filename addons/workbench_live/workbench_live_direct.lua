@@ -5,6 +5,7 @@ local M = {}
 function M.new(options)
     local client_id, identity, last_attempt, paused, stable_zone, stable_count, reconnect_since
     local hz = options.sample_hz or 1
+    local entity_last, entity_cache, entity_zone = nil, nil, nil
     assert(hz == 1 or hz == 5 or hz == 10 or hz == 20, 'invalid live sampling rate')
     local clock = options.now or os.time
     local function timestamp()
@@ -14,6 +15,7 @@ function M.new(options)
     end
     local function stop(reason)
         client_id, identity, last_attempt, paused, stable_zone, stable_count, reconnect_since = nil, nil, nil, nil, nil, 0, nil
+        entity_last, entity_cache, entity_zone = nil, nil, nil
         if options.stop_bridge then options.stop_bridge() end
         if reason and options.message then options.message(reason) end
     end
@@ -47,6 +49,7 @@ function M.new(options)
         if not ok then
             if observation.is_transition_error(result) then
                 paused, stable_zone, stable_count = paused or now, nil, 0
+                entity_last, entity_cache, entity_zone = nil, nil, nil
                 return
             end
             stop('Live telemetry stopped: '..tostring(result))
@@ -57,10 +60,31 @@ function M.new(options)
             return
         end
         if paused then
+            entity_last, entity_cache, entity_zone = nil, nil, nil
             stable_count = result.position.zone_id == stable_zone and stable_count + 1 or 1
             stable_zone = result.position.zone_id
             if stable_count < 2 then return end
             paused, stable_zone, stable_count = nil, nil, 0
+        end
+        -- Entity enumeration at 2 Hz; player sampling retains its configured cadence.
+        if entity_zone ~= result.position.zone_id or paused then
+            entity_last, entity_cache = nil, nil
+        end
+        entity_zone = result.position.zone_id
+        if options.capture_entities and (not entity_last or now - entity_last >= 0.5) then
+            entity_last = now
+            local ok_entities, extended = pcall(options.capture_entities, client_id, now)
+            if ok_entities and extended.position.zone_id == result.position.zone_id
+                and (extended.source_identity or extended.character) == identity then
+                entity_cache = extended
+            else
+                entity_cache = nil
+            end
+        end
+        if entity_cache and entity_last and now - entity_last <= 2 then
+            result.entities = entity_cache.entities
+            result.observation_scope = entity_cache.observation_scope
+            result.entities_truncated = entity_cache.entities_truncated
         end
         local encoded = observation.encode(result)
         if not options.send(client_id, encoded) then

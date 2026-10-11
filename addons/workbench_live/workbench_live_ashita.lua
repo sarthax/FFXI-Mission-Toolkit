@@ -39,6 +39,7 @@ end
 local direct = require('workbench_live_direct').new({
     now = live_now, sample_hz = live_hz,
     capture = function(id, now) return observation.capture_ashita(AshitaCore, GetEntity, id, now, false, true) end,
+    capture_entities = function(id, now) return observation.capture_ashita(AshitaCore, GetEntity, id, now, true, true, 128) end,
     start_bridge = function(id) return bridge.start(id) end,  -- returns ok, reason,
     stop_bridge = function() bridge.stop() end,
     send = function(id, frame) return bridge.observe(id, frame) end,

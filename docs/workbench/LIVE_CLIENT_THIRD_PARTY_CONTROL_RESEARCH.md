@@ -200,3 +200,9 @@ In game: `/wbprobe speed <25..400>|off|status`, `/wbprobe warp <id> <x> <y> <z>`
 - The Ashita movement test remains the **write-control gate**, but passive observation slices can proceed independently.
 
 **Status:** research documented; no additional runtime functionality implemented by this audit.
+
+### 2026-10-11 — Live Entity Streaming V2 (bounded implementation)
+
+The Ashita Direct Live Bridge now samples loaded entity slots separately from the player at **2 Hz** while retaining the configured 1/5/10/20 Hz position stream. It uses the existing `capture_ashita` inventory enumerator with a **128-entity limit**, preserves entity client index, reported server ID, name, XYZ/heading, raw status/type and target roles, and sets `entities_truncated` when over the cap. The existing recording export continues to default to 32 entries. The decoder accepts up to 256 bounded entities. The 3D viewer enables Nearby entities by default and uses reported `server_entity_id` or `client_index` for its picker identity. The read-only projection and same-zone safeguards remain in place.
+
+**Evidence limits:** loaded client entity slots are not the complete zone spawn database. This slice does not yet provide classified player/NPC/mob filters, dynamic scan cadence settings, history trails, or a validated full-zone inventory. Runtime Ashita acceptance and sustained payload/performance measurement remain required. Source identity and zone changes invalidate cached entity observations, and the map must not show disconnected/stale observations as fresh.

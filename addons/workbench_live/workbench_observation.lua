@@ -69,7 +69,7 @@ function M.capture(ffxi, client_id, observed_at)
     return frame
 end
 
-function M.capture_ashita(core, get_entity, client_id, observed_at, inventory, allow_transition)
+function M.capture_ashita(core, get_entity, client_id, observed_at, inventory, allow_transition, entity_limit)
     text(client_id, true)
     number(observed_at)
     local memory = assert(core:GetMemoryManager(), 'Ashita memory manager unavailable')
@@ -111,6 +111,8 @@ function M.capture_ashita(core, get_entity, client_id, observed_at, inventory, a
         original_index = integer(target:GetTargetIndex(1), 0, 65535)
     end
     local seen, checks = {[index] = true}, {}
+    local limit = entity_limit or 32
+    assert(type(limit) == 'number' and limit == math.floor(limit) and limit >= 1 and limit <= 256, 'invalid entity limit')
     local function optional(getter, slot, high)
         if type(entity[getter]) == 'function' then
             return integer(entity[getter](entity, slot), 0, high)
@@ -127,7 +129,7 @@ function M.capture_ashita(core, get_entity, client_id, observed_at, inventory, a
         if get_entity(slot) == nil then return end
         local entity_name = text(entity:GetName(slot), false)
         if not is_target and not entity_name:find('%S') then return end
-        if #frame.entities >= 32 then frame.entities_truncated = true; return end
+        if #frame.entities >= limit then frame.entities_truncated = true; return end
         local id = optional('GetServerId', slot, 4294967295)
         local item = {client_index = slot, kind = 'unknown', name = entity_name,
             server_entity_id = id ~= 0 and id or nil,

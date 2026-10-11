@@ -24,7 +24,7 @@ class TelemetryTest(unittest.TestCase):
 
     def test_inventory_scope_is_bounded_and_strict(self):
         for patch in ({"observation_scope": "invented"}, {"entities_truncated": 1},
-                      {"observation_scope": "bounded_loaded_entities", "entities": self.packet["entities"] * 33}):
+                      {"observation_scope": "bounded_loaded_entities", "entities": self.packet["entities"] * 257}):
             with self.assertRaises(ValueError):
                 decode_frame({**self.packet, **patch})
         frame = decode_frame({**self.packet, "observation_scope": "bounded_loaded_entities", "entities_truncated": True})
