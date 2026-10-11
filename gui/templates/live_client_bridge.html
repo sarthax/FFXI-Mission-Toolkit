@@ -61,12 +61,44 @@
  <button type="button" id="bridge-copy-health">Copy safe health report</button>
  <a id="liveZoneLink" class="chip" style="display:none" href="#" rel="noopener">Open current zone in 3D Viewer ↗</a>
  <div id="metrics"></div>
+ <details class="lc-panel" id="alignment-panel">
+ <summary>Two-point 3D alignment check (read-only)</summary>
+ <p class="muted">In the 3D viewer, mark two positions and copy the two-point comparison JSON. Paste it below to check consistency. No evidence is saved and a passing check does not authorize movement controls.</p>
+ <label for="alignment-json">Two-point comparison JSON</label>
+ <textarea id="alignment-json" rows="6" maxlength="16384" spellcheck="false" placeholder="Paste the 3D viewer two-point JSON here"></textarea>
+ <div class="lc-actions"><button type="button" id="alignment-validate">Validate samples</button><button type="button" id="alignment-clear">Clear</button></div>
+ <div id="alignment-feedback" role="status" aria-live="polite">No sample checked.</div>
+ <pre id="alignment-result"></pre>
+ </details>
  <h3>Nearby observed entities</h3><div id="entities">No observations yet</div>
  <details><summary>Technical details</summary><pre id="status" aria-live="polite">Not connected</pre></details>
 </section>
 </div>
 <script>
 const root='/live-client/bridge/';
+const alignmentInput=document.getElementById('alignment-json');
+const alignmentFeedback=document.getElementById('alignment-feedback');
+const alignmentResult=document.getElementById('alignment-result');
+document.getElementById('alignment-clear').addEventListener('click',()=>{
+ alignmentInput.value='';alignmentResult.textContent='';alignmentFeedback.textContent='No sample checked.';
+});
+document.getElementById('alignment-validate').addEventListener('click',async()=>{
+ alignmentResult.textContent='';
+ if(alignmentInput.value.length>16384){alignmentFeedback.textContent='Sample exceeds 16 KiB limit';return;}
+ let payload;
+ try{payload=JSON.parse(alignmentInput.value);}
+ catch(_){alignmentFeedback.textContent='Invalid JSON';return;}
+ try{
+  const response=await fetch(root+'alignment/validate',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+  });
+  const result=await response.json();
+  if(!response.ok){alignmentFeedback.textContent='Validation rejected: '+(result.detail||response.status);return;}
+  alignmentFeedback.textContent=result.distance_preserved?'Distance preserved — direction remains unverified':'Distance mismatch — inspect axis projection';
+  alignmentResult.textContent=JSON.stringify(result,null,2);
+ }catch(_){alignmentFeedback.textContent='Validation request failed';}
+});
+
 const installRootInput=document.getElementById('ashita-install-root');
 const installStatus=document.getElementById('ashita-install-status');
 const installResult=document.getElementById('ashita-install-result');
