@@ -30,6 +30,9 @@
   #zone3d-drawer #zone3d-mesh-diagnostics{margin:0!important}
   #zone3d-drawer #zone3d-diagnostics-content{overflow-wrap:anywhere}
   #zone3d-drawer .zone3d-tab-pane > *{margin-bottom:8px!important}
+  #zone3d-drawer .zone3d-settings-group{padding:7px;border:1px solid var(--border);border-radius:6px;margin:6px 0}
+  #zone3d-drawer .zone3d-settings-group summary{cursor:pointer;font-weight:650;margin-bottom:5px}
+  #zone3d-drawer .zone3d-settings-group label{margin:5px 0}
   @media(max-width:680px){ #zone3d-toolrail{top:5px;left:5px;padding:3px}#zone3d-toolrail button{min-width:66px;font-size:11px}#zone3d-drawer{top:5px;bottom:5px;left:82px;width:calc(100% - 87px)}}
   @media (max-width:900px) { #viewer-container{height:calc(100vh - var(--shell-h) - 235px) !important;min-height:400px} }
 </style>
@@ -214,6 +217,30 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   if (captureLink) sections.get('capture').appendChild(captureLink);
   const pathLink = document.querySelector('a[href*="/captures/plot_all?"]');
   if (pathLink) sections.get('capture').appendChild(pathLink.cloneNode(true));
+  // Group long controls by task without changing their element identities or listeners.
+  // Native details keep seldom-used alignment and export actions out of the way.
+  function makeGroup(tab, title, ids, initiallyOpen = false) {
+    const available = ids.map(id => document.getElementById(id)).filter(Boolean);
+    if (!available.length) return;
+    const group = document.createElement('details');
+    group.className = 'zone3d-settings-group';
+    group.open = initiallyOpen;
+    const summary = document.createElement('summary');
+    summary.textContent = title;
+    group.appendChild(summary);
+    for (const el of available) {
+      const field = el.closest('label') || el;
+      if (field.closest('.zone3d-settings-group')) continue;
+      group.appendChild(field);
+    }
+    sections.get(tab).appendChild(group);
+  }
+  makeGroup('live', 'Live position and tracking', ['ashita-live-toggle', 'ashita-live-client', 'ashita-live-refresh', 'ashita-live-entities', 'ashita-live-follow', 'ashita-live-autozone'], true);
+  makeGroup('live', 'Axis and heading alignment', ['ashita-live-axes', 'ashita-live-heading', 'ashita-live-sample', 'ashita-live-copy-points', 'ashita-live-samples']);
+  makeGroup('live', 'Player actions and diagnostics', ['ashita-live-focus', 'ashita-live-copy', 'ashita-live-status'], true);
+  makeGroup('camera', 'Position and coordinates', ['zone3d-camera-readout', 'zone3d-goto-x', 'zone3d-goto-y', 'zone3d-goto-z', 'zone3d-goto', 'zone3d-frame-zone'], true);
+  makeGroup('camera', 'Saved viewpoints', ['zone3d-save-view', 'zone3d-restore-view', 'zone3d-view-name', 'zone3d-add-bookmark', 'zone3d-bookmark-list', 'zone3d-open-bookmark', 'zone3d-delete-bookmark'], true);
+  makeGroup('camera', 'Entity focus', ['zone3d-focus-spawn', 'zone3d-focus-spawn-button'], true);
   const names = {zone:'Zone',layers:'Display layers',camera:'Camera and viewpoints',live:'Live client',capture:'Capture context',diagnostics:'Diagnostics'};
   function showTab(tab) {
     const isOpen = !panel.hidden && panel.dataset.activeTab === tab;
