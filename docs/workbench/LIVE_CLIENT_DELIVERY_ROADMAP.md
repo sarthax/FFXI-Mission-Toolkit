@@ -45,6 +45,10 @@ The new `workbench.runtime.live_client.movement_control` service builds on the e
 
 The opt-in local bridge now exposes `GET /live-client/bridge/movement/capabilities` and same-origin `POST /live-client/bridge/movement/simulate`. The POST requires an explicitly provisioned, connected client, matching zone and consent; it runs through the existing reject-only movement gate and returns `executed:false`. It is **not** a bidirectional Ashita command receiver, does not write memory/inject packets, and does not arm real game controls. The remaining critical next step is a versioned authenticated bridge response channel and verified Ashita v4 adapter.
 
+### Authenticated control delivery milestone
+
+A read-only `capabilities_probe` now travels from a same-origin Toolkit request to the selected authenticated Ashita peer on its next `/wblive bridge ping`. The addon returns a matched `REJECT` indicating game writes are unsupported. The shared control broker isolates client/session/generation, bounds the queue to one outstanding probe per client, expires unsent requests, and cancels on receiver shutdown or credential rotation. API status reports queued/delivered/rejected/expired without exposing secrets. This verifies a *command envelope round-trip*, not execution of a player movement command. Only the fixed capability probe is dispatchable; movement and STOP commands remain undelivered until adapter verification.
+
 ### P2 — Real bidirectional transport (safe simulation first)
 
 **B6. Versioned command protocol:** Extend the existing bridge rather than creating a second server. Define selected source/client/session generation, request UUID/sequence, capability advertisement, heartbeat, expiration, ack/reject/error, timeout/retry (idempotent commands only), bounded queues and audit log. Prioritize STOP independently of high-volume Capture streams. Keep replay/Windower/read-only providers incapable of writes.
