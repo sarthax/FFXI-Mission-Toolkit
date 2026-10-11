@@ -64,3 +64,12 @@ def test_sessions_are_distinct_sources():
     assert ingest_session(con, cid, Source(make_row()), "one.jsonl") == 1
     assert ingest_session(con, cid, Source(make_row(session_id="capture-2")), "two.jsonl") == 1
     assert con.execute("SELECT COUNT(*) FROM capture_raw_packets").fetchone()[0] == 2
+
+def test_native_session_auto_discovery_in_capture_upload():
+    con, cid = capture_db()
+    result = bci.ingest_single_file(con, cid, "native-session.jsonl", make_row())
+    assert result["error"] is None
+    assert result["format"] == "native_live_capture"
+    assert result["rows"] == 1
+    saved = con.execute("SELECT source_format,raw_hex FROM capture_raw_packets").fetchone()
+    assert saved == ("native_live_capture", "28040000")
