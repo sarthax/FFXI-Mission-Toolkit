@@ -110,3 +110,7 @@ Windows native-position acceptance confirmed (2026-10-11): Ashita v4.05 Beta and
 ## Operator deliverables and review discipline
 
 Each batch should ship tests, updated Toolkit help and this roadmap, source/adapter versions, redacted test samples where available, compatibility gate outcomes and a clear distinction among simulated, observed and verified-in-game. Prefer one coherent PR per batch with green CI; avoid long-lived stacks against moving main. Do not auto-merge unrelated agents' branches or reinterpret an unverified working branch as green.
+
+### Native XYZ comparison dashboard (2026-10-11)
+
+Direct Live Bridge now offers a **Native XYZ comparison (read-only)** section. With native probe loaded, run `/wbprobe position`, paste the chat line, and immediately compare against the selected client’s current live snapshot. The same-origin API rejects disconnected clients, stale telemetry and zone mismatch, and reports XYZ distance. This is a manual operator diagnostic and **not** a native streaming adapter, movement control, or independent server-side validation. Compare while stationary to avoid timestamp uncertainty.
