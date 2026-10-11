@@ -118,3 +118,8 @@ Direct Live Bridge now offers a **Native XYZ comparison (read-only)** section. W
 ### Native XYZ setter signature gate (2026-10-11)
 
 Ashita v4-Beta public SDK `IEntity` declares `SetLocalPositionX/Y/Z(uint32_t, float) const`. The native plugin now performs compile-time signature checks and provides `/wbprobe capabilities` to report setter declaration availability. **This does not invoke a setter, establish runtime permission, or demonstrate server-accepted movement.** Confirm compilation against the installed `C:\\ValhallaXI\\Ashitav4-Beta\\plugins\\sdk` headers, then test the diagnostic on the authorized DSP test client. The existing XYZ reader and Lua telemetry comparison remain read-only.
+
+
+### Native movement adapter implemented, NOT live-tested (2026-10-11)
+
+B9 groundwork: `native/ashita_workbench_probe/movement_adapter.h` adds a fail-closed, SDK-independent movement policy (disabled by default, consent token, character+zone binding, bounded 3-yalm steps, 1 s rate limit, duplicate/busy/zoning/stale rejection, unconditional STOP, audit ring) with an `autorun` (IAutoFollow, experimental) and a `local` (SetLocalPosition) executor. Verified: installed-SDK x86 build (C++20), dumpbin x86 + 3 exports, host-compiled policy tests (/W4 /WX). **Unverified:** any in-game effect, axis meaning of IAutoFollow deltas, packet emission, server acceptance. Outcomes always report `server_confirmed=NO`. Toolkit-side command wiring (Live Client -> `/wbprobe`) is the next slice; the manual smoke test is in the native README.

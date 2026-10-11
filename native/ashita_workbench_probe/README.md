@@ -78,3 +78,33 @@ or permit game state writes.
 ### Native XYZ setter signature gate (2026-10-11)
 
 Ashita v4-Beta public SDK `IEntity` declares `SetLocalPositionX/Y/Z(uint32_t, float) const`. The native plugin now performs compile-time signature checks and provides `/wbprobe capabilities` to report setter declaration availability. **This does not invoke a setter, establish runtime permission, or demonstrate server-accepted movement.** Confirm compilation against the installed `C:\\ValhallaXI\\Ashitav4-Beta\\plugins\\sdk` headers, then test the diagnostic on the authorized DSP test client. The existing XYZ reader and Lua telemetry comparison remain read-only.
+
+## Movement adapter (development-only, disabled by default)
+
+`movement_adapter.h` is an SDK-independent policy/state machine; `SdkMovementPort`
+in the plugin is the only code that touches the game. The earlier "no XYZ write"
+statement above describes the original probe; writes now exist but are gated:
+
+* **Disabled after load.** Enabling needs the literal consent token and binds the session
+  to the current character server-id and zone:
+  `/wbprobe movement enable <autorun|local> DEV-SERVER-ONLY` (authorized private DSP/Topaz test server only).
+* Auto-disables after 120 s; `/wbprobe movement disable`, `/wbprobe stop` (unconditional, needs no telemetry) and plugin unload all cancel.
+* `/wbprobe move <id> <dx> <dy> <dz>` — relative; rejected for: disabled, bad/duplicate id, nonfinite,
+  < 0.05 or > 3.0 yalms, < 1 s since last command, busy, unverified state, zoning, wrong character, wrong zone.
+* Modes: `autorun` (experimental) sets `IAutoFollow` delta + `IsAutoRunning` so the client's own movement code runs
+  and emits ordinary packets for the server to judge; the per-frame tick stops on arrival (0.35), overshoot, 4 s timeout, or lost state.
+  `local` calls `IEntity::SetLocalPosition*` once (client-local; the server is not told).
+* `/wbprobe movement status|audit` print the outcome/audit ring. Every outcome is reported
+  `scope=client_local server_confirmed=NO`: native code cannot observe server acceptance, so verify against
+  server-observed coordinates (Toolkit capture/GM `!pos`) separately.
+* Axis semantics of `IAutoFollow` deltas and SDK Y/Z are **unverified** until the live smoke test below.
+
+Host policy tests (no game): `cl /std:c++20 /EHsc movement_adapter_test.cpp`, or `pytest tests/test_ashita_native_movement_adapter.py`.
+
+### Manual smoke test (not yet run)
+
+1. Disposable character on the private DSP server, open flat area, Toolkit Live Client connected. `/plugin load workbench_native_probe`.
+2. `/wbprobe movement` (expect DISABLED); `/wbprobe move t0 1 0 0` (expect REJECTED: disabled); `/wbprobe position` (record, plus server `!pos`).
+3. `/wbprobe movement enable autorun DEV-SERVER-ONLY`, then `/wbprobe move t1 1 0 0`; `/wbprobe movement status`; `/wbprobe position`; compare with server `!pos` and Lua bridge. Press `/wbprobe stop` if anything looks wrong.
+4. Repeat t2 with `0 1 0`, `0 0 1` to learn axis meaning. Only then, optionally, `enable local` and one 1-yalm `move`; note rubber-banding.
+5. `/wbprobe movement audit`, then unload/reload and confirm DISABLED again. Report client-local vs server-observed positions separately.
