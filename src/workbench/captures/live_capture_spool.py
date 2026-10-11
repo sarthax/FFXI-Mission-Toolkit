@@ -164,3 +164,37 @@ class LiveCaptureSpool:
             "rejected": self.rejected, "segments": len(self.segments),
             "closed": self._closed, "fault": self._fault,
         }
+
+
+def inspect_interrupted_session(directory: Path) -> dict:
+    """Read-only diagnostic for an unfinalized spool; never repairs evidence in place."""
+    directory = Path(directory)
+    result = {"status": "missing", "segments": 0, "packets": 0, "errors": []}
+    if not directory.is_dir():
+        return result
+    manifest = directory / "manifest.json"
+    if manifest.exists():
+        try:
+            from .live_capture_jsonl import parse_manifest
+            parse_manifest(manifest.read_bytes())
+            result["status"] = "manifest_present_unverified"
+        except (OSError, ValueError) as exc:
+            result["status"] = "invalid_manifest"
+            result["errors"].append(str(exc))
+        return result
+    result["status"] = "interrupted"
+    from .live_capture_jsonl import parse_segments
+    segments = sorted(directory.glob("segment-*.jsonl"))
+    result["segments"] = len(segments)
+    if not segments:
+        result["status"] = "empty"
+        return result
+    try:
+        payloads = [path.read_bytes() for path in segments]
+        parsed = parse_segments(payloads)
+        result["packets"] = sum(len(rows) for rows in parsed)
+        result["status"] = "recoverable_unfinalized"
+    except (OSError, ValueError) as exc:
+        result["status"] = "damaged_unfinalized"
+        result["errors"].append(str(exc))
+    return result
