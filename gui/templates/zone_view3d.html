@@ -190,19 +190,16 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   const buttons = Array.from(document.querySelectorAll('#zone3d-toolrail [data-viewer-tab]'));
   const sections = new Map(Array.from(document.querySelectorAll('.zone3d-tab-pane'), node => [node.dataset.viewerPane, node]));
   const destinations = [
-    ['zone', '#zone-select', true],
-    ['zone', 'form[action*="/zones/"]', false],
-    ['layers', '#spawn-visibility', false],
-    ['camera', '#zone3d-navigation', false],
-    ['live', '#ashita-live-controls', false],
-    ['capture', '#capture-spatial-controls', false],
-    ['diagnostics', '#zone3d-mesh-diagnostics', false]
+    ['zone', 'form[action*="/zones/"]'],
+    ['layers', '#spawn-visibility'],
+    ['camera', '#zone3d-navigation'],
+    ['live', '#ashita-live-controls'],
+    ['capture', '#capture-spatial-controls'],
+    ['diagnostics', '#zone3d-mesh-diagnostics']
   ];
-  for (const [tab, selector, single] of destinations) {
+  for (const [tab, selector] of destinations) {
     const target = document.querySelector(selector);
-    if (!target) continue;
-    const node = single && target.closest('div')?.querySelector('select') === target ? target.parentElement : target;
-    sections.get(tab).appendChild(node);
+    if (target) sections.get(tab).appendChild(target);
   }
   // The existing view toolbar includes both rendering and flight controls.
   // Move the entire group into Layers so no event bindings or controls are lost.
