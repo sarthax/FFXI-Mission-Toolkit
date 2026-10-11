@@ -26,3 +26,14 @@ The envelope preserves raw packet bytes and hook flags, and enforces explicit si
 5. Add a GUI recorder session page using existing Capture routes.
 
 Keep this work independent of the ongoing Ashita movement-write DLL branch.
+
+## 2026-10-11 implementation progress
+
+- New native envelope format is auto-detected by the existing Capture single-file uploader, bundled-source scan and source rebuild path; legacy `ashita_packets` remains supported unchanged.
+- Offline native JSONL ingestion writes into `capture_raw_packets` and source row locators with transactional rollback. Tests cover provenance, malformed input and upload discovery.
+- `live_capture_spool.py` provides a **backend reference implementation** of a bounded offer queue, explicit reject counters, worker-driven fsync and exclusive segment creation. It is not yet attached to Ashita callbacks or the Live Bridge.
+- **Known integration gap:** rotated spool segments after the first start at sequence >1, whereas the current standalone JSONL importer requires sequence 1. Implement a versioned session manifest and multi-segment import before enabling rotation in the live recorder. Never reset sequence silently.
+- **Known integration gap:** the spool is not thread-safe; native producer/consumer synchronization and shutdown semantics require an explicit implementation. This Python reference is not a drop-in native C++ queue.
+- **Known integration gap:** queue rejections are counted, but the native producer must report loss through the cumulative `dropped_before` counter, including when no subsequent packet arrives. Add a session-end summary and reconciliation before declaring loss accounting complete.
+- **Known integration gap:** source identity, timestamps, hook-stage provenance and exact native callback bytes require validation against the running Ashita v4 plugin.
+- **Validation:** changes committed but tests/CI and Windows live-client testing are not yet verified. Do not label this production-ready.
