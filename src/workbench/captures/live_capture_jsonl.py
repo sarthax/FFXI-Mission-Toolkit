@@ -139,3 +139,69 @@ def ingest_segments(con, capture_id: int, src, relnames: list[str]) -> int:
     finally:
         con.execute("RELEASE SAVEPOINT native_live_segments")
     return total
+
+
+def parse_manifest(data: bytes) -> tuple[str, str, list[dict]]:
+    """Strict portable manifest: ordered names, hashes and packet ranges."""
+    import re
+    if not isinstance(data, bytes) or not 0 < len(data) <= 262144:
+        raise ValueError("invalid native capture manifest size")
+    try:
+        value = json.loads(data.decode("utf-8"))
+    except (ValueError, UnicodeError) as exc:
+        raise ValueError("invalid native capture manifest") from exc
+    if not isinstance(value, dict) or set(value) != {"schema_version", "client_id", "session_id", "segments"}:
+        raise ValueError("invalid native manifest fields")
+    if type(value["schema_version"]) is not int or value["schema_version"] != 1:
+        raise ValueError("unsupported native manifest version")
+    for key in ("client_id", "session_id"):
+        if not isinstance(value[key], str) or not 1 <= len(value[key]) <= 128:
+            raise ValueError("invalid native manifest identity")
+    segments = value["segments"]
+    if not isinstance(segments, list) or not 1 <= len(segments) <= 1000:
+        raise ValueError("invalid native segment list")
+    seen = set()
+    for segment in segments:
+        if not isinstance(segment, dict) or set(segment) != {"filename", "sha256", "first_sequence", "last_sequence"}:
+            raise ValueError("invalid native segment entry")
+        name = segment["filename"]
+        if not isinstance(name, str) or not re.fullmatch(r"segment-[0-9]{6}\.jsonl", name) or name in seen:
+            raise ValueError("unsafe or duplicate native segment name")
+        seen.add(name)
+        if not isinstance(segment["sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", segment["sha256"]):
+            raise ValueError("invalid native segment digest")
+        first, last = segment["first_sequence"], segment["last_sequence"]
+        if type(first) is not int or type(last) is not int or first < 1 or last < first:
+            raise ValueError("invalid native segment range")
+    if [x["filename"] for x in segments] != sorted(seen):
+        raise ValueError("native segments must be ordered")
+    return value["client_id"], value["session_id"], segments
+
+
+def ingest_manifest(con, capture_id: int, src, manifest_name: str) -> int:
+    """Verify every referenced segment before inserting any packet."""
+    import hashlib
+    from pathlib import PurePosixPath
+    client_id, session_id, segments = parse_manifest(src.read_bytes(manifest_name))
+    parent = PurePosixPath(manifest_name).parent
+    names = []
+    payloads = []
+    for entry in segments:
+        name = str(parent / entry["filename"])
+        data = src.read_bytes(name)
+        if hashlib.sha256(data).hexdigest() != entry["sha256"]:
+            raise ValueError(f"native segment checksum mismatch: {entry['filename']}")
+        names.append(name)
+        payloads.append(data)
+    parsed = parse_segments(payloads)
+    for entry, rows in zip(segments, parsed):
+        if not rows or rows[0][0].client_id != client_id or rows[0][0].session_id != session_id:
+            raise ValueError("native segment identity mismatch")
+        if rows[0][0].sequence != entry["first_sequence"] or rows[-1][0].sequence != entry["last_sequence"]:
+            raise ValueError("native segment range mismatch")
+    class VerifiedSource:
+        def __init__(self, names, data):
+            self._data = dict(zip(names, data))
+        def read_bytes(self, name):
+            return self._data[name]
+    return ingest_segments(con, capture_id, VerifiedSource(names, payloads), names)
