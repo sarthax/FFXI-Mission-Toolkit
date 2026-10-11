@@ -229,6 +229,28 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
             }
         return result
 
+    @router.post("/control/probe")
+    def queue_control_probe(request: Request, selection: ClientSelection) -> dict:
+        """Queue a read-only capability request for the next authenticated Ashita ping."""
+        require_same_origin(request)
+        peer = manager.peers.identity(selection.client_id)
+        status = manager.status(selection.client_id)
+        if not manager.running or peer is None or not status["connected"]:
+            raise HTTPException(status_code=409, detail="fresh provisioned client required")
+        try:
+            command = manager.controls.schedule_probe(peer)
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return {"mode": "read_only", "request_id": command.request_id, "state": "queued",
+                "client_id": selection.client_id, "writes_enabled": False}
+
+    @router.get("/control/probe/{client_id}")
+    def control_probe_status(client_id: str) -> dict:
+        if not 0 < len(client_id) <= 64 or not client_id.replace("_", "").replace("-", "").isalnum():
+            raise HTTPException(status_code=422, detail="invalid client ID")
+        return {"client_id": client_id, "writes_enabled": False,
+                **manager.controls.status(client_id)}
+
     @router.get("/movement/capabilities")
     def movement_capabilities() -> dict:
         return {"mode": "simulation_only", "real_writes_enabled": False,
