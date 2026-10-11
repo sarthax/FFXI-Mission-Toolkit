@@ -62,3 +62,15 @@ If `Index unresolved` appears, record the reported party slot, server ID, mapped
 ## Confirmed Windows validation (2026-10-11)
 
 On the ValhallaXI Ashita v4.05 Beta environment, the user confirmed successful native XYZ readback in zone 98 at entity index 1024, with multiple changing coordinate samples after movement. The plugin was compiled with VS 18 x86 and C++20 against the local Beta SDK. This validates *read-only* native entity position access, not movement writes or server correction behavior. An unrelated Ashita plugin load attempt also produced an Error 126 message in the screenshot; it does not invalidate the successful `/wbprobe position` readings.
+
+## Native versus Lua live-telemetry comparison
+
+The repository now includes `workbench.runtime.live_client.native_position_compare`
+with `PositionSample` and `compare_native_live`. Capture the native
+`/wbprobe position` result and the Toolkit live dashboard snapshot from
+the **same zone**, as close together in time as possible. The comparison
+rejects mismatched zones and samples over two seconds apart, then reports
+the three-dimensional distance (default tolerance 1.5 units). Compare while
+stationary first, then after a short normal walk and stopping. This measures
+agreement of two local client readings; it does **not** prove server acceptance
+or permit game state writes.
