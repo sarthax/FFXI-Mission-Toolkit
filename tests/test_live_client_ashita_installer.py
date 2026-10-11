@@ -16,7 +16,7 @@ def test_installer_creates_only_missing_ashita_addon_files(tmp_path):
     assert not (tmp_path / "addons" / "workbench_live").exists()
     result = install_missing(str(tmp_path), report)
     addon = tmp_path / "addons" / "workbench_live"
-    assert len(result["created"]) == 6
+    assert len(result["created"]) == 7
     assert (addon / "workbench_live.lua").read_text().startswith("-- Copyright")
     assert "addon.name = 'workbench_live'" in (addon / "workbench_live.lua").read_text()
     assert (addon / "workbench_bridge.lua").is_file()
