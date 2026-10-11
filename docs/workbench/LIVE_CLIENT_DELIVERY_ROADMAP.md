@@ -114,3 +114,7 @@ Each batch should ship tests, updated Toolkit help and this roadmap, source/adap
 ### Native XYZ comparison dashboard (2026-10-11)
 
 Direct Live Bridge now offers a **Native XYZ comparison (read-only)** section. With native probe loaded, run `/wbprobe position`, paste the chat line, and immediately compare against the selected client’s current live snapshot. The same-origin API rejects disconnected clients, stale telemetry and zone mismatch, and reports XYZ distance. This is a manual operator diagnostic and **not** a native streaming adapter, movement control, or independent server-side validation. Compare while stationary to avoid timestamp uncertainty.
+
+### Native XYZ setter signature gate (2026-10-11)
+
+Ashita v4-Beta public SDK `IEntity` declares `SetLocalPositionX/Y/Z(uint32_t, float) const`. The native plugin now performs compile-time signature checks and provides `/wbprobe capabilities` to report setter declaration availability. **This does not invoke a setter, establish runtime permission, or demonstrate server-accepted movement.** Confirm compilation against the installed `C:\\ValhallaXI\\Ashitav4-Beta\\plugins\\sdk` headers, then test the diagnostic on the authorized DSP test client. The existing XYZ reader and Lua telemetry comparison remain read-only.
