@@ -66,7 +66,7 @@ def test_installer_mutation_is_local_same_origin_and_explicit(tmp_path):
     assert http.post("/live-client/bridge/installer/apply", json={**selection,"expected":report.json()}).status_code == 403
     applied = http.post("/live-client/bridge/installer/apply",json={**selection,"expected":report.json()},headers=origin)
     assert applied.status_code == 200
-    assert len(applied.json()["created"]) == 6
+    assert len(applied.json()["created"]) == 7
 
 
 def test_upgrade_backs_up_existing_files_and_keeps_private_settings(tmp_path):
