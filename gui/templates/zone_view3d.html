@@ -180,6 +180,13 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
   <div id="zone3d-entity-inspector" hidden style="position:absolute;right:12px;bottom:12px;z-index:12;width:min(330px,calc(100% - 130px));max-height:65%;overflow:auto;background:rgba(10,15,22,.95);border:1px solid var(--border);border-radius:8px;padding:10px;">
     <div style="display:flex;justify-content:space-between;align-items:center"><strong>Entity inspection</strong><button type="button" id="zone3d-inspector-close" aria-label="Close entity inspection">×</button></div>
     <div id="zone3d-inspector-content" class="mono" style="font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0"></div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+      <button type="button" id="zone3d-inspector-focus">Focus camera</button>
+      <button type="button" id="zone3d-inspector-copy-id">Copy ID</button>
+      <button type="button" id="zone3d-inspector-copy-xyz">Copy XYZ</button>
+      <button type="button" id="zone3d-inspector-search">Find similar</button>
+    </div>
+    <span id="zone3d-inspector-feedback" role="status" class="muted" aria-live="polite"></span>
     <div id="zone3d-inspector-links" style="display:flex;gap:7px;flex-wrap:wrap"></div>
   </div>
   <div id="viewer-loading" class="muted" role="status" aria-live="polite" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Loading mesh&hellip;</div>
@@ -973,8 +980,10 @@ function captureEntityMatches(e, q) {
 }
 
 function focusCaptureEntity(e) {
-  if (!e || !Number.isFinite(e.x)) return;
+  if (!e || ![e.x, e.y, e.z].every(Number.isFinite)) return;
+  if (flyModeOn) exitFlyMode();
   flyTo(new THREE.Vector3(e.x, -e.y, -e.z));
+  inspectEntity(e);
 }
 
 function refreshCaptureSpatialResults() {
@@ -1049,6 +1058,11 @@ let selectedEntity = null;
 function inspectEntity(entity) {
   if (!entity) return;
   selectedEntity = entity;
+  inspectorFeedback.textContent = '';
+  const hasPosition = [entity.x, entity.y, entity.z].every(Number.isFinite);
+  document.getElementById('zone3d-inspector-focus').disabled = !hasPosition;
+  document.getElementById('zone3d-inspector-copy-xyz').disabled = !hasPosition;
+  document.getElementById('zone3d-inspector-copy-id').disabled = entity.id == null;
   const kind = {m:'Mob',n:'NPC',d:'Door/prop',c:'Capture'}[entity.k] || 'Entity';
   const lines = [entity.n || 'Unnamed entity', kind, 'ID: ' + (entity.id ?? 'unavailable')];
   if ([entity.x,entity.y,entity.z].every(Number.isFinite)) {
@@ -1083,6 +1097,34 @@ function inspectEntity(entity) {
   }
   entityInspector.hidden = false;
 }
+const inspectorFeedback = document.getElementById('zone3d-inspector-feedback');
+async function copyInspectorValue(value, success) {
+  try {
+    await navigator.clipboard.writeText(value);
+    inspectorFeedback.textContent = success;
+  } catch (_) {
+    inspectorFeedback.textContent = 'Clipboard unavailable; use the visible entity details.';
+  }
+}
+document.getElementById('zone3d-inspector-focus').addEventListener('click', () => {
+  if (!selectedEntity || ![selectedEntity.x, selectedEntity.y, selectedEntity.z].every(Number.isFinite)) return;
+  if (flyModeOn) exitFlyMode();
+  flyTo(new THREE.Vector3(selectedEntity.x, -selectedEntity.y, -selectedEntity.z));
+});
+document.getElementById('zone3d-inspector-copy-id').addEventListener('click', () => {
+  if (selectedEntity?.id != null) copyInspectorValue(String(selectedEntity.id), 'Entity ID copied.');
+});
+document.getElementById('zone3d-inspector-copy-xyz').addEventListener('click', () => {
+  if (!selectedEntity || ![selectedEntity.x, selectedEntity.y, selectedEntity.z].every(Number.isFinite)) return;
+  copyInspectorValue([selectedEntity.x, selectedEntity.y, selectedEntity.z].join(', '), 'Game XYZ copied.');
+});
+document.getElementById('zone3d-inspector-search').addEventListener('click', () => {
+  if (!selectedEntity) return;
+  document.getElementById('zone3d-quick-find').click();
+  const search = document.getElementById('zone3d-focus-search');
+  search.value = String(selectedEntity.n || selectedEntity.id || '');
+  search.dispatchEvent(new Event('input', { bubbles: true }));
+});
 document.getElementById('zone3d-inspector-close').addEventListener('click', () => {
   entityInspector.hidden = true;
   selectedEntity = null;
