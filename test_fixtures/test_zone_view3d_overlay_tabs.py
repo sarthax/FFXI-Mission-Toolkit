@@ -18,3 +18,12 @@ def test_read_only_viewer_reparents_existing_controls_into_collapsible_overlay()
     assert "panel.hidden = isOpen" in source
     assert "event.key === 'Escape'" in source
     assert '#zone3d-drawer[hidden],.zone3d-tab-pane[hidden]{display:none!important}' in source
+
+
+def test_overlay_template_has_no_jinja_comment_delimiter_in_css():
+    source = VIEWER.read_text(encoding="utf-8")
+    assert "{#zone3d-" not in source
+    assert "makeGroup('live', 'Axis and heading alignment'" in source
+    assert "makeGroup('camera', 'Saved viewpoints'" in source
+    from jinja2 import Environment
+    Environment().parse(source)
