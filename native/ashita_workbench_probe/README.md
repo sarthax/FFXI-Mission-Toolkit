@@ -35,7 +35,7 @@ Use a disposable authorized DSP/Topaz test client. With Ashita running:
 
 Expected: a message that the native probe loaded; then an explicit
 `SDK loaded; read-only; XYZ write=disabled; packet injection=disabled`
-response. The `/wbprobe position` command shows read-only zone, entity index and native XYZ via `IParty::GetMemberIndex(0)` and `IEntity::GetLocalPositionX/Y/Z`. Compare against the Toolkit live telemetry while stationary, then after walking a short distance. The results should agree to within normal telemetry timing and rounding; capture both readings and the Ashita SDK version for investigation. No position writes occur. Confirm unload, relog and reload succeed; test alongside the Lua live
+response. The `/wbprobe position` command shows read-only zone, entity index and native XYZ via `IParty::GetMemberServerId(0)`, `IResourceManager::GetEntityIndexById` and `IEntity::GetLocalPositionX/Y/Z`. Compare against the Toolkit live telemetry while stationary, then after walking a short distance. The results should agree to within normal telemetry timing and rounding; capture both readings and the Ashita SDK version for investigation. No position writes occur. Confirm unload, relog and reload succeed; test alongside the Lua live
 telemetry addon. If loading fails, retain the console/error output and inspect the
 actual export names and architecture with `dumpbin /exports` and
 `dumpbin /headers`. Do not rename an x64 DLL or force-load incompatible builds.
@@ -56,3 +56,5 @@ Successful loading only proves native plugin compatibility. Then inspect the
 actual installed SDK and verify a supported position-access/write path before
 adding a **separate explicitly armed** development-only movement capability.
 Do not mistake a client-local coordinate change for server-accepted movement.
+
+If `Index unresolved` appears, record the reported party slot, server ID, mapped index and map size. The party `GetMemberIndex(0)` value is not the same as the entity-map index; native lookup now uses the server ID and confirms the mapped entity before reading coordinates.
