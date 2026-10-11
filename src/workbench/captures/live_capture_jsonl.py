@@ -8,7 +8,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import json
 
-from . import integrity, raw_packet_ingest
+from workbench.core.services import capture_integrity as integrity
+from workbench.core.services import raw_packet_ingest
 from .live_capture_contract import LiveCaptureSequence, LivePacketEnvelope
 
 MAX_SESSION_BYTES = 16 * 1024 * 1024
