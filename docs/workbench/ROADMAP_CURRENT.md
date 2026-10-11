@@ -538,3 +538,15 @@ Overlapping browser trace requests also discard superseded responses, preventing
 **Milestone for original Tako-style goal:** An authorized user selects a destination in the Toolkit, issues Move, observes the **actual running character** approach it with live status and stop/recovery, and can record the resulting interaction into the existing Capture research pipeline. Report each capability separately as contract, synthetic-tested, Windows-tested or verified supported; do not equate a replay or matching packet timestamp with successful control.
 
 **Parallel-work boundaries:** Do not displace current Wiki, Auction House or unrelated refactor work. Implement in isolated PRs, CI green before merging; controls remain disabled for unsupported clients or unverified sessions.
+
+
+### 2026-10-10 — DAT Inspector decoder capability reconciliation
+
+The DAT Inspector now distinguishes **callable installed xi-tinkerer parsers** from
+empirically parsed DAT files. Missing bindings and missing registered decoder
+functions are reported separately from an available decoder rejecting a DAT.
+The associated format audit is in
+`docs/workbench/CLIENT_ASSET_CACHE_FORMAT_AUDIT_2026-10-10.md` and bounded
+regressions in `test_fixtures/test_dat_parser_capability_audit.py`.
+Do not treat decoder availability as verified DAT format support, and do not bundle
+copyrighted game assets or modify the Live Client bridge as part of this audit.
