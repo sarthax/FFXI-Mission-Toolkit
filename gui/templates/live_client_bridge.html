@@ -124,11 +124,10 @@ const installRootInput=document.getElementById('ashita-install-root');
 const installStatus=document.getElementById('ashita-install-status');
 const installResult=document.getElementById('ashita-install-result');
 const installApply=document.getElementById('ashita-install-apply');
-let installerPreview=null;
 let upgradePreview=null;
 const upgradeApply=document.getElementById('ashita-upgrade-apply');
 installRootInput.addEventListener('input',()=>{
-  installerPreview=null;installApply.disabled=true;upgradePreview=null;upgradeApply.disabled=true;
+  installApply.disabled=true;upgradePreview=null;upgradeApply.disabled=true;
   installStatus.textContent='Path changed. Preview again.';
   installResult.textContent='';
 });
@@ -152,8 +151,8 @@ upgradeApply.addEventListener('click',async()=>{
   try {
     const result=await request('installer/upgrade-apply',{ashita_root:installRootInput.value,expected:upgradePreview});
     installStatus.textContent='Updated '+result.updated.length+' file(s). Backup: '+(result.backup_directory||'none required')+'. Reload the addon manually.';
-    upgradePreview=null;
-  }catch(error){upgradePreview=null;installStatus.textContent=String(error);}
+    upgradePreview=null;installApply.disabled=true;
+  }catch(error){upgradePreview=null;installApply.disabled=true;installStatus.textContent=String(error);}
 });
 document.getElementById('ashita-install-preview').addEventListener('click',previewSafeUpgrade);
 installApply.addEventListener('click',async()=>{
