@@ -37,3 +37,11 @@ Keep this work independent of the ongoing Ashita movement-write DLL branch.
 - **Known integration gap:** queue rejections are counted, but the native producer must report loss through the cumulative `dropped_before` counter, including when no subsequent packet arrives. Add a session-end summary and reconciliation before declaring loss accounting complete.
 - **Known integration gap:** source identity, timestamps, hook-stage provenance and exact native callback bytes require validation against the running Ashita v4 plugin.
 - **Validation:** changes committed but tests/CI and Windows live-client testing are not yet verified. Do not label this production-ready.
+
+## Queue and loss contract update
+
+- A gap in packet sequence numbers is permitted only if it is exactly explained by the increase in `dropped_before` since the previous accepted observation. Duplicate or reversed sequence numbers remain invalid.
+- Producer offers are nonblocking under lock contention; a rejected offer is a source-side loss and must advance the producer sequence and cumulative loss count. The Python spool does **not** generate those producer counters.
+- Worker disk operations do not hold the queue lock. Failed writes retain the pending queue item and fault the spool rather than silently discarding it.
+- This reference implementation has no background worker, no session-end manifest, no cross-segment continuity proof, and no native callback integration. A source that terminates immediately after a drop cannot yet prove its final loss count.
+- The existing parser still requires standalone sessions to start at sequence 1; later rotated segments are not independently importable until the session manifest / segment-aware importer is implemented.
