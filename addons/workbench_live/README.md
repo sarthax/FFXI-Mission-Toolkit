@@ -58,6 +58,10 @@ The primary **Preview addon changes** action now previews updates to installed f
 
 The **Test Command (read-only)** button in the live dashboard queues a capability probe for the selected connected Ashita client. Within 10 seconds, run `/wblive bridge ping` in the game and await the expected **rejected: unsupported game writes** status. It tests command delivery, not actual movement.
 
+## Movement API feasibility diagnostic
+
+After **Install / update with backup** and reloading the addon, enter `/wblive movement audit`. The diagnostic reports whether selected Lua interface methods are exposed by your loaded Ashita v4 runtime. It neither dereferences position pointers nor calls memory-write/packet-injection functions. A reported candidate is **unverified** and does not establish a usable player movement operation. Copy its single-line output for the next development pass; an absent Lua method does not rule out the Ashita C++ plugin SDK.
+
 ## Windows acceptance run
 
 Record the actual Ashita version, FFXI game/module version and module SHA-256
