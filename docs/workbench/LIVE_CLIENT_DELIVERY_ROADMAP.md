@@ -41,6 +41,10 @@ Available foundations include Ashita bounded observations and recordings, playba
 
 The new `workbench.runtime.live_client.movement_control` service builds on the existing transport-neutral `BridgeEnvelope` and `BridgeMailbox`. It validates finite XYZ, same selected client/session/generation/zone, bounded nudge size, explicit simulation consent, fresh monotonic telemetry, and local STOP/disarm. Its response is **always REJECT / writes_not_supported**. This is an isolated testable control contract, **not** an active endpoint, Ashita memory writer, packet injector, or real in-game movement mechanism. Next: wire a local bridge command transport and verify the Ashita v4 capability with an authorized Windows environment before enabling actual writes.
 
+### Command preview HTTP milestone
+
+The opt-in local bridge now exposes `GET /live-client/bridge/movement/capabilities` and same-origin `POST /live-client/bridge/movement/simulate`. The POST requires an explicitly provisioned, connected client, matching zone and consent; it runs through the existing reject-only movement gate and returns `executed:false`. It is **not** a bidirectional Ashita command receiver, does not write memory/inject packets, and does not arm real game controls. The remaining critical next step is a versioned authenticated bridge response channel and verified Ashita v4 adapter.
+
 ### P2 — Real bidirectional transport (safe simulation first)
 
 **B6. Versioned command protocol:** Extend the existing bridge rather than creating a second server. Define selected source/client/session generation, request UUID/sequence, capability advertisement, heartbeat, expiration, ack/reject/error, timeout/retry (idempotent commands only), bounded queues and audit log. Prioritize STOP independently of high-volume Capture streams. Keep replay/Windower/read-only providers incapable of writes.

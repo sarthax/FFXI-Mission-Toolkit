@@ -66,6 +66,13 @@ class LocalPeerRegistry:
         self._peers[identity.client_id] = (identity, token, clock + self.ttl_seconds)
         return True
 
+    def identity(self, client_id: str) -> PeerIdentity | None:
+        """Current unexpired registered identity, without exposing credentials."""
+        entry = self._peers.get(client_id)
+        if entry is None or time.monotonic() >= entry[2]:
+            return None
+        return entry[0]
+
     def revoke(self, client_id: str) -> None:
         self._peers.pop(client_id, None)
 
