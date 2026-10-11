@@ -1,4 +1,6 @@
 # Ashita v4 native plugin smoke test (read-only)
+> **Current status (2026-10-11):** This README preserves the original read-only smoke-test steps as history. The plugin now also includes **gated movement and native warp/speed controls** with a Toolkit file-command channel. Refer to the later “Movement adapter” and “Toolkit-driven warp” sections for current commands. The user's integrated movement test is reported successful; this document audit did not independently retest the DLL. Native acknowledgments remain client-local (`server_confirmed=NO`). The first two paragraphs describing “no XYZ write” are superseded historical text, not the present implementation.
+
 
 This original C++ plugin tests whether the installed Ashita v4 SDK can build and load a
 native x86 plugin. It deliberately has **no XYZ write, pointer scan, movement opcode,
