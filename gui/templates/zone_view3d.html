@@ -101,6 +101,9 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
   <span id="ashita-live-samples" class="chip mono" role="status">0/2 points</span>
   <a class="inline" href="/live-client/bridge/console" target="_blank" rel="noopener">Bridge setup ↗</a>
   <span id="ashita-live-status" class="chip mono" role="status">Off</span>
+  <label><input type="checkbox" id="ashita-other-clients"> Show other clients in this zone</label>
+  <span id="ashita-other-client-status" class="muted mono" role="status">Other clients off</span>
+  <span id="ashita-telemetry-health" class="muted mono" role="status">No samples yet</span>
 </div>
 <div class="dense-toolbar" style="margin-bottom:6px; flex-wrap:wrap;">
   <fieldset id="spawn-visibility" style="display:flex;gap:9px;flex-wrap:wrap;align-items:center;border:1px solid var(--border);border-radius:5px;padding:4px 8px;">
@@ -250,7 +253,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
     }
     sections.get(tab).appendChild(group);
   }
-  makeGroup('live', 'Live position and tracking', ['ashita-live-toggle', 'ashita-live-client', 'ashita-live-refresh', 'ashita-live-entities', 'ashita-live-follow', 'ashita-live-autozone'], true);
+  makeGroup('live', 'Live position and tracking', ['ashita-live-toggle', 'ashita-live-client', 'ashita-live-refresh', 'ashita-live-entities', 'ashita-live-follow', 'ashita-live-autozone', 'ashita-other-clients', 'ashita-other-client-status', 'ashita-telemetry-health'], true);
   makeGroup('live', 'Axis and heading alignment', ['ashita-live-axes', 'ashita-live-heading', 'ashita-live-sample', 'ashita-live-copy-points', 'ashita-live-samples']);
   makeGroup('live', 'Player actions and diagnostics', ['ashita-live-focus', 'ashita-live-copy', 'ashita-live-status'], true);
   makeGroup('camera', 'Position and coordinates', ['zone3d-camera-readout', 'zone3d-goto-x', 'zone3d-goto-y', 'zone3d-goto-z', 'zone3d-goto', 'zone3d-frame-zone'], true);
@@ -468,6 +471,76 @@ let liveAlignmentSamples = [];
 const liveSampleCount = document.getElementById('ashita-live-samples');
 let lastLiveRequest = 0;
 const liveEntityGeometry = new THREE.SphereGeometry(1.5, 8, 6);
+const otherClientsToggle = document.getElementById('ashita-other-clients');
+const otherClientsStatus = document.getElementById('ashita-other-client-status');
+const telemetryHealth = document.getElementById('ashita-telemetry-health');
+const otherClientMarkers = new Map();
+let knownClientIds = [];
+let secondaryPollBusy = false;
+let secondaryPollGeneration = 0;
+let sampleStartedAt = 0;
+function clearOtherClientMarkers() {
+  ++secondaryPollGeneration;
+  for (const marker of otherClientMarkers.values()) {
+    scene.remove(marker);
+    marker.geometry.dispose();
+    marker.material.dispose();
+  }
+  otherClientMarkers.clear();
+  otherClientsStatus.textContent = 'Other clients off';
+}
+function renderOtherClientMarker(clientId, position) {
+  let marker = otherClientMarkers.get(clientId);
+  if (!marker) {
+    marker = new THREE.Mesh(new THREE.SphereGeometry(2.1, 10, 8),
+      new THREE.MeshBasicMaterial({color: 0x83a8ff, depthTest: false}));
+    marker.renderOrder = 21;
+    marker.userData.clientId = clientId;
+    scene.add(marker);
+    otherClientMarkers.set(clientId, marker);
+  }
+  marker.position.copy(projectLivePoint(position));
+}
+async function refreshOtherClientMarkers() {
+  if (secondaryPollBusy || !liveToggle.checked || !otherClientsToggle.checked) return;
+  secondaryPollBusy = true;
+  const generation = secondaryPollGeneration;
+  try {
+    const primary = liveClient.value.trim();
+    const ids = knownClientIds.filter(id => id !== primary && /^[a-zA-Z0-9_-]{1,64}$/.test(id)).slice(0, 12);
+    const visible = new Set();
+    const results = await Promise.allSettled(ids.map(async id => {
+      const response = await fetch('/live-client/bridge/projection?client_id=' +
+        encodeURIComponent(id) + '&zone_id=' + ZONEID, {cache:'no-store'});
+      if (!response.ok) throw Error('projection unavailable');
+      return {id, data: await response.json()};
+    }));
+    if (generation !== secondaryPollGeneration || !otherClientsToggle.checked ||
+        !liveToggle.checked || primary !== liveClient.value.trim()) return;
+    for (const result of results) {
+      if (result.status !== 'fulfilled') continue;
+      const {id, data} = result.value;
+      const position = data?.player?.position;
+      if (!data?.visible || !position || ![position.x,position.y,position.z].every(Number.isFinite)) continue;
+      visible.add(id);
+      renderOtherClientMarker(id, position);
+    }
+    for (const [id, marker] of otherClientMarkers) {
+      if (!visible.has(id)) {
+        scene.remove(marker); marker.geometry.dispose(); marker.material.dispose();
+        otherClientMarkers.delete(id);
+      }
+    }
+    otherClientsStatus.textContent = visible.size + ' other client(s) in zone · blue markers';
+  } catch (_) {
+    otherClientsStatus.textContent = 'Other client telemetry unavailable';
+  } finally { secondaryPollBusy = false; }
+}
+otherClientsToggle.addEventListener('change', () => {
+  if (!otherClientsToggle.checked) clearOtherClientMarkers();
+  else refreshOtherClientMarkers();
+});
+
 const liveEntityMaterial = new THREE.MeshBasicMaterial({color: 0xf5a35c, depthTest: false});
 const liveEntityPool = [];
 let liveMarker = null;
@@ -497,7 +570,8 @@ async function refreshLiveClients() {
     const body = await response.json();
     const list = document.getElementById('ashita-live-clients');
     list.replaceChildren();
-    for (const id of body.clients || []) {
+    knownClientIds = (body.clients || []).filter(id => typeof id === 'string');
+    for (const id of knownClientIds) {
       const option = document.createElement('option'); option.value = id; list.appendChild(option);
     }
   } catch (_) {}
@@ -506,6 +580,8 @@ function clearLiveEntities() {
   for (const child of liveEntityPool) child.visible = false;
 }
 function clearLiveMarker() {
+  clearOtherClientMarkers();
+  telemetryHealth.textContent = 'No fresh live sample';
   liveDisplayTarget = null;
   liveDisplayPosition = null;
   liveLastSampleAt = 0;
@@ -548,6 +624,7 @@ async function pollAshitaPosition() {
     clearLiveMarker(); liveStatus.textContent = 'Invalid client ID'; return;
   }
   const requestId = ++lastLiveRequest;
+  sampleStartedAt = performance.now();
   livePollInFlight = true;
   try {
     const url = '/live-client/bridge/projection?client_id=' + encodeURIComponent(clientId) + '&zone_id=' + ZONEID;
@@ -599,6 +676,8 @@ async function pollAshitaPosition() {
         new THREE.Vector3(Math.cos(position.heading + Number(liveHeading.value) * Math.PI / 180), 0,
           Math.sin(position.heading + Number(liveHeading.value) * Math.PI / 180)).normalize());
     }
+    const roundTripMs = Math.round(performance.now() - sampleStartedAt);
+    telemetryHealth.textContent = 'Bridge ' + roundTripMs + ' ms · sample received now';
     lastLivePosition = current;
     lastLiveDiagnostic = {
       client_id: clientId, zone_id: ZONEID,
@@ -704,6 +783,8 @@ liveClient.addEventListener('change', () => {
 });
 refreshLiveClients();
 setInterval(refreshLiveClients, 10000);
+setInterval(refreshOtherClientMarkers, 2000);
+liveClient.addEventListener('change', () => { clearOtherClientMarkers(); refreshOtherClientMarkers(); });
 const liveRefresh = document.getElementById('ashita-live-refresh');
 let livePollTimer = null;
 try { const ms = localStorage.getItem('wb-live-view-refresh');
