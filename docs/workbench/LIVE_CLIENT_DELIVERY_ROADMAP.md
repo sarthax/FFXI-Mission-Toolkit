@@ -59,6 +59,8 @@ A read-only `capabilities_probe` now travels from a same-origin Toolkit request 
 
 Ashita v4 source-only capability audit: `/wblive movement audit` checks available Lua method names without executing writes, reading addresses or modifying outgoing packets. Windows results remain pending; method presence is not permission or verified functionality.
 
+Native plugin feasibility slice: `native/ashita_workbench_probe` provides an original **read-only** Ashita v4 C++ `IPlugin` with documented ABI exports, Win32/x86 CMake configuration, and in-game `/wbprobe` load test. It is source-tested in CI; actual DLL compilation, Ashita loading and client runtime verification require the user's Windows SDK environment. Position writes and packet injection remain disabled. The prior Lua audit showed `GetWarpPointer` and `SetPosition` not exposed in its sampled interfaces, and candidate outgoing-packet method presence alone does not establish a movement-capable interface.
+
 ### P3 — First authorized movement action (explicit go/no-go)
 
 **B8. Capability feasibility:** Verify an Ashita v4-supported command API against actual installed version, or document why a narrowly scoped native Windows adapter is needed. Audit Project Tako/Clipper reference behavior and licenses; do not copy incompatible code. Require test client/environment ownership, exact build identity and opt-in authorization.
