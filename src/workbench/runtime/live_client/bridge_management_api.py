@@ -14,6 +14,10 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from .bridge_managed import ManagedLiveReceiver
+from .bridge_mailbox import BridgeMailbox
+from .movement_control import ControlIdentity, MovementControlGate, Position
+import secrets
+import time
 from .bridge_settings_file import render_settings_lua, write_settings
 from .ashita_install import (preview as preview_ashita_addon, install_missing as install_ashita_addon,
                              preview_upgrade as preview_ashita_upgrade, upgrade_with_backup as apply_ashita_upgrade)
@@ -32,6 +36,15 @@ class QuickStart(BaseModel):
     ashita_root: str | None = Field(default=None, max_length=2048)
     regenerate: bool = False
     sample_hz: int = 10
+
+
+class SimulatedNudge(BaseModel):
+    client_id: str = Field(min_length=1, max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
+    zone_id: int = Field(ge=1, le=65535)
+    dx: float = Field(ge=-3, le=3)
+    dy: float = Field(ge=-3, le=3)
+    dz: float = Field(ge=-3, le=3)
+    explicit_consent: bool = False
 
 
 class ClientSelection(BaseModel):
@@ -215,6 +228,45 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
                 ],
             }
         return result
+
+    @router.get("/movement/capabilities")
+    def movement_capabilities() -> dict:
+        return {"mode": "simulation_only", "real_writes_enabled": False,
+                "supported": ["simulate_nudge", "local_stop"], "max_nudge": 3.0,
+                "ashita_command_receiver": False}
+
+    @router.post("/movement/simulate")
+    def simulate_movement(request: Request, selection: SimulatedNudge) -> dict:
+        """Reject-only end-to-end HTTP simulation; never delivers game commands."""
+        require_same_origin(request)
+        if not selection.explicit_consent:
+            raise HTTPException(status_code=403, detail="simulation requires explicit consent")
+        peer = manager.peers.identity(selection.client_id)
+        status = manager.status(selection.client_id)
+        snapshot = status["snapshot"]
+        if peer is None or not status["connected"] or snapshot is None:
+            raise HTTPException(status_code=409, detail="fresh selected client required")
+        pos = snapshot.position
+        if pos.zone_id != selection.zone_id:
+            raise HTTPException(status_code=409, detail="zone mismatch")
+        mailbox = BridgeMailbox(peer.client_id, peer.session_id, peer.generation)
+        gate = MovementControlGate(mailbox, selection.zone_id)
+        clock = time.monotonic()
+        identity = ControlIdentity(peer.client_id, peer.session_id,
+                                   peer.generation, selection.zone_id)
+        try:
+            origin = Position(pos.x, pos.y, pos.z)
+            gate.observe(identity, origin, now=clock)
+            gate.arm_simulation(explicit_consent=True)
+            target = Position(origin.x + selection.dx, origin.y + selection.dy,
+                              origin.z + selection.dz)
+            reply = gate.simulate_nudge(identity, target, secrets.token_hex(12), now=clock)
+        except (ValueError, PermissionError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {"mode": "simulation_only", "executed": False,
+                "kind": reply.kind.value, "reason": "writes_not_supported",
+                "client_id": selection.client_id, "zone_id": selection.zone_id,
+                "requested_xyz": {"x": target.x, "y": target.y, "z": target.z}}
 
     @router.post("/stop")
     def stop(request: Request) -> dict:
