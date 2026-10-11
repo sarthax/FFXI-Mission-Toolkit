@@ -18,3 +18,12 @@ def test_focus_enables_follow_and_zone_navigation_persists_follow():
     assert "follow:liveFollowToggle.checked?'1':'0'" in html
     assert "liveFollowToggle.checked = liveQuery.get('follow') === '1';" in html
     assert "if (liveAutoZoneToggle.checked || liveFollowToggle.checked) await checkLiveZone(clientId, requestId);" in html
+
+
+def test_follow_zone_recenters_first_live_frame_in_new_viewer():
+    html = VIEWER.read_text(encoding="utf-8")
+    assert "let pendingLiveZoneFocus = liveToggle.checked && liveFollowToggle.checked;" in html
+    assert "if (pendingLiveZoneFocus && liveFollowToggle.checked && !flyModeOn)" in html
+    assert "controls.target.copy(current);" in html
+    assert "camera.position.copy(current).add(new THREE.Vector3(25, 18, 25));" in html
+    assert "pendingLiveZoneFocus = false;" in html
