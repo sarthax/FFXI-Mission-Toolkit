@@ -46,12 +46,12 @@
 </section>
 <section class="lc-panel">
  <h2>Install Ashita addon locally</h2>
- <p class="muted">Optional: use only on the Windows PC running Ashita and the Toolkit. Preview before creating files. Existing addon files are never overwritten; credentials remain separate.</p>
+ <p class="muted">Optional: use only on the Windows PC running Ashita and the Toolkit. Preview changes, then explicitly choose backup and replace to update existing addon files. Private settings remain separate.</p>
  <label>Ashita root folder <input id="ashita-install-root" style="max-width:min(100%,660px);width:560px" placeholder="C:\\Ashita" autocomplete="off"></label>
  <div class="lc-actions">
- <button type="button" id="ashita-install-preview">Preview addon files</button>
+ <button type="button" id="ashita-install-preview">Preview addon changes</button>
  <button type="button" id="ashita-install-apply" disabled>Install missing files</button>
- <button type="button" id="ashita-upgrade-preview">Preview backup upgrade</button>
+ <button type="button" id="ashita-upgrade-preview">Preview backup and replace</button>
  <button type="button" id="ashita-upgrade-apply" disabled>Backup and replace addon files</button>
  </div>
  <div id="ashita-install-status" role="status" aria-live="polite" class="muted">No installation requested.</div>
@@ -62,6 +62,8 @@
  <div id="health" role="status">Waiting for telemetry</div>
  <p class="muted" id="bridge-health-hint" aria-live="polite">Start the receiver and connect your Ashita addon.</p>
  <button type="button" id="bridge-copy-health">Copy safe health report</button>
+ <div class="lc-actions"><button type="button" id="bridge-test-command">Test Command (read-only)</button>
+ <span id="bridge-test-command-result" role="status" aria-live="polite" class="muted">Select a connected Ashita client to test command delivery.</span></div>
  <a id="liveZoneLink" class="chip" style="display:none" href="#" rel="noopener">Open current zone in 3D Viewer ↗</a>
  <div id="metrics"></div>
  <details class="lc-panel" id="alignment-panel">
@@ -81,6 +83,20 @@
 const root='/live-client/bridge/';
 try{const rate=localStorage.getItem('wb-live-sample-hz');if(['1','5','10','20'].includes(rate))document.getElementById('live-sample-hz').value=rate;}catch(_){}
 document.getElementById('live-sample-hz').addEventListener('change',e=>{try{localStorage.setItem('wb-live-sample-hz',e.target.value)}catch(_){}});
+const probeButton=document.getElementById('bridge-test-command');
+const probeResult=document.getElementById('bridge-test-command-result');
+probeButton.addEventListener('click',async()=>{
+ const id=document.getElementById('client').value.trim();
+ if(!/^[a-zA-Z0-9_-]{1,64}$/.test(id)){probeResult.textContent='Enter a valid Ashita client ID';return;}
+ probeButton.disabled=true;
+ try{
+  const queued=await request('control/probe',{client_id:id});
+  probeResult.textContent='Probe queued for '+id+'. In Ashita run /wblive bridge ping within 10 seconds.';
+  const result=await (await fetch(root+'control/probe/'+encodeURIComponent(id),{cache:'no-store'})).json();
+  if(result.request_id===queued.request_id && result.state!=='queued') probeResult.textContent='Probe '+result.state+' for '+id;
+ }catch(error){probeResult.textContent='Test command unavailable: '+String(error);}
+ finally{probeButton.disabled=false;}
+});
 const alignmentInput=document.getElementById('alignment-json');
 const alignmentFeedback=document.getElementById('alignment-feedback');
 const alignmentResult=document.getElementById('alignment-result');
@@ -145,7 +161,7 @@ document.getElementById('ashita-install-preview').addEventListener('click',async
     installResult.textContent=response.files.map(f=>f.action+' · '+f.name).join('\n');
     installStatus.textContent=response.can_install?
       'Ready: creates missing files only. Private settings are untouched.':
-      'Blocked: existing addon files differ. Back up or reconcile manually.';
+      'Existing addon files differ. Select Preview backup and replace to update safely without deleting files.';
     installApply.disabled=!response.can_install;
   }catch(error){installStatus.textContent=String(error);}
 });
@@ -287,6 +303,18 @@ async function refreshClients(){try{const response=await fetch(root+'clients');
  const list=document.getElementById('clients');list.replaceChildren();
  for(const id of result.clients||[]){const option=document.createElement('option');option.value=id;list.appendChild(option);}
  }catch(error){}}
+setInterval(async()=>{
+ const id=document.getElementById('client').value.trim();
+ if(!/^[a-zA-Z0-9_-]{1,64}$/.test(id))return;
+ try{
+  const res=await fetch(root+'control/probe/'+encodeURIComponent(id),{cache:'no-store'});
+  if(!res.ok)return;
+  const data=await res.json();
+  if(data.state==='rejected')probeResult.textContent='Command delivered; Ashita rejected unsupported game writes (expected).';
+  else if(data.state==='expired')probeResult.textContent='Command expired. Queue a new probe and run /wblive bridge ping promptly.';
+  else if(data.state==='delivered')probeResult.textContent='Command delivered; awaiting Ashita reply.';
+ }catch(_){}
+},1500);
 setInterval(poll,1500);setInterval(refreshClients,5000);refreshClients();poll();
 </script>
 {% endblock %}
