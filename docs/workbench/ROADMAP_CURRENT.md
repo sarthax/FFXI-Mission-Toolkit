@@ -529,6 +529,14 @@ Overlapping browser trace requests also discard superseded responses, preventing
 - Live Client entity research handoff: explicitly reported nonzero server IDs now provide unverified ID searches in existing Capture, Entity Browser and Feature Trace views. Source context remains in link tooltips; client indexes/unknown IDs never become queries. No new browser, decoder, schema or graph relationship. Cloud projection/browser regression coverage is added; runtime/catalog identity review and paired packet evidence remain pending.
 
 
+### 3D Viewer texture diagnostic follow-up — 2026-10-10
+
+- [x] Material alpha diagnostics moved from the full-width bar above the map into the Info drawer; label now clarifies disabling transparency is debug-only and may create expected black billboard rectangles.
+- [x] Optional click-to-inspect client DAT scenery now identifies prefab, instance, triangle count, mirroring and the matching material alpha audit; no DAT/server modifications.
+- [ ] Determine whether distant vegetation uses authored LOD geometry or runtime switching from actual client DAT evidence, not only visual overlap.
+- [ ] Bastok Markets / Bastok Markets [S] missing floors/buildings remain separate unverified rendering issues.
+- [ ] Browser acceptance in affected zones with normal/default alpha (debug unchecked).
+
 ## Unified Live Client Bridge — movement control + research capture (approved direction, 2026-10-09)
 
 **Priority:** Promote bidirectional, low-latency Live Client development control and canonical research capture to a shared architectural milestone. The intended outcome is direct interaction with an authorized running FFXI client: observe live XYZ/heading/entities, move or guide the player toward a Toolkit-selected location, and record correlated research evidence. This is **not** path-file replay or a second Capture subsystem.
