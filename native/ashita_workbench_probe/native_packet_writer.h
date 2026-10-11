@@ -33,6 +33,13 @@ public:
     }
     size_t Pump(size_t limit = 256) {
         if (!stream_.is_open() || faulted_) throw std::logic_error("recording unavailable");
+        // This first writer version fails closed on any loss rather than silently
+        // publishing a falsely complete session with missing packets.
+        if (queue_.Health().rejected != 0) {
+            faulted_ = true;
+            queue_.Stop();
+            throw std::runtime_error("packet queue loss detected; session incomplete");
+        }
         auto packets = queue_.Drain(limit);
         try {
             for (const auto& packet : packets) {
@@ -50,6 +57,7 @@ public:
     }
     void Stop() {
         queue_.Stop();
+        if (queue_.Health().rejected != 0) faulted_ = true;
         if (stream_.is_open() && !faulted_) {
             while (queue_.Health().queued) Pump();
         }
