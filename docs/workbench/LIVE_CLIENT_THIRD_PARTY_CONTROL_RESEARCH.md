@@ -88,3 +88,7 @@ Separate **frequent position/heading/target telemetry** from **event-triggered s
 - How do we avoid conflict with existing Live Client, Capture, Entity, and Feature Trace features?
 
 **Do not mark these use cases implemented based solely on this document.** This is a durable research and follow-up reference.
+
+### Native XYZ comparison dashboard (2026-10-11)
+
+Direct Live Bridge now offers a **Native XYZ comparison (read-only)** section. With native probe loaded, run `/wbprobe position`, paste the chat line, and immediately compare against the selected client’s current live snapshot. The same-origin API rejects disconnected clients, stale telemetry and zone mismatch, and reports XYZ distance. This is a manual operator diagnostic and **not** a native streaming adapter, movement control, or independent server-side validation. Compare while stationary to avoid timestamp uncertainty.
