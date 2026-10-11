@@ -12,7 +12,7 @@ def test_native_probe_is_an_explicit_read_only_sdk_smoke_test():
     assert "Ashita::PluginFlags::UseCommands" in source
     assert '"/wbprobe"' in source
     assert 'GetMemberServerId(0)' in source
-    assert 'GetEntityIndexById(server_id)' in source
+    assert 'entities->GetServerId(i) == server_id' in source  # entity-map scan: the SDK has no GetEntityIndexById
     assert 'GetServerId(index) != server_id' in source
     assert 'GetMemberIsActive(0)' in source
     assert 'GetLocalPositionX(index)' in source

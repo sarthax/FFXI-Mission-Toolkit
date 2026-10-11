@@ -19,6 +19,6 @@ add_library(workbench_native_probe MODULE
     workbench_native_probe.cpp
     exports.def)
 target_include_directories(workbench_native_probe PRIVATE "${ASHITA_SDK}")
-target_compile_features(workbench_native_probe PRIVATE cxx_std_17)
+target_compile_features(workbench_native_probe PRIVATE cxx_std_20)
 target_compile_definitions(workbench_native_probe PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
 set_target_properties(workbench_native_probe PROPERTIES PREFIX "" OUTPUT_NAME "workbench_native_probe")
