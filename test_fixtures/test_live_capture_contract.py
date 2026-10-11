@@ -32,13 +32,18 @@ class LiveCaptureContractTests(unittest.TestCase):
     def test_sequence_and_drop_counter(self):
         check = LiveCaptureSequence()
         check.accept(LivePacketEnvelope.from_mapping(sample()))
-        check.accept(LivePacketEnvelope.from_mapping(sample(sequence=2, dropped_before=3)))
+        check.accept(LivePacketEnvelope.from_mapping(sample(sequence=2, dropped_before=0)))
         with self.assertRaises(ValueError):
-            check.accept(LivePacketEnvelope.from_mapping(sample(sequence=4, dropped_before=3)))
+            check.accept(LivePacketEnvelope.from_mapping(sample(sequence=4, dropped_before=0)))
         with self.assertRaises(ValueError):
-            check.accept(LivePacketEnvelope.from_mapping(sample(sequence=3, dropped_before=2)))
+            check.accept(LivePacketEnvelope.from_mapping(sample(sequence=3, dropped_before=0)))
 
     def test_clients_are_independent(self):
         check = LiveCaptureSequence()
         check.accept(LivePacketEnvelope.from_mapping(sample(client_id="a")))
         check.accept(LivePacketEnvelope.from_mapping(sample(client_id="b")))
+
+    def test_reported_loss_allows_sequence_gap(self):
+        check = LiveCaptureSequence()
+        check.accept(LivePacketEnvelope.from_mapping(sample()))
+        check.accept(LivePacketEnvelope.from_mapping(sample(sequence=4, dropped_before=2)))
