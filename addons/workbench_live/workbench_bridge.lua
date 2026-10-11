@@ -24,17 +24,24 @@ local function length_prefix(n, bytes)
     for i=bytes-1,0,-1 do out[#out+1]=string.char(math.floor(n / (256^i)) % 256) end
     return table.concat(out)
 end
-function M.new(options)
+function M.new(options, notify, load_error)
     -- Even if an older entry point passes Lua require()'s true sentinel,
     -- never throw from the addon command callback.
     if type(options) ~= 'table' then options = {enabled=false} end
-    local source, sequence = nil, 0
+    local source, sequence, last_error = nil, 0, nil
+    -- Reasons never include token/session values; asserts below use fixed text.
+    local function fail(reason)
+        last_error = reason
+        return false, reason
+    end
     local function close()
         source, sequence = nil, 0
     end
     local function start(client_id)
         close()
-        if not options or options.enabled ~= true then return false end
+        last_error = nil
+        if load_error then return fail('settings file failed to load: '..tostring(load_error)) end
+        if options.enabled ~= true then return fail('settings missing or bridge disabled (enabled ~= true)') end
         local ok, err = pcall(function()
             assert(options.host == '127.0.0.1', 'bridge requires IPv4 loopback')
             local port=options.port
@@ -45,9 +52,16 @@ function M.new(options)
             assert(type(token)=='string' and #token>=32 and #token<=256 and token:match('^[%w_-]+$'), 'invalid bridge token')
             local id=json_string(client_id)
             assert(type(options.connect)=='function', 'missing socket connector')
+            -- Preflight: distinguishes unreachable receiver from bad settings. Sends nothing.
+            local probe, perr = pcall(options.connect, options.host, port)
+            assert(probe, 'receiver unreachable: '..(tostring(perr):gsub('^.-:%d+: ','')))
+            pcall(function() perr:close() end)
             source = client_id
+            -- Credentials persist across addon reloads, so the receiver must see
+            -- strictly increasing sequences; a wall-clock base guarantees that.
+            sequence = math.floor(os.time() * 1000)
         end)
-        if not ok then close(); if options.message then options.message('Bridge offline: '..tostring(err)) end; return false end
+        if not ok then close(); return fail((tostring(err):gsub('^.-:%d+: ',''))) end
         return true
     end
     local function observe(client_id, json)
@@ -78,9 +92,9 @@ function M.new(options)
             pcall(function() peer:close() end)
             assert(transferred,transfer_err)
         end)
-        if not ok then close(); if options.message then options.message('Bridge disconnected: '..tostring(err)) end; return false end
+        if not ok then close(); last_error='telemetry send failed: '..tostring(err); if notify or options.message then (notify or options.message)('Bridge disconnected: '..tostring(err)) end; return false end
         return true
     end
-    return {start=start, observe=observe, stop=close, active=function() return source~=nil end}
+    return {start=start, observe=observe, stop=close, active=function() return source~=nil end, last_error=function() return last_error end}
 end
 return M
