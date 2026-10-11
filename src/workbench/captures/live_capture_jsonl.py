@@ -195,7 +195,7 @@ def ingest_manifest(con, capture_id: int, src, manifest_name: str) -> int:
         payloads.append(data)
     parsed = parse_segments(payloads)
     for entry, rows in zip(segments, parsed):
-        if not rows or rows[0][0].client_id != client_id or rows[0][0].session_id != session_id:
+        if not rows or any(packet.client_id != client_id or packet.session_id != session_id for packet, *_ in rows):
             raise ValueError("native segment identity mismatch")
         if rows[0][0].sequence != entry["first_sequence"] or rows[-1][0].sequence != entry["last_sequence"]:
             raise ValueError("native segment range mismatch")
