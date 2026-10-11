@@ -626,13 +626,15 @@ const liveEntitySelect = document.getElementById('ashita-entity-select');
 const liveEntityInspect = document.getElementById('ashita-entity-inspect');
 const liveEntityCount = document.getElementById('ashita-entity-count');
 function updateLiveEntityPicker() {
-  const current = liveEntitySelect.value;
+  const previous = liveObservedEntities[Number(liveEntitySelect.value)];
+  const selectedId = liveEntitySelect.value !== '' ? String(previous?.id ?? '') : '';
   liveEntitySelect.replaceChildren(new Option('Select observed entity', ''));
   liveObservedEntities.forEach((entity, index) => {
     const option = new Option((entity.n || 'Unnamed') + ' [' + (entity.id ?? '?') + ']', String(index));
     liveEntitySelect.appendChild(option);
   });
-  liveEntitySelect.value = current !== '' && Number(current) < liveObservedEntities.length ? current : '';
+  const restored = selectedId ? liveObservedEntities.findIndex(e => String(e.id ?? '') === selectedId) : -1;
+  liveEntitySelect.value = restored >= 0 ? String(restored) : '';
   liveEntityInspect.disabled = liveEntitySelect.value === '';
   liveEntityCount.textContent = liveObservedEntities.length + ' live entities';
 }
@@ -680,7 +682,9 @@ async function refreshLiveClients() {
 function clearLiveEntities() {
   for (const child of liveEntityPool) child.visible = false;
   liveObservedEntities.length = 0;
-  updateLiveEntityPicker();
+  liveEntitySelect.replaceChildren(new Option('Select observed entity', ''));
+  liveEntityInspect.disabled = true;
+  liveEntityCount.textContent = 'No live entities';
 }
 function clearLiveMarker() {
   clearOtherClientMarkers();
