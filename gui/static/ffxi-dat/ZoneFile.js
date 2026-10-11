@@ -143,27 +143,18 @@ function parseZoneFile(buffer, onProgress, supplementalTextures) {
     } catch {
     }
   }
-  const texUsage = /* @__PURE__ */ new Map();
-  for (const p of prefabs) {
-    if (p.materialIndex >= 0) texUsage.set(p.materialIndex, (texUsage.get(p.materialIndex) || 0) + 1);
+  // Do not invent materials for unresolved names. Assigning the most frequently
+  // used texture here can paint unrelated terrain/buildings incorrectly and mask
+  // missing companion DAT or name-resolution issues.
+  const missingTextureNames = /* @__PURE__ */ new Map();
+  for (const prefab of prefabs) {
+    if (prefab.materialIndex !== -1) continue;
+    const name = prefab.textureName || "(unnamed)";
+    missingTextureNames.set(name, (missingTextureNames.get(name) || 0) + 1);
   }
-  let fallbackTexIdx = -1;
-  let fallbackMax = 0;
-  for (const [idx, count] of texUsage) {
-    if (count > fallbackMax) {
-      fallbackMax = count;
-      fallbackTexIdx = idx;
-    }
-  }
-  if (fallbackTexIdx >= 0) {
-    let count = 0;
-    for (const p of prefabs) {
-      if (p.materialIndex === -1) {
-        p.materialIndex = fallbackTexIdx;
-        count++;
-      }
-    }
-    if (count > 0) console.log(`[ZoneFile] ${count} untextured meshes \u2192 fallback texture[${fallbackTexIdx}]`);
+  if (missingTextureNames.size > 0) {
+    onProgress?.(`Unresolved textures: ${missingTextureNames.size} names; surfaces remain untextured`);
+    console.warn("[ZoneFile] unresolved material names:", Array.from(missingTextureNames.entries()));
   }
   onProgress?.(`MMB: ${prefabs.length} meshes from ${mmbBlocks.length} blocks, ${mmbNameMap.size} unique names`);
   const mzbBlocks = blocks.filter((b) => b.type === BLOCK_MZB);
@@ -199,7 +190,13 @@ function parseZoneFile(buffer, onProgress, supplementalTextures) {
   const unmatchedCount = { total: mzbTotal, matched: mzbMatched };
   onProgress?.(`Instances: ${instances.length} (${unmatchedCount.matched}/${unmatchedCount.total} MZB entries matched MMB names)`);
   onProgress?.(`Result: ${prefabs.length} prefabs, ${instances.length} instances, ${textures.length} textures`);
-  return { prefabs, instances, textures };
+  return {
+    prefabs, instances, textures,
+    textureDiagnostics: {
+      unresolvedPrefabCount: Array.from(missingTextureNames.values()).reduce((total, count) => total + count, 0),
+      unresolvedNames: Array.from(missingTextureNames, ([name, count]) => ({ name, count }))
+    }
+  };
 }
 export {
   parseTexturesFromDat,
