@@ -11,7 +11,9 @@ def test_native_probe_is_an_explicit_read_only_sdk_smoke_test():
     assert "ASHITA_INTERFACE_VERSION" in source
     assert "Ashita::PluginFlags::UseCommands" in source
     assert '"/wbprobe"' in source
-    assert 'GetMemberIndex(0)' in source
+    assert 'GetMemberServerId(0)' in source
+    assert 'GetEntityIndexById(server_id)' in source
+    assert 'GetServerId(index) != server_id' in source
     assert 'GetMemberIsActive(0)' in source
     assert 'GetLocalPositionX(index)' in source
     assert 'GetLocalPositionY(index)' in source
