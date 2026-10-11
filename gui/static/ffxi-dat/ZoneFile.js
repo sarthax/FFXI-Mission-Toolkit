@@ -55,6 +55,21 @@ function parseTexturesFromDat(buffer) {
   }
   return result;
 }
+// Canonical aliases are used only when they identify exactly one source texture.
+// Never guess an unrelated texture to fill a missing zone material.
+function textureAlias(name) {
+  return String(name || "").replace(/\\0+$/g, "").trim().toLowerCase();
+}
+function uniqueTextureAliases(textureNameMap) {
+  const aliases = new Map();
+  for (const [name, index] of textureNameMap) {
+    const alias = textureAlias(name);
+    if (!alias) continue;
+    if (aliases.has(alias) && aliases.get(alias) !== index) aliases.set(alias, null);
+    else if (!aliases.has(alias)) aliases.set(alias, index);
+  }
+  return aliases;
+}
 function parseZoneFile(buffer, onProgress, supplementalTextures) {
   const reader = new DatReader(buffer);
   const blocks = parseBlockChain(reader);
@@ -103,6 +118,8 @@ function parseZoneFile(buffer, onProgress, supplementalTextures) {
       console.log(`[ZoneFile] ${added} supplemental textures merged, total now ${textures.length}`);
     }
   }
+  const textureAliases = uniqueTextureAliases(textureNameMap);
+  let aliasMatchedCount = 0;
   const mmbBlocks = blocks.filter((b) => b.type === BLOCK_MMB);
   onProgress?.(`Parsing ${mmbBlocks.length} MMB blocks...`);
   const mmbNameMap = /* @__PURE__ */ new Map();
@@ -123,9 +140,13 @@ function parseZoneFile(buffer, onProgress, supplementalTextures) {
           mesh.materialIndex = -1;
           continue;
         }
-        const texIdx = textureNameMap.get(mesh.textureName);
-        if (texIdx !== void 0) {
-          mesh.materialIndex = texIdx;
+        const exactIndex = textureNameMap.get(mesh.textureName);
+        const aliasIndex = exactIndex === undefined ? textureAliases.get(textureAlias(mesh.textureName)) : undefined;
+        if (exactIndex !== undefined) {
+          mesh.materialIndex = exactIndex;
+        } else if (aliasIndex !== undefined && aliasIndex !== null) {
+          mesh.materialIndex = aliasIndex;
+          aliasMatchedCount++;
         } else {
           mesh.materialIndex = -1;
         }
@@ -193,6 +214,7 @@ function parseZoneFile(buffer, onProgress, supplementalTextures) {
   return {
     prefabs, instances, textures,
     textureDiagnostics: {
+      aliasMatchedCount,
       unresolvedPrefabCount: Array.from(missingTextureNames.values()).reduce((total, count) => total + count, 0),
       unresolvedNames: Array.from(missingTextureNames, ([name, count]) => ({ name, count }))
     }
