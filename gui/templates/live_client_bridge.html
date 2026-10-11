@@ -50,7 +50,7 @@
  <label>Ashita root folder <input id="ashita-install-root" style="max-width:min(100%,660px);width:560px" placeholder="C:\\Ashita" autocomplete="off"></label>
  <div class="lc-actions">
  <button type="button" id="ashita-install-preview">Preview addon changes</button>
- <button type="button" id="ashita-install-apply" disabled>Install missing files</button>
+ <button type="button" id="ashita-install-apply" disabled>Install / update with backup</button>
  <button type="button" id="ashita-upgrade-preview">Preview backup and replace</button>
  <button type="button" id="ashita-upgrade-apply" disabled>Backup and replace addon files</button>
  </div>
@@ -132,17 +132,19 @@ installRootInput.addEventListener('input',()=>{
   installStatus.textContent='Path changed. Preview again.';
   installResult.textContent='';
 });
-document.getElementById('ashita-upgrade-preview').addEventListener('click',async()=>{
+async function previewSafeUpgrade(){
   upgradePreview=null;upgradeApply.disabled=true;installApply.disabled=true;installerPreview=null;
   try {
     const result=await request('installer/upgrade-preview',{ashita_root:installRootInput.value});
     upgradePreview=result;
     installResult.textContent=result.files.map(f=>f.action+' · '+f.name).join('\n');
     const count=result.files.filter(f=>f.action==='replace_with_backup').length;
-    installStatus.textContent='Upgrade preview: '+count+' existing file(s) will be backed up before replacement. Private settings are untouched.';
+    installStatus.textContent='Ready: '+count+' differing existing file(s) will be backed up and replaced. Private settings are untouched.';
     upgradeApply.disabled=false;
+    installApply.disabled=false;
   }catch(error){installStatus.textContent=String(error);}
-});
+}
+document.getElementById('ashita-upgrade-preview').addEventListener('click',previewSafeUpgrade);
 upgradeApply.addEventListener('click',async()=>{
   if(!upgradePreview)return;
   if(!confirm('Back up and replace the differing Workbench Live addon files in '+upgradePreview.target+'? Do not proceed while the addon is running.'))return;
@@ -153,27 +155,16 @@ upgradeApply.addEventListener('click',async()=>{
     upgradePreview=null;
   }catch(error){upgradePreview=null;installStatus.textContent=String(error);}
 });
-document.getElementById('ashita-install-preview').addEventListener('click',async()=>{
-  installerPreview=null;installApply.disabled=true;installResult.textContent='';
-  try {
-    const response=await request('installer/preview',{ashita_root:installRootInput.value});
-    installerPreview=response;
-    installResult.textContent=response.files.map(f=>f.action+' · '+f.name).join('\n');
-    installStatus.textContent=response.can_install?
-      'Ready: creates missing files only. Private settings are untouched.':
-      'Existing addon files differ. Select Preview backup and replace to update safely without deleting files.';
-    installApply.disabled=!response.can_install;
-  }catch(error){installStatus.textContent=String(error);}
-});
+document.getElementById('ashita-install-preview').addEventListener('click',previewSafeUpgrade);
 installApply.addEventListener('click',async()=>{
-  if(!installerPreview || !installerPreview.can_install)return;
-  if(!confirm('Create missing Workbench Live addon files in '+installerPreview.target+'? Existing files and private settings will not be replaced.'))return;
-  installApply.disabled=true;
-  try {
-    const result=await request('installer/apply',{ashita_root:installRootInput.value,expected:installerPreview});
-    installStatus.textContent='Installed '+result.created.length+' missing addon files. Reload the Ashita addon manually.';
-    installerPreview=null;
-  }catch(error){installStatus.textContent=String(error);installerPreview=null;}
+ if(!upgradePreview)return;
+ if(!confirm('Back up differing files and install the current Workbench Live addon in '+upgradePreview.target+'? Reload Ashita addon after update.'))return;
+ installApply.disabled=true;upgradeApply.disabled=true;
+ try {
+  const result=await request('installer/upgrade-apply',{ashita_root:installRootInput.value,expected:upgradePreview});
+  installStatus.textContent='Updated '+result.updated.length+' files. Backup: '+(result.backup_directory||'not needed')+'. Reload the addon.';
+  upgradePreview=null;installResult.textContent='Installation complete. Preview again to verify versions match.';
+ }catch(error){installStatus.textContent='Update failed: '+String(error)+'. Files may still need recovery from backup; preview again.';upgradePreview=null;}
 });
 const clientInput=document.getElementById('client');
 const client=()=>clientInput.value.trim();
