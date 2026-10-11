@@ -35,7 +35,7 @@ Use a disposable authorized DSP/Topaz test client. With Ashita running:
 
 Expected: a message that the native probe loaded; then an explicit
 `SDK loaded; read-only; XYZ write=disabled; packet injection=disabled`
-response. The `/wbprobe position` command shows read-only zone, entity index and native XYZ via `IParty::GetMemberServerId(0)`, `IResourceManager::GetEntityIndexById` and `IEntity::GetLocalPositionX/Y/Z`. Compare against the Toolkit live telemetry while stationary, then after walking a short distance. The results should agree to within normal telemetry timing and rounding; capture both readings and the Ashita SDK version for investigation. No position writes occur. Confirm unload, relog and reload succeed; test alongside the Lua live
+response. The `/wbprobe position` command shows read-only zone, entity index and native XYZ via `IParty::GetMemberServerId(0)`, a bounded scan of `IEntity::GetServerId(i)` and `IEntity::GetLocalPositionX/Y/Z`. Compare against the Toolkit live telemetry while stationary, then after walking a short distance. The results should agree to within normal telemetry timing and rounding; capture both readings and the Ashita SDK version for investigation. No position writes occur. Confirm unload, relog and reload succeed; test alongside the Lua live
 telemetry addon. If loading fails, retain the console/error output and inspect the
 actual export names and architecture with `dumpbin /exports` and
 `dumpbin /headers`. Do not rename an x64 DLL or force-load incompatible builds.
@@ -57,4 +57,8 @@ actual installed SDK and verify a supported position-access/write path before
 adding a **separate explicitly armed** development-only movement capability.
 Do not mistake a client-local coordinate change for server-accepted movement.
 
-If `Index unresolved` appears, record the reported party slot, server ID, mapped index and map size. The party `GetMemberIndex(0)` value is not the same as the entity-map index; native lookup now uses the server ID and confirms the mapped entity before reading coordinates.
+If `Index unresolved` appears, record the reported party slot, server ID, mapped index and map size. The party `GetMemberIndex(0)` value is not a full entity-map index. The Valhalla Ashita v4-Beta SDK lacks `IResourceManager::GetEntityIndexById`, so the tested plugin scans the entity map for a matching server ID before reading coordinates. The SDK also requires C++20 because its `Commands.h` uses `std::ranges`.
+
+## Confirmed Windows validation (2026-10-11)
+
+On the ValhallaXI Ashita v4.05 Beta environment, the user confirmed successful native XYZ readback in zone 98 at entity index 1024, with multiple changing coordinate samples after movement. The plugin was compiled with VS 18 x86 and C++20 against the local Beta SDK. This validates *read-only* native entity position access, not movement writes or server correction behavior. An unrelated Ashita plugin load attempt also produced an Error 126 message in the screenshot; it does not invalidate the successful `/wbprobe position` readings.
