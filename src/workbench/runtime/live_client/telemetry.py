@@ -99,6 +99,6 @@ def decode_frame(payload: dict, *, max_entities: int = 4096) -> TelemetryFrame:
     truncated = payload.get("entities_truncated", False)
     if scope not in ("unspecified", "selected_targets", "bounded_loaded_entities") or type(truncated) is not bool:
         raise ValueError("invalid entity observation scope")
-    if scope == "bounded_loaded_entities" and len(entities) > 32:
+    if scope == "bounded_loaded_entities" and len(entities) > 256:
         raise ValueError("bounded inventory exceeds 32 entities")
     return TelemetryFrame(snapshot, tuple(entities), scope, truncated)
