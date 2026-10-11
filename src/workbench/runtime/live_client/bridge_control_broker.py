@@ -26,7 +26,7 @@ class PendingProbe:
 
 @dataclass
 class ControlBroker:
-    ttl: float = 3.0
+    ttl: float = 10.0
     _lock: threading.RLock = field(default_factory=threading.RLock, repr=False)
     _pending: dict[str, PendingProbe] = field(default_factory=dict, repr=False)
     _sequence: int = 0
