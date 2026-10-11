@@ -452,6 +452,12 @@ A future source-layout/bootstrap phase may retire root compatibility launchers a
 - `docs/workbench/AUCTION_HOUSE_CAPABILITY_STATUS.md` — Auction House operator summary.
 - `docs/workbench/ROADMAP.md` — historical implementation ledger.
 - `docs/workbench/AUDIT_STATUS.md` — historical implementation/audit notes.
+### Live Client remaining delivery plan — reconciled 2026-10-10
+
+**Detailed prioritized roadmap:** [LIVE_CLIENT_DELIVERY_ROADMAP.md](LIVE_CLIENT_DELIVERY_ROADMAP.md). This is the forward-looking work plan with B1–B17 batches, dependencies, required Windows evidence, go/no-go gates, operator controls and acceptance criteria. Existing older notes below are historical implementation evidence, not a claim that native writes or end-to-end travel are complete.
+
+**Merged baseline:** 3D Viewer PRs #943–#957 (including DXT1 correction #947, forced-opaque diagnosis #948 and live-entity selection/highlighting #957) are on `main`. Read-only camera, live multi-client, entity selection, hover and research navigation are implemented but need Windows/browser acceptance. Bastok missing-floor behavior remains unverified; do not mark repaired. **Outstanding primary goals:** dependable multi-client lifecycle, verified entity identity and spatial calibration, bidirectional command protocol, authorized real client movement, feedback-guided navigation, and canonical Capture research session workflow.
+
 ### Live Client cloud development follow-up
 
 Current Live Client delivery status (supersedes older pending statements below):
