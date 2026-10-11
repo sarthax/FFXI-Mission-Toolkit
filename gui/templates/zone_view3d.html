@@ -176,6 +176,11 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
     <section class="zone3d-tab-pane" data-viewer-pane="capture" hidden></section>
     <section class="zone3d-tab-pane" data-viewer-pane="diagnostics" hidden></section>
   </aside>
+  <div id="zone3d-entity-inspector" hidden style="position:absolute;right:12px;bottom:12px;z-index:12;width:min(330px,calc(100% - 130px));max-height:65%;overflow:auto;background:rgba(10,15,22,.95);border:1px solid var(--border);border-radius:8px;padding:10px;">
+    <div style="display:flex;justify-content:space-between;align-items:center"><strong>Entity inspection</strong><button type="button" id="zone3d-inspector-close" aria-label="Close entity inspection">×</button></div>
+    <div id="zone3d-inspector-content" class="mono" style="font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0"></div>
+    <div id="zone3d-inspector-links" style="display:flex;gap:7px;flex-wrap:wrap"></div>
+  </div>
   <div id="viewer-loading" class="muted" role="status" aria-live="polite" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Loading mesh&hellip;</div>
   <div id="viewer-mesh-source" class="chip mono" role="status" style="display:none;position:absolute;top:10px;right:10px;z-index:3;"></div>
   <div id="viewer-mesh-error" role="alert" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-width:min(90%,540px);padding:16px;background:rgba(10,13,16,.94);border:1px solid var(--border);border-radius:8px;z-index:5;">
@@ -973,6 +978,41 @@ function buildSpawnMarkers() {
   spawnMesh = mesh;
 }
 
+const entityInspector = document.getElementById('zone3d-entity-inspector');
+const entityInspectorContent = document.getElementById('zone3d-inspector-content');
+const entityInspectorLinks = document.getElementById('zone3d-inspector-links');
+let selectedEntity = null;
+function inspectEntity(entity) {
+  if (!entity) return;
+  selectedEntity = entity;
+  const kind = {m:'Mob',n:'NPC',d:'Door/prop',c:'Capture'}[entity.k] || 'Entity';
+  const lines = [entity.n || 'Unnamed entity', kind, 'ID: ' + (entity.id ?? 'unavailable')];
+  if ([entity.x,entity.y,entity.z].every(Number.isFinite)) {
+    lines.push('XYZ: ' + [entity.x,entity.y,entity.z].map(x => x.toFixed(2)).join(', '));
+  }
+  if (entity.model != null) lines.push('Model: ' + entity.model);
+  if (entity.lv != null) lines.push('Level: ' + entity.lv);
+  if (entity.hpp != null) lines.push('HP: ' + entity.hpp + '%');
+  lines.push('Source: ' + (entity.k === 'c' ? 'capture observation' : 'zone entity data'));
+  entityInspectorContent.textContent = lines.join('\n');
+  entityInspectorLinks.replaceChildren();
+  const id = String(entity.id ?? '');
+  // Only link known entity IDs to the existing Inspector route. Never make up
+  // feature-trace, wiki or capture URLs from labels that may not resolve.
+  if (/^\d+$/.test(id)) {
+    const link = document.createElement('a');
+    link.className = 'chip';
+    link.textContent = 'Open Entity Inspector ↗';
+    link.href = '/entity/' + encodeURIComponent(id);
+    entityInspectorLinks.appendChild(link);
+  }
+  entityInspector.hidden = false;
+}
+document.getElementById('zone3d-inspector-close').addEventListener('click', () => {
+  entityInspector.hidden = true;
+  selectedEntity = null;
+});
+
 // Hover tooltip + click-to-fly, raycast against the instanced spawn mesh each frame.
 const raycaster = new THREE.Raycaster();
 const pointerNdc = new THREE.Vector2();
@@ -993,6 +1033,7 @@ renderer.domElement.addEventListener('click', () => {
   spawnMesh.getMatrixAt(hoveredSpawnId, m);
   const pos = new THREE.Vector3().setFromMatrixPosition(m);
   flyTo(pos);
+  inspectEntity(spawnEntities[hoveredSpawnId]);
 });
 
 // Smooth ease-out camera fly, ported from Vanalytics' CameraFlyTo idea.
@@ -1379,6 +1420,7 @@ document.getElementById('zone3d-focus-spawn-button').addEventListener('click', (
     if (flyModeOn) exitFlyMode();
     flyTo(new THREE.Vector3(entity.x, -entity.y, -entity.z));
     navFeedback.textContent = `Focusing ${entity.n || entity.id}`;
+    inspectEntity(entity);
   }
 });
 const cameraFields = ['x', 'y', 'z'].map(axis => document.getElementById('zone3d-goto-' + axis));
