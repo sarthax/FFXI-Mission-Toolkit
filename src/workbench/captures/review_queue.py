@@ -41,12 +41,15 @@ def ensure(con):
     con.execute(DDL)
     cols={row[1] for row in con.execute("PRAGMA table_info(review_queue)")}
     if "blocking" not in cols:
+        caller_transaction=con.in_transaction
         con.execute("ALTER TABLE review_queue ADD COLUMN blocking INTEGER NOT NULL DEFAULT 0")
         # One-time migration of pre-column automated blockers. New rows receive their
         # effective blocking value in raise_item(), so ordinary reads stay read-only.
         for kind, handler in KINDS.items():
             if handler.get("blocking"):
                 con.execute("UPDATE review_queue SET blocking=1 WHERE kind=?", (kind,))
+        if not caller_transaction:
+            con.commit()
 
 
 def _now():
