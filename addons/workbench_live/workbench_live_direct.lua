@@ -4,6 +4,14 @@ local observation = require('workbench_observation')
 local M = {}
 function M.new(options)
     local client_id, identity, last_attempt, paused, stable_zone, stable_count, reconnect_since
+    local hz = options.sample_hz or 1
+    assert(hz == 1 or hz == 5 or hz == 10 or hz == 20, 'invalid live sampling rate')
+    local clock = options.now or os.time
+    local function timestamp()
+        local t = clock()
+        assert(type(t) == 'number' and t == t and t > 0 and t < math.huge, 'invalid live sample clock')
+        return t
+    end
     local function stop(reason)
         client_id, identity, last_attempt, paused, stable_zone, stable_count, reconnect_since = nil, nil, nil, nil, nil, 0, nil
         if options.stop_bridge then options.stop_bridge() end
@@ -14,7 +22,7 @@ function M.new(options)
         if type(id) ~= 'string' or #id > 64 or not id:match('^[%w_-]+$') then
             return false, 'invalid live instance ID'
         end
-        local ok, frame = pcall(options.capture, id, os.time())
+        local ok, frame = pcall(options.capture, id, timestamp())
         if not ok then return false, tostring(frame) end
         local source = frame.source_identity or frame.character
         if type(source) ~= 'string' or #source == 0 then return false, 'invalid player identity' end
@@ -25,8 +33,8 @@ function M.new(options)
     end
     local function sample()
         if not client_id then return end
-        local now = os.time()
-        if last_attempt and now <= last_attempt then
+        local now = timestamp()
+        if last_attempt and now - last_attempt < (1 / hz) - 0.000001 then
             if now < last_attempt then stop('Live telemetry stopped: system clock moved backwards') end
             return
         end
