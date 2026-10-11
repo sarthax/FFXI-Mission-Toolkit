@@ -18,7 +18,25 @@ else
     print('Workbench Live: bridge settings missing or invalid; download fresh workbench_bridge_settings.lua from Direct Live Bridge.')
 end
 local bridge = require('workbench_bridge').new(bridge_options, function(msg) print('Workbench Live: '..msg) end, bridge_load_error)
+-- LuaSocket exposes a wall-clock with subsecond precision; fall back to 1 Hz
+-- rather than pretending a seconds-only clock can produce fresh samples.
+local live_now = os.time
+local live_hz = 1
+local clock_ok, socket_clock = pcall(require, 'socket')
+if clock_ok and type(socket_clock) == 'table' and type(socket_clock.gettime) == 'function' then
+    live_now = socket_clock.gettime
+    local requested = bridge_options.sample_hz or 10
+    if requested == 1 or requested == 5 or requested == 10 or requested == 20 then
+        live_hz = requested
+    else
+        print('Workbench Live: invalid sample_hz; defaulting to 10 Hz')
+        live_hz = 10
+    end
+else
+    print('Workbench Live: subsecond LuaSocket clock unavailable; direct telemetry limited to 1 Hz')
+end
 local direct = require('workbench_live_direct').new({
+    now = live_now, sample_hz = live_hz,
     capture = function(id, now) return observation.capture_ashita(AshitaCore, GetEntity, id, now, false, true) end,
     start_bridge = function(id) return bridge.start(id) end,  -- returns ok, reason,
     stop_bridge = function() bridge.stop() end,

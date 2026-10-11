@@ -31,6 +31,7 @@ class QuickStart(BaseModel):
     client_id: str = Field(default="ashita-a", min_length=1, max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
     ashita_root: str | None = Field(default=None, max_length=2048)
     regenerate: bool = False
+    sample_hz: int = 10
 
 
 class ClientSelection(BaseModel):
@@ -120,9 +121,12 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
             result = {"running": True, "host": creds["host"], "port": creds["port"],
                       "client_id": selection.client_id, "settings_written": False,
                       "settings_changed": False, "command": "/wblive live start " + selection.client_id}
+            if selection.sample_hz not in (1, 5, 10, 20):
+                raise ValueError('sample_hz must be 1, 5, 10 or 20')
+            result['sample_hz'] = selection.sample_hz
             if root:
                 try:
-                    path, changed = write_settings(root, creds)
+                    path, changed = write_settings(root, creds, selection.sample_hz)
                 except (ValueError, OSError) as exc:
                     result["settings_error"] = str(exc)
                 else:
@@ -130,7 +134,7 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
                     result.update(settings_written=True, settings_changed=changed, settings_path=str(path))
             if not result["settings_written"]:
                 # No usable Ashita folder: hand the file back for manual download.
-                result["settings_lua"] = render_settings_lua(creds)
+                result["settings_lua"] = render_settings_lua(creds, selection.sample_hz)
             return result
         except (RuntimeError, ValueError, OSError) as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc

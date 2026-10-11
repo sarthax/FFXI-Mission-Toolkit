@@ -13,13 +13,16 @@ from .ashita_install import _paths
 SETTINGS_NAME = "workbench_bridge_settings.lua"
 
 
-def render_settings_lua(creds: dict) -> str:
+def render_settings_lua(creds: dict, sample_hz: int = 10) -> str:
     """Lua text with real line breaks; LuaSocket is required lazily inside connect()."""
+    if type(sample_hz) is not int or sample_hz not in (1, 5, 10, 20):
+        raise ValueError("invalid live sample rate")
     return (
         "-- Private workbench_bridge_settings.lua; do not commit this file.\n"
         "return {\n"
         '  enabled = true, host = "127.0.0.1",\n'
         f"  port = {int(creds['port'])},\n"
+        f"  sample_hz = {sample_hz},\n"
         f"  session_id = {json.dumps(creds['session_id'])},\n"
         f"  generation = {json.dumps(creds['generation'])},\n"
         f"  token = {json.dumps(creds['token'])},\n"
@@ -36,12 +39,12 @@ def render_settings_lua(creds: dict) -> str:
     )
 
 
-def write_settings(ashita_root: str, creds: dict) -> tuple[Path, bool]:
+def write_settings(ashita_root: str, creds: dict, sample_hz: int = 10) -> tuple[Path, bool]:
     """Write settings into <root>/addons/workbench_live; returns (path, changed)."""
     addon = _paths(ashita_root)
     addon.mkdir(exist_ok=True)
     target = addon / SETTINGS_NAME
-    text = render_settings_lua(creds)
+    text = render_settings_lua(creds, sample_hz)
     if target.is_symlink():
         raise ValueError("Refusing to write through a symlinked settings file")
     if target.exists() and target.read_text(encoding="utf-8") == text:

@@ -873,3 +873,24 @@ record the actual in-game direction, approximate distance, active client ID,
 zone and heading. A two-point displacement alone cannot prove absolute
 world position, game/server synchronization or writing capability. Movement
 commands remain disabled pending further independent validation.
+
+
+## 2026-10-10 configurable direct live sampling
+
+The Direct Live Bridge console offers Ashita telemetry sampling presets at
+1, 5, 10 (default) and 20 Hz. On **Start receiver**, the selected rate is
+validated and written to the private Ashita settings file. Reload the addon,
+stop and start `/wblive live` for settings changes to take effect. LuaSocket
+`gettime()` provides fractional wall-clock timestamps where available;
+otherwise the addon fails back to 1 Hz and prints a warning. Settings files
+remain private and transport credentials must not appear in health reports.
+
+The read-only 3D viewer independently offers 1/5/10/20 Hz polling presets,
+remembered in browser storage. Higher viewer refresh alone does not add
+observations; choose a matching Ashita sampling rate for smoother position
+tracking. Telemetry is not interpolated and should still be considered stale
+when the bridge disconnects. The JSONL recording exporter intentionally
+retains its original one-second cadence; no game commands or writes are added.
+At 20 Hz, transport/CPU load should be checked on the Windows runtime before
+using the setting routinely. Live clock, network throughput and zoning recovery
+at subsecond cadence still require real Windows/Ashita verification.

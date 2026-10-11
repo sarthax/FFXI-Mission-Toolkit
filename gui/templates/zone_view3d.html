@@ -63,6 +63,7 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   <label><input id="ashita-live-toggle" type="checkbox"> Live Ashita position (read only)</label>
   <label>Client ID <input id="ashita-live-client" value="ashita-a" list="ashita-live-clients" style="width:120px"></label>
   <datalist id="ashita-live-clients"></datalist>
+  <label>Refresh <select id="ashita-live-refresh"><option value="1000">1 Hz</option><option value="200">5 Hz</option><option value="100" selected>10 Hz</option><option value="50">20 Hz</option></select></label>
   <label><input id="ashita-live-entities" type="checkbox"> Nearby entities</label>
   <label><input id="ashita-live-follow" type="checkbox"> Follow player (orbit)</label>
   <label><input id="ashita-live-autozone" type="checkbox"> Follow zone changes</label>
@@ -504,7 +505,20 @@ liveClient.addEventListener('change', () => {
 });
 refreshLiveClients();
 setInterval(refreshLiveClients, 10000);
-setInterval(pollAshitaPosition, 1500);
+const liveRefresh = document.getElementById('ashita-live-refresh');
+let livePollTimer = null;
+try { const ms = localStorage.getItem('wb-live-view-refresh');
+  if (['1000','200','100','50'].includes(ms)) liveRefresh.value = ms;
+} catch (_) {}
+function scheduleLivePolling() {
+  if (livePollTimer !== null) clearInterval(livePollTimer);
+  livePollTimer = setInterval(pollAshitaPosition, Number(liveRefresh.value));
+}
+liveRefresh.addEventListener('change', () => {
+  try { localStorage.setItem('wb-live-view-refresh', liveRefresh.value); } catch (_) {}
+  scheduleLivePolling(); pollAshitaPosition();
+});
+scheduleLivePolling();
 
 scene.background = new THREE.Color(0x0a0d10);
 scene.fog = new THREE.FogExp2(0x0a0d10, 0.0025);

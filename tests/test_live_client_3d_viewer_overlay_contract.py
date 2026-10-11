@@ -14,7 +14,7 @@ def test_zone_viewer_live_overlay_is_opt_in_and_uses_safe_projection():
     assert "if (liveAutoZoneToggle.checked || liveFollowToggle.checked) await checkLiveZone(clientId, requestId)" in content
     assert "const current = projectLivePoint(position)" in content
     assert "liveMarker.position.copy(current)" in content
-    assert "setInterval(pollAshitaPosition, 1500)" in content
+    assert "livePollTimer = setInterval(pollAshitaPosition, Number(liveRefresh.value))" in content
     assert "fetch('/live-client/bridge/clients')" in content
 
 
