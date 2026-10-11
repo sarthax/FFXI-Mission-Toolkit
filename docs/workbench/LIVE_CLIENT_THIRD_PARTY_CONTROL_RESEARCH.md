@@ -4,6 +4,14 @@
 **Status:** Research backlog; not implementation authorization  
 **Project:** FFXI Mission Toolkit — Live Client, Captures, Entity, Zone Editor, Feature Trace
 
+## Current status reconciliation — 2026-10-11
+
+The original read-only decision and progress tables below are **dated research history**, not the current implementation status. Newer merged `main` includes `native/ashita_workbench_probe/movement_adapter.h`, `native_control.h`, `workbench_native_probe.cpp`, `src/workbench/runtime/live_client/native_control.py` and native warp controls in `gui/templates/zone_view3d.html`. Native control supports operator-enabled movement, warp, speed, stop/disarm, per-load nonce/status, same-client zoning checks, and a 3D map target/nudge UI. The user reports successful integrated live movement. This audit verified source presence, **not** an independent Windows replay of the complete test.
+
+The native and Lua telemetry had previously matched in zone 98 within 0.0006 XYZ units and 23 ms. The native protocol intentionally reports `server_confirmed=false`: actual DSP/Topaz authoritative acceptance should be separately demonstrated with server-side location samples and zoning/relogin tests. Warp-pointer offsets, persistent auto-arm, configurable indefinite TTL, opt-in file control and absent server identity attestation remain deployment risks. User interface movement features are **not** evidence that autonomous pathfinding, 2D movement controls, or full passive capture enrichment are done. See [current Live Client delivery audit](LIVE_CLIENT_DELIVERY_ROADMAP.md#current-movement-capability-audit--2026-10-11-supersedes-older-historical-gates-below).
+
+**Remaining third-party-research priority:** Validate server-accepted movement, recovery and multi-client isolation before adding Cure Please / Project Tako / Clipper feature adapters. Existing references below remain research only.
+
 ## Decision and current boundary
 
 Continue the existing Ashita v4 Live Client integration rather than introducing a second native hook prematurely. The authenticated **read-only** Toolkit ↔ client round trip was confirmed in the Windows environment. A native Ashita v4-Beta plugin has also successfully loaded and reported changing player XYZ positions; neither test demonstrates the ability to move the player programmatically. Keep the existing bridge and native plugin as the preferred integration foundations, and validate command acknowledgment, native-versus-Lua telemetry agreement, and server-observed movement before adopting another control stack.

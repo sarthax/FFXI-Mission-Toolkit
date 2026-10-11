@@ -1,6 +1,26 @@
-# Live Client — remaining delivery roadmap
+# Live Client — delivery roadmap and acceptance ledger
 
 Status baseline: 2026-10-10. Authoritative implementation ledger: [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md). Architecture: [LIVE_CLIENT_BRIDGE.md](LIVE_CLIENT_BRIDGE.md), [LIVE_CLIENT_REFERENCE_AUDIT.md](LIVE_CLIENT_REFERENCE_AUDIT.md), [LIVE_CLIENT_WINDOWS_HANDOFF.md](LIVE_CLIENT_WINDOWS_HANDOFF.md).
+
+## Current movement capability audit — 2026-10-11 (supersedes older historical gates below)
+
+**User-reported live milestone:** The native Ashita DLL, Toolkit Live Client and 3D Zone Viewer now support actual movement and have been merged to `main`. The repository confirms implemented native movement handlers and UI controls; this documentation pass did **not** independently replay the live Windows test. Historical sections below saying native writes do not exist refer to earlier development stages and are **not the current product status**.
+
+| Original goal | Current implementation / evidence | Audit |
+|---|---|---|
+| Ashita client observation and native XYZ | Authenticated live Lua bridge plus native plugin XYZ getter; operator's zone-98 native/Lua sample agreed within 0.0006 units at 23 ms separation | **Met for tested client** |
+| Native player movement | Native movement adapter with `autorun`, local XYZ setters, experimental warp pointer mode, and explicit native control handler; in-game autorun short legs recorded in prior milestone | **Implemented; user reports working** |
+| Toolkit-originated commands | Native file channel `settings.ini` / `command.txt` / `status.txt`, opt-in enable/disable, nonce, sequence, freshness and audit outcome; `src/workbench/runtime/live_client/native_control.py` API | **Implemented; user reports tested** |
+| 3D Viewer movement | Warp controls: arm, disarm, STOP, compass/diagonal nudges, direct coordinates, navmesh-target picking, bookmarks, speed, zone guard, pending cross-zone bookmark | **Implemented; user reports integrated** |
+| Stop, disarm and defensive validation | Movement adapter, command channel and viewer guards, independent per-load nonce, audit ring, identity/zone checks; `server_confirmed=false` remains explicit | **Implemented; lifecycle stress tests pending** |
+| 2D destination movement / path-follow | Core path/waypoint and 2D research tools exist, but this audit did not establish an equivalent end-to-end, directed 2D-map action or autonomous route traversal with obstacles | **Partial / separate target** |
+| Server-authoritative proof | Native acknowledgments are client-local; record independent DSP/Topaz `!logpos` before/after, walk/no-snapback, zone and relog trials | **Not independently established in repository** |
+| Unified passive capture | Bounded Ashita packet observer and canonical ingest foundation; roadmap's full high-volume capture and event/entity lifecycle enrichment remain separate | **Partial / ongoing** |
+| Windows recovery, dual-client isolation, spatial calibration | Synthetic coverage and some Windows observations; repeatable two-client, reconnect, unknown-zone/instance and multi-zone landmark results are not comprehensively documented | **Partial / acceptance backlog** |
+
+**Important safety/portability findings:** `auto_arm=warp`, `enable_ttl_seconds=0` and file-command opt-in are available as development conveniences, but reduce the default-off posture when configured. The `DEV-SERVER-ONLY` literal is **not** a server-attestation check. The experimental warp-pointer offsets are version-dependent; do not assume they work on other client builds. Speed percentage mapping and server tolerance require measured confirmation. The UI's snap-to-navmesh is optional and does not establish safe collision/grounding for arbitrary coordinates.
+
+**Residual high-priority acceptance:** (1) Record a reproducible DSP server-side position test with before/after server and native XYZ, (2) verify STOP/disarm and zoning/logoff/reload recovery, (3) test two distinct live clients and session isolation, (4) add explicit private-server allowlisting/version compatibility where feasible, (5) verify speed/warp consistency and movement audit data, (6) complete capture-event stream integration. The original *native controlled movement and 3D Viewer integration* milestones should no longer be shown as unimplemented.
 
 ## Goal and what is **not** delivered
 
