@@ -51,6 +51,13 @@ This is a **control transport test only**. It does not offer a movement command,
 
 With the local bridge and live addon started, run `/wblive bridge ping`. This checks an authenticated, same-socket heartbeat response from the Toolkit. No game commands, memory writes, or movement packets are enabled. This is a transport readiness check only.
 
+## Updating existing addon files
+
+Use **Client → Live Client → Direct Live Bridge → Install Ashita addon locally**.
+The primary **Preview addon changes** action now previews updates to installed files, not just missing files. Choose **Install / update with backup** to back up differing source files into a separate `addons/workbench_live_backup_*` directory and replace them with the current Toolkit version. Private `workbench_bridge_settings.lua` remains untouched; reloading the Ashita addon is required afterward. No manual deletion is needed. The alternate **Backup and replace addon files** button uses the same guarded upgrade operation. If preview detects unexpected external changes, preview again rather than bypassing the safety check.
+
+The **Test Command (read-only)** button in the live dashboard queues a capability probe for the selected connected Ashita client. Within 10 seconds, run `/wblive bridge ping` in the game and await the expected **rejected: unsupported game writes** status. It tests command delivery, not actual movement.
+
 ## Windows acceptance run
 
 Record the actual Ashita version, FFXI game/module version and module SHA-256
