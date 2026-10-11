@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Query
 from .viewer import viewer_projection
+from .alignment import evaluate_alignment
 from pathlib import Path
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
@@ -147,6 +148,15 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
             return manager.provision(selection.client_id)
         except (RuntimeError, ValueError) as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    @router.post("/alignment/validate")
+    def validate_alignment(request: Request, payload: dict) -> dict:
+        """Validate user-pasted two-point evidence; never store it or control FFXI."""
+        require_same_origin(request)
+        try:
+            return evaluate_alignment(payload)
+        except (ValueError, KeyError, TypeError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     @router.get("/clients")
     def clients() -> dict:
