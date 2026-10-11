@@ -3339,8 +3339,6 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         segment_names = []
         try:
             manifest_data = src.read_bytes(manifest_name)
-            if b'"segments"' not in manifest_data or b'"schema_version"' not in manifest_data:
-                continue
             prefix = manifest_name.rsplit("/", 1)[0] + "/" if "/" in manifest_name else ""
             # Mark every sibling native segment as owned before validating the
             # manifest. A corrupt manifest must not trigger partial imports.
