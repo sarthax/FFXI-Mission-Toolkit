@@ -1317,7 +1317,10 @@ if (LIVE_PARSE_AVAILABLE) {
     const discarded = audit.missingPrefab + audit.invalidTransform;
     showMeshSource(`Client DAT · ${audit.accepted}/${audit.total} instances · ${audit.mirrored} mirrored${discarded ? ' · ' + discarded + ' skipped' : ''}`);
     const materials = group.userData.materialAudit;
-    setMeshDiagnostics('client_dat', { rom_path: GEOMETRY_ROM_PATH, instances: audit, materials });
+    setMeshDiagnostics('client_dat', {
+      rom_path: GEOMETRY_ROM_PATH, instances: audit, materials,
+      unresolved_texture_names: zoneData.textureDiagnostics?.unresolvedNames || []
+    });
     console.info('[ZoneViewer] zone material audit:', materials);
     if (materials.missingTexture || materials.invalidTexture) {
       console.warn('[ZoneViewer] some prefab textures are missing or invalid; falling back to untextured surfaces:', materials);
