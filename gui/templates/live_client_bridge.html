@@ -35,6 +35,9 @@
  <button type="button" onclick="action('stop')">Stop receiver</button>
  <button type="button" onclick="quickStart(true)">Regenerate credentials</button></div>
  <p class="muted">Start receiver is one step: it reuses saved credentials and port (so restarts need no reconfiguration) and writes the settings file into your Ashita addon folder (set the folder under "Install Ashita addon" once; it is remembered). Regenerate credentials revokes the old ones. Existing credentials were revoked. Settings are private.</p>
+ <label>Live position sampling
+ <select id="live-sample-hz" aria-label="Ashita live telemetry rate"><option value="1">1 Hz · low overhead</option><option value="5">5 Hz</option><option value="10" selected>10 Hz · smooth</option><option value="20">20 Hz · high</option></select></label>
+ <p class="muted">Changing this option writes an updated private settings file on Start receiver. Reload the Ashita addon and restart direct telemetry to apply it. Recorded JSONL exports are unaffected.</p>
  <button type="button" id="downloadConfig" onclick="downloadConfig()" disabled>Download Ashita settings</button>
  <button type="button" id="copyLiveCommand">Copy Ashita start command</button>
  <p id="bridge-action-message" role="status" class="muted" aria-live="polite">Start receiver, then configure and download settings for your Ashita addon.</p>
@@ -76,6 +79,8 @@
 </div>
 <script>
 const root='/live-client/bridge/';
+try{const rate=localStorage.getItem('wb-live-sample-hz');if(['1','5','10','20'].includes(rate))document.getElementById('live-sample-hz').value=rate;}catch(_){}
+document.getElementById('live-sample-hz').addEventListener('change',e=>{try{localStorage.setItem('wb-live-sample-hz',e.target.value)}catch(_){}});
 const alignmentInput=document.getElementById('alignment-json');
 const alignmentFeedback=document.getElementById('alignment-feedback');
 const alignmentResult=document.getElementById('alignment-result');
@@ -209,7 +214,7 @@ async function action(name){try{const result=await request(name);statusEl.textCo
  catch(error){actionMessage.textContent=String(error)}}
 async function quickStart(regenerate){try{const value=client();
  if(!/^[a-zA-Z0-9_-]{1,64}$/.test(value))throw Error('Invalid client ID');
- const body={client_id:value,regenerate:!!regenerate};
+ const body={client_id:value,regenerate:!!regenerate,sample_hz:Number(document.getElementById('live-sample-hz').value)};
  if(installRootInput.value.trim())body.ashita_root=installRootInput.value.trim();
  const result=await request('quick-start',body);
  statusEl.textContent=JSON.stringify({running:result.running,port:result.port,client_id:result.client_id,settings_written:result.settings_written,settings_changed:result.settings_changed},null,2);
