@@ -622,12 +622,12 @@ otherClientsToggle.addEventListener('change', () => {
 const liveEntityMaterial = new THREE.MeshBasicMaterial({color: 0xf5a35c, depthTest: false});
 const liveEntityPool = [];
 const liveObservedEntities = [];
+let liveSelectedEntityId = '';
 const liveEntitySelect = document.getElementById('ashita-entity-select');
 const liveEntityInspect = document.getElementById('ashita-entity-inspect');
 const liveEntityCount = document.getElementById('ashita-entity-count');
 function updateLiveEntityPicker() {
-  const previous = liveObservedEntities[Number(liveEntitySelect.value)];
-  const selectedId = liveEntitySelect.value !== '' ? String(previous?.id ?? '') : '';
+  const selectedId = liveSelectedEntityId;
   liveEntitySelect.replaceChildren(new Option('Select observed entity', ''));
   liveObservedEntities.forEach((entity, index) => {
     const option = new Option((entity.n || 'Unnamed') + ' [' + (entity.id ?? '?') + ']', String(index));
@@ -639,6 +639,8 @@ function updateLiveEntityPicker() {
   liveEntityCount.textContent = liveObservedEntities.length + ' live entities';
 }
 liveEntitySelect.addEventListener('change', () => {
+  liveSelectedEntityId = liveEntitySelect.value === '' ? '' :
+    String(liveObservedEntities[Number(liveEntitySelect.value)]?.id ?? '');
   liveEntityInspect.disabled = liveEntitySelect.value === '';
 });
 liveEntityInspect.addEventListener('click', () => {
@@ -694,6 +696,7 @@ function clearLiveMarker() {
   liveLastSampleAt = 0;
   lastLivePosition = null;
   lastLiveDiagnostic = null;
+  liveSelectedEntityId = '';
   clearLiveEntities();
   if (!liveMarker) return;
   liveMarker.parent.remove(liveMarker);
