@@ -52,6 +52,17 @@
 </tbody></table></div>
 
 </div></details>
+<details class="capture-help-section" open><summary>Review flags, missing data, and follow-up requests</summary><div class="body">
+<p>Capture Detail now uses the same persistent <code>review_queue</code> as automated ingest exceptions for human review notes. Use <strong>Review / missing data</strong> on a capture to record one of three manual kinds: missing data, invalid/suspect data, or a follow-up request.</p>
+<ul>
+<li>Manual review items are auditable and survive normal capture browsing/re-ingest because they are stored as review records, not transient UI notes.</li>
+<li>They are <strong>non-blocking by default</strong>. Choose the quarantine checkbox only when derived/aggregate results should exclude the capture until that review item is resolved.</li>
+<li>Resolving or dismissing a review item does not delete raw evidence. It only closes the review condition and records the reviewer note.</li>
+<li>The global <a href="/captures/review">Capture review queue</a> shows automated and manual review items together, while each Capture Detail page shows that capture's complete review history.</li>
+</ul>
+<p class="muted">Automatic tag/content-type completeness checklists are a separate planned layer; this review system is the persistence/workflow foundation they will use.</p>
+</div></details>
+
 <details class="capture-help-section"><summary>Raw packet convergence</summary><div class="body">
 <p>Raw packet-producing tools feed the common <code>capture_raw_packets</code> evidence store while retaining their own <code>source_format</code>, native source identity, row/block provenance, and optional packet metadata. Equivalent packets may be correlated by <code>opcode + direction + exact raw bytes</code>; the original observations are not deleted or merged.</p>
 <p><strong>Packet inspection is capture-native.</strong> Each raw packet row can be opened in a contextual decoder keyed by <code>capture_id + seq</code>. It uses the same canonical packet definitions as the standalone scratch decoder, but keeps the session timestamp, neighboring packets, packet header metadata, exact source locator, source hash, and cross-source correlations visible. Decoded fields are color-coordinated with their exact raw byte spans; unclaimed and overlapping bytes remain explicit rather than being assigned guessed meanings.</p>
