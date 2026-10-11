@@ -36,7 +36,7 @@ class LiveCaptureContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             check.accept(LivePacketEnvelope.from_mapping(sample(sequence=4, dropped_before=0)))
         with self.assertRaises(ValueError):
-            check.accept(LivePacketEnvelope.from_mapping(sample(sequence=3, dropped_before=0)))
+            check.accept(LivePacketEnvelope.from_mapping(sample(sequence=2, dropped_before=0)))  # repeat/backward
 
     def test_clients_are_independent(self):
         check = LiveCaptureSequence()
