@@ -9,6 +9,13 @@ This is the authoritative current planning and capability inventory for the Miss
 
 `ROADMAP.md` remains the historical implementation ledger. `AUDIT_STATUS.md` remains a historical/implementation audit log. When older status text conflicts with this file, use this file plus merged `main` history.
 
+## 2026-10-11 Live Client movement status correction
+
+- [x] **Native Ashita movement architecture and 3D controls merged:** SDK-built DLL with player XYZ readback, armed movement/warp/speed/STOP, file-based control channel, live client API, 3D viewer target picking, compass nudges, coordinates, bookmarks and zone checks. The operator reports successful integrated movement. See [Live Client delivery/acceptance ledger](LIVE_CLIENT_DELIVERY_ROADMAP.md#current-movement-capability-audit--2026-10-11-supersedes-older-historical-gates-below).
+- [~] **Independent acceptance remains:** client-local commands return `server_confirmed=false`; retain separate DSP/Topaz GM `!logpos` observations, zone and relog checks, STOP/disarm stress, dual-client isolation, SDK version compatibility and optional auto-arm risk assessment.
+- [~] **Broader original goal:** reusable capture correlation, full unified native capture, verified 2D destination movement/autonomous path following, and multi-zone spatial calibration are separate incomplete milestones; do not equate successful 3D warp with route navigation.
+- **Status note:** older 2026-10-10 paragraphs below are dated baselines, not statements that native movement is still absent.
+
 ## 2026-10-10 targeted module documentation reconciliation
 
 **Scope and evidence:** Key Items code and merged PRs #868, #875, #880, #881, #883, #889, #891, #896, #899, #900, #902, #905, #910 and #911; existing Auction House status/help, Live Client bridge guide and Synth UI/API. This targeted update **does not supersede** the October 6 repository-wide baseline for unreviewed modules.
