@@ -1,4 +1,6 @@
 # Live Client Development Bridge — Roadmap and Resume Guide
+> **Current status (2026-10-11):** The original observation-only roadmap sections below are historical. Current `main` implements the gated Ashita native movement adapter and Toolkit-to-plugin control channel, plus 3D Viewer warp-to-target, compass/diagonal nudge, direct XYZ, bookmarks, speed, arm/disarm/STOP and zone guards. User reports actual integrated movement. Native feedback still says `server_confirmed=false`; a separate DSP/Topaz server readback and lifecycle/multi-client acceptance remain. See [current movement acceptance ledger](LIVE_CLIENT_DELIVERY_ROADMAP.md#current-movement-capability-audit--2026-10-11-supersedes-older-historical-gates-below).
+
 
 > **Delivery status and next milestones:** [Live Client delivery roadmap](LIVE_CLIENT_DELIVERY_ROADMAP.md). Read-only observation/viewer functionality is not proof of in-game movement control; see the Windows acceptance gates before enabling writes.
 
