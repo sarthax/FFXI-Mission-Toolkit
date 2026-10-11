@@ -727,8 +727,7 @@ def capture_review_items(capture_id) -> list:
         from workbench.captures import review_queue as _rq
         con = get_con()
         try:
-            return [dict(r, label=_rq.KINDS.get(r["kind"], {}).get("label", r["kind"]),
-                         blocking=_rq.KINDS.get(r["kind"], {}).get("blocking", False))
+            return [dict(r, label=_rq.KINDS.get(r["kind"], {}).get("label", r["kind"]))
                     for r in _rq.items(con, "pending", capture_id=int(capture_id))]
         finally:
             con.close()
@@ -920,6 +919,64 @@ def capture_review_flags(capture_id: int):
         return JSONResponse([{k: r[k] for k in ("review_id", "kind", "status", "key")} for r in rq.items(con, "pending", capture_id=capture_id)])
     finally:
         con.close()
+
+
+@app.post("/captures/{capture_id}/review-flags")
+def capture_review_flag_create(
+    capture_id: int,
+    kind: str = Form(...),
+    summary: str = Form(...),
+    note: str = Form(""),
+    blocking: str = Form(""),
+):
+    """Add a human-authored missing/invalid/follow-up review item to one capture."""
+    from urllib.parse import quote
+    from workbench.captures import review_queue as rq
+    con=get_con()
+    try:
+        item=rq.create_manual(
+            con,capture_id,kind,summary,note,
+            blocking=bool(blocking),
+        )
+        msg=f"Review #{item['review_id']} created."
+    except ValueError as exc:
+        msg=f"Not saved: {exc}"
+    finally:
+        con.close()
+    return RedirectResponse(
+        url=f"/captures/{capture_id}?review_msg={quote(msg)}",
+        status_code=303,
+    )
+
+
+@app.post("/captures/{capture_id}/review-flags/{review_id}")
+def capture_review_flag_decide(
+    capture_id: int,
+    review_id: int,
+    action: str = Form(...),
+    note: str = Form(""),
+):
+    """Resolve/dismiss one review item and return to the capture dossier."""
+    from urllib.parse import quote
+    from workbench.captures import review_queue as rq
+    con=get_con()
+    try:
+        row=con.execute(
+            "SELECT capture_id FROM review_queue WHERE review_id=?",
+            (review_id,),
+        ).fetchone()
+        if not row or row[0] != capture_id:
+            raise ValueError("review item does not belong to this capture")
+        rq.decide(con,review_id,action,None,note.strip() or None)
+        msg=f"Review #{review_id} {'resolved' if action == 'resolve' else 'dismissed'}."
+    except (ValueError,KeyError) as exc:
+        msg=f"Not saved: {exc}"
+    finally:
+        con.close()
+    return RedirectResponse(
+        url=f"/captures/{capture_id}?review_msg={quote(msg)}",
+        status_code=303,
+    )
 
 
 @app.get("/roadmap", response_class=HTMLResponse)
@@ -8668,7 +8725,7 @@ def captures_source_locator(
 @app.get("/captures/{capture_id}", response_class=HTMLResponse)
 def captures_detail(
     request: Request, capture_id: int, content_type: str = "", q: str = "",
-    rebuild_status: str = "", rebuild_error: str = "",
+    rebuild_status: str = "", rebuild_error: str = "", review_msg: str = "",
 ):
     """Dedicated detail page, with prev/next cycling through the SAME filtered list the user
     came from (content_type/q carried through as query params) -- directly answers "let me
@@ -8725,6 +8782,16 @@ def captures_detail(
         (capture_id,)).fetchall()
     detail["health"] = capture_integrity.capture_health(con, capture_id)
     detail["exact_capture_duplicates"] = capture_integrity.find_exact_capture_duplicates(con, capture_id)
+    from workbench.captures import review_queue as _rq
+    detail["review_items"] = [
+        dict(item, label=_rq.KINDS.get(item["kind"], {}).get("label", item["kind"]))
+        for item in _rq.items(con, "all", capture_id=capture_id)
+    ]
+    detail["manual_review_kinds"] = [
+        (kind, handler["label"])
+        for kind,handler in _rq.KINDS.items()
+        if handler.get("manual")
+    ]
     rebuild_inventory = {
         item["filename"]: item
         for item in build_capture_index.capture_rebuild_inventory(con, capture_id)
@@ -8759,6 +8826,7 @@ def captures_detail(
         "prev_id": prev_id, "next_id": next_id, "position": position,
         "all_tags": _detail_tags,
         "rebuild_status": rebuild_status, "rebuild_error": rebuild_error,
+        "review_msg": review_msg,
     })
 
 

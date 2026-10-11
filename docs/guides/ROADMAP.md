@@ -76,9 +76,9 @@ Use the generic Workbench rather than adding system-specific concepts to the cor
 ### 7. Product/workflow backlog
 
 - [ ] Watched-folder or live Windower/Ashita ingestion.
-- [ ] Capture-data request/fulfillment workflow.
-- [ ] Capture annotations and invalid-data flags.
-- [ ] Tag/category completeness checklists.
+- [~] Capture-data request/fulfillment workflow — manual follow-up requests now persist in the existing capture review queue with status/history and optional explicit quarantine; automatic request-to-later-capture fulfillment matching remains.
+- [~] Capture annotations and invalid-data flags — Capture Detail can now create persistent missing-data, invalid/suspect-data, and follow-up review items, resolve/dismiss them with audit notes, and explicitly quarantine only selected items from derived/aggregate results.
+- [ ] Tag/category completeness checklists — next layer should raise/update review items from content-type/tag expectations rather than creating a separate workflow.
 - [ ] Capture → server drafting/export through canonical evidence and package review.
 - [ ] Authenticated remote/hosted access.
 - [ ] Discord/reference-history catalog integration.

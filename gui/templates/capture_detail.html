@@ -56,6 +56,58 @@
 <div id="summarize-capture-result"></div>
 {% if rebuild_status %}<div class="ok" style="margin:6px 0;">{{ rebuild_status }}</div>{% endif %}
 {% if rebuild_error %}<div class="warn" style="margin:6px 0;"><b>Rebuild refused:</b> {{ rebuild_error }}</div>{% endif %}
+{% if review_msg %}<div class="ok" style="margin:6px 0;">{{ review_msg }}</div>{% endif %}
+
+<details class="capture-section"{% if detail.review_items|selectattr('status','equalto','pending')|list %} open{% endif %}>
+  <summary>Review / missing data <span class="chip">{{ detail.review_items|selectattr('status','equalto','pending')|list|length }} pending</span></summary>
+  <div class="section-body">
+    <p class="muted">Record missing evidence, suspect/invalid evidence, or a follow-up request. Manual items are non-blocking by default; choose quarantine only when derived results should not use this capture until review is resolved.</p>
+    <form method="post" action="/captures/{{ detail.capture_id }}/review-flags" style="display:grid;grid-template-columns:minmax(180px,.7fr) minmax(260px,1.5fr);gap:7px;align-items:end;margin-bottom:10px;">
+      <label>Type
+        <select name="kind" required style="width:100%;margin-top:3px;">
+          {% for kind,label in detail.manual_review_kinds %}<option value="{{ kind }}">{{ label }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Summary
+        <input name="summary" required placeholder="What is missing, invalid, or needs follow-up?" style="width:100%;margin-top:3px;">
+      </label>
+      <label style="grid-column:1 / -1;">Detail / next action
+        <textarea name="note" rows="2" placeholder="Optional context: row/source/packet/entity, what to capture again, expected correction, etc." style="width:100%;margin-top:3px;"></textarea>
+      </label>
+      <label style="grid-column:1 / -1;display:flex;align-items:center;gap:6px;font-weight:normal;">
+        <input type="checkbox" name="blocking" value="1"> Quarantine from derived/aggregate results until this review item is resolved
+      </label>
+      <div style="grid-column:1 / -1;"><button type="submit">Add review item</button></div>
+    </form>
+
+    {% if detail.review_items %}
+    <div class="table-wrap"><table>
+      <thead><tr><th>#</th><th>Type</th><th>Summary</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for item in detail.review_items %}
+      <tr>
+        <td class="mono">{{ item.review_id }}</td>
+        <td>{{ item.label }}{% if item.blocking %} <span class="chip" title="Held out of derived/aggregate results while pending">blocking</span>{% endif %}</td>
+        <td>{{ item.detail.summary or item.detail.reason or '—' }}{% if item.detail.note %}<div class="muted">{{ item.detail.note }}</div>{% endif %}{% if item.key and not item.key.startswith('manual:') %}<div class="muted mono">{{ item.key }}</div>{% endif %}</td>
+        <td>{{ item.status|replace('_',' ') }}{% if item.note %}<div class="muted">{{ item.note }}</div>{% endif %}</td>
+        <td>
+          {% if item.status == 'pending' %}
+          <form method="post" action="/captures/{{ detail.capture_id }}/review-flags/{{ item.review_id }}" style="display:flex;gap:4px;flex-wrap:wrap;">
+            <input name="note" placeholder="resolution note" size="16">
+            <button name="action" value="resolve">Resolve</button>
+            <button name="action" value="dismiss">Dismiss</button>
+          </form>
+          {% else %}<span class="muted">closed</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}
+    <p class="muted">No review items recorded for this capture.</p>
+    {% endif %}
+  </div>
+</details>
 
 <div class="capture-stats">
   <div class="capture-stat"><div class="n">{{ detail.n_events }}</div><div class="l">Events</div></div>

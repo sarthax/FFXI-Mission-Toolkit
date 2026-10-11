@@ -27,6 +27,7 @@ DB_PATH = os.environ.get("MISSION_TOOLKIT_DB", r"D:\Claude\mission_toolkit\ffxi_
 DDL = """CREATE TABLE IF NOT EXISTS review_queue (
     review_id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, source_path TEXT, capture_id INTEGER,
     key TEXT NOT NULL DEFAULT '', detail TEXT, status TEXT NOT NULL DEFAULT 'pending',
+    blocking INTEGER NOT NULL DEFAULT 0,
     resolution TEXT, note TEXT, created_at TEXT, reviewed_at TEXT, UNIQUE(kind, source_path, key))"""
 
 # status: pending | resolved | dismissed | auto_resolved
@@ -38,6 +39,17 @@ _SKIP_TABLES = {"captures", "capture_tags", "capture_post_meta", "capture_msgid_
 
 def ensure(con):
     con.execute(DDL)
+    cols={row[1] for row in con.execute("PRAGMA table_info(review_queue)")}
+    if "blocking" not in cols:
+        caller_transaction=con.in_transaction
+        con.execute("ALTER TABLE review_queue ADD COLUMN blocking INTEGER NOT NULL DEFAULT 0")
+        # One-time migration of pre-column automated blockers. New rows receive their
+        # effective blocking value in raise_item(), so ordinary reads stay read-only.
+        for kind, handler in KINDS.items():
+            if handler.get("blocking"):
+                con.execute("UPDATE review_queue SET blocking=1 WHERE kind=?", (kind,))
+        if not caller_transaction:
+            con.commit()
 
 
 def _now():
@@ -51,27 +63,28 @@ def _src(con, capture_id):
 
 def _row(r):
     d = dict(zip([c for c in ("review_id", "kind", "source_path", "capture_id", "key", "detail", "status",
-                              "resolution", "note", "created_at", "reviewed_at")], r))
+                              "blocking", "resolution", "note", "created_at", "reviewed_at")], r))
     d["detail"] = json.loads(d["detail"]) if d["detail"] else {}
     return d
 
 
-_COLS = "review_id,kind,source_path,capture_id,key,detail,status,resolution,note,created_at,reviewed_at"
+_COLS = "review_id,kind,source_path,capture_id,key,detail,status,blocking,resolution,note,created_at,reviewed_at"
 
 
-def raise_item(con, kind, source_path, capture_id, key="", detail=None):
+def raise_item(con, kind, source_path, capture_id, key="", detail=None, blocking=None):
     """Create or refresh a pending item. A previously decided item for the same (kind, source, key) is kept as is,
     except auto_resolved ones, which reopen if the condition returns."""
     ensure(con)
     d = json.dumps(detail or {}, sort_keys=True)
+    effective_blocking = int(bool(KINDS.get(kind, {}).get("blocking")) if blocking is None else bool(blocking))
     cur = con.execute("SELECT review_id,status FROM review_queue WHERE kind=? AND source_path=? AND key=?",
                       (kind, source_path, key)).fetchone()
     if cur is None:
-        con.execute("INSERT INTO review_queue (kind,source_path,capture_id,key,detail,created_at) VALUES (?,?,?,?,?,?)",
-                    (kind, source_path, capture_id, key, d, _now()))
+        con.execute("INSERT INTO review_queue (kind,source_path,capture_id,key,detail,blocking,created_at) VALUES (?,?,?,?,?,?,?)",
+                    (kind, source_path, capture_id, key, d, effective_blocking, _now()))
     elif cur[1] in ("pending", "auto_resolved"):
-        con.execute("UPDATE review_queue SET detail=?, capture_id=?, status='pending', reviewed_at=NULL WHERE review_id=?",
-                    (d, capture_id, cur[0]))
+        con.execute("UPDATE review_queue SET detail=?, capture_id=?, blocking=?, status='pending', reviewed_at=NULL WHERE review_id=?",
+                    (d, capture_id, effective_blocking, cur[0]))
     else:
         con.execute("UPDATE review_queue SET capture_id=? WHERE review_id=?", (capture_id, cur[0]))
     con.commit()
@@ -104,18 +117,18 @@ def items(con, status="pending", kind=None, capture_id=None):
 
 def pending_count(con, blocking_only=False):
     ensure(con)
-    ks = [k for k, h in KINDS.items() if h["blocking"]] if blocking_only else list(KINDS)
-    ks += [] if ks else ["__none__"]
-    return con.execute("SELECT COUNT(*) FROM review_queue WHERE status='pending' AND kind IN (%s)" % ",".join("?" * len(ks)),
-                       ks).fetchone()[0]
+    if blocking_only:
+        return con.execute("SELECT COUNT(*) FROM review_queue WHERE status='pending' AND blocking=1").fetchone()[0]
+    return con.execute("SELECT COUNT(*) FROM review_queue WHERE status='pending'").fetchone()[0]
 
 
 def is_quarantined(con, capture_id):
-    """True while the capture has a pending item of a blocking kind. Derived pipelines should call this."""
+    """True while the capture has any explicitly blocking pending review item."""
     ensure(con)
-    ks = [k for k, h in KINDS.items() if h["blocking"]]
-    return con.execute("SELECT 1 FROM review_queue WHERE source_path=? AND status='pending' AND kind IN (%s) LIMIT 1"
-                       % ",".join("?" * len(ks)), [_src(con, capture_id)] + ks).fetchone() is not None
+    return con.execute(
+        "SELECT 1 FROM review_queue WHERE source_path=? AND status='pending' AND blocking=1 LIMIT 1",
+        (_src(con, capture_id),),
+    ).fetchone() is not None
 
 
 def pending_by_capture(con):
@@ -261,6 +274,52 @@ KINDS["duplicate_capture"] = {
     "actions": [("resolve", "Handled (merged/removed)"), ("dismiss", "Keep both")], "value": None, "needs_note": True,
     "help": "Two ingested captures have identical source content, so their data is counted twice. Pick which to keep, merge their tags/post metadata, and delete the other -- or dismiss with a note if both are intentional."}
 
+
+KINDS["manual_missing_data"] = {
+    "label": "Missing data (manual)", "blocking": False, "detect": None, "decide": _decide_noop, "after": None,
+    "actions": [("resolve", "Mark filled"), ("dismiss", "Dismiss")], "value": None, "needs_note": False,
+    "manual": True,
+    "help": "A reviewer explicitly recorded data that is missing from this capture and may need another capture or manual source."
+}
+KINDS["manual_invalid_data"] = {
+    "label": "Invalid / suspect data (manual)", "blocking": False, "detect": None, "decide": _decide_noop, "after": None,
+    "actions": [("resolve", "Mark corrected"), ("dismiss", "Dismiss")], "value": None, "needs_note": False,
+    "manual": True,
+    "help": "A reviewer explicitly marked captured evidence as invalid, suspect, or not safe to use without review."
+}
+KINDS["manual_followup"] = {
+    "label": "Follow-up requested (manual)", "blocking": False, "detect": None, "decide": _decide_noop, "after": None,
+    "actions": [("resolve", "Mark complete"), ("dismiss", "Dismiss")], "value": None, "needs_note": False,
+    "manual": True,
+    "help": "A reviewer requested a follow-up capture, verification step, or research action."
+}
+
+
+def create_manual(con, capture_id, kind, summary, note="", blocking=False, key=""):
+    """Create a human-authored review item on one capture.
+
+    Manual items are non-blocking unless the reviewer explicitly requests quarantine.
+    """
+    ensure(con)
+    handler=KINDS.get(kind)
+    if not handler or not handler.get("manual"):
+        raise ValueError("kind is not a manual review kind")
+    summary=(summary or "").strip()
+    if not summary:
+        raise ValueError("summary is required")
+    source_path=_src(con,capture_id)
+    if source_path is None:
+        raise ValueError("capture not found")
+    manual_key=(key or "").strip() or f"manual:{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}"
+    detail={"summary":summary,"note":(note or "").strip(),"created_by":"manual-review"}
+    raise_item(con,kind,source_path,capture_id,manual_key,detail,blocking=blocking)
+    row=con.execute(
+        f"SELECT {_COLS} FROM review_queue WHERE kind=? AND source_path=? AND key=?",
+        (kind,source_path,manual_key),
+    ).fetchone()
+    return _row(row)
+
+
 # ---------------------------------------------------------------- event-driven kinds (raised by ingest, no detector)
 EVENT_KINDS = ("ingest_failed", "file_error", "unrecognized_file", "duplicate_source", "duplicate_capture")
 
@@ -354,9 +413,9 @@ def exclude_sql(con, col="capture_id"):
     try:
         if not con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='review_queue'").fetchone():
             return ""
-        blocking = ",".join("'%s'" % k for k, h in KINDS.items() if h["blocking"])
-        return (" AND %s NOT IN (SELECT capture_id FROM review_queue WHERE status='pending' AND capture_id IS NOT NULL "
-                "AND kind IN (%s))" % (col, blocking))
+        ensure(con)
+        return (" AND %s NOT IN (SELECT capture_id FROM review_queue WHERE status='pending' "
+                "AND capture_id IS NOT NULL AND blocking=1)" % col)
     except Exception:
         return ""
 
