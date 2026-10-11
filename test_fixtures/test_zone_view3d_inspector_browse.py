@@ -14,3 +14,10 @@ def test_inspector_browsing_and_marker_selection():
     assert "e === selectedEntity ? 0xffff33" in SOURCE
     assert "e === entity ? 0xffff33" in SOURCE
     assert "spawnMesh.instanceColor.needsUpdate = true" in SOURCE
+
+
+def test_inspector_shortcuts_ignore_typing_and_fly_mode():
+    assert "event.key === '[' || event.key === ']'" in SOURCE
+    assert "event.key === 'Escape'" in SOURCE
+    assert "document.pointerLockElement || entityInspector.hidden" in SOURCE
+    assert "target.isContentEditable" in SOURCE
