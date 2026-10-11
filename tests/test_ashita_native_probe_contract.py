@@ -14,6 +14,8 @@ def test_native_probe_is_an_explicit_read_only_sdk_smoke_test():
     assert 'GetMemberServerId(0)' in source
     assert 'for (uint32_t i = 1; i < capacity; ++i)' in source
     assert 'GetServerId(i) == server_id' in source
+    assert 'entities->GetServerId(i) == server_id' in source  # entity-map scan: the SDK has no GetEntityIndexById
+    assert 'if (index == 0) {' in source  # unresolved -> diagnostic line, never reads XYZ
     assert 'GetMemberIsActive(0)' in source
     assert 'GetLocalPositionX(index)' in source
     assert 'GetLocalPositionY(index)' in source

@@ -925,3 +925,9 @@ position, zoning, and the 3D viewer overlay.
 Operator flow: restart Toolkit, click *Start receiver*, then in game
 `/addon reload workbench_live` and `/wblive live start <client_id>`.
 
+action feedback independent of telemetry polling, and a read-only link to the
+selected client's currently connected zone in the 3D Viewer. The zone shortcut
+appears only for fresh connected telemetry with a valid numeric zone ID and
+never attempts to move the character or switch zones in game. Downloading
+new client settings still revokes earlier provisioning; copy the private file
+to the explicitly chosen Ashita addon directory and reload that addon.

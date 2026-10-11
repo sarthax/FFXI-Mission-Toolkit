@@ -551,6 +551,8 @@ function projectLivePoint(p) {
   if (liveAxes.value === 'x-z-y') return new THREE.Vector3(p.x,-p.z,-p.y);
   return new THREE.Vector3(p.x,-p.y,-p.z);
 }
+// Ashita local position is (X, north-south, height); server/LOGPOS is (x, height, z).
+// Spawn markers use scene (x,-y_server,-z_server), i.e. (x,-ashita_z,-ashita_y).
 const liveEntitiesGroup = new THREE.Group();
 scene.add(liveEntitiesGroup);
 let lastLivePosition = null;
