@@ -5,7 +5,7 @@ import sqlite3
 import pytest
 
 from workbench.captures.ingestion import build_index as bci
-from workbench.captures.live_capture_jsonl import ingest_session, parse_session
+from workbench.captures.live_capture_jsonl import ingest_session, parse_session, parse_segments, ingest_segments
 
 
 class Source:
@@ -73,3 +73,25 @@ def test_native_session_auto_discovery_in_capture_upload():
     assert result["rows"] == 1
     saved = con.execute("SELECT source_format,raw_hex FROM capture_raw_packets").fetchone()
     assert saved == ("native_live_capture", "28040000")
+
+def test_rotated_segments_import_as_one_session():
+    con, cid = capture_db()
+    class Bundle:
+        def read_bytes(self, name):
+            return {"segment-000001.jsonl": make_row(1), "segment-000002.jsonl": make_row(2)}[name]
+    assert ingest_segments(con, cid, Bundle(), ["segment-000001.jsonl", "segment-000002.jsonl"]) == 2
+    assert con.execute("SELECT COUNT(*) FROM capture_raw_packets").fetchone()[0] == 2
+
+
+def test_rotated_segment_gap_rolls_back():
+    con, cid = capture_db()
+    class Bundle:
+        def read_bytes(self, name):
+            return {"first.jsonl": make_row(1), "second.jsonl": make_row(3)}[name]
+    with pytest.raises(ValueError):
+        ingest_segments(con, cid, Bundle(), ["first.jsonl", "second.jsonl"])
+    assert con.execute("SELECT COUNT(*) FROM capture_raw_packets").fetchone()[0] == 0
+
+
+def test_rotated_segment_drop_accounting():
+    assert len(parse_segments([make_row(1), make_row(3, dropped_before=1)])) == 2
