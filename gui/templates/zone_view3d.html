@@ -438,6 +438,25 @@ const liveEntityGeometry = new THREE.SphereGeometry(1.5, 8, 6);
 const liveEntityMaterial = new THREE.MeshBasicMaterial({color: 0xf5a35c, depthTest: false});
 const liveEntityPool = [];
 let liveMarker = null;
+let liveDisplayTarget = null;
+let liveDisplayPosition = null;
+let liveLastSampleAt = 0;
+const LIVE_SMOOTHING_RATE = 10; // exponential approach per second (render frames, not polls)
+function updateLiveDisplay(frameSeconds) {
+  if (!liveMarker || !liveDisplayTarget || !liveDisplayPosition || !liveToggle.checked) return;
+  // Never extrapolate past the last observed sample or keep following stale telemetry.
+  if (performance.now() - liveLastSampleAt > 2500) return;
+  const alpha = 1 - Math.exp(-LIVE_SMOOTHING_RATE * frameSeconds);
+  const previous = liveDisplayPosition.clone();
+  liveDisplayPosition.lerp(liveDisplayTarget, alpha);
+  liveMarker.position.copy(liveDisplayPosition);
+  if (liveFollowToggle.checked && !flyModeOn) {
+    const delta = liveDisplayPosition.clone().sub(previous);
+    camera.position.add(delta);
+    controls.target.add(delta);
+    controls.update();
+  }
+}
 async function refreshLiveClients() {
   try {
     const response = await fetch('/live-client/bridge/clients');
@@ -454,6 +473,9 @@ function clearLiveEntities() {
   for (const child of liveEntityPool) child.visible = false;
 }
 function clearLiveMarker() {
+  liveDisplayTarget = null;
+  liveDisplayPosition = null;
+  liveLastSampleAt = 0;
   lastLivePosition = null;
   lastLiveDiagnostic = null;
   clearLiveEntities();
@@ -512,9 +534,16 @@ async function pollAshitaPosition() {
       liveMarker.renderOrder = 20;
       scene.add(liveMarker);
     }
-    const previous = lastLivePosition;
     const current = projectLivePoint(position);
-    liveMarker.position.copy(current);
+    const now = performance.now();
+    const needsSnap = !liveDisplayPosition || !liveDisplayTarget ||
+      now - liveLastSampleAt > 2500 || liveDisplayPosition.distanceTo(current) > 100;
+    liveDisplayTarget = current.clone();
+    liveLastSampleAt = now;
+    if (needsSnap) {
+      liveDisplayPosition = current.clone();
+      liveMarker.position.copy(current);
+    }
     // Heading uses the observed radian angle; verify its orientation against Windows game view.
     if (Number.isFinite(position.heading)) {
       if (!liveMarker.userData.direction) {
@@ -543,11 +572,6 @@ async function pollAshitaPosition() {
       camera.position.copy(current).add(new THREE.Vector3(25, 18, 25));
       controls.update();
       pendingLiveZoneFocus = false;
-    } else if (liveFollowToggle.checked && !flyModeOn && previous) {
-      const delta = current.clone().sub(previous);
-      camera.position.add(delta);
-      controls.target.add(delta);
-      controls.update();
     }
     clearLiveEntities();
     let entityCount = 0;
@@ -1637,6 +1661,7 @@ function animate() {
   // Use elapsed time for camera motion instead of browser frame count.
   // Clamp resumed/background tabs so a long pause cannot teleport the camera.
   const frameSeconds = Math.min(clock.getDelta(), 0.05);
+  updateLiveDisplay(frameSeconds);
   if (flyModeOn) {
     if (pointerLocked) {
       const walking = walkToggle.checked && navMesh;
