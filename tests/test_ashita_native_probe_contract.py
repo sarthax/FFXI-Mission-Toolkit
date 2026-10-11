@@ -12,8 +12,8 @@ def test_native_probe_is_an_explicit_read_only_sdk_smoke_test():
     assert "Ashita::PluginFlags::UseCommands" in source
     assert '"/wbprobe"' in source
     assert 'GetMemberServerId(0)' in source
-    assert 'GetEntityIndexById(server_id)' in source
-    assert 'GetServerId(index) != server_id' in source
+    assert 'for (uint32_t i = 1; i < capacity; ++i)' in source
+    assert 'GetServerId(i) == server_id' in source
     assert 'GetMemberIsActive(0)' in source
     assert 'GetLocalPositionX(index)' in source
     assert 'GetLocalPositionY(index)' in source
@@ -30,6 +30,7 @@ def test_native_plugin_requires_x86_sdk_and_exports():
     exports = (BASE / "exports.def").read_text()
     assert "CMAKE_SIZEOF_VOID_P EQUAL 4" in cmake
     assert "ASHITA4_SDK_PATH" in cmake
+    assert "cxx_std_20" in cmake
     assert "Ashita.h" in cmake
     for symbol in ("expCreatePlugin", "expDestroyPlugin", "expGetInterfaceVersion"):
         assert symbol in exports
