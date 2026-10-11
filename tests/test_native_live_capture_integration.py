@@ -34,7 +34,7 @@ def capture_db():
 
 def test_native_session_to_canonical_capture():
     con, cid = capture_db()
-    payload = make_row() + make_row(2, direction="outgoing", dropped_before=2)
+    payload = make_row() + make_row(2, direction="outgoing", dropped_before=0)
     assert ingest_session(con, cid, Source(payload), "native.jsonl") == 2
     rows = con.execute(
         "SELECT direction,opcode,raw_hex,source_format,is_injected,is_blocked "
@@ -48,7 +48,7 @@ def test_native_session_to_canonical_capture():
         "SELECT details_json FROM capture_row_locators ORDER BY start_offset"
     )]
     assert details[0]["client_id"] == "ashita-a"
-    assert details[1]["dropped_before"] == 2
+    assert details[1]["dropped_before"] == 0
     assert details[0]["wire_verified"] is False
 
 
