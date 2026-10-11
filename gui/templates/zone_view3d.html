@@ -626,6 +626,15 @@ let liveSelectedEntityId = '';
 const liveEntitySelect = document.getElementById('ashita-entity-select');
 const liveEntityInspect = document.getElementById('ashita-entity-inspect');
 const liveEntityCount = document.getElementById('ashita-entity-count');
+function highlightObservedEntity() {
+  for (const marker of liveEntityPool) {
+    const entity = liveObservedEntities[marker.userData.liveEntityIndex];
+    const active = marker.visible && liveSelectedEntityId !== '' &&
+      String(entity?.id ?? '') === liveSelectedEntityId;
+    marker.material.color.setHex(active ? 0xffff33 : 0xf5a35c);
+    marker.scale.setScalar(active ? 1.5 : 1);
+  }
+}
 function updateLiveEntityPicker() {
   const selectedId = liveSelectedEntityId;
   liveEntitySelect.replaceChildren(new Option('Select observed entity', ''));
@@ -637,16 +646,19 @@ function updateLiveEntityPicker() {
   liveEntitySelect.value = restored >= 0 ? String(restored) : '';
   liveEntityInspect.disabled = liveEntitySelect.value === '';
   liveEntityCount.textContent = liveObservedEntities.length + ' live entities';
+  highlightObservedEntity();
 }
 liveEntitySelect.addEventListener('change', () => {
   liveSelectedEntityId = liveEntitySelect.value === '' ? '' :
     String(liveObservedEntities[Number(liveEntitySelect.value)]?.id ?? '');
   liveEntityInspect.disabled = liveEntitySelect.value === '';
+  highlightObservedEntity();
 });
 liveEntityInspect.addEventListener('click', () => {
   const entity = liveObservedEntities[Number(liveEntitySelect.value)];
   if (liveEntitySelect.value === '' || !entity) return;
   inspectEntity(entity);
+  highlightObservedEntity();
 });
 let liveMarker = null;
 let liveDisplayTarget = null;
@@ -687,6 +699,7 @@ function clearLiveEntities() {
   liveEntitySelect.replaceChildren(new Option('Select observed entity', ''));
   liveEntityInspect.disabled = true;
   liveEntityCount.textContent = 'No live entities';
+  highlightObservedEntity();
 }
 function clearLiveMarker() {
   clearOtherClientMarkers();
@@ -1412,6 +1425,7 @@ renderer.domElement.addEventListener('click', (event) => {
       liveEntitySelect.value = String(entityIndex);
       liveSelectedEntityId = String(entity.id ?? '');
       liveEntityInspect.disabled = false;
+      highlightObservedEntity();
       flyTo(new THREE.Vector3(entity.x, -entity.y, -entity.z));
       return;
     }
@@ -1444,6 +1458,19 @@ function flyTo(target) {
 }
 
 function updateSpawnHover() {
+  const liveHits = raycaster.intersectObjects(liveEntityPool.filter(marker => marker.visible), false);
+  if (liveHits.length) {
+    const entity = liveObservedEntities[liveHits[0].object.userData.liveEntityIndex];
+    if (entity) {
+      spawnTooltip.textContent = (entity.n || 'Live entity') + ' · id ' + (entity.id ?? '?') +
+        ' · ' + [entity.x, entity.y, entity.z].map(value => value.toFixed(1)).join(', ');
+      spawnTooltip.style.left = (lastClientXY.x + 12) + 'px';
+      spawnTooltip.style.top = (lastClientXY.y + 12) + 'px';
+      spawnTooltip.style.display = 'block';
+      hoveredSpawnId = null;
+      return;
+    }
+  }
   if (!spawnMesh) return;
   raycaster.setFromCamera(pointerNdc, camera);
   const hits = raycaster.intersectObject(spawnMesh);
