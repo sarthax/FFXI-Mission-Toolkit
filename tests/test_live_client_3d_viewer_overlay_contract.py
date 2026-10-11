@@ -26,7 +26,7 @@ def test_zone_viewer_live_heading_entities_and_follow_are_opt_in():
     assert "liveEntitiesToggle.checked && Array.isArray(data.entities)" in content
     assert "data.entities.slice(0, 100)" in content
     assert "Number.isFinite(position.heading)" in content
-    assert "liveFollowToggle.checked && !flyModeOn && previous" in content
+    assert "if (liveFollowToggle.checked && !flyModeOn)" in content
     assert "clearLiveEntities();" in content
     assert "requestId !== lastLiveRequest" in content
 
