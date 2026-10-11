@@ -74,3 +74,25 @@ def test_clean_close_emits_checksums(tmp_path):
     client, session, entries = parse_manifest((tmp_path / "manifest.json").read_bytes())
     assert (client, session) == ("ashita-a", "s1")
     assert entries[0]["first_sequence"] == entries[0]["last_sequence"] == 1
+
+
+def test_first_segment_does_not_record_phantom_range(tmp_path):
+    from workbench.captures.live_capture_jsonl import parse_manifest
+    spool = LiveCaptureSpool(tmp_path, "ashita-a", "s1")
+    assert spool.enqueue(packet(1))
+    spool.close()
+    _, _, entries = parse_manifest((tmp_path / "manifest.json").read_bytes())
+    assert len(entries) == 1
+    assert entries[0]["filename"] == "segment-000001.jsonl"
+    assert not (tmp_path / "manifest.json.tmp").exists()
+
+
+def test_existing_manifest_is_not_replaced(tmp_path):
+    target = tmp_path / "manifest.json"
+    target.write_text("existing evidence")
+    spool = LiveCaptureSpool(tmp_path, "ashita-a", "s1")
+    assert spool.enqueue(packet(1))
+    with pytest.raises(FileExistsError):
+        spool.close()
+    assert target.read_text() == "existing evidence"
+    assert not (tmp_path / "manifest.json.tmp").exists()

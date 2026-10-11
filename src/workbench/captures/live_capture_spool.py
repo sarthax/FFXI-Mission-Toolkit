@@ -103,7 +103,7 @@ class LiveCaptureSpool:
                         self._file.flush()
                         os.fsync(self._file.fileno())
                         self._file.close()
-                    self._ranges.append((self.segments[-1], self._first_seq, self._last_seq))
+                        self._ranges.append((self.segments[-1], self._first_seq, self._last_seq))
                     self._file = None
                     self._open_segment()
                 self._file.write(line)
@@ -143,8 +143,18 @@ class LiveCaptureSpool:
                 for name, first, last in self._ranges:
                     entries.append({"filename": Path(name).name, "sha256": hashlib.sha256(Path(name).read_bytes()).hexdigest(), "first_sequence": first, "last_sequence": last})
                 manifest = {"schema_version": 1, "client_id": self.client_id, "session_id": self.session_id, "segments": entries}
-                with (self.directory / "manifest.json").open("x", encoding="utf-8") as stream:
-                    json.dump(manifest, stream, sort_keys=True)
+                target = self.directory / "manifest.json"
+                if target.exists():
+                    raise FileExistsError(f"manifest already exists: {target}")
+                temp = self.directory / "manifest.json.tmp"
+                try:
+                    with temp.open("x", encoding="utf-8") as stream:
+                        json.dump(manifest, stream, sort_keys=True)
+                        stream.flush()
+                        os.fsync(stream.fileno())
+                    os.link(temp, target)  # exclusive, atomic publication
+                finally:
+                    temp.unlink(missing_ok=True)
 
     def health(self) -> dict:
         return {
