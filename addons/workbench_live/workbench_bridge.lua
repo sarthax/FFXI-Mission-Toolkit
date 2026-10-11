@@ -116,6 +116,9 @@ function M.new(options, notify, load_error)
                 for i=1,4 do count=count*256+header:byte(i) end
                 assert(count>0 and count<=2048, 'invalid heartbeat response size')
                 local response=assert(peer:receive(count))
+                assert(response:find('"client_id":'..json_string(source),1,true), 'receiver identity mismatch')
+                assert(response:find('"session_id":'..json_string(options.session_id),1,true), 'receiver session mismatch')
+                assert(response:find('"generation":'..json_string(options.generation),1,true), 'receiver generation mismatch')
                 local is_probe = response:find('"kind":"command"',1,true) ~= nil
                 assert(is_probe or response:find('"kind":"heartbeat"',1,true), 'invalid control response')
                 if is_probe then
