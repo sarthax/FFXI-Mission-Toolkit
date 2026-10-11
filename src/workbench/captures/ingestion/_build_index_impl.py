@@ -3333,6 +3333,7 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
     # FFXI UDP chunk streams.
     all_source_names = sorted(src.list_files() if subroot is None
                               else [n for n in src.list_files() if n.startswith(subroot + "/")])
+    all_source_names_set = set(all_source_names)
     # A completed native session manifest owns its rotated segments. Import it
     # atomically instead of treating each segment as a standalone recording.
     for manifest_name in sorted(name for name in all_source_names if name.rsplit("/", 1)[-1] == "manifest.json"):
@@ -3353,6 +3354,9 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
                 result_sink.append({"filename": manifest_name, "rows": rows, "error": None})
         except (ValueError, KeyError, OSError) as exc:
             matched_names.add(manifest_name)
+            if "segment_names" in locals():
+                matched_names.update(segment_names)
+            segment_names = []
             if result_sink is not None:
                 result_sink.append({"filename": manifest_name, "rows": 0, "error": str(exc)})
 
