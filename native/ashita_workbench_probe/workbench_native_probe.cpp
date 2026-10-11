@@ -42,10 +42,17 @@ public:
                     "[WorkbenchNativeProbe] Position unavailable: no active player.");
                 return true;
             }
-            const uint32_t index = party->GetMemberIndex(0);
-            if (index == 0 || index >= entities->GetEntityMapSize()) {
-                core_->GetChatManager()->Write(1, false,
-                    "[WorkbenchNativeProbe] Position unavailable: invalid entity index.");
+            const auto resources = core_->GetResourceManager();
+            const uint32_t server_id = party->GetMemberServerId(0);
+            const uint32_t index = resources ? resources->GetEntityIndexById(server_id) : 0;
+            const uint32_t capacity = entities->GetEntityMapSize();
+            if (!resources || index == 0 || index >= capacity || entities->GetServerId(index) != server_id) {
+                char detail[256];
+                std::snprintf(detail, sizeof(detail),
+                    "[WorkbenchNativeProbe] Index unresolved: party_slot=%u server_id=%u mapped=%u map_size=%u",
+                    static_cast<unsigned>(party->GetMemberIndex(0)), static_cast<unsigned>(server_id),
+                    static_cast<unsigned>(index), static_cast<unsigned>(capacity));
+                core_->GetChatManager()->Write(1, false, detail);
                 return true;
             }
             const float x = entities->GetLocalPositionX(index);
