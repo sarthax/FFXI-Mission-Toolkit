@@ -1034,10 +1034,25 @@ function buildLiveZoneGroup(zoneData) {
   // Group instances by prefab, split by transform determinant sign -- mirrored instances need
   // reversed triangle winding to keep correct face orientation (Vanalytics' cloneWithFlippedWinding).
   const normalGroups = new Map(), mirroredGroups = new Map();
+  const transformAudit = { total: zoneData.instances.length, accepted: 0, missingPrefab: 0, invalidTransform: 0, mirrored: 0 };
   for (const inst of zoneData.instances) {
-    if (!geoMap.has(inst.meshIndex)) continue;
+    if (!geoMap.has(inst.meshIndex)) { transformAudit.missingPrefab++; continue; }
+    // Missing, non-finite or singular instance matrices can collapse geometry or poison
+    // the renderer. Never replace bad transforms with identity (which invents placement).
+    if (!inst.transform || inst.transform.length !== 16 ||
+        !Array.from(inst.transform).every(Number.isFinite)) {
+      transformAudit.invalidTransform++;
+      continue;
+    }
     const matrix = new THREE.Matrix4().fromArray(inst.transform);
-    const target = matrix.determinant() < 0 ? mirroredGroups : normalGroups;
+    const determinant = matrix.determinant();
+    if (!Number.isFinite(determinant) || Math.abs(determinant) < 1e-10) {
+      transformAudit.invalidTransform++;
+      continue;
+    }
+    transformAudit.accepted++;
+    if (determinant < 0) transformAudit.mirrored++;
+    const target = determinant < 0 ? mirroredGroups : normalGroups;
     let arr = target.get(inst.meshIndex);
     if (!arr) { arr = []; target.set(inst.meshIndex, arr); }
     arr.push(matrix);
@@ -1071,6 +1086,7 @@ function buildLiveZoneGroup(zoneData) {
     mesh.instanceMatrix.needsUpdate = true;
     group.add(mesh);
   }
+  group.userData.transformAudit = transformAudit;
   return group;
 }
 
@@ -1245,7 +1261,11 @@ if (LIVE_PARSE_AVAILABLE) {
     // the live mesh was Z-mirrored). All materials here are DoubleSide, so the winding flip
     // from a negative scale doesn't affect visibility.
     group.scale.set(1, -1, -1);
-    showMeshSource('Client DAT · live textured mesh');
+    const audit = group.userData.transformAudit;
+    const discarded = audit.missingPrefab + audit.invalidTransform;
+    showMeshSource(`Client DAT · ${audit.accepted}/${audit.total} instances · ${audit.mirrored} mirrored${discarded ? ' · ' + discarded + ' skipped' : ''}`);
+    if (discarded) console.warn('[ZoneViewer] excluded unrenderable instances (no fallback transform invented):', audit);
+    if (!audit.accepted) throw new Error('No valid zone instance transforms');
     onZoneMeshReady(group);
   }).catch(err => {
     console.warn('[ZoneViewer] live parse failed, falling back to cached OBJ:', err);
