@@ -14,6 +14,23 @@
   #zone3d-title .chip{font-weight:500}
   #viewer-container{height:calc(100vh - var(--shell-h) - 185px) !important;min-height:480px}
   #capture-spatial-controls{padding:5px 7px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
+  /* Like the Zone Editor: the map occupies the workspace and settings overlay it. */
+  #viewer-container{overflow:hidden}
+  #zone3d-toolrail{position:absolute;top:12px;left:12px;z-index:15;display:flex;flex-direction:column;gap:5px;padding:5px;background:rgba(9,13,19,.90);border:1px solid var(--border);border-radius:8px}
+  #zone3d-toolrail button{min-width:86px;padding:6px 8px;font-size:12px;text-align:left}
+  #zone3d-toolrail button[aria-selected="true"]{background:var(--accent-soft,#345);outline:1px solid var(--accent,#79a);font-weight:700}
+  #zone3d-drawer{position:absolute;top:12px;bottom:12px;left:114px;width:min(375px,calc(100% - 126px));z-index:14;overflow:auto;padding:10px;background:rgba(11,17,24,.96);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 32px #0007}
+  #zone3d-drawer[hidden],.zone3d-tab-pane[hidden]{display:none!important}
+  #zone3d-drawer h3{font-size:14px;margin:0 0 8px}
+  #zone3d-drawer .dense-toolbar,#zone3d-drawer #ashita-live-controls,#zone3d-drawer #zone3d-navigation,#zone3d-drawer #capture-spatial-controls{display:flex!important;flex-direction:column;align-items:stretch!important;gap:7px!important;flex-wrap:nowrap!important;margin:0!important;padding:4px!important}
+  #zone3d-drawer label{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  #zone3d-drawer input[type=range]{max-width:100%;width:100%!important}
+  #zone3d-drawer #spawn-visibility{display:flex;flex-wrap:wrap}
+  #zone3d-drawer select,#zone3d-drawer input[type=text],#zone3d-drawer input[type=number]{max-width:100%}
+  #zone3d-drawer #zone3d-mesh-diagnostics{margin:0!important}
+  #zone3d-drawer #zone3d-diagnostics-content{overflow-wrap:anywhere}
+  #zone3d-drawer .zone3d-tab-pane > *{margin-bottom:8px!important}
+  @media(max-width:680px){#zone3d-toolrail{top:5px;left:5px;padding:3px}#zone3d-toolrail button{min-width:66px;font-size:11px}#zone3d-drawer{top:5px;bottom:5px;left:82px;width:calc(100% - 87px)}}
   @media (max-width:900px) { #viewer-container{height:calc(100vh - var(--shell-h) - 235px) !important;min-height:400px} }
 </style>
 {% if multi %}
@@ -138,6 +155,24 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   <button type="button" id="zone3d-copy-diagnostics" style="margin-top:8px;" disabled>Copy diagnostics</button>
 </details>
 <div id="viewer-container" style="width:100%; height:640px; border:1px solid var(--border); border-radius:8px; background:#0a0d10; position:relative;">
+  <nav id="zone3d-toolrail" aria-label="Viewer tools">
+    <button type="button" data-viewer-tab="zone" aria-selected="false" title="Zone and session controls">Zone</button>
+    <button type="button" data-viewer-tab="layers" aria-selected="false" title="Display layers and rendering">Layers</button>
+    <button type="button" data-viewer-tab="camera" aria-selected="false" title="Navigation and viewpoints">Camera</button>
+    <button type="button" data-viewer-tab="live" aria-selected="false" title="Live Ashita overlay">Live</button>
+    <button type="button" data-viewer-tab="capture" aria-selected="false" title="Capture context and entity search">Capture</button>
+    <button type="button" data-viewer-tab="diagnostics" aria-selected="false" title="Mesh and material diagnostics">Info</button>
+    <button type="button" id="zone3d-hide-tools" title="Close viewer settings">Hide</button>
+  </nav>
+  <aside id="zone3d-drawer" aria-label="Viewer settings" hidden>
+    <h3 id="zone3d-drawer-title">Viewer settings</h3>
+    <section class="zone3d-tab-pane" data-viewer-pane="zone" hidden></section>
+    <section class="zone3d-tab-pane" data-viewer-pane="layers" hidden></section>
+    <section class="zone3d-tab-pane" data-viewer-pane="camera" hidden></section>
+    <section class="zone3d-tab-pane" data-viewer-pane="live" hidden></section>
+    <section class="zone3d-tab-pane" data-viewer-pane="capture" hidden></section>
+    <section class="zone3d-tab-pane" data-viewer-pane="diagnostics" hidden></section>
+  </aside>
   <div id="viewer-loading" class="muted" role="status" aria-live="polite" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Loading mesh&hellip;</div>
   <div id="viewer-mesh-source" class="chip mono" role="status" style="display:none;position:absolute;top:10px;right:10px;z-index:3;"></div>
   <div id="viewer-mesh-error" role="alert" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-width:min(90%,540px);padding:16px;background:rgba(10,13,16,.94);border:1px solid var(--border);border-radius:8px;z-index:5;">
@@ -147,6 +182,63 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   </div>
   <div id="fly-hint" class="muted mono" style="display:none; position:absolute; bottom:10px; left:10px; background:rgba(10,13,16,0.85); border:1px solid var(--border); border-radius:4px; padding:6px 10px; font-size:12px;">Click to lock mouse &middot; WASD move &middot; Space/Shift up/down &middot; scroll = speed &middot; Esc to release</div>
 </div>
+<script>
+/* Reparent existing viewer controls, retaining their IDs, values and event handlers.
+   Never duplicate controls: this is only layout, not another editor implementation. */
+(function initZoneViewerToolDrawer() {
+  const panel = document.getElementById('zone3d-drawer');
+  const buttons = Array.from(document.querySelectorAll('#zone3d-toolrail [data-viewer-tab]'));
+  const sections = new Map(Array.from(document.querySelectorAll('.zone3d-tab-pane'), node => [node.dataset.viewerPane, node]));
+  const destinations = [
+    ['zone', '#zone-select', true],
+    ['zone', 'form[action*="/zones/"]', false],
+    ['layers', '#spawn-visibility', false],
+    ['camera', '#zone3d-navigation', false],
+    ['live', '#ashita-live-controls', false],
+    ['capture', '#capture-spatial-controls', false],
+    ['diagnostics', '#zone3d-mesh-diagnostics', false]
+  ];
+  for (const [tab, selector, single] of destinations) {
+    const target = document.querySelector(selector);
+    if (!target) continue;
+    const node = single && target.closest('div')?.querySelector('select') === target ? target.parentElement : target;
+    sections.get(tab).appendChild(node);
+  }
+  // The existing view toolbar includes both rendering and flight controls.
+  // Move the entire group into Layers so no event bindings or controls are lost.
+  const layerGroup = document.querySelector('#tod-slider')?.closest('.dense-toolbar');
+  if (layerGroup) sections.get('layers').appendChild(layerGroup);
+  // Zone/capture chooser forms are context dependent and remain functional.
+  const zonePicker = document.getElementById('zone-select');
+  if (zonePicker && !sections.get('zone').contains(zonePicker)) sections.get('zone').appendChild(zonePicker.parentElement);
+  const zoneSwitch = document.querySelector('select[name="zone_db"]')?.closest('form');
+  if (zoneSwitch) sections.get('zone').appendChild(zoneSwitch);
+  const captureLink = document.querySelector('a[href*="/captures/plot?"]')?.closest('p');
+  if (captureLink) sections.get('capture').appendChild(captureLink);
+  const pathLink = document.querySelector('a[href*="/captures/plot_all?"]');
+  if (pathLink) sections.get('capture').appendChild(pathLink.cloneNode(true));
+  const names = {zone:'Zone',layers:'Display layers',camera:'Camera and viewpoints',live:'Live client',capture:'Capture context',diagnostics:'Diagnostics'};
+  function showTab(tab) {
+    const isOpen = !panel.hidden && panel.dataset.activeTab === tab;
+    panel.hidden = isOpen;
+    if (!isOpen) panel.dataset.activeTab = tab;
+    for (const button of buttons) button.setAttribute('aria-selected', String(!panel.hidden && button.dataset.viewerTab === tab));
+    for (const [name, section] of sections) section.hidden = panel.hidden || name !== tab;
+    document.getElementById('zone3d-drawer-title').textContent = names[tab] || 'Viewer settings';
+  }
+  buttons.forEach(button => button.addEventListener('click', () => showTab(button.dataset.viewerTab)));
+  document.getElementById('zone3d-hide-tools').addEventListener('click', () => {
+    panel.hidden = true;
+    for (const button of buttons) button.setAttribute('aria-selected', 'false');
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !panel.hidden && !document.pointerLockElement) {
+      panel.hidden = true;
+      for (const button of buttons) button.setAttribute('aria-selected', 'false');
+    }
+  });
+})();
+</script>
 
 {% if multi and legend %}
 <h2 style="margin-top:16px;">Path legend</h2>
