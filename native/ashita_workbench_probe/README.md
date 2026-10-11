@@ -29,12 +29,13 @@ Use a disposable authorized DSP/Topaz test client. With Ashita running:
 ```text
 /plugin load workbench_native_probe
 /wbprobe
+/wbprobe position
 /plugin unload workbench_native_probe
 ```
 
 Expected: a message that the native probe loaded; then an explicit
 `SDK loaded; read-only; XYZ write=disabled; packet injection=disabled`
-response. Confirm unload, relog and reload succeed; test alongside the Lua live
+response. The `/wbprobe position` command shows read-only zone, entity index and native XYZ via `IParty::GetMemberIndex(0)` and `IEntity::GetLocalPositionX/Y/Z`. Compare against the Toolkit live telemetry while stationary, then after walking a short distance. The results should agree to within normal telemetry timing and rounding; capture both readings and the Ashita SDK version for investigation. No position writes occur. Confirm unload, relog and reload succeed; test alongside the Lua live
 telemetry addon. If loading fails, retain the console/error output and inspect the
 actual export names and architecture with `dumpbin /exports` and
 `dumpbin /headers`. Do not rename an x64 DLL or force-load incompatible builds.
