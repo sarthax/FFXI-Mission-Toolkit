@@ -278,6 +278,7 @@ if (liveQuery.get('live') === '1' && /^[a-zA-Z0-9_-]{1,64}$/.test(liveQuery.get(
   liveClient.value = liveQuery.get('client');
   liveToggle.checked = true;
   liveAutoZoneToggle.checked = liveQuery.get('autozone') === '1';
+  liveFollowToggle.checked = liveQuery.get('follow') === '1';
 }
 const liveAxes = document.getElementById('ashita-live-axes');
 const liveHeading = document.getElementById('ashita-live-heading');
@@ -345,7 +346,7 @@ async function checkLiveZone(clientId, requestId) {
         clientId !== liveClient.value.trim() || !status.connected || !status.snapshot) return;
     const zone = Number(status.snapshot.zone_id);
     if (!Number.isInteger(zone) || zone < 1 || zone > 65535 || zone === ZONEID) return;
-    const next = new URLSearchParams({live:'1',client:clientId,autozone:'1',axes:liveAxes.value,heading:liveHeading.value});
+    const next = new URLSearchParams({live:'1',client:clientId,autozone:'1',follow:liveFollowToggle.checked?'1':'0',axes:liveAxes.value,heading:liveHeading.value});
     location.assign('/zones/' + zone + '/view3d?' + next.toString());
   } catch (_) { /* Stay on current map if receiver is unavailable. */ }
 }
@@ -365,7 +366,7 @@ async function pollAshitaPosition() {
     if (!data.visible || !data.player || !data.player.position) {
       clearLiveMarker();
       liveStatus.textContent = 'No fresh matching-zone telemetry';
-      if (liveAutoZoneToggle.checked) await checkLiveZone(clientId, requestId);
+      if (liveAutoZoneToggle.checked || liveFollowToggle.checked) await checkLiveZone(clientId, requestId);
       return;
     }
     const position = data.player.position;
@@ -391,7 +392,7 @@ async function pollAshitaPosition() {
       }
       liveMarker.userData.direction.setDirection(
         new THREE.Vector3(Math.cos(position.heading + Number(liveHeading.value) * Math.PI / 180), 0,
-          -Math.sin(position.heading + Number(liveHeading.value) * Math.PI / 180)).normalize());
+          Math.sin(position.heading + Number(liveHeading.value) * Math.PI / 180)).normalize());
     }
     lastLivePosition = current;
     lastLiveDiagnostic = {
@@ -444,6 +445,8 @@ document.getElementById('ashita-live-focus').addEventListener('click', () => {
   if (!liveToggle.checked || !lastLivePosition || flyModeOn) {
     liveStatus.textContent = 'Focus requires a fresh live marker and orbit mode'; return;
   }
+  liveFollowToggle.checked = true;
+  liveAutoZoneToggle.checked = true;
   controls.target.copy(lastLivePosition);
   camera.position.copy(lastLivePosition).add(new THREE.Vector3(25, 18, 25));
   controls.update();
