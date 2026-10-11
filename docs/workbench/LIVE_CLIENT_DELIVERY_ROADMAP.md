@@ -37,6 +37,10 @@ Available foundations include Ashita bounded observations and recordings, playba
 
 **Acceptance:** Measured rates/gaps, correct rejection of stale samples, sample-linked identity confidence and landmark residuals; all regressions have fixture tests. No floor/navmesh, entity-ID or heading correctness claim based solely on visual proximity.
 
+### Movement control foundation — simulation-only gate
+
+The new `workbench.runtime.live_client.movement_control` service builds on the existing transport-neutral `BridgeEnvelope` and `BridgeMailbox`. It validates finite XYZ, same selected client/session/generation/zone, bounded nudge size, explicit simulation consent, fresh monotonic telemetry, and local STOP/disarm. Its response is **always REJECT / writes_not_supported**. This is an isolated testable control contract, **not** an active endpoint, Ashita memory writer, packet injector, or real in-game movement mechanism. Next: wire a local bridge command transport and verify the Ashita v4 capability with an authorized Windows environment before enabling actual writes.
+
 ### P2 — Real bidirectional transport (safe simulation first)
 
 **B6. Versioned command protocol:** Extend the existing bridge rather than creating a second server. Define selected source/client/session generation, request UUID/sequence, capability advertisement, heartbeat, expiration, ack/reject/error, timeout/retry (idempotent commands only), bounded queues and audit log. Prioritize STOP independently of high-volume Capture streams. Keep replay/Windower/read-only providers incapable of writes.
