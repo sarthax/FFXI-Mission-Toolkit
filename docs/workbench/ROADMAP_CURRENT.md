@@ -227,6 +227,7 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Standalone 3D viewer identifies client DAT versus cached OBJ mesh source and surfaces recoverable load failures with retry controls; visual verification on local FFXI DATs remains pending.
 - [x] Standalone 3D viewer can toggle mob/NPC/door/captured spawn markers with shared search and marker-count feedback; visual smoke test pending.
 - [x] Standalone 3D viewer provides read-only camera XYZ/view-heading diagnostics, go-to XYZ, and page-session save/restore viewpoints. Coordinates use existing viewer transform; local visual acceptance remains pending.
+- [x] 3D fly camera movement uses capped elapsed frame time and normalized direction, making speed consistent across frame rates and diagonal travel; real-browser acceptance remains pending.
 - [x] 3D live DAT mesh pipeline audits instance transforms, skips non-finite/singular matrices without inventing placements, and reports mirrored/skipped counts; real-client visual correctness still requires validation.
 - [x] 3D viewer records per-DAT prefab material/texture diagnostics (missing/malformed RGBA, alpha/water/sky tags) while preserving rendering transforms and untextured fallbacks; real DAT visual verification pending.
 - [x] 3D Viewer surfaces live-DAT and OBJ fallback diagnostics in a read-only expandable panel with copyable JSON; real client validation pending.
