@@ -18,7 +18,7 @@ def sample(**changes):
 class LiveCaptureContractTests(unittest.TestCase):
     def test_preserves_raw_bytes(self):
         packet = LivePacketEnvelope.from_mapping(sample())
-        self.assertEqual(packet.raw_bytes, b"\\x00\\x11\\x22\\x33")
+        self.assertEqual(packet.raw_bytes, bytes.fromhex("00112233"))
 
     def test_rejects_invalid_payloads(self):
         for changes in (
