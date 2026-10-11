@@ -1340,23 +1340,26 @@ if (LIVE_PARSE_AVAILABLE) {
 const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
+  // Use elapsed time for camera motion instead of browser frame count.
+  // Clamp resumed/background tabs so a long pause cannot teleport the camera.
+  const frameSeconds = Math.min(clock.getDelta(), 0.05);
   if (flyModeOn) {
     if (pointerLocked) {
       const walking = walkToggle.checked && navMesh;
-      const s = flySpeed;
       const dir = new THREE.Vector3();
-      if (moveState.forward) dir.z -= s;
-      if (moveState.backward) dir.z += s;
-      if (moveState.left) dir.x -= s;
-      if (moveState.right) dir.x += s;
+      if (moveState.forward) dir.z -= 1;
+      if (moveState.backward) dir.z += 1;
+      if (moveState.left) dir.x -= 1;
+      if (moveState.right) dir.x += 1;
       // Walk mode ignores free vertical fly input -- height comes from the navmesh raycast below.
       if (!walking) {
-        if (moveState.up) dir.y += s;
-        if (moveState.down) dir.y -= s;
+        if (moveState.up) dir.y += 1;
+        if (moveState.down) dir.y -= 1;
       }
       dir.applyQuaternion(camera.quaternion);
-      if (walking) { dir.y = 0; }
-      camera.position.add(dir);
+      if (walking) dir.y = 0;
+      // Normalize to prevent diagonal flight from exceeding forward flight speed.
+      if (dir.lengthSq() > 0) camera.position.addScaledVector(dir.normalize(), flySpeed * 60 * frameSeconds);
       if (walking) {
         groundRay.set(new THREE.Vector3(camera.position.x, camera.position.y + 200, camera.position.z), new THREE.Vector3(0, -1, 0));
         const hits = groundRay.intersectObject(navMesh, false);
@@ -1372,7 +1375,7 @@ function animate() {
   updateTimeOfDay();
   skyDome.position.copy(camera.position);
   if (waterMaterials.length > 0) {
-    const t = clock.getElapsedTime();
+    const t = clock.elapsedTime;
     for (const m of waterMaterials) m.uniforms.time.value = t;
   }
   updateCameraReadout();
