@@ -1,6 +1,6 @@
 {
-  "_comment": "Pinned plugin release for the Toolkit installer. Fill tag/url/sha256 after publishing the DLL as a GitHub release asset; the installer refuses any download whose SHA-256 differs.",
-  "tag": "",
-  "url": "",
-  "sha256": ""
+  "_comment": "Pinned plugin release for the Toolkit installer. The installer refuses any download whose SHA-256 differs. Built from source commit 9a1c980a.",
+  "tag": "native-plugin-v1",
+  "url": "https://github.com/sarthax/FFXI-Mission-Toolkit/releases/download/native-plugin-v1/workbench_native_probe.dll",
+  "sha256": "033d5c3d7bc4c3e950782314b94783d16eddd1700462f1fbafd7721d142f66fb"
 }
