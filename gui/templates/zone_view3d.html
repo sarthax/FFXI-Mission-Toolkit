@@ -169,6 +169,9 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
   <p class="muted" style="margin:5px 0;">Shows otherwise invisible regions of alpha-masked textures as opaque rectangles. Leave unchecked for normal rendering; no DAT edits.</p>
   <label><input type="checkbox" id="zone3d-pick-material"> Click scenery to inspect material</label>
   <span id="zone3d-pick-material-status" class="muted mono" role="status">Click inspection off</span>
+  <label><input type="checkbox" id="zone3d-isolate-prefab" disabled> Isolate selected prefab (temporarily hide other scenery)</label>
+  <button type="button" id="zone3d-copy-material-evidence" disabled>Copy scenery evidence</button>
+  <pre id="zone3d-scenery-evidence" class="mono" style="font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;">Select a scenery surface to collect evidence.</pre>
   <label>Material / prefab <select id="zone3d-material-select" style="width:100%;max-width:100%;"><option value="">Select a material</option></select></label>
   <pre id="zone3d-material-details" class="mono" style="font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto;">Select a material for texture alpha statistics.</pre>
 </section>
@@ -1433,11 +1436,26 @@ renderer.domElement.addEventListener('click', (event) => {
     alphaDiagnosticSelect.dispatchEvent(new Event('change'));
     const mesh = hit.object;
     const triCount = mesh.geometry.index ? mesh.geometry.index.count / 3 : mesh.geometry.attributes.position.count / 3;
+    selectedSceneryPrefab = mesh.userData.prefabIndex;
+    selectedSceneryEvidence = {
+      zone_id: ZONEID,
+      prefab_index: mesh.userData.prefabIndex,
+      instance_index_in_group: hit.instanceId,
+      instances_in_group: mesh.count,
+      mirrored: Boolean(mesh.userData.mirrored),
+      triangles_per_prefab: Math.floor(triCount),
+      camera_distance: Number(hit.distance.toFixed(3)),
+      material: alphaDiagnosticRows[rowIndex],
+      lod_switching: 'not established (scene currently renders all DAT instances)'
+    };
+    sceneryEvidencePanel.textContent = JSON.stringify(selectedSceneryEvidence, null, 2);
+    prefabIsolationToggle.disabled = false;
+    copySceneryEvidenceButton.disabled = false;
+    applyPrefabIsolation();
     materialPickerStatus.textContent = 'Prefab ' + mesh.userData.prefabIndex +
       ' · instance ' + hit.instanceId + ' / ' + mesh.count +
-      ' · triangles/prefab ' + Math.floor(triCount) +
-      (mesh.userData.mirrored ? ' · mirrored' : '') +
-      ' · no LOD switching confirmed';
+      ' · distance ' + hit.distance.toFixed(1) +
+      ' · triangles/prefab ' + Math.floor(triCount);
     return;
   }
   const liveHit = raycaster.intersectObjects(liveEntityPool.filter(x => x.visible), false)[0];
@@ -1644,6 +1662,22 @@ function isSkyWeatherMesh(prefab) { return SKY_WEATHER_RE.test(prefab.textureNam
 // install or this zone's geometry DAT path isn't known.
 const alphaDiagnosticMaterials = [];
 const sceneryMeshes = [];
+let selectedSceneryEvidence = null;
+let selectedSceneryPrefab = null;
+const prefabIsolationToggle = document.getElementById('zone3d-isolate-prefab');
+const copySceneryEvidenceButton = document.getElementById('zone3d-copy-material-evidence');
+const sceneryEvidencePanel = document.getElementById('zone3d-scenery-evidence');
+function applyPrefabIsolation() {
+  for (const mesh of sceneryMeshes) mesh.visible = !prefabIsolationToggle.checked ||
+    mesh.userData.prefabIndex === selectedSceneryPrefab;
+}
+prefabIsolationToggle.addEventListener('change', applyPrefabIsolation);
+copySceneryEvidenceButton.addEventListener('click', async () => {
+  if (!selectedSceneryEvidence) return;
+  try { await navigator.clipboard.writeText(JSON.stringify(selectedSceneryEvidence, null, 2));
+    materialPickerStatus.textContent = 'Scenery evidence copied'; }
+  catch (_) { materialPickerStatus.textContent = 'Clipboard unavailable; select the evidence text below'; }
+});
 const materialRowByMaterial = new Map();
 const materialPickerToggle = document.getElementById('zone3d-pick-material');
 const materialPickerStatus = document.getElementById('zone3d-pick-material-status');
@@ -1687,6 +1721,12 @@ function buildLiveZoneGroup(zoneData) {
   alphaDiagnosticMaterials.length = 0;
   sceneryMeshes.length = 0;
   materialRowByMaterial.clear();
+  selectedSceneryEvidence = null;
+  selectedSceneryPrefab = null;
+  prefabIsolationToggle.checked = false;
+  prefabIsolationToggle.disabled = true;
+  copySceneryEvidenceButton.disabled = true;
+  sceneryEvidencePanel.textContent = 'Select a scenery surface to collect evidence.';
   alphaDiagnosticRows.length = 0;
   alphaDiagnosticSelect.replaceChildren(new Option('Select a material', ''));
   alphaDiagnosticDetails.textContent = 'Select a material for texture alpha statistics.';
