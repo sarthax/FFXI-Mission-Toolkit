@@ -100,7 +100,7 @@ def test_existing_manifest_is_not_replaced(tmp_path):
 
 def test_interrupted_session_diagnostics_are_read_only(tmp_path):
     from workbench.captures.live_capture_spool import inspect_interrupted_session
-    (tmp_path / "segment-000001.jsonl").write_text(json.dumps(packet(1)) + "\\n")
+    (tmp_path / "segment-000001.jsonl").write_text(json.dumps(packet(1)) + "\n")
     before = (tmp_path / "segment-000001.jsonl").read_bytes()
     result = inspect_interrupted_session(tmp_path)
     assert result["status"] == "recoverable_unfinalized"
@@ -111,7 +111,7 @@ def test_interrupted_session_diagnostics_are_read_only(tmp_path):
 
 def test_corrupted_interrupted_session_remains_unmodified(tmp_path):
     from workbench.captures.live_capture_spool import inspect_interrupted_session
-    (tmp_path / "segment-000001.jsonl").write_bytes(b"invalid json\\n")
+    (tmp_path / "segment-000001.jsonl").write_bytes(b"invalid json\n")
     result = inspect_interrupted_session(tmp_path)
     assert result["status"] == "damaged_unfinalized"
     assert result["errors"]
