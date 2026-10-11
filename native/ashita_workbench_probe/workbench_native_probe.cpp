@@ -167,6 +167,8 @@ public:
         delete port_; port_ = nullptr;
         core_ = nullptr;
     }
+    // SDK default returns false, which makes Ashita refuse to load a UseDirect3D plugin.
+    bool Direct3DInitialize(IDirect3DDevice8*) override { return true; }
     void Direct3DPresent(const RECT*, const RECT*, HWND, const RGNDATA*) override {
         if (adapter_) adapter_->Tick();
     }
