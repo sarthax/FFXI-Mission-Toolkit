@@ -1399,6 +1399,12 @@ renderer.domElement.addEventListener('mousemove', (ev) => {
 
 renderer.domElement.addEventListener('click', () => {
   if (flyModeOn) { Promise.resolve(renderer.domElement.requestPointerLock()).catch(() => {}); return; }
+  const liveHit = raycaster.intersectObjects(liveEntityPool.filter(x => x.visible), false)[0];
+  if (liveHit) {
+    const entityIndex = liveHit.object.userData.liveEntityIndex;
+    const entity = liveObservedEntities[entityIndex];
+    if (entity) { inspectEntity(entity); liveEntitySelect.value = String(entityIndex); flyTo(liveHit.point); return; }
+  }
   if (hoveredSpawnId == null || !spawnMesh) return;
   const m = new THREE.Matrix4();
   spawnMesh.getMatrixAt(hoveredSpawnId, m);
