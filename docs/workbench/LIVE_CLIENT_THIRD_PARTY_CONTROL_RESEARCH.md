@@ -151,3 +151,44 @@ In game: `/wbprobe speed <25..400>|off|status`, `/wbprobe warp <id> <x> <y> <z>`
 5. Zone and confirm the speed hold re-applies and (with `auto_arm=warp`) the plugin re-arms.
 6. Toolkit 3D viewer: open the zone, "Native warp" panel, Arm, tick Pick target, click a spawn, "Warp to target", compare `!logpos`.
 7. STOP / Disarm buttons; `/wbprobe movement audit` lists everything.
+## Deeper addon and SDK audit — 2026-10-11
+
+**Context:** Toolkit's Ashita DLL is currently read-only; write functionality remains under development. These findings identify independently useful *observation* features and separate active/injected behaviors that must remain gated.
+
+### Verified source-level findings
+
+1. **Ashita v4 SDK plugin callbacks:** [Ashita.h](https://github.com/AshitaXI/Ashita-v4beta/blob/main/plugins/sdk/Ashita.h) documents incoming packet callbacks, individual packet ID/size/data, full enclosing chunk data, injected/blocked flags, and plugin-to-plugin custom events. Capture both original and effective metadata when permitted; never mutate packets in observation mode. The API warns callbacks require plugin flags and blocked events may still be delivered.
+2. **Ashita v4 Lua example:** [example.lua](https://github.com/AshitaXI/example/blob/main/example.lua) documents `packet_in`, `packet_out`, `text_in`, `text_out`, `plugin_event`, input events, and coroutine behavior. It warns that text handling can deadlock if injected text is reprocessed recursively. Do not carry over Ashita v3 event registration syntax.
+3. **Project Tako React:** [react.lua](https://github.com/ProjectTako/ffxi-addons/blob/master/react/ashita/react.lua) observes incoming action packet `0x028`, parses actor/target, resolves entity IDs and distinguishes begin/finish action states; also reads job-change packet `0x061` to swap configuration. Its turn-around feature writes directly to memory using client offsets: **not** a safe or portable read-only integration. Original addon targets Ashita v3; port semantics, not API calls.
+4. **Project Tako ScanZone:** [ffxi-addons](https://github.com/ProjectTako/ffxi-addons) describes actively requesting entity updates and reading names, IDs, positions. This is **not passive discovery**; requires outbound action, a private-server gate, packet validation, and rate limits.
+5. **Windower NPC and trade research:** [Ivaar/Windower-addons](https://github.com/Ivaar/Windower-addons) contains Trade, TradeNPC, SellNPC and NPCit examples; repository warns some inject packets and can carry ban risk. Treat as reference for transaction state machines and packet evidence, **not** functionality to silently activate.
+6. **Ashita v4 addon ecosystem:** [Sippius/Ashita-v4-addons](https://github.com/Sippius/Ashita-v4-addons) includes `find` (inventory lookup), `chains` (skillchain tracking), `RollTracker` and `pupsets`. The author notes retail-only testing and private-server skill/pet IDs requiring adjustment. Use as a compatibility and ID-drift research source.
+7. **Further candidates:** [Icydeath/ffxi-addons](https://github.com/Icydeath/ffxi-addons) includes CurePlease_addon and various combat helpers; [Ashita v4 community catalog](https://gist.github.com/kyau/989981b5699886c124bf9e4cf5a8ea08) indexes DatSeeker, mobdb, Packer, inventorycounter and status timers. These are discovery leads; exact functionality, code paths, licenses and compatibility are **not yet audited**.
+
+### Incremental implementation backlog, deliberately independent of movement writes
+
+| Slice | Proposal | Data and acceptance criteria | Dependencies |
+|---|---|---|---|
+| A | Packet observation envelope | Capture per-client ID, sequence, time, packet ID/size, direction, chunk reference, injected/blocked status; compare to existing canonical capture schema; verify no packet changes | Existing read-only plugin |
+| B | Action lifecycle decoder | Extract actor/target/action ID, start/finish, zone and raw packet evidence; test with known capture samples and LSB references | A |
+| C | Passive entity lifecycle | Track spawn/update/despawn, entity index/server ID, XYZ, source and confidence; avoid asserting identity solely from name | A |
+| D | State-change events | Observe job, status, buff, inventory, equipment and recast changes using supported callbacks; test event vs poll reconciliation | A |
+| E | Multi-client event stream diagnostics | Per-client sequence gap, drop count, stale status, queue depth, latency and clock alignment | A |
+| F | NPC/menu and trade timeline | Correlate outbound intent with incoming menu/result/CSID, capture evidence and Lua trace; **observation first** | A, B |
+| G | Active ScanZone-style requests | Opt-in test-only server request, explicit zone and rate limits, user-visible audit; never claim this is passive | Write-enabled adapter and private server |
+| H | Action/target/movement control | Only after current live movement test, with command acknowledgement, independent server-side verification and rollback | Separate write milestone |
+
+**Cross-module value:** A–F feed Capture research, Entity Browser, Feature Trace, Zone Editor and the 2D/3D viewers without duplicating a separate recorder. Preserve raw references and uncertainty; distinguish observed vs decoded vs inferred.
+
+### Engineering guardrails
+
+- Do not port hard-coded client addresses or offsets from historical addons into the v4 DLL.
+- Separate packet callback processing from transport and UI work; bounded queue and backpressure are required.
+- Never block/modify/inject packets in read-only mode. Retain original-vs-modified metadata and injection provenance when available.
+- Test multiple clients, zoning, disconnects, duplicate packets, and missing or unknown entity mappings.
+- Use existing Toolkit schemas/routes and current branch state as source of truth; audit before writing runtime code.
+- Check each project's exact license and dependencies before copying code. Link and describe reference behavior when reuse rights are unclear.
+- Do not infer retail/private-server compatibility from addon names; validate packet semantics against actual DSP captures.
+- The Ashita movement test remains the **write-control gate**, but passive observation slices can proceed independently.
+
+**Status:** research documented; no additional runtime functionality implemented by this audit.
