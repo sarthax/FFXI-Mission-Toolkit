@@ -827,7 +827,7 @@ async function pollAshitaPosition() {
         if (!point || ![point.x, point.y, point.z].every(Number.isFinite)) continue;
         let marker = liveEntityPool[entityCount];
         if (!marker) {
-          marker = new THREE.Mesh(liveEntityGeometry, liveEntityMaterial);
+          marker = new THREE.Mesh(liveEntityGeometry, liveEntityMaterial.clone());
           marker.renderOrder = 19;
           liveEntitiesGroup.add(marker);
           liveEntityPool.push(marker);
@@ -1458,8 +1458,10 @@ function flyTo(target) {
 }
 
 function updateSpawnHover() {
+  raycaster.setFromCamera(pointerNdc, camera);
   const liveHits = raycaster.intersectObjects(liveEntityPool.filter(marker => marker.visible), false);
-  if (liveHits.length) {
+  const spawnHit = spawnMesh ? raycaster.intersectObject(spawnMesh)[0] : null;
+  if (liveHits.length && (!spawnHit || liveHits[0].distance <= spawnHit.distance)) {
     const entity = liveObservedEntities[liveHits[0].object.userData.liveEntityIndex];
     if (entity) {
       spawnTooltip.textContent = (entity.n || 'Live entity') + ' · id ' + (entity.id ?? '?') +
