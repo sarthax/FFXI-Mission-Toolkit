@@ -49,7 +49,8 @@ def test_live_alignment_controls_require_fresh_observation_and_report_transform(
     assert 'id="ashita-live-focus"' in content
     assert 'id="ashita-live-copy"' in content
     assert 'href="/live-client/bridge/console"' in content
-    assert "if (!liveToggle.checked || !lastLivePosition || flyModeOn)" in content
+    assert "let pos = (liveToggle.checked && lastLivePosition) ? lastLivePosition : null" in content
+    assert "if (!pos || flyModeOn)" in content
     assert "controls.target.copy(lastLivePosition)" in content
     assert "raw_position: {x:position.x,y:position.y,z:position.z,heading:position.heading}" in content
     assert "viewer_position: {x:current.x,y:current.y,z:current.z}" in content
