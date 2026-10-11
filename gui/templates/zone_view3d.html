@@ -106,7 +106,13 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
 </div>
 {% endif %}
 <div id="viewer-container" style="width:100%; height:640px; border:1px solid var(--border); border-radius:8px; background:#0a0d10; position:relative;">
-  <div id="viewer-loading" class="muted" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Loading mesh&hellip;</div>
+  <div id="viewer-loading" class="muted" role="status" aria-live="polite" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Loading mesh&hellip;</div>
+  <div id="viewer-mesh-source" class="chip mono" role="status" style="display:none;position:absolute;top:10px;right:10px;z-index:3;"></div>
+  <div id="viewer-mesh-error" role="alert" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-width:min(90%,540px);padding:16px;background:rgba(10,13,16,.94);border:1px solid var(--border);border-radius:8px;z-index:5;">
+    <strong>Zone mesh unavailable</strong><p id="viewer-mesh-error-detail" class="muted"></p>
+    <a class="chip" href="/zoneplot2?zone={{ zoneid }}">Open Zone Editor</a>
+    <button type="button" id="viewer-retry-mesh">Retry loading</button>
+  </div>
   <div id="fly-hint" class="muted mono" style="display:none; position:absolute; bottom:10px; left:10px; background:rgba(10,13,16,0.85); border:1px solid var(--border); border-radius:4px; padding:6px 10px; font-size:12px;">Click to lock mouse &middot; WASD move &middot; Space/Shift up/down &middot; scroll = speed &middot; Esc to release</div>
 </div>
 
@@ -149,6 +155,20 @@ const CAPTURE_SPATIAL_URL = {{ capture_spatial_url_json | default('""') | safe }
 
 const container = document.getElementById('viewer-container');
 const loadingEl = document.getElementById('viewer-loading');
+const meshSourceEl = document.getElementById('viewer-mesh-source');
+const meshErrorEl = document.getElementById('viewer-mesh-error');
+const meshErrorDetailEl = document.getElementById('viewer-mesh-error-detail');
+function showMeshError(detail) {
+  loadingEl.hidden = true;
+  meshErrorDetailEl.textContent = detail;
+  meshErrorEl.style.display = 'block';
+}
+function showMeshSource(label) {
+  meshErrorEl.style.display = 'none';
+  meshSourceEl.textContent = label;
+  meshSourceEl.style.display = 'block';
+}
+document.getElementById('viewer-retry-mesh').addEventListener('click', () => window.location.reload());
 
 // ---- Spawn markers (Phase 1) -- reuses zone_plot.py's existing /zoneplot/{zid}/data.json
 // live-DB query (same data the 2D top-down plotter uses), ported here as instanced spheres
@@ -1121,9 +1141,11 @@ function loadObjFallback() {
         wallMaterials.push(mat);
       }
     });
+    showMeshSource('Cached OBJ · untextured fallback');
     onZoneMeshReady(obj);
   }, undefined, (err) => {
-    loadingEl.textContent = 'Failed to load mesh: ' + err.message;
+    console.error('[ZoneViewer] cached OBJ failed:', err);
+    showMeshError('The cached OBJ is missing or unreadable. Check the configured FFXI client and zone geometry DAT, or build the local visual cache from the Zone Editor. See browser console for technical details.');
   });
 }
 
@@ -1144,6 +1166,7 @@ if (LIVE_PARSE_AVAILABLE) {
     // the live mesh was Z-mirrored). All materials here are DoubleSide, so the winding flip
     // from a negative scale doesn't affect visibility.
     group.scale.set(1, -1, -1);
+    showMeshSource('Client DAT · live textured mesh');
     onZoneMeshReady(group);
   }).catch(err => {
     console.warn('[ZoneViewer] live parse failed, falling back to cached OBJ:', err);
