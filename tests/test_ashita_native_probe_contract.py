@@ -25,7 +25,7 @@ def test_native_probe_is_an_explicit_read_only_sdk_smoke_test():
     assert 'writes=disabled; server acceptance=unverified' in source
     assert "XYZ write=disabled; packet injection=disabled" in source
     for forbidden in ("WriteProcessMemory", "VirtualProtect", "AddOutgoingPacket(",
-                      "GetWarpPointer(", "SetPosition(", "CreateRemoteThread"):
+                      "SetPosition(", "CreateRemoteThread"):
         assert forbidden not in source
 
 

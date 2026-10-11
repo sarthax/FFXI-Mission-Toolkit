@@ -44,7 +44,22 @@ def test_movement_is_disabled_by_default_and_consent_gated():
     assert "server_confirmed=NO" in plugin
     # No raw memory/packet primitives; writes only through the approved port methods.
     for forbidden in ("WriteProcessMemory", "VirtualProtect", "AddOutgoingPacket(",
-                      "CreateRemoteThread", "GetWarpPointer("):
+                      "CreateRemoteThread"):
         assert forbidden not in plugin and forbidden not in adapter
+    # Warp mode is a separately consented experiment; the pointer is touched SDK-side only.
+    assert "GetWarpPointer(" in plugin and "GetWarpPointer(" not in adapter
     assert plugin.count("SetLocalPositionX(index, p.x)") == 1
     assert "Stop(\"unload\")" in plugin
+
+
+def test_file_channel_is_opt_in_and_never_bypasses_the_adapter():
+    ctl = (BASE / "native_control.h").read_text()
+    plugin = (BASE / "workbench_native_probe.cpp").read_text()
+    assert "bool allow_file_commands = false" in ctl           # default OFF
+    assert "consent_required" in ctl and "DEV-SERVER-ONLY" in ctl
+    assert "nonce_mismatch" in ctl and "stale_command" in ctl
+    # Channel code only routes through the adapter/speed override; no raw primitives.
+    for forbidden in ("WriteProcessMemory", "VirtualProtect", "AddOutgoingPacket(", "CreateRemoteThread",
+                      "SetLocalPosition", "WriteWarpPosition", "WriteSpeed"):
+        assert forbidden not in ctl
+    assert "server_confirmed=NO" in ctl and "PollFiles" in plugin

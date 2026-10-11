@@ -123,3 +123,53 @@ Ashita v4-Beta public SDK `IEntity` declares `SetLocalPositionX/Y/Z(uint32_t, fl
 ### Native movement adapter implemented, NOT live-tested (2026-10-11)
 
 B9 groundwork: `native/ashita_workbench_probe/movement_adapter.h` adds a fail-closed, SDK-independent movement policy (disabled by default, consent token, character+zone binding, bounded 3-yalm steps, 1 s rate limit, duplicate/busy/zoning/stale rejection, unconditional STOP, audit ring) with an `autorun` (IAutoFollow, experimental) and a `local` (SetLocalPosition) executor. Verified: installed-SDK x86 build (C++20), dumpbin x86 + 3 exports, host-compiled policy tests (/W4 /WX). **Unverified:** any in-game effect, axis meaning of IAutoFollow deltas, packet emission, server acceptance. Outcomes always report `server_confirmed=NO`. Toolkit-side command wiring (Live Client -> `/wbprobe`) is the next slice; the manual smoke test is in the native README.
+
+## Update 2026-10-11: autorun live result and Tako/warp mode
+- Autorun live-tested on the dev server: 1-yalm legs arrive (reason `arrived`), no rubber-banding observed; server `!logpos` after moves still to be recorded.
+- Project Tako analysis and the new experimental `warp` mode (untested): see `PROJECT_TAKO_ANALYSIS.md`.
+
+
+## Toolkit-driven warp, speed hold and enablement (built 2026-10-11, live test pending)
+
+Status: host-tested only (adapter, control router, Python channel/API). **Not yet live-tested**: large-distance warps,
+warps after zoning, speed value mapping, the file channel, and click-to-warp in the viewer.
+
+### Enablement (default OFF, admin opt-in)
+- Nothing is armed at load. The in-game `/wbprobe movement enable warp DEV-SERVER-ONLY` path still works.
+- Persistent opt-in lives in `<Ashita>/config/workbench_native/settings.ini` (re-read every 2 s, except TTL/base speed which are load-time):
+  ```
+  allow_file_commands=1      ; lets the Toolkit arm/stop/warp/speed through command.txt
+  auto_arm=warp              ; optional: arm at load and re-bind after every zone change (""/warp/autorun/local)
+  enable_ttl_seconds=0       ; 0 = never expires (default 120)
+  speed_percent=120          ; optional: hold this speed once armed (25..400)
+  base_speed=5.0             ; MovementSpeed2 at 100% (verify with /wbprobe speed status)
+  ```
+- The `DEV-SERVER-ONLY` token is a consent literal only. **There is no server-identity check**: the plugin cannot tell
+  a private dev server from any other. An allow-list (zone/server name or host) is the natural next step for other admins.
+
+### Control channel (Toolkit -> plugin)
+`config/workbench_native/{settings.ini, command.txt, status.txt}`; flat key=value. The plugin publishes a per-load `nonce`
+in `status.txt` (~2 Hz); each command carries `seq` (epoch ms, strictly increasing), `nonce`, `ts_ms` (must be within 15 s),
+and, for `enable`, `consent=DEV-SERVER-ONLY`. Commands: `enable`, `disable`, `stop`, `warp_to`, `speed`, `speed_off`.
+Every command goes through the same MovementAdapter/SpeedOverride checks as the chat commands (binding, zoning, bounds, audit).
+Result fields stay `scope=client_local`, `server_confirmed=NO`.
+
+### Coordinates
+Toolkit/viewer/commands use **server order** (what `!logpos` prints: x, y = height, z). The plugin converts once
+(`ServerToSdk`: SDK = (x, z, y)). Viewer scene = (x, -y, -z), so server = (sx, -sy, -sz). Server Y is inverted: to raise
+the character use a smaller Y (the viewer map-point pick applies a default 0.5 yd lift). Arbitrary map points are not
+navmesh-checked: run `!checknav x y z` before treating one as valid.
+
+### Speed override
+`MovementSpeed2 = base(5.0) * percent / 100` (mapping unverified; compare with `!speed 120` via `/wbprobe speed status`).
+Held at about 4 Hz while armed, so it survives zone changes; restored once on disarm/unload. Whether the server tolerates it is untested.
+In game: `/wbprobe speed <25..400>|off|status`, `/wbprobe warp <id> <x> <y> <z>`.
+
+### Live test steps
+1. Unload the plugin, copy the new DLL (SHA-256 starts `033d5c3d7bc4c3e9`) over `plugins\workbench_native_probe.dll`, load it.
+2. Create `config\workbench_native\settings.ini` with `allow_file_commands=1`.
+3. `/wbprobe movement enable warp DEV-SERVER-ONLY`; `!speed 120`; `/wbprobe speed status` -> expect MovementSpeed2 about 6.0.
+4. `/wbprobe warp t1 <x> <y> <z>` to a far point (copy from a mob spawn); verify with `!logpos`; walk and confirm no snap-back.
+5. Zone and confirm the speed hold re-applies and (with `auto_arm=warp`) the plugin re-arms.
+6. Toolkit 3D viewer: open the zone, "Native warp" panel, Arm, tick Pick target, click a spawn, "Warp to target", compare `!logpos`.
+7. STOP / Disarm buttons; `/wbprobe movement audit` lists everything.

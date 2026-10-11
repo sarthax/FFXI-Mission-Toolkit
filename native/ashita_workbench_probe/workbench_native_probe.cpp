@@ -8,7 +8,11 @@
 #include <chrono>
 #include <cstdlib>
 #include <string>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
 #include "movement_adapter.h"
+#include "native_control.h"
 
 // Compile-time SDK signature gate only: these methods are never invoked.
 using XYZSetter = void (IEntity::*)(uint32_t, float) const;
@@ -69,6 +73,61 @@ public:
         e->SetLocalPositionY(index, p.y);
         e->SetLocalPositionZ(index, p.z);
     }
+    // Experimental (mirrors what Project Tako was observed to do, static analysis only).
+    // The entity's WarpPointer points at its model/"editable movement" object; position structs
+    // live at +52 and +1476 as {x, height, horiz, 1, roll, yaw, pitch} floats (memory order).
+    // SDK axes: X = x, Y = horizontal (server z), Z = height (server y).
+    static bool ReadFloats(uintptr_t addr, float* out, int n) {
+        __try { for (int i = 0; i < n; ++i) out[i] = reinterpret_cast<const float*>(addr)[i]; return true; }
+        __except (EXCEPTION_EXECUTE_HANDLER) { return false; }
+    }
+    static bool WriteFloats(uintptr_t addr, const float* in, int n) {
+        __try { for (int i = 0; i < n; ++i) reinterpret_cast<float*>(addr)[i] = in[i]; return true; }
+        __except (EXCEPTION_EXECUTE_HANDLER) { return false; }
+    }
+    static constexpr uintptr_t kWarpOffsets[2] = {52, 1476};
+    // Read-only diagnostic: returns pointer (0 if unavailable) and fills both structs.
+    uintptr_t ReadWarp(uint32_t index, float out[2][3], bool ok[2]) {
+        auto* e = core_->GetMemoryManager()->GetEntity();
+        const uintptr_t wp = e->GetWarpPointer(index);
+        ok[0] = ok[1] = false;
+        if (wp < 0x10000) return 0;
+        for (int i = 0; i < 2; ++i) ok[i] = ReadFloats(wp + kWarpOffsets[i], out[i], 3);
+        return wp;
+    }
+    const char* WriteWarpPosition(uint32_t index, const wb::Vec3& p) override {
+        float cur[2][3]; bool ok[2];
+        const uintptr_t wp = ReadWarp(index, cur, ok);
+        if (!wp) return "warp_pointer_null";
+        if (!ok[0] || !ok[1]) return "warp_unreadable";
+        auto* e = core_->GetMemoryManager()->GetEntity();
+        const float local[3] = {e->GetLocalPositionX(index), e->GetLocalPositionZ(index), e->GetLocalPositionY(index)};
+        for (int i = 0; i < 2; ++i) {
+            for (int k = 0; k < 3; ++k)
+                if (!std::isfinite(cur[i][k]) || std::fabs(cur[i][k] - local[k]) > 2.0f) return "warp_struct_mismatch";
+        }
+        const float np[3] = {p.x, p.z, p.y};  // memory order: x, height, horiz
+        for (int i = 0; i < 2; ++i)
+            if (!WriteFloats(wp + kWarpOffsets[i], np, 3)) return "warp_write_failed";
+        return nullptr;
+    }
+    bool ReadSpeed(uint32_t index, float& v) override {
+        auto* mm = core_ ? core_->GetMemoryManager() : nullptr;
+        auto* e = mm ? mm->GetEntity() : nullptr;
+        if (!e) return false;
+        v = e->GetMovementSpeed2(index);
+        return true;
+    }
+    void WriteSpeed(uint32_t index, float v) override {
+        auto* mm = core_ ? core_->GetMemoryManager() : nullptr;
+        auto* e = mm ? mm->GetEntity() : nullptr;
+        if (e) e->SetMovementSpeed2(index, v);
+    }
+    float ReadSpeed1(uint32_t index) {
+        auto* mm = core_ ? core_->GetMemoryManager() : nullptr;
+        auto* e = mm ? mm->GetEntity() : nullptr;
+        return e ? e->GetMovementSpeed(index) : -1.0f;
+    }
     double NowSeconds() override {
         using namespace std::chrono;
         return duration<double>(steady_clock::now().time_since_epoch()).count();
@@ -79,6 +138,76 @@ class WorkbenchNativeProbe final : public IPlugin {
     IAshitaCore* core_ = nullptr;
     SdkMovementPort* port_ = nullptr;
     wb::MovementAdapter* adapter_ = nullptr;
+    wb::SpeedOverride* speed_ = nullptr;
+    wb::ControlRouter* router_ = nullptr;
+    std::filesystem::path dir_;
+    double next_cmd_ = 0, next_status_ = 0, next_settings_ = 0;
+    static int64_t EpochMs() {
+        using namespace std::chrono;
+        return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    }
+    static bool ReadSmall(const std::filesystem::path& f, std::string& out) {
+        std::error_code ec;
+        if (!std::filesystem::is_regular_file(f, ec) || std::filesystem::file_size(f, ec) > 8192) return false;
+        std::ifstream in(f, std::ios::binary);
+        if (!in) return false;
+        std::ostringstream ss;
+        ss << in.rdbuf();
+        out = ss.str();
+        return true;
+    }
+    wb::Settings LoadSettings() {
+        std::string txt;
+        return ReadSmall(dir_ / "settings.ini", txt) ? wb::ParseSettings(txt) : wb::Settings{};
+    }
+    void WriteStatus() {
+        wb::StatusInfo si;
+        si.nonce = router_->nonce();
+        si.now_ms = EpochMs();
+        si.allow_file_commands = router_->settings().allow_file_commands;
+        si.auto_arm = router_->settings().auto_arm;
+        si.enabled = adapter_->enabled();
+        si.mode = adapter_->enabled() ? (adapter_->mode() == wb::Mode::Warp ? "warp" : adapter_->mode() == wb::Mode::Autorun ? "autorun" : "local") : "";
+        si.snap = port_->Snapshot();
+        si.speed_active = speed_->active();
+        si.speed_percent = speed_->percent();
+        si.speed_raw = si.snap.valid ? port_->ReadSpeed1(si.snap.entity_index) : -1.0f;
+        si.last = router_->last();
+        si.last_move = adapter_->last().id.empty() ? nullptr : &adapter_->last();
+        const auto tmp = dir_ / "status.tmp";
+        {
+            std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
+            if (!out) return;
+            out << wb::RenderStatus(si);
+        }
+        std::error_code ec;
+        std::filesystem::rename(tmp, dir_ / "status.txt", ec);
+    }
+    void PollFiles() {
+        const double now = port_->NowSeconds();
+        if (now >= next_settings_) {
+            next_settings_ = now + 2.0;
+            wb::Settings st = LoadSettings();
+            const auto& cur = router_->settings();
+            st.enable_ttl_seconds = cur.enable_ttl_seconds;  // load-time only
+            st.base_speed = cur.base_speed;
+            router_->SetSettings(st);
+        }
+        if (now >= next_cmd_) {
+            next_cmd_ = now + 0.2;
+            std::string txt;
+            if (router_->settings().allow_file_commands && ReadSmall(dir_ / "command.txt", txt) &&
+                router_->Process(txt, EpochMs())) {
+                const auto& o = router_->last();
+                Say(("[WorkbenchNativeProbe] toolkit cmd seq=" + std::to_string(o.seq) + (o.ok ? " ok: " : " REJECTED: ") + o.reason).c_str());
+                next_status_ = 0;
+            }
+        }
+        if (now >= next_status_) {
+            next_status_ = now + 0.5;
+            WriteStatus();
+        }
+    }
     void Say(const char* text) { if (core_) core_->GetChatManager()->Write(1, false, text); }
     void SayAudit(size_t n) {
         const auto& a = adapter_->audit();
@@ -118,6 +247,54 @@ class WorkbenchNativeProbe final : public IPlugin {
             Say(("[WorkbenchNativeProbe] move " + std::string(r.ok ? "accepted: " : "REJECTED: ") + r.reason).c_str());
             return true;
         }
+        if (tok[0] == "warp") {  // /wbprobe warp <id> <x> <y> <z>  (server coords, as !logpos prints)
+            if (n != 5) { Say("[WorkbenchNativeProbe] usage: /wbprobe warp <id> <x> <y> <z>  (server order: x, y=height, z; as !logpos)"); return true; }
+            char* end = nullptr;
+            float v[3];
+            for (int i = 0; i < 3; ++i) { v[i] = std::strtof(tok[2 + i].c_str(), &end); if (*end) v[i] = NAN; }
+            const auto r = adapter_->RequestAbsolute(tok[1], wb::ServerToSdk(v[0], v[1], v[2]));
+            Say(("[WorkbenchNativeProbe] warp " + std::string(r.ok ? "accepted: " : "REJECTED: ") + r.reason).c_str());
+            if (r.ok) SayLast();
+            return true;
+        }
+        if (tok[0] == "speed") {  // /wbprobe speed <percent>|off|status
+            char b[256];
+            if (n == 1 || tok[1] == "status") {
+                const auto sn = port_->Snapshot();
+                std::snprintf(b, sizeof(b), "[WorkbenchNativeProbe] speed: override=%s %.0f%% armed=%d MovementSpeed=%.3f MovementSpeed2=%.3f",
+                              speed_->active() ? "ON" : "off", speed_->percent(), adapter_->enabled() ? 1 : 0,
+                              sn.valid ? port_->ReadSpeed1(sn.entity_index) : -1.0f, [&] { float f = -1; if (sn.valid) port_->ReadSpeed(sn.entity_index, f); return f; }());
+                Say(b);
+            } else if (tok[1] == "off") {
+                speed_->Off();
+                router_->SuppressSpeedConfig();
+                Say("[WorkbenchNativeProbe] speed override off (base restored).");
+            } else {
+                char* end = nullptr;
+                const float pct = std::strtof(tok[1].c_str(), &end);
+                if (*end || !adapter_->enabled() || !speed_->Set(pct))
+                    Say("[WorkbenchNativeProbe] speed REJECTED: needs movement armed and percent 25..400.");
+                else Say("[WorkbenchNativeProbe] speed override set; held while armed (re-applied after zoning).");
+            }
+            return true;
+        }
+        if (tok[0] == "warpinfo") {  // read-only discovery of the warp structs
+            auto* snap = static_cast<SdkMovementPort*>(port_);
+            const auto sn = snap->Snapshot();
+            if (!sn.valid) { Say("[WorkbenchNativeProbe] warpinfo: state unverified."); return true; }
+            float w[2][3]; bool ok[2];
+            const uintptr_t wp = snap->ReadWarp(sn.entity_index, w, ok);
+            char b[320];
+            std::snprintf(b, sizeof(b), "[WorkbenchNativeProbe] warpinfo: ptr=0x%08X local(sdk x,y,z)=(%.3f,%.3f,%.3f)",
+                          (unsigned)wp, sn.pos.x, sn.pos.y, sn.pos.z);
+            Say(b);
+            for (int i = 0; i < 2 && wp; ++i) {
+                std::snprintf(b, sizeof(b), "[WorkbenchNativeProbe] warpinfo: +%u %s mem(x,h,horiz)=(%.3f,%.3f,%.3f)",
+                              (unsigned)SdkMovementPort::kWarpOffsets[i], ok[i] ? "ok" : "UNREADABLE", w[i][0], w[i][1], w[i][2]);
+                Say(b);
+            }
+            return true;
+        }
         if (tok[0] != "movement") return false;
         if (n == 1 || tok[1] == "status") {
             Say(adapter_->enabled() ? "[WorkbenchNativeProbe] movement=ENABLED (dev mode)" :
@@ -127,14 +304,17 @@ class WorkbenchNativeProbe final : public IPlugin {
             // Explicit consent token is required: mode then the literal phrase.
             const bool local = n >= 3 && tok[2] == "local";
             const bool autorun = n >= 3 && tok[2] == "autorun";
-            if (!(local || autorun) || n != 4 || tok[3] != "DEV-SERVER-ONLY") {
-                Say("[WorkbenchNativeProbe] usage: /wbprobe movement enable <autorun|local> DEV-SERVER-ONLY (authorized private DSP/Topaz test server only)");
+            const bool warp = n >= 3 && tok[2] == "warp";
+            if (!(local || autorun || warp) || n != 4 || tok[3] != "DEV-SERVER-ONLY") {
+                Say("[WorkbenchNativeProbe] usage: /wbprobe movement enable <autorun|local|warp> DEV-SERVER-ONLY (authorized private DSP/Topaz test server only)");
             } else {
-                const auto r = adapter_->Enable(local ? wb::Mode::LocalWrite : wb::Mode::Autorun);
+                const auto r = adapter_->Enable(warp ? wb::Mode::Warp : local ? wb::Mode::LocalWrite : wb::Mode::Autorun);
                 Say(("[WorkbenchNativeProbe] enable: " + r.reason).c_str());
             }
         } else if (tok[1] == "disable") {
             adapter_->Disable();
+            speed_->Off();
+            router_->SuppressAutoArm();
             Say("[WorkbenchNativeProbe] movement disabled.");
         } else if (tok[1] == "audit") {
             SayAudit(20);
@@ -157,12 +337,27 @@ public:
         if (!core) return false;
         core_ = core;
         port_ = new SdkMovementPort(core);
-        adapter_ = new wb::MovementAdapter(*port_);
+        dir_ = std::filesystem::path(core->GetInstallPath()) / "config" / "workbench_native";
+        std::error_code ec;
+        std::filesystem::create_directories(dir_, ec);
+        const wb::Settings st = LoadSettings();
+        wb::Limits lim;
+        lim.enable_ttl = st.enable_ttl_seconds;
+        adapter_ = new wb::MovementAdapter(*port_, lim);
+        speed_ = new wb::SpeedOverride(*port_, static_cast<float>(st.base_speed));
+        char nonce[32];
+        std::snprintf(nonce, sizeof(nonce), "%llx", static_cast<unsigned long long>(EpochMs()) ^ (static_cast<unsigned long long>(GetCurrentProcessId()) << 40));
+        router_ = new wb::ControlRouter(*adapter_, *speed_, *port_, nonce);
+        router_->SetSettings(st);
         core_->GetChatManager()->Write(1, false, "[WorkbenchNativeProbe] Loaded: reads available; movement DISABLED by default.");
         return true;
     }
     void Release() override {
         if (adapter_) { adapter_->Stop("unload"); adapter_->Disable("unload"); }
+        if (speed_) speed_->Off();
+        if (speed_ && adapter_) speed_->Tick(false);  // restore base speed once before teardown
+        delete router_; router_ = nullptr;
+        delete speed_; speed_ = nullptr;
         delete adapter_; adapter_ = nullptr;
         delete port_; port_ = nullptr;
         core_ = nullptr;
@@ -170,7 +365,11 @@ public:
     // SDK default returns false, which makes Ashita refuse to load a UseDirect3D plugin.
     bool Direct3DInitialize(IDirect3DDevice8*) override { return true; }
     void Direct3DPresent(const RECT*, const RECT*, HWND, const RGNDATA*) override {
-        if (adapter_) adapter_->Tick();
+        if (adapter_) {
+            adapter_->Tick();
+            router_->Tick();
+            PollFiles();
+        }
     }
     bool HandleCommand(int32_t, const char* command, bool) override {
         if (command == nullptr) return false;

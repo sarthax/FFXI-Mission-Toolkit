@@ -46,16 +46,27 @@ public:
     virtual void BeginAutorun(const Vec3& direction) = 0;     // autofollow delta + IsAutoRunning=1
     virtual void EndAutorun() = 0;                            // IsAutoRunning=0, deltas zeroed
     virtual void WriteLocalPosition(uint32_t entity_index, const Vec3& pos) = 0;  // experimental
+    // Writes the entity's editable-movement structs (via WarpPointer). Returns nullptr on
+    // success, otherwise a static reason string (nothing written).
+    virtual const char* WriteWarpPosition(uint32_t entity_index, const Vec3& pos) = 0;  // experimental
+    // Entity MovementSpeed2 (client float; 5.0 == 100%). Experimental speed override.
+    virtual bool ReadSpeed(uint32_t entity_index, float& speed) = 0;
+    virtual void WriteSpeed(uint32_t entity_index, float speed) = 0;
     virtual double NowSeconds() = 0;                          // monotonic
 };
 
-enum class Mode { Autorun, LocalWrite };
+enum class Mode { Autorun, LocalWrite, Warp };
 
 struct Limits {
     float max_step = 3.0f;          // yalms, total displacement per command
     float arrive_radius = 0.35f;
     double min_interval = 1.0;      // seconds between accepted commands
-    double enable_ttl = 120.0;      // auto-disable after this long
+    double enable_ttl = 120.0;      // auto-disable after this long; <= 0 means never (admin opt-in)
+    // Warp mode is an absolute teleport on an authorized dev server: no distance cap by design,
+    // only a sanity bound on the target coordinates themselves.
+    float max_warp_distance = 1.0e9f;
+    float max_abs_coord = 4096.0f;
+    double warp_min_interval = 0.5;
     double autorun_timeout = 4.0;   // hard stop for an autorun leg
 };
 
@@ -81,6 +92,9 @@ public:
     bool enabled() const { return enabled_; }
     bool active() const { return active_; }
     const Outcome& last() const { return last_; }
+    Mode mode() const { return mode_; }
+    uint32_t bound_server_id() const { return bound_server_id_; }
+    uint32_t bound_zone() const { return bound_zone_; }
     const std::deque<std::string>& audit() const { return audit_; }
 
     // Explicit development-mode enablement; binds the session to one character+zone.
@@ -111,50 +125,18 @@ public:
         else Log("stop (idle) reason=%s", why);
     }
 
-    Result Request(const std::string& id, const Vec3& delta) {
+    // Relative request: move by delta from the freshly read position.
+    Result Request(const std::string& id, const Vec3& delta) { return Submit(id, false, delta); }
+    // Absolute request (Warp mode only): move to target, in SDK axes (x, horiz, height).
+    Result RequestAbsolute(const std::string& id, const Vec3& target) {
         if (!enabled_) return Deny(id, "disabled");
-        if (id.empty() || id.size() > 64) return Deny(id, "invalid_id");
-        if (seen_ids_.count(id)) return Deny(id, "duplicate_id");
-        if (!finite3(delta)) return Deny(id, "nonfinite_delta");
-        const float mag = std::sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
-        if (mag < 0.05f) return Deny(id, "delta_too_small");
-        if (mag > lim_.max_step) return Deny(id, "exceeds_max_step");
-        if (mode_ == Mode::Autorun && std::fabs(delta.z) > 0.05f) return Deny(id, "vertical_unsupported_in_autorun");
-        const double now = port_.NowSeconds();
-        if (now - enabled_at_ > lim_.enable_ttl) { enabled_ = false; return Deny(id, "enable_expired"); }
-        if (active_) return Deny(id, "busy");
-        if (now - last_accept_ < lim_.min_interval) return Deny(id, "rate_limited");
-        const auto s = port_.Snapshot();
-        if (!s.valid) return Deny(id, "state_unverified");
-        if (s.zoning) return Deny(id, "zoning");
-        if (s.server_id != bound_server_id_) return Deny(id, "wrong_character");
-        if (s.zone != bound_zone_) return Deny(id, "wrong_zone");
-        if (!finite3(s.pos)) return Deny(id, "nonfinite_position");
-
-        seen_ids_.insert(id);
-        last_accept_ = now;
-        cur_ = Outcome{};
-        cur_.id = id;
-        cur_.mode = mode_;
-        cur_.before = s.pos;
-        cur_.target = {s.pos.x + delta.x, s.pos.y + delta.y, s.pos.z + delta.z};
-        entity_index_ = s.entity_index;
-        started_ = now;
-        active_ = true;
-        Log("accept id=%s mode=%s delta=(%.2f,%.2f,%.2f) from=(%.3f,%.3f,%.3f)", id.c_str(), ModeName(mode_),
-            delta.x, delta.y, delta.z, s.pos.x, s.pos.y, s.pos.z);
-        if (mode_ == Mode::LocalWrite) {
-            port_.WriteLocalPosition(entity_index_, cur_.target);
-            Finish(true, "local_write_applied");
-        } else {
-            port_.BeginAutorun(delta);
-        }
-        return {true, "accepted"};
+        if (mode_ != Mode::Warp) return Deny(id, "absolute_requires_warp_mode");
+        return Submit(id, true, target);
     }
 
     // Call every frame.
     void Tick() {
-        if (enabled_ && port_.NowSeconds() - enabled_at_ > lim_.enable_ttl) Disable("ttl");
+        if (enabled_ && lim_.enable_ttl > 0 && port_.NowSeconds() - enabled_at_ > lim_.enable_ttl) Disable("ttl");
         if (!active_ || mode_ != Mode::Autorun) return;
         const auto s = port_.Snapshot();
         if (!s.valid || s.zoning || s.server_id != bound_server_id_ || s.zone != bound_zone_ || !finite3(s.pos)) {
@@ -171,7 +153,57 @@ public:
     }
 
 private:
-    static const char* ModeName(Mode m) { return m == Mode::Autorun ? "autorun" : "local_write"; }
+    Result Submit(const std::string& id, bool absolute, const Vec3& v) {
+        if (!enabled_) return Deny(id, "disabled");
+        if (id.empty() || id.size() > 64) return Deny(id, "invalid_id");
+        if (seen_ids_.count(id)) return Deny(id, "duplicate_id");
+        if (!finite3(v)) return Deny(id, absolute ? "nonfinite_target" : "nonfinite_delta");
+        const double now = port_.NowSeconds();
+        if (lim_.enable_ttl > 0 && now - enabled_at_ > lim_.enable_ttl) { enabled_ = false; return Deny(id, "enable_expired"); }
+        if (active_) return Deny(id, "busy");
+        const double interval = mode_ == Mode::Warp ? lim_.warp_min_interval : lim_.min_interval;
+        if (now - last_accept_ < interval) return Deny(id, "rate_limited");
+        const auto s = port_.Snapshot();
+        if (!s.valid) return Deny(id, "state_unverified");
+        if (s.zoning) return Deny(id, "zoning");
+        if (s.server_id != bound_server_id_) return Deny(id, "wrong_character");
+        if (s.zone != bound_zone_) return Deny(id, "wrong_zone");
+        if (!finite3(s.pos)) return Deny(id, "nonfinite_position");
+        const Vec3 target = absolute ? v : Vec3{s.pos.x + v.x, s.pos.y + v.y, s.pos.z + v.z};
+        const Vec3 delta = {target.x - s.pos.x, target.y - s.pos.y, target.z - s.pos.z};
+        if (std::fabs(target.x) > lim_.max_abs_coord || std::fabs(target.y) > lim_.max_abs_coord ||
+            std::fabs(target.z) > lim_.max_abs_coord) return Deny(id, "target_out_of_bounds");
+        const float mag = std::sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
+        if (mag < 0.05f) return Deny(id, "delta_too_small");
+        if (mag > (mode_ == Mode::Warp ? lim_.max_warp_distance : lim_.max_step)) return Deny(id, "exceeds_max_step");
+        if (mode_ == Mode::Autorun && std::fabs(delta.z) > 0.05f) return Deny(id, "vertical_unsupported_in_autorun");
+
+        seen_ids_.insert(id);
+        last_accept_ = now;
+        cur_ = Outcome{};
+        cur_.id = id;
+        cur_.mode = mode_;
+        cur_.before = s.pos;
+        cur_.target = target;
+        entity_index_ = s.entity_index;
+        started_ = now;
+        active_ = true;
+        Log("accept id=%s mode=%s delta=(%.2f,%.2f,%.2f) from=(%.3f,%.3f,%.3f)", id.c_str(), ModeName(mode_),
+            delta.x, delta.y, delta.z, s.pos.x, s.pos.y, s.pos.z);
+        if (mode_ == Mode::LocalWrite) {
+            port_.WriteLocalPosition(entity_index_, cur_.target);
+            Finish(true, "local_write_applied");
+        } else if (mode_ == Mode::Warp) {
+            const char* why = port_.WriteWarpPosition(entity_index_, cur_.target);
+            if (why) Finish(false, why);
+            else Finish(true, "warp_written");
+        } else {
+            port_.BeginAutorun(delta);
+        }
+        return {true, "accepted"};
+    }
+
+    static const char* ModeName(Mode m) { return m == Mode::Autorun ? "autorun" : m == Mode::LocalWrite ? "local_write" : "warp"; }
 
     Result Deny(const std::string& id, const char* reason) {
         Log("deny id=%s reason=%s", id.c_str(), reason);
@@ -215,6 +247,46 @@ private:
     Outcome cur_, last_;
     IdSet seen_ids_;
     std::deque<std::string> audit_;
+};
+
+// Optional client-side movement speed override. Gated by the adapter being enabled: when the
+// adapter is disabled (or the character/zone changes) the original base speed is restored once.
+// The client resets speed on zone change, so `hold` re-applies it periodically.
+class SpeedOverride {
+public:
+    static constexpr float kBase = 5.0f;  // MovementSpeed2 at !speed 100 (verify live with `speed status`)
+    SpeedOverride(MovementPort& port, float base = kBase) : port_(port), base_(base) {}
+    bool active() const { return active_; }
+    float percent() const { return percent_; }
+    uint32_t writes() const { return writes_; }
+    // percent in [25, 400]. Returns false (nothing changes) when invalid.
+    bool Set(float percent) {
+        if (!std::isfinite(percent) || percent < 25.0f || percent > 400.0f) return false;
+        percent_ = percent; active_ = true; next_ = -1e18; return true;
+    }
+    void Off() { if (active_) restore_ = true; active_ = false; next_ = -1e18; }
+    // Call every frame with whether movement is currently armed.
+    void Tick(bool armed) {
+        if (active_ && !armed) Off();
+        const double now = port_.NowSeconds();
+        if (now < next_) return;
+        next_ = now + 0.25;
+        if (!active_ && !restore_) return;
+        const auto s = port_.Snapshot();
+        if (!s.valid || s.zoning) return;
+        float cur = 0;
+        if (!port_.ReadSpeed(s.entity_index, cur) || !std::isfinite(cur)) return;
+        const float want = active_ ? base_ * percent_ / 100.0f : base_;
+        if (std::fabs(cur - want) > 0.01f) { port_.WriteSpeed(s.entity_index, want); ++writes_; }
+        if (!active_) restore_ = false;
+    }
+private:
+    MovementPort& port_;
+    float base_;
+    float percent_ = 100.0f;
+    bool active_ = false, restore_ = false;
+    double next_ = -1e18;
+    uint32_t writes_ = 0;
 };
 
 }  // namespace wb

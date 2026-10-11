@@ -31,7 +31,7 @@
  <h2>Direct Live Bridge</h2>
  <p class="muted">Local, read-only Ashita telemetry. No recording files or game writes.</p>
  <div class="lc-actions"><label>Ashita client ID <input id="client" value="ashita-a" list="clients" pattern="[a-zA-Z0-9_-]+"></label><datalist id="clients"></datalist>
- <button type="button" id="quickStart" onclick="quickStart(false)">Start receiver</button>
+ <button type="button" id="quickStart" onclick="quickStart(false)">Quick start (receiver + credentials + settings)</button>
  <button type="button" onclick="action('stop')">Stop receiver</button>
  <button type="button" onclick="quickStart(true)">Regenerate credentials</button></div>
  <p class="muted">Start receiver is one step: it reuses saved credentials and port (so restarts need no reconfiguration) and writes the settings file into your Ashita addon folder (set the folder under "Install Ashita addon" once; it is remembered). Regenerate credentials revokes the old ones. Existing credentials were revoked. Settings are private.</p>
