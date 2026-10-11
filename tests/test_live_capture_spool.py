@@ -65,3 +65,12 @@ def test_nonblocking_offer_when_worker_lock_held(tmp_path):
     with spool._lock:
         assert not spool.enqueue(packet(1))
     assert spool.health()["rejected"] == 1
+
+def test_clean_close_emits_checksums(tmp_path):
+    from workbench.captures.live_capture_jsonl import parse_manifest
+    spool = LiveCaptureSpool(tmp_path, "ashita-a", "s1")
+    assert spool.enqueue(packet(1))
+    spool.close()
+    client, session, entries = parse_manifest((tmp_path / "manifest.json").read_bytes())
+    assert (client, session) == ("ashita-a", "s1")
+    assert entries[0]["first_sequence"] == entries[0]["last_sequence"] == 1
