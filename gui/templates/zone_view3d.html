@@ -1397,14 +1397,26 @@ renderer.domElement.addEventListener('mousemove', (ev) => {
   lastClientXY = { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
 });
 
-renderer.domElement.addEventListener('click', () => {
+renderer.domElement.addEventListener('click', (event) => {
+  const bounds = renderer.domElement.getBoundingClientRect();
+  pointerNdc.set(((event.clientX - bounds.left) / bounds.width) * 2 - 1, -((event.clientY - bounds.top) / bounds.height) * 2 + 1);
+  raycaster.setFromCamera(pointerNdc, camera);
   if (flyModeOn) { Promise.resolve(renderer.domElement.requestPointerLock()).catch(() => {}); return; }
   const liveHit = raycaster.intersectObjects(liveEntityPool.filter(x => x.visible), false)[0];
-  if (liveHit) {
+  const spawnHit = spawnMesh ? raycaster.intersectObject(spawnMesh)[0] : null;
+  if (liveHit && (!spawnHit || liveHit.distance <= spawnHit.distance)) {
     const entityIndex = liveHit.object.userData.liveEntityIndex;
     const entity = liveObservedEntities[entityIndex];
-    if (entity) { inspectEntity(entity); liveEntitySelect.value = String(entityIndex); flyTo(liveHit.point); return; }
+    if (entity) {
+      inspectEntity(entity);
+      liveEntitySelect.value = String(entityIndex);
+      liveSelectedEntityId = String(entity.id ?? '');
+      liveEntityInspect.disabled = false;
+      flyTo(new THREE.Vector3(entity.x, -entity.y, -entity.z));
+      return;
+    }
   }
+  hoveredSpawnId = spawnHit?.instanceId ?? null;
   if (hoveredSpawnId == null || !spawnMesh) return;
   const m = new THREE.Matrix4();
   spawnMesh.getMatrixAt(hoveredSpawnId, m);
