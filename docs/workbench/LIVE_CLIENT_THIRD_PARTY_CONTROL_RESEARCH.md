@@ -6,9 +6,25 @@
 
 ## Decision and current boundary
 
-Continue the existing Ashita v4 Live Client integration rather than introducing a second native hook prematurely. The authenticated **read-only** Toolkit ↔ client round trip was reported working. Movement capability has **not** yet been demonstrated in the Toolkit. Prioritize a controlled local DSP live test of the existing bridge, install/overwrite behavior, command acknowledgment, position update cadence, and movement capability before adopting new code.
+Continue the existing Ashita v4 Live Client integration rather than introducing a second native hook prematurely. The authenticated **read-only** Toolkit ↔ client round trip was confirmed in the Windows environment. A native Ashita v4-Beta plugin has also successfully loaded and reported changing player XYZ positions; neither test demonstrates the ability to move the player programmatically. Keep the existing bridge and native plugin as the preferred integration foundations, and validate command acknowledgment, native-versus-Lua telemetry agreement, and server-observed movement before adopting another control stack.
 
 Distinguish four capabilities throughout: **observation**, **client command**, **client-directed movement**, and **server-authoritative relocation**. Evidence for one is not evidence for another. Coordinate-directed autofollow does not establish arbitrary teleportation or navmesh bypass.
+
+## Verified progress (updated 2026-10-11)
+
+| Area | Evidence and implementation | Remaining limitation |
+|---|---|---|
+| Direct Live Bridge | Windows `/wblive bridge ping` returned authenticated read-only round-trip confirmation; PRs #961–#964 introduced simulated movement guards, loopback round-trip and bounded session-scoped capability-probe delivery | No movement command execution or server-confirmed position update |
+| Installer | PR #965 merged a primary backup-and-replace workflow for installed Ashita addon files, retaining private settings | Operator should confirm replacement on the actual Windows installation; prior manual-deletion problem is addressed in code, not independently validated as resolved |
+| Ashita Lua movement API audit | Windows `/wblive movement audit` reported warp pointer and position setter not exposed; a candidate outgoing-packet API was present but unverified; PR #966 merged | Does not rule out other Lua methods or prove packet-driven movement |
+| Native Ashita plugin | Windows Ashita v4.05 Beta x86 plugin compiled, loaded, responded to `/wbprobe`, and unloaded; PR #969 merged | No movement writes; the Windows SDK differs from some public SDK interfaces |
+| Native XYZ readback | Windows `/wbprobe position` reported zone **98**, entity index **1024**, and changing XYZ across multiple samples | Independent server acceptance and native-versus-Lua agreement still require testing |
+| SDK compatibility | Windows build required C++20 (`std::ranges` in SDK headers) and bounded entity-map scanning by server ID (the Beta SDK lacked `IResourceManager::GetEntityIndexById`) | Avoid assuming public header interfaces match this installed Beta SDK |
+| Position comparison | PR #969 merged a read-only coordinate comparison service with zone, sample-age and distance guards | Library/service implemented, not yet exposed in the dashboard or validated against paired Windows samples |
+
+**Current delivery boundary:** Native read access and authenticated transport are established. Actual Toolkit-controlled player movement, direct XYZ writing, packet injection, stop execution, and **server-authoritative relocation** remain unimplemented or unverified. The third-party projects below are research references, not newly integrated dependencies.
+
+**Next priorities:** (1) Compare synchronized native and Live Client XYZ; (2) inspect the installed native SDK for legitimate position setters and movement interfaces; (3) prototype an explicitly armed, bounded test only on the authorized DSP/Topaz development environment, with cancel/stop and server-side verification; (4) revisit Cure Please event, entity, and capture features after the movement test. Keep the Toolkit roadmap and help pages synchronized as each feature is actually delivered.
 
 ## Reference projects
 
