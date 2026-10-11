@@ -173,6 +173,7 @@ app.include_router(create_replay_console_router(render_live_client_console))
 # Opt-in local Live Bridge management; disabled until explicitly started in UI.
 from workbench.runtime.live_client.bridge_managed import ManagedLiveReceiver
 from workbench.runtime.live_client.bridge_management_api import create_bridge_management_router
+from workbench.runtime.live_client.native_control_api import create_native_control_router
 # Opt-in persisted receiver state under ignored local data, never in Git.
 live_client_bridge_manager = ManagedLiveReceiver(
     state_path=Path(__file__).resolve().parents[3] / "data" / "live_client_bridge_state.json")
@@ -659,6 +660,7 @@ def current_theme() -> str:
 
 templates.env.globals["current_theme"] = current_theme
 app.include_router(create_bridge_management_router(live_client_bridge_manager, templates))
+app.include_router(create_native_control_router(live_client_bridge_manager.remembered_ashita_root))
 
 
 def backport_enabled() -> bool:

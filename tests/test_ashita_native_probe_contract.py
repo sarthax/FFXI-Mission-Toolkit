@@ -19,9 +19,13 @@ def test_native_probe_is_an_explicit_read_only_sdk_smoke_test():
     assert 'GetLocalPositionY(index)' in source
     assert 'GetLocalPositionZ(index)' in source
     assert 'std::isfinite(x)' in source
+    for axis in ('X', 'Y', 'Z'):
+        assert f'decltype(&IEntity::SetLocalPosition{axis})' in source
+    assert 'std::strcmp(rest, "capabilities")' in source
+    assert 'writes=disabled; server acceptance=unverified' in source
     assert "XYZ write=disabled; packet injection=disabled" in source
     for forbidden in ("WriteProcessMemory", "VirtualProtect", "AddOutgoingPacket(",
-                      "GetWarpPointer(", "SetPosition(", "CreateRemoteThread"):
+                      "SetPosition(", "CreateRemoteThread"):
         assert forbidden not in source
 
 

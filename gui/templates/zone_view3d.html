@@ -79,6 +79,73 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
   Zone meshes run 30-75MB and take a real parse (up to a minute) -- or run
   <code class="chip">py -3 -m workbench.devtools.spatial.build_visual_cache {{ zoneid }}</code> from a terminal instead.</div>
 {% else %}
+<div id="native-warp-panel" style="display:flex;flex-direction:column;gap:8px;">
+  <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+    <span id="nw-status" class="chip mono" role="status">Checking plugin…</span>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+    <button type="button" id="nw-arm">Arm warp</button>
+    <button type="button" id="nw-disarm" disabled>Disarm</button>
+    <button type="button" id="nw-stop" disabled>STOP</button>
+  </div>
+  <fieldset style="border:1px solid var(--border);border-radius:5px;padding:6px;">
+    <legend class="muted" style="font-size:11px;">Nudge player</legend>
+    <label>Custom <input id="nw-step-custom" type="number" min="0.01" step="any" placeholder="override" style="width:72px"> yd</label>
+    <label>Step <select id="nw-step"><option>1</option><option selected>2</option><option>5</option><option>10</option><option>25</option><option>50</option></select> yd</label>
+    <div style="display:grid;grid-template-columns:repeat(3,auto);gap:4px;justify-content:start;margin-top:6px;">
+      <button type="button" data-nudge="nw" title="North-west">NW</button>
+      <button type="button" data-nudge="n" title="North (server Z plus)">N</button>
+      <button type="button" data-nudge="ne" title="North-east">NE</button>
+      <button type="button" data-nudge="w" title="West (server X minus)">W</button>
+      <span></span>
+      <button type="button" data-nudge="e" title="East (server X plus)">E</button>
+      <button type="button" data-nudge="sw" title="South-west">SW</button>
+      <button type="button" data-nudge="s" title="South (server Z minus)">S</button>
+      <button type="button" data-nudge="se" title="South-east">SE</button>
+    </div>
+    <div style="display:flex;gap:4px;margin-top:4px;"><button type="button" data-nudge="up" title="Raise (smaller server Y)">Up</button><button type="button" data-nudge="down" title="Lower (larger server Y)">Down</button></div>
+    <div class="muted" style="font-size:11px;">Compass: N = +Z, E = +X (viewer convention; verify with !logpos). Diagonals move the full step distance. A custom step overrides the dropdown.</div>
+  </fieldset>
+  <fieldset style="border:1px solid var(--border);border-radius:5px;padding:6px;">
+    <legend class="muted" style="font-size:11px;">Direct coordinates (as !logpos: X, Y height, Z)</legend>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;">
+      <input id="nw-cx" type="number" step="any" placeholder="X" style="width:72px">
+      <input id="nw-cy" type="number" step="any" placeholder="Y" style="width:72px">
+      <input id="nw-cz" type="number" step="any" placeholder="Z" style="width:72px">
+    </div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">
+      <button type="button" id="nw-coord-warp" disabled>Warp here</button>
+      <button type="button" id="nw-coord-target">Set as target</button>
+      <button type="button" id="nw-coord-current">Fill from player</button>
+    </div>
+  </fieldset>
+  <fieldset style="border:1px solid var(--border);border-radius:5px;padding:6px;">
+    <legend class="muted" style="font-size:11px;">Map target</legend>
+    <label><input type="checkbox" id="nw-pick"> Pick target (click map / spawn / entity)</label>
+    <label title="Raycast the navmesh (works even when hidden)"><input type="checkbox" id="nw-snapnav" checked> Snap to navmesh</label>
+    <label>Lift <input id="nw-lift" type="number" step="0.5" value="0.5" style="width:56px"> yd</label>
+    <div id="nw-target" class="mono muted">No target</div>
+    <button type="button" id="nw-go" disabled>Warp to target</button>
+  </fieldset>
+  <fieldset style="border:1px solid var(--border);border-radius:5px;padding:6px;">
+    <legend class="muted" style="font-size:11px;">Warp bookmarks (this browser)</legend>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;">
+      <input id="nw-bm-name" placeholder="Name" style="width:110px">
+      <button type="button" id="nw-bm-save-target">Save target</button>
+      <button type="button" id="nw-bm-save-here">Save player position</button>
+    </div>
+    <div id="nw-bm-list" style="margin-top:6px;display:flex;flex-direction:column;gap:3px;"></div>
+    <div id="nw-pending" class="mono muted"></div>
+  </fieldset>
+  <fieldset style="border:1px solid var(--border);border-radius:5px;padding:6px;">
+    <legend class="muted" style="font-size:11px;">Speed</legend>
+    <label>Speed % <input id="nw-speed" type="number" min="25" max="400" step="5" value="120" style="width:64px"></label>
+    <button type="button" id="nw-speed-set" disabled>Hold speed</button>
+    <button type="button" id="nw-speed-off" disabled>Speed off</button>
+  </fieldset>
+  <div id="nw-result" class="mono muted" role="status"></div>
+  <div class="muted" style="font-size:11px;">Client-local result only: confirm with <code>!logpos</code>. Arbitrary points may be outside the navmesh (<code>!checknav x y z</code>). Raising uses a smaller Y (server Y is inverted). A bookmark in another zone warps automatically once you arrive there, while the plugin is armed.</div>
+</div>
 <div id="ashita-live-controls" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:5px 0;padding:6px;border:1px solid var(--border);border-radius:6px;">
   <label><input id="ashita-live-toggle" type="checkbox"> Live Ashita position (read only)</label>
   <label>Client ID <input id="ashita-live-client" value="ashita-a" list="ashita-live-clients" style="width:120px"></label>
@@ -183,6 +250,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
     <button type="button" id="zone3d-quick-find" title="Find an entity (/)">Find</button>
     <button type="button" data-viewer-tab="camera" aria-selected="false" title="Navigation and viewpoints">Camera</button>
     <button type="button" data-viewer-tab="live" aria-selected="false" title="Live Ashita overlay">Live</button>
+    <button type="button" data-viewer-tab="warp" aria-selected="false" title="Warp, nudge, coordinates, bookmarks (dev server)">Warp</button>
     <button type="button" data-viewer-tab="capture" aria-selected="false" title="Capture context and entity search">Capture</button>
     <button type="button" data-viewer-tab="diagnostics" aria-selected="false" title="Mesh and material diagnostics">Info</button>
     <button type="button" id="zone3d-hide-tools" title="Close viewer settings">Hide</button>
@@ -192,6 +260,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
     <section class="zone3d-tab-pane" data-viewer-pane="layers" hidden></section>
     <section class="zone3d-tab-pane" data-viewer-pane="camera" hidden></section>
     <section class="zone3d-tab-pane" data-viewer-pane="live" hidden></section>
+    <section class="zone3d-tab-pane" data-viewer-pane="warp" hidden></section>
     <section class="zone3d-tab-pane" data-viewer-pane="capture" hidden></section>
     <section class="zone3d-tab-pane" data-viewer-pane="diagnostics" hidden></section>
   </aside>
@@ -232,6 +301,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
     ['layers', '#spawn-visibility'],
     ['camera', '#zone3d-navigation'],
     ['live', '#ashita-live-controls'],
+    ['warp', '#native-warp-panel'],
     ['capture', '#capture-spatial-controls'],
     ['diagnostics', '#zone3d-alpha-tools'],
     ['diagnostics', '#zone3d-mesh-diagnostics']
@@ -275,7 +345,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
   makeGroup('camera', 'Position and coordinates', ['zone3d-camera-readout', 'zone3d-goto-x', 'zone3d-goto-y', 'zone3d-goto-z', 'zone3d-goto', 'zone3d-frame-zone'], true);
   makeGroup('camera', 'Saved viewpoints', ['zone3d-save-view', 'zone3d-restore-view', 'zone3d-view-name', 'zone3d-add-bookmark', 'zone3d-bookmark-list', 'zone3d-open-bookmark', 'zone3d-delete-bookmark'], true);
   makeGroup('camera', 'Entity focus', ['zone3d-focus-search', 'zone3d-focus-count', 'zone3d-focus-spawn', 'zone3d-focus-spawn-button'], true);
-  const names = {layers:'Display layers',camera:'Camera and viewpoints',live:'Live client',capture:'Capture context',diagnostics:'Diagnostics'};
+  const names = {layers:'Display layers',camera:'Camera and viewpoints',live:'Live client',warp:'Warp controls',capture:'Capture context',diagnostics:'Diagnostics'};
   function showTab(tab) {
     const isOpen = !panel.hidden && panel.dataset.activeTab === tab;
     panel.hidden = isOpen;
@@ -443,6 +513,7 @@ fetch(`/zoneplot/${ZONEID}/data.json`).then(r => r.json()).then(d => {
     navMesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0x2a9d8f, wireframe: true, transparent: true, opacity: 0.3, depthTest: false }));
     navMesh.visible = shownavToggle.checked;
     navMesh.renderOrder = 5;
+    navMesh.frustumCulled = false;
     scene.add(navMesh);
   }).catch(() => {});
 }).catch(() => {});
@@ -867,14 +938,18 @@ async function pollAshitaPosition() {
   }
 }
 document.getElementById('ashita-live-focus').addEventListener('click', () => {
-  if (!liveToggle.checked || !lastLivePosition || flyModeOn) {
-    liveStatus.textContent = 'Focus requires a fresh live marker and orbit mode'; return;
+  // Prefer the live-bridge marker; fall back to the native plugin position (server x,y,z -> scene x,-y,-z).
+  let pos = (liveToggle.checked && lastLivePosition) ? lastLivePosition : null;
+  const np = nw.status && nw.status.position;
+  if (!pos && np && np.x != null && (!nw.status.zone || String(nw.status.zone) === String(ZONEID))) pos = new THREE.Vector3(np.x, -np.y, -np.z);
+  if (!pos || flyModeOn) {
+    const msg = flyModeOn ? 'Focus needs orbit mode (turn Fly mode off)' : 'No player position yet (enable Live overlay or arm the native plugin in this zone)';
+    liveStatus.textContent = msg; nw.el('nw-result').textContent = msg; return;
   }
-  liveFollowToggle.checked = true;
-  liveAutoZoneToggle.checked = true;
+  if (liveToggle.checked) { liveFollowToggle.checked = true; liveAutoZoneToggle.checked = true; }
   pendingLiveZoneFocus = false;
-  controls.target.copy(lastLivePosition);
-  camera.position.copy(lastLivePosition).add(new THREE.Vector3(25, 18, 25));
+  controls.target.copy(pos);
+  camera.position.copy(pos).add(new THREE.Vector3(25, 18, 25));
   controls.update();
 });
 document.getElementById('ashita-live-sample').addEventListener('click', () => {
@@ -1080,6 +1155,7 @@ document.getElementById('shownav-toggle').addEventListener('change', (e) => {
 });
 document.getElementById('xray-slider').addEventListener('input', (e) => {
   const v = parseFloat(e.target.value);
+  if (document.getElementById('zone3d-force-opaque')?.checked) return; // debug toggle owns the flags while on
   for (const m of wallMaterials) { m.transparent = v < 1; m.opacity = v; m.depthWrite = v >= 1; }
 });
 
@@ -1442,6 +1518,7 @@ renderer.domElement.addEventListener('click', (event) => {
   }
   const liveHit = raycaster.intersectObjects(liveEntityPool.filter(x => x.visible), false)[0];
   const spawnHit = spawnMesh ? raycaster.intersectObject(spawnMesh)[0] : null;
+  if (nwHandlePick(liveHit, spawnHit)) return;
   if (liveHit && (!spawnHit || liveHit.distance <= spawnHit.distance)) {
     const entityIndex = liveHit.object.userData.liveEntityIndex;
     const entity = liveObservedEntities[entityIndex];
@@ -1463,6 +1540,228 @@ renderer.domElement.addEventListener('click', (event) => {
   flyTo(pos);
   inspectEntity(spawnEntities[hoveredSpawnId]);
 });
+
+// ---- Native warp (Toolkit -> Ashita plugin via file channel). Server coords = (sx, -sy, -sz). ----
+const nw = {
+  el: id => document.getElementById(id),
+  target: null, online: false, armed: false, channel: false, marker: null,
+};
+function nwEnsureMarker() {
+  if (nw.marker) return nw.marker;
+  nw.marker = new THREE.Mesh(new THREE.ConeGeometry(0.9, 3, 12), new THREE.MeshBasicMaterial({ color: 0xff3df2, depthTest: false }));
+  nw.marker.rotation.x = Math.PI; nw.marker.renderOrder = 999; nw.marker.visible = false;
+  scene.add(nw.marker);
+  return nw.marker;
+}
+function nwSetTarget(server, source) {
+  nw.target = { x: server.x, y: server.y, z: server.z };
+  const m = nwEnsureMarker();
+  m.position.set(server.x, -server.y + 1.5, -server.z);
+  m.visible = true;
+  nw.el('nw-target').textContent = source + ' → ' + server.x.toFixed(2) + ', ' + server.y.toFixed(2) + ', ' + server.z.toFixed(2);
+  nwRefreshButtons();
+}
+function nwRefreshButtons() {
+  nw.el('nw-arm').disabled = !(nw.online && nw.channel);
+  nw.el('nw-disarm').disabled = !nw.armed;
+  nw.el('nw-stop').disabled = !nw.armed;
+  nw.el('nw-go').disabled = !(nw.armed && nw.target);
+  nw.el('nw-coord-warp').disabled = !nw.armed;
+  document.querySelectorAll('[data-nudge]').forEach(btn => { btn.disabled = !nw.armed; });
+  nw.el('nw-speed-set').disabled = !nw.armed;
+  nw.el('nw-speed-off').disabled = !nw.armed;
+}
+async function nwPost(path, body) {
+  const res = await fetch('/live-client/native/' + path, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : '{}',
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const d = data.detail;
+    nw.el('nw-result').textContent = 'REJECTED: ' + (d && d.message ? d.message : (typeof d === 'string' ? d : res.status));
+    return null;
+  }
+  const out = data.outcome;
+  nw.el('nw-result').textContent = out ? (out.ok ? 'plugin ok: ' : 'plugin REJECTED: ') + out.reason + ' (client-local; verify with !logpos)'
+                                       : (data.note || 'sent');
+  return data;
+}
+async function nwPoll() {
+  try {
+    const res = await fetch('/live-client/native/status', { cache: 'no-store' });
+    const st = await res.json();
+    nw.status = st;
+    nw.online = !!st.online; nw.channel = !!st.channel_enabled; nw.armed = !!(st.online && st.armed);
+    const chip = nw.el('nw-status');
+    if (!st.online) chip.textContent = st.reason === 'no_ashita_root' ? 'No Ashita install remembered (Bridge setup)' : 'Plugin offline (load workbench_native_probe)';
+    else if (!st.channel_enabled) chip.textContent = 'Channel disabled: set allow_file_commands=1 in settings.ini';
+    else {
+      const p = st.position || {};
+      chip.textContent = (st.armed ? 'ARMED ' + st.mode : 'Disarmed') + ' · zone ' + st.zone + (st.zoning ? ' (zoning)' : '') +
+        (p.x == null ? '' : ' · ' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ',' + p.z.toFixed(1)) +
+        (st.speed && st.speed.active ? ' · speed ' + st.speed.percent + '%' : '');
+    }
+  } catch (e) { nw.online = false; nw.el('nw-status').textContent = 'Toolkit API unreachable'; }
+  nwRefreshButtons();
+  nwPendingTick();
+}
+nw.el('nw-arm').addEventListener('click', async () => {
+  if (!confirm('Arm native warp on this client? Authorized private DSP/Topaz dev server only.')) return;
+  await nwPost('arm', { mode: 'warp', consent: 'DEV-SERVER-ONLY' }); nwPoll();
+});
+nw.el('nw-disarm').addEventListener('click', async () => { await nwPost('disarm'); nwPoll(); });
+nw.el('nw-stop').addEventListener('click', async () => { await nwPost('stop'); nwPoll(); });
+nw.el('nw-go').addEventListener('click', async () => {
+  if (!nw.target) return;
+  const here = nw.status ? Number(nw.status.zone) : null;
+  if (!here) { nw.el('nw-result').textContent = 'Refused: player zone unknown'; return; }
+  if (here !== Number(ZONEID)) {
+    // The plugin cannot change zones: queue the warp, it fires on arrival while armed.
+    nw.pending = { name: 'map target', zone: Number(ZONEID), x: nw.target.x, y: nw.target.y, z: nw.target.z };
+    const cmd = '!zone ' + ZONEID;
+    try { await navigator.clipboard.writeText(cmd); } catch (e) {}
+    nw.el('nw-pending').textContent = 'Pending: target is in zone ' + ZONEID + ' (you are in ' + here + '). Zone there yourself (GM zone command, copied: ' + cmd + '); the warp fires on arrival while armed.';
+    return;
+  }
+  await nwPost('warp', nw.target); nwPoll();
+});
+nw.el('nw-speed-set').addEventListener('click', async () => { await nwPost('speed', { value: Number(nw.el('nw-speed').value) }); nwPoll(); });
+nw.el('nw-speed-off').addEventListener('click', async () => { await nwPost('speed/off'); nwPoll(); });
+setInterval(nwPoll, 1000); nwPoll();
+
+// ---- Warp tab: nudge, direct coordinates, bookmarks (cross-zone via pending warp) ----
+nw.status = null;
+nw.expect = null;     // last warped-to position, trusted briefly so rapid nudges accumulate
+nw.pending = null;    // bookmark waiting for the player to arrive in its zone
+const NW_BM_KEY = 'nativeWarpBookmarks.v1';
+function nwLoadBookmarks() {
+  try { const v = JSON.parse(localStorage.getItem(NW_BM_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+}
+function nwSaveBookmarks(list) { try { localStorage.setItem(NW_BM_KEY, JSON.stringify(list)); } catch (e) {} }
+function nwPlayerPos() {
+  if (nw.expect && performance.now() - nw.expect.t < 1500) return { x: nw.expect.x, y: nw.expect.y, z: nw.expect.z };
+  const p = nw.status && nw.status.position;
+  return p && p.x != null ? { x: p.x, y: p.y, z: p.z } : null;
+}
+// Refuse any warp whose coordinates belong to a different zone than the player is in.
+function nwZoneOk(zone) {
+  const here = nw.status ? Number(nw.status.zone) : 0;
+  if (!here) { nw.el('nw-result').textContent = 'Refused: player zone unknown (is the plugin running and the character in game?)'; return false; }
+  if (here !== Number(zone)) { nw.el('nw-result').textContent = 'Refused: coordinates are for zone ' + zone + ' but the player is in zone ' + here; return false; }
+  return true;
+}
+async function nwWarp(t, label, zone) {
+  if (!nwZoneOk(zone === undefined ? ZONEID : zone)) return null;
+  const data = await nwPost('warp', { x: t.x, y: t.y, z: t.z });
+  if (data && data.outcome && data.outcome.ok) nw.expect = { x: t.x, y: t.y, z: t.z, t: performance.now() };
+  if (label) nw.el('nw-result').textContent = label + ': ' + nw.el('nw-result').textContent;
+  return data;
+}
+document.querySelectorAll('[data-nudge]').forEach(btn => btn.addEventListener('click', async () => {
+  const p = nwPlayerPos();
+  if (!p) { nw.el('nw-result').textContent = 'No player position yet'; return; }
+  const cs = Number(nw.el('nw-step-custom').value);
+  const s = (Number.isFinite(cs) && cs > 0) ? Math.min(cs, 4000) : (Number(nw.el('nw-step').value) || 1);
+  const r = 0.70710678 * s;
+  const d = { e: [s, 0, 0], w: [-s, 0, 0], n: [0, 0, s], s: [0, 0, -s], ne: [r, 0, r], nw: [-r, 0, r], se: [r, 0, -r], sw: [-r, 0, -r], up: [0, -s, 0], down: [0, s, 0] }[btn.dataset.nudge];
+  await nwWarp({ x: p.x + d[0], y: p.y + d[1], z: p.z + d[2] }, 'nudge ' + btn.dataset.nudge, nw.status && nw.status.zone);
+}));
+function nwCoords() {
+  const v = ['nw-cx', 'nw-cy', 'nw-cz'].map(id => Number(nw.el(id).value));
+  return v.every(n => Number.isFinite(n)) && ['nw-cx', 'nw-cy', 'nw-cz'].every(id => nw.el(id).value !== '')
+    ? { x: v[0], y: v[1], z: v[2] } : null;
+}
+nw.el('nw-coord-warp').addEventListener('click', async () => {
+  const c = nwCoords();
+  if (!c) { nw.el('nw-result').textContent = 'Enter numeric X, Y and Z'; return; }
+  await nwWarp(c, 'coordinates', nw.status && nw.status.zone); // typed values are taken as the player's current zone
+});
+nw.el('nw-coord-target').addEventListener('click', () => {
+  const c = nwCoords();
+  if (!c) { nw.el('nw-result').textContent = 'Enter numeric X, Y and Z'; return; }
+  nwSetTarget(c, 'typed');
+});
+nw.el('nw-coord-current').addEventListener('click', () => {
+  const p = nwPlayerPos();
+  if (!p) { nw.el('nw-result').textContent = 'No player position yet'; return; }
+  nw.el('nw-cx').value = p.x.toFixed(2); nw.el('nw-cy').value = p.y.toFixed(2); nw.el('nw-cz').value = p.z.toFixed(2);
+});
+function nwRenderBookmarks() {
+  const box = nw.el('nw-bm-list');
+  box.textContent = '';
+  const list = nwLoadBookmarks();
+  if (!list.length) { box.textContent = 'No bookmarks yet'; box.className = 'muted'; return; }
+  box.className = '';
+  list.forEach((b, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:4px;align-items:center;flex-wrap:wrap;';
+    const label = document.createElement('span');
+    label.className = 'mono';
+    label.textContent = b.name + ' · zone ' + b.zone + ' · ' + b.x.toFixed(1) + ',' + b.y.toFixed(1) + ',' + b.z.toFixed(1);
+    const go = document.createElement('button'); go.type = 'button'; go.textContent = 'Go';
+    go.addEventListener('click', () => nwGoBookmark(b));
+    const tgt = document.createElement('button'); tgt.type = 'button'; tgt.textContent = 'Target';
+    tgt.addEventListener('click', () => nwSetTarget({ x: b.x, y: b.y, z: b.z }, 'bookmark ' + b.name));
+    const del = document.createElement('button'); del.type = 'button'; del.textContent = '×'; del.title = 'Delete bookmark';
+    del.addEventListener('click', () => { const l = nwLoadBookmarks(); l.splice(i, 1); nwSaveBookmarks(l); nwRenderBookmarks(); });
+    row.append(label, go, tgt, del);
+    box.appendChild(row);
+  });
+}
+function nwAddBookmark(pos, zone, fallbackName) {
+  if (!pos) { nw.el('nw-result').textContent = 'Nothing to save yet'; return; }
+  const name = nw.el('nw-bm-name').value.trim() || fallbackName;
+  const list = nwLoadBookmarks();
+  list.push({ name: name.slice(0, 40), zone: zone, x: pos.x, y: pos.y, z: pos.z });
+  nwSaveBookmarks(list); nwRenderBookmarks();
+  nw.el('nw-bm-name').value = '';
+}
+nw.el('nw-bm-save-target').addEventListener('click', () => nwAddBookmark(nw.target, ZONEID, 'target'));
+nw.el('nw-bm-save-here').addEventListener('click', () => {
+  nwAddBookmark(nwPlayerPos(), nw.status ? nw.status.zone : ZONEID, 'player');
+});
+async function nwGoBookmark(b) {
+  const here = nw.status ? nw.status.zone : null;
+  if (Number(here) === Number(b.zone) && nw.armed) { nw.pending = null; await nwWarp({ x: b.x, y: b.y, z: b.z }, 'bookmark ' + b.name, b.zone); return; }
+  nw.pending = b;
+  nw.el('nw-pending').textContent = 'Pending: ' + b.name + ' (zone ' + b.zone + '): warps automatically on arrival while armed.';
+}
+async function nwPendingTick() {
+  const b = nw.pending, st = nw.status;
+  if (!b || !st || !nw.armed || st.zoning || !st.player_valid || Number(st.zone) !== Number(b.zone)) return;
+  nw.pending = null;
+  nw.el('nw-pending').textContent = '';
+  await nwWarp({ x: b.x, y: b.y, z: b.z }, 'bookmark ' + b.name + ' (arrived)', b.zone);
+}
+nwRenderBookmarks();
+
+// Picks a warp target instead of the normal click-to-fly. Returns true when it consumed the click.
+function nwHandlePick(liveHit, spawnHit) {
+  if (!nw.el('nw-pick').checked) return false;
+  if (liveHit && (!spawnHit || liveHit.distance <= spawnHit.distance)) {
+    const e = liveObservedEntities[liveHit.object.userData.liveEntityIndex];
+    if (e) { nwSetTarget({ x: e.x, y: e.y, z: e.z }, 'entity ' + (e.name || e.id || '')); return true; }
+  }
+  if (spawnHit && spawnMesh) {
+    const m = new THREE.Matrix4(); spawnMesh.getMatrixAt(spawnHit.instanceId, m);
+    const v = new THREE.Vector3().setFromMatrixPosition(m);
+    const ent = spawnEntities[spawnHit.instanceId] || {};
+    nwSetTarget({ x: v.x, y: -v.y, z: -v.z }, 'spawn ' + (ent.name || ent.id || ''));
+    return true;
+  }
+  const lift = Number(nw.el('nw-lift').value) || 0;
+  if (nw.el('nw-snapnav').checked && navMesh) {
+    const nh = raycaster.intersectObject(navMesh, false)[0];
+    if (nh) { nwSetTarget({ x: nh.point.x, y: -nh.point.y - lift, z: -nh.point.z }, 'navmesh point'); return true; }
+    nw.el('nw-result').textContent = 'No navmesh under cursor';
+    return true;
+  }
+  const targets = scene.children.filter(o => o !== nw.marker && o.visible);
+  const hit = raycaster.intersectObjects(targets, true).find(h => h.object.isMesh && h.object !== nw.marker);
+  if (!hit) { nw.el('nw-result').textContent = 'No surface under cursor'; return true; }
+  nwSetTarget({ x: hit.point.x, y: -hit.point.y - lift, z: -hit.point.z }, 'map point');
+  return true;
+}
 
 // Smooth ease-out camera fly, ported from Vanalytics' CameraFlyTo idea.
 let flyAnim = null;
@@ -1661,6 +1960,7 @@ function applyAlphaDiagnosticMode() {
   }
 }
 alphaDiagnosticToggle.addEventListener('change', applyAlphaDiagnosticMode);
+alphaDiagnosticToggle.addEventListener('change', () => { if (!alphaDiagnosticToggle.checked) document.getElementById('xray-slider').dispatchEvent(new Event('input')); });
 alphaDiagnosticSelect.addEventListener('change', () => {
   const index = Number(alphaDiagnosticSelect.value);
   alphaDiagnosticDetails.textContent = alphaDiagnosticSelect.value === '' ?
@@ -2085,6 +2385,7 @@ function onZoneMeshReady(obj) {
   }
   controls.update();
   initialCameraView = snapshotView();
+  document.getElementById('xray-slider').dispatchEvent(new Event('input')); // same state as sliding down and back
   document.getElementById('zone3d-frame-zone').disabled = false;
 }
 
