@@ -55,7 +55,7 @@ class BridgeListener:
                     probe.client_id, probe.session_id, probe.generation, probe.sequence + 1,
                     None, b'read_only')
                 if self.controls is not None:
-                    pending = self.controls.next_for(PeerIdentity(probe.client_id, probe.session_id, probe.generation))
+                    pending = self.controls.next_for(PeerIdentity(probe.client_id, probe.session_id, probe.generation), now=now)
                     if pending is not None:
                         response = pending
                 send(connection, response)
@@ -64,7 +64,7 @@ class BridgeListener:
             msg = messages[0]
             if msg.kind.value in ('ack', 'reject'):
                 if self.controls is None or not self.controls.resolve(
-                    PeerIdentity(msg.client_id, msg.session_id, msg.generation), msg):
+                    PeerIdentity(msg.client_id, msg.session_id, msg.generation), msg, now=now):
                     raise PermissionError('unknown or stale control response')
             return messages
         # Reject the entire batch before any queue mutation if it spans identities.
