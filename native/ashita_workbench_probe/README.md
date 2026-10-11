@@ -161,3 +161,16 @@ In game: `/wbprobe speed <25..400>|off|status`, `/wbprobe warp <id> <x> <y> <z>`
 5. Zone and confirm the speed hold re-applies and (with `auto_arm=warp`) the plugin re-arms.
 6. Toolkit 3D viewer: open the zone, "Native warp" panel, Arm, tick Pick target, click a spawn, "Warp to target", compare `!logpos`.
 7. STOP / Disarm buttons; `/wbprobe movement audit` lists everything.
+
+## Passive packet queue foundation (not yet wired to Ashita)
+
+`passive_packet_queue.h` is an SDK-independent bounded queue for copying
+callback packet bytes and recording direction, opcode, sequence and timestamp.
+`Offer` never performs file or network I/O; it uses a nonblocking lock and
+reports overflow/invalid-packet drops and lock-contention drops through
+`Health`. `Drain` is intended for a separate consumer, not the callback.
+Capture defaults to disabled; no packet hooks are registered in this slice.
+The queue is included in the CMake project and a standalone C++ compile/run
+regression test runs where a compiler is available. The actual Ashita Beta SDK
+callback signatures and lifetime must still be verified on Windows before
+binding the queue to packet events. Do not claim a live recording yet.
