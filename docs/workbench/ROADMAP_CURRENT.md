@@ -228,6 +228,7 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Standalone 3D viewer can toggle mob/NPC/door/captured spawn markers with shared search and marker-count feedback; visual smoke test pending.
 - [x] Standalone 3D viewer provides read-only camera XYZ/view-heading diagnostics, go-to XYZ, and page-session save/restore viewpoints. Coordinates use existing viewer transform; local visual acceptance remains pending.
 - [x] 3D live DAT mesh pipeline audits instance transforms, skips non-finite/singular matrices without inventing placements, and reports mirrored/skipped counts; real-client visual correctness still requires validation.
+- [x] 3D viewer records per-DAT prefab material/texture diagnostics (missing/malformed RGBA, alpha/water/sky tags) while preserving rendering transforms and untextured fallbacks; real DAT visual verification pending.
 - [x] Model catalog failures from unrecognized gear-slot indices no longer abort the complete catalog.
 - [x] Nyzul Editor preserves explicit DSP/Topaz legacy-layout handling while routing modern LandSandBoat checkouts through the native adapter.
 - [x] Native modern-LSB Nyzul adapter parses `floor_generation.lua`, current objective/layout selection, YAML-backed entity tables, native boss/Rampart positions, shared spawn pools, and fail-closed unsupported mappings; merged in PR #544.
