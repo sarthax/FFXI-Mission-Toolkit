@@ -152,6 +152,12 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
   <button type="button" id="zone3d-focus-spawn-button" disabled>Focus</button>
   <span id="zone3d-nav-feedback" class="muted" role="status" aria-live="polite"></span>
 </div>
+<section id="zone3d-alpha-tools" style="padding:7px;border:1px solid var(--border);border-radius:6px;margin-bottom:8px;">
+  <label><input type="checkbox" id="zone3d-force-opaque"> Force opaque (diagnostic only)</label>
+  <p class="muted" style="margin:5px 0;">Compare the same geometry with alpha masking and blending disabled. Does not edit DATs or server data.</p>
+  <label>Material / prefab <select id="zone3d-material-select" style="width:100%;max-width:100%;"><option value="">Select a material</option></select></label>
+  <pre id="zone3d-material-details" class="mono" style="font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto;">Select a material for texture alpha statistics.</pre>
+</section>
 <details id="zone3d-mesh-diagnostics" style="margin:8px 0;border:1px solid var(--border);border-radius:6px;padding:8px;">
   <summary>Mesh diagnostics <span id="zone3d-diagnostics-status" class="chip mono" role="status">Waiting for geometry</span></summary>
   <div id="zone3d-diagnostics-content" class="mono" style="white-space:pre-wrap;font-size:12px;margin-top:8px;">No mesh parsed yet.</div>
@@ -1248,7 +1254,47 @@ function isSkyWeatherMesh(prefab) { return SKY_WEATHER_RE.test(prefab.textureNam
 // scene-construction block (real textures/water/mirrored-instance winding), replacing the
 // untextured pre-baked OBJ this viewer used before. Falls back to the OBJ cache when the FFXI
 // install or this zone's geometry DAT path isn't known.
+const alphaDiagnosticMaterials = [];
+const alphaDiagnosticRows = [];
+const alphaDiagnosticToggle = document.getElementById('zone3d-force-opaque');
+const alphaDiagnosticSelect = document.getElementById('zone3d-material-select');
+const alphaDiagnosticDetails = document.getElementById('zone3d-material-details');
+function applyAlphaDiagnosticMode() {
+  for (const { material, original } of alphaDiagnosticMaterials) {
+    material.alphaTest = alphaDiagnosticToggle.checked ? 0 : original.alphaTest;
+    material.transparent = alphaDiagnosticToggle.checked ? false : original.transparent;
+    material.depthWrite = alphaDiagnosticToggle.checked ? true : original.depthWrite;
+    material.opacity = alphaDiagnosticToggle.checked ? 1 : original.opacity;
+    material.needsUpdate = true;
+  }
+}
+alphaDiagnosticToggle.addEventListener('change', applyAlphaDiagnosticMode);
+alphaDiagnosticSelect.addEventListener('change', () => {
+  const index = Number(alphaDiagnosticSelect.value);
+  alphaDiagnosticDetails.textContent = alphaDiagnosticSelect.value === '' ?
+    'Select a material for texture alpha statistics.' :
+    JSON.stringify(alphaDiagnosticRows[index], null, 2);
+});
+function registerAlphaMaterial(material, prefab, index, counts) {
+  const original = {
+    alphaTest: material.alphaTest, transparent: material.transparent,
+    depthWrite: material.depthWrite, opacity: material.opacity
+  };
+  alphaDiagnosticMaterials.push({ material, original });
+  const row = { prefab_index: index, texture_name: prefab.textureName || null,
+    material_index: prefab.materialIndex, blending_flag: prefab.blending,
+    ...counts, alpha_test: original.alphaTest, transparent: original.transparent };
+  const rowIndex = alphaDiagnosticRows.push(row) - 1;
+  const option = document.createElement('option');
+  option.value = String(rowIndex);
+  option.textContent = `${index}: ${row.texture_name || '(unresolved)'}`;
+  alphaDiagnosticSelect.appendChild(option);
+}
 function buildLiveZoneGroup(zoneData) {
+  alphaDiagnosticMaterials.length = 0;
+  alphaDiagnosticRows.length = 0;
+  alphaDiagnosticSelect.replaceChildren(new Option('Select a material', ''));
+  alphaDiagnosticDetails.textContent = 'Select a material for texture alpha statistics.';
   const group = new THREE.Group();
   const geoMap = new Map();
   const matMap = new Map();
@@ -1277,6 +1323,8 @@ function buildLiveZoneGroup(zoneData) {
     let texture = null;
     let alphaPixels = 0;
     let partialAlphaPixels = 0;
+    let opaquePixels = 0;
+    let zeroAlphaPixels = 0;
     if (!tex) {
       materialAudit.missingTexture++;
     } else if (!Number.isInteger(tex.width) || !Number.isInteger(tex.height) ||
@@ -1290,6 +1338,8 @@ function buildLiveZoneGroup(zoneData) {
       for (let pixel = 3; pixel < tex.rgba.length; pixel += 4) {
         const alpha = tex.rgba[pixel];
         if (alpha < 255) alphaPixels++;
+        if (alpha === 255) opaquePixels++;
+        if (alpha === 0) zeroAlphaPixels++;
         if (alpha > 0 && alpha < 255) partialAlphaPixels++;
       }
       texture = new THREE.DataTexture(new Uint8Array(tex.rgba), tex.width, tex.height, THREE.RGBAFormat);
@@ -1322,6 +1372,11 @@ function buildLiveZoneGroup(zoneData) {
       });
       patchHeightFogMaterial(mat);
       matMap.set(prefabIdx, mat);
+      registerAlphaMaterial(mat, prefab, prefabIdx, {
+        texture_width: tex?.width || null, texture_height: tex?.height || null,
+        opaque_pixels: opaquePixels, zero_alpha_pixels: zeroAlphaPixels,
+        partial_alpha_pixels: partialAlphaPixels, translucent_pixels: alphaPixels
+      });
       wallMaterials.push(mat);
     }
   }
@@ -1383,6 +1438,7 @@ function buildLiveZoneGroup(zoneData) {
   }
   group.userData.transformAudit = transformAudit;
   group.userData.materialAudit = materialAudit;
+  applyAlphaDiagnosticMode();
   return group;
 }
 
