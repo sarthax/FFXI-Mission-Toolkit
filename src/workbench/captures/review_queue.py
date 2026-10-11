@@ -42,9 +42,11 @@ def ensure(con):
     cols={row[1] for row in con.execute("PRAGMA table_info(review_queue)")}
     if "blocking" not in cols:
         con.execute("ALTER TABLE review_queue ADD COLUMN blocking INTEGER NOT NULL DEFAULT 0")
-    for kind, handler in KINDS.items():
-        if handler.get("blocking"):
-            con.execute("UPDATE review_queue SET blocking=1 WHERE kind=? AND blocking=0", (kind,))
+        # One-time migration of pre-column automated blockers. New rows receive their
+        # effective blocking value in raise_item(), so ordinary reads stay read-only.
+        for kind, handler in KINDS.items():
+            if handler.get("blocking"):
+                con.execute("UPDATE review_queue SET blocking=1 WHERE kind=?", (kind,))
 
 
 def _now():
