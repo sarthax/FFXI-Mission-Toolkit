@@ -853,3 +853,33 @@ instead of newline characters. Because its first line begins with a Lua
 Update the Toolkit and reprovision/download a fresh private settings file,
 then copy it into the actual Ashita addon folder and reload. Reprovisioning
 revokes earlier credentials; never share the private settings file.
+
+## 2026-10-10 Windows-verified Ashita v4 bridge (PR #918)
+
+Verified against a real Ashita v4 client: connection, authentication, live
+position, zoning, and the 3D viewer overlay.
+
+- **Root cause of "Bridge connection not configured":** the addon swallowed
+  the real failure reason. `start()` now reports a specific reason (settings
+  failed to load, bridge disabled, missing field, or receiver unreachable)
+  without ever printing the token. Ashita's `Addons.dll` embeds LuaSocket 3.0,
+  so `require('socket')` works; generated settings defer it with `pcall`.
+- **Feed stall after ~128 frames:** the mailbox telemetry queue (limit 128)
+  was never drained, raising `BufferError`. `BridgeLiveFeeds` now drains it.
+- **One-click Start receiver:** the bridge page's *Start receiver* reuses a
+  saved port, session, generation and token (`data/live_client_bridge_state.json`,
+  git-ignored, private) and writes `workbench_bridge_settings.lua` into the
+  remembered Ashita addon folder. *Regenerate credentials* revokes the old
+  set. If the saved port is busy an ephemeral one is used and the settings
+  file is rewritten. Endpoints: `GET /live-client/bridge/state`,
+  `POST /quick-start`, `POST /reset-credentials` (same-origin, local only).
+  The Lua sequence counter starts from the current time so a restored session
+  survives an addon reload.
+- **Coordinate order:** Ashita reports (X, north-south, height); the server
+  and `LOGPOS` use (x, height, z). The viewer default axis mapping is
+  `X,-Z,-Y`, and the live heading offset defaults to 180 degrees (both
+  confirmed in game).
+
+Operator flow: restart Toolkit, click *Start receiver*, then in game
+`/addon reload workbench_live` and `/wblive live start <client_id>`.
+

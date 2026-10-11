@@ -292,8 +292,11 @@ Copy `workbench_bridge.lua` beside the other addon files. This module is
 **inactive by default**; it does not affect normal JSONL recording. For a local
 Windows test, the operator must first explicitly start the Toolkit's opt-in
 `BridgeListener`, issue a matching `PeerIdentity` and token in its
-`LocalPeerRegistry`, and keep that listener accepting connections. The Toolkit
-does not currently expose a GUI or automatic provisioning for this operation.
+`LocalPeerRegistry`, and keep that listener accepting connections. In the Toolkit,
+open the Live Client Bridge page and click **Start receiver**: it reuses saved
+credentials and writes the settings file into your Ashita addon folder for
+you (set the folder once). The manual steps below remain for reference.
+`require('socket')` works in Ashita v4 (LuaSocket is built in).
 
 Create a private, **untracked** `workbench_bridge_settings.lua` in the addon
 folder, with an explicitly chosen unique session and generation and the token
