@@ -44,3 +44,40 @@ int main() {
     binary = tmp_path / "packet_queue_test"
     subprocess.run([compiler, "-std=c++20", "-pthread", "-I", str(include), str(source), "-o", str(binary)], check=True, timeout=60)
     subprocess.run([str(binary)], check=True, timeout=15)
+
+
+def test_native_packet_writer_round_trip(tmp_path):
+    compiler = shutil.which("g++") or shutil.which("clang++")
+    if not compiler:
+        pytest.skip("C++ compiler unavailable")
+    root = Path(__file__).resolve().parents[1]
+    include = root / "native" / "ashita_workbench_probe"
+    source = tmp_path / "writer_test.cpp"
+    source.write_text(r"""
+#include "native_packet_writer.h"
+#include <cassert>
+#include <cstdint>
+int main(int argc, char** argv) {
+    assert(argc == 2);
+    wb::PassivePacketQueue queue(8, 4096);
+    wb::PassivePacketWriter writer(queue, argv[1], "ashita-a", "session-1");
+    writer.Start();
+    const uint8_t raw[] = {0x12, 0xAB, 0xFF};
+    assert(queue.Offer(wb::PacketDirection::Incoming, 0x34, raw, sizeof(raw)));
+    assert(writer.Pump() == 1);
+    writer.Stop();
+    assert(writer.Written() == 1);
+}
+""")
+    binary = tmp_path / "writer_test"
+    subprocess.run([compiler, "-std=c++20", "-pthread", "-I", str(include),
+                    str(source), "-o", str(binary)], check=True, timeout=60)
+    target = tmp_path / "session.jsonl"
+    subprocess.run([str(binary), str(target)], check=True, timeout=15)
+    from workbench.captures.live_capture_jsonl import parse_session
+    rows = parse_session(target.read_bytes())
+    assert len(rows) == 1
+    packet = rows[0][0]
+    assert packet.raw_bytes == bytes([0x12, 0xAB, 0xFF])
+    assert packet.opcode == 0x34
+    assert packet.direction == "incoming"
