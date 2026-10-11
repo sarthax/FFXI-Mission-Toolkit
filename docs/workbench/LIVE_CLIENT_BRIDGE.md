@@ -1,5 +1,7 @@
 # Live Client Development Bridge — Roadmap and Resume Guide
 
+> **Delivery status and next milestones:** [Live Client delivery roadmap](LIVE_CLIENT_DELIVERY_ROADMAP.md). Read-only observation/viewer functionality is not proof of in-game movement control; see the Windows acceptance gates before enabling writes.
+
 Status: **recorded sessions integrated; partial Ashita v4 runtime evidence received**.
 Foundation: [PR #663](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/663).
 First recorded: 2026-10-07. Dated entries below record historical progress; consult
