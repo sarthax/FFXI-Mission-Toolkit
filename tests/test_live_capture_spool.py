@@ -96,3 +96,23 @@ def test_existing_manifest_is_not_replaced(tmp_path):
         spool.close()
     assert target.read_text() == "existing evidence"
     assert not (tmp_path / "manifest.json.tmp").exists()
+
+
+def test_interrupted_session_diagnostics_are_read_only(tmp_path):
+    from workbench.captures.live_capture_spool import inspect_interrupted_session
+    (tmp_path / "segment-000001.jsonl").write_text(json.dumps(packet(1)) + "\n")
+    before = (tmp_path / "segment-000001.jsonl").read_bytes()
+    result = inspect_interrupted_session(tmp_path)
+    assert result["status"] == "recoverable_unfinalized"
+    assert result["packets"] == 1
+    assert (tmp_path / "segment-000001.jsonl").read_bytes() == before
+    assert not (tmp_path / "manifest.json").exists()
+
+
+def test_corrupted_interrupted_session_remains_unmodified(tmp_path):
+    from workbench.captures.live_capture_spool import inspect_interrupted_session
+    (tmp_path / "segment-000001.jsonl").write_bytes(b"invalid json\n")
+    result = inspect_interrupted_session(tmp_path)
+    assert result["status"] == "damaged_unfinalized"
+    assert result["errors"]
+    assert not (tmp_path / "manifest.json").exists()
