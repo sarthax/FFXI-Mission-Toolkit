@@ -41,6 +41,19 @@ def audit_edge_ids(trace: dict) -> list[str]:
     return ids
 
 
+def annotation_template(trace: dict) -> dict:
+    """Blank review template; never implies edges are verified or relevant."""
+    audit_edge_ids(trace)
+    return {
+        "initial_edge_ids": [],
+        "verified_edge_ids": [],
+        "relevant_edge_ids": [],
+        "required_edge_ids": [],
+        "locator_edge_ids": [],
+        "missing_required_paths": [],
+    }
+
+
 def score(trace: dict, annotations: dict) -> dict:
     edges = list(trace.get("edges") or [])
     ids = audit_edge_ids(trace)
@@ -95,8 +108,12 @@ def main() -> None:
     parser.add_argument("trace_json", type=Path)
     parser.add_argument("annotations_json", type=Path, nargs="?")
     parser.add_argument("--list-edges", action="store_true")
+    parser.add_argument("--template", action="store_true", help="Print blank review annotations")
     args = parser.parse_args()
     trace = json.loads(args.trace_json.read_text(encoding="utf-8"))
+    if args.template:
+        print(json.dumps(annotation_template(trace), indent=2))
+        return
     if args.list_edges:
         print(json.dumps([{"audit_id": edge_id, "source_node": edge.get("source_node"),
                            "relationship": edge.get("relationship"), "target_node": edge.get("target_node")}
