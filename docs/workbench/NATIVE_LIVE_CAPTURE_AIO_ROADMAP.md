@@ -1,6 +1,6 @@
 # Native Live Capture — AIO Recorder Plan
 
-**Status:** proposed roadmap; not implemented  
+**Status:** backend session spool, canonical importer, manifest discovery, and read-only verification implemented; native callback and live control wiring pending  
 **Date:** 2026-10-11  
 **Related research:** [Live Client third-party control research](LIVE_CLIENT_THIRD_PARTY_CONTROL_RESEARCH.md)
 
@@ -70,3 +70,22 @@ Each PR should remain small enough for CI and avoid concurrent Ashita movement-D
 - Session readable by existing Capture tools, with cross-links into Entity, Zone Editor, Feature Trace and Packet Viewer.
 
 **Decision:** Treat this as a first-party Live Capture source **within** the current Capture platform, not a wholesale replacement of capture tooling.
+
+## Native callback integration gate (2026-10-11)
+
+The current `native/ashita_workbench_probe/workbench_native_probe.cpp` exposes
+movement/position commands but has no packet callback overrides. The existing
+`addons/workbench_live/workbench_packets.lua` is a limited passive Lua
+observation tool, not the native session recorder.
+
+Before adding C++ overrides, verify the exact installed Ashita v4 Beta
+`IPlugin` packet callback declarations (method names, argument types,
+return contract, and callback byte lifetime). Do not infer the signatures from
+Windower or older Ashita versions. Then implement an isolated packet-observer
+component with no packet modification, bounded nonblocking enqueue, and a
+separate disk worker. Capture only explicitly enabled sessions. Preserve
+source identity, sequence, original callback bytes, direction, timestamp,
+flags when exposed, and loss counters. Validate in the local x86 SDK build
+before enabling the native source in Toolkit settings.
+
+Do not use native movement commands or injected packets as recording tests.
