@@ -18,6 +18,9 @@ endif()
 add_library(workbench_native_probe MODULE
     workbench_native_probe.cpp
     movement_adapter.h
+    passive_packet_queue.h
+    native_packet_jsonl.h
+    native_packet_writer.h
     exports.def)
 target_include_directories(workbench_native_probe PRIVATE "${ASHITA_SDK}")
 target_compile_features(workbench_native_probe PRIVATE cxx_std_20)

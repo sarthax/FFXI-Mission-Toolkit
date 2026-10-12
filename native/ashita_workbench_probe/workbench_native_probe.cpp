@@ -13,6 +13,8 @@
 #include <sstream>
 #include "movement_adapter.h"
 #include "native_control.h"
+#include "native_packet_writer.h"
+#include <memory>
 
 // Compile-time SDK signature gate only: these methods are never invoked.
 using XYZSetter = void (IEntity::*)(uint32_t, float) const;
@@ -141,6 +143,28 @@ class WorkbenchNativeProbe final : public IPlugin {
     wb::SpeedOverride* speed_ = nullptr;
     wb::ControlRouter* router_ = nullptr;
     std::filesystem::path dir_;
+    wb::PassivePacketQueue packet_queue_{512, 4096};
+    std::unique_ptr<wb::PassivePacketWriter> packet_writer_;
+    void StopPacketRecording() {
+        if (!packet_writer_) return;
+        try { packet_writer_->Stop(); Say("[WorkbenchNativeProbe] Packet recording stopped."); }
+        catch (const std::exception&) { Say("[WorkbenchNativeProbe] Packet recording incomplete; retain evidence."); }
+        packet_writer_.reset();
+    }
+    void HandlePacketRecorderCommand(const char* cmd) {
+        if (std::strcmp(cmd, "capture status") == 0) {
+            auto h = packet_queue_.Health();
+            const std::string msg = "[WorkbenchNativeProbe] capture enabled=" + std::to_string(h.enabled) +
+                " queued=" + std::to_string(h.queued) + " accepted=" + std::to_string(h.accepted) +
+                " lost=" + std::to_string(h.rejected) + " written=" +
+                std::to_string(packet_writer_ ? packet_writer_->Written() : 0);
+            Say(msg.c_str());
+        } else if (std::strcmp(cmd, "capture stop") == 0) {
+            StopPacketRecording();
+        } else if (std::strcmp(cmd, "capture start") == 0) {
+            Say("[WorkbenchNativeProbe] Native capture unavailable until Ashita SDK packet callbacks are verified and wired.");
+        }
+    }
     double next_cmd_ = 0, next_status_ = 0, next_settings_ = 0;
     static int64_t EpochMs() {
         using namespace std::chrono;
@@ -353,6 +377,7 @@ public:
         return true;
     }
     void Release() override {
+        StopPacketRecording();
         if (adapter_) { adapter_->Stop("unload"); adapter_->Disable("unload"); }
         if (speed_) speed_->Off();
         if (speed_ && adapter_) speed_->Tick(false);  // restore base speed once before teardown
@@ -369,6 +394,10 @@ public:
             adapter_->Tick();
             router_->Tick();
             PollFiles();
+            if (packet_writer_) {
+                try { packet_writer_->Pump(); }
+                catch (const std::exception&) { StopPacketRecording(); }
+            }
         }
     }
     bool HandleCommand(int32_t, const char* command, bool) override {
@@ -378,6 +407,11 @@ public:
         if (std::strncmp(command, prefix, sizeof(prefix)-1) != 0) return false;
         const char* rest = command + sizeof(prefix)-1;
         while (*rest == ' ') ++rest;
+        if (std::strcmp(rest, "capture start") == 0 || std::strcmp(rest, "capture stop") == 0 ||
+            std::strcmp(rest, "capture status") == 0) {
+            HandlePacketRecorderCommand(rest);
+            return true;
+        }
         if (adapter_ && *rest && HandleMovement(rest)) return true;
         const bool position = std::strcmp(rest, "position") == 0;
         const bool capabilities = std::strcmp(rest, "capabilities") == 0;
