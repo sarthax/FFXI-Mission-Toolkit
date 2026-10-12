@@ -174,3 +174,13 @@ The queue is included in the CMake project and a standalone C++ compile/run
 regression test runs where a compiler is available. The actual Ashita Beta SDK
 callback signatures and lifetime must still be verified on Windows before
 binding the queue to packet events. Do not claim a live recording yet.
+
+## Native recording control scaffold
+
+The plugin recognizes `/wbprobe capture status`, `/wbprobe capture stop`,
+and `/wbprobe capture start`. **Start is deliberately rejected** until the
+installed Ashita SDK callback contract is confirmed and incoming/outgoing
+packet handlers are connected. The writer and bounded queue are compiled into
+the native plugin, and the writer is pumped outside packet callbacks. This is
+not a live packet capture implementation yet. No movement control or packet
+injection is required for these diagnostics.
