@@ -72,6 +72,7 @@
   <h2 id="behavior-graph-heading">Behavior / State Graph</h2>
   <div class="behavior-controls">
     <label>Filter <input id="behavior-filter" type="search" placeholder="hook, effect, API, state, target"></label>
+    <label>Preview <select id="behavior-hop-depth"><option value="1" selected>1 hop</option><option value="2">2 hops</option></select></label>
     <button type="button" id="behavior-reset">Reset selection</button>
   </div>
   <div class="behavior-legend" aria-label="Graph legend">
@@ -290,12 +291,14 @@
  }
  function related(id){
    if(!id)return new Set();
-   const keep=new Set([id]),q=[id];
+   const maxDepth=Number(document.getElementById('behavior-hop-depth')?.value||1);
+   const keep=new Set([id]),q=[[id,0]];
    while(q.length){
-     const cur=q.shift();
+     const [cur,depth]=q.shift();
+     if(depth>=maxDepth)continue;
      [...(incoming.get(cur)||[]),...(outgoing.get(cur)||[])].forEach(e=>{
        const other=e.source===cur?e.target:e.source;
-       if(!keep.has(other)){keep.add(other);q.push(other);}
+       if(!keep.has(other)){keep.add(other);q.push([other,depth+1]);}
      });
    }
    return keep;
@@ -335,7 +338,7 @@
    detail.innerHTML=`<strong>${esc(n.label)}</strong> <span class="chip">${esc(n.kind)}</span><p><code>${esc(n.id)}</code></p>${bindingLink}<dl>${rows||'<dt>Metadata</dt><dd class="muted">No additional metadata</dd>'}</dl><p><strong>Incoming:</strong> ${esc(ins.map(e=>e.kind).join(', ')||'none')}<br><strong>Outgoing:</strong> ${esc(outs.map(e=>e.kind).join(', ')||'none')}</p>`;
    render();
  }
- filter.addEventListener('input',render);
+ filter.addEventListener('input',render);\n document.getElementById('behavior-hop-depth').addEventListener('change',render);
  document.getElementById('behavior-reset').addEventListener('click',()=>{selected=null;filter.value='';detail.innerHTML='<strong>Select a graph node</strong><p class="muted">Inspect exact source provenance, trigger/state/effect metadata, API identity, or affected target.</p>';render();});
  render();
 })();
