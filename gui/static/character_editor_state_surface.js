@@ -172,9 +172,12 @@
     const diagnosisTone = progression.diagnosis === 'CURRENT' || progression.diagnosis === 'COMPLETED' ? 'ok' : 'warn';
     const stepLabel = progression.diagnosis === 'COMPLETED' ? 'Mission/quest complete' : step.section_index ? `Section ${step.section_index}` : 'No matching section';
     const assessment = assessmentHtml(progression.assessment);
+    const progressionMap = window.CharacterProgressionMap?.render(payload) || '';
 
     body.innerHTML = `<div class="ce-state-summary">${pill(statusText(progression.status), progression.status?.includes('COMPLETED') ? 'ok' : '')}${pill(progression.diagnosis || 'UNKNOWN', diagnosisTone)}${pill(`${progression.summary?.transition_count || 0} modeled transitions`)}${pill(`${progression.summary?.transition_bundle_count || 0} transition bundles`)}</div>
       ${assessment}
+      ${progressionMap}
+      <details style="margin-top:10px" open><summary>Existing progression inspector</summary>
       <div class="ce-prog-overview">
         <section class="ce-prog-card"><h4>Current state</h4><div class="ce-prog-value">${esc(statusText(progression.status))}</div><div class="ce-prog-vars">${vars || '<span class="ce-muted">No persisted feature variables modeled.</span>'}</div></section>
         <section class="ce-prog-card"><h4>Current step</h4><div class="ce-prog-value">${esc(stepLabel)}</div><div class="ce-muted">${step.source_lines ? `Source lines ${esc(step.source_lines.join('–'))}` : 'Structured from the active server mission definition.'}</div></section>
@@ -183,6 +186,7 @@
       <section class="ce-prog-card" style="margin-top:8px"><h4>What happens next</h4>${primary}${primaryBundle}${otherActions ? `<details style="margin-top:7px"><summary>Other actions/reminders available in this state</summary>${otherActions}</details>` : ''}</section>
       ${blockers ? `<section class="ce-prog-blockers"><h4>Blocking / inconsistent conditions</h4><div class="ce-muted">These persisted values do not match the nearest modeled progression state. Review them before changing anything.</div>${blockers}</section>` : ''}
       <div class="ce-muted" style="margin-top:8px">Read-only diagnosis. Persisted blockers can hand off to the guarded Character Editor tab that owns the state. Runtime-only requirements are shown as requirements, not treated as corrupt stored state.</div>
+      </details>
       ${rawEvidenceHtml(payload)}`;
     bindJumps(body);
   }
