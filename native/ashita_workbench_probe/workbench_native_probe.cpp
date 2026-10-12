@@ -163,18 +163,6 @@ class WorkbenchNativeProbe final : public IPlugin {
             StopPacketRecording();
         } else if (std::strcmp(cmd, "capture start") == 0) {
             Say("[WorkbenchNativeProbe] Native capture unavailable until Ashita SDK packet callbacks are verified and wired.");
-            return;
-            if (packet_writer_) { Say("[WorkbenchNativeProbe] Capture already active."); return; }
-            const std::string id = std::to_string(EpochMs());
-            const auto file = dir_ / "captures" / ("native-" + id + ".jsonl");
-            try {
-                packet_writer_ = std::make_unique<wb::PassivePacketWriter>(packet_queue_, file, "ashita-native", id);
-                packet_writer_->Start();
-                Say("[WorkbenchNativeProbe] Capture queue armed. SDK callbacks not yet wired; no packets will be observed.");
-            } catch (const std::exception&) {
-                packet_writer_.reset();
-                Say("[WorkbenchNativeProbe] Could not start packet recorder.");
-            }
         }
     }
     double next_cmd_ = 0, next_status_ = 0, next_settings_ = 0;
