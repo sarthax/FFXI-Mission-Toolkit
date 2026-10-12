@@ -36,6 +36,9 @@ def score(trace: dict, annotations: dict) -> dict:
     locators = selections["locator_edge_ids"]
     if not relevant <= verified or not required <= verified or not locators <= verified:
         raise ValueError("Relevant, required and locator-backed edges must be independently verified")
+    reviewed_initial = initial & verified
+    irrelevant_reviewed = reviewed_initial - relevant
+    unreviewed_initial = initial - verified
     def ratio(numerator: int, denominator: int):
         return round(numerator / denominator, 4) if denominator else None
     return {
@@ -44,9 +47,11 @@ def score(trace: dict, annotations: dict) -> dict:
         "initial_edges": len(initial),
         "verified_edges": len(verified),
         "relevant_initial_edges": len(initial & relevant),
-        "irrelevant_initial_edges": len(initial - relevant),
-        "unreviewed_initial_edges": len(initial - verified),
-        "precision_verified_only": ratio(len(initial & relevant), len(initial & verified)),
+        "irrelevant_initial_edges": len(irrelevant_reviewed),
+        "unreviewed_initial_edges": len(unreviewed_initial),
+        "reviewed_initial_edges": len(reviewed_initial),
+        "review_coverage": ratio(len(reviewed_initial), len(initial)),
+        "precision_verified_only": ratio(len(initial & relevant), len(reviewed_initial)),
         "required_path_recall": ratio(len(initial & required), len(required)),
         "locator_coverage_verified_initial": ratio(len(initial & locators), len(initial & verified)),
         "caution": "Counts describe manually annotated edge IDs, not semantic correctness or source verification performed by this script.",
