@@ -2,7 +2,8 @@
 
 Input is an exported trace JSON and a separate human-reviewed annotation JSON:
 {"relevant_edge_ids":["..."],"required_edge_ids":["..."],"verified_edge_ids":["..."],
- "locator_edge_ids":["..."],"initial_edge_ids":["..."]}.
+ "locator_edge_ids":["..."],"initial_edge_ids":["..."],
+ "missing_required_paths":["independently verified path absent from returned graph"]}.
 IDs must be stable trace edge IDs. Unreviewed edges are NOT automatically irrelevant.
 """
 from __future__ import annotations
@@ -36,6 +37,9 @@ def score(trace: dict, annotations: dict) -> dict:
     locators = selections["locator_edge_ids"]
     if not relevant <= verified or not required <= verified or not locators <= verified:
         raise ValueError("Relevant, required and locator-backed edges must be independently verified")
+    missing = annotations.get("missing_required_paths", [])
+    if not isinstance(missing, list) or any(not isinstance(v, str) or not v.strip() for v in missing) or len(missing) != len(set(missing)):
+        raise ValueError("missing_required_paths must be a list of unique, nonempty descriptions")
     reviewed_initial = initial & verified
     irrelevant_reviewed = reviewed_initial - relevant
     unreviewed_initial = initial - verified
@@ -52,7 +56,9 @@ def score(trace: dict, annotations: dict) -> dict:
         "reviewed_initial_edges": len(reviewed_initial),
         "review_coverage": ratio(len(reviewed_initial), len(initial)),
         "precision_verified_only": ratio(len(initial & relevant), len(reviewed_initial)),
-        "required_path_recall": ratio(len(initial & required), len(required)),
+        "required_path_recall": ratio(len(initial & required), len(required) + len(missing)),
+        "missing_required_path_count": len(missing),
+        "missing_required_paths": missing,
         "locator_coverage_verified_initial": ratio(len(initial & locators), len(initial & verified)),
         "caution": "Counts describe manually annotated edge IDs, not semantic correctness or source verification performed by this script.",
     }
