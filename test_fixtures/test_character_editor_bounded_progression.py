@@ -90,3 +90,24 @@ def test_unavailable_progression_stays_bounded_and_read_only():
         "blocked_alternatives": 0,
         "trace_policy": "on_demand",
     }
+
+
+def test_visible_layer_preserves_branching_and_equivalent_routes():
+    branch_a = _action("branch-a", score=4)
+    branch_b = _action("branch-b", score=4)
+    alternate = _action("alternate-same-outcome", score=3)
+    section = _section(2, actions=[branch_a, branch_b, alternate])
+    bounded = build_bounded_progression({
+        "available": True,
+        "sections": [section],
+        "current_step": section,
+    })
+
+    current = bounded["current"]
+    assert current["has_alternatives"] is True
+    assert current["action_count"] == 3
+    assert {row["transition_id"] for row in current["actions"]} == {
+        "branch-a", "branch-b", "alternate-same-outcome",
+    }
+    assert bounded["bound_unit"] == "progression_layers"
+    assert bounded["preserves_visible_alternative_routes"] is True
