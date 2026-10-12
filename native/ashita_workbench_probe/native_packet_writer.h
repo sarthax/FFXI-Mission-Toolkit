@@ -26,7 +26,7 @@ public:
     void Start() {
         if (stream_.is_open() || faulted_) throw std::logic_error("recording already started or faulted");
         if (std::filesystem::exists(path_)) throw std::runtime_error("recording destination exists");
-        std::filesystem::create_directories(path_.parent_path());
+        if (!path_.parent_path().empty()) std::filesystem::create_directories(path_.parent_path());
         stream_.open(path_, std::ios::out | std::ios::binary | std::ios::trunc);
         if (!stream_) { faulted_ = true; throw std::runtime_error("recording open failed"); }
         queue_.Start();
