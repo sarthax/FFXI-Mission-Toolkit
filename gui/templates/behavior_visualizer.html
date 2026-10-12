@@ -343,7 +343,11 @@
    detail.innerHTML=`<strong>${esc(n.label)}</strong> <span class="chip">${esc(n.kind)}</span><p><code>${esc(n.id)}</code></p>${bindingLink}<dl>${rows||'<dt>Metadata</dt><dd class="muted">No additional metadata</dd>'}</dl><p><strong>Incoming:</strong> ${esc(ins.map(e=>e.kind).join(', ')||'none')}<br><strong>Outgoing:</strong> ${esc(outs.map(e=>e.kind).join(', ')||'none')}</p>`;
    render();
  }
- filter.addEventListener('input',render);\n document.getElementById('behavior-hop-depth').addEventListener('change',render);
+ filter.addEventListener('input',render);
+ document.getElementById('behavior-hop-depth').addEventListener('change',()=>{focusPinned=false;render();});
+ document.getElementById('behavior-pin').addEventListener('click',()=>{if(!selected)return;if(!pinned.includes(selected))pinned.push(selected);focusPinned=false;render();});
+ document.getElementById('behavior-backtrack').addEventListener('click',()=>{if(!pinned.length)return;pinned.pop();selected=pinned[pinned.length-1]||null;focusPinned=false;if(selected)select(selected);else render();});
+ document.getElementById('behavior-focus-path').addEventListener('click',()=>{focusPinned=!focusPinned;const keep=new Set(pinned);svg.querySelectorAll('.behavior-node').forEach(el=>el.classList.toggle('dim',focusPinned&&!keep.has(el.dataset.id)));});
  document.getElementById('behavior-reset').addEventListener('click',()=>{selected=null;pinned=[];focusPinned=false;filter.value='';detail.innerHTML='<strong>Select a graph node</strong><p class="muted">Inspect exact source provenance, trigger/state/effect metadata, API identity, or affected target.</p>';render();});
  render();
 })();
