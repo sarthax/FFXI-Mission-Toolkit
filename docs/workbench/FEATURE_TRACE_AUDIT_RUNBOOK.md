@@ -28,6 +28,12 @@ Before annotating, generate a manifest of actual audit IDs:
 python scripts/audit_feature_trace_relevance.py .\\av-trace.json --list-edges
 ```
 
+Generate a blank annotation file (all evidence starts unreviewed):
+
+```powershell
+python scripts/audit_feature_trace_relevance.py .\av-trace.json --template > .\av-reviewed.json
+```
+
 ## 3. Annotate
 
 For each exported response containing an `edges` array, prepare a separate JSON with these **five required arrays**:
