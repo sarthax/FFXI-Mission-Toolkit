@@ -122,6 +122,17 @@ The Character Editor is now a mature guarded administration surface across DSP /
 
 These are deliberate safety boundaries, not generic missing editors.
 
+## Saved / resumable trace investigations — planned 2026-10-11
+
+- [ ] Add a shared saved-investigation/session model for **Feature Trace, Behavior Trace, and Character Mission/Quest Progression**.
+- [ ] Persist the investigation root, active node, pinned breadcrumb/path, saved alternate branches, hop depth, filters/overlays, expanded/collapsed state, and optional user name/notes.
+- [ ] Provide automatic local draft recovery plus explicit backend-persisted named investigations that survive browser, Workbench, and machine restarts.
+- [ ] Add **Resume Investigation** and saved-investigation browsing so a user can return to the exact research path without rebuilding the graph walk.
+- [ ] Rehydrate saved IDs against current graph/evidence data rather than duplicating evidence; visibly flag nodes/edges that changed or disappeared since the session was saved.
+- [ ] Preserve multiple investigations per feature/mission and support branching from a saved fork without overwriting the original trail.
+- [ ] Keep the saved path suitable for later reproducible research/provenance export.
+- [ ] Build this on the bounded pin/history navigation from PR #990 before propagating the shared navigation model across all three trace surfaces.
+
 # 4. Feature Trace / Implementation Path
 
 Feature Trace is now a mature cross-source implementation/evidence navigator at a deliberate real-data testing boundary. Provider-native relationships are read-only navigation evidence and remain distinct from canonical graph truth. The combined workflow and evidence boundary are documented in `docs/workbench/BEHAVIOR_FEATURE_TRACE_GUIDE.md`; the closure matrix and current stopping point are documented in `docs/workbench/FEATURE_TRACE_CLOSEOUT_2026-10-04.md`.
