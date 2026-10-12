@@ -65,6 +65,16 @@ def test_generated_edge_identity():
     assert module.score({"edges": [edge]}, annotation)["required_path_recall"] == 1.0
 
 
+def test_blank_template():
+    trace = {"edges": [{"relationship_id": "r1"}]}
+    template = module.annotation_template(trace)
+    assert set(template) == {
+        "initial_edge_ids", "verified_edge_ids", "relevant_edge_ids",
+        "required_edge_ids", "locator_edge_ids", "missing_required_paths"}
+    assert all(value == [] for value in template.values())
+    assert module.score(trace, template)["review_coverage"] is None
+
+
 def test_invalid_edge_reference():
     trace = {"edges": [{"id": "a"}]}
     annotation = {name: [] for name in (
@@ -84,4 +94,5 @@ if __name__ == "__main__":
     test_invalid_edge_reference()
     test_native_relationship_ids()
     test_generated_edge_identity()
+    test_blank_template()
     print("Feature Trace audit scorer checks passed")
