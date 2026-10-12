@@ -30,17 +30,23 @@ def _step(section: dict[str, Any] | None, relation: str) -> dict[str, Any] | Non
         "eligibility": section.get("eligibility"),
         "conditions": list(section.get("conditions", ())),
         "primary_action": primary,
+        # Preserve every modeled progression route in the visible layer. The primary action is
+        # only the recommended/default route; alternatives may represent branching quest paths
+        # or equivalent ways to reach the same outcome.
+        "actions": actions,
         "action_count": len(actions),
+        "has_alternatives": len(actions) > 1,
         "source_lines": section.get("source_lines"),
     }
 
 
 def build_bounded_progression(progression: dict[str, Any]) -> dict[str, Any]:
-    """Project at most one previous, current and next structural step.
+    """Project at most one previous, current and next structural layer.
 
-    Blocked alternatives are counted, not expanded. This keeps the Character Editor focused on
-    progression while leaving the complete section/action model available for explicit trace
-    drill-downs.
+    The bound applies to layers, not routes. Every progression action inside a visible layer is
+    retained so branching quest paths and equivalent means of reaching an outcome are not lost.
+    Off-layer blocked sections remain collapsed to a count. The complete structural model stays
+    available for explicit trace drill-downs.
     """
     if not progression.get("available"):
         return {
@@ -103,6 +109,8 @@ def build_bounded_progression(progression: dict[str, Any]) -> dict[str, Any]:
         "blocked_alternatives": blocked_alternatives,
         "visible_step_count": len(steps),
         "max_visible_steps": 3,
+        "bound_unit": "progression_layers",
+        "preserves_visible_alternative_routes": True,
         "trace_policy": "on_demand",
         "trace_scope": "selected_step_or_edge",
     }
