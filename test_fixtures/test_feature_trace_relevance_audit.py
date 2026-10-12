@@ -29,6 +29,10 @@ def test_scoring():
     assert result["reviewed_initial_edges"] == 1
     assert result["review_coverage"] == 0.5
     assert result["locator_coverage_verified_initial"] == 1.0
+    annotation["missing_required_paths"] = ["AV Lua behavior entry point"]
+    with_gap = module.score(trace, annotation)
+    assert with_gap["missing_required_path_count"] == 1
+    assert with_gap["required_path_recall"] == 0.3333
 
 
 def test_invalid_edge_reference():
