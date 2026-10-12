@@ -4,7 +4,7 @@ Input is an exported trace JSON and a separate human-reviewed annotation JSON:
 {"relevant_edge_ids":["..."],"required_edge_ids":["..."],"verified_edge_ids":["..."],
  "locator_edge_ids":["..."],"initial_edge_ids":["..."],
  "missing_required_paths":["independently verified path absent from returned graph"]}.
-IDs must be stable trace edge IDs. Unreviewed edges are NOT automatically irrelevant.
+IDs must be stable trace relationship_id, edge_id, or id values. Unreviewed edges are NOT automatically irrelevant.
 """
 from __future__ import annotations
 
@@ -15,9 +15,9 @@ from pathlib import Path
 
 def score(trace: dict, annotations: dict) -> dict:
     edges = list(trace.get("edges") or [])
-    ids = [str(e.get("id") or e.get("edge_id") or "") for e in edges]
+    ids = [str(e.get("relationship_id") or e.get("edge_id") or e.get("id") or "") for e in edges]
     if not all(ids) or len(ids) != len(set(ids)):
-        raise ValueError("Trace edges require unique, nonempty id/edge_id for reproducible scoring")
+        raise ValueError("Trace edges require unique, nonempty relationship_id/edge_id/id for reproducible scoring; generated evidence without IDs must be reviewed separately")
     universe = set(ids)
     fields = ("relevant_edge_ids", "required_edge_ids", "verified_edge_ids",
               "locator_edge_ids", "initial_edge_ids")
