@@ -25,6 +25,9 @@ def test_scoring():
     assert result["required_path_recall"] == 0.5
     assert result["precision_verified_only"] == 1.0
     assert result["unreviewed_initial_edges"] == 1
+    assert result["irrelevant_initial_edges"] == 0
+    assert result["reviewed_initial_edges"] == 1
+    assert result["review_coverage"] == 0.5
     assert result["locator_coverage_verified_initial"] == 1.0
 
 
