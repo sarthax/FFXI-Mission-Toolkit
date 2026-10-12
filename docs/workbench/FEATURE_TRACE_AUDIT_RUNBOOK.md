@@ -22,6 +22,12 @@ Start the Toolkit and use the existing Feature Trace page. For each case, select
 
 Record the initially shown edges and copy/export the trace response as JSON where supported. If the UI has no JSON export, use browser developer tools > Network and save the relevant trace API response; do not guess a route or assume the API has an export button. Keep private captures outside the repository.
 
+Before annotating, generate a manifest of actual audit IDs:
+
+```powershell
+python scripts/audit_feature_trace_relevance.py .\\av-trace.json --list-edges
+```
+
 ## 3. Annotate
 
 For each exported response containing an `edges` array, prepare a separate JSON with these **five required arrays**:
@@ -39,7 +45,7 @@ For each exported response containing an `edges` array, prepare a separate JSON 
 
 Use exact unique `relationship_id`, `edge_id`, or `id` values from the response. An empty array means none are annotated; it is **not** a negative judgment. Only mark `verified_edge_ids` after checking source evidence. `relevant_edge_ids` are verified edges necessary to answer the chosen question. `required_edge_ids` are independently verified paths that should be in the first view; for missing required edges, record a concise independently verified source-backed description in `missing_required_paths` because an absent edge cannot be referenced by ID. `locator_edge_ids` have working source/row/capture locators. `initial_edge_ids` are actually visible on initial load, not every returned edge.
 
-Feature Trace also returns read-only generated provider edges with `relationship_id: null`. These are not directly scorable by this first-pass ID-based utility; **record their counts, generator, source/target, relationship and evidence separately** rather than treating them as absent or irrelevant. If the response lacks stable unique edge IDs, **stop and record a schema/identity blocker**. Do not invent identifiers or silently substitute list indexes.
+Feature Trace also returns read-only generated provider edges with `relationship_id: null`. The audit utility assigns these a deterministic `audit:generated:<sha256>` identity based on source, target, relationship, generator and evidence. This identity is **audit-only** and does not change canonical graph data. If two edges have indistinguishable identities, scoring fails closed. If the response lacks stable unique edge IDs, **stop and record a schema/identity blocker**. Do not invent identifiers or silently substitute list indexes.
 
 ## 4. Score
 
