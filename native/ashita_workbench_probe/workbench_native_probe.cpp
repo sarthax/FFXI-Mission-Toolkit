@@ -162,6 +162,8 @@ class WorkbenchNativeProbe final : public IPlugin {
         } else if (std::strcmp(cmd, "capture stop") == 0) {
             StopPacketRecording();
         } else if (std::strcmp(cmd, "capture start") == 0) {
+            Say("[WorkbenchNativeProbe] Native capture unavailable until Ashita SDK packet callbacks are verified and wired.");
+            return;
             if (packet_writer_) { Say("[WorkbenchNativeProbe] Capture already active."); return; }
             const std::string id = std::to_string(EpochMs());
             const auto file = dir_ / "captures" / ("native-" + id + ".jsonl");
