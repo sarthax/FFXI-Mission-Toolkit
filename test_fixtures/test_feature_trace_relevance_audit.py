@@ -35,6 +35,14 @@ def test_scoring():
     assert with_gap["required_path_recall"] == 0.3333
 
 
+def test_native_relationship_ids():
+    trace = {"edges": [{"relationship_id": "persisted-1"}]}
+    annotation = {name: ["persisted-1"] for name in (
+        "relevant_edge_ids", "required_edge_ids", "verified_edge_ids",
+        "locator_edge_ids", "initial_edge_ids")}
+    assert module.score(trace, annotation)["precision_verified_only"] == 1.0
+
+
 def test_invalid_edge_reference():
     trace = {"edges": [{"id": "a"}]}
     annotation = {name: [] for name in (
@@ -52,4 +60,5 @@ def test_invalid_edge_reference():
 if __name__ == "__main__":
     test_scoring()
     test_invalid_edge_reference()
+    test_native_relationship_ids()
     print("Feature Trace audit scorer checks passed")
