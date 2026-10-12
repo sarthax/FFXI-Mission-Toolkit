@@ -73,7 +73,10 @@
   <div class="behavior-controls">
     <label>Filter <input id="behavior-filter" type="search" placeholder="hook, effect, API, state, target"></label>
     <label>Preview <select id="behavior-hop-depth"><option value="1" selected>1 hop</option><option value="2">2 hops</option></select></label>
-    <button type="button" id="behavior-reset">Reset selection</button>
+    <button type="button" id="behavior-pin">Pin &amp; Continue</button>
+    <button type="button" id="behavior-backtrack">Backtrack</button>
+    <button type="button" id="behavior-focus-path">Focus pinned path</button>
+    <button type="button" id="behavior-reset">Reset trail</button>
   </div>
   <div class="behavior-legend" aria-label="Graph legend">
     <span><i class="legend-dot condition"></i> upstream condition/state</span>
@@ -87,6 +90,7 @@
     <span><i class="legend-dot helper-effect"></i> helper downstream/direct call</span>
     <span><i class="legend-dot target"></i> affected actor/system</span>
   </div>
+  <div id="behavior-trail" class="behavior-trail"><strong>Trace trail:</strong> <span class="muted">No pinned nodes yet.</span></div>
   <p id="behavior-status" class="muted"></p>
   <div class="behavior-canvas-wrap">
     <svg id="behavior-graph" viewBox="0 0 1480 760" role="img" aria-label="Lua behavior causal graph"></svg>
@@ -252,16 +256,16 @@
 
 <script id="behavior-data" type="application/json">{{ result.graph|tojson }}</script>
 <style>
-.behavior-inspector{margin-top:1.5rem}.behavior-controls,.behavior-legend{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin:.6rem 0}.behavior-controls input{min-width:20rem}.behavior-legend span{font-size:.85rem;color:var(--muted)}.legend-dot{display:inline-block;width:.75rem;height:.75rem;border-radius:50%;margin-right:.25rem;vertical-align:-.05rem;border:1px solid var(--border)}.legend-dot.condition{background:#7c3aed}.legend-dot.hook{background:#2563eb}.legend-dot.callback{background:#be185d}.legend-dot.rule{background:#475569}.legend-dot.effect{background:#059669}.legend-dot.state{background:#0891b2}.legend-dot.shared-helper{background:#7c2d12}.legend-dot.helper-input{background:#6d28d9}.legend-dot.helper-effect{background:#15803d}.legend-dot.target{background:#d97706}.behavior-canvas-wrap{overflow:auto;border:1px solid var(--border);border-radius:6px;background:var(--panel,#0f172a)}#behavior-graph{width:100%;min-width:900px;min-height:620px}.behavior-edge{stroke:#64748b;stroke-width:1.4;fill:none;marker-end:url(#behavior-arrow)}.behavior-edge.dim{opacity:.12}.behavior-node{cursor:pointer}.behavior-node rect{rx:8;ry:8;stroke:#cbd5e1;stroke-width:1.3}.behavior-node text{fill:#f8fafc;font-size:11px;pointer-events:none}.behavior-node .secondary{fill:#cbd5e1;font-size:9px}.behavior-node.condition rect{fill:#5b21b6}.behavior-node.hook rect{fill:#1d4ed8}.behavior-node.callback rect{fill:#9d174d}.behavior-node.rule rect{fill:#334155}.behavior-node.effect rect{fill:#047857}.behavior-node.state rect{fill:#0e7490}.behavior-node.shared_helper rect{fill:#7c2d12}.behavior-node.shared_helper_callee rect{fill:#92400e}.behavior-node.helper_input rect{fill:#6d28d9}.behavior-node.helper_effect rect,.behavior-node.helper_call rect{fill:#15803d}.behavior-node.target rect{fill:#b45309}.behavior-node.subject rect{fill:#0f766e}.behavior-node.selected rect{stroke:#fff;stroke-width:3}.behavior-node.dim{opacity:.2}.behavior-detail{margin-top:.8rem;padding:1rem;border:1px solid var(--border);border-radius:6px;background:var(--card,#111827);white-space:normal}.behavior-detail code{white-space:pre-wrap;word-break:break-word}.behavior-detail dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:.3rem .8rem}.behavior-detail dt{color:var(--muted)}.behavior-detail dd{margin:0;min-width:0;word-break:break-word}
+.behavior-inspector{margin-top:1.5rem}.behavior-trail{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;padding:.55rem .7rem;margin:.6rem 0;border:1px solid var(--border);border-radius:6px}.behavior-node.pinned rect{stroke:#f8fafc;stroke-width:2.2;stroke-dasharray:5 3}.behavior-controls,.behavior-legend{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin:.6rem 0}.behavior-controls input{min-width:20rem}.behavior-legend span{font-size:.85rem;color:var(--muted)}.legend-dot{display:inline-block;width:.75rem;height:.75rem;border-radius:50%;margin-right:.25rem;vertical-align:-.05rem;border:1px solid var(--border)}.legend-dot.condition{background:#7c3aed}.legend-dot.hook{background:#2563eb}.legend-dot.callback{background:#be185d}.legend-dot.rule{background:#475569}.legend-dot.effect{background:#059669}.legend-dot.state{background:#0891b2}.legend-dot.shared-helper{background:#7c2d12}.legend-dot.helper-input{background:#6d28d9}.legend-dot.helper-effect{background:#15803d}.legend-dot.target{background:#d97706}.behavior-canvas-wrap{overflow:auto;border:1px solid var(--border);border-radius:6px;background:var(--panel,#0f172a)}#behavior-graph{width:100%;min-width:900px;min-height:620px}.behavior-edge{stroke:#64748b;stroke-width:1.4;fill:none;marker-end:url(#behavior-arrow)}.behavior-edge.dim{opacity:.12}.behavior-node{cursor:pointer}.behavior-node rect{rx:8;ry:8;stroke:#cbd5e1;stroke-width:1.3}.behavior-node text{fill:#f8fafc;font-size:11px;pointer-events:none}.behavior-node .secondary{fill:#cbd5e1;font-size:9px}.behavior-node.condition rect{fill:#5b21b6}.behavior-node.hook rect{fill:#1d4ed8}.behavior-node.callback rect{fill:#9d174d}.behavior-node.rule rect{fill:#334155}.behavior-node.effect rect{fill:#047857}.behavior-node.state rect{fill:#0e7490}.behavior-node.shared_helper rect{fill:#7c2d12}.behavior-node.shared_helper_callee rect{fill:#92400e}.behavior-node.helper_input rect{fill:#6d28d9}.behavior-node.helper_effect rect,.behavior-node.helper_call rect{fill:#15803d}.behavior-node.target rect{fill:#b45309}.behavior-node.subject rect{fill:#0f766e}.behavior-node.selected rect{stroke:#fff;stroke-width:3}.behavior-node.dim{opacity:.2}.behavior-detail{margin-top:.8rem;padding:1rem;border:1px solid var(--border);border-radius:6px;background:var(--card,#111827);white-space:normal}.behavior-detail code{white-space:pre-wrap;word-break:break-word}.behavior-detail dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:.3rem .8rem}.behavior-detail dt{color:var(--muted)}.behavior-detail dd{margin:0;min-width:0;word-break:break-word}
 </style>
 <script>
 (() => {
  const data=JSON.parse(document.getElementById('behavior-data').textContent);
- const svg=document.getElementById('behavior-graph'), detail=document.getElementById('behavior-detail'), filter=document.getElementById('behavior-filter'), status=document.getElementById('behavior-status');
+ const svg=document.getElementById('behavior-graph'), detail=document.getElementById('behavior-detail'), filter=document.getElementById('behavior-filter'), status=document.getElementById('behavior-status'), trail=document.getElementById('behavior-trail');
  const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
  const nodes=new Map(data.nodes.map(n=>[n.id,n])), outgoing=new Map(), incoming=new Map();
  data.edges.forEach(e=>{(outgoing.get(e.source)||outgoing.set(e.source,[]).get(e.source)).push(e);(incoming.get(e.target)||incoming.set(e.target,[]).get(e.target)).push(e);});
- let selected=null;
+ let selected=null, pinned=[], focusPinned=false;
  function depthFor(n){
    if(n.kind==='condition' || n.kind==='helper_input') return 0;
    if(n.kind==='state'){
@@ -311,7 +315,7 @@
  function render(){
    const query=filter.value.trim().toLowerCase();
    const visible=data.nodes.filter(n=>matches(n,query));
-   const visibleIds=new Set(visible.map(n=>n.id)), pos=layout(visible), focus=related(selected);
+   const focus=related(selected); pinned.forEach(id=>focus.add(id)); const visibleIds=new Set(visible.map(n=>n.id)), pos=layout(visible);
    let html='<defs><marker id="behavior-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/></marker></defs>';
    data.edges.forEach(e=>{
      if(!visibleIds.has(e.source)||!visibleIds.has(e.target))return;
@@ -320,14 +324,15 @@
      html+=`<path class="behavior-edge${dim?' dim':''}" d="M ${ax} ${a.y+20} C ${ax+70} ${a.y+20}, ${bx-70} ${b.y+20}, ${bx} ${b.y+20}"><title>${esc(e.kind)}</title></path>`;
    });
    visible.forEach(n=>{
-     const p=pos[n.id],dim=selected&&!focus.has(n.id),sel=selected===n.id;
+     const p=pos[n.id],dim=selected&&!focus.has(n.id),sel=selected===n.id,pin=pinned.includes(n.id);
      const label=n.label.length>28?n.label.slice(0,27)+'…':n.label;
-     html+=`<g class="behavior-node ${esc(n.kind)}${dim?' dim':''}${sel?' selected':''}" data-id="${esc(n.id)}" transform="translate(${p.x-80},${p.y})"><rect width="160" height="42"/><text x="8" y="17">${esc(label)}</text><text class="secondary" x="8" y="32">${esc(n.kind)}</text></g>`;
+     html+=`<g class="behavior-node ${esc(n.kind)}${dim?' dim':''}${sel?' selected':''}${pin?' pinned':''}" data-id="${esc(n.id)}" transform="translate(${p.x-80},${p.y})"><rect width="160" height="42"/><text x="8" y="17">${esc(label)}</text><text class="secondary" x="8" y="32">${esc(n.kind)}</text></g>`;
    });
    svg.innerHTML=html;
    svg.querySelectorAll('.behavior-node').forEach(el=>el.addEventListener('click',()=>select(el.dataset.id)));
-   status.textContent=`Showing ${visible.length} of ${data.nodes.length} nodes and ${data.edges.filter(e=>visibleIds.has(e.source)&&visibleIds.has(e.target)).length} causal edges.`;
+   status.textContent=`Showing ${visible.length} of ${data.nodes.length} nodes and ${data.edges.filter(e=>visibleIds.has(e.source)&&visibleIds.has(e.target)).length} causal edges · ${pinned.length} pinned.`; renderTrail();
  }
+ function renderTrail(){ if(!pinned.length){trail.innerHTML='<strong>Trace trail:</strong> <span class="muted">No pinned nodes yet.</span>';return;} trail.innerHTML='<strong>Trace trail:</strong> '+pinned.map((id,i)=>'<button type="button" class="chip" data-trail-index="'+i+'">'+esc(nodes.get(id)?.label||id)+'</button>').join('<span class="muted">→</span>'); trail.querySelectorAll('[data-trail-index]').forEach(el=>el.addEventListener('click',()=>{const i=Number(el.dataset.trailIndex);pinned=pinned.slice(0,i+1);selected=pinned[i];focusPinned=false;select(selected);})); }
  function select(id){
    selected=id;
    const n=nodes.get(id),meta=n.meta||{};
@@ -339,7 +344,7 @@
    render();
  }
  filter.addEventListener('input',render);\n document.getElementById('behavior-hop-depth').addEventListener('change',render);
- document.getElementById('behavior-reset').addEventListener('click',()=>{selected=null;filter.value='';detail.innerHTML='<strong>Select a graph node</strong><p class="muted">Inspect exact source provenance, trigger/state/effect metadata, API identity, or affected target.</p>';render();});
+ document.getElementById('behavior-reset').addEventListener('click',()=>{selected=null;pinned=[];focusPinned=false;filter.value='';detail.innerHTML='<strong>Select a graph node</strong><p class="muted">Inspect exact source provenance, trigger/state/effect metadata, API identity, or affected target.</p>';render();});
  render();
 })();
 </script>
