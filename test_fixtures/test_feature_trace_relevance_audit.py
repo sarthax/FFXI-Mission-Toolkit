@@ -43,6 +43,28 @@ def test_native_relationship_ids():
     assert module.score(trace, annotation)["precision_verified_only"] == 1.0
 
 
+def test_generated_edge_identity():
+    edge = {"source_node": "spawn:1", "target_node": "group:1",
+            "relationship": "SPAWN_USES_GROUP", "generator": "lua-sql",
+            "evidence": [{"row": 3, "table": "mob_spawn_points"}]}
+    first = module.audit_edge_ids({"edges": [edge]})[0]
+    assert first.startswith("audit:generated:")
+    changed_order = dict(edge, evidence=[{"table": "mob_spawn_points", "row": 3}])
+    assert module.audit_edge_ids({"edges": [changed_order]}) == [first]
+    changed_target = dict(edge, target_node="group:2")
+    assert module.audit_edge_ids({"edges": [changed_target]}) != [first]
+    try:
+        module.audit_edge_ids({"edges": [edge, edge]})
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("indistinguishable duplicate evidence must fail closed")
+    annotation = {name: [first] for name in (
+        "relevant_edge_ids", "required_edge_ids", "verified_edge_ids",
+        "locator_edge_ids", "initial_edge_ids")}
+    assert module.score({"edges": [edge]}, annotation)["required_path_recall"] == 1.0
+
+
 def test_invalid_edge_reference():
     trace = {"edges": [{"id": "a"}]}
     annotation = {name: [] for name in (
@@ -61,4 +83,5 @@ if __name__ == "__main__":
     test_scoring()
     test_invalid_edge_reference()
     test_native_relationship_ids()
+    test_generated_edge_identity()
     print("Feature Trace audit scorer checks passed")
