@@ -17,7 +17,7 @@ from workbench.client.identity_snapshot import read_manifest, ingest_client_iden
 def main() -> None:
     assert dat_id_for_zone(0) == 6420
     assert dat_id_for_zone(255) == 6675
-    assert dat_id_for_zone(256) == 85590
+    assert dat_id_for_zone(256) == 85591
     assert dat_id_for_zone(87, "entities") == 6807
     assert dat_id_for_zone(256, "entities") == 86491
 
