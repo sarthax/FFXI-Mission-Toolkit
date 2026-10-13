@@ -211,7 +211,7 @@ def load_entities(conn):
 
 def dat_id_for_zone(zoneid: int, category: str):
     offsets_0_255 = {"zone_data": 100, "events": 5820, "dialog": 6420, "entities": 6720}
-    offsets_256_511 = {"zone_data": 83891, "events": 84991, "dialog": 85590, "entities": 86491}
+    offsets_256_511 = {"zone_data": 83891, "events": 84991, "dialog": 85591, "entities": 86491}
     if 0 <= zoneid <= 255:
         return offsets_0_255[category] + zoneid
     if 256 <= zoneid <= 511:
