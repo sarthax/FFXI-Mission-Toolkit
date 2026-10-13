@@ -1,0 +1,13 @@
+{
+  "survival_guides": {
+    "label": "Survival Guides",
+    "archetype": "system.survival_guides",
+    "summary": "Survival Guide NPCs (home-point style travel/registration NPCs) across the field zones: one tracked row per guide with its DSP npc id, position, whether the id is DAT-verified, whether it is present in the live DB, and your in-game validation mark (visible, clickable, positioned on navmesh).",
+    "wiki": {"categories": ["Survival Guides"], "templates": [], "headings": []},
+    "children": [],
+    "entities": [
+      {"kind": "Survival Guide NPCs", "fields": ["zone", "DSP id", "x", "y", "z", "dat", "live", "validation"], "server_globs": ["sql/survival_guides_apply.sql", "scripts/globals/survival_guide.lua", "scripts/zones/*/npcs/Survival_Guide.lua"], "edit": "/zoneplot"}
+    ],
+    "compare": "Verify each id against a fresh DAT pull (entity name 'Survival Guide'), run !checknav on the position, then mark it ok in game."
+  }
+}

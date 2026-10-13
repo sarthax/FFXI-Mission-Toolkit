@@ -27,7 +27,7 @@ def dat_id_for_zone(zone_id: int, category: str = "dialog") -> int:
     """Return the client DAT id for a common per-zone resource family."""
     category=str(category or "dialog").strip().lower()
     offsets_0_255={"zone_data":100,"events":5820,"dialog":6420,"entities":6720}
-    offsets_256_511={"zone_data":83891,"events":84991,"dialog":85590,"entities":86491}
+    offsets_256_511={"zone_data":83891,"events":84991,"dialog":85591,"entities":86491}
     if category not in offsets_0_255:
         raise ValueError(f"Unsupported zone DAT category: {category}")
     zone_id=int(zone_id)

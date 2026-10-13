@@ -154,7 +154,7 @@ def resolve_geometry_mapid(zone_name: str) -> tuple[int, str] | None:
 def dat_id_for_zone(zoneid: int, category: str) -> int | None:
     """Reproduces xi-tinkerer's crates/dats/src/id_mapping.rs DatIdMapping offsets."""
     offsets_0_255 = {"zone_data": 100, "events": 5820, "dialog": 6420, "entities": 6720}
-    offsets_256_511 = {"zone_data": 83891, "events": 84991, "dialog": 85590, "entities": 86491}
+    offsets_256_511 = {"zone_data": 83891, "events": 84991, "dialog": 85591, "entities": 86491}
 
     if category not in offsets_0_255:
         return None
