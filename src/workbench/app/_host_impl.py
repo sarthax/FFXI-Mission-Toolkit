@@ -9604,7 +9604,7 @@ def restart_server(request: Request):
 
 # ---- Domain landing pages -------------------------------------------------------------------
 @app.get("/domains/assault", response_class=HTMLResponse)
-def assault_domain_page(request: Request):
+def assault_domain_page(request: Request, zone: str = "", backlog_status: str = "all", q: str = ""):
     """Assault domain workspace: a stable home for Assault-specific development/admin workflows.
 
     Existing generic editors remain canonical; this page links into them rather than duplicating
@@ -9638,6 +9638,14 @@ def assault_domain_page(request: Request):
                 mission[field] = mission["reviews"][stage]["state"]
     from workbench.domains.assault_summary import summarize
     tracker["progress"] = summarize(tracker["missions"])
+    from workbench.domains.assault_backlog import backlog, FILTERS
+    if backlog_status not in FILTERS:
+        raise HTTPException(status_code=400, detail="Unknown backlog filter")
+    if zone and zone not in tracker["zones"]:
+        raise HTTPException(status_code=400, detail="Unknown Assault zone")
+    tracker["backlog"] = backlog(tracker["missions"], zone=zone, status=backlog_status, search=q)
+    tracker["backlog_filters"] = FILTERS
+    tracker["backlog_selection"] = {"zone": zone, "status": backlog_status, "q": q}
     return templates.TemplateResponse(request, "domain_assault.html", {"request": request, "tracker": tracker})
 
 
