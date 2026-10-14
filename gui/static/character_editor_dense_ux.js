@@ -31,7 +31,11 @@
     .character-editor-page details.ce-container{margin:0;padding:5px;min-width:0}
     .character-editor-page details.ce-container>summary{cursor:pointer;display:flex;gap:5px;align-items:center;font-weight:700;font-size:12px;padding:2px}
     .character-editor-page .ce-inventory-scroll{max-height:285px;overflow:auto;margin-top:4px;border:1px solid var(--border,#333);border-radius:4px}
-    .character-editor-page .ce-inventory-scroll table{min-width:420px}
+    .character-editor-page .ce-inventory-scroll table{width:100%;min-width:540px;table-layout:fixed}
+    .character-editor-page .ce-inventory-scroll th,.character-editor-page .ce-inventory-scroll td{box-sizing:border-box;min-width:0;overflow-wrap:anywhere}
+    .character-editor-page .ce-inventory-scroll th:nth-child(2),.character-editor-page .ce-inventory-scroll th:nth-child(4),.character-editor-page .ce-inventory-scroll td:nth-child(2),.character-editor-page .ce-inventory-scroll td:nth-child(4){text-align:center;font-variant-numeric:tabular-nums}
+    .character-editor-page .ce-inventory-scroll td.ce-inventory-name{overflow-wrap:anywhere}
+    .character-editor-page .ce-inventory-scroll .ce-icon{display:block;max-width:100%}
     .character-editor-page .ce-inventory-scroll th,.character-editor-page .ce-inventory-scroll td{padding:3px 4px;font-size:11px}
     .character-editor-page .ce-inventory-scroll th{font-size:9px}
     .character-editor-page .ce-icon{width:22px;height:22px}
@@ -119,7 +123,7 @@
         }).join('')||'<tr><td colspan="5" class="ce-muted">Empty</td></tr>';
         const shouldOpen=!openedFirstPopulated&&Number(c.count||0)>0;
         if(shouldOpen)openedFirstPopulated=true;
-        return `<details class="ce-container ce-card"${shouldOpen?' open':''}><summary><span>${esc((c.label||c.name||'Container').replaceAll('_',' '))}</span>${pill(cap,c.capacity!==null&&c.count>=c.capacity?'warn':'')}<span class="sp"></span><span class="ce-muted">loc ${esc(c.location)}</span></summary><div class="ce-inventory-scroll"><table class="ce-table"><thead><tr><th></th><th>Slot</th><th>Item</th><th>Qty</th><th>Extra</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
+        return `<details class="ce-container ce-card"${shouldOpen?' open':''}><summary><span>${esc((c.label||c.name||'Container').replaceAll('_',' '))}</span>${pill(cap,c.capacity!==null&&c.count>=c.capacity?'warn':'')}<span class="sp"></span><span class="ce-muted">loc ${esc(c.location)}</span></summary><div class="ce-inventory-scroll"><table class="ce-table"><colgroup><col style="width:34px"><col style="width:48px"><col><col style="width:48px"><col style="width:92px"></colgroup><thead><tr><th scope="col">Icon</th><th scope="col">Slot</th><th scope="col">Item</th><th scope="col">Qty</th><th scope="col">Extra</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
       }).join('');
       box.innerHTML=`<div class="ce-inventory-grid">${cards}</div>`;
       box.querySelectorAll('details.ce-container').forEach(details=>{
