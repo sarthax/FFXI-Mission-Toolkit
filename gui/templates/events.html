@@ -51,9 +51,9 @@
   <tr><th>entity</th><th>name</th><th>CSID</th><th>decompile</th><th>evidence</th><th>actions</th></tr>
   {% for r in rows %}
   <tr>
-    <td class="event-id"><a class="inline" href="/entity/{{ r.entity_id }}">{{ r.entity_id }}</a></td>
+    <td class="event-id">{{ r.entity_id }}</td>
     <td>{{ r.name or "" }}</td>
-    <td class="event-id"><strong>{{ r.csid }}</strong> <span class="muted">/ 0x{{ "%04X"|format(r.csid) }}</span></td>
+    <td class="event-id"><a class="inline" href="/events/view?zone={{ zone|urlencode }}&entity={{ r.entity_id }}&csid={{ r.csid }}" title="Open decoded client event and CSID evidence"><strong>{{ r.csid }}</strong> <span class="muted">/ 0x{{ "%04X"|format(r.csid) }}</span></a></td>
     <td>
       {% if r.decompile_status == 'ok' %}
         <span class="pill match">OK{% if r.decompile_line_count %} · {{ r.decompile_line_count }} lines{% endif %}</span>
@@ -78,7 +78,7 @@
     </td>
     <td>
       <div class="event-actions">
-        <a class="chip" href="/events/view?zone={{ zone|urlencode }}&entity={{ r.entity_id }}&csid={{ r.csid }}">{{ 'Wiring dossier' if r.decompile_status == 'ok' else 'View decompile issue' }} &rarr;</a>
+        <a class="chip" href="/events/view?zone={{ zone|urlencode }}&entity={{ r.entity_id }}&csid={{ r.csid }}">{{ 'View decoded event' if r.decompile_status == 'ok' else 'View decompile status' }} &rarr;</a>
         <a class="chip" href="/features/trace?q=entity:{{ r.entity_id }}">Feature Trace</a>
       </div>
     </td>
