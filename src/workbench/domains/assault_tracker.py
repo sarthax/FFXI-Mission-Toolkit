@@ -21,7 +21,7 @@ def overview():
     shared = []
     for i, match in enumerate(sections):
         label = match.group(1)
-        if label.startswith(("Status grid", "PSC ", "PFC ", "LC ", "C ", "SM ", "CS ", "SL ", "FL ", "S ", "How to use")):
+        if label.startswith(("Status grid", "PSC ", "PFC ", "SP ", "LC ", "C ", "S ", "SM ", "CS ", "SL ", "FL ", "How to use")):
             continue
         end = sections[i + 1].start() if i + 1 < len(sections) else len(source)
         shared.append({"title": label, "comments": source[match.end():end].strip()})
@@ -44,7 +44,7 @@ def overview():
             "comments": comments,
             "topaz_reference": f"https://github.com/sarthax/Topaz-to-Valhalla/blob/release/documentation/Assault_Issue_Tracker.md",
             "dsp_implementation": "unverified",
-            "dsp_port": "pending_review" if rank_index >= 5 else "unverified",
+            "dsp_port": "pending_review" if rank_index >= 4 else "unverified",
             "dsp_validation": "not_verified",
         })
     missions.sort(key=lambda m:m["number"])
