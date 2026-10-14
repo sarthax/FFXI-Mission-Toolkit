@@ -9615,6 +9615,14 @@ def assault_domain_page(request: Request, zone: str = "", backlog_status: str = 
     tracker = overview()
     from workbench.domains.assault_fix_crossref import correlate
     tracker["fix_log"] = correlate(tracker["missions"], tracker["shared"])
+    from workbench.domains.assault_shared_reviews import read as read_shared
+    shared_data = read_shared()
+    shared_review_map = {(r["topic"], r["stage"]): r for r in shared_data["reviews"]}
+    for section in tracker["shared"]:
+        section["reviews"] = {stage: shared_review_map.get((section["title"], stage))
+                              for stage in ("topaz", "dsp_port", "dsp_validation")}
+        section["history"] = [r for r in shared_data["history"] if r["topic"] == section["title"]]
+        section["missions"] = [r["mission"] for r in shared_data["links"] if r["topic"] == section["title"]]
     rows, history = all_reviews()
     from workbench.domains.assault_issue_reviews import read as issue_review_read
     issue_rows, issue_history = issue_review_read()
@@ -9647,6 +9655,35 @@ def assault_domain_page(request: Request, zone: str = "", backlog_status: str = 
     tracker["backlog_filters"] = FILTERS
     tracker["backlog_selection"] = {"zone": zone, "status": backlog_status, "q": q}
     return templates.TemplateResponse(request, "domain_assault.html", {"request": request, "tracker": tracker})
+
+
+@app.post("/domains/assault/shared/review")
+async def assault_shared_review_update(request: Request):
+    from workbench.domains.assault_tracker import overview
+    from workbench.domains.assault_shared_reviews import update
+    data = await request.form()
+    titles = {section["title"] for section in overview()["shared"]}
+    topic = str(data.get("topic", ""))
+    try:
+        update(topic, str(data.get("stage", "")), str(data.get("state", "")),
+               str(data.get("note", "")), str(data.get("evidence", "")), topics=titles)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return RedirectResponse(url="/domains/assault#assault-shared", status_code=303)
+
+
+@app.post("/domains/assault/shared/link")
+async def assault_shared_link_update(request: Request):
+    from workbench.domains.assault_tracker import overview
+    from workbench.domains.assault_shared_reviews import link
+    data = await request.form()
+    try:
+        link(str(data.get("topic", "")), int(data.get("mission", 0)),
+             topics={section["title"] for section in overview()["shared"]},
+             unlink=str(data.get("action", "")) == "unlink")
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return RedirectResponse(url="/domains/assault#assault-shared", status_code=303)
 
 
 @app.post("/domains/assault/issue/review")
