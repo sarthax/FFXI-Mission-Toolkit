@@ -21,6 +21,9 @@
 .gap-report .gap-empty{opacity:.6;font-style:italic}
 .gap-report .gap-conflict{border-left:3px solid var(--amber,#b98228);background:rgba(230,160,45,.07)}
 .gap-report .gap-unknown{border-left:3px solid var(--border)}
+.gap-report .gap-field-diff{background:rgba(230,160,45,.17);box-shadow:inset 3px 0 var(--amber,#b98228);border-radius:3px;padding:2px 5px}
+.gap-report .gap-field-diff::after{content:" • differs";font-size:10px;font-weight:normal;opacity:.8}
+.gap-report .gap-field-missing{background:rgba(230,160,45,.12);padding:3px 5px;border-radius:3px}
 .gap-type{display:inline-block;border:1px solid var(--border);border-radius:5px;padding:2px 5px;white-space:nowrap}
 .gap-footnote{margin-top:10px;font-size:12px}
 @media(max-width:950px){.gap-report{min-width:920px}}
@@ -85,15 +88,20 @@
   <td class="gap-field"><strong class="gap-type">{{ row.type|replace('_',' ') }}</strong><div>{{ row.detail }}</div><span class="muted">{{ row.source }} · {{ row.confidence }}</span></td>
   {% for origin in ['client', 'dsp', 'lsb'] %}
   {% set value = row.values[origin] %}
-  <td class="gap-src {% if row.entity_id is not none and row.type not in ['client_index_unavailable','server_index_unavailable'] %}gap-conflict{% else %}gap-unknown{% endif %}">
+  {% set flags = row.field_flags[origin] %}
+  <td class="gap-src">
     {% if value %}
-      <strong>{{ value.name }}</strong>
-      <div class="gap-field muted">{{ value.table }}</div>
+      <div class="gap-field {% if 'name' in flags %}gap-field-diff{% endif %}"><strong>{{ value.name }}</strong></div>
+      <div class="gap-field muted {% if 'table' in flags %}gap-field-diff{% endif %}">{{ value.table }}</div>
       {% if value.position is defined %}
-      <div class="gap-field mono">XYZ {{ value.position|join(', ') }}</div>
+      <div class="gap-field mono">
+        {% for axis in ['x','y','z'] %}
+          <span class="{% if 'pos_' ~ axis in flags %}gap-field-diff{% endif %}" title="Position {{ axis|upper }}">{{ axis|upper }}: {{ value.position[loop.index0] if value.position[loop.index0] is not none else 'unknown' }}</span>
+        {% endfor %}
+      </div>
       {% endif %}
     {% else %}
-      <span class="gap-empty">Not indexed / unavailable</span>
+      <span class="{% if 'presence' in flags %}gap-field-missing{% else %}gap-empty{% endif %}">Not indexed / unavailable{% if 'presence' in flags %} • investigate{% endif %}</span>
     {% endif %}
   </td>
   {% endfor %}
