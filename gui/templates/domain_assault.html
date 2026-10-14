@@ -73,6 +73,43 @@
   </div>
   <div><a class="chip" href="/missions?q={{ mission.name|urlencode }}">Find mission</a>
     <a class="chip" href="/features/trace?q={{ mission.name|urlencode }}">Feature Trace</a></div>
+  <details style="margin:10px 0;padding:8px;border:1px solid var(--border);border-radius:6px">
+    <summary>Update DSP implementation, port or validation</summary>
+    <p class="muted">Each stage is reviewed independently. Marking validated requires a supporting test, capture, PR or other evidence reference. Original Topaz notes remain unchanged.</p>
+    <form method="post" action="/domains/assault/review" style="display:grid;gap:7px;max-width:720px">
+      <input type="hidden" name="mission" value="{{ mission.number }}">
+      <label>Stage
+        <select name="stage" required>
+          <option value="implementation">DSP implementation</option>
+          <option value="port">DSP port from Topaz</option>
+          <option value="validation">DSP live validation</option>
+        </select>
+      </label>
+      <label>Status
+        <select name="state" required>
+          {% for state in ['unverified','pending','in_progress','blocked','ready_for_test','validated','not_applicable'] %}
+          <option value="{{ state }}">{{ state|replace('_',' ')|title }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Review note <textarea name="note" rows="3" maxlength="4000" placeholder="What's implemented, missing or blocked?"></textarea></label>
+      <label>Evidence reference <input name="evidence" type="text" maxlength="2000" placeholder="PR URL, capture ID, test run, file path, etc. (required for validated)"></label>
+      <button type="submit">Save stage review</button>
+    </form>
+  </details>
+  {% if mission.history %}
+  <details style="margin:6px 0">
+    <summary>Review history ({{ mission.history|length }} updates)</summary>
+    {% for update in mission.history %}
+    <div style="border-bottom:1px solid var(--border);padding:7px 0">
+      <strong>{{ update.stage }} → {{ update.state }}</strong>
+      <span class="muted">{{ update.updated_at }}</span>
+      {% if update.note %}<div>{{ update.note }}</div>{% endif %}
+      {% if update.evidence %}<div class="mono">{{ update.evidence }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </details>
+  {% endif %}
   <div class="assault-comments">{{ mission.comments }}</div>
 </details>
 {% endfor %}
