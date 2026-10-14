@@ -157,6 +157,34 @@ def build_report(db: Path, zone: int, *, sources=SOURCES, kind=None):
                 "dsp": snapshot("dsp"),
                 "lsb": snapshot("lsb"),
             }
+        # Precisely flag the affected fields. Comparisons are scoped to the
+        # source pairs that actually produced the finding.
+        for issue in issues:
+            typ, source = issue["type"], issue["source"]
+            fields = {"client": [], "dsp": [], "lsb": []}
+            if typ == "name_mismatch":
+                fields["client"].append("name")
+                fields[source].append("name")
+            elif typ == "server_name_disagreement":
+                fields["dsp"].append("name")
+                fields["lsb"].append("name")
+            elif typ == "position_disagreement":
+                d, l = issue["values"]["dsp"], issue["values"]["lsb"]
+                if d and l:
+                    for i, axis in enumerate("xyz"):
+                        if d["position"][i] is not None and l["position"][i] is not None and abs(float(d["position"][i]) - float(l["position"][i])) > 0.00001:
+                            fields["dsp"].append("pos_" + axis)
+                            fields["lsb"].append("pos_" + axis)
+            elif typ == "zero_position" and source in fields:
+                fields[source].extend(("pos_x", "pos_y", "pos_z"))
+            elif typ == "wrong_table":
+                for name in (("dsp", "lsb") if source == "dsp/lsb" else (source,)):
+                    fields[name].append("table")
+            elif typ == "missing_client":
+                fields["client"].append("presence")
+            elif typ == "missing_server" and source in fields:
+                fields[source].append("presence")
+            issue["field_flags"] = fields
         issues.sort(key=lambda x: (x["type"], x["source"], x["entity_id"] if x["entity_id"] is not None else -1))
         return {"zone": zone, "coverage": coverage, "counts": dict(Counter(r["type"] for r in issues)),
                 "rows": issues, "limitations": [
