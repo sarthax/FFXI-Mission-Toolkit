@@ -9616,6 +9616,16 @@ def assault_domain_page(request: Request):
     from workbench.domains.assault_fix_crossref import correlate
     tracker["fix_log"] = correlate(tracker["missions"], tracker["shared"])
     rows, history = all_reviews()
+    from workbench.domains.assault_issue_reviews import read as issue_review_read
+    issue_rows, issue_history = issue_review_read()
+    issue_map = {(r["mission"], r["issue"], r["stage"]): r for r in issue_rows}
+    for mission in tracker["missions"]:
+        for issue in mission["issue_crossrefs"]:
+            number = mission["number"]
+            issue["reviews"] = {stage: issue_map.get((number, issue["id"], stage))
+                                for stage in ("topaz", "dsp_port", "dsp_validation")}
+            issue["history"] = [r for r in issue_history
+                                if r["mission"] == number and r["issue"] == issue["id"]]
     by_mission = {}
     for row in rows:
         by_mission.setdefault(row["mission"], {})[row["stage"]] = row
@@ -9627,6 +9637,28 @@ def assault_domain_page(request: Request):
             if stage in mission["reviews"]:
                 mission[field] = mission["reviews"][stage]["state"]
     return templates.TemplateResponse(request, "domain_assault.html", {"request": request, "tracker": tracker})
+
+
+@app.post("/domains/assault/issue/review")
+async def assault_issue_review_update(request: Request):
+    from workbench.domains.assault_issue_reviews import mark
+    from workbench.domains.assault_tracker import overview
+    from workbench.domains.assault_fix_crossref import correlate
+    data = await request.form()
+    try:
+        mission_id, issue_id = int(data.get("mission", 0)), int(data.get("issue", 0))
+        tracker = overview()
+        correlate(tracker["missions"], tracker["shared"])
+        mission = next((m for m in tracker["missions"] if m["number"] == mission_id), None)
+        if mission is None:
+            raise ValueError("Unknown mission")
+        mark(mission_id, issue_id, str(data.get("stage", "")),
+             str(data.get("state", "")), str(data.get("note", "")),
+             str(data.get("evidence", "")), issue_count=len(mission["issue_crossrefs"]))
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return RedirectResponse(
+        url=f"/domains/assault#assault-{mission_id}-issue-{issue_id}", status_code=303)
 
 
 @app.post("/domains/assault/review")
