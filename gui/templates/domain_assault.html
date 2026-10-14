@@ -1,32 +1,91 @@
 {% extends "workbench_page.html" %}
-{% block title %}Assault Domain — Mission Toolkit{% endblock %}
+{% block title %}Assault Development Tracker{% endblock %}
 {% block page_archetype %}dashboard{% endblock %}
-{% block page_heading %}Assault Domain{% endblock %}
-{% block page_help %}Workspace for Assault-specific development, administration, validation, and future domain-package workflows.{% endblock %}
+{% block page_heading %}Assault Development Tracker{% endblock %}
+{% block page_help %}The complete Topaz release issue tracker, preserved verbatim. Topaz status, DSP implementation/porting, and DSP live validation are independent; no mission is counted as DSP-complete until independently verified.{% endblock %}
 {% block page_body %}
-
-<h2>Available now</h2>
-<div class="table-wrap">
-<table>
-  <thead><tr><th>Area</th><th>Purpose</th><th>Open</th></tr></thead>
-  <tbody>
-    <tr>
-      <td>Mission data</td>
-      <td>Search indexed Assault mission names/text without calculating all runtime/capture coverage.</td>
-      <td><a class="zonelink" href="/missions?q=__coverage_not_loaded__">Mission Explorer</a></td>
-    </tr>
-    <tr>
-      <td>Observed coverage</td>
-      <td>Calculate server entity/drop wiring plus indexed capture observations for every Assault mission. This is intentionally on demand and can take several seconds.</td>
-      <td><a class="zonelink" href="/missions">Load all coverage</a></td>
-    </tr>
-    <tr><td>Assault zones</td><td>Inspect and edit zone entities, navmesh data, drops, and SQL using the canonical generic editor.</td><td><a class="zonelink" href="/zoneplot2">Zone Editor</a></td></tr>
-    <tr><td>Captures</td><td>Inspect gameplay captures, paths, packets, and instance evidence.</td><td><a class="zonelink" href="/captures">Captures</a></td></tr>
-    <tr><td>Server data</td><td>Inspect zones, entities, items, key items, dialog, events, and packets.</td><td><a class="zonelink" href="/zones">Server workspace</a></td></tr>
-  </tbody>
-</table>
+<style>
+.assault-grid{width:100%;border-collapse:separate;border-spacing:3px;table-layout:fixed}
+.assault-grid th{font-size:11px;text-align:left;padding:6px}
+.assault-grid td{padding:2px;vertical-align:stretch}
+.assault-grid a{display:block;padding:7px 5px;border:1px solid var(--border);border-radius:6px;text-decoration:none;font-size:11px;min-height:58px;overflow-wrap:anywhere}
+.assault-grid a:hover,.assault-grid a:focus{outline:2px solid var(--accent,#6aa6d5)}
+.assault-grid .mission-number{font-weight:700;font-size:12px}
+.assault-grid .mission-name{display:block;margin-top:3px;line-height:1.2}
+.assault-grid .mission-state{display:block;font-size:10px;margin-top:3px}
+.assault-status{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 14px}
+.assault-status span{padding:5px 9px;border:1px solid var(--border);border-radius:5px}
+.assault-detail{border:1px solid var(--border);border-radius:7px;margin:10px 0;padding:9px}
+.assault-detail>summary{cursor:pointer;font-weight:700}
+.assault-meta{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0}
+.assault-meta span{border:1px solid var(--border);padding:4px 7px;border-radius:4px;font-size:11px}
+.assault-comments{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.5;max-height:600px;overflow:auto;border-top:1px solid var(--border);padding:10px 2px}
+.assault-shared{margin-top:20px}
+.assault-table-scroll{overflow-x:auto}
+@media(max-width:950px){.assault-grid{min-width:1000px}}
+</style>
+<div class="dense-toolbar">
+  <strong>{{ tracker.count }} imported missions</strong>
+  <span class="sp"></span>
+  <a class="chip" href="https://github.com/sarthax/Topaz-to-Valhalla/blob/release/documentation/Assault_Issue_Tracker.md" target="_blank" rel="noopener">Original Topaz tracker</a>
+  <a class="chip" href="/missions">Mission coverage</a>
+  <a class="chip" href="/zoneplot2">Zone Editor</a>
 </div>
-
-<h2>Planned domain capabilities</h2>
-<p class="muted">Backport status, promotion/rank logic, appraisal systems, instance diagnostics, and domain validation will be added here as their pipelines become available.</p>
+<p class="muted">Cell icon = historical Topaz overall status only. DSP porting and live validation are tracked separately and remain unverified until proven. For ranks Sergeant through First Lieutenant (6–10), porting is assumed pending review, not completed.</p>
+<div class="assault-status">
+  <span>✅ Topaz playthrough confirmed</span><span>🟢 Topaz built / untested</span><span>🟡 Topaz gaps</span><span>🔴 Topaz broken</span><span>❔ Unclassified</span>
+</div>
+<div class="assault-table-scroll"><table class="assault-grid" aria-label="Assault missions by zone and rank">
+<thead><tr><th>Area / Rank</th>{% for rank in tracker.ranks %}<th>{{ rank }}</th>{% endfor %}</tr></thead>
+<tbody>
+{% for zone in tracker.zones %}
+<tr>
+<th scope="row">{{ zone }}</th>
+{% for rank in tracker.ranks %}
+{% set hit = tracker.missions | selectattr('zone', 'equalto', zone) | selectattr('rank', 'equalto', rank) | first | default(none) %}
+<td>{% if hit %}<a href="#assault-{{ hit.number }}" title="Mission {{ hit.number }}: {{ hit.name }} — Topaz {{ hit.topaz_status }}">
+  <span class="mission-number">#{{ hit.number }} {{ hit.topaz_status }}</span>
+  <span class="mission-name">{{ hit.name }}</span>
+  <span class="mission-state">DSP: {{ hit.dsp_port|replace('_',' ') }}</span>
+</a>{% else %}—{% endif %}</td>
+{% endfor %}
+</tr>
+{% endfor %}
+</tbody></table></div>
+<h2>System-wide and shared dependencies</h2>
+<p class="muted">Issues here may affect all missions (including appraisal, runic portals, timeouts, navigation meshes, GM warp tooling, and other infrastructure). Historical comments remain intact.</p>
+{% for section in tracker.shared %}
+<details class="assault-detail assault-shared" id="assault-shared-{{ loop.index }}">
+  <summary>{{ section.title }}</summary>
+  <div class="assault-comments">{{ section.comments }}</div>
+</details>
+{% endfor %}
+<h2>Mission issues — all original comments</h2>
+<p class="muted">Click a cell in the matrix to jump to its detailed issue history. Topaz green/completed is not the same as DSP ported, tested, or finished.</p>
+{% for mission in tracker.missions %}
+<details class="assault-detail" id="assault-{{ mission.number }}">
+  <summary>#{{ mission.number }} {{ mission.name }} — {{ mission.zone }} / {{ mission.rank }} · Topaz {{ mission.topaz_status }}</summary>
+  <div class="assault-meta">
+    <span>Topaz: {{ mission.topaz_status_text }}</span>
+    <span>DSP implementation: {{ mission.dsp_implementation }}</span>
+    <span>DSP port: {{ mission.dsp_port }}</span>
+    <span>DSP live validation: {{ mission.dsp_validation }}</span>
+  </div>
+  <div><a class="chip" href="/missions?q={{ mission.name|urlencode }}">Find mission</a>
+    <a class="chip" href="/features/trace?q={{ mission.name|urlencode }}">Feature Trace</a></div>
+  <div class="assault-comments">{{ mission.comments }}</div>
+</details>
+{% endfor %}
+<script>
+(function(){
+  function reveal(){
+    const id=decodeURIComponent(location.hash.slice(1));
+    if(!id.startsWith('assault-'))return;
+    const panel=document.getElementById(id);
+    if(panel && panel.tagName==='DETAILS'){panel.open=true;panel.scrollIntoView({block:'start'});}
+  }
+  window.addEventListener('hashchange',reveal);
+  reveal();
+})();
+</script>
 {% endblock %}
