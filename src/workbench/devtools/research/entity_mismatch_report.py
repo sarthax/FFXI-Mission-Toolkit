@@ -15,7 +15,7 @@ from pathlib import Path
 
 SOURCES = ("dsp", "lsb")
 KINDS = ("missing_client", "missing_server", "wrong_table", "name_mismatch",
-         "server_name_disagreement", "position_disagreement", "zero_position",
+         "server_name_disagreement", "position_disagreement", "model_disagreement", "zero_position",
          "client_index_unavailable", "server_index_unavailable")
 
 
@@ -57,6 +57,24 @@ def build_report(db: Path, zone: int, *, sources=SOURCES, kind=None):
             npc = _rows(con, f"SELECT npcid AS id,name,pos_x,pos_y,pos_z FROM {npc_table} WHERE zoneid=?", (zone,))
             # FFXI runtime IDs are zoned; mob_spawn_points indexes may not store zoneid.
             mob = _rows(con, f"SELECT mobid AS id,mobname AS name,pos_x,pos_y,pos_z FROM {mob_table} WHERE (mobid >> 12) & 4095 = ?", (zone,))
+            # Model provenance: spawn.groupid -> same-zone group.poolid -> pool.modelid.
+            # A missing or ambiguous join remains unknown, not a discrepancy.
+            group_table, pool_table = source + "_mob_groups", source + "_mob_pools"
+            models = {}
+            if _exists(con, group_table) and _exists(con, pool_table):
+                for row in _rows(con, f"""
+                    SELECT s.mobid AS id, p.modelid AS model
+                    FROM {mob_table} s
+                    JOIN {group_table} g ON s.groupid=g.groupid AND g.zoneid=?
+                    JOIN {pool_table} p ON g.poolid=p.poolid
+                    WHERE ((s.mobid >> 12) & 4095)=?
+                """, (zone, zone)):
+                    if row["id"] in models and models[row["id"]] != row["model"]:
+                        models[row["id"]] = None
+                    else:
+                        models[row["id"]] = row["model"]
+            for row in mob:
+                row["model"] = models.get(row["id"])
             found[source] = {
                 "npc": {r["id"]: r for r in npc},
                 "mob": {r["id"]: r for r in mob},
@@ -122,6 +140,12 @@ def build_report(db: Path, zone: int, *, sources=SOURCES, kind=None):
                             detail="DSP and LSB classify the same ID differently")
                 d = found["dsp"]["npc"].get(entity_id) or found["dsp"]["mob"].get(entity_id)
                 l = found["lsb"]["npc"].get(entity_id) or found["lsb"]["mob"].get(entity_id)
+                # Do not equate an NPC with a mob or compare unresolved model IDs.
+                if (entity_id in found["dsp"]["mob"] and entity_id in found["lsb"]["mob"]
+                        and d.get("model") not in (None, "") and l.get("model") not in (None, "")
+                        and str(d["model"]) != str(l["model"])):
+                    add("dsp/lsb", "model_disagreement", entity_id,
+                        detail=f"DSP mob pool model {d['model']} vs LSB mob pool model {l['model']}")
                 if _normal(d["name"]) != _normal(l["name"]):
                     add("dsp/lsb", "server_name_disagreement", entity_id,
                         client_name=d["name"], server_name=l["name"],
@@ -149,7 +173,7 @@ def build_report(db: Path, zone: int, *, sources=SOURCES, kind=None):
                     return None
                 table, row = matches[0]
                 return {"table": "/".join(t for t, _ in matches),
-                        "name": row["name"], "position": [
+                        "name": row["name"], "model": row.get("model"), "position": [
                             row["pos_x"], row["pos_y"], row["pos_z"]]}
             issue["values"] = {
                 "client": {"name": client[entity_id]["name"], "table": "client MobList"}
@@ -168,6 +192,9 @@ def build_report(db: Path, zone: int, *, sources=SOURCES, kind=None):
             elif typ == "server_name_disagreement":
                 fields["dsp"].append("name")
                 fields["lsb"].append("name")
+            elif typ == "model_disagreement":
+                fields["dsp"].append("model")
+                fields["lsb"].append("model")
             elif typ == "position_disagreement":
                 d, l = issue["values"]["dsp"], issue["values"]["lsb"]
                 if d and l:
@@ -189,6 +216,7 @@ def build_report(db: Path, zone: int, *, sources=SOURCES, kind=None):
         return {"zone": zone, "coverage": coverage, "counts": dict(Counter(r["type"] for r in issues)),
                 "rows": issues, "limitations": [
                     "No client positions or models are present in npc_names; do not infer client model or position mismatches.",
+                    "Mob models are compared only when both group/pool joins resolve; NPC model comparisons are not yet supported.",
                     "Wrong-table inference only flags duplicate IDs or DSP/LSB classification disagreement.",
                     "Absent records are only reported when both corresponding indexes contain zone data.",
                     "This is a review report: runtime spawns, instance entities and intentional Lua moves can explain gaps.",
