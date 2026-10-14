@@ -121,6 +121,41 @@
     <div style="border-top:1px solid var(--border);padding:7px 0" id="assault-{{ mission.number }}-issue-{{ issue.id }}">
       <strong>Issue {{ issue.id }}</strong> <span class="chip">Requires review</span>
       <div style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;margin:4px 0">{{ issue.text }}</div>
+      <div class="assault-meta">
+        {% for stage in ['topaz','dsp_port','dsp_validation'] %}
+          {% set review = issue.reviews[stage] %}
+          <span>{{ stage|replace('_',' ')|title }}: {{ review.state if review else 'unreviewed' }}</span>
+        {% endfor %}
+      </div>
+      <details style="margin:5px 0">
+        <summary>Review this issue / evidence</summary>
+        <form method="post" action="/domains/assault/issue/review" style="display:grid;gap:5px;max-width:700px">
+          <input type="hidden" name="mission" value="{{ mission.number }}">
+          <input type="hidden" name="issue" value="{{ issue.id }}">
+          <label>Stage <select name="stage" required>
+            <option value="topaz">Topaz fix</option>
+            <option value="dsp_port">DSP port</option>
+            <option value="dsp_validation">DSP validation</option>
+          </select></label>
+          <label>State <select name="state" required>
+            {% for state in ['unreviewed','open','in_progress','fixed','blocked','not_applicable'] %}
+            <option value="{{ state }}">{{ state|replace('_',' ')|title }}</option>
+            {% endfor %}
+          </select></label>
+          <label>Review notes <textarea name="note" rows="2" maxlength="4000"></textarea></label>
+          <label>Evidence reference <input type="text" name="evidence" maxlength="2000" placeholder="Fix log section, PR, commit, capture, test (required for fixed)"></label>
+          <button type="submit">Record issue review</button>
+        </form>
+        {% if issue.history %}
+        <h4>Review history</h4>
+        {% for h in issue.history %}
+        <div class="gap-field" style="border-top:1px solid var(--border);padding:5px">
+          <strong>{{ h.stage }} / {{ h.state }}</strong> <span class="muted">{{ h.updated_at }}</span>
+          <div>{{ h.note }}</div><div class="mono">{{ h.evidence }}</div>
+        </div>
+        {% endfor %}
+        {% endif %}
+      </details>
       {% if issue.candidates %}
       <div class="muted">Candidate Topaz fix-log entries (not confirmed resolution):</div>
       {% for candidate in issue.candidates %}
@@ -157,7 +192,11 @@
     const id=decodeURIComponent(location.hash.slice(1));
     if(!id.startsWith('assault-'))return;
     const panel=document.getElementById(id);
-    if(panel && panel.tagName==='DETAILS'){panel.open=true;panel.scrollIntoView({block:'start'});}
+    if(panel){
+      let ancestor=panel;
+      while(ancestor){if(ancestor.tagName==='DETAILS')ancestor.open=true;ancestor=ancestor.parentElement;}
+      panel.scrollIntoView({block:'start'});
+    }
   }
   window.addEventListener('hashchange',reveal);
   reveal();
