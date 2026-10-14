@@ -57,6 +57,10 @@
 {% for section in tracker.shared %}
 <details class="assault-detail assault-shared" id="assault-shared-{{ loop.index }}">
   <summary>{{ section.title }}</summary>
+  {% if section.fix_log_entries %}
+  <div class="assault-meta"><strong>Potential fix-log sections:</strong>
+  {% for log in section.fix_log_entries %}<a class="chip" href="#assault-fix-{{ log.id }}">{{ log.title }}</a>{% endfor %}
+  </div>{% endif %}
   <div class="assault-comments">{{ section.comments }}</div>
 </details>
 {% endfor %}
@@ -110,7 +114,41 @@
     {% endfor %}
   </details>
   {% endif %}
-  <div class="assault-comments">{{ mission.comments }}</div>
+  <details style="margin:8px 0" open>
+    <summary>Issue-by-issue fix-log reconciliation ({{ mission.issue_crossrefs|length }} tracked bullets)</summary>
+    <p class="muted">A related fix-log passage is not evidence that this issue was actually fixed or ported to DSP. Each finding requires review and separate DSP validation.</p>
+    {% for issue in mission.issue_crossrefs %}
+    <div style="border-top:1px solid var(--border);padding:7px 0" id="assault-{{ mission.number }}-issue-{{ issue.id }}">
+      <strong>Issue {{ issue.id }}</strong> <span class="chip">Requires review</span>
+      <div style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;margin:4px 0">{{ issue.text }}</div>
+      {% if issue.candidates %}
+      <div class="muted">Candidate Topaz fix-log entries (not confirmed resolution):</div>
+      {% for candidate in issue.candidates %}
+      <a class="chip" href="#assault-fix-{{ candidate.section_id }}">{{ candidate.title }}</a>
+      {% endfor %}
+      {% else %}<span class="muted">No matching mission fix-log passage found; remains open for investigation.</span>{% endif %}
+    </div>
+    {% endfor %}
+  </details>
+  {% if mission.fix_log_entries %}
+  <details style="margin:8px 0">
+    <summary>All matching mission fix-log passages ({{ mission.fix_log_entries|length }})</summary>
+    {% for log in mission.fix_log_entries %}
+    <a class="chip" href="#assault-fix-{{ log.id }}">{{ log.title }}</a>
+    {% endfor %}
+  </details>
+  {% endif %}
+  <details><summary>Original issue tracker comments (verbatim)</summary>
+    <div class="assault-comments">{{ mission.comments }}</div>
+  </details>
+</details>
+{% endfor %}
+<h2>Chronological Topaz fix log — complete preserved text</h2>
+<p class="muted">Every original section is retained; mission issues link here when the heading and issue language support a candidate match. This is not a DSP completion record.</p>
+{% for log in tracker.fix_log.sections %}
+<details class="assault-detail" id="assault-fix-{{ log.id }}">
+  <summary>{{ log.title }}</summary>
+  <div class="assault-comments">{{ log.text }}</div>
 </details>
 {% endfor %}
 <script>
