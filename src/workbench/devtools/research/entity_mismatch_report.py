@@ -132,6 +132,31 @@ def build_report(db: Path, zone: int, *, sources=SOURCES, kind=None):
                         add("dsp/lsb", "position_disagreement", entity_id,
                             client_name=d["name"], server_name=l["name"],
                             detail=f"DSP vs LSB XYZ differ by {delta:.2f} world units")
+        # Attach the exact side-by-side source records, not just a textual diagnosis.
+        # Absent source values remain None (never displayed as an invented zero).
+        for issue in issues:
+            entity_id = issue["entity_id"]
+            if entity_id is None:
+                issue["values"] = {"client": None, "dsp": None, "lsb": None}
+                continue
+            def snapshot(source):
+                tables = found.get(source) or {}
+                if not tables:
+                    return None
+                matches = [(table, tables[table][entity_id])
+                           for table in ("npc", "mob") if entity_id in tables[table]]
+                if not matches:
+                    return None
+                table, row = matches[0]
+                return {"table": "/".join(t for t, _ in matches),
+                        "name": row["name"], "position": [
+                            row["pos_x"], row["pos_y"], row["pos_z"]]}
+            issue["values"] = {
+                "client": {"name": client[entity_id]["name"], "table": "client MobList"}
+                          if entity_id in client else None,
+                "dsp": snapshot("dsp"),
+                "lsb": snapshot("lsb"),
+            }
         issues.sort(key=lambda x: (x["type"], x["source"], x["entity_id"] if x["entity_id"] is not None else -1))
         return {"zone": zone, "coverage": coverage, "counts": dict(Counter(r["type"] for r in issues)),
                 "rows": issues, "limitations": [
