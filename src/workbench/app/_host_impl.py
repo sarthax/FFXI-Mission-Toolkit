@@ -9611,7 +9611,33 @@ def assault_domain_page(request: Request):
     Zone Editor or mission/capture logic while the domain package grows.
     """
     from workbench.domains.assault_tracker import overview
-    return templates.TemplateResponse(request, "domain_assault.html", {"request": request, "tracker": overview()})
+    from workbench.domains.assault_reviews import all_reviews
+    tracker = overview()
+    rows, history = all_reviews()
+    by_mission = {}
+    for row in rows:
+        by_mission.setdefault(row["mission"], {})[row["stage"]] = row
+    for mission in tracker["missions"]:
+        mission["reviews"] = by_mission.get(mission["number"], {})
+        mission["history"] = [h for h in history if h["mission"] == mission["number"]]
+        for stage, field in (("implementation", "dsp_implementation"),
+                             ("port", "dsp_port"), ("validation", "dsp_validation")):
+            if stage in mission["reviews"]:
+                mission[field] = mission["reviews"][stage]["state"]
+    return templates.TemplateResponse(request, "domain_assault.html", {"request": request, "tracker": tracker})
+
+
+@app.post("/domains/assault/review")
+async def assault_review_update(request: Request):
+    from workbench.domains.assault_reviews import mark
+    data = await request.form()
+    try:
+        mission = int(data.get("mission", "0"))
+        mark(mission, str(data.get("stage", "")), str(data.get("state", "")),
+             str(data.get("note", "")), str(data.get("evidence", "")))
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return RedirectResponse(url=f"/domains/assault#assault-{mission}", status_code=303)
 
 
 # ---- Nyzul Isle plot tool (nyzul_plot.py) ---------------------------------------------------
