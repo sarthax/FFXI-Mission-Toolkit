@@ -93,6 +93,9 @@
     {% if value %}
       <div class="gap-field {% if 'name' in flags %}gap-field-diff{% endif %}"><strong>{{ value.name }}</strong></div>
       <div class="gap-field muted {% if 'table' in flags %}gap-field-diff{% endif %}">{{ value.table }}</div>
+      {% if value.model is defined and value.model is not none %}
+      <div class="gap-field mono {% if 'model' in flags %}gap-field-diff{% endif %}">Model: {{ value.model }}</div>
+      {% endif %}
       {% if value.position is defined %}
       <div class="gap-field mono">
         {% for axis in ['x','y','z'] %}
