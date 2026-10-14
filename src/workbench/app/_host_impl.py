@@ -9636,6 +9636,8 @@ def assault_domain_page(request: Request):
                              ("port", "dsp_port"), ("validation", "dsp_validation")):
             if stage in mission["reviews"]:
                 mission[field] = mission["reviews"][stage]["state"]
+    from workbench.domains.assault_summary import summarize
+    tracker["progress"] = summarize(tracker["missions"])
     return templates.TemplateResponse(request, "domain_assault.html", {"request": request, "tracker": tracker})
 
 
