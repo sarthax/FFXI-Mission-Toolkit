@@ -1,0 +1,1995 @@
+{
+ "generated": "2026-10-12",
+ "sources": {
+  "W": "https://ffxiclopedia.fandom.com/wiki/Mog-Tablet and /wiki/Category:Super_Kupowers (read 2026-10-12)",
+  "S": "D:\\Claude\\DSP-LSB-Gap-Audit\\evidence\\lsb_snapshot\\server-base\\scripts\\globals\\mog_tablets.lua",
+  "D": "ffxi_zone_database.db (zone ids)",
+  "items": [
+   "item_basic.sql",
+   "item_basic.sql"
+  ]
+ },
+ "powers": [
+  {
+   "id": "thrifty_transit",
+   "name": "Thrifty Transit",
+   "lsb_power": 1,
+   "effect": "Outpost teleport and Survival Guide sites operate free of charge; the Explorer Moogle teleport service appears (Mhaura, Selbina, the three nations).",
+   "touches": [
+    "outpost teleport",
+    "survival guide",
+    "explorer moogle"
+   ],
+   "scope": "zone/global",
+   "impl": "partial",
+   "impl_note": "conquest.lua OP_TeleFee free; Explorer Moogles gated by MOG_TABLET_GATE_EXPLORER_MOOGLES (teleports already on Valhalla); Survival Guides absent on Valhalla, separate branch"
+  },
+  {
+   "id": "martial_master",
+   "name": "Martial Master",
+   "lsb_power": 2,
+   "effect": "With Signet, combat, magic and automaton skills increase more quickly.",
+   "touches": [
+    "skill-up"
+   ],
+   "scope": "global",
+   "impl": "done",
+   "impl_note": "skill-up +25% (MOG_TABLET_SKILLUP_RATE) under Signet"
+  },
+  {
+   "id": "blood_of_the_vampyr",
+   "name": "Blood of the Vampyr",
+   "lsb_power": 3,
+   "effect": "Signet grants latent Regen (1 HP/tick) and Refresh (1 MP/tick) when HP/MP is below 51%. Affects Adventuring Fellows as if they always have Signet.",
+   "touches": [
+    "signet",
+    "fellow"
+   ],
+   "scope": "global",
+   "impl": "done",
+   "impl_note": "mods 871/872 added in TickRegen when HP/MP < 51%; Fellows not covered"
+  },
+  {
+   "id": "treasure_hound",
+   "name": "Treasure Hound",
+   "lsb_power": 4,
+   "effect": "Signet grants Gilfinder +1 and Treasure Hunter +1.",
+   "touches": [
+    "signet"
+   ],
+   "scope": "global",
+   "impl": "done",
+   "impl_note": "Signet Gilfinder/TH +1"
+  },
+  {
+   "id": "artisans_advantage",
+   "name": "Artisan's Advantage",
+   "lsb_power": 5,
+   "effect": "Chance of losing ingredients on a failed synthesis is drastically reduced while the crafter has Synthesis Image Support from their guild.",
+   "touches": [
+    "synthesis image support"
+   ],
+   "scope": "global",
+   "impl": "done",
+   "impl_note": "mod 873 in doSynthFail, Advanced image support (power>=3) only, default -20% (JP measurements ~-18%)"
+  },
+  {
+   "id": "myriad_mystery_boxes",
+   "name": "Myriad Mystery Boxes",
+   "lsb_power": 6,
+   "effect": "Treasure Caskets appear more often (merged from four regional Mystery Boxes powers in Sept 2012).",
+   "touches": [
+    "treasure caskets"
+   ],
+   "scope": "global",
+   "impl": "done",
+   "impl_note": "caskets.lua"
+  },
+  {
+   "id": "dilatory_digestion",
+   "name": "Dilatory Digestion",
+   "lsb_power": 7,
+   "effect": "Food effects last twice as long.",
+   "touches": [
+    "food"
+   ],
+   "scope": "global",
+   "impl": "done",
+   "impl_note": "mod 874 FOOD_DURATION, +100% on EFFECT_FOOD in AddStatusEffect"
+  },
+  {
+   "id": "boundary_buster",
+   "name": "Boundary Buster",
+   "lsb_power": 8,
+   "effect": "Conquest Points received from defeating enemies are doubled.",
+   "touches": [
+    "conquest"
+   ],
+   "scope": "global",
+   "impl": "done",
+   "impl_note": "conquest points doubled"
+  },
+  {
+   "id": "bountiful_bazaar",
+   "name": "Bountiful Bazaar",
+   "lsb_power": 9,
+   "effect": "All Regional Merchants in the three nations simultaneously open for business.",
+   "touches": [
+    "regional merchants"
+   ],
+   "scope": "zone",
+   "impl": "done",
+   "impl_note": "54 city regional vendor scripts"
+  },
+  {
+   "id": "swift_shoes",
+   "name": "Swift Shoes",
+   "lsb_power": 10,
+   "effect": "Resting grants a quickening effect; resting longer raises potency and duration. Also affects Adventuring Fellows.",
+   "touches": [
+    "resting",
+    "fellow"
+   ],
+   "scope": "global",
+   "impl": "partial",
+   "impl_note": "Quickening on resting; Alter Egos/Fellows/Automatons and removal conditions missing"
+  },
+  {
+   "id": "crystal_caboodle",
+   "name": "Crystal Caboodle",
+   "lsb_power": 11,
+   "effect": "Crystal drop rate is increased, and crystals can also be obtained from beastmen-controlled regions.",
+   "touches": [
+    "crystal drops"
+   ],
+   "scope": "global",
+   "impl": "done",
+   "impl_note": "mods 869/870: crystal chance 20%->40%, 10% become clusters"
+  }
+ ],
+ "retired_powers": [
+  {
+   "name": "Mystery Boxes: San d'Oria",
+   "when": "Sept 2012",
+   "fate": "Merged into Myriad Mystery Boxes"
+  },
+  {
+   "name": "Mystery Boxes: Bastok",
+   "when": "Sept 2012",
+   "fate": "Merged into Myriad Mystery Boxes"
+  },
+  {
+   "name": "Mystery Boxes: Windurst",
+   "when": "Sept 2012",
+   "fate": "Merged into Myriad Mystery Boxes"
+  },
+  {
+   "name": "Mystery Boxes: Frontier Lands",
+   "when": "Sept 2012",
+   "fate": "Merged into Myriad Mystery Boxes"
+  },
+  {
+   "name": "Ease of Exploration",
+   "when": "June 2014",
+   "fate": "Explorer Moogle teleport service; merged into Thrifty Transit"
+  }
+ ],
+ "tablets": [
+  {
+   "id": "temperance",
+   "name": "Tablet of Temperance",
+   "lsb_index": 0,
+   "reward": "Nomad Moogle Statue",
+   "reward_item": {
+    "id": 268,
+    "src": "item_basic.sql"
+   },
+   "history": [
+    {
+     "era": "2009-05..2015-08",
+     "reward": "Nomad Moogle Statue",
+     "item": {
+      "id": 268,
+      "src": "item_basic.sql"
+     }
+    }
+   ]
+  },
+  {
+   "id": "fortitude",
+   "name": "Tablet of Fortitude",
+   "lsb_index": 1,
+   "reward": "Talaria",
+   "reward_item": {
+    "id": 11403,
+    "src": "item_basic.sql"
+   },
+   "history": [
+    {
+     "era": "2009-05..2015-08",
+     "reward": "Talaria",
+     "item": {
+      "id": 11403,
+      "src": "item_basic.sql"
+     }
+    }
+   ]
+  },
+  {
+   "id": "piety",
+   "name": "Tablet of Piety",
+   "lsb_index": 2,
+   "reward": "Kupon I-Orche",
+   "reward_item": null,
+   "history": [
+    {
+     "era": "2009-05..2013-03",
+     "reward": "Bloodwood Log",
+     "item": {
+      "id": 729,
+      "src": "item_basic.sql"
+     }
+    },
+    {
+     "era": "2013-03..2014-05",
+     "reward": "Urunday Log",
+     "item": {
+      "id": 3926,
+      "src": "item_basic.sql"
+     }
+    },
+    {
+     "era": "2014-05..2015-08",
+     "reward": "Beetle Blood",
+     "item": null
+    }
+   ]
+  },
+  {
+   "id": "justice",
+   "name": "Tablet of Justice",
+   "lsb_index": 3,
+   "reward": "Macrocosmic Orb",
+   "reward_item": {
+    "id": 4063,
+    "src": "item_basic.sql"
+   },
+   "history": [
+    {
+     "era": "2009-05..2013-03",
+     "reward": "Noble's Bed",
+     "item": {
+      "id": 6,
+      "src": "item_basic.sql"
+     }
+    },
+    {
+     "era": "2013-03..2014-05",
+     "reward": "Themis Orb",
+     "item": {
+      "id": 1553,
+      "src": "item_basic.sql"
+     }
+    },
+    {
+     "era": "2014-05..2015-08",
+     "reward": "Macrocosmic Orb",
+     "item": {
+      "id": 4063,
+      "src": "item_basic.sql"
+     }
+    }
+   ]
+  },
+  {
+   "id": "hope",
+   "name": "Tablet of Hope",
+   "lsb_index": 4,
+   "reward": "Nomad Moogle Rod",
+   "reward_item": {
+    "id": 18842,
+    "src": "item_basic.sql"
+   },
+   "history": [
+    {
+     "era": "2009-05..2013-03",
+     "reward": "Bookshelf",
+     "item": {
+      "id": 77,
+      "src": "item_basic.sql"
+     }
+    },
+    {
+     "era": "2013-03..2014-05",
+     "reward": "Redeyes",
+     "item": {
+      "id": 16120,
+      "src": "item_basic.sql"
+     }
+    },
+    {
+     "era": "2014-05..2015-08",
+     "reward": "Nomad Moogle Rod",
+     "item": {
+      "id": 18842,
+      "src": "item_basic.sql"
+     }
+    }
+   ]
+  },
+  {
+   "id": "wisdom",
+   "name": "Tablet of Wisdom",
+   "lsb_index": 5,
+   "reward": "Moogle's Largesse",
+   "reward_item": {
+    "id": 19181,
+    "src": "item_basic.sql"
+   },
+   "history": [
+    {
+     "era": "2009-05..2013-03",
+     "reward": "Coffee Table",
+     "item": {
+      "id": 127,
+      "src": "item_basic.sql"
+     }
+    },
+    {
+     "era": "2013-03..2015-08",
+     "reward": "Moogle's Largesse",
+     "item": {
+      "id": 19181,
+      "src": "item_basic.sql"
+     }
+    }
+   ]
+  },
+  {
+   "id": "compassion",
+   "name": "Tablet of Compassion",
+   "lsb_index": 6,
+   "reward": "Invisible Ring",
+   "reward_item": {
+    "id": 26166,
+    "src": "item_basic.sql"
+   },
+   "history": [
+    {
+     "era": "2009-05..2013-03",
+     "reward": "Adaman Ingot",
+     "item": {
+      "id": 655,
+      "src": "item_basic.sql"
+     }
+    },
+    {
+     "era": "2013-03..2014-05",
+     "reward": "Damascus Ingot",
+     "item": {
+      "id": 658,
+      "src": "item_basic.sql"
+     }
+    },
+    {
+     "era": "2014-05..2015-08",
+     "reward": "Damascene Cloth",
+     "item": null
+    }
+   ]
+  },
+  {
+   "id": "dignity",
+   "name": "Tablet of Dignity",
+   "lsb_index": 7,
+   "reward": "Sneak Ring",
+   "reward_item": {
+    "id": 26167,
+    "src": "item_basic.sql"
+   },
+   "history": [
+    {
+     "era": "2009-05..2013-03",
+     "reward": "Orichalcum Ore",
+     "item": null
+    },
+    {
+     "era": "2013-03..2014-05",
+     "reward": "Vanadium Ore",
+     "item": null
+    },
+    {
+     "era": "2014-05..2015-08",
+     "reward": "Malboro Fiber",
+     "item": null
+    }
+   ]
+  },
+  {
+   "id": "loyalty",
+   "name": "Tablet of Loyalty",
+   "lsb_index": 8,
+   "reward": "Deodorize Ring",
+   "reward_item": {
+    "id": 26168,
+    "src": "item_basic.sql"
+   },
+   "history": [
+    {
+     "era": "2009-05..2013-03",
+     "reward": "Scintillant Ingot",
+     "item": {
+      "id": 2275,
+      "src": "item_basic.sql"
+     }
+    },
+    {
+     "era": "2013-03..2014-05",
+     "reward": "Palladian Brass Ingot",
+     "item": {
+      "id": 742,
+      "src": "item_basic.sql"
+     }
+    },
+    {
+     "era": "2014-05..2015-08",
+     "reward": "Oxblood",
+     "item": null
+    }
+   ]
+  },
+  {
+   "id": "charity",
+   "name": "Tablet of Charity",
+   "lsb_index": 9,
+   "reward": "Reraise Ring",
+   "reward_item": {
+    "id": 26169,
+    "src": "item_basic.sql"
+   },
+   "history": [
+    {
+     "era": "2009-05..2013-03",
+     "reward": "Opaline Dress",
+     "item": {
+      "id": 14384,
+      "src": "item_basic.sql"
+     }
+    },
+    {
+     "era": "2013-03..2015-08",
+     "reward": "Dragon Meat",
+     "item": null
+    }
+   ]
+  },
+  {
+   "id": "courage",
+   "name": "Tablet of Courage",
+   "lsb_index": 10,
+   "reward": "Pelican Ring",
+   "reward_item": {
+    "id": 15554,
+    "src": "item_basic.sql"
+   },
+   "history": [
+    {
+     "era": "2009-05..2013-03",
+     "reward": "Argent Coat (females: Vile Elixir +1)",
+     "item": null
+    },
+    {
+     "era": "2013-03..2015-08",
+     "reward": "Vile Elixir +1",
+     "item": {
+      "id": 4175,
+      "src": "item_basic.sql"
+     }
+    }
+   ]
+  }
+ ],
+ "tablet_note": "LSB enum index 0..10 is the order in mog_tablets.lua [S]; it is NOT claimed to be the retail tablet order. Wiki names the reward per tablet; the mapping to LSB indices is by name only and is unverified.",
+ "kupofried_ring": {
+  "id": "kupofrieds_ring",
+  "name": "Kupofried's Ring",
+  "role": "Primary reward for each tablet found; given with the secondary reward by the Explorer Moogle.",
+  "item_id": null,
+  "item": {
+   "id": 15840,
+   "src": "item_basic.sql"
+  }
+ },
+ "npcs": [
+  {
+   "id": "kupofried",
+   "name": "King Kupofried",
+   "role": "Quest giver / announces the Kupowers. Placed in Walk of Echoes.",
+   "zone": null,
+   "dsp_npcid": 17339258,
+   "status": "partial",
+   "note": "DSP npc_list row 17339258 is the candidate from the earlier audit; its zone and name text are NOT yet verified. Check zone_id encoding (bits 12-23) before relying on it."
+  },
+  {
+   "id": "explorer_moogle",
+   "name": "Explorer Moogle",
+   "role": "Ru'Lude Gardens. Hands out Kupofried's Ring + the tablet's second reward; also the Thrifty Transit teleport service (Mhaura/Selbina/3 nations).",
+   "zone": 243,
+   "dsp_npcid": null,
+   "status": "not built",
+   "note": "LSB has scripts/zones/RuLude_Gardens/npcs/Explorer_Moogle.lua [S] (stub). Zone 243 is the retail Ru'Lude Gardens id, confirm in zones table.",
+   "zone_candidates": [
+    [
+     243,
+     "RULUDE_GARDENS"
+    ]
+   ]
+  },
+  {
+   "id": "mog_tablet",
+   "name": "Mog Tablet (prop)",
+   "role": "Hidden prop. Spawns when a player is within ~87 yalms; targetable 2-3 s after; widescan after first spawn. 11 per cycle, one per tablet type.",
+   "zone": null,
+   "dsp_npcid": null,
+   "status": "not built",
+   "note": "Needs one npc_list row per tablet per zone. Ids must be allocated with the zone-id encoding (targid < 0x400) - do not invent."
+  },
+  {
+   "id": "regional_merchants",
+   "name": "Regional Merchants (3 nations)",
+   "role": "Bountiful Bazaar: all open for business simultaneously.",
+   "zone": null,
+   "dsp_npcid": null,
+   "status": "not built",
+   "note": "Hook into the regional vendor scripts; scope not yet audited."
+  },
+  {
+   "id": "outpost_survival",
+   "name": "Outpost teleporters / Survival Guides",
+   "role": "Thrifty Transit: free of charge.",
+   "zone": null,
+   "dsp_npcid": null,
+   "status": "not built",
+   "note": "Gil cost check in outpost teleport + survival guide scripts."
+  }
+ ],
+ "globals": [
+  {
+   "id": "cycle",
+   "label": "Cycle",
+   "detail": "All 11 tablets must be discovered; then the 3 random powers last 1 week (all 11 during Adventurer Appreciation Campaigns). After that, the tablets scatter again and become findable after a random 8-24 h. Each World has its own start time.",
+   "hook": "global state"
+  },
+  {
+   "id": "announce",
+   "label": "Discovery announce",
+   "detail": "A message is shown to every player in affected areas when a tablet is found; another when the Kupowers fade and the tablets spread. Entering an affected zone shows a chat message listing active powers.",
+   "hook": "zone-in + broadcast"
+  },
+  {
+   "id": "claim",
+   "label": "Reward claim",
+   "detail": "Reward claim persists until the Kupowers wear off (1 week). Delay between discovery and being able to claim. If a reward item is NoTrade/rare and already held, the Moogle blocks both until it is discarded.",
+   "hook": "explorer moogle"
+  },
+  {
+   "id": "zones",
+   "label": "Affected areas",
+   "detail": "Original FFXI, Rise of the Zilart and Chains of Promathia areas. Excluded: Dynamis, Tu'Lia, Lumoria, Promyvion, Abdhaljs, Halls of Transference, airship and ferry routes.",
+   "hook": "zone filter"
+  },
+  {
+   "id": "tablet_zones",
+   "label": "Tablet zones",
+   "detail": "29 field zones (list below). Locations per zone below are wiki-reported spots (grid squares), not coordinates.",
+   "hook": "per zone"
+  }
+ ],
+ "zones": [
+  {
+   "zoneid": 114,
+   "name": "EASTERN_ALTEPA_DESERT",
+   "wiki_spots": [
+    {
+     "grid": "F-8",
+     "wiki": "Dead center",
+     "id": "114-1"
+    },
+    {
+     "grid": "H-6",
+     "wiki": "Middle left",
+     "id": "114-2"
+    },
+    {
+     "grid": "G-6",
+     "wiki": "Top center",
+     "id": "114-3"
+    },
+    {
+     "grid": "G-8",
+     "wiki": "Top left",
+     "id": "114-4"
+    },
+    {
+     "grid": "G-8",
+     "wiki": "Slightly right of center",
+     "id": "114-5"
+    },
+    {
+     "grid": "G-8",
+     "wiki": "Bottom middle",
+     "id": "114-6"
+    },
+    {
+     "grid": "G-8/G-9",
+     "wiki": "Mid-left on the line",
+     "id": "114-7"
+    },
+    {
+     "grid": "G-9",
+     "wiki": "Top middle",
+     "id": "114-8"
+    }
+   ]
+  },
+  {
+   "zoneid": 125,
+   "name": "WESTERN_ALTEPA_DESERT",
+   "wiki_spots": [
+    {
+     "grid": "D-11/D-12",
+     "wiki": "On border slightly right of center, on top level",
+     "id": "125-1"
+    },
+    {
+     "grid": "D-12",
+     "wiki": "Top near trench",
+     "id": "125-2"
+    },
+    {
+     "grid": "F-11",
+     "wiki": "Dead center",
+     "id": "125-3"
+    },
+    {
+     "grid": "F-11",
+     "wiki": "Top middle",
+     "id": "125-4"
+    },
+    {
+     "grid": "H-5",
+     "wiki": "Bottom middle",
+     "id": "125-5"
+    },
+    {
+     "grid": "G-5",
+     "wiki": "Very bottom right",
+     "id": "125-6"
+    },
+    {
+     "grid": "I-8",
+     "wiki": "Top middle",
+     "id": "125-7"
+    },
+    {
+     "grid": "G-11",
+     "wiki": "Top center",
+     "id": "125-8"
+    },
+    {
+     "grid": "K-6",
+     "wiki": "Bottom left",
+     "id": "125-9"
+    },
+    {
+     "grid": "L-6",
+     "wiki": "Bottom middle (in between the plants)",
+     "id": "125-10"
+    }
+   ]
+  },
+  {
+   "zoneid": 123,
+   "name": "YUHTUNGA_JUNGLE",
+   "wiki_spots": [
+    {
+     "grid": "E-9",
+     "wiki": "Bottom left",
+     "id": "123-1"
+    },
+    {
+     "grid": "H-7",
+     "wiki": "Behind a rock near the tunnel",
+     "id": "123-2"
+    },
+    {
+     "grid": "I-6",
+     "wiki": "Next to the rock",
+     "id": "123-3"
+    },
+    {
+     "grid": "K-8",
+     "wiki": "Near center (must walk through Ifrit's Cauldron)",
+     "id": "123-4"
+    },
+    {
+     "grid": "F-10",
+     "wiki": "Bottom middle, right of the ramp that goes north",
+     "id": "123-5"
+    }
+   ]
+  },
+  {
+   "zoneid": 124,
+   "name": "YHOATOR_JUNGLE",
+   "wiki_spots": [
+    {
+     "grid": "E-9",
+     "wiki": "Lower middle at the bend",
+     "id": "124-1"
+    },
+    {
+     "grid": "E-9",
+     "wiki": "Top right",
+     "id": "124-2"
+    },
+    {
+     "grid": "G-7",
+     "wiki": "Lower left corner in the bend of the path",
+     "id": "124-3"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Above ground dead center",
+     "id": "124-4"
+    },
+    {
+     "grid": "F-9",
+     "wiki": "Top right corner next to rock surrounding teleport",
+     "id": "124-5"
+    },
+    {
+     "grid": "I-9",
+     "wiki": "Just south of Outpost in the ruins",
+     "id": "124-6"
+    },
+    {
+     "grid": "I-10",
+     "wiki": "Southeast corner",
+     "id": "124-7"
+    },
+    {
+     "grid": "G-11",
+     "wiki": "Top left corner",
+     "id": "124-8"
+    },
+    {
+     "grid": "J-11",
+     "wiki": "Top middle",
+     "id": "124-9"
+    }
+   ]
+  },
+  {
+   "zoneid": 101,
+   "name": "EAST_RONFAURE",
+   "wiki_spots": [
+    {
+     "grid": "H-6",
+     "wiki": "Center, on the surface SE from the hole",
+     "id": "101-1"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Top middle",
+     "id": "101-2"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Bottom left corner",
+     "id": "101-3"
+    },
+    {
+     "grid": "I-7",
+     "wiki": "Bridge on river",
+     "id": "101-4"
+    },
+    {
+     "grid": "J-7",
+     "wiki": "Top left",
+     "id": "101-5"
+    },
+    {
+     "grid": "I-9",
+     "wiki": "Near bridge on river",
+     "id": "101-6"
+    },
+    {
+     "grid": "I-9",
+     "wiki": "Top middle near river",
+     "id": "101-7"
+    }
+   ]
+  },
+  {
+   "zoneid": 100,
+   "name": "WEST_RONFAURE",
+   "wiki_spots": [
+    {
+     "grid": "F-7",
+     "wiki": "Bottom left",
+     "id": "100-1"
+    },
+    {
+     "grid": "G-7",
+     "wiki": "Top middle",
+     "id": "100-2"
+    },
+    {
+     "grid": "H-7",
+     "wiki": "Bottom left",
+     "id": "100-3"
+    },
+    {
+     "grid": "G-8",
+     "wiki": "Bottom right",
+     "id": "100-4"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Center",
+     "id": "100-5"
+    },
+    {
+     "grid": "H-9",
+     "wiki": "Center",
+     "id": "100-6"
+    },
+    {
+     "grid": "H-10",
+     "wiki": "Bottom right",
+     "id": "100-7"
+    },
+    {
+     "grid": "I-10",
+     "wiki": "Northeast of Stone Monument",
+     "id": "100-8"
+    }
+   ]
+  },
+  {
+   "zoneid": 102,
+   "name": "LA_THEINE_PLATEAU",
+   "wiki_spots": [
+    {
+     "grid": "C-8/D-8",
+     "wiki": "Border middle",
+     "id": "102-1"
+    },
+    {
+     "grid": "D-7",
+     "wiki": "Top left",
+     "id": "102-2"
+    },
+    {
+     "grid": "D-7",
+     "wiki": "Below middle of mountain",
+     "id": "102-3"
+    },
+    {
+     "grid": "E-7",
+     "wiki": "Near the road on the hillside",
+     "id": "102-4"
+    },
+    {
+     "grid": "I-6",
+     "wiki": "Near the middle",
+     "id": "102-5"
+    },
+    {
+     "grid": "I-7",
+     "wiki": "West of mountains",
+     "id": "102-6"
+    },
+    {
+     "grid": "I-8",
+     "wiki": "Top middle",
+     "id": "102-7"
+    },
+    {
+     "grid": "I-9",
+     "wiki": "Next to the road",
+     "id": "102-8"
+    },
+    {
+     "grid": "J-7",
+     "wiki": "Bottom right corner next to road",
+     "id": "102-9"
+    },
+    {
+     "grid": "I-11",
+     "wiki": "Center on road",
+     "id": "102-10"
+    },
+    {
+     "grid": "J-11",
+     "wiki": "Center",
+     "id": "102-11"
+    },
+    {
+     "grid": "K-11",
+     "wiki": "In the middle near the pond",
+     "id": "102-12"
+    },
+    {
+     "grid": "L-10",
+     "wiki": "Middle-west",
+     "id": "102-13"
+    }
+   ]
+  },
+  {
+   "zoneid": 103,
+   "name": "VALKURM_DUNES",
+   "wiki_spots": [
+    {
+     "grid": "D-7",
+     "wiki": "On way to secret beach",
+     "id": "103-1"
+    },
+    {
+     "grid": "E-7",
+     "wiki": "The very top left",
+     "id": "103-2"
+    },
+    {
+     "grid": "E-8",
+     "wiki": "Just west of the palm trees",
+     "id": "103-3"
+    },
+    {
+     "grid": "E-8",
+     "wiki": "Middle/bottom left",
+     "id": "103-4"
+    },
+    {
+     "grid": "F-7",
+     "wiki": "Right in-between all the palm trees",
+     "id": "103-5"
+    },
+    {
+     "grid": "G-7",
+     "wiki": "Middle of square, between root and wall",
+     "id": "103-6"
+    },
+    {
+     "grid": "H-9",
+     "wiki": "A little north of the boat",
+     "id": "103-7"
+    },
+    {
+     "grid": "I-8",
+     "wiki": "Middle/bottom right",
+     "id": "103-8"
+    },
+    {
+     "grid": "K-9",
+     "wiki": "Top middle slightly to the right next to wall",
+     "id": "103-9"
+    }
+   ]
+  },
+  {
+   "zoneid": 106,
+   "name": "NORTH_GUSTABERG",
+   "wiki_spots": [
+    {
+     "grid": "D-10/E-10",
+     "wiki": "By road next to a rock",
+     "id": "106-1"
+    },
+    {
+     "grid": "E-9/E-10",
+     "wiki": "On right side of border near mountain",
+     "id": "106-2"
+    },
+    {
+     "grid": "F-8/G-8",
+     "wiki": "Center of border line",
+     "id": "106-3"
+    },
+    {
+     "grid": "F-9",
+     "wiki": "Bottom right",
+     "id": "106-4"
+    },
+    {
+     "grid": "H-7",
+     "wiki": "Center (just south of the river)",
+     "id": "106-5"
+    },
+    {
+     "grid": "H-7",
+     "wiki": "Bottom left corner",
+     "id": "106-6"
+    },
+    {
+     "grid": "I-7",
+     "wiki": "Lower left on Zegham Hill path",
+     "id": "106-7"
+    },
+    {
+     "grid": "J-7",
+     "wiki": "Center left on Zegham Hill path",
+     "id": "106-8"
+    },
+    {
+     "grid": "J-8",
+     "wiki": "Northwest corner on Zegham Hill",
+     "id": "106-9"
+    },
+    {
+     "grid": "K-6",
+     "wiki": "Slight right of center in front of Oldton Movalpolos zone",
+     "id": "106-10"
+    },
+    {
+     "grid": "K-7",
+     "wiki": "Top-left quad near bend",
+     "id": "106-11"
+    }
+   ]
+  },
+  {
+   "zoneid": 107,
+   "name": "SOUTH_GUSTABERG",
+   "wiki_spots": [
+    {
+     "grid": "E-8",
+     "wiki": "Bottom Left",
+     "id": "107-1"
+    },
+    {
+     "grid": "E-9",
+     "wiki": "Between 3 small ponds",
+     "id": "107-2"
+    },
+    {
+     "grid": "F-8",
+     "wiki": "Top left",
+     "id": "107-3"
+    },
+    {
+     "grid": "F-8",
+     "wiki": "Top middle",
+     "id": "107-4"
+    },
+    {
+     "grid": "E-8/E-9/F-8/F-9",
+     "wiki": "At the intersection near path",
+     "id": "107-5"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Bottom left corner next to road",
+     "id": "107-6"
+    },
+    {
+     "grid": "H-9",
+     "wiki": "Top middle/left near path",
+     "id": "107-7"
+    },
+    {
+     "grid": "I-8",
+     "wiki": "Center top - top level Vomp Hill",
+     "id": "107-8"
+    },
+    {
+     "grid": "J-9",
+     "wiki": "Lower left under platform",
+     "id": "107-9"
+    },
+    {
+     "grid": "J-9",
+     "wiki": "Top right corner",
+     "id": "107-10"
+    }
+   ]
+  },
+  {
+   "zoneid": 108,
+   "name": "KONSCHTAT_HIGHLANDS",
+   "wiki_spots": [
+    {
+     "grid": "E-6/F-6",
+     "wiki": "At the middle of line dividing the coordinates",
+     "id": "108-1"
+    },
+    {
+     "grid": "H-4/H-5",
+     "wiki": "At the middle of line dividing the coordinates",
+     "id": "108-2"
+    },
+    {
+     "grid": "G-6",
+     "wiki": "Just below middle center",
+     "id": "108-3"
+    },
+    {
+     "grid": "G-6",
+     "wiki": "Middle left",
+     "id": "108-4"
+    },
+    {
+     "grid": "G-6",
+     "wiki": "Bottom left",
+     "id": "108-5"
+    },
+    {
+     "grid": "F-8",
+     "wiki": "Bottom left",
+     "id": "108-6"
+    },
+    {
+     "grid": "G-9",
+     "wiki": "Top middle",
+     "id": "108-7"
+    },
+    {
+     "grid": "K-5",
+     "wiki": "Bottom left corner next to road",
+     "id": "108-8"
+    },
+    {
+     "grid": "K-6",
+     "wiki": "Bottom left next to road",
+     "id": "108-9"
+    },
+    {
+     "grid": "K-7",
+     "wiki": "Bottom left corner next to road",
+     "id": "108-10"
+    },
+    {
+     "grid": "J-8",
+     "wiki": "Hill slope",
+     "id": "108-11"
+    },
+    {
+     "grid": "K-4",
+     "wiki": "Heading toward Pashhow",
+     "id": "108-12"
+    }
+   ]
+  },
+  {
+   "zoneid": 109,
+   "name": "PASHHOW_MARSHLANDS",
+   "wiki_spots": [
+    {
+     "grid": "F-6",
+     "wiki": "Top right corner, in a muddy pool against the wall",
+     "id": "109-1"
+    },
+    {
+     "grid": "G-7",
+     "wiki": "Southwest corner, against north wall",
+     "id": "109-2"
+    },
+    {
+     "grid": "G-8/G-9",
+     "wiki": "Right side on border",
+     "id": "109-3"
+    },
+    {
+     "grid": "H-6",
+     "wiki": "Bottom left",
+     "id": "109-4"
+    },
+    {
+     "grid": "H-7",
+     "wiki": "Center",
+     "id": "109-5"
+    },
+    {
+     "grid": "H-10",
+     "wiki": "Top right",
+     "id": "109-6"
+    },
+    {
+     "grid": "H-10",
+     "wiki": "Bottom middle near wall",
+     "id": "109-7"
+    },
+    {
+     "grid": "H-9",
+     "wiki": "Bottom center",
+     "id": "109-8"
+    },
+    {
+     "grid": "I-8",
+     "wiki": "Bottom left corner close to path",
+     "id": "109-9"
+    },
+    {
+     "grid": "I-8",
+     "wiki": "Top right",
+     "id": "109-10"
+    },
+    {
+     "grid": "I-10",
+     "wiki": "Top center",
+     "id": "109-11"
+    },
+    {
+     "grid": "J-6",
+     "wiki": "Against the wall",
+     "id": "109-12"
+    },
+    {
+     "grid": "J-10",
+     "wiki": "NW corner",
+     "id": "109-13"
+    }
+   ]
+  },
+  {
+   "zoneid": 116,
+   "name": "EAST_SARUTABARUTA",
+   "wiki_spots": [
+    {
+     "grid": "G-5",
+     "wiki": "Bottom right",
+     "id": "116-1"
+    },
+    {
+     "grid": "G-6",
+     "wiki": "Top left corner",
+     "id": "116-2"
+    },
+    {
+     "grid": "F-8",
+     "wiki": "Bottom middle",
+     "id": "116-3"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Bottom, south of path",
+     "id": "116-4"
+    },
+    {
+     "grid": "H-9",
+     "wiki": "Top middle, slightly east of the river before bend",
+     "id": "116-5"
+    },
+    {
+     "grid": "J-7",
+     "wiki": "Bottom right, right next to the tower",
+     "id": "116-6"
+    },
+    {
+     "grid": "J-8",
+     "wiki": "Top left",
+     "id": "116-7"
+    },
+    {
+     "grid": "J-8",
+     "wiki": "Bottom left",
+     "id": "116-8"
+    },
+    {
+     "grid": "J-10",
+     "wiki": "Top left corner between two rock formations",
+     "id": "116-9"
+    }
+   ]
+  },
+  {
+   "zoneid": 115,
+   "name": "WEST_SARUTABARUTA",
+   "wiki_spots": [
+    {
+     "grid": "F-11/G-11",
+     "wiki": "Border middle",
+     "id": "115-1"
+    },
+    {
+     "grid": "G-9",
+     "wiki": "Bottom middle",
+     "id": "115-2"
+    },
+    {
+     "grid": "H-6",
+     "wiki": "North of Outpost close to a tree",
+     "id": "115-3"
+    },
+    {
+     "grid": "F-7",
+     "wiki": "Top right",
+     "id": "115-4"
+    },
+    {
+     "grid": "H-7",
+     "wiki": "On the north line (south of outpost, right as the road turns east)",
+     "id": "115-5"
+    },
+    {
+     "grid": "I-7",
+     "wiki": "Near border with J-7",
+     "id": "115-6"
+    },
+    {
+     "grid": "I-8",
+     "wiki": "Top left corner",
+     "id": "115-7"
+    },
+    {
+     "grid": "J-8",
+     "wiki": "Middle-east",
+     "id": "115-8"
+    }
+   ]
+  },
+  {
+   "zoneid": 117,
+   "name": "TAHRONGI_CANYON",
+   "wiki_spots": [
+    {
+     "grid": "G-5",
+     "wiki": "Bottom right",
+     "id": "117-1"
+    },
+    {
+     "grid": "H-5",
+     "wiki": "Top right",
+     "id": "117-2"
+    },
+    {
+     "grid": "G-7/H-7",
+     "wiki": "Right on the line in the middle",
+     "id": "117-3"
+    },
+    {
+     "grid": "H-6",
+     "wiki": "Southeast corner",
+     "id": "117-4"
+    },
+    {
+     "grid": "H-6",
+     "wiki": "Bottom middle",
+     "id": "117-5"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Smack in the middle, on top of the hill",
+     "id": "117-6"
+    },
+    {
+     "grid": "H-8/I-8",
+     "wiki": "Bottom part of border",
+     "id": "117-7"
+    },
+    {
+     "grid": "I-8/J-8",
+     "wiki": "Right on the line in the middle",
+     "id": "117-8"
+    },
+    {
+     "grid": "J-6",
+     "wiki": "Bottom left corner",
+     "id": "117-9"
+    },
+    {
+     "grid": "F-7",
+     "wiki": "Bottom middle",
+     "id": "117-10"
+    }
+   ]
+  },
+  {
+   "zoneid": 119,
+   "name": "MERIPHATAUD_MOUNTAINS",
+   "wiki_spots": [
+    {
+     "grid": "E-5",
+     "wiki": "Top left corner",
+     "id": "119-1"
+    },
+    {
+     "grid": "F-8",
+     "wiki": "Middle right",
+     "id": "119-2"
+    },
+    {
+     "grid": "F-9",
+     "wiki": "Under the top line, just under the big \"G\" letter",
+     "id": "119-3"
+    },
+    {
+     "grid": "H-6",
+     "wiki": "Bottom left corner",
+     "id": "119-4"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Left side under spine",
+     "id": "119-5"
+    },
+    {
+     "grid": "I-7",
+     "wiki": "Middle",
+     "id": "119-6"
+    },
+    {
+     "grid": "I-8",
+     "wiki": "South middle right",
+     "id": "119-7"
+    },
+    {
+     "grid": "I-8/I-9",
+     "wiki": "On border slight left of center north of rock formation",
+     "id": "119-8"
+    }
+   ]
+  },
+  {
+   "zoneid": 110,
+   "name": "ROLANBERRY_FIELDS",
+   "wiki_spots": [
+    {
+     "grid": "F-9",
+     "wiki": "Lower left",
+     "id": "110-1"
+    },
+    {
+     "grid": "F-10",
+     "wiki": "Lower right",
+     "id": "110-2"
+    },
+    {
+     "grid": "G-7",
+     "wiki": "Top right next to road",
+     "id": "110-3"
+    },
+    {
+     "grid": "H-10",
+     "wiki": "Middle left",
+     "id": "110-4"
+    },
+    {
+     "grid": "H-11",
+     "wiki": "Near the vines",
+     "id": "110-5"
+    },
+    {
+     "grid": "I-9",
+     "wiki": "Center",
+     "id": "110-6"
+    },
+    {
+     "grid": "I-10",
+     "wiki": "Top middle, on lower section between \"us\" of \"Brutus's Field\"",
+     "id": "110-7"
+    },
+    {
+     "grid": "I-9/I-10",
+     "wiki": "Border right beneath 2nd \"s\" of \"Brutus's Field\"",
+     "id": "110-8"
+    },
+    {
+     "grid": "J-10",
+     "wiki": "Right center near pond",
+     "id": "110-9"
+    }
+   ]
+  },
+  {
+   "zoneid": 105,
+   "name": "BATALLIA_DOWNS",
+   "wiki_spots": [
+    {
+     "grid": "E-5",
+     "wiki": "Near Necropolis entrance",
+     "id": "105-1"
+    },
+    {
+     "grid": "E-6",
+     "wiki": "Exactly north of Syrillia on raised section",
+     "id": "105-2"
+    },
+    {
+     "grid": "E-7",
+     "wiki": "Southwest quadrant",
+     "id": "105-3"
+    },
+    {
+     "grid": "F-5",
+     "wiki": "Bottom right",
+     "id": "105-4"
+    },
+    {
+     "grid": "F-5",
+     "wiki": "Top right",
+     "id": "105-5"
+    },
+    {
+     "grid": "G-7",
+     "wiki": "Southeast, on top of a hill",
+     "id": "105-6"
+    },
+    {
+     "grid": "G-8",
+     "wiki": "Bottom of hill near tunnel",
+     "id": "105-7"
+    },
+    {
+     "grid": "H-6",
+     "wiki": "On top of the hill near the ruins",
+     "id": "105-8"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Center",
+     "id": "105-9"
+    },
+    {
+     "grid": "I-7/J-7",
+     "wiki": "Top of border near path",
+     "id": "105-10"
+    },
+    {
+     "grid": "J-6",
+     "wiki": "By the ocean",
+     "id": "105-11"
+    }
+   ]
+  },
+  {
+   "zoneid": 120,
+   "name": "SAUROMUGUE_CHAMPAIGN",
+   "wiki_spots": [
+    {
+     "grid": "H-7",
+     "wiki": "Middle right on path",
+     "id": "120-1"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Slightly left of center close to mountain",
+     "id": "120-2"
+    },
+    {
+     "grid": "H-9",
+     "wiki": "Next to Gausebit Mountains",
+     "id": "120-3"
+    },
+    {
+     "grid": "H-9/I-9",
+     "wiki": "Border center",
+     "id": "120-4"
+    },
+    {
+     "grid": "I-7",
+     "wiki": "Center in ruins on hillside",
+     "id": "120-5"
+    },
+    {
+     "grid": "I-7",
+     "wiki": "Outside of ruins, northeast quadrant",
+     "id": "120-6"
+    },
+    {
+     "grid": "J-7",
+     "wiki": "Slightly right of center on raised section",
+     "id": "120-7"
+    },
+    {
+     "grid": "J-8",
+     "wiki": "East of mountain",
+     "id": "120-8"
+    },
+    {
+     "grid": "K-7",
+     "wiki": "Near tower",
+     "id": "120-9"
+    },
+    {
+     "grid": "K-7/L-7",
+     "wiki": "Border center",
+     "id": "120-10"
+    },
+    {
+     "grid": "K-8",
+     "wiki": "Near path",
+     "id": "120-11"
+    },
+    {
+     "grid": "K-9/L-9",
+     "wiki": "Border center",
+     "id": "120-12"
+    },
+    {
+     "grid": "J-9/K-9",
+     "wiki": "Border center",
+     "id": "120-13"
+    },
+    {
+     "grid": "K-10",
+     "wiki": "On path",
+     "id": "120-14"
+    },
+    {
+     "grid": "L-7",
+     "wiki": "Eastern side at start of mountain path",
+     "id": "120-15"
+    }
+   ]
+  },
+  {
+   "zoneid": 118,
+   "name": "BUBURIMU_PENINSULA",
+   "wiki_spots": [
+    {
+     "grid": "I-6",
+     "wiki": "Middle left next to mountain",
+     "id": "118-1"
+    },
+    {
+     "grid": "G-7",
+     "wiki": "Bottom right",
+     "id": "118-2"
+    },
+    {
+     "grid": "G-7",
+     "wiki": "Center",
+     "id": "118-3"
+    },
+    {
+     "grid": "G-7",
+     "wiki": "Bottom middle",
+     "id": "118-4"
+    },
+    {
+     "grid": "G-9",
+     "wiki": "Middle right on beach level",
+     "id": "118-5"
+    },
+    {
+     "grid": "J-7",
+     "wiki": "Bottom middle",
+     "id": "118-6"
+    },
+    {
+     "grid": "J-8",
+     "wiki": "Middle right",
+     "id": "118-7"
+    },
+    {
+     "grid": "J-5",
+     "wiki": "Bottom right",
+     "id": "118-8"
+    }
+   ]
+  },
+  {
+   "zoneid": 113,
+   "name": "CAPE_TERIGGAN",
+   "wiki_spots": [
+    {
+     "grid": "G-7/H-7",
+     "wiki": "Right on the line",
+     "id": "113-1"
+    },
+    {
+     "grid": "H-9",
+     "wiki": "Center",
+     "id": "113-2"
+    },
+    {
+     "grid": "H-7",
+     "wiki": "Southwest quadrant",
+     "id": "113-3"
+    }
+   ]
+  },
+  {
+   "zoneid": 128,
+   "name": "VALLEY_OF_SORROWS",
+   "wiki_spots": [
+    {
+     "grid": "G-8",
+     "wiki": "By the entrance",
+     "id": "128-1"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Dead center",
+     "id": "128-2"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Top right",
+     "id": "128-3"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Bottom left",
+     "id": "128-4"
+    }
+   ]
+  },
+  {
+   "zoneid": 127,
+   "name": "BEHEMOTHS_DOMINION",
+   "wiki_spots": [
+    {
+     "grid": "E-8",
+     "wiki": "Near the Ethereal Junction",
+     "id": "127-1"
+    },
+    {
+     "grid": "E-8",
+     "wiki": "Top right corner",
+     "id": "127-2"
+    },
+    {
+     "grid": "F-7",
+     "wiki": "Left middle between E-7/F-7 line",
+     "id": "127-3"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Against the spine",
+     "id": "127-4"
+    }
+   ]
+  },
+  {
+   "zoneid": 121,
+   "name": "THE_SANCTUARY_OF_ZITAH",
+   "wiki_spots": [
+    {
+     "grid": "D-7",
+     "wiki": "Behind rock near the wall",
+     "id": "121-1"
+    },
+    {
+     "grid": "F-8",
+     "wiki": "Bottom middle",
+     "id": "121-2"
+    },
+    {
+     "grid": "F-8",
+     "wiki": "Bottom right",
+     "id": "121-3"
+    },
+    {
+     "grid": "G-10",
+     "wiki": "Bottom center small hill",
+     "id": "121-4"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Bottom left corner",
+     "id": "121-5"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Middle against tree",
+     "id": "121-6"
+    },
+    {
+     "grid": "H-9",
+     "wiki": "Bottom middle slightly to the right",
+     "id": "121-7"
+    },
+    {
+     "grid": "K-10",
+     "wiki": "South near rocks",
+     "id": "121-8"
+    }
+   ]
+  },
+  {
+   "zoneid": 122,
+   "name": "ROMAEVE",
+   "wiki_spots": [
+    {
+     "grid": "C-9",
+     "wiki": "Southeast quadrant",
+     "id": "122-1"
+    },
+    {
+     "grid": "G-9",
+     "wiki": "Upper right",
+     "id": "122-2"
+    },
+    {
+     "grid": "K-6",
+     "wiki": "Middle south, by the wall",
+     "id": "122-3"
+    },
+    {
+     "grid": "L-9",
+     "wiki": "",
+     "id": "122-4"
+    },
+    {
+     "grid": "M-9",
+     "wiki": "Southwest quadrant",
+     "id": "122-5"
+    }
+   ]
+  },
+  {
+   "zoneid": 111,
+   "name": "BEAUCEDINE_GLACIER",
+   "wiki_spots": [
+    {
+     "grid": "G-7",
+     "wiki": "Right in middle",
+     "id": "111-1"
+    },
+    {
+     "grid": "H-8",
+     "wiki": "Up on very top cliff (have to go around to get there)",
+     "id": "111-2"
+    },
+    {
+     "grid": "I-7",
+     "wiki": "Atop the cliff, near center",
+     "id": "111-3"
+    },
+    {
+     "grid": "I-9",
+     "wiki": "Middle right, top level",
+     "id": "111-4"
+    },
+    {
+     "grid": "J-9",
+     "wiki": "Left side, top level",
+     "id": "111-5"
+    },
+    {
+     "grid": "J-9",
+     "wiki": "Top right corner, bottom level near cliff",
+     "id": "111-6"
+    },
+    {
+     "grid": "K-5",
+     "wiki": "Close to Fei'Yin behind rock on the right side of ramp",
+     "id": "111-7"
+    },
+    {
+     "grid": "H-9",
+     "wiki": "Top right corner, between pond and cliff",
+     "id": "111-8"
+    },
+    {
+     "grid": "G-8",
+     "wiki": "Right in the middle",
+     "id": "111-9"
+    }
+   ]
+  },
+  {
+   "zoneid": 112,
+   "name": "XARCABARD",
+   "wiki_spots": [
+    {
+     "grid": "F-7",
+     "wiki": "Southeast corner, near trench",
+     "id": "112-1"
+    },
+    {
+     "grid": "F-8",
+     "wiki": "Near wall (might be the same as the F-7 one)",
+     "id": "112-2"
+    },
+    {
+     "grid": "G-8",
+     "wiki": "Upper right corner of coordinate square, along the wall",
+     "id": "112-3"
+    },
+    {
+     "grid": "H-7",
+     "wiki": "Middle left on top level next to mountain",
+     "id": "112-4"
+    },
+    {
+     "grid": "H-7",
+     "wiki": "Middle right on top level next to mountain",
+     "id": "112-5"
+    },
+    {
+     "grid": "H-9",
+     "wiki": "Right behind the rock north of the Outpost Warp",
+     "id": "112-6"
+    },
+    {
+     "grid": "I-6",
+     "wiki": "Beside the Banner, bottom of mountain",
+     "id": "112-7"
+    },
+    {
+     "grid": "I-7",
+     "wiki": "Bottom middle slightly to the right next to rock",
+     "id": "112-8"
+    }
+   ]
+  },
+  {
+   "zoneid": 104,
+   "name": "JUGNER_FOREST",
+   "wiki_spots": [
+    {
+     "grid": "K-7",
+     "wiki": "Bottom left corner",
+     "id": "104-1"
+    },
+    {
+     "grid": "K-10",
+     "wiki": "Bottom middle",
+     "id": "104-2"
+    },
+    {
+     "grid": "J-6",
+     "wiki": "Near path",
+     "id": "104-3"
+    },
+    {
+     "grid": "J-10",
+     "wiki": "Middle, eastern bank of river",
+     "id": "104-4"
+    },
+    {
+     "grid": "I-5",
+     "wiki": "Bottom middle, west of mountain near lake",
+     "id": "104-5"
+    },
+    {
+     "grid": "I-6/J-6",
+     "wiki": "Top corner",
+     "id": "104-6"
+    },
+    {
+     "grid": "I-10/J-10",
+     "wiki": "Border near wall",
+     "id": "104-7"
+    }
+   ]
+  },
+  {
+   "zoneid": 126,
+   "name": "QUFIM_ISLAND",
+   "wiki_spots": [
+    {
+     "grid": "G-8",
+     "wiki": "Northwest corner (near: Atkorkamuy spawn)",
+     "id": "126-1"
+    },
+    {
+     "grid": "H-7/I-7",
+     "wiki": "Border",
+     "id": "126-2"
+    },
+    {
+     "grid": "I-8",
+     "wiki": "Top middle near I-7 border next to mountain",
+     "id": "126-3"
+    }
+   ]
+  }
+ ],
+ "missing_items": [
+  "Argent Coat (females: Vile Elixir +1)",
+  "Beetle Blood",
+  "Damascene Cloth",
+  "Dragon Meat",
+  "Kupon I-Orche",
+  "Malboro Fiber",
+  "Orichalcum Ore",
+  "Oxblood",
+  "Vanadium Ore"
+ ]
+}

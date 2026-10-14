@@ -11408,6 +11408,46 @@ async def campaign_mark(request: Request):
         raise HTTPException(status_code=400, detail=str(ex))
 
 
+@app.get("/domains/super_kupopower/overview.json")
+def kupopower_overview_json():
+    from workbench.domains import super_kupopower as kp
+    return JSONResponse(kp.overview())
+
+
+@app.post("/domains/super_kupopower/rebuild")
+def kupopower_rebuild():
+    from workbench.domains import super_kupopower as kp
+    kp.rebuild()
+    return JSONResponse({"ok": True})
+
+
+@app.post("/domains/super_kupopower/spot")
+async def kupopower_spot(request: Request):
+    from workbench.domains import super_kupopower as kp
+    b = await request.json()
+    try:
+        if b.get("delete"):
+            kp.delete_spot(str(b.get("id", "")))
+            return JSONResponse({"ok": True})
+        return JSONResponse(kp.save_spot(str(b.get("id", "")), b))
+    except KeyError as ex:
+        raise HTTPException(status_code=404, detail=str(ex))
+    except (ValueError, TypeError) as ex:
+        raise HTTPException(status_code=400, detail=str(ex))
+
+
+@app.post("/domains/super_kupopower/mark")
+async def kupopower_mark(request: Request):
+    from workbench.domains import super_kupopower as kp
+    b = await request.json()
+    try:
+        return JSONResponse(kp.mark(str(b.get("kind", "")), str(b.get("id", "")), str(b.get("state", "")), str(b.get("note", ""))))
+    except KeyError as ex:
+        raise HTTPException(status_code=404, detail=str(ex))
+    except ValueError as ex:
+        raise HTTPException(status_code=400, detail=str(ex))
+
+
 @app.get("/domains/salvage/overview.json")
 def salvage_overview_json():
     from workbench.domains import salvage as slv
@@ -11499,3 +11539,21 @@ if __name__ == "__main__":
     _port = int(settings_mod.get(_con, "port") or settings_mod.DEFAULTS["port"])
     _con.close()
     uvicorn.run("workbench.app.host:app", host="127.0.0.1", port=_port, reload=False)
+
+
+@app.get("/domains/survival_guides/overview.json")
+def survival_guides_overview_json():
+    from workbench.domains import survival_guides as sg
+    return JSONResponse(sg.overview())
+
+
+@app.post("/domains/survival_guides/mark")
+async def survival_guides_mark(request: Request):
+    from workbench.domains import survival_guides as sg
+    b = await request.json()
+    try:
+        return JSONResponse(sg.mark(str(b.get("id", "")), str(b.get("state", "")), str(b.get("note", ""))))
+    except KeyError as ex:
+        raise HTTPException(status_code=404, detail=str(ex))
+    except ValueError as ex:
+        raise HTTPException(status_code=400, detail=str(ex))

@@ -1,0 +1,19 @@
+{
+  "super_kupopower": {
+    "label": "Super Kupopower",
+    "archetype": "system.super_kupopower",
+    "summary": "Wings of the Goddess era Mog Tablets and King Kupofried's Super Kupowers: 11 tablets hidden across 29 field zones, the Explorer Moogle rewards, 11 powers (3 active per week) and the global/zone changes they make. Tablet locations are entered per zone with coordinates; every power, NPC and reward gets a status and a validation mark. Unknowns stay marked unknown.",
+    "wiki": {
+      "categories": ["Super Kupowers"],
+      "templates": [],
+      "headings": ["Tablets and Secondary Rewards", "Tablet Locations", "Affected Areas"]
+    },
+    "children": [],
+    "entities": [
+      {"kind": "Mog Tablet spots", "fields": ["zone", "grid", "x", "y", "z", "tablet", "status"], "server_globs": ["scripts/globals/mog_tablets.lua"], "edit": null},
+      {"kind": "Kupofried / Explorer Moogle NPCs", "fields": ["name", "zone", "DSP id", "events"], "server_globs": ["scripts/zones/RuLude_Gardens/npcs/Explorer_Moogle.lua", "sql/npc_list.sql"], "edit": "/zoneplot"},
+      {"kind": "Super Kupowers", "fields": ["name", "effect", "hook", "status"], "server_globs": ["scripts/globals/mog_tablets.lua", "scripts/globals/caskets.lua"], "edit": null}
+    ],
+    "compare": "Compare against captures (message ids, Explorer Moogle events) and in-game !logpos before marking anything ok."
+  }
+}

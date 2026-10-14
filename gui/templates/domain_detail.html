@@ -62,6 +62,33 @@ th.vwc1,td.vwc1,th.vwc2,td.vwc2{width:120px;min-width:120px;white-space:nowrap}.
 <script src="/static/campaign.js?v=1"></script>
 {% endif %}
 
+{% if d.archetype == "system.super_kupopower" %}
+<style>
+.cpcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}.cpcard{border:1px solid var(--border,#444);border-radius:8px;padding:8px}
+.cpst{font-weight:600;min-width:70px;text-align:center}.cptabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.cpact{font-weight:700;outline:2px solid currentColor}
+#kp-root table input{font-family:monospace}#kp-root details{border:1px solid var(--border,#444);border-radius:8px;padding:6px 10px;margin:6px 0}.vwkv td{padding:1px 8px 1px 0;vertical-align:top}
+</style>
+<section id="kp-root">
+<h2>Super Kupopower <a class="chip" href="/domains/super_kupopower/overview.json" target="_blank">json</a> <button type="button" id="kp-rebuild" class="chip">Rebuild from research</button></h2>
+<div id="kp-sum" class="muted"></div>
+<div id="kp-strip" class="cpcards"></div>
+<div id="kp-tabs" class="cptabs"></div>
+<div id="kp-body"></div>
+<p class="muted">Wiki spots [W] are grid squares only and unverified. Enter x/y/z from <span class="mono">!logpos</span> in game (Y is the DB value, inverted axis; run <span class="mono">!checknav x y z</span> before writing SQL). Message and event ids are not recorded: none are verified.</p>
+</section>
+<script src="/static/super_kupopower.js?v=1"></script>
+{% endif %}
+
+{% if d.archetype == "system.survival_guides" %}
+<section id="sg-root">
+<h2>Survival Guides <a class="chip" href="/domains/survival_guides/overview.json" target="_blank">json</a></h2>
+<div id="sg-sum" class="muted"></div>
+<div id="sg-body"></div>
+<p class="muted">DAT = id found as "Survival Guide" in a fresh client pull (blank = zone not pulled yet). Live = present in dspdb_fresh now. Y is the DB value (inverted axis): run <span class="mono">!checknav x y z</span> before moving a guide.</p>
+</section>
+<script src="/static/survival_guides.js?v=1"></script>
+{% endif %}
+
 {% if d.archetype == "system.salvage" %}
 <style>
 .cpcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}.cpcard{border:1px solid var(--border,#444);border-radius:8px;padding:8px}.cpbar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:#8883;margin:4px 0 0}.cpbar span{display:block;height:100%}
