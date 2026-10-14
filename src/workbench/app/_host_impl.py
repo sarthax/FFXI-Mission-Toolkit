@@ -9613,6 +9613,8 @@ def assault_domain_page(request: Request):
     from workbench.domains.assault_tracker import overview
     from workbench.domains.assault_reviews import all_reviews
     tracker = overview()
+    from workbench.domains.assault_fix_crossref import correlate
+    tracker["fix_log"] = correlate(tracker["missions"], tracker["shared"])
     rows, history = all_reviews()
     by_mission = {}
     for row in rows:
