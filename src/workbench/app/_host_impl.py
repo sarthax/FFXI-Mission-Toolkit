@@ -9610,7 +9610,8 @@ def assault_domain_page(request: Request):
     Existing generic editors remain canonical; this page links into them rather than duplicating
     Zone Editor or mission/capture logic while the domain package grows.
     """
-    return templates.TemplateResponse(request, "domain_assault.html", {"request": request})
+    from workbench.domains.assault_tracker import overview
+    return templates.TemplateResponse(request, "domain_assault.html", {"request": request, "tracker": overview()})
 
 
 # ---- Nyzul Isle plot tool (nyzul_plot.py) ---------------------------------------------------
