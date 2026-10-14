@@ -55,6 +55,33 @@
 <td>{{ progress.get('fully_reviewed_issues', 0) }}</td>
 <td>{{ progress.get('blocked_issues', 0) }}</td></tr>
 {% endfor %}</tbody></table></div>
+<h2 id="assault-backlog">Issue review backlog</h2>
+<p class="muted">Uses explicit review decisions only; historical fixes and candidate matches do not automatically close any issue.</p>
+<form method="get" action="/domains/assault#assault-backlog" class="gap-filters" style="display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin:10px 0">
+  <label>Zone <select name="zone">
+    <option value="">All zones</option>
+    {% for z in tracker.zones %}<option value="{{ z }}" {% if tracker.backlog_selection.zone == z %}selected{% endif %}>{{ z }}</option>{% endfor %}
+  </select></label>
+  <label>Issue state <select name="backlog_status">
+    {% for state in tracker.backlog_filters %}
+    <option value="{{ state }}" {% if tracker.backlog_selection.status == state %}selected{% endif %}>{{ state|replace('_',' ')|title }}</option>
+    {% endfor %}
+  </select></label>
+  <label>Search <input name="q" value="{{ tracker.backlog_selection.q }}" placeholder="Mission name or issue text"></label>
+  <button type="submit">Filter issues</button>
+</form>
+<div class="dense-toolbar"><strong>{{ tracker.backlog|length }} matching issue(s)</strong></div>
+{% if tracker.backlog %}
+<div class="table-wrap" style="max-height:520px;overflow:auto"><table>
+<thead><tr><th>Mission / zone</th><th>Issue</th><th>Topaz</th><th>DSP port</th><th>DSP test</th><th>Review</th></tr></thead>
+<tbody>{% for row in tracker.backlog %}
+<tr>
+<td><strong>#{{ row.mission }} {{ row.name }}</strong><div class="muted">{{ row.zone }}</div></td>
+<td style="max-width:540px"><div style="max-height:85px;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere">{{ row.text }}</div><span class="muted">{{ row.fix_candidates }} possible fix-log link(s)</span></td>
+<td>{{ row.topaz }}</td><td>{{ row.port }}</td><td>{{ row.validation }}</td>
+<td><a class="chip" href="#assault-{{ row.mission }}-issue-{{ row.issue }}">Review issue {{ row.issue }}</a></td>
+</tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">No recorded issues match these filters. An empty result is not proof all issues have been fixed.</p>{% endif %}
 <div class="assault-table-scroll"><table class="assault-grid" aria-label="Assault missions by zone and rank">
 <thead><tr><th>Area / Rank</th>{% for rank in tracker.ranks %}<th>{{ rank }}</th>{% endfor %}</tr></thead>
 <tbody>
