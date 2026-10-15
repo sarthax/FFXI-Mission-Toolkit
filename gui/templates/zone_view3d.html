@@ -296,6 +296,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
       <strong>Zone correlation · live versus loaded map</strong>
       <label style="display:block;margin:6px 0"><input type="checkbox" id="zone3d-correlation-highlight"> Highlight discrepancies on map</label>
       <div id="zone3d-correlation-legend" class="muted" style="font-size:11px">Orange = live only · red = map only · purple = displaced · yellow = selected/pair</div>
+      <div id="zone3d-correlation-lifecycle" class="muted" style="font-size:11px;margin-bottom:6px" role="status">Awaiting first entity observation.</div>
       <div id="zone3d-correlation-coverage" class="muted" style="font-size:11px;margin-bottom:6px">Map source and live scope are not yet validated.</div>
       <div id="zone3d-correlation-summary" class="muted" role="status">Waiting for zone records and live observations.</div>
       <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin:7px 0">
@@ -304,6 +305,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
           <option value="paired">Exact ID pairs</option>
           <option value="displaced">Separated pairs</option>
           <option value="server_only">Loaded map only</option>
+          <option value="last_seen">Recently seen, now absent</option>
           <option value="live_only">Observed only</option>
           <option value="ambiguous">Ambiguous IDs</option>
           <option value="unknown">No reported ID</option>
@@ -908,6 +910,7 @@ function clearLiveEntities(preservePicker = false) {
   for (const child of liveEntityPool) child.visible = false;
   liveObservedEntities.length = 0;
   if (!preservePicker) {
+    clearObservationHistory();
     inspectorLiveSelect.replaceChildren(new Option('Select a live entity…', ''));
     delete inspectorLiveSelect.dataset.signature;
     inspectorLiveCount.textContent = 'No live entities received';
@@ -1068,6 +1071,7 @@ async function pollAshitaPosition() {
         entityCount++;
       }
     }
+    rememberLiveEntitySnapshot();
     updateLiveEntityPicker();
     updateLiveEntityVisibility();
     updateEntityPair();
@@ -1525,7 +1529,33 @@ const correlationFilter = document.getElementById('zone3d-correlation-filter');
 const correlationThreshold = document.getElementById('zone3d-correlation-threshold');
 const correlationHighlight = document.getElementById('zone3d-correlation-highlight');
 const correlationCoverage = document.getElementById('zone3d-correlation-coverage');
-const correlationColors = {server_only:0xff5e61, live_only:0xffaa45, displaced:0xb77bff, ambiguous:0xffd36c, unknown:0x8e95a4};
+const correlationLifecycle = document.getElementById('zone3d-correlation-lifecycle');
+const lastLiveEntitiesById = new Map();
+let liveEntitySnapshotAt = 0;
+let liveEntitySnapshotCount = 0;
+const OBSERVATION_HISTORY_SECONDS = 120;
+function rememberLiveEntitySnapshot() {
+  const now = Date.now() / 1000;
+  liveEntitySnapshotAt = now;
+  liveEntitySnapshotCount = liveObservedEntities.length;
+  for (const entity of liveObservedEntities) {
+    const id = pairEntityId(entity);
+    if (id !== null && liveEntityAgeSeconds(entity) <= 3) {
+      const prior = lastLiveEntitiesById.get(id);
+      lastLiveEntitiesById.set(id, {entity, seenAt:now, firstSeenAt:prior?.firstSeenAt || now});
+    }
+  }
+  for (const [id, value] of lastLiveEntitiesById) {
+    if (now - value.seenAt > OBSERVATION_HISTORY_SECONDS) lastLiveEntitiesById.delete(id);
+  }
+}
+function clearObservationHistory() {
+  lastLiveEntitiesById.clear();
+  liveEntitySnapshotAt = 0;
+  liveEntitySnapshotCount = 0;
+}
+
+const correlationColors = {last_seen:0x80aec7, server_only:0xff5e61, live_only:0xffaa45, displaced:0xb77bff, ambiguous:0xffd36c, unknown:0x8e95a4};
 function applyCorrelationMapColors(rows) {
   const kinds = new Map(rows.filter(r => r.id !== undefined && r.id !== null).map(r => [r.id, r.kind]));
   if (spawnMesh) {
@@ -1568,6 +1598,12 @@ function zoneCorrelationRows() {
     if (!byId.has(id)) byId.set(id, {id, map:[], live:[]});
     byId.get(id).live.push(e);
   }
+  // Recently lost entities remain visible as history, never as active observations.
+  const now = Date.now() / 1000;
+  for (const [id, record] of lastLiveEntitiesById) {
+    if (now - record.seenAt > OBSERVATION_HISTORY_SECONDS) continue;
+    if (!byId.has(id)) byId.set(id, {id, map:[], live:[]});
+  }
   const threshold = Math.max(0, Number(correlationThreshold.value) || 0);
   const rows = [...byId.values()].map(group => {
     const {id,map,live} = group;
@@ -1581,7 +1617,11 @@ function zoneCorrelationRows() {
       }
       kind = separation !== null && separation >= threshold ? 'displaced' : 'paired';
     }
-    return {id, kind, separation, entity:live[0] || map[0], map:map.length, live:live.length};
+    const previous = lastLiveEntitiesById.get(id);
+    const lastSeenSeconds = !live.length && previous ? Math.max(0, now - previous.seenAt) : null;
+    if (!live.length && previous && now - previous.seenAt <= OBSERVATION_HISTORY_SECONDS) kind = 'last_seen';
+    return {id, kind, separation, entity:live[0] || map[0] || previous?.entity,
+      map:map.length, live:live.length, lastSeenSeconds};
   });
   return rows.concat(unknown);
 }
@@ -1593,15 +1633,20 @@ function refreshZoneCorrelation() {
     : 'Map: loaded zone index records (not runtime spawn state)') +
     ' · Ashita: ' + (liveToggle.checked && liveEntitiesToggle.checked ? 'fresh nearby observations only' : 'nearby telemetry disabled') +
     ' · current instance and observation range unverified';
+  const snapshotAge = liveEntitySnapshotAt ? Date.now() / 1000 - liveEntitySnapshotAt : Infinity;
+  correlationLifecycle.textContent = Number.isFinite(snapshotAge)
+    ? 'Latest nearby snapshot: ' + snapshotAge.toFixed(1) + 's ago · ' + liveEntitySnapshotCount +
+      ' valid-position entries · recent history kept for ' + OBSERVATION_HISTORY_SECONDS + 's'
+    : 'No successful nearby entity snapshot recorded in this viewer session';
   applyCorrelationMapColors(rows);
   const counts = {};
   for (const row of rows) counts[row.kind] = (counts[row.kind] || 0) + 1;
   correlationSummary.textContent = rows.length + ' classified IDs/entries · ' +
-    ['paired','displaced','server_only','live_only','ambiguous','unknown']
+    ['paired','displaced','server_only','live_only','last_seen','ambiguous','unknown']
     .map(k => k.replace('_',' ') + ': ' + (counts[k] || 0)).join(' · ');
   const filter = correlationFilter.value;
   const matching = rows.filter(r => filter === 'all' || r.kind === filter).slice(0,100);
-  const signature = JSON.stringify(matching.map(r => [r.id, r.kind, r.entity?.n, r.separation === null ? null : Math.round(r.separation * 10) / 10]));
+  const signature = JSON.stringify(matching.map(r => [r.id, r.kind, r.entity?.n, r.separation === null ? null : Math.round(r.separation * 10) / 10, r.lastSeenSeconds === null || r.lastSeenSeconds === undefined ? null : Math.floor(r.lastSeenSeconds / 5)]));
   if (correlationList.dataset.signature === signature) return;
   correlationList.dataset.signature = signature;
   correlationList.replaceChildren();
@@ -1611,7 +1656,8 @@ function refreshZoneCorrelation() {
     btn.style.cssText = 'display:block;width:100%;text-align:left;margin:2px 0;font-size:12px;';
     const name = row.entity?.n || 'Unnamed';
     btn.textContent = row.kind.replace('_',' ') + ' · ' + name + ' [' + (row.id || 'unknown') + ']' +
-      (row.separation === null || row.separation === undefined ? '' : ' · ' + row.separation.toFixed(1) + ' units');
+      (row.separation === null || row.separation === undefined ? '' : ' · ' + row.separation.toFixed(1) + ' units') +
+      (row.lastSeenSeconds === null || row.lastSeenSeconds === undefined ? '' : ' · last seen ' + Math.round(row.lastSeenSeconds) + 's ago (not proof of despawn)');
     btn.addEventListener('click', () => {
       // Resolve against the latest arrays; telemetry reconstructs live objects on each poll.
       const fresh = zoneCorrelationRows().find(current => current.id === row.id && current.kind === row.kind);
