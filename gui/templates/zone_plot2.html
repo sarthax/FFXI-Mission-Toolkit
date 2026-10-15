@@ -109,10 +109,10 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
   <details class="zdet" open><summary>Colour &amp; labels</summary>
     <label>Colour by <select id="mode"><option value="reach">Reachability</option><option value="kind">Kind</option><option value="family">Mob family</option><option value="comp">Nav region</option><option value="height">Elevation</option></select></label><div id="famLegend" class="mono" hidden style="font-size:10px;max-height:150px;overflow:auto;border:1px solid var(--border);border-radius:4px;padding:3px;margin:3px 0"></div><label>Dot size <input type="range" id="dsz" min="0.3" max="4" step="0.1" value="1.2"></label><label>Nearest labels <input type="number" id="nlab" value="40" min="0" max="300"></label>
   </details>
-  <details class="zdet"><summary>Mesh</summary>
+  <details class="zdet" open><summary>Mesh</summary>
     <label>Mesh complexity <select id="lod"><option value="live">Live (textured)</option><option value="0">Full</option><option value="1">High (drop &lt;0.75u)</option><option value="2">Medium (&lt;1.5u)</option><option value="3">Low (&lt;3u)</option><option value="obj">Legacy OBJ (full)</option></select></label>
     <button id="buildCacheBtn" hidden style="margin-top:4px">Build visual mesh cache for this zone</button>
-    <label>Mesh opacity <input type="range" id="opac" min="0.05" max="1" step="0.05" value="0.35"></label>
+    <label>Mesh opacity <input type="range" id="opac" min="0.05" max="1" step="0.05" value="1"></label>
   </details>
   <details class="zdet" open><summary>Mob ranges &amp; detection</summary>
     <div class="chips"><label class="inl"><span>Show all explicit mob radii</span><input type="checkbox" id="showMobRadii"></label><label class="inl"><input type="checkbox" id="showDetect"><span>Detection (selected)</span></label><label class="inl"><input type="checkbox" id="showDetectAll"><span>all mobs</span></label></div>
@@ -933,8 +933,9 @@ function buildLiveZoneGroup(zoneData) {
     geoMap.set(prefabIdx, geometry);
 
     const tex = zoneData.textures[prefab.materialIndex];
-    let texture = null;
+    let texture = null, alphaPixels = 0, partialAlphaPixels = 0;
     if (tex) {
+      for (let i = 3; i < tex.rgba.length; i += 4) { const a = tex.rgba[i]; if (a < 255) { alphaPixels++; if (a > 0) partialAlphaPixels++; } }
       texture = new THREE.DataTexture(new Uint8Array(tex.rgba), tex.width, tex.height, THREE.RGBAFormat);
       texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
       texture.needsUpdate = true;
@@ -948,11 +949,19 @@ function buildLiveZoneGroup(zoneData) {
       matMap.set(prefabIdx, waterMat);
     } else {
       const useAlpha = prefab.blending > 0;
+      const hasTextureAlpha = alphaPixels > 0;
+      const isCutout = hasTextureAlpha && partialAlphaPixels === 0;
+      // Like the 3D viewer's opacity slider: at 1.0 everything is solid (alphaTest drops fully clear texels,
+      // depth writes on); below 1.0 the whole mesh is ghosted with blending and no depth writes.
+      const ghost = curOpacity < 1;
       const mat = new THREE.MeshBasicMaterial({
         ...(texture && { map: texture }),
-        vertexColors: true, side: THREE.DoubleSide, transparent: true, opacity: curOpacity, depthWrite: false,
-        ...(useAlpha && { alphaTest: 0.1, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+        vertexColors: true, side: THREE.DoubleSide, opacity: curOpacity,
+        transparent: ghost, depthWrite: !ghost,
+        ...(hasTextureAlpha && { alphaTest: isCutout ? 0.5 : 0.1 }),
+        ...(useAlpha && { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
       });
+      mat.userData.ghostable = true;
       matMap.set(prefabIdx, mat);
     }
   }
@@ -1393,7 +1402,7 @@ $('showDoorFacing').onchange=()=>{ saveZoneEditorState(); if(Z) rebuild(); };
 $('showMobRadii').onchange=()=>{ saveZoneEditorState(); updateMobRadiusVisuals(); };
 $('showDetect').onchange=$('showDetectAll').onchange=()=>{ updateMobRadiusVisuals(); };
 document.querySelectorAll('#detSenses input').forEach(c=>c.onchange=()=>updateMobRadiusVisuals());
-$('opac').oninput=()=>{ meshObj&&meshObj.traverse(c=>{ if(c.isMesh) c.material.opacity=+$('opac').value; }); saveZoneEditorState(); };
+$('opac').oninput=()=>{ const v=+$('opac').value; meshObj&&meshObj.traverse(c=>{ if(!c.isMesh) return; const m=c.material; m.opacity=v; if(m.userData&&m.userData.ghostable){ m.transparent=v<1; m.depthWrite=v>=1; m.needsUpdate=true; } }); saveZoneEditorState(); };
 document.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>cameraPreset(b.dataset.cam));
 $('projection').onchange=()=>{ switchProjection($('projection').value); saveZoneEditorState(); };
 $('buildCacheBtn').onclick=async()=>{
