@@ -1,0 +1,26 @@
+import pytest
+from workbench.domains.assault_readiness_filters import filter_missions
+
+def test_ready_to_test_requires_confirmed_implementation_and_port():
+    def mission(number, i, p, v, readiness="needs_evidence"):
+        return {"number":number,"zone":"Periqia","readiness":{"status":readiness},
+                "reviews":{"implementation":{"state":i},"port":{"state":p},"validation":{"state":v}}}
+    entries=[mission(1,"validated","validated","pending"),
+             mission(2,"unverified","validated","pending"),
+             mission(3,"validated","unverified","pending"),
+             mission(4,"validated","validated","pending","blocked"),
+             mission(5,"validated","validated","validated","validated")]
+    assert [m["number"] for m in filter_missions(entries,status="ready_for_live_test")]==[1]
+    assert [m["number"] for m in filter_missions(entries,status="port_pending")]==[3]
+    assert [m["number"] for m in filter_missions(entries,status="blocked")]==[4]
+    assert filter_missions(entries,zone="Ilrusi Atoll")==[]
+    with pytest.raises(ValueError):
+        filter_missions(entries,status="other")
+
+def test_readiness_filter_ui_is_separate_from_issue_backlog():
+    from pathlib import Path
+    page=(Path(__file__).resolve().parents[1]/"gui/templates/domain_assault.html").read_text(encoding="utf-8")
+    assert 'name="readiness_zone"' in page
+    assert 'name="readiness_status"' in page
+    assert 'name="backlog_status"' in page
+    assert 'id="readiness-results"' in page
