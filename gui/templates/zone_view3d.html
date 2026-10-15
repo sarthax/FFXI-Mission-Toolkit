@@ -1775,7 +1775,13 @@ function nwHandlePick(liveHit, spawnHit) {
   if (!nw.el('nw-pick').checked) return false;
   if (liveHit && (!spawnHit || liveHit.distance <= spawnHit.distance)) {
     const e = liveObservedEntities[liveHit.object.userData.liveEntityIndex];
-    if (e) { nwSetTarget({ x: e.x, y: e.y, z: e.z }, 'entity ' + (e.name || e.id || '')); return true; }
+    if (e) {
+      // Live entity coords are in bridge (Ashita) axis order; route through the same projection the marker uses,
+      // then convert scene -> server (x, -sy, -sz) so height/north-south are not swapped.
+      const v = projectLivePoint(e);
+      nwSetTarget({ x: v.x, y: -v.y, z: -v.z }, 'entity ' + (e.n || e.id || ''));
+      return true;
+    }
   }
   if (spawnHit && spawnMesh) {
     const m = new THREE.Matrix4(); spawnMesh.getMatrixAt(spawnHit.instanceId, m);
