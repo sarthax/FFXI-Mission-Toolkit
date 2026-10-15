@@ -91,23 +91,23 @@ ROLE_LABEL = {"start": "starting officer", "sub": "sub-quest NPC", "officer": "f
 
 
 # Build notes shown in the UI: what is implemented in the Lua slice and what is still missing (kept in sync with docs/voidwatch/UNIMPLEMENTED.md)
-SLICE = "voidwatch-officers-v5 (feature/voidwatch-officers, untested in-game)"
+SLICE = "feature/voidwatch-officers-v2 (pushed to valhalla 2026-10-14, not merged; officer/refiner flows untested in-game unless noted)"
 IMPL = {
-    "crimson": "Officer 963 + refiner 962 scripted; kill-tracking hook not wired; tier gate approximate",
-    "indigo": "Officer 9 + refiner 8 scripted; kill-tracking hook not wired; tier gate approximate",
-    "jade": "Officer 1024 + refiner 1023 scripted; kill-tracking hook not wired; Jade IV has no NM",
+    "crimson": "Officer 963 + refiner 962 scripted; officer cruor exchange (cells, periapts, petrifacts) built, untested; kill-tracking hook not wired; tier gate approximate",
+    "indigo": "Officer 9 + refiner 8 scripted; officer cruor exchange built, untested (Bastok Markets purchase awarded nothing before 2026-10-14); kill-tracking hook not wired; tier gate approximate",
+    "jade": "Officer 1024 + refiner 1023 scripted; officer cruor exchange built, untested; kill-tracking hook not wired; Jade IV has no NM",
     "white": "Not an officer: quest chain Guardian of the Void -> Drafted by the Duchy (cutscenes at Veridical Conflux / Ru'Lude door / Bulwark Gate); not built, csids undecoded",
     "ashen": "Scripted from client-dat csids (Kieran event 259 + refiner 264); no capture; nation bits unknown; untested",
     "hyacinth": "Scripted from client-dat csids (Owain event 626 + refiner 627); no capture; nation bits unknown; untested",
     "amber": "Scripted from client-dat csids (Camille event 23 + refiner 24); no capture; nation bits unknown; untested",
     "hildegard": "Scripted from client-dat csids (Hildegard event 314 + refiner 316; quest flags not implemented); no capture; nation bits unknown; untested",
-    "officer_field": "No field-officer scripts yet (only Bastok Markets / Southern San d'Oria / Windurst Waters have one); needs per-zone csids",
-    "refiner_present": "Refiner scripts exist for Bastok Markets, Southern San d'Oria, Windurst Waters only; field zones and Qufim not scripted",
-    "refiner_past": "No [S] zone scripts; [S] csids not captured",
+    "officer_field": "Officer scripts for Rolanberry, Sauromugue, Batallia Downs, Batallia Downs [S] and Qufim Island (Qufim and Batallia [S] confirmed by capture 2026-10-14); atma/key item message ids from per-zone dialog pulls; untested",
+    "refiner_present": "Refiner scripts in all present-day zones including Qufim Island (positions from the Widescan Audit capture); teleport menu mapping in progress (VWO_PROBE debug on); untested outside the three home cities",
+    "refiner_past": "Refiner (and Officer) scripts in all six [S] zones; [S] atma message ids use the Bastok-style cluster, unverified in game",
     "refiner_outland": "Scripted from client-dat csids alongside the Owain/Camille/Gushing/Hildegard/Kieran NPCs; untested",
-    "purveyor_sandy": "No Purveyor script exists anywhere; rows only", "purveyor_bastok": "No Purveyor script exists anywhere; rows only",
-    "purveyor_windurst": "No Purveyor script exists anywhere; rows only", "purveyor_jeuno": "No Purveyor script exists anywhere; rows only",
-    "purveyor_ahturhgan": "No Purveyor script exists anywhere; rows only",
+    "purveyor_sandy": "Scripted (shared voidwatch_purveyor.lua); validated in game 2026-10-14", "purveyor_bastok": "Scripted; validated in game 2026-10-14",
+    "purveyor_windurst": "Scripted; validated in game 2026-10-14", "purveyor_jeuno": "Scripted; validated in game 2026-10-14",
+    "purveyor_ahturhgan": "Scripted; currency Imperial Standing; validated in game 2026-10-14",
     "ardrick": "No Ardrick script exists; row only",
     "gushing": "Scripted from client-dat csids (Gushing Spring event 14 + refiner 16; quest flags not implemented); no capture; nation bits unknown; untested",
 }

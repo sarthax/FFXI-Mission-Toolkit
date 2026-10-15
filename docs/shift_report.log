@@ -613,3 +613,8 @@
 [2026-10-09 22:50:51] capture 1
   observations: 0
   no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-14 01:09:31] capture 1
+  shift check FAILED: OperationalError('no such table: zones')
+[2026-10-14 01:19:26] capture 2
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)

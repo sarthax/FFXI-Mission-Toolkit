@@ -164,11 +164,75 @@
   {
     "id": "w04",
     "area": "Rewards",
-    "title": "Purveyor (cruor shop: atmacites, periapts)",
-    "status": "missing",
+    "title": "Officer cruor exchange (cells, periapts, petrifacts, Voidstone items)",
+    "status": "partial",
     "evidence": "W",
-    "detail": "Key item atmacites/periapts are also purchasable with cruor. Not checked whether built.",
+    "detail": "Purchase handler built 2026-10-14 (option = 2 + slot<<16 + qty<<22; slots 1-3 cells, 9-16 key items) in voidwatch_officer.lua; untested in game. The Purveyor shop is done (p01).",
     "note": ""
+  },
+  {
+    "id": "p01",
+    "area": "Purveyor",
+    "title": "Voidwatch Purveyor: scripts + shared logic built (17 zones, 20 NPCs)",
+    "status": "done",
+    "evidence": "V",
+    "detail": "scripts/globals/voidwatch_purveyor.lua + scripts/zones/<Zone>/npcs/Voidwatch_Purveyor.lua. Built from the client event decompile (no captures exist). Menu: Cobalt 3434 / Rubicund 3435 / Xanthous 3436 / Jade 3437 / Voiddust 3450. Result option bitfield: bits 0-15 = 1, 16-21 = slot, 22-31 = quantity. Not tested in game.",
+    "note": "Validated by the user in every zone 2026-10-14."
+  },
+  {
+    "id": "p02",
+    "area": "Purveyor",
+    "title": "Purveyor prices: baked-in client values vs wiki",
+    "status": "partial",
+    "evidence": "V",
+    "detail": "Baked into the event (identical in all 20 dumps): cells 2000 for Conquest Points and Imperial Standing, 3000 for Allied Notes; Pouch of Voiddust 2000 for all three. BG-wiki table says 3000 for every cell. Per user rule the baked values are used.",
+    "note": "Verify in game that the client shows the same price the server charges."
+  },
+  {
+    "id": "p03",
+    "area": "Purveyor",
+    "title": "Purveyor currency per city (design choice)",
+    "status": "partial",
+    "evidence": "D",
+    "detail": "Client param 2 picks the currency. Used: Imperial Standing in Whitegate / Al Zahbi / Nashmau, Allied Notes in the three [S] zones, Conquest Points in all other zones. No source gives the real per-city assignment.",
+    "note": "Check against retail memory or a capture if one can be obtained."
+  },
+  {
+    "id": "p04",
+    "area": "Purveyor",
+    "title": "Purveyor npc ids do not match the client in 7 zones",
+    "status": "done",
+    "evidence": "V",
+    "detail": "Dump (client) id vs DSP npc_list id: Port Windurst 17760468 vs 17760466; Port Bastok 17744057 vs 17744056; SSD[S] 17105697 vs 17105696; Bastok Markets[S] 17134279 vs 17134278; Windurst Waters[S] 17163021 vs 17163020; Al Zahbi 16974406/07 vs 16974380/81; Ru'Lude Gardens 17772838 vs 17772792 (named csnpc, so no script loads). The event is attached to the client entity, so these will probably not open the menu until the ids are realigned.",
+    "note": "Part of the npc id realign work; the [S] zones also shift Officer / Refiner / Hunt Registry / Porter Moogle by the same amount. No ids were changed here.",
+    "notes": "2026-10-13: Not an id mismatch. The ids compared were EventsDump event-block ids, not our client numbering; npc_list matches the client DAT pull in all 7 zones. Do NOT move ids. Real fixes: Ru'Lude row 17772792 renamed csnpc -> Voidwatch_Purveyor (repo + live) and RuLude_Gardens Voidwatch_Purveyor.lua added (csid 10187 from EventsDump, currency CP). Checked: all 21 Purveyor rows are named Voidwatch_Purveyor and every zone has a script except stray Batallia Downs [S] (see p05). Untested in game."
+  },
+  {
+    "id": "p05",
+    "area": "Purveyor",
+    "title": "Batallia Downs [S] row 17122262 renamed to Voidwatch_Officer",
+    "status": "done",
+    "evidence": "V",
+    "detail": "Was named Voidwatch_Purveyor; capture 2026-10-14 confirms it is the Officer (event 26, refiner event 25). Renamed in sql/npc_list.sql and the live DB; Officer script added.",
+    "note": "Decide whether it is an Officer that was misnamed."
+  },
+  {
+    "id": "p06",
+    "area": "Purveyor",
+    "title": "Purveyor in-game test checklist",
+    "status": "done",
+    "evidence": "",
+    "detail": "All Purveyors tested in game in all zones 2026-10-14.",
+    "note": "Aligned zones that can be tested now: NSD, SSD (both), Bastok Mines, Bastok Markets, Windurst Waters, Windurst Woods, Upper / Lower / Port Jeuno, Whitegate, Nashmau."
+  },
+  {
+    "id": "p07",
+    "area": "Purveyor",
+    "title": "Purveyor client text not readable in Al Zahbi / Port Jeuno dumps",
+    "status": "hold",
+    "evidence": "V",
+    "detail": "In 17 of 20 dumps every message id and text matches Windurst Waters at the same offsets from the greeting. The Al Zahbi and Port Jeuno dumps contain no text, only the same code and prices.",
+    "note": "Confirm with a pull from the client DAT if the menu text looks wrong there."
   },
   {
     "id": "n01",
@@ -300,9 +364,9 @@
     "id": "g01",
     "area": "Process",
     "title": "Branch / commit plan for Voidwatch work",
-    "status": "missing",
+    "status": "partial",
     "evidence": "",
-    "detail": "Everything since the lights work is uncommitted (kept local by request). Needs slice branches and tags per BRANCH_PLAN.md.",
+    "detail": "Voidwatch officer/refiner/purveyor work lives on feature/voidwatch-officers-v2 (pushed to valhalla 2026-10-14, not merged to main). Other slices per BRANCH_PLAN.",
     "note": ""
   },
   {

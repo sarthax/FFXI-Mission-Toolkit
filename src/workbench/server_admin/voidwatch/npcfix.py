@@ -20,19 +20,11 @@ VW_NAMES = ("Voidwatch_Officer", "Voidwatch_Purveyor", "Atmacite_Refiner", "Ardr
 UPDATE_COLS = {"name": str, "polutils_name": str, "pos_x": float, "pos_y": float, "pos_z": float, "pos_rot": int}
 
 # Proposed fixes backed by DB evidence (re-evaluated live: a fix shows as done once the row matches).
-FIXES = [
-    {"id": "batallia_s_officer", "title": "Batallia Downs [S] row 17122262 is registered as Voidwatch_Purveyor but is the officer",
-     "evidence": "polutils_name is 'Voidwatch Officer'; it sits at (429.5, 8.25, -135.5) beside the [S] refiner 17122261 and mirrors the present-day officer 17207937 "
-                 "(429.299, 8.25, -136.0). npc_list.name drives script lookup, so as a Purveyor it would load the wrong script.",
-     "plan": {"kind": "update", "npcid": 17122262, "changes": {"name": "Voidwatch_Officer"}}},
-]
+FIXES = []  # none pending; the Batallia Downs [S] officer rename (17122262) and the Qufim Island rows (17293808/9) were applied 2026-10-14
 # Needs user input (not guessed): shown as open questions.
 OPEN = [
-    "Southern San d'Oria: purveyor rows 17719636 (-100.5,1,-51) and 17719637 (100,1,-50). The latter has the same coordinates as the [S] purveyor 17105696. "
-    "Wiki says one purveyor at K-10. Stand at the real one and send !logpos to decide which to delete.",
-    "Al Zahbi: purveyor rows 16974380 (-85,2,100) and 16974381 (-101,2,86). Wiki gives no grid ref; needs an in-game check.",
-    "Missing rows (wiki lists the zone, DB has none): Voidwatch_Officer and Atmacite_Refiner in Qufim_Island (I-11); Voidwatch_Purveyor in RuLude_Gardens (H-10). "
-    "Enter !logpos coordinates in the Add-row form.",
+    "Stale placeholder rows in Qufim Island: 17293814 'NPC[1ef]' and 17293815 'NPC[1f0]' at 0,0,0 (no script, no entity). Confirm they are unused before deleting.",
+    "Purveyor client text is unreadable in the Al Zahbi / Port Jeuno dumps (see systems backlog p07).",
 ]
 
 

@@ -75,13 +75,13 @@ References[2]
     assert "fixture_from_documents(" in bridge
     assert 'sys.stdout.reconfigure(encoding="utf-8", errors="replace")' in bridge
 
-    assert "Wiring dossier" in browser
+    assert "View decoded event" in browser
     assert "0x{{ \"%04X\"|format(r.csid) }}" in browser
     assert "runtime obs." in browser
     assert "decompile health" in browser
     assert "stub / empty" in browser
     assert "decompile failed" in browser
-    assert "View decompile issue" in browser
+    assert "View decompile status" in browser
 
     assert "Client CSID decompile" in detail
     assert "Runtime observations" in detail

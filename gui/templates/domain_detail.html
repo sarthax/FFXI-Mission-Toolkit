@@ -24,11 +24,13 @@ th.vwc1,td.vwc1,th.vwc2,td.vwc2{width:120px;min-width:120px;white-space:nowrap}.
 <div id="vw-unas" class="muted"></div>
 <p class="muted">Each box is a path/tier with its NM count; click one to filter the table. Solid arrows are tier advances, dashed arcs the City-to-White unlock. Advance rules are [W] BG Wiki digest, reference only; "?" means the method is not recorded. NM path/tier/abyssite come from data/voidwatch/nm_tracker.json.</p>
 <div class="vwlegend muted">Status / Validation colours, same in every table: <span class="chip vwst" style="border-color:#1e9e6a;color:#1e9e6a">ok</span> validated, ok, done, built, complete <span class="chip vwst" style="border-color:#d68910;color:#d68910">warn</span> partial, needs-work, incomplete <span class="chip vwst" style="border-color:#c0392b;color:#c0392b">bad</span> issue, bad, missing, not built <span class="chip vwst" style="border-color:#888;color:#888">idle</span> untested, unvalidated, hold, n/a</div>
-<h2>Notorious monsters</h2>
+<h2>Voidwatch NPCs</h2>
+<p class="muted">Starting officers, sub-quest NPCs, field officers, atmacite refiners and purveyors. Click a row for per-zone positions, scripts and validation.</p>
 <div id="vw-off"></div>
-<div id="vw-npcfix"></div>
+<h2>Systems &amp; warps</h2>
 <div id="vw-backlog"></div>
 <div id="vw-warps"></div>
+<h2>Notorious monsters</h2>
 <div id="vw-sum" class="muted"></div>
 <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">
 <input type="search" id="vw-q" placeholder="Search NM or zone" style="flex:1;min-width:180px">
@@ -39,8 +41,10 @@ th.vwc1,td.vwc1,th.vwc2,td.vwc2{width:120px;min-width:120px;white-space:nowrap}.
 <div class="table-wrap"><table><thead><tr><th>NM</th><th>Zone (id)</th><th>Path / tier</th><th>HP</th><th>Abyssite KI</th><th class="vwc1">Status</th><th class="vwc2">Validation</th></tr></thead><tbody id="vw-tb" class="vwtb"></tbody></table></div>
 <p class="muted">Click an NM for its full dossier. Voidstone KIs are ids 1539-1544. Rift Y is the DB value (inverted axis).</p>
 <div id="vw-detail" hidden><div style="text-align:right"><button id="vw-close" type="button">Close</button></div><div id="vw-dbody"></div></div>
+<h2>Tools: NPC row fixes</h2>
+<div id="vw-npcfix"></div>
 </section>
-<script src="/static/voidwatch.js?v=15"></script>
+<script src="/static/voidwatch.js?v=16"></script>
 {% endif %}
 
 {% if d.archetype == "system.campaign" %}
