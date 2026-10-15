@@ -25,7 +25,11 @@
       #inventoryContainers .ce-bar{width:90px;height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}
       #inventoryContainers .ce-bar i{display:block;height:100%;background:#6aa9ff}.ce-bar.full i{background:#ff8a80}
       #inventoryContainers .ce-bagbody{padding-bottom:8px}
-      #inventoryContainers .ce-invtable{width:100%;border-collapse:collapse;font-size:12px}
+      #inventoryContainers .ce-bagbody{overflow-x:auto}
+      #inventoryContainers .ce-invtable{width:100%;min-width:520px;table-layout:fixed;border-collapse:collapse;font-size:12px}
+      #inventoryContainers .ce-invtable th:nth-child(2),#inventoryContainers .ce-invtable td:nth-child(2){text-align:center}
+      #inventoryContainers .ce-invtable th:nth-child(4),#inventoryContainers .ce-invtable td:nth-child(4){text-align:right;font-variant-numeric:tabular-nums}
+      #inventoryContainers .ce-invtable td{overflow-wrap:anywhere}
       #inventoryContainers .ce-invtable td,#inventoryContainers .ce-invtable th{padding:3px 6px;text-align:left;border-bottom:1px solid rgba(255,255,255,.08)}
       #inventoryContainers .ce-invtable tr.row{cursor:pointer}#inventoryContainers .ce-invtable tr.row:hover{background:rgba(106,169,255,.1)}
       #ceItemDialog{max-width:min(860px,94vw);width:100%;border:1px solid var(--border,#555);border-radius:8px;background:var(--bg,#1e1e1e);color:inherit;padding:14px}
@@ -85,7 +89,7 @@
       const pct = cap ? Math.min(100, Math.round(used / cap * 100)) : 0;
       const body = !shown.length ? '<div class="ce-muted">Empty</div>' : st.view === 'tiles'
         ? `<div class="ce-tiles">${shown.map(i => `<button class="ce-tile" data-loc="${c.location}" data-slot="${i.r.slot}">${i.aug ? `<span class="bd">✦${i.aug}</span>` : ''}${i.w ? '<span class="wn">worn</span>' : ''}${G.iconImg(i.id, 32)}<span class="nm">${esc(i.name)}</span>${i.r.quantity > 1 ? `<span class="qt">${i.r.quantity}</span>` : ''}</button>`).join('')}</div>`
-        : `<table class="ce-invtable"><thead><tr><th></th><th>Slot</th><th>Item</th><th>Qty</th><th>Details</th></tr></thead><tbody>${shown.map(i => `<tr class="row" data-loc="${c.location}" data-slot="${i.r.slot}"><td>${G.iconImg(i.id, 24)}</td><td>${esc(i.r.slot)}</td><td><strong>${esc(i.name)}</strong></td><td>${esc(i.r.quantity)}</td><td class="ce-muted">${esc(detailText(i))}</td></tr>`).join('')}</tbody></table>`;
+        : `<table class="ce-invtable"><colgroup><col style="width:36px"><col style="width:56px"><col><col style="width:64px"><col style="width:180px"></colgroup><thead><tr><th scope="col">Icon</th><th scope="col">Slot</th><th scope="col">Item</th><th scope="col">Qty</th><th scope="col">Details</th></tr></thead><tbody>${shown.map(i => `<tr class="row" data-loc="${c.location}" data-slot="${i.r.slot}"><td>${G.iconImg(i.id, 24)}</td><td>${esc(i.r.slot)}</td><td><strong>${esc(i.name)}</strong></td><td>${esc(i.r.quantity)}</td><td class="ce-muted">${esc(detailText(i))}</td></tr>`).join('')}</tbody></table>`;
       return `<details class="ce-bag" data-loc="${c.location}" ${open ? 'open' : ''}><summary><strong>${esc(c.label || c.name)}</strong>${cap ? `<span class="ce-bar${used >= cap ? ' full' : ''}"><i style="width:${pct}%"></i></span><span class="ce-muted">${used}/${cap}</span>` : `<span class="ce-muted">${used} item${used === 1 ? '' : 's'} · capacity not tracked</span>`}</summary><div class="ce-bagbody">${body}</div></details>`;
     }).join('');
     box.innerHTML = `<div class="ce-invbar"><input type="search" placeholder="Search all containers…" value="${esc(st.q)}">${chips.map(([k, l]) => `<button class="ce-chip${st.filter === k ? ' on' : ''}" data-f="${k}">${l}</button>`).join('')}<button class="ce-chip" data-view="${st.view === 'tiles' ? 'list' : 'tiles'}">${st.view === 'tiles' ? 'List view' : 'Tile view'}</button>${gilRow ? `<span class="ce-gil" title="Gil in Inventory slot 0">${Number(gilRow.quantity).toLocaleString()} gil</span>` : ''}</div>${bags || '<div class="ce-muted">Nothing matches.</div>'}`;
