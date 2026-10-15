@@ -9604,7 +9604,7 @@ def restart_server(request: Request):
 
 # ---- Domain landing pages -------------------------------------------------------------------
 @app.get("/domains/assault", response_class=HTMLResponse)
-def assault_domain_page(request: Request, zone: str = "", backlog_status: str = "all", q: str = ""):
+def assault_domain_page(request: Request, zone: str = "", backlog_status: str = "all", q: str = "", readiness_zone: str = "", readiness_status: str = "all"):
     """Assault domain workspace: a stable home for Assault-specific development/admin workflows.
 
     Existing generic editors remain canonical; this page links into them rather than duplicating
@@ -9653,6 +9653,15 @@ def assault_domain_page(request: Request, zone: str = "", backlog_status: str = 
     tracker["readiness_counts"] = assess_all(tracker["missions"])
     from workbench.domains.assault_summary import summarize
     tracker["progress"] = summarize(tracker["missions"])
+    from workbench.domains.assault_readiness_filters import filter_missions, FILTERS as READINESS_FILTERS
+    if readiness_zone and readiness_zone not in tracker["zones"]:
+        raise HTTPException(status_code=400, detail="Unknown readiness zone")
+    try:
+        tracker["readiness_results"] = filter_missions(tracker["missions"], zone=readiness_zone, status=readiness_status)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    tracker["readiness_filters"] = READINESS_FILTERS
+    tracker["readiness_selection"] = {"zone": readiness_zone, "status": readiness_status}
     from workbench.domains.assault_backlog import backlog, FILTERS
     if backlog_status not in FILTERS:
         raise HTTPException(status_code=400, detail="Unknown backlog filter")
