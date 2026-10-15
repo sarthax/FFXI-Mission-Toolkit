@@ -1497,6 +1497,12 @@ function pairEntityId(e) {
 }
 function updateEntityPair() {
   pairLine.visible = false;
+  if (spawnMesh) {
+    const color = new THREE.Color();
+    spawnEntities.forEach((e, index) => spawnMesh.setColorAt(index,
+      color.set(e === selectedEntity ? 0xffff33 : (SPAWN_COLORS[e.k] ?? 0x44cc88))));
+    if (spawnMesh.instanceColor) spawnMesh.instanceColor.needsUpdate = true;
+  }
   if (!selectedEntity || entityInspector.hidden) return;
   const id = pairEntityId(selectedEntity);
   if (id === null) {
@@ -1586,12 +1592,6 @@ function inspectEntity(entity) {
   }
   updateInspectorNavigation();
   updateEntityPair();
-  if (spawnMesh) {
-    const color = new THREE.Color();
-    spawnEntities.forEach((e, index) =>
-      spawnMesh.setColorAt(index, color.set(e === entity ? 0xffff33 : (SPAWN_COLORS[e.k] ?? 0x44cc88))));
-    if (spawnMesh.instanceColor) spawnMesh.instanceColor.needsUpdate = true;
-  }
   inspectorFeedback.textContent = '';
   const hasPosition = [entity.x, entity.y, entity.z].every(Number.isFinite);
   document.getElementById('zone3d-inspector-focus').disabled = !hasPosition;
