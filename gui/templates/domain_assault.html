@@ -202,6 +202,23 @@
     <span>DSP port: {{ mission.dsp_port }}</span>
     <span>DSP live validation: {{ mission.dsp_validation }}</span>
   </div>
+  <details style="margin:8px 0" {% if mission.shared_dependencies %}open{% endif %}>
+    <summary>Confirmed shared dependencies ({{ mission.shared_dependencies|length }})</summary>
+    {% if mission.shared_dependencies %}
+      <p class="muted">Linked or confirmed zone-wide dependencies. No shared review state automatically validates this mission.</p>
+      {% for dep in mission.shared_dependencies %}
+      <div style="border-top:1px solid var(--border);padding:7px">
+        <a href="#assault-shared-{{ dep.section_id }}"><strong>{{ dep.title }}</strong></a>
+        <span class="chip">{{ dep.scope }}</span>
+        <div class="assault-meta">
+          <span>Topaz: {{ dep.topaz }}</span><span>DSP port: {{ dep.port }}</span>
+          <span>DSP validation: {{ dep.validation }}</span>
+        </div>
+        {% for evidence in dep.evidence %}<div class="muted">Zone-scope evidence: {{ evidence }}</div>{% endfor %}
+      </div>
+      {% endfor %}
+    {% else %}<p class="muted">No confirmed shared dependencies linked to this mission yet.</p>{% endif %}
+  </details>
   <div><a class="chip" href="/missions?q={{ mission.name|urlencode }}">Find mission</a>
     <a class="chip" href="/features/trace?q={{ mission.name|urlencode }}">Feature Trace</a></div>
   <details style="margin:10px 0;padding:8px;border:1px solid var(--border);border-radius:6px">
