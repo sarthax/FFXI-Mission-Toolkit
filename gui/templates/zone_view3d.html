@@ -292,6 +292,24 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
       <button type="button" id="zone3d-inspector-live-refresh" title="Rebuild list from current live telemetry">Refresh observed list</button>
       <div id="zone3d-inspector-live-count" class="muted" style="font-size:11px;margin-top:4px" role="status">No live entities received</div>
     </section>
+    <section aria-label="Zone-wide entity correlation" style="margin:8px 0;padding:9px;border:1px solid var(--border);border-radius:6px">
+      <strong>Zone correlation · live versus loaded map</strong>
+      <div id="zone3d-correlation-summary" class="muted" role="status">Waiting for zone records and live observations.</div>
+      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin:7px 0">
+        <label>Show <select id="zone3d-correlation-filter">
+          <option value="all">All classifications</option>
+          <option value="paired">Exact ID pairs</option>
+          <option value="displaced">Separated pairs</option>
+          <option value="server_only">Loaded map only</option>
+          <option value="live_only">Observed only</option>
+          <option value="ambiguous">Ambiguous IDs</option>
+          <option value="unknown">No reported ID</option>
+        </select></label>
+        <label>Separation ≥ <input id="zone3d-correlation-threshold" type="number" value="10" min="0" step="1" style="width:5rem"> units</label>
+      </div>
+      <div id="zone3d-correlation-list" style="max-height:190px;overflow:auto;font-size:12px"></div>
+      <div class="muted" style="font-size:11px;margin-top:5px">Only fresh observations within Ashita scope are counted. Loaded map records are not proof of an active spawn or the current instance.</div>
+    </section>
     <section aria-label="Live and server pairing" style="margin:8px 0;padding:9px;border:2px solid #b89236;border-radius:6px">
       <strong>Live ↔ server spawn pair · correlation</strong>
       <div id="zone3d-pair-status" class="muted" role="status" style="font-size:12px;margin:5px 0">Select a live or server entity to compare.</div>
@@ -523,6 +541,7 @@ const entityDataUrl = CAPTURE_SPATIAL_URL || `/zoneplot/${ZONEID}/data.json`;
 fetch(entityDataUrl).then(r => r.json()).then(d => {
   spawnEntitiesAll = (d.entities || []).filter(e => !e.zero);
   refreshCaptureSpatialResults();
+  refreshZoneCorrelation();
 }).catch(() => {});
 
 // Navmesh remains zone data, regardless of whether markers came from the live server or a capture.
@@ -897,6 +916,7 @@ function clearLiveEntities(preservePicker = false) {
   }
   highlightObservedEntity();
   updateEntityPair();
+  refreshZoneCorrelation();
 }
 function clearLiveMarker() {
   clearOtherClientMarkers();
@@ -1048,6 +1068,7 @@ async function pollAshitaPosition() {
     updateLiveEntityPicker();
     updateLiveEntityVisibility();
     updateEntityPair();
+    refreshZoneCorrelation();
     liveStatus.textContent = (data.player.character || clientId) + ' · live · ' +
       position.x.toFixed(1) + ', ' + position.y.toFixed(1) + ', ' + position.z.toFixed(1) +
       (liveEntitiesToggle.checked ? ' · entities ' + entityCount +
@@ -1495,6 +1516,76 @@ function pairEntityId(e) {
   if (raw === null || raw === undefined || raw === '' || !/^\d+$/.test(String(raw))) return null;
   return String(BigInt(raw));
 }
+const correlationSummary = document.getElementById('zone3d-correlation-summary');
+const correlationList = document.getElementById('zone3d-correlation-list');
+const correlationFilter = document.getElementById('zone3d-correlation-filter');
+const correlationThreshold = document.getElementById('zone3d-correlation-threshold');
+function zoneCorrelationRows() {
+  const byId = new Map();
+  const unknown = [];
+  for (const e of spawnEntitiesAll) {
+    const id = pairEntityId(e);
+    if (id === null) { unknown.push({kind:'unknown', entity:e, label:'Map entry: '}); continue; }
+    if (!byId.has(id)) byId.set(id, {id, map:[], live:[]});
+    byId.get(id).map.push(e);
+  }
+  for (const e of liveObservedEntities) {
+    if (liveEntityAgeSeconds(e) > 3) continue;
+    const id = pairEntityId(e);
+    if (id === null) { unknown.push({kind:'unknown', entity:e, label:'Live: '}); continue; }
+    if (!byId.has(id)) byId.set(id, {id, map:[], live:[]});
+    byId.get(id).live.push(e);
+  }
+  const threshold = Math.max(0, Number(correlationThreshold.value) || 0);
+  const rows = [...byId.values()].map(group => {
+    const {id,map,live} = group;
+    let kind = 'ambiguous', separation = null;
+    if (!map.length) kind = 'live_only';
+    else if (!live.length) kind = 'server_only';
+    else if (map.length === 1 && live.length === 1) {
+      const m = map[0], l = live[0];
+      if ([m.x,m.y,m.z,l.x,l.y,l.z].every(Number.isFinite)) {
+        separation = new THREE.Vector3(m.x,-m.y,-m.z).distanceTo(projectLivePoint(l));
+      }
+      kind = separation !== null && separation >= threshold ? 'displaced' : 'paired';
+    }
+    return {id, kind, separation, entity:live[0] || map[0], map:map.length, live:live.length};
+  });
+  return rows.concat(unknown);
+}
+function refreshZoneCorrelation() {
+  if (!correlationSummary) return;
+  const rows = zoneCorrelationRows();
+  const counts = {};
+  for (const row of rows) counts[row.kind] = (counts[row.kind] || 0) + 1;
+  correlationSummary.textContent = rows.length + ' classified IDs/entries · ' +
+    ['paired','displaced','server_only','live_only','ambiguous','unknown']
+    .map(k => k.replace('_',' ') + ': ' + (counts[k] || 0)).join(' · ');
+  const filter = correlationFilter.value;
+  const matching = rows.filter(r => filter === 'all' || r.kind === filter).slice(0,100);
+  const signature = JSON.stringify(matching.map(r => [r.id, r.kind, r.entity?.n, r.separation === null ? null : Math.round(r.separation * 10) / 10]));
+  if (correlationList.dataset.signature === signature) return;
+  correlationList.dataset.signature = signature;
+  correlationList.replaceChildren();
+  for (const row of matching) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.style.cssText = 'display:block;width:100%;text-align:left;margin:2px 0;font-size:12px;';
+    const name = row.entity?.n || 'Unnamed';
+    btn.textContent = row.kind.replace('_',' ') + ' · ' + name + ' [' + (row.id || 'unknown') + ']' +
+      (row.separation === null || row.separation === undefined ? '' : ' · ' + row.separation.toFixed(1) + ' units');
+    btn.addEventListener('click', () => {
+      // Resolve against the latest arrays; telemetry reconstructs live objects on each poll.
+      const fresh = zoneCorrelationRows().find(current => current.id === row.id && current.kind === row.kind);
+      if (fresh?.entity) inspectEntity(fresh.entity);
+      else refreshZoneCorrelation();
+    });
+    correlationList.append(btn);
+  }
+  if (rows.length > 100) correlationList.title = 'First 100 matching results shown';
+}
+correlationFilter.addEventListener('change', refreshZoneCorrelation);
+correlationThreshold.addEventListener('change', refreshZoneCorrelation);
 function updateEntityPair() {
   pairLine.visible = false;
   if (spawnMesh) {
@@ -1709,6 +1800,7 @@ function inspectEntity(entity) {
   }
   entityInspector.hidden = false;
   updateEntityPair(); // inspect panel must be visible before initial pairing runs
+  refreshZoneCorrelation();
 }
 const inspectorFeedback = document.getElementById('zone3d-inspector-feedback');
 async function copyInspectorValue(value, success) {
