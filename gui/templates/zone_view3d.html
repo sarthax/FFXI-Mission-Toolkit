@@ -1170,7 +1170,11 @@ todSlider.addEventListener('input', () => {
 document.getElementById('shownav-toggle').addEventListener('change', (e) => {
   if (navMesh) navMesh.visible = e.target.checked;
 });
-document.getElementById('xray-slider').addEventListener('input', applySceneryOpacity);
+document.getElementById('xray-slider').addEventListener('input', (e) => {
+  const v = parseFloat(e.target.value);
+  if (document.getElementById('zone3d-force-opaque')?.checked) return; // debug toggle owns the flags while on
+  for (const m of wallMaterials) { m.transparent = v < 1; m.opacity = v; m.depthWrite = v >= 1; }
+});
 
 function updateTimeOfDay() {
   const p = getTimeOfDayParams(timeOfDay);
@@ -1997,22 +2001,17 @@ const alphaDiagnosticRows = [];
 const alphaDiagnosticToggle = document.getElementById('zone3d-force-opaque');
 const alphaDiagnosticSelect = document.getElementById('zone3d-material-select');
 const alphaDiagnosticDetails = document.getElementById('zone3d-material-details');
-function applySceneryOpacity() {
-  const sliderOpacity = Number(document.getElementById('xray-slider').value);
-  const opacity = Number.isFinite(sliderOpacity) ? Math.max(0, Math.min(1, sliderOpacity)) : 1;
-  const debugOpaque = alphaDiagnosticToggle.checked;
+function applyAlphaDiagnosticMode() {
   for (const { material, original } of alphaDiagnosticMaterials) {
-    // Full opacity must restore each texture's own alpha/cutout behavior, not
-    // globally turn alpha-tested scenery into a blended surface.
-    material.alphaTest = debugOpaque ? 0 : original.alphaTest;
-    material.transparent = debugOpaque ? false : (opacity < 1 || original.transparent);
-    material.depthWrite = debugOpaque ? true : (opacity < 1 ? false : original.depthWrite);
-    material.opacity = debugOpaque ? 1 : original.opacity * opacity;
+    material.alphaTest = alphaDiagnosticToggle.checked ? 0 : original.alphaTest;
+    material.transparent = alphaDiagnosticToggle.checked ? false : original.transparent;
+    material.depthWrite = alphaDiagnosticToggle.checked ? true : original.depthWrite;
+    material.opacity = alphaDiagnosticToggle.checked ? 1 : original.opacity;
     material.needsUpdate = true;
   }
 }
-function applyAlphaDiagnosticMode() { applySceneryOpacity(); }
 alphaDiagnosticToggle.addEventListener('change', applyAlphaDiagnosticMode);
+alphaDiagnosticToggle.addEventListener('change', () => { if (!alphaDiagnosticToggle.checked) document.getElementById('xray-slider').dispatchEvent(new Event('input')); });
 alphaDiagnosticSelect.addEventListener('change', () => {
   const index = Number(alphaDiagnosticSelect.value);
   alphaDiagnosticDetails.textContent = alphaDiagnosticSelect.value === '' ?

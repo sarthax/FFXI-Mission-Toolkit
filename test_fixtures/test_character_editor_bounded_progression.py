@@ -65,7 +65,8 @@ def test_blocked_alternatives_are_counted_not_expanded():
 
     assert bounded["next"]["section_index"] == 4
     assert {row["section_index"] for row in bounded["steps"]} == {1, 2, 4}
-    assert bounded["blocked_alternatives"] == 2
+    # Blocked sections 0, 3 and 5 sit outside the visible layers {1, 2, 4}; blocked section 1 is the visible previous step.
+    assert bounded["blocked_alternatives"] == 3
 
 
 def test_projection_prefers_highest_value_progression_action_per_step():

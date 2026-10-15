@@ -16,6 +16,33 @@ from .categories import category_metadata
 from .legacy_test_executor import LegacyTestExecutionBlocked, evaluate_legacy_test_write_gate
 
 
+# Character-editor hooks are resolved on first call: importing workbench.editors.character at module load is
+# circular with this package. They stay module-level names so tests can patch them.
+def discover_character_schema(connection):
+    from workbench.editors.character.schema import discover_character_schema as impl
+    return impl(connection)
+
+
+def inspect_inventory_contract(schema, family):
+    from workbench.editors.character.adapters.inventory import inspect_inventory_contract as impl
+    return impl(schema, family)
+
+
+def build_basic_insert_plan(contract, **kwargs):
+    from workbench.editors.character.adapters.inventory import build_basic_insert_plan as impl
+    return impl(contract, **kwargs)
+
+
+def inspect_slots(connection, char_id, location):
+    from workbench.editors.character.inventory_slots import inspect_slots as impl
+    return impl(connection, char_id, location)
+
+
+def detect_online_state(connection, schema, char_id):
+    from workbench.editors.character.session_state import detect_online_state as impl
+    return impl(connection, schema, char_id)
+
+
 @dataclass(frozen=True)
 class ListingFilter:
     seller_id: int | None = None
@@ -158,10 +185,6 @@ def execute_legacy_test_return_to_seller(
             raise LegacyTestExecutionBlocked("Item or seller state could not be verified")
         quantity = max(1, int(item.get("stack_size") or 1)) if current["stack"] else 1
 
-        from workbench.editors.character.adapters.inventory import build_basic_insert_plan, inspect_inventory_contract
-        from workbench.editors.character.inventory_slots import inspect_slots
-        from workbench.editors.character.schema import discover_character_schema
-        from workbench.editors.character.session_state import detect_online_state
         char_schema = discover_character_schema(connection)
         family = str(environment.get("family") or "").strip().lower()
         inventory_contract = inspect_inventory_contract(char_schema, family)
