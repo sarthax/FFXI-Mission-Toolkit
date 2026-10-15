@@ -71,3 +71,15 @@ data/live_client_bridge_state.tmp
 
 # Native plugin installer cache (downloaded release DLL)
 dist/native/
+
+# Local build output, exports and scratch artifacts
+build/
+exports/
+/*.log
+key_item_lua_refs.sqlite
+scripts/lua_syntax_check.py
+
+# Local runtime databases and logs
+data/auction_house_*.db
+data/live_client_test/
+data/voidwatch/edit_log.jsonl
