@@ -41,3 +41,28 @@ never accept arbitrary browser/client JSON as authoritative server state.
 `TrustedRuntimeProvider` accepts a server-administrator-injected **read-only** callable named `read_server_entity(zone, server_entity_id, instance_id)`. It validates the requested IDs before calling the provider and delegates to strict sample timestamp and identity verification. Unavailable or timed-out transports yield `unknown`.
 
 **Important:** An arbitrary callback is not authenticated merely by this wrapper. Production wiring must verify that the callback talks to an approved DSP server-side diagnostic source, not a client-supplied payload. The repo currently has no verified DSP runtime diagnostic transport; this slice does not expose an API or claim server state can be queried today. Avoid substituting static MySQL spawn tables for live runtime information.
+
+## Operator-controlled diagnostic snapshot spool prototype
+
+`RuntimeSnapshotSpool(directory)` reads a fixed `entity_runtime_snapshot.json`
+file in a trusted local directory and can be injected into
+`TrustedRuntimeProvider`. The reader does not create files, write to DSP,
+issue game commands, or accept a filename from client input.
+
+Example server-side file shape (illustrative only):
+```json
+{"producer":"server_diagnostic","entities":[{"source":"server_runtime","zone":87,"server_entity_id":17215539,"instance_id":"instance-a","observed_at":1000.0,"state":"active"}]}
+```
+
+The reader rejects oversized files, duplicate records, missing files, and
+unrecognized producer markers. The existing provider validates timestamp,
+state, zone, entity ID, and instance.
+
+**Security and accuracy:** This is an **operator-side spool reader**, not a
+deployed DSP producer. The JSON marker is not an authentication credential.
+Only use a directory protected by operating-system permissions and writable
+solely by verified server-side diagnostics; never use an upload folder or
+allow browser/client-provided content. A real DSP instrumentation producer,
+safe atomic file replacement, transport trust verification, and instance
+identity validation are still required before claiming production runtime
+status or exposing this result in the GUI.
