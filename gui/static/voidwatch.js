@@ -128,12 +128,20 @@ function warpTable(){
 }
 function offTable(){
  var el=$('vw-off');if(!el)return;var L=OF.officers;
- if(!L.length){el.innerHTML='<span class="muted">Officer data unavailable.</span>';return;}
- var b=L.filter(function(x){return x.status==='built';}).length,v=L.filter(function(x){return x.validation==='validated';}).length;
- el.innerHTML='<h3 style="margin:8px 0 2px">Voidwatch NPCs (officers, refiners, purveyors) <span class="muted">(no path can start without them)</span></h3><div class="muted">'+L.length+' officer/quest NPCs: '+b+' built / '+(L.length-b)+' not built; '+v+' validated / '+(L.length-v)+' not</div>'+
- '<div class="table-wrap"><table><thead><tr><th>Officer</th><th>Zones</th><th>Path</th><th>Key item</th><th>DB npc</th><th>Script</th><th class="vwc1">Status</th><th class="vwc2">Validation</th></tr></thead><tbody>'+L.map(function(x){
-  var n=x.zones_live.filter(function(z){return z.npcs.length;}).length,sc=x.zones_live.filter(function(z){return z.script;}).length,t=x.zones_live.length;
-  return '<tr class="vwor" data-id="'+x.id+'" style="cursor:pointer"><td><b>'+esc(x.name)+'</b>'+' <span class="chip">'+esc(x.role_label||x.role)+'</span>'+'</td><td>'+esc(x.zones.join(', '))+' <span class="muted">'+esc(x.grid)+'</span></td><td>'+esc(x.path)+'</td><td>'+(x.ki?esc(x.ki)+(x.ki_id!=null?' ('+x.ki_id+')':' <span style="color:#c0392b">missing</span>'):'-')+'</td><td>'+n+'/'+t+'</td><td>'+sc+'/'+t+'</td><td class="vwc1">'+vchip(x.status)+'</td><td class="vwc2">'+vchip(x.validation)+'</td></tr>';}).join('')+'</tbody></table></div>';
+ if(!L.length){el.innerHTML='<span class="muted">NPC data unavailable.</span>';return;}
+ var GR=[['start','Starting officers','Hand out the first Stratum Abyssite and start each path.'],['sub','Sub-quest NPCs','Ashen path quest givers.'],['officer','Field officers','Same menu as the city officers; cruor exchange, Voidstones, Ops.'],
+  ['refiner','Atmacite refiners','Atmacite infuse/purge/enrich, abyssite upgrade, cruor teleports.'],['purveyor','Purveyors','Cell and Voiddust shop for Conquest Points / Imperial Standing / Allied Notes.'],['misc','Other','']];
+ function cnt(l){var b=l.filter(function(x){return x.status==='built';}).length,v=l.filter(function(x){return x.validation==='validated';}).length;return b+'/'+l.length+' built, '+v+' validated';}
+ var h='<div class="muted">'+L.length+' NPC groups: '+cnt(L)+'</div>';
+ GR.forEach(function(g){
+  var G=L.filter(function(x){return x.role===g[0];});if(!G.length)return;
+  h+='<h3 style="margin:14px 0 2px">'+g[1]+' <span class="muted">('+cnt(G)+')</span></h3>'+(g[2]?'<div class="muted">'+g[2]+'</div>':'')+
+  '<div class="table-wrap"><table><thead><tr><th>NPC</th><th>Zones</th><th>'+(g[0]==='start'?'Path / key item':'Path')+'</th><th>DB npc</th><th>Script</th><th class="vwc1">Status</th><th class="vwc2">Validation</th></tr></thead><tbody>'+G.map(function(x){
+   var n=x.zones_live.filter(function(z){return z.npcs.length;}).length,sc=x.zones_live.filter(function(z){return z.script;}).length,t=x.zones_live.length;
+   var pk=x.path?esc(x.path)+(x.ki?' / '+esc(x.ki)+(x.ki_id!=null?' ('+x.ki_id+')':' <span style="color:#c0392b">missing</span>'):''):'-';
+   return '<tr class="vwor" data-id="'+x.id+'" style="cursor:pointer"><td><b>'+esc(x.name)+'</b></td><td>'+esc(x.zones.join(', '))+' <span class="muted">'+esc(x.grid)+'</span></td><td>'+pk+'</td><td>'+n+'/'+t+'</td><td>'+sc+'/'+t+'</td><td class="vwc1">'+vchip(x.status)+'</td><td class="vwc2">'+vchip(x.validation)+'</td></tr>';}).join('')+'</tbody></table></div>';
+ });
+ el.innerHTML=h;
  Array.prototype.forEach.call(el.querySelectorAll('.vwor'),function(r){r.addEventListener('click',function(){openOfficer(r.dataset.id);});});
 }
 function openOfficer(id){

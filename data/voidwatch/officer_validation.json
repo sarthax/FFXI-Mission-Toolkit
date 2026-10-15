@@ -1,4 +1,299 @@
 {
+ "indigo": {
+  "areas": {},
+  "by": "",
+  "note": "",
+  "updated": "",
+  "zones": {
+   "Bastok_Markets": {
+    "areas": {
+     "ingame": "untested",
+     "menu": "issue",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:54:38"
+   }
+  }
+ },
+ "purveyor_ahturhgan": {
+  "areas": {},
+  "by": "",
+  "note": "",
+  "updated": "",
+  "zones": {
+   "Aht_Urhgan_Whitegate": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:35:03"
+   },
+   "Al_Zahbi": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:37:50"
+   },
+   "Nashmau": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:36:31"
+   }
+  }
+ },
+ "purveyor_bastok": {
+  "areas": {},
+  "by": "",
+  "note": "",
+  "updated": "",
+  "zones": {
+   "Bastok_Markets": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:34:38"
+   },
+   "Bastok_Markets_[S]": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:34:33"
+   },
+   "Bastok_Mines": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:34:44"
+   },
+   "Port_Bastok": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:34:42"
+   }
+  }
+ },
+ "purveyor_jeuno": {
+  "areas": {},
+  "by": "",
+  "note": "",
+  "updated": "",
+  "zones": {
+   "Lower_Jeuno": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:44:49"
+   },
+   "Port_Jeuno": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:45:19"
+   },
+   "RuLude_Gardens": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:43:39"
+   },
+   "Upper_Jeuno": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:44:13"
+   }
+  }
+ },
+ "purveyor_sandy": {
+  "areas": {},
+  "by": "",
+  "note": "",
+  "updated": "",
+  "zones": {
+   "Northern_San_dOria": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:48:21"
+   },
+   "Southern_San_dOria": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:47:28"
+   },
+   "Southern_San_dOria_[S]": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:49:24"
+   }
+  }
+ },
+ "purveyor_windurst": {
+  "areas": {},
+  "by": "",
+  "note": "",
+  "updated": "",
+  "zones": {
+   "Port_Windurst": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:42:13"
+   },
+   "Windurst_Waters": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:38:52"
+   },
+   "Windurst_Waters_[S]": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:41:00"
+   },
+   "Windurst_Woods": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:42:49"
+   }
+  }
+ },
  "refiner_outland": {
   "areas": {
    "ingame": "untested",
@@ -13,5 +308,26 @@
   "by": "",
   "note": "",
   "updated": "2026-10-08T15:47:09"
+ },
+ "refiner_present": {
+  "areas": {},
+  "by": "",
+  "note": "",
+  "updated": "",
+  "zones": {
+   "Bastok_Markets": {
+    "areas": {
+     "ingame": "ok",
+     "menu": "ok",
+     "name": "ok",
+     "position": "ok",
+     "script": "ok",
+     "spawn": "ok"
+    },
+    "by": "",
+    "note": "",
+    "updated": "2026-10-14T00:45:55"
+   }
+  }
  }
 }
