@@ -115,6 +115,29 @@
     {% endfor %}
   </div>
   <div class="assault-meta">
+    <strong>Confirmed zone-wide dependencies:</strong>
+    {% for scope in section.zones %}
+      <span>{{ scope.zone }} — all 10 missions <small>({{ scope.evidence }})</small>
+        <form method="post" action="/domains/assault/shared/zone" style="display:inline">
+          <input type="hidden" name="topic" value="{{ section.title }}">
+          <input type="hidden" name="zone" value="{{ scope.zone }}">
+          <button type="submit" name="action" value="unlink">Remove scope</button>
+        </form>
+      </span>
+    {% else %}<span class="muted">None confirmed</span>{% endfor %}
+  </div>
+  <details><summary>Confirm zone-wide impact</summary>
+    <p class="muted">Applies this dependency to all ten missions in the selected Assault zone. This records scope only; it does not validate or close mission issues.</p>
+    <form method="post" action="/domains/assault/shared/zone" style="display:grid;gap:6px;max-width:680px">
+      <input type="hidden" name="topic" value="{{ section.title }}">
+      <label>Assault zone <select name="zone" required>
+        {% for z in tracker.zones %}<option value="{{ z }}">{{ z }}</option>{% endfor %}
+      </select></label>
+      <label>Supporting evidence <input name="evidence" required maxlength="2000" placeholder="Fix log section, zone script, test, or capture"></label>
+      <button type="submit" name="action" value="link">Confirm zone-wide scope</button>
+    </form>
+  </details>
+  <div class="assault-meta">
     <strong>Explicitly linked missions:</strong>
     {% for mission_id in section.missions %}
     <span><a href="#assault-{{ mission_id }}">#{{ mission_id }}</a>
