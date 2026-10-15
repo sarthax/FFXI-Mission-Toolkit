@@ -9623,6 +9623,7 @@ def assault_domain_page(request: Request, zone: str = "", backlog_status: str = 
                               for stage in ("topaz", "dsp_port", "dsp_validation")}
         section["history"] = [r for r in shared_data["history"] if r["topic"] == section["title"]]
         section["missions"] = [r["mission"] for r in shared_data["links"] if r["topic"] == section["title"]]
+        section["zones"] = [r for r in shared_data["zones"] if r["topic"] == section["title"]]
     from workbench.domains.assault_dependency_suggestions import suggest
     suggest(tracker["shared"], tracker["missions"])
     rows, history = all_reviews()
@@ -9657,6 +9658,23 @@ def assault_domain_page(request: Request, zone: str = "", backlog_status: str = 
     tracker["backlog_filters"] = FILTERS
     tracker["backlog_selection"] = {"zone": zone, "status": backlog_status, "q": q}
     return templates.TemplateResponse(request, "domain_assault.html", {"request": request, "tracker": tracker})
+
+
+@app.post("/domains/assault/shared/zone")
+async def assault_shared_zone_update(request: Request):
+    from workbench.domains.assault_tracker import overview
+    from workbench.domains.assault_shared_reviews import set_zone
+    data = await request.form()
+    tracker = overview()
+    try:
+        set_zone(str(data.get("topic", "")), str(data.get("zone", "")),
+                 str(data.get("evidence", "")),
+                 topics={section["title"] for section in tracker["shared"]},
+                 zones=set(tracker["zones"]),
+                 unlink=str(data.get("action", "")) == "unlink")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return RedirectResponse(url="/domains/assault#assault-shared", status_code=303)
 
 
 @app.post("/domains/assault/shared/review")
