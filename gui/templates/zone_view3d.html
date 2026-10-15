@@ -1492,7 +1492,7 @@ pairLine.renderOrder = 22;
 scene.add(pairLine);
 function pairEntityId(e) {
   const raw = e?.live_observation ? e.server_entity_id : e?.id;
-  if (raw === null || raw === undefined || raw === '' || !/^\\d+$/.test(String(raw))) return null;
+  if (raw === null || raw === undefined || raw === '' || !/^\d+$/.test(String(raw))) return null;
   return String(BigInt(raw));
 }
 function updateEntityPair() {
@@ -1509,13 +1509,13 @@ function updateEntityPair() {
     pairStatus.textContent = 'No verified reported server ID. Client slot and name are not safe matching keys.';
     return;
   }
-  const onMap = spawnEntities.filter(e => pairEntityId(e) === id);
+  const onMap = spawnEntitiesAll.filter(e => pairEntityId(e) === id);
   const observed = liveObservedEntities.filter(e => pairEntityId(e) === id && liveEntityAgeSeconds(e) <= 3);
   const matches = selectedEntity.live_observation ? onMap : observed;
   if (!matches.length) {
     pairStatus.textContent = selectedEntity.live_observation
-      ? 'Live entity ' + id + ' observed; no matching server marker loaded in this map. Check zone/instance and source coverage.'
-      : 'Server spawn ' + id + ' loaded; no fresh Ashita observation. May be out of range, despawned, conditional, hidden, or not reported.';
+      ? 'Live entity ' + id + ' observed; no matching record in loaded zone data. Check zone/instance and source coverage.'
+      : 'Zone record ' + id + ' loaded; no fresh Ashita observation. May be out of range, despawned, conditional, hidden, or not reported.';
     return;
   }
   if (matches.length !== 1 || (selectedEntity.live_observation ? observed.length : onMap.length) !== 1) {
@@ -1525,6 +1525,10 @@ function updateEntityPair() {
   }
   const server = selectedEntity.live_observation ? matches[0] : selectedEntity;
   const live = selectedEntity.live_observation ? selectedEntity : matches[0];
+  if (![server.x, server.y, server.z, live.x, live.y, live.z].every(Number.isFinite)) {
+    pairStatus.textContent = 'Exact ID ' + id + ' found; positions unavailable for comparison.';
+    return;
+  }
   const a = new THREE.Vector3(server.x, -server.y, -server.z);
   const b = projectLivePoint(live);
   const distance = a.distanceTo(b);
@@ -1540,7 +1544,7 @@ function updateEntityPair() {
   }
   pairStatus.textContent = 'Exact ID ' + id + ' · ' + (live.n || 'Live') +
     ' ↔ ' + (server.n || 'Server') + ' · separation ' + distance.toFixed(2) +
-    ' world units. Yellow line joins configured spawn to observed position.';
+    ' world units. Yellow line joins loaded zone record to observed position.';
 }
 const entityInspector = document.getElementById('zone3d-entity-inspector');
 const entityInspectorContent = document.getElementById('zone3d-inspector-content');
