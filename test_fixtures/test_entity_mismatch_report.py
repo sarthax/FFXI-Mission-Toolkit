@@ -1,7 +1,10 @@
 """Focused synthetic regression for read-only zone mismatch reporting."""
+import csv
+import json
 import sqlite3
+from io import StringIO
 from pathlib import Path
-from workbench.devtools.research.entity_mismatch_report import build_report
+from workbench.devtools.research.entity_mismatch_report import build_report, main
 
 
 def test_zone_mismatch_types(tmp_path: Path):
@@ -75,3 +78,25 @@ def test_field_flags_and_resolved_mob_models(tmp_path: Path):
     xyz = next(row for row in report["rows"] if row["type"] == "position_disagreement")
     assert xyz["field_flags"]["dsp"] == ["pos_x"]
     assert xyz["field_flags"]["lsb"] == ["pos_x"]
+
+
+def test_csv_cli_preserves_nested_evidence(tmp_path: Path, capsys):
+    db = tmp_path / "export.db"
+    with sqlite3.connect(db) as con:
+        con.executescript("""
+        CREATE TABLE npc_names(npcid INTEGER,name TEXT,zoneid INTEGER);
+        CREATE TABLE dsp_npc_list(npcid INTEGER,name TEXT,zoneid INTEGER,pos_x REAL,pos_y REAL,pos_z REAL);
+        CREATE TABLE dsp_mob_spawn_points(mobid INTEGER,mobname TEXT,pos_x REAL,pos_y REAL,pos_z REAL);
+        INSERT INTO npc_names VALUES(100,'Client Name',44);
+        INSERT INTO dsp_npc_list VALUES(100,'Server Name',44,1,2,3);
+        """)
+    main(["--db", str(db), "--zone", "44", "--format", "csv"])
+    rows = list(csv.DictReader(StringIO(capsys.readouterr().out)))
+    assert rows
+    mismatch = next(row for row in rows if row["type"] == "name_mismatch")
+    values = json.loads(mismatch["values"])
+    flags = json.loads(mismatch["field_flags"])
+    assert values["client"]["name"] == "Client Name"
+    assert values["dsp"]["name"] == "Server Name"
+    assert flags["client"] == ["name"]
+    assert flags["dsp"] == ["name"]
