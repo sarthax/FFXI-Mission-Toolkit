@@ -279,6 +279,18 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
       <span id="zone3d-inspector-index" class="mono muted" role="status">—</span>
       <button type="button" id="zone3d-inspector-next" aria-label="Next visible entity">Next →</button>
     </div>
+    <section id="zone3d-inspector-live-tools" aria-label="Live observed entities" style="border:1px solid var(--border);border-radius:6px;padding:7px;margin:8px 0">
+      <strong>Live observed entities · Ashita</strong>
+      <div class="muted" style="font-size:11px;margin:3px 0">Search and inspect currently received live entities (not configured server spawns).</div>
+      <label style="display:block;margin:5px 0">Search live entities
+        <input type="search" id="zone3d-inspector-live-search" placeholder="Name, reported ID, client slot" style="width:100%">
+      </label>
+      <label style="display:block;margin:5px 0">Observed entity
+        <select id="zone3d-inspector-live-select" style="width:100%"><option value="">Select a live entity…</option></select>
+      </label>
+      <button type="button" id="zone3d-inspector-live-open" disabled>Inspect selected live entity</button>
+      <div id="zone3d-inspector-live-count" class="muted" style="font-size:11px;margin-top:4px" role="status">No live entities received</div>
+    </section>
     <div id="zone3d-inspector-content" class="mono" style="font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0"></div>
     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
       <button type="button" id="zone3d-inspector-focus">Focus camera</button>
@@ -717,6 +729,45 @@ const liveEntitySelect = document.getElementById('ashita-entity-select');
 const liveEntityInspect = document.getElementById('ashita-entity-inspect');
 const liveEntityCount = document.getElementById('ashita-entity-count');
 const liveEntitySearch = document.getElementById('ashita-entity-search');
+const inspectorLiveSearch = document.getElementById('zone3d-inspector-live-search');
+const inspectorLiveSelect = document.getElementById('zone3d-inspector-live-select');
+const inspectorLiveOpen = document.getElementById('zone3d-inspector-live-open');
+const inspectorLiveCount = document.getElementById('zone3d-inspector-live-count');
+function liveEntityIdentity(e) {
+  return String(e.server_entity_id ?? ('slot:' + e.client_index));
+}
+function refreshInspectorLivePicker() {
+  const needle = inspectorLiveSearch.value.trim().toLowerCase();
+  const visible = liveObservedEntities.map((e, index) => ({e, index}))
+    .filter(({e}) => liveEntityAgeSeconds(e) <= 3 &&
+      (!needle || [e.n, e.server_entity_id, e.client_index].some(
+        value => value != null && String(value).toLowerCase().includes(needle))));
+  // Keep an open native select stable through 10 Hz telemetry.
+  const signature = JSON.stringify(visible.map(({e}) => [liveEntityIdentity(e), e.n]));
+  if (inspectorLiveSelect.dataset.signature !== signature) {
+    const current = inspectorLiveSelect.value;
+    inspectorLiveSelect.replaceChildren(new Option('Select a live entity…', ''));
+    visible.forEach(({e,index}) => inspectorLiveSelect.add(
+      new Option((e.n || 'Unnamed') + ' [' + liveEntityIdentity(e) + ']', String(index))));
+    inspectorLiveSelect.dataset.signature = signature;
+    if (visible.some(({index}) => String(index) === current)) inspectorLiveSelect.value = current;
+  }
+  inspectorLiveCount.textContent = visible.length + ' current live entities' +
+    (needle ? ' matching search' : '') + ' · hidden when telemetry is stale';
+  inspectorLiveOpen.disabled = !inspectorLiveSelect.value;
+}
+inspectorLiveSearch.addEventListener('input', refreshInspectorLivePicker);
+inspectorLiveSelect.addEventListener('change', () => {
+  inspectorLiveOpen.disabled = !inspectorLiveSelect.value;
+});
+inspectorLiveOpen.addEventListener('click', () => {
+  const e = liveObservedEntities[Number(inspectorLiveSelect.value)];
+  if (!inspectorLiveSelect.value || !e || liveEntityAgeSeconds(e) > 3) return;
+  liveSelectedEntityId = liveEntityIdentity(e);
+  inspectEntity(e);
+  highlightObservedEntity();
+});
+
 function liveEntityMatchesFilter(entity) {
   const needle = liveEntitySearch.value.trim().toLowerCase();
   if (!needle) return true;
@@ -773,6 +824,7 @@ function updateLiveEntityPicker() {
     liveEntitySelect.value = restored >= 0 ? String(restored) : '';
   liveEntityInspect.disabled = liveEntitySelect.value === '';
   updateLiveEntityVisibility();
+  refreshInspectorLivePicker();
 }
 liveEntitySelect.addEventListener('change', () => {
   liveSelectedEntityId = liveEntitySelect.value === '' ? '' :
@@ -1451,6 +1503,11 @@ function updateInspectorNavigation() {
 function inspectEntity(entity) {
   if (!entity) return;
   selectedEntity = entity;
+  if (entity.live_observation) {
+    const index = liveObservedEntities.findIndex(e => e === entity);
+    if (index >= 0) inspectorLiveSelect.value = String(index);
+    inspectorLiveOpen.disabled = index < 0;
+  }
   updateInspectorNavigation();
   if (spawnMesh) {
     const color = new THREE.Color();
