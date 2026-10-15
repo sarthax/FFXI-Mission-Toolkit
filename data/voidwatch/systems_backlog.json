@@ -1,23 +1,443 @@
 [
- {"id": "r01", "area": "Refiner", "title": "Teleport (warp) options: Crimson / Indigo / Jade present era", "status": "done", "evidence": "C", "detail": "12 options mapped from Gwendy menu walks 2026-10-09; user-tested in game (San d'Oria + Bastok confirmed; Windurst wired, test pending). Export: Warps checklist.", "note": ""},
- {"id": "r02", "area": "Refiner", "title": "Refiner menu gating (p5/p6 bitfields)", "status": "partial", "evidence": "C", "detail": "Decode: docs/voidwatch/research/REFINER-CAPTURE-DECODE.md. p5 = 0x800000 + held-stone bits (path*4+tier-1), p6 = 2 bits/path ready flag: decoded from 12 captures and written into refinerParams. VWO_PROBE still forces all-ones; flip off after in-game test. Unknown: p1 bit1, p0 high bits, which bits unlock warp entries.", "note": ""},
- {"id": "r03", "area": "Refiner", "title": "Stratum abyssite upgrade (opt 1)", "status": "partial", "evidence": "C", "detail": "Decode: docs/voidwatch/research/REFINER-CAPTURE-DECODE.md. Option 1 auto=0 confirmed. Ready state is p6 (not p5). Multi-stone selection still unknown.", "note": ""},
- {"id": "r04", "area": "Refiner", "title": "Warp stone check per tier", "status": "partial", "evidence": "D", "detail": "Warp gate = holds ANY tier of the destination path; retail gates by tier. Cruor 1000 cost [W].", "note": ""},
- {"id": "r05", "area": "Refiner", "title": "Warps: [S] past era, Tavnazia beyond tier 1, White/Ashen/Amber", "status": "hold", "evidence": "", "detail": "On hold until the three home-nation paths (Crimson/Indigo/Jade) are solid [user 2026-10-09].", "note": ""},
- {"id": "a01", "area": "Atmacite", "title": "Infuse / purge atmacite at Refiner", "status": "done", "evidence": "C", "detail": "Infuse (first empty position 1-3), swap and purge work in game (Bastok, 2026-10-09). Encodings: REFINER-CAPTURE-DECODE.md section 6. Other zones wired, untested. Swap flag for pos 2/3 inferred.", "note": ""},
- {"id": "a02", "area": "Atmacite", "title": "Enrich (level up) atmacite 1-15", "status": "done", "evidence": "C", "detail": "Enrich works in game (Bastok, 2026-10-09). Enrich reply first value (counter) unverified. See REFINER-CAPTURE-DECODE.md section 6.", "note": ""},
- {"id": "a03", "area": "Atmacite", "title": "Infuse / purge / enrich at Planar Rift", "status": "missing", "evidence": "W", "detail": "Rift menu option ids not captured; the refiner flow is decoded (see a01/a02).", "note": ""},
- {"id": "a04", "area": "Atmacite", "title": "Atmacite battle effects (stat mods, party Sphere buffs)", "status": "missing", "evidence": "W", "detail": "Per-atmacite effect at L1/5/10/15 is on the wiki. Sphere effects: party-only, 10' range, not on the wearer. Needs mod mapping per atmacite.", "note": ""},
- {"id": "a05", "area": "Atmacite", "title": "Atmacite ownership model (key items vs levelled)", "status": "partial", "evidence": "", "detail": "Data: docs/voidwatch/research/ATMACITE-DATA.md (all 40, cost classes A-E, infuse = flat 100 cruor, periapt slots). Atmacites currently drop as plain key items (5% [D]). Retail: obtained with white alignment > 0%, chance = white %; level starts at 1.", "note": ""},
- {"id": "l01", "area": "Lights / weakness", "title": "Weakness: elemental magic only", "status": "partial", "evidence": "D", "detail": "vwOnMagicHit counts elemental-magic hits on the NM's weak element. Missing: weapon skill, job ability, pet/avatar/automaton weakness categories, degree rule, per-hit values [D 20/20/10/10].", "note": ""},
- {"id": "l02", "area": "Lights / weakness", "title": "Stagger / devastate trigger and Synchronic Blitz", "status": "partial", "evidence": "D", "detail": "Simplified: blitz every 3rd weakness hit, doubles gains, ends with bonus. Retail trigger is a hidden stagger state (captures: no fixed count). Blitz length/ordering from Kaggen capture.", "note": ""},
- {"id": "l03", "area": "Lights / weakness", "title": "Light (alignment) caps and final report", "status": "partial", "evidence": "C", "detail": "Caps blue/red 350, yellow/green 225, white 100 [C]. End-of-battle BR / YG / W messages wired per NM; message ids verified per zone only where text-checked.", "note": ""},
- {"id": "l04", "area": "Lights / weakness", "title": "White light drives atmacite / periapt chance", "status": "partial", "evidence": "W", "detail": "White % now = per-member chance of periapt/atmacite, 100% guaranteed (voidwatch.lua vwOnKill; local, untested). Void Stone requirement not enforced; white accrual rate unaudited.", "note": ""},
- {"id": "l05", "area": "Lights / weakness", "title": "Ascent cells (blue/red +50, yellow/green +25)", "status": "partial", "evidence": "F", "detail": "Rift trade works; client item ids and trade messages pending.", "note": ""},
- {"id": "w01", "area": "Rewards", "title": "Cruor / EXP from lights", "status": "partial", "evidence": "F", "detail": "Stage table applied (cruor x green, EXP x yellow). Per-stage base values partly [D]; EXP message id unknown (silent).", "note": ""},
- {"id": "w02", "area": "Rewards", "title": "Pyxis item pools and rates", "status": "partial", "evidence": "D", "detail": "Several NMs use placeholder pools / [D] rates; Celaeno and Baneberry use FFXIDB rates. See NM-DETAILS ledger per NM.", "note": ""},
- {"id": "w03", "area": "Rewards", "title": "Key item / periapt rewards (client-id verification)", "status": "partial", "evidence": "V", "detail": "Atmacite KI client-id checks pending for most NMs (KI-VERIFICATION.md covers names, not per-NM grants).", "note": ""},
- {"id": "w04", "area": "Rewards", "title": "Purveyor (cruor shop: atmacites, periapts)", "status": "missing", "evidence": "W", "detail": "Key item atmacites/periapts are also purchasable with cruor. Not checked whether built.", "note": ""},
- {"id": "n01", "area": "NMs", "title": "Unbuilt NMs: Hyacinth / Amber / White / Ashen, Provenance battlefield", "status": "hold", "evidence": "", "detail": "Outside the three home paths; see NM-TRACKER.", "note": ""},
- {"id": "n02", "area": "NMs", "title": "In-game testing of built home-path NMs", "status": "partial", "evidence": "", "detail": "Per-NM validation on the Overview table. Indigo batch (Ushumgal, Lorbulcrud, Baneberry, Celaeno) and Akupara/Voidwrought untested.", "note": ""}
+  {
+    "id": "r01",
+    "area": "Refiner",
+    "title": "Teleport (warp) options: Crimson / Indigo / Jade present era",
+    "status": "done",
+    "evidence": "C",
+    "detail": "12 options mapped from Gwendy menu walks 2026-10-09; user-tested in game (San d'Oria + Bastok confirmed; Windurst wired, test pending). Export: Warps checklist.",
+    "note": ""
+  },
+  {
+    "id": "r02",
+    "area": "Refiner",
+    "title": "Refiner menu gating (p5/p6 bitfields)",
+    "status": "partial",
+    "evidence": "C",
+    "detail": "Decode: docs/voidwatch/research/REFINER-CAPTURE-DECODE.md. p5 = 0x800000 + held-stone bits (path*4+tier-1), p6 = 2 bits/path ready flag: decoded from 12 captures and written into refinerParams. VWO_PROBE still forces all-ones; flip off after in-game test. Unknown: p1 bit1, p0 high bits, which bits unlock warp entries.",
+    "note": ""
+  },
+  {
+    "id": "r03",
+    "area": "Refiner",
+    "title": "Stratum abyssite upgrade (opt 1)",
+    "status": "partial",
+    "evidence": "C",
+    "detail": "Decode: docs/voidwatch/research/REFINER-CAPTURE-DECODE.md. Option 1 auto=0 confirmed. Ready state is p6 (not p5). Multi-stone selection still unknown.",
+    "note": ""
+  },
+  {
+    "id": "r04",
+    "area": "Refiner",
+    "title": "Warp stone check per tier",
+    "status": "partial",
+    "evidence": "D",
+    "detail": "Warp gate = holds ANY tier of the destination path; retail gates by tier. Cruor 1000 cost [W].",
+    "note": ""
+  },
+  {
+    "id": "r05",
+    "area": "Refiner",
+    "title": "Warps: [S] past era, Tavnazia beyond tier 1, White/Ashen/Amber",
+    "status": "hold",
+    "evidence": "",
+    "detail": "On hold until the three home-nation paths (Crimson/Indigo/Jade) are solid [user 2026-10-09].",
+    "note": ""
+  },
+  {
+    "id": "a01",
+    "area": "Atmacite",
+    "title": "Infuse / purge atmacite at Refiner",
+    "status": "done",
+    "evidence": "C",
+    "detail": "Infuse (first empty position 1-3), swap and purge work in game (Bastok, 2026-10-09). Encodings: REFINER-CAPTURE-DECODE.md section 6. Other zones wired, untested. Swap flag for pos 2/3 inferred.",
+    "note": ""
+  },
+  {
+    "id": "a02",
+    "area": "Atmacite",
+    "title": "Enrich (level up) atmacite 1-15",
+    "status": "done",
+    "evidence": "C",
+    "detail": "Enrich works in game (Bastok, 2026-10-09). Enrich reply first value (counter) unverified. See REFINER-CAPTURE-DECODE.md section 6.",
+    "note": ""
+  },
+  {
+    "id": "a03",
+    "area": "Atmacite",
+    "title": "Infuse / purge / enrich at Planar Rift",
+    "status": "missing",
+    "evidence": "W",
+    "detail": "Rift menu option ids not captured; the refiner flow is decoded (see a01/a02).",
+    "note": ""
+  },
+  {
+    "id": "a04",
+    "area": "Atmacite",
+    "title": "Atmacite battle effects (stat mods, party Sphere buffs)",
+    "status": "missing",
+    "evidence": "W",
+    "detail": "Per-atmacite effect at L1/5/10/15 is on the wiki. Sphere effects: party-only, 10' range, not on the wearer. Needs mod mapping per atmacite.",
+    "note": ""
+  },
+  {
+    "id": "a05",
+    "area": "Atmacite",
+    "title": "Atmacite ownership model (key items vs levelled)",
+    "status": "partial",
+    "evidence": "",
+    "detail": "Data: docs/voidwatch/research/ATMACITE-DATA.md (all 40, cost classes A-E, infuse = flat 100 cruor, periapt slots). Atmacites currently drop as plain key items (5% [D]). Retail: obtained with white alignment > 0%, chance = white %; level starts at 1.",
+    "note": ""
+  },
+  {
+    "id": "l01",
+    "area": "Lights / weakness",
+    "title": "Weakness trigger: elemental magic",
+    "status": "partial",
+    "evidence": "D",
+    "detail": "Built; client element index mapped (DSP ELE -> client 1-8). In-game test pending. Test plan: docs/voidwatch/LIGHTS-TEST-PLAN.md. No miss/resist check.",
+    "note": ""
+  },
+  {
+    "id": "l02",
+    "area": "Lights / weakness",
+    "title": "Stagger / devastate trigger and Synchronic Blitz",
+    "status": "partial",
+    "evidence": "D",
+    "detail": "Simplified: blitz every 3rd weakness hit, doubles gains, ends with bonus. Retail trigger is a hidden stagger state (captures: no fixed count). Blitz length/ordering from Kaggen capture.",
+    "note": ""
+  },
+  {
+    "id": "l03",
+    "area": "Lights / weakness",
+    "title": "Light (alignment) caps and final report",
+    "status": "partial",
+    "evidence": "C",
+    "detail": "Caps blue/red 350, yellow/green 225, white 100 [C]. End-of-battle BR / YG / W messages wired per NM; message ids verified per zone only where text-checked.",
+    "note": ""
+  },
+  {
+    "id": "l04",
+    "area": "Lights / weakness",
+    "title": "White light drives atmacite / periapt chance",
+    "status": "partial",
+    "evidence": "W",
+    "detail": "White accrues only from high/extreme hits (0/25/100 per hit, estimate); white-gated drop checked in vwOnKill. Untested in game. Per-hit values for yellow/green/white are design guesses.",
+    "note": ""
+  },
+  {
+    "id": "l05",
+    "area": "Lights / weakness",
+    "title": "Ascent cells (blue/red +50, yellow/green +25)",
+    "status": "partial",
+    "evidence": "F",
+    "detail": "Rift trade works; client item ids and trade messages pending.",
+    "note": ""
+  },
+  {
+    "id": "w01",
+    "area": "Rewards",
+    "title": "Cruor / EXP from lights",
+    "status": "partial",
+    "evidence": "F",
+    "detail": "Stage table applied (cruor x green, EXP x yellow). Per-stage base values partly [D]; EXP message id unknown (silent).",
+    "note": ""
+  },
+  {
+    "id": "w02",
+    "area": "Rewards",
+    "title": "Pyxis item pools and rates",
+    "status": "partial",
+    "evidence": "D",
+    "detail": "Several NMs use placeholder pools / [D] rates; Celaeno and Baneberry use FFXIDB rates. See NM-DETAILS ledger per NM.",
+    "note": ""
+  },
+  {
+    "id": "w03",
+    "area": "Rewards",
+    "title": "Key item / periapt rewards (client-id verification)",
+    "status": "partial",
+    "evidence": "V",
+    "detail": "Atmacite KI client-id checks pending for most NMs (KI-VERIFICATION.md covers names, not per-NM grants).",
+    "note": ""
+  },
+  {
+    "id": "w04",
+    "area": "Rewards",
+    "title": "Purveyor (cruor shop: atmacites, periapts)",
+    "status": "missing",
+    "evidence": "W",
+    "detail": "Key item atmacites/periapts are also purchasable with cruor. Not checked whether built.",
+    "note": ""
+  },
+  {
+    "id": "n01",
+    "area": "NMs",
+    "title": "Unbuilt NMs: Hyacinth / Amber / White / Ashen, Provenance battlefield",
+    "status": "hold",
+    "evidence": "",
+    "detail": "Outside the three home paths; see NM-TRACKER.",
+    "note": ""
+  },
+  {
+    "id": "n02",
+    "area": "NMs",
+    "title": "In-game testing of built home-path NMs",
+    "status": "partial",
+    "evidence": "",
+    "detail": "Per-NM validation on the Overview table. Indigo batch (Ushumgal, Lorbulcrud, Baneberry, Celaeno) and Akupara/Voidwrought untested.",
+    "note": ""
+  },
+  {
+    "id": "l06",
+    "area": "Lights / weakness",
+    "title": "Weakness trigger: weapon skills",
+    "status": "partial",
+    "evidence": "D",
+    "detail": "onWeaponskillHit wired in 28 NM files (must return 0). Weapon type index 1-12, 25->13, 26->14. Not covered: Relic/Mythic/Empyrean/Aeonic exclusion, per-weapon WS lists. Untested.",
+    "note": ""
+  },
+  {
+    "id": "l07",
+    "area": "Lights / weakness",
+    "title": "Weakness trigger: job abilities",
+    "status": "partial",
+    "evidence": "D",
+    "detail": "20 ability scripts call vwOnAbility (no mob-side ability hook exists). Other JAs unhooked. Untested.",
+    "note": ""
+  },
+  {
+    "id": "l08",
+    "area": "Lights / weakness",
+    "title": "Weakness trigger: avatar blood pacts",
+    "status": "partial",
+    "evidence": "D",
+    "detail": "6 *_iv pet scripts call vwOnPetAbility. Light/Dark avatars, jug pets, automaton, ninjutsu, songs, blue magic not hooked.",
+    "note": ""
+  },
+  {
+    "id": "l09",
+    "area": "Lights / weakness",
+    "title": "Weakness client messages (10897-10903 block)",
+    "status": "partial",
+    "evidence": "V",
+    "detail": "Ids are offsets from msgWeakElem (-2..+4, blitz on +7); text matched from Ru'Aun dialog.yml. Verify per zone cfg in game.",
+    "note": ""
+  },
+  {
+    "id": "l10",
+    "area": "Lights / weakness",
+    "title": "Weakness tiers (normal/high/extreme)",
+    "status": "partial",
+    "evidence": "W",
+    "detail": "Per fight 1 extreme, 1 high, others normal. Blue/red 20/100/250 from BG Wiki digest; the 4-slot split and half-rate for yellow/green are judgement. Replacement after a normal hit not modelled.",
+    "note": ""
+  },
+  {
+    "id": "l11",
+    "area": "Lights / weakness",
+    "title": "Periapt hints (Guidance / Percipience)",
+    "status": "partial",
+    "evidence": "D",
+    "detail": "15% hint chance is a guess. Purchase menu (Officer, 150,000 cruor) not built: no csid/option capture. Clarity, Sapience not built.",
+    "note": ""
+  },
+  {
+    "id": "l12",
+    "area": "Lights / weakness",
+    "title": "Lights / weakness in-game test pass",
+    "status": "missing",
+    "evidence": "",
+    "detail": "Nothing in the lights chain has been tested in game. Use LIGHTS-TEST-PLAN.md; log results per row.",
+    "note": ""
+  },
+  {
+    "id": "l13",
+    "area": "Lights / weakness",
+    "title": "Weakness: /fume, extreme-tier rest rules, miss/resist",
+    "status": "missing",
+    "evidence": "",
+    "detail": "Open data gaps; do not guess. Needs captures or wiki confirmation.",
+    "note": ""
+  },
+  {
+    "id": "l14",
+    "area": "Lights / weakness",
+    "title": "Cell trade / expend messages",
+    "status": "missing",
+    "evidence": "",
+    "detail": "Message ids for cell use not captured (l05 cell values are forum figures).",
+    "note": ""
+  },
+  {
+    "id": "w05",
+    "area": "Rewards",
+    "title": "Drop rates per NM (dropRates tables)",
+    "status": "partial",
+    "evidence": "F",
+    "detail": "Done for 8 NMs (Belphoebe, Kholomodumo, Hahava, Lord Asag, Akupara, Voidwrought, Moira, Aello) from FFXIDB/wiki. Open: Lord Asag Silver Mirror, Voidwrought item-name mismatch (11856), Uncommon/Common pools, other NMs.",
+    "note": ""
+  },
+  {
+    "id": "n03",
+    "area": "NMs",
+    "title": "Jeuno VI [S] NMs (Gaunab, Ocythoe, Kalasutrax)",
+    "status": "partial",
+    "evidence": "D",
+    "detail": "Built locally with skills/spells SQL; real gating, levels and drops unknown. SQL needs reimport (jeuno_vi_s_base.sql, jeuno_vi_s_skills.sql) plus map-server restart.",
+    "note": ""
+  },
+  {
+    "id": "n04",
+    "area": "NMs",
+    "title": "KI client-id verification and rift !checknav",
+    "status": "missing",
+    "evidence": "",
+    "detail": "Verify KI ids against the client and run !checknav on rift positions before trusting them.",
+    "note": ""
+  },
+  {
+    "id": "g01",
+    "area": "Process",
+    "title": "Branch / commit plan for Voidwatch work",
+    "status": "missing",
+    "evidence": "",
+    "detail": "Everything since the lights work is uncommitted (kept local by request). Needs slice branches and tags per BRANCH_PLAN.md.",
+    "note": ""
+  },
+  {
+    "id": "s01",
+    "area": "NM skills",
+    "title": "Cottus: Mercurial Strike, Colossal Slam, ranged attack",
+    "status": "missing",
+    "evidence": "[J] wikiwiki.jp VW route pages vs live mob_skills; BG forum by_nm; SKILL-AUDIT",
+    "detail": "Rows 2576-2578 commented out in mob_skills.sql, no Lua.",
+    "note": "Audit 2026-10-12. Commented rows have LSB-era anim ids that may not match this client (Fatal Scream: row anim 2131 vs capture anim 1660). Needs capture/client anim confirmation + Lua before enabling."
+  },
+  {
+    "id": "s02",
+    "area": "NM skills",
+    "title": "Pancimanci: Fatal Scream, hate-reset single-target move",
+    "status": "missing",
+    "evidence": "[J] wikiwiki.jp VW route pages vs live mob_skills; BG forum by_nm; SKILL-AUDIT",
+    "detail": "Fatal Scream row 2387 commented (anim mismatch vs capture); hate-reset move unnamed.",
+    "note": "Audit 2026-10-12. Commented rows have LSB-era anim ids that may not match this client (Fatal Scream: row anim 2131 vs capture anim 1660). Needs capture/client anim confirmation + Lua before enabling."
+  },
+  {
+    "id": "s03",
+    "area": "NM skills",
+    "title": "Sarimanok: Somnial Durance",
+    "status": "missing",
+    "evidence": "[J] wikiwiki.jp VW route pages vs live mob_skills; BG forum by_nm; SKILL-AUDIT",
+    "detail": "Row 2644 commented, no Lua. Own list 1184 built with Crosswind/Wind Shear/Ill Wind.",
+    "note": "Audit 2026-10-12. Commented rows have LSB-era anim ids that may not match this client (Fatal Scream: row anim 2131 vs capture anim 1660). Needs capture/client anim confirmation + Lua before enabling."
+  },
+  {
+    "id": "s04",
+    "area": "NM skills",
+    "title": "Belphoebe: Norn Arrows",
+    "status": "missing",
+    "evidence": "[J] wikiwiki.jp VW route pages vs live mob_skills; BG forum by_nm; SKILL-AUDIT",
+    "detail": "Row 2518 commented, no Lua. Seasonal Breezes + Cyclonic Turmoil added.",
+    "note": "Audit 2026-10-12. Commented rows have LSB-era anim ids that may not match this client (Fatal Scream: row anim 2131 vs capture anim 1660). Needs capture/client anim confirmation + Lua before enabling."
+  },
+  {
+    "id": "s05",
+    "area": "NM skills",
+    "title": "Sallow Seymour: Mud Stream",
+    "status": "missing",
+    "evidence": "[J] wikiwiki.jp VW route pages vs live mob_skills; BG forum by_nm; SKILL-AUDIT",
+    "detail": "Row 2645 commented, no Lua.",
+    "note": "Audit 2026-10-12. Commented rows have LSB-era anim ids that may not match this client (Fatal Scream: row anim 2131 vs capture anim 1660). Needs capture/client anim confirmation + Lua before enabling."
+  },
+  {
+    "id": "s06",
+    "area": "NM skills",
+    "title": "Lord Asag: Nocturnal Servitude + amnesia move",
+    "status": "missing",
+    "evidence": "[J] wikiwiki.jp VW route pages vs live mob_skills; BG forum by_nm; SKILL-AUDIT",
+    "detail": "Row 2112 commented; amnesia move unnamed in JP.",
+    "note": "Audit 2026-10-12. Commented rows have LSB-era anim ids that may not match this client (Fatal Scream: row anim 2131 vs capture anim 1660). Needs capture/client anim confirmation + Lua before enabling."
+  },
+  {
+    "id": "s07",
+    "area": "NM skills",
+    "title": "Ogbunabali: Gravity Horn, Quake Blast",
+    "status": "missing",
+    "evidence": "[J] wikiwiki.jp VW route pages vs live mob_skills; BG forum by_nm; SKILL-AUDIT",
+    "detail": "Gravity Horn has no row at all; Quake Blast 2517 commented.",
+    "note": "Audit 2026-10-12. Commented rows have LSB-era anim ids that may not match this client (Fatal Scream: row anim 2131 vs capture anim 1660). Needs capture/client anim confirmation + Lua before enabling."
+  },
+  {
+    "id": "s08",
+    "area": "NM skills",
+    "title": "Kholomodumo: Eclipse Meteor, Meteor (spell-like)",
+    "status": "missing",
+    "evidence": "[J] wikiwiki.jp VW route pages vs live mob_skills; BG forum by_nm; SKILL-AUDIT",
+    "detail": "No Eclipse Meteor row; Meteor commented. Thunderbolt 629 added.",
+    "note": "Audit 2026-10-12. Commented rows have LSB-era anim ids that may not match this client (Fatal Scream: row anim 2131 vs capture anim 1660). Needs capture/client anim confirmation + Lua before enabling."
+  },
+  {
+    "id": "s09",
+    "area": "NM skills",
+    "title": "Ushumgal: Grim Glower (no Lua), Calcifying Mist (commented)",
+    "status": "missing",
+    "evidence": "[J] wikiwiki.jp VW route pages vs live mob_skills; BG forum by_nm; SKILL-AUDIT",
+    "detail": "Grim Glower row 2156 exists without Lua; Calcifying Mist 2157 commented. Regurgitation added.",
+    "note": "Audit 2026-10-12. Commented rows have LSB-era anim ids that may not match this client (Fatal Scream: row anim 2131 vs capture anim 1660). Needs capture/client anim confirmation + Lua before enabling."
+  },
+  {
+    "id": "s10",
+    "area": "NM skills",
+    "title": "Melancholic Moira: Thousand Spears, Foul/fetid breath variant",
+    "status": "missing",
+    "evidence": "[J] wikiwiki.jp VW route pages vs live mob_skills; BG forum by_nm; SKILL-AUDIT",
+    "detail": "Thousand Spears 2574 commented; death-breath move name unresolved.",
+    "note": "Audit 2026-10-12. Commented rows have LSB-era anim ids that may not match this client (Fatal Scream: row anim 2131 vs capture anim 1660). Needs capture/client anim confirmation + Lua before enabling."
+  },
+  {
+    "id": "s11",
+    "area": "NM skills",
+    "title": "Murk-veined Baneberry: Ritual Bind + unnamed single-target move",
+    "status": "missing",
+    "evidence": "[J] wikiwiki.jp VW route pages vs live mob_skills; BG forum by_nm; SKILL-AUDIT",
+    "detail": "Ritual Bind 2393 commented.",
+    "note": "Audit 2026-10-12. Commented rows have LSB-era anim ids that may not match this client (Fatal Scream: row anim 2131 vs capture anim 1660). Needs capture/client anim confirmation + Lua before enabling."
+  },
+  {
+    "id": "s12",
+    "area": "NM skills",
+    "title": "Lorbulcrud: Dissolve",
+    "status": "missing",
+    "evidence": "[J] wikiwiki.jp VW route pages vs live mob_skills; BG forum by_nm; SKILL-AUDIT",
+    "detail": "Row 2550 commented. Epoxy Spread 1319 added by name match (verify).",
+    "note": "Audit 2026-10-12. Commented rows have LSB-era anim ids that may not match this client (Fatal Scream: row anim 2131 vs capture anim 1660). Needs capture/client anim confirmation + Lua before enabling."
+  },
+  {
+    "id": "s13",
+    "area": "NM skills",
+    "title": "Krabimanjaro: unnamed plague-AoE move",
+    "status": "missing",
+    "evidence": "[J] wikiwiki.jp VW route pages vs live mob_skills; BG forum by_nm; SKILL-AUDIT",
+    "detail": "JP lists a blight/plague AoE with no name resolved.",
+    "note": "Audit 2026-10-12. Commented rows have LSB-era anim ids that may not match this client (Fatal Scream: row anim 2131 vs capture anim 1660). Needs capture/client anim confirmation + Lua before enabling."
+  },
+  {
+    "id": "s14",
+    "area": "NM skills",
+    "title": "NM HP estimates: Pancimanci, Akupara, Voidwrought = 45000",
+    "status": "partial",
+    "evidence": "[J] wikiwiki.jp VW route pages vs live mob_skills; BG forum by_nm; SKILL-AUDIT",
+    "detail": "No source found (captures/forum/wiki); user-stated ~45k estimate. Capture a kill hptrack to replace.",
+    "note": "Audit 2026-10-12. Commented rows have LSB-era anim ids that may not match this client (Fatal Scream: row anim 2131 vs capture anim 1660). Needs capture/client anim confirmation + Lua before enabling."
+  },
+  {
+    "id": "s15",
+    "area": "NM skills",
+    "title": "In-game verify: Cottus now mobType 2; new skill lists 1184 etc.",
+    "status": "partial",
+    "evidence": "[J] wikiwiki.jp VW route pages vs live mob_skills; BG forum by_nm; SKILL-AUDIT",
+    "detail": "SQL in sql/slices/voidwatch-vwnm/nm_audit_20261012.sql applied to dspdb_fresh; needs map-server restart + /check test.",
+    "note": "Audit 2026-10-12. Commented rows have LSB-era anim ids that may not match this client (Fatal Scream: row anim 2131 vs capture anim 1660). Needs capture/client anim confirmation + Lua before enabling."
+  }
 ]
