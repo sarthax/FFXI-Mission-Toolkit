@@ -1574,7 +1574,12 @@ function refreshZoneCorrelation() {
     const name = row.entity?.n || 'Unnamed';
     btn.textContent = row.kind.replace('_',' ') + ' · ' + name + ' [' + (row.id || 'unknown') + ']' +
       (row.separation === null || row.separation === undefined ? '' : ' · ' + row.separation.toFixed(1) + ' units');
-    btn.addEventListener('click', () => inspectEntity(row.entity));
+    btn.addEventListener('click', () => {
+      // Resolve against the latest arrays; telemetry reconstructs live objects on each poll.
+      const fresh = zoneCorrelationRows().find(current => current.id === row.id && current.kind === row.kind);
+      if (fresh?.entity) inspectEntity(fresh.entity);
+      else refreshZoneCorrelation();
+    });
     correlationList.append(btn);
   }
   if (rows.length > 100) correlationList.title = 'First 100 matching results shown';
