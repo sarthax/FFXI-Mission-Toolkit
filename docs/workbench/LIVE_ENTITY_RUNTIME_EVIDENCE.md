@@ -35,3 +35,9 @@ closed to `unknown` on invalid evidence. These functions do **not** authenticate
 who supplied the sample, and are **not** a connected DSP runtime adapter.
 Only wire samples from a separately trusted, read-only server-side transport;
 never accept arbitrary browser/client JSON as authoritative server state.
+
+## Trusted provider injection (not connected)
+
+`TrustedRuntimeProvider` accepts a server-administrator-injected **read-only** callable named `read_server_entity(zone, server_entity_id, instance_id)`. It validates the requested IDs before calling the provider and delegates to strict sample timestamp and identity verification. Unavailable or timed-out transports yield `unknown`.
+
+**Important:** An arbitrary callback is not authenticated merely by this wrapper. Production wiring must verify that the callback talks to an approved DSP server-side diagnostic source, not a client-supplied payload. The repo currently has no verified DSP runtime diagnostic transport; this slice does not expose an API or claim server state can be queried today. Avoid substituting static MySQL spawn tables for live runtime information.
