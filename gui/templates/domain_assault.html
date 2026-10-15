@@ -42,6 +42,31 @@
   <span>Confirmed blockers: <strong>{{ tracker.readiness_counts.get('blocked',0) }}</strong></span>
   <span>Awaiting evidence: <strong>{{ tracker.readiness_counts.get('needs_evidence',0) }}</strong></span>
 </div>
+<form method="get" action="/domains/assault#readiness-results" style="display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin:10px 0">
+  <label>Readiness zone <select name="readiness_zone">
+    <option value="">All zones</option>
+    {% for z in tracker.zones %}<option value="{{ z }}" {% if tracker.readiness_selection.zone == z %}selected{% endif %}>{{ z }}</option>{% endfor %}
+  </select></label>
+  <label>Readiness view <select name="readiness_status">
+    {% for status in tracker.readiness_filters %}
+    <option value="{{ status }}" {% if tracker.readiness_selection.status == status %}selected{% endif %}>{{ status|replace('_',' ')|title }}</option>
+    {% endfor %}
+  </select></label>
+  <button type="submit">Filter missions</button>
+</form>
+<div id="readiness-results" class="dense-toolbar"><strong>{{ tracker.readiness_results|length }} matching mission(s)</strong></div>
+<div class="table-wrap" style="max-height:470px;overflow:auto"><table>
+<thead><tr><th>Mission</th><th>Zone / rank</th><th>Readiness</th><th>Implementation</th><th>DSP port</th><th>DSP test</th><th>Evidence gaps</th></tr></thead>
+<tbody>{% for mission in tracker.readiness_results %}
+<tr><td><a href="#assault-{{ mission.number }}">#{{ mission.number }} {{ mission.name }}</a></td>
+<td>{{ mission.zone }} / {{ mission.rank }}</td>
+<td>{{ mission.readiness.status|replace('_',' ') }}</td>
+<td>{{ mission.dsp_implementation|replace('_',' ') }}</td>
+<td>{{ mission.dsp_port|replace('_',' ') }}</td>
+<td>{{ mission.dsp_validation|replace('_',' ') }}</td>
+<td>{{ mission.readiness.blockers|length }} blockers · {{ mission.readiness.unknown|length }} unknown</td></tr>
+{% else %}<tr><td colspan="7" class="muted">No missions match the selected readiness criteria. This does not indicate that unreviewed missions have passed.</td></tr>{% endfor %}
+</tbody></table></div>
 <h2>Development progress</h2>
 <p class="muted">Counts are calculated from recorded reviews, not inferred from Topaz checkmarks. Unreviewed means no DSP evidence recorded, not confirmed broken.</p>
 <div class="assault-status">
