@@ -54,7 +54,15 @@ def _conf_path(root: Path) -> Path:
 
 
 def _nav_dirs(server=None):
-    return [_server_root(server) / "navmeshes"]
+    """This server's navmeshes first, then the other server's: Topaz and DSP share the same .nav bakes, and the
+    navmeshes submodule is often only checked out under one of the two roots."""
+    dirs = [_server_root(server) / "navmeshes"]
+    other = "dsp" if (server or get_server()) == "topaz" else "topaz"
+    try:
+        dirs.append(_server_root(other) / "navmeshes")
+    except (ValueError, OSError):
+        pass
+    return dirs
 
 
 def _db(server=None):
