@@ -294,6 +294,9 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
     </section>
     <section aria-label="Zone-wide entity correlation" style="margin:8px 0;padding:9px;border:1px solid var(--border);border-radius:6px">
       <strong>Zone correlation · live versus loaded map</strong>
+      <label style="display:block;margin:6px 0"><input type="checkbox" id="zone3d-correlation-highlight"> Highlight discrepancies on map</label>
+      <div id="zone3d-correlation-legend" class="muted" style="font-size:11px">Orange = live only · red = map only · purple = displaced · yellow = selected/pair</div>
+      <div id="zone3d-correlation-coverage" class="muted" style="font-size:11px;margin-bottom:6px">Map source and live scope are not yet validated.</div>
       <div id="zone3d-correlation-summary" class="muted" role="status">Waiting for zone records and live observations.</div>
       <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin:7px 0">
         <label>Show <select id="zone3d-correlation-filter">
@@ -1520,6 +1523,35 @@ const correlationSummary = document.getElementById('zone3d-correlation-summary')
 const correlationList = document.getElementById('zone3d-correlation-list');
 const correlationFilter = document.getElementById('zone3d-correlation-filter');
 const correlationThreshold = document.getElementById('zone3d-correlation-threshold');
+const correlationHighlight = document.getElementById('zone3d-correlation-highlight');
+const correlationCoverage = document.getElementById('zone3d-correlation-coverage');
+const correlationColors = {server_only:0xff5e61, live_only:0xffaa45, displaced:0xb77bff, ambiguous:0xffd36c, unknown:0x8e95a4};
+function applyCorrelationMapColors(rows) {
+  const kinds = new Map(rows.filter(r => r.id !== undefined && r.id !== null).map(r => [r.id, r.kind]));
+  if (spawnMesh) {
+    const c = new THREE.Color();
+    spawnEntities.forEach((e, index) => {
+      const kind = kinds.get(pairEntityId(e));
+      const color = e === selectedEntity ? 0xffff33 :
+        correlationHighlight.checked && correlationColors[kind] !== undefined
+          ? correlationColors[kind] : (SPAWN_COLORS[e.k] ?? 0x44cc88);
+      spawnMesh.setColorAt(index, c.setHex(color));
+    });
+    if (spawnMesh.instanceColor) spawnMesh.instanceColor.needsUpdate = true;
+  }
+  for (const marker of liveEntityPool) {
+    const entity = liveObservedEntities[marker.userData.liveEntityIndex];
+    if (!entity) continue;
+    const id = pairEntityId(entity);
+    const kind = kinds.get(id);
+    const selected = marker.visible && liveSelectedEntityId !== '' &&
+      String(entity.server_entity_id ?? ('slot:' + entity.client_index)) === liveSelectedEntityId;
+    marker.material.color.setHex(selected ? 0xffff33 :
+      correlationHighlight.checked && correlationColors[kind] !== undefined
+        ? correlationColors[kind] : 0xf5a35c);
+  }
+}
+
 function zoneCorrelationRows() {
   const byId = new Map();
   const unknown = [];
@@ -1556,6 +1588,12 @@ function zoneCorrelationRows() {
 function refreshZoneCorrelation() {
   if (!correlationSummary) return;
   const rows = zoneCorrelationRows();
+  correlationCoverage.textContent = (CAPTURE_SPATIAL_URL
+    ? 'Map: capture-derived records (not authoritative configured spawns)'
+    : 'Map: loaded zone index records (not runtime spawn state)') +
+    ' · Ashita: ' + (liveToggle.checked && liveEntitiesToggle.checked ? 'fresh nearby observations only' : 'nearby telemetry disabled') +
+    ' · current instance and observation range unverified';
+  applyCorrelationMapColors(rows);
   const counts = {};
   for (const row of rows) counts[row.kind] = (counts[row.kind] || 0) + 1;
   correlationSummary.textContent = rows.length + ' classified IDs/entries · ' +
@@ -1586,14 +1624,10 @@ function refreshZoneCorrelation() {
 }
 correlationFilter.addEventListener('change', refreshZoneCorrelation);
 correlationThreshold.addEventListener('change', refreshZoneCorrelation);
+correlationHighlight.addEventListener('change', refreshZoneCorrelation);
 function updateEntityPair() {
   pairLine.visible = false;
-  if (spawnMesh) {
-    const color = new THREE.Color();
-    spawnEntities.forEach((e, index) => spawnMesh.setColorAt(index,
-      color.set(e === selectedEntity ? 0xffff33 : (SPAWN_COLORS[e.k] ?? 0x44cc88))));
-    if (spawnMesh.instanceColor) spawnMesh.instanceColor.needsUpdate = true;
-  }
+  applyCorrelationMapColors(zoneCorrelationRows());
   if (!selectedEntity || entityInspector.hidden) return;
   const id = pairEntityId(selectedEntity);
   if (id === null) {
