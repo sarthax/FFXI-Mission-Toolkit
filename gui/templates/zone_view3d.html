@@ -292,8 +292,8 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
       <button type="button" id="zone3d-inspector-live-refresh" title="Rebuild list from current live telemetry">Refresh observed list</button>
       <div id="zone3d-inspector-live-count" class="muted" style="font-size:11px;margin-top:4px" role="status">No live entities received</div>
     </section>
-    <section aria-label="Live and server pairing" style="margin:8px 0;padding:7px;border:1px solid var(--border);border-radius:6px">
-      <strong>Live ↔ server spawn pair</strong>
+    <section aria-label="Live and server pairing" style="margin:8px 0;padding:9px;border:2px solid #b89236;border-radius:6px">
+      <strong>Live ↔ server spawn pair · correlation</strong>
       <div id="zone3d-pair-status" class="muted" role="status" style="font-size:12px;margin:5px 0">Select a live or server entity to compare.</div>
       <div class="muted" style="font-size:11px">Matches require the same reported server ID. Not observed does not prove unspawned, hidden, or conditionally disabled.</div>
     </section>
@@ -1591,7 +1591,6 @@ function inspectEntity(entity) {
     inspectorLiveOpen.disabled = index < 0;
   }
   updateInspectorNavigation();
-  updateEntityPair();
   inspectorFeedback.textContent = '';
   const hasPosition = [entity.x, entity.y, entity.z].every(Number.isFinite);
   document.getElementById('zone3d-inspector-focus').disabled = !hasPosition;
@@ -1705,6 +1704,7 @@ function inspectEntity(entity) {
     entityInspectorLinks.appendChild(gaps);
   }
   entityInspector.hidden = false;
+  updateEntityPair(); // inspect panel must be visible before initial pairing runs
 }
 const inspectorFeedback = document.getElementById('zone3d-inspector-feedback');
 async function copyInspectorValue(value, success) {
