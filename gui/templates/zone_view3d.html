@@ -717,7 +717,7 @@ function highlightObservedEntity() {
   for (const marker of liveEntityPool) {
     const entity = liveObservedEntities[marker.userData.liveEntityIndex];
     const active = marker.visible && liveSelectedEntityId !== '' &&
-      String(entity?.id ?? '') === liveSelectedEntityId;
+      String(entity?.server_entity_id ?? ('slot:' + entity?.client_index)) === liveSelectedEntityId;
     marker.material.color.setHex(active ? 0xffff33 : 0xf5a35c);
     marker.scale.setScalar(active ? 1.5 : 1);
   }
@@ -727,14 +727,14 @@ function updateLiveEntityPicker() {
   // browser's menu is open resets keyboard/mouse selection to the placeholder.
   const selectedId = liveSelectedEntityId;
   const options = liveObservedEntities.map((e, i) =>
-    ({value: String(e.id ?? ''), label: (e.n || 'Unnamed') + ' [' + (e.id ?? '?') + ']', index: i}));
+    ({value: String(e.server_entity_id ?? ('slot:' + e.client_index)), label: (e.n || 'Unnamed') + ' [' + (e.server_entity_id ?? ('slot ' + e.client_index)) + ']', index: i}));
   const signature = JSON.stringify(options.map(e => [e.value, e.label]));
   if (liveEntitySelect.dataset.signature !== signature) {
     liveEntitySelect.replaceChildren(new Option('Select observed entity', ''));
     options.forEach(e => liveEntitySelect.appendChild(new Option(e.label, String(e.index))));
     liveEntitySelect.dataset.signature = signature;
   }
-  const restored = selectedId ? liveObservedEntities.findIndex(e => String(e.id ?? '') === selectedId) : -1;
+  const restored = selectedId ? liveObservedEntities.findIndex(e => String(e.server_entity_id ?? ('slot:' + e.client_index)) === selectedId) : -1;
   if (liveEntitySelect.value !== (restored >= 0 ? String(restored) : ''))
     liveEntitySelect.value = restored >= 0 ? String(restored) : '';
   liveEntityInspect.disabled = liveEntitySelect.value === '';
@@ -743,7 +743,7 @@ function updateLiveEntityPicker() {
 }
 liveEntitySelect.addEventListener('change', () => {
   liveSelectedEntityId = liveEntitySelect.value === '' ? '' :
-    String(liveObservedEntities[Number(liveEntitySelect.value)]?.id ?? '');
+    String(liveObservedEntities[Number(liveEntitySelect.value)]?.server_entity_id ?? ('slot:' + liveObservedEntities[Number(liveEntitySelect.value)]?.client_index));
   liveEntityInspect.disabled = liveEntitySelect.value === '';
   highlightObservedEntity();
 });
@@ -931,10 +931,13 @@ async function pollAshitaPosition() {
         marker.position.copy(projectLivePoint(point));
         marker.userData.liveName = entity.name || '';
         liveObservedEntities.push({
-          n: String(entity.name || ''), id: entity.server_entity_id ?? entity.client_index, k: 'c',
+          n: String(entity.name || ''), id: entity.server_entity_id ?? null, k: 'c', live_observation: true,
           client_index: entity.client_index, server_entity_id: entity.server_entity_id ?? null,
           x: point.x, y: point.y, z: point.z,
-          model: entity.model ?? null, lv: entity.level ?? null, hpp: entity.hpp ?? null
+          model: entity.model ?? null, lv: entity.level ?? null, hpp: entity.hpp ?? null,
+          heading: point.heading, observed_at: entity.observed_at ?? data.observed_at,
+          raw_status: entity.raw_status, raw_entity_type: entity.raw_entity_type,
+          observation_client: clientId
         });
         marker.userData.liveEntityIndex = liveObservedEntities.length - 1;
         marker.visible = true;
@@ -1425,11 +1428,34 @@ function inspectEntity(entity) {
   const hasPosition = [entity.x, entity.y, entity.z].every(Number.isFinite);
   document.getElementById('zone3d-inspector-focus').disabled = !hasPosition;
   document.getElementById('zone3d-inspector-copy-xyz').disabled = !hasPosition;
-  document.getElementById('zone3d-inspector-copy-id').disabled = entity.id == null;
-  const kind = {m:'Mob',n:'NPC',d:'Door/prop',c:'Capture'}[entity.k] || 'Entity';
+  document.getElementById('zone3d-inspector-copy-id').disabled = (entity.live_observation ? entity.server_entity_id : entity.id) == null;
+  const kind = {m:'Mob',n:'NPC',d:'Door/prop',c:'Live observation'}[entity.k] || 'Entity';
   const lines = [entity.n || 'Unnamed entity', kind, 'ID: ' + (entity.id ?? 'unavailable')];
   if ([entity.x,entity.y,entity.z].every(Number.isFinite)) {
     lines.push('XYZ: ' + [entity.x,entity.y,entity.z].map(x => x.toFixed(2)).join(', '));
+  }
+  if (entity.live_observation) {
+    lines.push('Client slot: ' + entity.client_index);
+    lines.push('Reported server entity ID: ' + (entity.server_entity_id ?? 'unavailable (do not treat slot as server ID)'));
+    lines.push('Source client: ' + (entity.observation_client || 'unknown'));
+    if (Number.isFinite(entity.heading)) lines.push('Heading: ' + entity.heading.toFixed(3));
+    if (entity.raw_status != null) lines.push('Raw status: ' + entity.raw_status);
+    if (entity.raw_entity_type != null) lines.push('Raw type: ' + entity.raw_entity_type);
+    if (Number.isFinite(entity.observed_at)) lines.push('Last observed: ' + new Date(entity.observed_at * 1000).toLocaleString());
+    const matches = entity.server_entity_id == null ? [] :
+      spawnEntities.filter(e => String(e.id ?? '') === String(entity.server_entity_id));
+    if (matches.length === 1) {
+      const spawn = matches[0];
+      lines.push('Server map record: ' + (spawn.n || 'Unnamed') + ' · ' + (spawn.k || '?'));
+      if ([spawn.x, spawn.y, spawn.z].every(Number.isFinite)) {
+        lines.push('Configured XYZ: ' + [spawn.x, spawn.y, spawn.z].map(v => v.toFixed(2)).join(', '));
+        lines.push('Live-to-record distance: ' + Math.hypot(entity.x - spawn.x, entity.y - spawn.y, entity.z - spawn.z).toFixed(2) + ' (movement may be expected)');
+      }
+      if (spawn.model != null && entity.model != null && String(spawn.model) !== String(entity.model))
+        lines.push('Model difference: live ' + entity.model + ' / configured ' + spawn.model);
+    } else {
+      lines.push('Server map record: ' + (matches.length ? 'ambiguous (' + matches.length + ' records)' : 'no exact reported-ID match'));
+    }
   }
   if (entity.model != null) lines.push('Model: ' + entity.model);
   if (entity.lv != null) lines.push('Level: ' + entity.lv);
@@ -1437,7 +1463,7 @@ function inspectEntity(entity) {
   lines.push('Source: ' + (entity.k === 'c' ? 'capture observation' : 'zone entity data'));
   entityInspectorContent.textContent = lines.join('\n');
   entityInspectorLinks.replaceChildren();
-  const id = String(entity.id ?? '');
+  const id = String(entity.live_observation ? (entity.server_entity_id ?? '') : (entity.id ?? ''));
   // Only link known entity IDs to the existing Inspector route. Never make up
   // feature-trace, wiki or capture URLs from labels that may not resolve.
   if (/^\d+$/.test(id)) {
@@ -1475,7 +1501,8 @@ document.getElementById('zone3d-inspector-focus').addEventListener('click', () =
   flyTo(new THREE.Vector3(selectedEntity.x, -selectedEntity.y, -selectedEntity.z));
 });
 document.getElementById('zone3d-inspector-copy-id').addEventListener('click', () => {
-  if (selectedEntity?.id != null) copyInspectorValue(String(selectedEntity.id), 'Entity ID copied.');
+  if ((selectedEntity?.live_observation ? selectedEntity.server_entity_id : selectedEntity?.id) != null)
+    copyInspectorValue(String(selectedEntity.live_observation ? selectedEntity.server_entity_id : selectedEntity.id), 'Server entity ID copied.');
 });
 document.getElementById('zone3d-inspector-copy-xyz').addEventListener('click', () => {
   if (!selectedEntity || ![selectedEntity.x, selectedEntity.y, selectedEntity.z].every(Number.isFinite)) return;
