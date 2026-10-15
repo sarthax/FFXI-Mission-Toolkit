@@ -9647,6 +9647,8 @@ def assault_domain_page(request: Request, zone: str = "", backlog_status: str = 
                              ("port", "dsp_port"), ("validation", "dsp_validation")):
             if stage in mission["reviews"]:
                 mission[field] = mission["reviews"][stage]["state"]
+    from workbench.domains.assault_dependency_projection import project
+    project(tracker["missions"], tracker["shared"])
     from workbench.domains.assault_summary import summarize
     tracker["progress"] = summarize(tracker["missions"])
     from workbench.domains.assault_backlog import backlog, FILTERS
