@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 317,
+  "route_count": 318,
   "routes": [
     {
       "method": "GET",
@@ -585,6 +585,14 @@
       "home": "Server",
       "section": "Zones > 3D Viewer",
       "role": "view",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zones/{zoneid}/entity-index-match.json",
+      "home": "Server",
+      "section": "Zones > 3D Viewer",
+      "role": "data",
       "disposition": "KEEP"
     },
     {
