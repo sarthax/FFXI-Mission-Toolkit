@@ -1465,11 +1465,12 @@ function inspectEntity(entity) {
   document.getElementById('zone3d-inspector-copy-id').disabled = (entity.live_observation ? entity.server_entity_id : entity.id) == null;
   const kind = {m:'Mob',n:'NPC',d:'Door/prop',c:'Live observation'}[entity.k] || 'Entity';
   document.getElementById('zone3d-inspector-source').textContent = entity.live_observation ? 'LIVE · Ashita observation' : (entity.k === 'c' ? 'CAPTURE · recorded observation' : 'SERVER · zone data');
-  const lines = [entity.n || 'Unnamed entity', kind, 'ID: ' + (entity.id ?? 'unavailable')];
+  const lines = ['ENTITY · ' + (entity.n || 'Unnamed entity'), 'Type: ' + kind, 'Reported ID: ' + (entity.id ?? 'unavailable')];
   if ([entity.x,entity.y,entity.z].every(Number.isFinite)) {
     lines.push('XYZ: ' + [entity.x,entity.y,entity.z].map(x => x.toFixed(2)).join(', '));
   }
   if (entity.live_observation) {
+    lines.push('LIVE OBSERVATION · Ashita bridge');
     lines.push('Client slot: ' + entity.client_index);
     lines.push('Coordinates: raw Ashita XYZ (camera uses selected Live client axis projection)');
     lines.push('Reported server entity ID: ' + (entity.server_entity_id ?? 'unavailable (do not treat slot as server ID)'));
@@ -1483,6 +1484,7 @@ function inspectEntity(entity) {
     }
     // Compare against the complete loaded source, not the current visibility filter.
     // A capture spatial overlay is not authoritative server spawn configuration.
+    lines.push('MAP COMPARISON · loaded zone records');
     const mapSourceIsCapture = Boolean(CAPTURE_SPATIAL_URL);
     const matches = entity.server_entity_id == null ? [] :
       spawnEntitiesAll.filter(e => String(e.id ?? '') === String(entity.server_entity_id));
@@ -1494,7 +1496,9 @@ function inspectEntity(entity) {
       if ([spawn.x, spawn.y, spawn.z].every(Number.isFinite)) {
         lines.push((mapSourceIsCapture ? 'Capture-recorded XYZ: ' : 'Map-record XYZ: ') +
           [spawn.x, spawn.y, spawn.z].map(v => v.toFixed(2)).join(', '));
-        lines.push('Live-to-record distance: ' + Math.hypot(entity.x - spawn.x, entity.y - spawn.y, entity.z - spawn.z).toFixed(2) + ' (not automatically a data error)');
+        const projected = projectLivePoint(entity);
+        const liveServer = {x: projected.x, y: -projected.y, z: -projected.z};
+        lines.push('Live-to-record distance: ' + Math.hypot(liveServer.x - spawn.x, liveServer.y - spawn.y, liveServer.z - spawn.z).toFixed(2) + ' (not automatically a data error)');
       }
       if (spawn.model != null && entity.model != null && String(spawn.model) !== String(entity.model))
         lines.push('Model difference: live ' + entity.model + ' / configured ' + spawn.model);
@@ -1667,10 +1671,11 @@ renderer.domElement.addEventListener('click', (event) => {
     if (entity) {
       inspectEntity(entity);
       liveEntitySelect.value = String(entityIndex);
-      liveSelectedEntityId = String(entity.id ?? '');
+      liveSelectedEntityId = String(entity.server_entity_id ?? ('slot:' + entity.client_index));
       liveEntityInspect.disabled = false;
       highlightObservedEntity();
-      flyTo(new THREE.Vector3(entity.x, -entity.y, -entity.z));
+      // Camera must use the exact same Ashita-to-scene projection as the clicked marker.
+      flyTo(liveHit.object.getWorldPosition(new THREE.Vector3()));
       return;
     }
   }
