@@ -16,4 +16,5 @@ def test_zone_correlation_contract():
     assert "kind = 'server_only'" in js
     assert "kind = 'ambiguous'" in js
     assert "kind = 'displaced'" in js
-    assert "btn.addEventListener('click', () => inspectEntity(row.entity))" in js
+    assert "const fresh = zoneCorrelationRows().find(" in js
+    assert "if (fresh?.entity) inspectEntity(fresh.entity)" in js
