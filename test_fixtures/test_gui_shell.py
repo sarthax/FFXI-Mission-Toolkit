@@ -32,6 +32,28 @@ def context_for(path: str, settings=None) -> dict:
     )
 
 
+class _EmptyTracker:
+    """Inert stand-in for the Assault tracker: every attribute/call is empty, so domain_assault.html renders its shell only."""
+
+    def __getattr__(self, _name):
+        return self
+
+    def __call__(self, *_args, **_kwargs):
+        return self
+
+    def __iter__(self):
+        return iter(())
+
+    def __len__(self):
+        return 0
+
+    def __bool__(self):
+        return False
+
+    def __str__(self):
+        return ""
+
+
 def render(name: str, path: str, **values) -> str:
     brand = values.pop("_brand", {
         "enabled": True,
@@ -461,7 +483,7 @@ def main():
     assert "/zoneplot/from_capture?capture_id={{ detail.capture_id }}" in capture_detail_template
     assert "/captures/plot_all?capture_id={{ detail.capture_id }}" in capture_detail_template
 
-    domains_html = render("domain_assault.html", "/domains/assault")
+    domains_html = render("domain_assault.html", "/domains/assault", tracker=_EmptyTracker())
     assert 'class="shell-menu section-menu"' in domains_html
     assert '<div class="shell-group-title">Battle Systems</div>' in domains_html
     assert re.search(r'class="section-link active"\s+href="/domains/assault" aria-current="page">Assault</a>', domains_html)
