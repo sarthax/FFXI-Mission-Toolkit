@@ -67,15 +67,15 @@
 <div class="dense-toolbar">
   <strong>{{ report.rows|length }} displayed findings · zone {{ zone }}{% if entity_id is not none %} · entity {{ entity_id }}{% endif %}</strong>
   <span class="sp"></span>
-  <a class="chip" href="/gaps/report?zone={{ zone|urlencode }}&mismatch={{ mismatch|urlencode }}&source={{ source|urlencode }}&entity_id={{ entity_id if entity_id is not none else '' }}&format=csv">Export CSV</a>
-  <a class="chip" href="/gaps/report?zone={{ zone|urlencode }}&mismatch={{ mismatch|urlencode }}&source={{ source|urlencode }}&entity_id={{ entity_id if entity_id is not none else '' }}&format=json">Export JSON</a>
+  <a class="chip" href="/gaps/report?zone={{ zone|urlencode }}&mismatch={{ mismatch|urlencode }}&source={{ source|urlencode }}{% if entity_id is not none %}&entity_id={{ entity_id }}{% endif %}&format=csv">Export CSV</a>
+  <a class="chip" href="/gaps/report?zone={{ zone|urlencode }}&mismatch={{ mismatch|urlencode }}&source={{ source|urlencode }}{% if entity_id is not none %}&entity_id={{ entity_id }}{% endif %}&format=json">Export JSON</a>
 </div>
 <div class="gap-summary">
   {% for origin, state in report.coverage.items() %}
     <span class="chip">{{ origin|upper }}: {{ state|replace('_',' ') }}</span>
   {% endfor %}
   {% for issue_type, count in report.counts.items() %}
-    <a href="/gaps?zone={{ zone|urlencode }}&mode=compare&entity_id={{ entity_id if entity_id is not none else '' }}&source={{ source|urlencode }}&mismatch={{ issue_type|urlencode }}">{{ issue_type|replace('_',' ') }}: <strong>{{ count }}</strong></a>
+    <a href="/gaps?zone={{ zone|urlencode }}&mode=compare{% if entity_id is not none %}&entity_id={{ entity_id }}{% endif %}&source={{ source|urlencode }}&mismatch={{ issue_type|urlencode }}">{{ issue_type|replace('_',' ') }}: <strong>{{ count }}</strong></a>
   {% endfor %}
   {% if mismatch %}<a href="/gaps?zone={{ zone|urlencode }}&mode=compare&source={{ source|urlencode }}">Clear mismatch filter</a>{% endif %}
 </div>
