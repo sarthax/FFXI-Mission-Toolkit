@@ -258,5 +258,235 @@
   "state": "ok",
   "note": "",
   "updated": "2026-10-13T02:15:51"
+ },
+ "guide:17167325": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:02:22"
+ },
+ "guide:17163026": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:03:03"
+ },
+ "guide:17171290": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:04:26"
+ },
+ "guide:17175428": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:05:46"
+ },
+ "guide:17179531": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:06:32"
+ },
+ "guide:17105700": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:09:10"
+ },
+ "guide:17109856": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:09:13"
+ },
+ "guide:17114046": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:11:00"
+ },
+ "guide:17118048": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:11:30"
+ },
+ "guide:17122289": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:12:13"
+ },
+ "guide:17134282": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:13:55"
+ },
+ "guide:17138612": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:13:57"
+ },
+ "guide:17142635": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:15:36"
+ },
+ "guide:17146661": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:15:37"
+ },
+ "guide:17150847": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:17:26"
+ },
+ "guide:17335168": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:20:47"
+ },
+ "guide:17343249": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:21:42"
+ },
+ "guide:17355013": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:22:03"
+ },
+ "guide:17379872": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:25:46"
+ },
+ "guide:17388055": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:26:06"
+ },
+ "guide:17396270": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:27:49"
+ },
+ "guide:17408069": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T12:28:16"
+ },
+ "guide:17429034": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T13:08:41"
+ },
+ "guide:17437017": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T13:09:46"
+ },
+ "guide:17449569": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:41:24"
+ },
+ "guide:17457388": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T13:10:20"
+ },
+ "guide:17461590": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:32:37"
+ },
+ "guide:17469855": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T13:12:54"
+ },
+ "guide:17478168": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:34:02"
+ },
+ "guide:17481849": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:43:11"
+ },
+ "guide:17486268": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T13:14:17"
+ },
+ "guide:17490329": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T13:15:07"
+ },
+ "guide:17494788": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:34:54"
+ },
+ "guide:17498668": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:43:52"
+ },
+ "guide:17531238": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:29:11"
+ },
+ "guide:17555977": {
+  "state": "ok",
+  "note": "Z fixed 2485 -> 248.5; retested in game",
+  "updated": "2026-10-14T15:37:05"
+ },
+ "guide:17559943": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:42:37"
+ },
+ "guide:17563927": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:31:00"
+ },
+ "guide:17568212": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:33:17"
+ },
+ "guide:17576448": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:30:31"
+ },
+ "guide:17580428": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:31:25"
+ },
+ "guide:17584513": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:29:58"
+ },
+ "guide:17588798": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:31:53"
+ },
+ "guide:17596874": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:28:13"
+ },
+ "guide:17617283": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:27:43"
+ },
+ "guide:17645915": {
+  "state": "ok",
+  "note": "",
+  "updated": "2026-10-14T14:27:09"
  }
 }
