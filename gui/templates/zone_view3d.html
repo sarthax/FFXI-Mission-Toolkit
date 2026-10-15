@@ -289,6 +289,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
         <select id="zone3d-inspector-live-select" style="width:100%"><option value="">Select a live entity…</option></select>
       </label>
       <button type="button" id="zone3d-inspector-live-open" disabled>Inspect selected live entity</button>
+      <button type="button" id="zone3d-inspector-live-refresh" title="Rebuild list from current live telemetry">Refresh observed list</button>
       <div id="zone3d-inspector-live-count" class="muted" style="font-size:11px;margin-top:4px" role="status">No live entities received</div>
     </section>
     <div id="zone3d-inspector-content" class="mono" style="font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0"></div>
@@ -743,7 +744,7 @@ function refreshInspectorLivePicker() {
       (!needle || [e.n, e.server_entity_id, e.client_index].some(
         value => value != null && String(value).toLowerCase().includes(needle))));
   // Keep an open native select stable through 10 Hz telemetry.
-  const signature = JSON.stringify(visible.map(({e}) => [liveEntityIdentity(e), e.n]));
+  const signature = JSON.stringify(visible.map(({e,index}) => [index, liveEntityIdentity(e), e.n]));
   if (inspectorLiveSelect.dataset.signature !== signature) {
     const current = inspectorLiveSelect.value;
     inspectorLiveSelect.replaceChildren(new Option('Select a live entity…', ''));
@@ -757,6 +758,11 @@ function refreshInspectorLivePicker() {
   inspectorLiveOpen.disabled = !inspectorLiveSelect.value;
 }
 inspectorLiveSearch.addEventListener('input', refreshInspectorLivePicker);
+document.getElementById('zone3d-inspector-live-refresh').addEventListener('click', () => {
+  delete inspectorLiveSelect.dataset.signature;
+  refreshInspectorLivePicker();
+});
+inspectorLiveSelect.addEventListener('focus', refreshInspectorLivePicker);
 inspectorLiveSelect.addEventListener('change', () => {
   inspectorLiveOpen.disabled = !inspectorLiveSelect.value;
 });
@@ -875,6 +881,10 @@ function clearLiveEntities(preservePicker = false) {
   for (const child of liveEntityPool) child.visible = false;
   liveObservedEntities.length = 0;
   if (!preservePicker) {
+    inspectorLiveSelect.replaceChildren(new Option('Select a live entity…', ''));
+    delete inspectorLiveSelect.dataset.signature;
+    inspectorLiveCount.textContent = 'No live entities received';
+    inspectorLiveOpen.disabled = true;
     liveEntitySelect.replaceChildren(new Option('Select observed entity', ''));
     liveSelectedEntityId = '';
     liveEntityInspect.disabled = true;
@@ -1092,7 +1102,12 @@ document.getElementById('ashita-live-copy').addEventListener('click', async () =
   } catch (_) { liveStatus.textContent = 'Clipboard blocked; check browser permissions'; }
 });
 liveToggle.addEventListener('change', () => { ++lastLiveRequest; pollAshitaPosition(); });
-liveEntitiesToggle.addEventListener('change', pollAshitaPosition);
+liveEntitiesToggle.addEventListener('change', () => {
+  // Rebuild both pickers when the stream is explicitly toggled; no second toggle is required.
+  delete liveEntitySelect.dataset.signature;
+  delete inspectorLiveSelect.dataset.signature;
+  pollAshitaPosition();
+});
 liveAutoZoneToggle.addEventListener('change', pollAshitaPosition);
 liveAxes.addEventListener('change', () => { ++lastLiveRequest; clearLiveMarker(); pollAshitaPosition(); });
 liveHeading.addEventListener('change', pollAshitaPosition);
@@ -1503,6 +1518,7 @@ function updateInspectorNavigation() {
 function inspectEntity(entity) {
   if (!entity) return;
   selectedEntity = entity;
+  refreshInspectorLivePicker();
   if (entity.live_observation) {
     const index = liveObservedEntities.findIndex(e => e === entity);
     if (index >= 0) inspectorLiveSelect.value = String(index);
