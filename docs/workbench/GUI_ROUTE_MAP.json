@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 305,
+  "route_count": 310,
   "routes": [
     {
       "method": "GET",
@@ -2442,6 +2442,46 @@
       "home": "Captures",
       "section": "Review Queue",
       "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/domains/assault/issue/review",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/domains/assault/review",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/domains/assault/shared/link",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/domains/assault/shared/review",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/domains/assault/shared/zone",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "action",
       "disposition": "KEEP"
     }
   ]

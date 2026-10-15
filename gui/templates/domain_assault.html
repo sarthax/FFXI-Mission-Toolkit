@@ -1,32 +1,387 @@
 {% extends "workbench_page.html" %}
-{% block title %}Assault Domain — Mission Toolkit{% endblock %}
+{% block title %}Assault Development Tracker{% endblock %}
 {% block page_archetype %}dashboard{% endblock %}
-{% block page_heading %}Assault Domain{% endblock %}
-{% block page_help %}Workspace for Assault-specific development, administration, validation, and future domain-package workflows.{% endblock %}
+{% block page_heading %}Assault Development Tracker{% endblock %}
+{% block page_help %}The complete Topaz release issue tracker, preserved verbatim. Topaz status, DSP implementation/porting, and DSP live validation are independent; no mission is counted as DSP-complete until independently verified.{% endblock %}
 {% block page_body %}
-
-<h2>Available now</h2>
-<div class="table-wrap">
-<table>
-  <thead><tr><th>Area</th><th>Purpose</th><th>Open</th></tr></thead>
-  <tbody>
-    <tr>
-      <td>Mission data</td>
-      <td>Search indexed Assault mission names/text without calculating all runtime/capture coverage.</td>
-      <td><a class="zonelink" href="/missions?q=__coverage_not_loaded__">Mission Explorer</a></td>
-    </tr>
-    <tr>
-      <td>Observed coverage</td>
-      <td>Calculate server entity/drop wiring plus indexed capture observations for every Assault mission. This is intentionally on demand and can take several seconds.</td>
-      <td><a class="zonelink" href="/missions">Load all coverage</a></td>
-    </tr>
-    <tr><td>Assault zones</td><td>Inspect and edit zone entities, navmesh data, drops, and SQL using the canonical generic editor.</td><td><a class="zonelink" href="/zoneplot2">Zone Editor</a></td></tr>
-    <tr><td>Captures</td><td>Inspect gameplay captures, paths, packets, and instance evidence.</td><td><a class="zonelink" href="/captures">Captures</a></td></tr>
-    <tr><td>Server data</td><td>Inspect zones, entities, items, key items, dialog, events, and packets.</td><td><a class="zonelink" href="/zones">Server workspace</a></td></tr>
-  </tbody>
-</table>
+<style>
+.assault-grid{width:100%;border-collapse:separate;border-spacing:3px;table-layout:fixed}
+.assault-grid th{font-size:11px;text-align:left;padding:6px}
+.assault-grid td{padding:2px;vertical-align:stretch}
+.assault-grid a{display:block;padding:7px 5px;border:1px solid var(--border);border-radius:6px;text-decoration:none;font-size:11px;min-height:58px;overflow-wrap:anywhere}
+.assault-grid a:hover,.assault-grid a:focus{outline:2px solid var(--accent,#6aa6d5)}
+.assault-grid .mission-number{font-weight:700;font-size:12px}
+.assault-grid .mission-name{display:block;margin-top:3px;line-height:1.2}
+.assault-grid .mission-state{display:block;font-size:10px;margin-top:3px}
+.assault-status{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 14px}
+.assault-status span{padding:5px 9px;border:1px solid var(--border);border-radius:5px}
+.assault-detail{border:1px solid var(--border);border-radius:7px;margin:10px 0;padding:9px}
+.assault-detail>summary{cursor:pointer;font-weight:700}
+.assault-meta{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0}
+.assault-meta span{border:1px solid var(--border);padding:4px 7px;border-radius:4px;font-size:11px}
+.assault-comments{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.5;max-height:600px;overflow:auto;border-top:1px solid var(--border);padding:10px 2px}
+.assault-shared{margin-top:20px}
+.assault-table-scroll{overflow-x:auto}
+@media(max-width:950px){.assault-grid{min-width:1000px}}
+</style>
+<div class="dense-toolbar">
+  <strong>{{ tracker.count }} imported missions</strong>
+  <span class="sp"></span>
+  <a class="chip" href="https://github.com/sarthax/Topaz-to-Valhalla/blob/release/documentation/Assault_Issue_Tracker.md" target="_blank" rel="noopener">Original Topaz tracker</a>
+  <a class="chip" href="/missions">Mission coverage</a>
+  <a class="chip" href="/zoneplot2">Zone Editor</a>
 </div>
-
-<h2>Planned domain capabilities</h2>
-<p class="muted">Backport status, promotion/rank logic, appraisal systems, instance diagnostics, and domain validation will be added here as their pipelines become available.</p>
+<p class="muted">Cell icon = historical Topaz overall status only. DSP porting and live validation are tracked separately and remain unverified until proven. For ranks Corporal through First Lieutenant (5–10), porting is assumed pending review, not completed.</p>
+<div class="assault-status">
+  <span>✅ Topaz playthrough confirmed</span><span>🟢 Topaz built / untested</span><span>🟡 Topaz gaps</span><span>🔴 Topaz broken</span><span>❔ Unclassified</span>
+</div>
+<h2>Mission readiness</h2>
+<p class="muted">Derived from reviewed mission stages, individual issues and confirmed shared dependencies. Unknown evidence never counts as a pass.</p>
+<div class="assault-status">
+  <span>Validated: <strong>{{ tracker.readiness_counts.get('validated',0) }}</strong></span>
+  <span>Confirmed blockers: <strong>{{ tracker.readiness_counts.get('blocked',0) }}</strong></span>
+  <span>Awaiting evidence: <strong>{{ tracker.readiness_counts.get('needs_evidence',0) }}</strong></span>
+</div>
+<form method="get" action="/domains/assault#readiness-results" style="display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin:10px 0">
+  <label>Readiness zone <select name="readiness_zone">
+    <option value="">All zones</option>
+    {% for z in tracker.zones %}<option value="{{ z }}" {% if tracker.readiness_selection.zone == z %}selected{% endif %}>{{ z }}</option>{% endfor %}
+  </select></label>
+  <label>Readiness view <select name="readiness_status">
+    {% for status in tracker.readiness_filters %}
+    <option value="{{ status }}" {% if tracker.readiness_selection.status == status %}selected{% endif %}>{{ status|replace('_',' ')|title }}</option>
+    {% endfor %}
+  </select></label>
+  <button type="submit">Filter missions</button>
+</form>
+<div id="readiness-results" class="dense-toolbar"><strong>{{ tracker.readiness_results|length }} matching mission(s)</strong></div>
+<div class="table-wrap" style="max-height:470px;overflow:auto"><table>
+<thead><tr><th>Mission</th><th>Zone / rank</th><th>Readiness</th><th>Implementation</th><th>DSP port</th><th>DSP test</th><th>Evidence gaps</th></tr></thead>
+<tbody>{% for mission in tracker.readiness_results %}
+<tr><td><a href="#assault-{{ mission.number }}">#{{ mission.number }} {{ mission.name }}</a></td>
+<td>{{ mission.zone }} / {{ mission.rank }}</td>
+<td>{{ mission.readiness.status|replace('_',' ') }}</td>
+<td>{{ mission.dsp_implementation|replace('_',' ') }}</td>
+<td>{{ mission.dsp_port|replace('_',' ') }}</td>
+<td>{{ mission.dsp_validation|replace('_',' ') }}</td>
+<td>{{ mission.readiness.blockers|length }} blockers · {{ mission.readiness.unknown|length }} unknown</td></tr>
+{% else %}<tr><td colspan="7" class="muted">No missions match the selected readiness criteria. This does not indicate that unreviewed missions have passed.</td></tr>{% endfor %}
+</tbody></table></div>
+<h2>Development progress</h2>
+<p class="muted">Counts are calculated from recorded reviews, not inferred from Topaz checkmarks. Unreviewed means no DSP evidence recorded, not confirmed broken.</p>
+<div class="assault-status">
+  <span><strong>{{ tracker.progress.total.missions }}</strong> missions</span>
+  <span><strong>{{ tracker.progress.total.issues }}</strong> imported issue bullets</span>
+  <span><strong>{{ tracker.progress.total.get('mission_port_validated', 0) }}</strong> missions with verified port</span>
+  <span><strong>{{ tracker.progress.total.get('mission_validation_validated', 0) }}</strong> mission validations recorded</span>
+  <span><strong>{{ tracker.progress.total.get('remaining_issue_reviews', 0) }}</strong> issue reviews incomplete</span>
+  <span><strong>{{ tracker.progress.total.get('blocked_issues', 0) }}</strong> explicitly blocked issues</span>
+</div>
+<div class="table-wrap"><table>
+<thead><tr><th>Zone</th><th>Missions</th><th>Issue bullets</th><th>DSP ports validated</th><th>DSP tests validated</th><th>Issues fully reviewed</th><th>Explicit blocks</th></tr></thead>
+<tbody>{% for zone in tracker.zones %}
+{% set progress = tracker.progress.zones[zone] %}
+<tr><td>{{ zone }}</td><td>{{ progress.missions }}</td><td>{{ progress.issues }}</td>
+<td>{{ progress.get('mission_port_validated', 0) }}</td>
+<td>{{ progress.get('mission_validation_validated', 0) }}</td>
+<td>{{ progress.get('fully_reviewed_issues', 0) }}</td>
+<td>{{ progress.get('blocked_issues', 0) }}</td></tr>
+{% endfor %}</tbody></table></div>
+<h2 id="assault-backlog">Issue review backlog</h2>
+<p class="muted">Uses explicit review decisions only; historical fixes and candidate matches do not automatically close any issue.</p>
+<form method="get" action="/domains/assault#assault-backlog" class="gap-filters" style="display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin:10px 0">
+  <label>Zone <select name="zone">
+    <option value="">All zones</option>
+    {% for z in tracker.zones %}<option value="{{ z }}" {% if tracker.backlog_selection.zone == z %}selected{% endif %}>{{ z }}</option>{% endfor %}
+  </select></label>
+  <label>Issue state <select name="backlog_status">
+    {% for state in tracker.backlog_filters %}
+    <option value="{{ state }}" {% if tracker.backlog_selection.status == state %}selected{% endif %}>{{ state|replace('_',' ')|title }}</option>
+    {% endfor %}
+  </select></label>
+  <label>Search <input name="q" value="{{ tracker.backlog_selection.q }}" placeholder="Mission name or issue text"></label>
+  <button type="submit">Filter issues</button>
+</form>
+<div class="dense-toolbar"><strong>{{ tracker.backlog|length }} matching issue(s)</strong></div>
+{% if tracker.backlog %}
+<div class="table-wrap" style="max-height:520px;overflow:auto"><table>
+<thead><tr><th>Mission / zone</th><th>Issue</th><th>Topaz</th><th>DSP port</th><th>DSP test</th><th>Review</th></tr></thead>
+<tbody>{% for row in tracker.backlog %}
+<tr>
+<td><strong>#{{ row.mission }} {{ row.name }}</strong><div class="muted">{{ row.zone }}</div></td>
+<td style="max-width:540px"><div style="max-height:85px;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere">{{ row.text }}</div><span class="muted">{{ row.fix_candidates }} possible fix-log link(s)</span></td>
+<td>{{ row.topaz }}</td><td>{{ row.port }}</td><td>{{ row.validation }}</td>
+<td><a class="chip" href="#assault-{{ row.mission }}-issue-{{ row.issue }}">Review issue {{ row.issue }}</a></td>
+</tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">No recorded issues match these filters. An empty result is not proof all issues have been fixed.</p>{% endif %}
+<div class="assault-table-scroll"><table class="assault-grid" aria-label="Assault missions by zone and rank">
+<thead><tr><th>Area / Rank</th>{% for rank in tracker.ranks %}<th>{{ rank }}</th>{% endfor %}</tr></thead>
+<tbody>
+{% for zone in tracker.zones %}
+<tr>
+<th scope="row">{{ zone }}</th>
+{% for rank in tracker.ranks %}
+{% set hit = tracker.missions | selectattr('zone', 'equalto', zone) | selectattr('rank', 'equalto', rank) | first | default(none) %}
+<td>{% if hit %}<a href="#assault-{{ hit.number }}" title="Mission {{ hit.number }}: {{ hit.name }} — Topaz {{ hit.topaz_status }}">
+  <span class="mission-number">#{{ hit.number }} {{ hit.topaz_status }}</span>
+  <span class="mission-name">{{ hit.name }}</span>
+  <span class="mission-state">DSP: {{ hit.dsp_port|replace('_',' ') }} · {{ hit.readiness.status|replace('_',' ') }}</span>
+</a>{% else %}—{% endif %}</td>
+{% endfor %}
+</tr>
+{% endfor %}
+</tbody></table></div>
+<h2 id="assault-shared">System-wide and shared dependencies</h2>
+<p class="muted">Issues here may affect all missions (including appraisal, runic portals, timeouts, navigation meshes, GM warp tooling, and other infrastructure). Historical comments remain intact.</p>
+{% for section in tracker.shared %}
+<details class="assault-detail assault-shared" id="assault-shared-{{ loop.index }}">
+  <summary>{{ section.title }}</summary>
+  {% if section.fix_log_entries %}
+  <div class="assault-meta"><strong>Potential fix-log sections:</strong>
+  {% for log in section.fix_log_entries %}<a class="chip" href="#assault-fix-{{ log.id }}">{{ log.title }}</a>{% endfor %}
+  </div>{% endif %}
+  <div class="assault-meta">
+    {% for stage in ['topaz','dsp_port','dsp_validation'] %}
+      {% set review = section.reviews[stage] %}
+      <span>{{ stage|replace('_',' ')|title }}: {{ review.state if review else 'unreviewed' }}</span>
+    {% endfor %}
+  </div>
+  <div class="assault-meta">
+    <strong>Confirmed zone-wide dependencies:</strong>
+    {% for scope in section.zones %}
+      <span>{{ scope.zone }} — all 10 missions <small>({{ scope.evidence }})</small>
+        <form method="post" action="/domains/assault/shared/zone" style="display:inline">
+          <input type="hidden" name="topic" value="{{ section.title }}">
+          <input type="hidden" name="zone" value="{{ scope.zone }}">
+          <button type="submit" name="action" value="unlink">Remove scope</button>
+        </form>
+      </span>
+    {% else %}<span class="muted">None confirmed</span>{% endfor %}
+  </div>
+  <details><summary>Confirm zone-wide impact</summary>
+    <p class="muted">Applies this dependency to all ten missions in the selected Assault zone. This records scope only; it does not validate or close mission issues.</p>
+    <form method="post" action="/domains/assault/shared/zone" style="display:grid;gap:6px;max-width:680px">
+      <input type="hidden" name="topic" value="{{ section.title }}">
+      <label>Assault zone <select name="zone" required>
+        {% for z in tracker.zones %}<option value="{{ z }}">{{ z }}</option>{% endfor %}
+      </select></label>
+      <label>Supporting evidence <input name="evidence" required maxlength="2000" placeholder="Fix log section, zone script, test, or capture"></label>
+      <button type="submit" name="action" value="link">Confirm zone-wide scope</button>
+    </form>
+  </details>
+  <div class="assault-meta">
+    <strong>Explicitly linked missions:</strong>
+    {% for mission_id in section.missions %}
+    <span><a href="#assault-{{ mission_id }}">#{{ mission_id }}</a>
+    <form method="post" action="/domains/assault/shared/link" style="display:inline">
+      <input type="hidden" name="topic" value="{{ section.title }}">
+      <input type="hidden" name="mission" value="{{ mission_id }}">
+      <button name="action" value="unlink" type="submit">Unlink</button>
+    </form></span>
+    {% else %}<span class="muted">None reviewed yet</span>{% endfor %}
+  </div>
+  <details><summary>Review shared dependency</summary>
+    <form method="post" action="/domains/assault/shared/review" style="display:grid;gap:6px;max-width:720px">
+      <input type="hidden" name="topic" value="{{ section.title }}">
+      <label>Stage <select name="stage"><option value="topaz">Topaz fix</option><option value="dsp_port">DSP port</option><option value="dsp_validation">DSP validation</option></select></label>
+      <label>Status <select name="state">
+        {% for state in ['unreviewed','open','in_progress','fixed','blocked','not_applicable'] %}
+        <option value="{{ state }}">{{ state|replace('_',' ')|title }}</option>
+        {% endfor %}
+      </select></label>
+      <label>Note <textarea name="note" maxlength="4000" rows="2"></textarea></label>
+      <label>Evidence <input name="evidence" maxlength="2000" placeholder="PR, capture, source file, test reference; required for fixed"></label>
+      <button type="submit">Save shared review</button>
+    </form>
+    <form method="post" action="/domains/assault/shared/link" style="display:flex;gap:6px;align-items:end;flex-wrap:wrap;margin-top:10px">
+      <input type="hidden" name="topic" value="{{ section.title }}">
+      <label>Affected mission number <input type="number" name="mission" min="1" max="50" required></label>
+      <button type="submit" name="action" value="link">Link mission</button>
+    </form>
+    {% if section.history %}<h4>Audit history</h4>
+      {% for h in section.history %}<div style="padding:5px;border-bottom:1px solid var(--border)"><strong>{{ h.stage }} / {{ h.state }}</strong> {{ h.updated_at }}<div>{{ h.note }}</div><div class="mono">{{ h.evidence }}</div></div>{% endfor %}
+    {% endif %}
+  </details>
+  {% if section.suggested_missions %}
+  <details style="margin:8px 0">
+    <summary>Suggested affected missions ({{ section.suggested_missions|length }}) — unconfirmed</summary>
+    <p class="muted">Exact mission names found in this shared issue section. These are suggestions only; accept each link deliberately.</p>
+    {% for candidate in section.suggested_missions %}
+    <div style="padding:7px;border-bottom:1px solid var(--border)">
+      <strong>#{{ candidate.mission }} {{ candidate.name }}</strong>
+      <span class="muted">({{ candidate.mentions }} mention(s))</span>
+      <div class="muted" style="overflow-wrap:anywhere">{{ candidate.evidence }}</div>
+      <form method="post" action="/domains/assault/shared/link">
+        <input type="hidden" name="topic" value="{{ section.title }}">
+        <input type="hidden" name="mission" value="{{ candidate.mission }}">
+        <button type="submit" name="action" value="link">Confirm affected mission</button>
+      </form>
+    </div>
+    {% endfor %}
+  </details>
+  {% endif %}
+  <div class="assault-comments">{{ section.comments }}</div>
+</details>
+{% endfor %}
+<h2>Mission issues — all original comments</h2>
+<p class="muted">Click a cell in the matrix to jump to its detailed issue history. Topaz green/completed is not the same as DSP ported, tested, or finished.</p>
+{% for mission in tracker.missions %}
+<details class="assault-detail" id="assault-{{ mission.number }}">
+  <summary>#{{ mission.number }} {{ mission.name }} — {{ mission.zone }} / {{ mission.rank }} · Topaz {{ mission.topaz_status }}</summary>
+  <details style="margin:8px 0" {% if mission.readiness.status == 'blocked' %}open{% endif %}>
+    <summary>Readiness: {{ mission.readiness.status|replace('_',' ')|title }} — {{ mission.readiness.blockers|length }} blocker(s), {{ mission.readiness.unknown|length }} evidence gap(s)</summary>
+    {% for reason in mission.readiness.blockers %}<div class="gap-field" style="padding:4px">Blocked: {{ reason }}</div>{% endfor %}
+    {% for reason in mission.readiness.unknown %}<div class="muted" style="padding:4px">Unverified: {{ reason }}</div>{% endfor %}
+    {% if mission.readiness.status == 'validated' %}<p>Recorded reviews for all tracked stages and issues are validated or not applicable; check that scope and evidence are complete.</p>{% endif %}
+  </details>
+  <div class="assault-meta">
+    <span>Topaz: {{ mission.topaz_status_text }}</span>
+    <span>DSP implementation: {{ mission.dsp_implementation }}</span>
+    <span>DSP port: {{ mission.dsp_port }}</span>
+    <span>DSP live validation: {{ mission.dsp_validation }}</span>
+  </div>
+  <details style="margin:8px 0" {% if mission.shared_dependencies %}open{% endif %}>
+    <summary>Confirmed shared dependencies ({{ mission.shared_dependencies|length }})</summary>
+    {% if mission.shared_dependencies %}
+      <p class="muted">Linked or confirmed zone-wide dependencies. No shared review state automatically validates this mission.</p>
+      {% for dep in mission.shared_dependencies %}
+      <div style="border-top:1px solid var(--border);padding:7px">
+        <a href="#assault-shared-{{ dep.section_id }}"><strong>{{ dep.title }}</strong></a>
+        <span class="chip">{{ dep.scope }}</span>
+        <div class="assault-meta">
+          <span>Topaz: {{ dep.topaz }}</span><span>DSP port: {{ dep.port }}</span>
+          <span>DSP validation: {{ dep.validation }}</span>
+        </div>
+        {% for evidence in dep.evidence %}<div class="muted">Zone-scope evidence: {{ evidence }}</div>{% endfor %}
+      </div>
+      {% endfor %}
+    {% else %}<p class="muted">No confirmed shared dependencies linked to this mission yet.</p>{% endif %}
+  </details>
+  <div><a class="chip" href="/missions?q={{ mission.name|urlencode }}">Find mission</a>
+    <a class="chip" href="/features/trace?q={{ mission.name|urlencode }}">Feature Trace</a></div>
+  <details style="margin:10px 0;padding:8px;border:1px solid var(--border);border-radius:6px">
+    <summary>Update DSP implementation, port or validation</summary>
+    <p class="muted">Each stage is reviewed independently. Marking validated requires a supporting test, capture, PR or other evidence reference. Original Topaz notes remain unchanged.</p>
+    <form method="post" action="/domains/assault/review" style="display:grid;gap:7px;max-width:720px">
+      <input type="hidden" name="mission" value="{{ mission.number }}">
+      <label>Stage
+        <select name="stage" required>
+          <option value="implementation">DSP implementation</option>
+          <option value="port">DSP port from Topaz</option>
+          <option value="validation">DSP live validation</option>
+        </select>
+      </label>
+      <label>Status
+        <select name="state" required>
+          {% for state in ['unverified','pending','in_progress','blocked','ready_for_test','validated','not_applicable'] %}
+          <option value="{{ state }}">{{ state|replace('_',' ')|title }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Review note <textarea name="note" rows="3" maxlength="4000" placeholder="What's implemented, missing or blocked?"></textarea></label>
+      <label>Evidence reference <input name="evidence" type="text" maxlength="2000" placeholder="PR URL, capture ID, test run, file path, etc. (required for validated)"></label>
+      <button type="submit">Save stage review</button>
+    </form>
+  </details>
+  {% if mission.history %}
+  <details style="margin:6px 0">
+    <summary>Review history ({{ mission.history|length }} updates)</summary>
+    {% for update in mission.history %}
+    <div style="border-bottom:1px solid var(--border);padding:7px 0">
+      <strong>{{ update.stage }} → {{ update.state }}</strong>
+      <span class="muted">{{ update.updated_at }}</span>
+      {% if update.note %}<div>{{ update.note }}</div>{% endif %}
+      {% if update.evidence %}<div class="mono">{{ update.evidence }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </details>
+  {% endif %}
+  <details style="margin:8px 0" open>
+    <summary>Issue-by-issue fix-log reconciliation ({{ mission.issue_crossrefs|length }} tracked bullets)</summary>
+    <p class="muted">A related fix-log passage is not evidence that this issue was actually fixed or ported to DSP. Each finding requires review and separate DSP validation.</p>
+    {% for issue in mission.issue_crossrefs %}
+    <div style="border-top:1px solid var(--border);padding:7px 0" id="assault-{{ mission.number }}-issue-{{ issue.id }}">
+      <strong>Issue {{ issue.id }}</strong> <span class="chip">Requires review</span>
+      <div style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;margin:4px 0">{{ issue.text }}</div>
+      <div class="assault-meta">
+        {% for stage in ['topaz','dsp_port','dsp_validation'] %}
+          {% set review = issue.reviews[stage] %}
+          <span>{{ stage|replace('_',' ')|title }}: {{ review.state if review else 'unreviewed' }}</span>
+        {% endfor %}
+      </div>
+      <details style="margin:5px 0">
+        <summary>Review this issue / evidence</summary>
+        <form method="post" action="/domains/assault/issue/review" style="display:grid;gap:5px;max-width:700px">
+          <input type="hidden" name="mission" value="{{ mission.number }}">
+          <input type="hidden" name="issue" value="{{ issue.id }}">
+          <label>Stage <select name="stage" required>
+            <option value="topaz">Topaz fix</option>
+            <option value="dsp_port">DSP port</option>
+            <option value="dsp_validation">DSP validation</option>
+          </select></label>
+          <label>State <select name="state" required>
+            {% for state in ['unreviewed','open','in_progress','fixed','blocked','not_applicable'] %}
+            <option value="{{ state }}">{{ state|replace('_',' ')|title }}</option>
+            {% endfor %}
+          </select></label>
+          <label>Review notes <textarea name="note" rows="2" maxlength="4000"></textarea></label>
+          <label>Evidence reference <input type="text" name="evidence" maxlength="2000" placeholder="Fix log section, PR, commit, capture, test (required for fixed)"></label>
+          <button type="submit">Record issue review</button>
+        </form>
+        {% if issue.history %}
+        <h4>Review history</h4>
+        {% for h in issue.history %}
+        <div class="gap-field" style="border-top:1px solid var(--border);padding:5px">
+          <strong>{{ h.stage }} / {{ h.state }}</strong> <span class="muted">{{ h.updated_at }}</span>
+          <div>{{ h.note }}</div><div class="mono">{{ h.evidence }}</div>
+        </div>
+        {% endfor %}
+        {% endif %}
+      </details>
+      {% if issue.candidates %}
+      <div class="muted">Candidate Topaz fix-log entries (not confirmed resolution):</div>
+      {% for candidate in issue.candidates %}
+      <a class="chip" href="#assault-fix-{{ candidate.section_id }}">{{ candidate.title }}</a>
+      {% endfor %}
+      {% else %}<span class="muted">No matching mission fix-log passage found; remains open for investigation.</span>{% endif %}
+    </div>
+    {% endfor %}
+  </details>
+  {% if mission.fix_log_entries %}
+  <details style="margin:8px 0">
+    <summary>All matching mission fix-log passages ({{ mission.fix_log_entries|length }})</summary>
+    {% for log in mission.fix_log_entries %}
+    <a class="chip" href="#assault-fix-{{ log.id }}">{{ log.title }}</a>
+    {% endfor %}
+  </details>
+  {% endif %}
+  <details><summary>Original issue tracker comments (verbatim)</summary>
+    <div class="assault-comments">{{ mission.comments }}</div>
+  </details>
+</details>
+{% endfor %}
+<h2>Chronological Topaz fix log — complete preserved text</h2>
+<p class="muted">Every original section is retained; mission issues link here when the heading and issue language support a candidate match. This is not a DSP completion record.</p>
+{% for log in tracker.fix_log.sections %}
+<details class="assault-detail" id="assault-fix-{{ log.id }}">
+  <summary>{{ log.title }}</summary>
+  <div class="assault-comments">{{ log.text }}</div>
+</details>
+{% endfor %}
+<script>
+(function(){
+  function reveal(){
+    const id=decodeURIComponent(location.hash.slice(1));
+    if(!id.startsWith('assault-'))return;
+    const panel=document.getElementById(id);
+    if(panel){
+      let ancestor=panel;
+      while(ancestor){if(ancestor.tagName==='DETAILS')ancestor.open=true;ancestor=ancestor.parentElement;}
+      panel.scrollIntoView({block:'start'});
+    }
+  }
+  window.addEventListener('hashchange',reveal);
+  reveal();
+})();
+</script>
 {% endblock %}

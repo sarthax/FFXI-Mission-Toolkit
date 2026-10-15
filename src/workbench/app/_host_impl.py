@@ -9604,13 +9604,154 @@ def restart_server(request: Request):
 
 # ---- Domain landing pages -------------------------------------------------------------------
 @app.get("/domains/assault", response_class=HTMLResponse)
-def assault_domain_page(request: Request):
+def assault_domain_page(request: Request, zone: str = "", backlog_status: str = "all", q: str = "", readiness_zone: str = "", readiness_status: str = "all"):
     """Assault domain workspace: a stable home for Assault-specific development/admin workflows.
 
     Existing generic editors remain canonical; this page links into them rather than duplicating
     Zone Editor or mission/capture logic while the domain package grows.
     """
-    return templates.TemplateResponse(request, "domain_assault.html", {"request": request})
+    from workbench.domains.assault_tracker import overview
+    from workbench.domains.assault_reviews import all_reviews
+    tracker = overview()
+    from workbench.domains.assault_fix_crossref import correlate
+    tracker["fix_log"] = correlate(tracker["missions"], tracker["shared"])
+    from workbench.domains.assault_shared_reviews import read as read_shared
+    shared_data = read_shared()
+    shared_review_map = {(r["topic"], r["stage"]): r for r in shared_data["reviews"]}
+    for section in tracker["shared"]:
+        section["reviews"] = {stage: shared_review_map.get((section["title"], stage))
+                              for stage in ("topaz", "dsp_port", "dsp_validation")}
+        section["history"] = [r for r in shared_data["history"] if r["topic"] == section["title"]]
+        section["missions"] = [r["mission"] for r in shared_data["links"] if r["topic"] == section["title"]]
+        section["zones"] = [r for r in shared_data["zones"] if r["topic"] == section["title"]]
+    from workbench.domains.assault_dependency_suggestions import suggest
+    suggest(tracker["shared"], tracker["missions"])
+    rows, history = all_reviews()
+    from workbench.domains.assault_issue_reviews import read as issue_review_read
+    issue_rows, issue_history = issue_review_read()
+    issue_map = {(r["mission"], r["issue"], r["stage"]): r for r in issue_rows}
+    for mission in tracker["missions"]:
+        for issue in mission["issue_crossrefs"]:
+            number = mission["number"]
+            issue["reviews"] = {stage: issue_map.get((number, issue["id"], stage))
+                                for stage in ("topaz", "dsp_port", "dsp_validation")}
+            issue["history"] = [r for r in issue_history
+                                if r["mission"] == number and r["issue"] == issue["id"]]
+    by_mission = {}
+    for row in rows:
+        by_mission.setdefault(row["mission"], {})[row["stage"]] = row
+    for mission in tracker["missions"]:
+        mission["reviews"] = by_mission.get(mission["number"], {})
+        mission["history"] = [h for h in history if h["mission"] == mission["number"]]
+        for stage, field in (("implementation", "dsp_implementation"),
+                             ("port", "dsp_port"), ("validation", "dsp_validation")):
+            if stage in mission["reviews"]:
+                mission[field] = mission["reviews"][stage]["state"]
+    from workbench.domains.assault_dependency_projection import project
+    project(tracker["missions"], tracker["shared"])
+    from workbench.domains.assault_readiness import assess_all
+    tracker["readiness_counts"] = assess_all(tracker["missions"])
+    from workbench.domains.assault_summary import summarize
+    tracker["progress"] = summarize(tracker["missions"])
+    from workbench.domains.assault_readiness_filters import filter_missions, FILTERS as READINESS_FILTERS
+    if readiness_zone and readiness_zone not in tracker["zones"]:
+        raise HTTPException(status_code=400, detail="Unknown readiness zone")
+    try:
+        tracker["readiness_results"] = filter_missions(tracker["missions"], zone=readiness_zone, status=readiness_status)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    tracker["readiness_filters"] = READINESS_FILTERS
+    tracker["readiness_selection"] = {"zone": readiness_zone, "status": readiness_status}
+    from workbench.domains.assault_backlog import backlog, FILTERS
+    if backlog_status not in FILTERS:
+        raise HTTPException(status_code=400, detail="Unknown backlog filter")
+    if zone and zone not in tracker["zones"]:
+        raise HTTPException(status_code=400, detail="Unknown Assault zone")
+    tracker["backlog"] = backlog(tracker["missions"], zone=zone, status=backlog_status, search=q)
+    tracker["backlog_filters"] = FILTERS
+    tracker["backlog_selection"] = {"zone": zone, "status": backlog_status, "q": q}
+    return templates.TemplateResponse(request, "domain_assault.html", {"request": request, "tracker": tracker})
+
+
+@app.post("/domains/assault/shared/zone")
+async def assault_shared_zone_update(request: Request):
+    from workbench.domains.assault_tracker import overview
+    from workbench.domains.assault_shared_reviews import set_zone
+    data = await request.form()
+    tracker = overview()
+    try:
+        set_zone(str(data.get("topic", "")), str(data.get("zone", "")),
+                 str(data.get("evidence", "")),
+                 topics={section["title"] for section in tracker["shared"]},
+                 zones=set(tracker["zones"]),
+                 unlink=str(data.get("action", "")) == "unlink")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return RedirectResponse(url="/domains/assault#assault-shared", status_code=303)
+
+
+@app.post("/domains/assault/shared/review")
+async def assault_shared_review_update(request: Request):
+    from workbench.domains.assault_tracker import overview
+    from workbench.domains.assault_shared_reviews import update
+    data = await request.form()
+    titles = {section["title"] for section in overview()["shared"]}
+    topic = str(data.get("topic", ""))
+    try:
+        update(topic, str(data.get("stage", "")), str(data.get("state", "")),
+               str(data.get("note", "")), str(data.get("evidence", "")), topics=titles)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return RedirectResponse(url="/domains/assault#assault-shared", status_code=303)
+
+
+@app.post("/domains/assault/shared/link")
+async def assault_shared_link_update(request: Request):
+    from workbench.domains.assault_tracker import overview
+    from workbench.domains.assault_shared_reviews import link
+    data = await request.form()
+    try:
+        link(str(data.get("topic", "")), int(data.get("mission", 0)),
+             topics={section["title"] for section in overview()["shared"]},
+             unlink=str(data.get("action", "")) == "unlink")
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return RedirectResponse(url="/domains/assault#assault-shared", status_code=303)
+
+
+@app.post("/domains/assault/issue/review")
+async def assault_issue_review_update(request: Request):
+    from workbench.domains.assault_issue_reviews import mark
+    from workbench.domains.assault_tracker import overview
+    from workbench.domains.assault_fix_crossref import correlate
+    data = await request.form()
+    try:
+        mission_id, issue_id = int(data.get("mission", 0)), int(data.get("issue", 0))
+        tracker = overview()
+        correlate(tracker["missions"], tracker["shared"])
+        mission = next((m for m in tracker["missions"] if m["number"] == mission_id), None)
+        if mission is None:
+            raise ValueError("Unknown mission")
+        mark(mission_id, issue_id, str(data.get("stage", "")),
+             str(data.get("state", "")), str(data.get("note", "")),
+             str(data.get("evidence", "")), issue_count=len(mission["issue_crossrefs"]))
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return RedirectResponse(
+        url=f"/domains/assault#assault-{mission_id}-issue-{issue_id}", status_code=303)
+
+
+@app.post("/domains/assault/review")
+async def assault_review_update(request: Request):
+    from workbench.domains.assault_reviews import mark
+    data = await request.form()
+    try:
+        mission = int(data.get("mission", "0"))
+        mark(mission, str(data.get("stage", "")), str(data.get("state", "")),
+             str(data.get("note", "")), str(data.get("evidence", "")))
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return RedirectResponse(url=f"/domains/assault#assault-{mission}", status_code=303)
 
 
 # ---- Nyzul Isle plot tool (nyzul_plot.py) ---------------------------------------------------
