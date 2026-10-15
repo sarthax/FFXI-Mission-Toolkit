@@ -147,6 +147,24 @@
       {% for h in section.history %}<div style="padding:5px;border-bottom:1px solid var(--border)"><strong>{{ h.stage }} / {{ h.state }}</strong> {{ h.updated_at }}<div>{{ h.note }}</div><div class="mono">{{ h.evidence }}</div></div>{% endfor %}
     {% endif %}
   </details>
+  {% if section.suggested_missions %}
+  <details style="margin:8px 0">
+    <summary>Suggested affected missions ({{ section.suggested_missions|length }}) — unconfirmed</summary>
+    <p class="muted">Exact mission names found in this shared issue section. These are suggestions only; accept each link deliberately.</p>
+    {% for candidate in section.suggested_missions %}
+    <div style="padding:7px;border-bottom:1px solid var(--border)">
+      <strong>#{{ candidate.mission }} {{ candidate.name }}</strong>
+      <span class="muted">({{ candidate.mentions }} mention(s))</span>
+      <div class="muted" style="overflow-wrap:anywhere">{{ candidate.evidence }}</div>
+      <form method="post" action="/domains/assault/shared/link">
+        <input type="hidden" name="topic" value="{{ section.title }}">
+        <input type="hidden" name="mission" value="{{ candidate.mission }}">
+        <button type="submit" name="action" value="link">Confirm affected mission</button>
+      </form>
+    </div>
+    {% endfor %}
+  </details>
+  {% endif %}
   <div class="assault-comments">{{ section.comments }}</div>
 </details>
 {% endfor %}
