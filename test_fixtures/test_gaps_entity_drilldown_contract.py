@@ -17,6 +17,6 @@ def test_gaps_entity_filter_and_csv_contract():
     assert '"values", "field_flags"' in export
     assert 'json.dumps(row[nested]' in export
     assert 'name="entity_id"' in gaps
-    assert 'entity_id={{ entity_id if entity_id is not none else' in gaps
+    assert '{% if entity_id is not none %}&entity_id={{ entity_id }}{% endif %}' in gaps
     assert "'&mode=compare&source=dsp&entity_id='" in viewer
     assert "entity.live_observation &&" in viewer
