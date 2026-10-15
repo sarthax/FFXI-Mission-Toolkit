@@ -292,6 +292,11 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
       <button type="button" id="zone3d-inspector-live-refresh" title="Rebuild list from current live telemetry">Refresh observed list</button>
       <div id="zone3d-inspector-live-count" class="muted" style="font-size:11px;margin-top:4px" role="status">No live entities received</div>
     </section>
+    <section aria-label="Live and server pairing" style="margin:8px 0;padding:7px;border:1px solid var(--border);border-radius:6px">
+      <strong>Live ↔ server spawn pair</strong>
+      <div id="zone3d-pair-status" class="muted" role="status" style="font-size:12px;margin:5px 0">Select a live or server entity to compare.</div>
+      <div class="muted" style="font-size:11px">Matches require the same reported server ID. Not observed does not prove unspawned, hidden, or conditionally disabled.</div>
+    </section>
     <div id="zone3d-inspector-content" class="mono" style="font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0"></div>
     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
       <button type="button" id="zone3d-inspector-focus">Focus camera</button>
@@ -891,6 +896,7 @@ function clearLiveEntities(preservePicker = false) {
     liveEntityCount.textContent = 'No live entities';
   }
   highlightObservedEntity();
+  updateEntityPair();
 }
 function clearLiveMarker() {
   clearOtherClientMarkers();
@@ -1041,6 +1047,7 @@ async function pollAshitaPosition() {
     }
     updateLiveEntityPicker();
     updateLiveEntityVisibility();
+    updateEntityPair();
     liveStatus.textContent = (data.player.character || clientId) + ' · live · ' +
       position.x.toFixed(1) + ', ' + position.y.toFixed(1) + ', ' + position.z.toFixed(1) +
       (liveEntitiesToggle.checked ? ' · entities ' + entityCount +
@@ -1476,6 +1483,65 @@ function buildSpawnMarkers() {
   spawnMesh = mesh;
 }
 
+const pairStatus = document.getElementById('zone3d-pair-status');
+const pairLineMaterial = new THREE.LineBasicMaterial({color: 0xf6d76a, depthTest:false});
+const pairLineGeometry = new THREE.BufferGeometry();
+const pairLine = new THREE.Line(pairLineGeometry, pairLineMaterial);
+pairLine.visible = false;
+pairLine.renderOrder = 22;
+scene.add(pairLine);
+function pairEntityId(e) {
+  const raw = e?.live_observation ? e.server_entity_id : e?.id;
+  if (raw === null || raw === undefined || raw === '' || !/^\\d+$/.test(String(raw))) return null;
+  return String(BigInt(raw));
+}
+function updateEntityPair() {
+  pairLine.visible = false;
+  if (spawnMesh) {
+    const color = new THREE.Color();
+    spawnEntities.forEach((e, index) => spawnMesh.setColorAt(index,
+      color.set(e === selectedEntity ? 0xffff33 : (SPAWN_COLORS[e.k] ?? 0x44cc88))));
+    if (spawnMesh.instanceColor) spawnMesh.instanceColor.needsUpdate = true;
+  }
+  if (!selectedEntity || entityInspector.hidden) return;
+  const id = pairEntityId(selectedEntity);
+  if (id === null) {
+    pairStatus.textContent = 'No verified reported server ID. Client slot and name are not safe matching keys.';
+    return;
+  }
+  const onMap = spawnEntities.filter(e => pairEntityId(e) === id);
+  const observed = liveObservedEntities.filter(e => pairEntityId(e) === id && liveEntityAgeSeconds(e) <= 3);
+  const matches = selectedEntity.live_observation ? onMap : observed;
+  if (!matches.length) {
+    pairStatus.textContent = selectedEntity.live_observation
+      ? 'Live entity ' + id + ' observed; no matching server marker loaded in this map. Check zone/instance and source coverage.'
+      : 'Server spawn ' + id + ' loaded; no fresh Ashita observation. May be out of range, despawned, conditional, hidden, or not reported.';
+    return;
+  }
+  if (matches.length !== 1 || (selectedEntity.live_observation ? observed.length : onMap.length) !== 1) {
+    pairStatus.textContent = 'Ambiguous ID ' + id + ': ' + onMap.length + ' server map entries, ' +
+      observed.length + ' fresh live observations. No unique pair selected.';
+    return;
+  }
+  const server = selectedEntity.live_observation ? matches[0] : selectedEntity;
+  const live = selectedEntity.live_observation ? selectedEntity : matches[0];
+  const a = new THREE.Vector3(server.x, -server.y, -server.z);
+  const b = projectLivePoint(live);
+  const distance = a.distanceTo(b);
+  pairLineGeometry.setFromPoints([a,b]);
+  pairLine.visible = true;
+  // Highlight the paired server marker as well as the selected entity.
+  if (spawnMesh) {
+    const idx = spawnEntities.indexOf(server);
+    if (idx >= 0) {
+      spawnMesh.setColorAt(idx, new THREE.Color(0xf6d76a));
+      if (spawnMesh.instanceColor) spawnMesh.instanceColor.needsUpdate = true;
+    }
+  }
+  pairStatus.textContent = 'Exact ID ' + id + ' · ' + (live.n || 'Live') +
+    ' ↔ ' + (server.n || 'Server') + ' · separation ' + distance.toFixed(2) +
+    ' world units. Yellow line joins configured spawn to observed position.';
+}
 const entityInspector = document.getElementById('zone3d-entity-inspector');
 const entityInspectorContent = document.getElementById('zone3d-inspector-content');
 const entityInspectorLinks = document.getElementById('zone3d-inspector-links');
@@ -1525,12 +1591,7 @@ function inspectEntity(entity) {
     inspectorLiveOpen.disabled = index < 0;
   }
   updateInspectorNavigation();
-  if (spawnMesh) {
-    const color = new THREE.Color();
-    spawnEntities.forEach((e, index) =>
-      spawnMesh.setColorAt(index, color.set(e === entity ? 0xffff33 : (SPAWN_COLORS[e.k] ?? 0x44cc88))));
-    if (spawnMesh.instanceColor) spawnMesh.instanceColor.needsUpdate = true;
-  }
+  updateEntityPair();
   inspectorFeedback.textContent = '';
   const hasPosition = [entity.x, entity.y, entity.z].every(Number.isFinite);
   document.getElementById('zone3d-inspector-focus').disabled = !hasPosition;
@@ -1678,6 +1739,7 @@ document.getElementById('zone3d-inspector-search').addEventListener('click', () 
 document.getElementById('zone3d-inspector-close').addEventListener('click', () => {
   entityInspector.hidden = true;
   selectedEntity = null;
+  pairLine.visible = false;
   if (spawnMesh) {
     const color = new THREE.Color();
     spawnEntities.forEach((e, index) => spawnMesh.setColorAt(index, color.set(SPAWN_COLORS[e.k] ?? 0x44cc88)));
