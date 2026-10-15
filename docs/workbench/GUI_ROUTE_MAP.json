@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 310,
+  "route_count": 317,
   "routes": [
     {
       "method": "GET",
@@ -2479,6 +2479,62 @@
     {
       "method": "POST",
       "path": "/domains/assault/shared/zone",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/domains/super_kupopower/overview.json",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/domains/survival_guides/overview.json",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/gaps/report",
+      "home": "Server",
+      "section": "Data Quality / Gaps",
+      "role": "diagnostic",
+      "disposition": "MERGE"
+    },
+    {
+      "method": "POST",
+      "path": "/domains/super_kupopower/mark",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/domains/super_kupopower/rebuild",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/domains/super_kupopower/spot",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/domains/survival_guides/mark",
       "home": "Server",
       "section": "Domain Research",
       "role": "action",
