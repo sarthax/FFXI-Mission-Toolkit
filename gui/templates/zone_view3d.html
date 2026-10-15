@@ -306,6 +306,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
           <option value="displaced">Separated pairs</option>
           <option value="server_only">Loaded map only</option>
           <option value="last_seen">Recently seen, now absent</option>
+          <option value="unverified">Live coverage unavailable</option>
           <option value="live_only">Observed only</option>
           <option value="ambiguous">Ambiguous IDs</option>
           <option value="unknown">No reported ID</option>
@@ -1555,7 +1556,7 @@ function clearObservationHistory() {
   liveEntitySnapshotCount = 0;
 }
 
-const correlationColors = {last_seen:0x80aec7, server_only:0xff5e61, live_only:0xffaa45, displaced:0xb77bff, ambiguous:0xffd36c, unknown:0x8e95a4};
+const correlationColors = {unverified:0x9399a3, last_seen:0x80aec7, server_only:0xff5e61, live_only:0xffaa45, displaced:0xb77bff, ambiguous:0xffd36c, unknown:0x8e95a4};
 function applyCorrelationMapColors(rows) {
   const kinds = new Map(rows.filter(r => r.id !== undefined && r.id !== null).map(r => [r.id, r.kind]));
   if (spawnMesh) {
@@ -1608,7 +1609,10 @@ function zoneCorrelationRows() {
   const rows = [...byId.values()].map(group => {
     const {id,map,live} = group;
     let kind = 'ambiguous', separation = null;
-    if (!map.length) kind = 'live_only';
+    const telemetryUsable = liveToggle.checked && liveEntitiesToggle.checked &&
+      liveEntitySnapshotAt > 0 && now - liveEntitySnapshotAt <= 3;
+    if (!live.length && !telemetryUsable) kind = 'unverified';
+    else if (!map.length) kind = 'live_only';
     else if (!live.length) kind = 'server_only';
     else if (map.length === 1 && live.length === 1) {
       const m = map[0], l = live[0];
@@ -1619,7 +1623,7 @@ function zoneCorrelationRows() {
     }
     const previous = lastLiveEntitiesById.get(id);
     const lastSeenSeconds = !live.length && previous ? Math.max(0, now - previous.seenAt) : null;
-    if (!live.length && previous && now - previous.seenAt <= OBSERVATION_HISTORY_SECONDS) kind = 'last_seen';
+    if (!live.length && telemetryUsable && previous && now - previous.seenAt <= OBSERVATION_HISTORY_SECONDS) kind = 'last_seen';
     return {id, kind, separation, entity:live[0] || map[0] || previous?.entity,
       map:map.length, live:live.length, lastSeenSeconds};
   });
@@ -1631,7 +1635,10 @@ function refreshZoneCorrelation() {
   correlationCoverage.textContent = (CAPTURE_SPATIAL_URL
     ? 'Map: capture-derived records (not authoritative configured spawns)'
     : 'Map: loaded zone index records (not runtime spawn state)') +
-    ' · Ashita: ' + (liveToggle.checked && liveEntitiesToggle.checked ? 'fresh nearby observations only' : 'nearby telemetry disabled') +
+    ' · Ashita: ' + (!liveToggle.checked || !liveEntitiesToggle.checked ? 'nearby telemetry disabled' :
+      !liveEntitySnapshotAt || Date.now() / 1000 - liveEntitySnapshotAt > 3
+        ? 'no fresh nearby snapshot: map-only classifications suspended'
+        : 'fresh nearby observations only') +
     ' · current instance and observation range unverified';
   const snapshotAge = liveEntitySnapshotAt ? Date.now() / 1000 - liveEntitySnapshotAt : Infinity;
   correlationLifecycle.textContent = Number.isFinite(snapshotAge)
@@ -1642,7 +1649,7 @@ function refreshZoneCorrelation() {
   const counts = {};
   for (const row of rows) counts[row.kind] = (counts[row.kind] || 0) + 1;
   correlationSummary.textContent = rows.length + ' classified IDs/entries · ' +
-    ['paired','displaced','server_only','live_only','last_seen','ambiguous','unknown']
+    ['paired','displaced','server_only','live_only','last_seen','unverified','ambiguous','unknown']
     .map(k => k.replace('_',' ') + ': ' + (counts[k] || 0)).join(' · ');
   const filter = correlationFilter.value;
   const matching = rows.filter(r => filter === 'all' || r.kind === filter).slice(0,100);
@@ -1654,11 +1661,13 @@ function refreshZoneCorrelation() {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.style.cssText = 'display:block;width:100%;text-align:left;margin:2px 0;font-size:12px;';
+    btn.disabled = row.kind === 'unverified';
     const name = row.entity?.n || 'Unnamed';
     btn.textContent = row.kind.replace('_',' ') + ' · ' + name + ' [' + (row.id || 'unknown') + ']' +
       (row.separation === null || row.separation === undefined ? '' : ' · ' + row.separation.toFixed(1) + ' units') +
       (row.lastSeenSeconds === null || row.lastSeenSeconds === undefined ? '' : ' · last seen ' + Math.round(row.lastSeenSeconds) + 's ago (not proof of despawn)');
     btn.addEventListener('click', () => {
+      if (row.kind === 'unverified') return;
       // Resolve against the latest arrays; telemetry reconstructs live objects on each poll.
       const fresh = zoneCorrelationRows().find(current => current.id === row.id && current.kind === row.kind);
       if (fresh?.entity) inspectEntity(fresh.entity);
