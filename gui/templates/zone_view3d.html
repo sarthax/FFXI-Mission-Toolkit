@@ -1555,6 +1555,12 @@ function inspectEntity(entity) {
       }
     });
     entityInspectorLinks.appendChild(check);
+    const gaps = document.createElement('a');
+    gaps.className = 'chip';
+    gaps.textContent = 'Data Gaps ↗';
+    gaps.href = '/gaps?zone=' + encodeURIComponent(ZONEID) +
+      '&mode=compare&source=dsp&entity_id=' + encodeURIComponent(id);
+    entityInspectorLinks.appendChild(gaps);
   }
   entityInspector.hidden = false;
 }
