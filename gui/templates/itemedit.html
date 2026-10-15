@@ -1085,6 +1085,8 @@ async function loadItem(itemid, remember=true) {
   renderPetMods(stagedEffects.pet_mods);
   renderLatents(stagedEffects.latents);
   renderDecodedSummary();
+  if (typeof window.ieShowTab === 'function') window.ieShowTab('props');
+  document.dispatchEvent(new CustomEvent('ie:effects-loaded'));
   document.getElementById('editorWrap').style.display = '';
   document.getElementById('saveStatus').textContent = '';
   document.getElementById('itemBackupMsg').textContent = '';

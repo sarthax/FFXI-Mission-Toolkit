@@ -142,12 +142,12 @@
   panes.effects.insertBefore(byId('editorLists'), panes.effects.firstChild);
 
   const pick = key => {
-    store.set('ieTab', key);
     bar.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.tab === key));
     Object.entries(panes).forEach(([k, p]) => p.classList.toggle('on', k === key));
   };
   bar.addEventListener('click', e => { const b = e.target.closest('button'); if (b) pick(b.dataset.tab); });
-  pick(panes[store.get('ieTab', 'props')] ? store.get('ieTab', 'props') : 'props');
+  pick('props');
+  window.ieShowTab = key => { if (panes[key]) pick(key); };
 
   // mark tabs that hold unsaved edits
   const markDirty = () => {

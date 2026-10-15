@@ -23,6 +23,15 @@
 .assault-shared{margin-top:20px}
 .assault-table-scroll{overflow-x:auto}
 @media(max-width:950px){.assault-grid{min-width:1000px}}
+
+.assault-jump{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 8px;margin:8px 0;background:var(--bg,#14181d);border:1px solid var(--border);border-radius:7px}
+.assault-jump a{font-size:12px;text-decoration:none}
+.assault-filter{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.assault-filter input[type=search]{min-width:220px}
+.assault-sev{font-size:11px;padding:1px 7px;border-radius:9px;border:1px solid var(--border);margin-left:6px;font-weight:400}
+.assault-sev.blocked{border-color:#d9534f;color:#d9534f}.assault-sev.validated{border-color:#3f9e5b;color:#3f9e5b}
+.assault-archive>summary{cursor:pointer;font-weight:700;font-size:1.1em}
+html{scroll-padding-top:56px}
 </style>
 <div class="dense-toolbar">
   <strong>{{ tracker.count }} imported missions</strong>
@@ -33,10 +42,20 @@
   <a class="chip" href="/zoneplot2">Zone Editor</a>
 </div>
 <p class="muted">Cell icon = historical Topaz overall status only. DSP porting and live validation are tracked separately and remain unverified until proven. For ranks Corporal through First Lieutenant (5–10), porting is assumed pending review, not completed.</p>
+<nav class="assault-jump" aria-label="Page sections">
+  <strong>Jump to</strong>
+  <a class="chip" href="#assault-sec-readiness">Readiness</a>
+  <a class="chip" href="#assault-sec-progress">Progress</a>
+  <a class="chip" href="#assault-backlog">Review backlog</a>
+  <a class="chip" href="#assault-sec-matrix">Mission matrix</a>
+  <a class="chip" href="#assault-shared">Shared dependencies</a>
+  <a class="chip" href="#assault-sec-missions">Mission issues</a>
+  <a class="chip" href="#assault-sec-fixlog">Topaz fix log (archive)</a>
+</nav>
 <div class="assault-status">
   <span>✅ Topaz playthrough confirmed</span><span>🟢 Topaz built / untested</span><span>🟡 Topaz gaps</span><span>🔴 Topaz broken</span><span>❔ Unclassified</span>
 </div>
-<h2>Mission readiness</h2>
+<h2 id="assault-sec-readiness">Mission readiness</h2>
 <p class="muted">Derived from reviewed mission stages, individual issues and confirmed shared dependencies. Unknown evidence never counts as a pass.</p>
 <div class="assault-status">
   <span>Validated: <strong>{{ tracker.readiness_counts.get('validated',0) }}</strong></span>
@@ -68,7 +87,7 @@
 <td>{{ mission.readiness.blockers|length }} blockers · {{ mission.readiness.unknown|length }} unknown</td></tr>
 {% else %}<tr><td colspan="7" class="muted">No missions match the selected readiness criteria. This does not indicate that unreviewed missions have passed.</td></tr>{% endfor %}
 </tbody></table></div>
-<h2>Development progress</h2>
+<h2 id="assault-sec-progress">Development progress</h2>
 <p class="muted">Counts are calculated from recorded reviews, not inferred from Topaz checkmarks. Unreviewed means no DSP evidence recorded, not confirmed broken.</p>
 <div class="assault-status">
   <span><strong>{{ tracker.progress.total.missions }}</strong> missions</span>
@@ -88,7 +107,7 @@
 <td>{{ progress.get('fully_reviewed_issues', 0) }}</td>
 <td>{{ progress.get('blocked_issues', 0) }}</td></tr>
 {% endfor %}</tbody></table></div>
-<h2 id="assault-backlog">Issue review backlog</h2>
+<h2 id="assault-backlog" class="assault-sec">Issue review backlog</h2>
 <p class="muted">Uses explicit review decisions only; historical fixes and candidate matches do not automatically close any issue.</p>
 <form method="get" action="/domains/assault#assault-backlog" class="gap-filters" style="display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin:10px 0">
   <label>Zone <select name="zone">
@@ -115,7 +134,7 @@
 <td><a class="chip" href="#assault-{{ row.mission }}-issue-{{ row.issue }}">Review issue {{ row.issue }}</a></td>
 </tr>{% endfor %}</tbody></table></div>
 {% else %}<p class="muted">No recorded issues match these filters. An empty result is not proof all issues have been fixed.</p>{% endif %}
-<div class="assault-table-scroll"><table class="assault-grid" aria-label="Assault missions by zone and rank">
+<div class="assault-table-scroll"><span id="assault-sec-matrix"></span><table class="assault-grid" aria-label="Assault missions by zone and rank">
 <thead><tr><th>Area / Rank</th>{% for rank in tracker.ranks %}<th>{{ rank }}</th>{% endfor %}</tr></thead>
 <tbody>
 {% for zone in tracker.zones %}
@@ -224,11 +243,18 @@
   <div class="assault-comments">{{ section.comments }}</div>
 </details>
 {% endfor %}
-<h2>Mission issues — all original comments</h2>
+<h2 id="assault-sec-missions">Mission issues — all original comments</h2>
 <p class="muted">Click a cell in the matrix to jump to its detailed issue history. Topaz green/completed is not the same as DSP ported, tested, or finished.</p>
+<div class="assault-filter" id="assaultFilter">
+  <input type="search" id="afText" placeholder="Filter missions by name, number or issue text" aria-label="Filter missions">
+  <select id="afZone" aria-label="Zone"><option value="">All zones</option>{% for z in tracker.zones %}<option value="{{ z }}">{{ z }}</option>{% endfor %}</select>
+  <select id="afStatus" aria-label="Readiness"><option value="">Any readiness</option><option value="blocked">Blocked</option><option value="validated">Validated</option><option value="other">Other</option></select>
+  <button type="button" id="afOpen">Expand shown</button><button type="button" id="afClose">Collapse all</button>
+  <span class="muted" id="afCount"></span>
+</div>
 {% for mission in tracker.missions %}
-<details class="assault-detail" id="assault-{{ mission.number }}">
-  <summary>#{{ mission.number }} {{ mission.name }} — {{ mission.zone }} / {{ mission.rank }} · Topaz {{ mission.topaz_status }}</summary>
+<details class="assault-detail assault-mission" id="assault-{{ mission.number }}" data-zone="{{ mission.zone }}" data-status="{{ mission.readiness.status }}">
+  <summary>#{{ mission.number }} {{ mission.name }} — {{ mission.zone }} / {{ mission.rank }} · Topaz {{ mission.topaz_status }}<span class="assault-sev {{ mission.readiness.status }}">{{ mission.readiness.status|replace('_',' ')|title }}</span></summary>
   <details style="margin:8px 0" {% if mission.readiness.status == 'blocked' %}open{% endif %}>
     <summary>Readiness: {{ mission.readiness.status|replace('_',' ')|title }} — {{ mission.readiness.blockers|length }} blocker(s), {{ mission.readiness.unknown|length }} evidence gap(s)</summary>
     {% for reason in mission.readiness.blockers %}<div class="gap-field" style="padding:4px">Blocked: {{ reason }}</div>{% endfor %}
@@ -297,7 +323,7 @@
     {% endfor %}
   </details>
   {% endif %}
-  <details style="margin:8px 0" open>
+  <details style="margin:8px 0" {% if mission.readiness.status == 'blocked' %}open{% endif %}>
     <summary>Issue-by-issue fix-log reconciliation ({{ mission.issue_crossrefs|length }} tracked bullets)</summary>
     <p class="muted">A related fix-log passage is not evidence that this issue was actually fixed or ported to DSP. Each finding requires review and separate DSP validation.</p>
     {% for issue in mission.issue_crossrefs %}
@@ -361,7 +387,8 @@
   </details>
 </details>
 {% endfor %}
-<h2>Chronological Topaz fix log — complete preserved text</h2>
+<h2 id="assault-sec-fixlog">Chronological Topaz fix log — complete preserved text</h2>
+<details class="assault-archive"><summary>Show the full preserved fix log ({{ tracker.fix_log.sections|length }} sections)</summary>
 <p class="muted">Every original section is retained; mission issues link here when the heading and issue language support a candidate match. This is not a DSP completion record.</p>
 {% for log in tracker.fix_log.sections %}
 <details class="assault-detail" id="assault-fix-{{ log.id }}">
@@ -369,6 +396,7 @@
   <div class="assault-comments">{{ log.text }}</div>
 </details>
 {% endfor %}
+</details>
 <script>
 (function(){
   function reveal(){
@@ -381,6 +409,20 @@
       panel.scrollIntoView({block:'start'});
     }
   }
+  const q=document.getElementById('afText'),z=document.getElementById('afZone'),st=document.getElementById('afStatus'),cnt=document.getElementById('afCount');
+  const ms=[...document.querySelectorAll('.assault-mission')];
+  function filt(){
+    const t=q.value.trim().toLowerCase();let n=0;
+    ms.forEach(m=>{
+      const s=m.dataset.status,ok=(!z.value||m.dataset.zone===z.value)&&(!st.value||(st.value==='other'?s!=='blocked'&&s!=='validated':s===st.value))&&(!t||m.textContent.toLowerCase().includes(t));
+      m.style.display=ok?'':'none';if(ok)n++;
+    });
+    cnt.textContent=n+' of '+ms.length+' missions shown';
+  }
+  [q,z,st].forEach(e=>e&&e.addEventListener('input',filt));
+  document.getElementById('afOpen')?.addEventListener('click',()=>ms.forEach(m=>{if(m.style.display!=='none')m.open=true;}));
+  document.getElementById('afClose')?.addEventListener('click',()=>ms.forEach(m=>{m.open=false;}));
+  filt();
   window.addEventListener('hashchange',reveal);
   reveal();
 })();

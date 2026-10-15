@@ -22,6 +22,7 @@
     nm_specific:{label:'NM-specific scripted behavior',kind:'simple',proc:14,chance:100,handoff:true},
   };
 
+  const EMPTY = {label:'No effect selected',kind:'none'};
   const row = (modId, value) => ({modId, value:Number(value)||0});
   const currentLineage = () => {
     const select = document.getElementById('srv');
@@ -83,7 +84,7 @@ end;
   card.innerHTML = `
     <h3>Weapon Effects <span class="hint">extra effect that can trigger on hit; staged only until you Save Item</span></h3>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;align-items:end">
-      <label>Preset<select id="weaponEffectPreset">${Object.entries(PRESETS).map(([k,p])=>`<option value="${k}">${p.label}</option>`).join('')}</select></label>
+      <label>Preset<select id="weaponEffectPreset"><option value="">Select…</option>${Object.entries(PRESETS).map(([k,p])=>`<option value="${k}">${p.label}</option>`).join('')}</select></label>
       <label>Chance %<input id="weaponEffectChance" type="number" min="0" max="100" value="20"></label>
       <label>Damage / amount<input id="weaponEffectDamage" type="number" value="25"></label>
       <label>Status ID<input id="weaponEffectStatus" type="number" min="0" value="0"></label>
@@ -107,7 +108,7 @@ end;
   const $ = id => document.getElementById(id);
   const latentId = () => (typeof pickerValue === 'function' && typeof LATENT_NAMES !== 'undefined') ? pickerValue('weaponEffectLatentName', LATENT_NAMES) : null;
   function values(){
-    const key=$('weaponEffectPreset').value, p=PRESETS[key], proc=p.proc || 1;
+    const key=$('weaponEffectPreset').value, p=PRESETS[key] || EMPTY, proc=p.proc || 1;
     const vals={key,p,proc,chance:Number($('weaponEffectChance').value),damage:Number($('weaponEffectDamage').value),status:Number($('weaponEffectStatus').value),power:Number($('weaponEffectPower').value),duration:Number($('weaponEffectDuration').value)};
     const rows=[row(431,proc)];
     if(p.subeffect) rows.push(row(499,p.subeffect));
@@ -121,6 +122,7 @@ end;
   }
   function applyPresetDefaults(){
     const p=PRESETS[$('weaponEffectPreset').value];
+    if(!p){ refresh(); return; }
     $('weaponEffectChance').value=p.chance ?? 20;
     $('weaponEffectDamage').value=p.damage ?? 0;
     $('weaponEffectPower').value=p.power ?? 1;
@@ -137,7 +139,7 @@ end;
       meta?`Condition ${lid} ${meta.name}: ${meta.comment||'no description'}${meta.param_semantics?'':' - the server source does not document what the value means; leave 0 unless you know.'}`:`Condition ${lid}: no description available in the active server tree.`;
     $('weaponEffectCapability').textContent=`${lineage} · ${cap}`;
     $('weaponEffectPrimary').textContent='Add to item';
-    $('weaponEffectPrimary').disabled=cap==='unsupported';
+    $('weaponEffectPrimary').disabled=cap==='unsupported' || !$('weaponEffectPreset').value;
     $('weaponEffectCopyHandoff').style.display=cap==='row-only'?'none':'';
     $('weaponEffectNote').textContent=cap==='row-only'?'':cap==='server-code-required'?'This effect type needs server-side handler code. Adding writes the rows, but nothing will happen in game until that handler exists; use Copy server handoff for the spec.':cap==='verify-lineage'?(lineage==='DSP'?'DSP: the item only gets effect 431 = 1, which means "this item has a script-driven proc". The actual effect (chance, damage, message) lives in scripts/globals/items/<item>.lua onAdditionalEffect; use Copy server handoff to get a ready Lua file for elemental damage presets. Chance/amount here only fill that script.':'Rows are added to the item; confirm the active server tree has a handler for this proc type before relying on it.'):'';
     $('weaponEffectPreview').textContent=`${v.p.label} · ${v.chance}%${v.damage?` · amount ${v.damage}`:''}${v.status?` · status ${v.status}`:''}\n`+
@@ -154,6 +156,7 @@ end;
     catch{ $('weaponEffectPreview').textContent+='\n'+text; }
   }
   function stage(){
+    if(!$('weaponEffectPreset').value) return;
     const v=values(), lineage=currentLineage(), cap=capability(v.p,lineage);
     if(cap==='unsupported'){ return; }
     let rows=v.rows;
@@ -172,5 +175,23 @@ end;
   document.getElementById('srv')?.addEventListener('change',refresh);
   $('weaponEffectPrimary').onclick=stage;
   $('weaponEffectCopyHandoff').onclick=copyHandoff;
+  // Preselect the effect already on the item (mods 431 proc, 499 subeffect, 950 element); otherwise "Select…".
+  function syncFromItem(){
+    const mods=(typeof loadedEffects!=='undefined' && loadedEffects.mods)||[], val=id=>{ const m=mods.find(r=>Number(r.modId)===id); return m?Number(m.value):null; };
+    const proc=val(431), sub=val(499), ele=val(950); let key='';
+    if(proc!=null){
+      const hit=Object.entries(PRESETS).filter(([,p])=>(p.proc||1)===proc);
+      key=(hit.find(([,p])=>p.subeffect!=null && p.subeffect===sub && (p.element==null||ele==null||p.element===ele)) || hit.find(([,p])=>p.subeffect==null) || hit[0] || [''])[0];
+    }
+    $('weaponEffectPreset').value=key;
+    if(key){
+      const p=PRESETS[key], c=val(501), d=val(500);
+      applyPresetDefaults();
+      if(c!=null) $('weaponEffectChance').value=c;
+      if(d!=null && p.damage!=null) $('weaponEffectDamage').value=d;
+    }
+    refresh();
+  }
+  document.addEventListener('ie:effects-loaded',syncFromItem);
   applyPresetDefaults();
 })();
