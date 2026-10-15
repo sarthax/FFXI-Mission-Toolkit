@@ -4771,21 +4771,66 @@ def zones_browse(request: Request, zone: str = "", tag: str = "", page: int = 1)
 
 
 @app.get("/gaps", response_class=HTMLResponse)
-def gaps_browse(request: Request, zone: str = "", mode: str = "zero_position"):
+def gaps_browse(request: Request, zone: str = "", mode: str = "compare",
+                mismatch: str = "", source: str = "all"):
+    from workbench.devtools.research.entity_mismatch_report import build_report, KINDS
     con = get_con()
     zones = con.execute("SELECT zoneid, name FROM zones WHERE zoneid > 0 ORDER BY name").fetchall()
-    rows = []
-    if zone:
-        zoneid = build_sql_index.resolve_zoneid_for_report(con, zone)
-        if zoneid is not None:
-            if mode == "unregistered":
+    rows, report, problem = [], None, ""
+    try:
+        if zone:
+            zoneid = build_sql_index.resolve_zoneid_for_report(con, zone)
+            if zoneid is None:
+                problem = "Unknown zone; choose an indexed zone."
+            elif mode == "compare":
+                chosen = ("dsp", "lsb") if source == "all" else (source,)
+                if source not in ("all", "dsp", "lsb") or (mismatch and mismatch not in KINDS):
+                    problem = "Invalid comparison filter."
+                else:
+                    report = build_report(DB_PATH, zoneid, sources=chosen, kind=mismatch or None)
+            elif mode == "unregistered":
                 rows = build_sql_index.query_unregistered(con, zoneid)
             else:
                 rows = build_sql_index.query_zero_position(con, zoneid)
-    con.close()
+    except (sqlite3.Error, OSError, ValueError) as exc:
+        problem = str(exc)
+    finally:
+        con.close()
     return templates.TemplateResponse(request, "gaps.html", {
         "zone": zone, "mode": mode, "zones": zones, "rows": rows,
+        "report": report, "problem": problem, "mismatch": mismatch,
+        "source": source, "mismatch_kinds": KINDS,
     })
+
+
+@app.get("/gaps/report")
+def gaps_report(zone: str, mismatch: str = "", source: str = "all",
+                format: str = "json"):
+    from workbench.devtools.research.entity_mismatch_report import build_report, KINDS
+    if source not in ("all", "dsp", "lsb") or (mismatch and mismatch not in KINDS):
+        raise HTTPException(status_code=400, detail="Invalid report filter")
+    if format not in ("json", "csv"):
+        raise HTTPException(status_code=400, detail="Invalid export format")
+    con = get_con()
+    try:
+        zoneid = build_sql_index.resolve_zoneid_for_report(con, zone)
+    finally:
+        con.close()
+    if zoneid is None:
+        raise HTTPException(status_code=404, detail="Zone not indexed")
+    report = build_report(DB_PATH, zoneid,
+                          sources=("dsp", "lsb") if source == "all" else (source,),
+                          kind=mismatch or None)
+    if format == "json":
+        return JSONResponse(report)
+    output = io.StringIO()
+    fields = ("zone", "source", "type", "entity_id", "client_name",
+              "server_name", "table", "detail", "confidence")
+    writer = csv.DictWriter(output, fieldnames=fields)
+    writer.writeheader()
+    writer.writerows(report["rows"])
+    return Response(output.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": f'attachment; filename="entity-gaps-zone-{zoneid}.csv"'})
 
 
 SQL_TABLES = {
