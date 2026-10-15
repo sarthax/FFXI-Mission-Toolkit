@@ -19,6 +19,8 @@ from workbench.runtime.paths import GUI_ROOT
 from .audit_gui import router as audit_router
 from .blacklist_transactions import apply_blacklist_edit, blacklist_rows, build_blacklist_edit_plan
 from .category_data import build_category_payload
+from .voidwatch_edit_transactions import apply_voidwatch_edit, build_voidwatch_edit_plan, voidwatch_state
+from .voidwatch_reset_transactions import apply_voidwatch_reset, build_voidwatch_reset_plan
 from .factory import open_character_editor
 from .equipment_augments import (
     apply_augment_plan, apply_equip_plan, augment_catalog, build_augment_plan, build_equip_plan, equipment_state, inventory_augmentables,
@@ -225,6 +227,71 @@ async def character_editor_apply_blacklist(char_id: int, request: Request):
             if isinstance(expected_before, bool) and plan.present_before is not expected_before:
                 raise HTTPException(status_code=409, detail="Blacklist state changed since preview; preview the edit again")
             return JSONResponse(_safe(apply_blacklist_edit(ctx.service.connection, plan, approved=True)))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.get("/characters/{char_id}/voidwatch.json")
+def character_editor_voidwatch_state(char_id: int):
+    try:
+        with _context() as ctx:
+            return JSONResponse(_safe(voidwatch_state(ctx.service.connection, char_id=char_id, server_root=get_active_server_root(),
+                                                      adapter_family=ctx.service.adapter_family)))
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.post("/characters/{char_id}/voidwatch-edit/preview")
+async def character_editor_preview_voidwatch_edit(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        with _context() as ctx:
+            plan = build_voidwatch_edit_plan(ctx.service.connection, char_id=char_id, server_root=get_active_server_root(),
+                                             adapter_family=ctx.service.adapter_family, edits=body.get("edits") or [])
+            return JSONResponse(_safe({k: v for k, v in plan.items() if not k.startswith("_")}))
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.post("/characters/{char_id}/voidwatch-edit/apply")
+async def character_editor_apply_voidwatch_edit(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        if body.get("approved") is not True:
+            raise HTTPException(status_code=400, detail="Explicit approved=true confirmation is required")
+        with _context() as ctx:
+            plan = build_voidwatch_edit_plan(ctx.service.connection, char_id=char_id, server_root=get_active_server_root(),
+                                             adapter_family=ctx.service.adapter_family, edits=body.get("edits") or [])
+            return JSONResponse(_safe(apply_voidwatch_edit(ctx.service.connection, plan, approved=True)))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.post("/characters/{char_id}/voidwatch-reset/preview")
+async def character_editor_preview_voidwatch_reset(char_id: int):
+    try:
+        with _context() as ctx:
+            plan = build_voidwatch_reset_plan(ctx.service.connection, char_id=char_id, server_root=get_active_server_root(),
+                                              adapter_family=ctx.service.adapter_family)
+            return JSONResponse(_safe(plan.as_dict()))
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.post("/characters/{char_id}/voidwatch-reset/apply")
+async def character_editor_apply_voidwatch_reset(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        if body.get("approved") is not True:
+            raise HTTPException(status_code=400, detail="Explicit approved=true confirmation is required")
+        with _context() as ctx:
+            plan = build_voidwatch_reset_plan(ctx.service.connection, char_id=char_id, server_root=get_active_server_root(),
+                                              adapter_family=ctx.service.adapter_family)
+            return JSONResponse(_safe(apply_voidwatch_reset(ctx.service.connection, plan, approved=True)))
     except HTTPException:
         raise
     except Exception as exc:
