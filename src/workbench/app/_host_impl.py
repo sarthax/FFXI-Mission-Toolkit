@@ -9852,6 +9852,23 @@ def zoneplot2_page(request: Request):
     return templates.TemplateResponse(request, "zone_plot2.html", {"request": request})
 
 
+@app.get("/zones/{zoneid}/entity-index-match.json")
+def zone_entity_index_match(zoneid: int, entity_id: int, source: str = "dsp"):
+    """On-demand, read-only indexed evidence; never use an Ashita client slot."""
+    from workbench.devtools.research.entity_live_reconciliation import reconcile_reported_id
+    try:
+        result = reconcile_reported_id(DB_PATH, zone=zoneid,
+                                       server_entity_id=entity_id, source=source)
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    except (OSError, sqlite3.Error) as exc:
+        # A missing/unbuilt local index is not evidence of a missing entity.
+        return JSONResponse({"source": source, "zone": zoneid, "server_entity_id": entity_id,
+                             "status": "unavailable", "matches": [],
+                             "note": "Indexed source database unavailable"})
+    return JSONResponse(result)
+
+
 @app.get("/zoneplot/server.json")
 def zoneplot_server_get():
     from workbench.runtime import settings_store as settings

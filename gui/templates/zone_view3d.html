@@ -1527,6 +1527,35 @@ function inspectEntity(entity) {
       entityInspectorLinks.appendChild(action);
     }
   }
+  if (entity.live_observation && /^\\d+$/.test(id)) {
+    const check = document.createElement('button');
+    check.type = 'button';
+    check.textContent = 'Check DSP indexed ID';
+    check.title = 'Read-only index lookup; not proof of a runtime spawn';
+    check.addEventListener('click', async () => {
+      check.disabled = true;
+      const priorEntity = selectedEntity;
+      const priorId = id;
+      inspectorFeedback.textContent = 'Checking DSP index…';
+      try {
+        const url = '/zones/' + encodeURIComponent(ZONEID) +
+          '/entity-index-match.json?source=dsp&entity_id=' + encodeURIComponent(priorId);
+        const response = await fetch(url);
+        if (!response.ok) throw Error('Index lookup HTTP ' + response.status);
+        const match = await response.json();
+        if (selectedEntity !== priorEntity) return;
+        const records = (match.matches || []).map(row => row.kind + ': ' + row.name).join('; ');
+        inspectorFeedback.textContent = 'DSP index: ' + match.status + ' — ' +
+          (records || match.note || 'No indexed evidence') +
+          ' (indexed match is not runtime verification)';
+      } catch (err) {
+        if (selectedEntity === priorEntity) inspectorFeedback.textContent = 'Index unavailable: ' + err.message;
+      } finally {
+        check.disabled = false;
+      }
+    });
+    entityInspectorLinks.appendChild(check);
+  }
   entityInspector.hidden = false;
 }
 const inspectorFeedback = document.getElementById('zone3d-inspector-feedback');
