@@ -1477,19 +1477,27 @@ function inspectEntity(entity) {
       lines.push('Last observed: ' + new Date(entity.observed_at * 1000).toLocaleString());
       lines.push('Observation age: ' + liveEntityAgeSeconds(entity).toFixed(1) + 's' + (liveEntityAgeSeconds(entity) > 3 ? ' · STALE' : ''));
     }
+    // Compare against the complete loaded source, not the current visibility filter.
+    // A capture spatial overlay is not authoritative server spawn configuration.
+    const mapSourceIsCapture = Boolean(CAPTURE_SPATIAL_URL);
     const matches = entity.server_entity_id == null ? [] :
-      spawnEntities.filter(e => String(e.id ?? '') === String(entity.server_entity_id));
+      spawnEntitiesAll.filter(e => String(e.id ?? '') === String(entity.server_entity_id));
     if (matches.length === 1) {
       const spawn = matches[0];
-      lines.push('Server map record: ' + (spawn.n || 'Unnamed') + ' · ' + (spawn.k || '?'));
+      lines.push((mapSourceIsCapture ? 'Capture map observation: ' : 'Server zone-data record: ') +
+        (spawn.n || 'Unnamed') + ' · ' + (spawn.k || '?'));
+      lines.push('Match basis: exact reported entity ID, same displayed zone; identity not independently verified');
       if ([spawn.x, spawn.y, spawn.z].every(Number.isFinite)) {
-        lines.push('Configured XYZ: ' + [spawn.x, spawn.y, spawn.z].map(v => v.toFixed(2)).join(', '));
-        lines.push('Live-to-record distance: ' + Math.hypot(entity.x - spawn.x, entity.y - spawn.y, entity.z - spawn.z).toFixed(2) + ' (movement may be expected)');
+        lines.push((mapSourceIsCapture ? 'Capture-recorded XYZ: ' : 'Map-record XYZ: ') +
+          [spawn.x, spawn.y, spawn.z].map(v => v.toFixed(2)).join(', '));
+        lines.push('Live-to-record distance: ' + Math.hypot(entity.x - spawn.x, entity.y - spawn.y, entity.z - spawn.z).toFixed(2) + ' (not automatically a data error)');
       }
       if (spawn.model != null && entity.model != null && String(spawn.model) !== String(entity.model))
         lines.push('Model difference: live ' + entity.model + ' / configured ' + spawn.model);
     } else {
-      lines.push('Server map record: ' + (matches.length ? 'ambiguous (' + matches.length + ' records)' : 'no exact reported-ID match'));
+      lines.push((mapSourceIsCapture ? 'Capture map observation: ' : 'Server zone-data record: ') +
+        (matches.length ? 'ambiguous (' + matches.length + ' matching IDs)' : 'no exact reported-ID match'));
+      if (entity.server_entity_id == null) lines.push('Match unavailable: no reported server ID');
     }
   }
   if (entity.model != null) lines.push('Model: ' + entity.model);
