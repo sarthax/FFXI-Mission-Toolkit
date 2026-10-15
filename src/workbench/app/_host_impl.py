@@ -9623,6 +9623,8 @@ def assault_domain_page(request: Request, zone: str = "", backlog_status: str = 
                               for stage in ("topaz", "dsp_port", "dsp_validation")}
         section["history"] = [r for r in shared_data["history"] if r["topic"] == section["title"]]
         section["missions"] = [r["mission"] for r in shared_data["links"] if r["topic"] == section["title"]]
+    from workbench.domains.assault_dependency_suggestions import suggest
+    suggest(tracker["shared"], tracker["missions"])
     rows, history = all_reviews()
     from workbench.domains.assault_issue_reviews import read as issue_review_read
     issue_rows, issue_history = issue_review_read()
