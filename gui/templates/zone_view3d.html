@@ -152,6 +152,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
   <datalist id="ashita-live-clients"></datalist>
   <label>Refresh <select id="ashita-live-refresh"><option value="1000">1 Hz</option><option value="200">5 Hz</option><option value="100" selected>10 Hz</option><option value="50">20 Hz</option></select></label>
   <label><input id="ashita-live-entities" type="checkbox" checked> Nearby entities</label>
+  <label>Find live entity <input id="ashita-entity-search" type="search" placeholder="Name, server ID or slot" style="width:165px" aria-label="Filter observed entities"></label>
   <label>Observed entity <select id="ashita-entity-select"><option value="">Select observed entity</option></select></label>
   <button type="button" id="ashita-entity-inspect" disabled>Inspect observed entity</button>
   <span id="ashita-entity-count" class="muted mono" role="status">No live entities</span>
@@ -713,6 +714,35 @@ let liveSelectedEntityId = '';
 const liveEntitySelect = document.getElementById('ashita-entity-select');
 const liveEntityInspect = document.getElementById('ashita-entity-inspect');
 const liveEntityCount = document.getElementById('ashita-entity-count');
+const liveEntitySearch = document.getElementById('ashita-entity-search');
+function liveEntityMatchesFilter(entity) {
+  const needle = liveEntitySearch.value.trim().toLowerCase();
+  if (!needle) return true;
+  return [entity.n, entity.server_entity_id, entity.client_index].some(
+    value => value != null && String(value).toLowerCase().includes(needle));
+}
+function liveEntityAgeSeconds(entity) {
+  const age = Date.now() / 1000 - Number(entity.observed_at);
+  return Number.isFinite(age) ? Math.max(0, age) : Infinity;
+}
+function updateLiveEntityVisibility() {
+  let shown = 0, stale = 0;
+  for (const marker of liveEntityPool) {
+    const entity = liveObservedEntities[marker.userData.liveEntityIndex];
+    const isStale = entity ? liveEntityAgeSeconds(entity) > 3 : true;
+    marker.visible = Boolean(entity && liveEntityMatchesFilter(entity) && !isStale);
+    if (marker.visible) shown++;
+    if (entity && isStale) stale++;
+  }
+  liveEntityCount.textContent = shown + '/' + liveObservedEntities.length +
+    ' live entities shown' + (stale ? ' · ' + stale + ' stale hidden' : '') +
+    (liveEntitySearch.value.trim() ? ' · filtered' : '');
+  highlightObservedEntity();
+}
+liveEntitySearch.addEventListener('input', () => {
+  updateLiveEntityPicker();
+  updateLiveEntityVisibility();
+});
 function highlightObservedEntity() {
   for (const marker of liveEntityPool) {
     const entity = liveObservedEntities[marker.userData.liveEntityIndex];
@@ -727,7 +757,9 @@ function updateLiveEntityPicker() {
   // browser's menu is open resets keyboard/mouse selection to the placeholder.
   const selectedId = liveSelectedEntityId;
   const options = liveObservedEntities.map((e, i) =>
-    ({value: String(e.server_entity_id ?? ('slot:' + e.client_index)), label: (e.n || 'Unnamed') + ' [' + (e.server_entity_id ?? ('slot ' + e.client_index)) + ']', index: i}));
+    ({value: String(e.server_entity_id ?? ('slot:' + e.client_index)), label: (e.n || 'Unnamed') + ' [' + (e.server_entity_id ?? ('slot ' + e.client_index)) + ']', index: i}))
+    .filter(e => liveEntityMatchesFilter(liveObservedEntities[e.index]) &&
+      liveEntityAgeSeconds(liveObservedEntities[e.index]) <= 3);
   const signature = JSON.stringify(options.map(e => [e.value, e.label]));
   if (liveEntitySelect.dataset.signature !== signature) {
     liveEntitySelect.replaceChildren(new Option('Select observed entity', ''));
@@ -738,8 +770,7 @@ function updateLiveEntityPicker() {
   if (liveEntitySelect.value !== (restored >= 0 ? String(restored) : ''))
     liveEntitySelect.value = restored >= 0 ? String(restored) : '';
   liveEntityInspect.disabled = liveEntitySelect.value === '';
-  liveEntityCount.textContent = liveObservedEntities.length + ' live entities';
-  highlightObservedEntity();
+  updateLiveEntityVisibility();
 }
 liveEntitySelect.addEventListener('change', () => {
   liveSelectedEntityId = liveEntitySelect.value === '' ? '' :
@@ -945,6 +976,7 @@ async function pollAshitaPosition() {
       }
     }
     updateLiveEntityPicker();
+    updateLiveEntityVisibility();
     liveStatus.textContent = (data.player.character || clientId) + ' · live · ' +
       position.x.toFixed(1) + ', ' + position.y.toFixed(1) + ', ' + position.z.toFixed(1) +
       (liveEntitiesToggle.checked ? ' · entities ' + entityCount +
@@ -1441,7 +1473,10 @@ function inspectEntity(entity) {
     if (Number.isFinite(entity.heading)) lines.push('Heading: ' + entity.heading.toFixed(3));
     if (entity.raw_status != null) lines.push('Raw status: ' + entity.raw_status);
     if (entity.raw_entity_type != null) lines.push('Raw type: ' + entity.raw_entity_type);
-    if (Number.isFinite(entity.observed_at)) lines.push('Last observed: ' + new Date(entity.observed_at * 1000).toLocaleString());
+    if (Number.isFinite(entity.observed_at)) {
+      lines.push('Last observed: ' + new Date(entity.observed_at * 1000).toLocaleString());
+      lines.push('Observation age: ' + liveEntityAgeSeconds(entity).toFixed(1) + 's' + (liveEntityAgeSeconds(entity) > 3 ? ' · STALE' : ''));
+    }
     const matches = entity.server_entity_id == null ? [] :
       spawnEntities.filter(e => String(e.id ?? '') === String(entity.server_entity_id));
     if (matches.length === 1) {
