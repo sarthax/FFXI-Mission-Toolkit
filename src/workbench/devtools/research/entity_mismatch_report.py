@@ -239,10 +239,17 @@ def main(argv=None):
     else:
         import io
         stream = io.StringIO()
-        fields = ("zone","source","type","entity_id","client_name","server_name","table","detail","confidence")
+        fields = ("zone","source","type","entity_id","client_name","server_name","table","detail","confidence",
+                  "values","field_flags")
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
-        writer.writerows(report["rows"])
+        for row in report["rows"]:
+            # Nested source evidence must remain exportable without breaking CSV's
+            # scalar field contract. JSON strings preserve nulls and provenance.
+            flat = dict(row)
+            for nested in ("values", "field_flags"):
+                flat[nested] = json.dumps(row[nested], ensure_ascii=False, sort_keys=True)
+            writer.writerow(flat)
         data = stream.getvalue()
     if args.output:
         args.output.write_text(data, encoding="utf-8")
