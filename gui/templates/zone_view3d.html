@@ -1563,6 +1563,9 @@ function refreshZoneCorrelation() {
     .map(k => k.replace('_',' ') + ': ' + (counts[k] || 0)).join(' · ');
   const filter = correlationFilter.value;
   const matching = rows.filter(r => filter === 'all' || r.kind === filter).slice(0,100);
+  const signature = JSON.stringify(matching.map(r => [r.id, r.kind, r.entity?.n, r.separation === null ? null : Math.round(r.separation * 10) / 10]));
+  if (correlationList.dataset.signature === signature) return;
+  correlationList.dataset.signature = signature;
   correlationList.replaceChildren();
   for (const row of matching) {
     const btn = document.createElement('button');
