@@ -1,276 +1,293 @@
 [
  {
-  "name": "At'euvhi",
   "zone": "Attohwa",
-  "tier": 1,
-  "keyitems": [
-   "Clear Demilune (1564)",
-   "Colorful Demilune (1565)"
-  ],
-  "atma": []
- },
- {
-  "name": "Brooder",
-  "zone": "La Theine",
-  "tier": null,
-  "keyitems": [
-   "Colorful Demilune (1565)",
-   "Scarlet Demilune (1566)"
-  ],
-  "atma": []
- },
- {
-  "name": "Brulo",
-  "zone": "Altepa",
-  "tier": null,
-  "keyitems": [
-   "Emerald Demilune (1652)"
-  ],
-  "atma": [
-   "Atma of the Burning Effigy"
+  "colour": "Jade",
+  "colour_ki": 1649,
+  "note": "FFXIclopedia+BG",
+  "tiers": [
+   {
+    "tier": 1,
+    "nms": [
+     "At'euvhi"
+    ],
+    "pop": "Clear Demilune (1564)",
+    "drops": "Colorful Demilune (1565) chance"
+   },
+   {
+    "tier": 2,
+    "nms": [
+     "Es'euvhi"
+    ],
+    "pop": "Colorful Demilune (1565)",
+    "drops": "Jade Demilune (1649) chance"
+   },
+   {
+    "tier": 3,
+    "nms": [
+     "Lusca"
+    ],
+    "pop": "Jade Demilune (1649), shatters on pop",
+    "drops": "Atma of the Demonic Skewer"
+   }
   ]
  },
  {
-  "name": "Chione",
+  "zone": "Misareaux",
+  "colour": "Sapphire",
+  "colour_ki": 1650,
+  "note": "",
+  "tiers": [
+   {
+    "tier": 1,
+    "nms": [
+     "Mi'ghrah"
+    ],
+    "pop": "Clear Demilune (1564)",
+    "drops": "Colorful Demilune (1565) chance"
+   },
+   {
+    "tier": 2,
+    "nms": [
+     "Mx'ghrah"
+    ],
+    "pop": "Colorful Demilune (1565)",
+    "drops": "Sapphire Demilune (1650) chance"
+   },
+   {
+    "tier": 3,
+    "nms": [
+     "Tristitia"
+    ],
+    "pop": "Sapphire Demilune (1650), shatters on pop",
+    "drops": "Atma of the Bludgeoning Brute"
+   }
+  ]
+ },
+ {
+  "zone": "La Theine",
+  "colour": "Scarlet",
+  "colour_ki": 1566,
+  "note": "",
+  "tiers": [
+   {
+    "tier": 1,
+    "nms": [
+     "Meditator"
+    ],
+    "pop": "Clear Demilune (1564)",
+    "drops": "Colorful Demilune (1565) chance"
+   },
+   {
+    "tier": 2,
+    "nms": [
+     "Brooder"
+    ],
+    "pop": "Colorful Demilune (1565)",
+    "drops": "Scarlet Demilune (1566) chance"
+   },
+   {
+    "tier": 3,
+    "nms": [
+     "Ruminator"
+    ],
+    "pop": "Scarlet Demilune (1566), shatters on pop",
+    "drops": "Atma of Eternity"
+   }
+  ]
+ },
+ {
+  "zone": "Konschtat",
+  "colour": "Azure",
+  "colour_ki": 1567,
+  "note": "Hadal Mirror x3 are adds spawned by Hadal Satiator's Fission",
+  "tiers": [
+   {
+    "tier": 1,
+    "nms": [
+     "Meanderer"
+    ],
+    "pop": "Clear Demilune (1564)",
+    "drops": "Colorful Demilune (1565) chance"
+   },
+   {
+    "tier": 2,
+    "nms": [
+     "Depths Digester"
+    ],
+    "pop": "Colorful Demilune (1565)",
+    "drops": "Azure Demilune (1567) chance"
+   },
+   {
+    "tier": 3,
+    "nms": [
+     "Hadal Satiator"
+    ],
+    "pop": "Azure Demilune (1567), shatters on pop",
+    "drops": "Atma of the Beyond"
+   }
+  ]
+ },
+ {
+  "zone": "Altepa",
+  "colour": "Emerald",
+  "colour_ki": 1652,
+  "note": "Tier I are ordinary elementals (BG Wiki: rest within 5 yalms with Clear Demilune)",
+  "tiers": [
+   {
+    "tier": 1,
+    "nms": [
+     "Fire Elemental",
+     "Earth Elemental"
+    ],
+    "pop": "Clear Demilune (1564)",
+    "drops": "Colorful Demilune (1565) chance"
+   },
+   {
+    "tier": 2,
+    "nms": [
+     "Koios"
+    ],
+    "pop": "Colorful Demilune (1565)",
+    "drops": "Emerald Demilune (1652) chance"
+   },
+   {
+    "tier": 3,
+    "nms": [
+     "Brulo"
+    ],
+    "pop": "Emerald Demilune (1652), shatters on pop",
+    "drops": "Atma of the Burning Effigy"
+   }
+  ]
+ },
+ {
   "zone": "Uleguerand",
-  "tier": null,
-  "keyitems": [
-   "Colorful Demilune (1565)",
-   "Vermillion Demilune (1653)"
-  ],
-  "atma": []
+  "colour": "Vermillion",
+  "colour_ki": 1653,
+  "note": "Tier I are ordinary elementals (BG Wiki)",
+  "tiers": [
+   {
+    "tier": 1,
+    "nms": [
+     "Ice Elemental",
+     "Water Elemental"
+    ],
+    "pop": "Clear Demilune (1564)",
+    "drops": "Colorful Demilune (1565) chance"
+   },
+   {
+    "tier": 2,
+    "nms": [
+     "Chione"
+    ],
+    "pop": "Colorful Demilune (1565)",
+    "drops": "Vermillion Demilune (1653) chance"
+   },
+   {
+    "tier": 3,
+    "nms": [
+     "Ogopogo"
+    ],
+    "pop": "Vermillion Demilune (1653), shatters on pop",
+    "drops": "Atma of the Lake Lurker"
+   }
+  ]
  },
  {
-  "name": "Dark Elemental",
   "zone": "Grauberg",
-  "tier": null,
-  "keyitems": [
-   "Clear Demilune (1564)"
-  ],
-  "atma": []
- },
- {
-  "name": "Depths Digester",
-  "zone": "Konschtat",
-  "tier": null,
-  "keyitems": [
-   "Colorful Demilune (1565)",
-   "Azure Demilune (1567)"
-  ],
-  "atma": []
- },
- {
-  "name": "Earth Elemental",
-  "zone": "Altepa",
-  "tier": null,
-  "keyitems": [
-   "Colorful Demilune (1565)"
-  ],
-  "atma": []
- },
- {
-  "name": "Es'euvhi",
-  "zone": "Attohwa",
-  "tier": 2,
-  "keyitems": [
-   "Colorful Demilune (1565)",
-   "Jade Demilune (1649)"
-  ],
-  "atma": []
- },
- {
-  "name": "Fire Elemental",
-  "zone": "Altepa",
-  "tier": null,
-  "keyitems": [
-   "Colorful Demilune (1565)"
-  ],
-  "atma": []
- },
- {
-  "name": "Gamayun",
-  "zone": "Grauberg",
-  "tier": null,
-  "keyitems": [
-   "Colorful Demilune (1565)",
-   "Indigo Demilune (1654)"
-  ],
-  "atma": []
- },
- {
-  "name": "Hadal Satiator",
-  "zone": "Konschtat",
-  "tier": null,
-  "keyitems": [
-   "Azure Demilune (1567)"
-  ],
-  "atma": [
-   "Atma of the Beyond"
+  "colour": "Indigo",
+  "colour_ki": 1654,
+  "note": "Tier I are ordinary elementals (BG Wiki)",
+  "tiers": [
+   {
+    "tier": 1,
+    "nms": [
+     "Air Elemental",
+     "Dark Elemental"
+    ],
+    "pop": "Clear Demilune (1564)",
+    "drops": "Colorful Demilune (1565) chance"
+   },
+   {
+    "tier": 2,
+    "nms": [
+     "Gamayun"
+    ],
+    "pop": "Colorful Demilune (1565)",
+    "drops": "Indigo Demilune (1654) chance"
+   },
+   {
+    "tier": 3,
+    "nms": [
+     "Maere"
+    ],
+    "pop": "Indigo Demilune (1654), shatters on pop",
+    "drops": "Atma of the Endless Nightmare"
+   }
   ]
  },
  {
-  "name": "Hm'Zdei",
   "zone": "Vunkerl",
-  "tier": null,
-  "keyitems": [
-   "Colorful Demilune (1565)",
-   "Crimson Demilune (1651)"
-  ],
-  "atma": []
+  "colour": "Crimson",
+  "colour_ki": 1651,
+  "note": "",
+  "tiers": [
+   {
+    "tier": 1,
+    "nms": [
+     "Vu'zdei"
+    ],
+    "pop": "Clear Demilune (1564)",
+    "drops": "Colorful Demilune (1565) chance"
+   },
+   {
+    "tier": 2,
+    "nms": [
+     "Hm'Zdei"
+    ],
+    "pop": "Colorful Demilune (1565)",
+    "drops": "Crimson Demilune (1651) chance"
+   },
+   {
+    "tier": 3,
+    "nms": [
+     "Ketea"
+    ],
+    "pop": "Crimson Demilune (1651), shatters on pop",
+    "drops": "Atma of the Demonic Lash"
+   }
+  ]
  },
  {
-  "name": "Hungerer",
   "zone": "Tahrongi",
-  "tier": null,
-  "keyitems": [
-   "Colorful Demilune (1565)"
-  ],
-  "atma": []
- },
- {
-  "name": "Ketea",
-  "zone": "Vunkerl",
-  "tier": null,
-  "keyitems": [
-   "Crimson Demilune (1651)"
-  ],
-  "atma": [
-   "Atma of the Demonic Lash"
+  "colour": "Viridian",
+  "colour_ki": 1568,
+  "note": "",
+  "tiers": [
+   {
+    "tier": 1,
+    "nms": [
+     "Hungerer"
+    ],
+    "pop": "Clear Demilune (1564)",
+    "drops": "Colorful Demilune (1565) chance"
+   },
+   {
+    "tier": 2,
+    "nms": [
+     "Yearner"
+    ],
+    "pop": "Colorful Demilune (1565)",
+    "drops": "Viridian Demilune (1568) chance"
+   },
+   {
+    "tier": 3,
+    "nms": [
+     "Usurper"
+    ],
+    "pop": "Viridian Demilune (1568), shatters on pop",
+    "drops": "Atma of the Siren Shadow"
+   }
   ]
- },
- {
-  "name": "Koios",
-  "zone": "Altepa",
-  "tier": null,
-  "keyitems": [
-   "Colorful Demilune (1565)",
-   "Emerald Demilune (1652)"
-  ],
-  "atma": []
- },
- {
-  "name": "Lusca",
-  "zone": "Attohwa",
-  "tier": 3,
-  "keyitems": [
-   "Jade Demilune (1649)"
-  ],
-  "atma": [
-   "Atma of the Demonic Skewer"
-  ]
- },
- {
-  "name": "Maere",
-  "zone": "Grauberg",
-  "tier": null,
-  "keyitems": [
-   "Indigo Demilune (1654)"
-  ],
-  "atma": [
-   "Atma of the Endless Nightmare"
-  ]
- },
- {
-  "name": "Meanderer",
-  "zone": "Konschtat",
-  "tier": null,
-  "keyitems": [
-   "Clear Demilune (1564)",
-   "Colorful Demilune (1565)"
-  ],
-  "atma": []
- },
- {
-  "name": "Meditator",
-  "zone": "La Theine",
-  "tier": null,
-  "keyitems": [
-   "Colorful Demilune (1565)"
-  ],
-  "atma": []
- },
- {
-  "name": "Mi'ghrah",
-  "zone": "Misareaux",
-  "tier": null,
-  "keyitems": [
-   "Clear Demilune (1564)",
-   "Colorful Demilune (1565)"
-  ],
-  "atma": []
- },
- {
-  "name": "Mx'ghrah",
-  "zone": "Misareaux",
-  "tier": null,
-  "keyitems": [
-   "Colorful Demilune (1565)",
-   "Sapphire Demilune (1650)"
-  ],
-  "atma": []
- },
- {
-  "name": "Ogopogo",
-  "zone": "Uleguerand",
-  "tier": null,
-  "keyitems": [
-   "Vermillion Demilune (1653)"
-  ],
-  "atma": [
-   "Atma of the Lake Lurker"
-  ]
- },
- {
-  "name": "Ruminator",
-  "zone": "La Theine",
-  "tier": null,
-  "keyitems": [
-   "Scarlet Demilune (1566)"
-  ],
-  "atma": [
-   "Atma of Eternity"
-  ]
- },
- {
-  "name": "Tristitia",
-  "zone": "Misareaux",
-  "tier": 3,
-  "keyitems": [
-   "Sapphire Demilune (1650)"
-  ],
-  "atma": [
-   "Atma of the Bludgeoning Brute"
-  ]
- },
- {
-  "name": "Usurper",
-  "zone": "Tahrongi",
-  "tier": null,
-  "keyitems": [
-   "Viridian Demilune (1568)"
-  ],
-  "atma": [
-   "Atma of the Siren Shadow"
-  ]
- },
- {
-  "name": "Vu'zdei",
-  "zone": "Vunkerl",
-  "tier": null,
-  "keyitems": [
-   "Clear Demilune (1564)",
-   "Colorful Demilune (1565)"
-  ],
-  "atma": []
- },
- {
-  "name": "Yearner",
-  "zone": "Tahrongi",
-  "tier": null,
-  "keyitems": [
-   "Colorful Demilune (1565)",
-   "Viridian Demilune (1568)"
-  ],
-  "atma": []
  }
 ]

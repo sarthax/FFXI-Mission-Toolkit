@@ -116,7 +116,7 @@ ABYSSEA = ("Exists, not built, not in LSB. FFXIclopedia 'Voidwalker Notorious Mo
            "Jade 1649, Sapphire 1650, Crimson 1651, Emerald 1652, Vermillion 1653, Indigo 1654; ids identical in LSB and DSP) inside the Abyssea zones "
            "(Attohwa, Misareaux, La Theine, Konschtat, Altepa, Uleguerand, Grauberg, Vunkerl, Tahrongi). Different NMs "
            "(At'euvhi, Es'euvhi, Lusca, Tristitia, Brulo, Ketea, Maere, Ogopogo, Ruminator, Usurper, Hadal Satiator and others), "
-           "Colorful Demilune upgrades to the next tier, top tiers drop Atma. DSP only references the key items (abyssea.lua, keyitems.lua, Cruor_Prospector). "
+           "Per zone: Tier I (Clear pop) -> Tier II (Colorful pop) -> Tier III (zone colour KI pop, drops Atma); 9 zone paths, no merge NM. DSP only references the key items (abyssea.lua, keyitems.lua, Cruor_Prospector). "
            "DECISION 2026-10-16: documented only; Valhalla's customised Abyssea zones are left untouched until the overworld path is finished. Full table: docs/voidwalker/ABYSSEA-BRANCH.md.")
 
 
@@ -209,7 +209,7 @@ def overview(root=None, conn=None) -> dict:
     import json as _j
     try: aby=_j.load(open(Path(__file__).resolve().parents[3]/"data"/"voidwalker"/"abyssea.json",encoding="utf-8"))
     except Exception: aby=[]
-    return {"abyssea_nms": aby, "npc": NPC, "abyssea": ABYSSEA, "wiki": wiki_coverage(names + ["Voidwalker", "Making Contact", "Assai Nybaem"]),
+    return {"abyssea_paths": aby, "npc": NPC, "abyssea": ABYSSEA, "wiki": wiki_coverage(names + ["Voidwalker", "Making Contact", "Assai Nybaem"]),
             "skills": skills_info(conn, root, names), "root": str(root), "areas": AREAS, "states": STATES, "tiers": tiers, "ki": KI, "nms": nms, "orphans": orphans, "backlog": backlog,
             "zones": [{"zone_id": z["zone_id"], "folder": z["folder"], "nms": len(z["mobs"]), "positions": z["positions"], "text": len(z["text"])} for z in zones],
             "db_checked": conn is not None,
