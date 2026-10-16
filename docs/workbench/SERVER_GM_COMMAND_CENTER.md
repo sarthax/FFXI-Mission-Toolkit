@@ -34,3 +34,14 @@ source modification is required for the planned GM path.
 ## Slice 2: Browser (implemented)
 
 The Server sidebar now links to `/server/gm`, a searchable, copy-only GM command browser. `/server/gm/commands` lists metadata read from the active local server checkout. No game command submission endpoint exists. If the server root is missing or lacks `scripts/commands`, the page reports the catalog error. This first UI pass is standalone HTML; shared-shell visual integration may be refined later.
+
+## Categories, usage and ID lookup (2026-10-15)
+
+- Each command carries `category`, `usage` (parsed from the command's own `!name <req> {opt}` help line) and `params`
+  (`label`, `required`, `type` from the `parameters` string, `lookup` kind). Categories come from an explicit name map in
+  `catalog.py`; unmapped commands land in "Other".
+- `GET /server/gm/lookup?kind=&q=&limit=` searches the active server's own tables (item, keyitem, title, effect, spell,
+  zone, mob, npc) by name or id prefix. IDs are read, never invented. Key item IDs come from the active server's
+  `keyitems.lua` because they drift between LSB and Topaz/DSP.
+- The page has category tabs, a left command list, and a right entry pane with per-parameter inputs, ID pickers, a live
+  preview and Copy. "Send to game" stays disabled: no command transport exists (the native plugin only does warp/speed).
