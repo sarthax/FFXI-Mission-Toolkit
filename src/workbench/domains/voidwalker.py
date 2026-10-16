@@ -203,6 +203,7 @@ def overview(root=None, conn=None) -> dict:
     except (OSError, ValueError):
         backlog = []
     tiers = [{"names": t, "count": sum(1 for n in nms if n["abyssite"] in t),
+              "nm": len({n["name"] for n in nms if n["abyssite"] in t}),
               "built": sum(1 for n in nms if n["abyssite"] in t and n["status"] == "built")} for t in TIERS]
     names = sorted({n["name"] for n in nms})
     import json as _j

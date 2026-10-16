@@ -14,7 +14,7 @@ function graph(){
   if(i<T.length-1)s+='<line x1="'+(x+w)+'" y1="'+(y+h/2)+'" x2="'+(x+w+gap-4)+'" y2="'+(y+h/2)+'" stroke="#888" stroke-width="2" marker-end="url(#vwm)"/><text x="'+(x+w+4)+'" y="'+(y+h/2-6)+'" font-size="10" fill="#888">1 in 10</text>';
   s+='<g class="vwt" data-k="'+key+'" style="cursor:pointer"><rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="8" fill="none" stroke="'+(on?'#2a7de1':'#888')+'" stroke-width="'+(on?3:1.5)+'"/>';
   s+='<text x="'+(x+w/2)+'" y="'+(y+22)+'" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">'+(t.names.length>1?'Colour tier':nice(t.names[0]))+'</text>';
-  s+='<text x="'+(x+w/2)+'" y="'+(y+40)+'" text-anchor="middle" font-size="11" fill="currentColor">'+t.count+' NMs, '+t.built+' built</text>';
+  s+='<text x="'+(x+w/2)+'" y="'+(y+40)+'" text-anchor="middle" font-size="11" fill="currentColor">'+(t.nm==null?t.count:t.nm)+' NMs, '+t.count+' spawns</text>';
   s+='<text x="'+(x+w/2)+'" y="'+(y+55)+'" text-anchor="middle" font-size="10" fill="#888">'+t.names.map(function(n){return O.ki[n];}).join('/')+'</text>';
   t.names.forEach(function(n,j){s+='<circle cx="'+(x+14+j*14)+'" cy="'+(y-12)+'" r="5" fill="'+COL[n]+'" stroke="#888"/>';});
   s+='</g>';
@@ -24,14 +24,14 @@ function graph(){
 }
 function strip(){
  var n=O.nms,b=n.filter(function(x){return x.status==='built';}).length,v=n.filter(function(x){return x.validation==='validated';}).length,p=n.filter(function(x){return x.validation==='partial';}).length,bad=n.filter(function(x){return x.validation==='issue';}).length;
- var c=[[n.length,'NMs'],[O.zones.length,'zones'],[b,'built'],[n.length-b,'with gaps'],[v,'validated'],[p,'partly validated'],[bad,'with issues'],[O.orphans.length,'orphan scripts']];
+ var dn={};n.forEach(function(x){dn[x.name]=1;});var c=[[Object.keys(dn).length,'distinct NMs'],[n.length,'NM spawns (NM x zone)'],[O.zones.length,'zones'],[b,'spawns built'],[n.length-b,'with gaps'],[v,'validated'],[p,'partly validated'],[bad,'with issues'],[O.orphans.length,'orphan scripts']];
  $('vw2-strip').innerHTML=c.map(function(x){return '<div class="cpcard"><b style="font-size:1.4em">'+x[0]+'</b><div class="muted">'+x[1]+'</div></div>';}).join('');
  $('vw2-srv').textContent=(O.db_checked?'Live DB cross-check on. ':'No DB connection: pool/spawn checks skipped. ')+'Source: '+O.root;
 }
 function table(){
- var q=$('vw2-q').value.toLowerCase(),st=$('vw2-st').value,vs=$('vw2-vs').value,z=$('vw2-z').value;
- var rows=O.nms.filter(function(x){return (!q||(x.name+x.zone).toLowerCase().indexOf(q)>=0)&&(!st||x.status===st)&&(!vs||x.validation===vs)&&(!z||String(x.zone_id)===z)&&(!sel||sel.split(',').indexOf(x.abyssite)>=0);});
- $('vw2-sum').textContent='Showing '+rows.length+' of '+O.nms.length+' NMs';
+ var q=$('vw2-q').value.toLowerCase(),st=$('vw2-st').value,vs=$('vw2-vs').value,z=$('vw2-z').value,nm=$('vw2-nm').value;
+ var rows=O.nms.filter(function(x){return (!q||(x.name+x.zone).toLowerCase().indexOf(q)>=0)&&(!st||x.status===st)&&(!vs||x.validation===vs)&&(!z||String(x.zone_id)===z)&&(!nm||x.name===nm)&&(!sel||sel.split(',').indexOf(x.abyssite)>=0);});
+ $('vw2-sum').textContent='Showing '+rows.length+' of '+O.nms.length+' spawns'+(nm?' of '+nm+' in '+new Set(rows.map(function(x){return x.zone_id;})).size+' zones, paths: '+Array.from(new Set(rows.map(function(x){return nice(x.abyssite);}))).join(', '):'');
  $('vw2-tb').innerHTML=rows.map(function(x){var d=x.db;
   return '<tr class="vwr" data-k="'+esc(x.key)+'" style="cursor:pointer"><td><b>'+esc(x.name)+'</b></td><td>'+esc(x.zone)+' ('+x.zone_id+')</td><td><span style="color:'+COL[x.abyssite]+'">&#9679;</span> '+nice(x.abyssite)+' '+x.ki_id+'</td><td>'+(x.upgrade?nice(x.upgrade):'<span class="muted">final</span>')+'</td><td class="mono">'+(d?(d.hp==null?'-':d.hp):'-')+'</td><td class="vwc1">'+chip(x.status)+(x.gaps.length?' <span style="color:#c0392b" title="'+esc(x.gaps.join('; '))+'">'+x.gaps.length+'</span>':'')+'</td><td class="vwc2">'+chip(x.validation)+'</td></tr>';}).join('');
  Array.prototype.forEach.call(document.querySelectorAll('.vwr'),function(r){r.addEventListener('click',function(){detail(r.dataset.k);});});
@@ -63,7 +63,7 @@ function extras(){
 function more(){
  var n=O.npc;
  $('vw2-npc').innerHTML='<div class="vwc vwc-ok"><b>'+esc(n.name)+'</b>, '+esc(n.zone)+' ('+n.zone_id+'), '+esc(n.pos)+'. Event '+n.event+', price '+n.price+' gil.<br>'+esc(n.desc)+'<br><span class="mono">'+esc(n.script)+'</span></div>';
- $('vw2-aby').innerHTML='<div class="vwc vwc-warn">'+esc(O.abyssea)+'</div><table class="vwt"><tr><th>NM</th><th>Zone</th><th>Tier</th><th>Key items</th><th>Atma</th></tr>'+(O.abyssea_nms||[]).map(function(n){return '<tr><td>'+esc(n.name)+'</td><td>'+esc(n.zone)+'</td><td>'+(n.tier||'')+'</td><td>'+esc(n.keyitems.join(', '))+'</td><td>'+esc(n.atma.join(', '))+'</td></tr>';}).join('')+'</table>';
+ $('vw2-aby').innerHTML='<div class="vwc vwc-warn">'+esc(O.abyssea)+'</div><table><tr><th>NM</th><th>Zone</th><th>Tier</th><th>Key items</th><th>Atma</th></tr>'+(O.abyssea_nms||[]).map(function(n){return '<tr><td>'+esc(n.name)+'</td><td>'+esc(n.zone)+'</td><td>'+(n.tier||'')+'</td><td>'+esc(n.keyitems.join(', '))+'</td><td>'+esc(n.atma.join(', '))+'</td></tr>';}).join('')+'</table>';
  var sk=O.skills||{},ks=Object.keys(sk).sort();
  $('vw2-skills').innerHTML=ks.length?'<table><thead><tr><th>NM</th><th>Pool</th><th>List</th><th>Skills</th></tr></thead><tbody>'+ks.map(function(k){var q=sk[k];return '<tr><td>'+esc(k)+'</td><td class="mono">'+q.pool+'</td><td class="mono">'+q.list+(q.list>=9000?' (own)':'')+'</td><td>'+q.skills.map(function(s){return '<span style="color:'+(s.lua?'inherit':'#c0392b')+'" title="'+(s.lua?'Lua present':'no Lua')+'">'+esc(s.name)+'</span>';}).join(', ')+'</td></tr>';}).join('')+'</tbody></table>':'<div class="muted">No DB connection.</div>';
  var w=O.wiki||{},wk=Object.keys(w).sort(),miss=wk.filter(function(k){return w[k].indexOf('BGWiki')<0&&w[k].indexOf('FFXIclopedia')<0;});
@@ -72,8 +72,8 @@ function more(){
 function load(){return fetch('/domains/voidwalker/overview.json').then(function(r){return r.json();}).then(function(j){O=j;strip();graph();table();extras();more();});}
 function init(){
  var z=$('vw2-z');
- load().then(function(){z.innerHTML='<option value="">All zones</option>'+O.zones.map(function(q){return '<option value="'+q.zone_id+'">'+esc(q.folder)+'</option>';}).join('');
-  ['vw2-q','vw2-st','vw2-vs','vw2-z'].forEach(function(i){$(i).oninput=$(i).onchange=table;});}).catch(function(e){$('vw2-sum').textContent='Failed to load: '+e.message;});
+ load().then(function(){$('vw2-nm').innerHTML='<option value="">All NMs</option>'+Array.from(new Set(O.nms.map(function(x){return x.name;}))).sort().map(function(n){return '<option>'+esc(n)+'</option>';}).join('');z.innerHTML='<option value="">All zones</option>'+O.zones.map(function(q){return '<option value="'+q.zone_id+'">'+esc(q.folder)+'</option>';}).join('');
+  ['vw2-q','vw2-st','vw2-vs','vw2-z','vw2-nm'].forEach(function(i){$(i).oninput=$(i).onchange=table;});}).catch(function(e){$('vw2-sum').textContent='Failed to load: '+e.message;});
 }
 init();
 })();

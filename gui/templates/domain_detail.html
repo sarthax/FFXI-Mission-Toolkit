@@ -97,7 +97,7 @@ th.vwc1,td.vwc1,th.vwc2,td.vwc2{width:120px;min-width:120px;white-space:nowrap}.
 <div id="vw2-graph" style="overflow-x:auto"></div>
 <p class="muted">Abyssite upgrade chain: a 1-in-10 chance on kill swaps the held abyssite for the next tier. Click a box to filter the table. Colours: ok = built or validated, warn = partial, bad = issue, grey = untested.</p>
 <h2>Voidwalker NMs</h2>
-<div><input id="vw2-q" placeholder="Search name or zone"> <select id="vw2-z"></select>
+<div><input id="vw2-q" placeholder="Search name or zone"> <select id="vw2-nm"></select> <select id="vw2-z"></select>
 <select id="vw2-st"><option value="">Any status</option><option>built</option><option>partial</option></select>
 <select id="vw2-vs"><option value="">Any validation</option><option>validated</option><option>partial</option><option>unvalidated</option><option>issue</option></select>
 <span id="vw2-sum" class="muted"></span></div>
@@ -122,7 +122,7 @@ th.vwc1,td.vwc1,th.vwc2,td.vwc2{width:120px;min-width:120px;white-space:nowrap}.
 <p class="muted">Community reference (Wings of the Goddess, "Invaders from Abyssea", wilddragonchase.blogspot.com, ver 0.975). Six paths, four tiers, the abyssite chain and pop rules. Reference only; verify against captures. Enhanced 2x (Lanczos + sharpen). Click to enlarge.</p>
 <div style="overflow:auto;max-height:80vh;border:1px solid var(--border,#444);border-radius:8px"><a href="/static/voidwalker/vnm_infographic.png" target="_blank"><img id="vw2-ref" src="/static/voidwalker/vnm_infographic.png" alt="Voidwalker NM system infographic" style="width:100%;max-width:1400px;display:block;margin:0 auto;cursor:zoom-in"></a></div>
 </section>
-<script src="/static/voidwalker.js?v=3"></script>
+<script src="/static/voidwalker.js?v=5"></script>
 {% endif %}
 
 {% if d.archetype == "system.run_geo" %}
