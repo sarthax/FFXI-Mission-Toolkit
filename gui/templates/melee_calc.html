@@ -23,7 +23,7 @@
  <div>
   <fieldset><legend>Weapons</legend><div class="g" id="f_w"></div></fieldset>
   <fieldset><legend>Your stats (base, before gear)</legend><div class="g" id="f_s"></div></fieldset>
-  <fieldset><legend>Buffs and traits not on gear</legend><div class="g" id="f_b"></div></fieldset>
+  <fieldset><legend>Buffs, merits and traits not from your job or gear</legend><div class="g" id="f_b"></div></fieldset>
   <fieldset><legend>Target</legend><div class="g" id="f_t"></div></fieldset>
   <fieldset><legend>Enspell and spikes</legend><div class="g" id="f_e"></div></fieldset>
  </div>
@@ -34,6 +34,7 @@
    <div class="stat"><div class="big" id="r_c">-</div><div class="l">TP per second</div></div>
   </div>
   <div class="muted" id="setup" style="margin:6px 0"></div>
+  <h3>From your gear</h3><div class="table-wrap"><table id="gearsum"></table></div>
   <h3>Stats</h3><div class="table-wrap"><table id="stats"></table></div>
   <h3>Hit, crit and damage</h3><div class="table-wrap"><table id="hits"></table></div>
   <h3>Swings per round</h3><div class="table-wrap"><table id="swings"></table></div>
@@ -45,6 +46,7 @@
  </div>
 </div>
 <script>
+window.PROFILE_LEVEL_KEY='level';
 const $=id=>document.getElementById(id);
 const num=(k,l,v)=>`<label>${l}<input data-k="${k}" type="number" step="any" value="${v}"></label>`;
 const sel=(k,l,opts)=>`<label>${l}<select data-k="${k}">${opts.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('')}</select></label>`;
@@ -52,7 +54,7 @@ const YN=[['false','No'],['true','Yes']];
 let timer=null;
 function build(M){const d=M.defaults,n=(k,l)=>num(k,l,d[k]);
  $('f_w').innerHTML=sel('use_gear','Use equipped weapons',[['true','Yes'],['false','No']])+sel('wtype','Weapon setup',[['auto','Auto'],['1h','One-hand'],['2h','Two-hand'],['h2h','Hand-to-hand'],['dw','Dual wield']])+
-  n('main_dmg','Main DMG (manual)')+n('main_delay','Main delay (manual)')+n('main_hits','Main hits')+n('sub_dmg','Sub DMG (manual)')+n('sub_delay','Sub delay (manual)')+n('sub_hits','Sub hits')+sel('ammo','Ammo swing (player extra)',YN);
+  n('main_dmg','Main DMG ')+n('main_delay','Main delay ')+n('main_hits','Main hits')+n('sub_dmg','Sub DMG ')+n('sub_delay','Sub delay ')+n('sub_hits','Sub hits')+sel('ammo','Ammo swing (player extra)',YN);
  $('f_s').innerHTML=n('level','Level')+n('skill','Melee skill')+n('base_str','STR')+n('base_dex','DEX')+n('att_buff','Attack (buffs)')+n('attp_buff','Attack % (buffs)')+n('acc_buff','Accuracy (buffs)');
  $('f_b').innerHTML=n('haste_magic','Magic haste (of 1024)')+n('haste_ability','Ability haste (of 1024)')+n('da_trait','Double attack %')+n('ta_trait','Triple attack %')+n('qa_trait','Quad attack %')+n('crit_trait','Crit rate %')+n('crit_dmg_trait','Crit damage %')+n('store_tp_trait','Store TP')+n('subtle_trait','Subtle blow')+n('dw_trait','Dual wield %')+n('regain_trait','Regain');
  $('f_t').innerHTML=n('t_level','Level')+n('t_def','Defense')+n('t_eva','Evasion')+n('t_vit','VIT')+n('t_agi','AGI')+sel('t_pc','Target is a player',YN);
@@ -68,7 +70,8 @@ async function calc(){
  const S=Object.fromEntries(r.summary);
  $('r_a').textContent=Math.round(S['Damage per second']).toLocaleString();$('r_b').textContent=Math.round(S['Damage per round']).toLocaleString();$('r_c').textContent=f0(S['TP per second']);
  const s=r.setup;$('setup').textContent=`${s.wtype}: main DMG ${s.main[0]} delay ${s.main[1]} hits ${s.main[2]}`+(s.sub?`; sub DMG ${s.sub[0]} delay ${s.sub[1]} hits ${s.sub[2]}`:'');
- tbl('stats',r.stats);tbl('hits',r.hits);tbl('swings',r.swings);tbl('delay',r.delay);tbl('tp',r.tp);tbl('magic',r.magic);
+ tbl('gearsum',r.gear.length?r.gear:[['(no stat gear equipped)','']]);tbl('stats',r.stats);
+ const gw=s.main&&payload().cfg.use_gear&&GEAR.totals&&GEAR.totals.weapon;[['main_dmg',s.main[0]],['main_delay',s.main[1]],['main_hits',s.main[2]],['sub_dmg',s.sub?s.sub[0]:0],['sub_delay',s.sub?s.sub[1]:0],['sub_hits',s.sub?s.sub[2]:1]].forEach(([k,v])=>{const i=document.querySelector('[data-k='+k+']');if(i&&gw&&document.activeElement!==i){i.value=v;i.disabled=true}else if(i&&!gw)i.disabled=false});tbl('hits',r.hits);tbl('swings',r.swings);tbl('delay',r.delay);tbl('tp',r.tp);tbl('magic',r.magic);
  const o=Object.entries(r.other);$('otherbox').style.display=o.length?'block':'none';tbl('other',o);
  $('notes').innerHTML=r.notes.map(x=>`<li>${x}</li>`).join('');
 }

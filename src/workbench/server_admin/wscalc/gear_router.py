@@ -27,13 +27,13 @@ def create_gear_router() -> APIRouter:
         conn.close()
         if str(root) not in cache:
             cache[str(root)] = G.augment_options(root)
-        return JSONResponse({"slots": G.slots(), "augments": cache[str(root)], "labels": G.STAT_LABEL, "presets": P.load()})
+        return JSONResponse({"slots": G.slots(), "augments": cache[str(root)], "labels": G.STAT_LABEL, "presets": P.load(), "jobs": G.JOBS, "races": G.RACES})
 
     @r.get("/api/gear/items")
-    def items(slot: int, q: str = ""):
+    def items(slot: int, q: str = "", job: int = 0, level: int = 0):
         root, conn = _ctx()
         try:
-            return JSONResponse({"items": G.search(conn, slot, q)})
+            return JSONResponse({"items": G.search(conn, slot, q, job=job, level=level)})
         finally:
             conn.close()
 
@@ -42,7 +42,7 @@ def create_gear_router() -> APIRouter:
         body = await request.json()
         root, conn = _ctx()
         try:
-            return JSONResponse(G.totals(conn, root, body.get("loadout") or []))
+            return JSONResponse(G.totals(conn, root, body.get("loadout") or [], body.get("profile")))
         finally:
             conn.close()
 

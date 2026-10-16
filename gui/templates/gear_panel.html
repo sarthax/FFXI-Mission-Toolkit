@@ -33,6 +33,18 @@ fieldset.cx.closed>legend::before{content:'▸ '}fieldset.cx.closed>*:not(legend
 .wsc>div:last-child,.mc>div:last-child{position:sticky;top:8px;align-self:start;max-height:calc(100vh - 16px);overflow:auto}
 @media(max-width:900px){.wsc>div:last-child,.mc>div:last-child{position:static;max-height:none}}
 </style>
+<div class="gp" id="pf" style="padding:8px 12px">
+ <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;font-size:12px">
+  <label>Main job<br><select id="pf_j"></select></label><label>Lv<br><input type="number" id="pf_l" min="1" max="99" style="width:58px"></label>
+  <label>Sub job<br><select id="pf_sj"></select></label><label>Lv<br><input type="number" id="pf_sl" min="0" max="49" style="width:58px"></label>
+  <label>Race<br><select id="pf_r"></select></label>
+  <label style="flex-direction:row;display:inline-flex;gap:4px;align-items:center"><input type="checkbox" id="pf_fill" checked> Fill base stats</label>
+  <label style="flex-direction:row;display:inline-flex;gap:4px;align-items:center"><input type="checkbox" id="pf_only" checked> Only equippable gear</label>
+ </div>
+ <div class="muted" id="pf_info" style="margin-top:6px"></div>
+ <div class="muted" id="pf_warn" style="margin-top:4px;color:#f5a742"></div>
+ <details style="margin-top:4px"><summary class="muted" style="cursor:pointer">Traits</summary><div id="pf_tr" class="tot"></div></details>
+</div>
 <details class="gp" id="gp_d">
  <summary>Gear loadout <span class="pill"><span id="gp_n">0</span> equipped</span>
   <label style="font-weight:400;font-size:12px;display:inline-flex;gap:4px;align-items:center" onclick="event.stopPropagation()"><input type="checkbox" id="gp_on" checked> Apply gear to calculation</label>
@@ -46,6 +58,10 @@ fieldset.cx.closed>legend::before{content:'▸ '}fieldset.cx.closed>*:not(legend
 (function(){
 const KEY='gearloadout_v2';let meta=null,cat=null,load={},sel=0,totals=null,qtxt='';
 const g=id=>document.getElementById(id);
+const PFK='calcprofile_v1';let prof={job:0,level:99,sjob:0,slevel:0,race:1,fill:true,only:true};
+try{Object.assign(prof,JSON.parse(localStorage.getItem(PFK)||'{}'))}catch(e){}
+const psave=()=>{try{localStorage.setItem(PFK,JSON.stringify(prof))}catch(e){}};
+const pfOn=()=>prof.job>0&&prof.level>0;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const icon=id=>`/character-editor/client-cache/icons/${id}.png`;
 const img=(id,sz)=>`<img src="${icon(id)}" loading="lazy" style="width:${sz}px;height:${sz}px" onerror="this.style.visibility='hidden'">`;
@@ -82,7 +98,7 @@ function drawDetail(){
   ${has?`<div class="nat"><strong style="font-size:12px">Built-in bonuses</strong>${natLines(sel).length?`<ul>${natLines(sel).map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`:'<div class="muted">No unconditional stats defined for this item.</div>'}</div>
   <h4>Augments</h4>${presetBox(e)}${e.preset?'':e.augments.map((a,i)=>augCard(a,i)).join('')}`:''}`;
  const q=g('gp_q');let t;
- const run=async()=>{const r=await(await fetch('/api/gear/items?slot='+sel+'&q='+encodeURIComponent(q.value))).json();
+ const run=async()=>{const r=await(await fetch('/api/gear/items?slot='+sel+'&q='+encodeURIComponent(q.value)+(prof.only&&pfOn()?'&job='+prof.job+'&level='+prof.level:''))).json();
   g('gp_res').innerHTML=r.items.length?`<div class="tiles">${r.items.map(it=>`<button type="button" class="tile" data-pick="${it.id}" data-n="${esc(it.name)}" title="${esc(pretty(it.name))}">${img(it.id,32)}<span class="nm">${esc(pretty(it.name))}</span><span class="sl">Lv${it.level}${it.ilevel?' i'+it.ilevel:''}</span></button>`).join('')}</div>`:'<div class="muted">No matching items.</div>';
   g('gp_res').querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{e.item=+b.dataset.pick;e.name=b.dataset.n;e.preset='';e.augments=e.augments.map(()=>({id:0,value:0}));save();qtxt='';drawSlots();upd().then(drawDetail)})};
  q.oninput=()=>{qtxt=q.value;clearTimeout(t);t=setTimeout(run,250)};run();
@@ -106,14 +122,32 @@ function augCard(a,i){const G=a.id?groupOf(a):null;
  return `<div class="augcard${a.id?' set':''}" data-i="${i}"><strong>Augment ${i+1}</strong>${st}${am}<button type="button" class="cl"${a.id?'':' disabled'}>Clear</button>${a.id?`<div class="augnote"><strong>${esc(describe(a))}</strong>${G&&G.comment&&G.comment.toLowerCase()!==G.label.toLowerCase()?' - '+esc(G.comment):''}</div>`:''}</div>`}
 async function upd(){
  const lo=Object.values(load).filter(e=>e.item);g('gp_n').textContent=lo.length;
- totals=await(await fetch('/api/gear/totals',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({loadout:lo})})).json();
- window.GEAR.totals=totals;const L=meta.labels;
+ totals=await(await fetch('/api/gear/totals',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({loadout:lo,profile:pfOn()?prof:null})})).json();
+ window.GEAR.totals=totals;window.GEAR.profile=totals.profile;drawProfile(totals);fillBase();const L=meta.labels;
  const parts=Object.entries(totals.stats).filter(([k,v])=>v).map(([k,v])=>`${esc(L[k]||k)} <b>${signed(v)}</b>`);
  for(const[el,v]of Object.entries(totals.aff_dmg))parts.push(`${el} affinity <b>+${v}</b>`);
  if(totals.weapon)parts.push(`Weapon dmg <b>${totals.weapon.dmg}</b> / delay <b>${totals.weapon.delay}</b>`);
  g('gp_tot').innerHTML=parts.length?parts.map(p=>`<span class="chip">${p}</span>`).join(''):'<span class="muted">No calculator-relevant stats equipped yet.</span>';
  window.dispatchEvent(new Event('gearchange'));
 }
+
+function drawProfile(T){const P=T.profile;
+ g('pf_info').innerHTML=P?'Base '+Object.entries(P.base).map(([k,v])=>`${esc((meta.labels[k]||k))} <b>${v}</b>`).join(' · ')+' <span class="muted">(before gear and merits; sub job halved)</span>':'Pick a main job to fill base stats, add traits and filter equippable gear.';
+ g('pf_tr').innerHTML=P&&P.traits.length?P.traits.map(x=>`<span class="chip" title="${x.src} job ${x.job}, mod ${x.mod}">${esc(x.name)} ${x.rank>1?'(rank '+x.rank+')':''}${x.stat?' <b>'+signed(x.value)+' '+esc(meta.labels[x.stat]||x.stat)+'</b>':' <span class="muted">(not modeled)</span>'}</span>`).join(''):'<span class="muted">None</span>';
+ const w=T.ineligible||[];g('pf_warn').textContent=w.length?'Not equippable by this job/level: '+w.map(x=>pretty(x.name)).join(', ')+' (still counted).':''}
+function fillBase(){const P=window.GEAR.profile;if(!P||!prof.fill)return;
+ const m={base_str:'str',base_dex:'dex'};for(const k of ['str','dex','vit','agi','int','mnd','chr'])m[k]=k;
+ document.querySelectorAll('[data-k]').forEach(i=>{const k=i.dataset.k;let v;
+  if(k in m&&!(i.dataset.k==='int'&&i.tagName==='SELECT'))v=P.base[m[k]];
+  else if(k==='lvl'||k===window.PROFILE_LEVEL_KEY)v=P.level;
+  if(v==null||i.type!=='number'||+i.value===v)return;i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))})}
+function initProfile(){
+ const jo=Object.entries(meta.jobs).map(([id,n])=>`<option value="${id}">${n}</option>`).join('');
+ g('pf_j').innerHTML='<option value="0">(none)</option>'+jo;g('pf_sj').innerHTML='<option value="0">(none)</option>'+jo;
+ g('pf_r').innerHTML=Object.entries(meta.races).map(([id,n])=>`<option value="${id}">${n}</option>`).join('');
+ g('pf_j').value=prof.job;g('pf_l').value=prof.level;g('pf_sj').value=prof.sjob;g('pf_sl').value=prof.slevel;g('pf_r').value=prof.race;g('pf_fill').checked=prof.fill;g('pf_only').checked=prof.only;
+ const ch=()=>{prof.job=+g('pf_j').value;prof.level=+g('pf_l').value||1;prof.sjob=+g('pf_sj').value;prof.slevel=Math.min(+g('pf_sl').value||0,Math.ceil(prof.level/2));prof.race=+g('pf_r').value;prof.fill=g('pf_fill').checked;prof.only=g('pf_only').checked;psave();drawDetail();upd()};
+ ['pf_j','pf_l','pf_sj','pf_sl','pf_r','pf_fill','pf_only'].forEach(i=>g(i).onchange=ch)}
 window.GEAR_MAP=window.GEAR_MAP||{};
 function hints(){document.querySelectorAll('label>input[data-k]').forEach(i=>{const lb=i.parentElement,old=lb.querySelector('.gh');if(old)old.remove();
  const k=window.GEAR_MAP[i.dataset.k];if(!k)return;const v=window.GEAR.stat(k);if(!v)return;
@@ -134,6 +168,6 @@ g('gp_clear').onclick=()=>{load={};save();drawSlots();upd().then(drawDetail)};
 g('gp_on').onchange=()=>{window.GEAR.on=g('gp_on').checked;window.dispatchEvent(new Event('gearchange'))};
 (async()=>{meta=await(await fetch('/api/gear/meta')).json();
  cat=buildCat((await(await fetch('/character-editor/reference/augments.json')).json()).rows||[]);
- restore();drawSlots();await upd();drawDetail()})();
+ initProfile();restore();drawSlots();await upd();drawDetail()})();
 })();
 </script>
