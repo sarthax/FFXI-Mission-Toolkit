@@ -72,6 +72,7 @@ function pane(){
   $('pane').innerHTML=`<h2 style="margin:0">!${esc(c.name)} <button id="fav" title="Toggle favorite" style="border:0;background:none;font-size:18px">${lsGet('fav',[]).includes(c.name)?'★':'☆'}</button></h2><div class="mu">${esc(c.category)} · permission ${c.permission} · ${esc(c.source_path)}</div>
   <p>${esc(c.description)}</p><div class="mu">Usage: <code>${esc(c.usage)}</code> &nbsp; (<span class="req">*</span> required, others optional)</div>
   ${c.params.map((p,i)=>`<div class="p"><label>${esc(p.label)}${p.required?' <span class="req">*</span>':''} <span class="mu">(${p.type==='i'?'number':p.type==='b'?'auto-translate':'text'})</span></label>
+  ${p.hint||p.min!=null?`<div class="mu" style="margin:-1px 0 4px">${p.min!=null?'Range '+p.min+'–'+p.max+'. ':''}${p.hint&&!(p.min!=null&&/between/i.test(p.hint))?esc(p.hint):''}</div>`:''}
   <div class="row"><input class="v" data-i="${i}" autocomplete="off">${p.lookup?`<input class="s" data-i="${i}" data-k="${p.lookup}" placeholder="Search ${p.lookup} by name or id…" style="width:230px">`:''}</div>
   ${p.lookup?`<div class="res" data-r="${i}" hidden></div>`:''}</div>`).join('')}
   <pre id="out"></pre>
@@ -126,7 +127,7 @@ function cmdText(){
   while(vals.length&&!vals[vals.length-1])vals.pop();
   const gaps=cur.params.filter((p,i)=>i<vals.length&&!vals[i]).map(p=>p.label);
   return {text:'!'+cur.name+(vals.length?' '+vals.map(v=>v||'0').join(' '):''),
-    warn:[...cur.params.filter((p,i)=>p.required&&!vals[i]).map(p=>p.label+' is required'),...gaps.map(m=>m+' left blank (sent as 0)')]};
+    warn:[...cur.params.map((p,i)=>p.min!=null&&vals[i]&&/^-?\d+$/.test(vals[i])&&(+vals[i]<p.min||+vals[i]>p.max)?p.label+' should be '+p.min+'–'+p.max:null).filter(Boolean),...cur.params.filter((p,i)=>p.required&&!vals[i]).map(p=>p.label+' is required'),...gaps.map(m=>m+' left blank (sent as 0)')]};
 }
 function preview(){const r=cmdText();$('out').textContent=r.text+(r.warn.length?'\n\n⚠ '+r.warn.join('\n⚠ '):'')}
 let timer;

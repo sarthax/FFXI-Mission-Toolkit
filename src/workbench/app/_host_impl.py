@@ -11576,6 +11576,8 @@ def _domain_roots():
 
 from workbench.server_admin.wscalc.router import create_wscalc_router
 app.include_router(create_wscalc_router(templates, lambda: settings_mod.get_dsp_root()))
+from workbench.server_admin.wscalc.magic_router import create_magic_router
+app.include_router(create_magic_router(templates))
 
 
 @app.get("/domains", response_class=HTMLResponse)

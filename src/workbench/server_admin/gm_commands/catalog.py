@@ -58,6 +58,33 @@ def _lookup_kind(label: str, name: str) -> str | None:
     return None
 
 
+_RANGE = re.compile(r"([A-Za-z_]\w*)\s*<\s*(-?\d+)\s+or\s+\1\s*>\s*(-?\d+)")
+_BETWEEN = re.compile(r"between (-?\d+) and (-?\d+)", re.I)
+_ERRMSG = re.compile(r"error\(\s*player\s*,\s*\"([^\"]{6,160})\"")
+
+
+def _norm(text: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", text.lower())
+
+
+def _attach_hints(source: str, params: list[dict]) -> None:
+    """Add range/hint to a param when the command's own validation names it. Never guesses."""
+    ranges = {_norm(v): (int(lo), int(hi)) for v, lo, hi in _RANGE.findall(source)}
+    errors = _ERRMSG.findall(source)
+    for p in params:
+        key = _norm(p["label"])
+        if key in ranges:
+            p["min"], p["max"] = ranges[key]
+        for msg in errors:
+            low = _norm(msg)
+            if key and key in low and not msg.lower().startswith(("you must", "usage")) and re.search(r"\bmust\b|\buse\b|\d", msg, re.I):
+                p["hint"] = " ".join(msg.split())
+                b = _BETWEEN.search(msg)
+                if b and "min" not in p:
+                    p["min"], p["max"] = int(b.group(1)), int(b.group(2))
+                break
+
+
 def _usage_params(name: str, source: str, types: str | None) -> tuple[str, list[dict]]:
     """Usage text from the command's own help line; params as {label, required, type, lookup}."""
     for m in _USAGE.finditer(source):
@@ -105,6 +132,7 @@ def catalog_commands(server_root: str | Path, *, limit: int = 512) -> list[dict]
         params = _PARAMETERS.search(source)
         name = path.stem.lower()
         usage, plist = _usage_params(name, source, params.group(1) if params else None)
+        _attach_hints(source, plist)
         records.append({
             "name": name,
             "command": "!" + name,

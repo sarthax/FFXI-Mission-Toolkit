@@ -45,3 +45,18 @@ def test_enumerable_lookups_currency_and_logs(tmp_path):
     assert [r["id"] for r in lookup(tmp_path, "currency")] == ["valor_point", "scyld"]
     assert lookup(tmp_path, "questlog", "other")[0] == {"id": 4, "name": "Other Areas"}
     assert lookup(tmp_path, "missionlog", "6")[0]["name"] == "Cop"
+
+
+def test_param_ranges_and_hints_come_from_command_source(tmp_path):
+    from workbench.server_admin.gm_commands.catalog import catalog_commands
+    d = tmp_path / "scripts" / "commands"
+    d.mkdir(parents=True)
+    (d / "setplayerlevel.lua").write_text(
+        '-- func: setplayerlevel\n-- desc: Sets level.\ncmdprops = { permission = 1, parameters = "ss" };\n'
+        'function error(player, msg)\n    player:PrintToPlayer("!setplayerlevel {player} <level>");\nend\n'
+        'function onTrigger(player, a, b)\n    if (level == nil or level < 1 or level > 99) then\n'
+        '        error(player, "Invalid level.  Must be between 1 and 99.");\n    end\nend\n')
+    cmd = catalog_commands(tmp_path)[0]
+    level = next(p for p in cmd["params"] if p["label"] == "level")
+    assert (level["min"], level["max"]) == (1, 99) and "between 1 and 99" in level["hint"]
+    assert "min" not in next(p for p in cmd["params"] if p["label"] == "player")
