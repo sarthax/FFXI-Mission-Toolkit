@@ -6,25 +6,25 @@
 {% block page_help %}Browse the active server's GM commands by category, look up IDs from the server's own tables, and copy the finished command. Copy is always available; Send to game needs the native plugin with allow_chat_commands=1.{% endblock %}
 {% block page_body %}
 <style>
-.gmc{--pn:#1a1f27;--bd:#2c333d;--mu:#8b97a6;--ac:#5aa9ff;--tx:inherit}
+.gmc{--pn:var(--surface);--bd:var(--border);--mu:var(--muted);--ac:var(--accent);--tx:var(--ink)}
 #tabs{display:flex;gap:2px;flex-wrap:wrap;padding:0;border-bottom:1px solid var(--bd)}
 #tabs button{background:none;border:1px solid transparent;border-bottom:0;color:var(--mu);padding:6px 11px;cursor:pointer;border-radius:6px 6px 0 0}
-#tabs button.on{background:var(--pn);color:var(--tx);border-color:var(--bd)}
+#tabs button:hover{color:var(--ac)}#tabs button.on{background:var(--accent-soft);color:var(--ac);border-color:var(--bd);font-weight:600}
 #tabs b{font-weight:400;opacity:.6;margin-left:4px}
 .gmc-main{display:grid;grid-template-columns:290px 1fr;height:calc(100vh - 260px);min-height:420px}
 #list{border-right:1px solid var(--bd);overflow:auto;padding:8px}
 #list input{width:100%;box-sizing:border-box;margin-bottom:6px}
 .cmd{display:block;width:100%;text-align:left;background:none;border:0;color:var(--tx);padding:6px 8px;border-radius:5px;cursor:pointer}
-.cmd:hover,.cmd.on{background:var(--pn)}.cmd.on{outline:1px solid var(--ac)}
+.cmd:hover,.cmd.on{background:var(--accent-soft)}.cmd.on{outline:1px solid var(--ac)}
 .cmd small{display:block;color:var(--mu);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #pane{overflow:auto;padding:14px 18px}
 input,select,button{font:inherit;background:var(--pn);color:var(--tx);border:1px solid var(--bd);border-radius:5px;padding:5px 8px}
 button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}
 .p{margin:10px 0;max-width:640px}.p label{display:block;font-size:12px;color:var(--mu);margin-bottom:3px}
-.p .row{display:flex;gap:6px}.p .row input.v{flex:1}.req{color:#f0a060}
+.p .row{display:flex;gap:6px}.p .row input.v{flex:1}.req{color:var(--amber)}
 .res{border:1px solid var(--bd);background:var(--pn);border-radius:5px;margin-top:4px;max-height:200px;overflow:auto}
-.res div{padding:4px 8px;cursor:pointer;display:flex;gap:10px}.res div:hover{background:#242c37}.res i{color:var(--ac);font-style:normal;min-width:80px}
-pre{background:var(--pn);border:1px solid var(--bd);padding:10px;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.res div{padding:4px 8px;cursor:pointer;display:flex;gap:10px}.res div:hover{background:var(--accent-soft)}.res i{color:var(--ac);font-style:normal;min-width:80px}
+pre{background:var(--code-bg);border:1px solid var(--bd);padding:10px;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
 .mu{color:var(--mu);font-size:12px}
 </style>
 <div class="gmc">
@@ -69,7 +69,7 @@ $('items').onclick=e=>{const b=e.target.closest('.cmd');if(!b)return;
   cur=DATA.find(c=>c.name===b.dataset.n);list();pane()};
 function pane(){
   const c=cur;
-  $('pane').innerHTML=`<h2 style="margin:0">!${esc(c.name)} <button id="fav" title="Toggle favorite" style="border:0;background:none;font-size:18px">${lsGet('fav',[]).includes(c.name)?'★':'☆'}</button></h2><div class="mu">${esc(c.category)} · permission ${c.permission}${c.permission>=3?' <b style="color:#b00020">⚠ high-privilege</b>':''} · <span title="Server-relative Lua source">${esc(c.source_path)}</span> · <a href="/features/trace?q=${encodeURIComponent(c.name)}" target="_blank">Feature Trace</a></div>
+  $('pane').innerHTML=`<h2 style="margin:0">!${esc(c.name)} <button id="fav" title="Toggle favorite" style="border:0;background:none;font-size:18px">${lsGet('fav',[]).includes(c.name)?'★':'☆'}</button></h2><div class="mu">${esc(c.category)} · permission ${c.permission}${c.permission>=3?' <b style="color:var(--red)">⚠ high-privilege</b>':''} · <span title="Server-relative Lua source">${esc(c.source_path)}</span> · <a href="/features/trace?q=${encodeURIComponent(c.name)}" target="_blank" style="border:1px solid var(--ac);color:var(--ac);border-radius:5px;padding:2px 8px;font-size:12px;text-decoration:none">Feature Trace ↗</a></div>
   <p>${esc(c.description)}</p><div class="mu">Usage: <code>${esc(c.usage)}</code> &nbsp; (<span class="req">*</span> required, others optional)</div>
   ${c.params.map((p,i)=>`<div class="p"><label>${esc(p.label)}${p.required?' <span class="req">*</span>':''} <span class="mu">(${p.type==='i'?'number':p.type==='b'?'auto-translate':'text'})</span></label>
   ${p.hint||p.min!=null?`<div class="mu" style="margin:-1px 0 4px">${p.min!=null?'Range '+p.min+'–'+p.max+'. ':''}${p.hint&&!(p.min!=null&&/between/i.test(p.hint))?esc(p.hint):''}</div>`:''}
