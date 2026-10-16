@@ -46,6 +46,17 @@ local direct = require('workbench_live_direct').new({
     message = function(msg) print('Workbench Live: ' .. msg) end,
 })
 
+local gm_capture = require('workbench_gm_capture').new({
+    now = live_now,
+    bridge_active = function() return bridge.active() end,
+    send = function(json)
+        local id = bridge_options.client_id
+        -- The active client ID is supplied by the existing exporter context.
+        local ctx = exporter and exporter.context and exporter.context()
+        return bridge.capture(ctx and ctx.client_id or id, json)
+    end,
+    notify = function(msg) print('Workbench Live: '..msg) end,
+})
 local exporter = require('workbench_export').new({
     directory = addon.path,
     exists = ashita.fs.exists,
@@ -69,6 +80,9 @@ local packets = require('workbench_packets').new({
         return context
     end,
 })
+ashita.events.register('text_in', 'workbench_live_gm_text', function(e)
+    gm_capture.on_text(e)
+end)
 ashita.events.register('packet_in', 'workbench_live_packet_in', function(e) packets.sample(e, 'incoming') end)
 ashita.events.register('packet_out', 'workbench_live_packet_out', function(e) packets.sample(e, 'outgoing') end)
 ashita.events.register('command', 'workbench_live_command', function(e)
@@ -77,6 +91,16 @@ ashita.events.register('command', 'workbench_live_command', function(e)
     for token in e.command:gmatch('%S+') do table.insert(args, token) end
     if args[1] ~= '/wblive' then return end
     e.blocked = true
+    if args[2] == 'gm' then
+        if args[3] == 'arm' then
+            local ok, why = gm_capture.arm()
+            print('Workbench Live: '..why)
+        elseif args[3] == 'stop' then
+            gm_capture.stop()
+            print('Workbench Live: GM capture stopped')
+        else print('Workbench Live: use /wblive gm arm or /wblive gm stop') end
+        return
+    end
     if args[2] == 'live' then
         if args[3] == 'start' then
             if exporter.context() then print('Workbench Live: stop JSONL export first'); return end
@@ -116,4 +140,4 @@ ashita.events.register('d3d_present', 'workbench_live_sample', function()
         packets.stop('Packet export stopped: telemetry inactive or paused; restart explicitly after fresh telemetry.')
     end
 end)
-ashita.events.register('unload', 'workbench_live_unload', function() packets.stop(); direct.stop(); bridge.stop(); exporter.stop() end)
+ashita.events.register('unload', 'workbench_live_unload', function() gm_capture.stop(); packets.stop(); direct.stop(); bridge.stop(); exporter.stop() end)
