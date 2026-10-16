@@ -37,6 +37,7 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
     from .reward_ui import router as auction_house_reward_ui_router
     from .seeder_ui import router as auction_house_seeder_ui_router
     from .status_ui import router as auction_house_status_router
+    from workbench.server_admin.gm_commands.gui import router as gm_commands_router
     from workbench.server_admin.synth.api import router as synth_router
     from workbench.server_admin.voidwatch.api import router as voidwatch_router
     from .synthetic_seed_api import router as auction_house_synthetic_seed_router
@@ -70,6 +71,7 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
         auction_house_activity_router,
         auction_house_status_router,
         synth_router,
+        gm_commands_router,
         voidwatch_router,
     ):
         for route in carrier.routes:
@@ -98,6 +100,8 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
         if not any(section.get("href") == "/synth" for section in sections):
             ah_at = next((index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house"), len(sections))
             sections.insert(ah_at, {"label": "Synth & Crafting", "href": "/synth"})
+        if not any(section.get("href") == "/server/gm" for section in sections):
+            sections.append({"label": "GM Command Center", "href": "/server/gm"})
         updated = dict(workspace)
         updated["sections"] = tuple(sections)
         workspaces.append(updated)
@@ -118,6 +122,9 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
             if path == "/synth" or path.startswith("/synth/"):
                 return {"home": "Server", "section": "Synth & Crafting", "path": "/synth", "method": method.upper(),
                         "role": "page" if method.upper() == "GET" else "action", "disposition": "KEEP"}
+            if path == "/server/gm" or path.startswith("/server/gm/"):
+                return {"home": "Server", "section": "GM Command Center", "path": "/server/gm",
+                        "method": method.upper(), "role": "page", "disposition": "KEEP"}
             return current_owner(path, method)
 
         _route_owner._auction_house_bridge = True  # type: ignore[attr-defined]

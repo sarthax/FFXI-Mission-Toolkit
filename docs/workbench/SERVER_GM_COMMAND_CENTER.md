@@ -30,3 +30,7 @@ show which configured checkout and branch/version the catalog represents.
 
 The existing Ashita addon's GM response capture remains separate. No server
 source modification is required for the planned GM path.
+
+## Slice 2: Browser (implemented)
+
+The Server sidebar now links to `/server/gm`, a searchable, copy-only GM command browser. `/server/gm/commands` lists metadata read from the active local server checkout. No game command submission endpoint exists. If the server root is missing or lacks `scripts/commands`, the page reports the catalog error. This first UI pass is standalone HTML; shared-shell visual integration may be refined later.
