@@ -104,9 +104,7 @@ async function nativeStatus(){
   $('sendhelp').textContent=ok?'Send queues this line into your game chat; the server reply appears in the game window.':'';
 }
 async function send(){
-  const c=cmdText();if(!confirm('Send to game chat:
-
-'+c.text))return;
+  const c=cmdText();if(!confirm('Send to game chat:\n\n'+c.text))return;
   $('sendnote').textContent='Sending…';
   const r=await fetch('/live-client/native/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:c.text})});
   const j=await r.json().catch(()=>({}));
