@@ -3,7 +3,7 @@
 {% block page_archetype %}workbench{% endblock %}
 {% block page_heading %}GM Command Center{% endblock %}
 {% block page_status %}<span class="wb-readonly-badge">Copy-only</span>{% endblock %}
-{% block page_help %}Browse the active server's GM commands by category, look up IDs from the server's own tables, and copy the finished command. Copy is always available; Send to game needs the native plugin with allow_chat_commands=1.{% endblock %}
+{% block page_help %}Browse the active server's GM commands by category, look up IDs from the server's own tables (items, key items, effects, zones, mobs, NPCs, currencies, quest/mission logs), and build the finished command. Set a Target player once to fill every player field; star favorites, reuse History, and save Presets of several commands for instant character builds. Parameter hints and ranges come from each command's own Lua. Copy is always available; Send to game types the line into game chat and needs the native Ashita plugin online with allow_chat_commands=1. Commands needing permission 3+ ask for an extra confirmation. Favorites, history and presets are stored in this browser only.{% endblock %}
 {% block page_body %}
 <style>
 .gmc{--pn:var(--surface);--bd:var(--border);--mu:var(--muted);--ac:var(--accent);--tx:var(--ink)}
