@@ -10,10 +10,7 @@
 {% block page_help %}Call-and-response evidence remains split by source/timeline instead of being merged into one guessed chronology. Dialog IDs resolve against indexed dialog text only when zone context and shift evidence support it.{% endblock %}
 {% block page_body %}
 <style>
-  .tabbar { display:flex; gap:4px; flex-wrap:wrap; border-bottom:1px solid var(--border); margin:6px 0 0; padding-bottom:0; position:sticky; top:var(--shell-h); z-index:3; background:var(--bg); }
-  .tabbtn { background:none; border:1px solid var(--border); border-bottom:none; border-radius:8px 8px 0 0;
-            padding:5px 9px; cursor:pointer; color:var(--fg); font:inherit; }
-  .tabbtn.active { background:var(--surface); border-color:var(--border); font-weight:bold; }
+  .tabbar { margin:6px 0 0; position:sticky; top:var(--shell-h); z-index:3; background:var(--bg); }
   .tabpanel { border:1px solid var(--border); border-top:none; padding:8px; border-radius:0 0 7px 7px; margin-bottom:10px; }
   .tabpanel[hidden] { display:none; }
   .nodata { border:1px dashed var(--border); border-radius:8px; padding:14px; color:var(--muted); }
@@ -23,7 +20,7 @@
   .interaction-card .meta { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
 </style>
 
-<div class="tabbar" role="tablist">
+<div class="tabbar wb-tabs" role="tablist">
   <button type="button" class="tabbtn" data-tab="events">Events ({{ events|length }})</button>
   <button type="button" class="tabbtn" data-tab="battle">Battle ({{ actions|length }})</button>
   <button type="button" class="tabbtn" data-tab="ki">Key Items ({{ ki_events|length }})</button>

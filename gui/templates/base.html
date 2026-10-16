@@ -161,6 +161,11 @@
     min-height:var(--wb-control-h); padding:2px 6px; font-size:11px; line-height:1.25;
   }
   .dense-panel { font-size:12px; background:var(--surface); }
+  .wb-tabs { display:flex; gap:2px; flex-wrap:wrap; border-bottom:1px solid var(--border); }
+  .wb-tabs > button { background:none; border:1px solid transparent; border-bottom:0; color:var(--muted); padding:6px 11px; cursor:pointer; border-radius:6px 6px 0 0; font:inherit; }
+  .wb-tabs > button:hover { color:var(--accent); }
+  .wb-tabs > button.on,.wb-tabs > button.active,.wb-tabs > button[aria-selected="true"] { background:var(--accent-soft); color:var(--accent); border-color:var(--border); font-weight:600; }
+  .wb-tabs b { font-weight:400; opacity:.6; margin-left:4px; }
   .dense-tabs { display:flex; gap:2px; border-bottom:1px solid var(--border); padding:3px 3px 0; }
   .dense-tabs button { flex:1; padding:3px 5px; font-size:11px; border-radius:4px 4px 0 0; }
   .dense-tabs button.active,.dense-tabs button.on { background:var(--accent-soft); color:var(--accent); }
