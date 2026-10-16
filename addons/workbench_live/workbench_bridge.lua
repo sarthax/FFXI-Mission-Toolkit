@@ -64,15 +64,15 @@ function M.new(options, notify, load_error)
         if not ok then close(); return fail((tostring(err):gsub('^.-:%d+: ',''))) end
         return true
     end
-    local function observe(client_id, json)
+    local function send_event(client_id, json, lane, kind)
         if not source then return false end
         local ok, err=pcall(function()
             assert(client_id == source, 'bridge source changed')
-            assert(type(json)=='string' and #json<=65536, 'invalid bridge telemetry size')
+            assert(type(json)=='string' and #json<=65536, 'invalid bridge event size')
             local line=json:gsub('%s+$','')
-            assert(#line>0 and #line<=65536, 'invalid bridge telemetry')
+            assert(#line>0 and #line<=65536, 'invalid bridge event')
             sequence=sequence+1
-            local body='{"schema_version":1,"lane":"telemetry","kind":"observation","client_id":'
+            local body='{"schema_version":1,"lane":"'..lane..'","kind":"'..kind..'","client_id":'
                 ..json_string(source)..',"session_id":'..json_string(options.session_id)
                 ..',"generation":'..json_string(options.generation)..',"sequence":'..sequence
                 ..',"request_id":null,"payload_base64":"'..b64(line)..'"}'
@@ -94,6 +94,12 @@ function M.new(options, notify, load_error)
         end)
         if not ok then close(); last_error='telemetry send failed: '..tostring(err); if notify or options.message then (notify or options.message)('Bridge disconnected: '..tostring(err)) end; return false end
         return true
+    end
+    local function observe(client_id, json)
+        return send_event(client_id, json, 'telemetry', 'observation')
+    end
+    local function capture(client_id, json)
+        return send_event(client_id, json, 'capture', 'capture_event')
     end
     local function ping()
         if not source then return fail('bridge not started') end
@@ -155,6 +161,6 @@ function M.new(options, notify, load_error)
         if not ok then return fail('read-only heartbeat failed') end
         return true, 'authenticated read-only round-trip confirmed; no movement capability'
     end
-    return {start=start, observe=observe, ping=ping, stop=close, active=function() return source~=nil end, last_error=function() return last_error end}
+    return {start=start, observe=observe, capture=capture, client_id=function() return source end, ping=ping, stop=close, active=function() return source~=nil end, last_error=function() return last_error end}
 end
 return M
