@@ -16,14 +16,12 @@
 .mc input,.mc select{padding:4px 6px;font-size:13px;width:100%;box-sizing:border-box}
 .mc td.n,.mc th.n{text-align:right;font-variant-numeric:tabular-nums}
 .mc .big{font-size:26px;font-weight:700;color:var(--accent)}
-.mc .tabs button{padding:6px 14px;margin-right:6px}
-.mc .tabs button.on{font-weight:700;border-bottom:2px solid var(--accent)}
 </style>
 {% include 'calc_tabs.html' %}
 {% include 'gear_panel.html' %}
 <div class="mc">
  <div>
-  <div class="tabs" style="margin-bottom:10px"><button id="tn" class="on">Elemental</button><button id="ti">Ninjutsu</button></div>
+  <div class="wb-tabs" style="margin-bottom:10px"><button id="tn" class="on">Elemental</button><button id="ti">Ninjutsu</button></div>
   <fieldset><legend>Spell and target</legend><div class="g">
    <label>Spell <select id="spell"></select></label>
    <label>Target family <select id="family"></select></label>

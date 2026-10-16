@@ -5,6 +5,12 @@
 This is the authoritative forward-looking roadmap. Older phase/status sections remain below as
 historical implementation provenance, but this section supersedes them when status conflicts.
 
+### Recent additions — 2026-10-16
+
+- [x] GM Command Center (`/server/gm`): categories, ID lookups, target player, favorites/history/presets, send-to-game via the native Ashita plugin (double opt-in), parameter hints parsed from command Lua, high-privilege confirm, Feature Trace link. See `docs/workbench/SERVER_GM_COMMAND_CENTER.md`.
+- [x] UI polish sweep started: shared `.wb-tabs` class and legacy theme-variable aliases in `base.html` so pages follow light/dark; remaining work is hard-coded colours on non-data pages (data colour coding such as packet opcodes stays as is).
+- [ ] GM Command Center: per-log quest/mission ID dropdowns; real defaults for blank middle arguments.
+
 ### 1. Stable foundations
 
 The Workbench skeleton is established and should now be extended rather than repeatedly redesigned:

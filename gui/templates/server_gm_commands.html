@@ -3,14 +3,10 @@
 {% block page_archetype %}workbench{% endblock %}
 {% block page_heading %}GM Command Center{% endblock %}
 {% block page_status %}<span class="wb-readonly-badge">Copy-only</span>{% endblock %}
-{% block page_help %}Browse the active server's GM commands by category, look up IDs from the server's own tables, and copy the finished command. Copy is always available; Send to game needs the native plugin with allow_chat_commands=1.{% endblock %}
+{% block page_help %}Browse the active server's GM commands by category, look up IDs from the server's own tables (items, key items, effects, zones, mobs, NPCs, currencies, quest/mission logs), and build the finished command. Set a Target player once to fill every player field; star favorites, reuse History, and save Presets of several commands for instant character builds. Parameter hints and ranges come from each command's own Lua. Copy is always available; Send to game types the line into game chat and needs the native Ashita plugin online with allow_chat_commands=1. Commands needing permission 3+ ask for an extra confirmation. Favorites, history and presets are stored in this browser only.{% endblock %}
 {% block page_body %}
 <style>
 .gmc{--pn:var(--surface);--bd:var(--border);--mu:var(--muted);--ac:var(--accent);--tx:var(--ink)}
-#tabs{display:flex;gap:2px;flex-wrap:wrap;padding:0;border-bottom:1px solid var(--bd)}
-#tabs button{background:none;border:1px solid transparent;border-bottom:0;color:var(--mu);padding:6px 11px;cursor:pointer;border-radius:6px 6px 0 0}
-#tabs button:hover{color:var(--ac)}#tabs button.on{background:var(--accent-soft);color:var(--ac);border-color:var(--bd);font-weight:600}
-#tabs b{font-weight:400;opacity:.6;margin-left:4px}
 .gmc-main{display:grid;grid-template-columns:290px 1fr;height:calc(100vh - 260px);min-height:420px}
 #list{border-right:1px solid var(--bd);overflow:auto;padding:8px}
 #list input{width:100%;box-sizing:border-box;margin-bottom:6px}
@@ -30,7 +26,7 @@ pre{background:var(--code-bg);border:1px solid var(--bd);padding:10px;border-rad
 <div class="gmc">
 <p class="note mu">Build a command, look up IDs from the active server, then copy it or Send to game. Send requires the Ashita plugin online, <code>allow_chat_commands=1</code> in <code>config/workbench_native/settings.ini</code> (a stock install has neither), and a GM-permission character.</p>
 <div class="p" style="max-width:none;display:flex;gap:8px;align-items:center;margin:6px 0"><label style="margin:0" for="tgt">Target player</label><input id="tgt" list="tgtl" placeholder="blank = yourself" autocomplete="off" style="width:220px"><datalist id="tgtl"></datalist><span class="mu">Fills every <b>player</b> argument (55 commands). Blank = the GM running the command.</span></div>
-<div id="tabs"></div>
+<div id="tabs" class="wb-tabs"></div>
 <div class="gmc-main"><div id="list"><input id="search" type="search" placeholder="Search all commands…" aria-label="Search commands"><div id="items"></div></div>
 <div id="pane"><p class="mu">Pick a category, then a command.</p></div></div>
 
