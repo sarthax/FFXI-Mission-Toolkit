@@ -45,7 +45,8 @@ def parse_data(root: Path) -> list[dict]:
                 mobs.append({"id": int(m.group(1)), "name": m.group(2).strip(), "abyssite": cur})
         pm = re.search(r"pos = \{(.*?)\n    \},", body, re.S)
         npos = len(re.findall(r"\{\s*-?\d+", pm.group(1))) if pm else 0
-        zones.append({"zone_id": zid, "folder": folder, "text": text, "mobs": mobs, "positions": npos})
+        plist = [[int(a), int(b), int(c)] for a, b, c in re.findall(r"\{\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\}", pm.group(1))] if pm else []
+        zones.append({"zone_id": zid, "folder": folder, "text": text, "mobs": mobs, "positions": npos, "pos_list": plist})
     return zones
 
 
@@ -211,7 +212,7 @@ def overview(root=None, conn=None) -> dict:
     except Exception: aby=[]
     return {"abyssea_paths": aby, "npc": NPC, "abyssea": ABYSSEA, "wiki": wiki_coverage(names + ["Voidwalker", "Making Contact", "Assai Nybaem"]),
             "skills": skills_info(conn, root, names), "root": str(root), "areas": AREAS, "states": STATES, "tiers": tiers, "ki": KI, "nms": nms, "orphans": orphans, "backlog": backlog,
-            "zones": [{"zone_id": z["zone_id"], "folder": z["folder"], "nms": len(z["mobs"]), "positions": z["positions"], "text": len(z["text"])} for z in zones],
+            "zones": [{"zone_id": z["zone_id"], "folder": z["folder"], "nms": len(z["mobs"]), "positions": z["positions"], "pos_list": z["pos_list"], "text": len(z["text"])} for z in zones],
             "db_checked": conn is not None,
             "note": "Abyssite ids are DSP keyitems.lua, not client-verified. Positions are LSB and not yet !checknav-verified."}
 

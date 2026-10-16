@@ -44,6 +44,7 @@ function strip(){
  $('vw2-strip').innerHTML=c.map(function(x){return '<div class="cpcard"><b style="font-size:1.4em">'+x[0]+'</b><div class="muted">'+x[1]+'</div></div>';}).join('');
  $('vw2-srv').textContent=(O.db_checked?'Live DB cross-check on. ':'No DB connection: pool/spawn checks skipped. ')+'Source: '+O.root;
 }
+var GM=[];
 function table(){
  var q=$('vw2-q').value.toLowerCase(),st=$('vw2-st').value,vs=$('vw2-vs').value,z=$('vw2-z').value,nm=$('vw2-nm').value;
  var rows=O.nms.filter(function(x){return (!q||(x.name+x.zone).toLowerCase().indexOf(q)>=0)&&(!st||x.status===st)&&(!vs||x.validation===vs)&&(!z||String(x.zone_id)===z)&&(!nm||x.name===nm)&&selOK(x);});
@@ -51,6 +52,7 @@ function table(){
  $('vw2-tb').innerHTML=rows.map(function(x){var d=x.db;
   return '<tr class="vwr" data-k="'+esc(x.key)+'" style="cursor:pointer"><td><b>'+esc(x.name)+'</b></td><td>'+esc(x.zone)+' ('+x.zone_id+')</td><td><span style="color:'+COL[x.abyssite]+'">&#9679;</span> '+nice(x.abyssite)+' '+x.ki_id+'</td><td>'+(x.upgrade?nice(x.upgrade):'<span class="muted">final</span>')+'</td><td class="mono">'+(d?(d.hp==null?'-':d.hp):'-')+'</td><td class="vwc1">'+chip(x.status)+(x.gaps.length?' <span style="color:#c0392b" title="'+esc(x.gaps.join('; '))+'">'+x.gaps.length+'</span>':'')+'</td><td class="vwc2">'+chip(x.validation)+'</td></tr>';}).join('');
  Array.prototype.forEach.call(document.querySelectorAll('.vwr'),function(r){r.addEventListener('click',function(){detail(r.dataset.k);});});
+ GM=rows;gmCmds();
 }
 function detail(k){
  var x=O.nms.filter(function(n){return n.key===k;})[0];if(!x)return;var d=x.db,r=x.validation_rec||{},a=r.areas||{};
@@ -126,6 +128,29 @@ function init(){
  var z=$('vw2-z');
  load().then(function(){$('vw2-nm').innerHTML='<option value="">All NMs</option>'+Array.from(new Set(O.nms.map(function(x){return x.name;}))).sort().map(function(n){return '<option>'+esc(n)+'</option>';}).join('');z.innerHTML='<option value="">All zones</option>'+O.zones.map(function(q){return '<option value="'+q.zone_id+'">'+esc(q.folder)+'</option>';}).join('');
   ['vw2-q','vw2-st','vw2-vs','vw2-z','vw2-nm'].forEach(function(i){$(i).oninput=$(i).onchange=table;});}).catch(function(e){$('vw2-sum').textContent='Failed to load: '+e.message;});
+}
+function gmCmds(){
+ var nm=$('vw2-nm').value,zid=$('vw2-z').value,Z=(O&&O.zones)||[];
+ function row(l,c){return '<tr><td>'+esc(l)+'</td><td><code>'+esc(c)+'</code></td><td><button type="button" class="vwcp" data-c="'+esc(c)+'">Copy</button></td></tr>';}
+ var rows=GM;
+ var h='<div class="vwc vwc-warn">Narrow the Voidwalker NMs list above (NM, zone, tier or a graph box). This list follows them. The NM is hidden until popped, so !gotoentity may refuse; use the spawnedOnly form (trailing 0) or walk to a pool position.</div>';
+ if(rows.length>=O.nms.length){$('vw2-gm').innerHTML=h+'<div class="muted">Everything is showing. Narrow the filters first.</div>';return;}
+ var zs=Array.from(new Set(rows.map(function(x){return x.zone_id;})));
+ var keyOf={CLEAR_ABYSSITE:'!addkeyitem 1253',COLORFUL_ABYSSITE:'!addkeyitem 1254',BLACK_ABYSSITE:'!addkeyitem 1260'};
+ var body='';
+ zs.forEach(function(z){
+  var zi=Z.filter(function(q){return q.zone_id===z;})[0]||{},zr=rows.filter(function(x){return x.zone_id===z;});
+  body+='<tr><th colspan="3">'+esc(zi.folder||z)+' (zone '+z+')</th></tr>';
+  var keys={};zr.forEach(function(x){if(keyOf[x.abyssite])keys[x.abyssite]=1;else if(x.ki_id)keys[x.abyssite]='!addkeyitem '+x.ki_id;});
+  Object.keys(keys).forEach(function(k){body+=row('Key item for '+nice(k)+' tier',keys[k]===1?keyOf[k]:keys[k]);});
+  zr.forEach(function(x){var p=x.db&&x.db.pos?' at '+x.db.pos.join(', '):'';
+   body+=row('Warp to '+x.name+' (id '+x.id+')'+p,'!gotoentity '+x.id);
+   body+=row('Warp spawnedOnly / check spawn: '+x.name,'!gotoentity '+x.id+' 0');
+   body+=row('Is '+x.name+' spawned?','!getmobaction '+x.id);});
+  (zi.pos_list||[]).forEach(function(q,i){body+=row('Pool position '+(i+1)+' of '+zi.pos_list.length,'!pos '+q.join(' ')+' '+z);});
+ });
+ $('vw2-gm').innerHTML=h+'<div class="muted">'+rows.length+' spawn row(s) in '+zs.length+' zone(s)</div><div class="table-wrap"><table><thead><tr><th>Purpose</th><th>Command</th><th></th></tr></thead><tbody>'+body+'</tbody></table></div>';
+ Array.prototype.forEach.call(document.querySelectorAll('.vwcp'),function(b){b.onclick=function(){try{navigator.clipboard.writeText(b.dataset.c);}catch(e){}b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1200);};});
 }
 init();
 })();
