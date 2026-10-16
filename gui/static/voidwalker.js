@@ -152,5 +152,11 @@ function gmCmds(){
  $('vw2-gm').innerHTML=h+'<div class="muted">'+rows.length+' spawn row(s) in '+zs.length+' zone(s)</div><div class="table-wrap"><table><thead><tr><th>Purpose</th><th>Command</th><th></th></tr></thead><tbody>'+body+'</tbody></table></div>';
  Array.prototype.forEach.call(document.querySelectorAll('.vwcp'),function(b){b.onclick=function(){try{navigator.clipboard.writeText(b.dataset.c);}catch(e){}b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1200);};});
 }
+function tabs(){var P=Array.prototype.slice.call(document.querySelectorAll('.vwtab')),bar=$('vw2-tabs'),cur='Overworld';try{cur=localStorage.getItem('vwtab')||cur;}catch(e){}
+ if(!P.some(function(p){return p.dataset.t===cur;}))cur='Overworld';
+ function show(t){P.forEach(function(p){p.style.display=p.dataset.t===t?'':'none';});Array.prototype.forEach.call(bar.children,function(b){b.className='vwtb'+(b.textContent===t?' on':'');});try{localStorage.setItem('vwtab',t);}catch(e){}}
+ bar.innerHTML=P.map(function(p){return '<button type="button" class="vwtb">'+esc(p.dataset.t)+'</button>';}).join('');
+ Array.prototype.forEach.call(bar.children,function(b){b.onclick=function(){show(b.textContent);};});show(cur);}
+tabs();
 init();
 })();
