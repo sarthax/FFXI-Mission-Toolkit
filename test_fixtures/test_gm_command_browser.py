@@ -28,5 +28,5 @@ def test_catalog_and_page_are_copy_only(monkeypatch):
     assert 'id="search"' in page.text
     assert "wb-page-frame" in page.text  # shared shell page template, not standalone HTML
     assert "Copy command" in page.text
-    assert "No command transmission is enabled" in page.text
+    assert "allow_chat_commands=1" in page.text
     assert client.post("/server/gm/commands", json={"command": "!additem 1"}).status_code == 405

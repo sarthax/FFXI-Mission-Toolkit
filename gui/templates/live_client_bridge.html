@@ -48,6 +48,8 @@
  <h2>Install native plugin (warp / position)</h2>
  <p class="muted">Copies the prebuilt <code>workbench_native_probe.dll</code> into the Ashita folder entered below (an existing DLL is backed up) and creates <code>settings.ini</code> only if missing. Unload the plugin in game first if it is loaded.</p>
  <label><input type="checkbox" id="native-allow-cmds"> Allow Toolkit file commands (enables warp control from the viewer; dev servers only)</label>
+ <label><input type="checkbox" id="native-allow-chat"> Allow GM chat commands (lets the GM Command Center type <code>!</code> commands into your game; needs GM permission; off by default)</label>
+ <p class="muted">A stock install has no <code>config/workbench_native/settings.ini</code>. The plugin ignores all Toolkit commands until it contains <code>allow_file_commands=1</code>, and ignores GM chat until it contains <code>allow_chat_commands=1</code>. The installer writes these lines from the boxes above (only when the file is missing); edit the file by hand to change them later, then reload the plugin.</p>
  <div class="lc-actions"><button type="button" id="native-install-preview">Preview</button><button type="button" id="native-install-apply" disabled>Install plugin</button></div>
  <div id="native-install-status" role="status" aria-live="polite" class="muted">Not checked.</div>
 </section>
@@ -273,7 +275,7 @@ async function nativeInstall(kind){const st=document.getElementById('native-inst
   if(kind==='preview'){const r=await request('installer/native-preview',{ashita_root:root});
    nativeSha=r.dll_found?r.dll_sha256:null;document.getElementById('native-install-apply').disabled=!nativeSha;
    st.textContent=r.dll_found?('DLL '+r.dll_sha256.slice(0,12)+' ready; '+(r.target_matches?'already installed':r.target_exists?'will replace existing (backup kept)':'will be installed')+'; settings.ini '+(r.settings_exists?'exists (left unchanged)':'will be created')+'.'):r.note;}
-  else{const r=await request('installer/native-apply',{ashita_root:root,expected_sha256:nativeSha,allow_file_commands:document.getElementById('native-allow-cmds').checked});
+  else{const r=await request('installer/native-apply',{ashita_root:root,expected_sha256:nativeSha,allow_file_commands:document.getElementById('native-allow-cmds').checked,allow_chat_commands:document.getElementById('native-allow-chat').checked});
    st.textContent=(r.dll_copied?'DLL installed. ':'DLL already current. ')+(r.settings_written?'settings.ini created. ':'settings.ini unchanged. ')+'In game: '+r.load_command;}
  }catch(e){st.textContent=String(e.message||e)}}
 document.getElementById('native-install-preview').addEventListener('click',()=>nativeInstall('preview'));

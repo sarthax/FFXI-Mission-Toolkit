@@ -3,7 +3,7 @@
 {% block page_archetype %}workbench{% endblock %}
 {% block page_heading %}GM Command Center{% endblock %}
 {% block page_status %}<span class="wb-readonly-badge">Copy-only</span>{% endblock %}
-{% block page_help %}Browse the active server's GM commands by category, look up IDs from the server's own tables, and copy the finished command. No command transmission is enabled.{% endblock %}
+{% block page_help %}Browse the active server's GM commands by category, look up IDs from the server's own tables, and copy the finished command. Copy is always available; Send to game needs the native plugin with allow_chat_commands=1.{% endblock %}
 {% block page_body %}
 <style>
 .gmc{--pn:#1a1f27;--bd:#2c333d;--mu:#8b97a6;--ac:#5aa9ff;--tx:inherit}
@@ -28,7 +28,7 @@ pre{background:var(--pn);border:1px solid var(--bd);padding:10px;border-radius:6
 .mu{color:var(--mu);font-size:12px}
 </style>
 <div class="gmc">
-<p class="note mu">No command transmission is enabled. Build a command, look up IDs from the active server, then copy it into the game chat.</p>
+<p class="note mu">Build a command, look up IDs from the active server, then copy it or Send to game. Send requires the Ashita plugin online, <code>allow_chat_commands=1</code> in <code>config/workbench_native/settings.ini</code> (a stock install has neither), and a GM-permission character.</p>
 <div id="tabs"></div>
 <div class="gmc-main"><div id="list"><input id="search" type="search" placeholder="Search all commands…" aria-label="Search commands"><div id="items"></div></div>
 <div id="pane"><p class="mu">Pick a category, then a command.</p></div></div>
@@ -62,8 +62,8 @@ function pane(){
   <div class="row"><input class="v" data-i="${i}" autocomplete="off">${p.lookup?`<input class="s" data-i="${i}" data-k="${p.lookup}" placeholder="Search ${p.lookup} by name or id…" style="width:230px">`:''}</div>
   ${p.lookup?`<div class="res" data-r="${i}" hidden></div>`:''}</div>`).join('')}
   <pre id="out"></pre>
-  <button id="copy">Copy command</button> <button disabled title="No Toolkit-to-game command transport exists yet; the native plugin only supports warp/speed.">Send to game</button>
-  <p class="mu">Send is disabled: no command transmission is enabled.</p>`;
+  <button id="copy">Copy command</button> <button id="send" disabled>Send to game</button> <span class="mu" id="sendnote"></span>
+  <p class="mu" id="sendhelp"></p>`;
   preview();
 }
 function cmdText(){
@@ -90,8 +90,31 @@ async function search(t){
 $('pane').addEventListener('click',e=>{
   const d=e.target.closest('.res div[data-id]');
   if(d){const box=d.parentElement,i=box.dataset.r;document.querySelector(`input.v[data-i="${i}"]`).value=d.dataset.id;box.hidden=true;preview();return}
+  if(e.target.id==='send'){send();return}
   if(e.target.id==='copy'){const r=cmdText();navigator.clipboard.writeText(r.text);e.target.textContent='Copied';setTimeout(()=>e.target.textContent='Copy command',1200)}
 });
+let NS=null;
+async function nativeStatus(){
+  try{NS=await (await fetch('/live-client/native/status')).json()}catch(e){NS=null}
+  const b=$('send');if(!b)return;
+  const ok=NS&&NS.online&&NS.channel_enabled&&NS.chat_enabled&&NS.player_valid;
+  const why=!NS||!NS.online?'Native plugin offline (load workbench_native_probe).':!NS.channel_enabled?'Add allow_file_commands=1 to config/workbench_native/settings.ini.':!NS.chat_enabled?'Add allow_chat_commands=1 to config/workbench_native/settings.ini, then /reload the plugin (stock servers do not have this line).':!NS.player_valid?'No character in game.':'';
+  const c=cmdText();b.disabled=!ok||c.warn.some(w=>w.endsWith('is required'));
+  $('sendnote').textContent=ok?'':why;
+  $('sendhelp').textContent=ok?'Send queues this line into your game chat; the server reply appears in the game window.':'';
+}
+async function send(){
+  const c=cmdText();if(!confirm('Send to game chat:
+
+'+c.text))return;
+  $('sendnote').textContent='Sending…';
+  const r=await fetch('/live-client/native/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:c.text})});
+  const j=await r.json().catch(()=>({}));
+  $('sendnote').textContent=r.ok?(j.outcome&&j.outcome.ok?'Sent.':'Plugin: '+(j.outcome?j.outcome.reason:'no outcome yet')):((j.detail&&j.detail.message)||j.detail||('Failed '+r.status));
+}
+const _pane=pane;pane=function(){_pane();nativeStatus()};
+const _prev=preview;preview=function(){_prev();nativeStatus()};
+setInterval(nativeStatus,4000);
 init();
 </script>
 {% endblock %}

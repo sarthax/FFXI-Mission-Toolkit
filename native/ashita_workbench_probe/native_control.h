@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <functional>
 #include <map>
 #include <sstream>
 #include <string>
@@ -69,6 +70,7 @@ inline Vec3 SdkToServer(const Vec3& s) { return {s.x, s.z, s.y}; }
 
 struct Settings {
     bool allow_file_commands = false;   // master switch for the Toolkit channel
+    bool allow_chat_commands = false;   // separate opt-in: let the Toolkit queue "!gm" lines into the game chat
     std::string auto_arm;               // "", "warp", "autorun", "local": arm automatically at load/zone
     double enable_ttl_seconds = 120.0;  // 0 = never expires
     double speed_percent = 0.0;         // >0: hold this speed override once armed
@@ -81,6 +83,8 @@ inline Settings ParseSettings(const std::string& text) {
     double v = 0;
     const std::string allow = Get(kv, "allow_file_commands");
     s.allow_file_commands = allow == "1" || allow == "true";
+    const std::string chat = Get(kv, "allow_chat_commands");
+    s.allow_chat_commands = chat == "1" || chat == "true";
     const std::string arm = Get(kv, "auto_arm");
     if (arm == "warp" || arm == "autorun" || arm == "local") s.auto_arm = arm;
     if (ParseDouble(kv, "enable_ttl_seconds", v) && v >= 0 && v <= 86400) s.enable_ttl_seconds = v;
@@ -94,6 +98,14 @@ inline bool ModeFromName(const std::string& n, Mode& m) {
     if (n == "autorun") { m = Mode::Autorun; return true; }
     if (n == "local") { m = Mode::LocalWrite; return true; }
     return false;
+}
+
+// A chat line the Toolkit may queue: GM "!" commands only, short, printable ASCII, no ';' (the settings
+// parser treats " ;" as a comment and Ashita could treat it as a separator).
+inline bool ValidChatLine(const std::string& t) {
+    if (t.size() < 2 || t.size() > 120 || t[0] != '!') return false;
+    for (char c : t) if (c < 0x20 || c > 0x7e || c == ';') return false;
+    return t[1] != ' ';
 }
 
 struct CommandOutcome {
@@ -110,6 +122,8 @@ public:
         : adapter_(adapter), speed_(speed), port_(port), nonce_(std::move(nonce)) {}
 
     void SetSettings(const Settings& s) { settings_ = s; }
+    // Queues a validated line into the game; supplied by the plugin (empty = chat unavailable).
+    void SetChatSink(std::function<void(const std::string&)> sink) { chat_sink_ = std::move(sink); }
     const Settings& settings() const { return settings_; }
     const std::string& nonce() const { return nonce_; }
     const CommandOutcome& last() const { return last_; }
@@ -172,6 +186,12 @@ public:
             if (!ParseDouble(kv, "value", pct) || !speed_.Set(static_cast<float>(pct))) o.reason = "invalid_speed";
             else if (!adapter_.enabled()) { speed_.Off(); o.reason = "not_armed"; }
             else { o.ok = true; o.reason = "speed_set"; }
+        } else if (cmd == "chat") {
+            const std::string line = Get(kv, "text");
+            if (!settings_.allow_chat_commands) o.reason = "chat_disabled";
+            else if (!chat_sink_) o.reason = "chat_unavailable";
+            else if (!ValidChatLine(line)) o.reason = "invalid_chat_line";
+            else { chat_sink_(line); o.ok = true; o.reason = "chat_queued"; }
         } else if (cmd == "speed_off") {
             speed_.Off();
             speed_suppressed_ = true;
@@ -209,6 +229,7 @@ private:
     MovementPort& port_;
     std::string nonce_;
     Settings settings_;
+    std::function<void(const std::string&)> chat_sink_;
     CommandOutcome last_;
     uint64_t last_seq_ = 0;
     bool auto_suppressed_ = false, speed_suppressed_ = false;
@@ -219,6 +240,7 @@ struct StatusInfo {
     std::string nonce;
     int64_t now_ms = 0;
     bool allow_file_commands = false;
+    bool allow_chat_commands = false;
     bool enabled = false;
     std::string mode;
     PlayerSnapshot snap;
@@ -234,11 +256,11 @@ inline std::string RenderStatus(const StatusInfo& s) {
     char b[1024];
     const Vec3 sv = SdkToServer(s.snap.pos);
     std::snprintf(b, sizeof(b),
-        "version=1\nupdated_ms=%lld\nnonce=%s\nallow_file_commands=%d\nauto_arm=%s\nenabled=%d\nmode=%s\n"
+        "version=1\nupdated_ms=%lld\nnonce=%s\nallow_file_commands=%d\nallow_chat_commands=%d\nauto_arm=%s\nenabled=%d\nmode=%s\n"
         "player_valid=%d\nzone=%u\nserver_id=%u\nzoning=%d\npos_x=%.3f\npos_y=%.3f\npos_z=%.3f\n"
         "speed_active=%d\nspeed_percent=%.1f\nspeed_raw=%.3f\n"
         "last_seq=%llu\nlast_id=%s\nlast_ok=%d\nlast_reason=%s\nlast_scope=client_local\nserver_confirmed=NO\n",
-        static_cast<long long>(s.now_ms), s.nonce.c_str(), s.allow_file_commands ? 1 : 0, s.auto_arm.c_str(),
+        static_cast<long long>(s.now_ms), s.nonce.c_str(), s.allow_file_commands ? 1 : 0, s.allow_chat_commands ? 1 : 0, s.auto_arm.c_str(),
         s.enabled ? 1 : 0, s.mode.c_str(), s.snap.valid ? 1 : 0, s.snap.zone, s.snap.server_id, s.snap.zoning ? 1 : 0,
         sv.x, sv.y, sv.z, s.speed_active ? 1 : 0, s.speed_percent, s.speed_raw,
         static_cast<unsigned long long>(s.last.seq), s.last.id.c_str(), s.last.ok ? 1 : 0, s.last.reason.c_str());

@@ -19,6 +19,7 @@ MAX_ABS_COORD = 4096.0
 STATUS_FRESH_SECONDS = 3.0
 _ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 _MODES = ("warp", "autorun", "local")
+MAX_CHAT_LEN = 120
 
 
 class NativeControlError(Exception):
@@ -57,6 +58,7 @@ def read_status(ashita_root: str | os.PathLike) -> dict:
         "age_seconds": round(age, 2),
         "nonce": kv.get("nonce", ""),
         "channel_enabled": kv.get("allow_file_commands") == "1",
+        "chat_enabled": kv.get("allow_chat_commands") == "1",
         "armed": kv.get("enabled") == "1",
         "mode": kv.get("mode", ""),
         "auto_arm": kv.get("auto_arm", ""),
@@ -103,6 +105,13 @@ def build_command(cmd: str, fields: dict) -> dict[str, str]:
             if abs(_finite(fields.get(axis), axis)) > MAX_ABS_COORD:
                 raise NativeControlError("target_out_of_bounds")
         return {**out, "id": wid, **{a: repr(round(float(fields[a]), 3)) for a in "xyz"}}
+    if cmd == "chat":
+        text = str(fields.get("text") or "")
+        if (not 2 <= len(text) <= MAX_CHAT_LEN or text[0] != "!" or text[1] == " "
+                or any(not 0x20 <= ord(c) <= 0x7E or c == ";" for c in text)):
+            raise NativeControlError("invalid_chat_line", "only '!' GM commands of printable ASCII "
+                                     f"(max {MAX_CHAT_LEN} chars, no ';') can be sent")
+        return {**out, "text": text}
     if cmd == "speed":
         pct = _finite(fields.get("value"), "speed")
         if not 25 <= pct <= 400:
@@ -122,6 +131,9 @@ def send_command(ashita_root: str | os.PathLike, cmd: str, fields: dict | None =
     if not status["channel_enabled"]:
         raise NativeControlError("channel_disabled", "set allow_file_commands=1 in "
                                  "config/workbench_native/settings.ini")
+    if cmd == "chat" and not status["chat_enabled"]:
+        raise NativeControlError("chat_disabled", "set allow_chat_commands=1 in "
+                                 "config/workbench_native/settings.ini and reload the plugin")
     seq = int(time.time() * 1000)
     lines = [f"seq={seq}", f"nonce={status['nonce']}", f"ts_ms={seq}"]
     lines += [f"{k}={v}" for k, v in body.items()]

@@ -189,6 +189,7 @@ class WorkbenchNativeProbe final : public IPlugin {
         si.nonce = router_->nonce();
         si.now_ms = EpochMs();
         si.allow_file_commands = router_->settings().allow_file_commands;
+        si.allow_chat_commands = router_->settings().allow_chat_commands;
         si.auto_arm = router_->settings().auto_arm;
         si.enabled = adapter_->enabled();
         si.mode = adapter_->enabled() ? (adapter_->mode() == wb::Mode::Warp ? "warp" : adapter_->mode() == wb::Mode::Autorun ? "autorun" : "local") : "";
@@ -216,6 +217,7 @@ class WorkbenchNativeProbe final : public IPlugin {
             st.enable_ttl_seconds = cur.enable_ttl_seconds;  // load-time only
             st.base_speed = cur.base_speed;
             router_->SetSettings(st);
+        router_->SetChatSink([this](const std::string& line) { core_->GetChatManager()->QueueCommand(1, line.c_str()); });
         }
         if (now >= next_cmd_) {
             next_cmd_ = now + 0.2;

@@ -45,3 +45,13 @@ The Server sidebar now links to `/server/gm`, a searchable, copy-only GM command
   `keyitems.lua` because they drift between LSB and Topaz/DSP.
 - The page has category tabs, a left command list, and a right entry pane with per-parameter inputs, ID pickers, a live
   preview and Copy. "Send to game" stays disabled: no command transport exists (the native plugin only does warp/speed).
+
+## Send to game
+
+The page can type a built command into the game chat through the native Ashita plugin (`POST /live-client/native/chat`). It is double opt-in and off by default:
+
+1. The plugin must be online (`allow_file_commands=1`).
+2. `config/workbench_native/settings.ini` must contain `allow_chat_commands=1`. A stock Ashita/server install has no such file or line; add both. The installer writes a commented template but never overwrites an existing file.
+3. The character must have GM permission on the server. Replies appear in game chat.
+
+Only single-line `!` commands (ASCII, no `;`, max 128 chars) are accepted; the plugin re-validates every line. The browser asks for confirmation before sending.
