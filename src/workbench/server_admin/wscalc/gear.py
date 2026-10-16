@@ -45,13 +45,101 @@ def slots() -> list[str]:
     return list(EQUIP_SLOTS)
 
 
-def search(conn, slot: int, text: str, limit: int = 60) -> list[dict]:
-    """Items that fit EQUIP_SLOTS[slot], by name (item_armor.slot bit = slot index; weapons have a row there too)."""
+def search(conn, slot: int, text: str, limit: int = 60, job: int = 0, level: int = 0) -> list[dict]:
+    """Items that fit EQUIP_SLOTS[slot], by name (item_armor.slot bit = slot index; weapons have a row there too).
+    job (1-22) and level (>0) restrict to items that job can equip at that level (item_armor.jobs bit = job-1)."""
     like = f"%{text.strip().replace(' ', '_')}%"
+    cond, args = "", [1 << slot, like, like]
+    if 1 <= job <= 22:
+        cond += " AND (a.jobs & %s) <> 0"
+        args.append(1 << (job - 1))
+    if level > 0:
+        cond += " AND a.level <= %s"
+        args.append(int(level))
+    args.append(int(limit))
     rows = _q(conn, "SELECT a.itemId, COALESCE(NULLIF(b.sortname,''), a.name), a.level, a.ilevel FROM item_armor a "
-                    "LEFT JOIN item_basic b ON b.itemid=a.itemId WHERE (a.slot & %s) <> 0 AND (a.name LIKE %s OR b.sortname LIKE %s) "
-                    "ORDER BY a.level DESC, a.name LIMIT %s", (1 << slot, like, like, int(limit)))
+                    "LEFT JOIN item_basic b ON b.itemid=a.itemId WHERE (a.slot & %s) <> 0 AND (a.name LIKE %s OR b.sortname LIKE %s)" + cond +
+                    " ORDER BY a.level DESC, a.name LIMIT %s", tuple(args))
     return [{"id": int(i), "name": str(n).replace("_", " "), "level": int(lv or 0), "ilevel": int(il or 0)} for i, n, lv, il in rows]
+
+
+# ---- job / race profile (grades.cpp + charutils::CalculateStats + battleutils::AddTraits) ----
+JOBS = {1: "WAR", 2: "MNK", 3: "WHM", 4: "BLM", 5: "RDM", 6: "THF", 7: "PLD", 8: "DRK", 9: "BST", 10: "BRD", 11: "RNG", 12: "SAM",
+        13: "NIN", 14: "DRG", 15: "SMN", 16: "BLU", 17: "COR", 18: "PUP", 19: "DNC", 20: "SCH", 21: "GEO", 22: "RUN"}
+RACES = {1: "Hume", 3: "Elvaan", 5: "Tarutaru", 7: "Mithra", 8: "Galka"}
+_RACE_ROW = {1: 0, 2: 0, 3: 1, 4: 1, 5: 2, 6: 2, 7: 3, 8: 4}
+# HP, MP, STR, DEX, VIT, AGI, INT, MND, CHR (grade 1=A .. 7=G)
+JOB_GRADES = {1: (2, 0, 1, 3, 4, 3, 6, 6, 5), 2: (1, 0, 3, 2, 1, 6, 7, 4, 5), 3: (5, 3, 4, 6, 4, 5, 5, 1, 3), 4: (6, 2, 6, 3, 6, 3, 1, 5, 4),
+              5: (4, 4, 4, 4, 5, 5, 3, 3, 4), 6: (4, 0, 4, 1, 4, 2, 3, 7, 7), 7: (3, 6, 2, 5, 1, 7, 7, 3, 3), 8: (3, 6, 1, 3, 3, 4, 3, 7, 7),
+              9: (3, 0, 4, 3, 4, 6, 5, 5, 1), 10: (4, 0, 4, 4, 4, 6, 4, 4, 2), 11: (5, 0, 5, 4, 4, 1, 5, 4, 5), 12: (2, 0, 3, 3, 3, 4, 5, 5, 4),
+              13: (4, 0, 3, 2, 3, 2, 4, 7, 6), 14: (3, 0, 2, 4, 3, 4, 6, 5, 3), 15: (7, 1, 6, 5, 6, 4, 2, 2, 2), 16: (4, 4, 5, 5, 5, 5, 5, 5, 5),
+              17: (4, 0, 5, 3, 5, 2, 3, 5, 5), 18: (4, 0, 5, 2, 4, 3, 5, 6, 3), 19: (4, 0, 4, 3, 5, 2, 6, 6, 2), 20: (5, 4, 6, 4, 5, 4, 3, 4, 3)}
+RACE_GRADES = [(4, 4, 4, 4, 4, 4, 4, 4, 4), (3, 5, 2, 5, 3, 6, 6, 2, 4), (7, 1, 6, 4, 5, 3, 1, 5, 4), (4, 4, 5, 1, 5, 2, 4, 5, 6), (1, 7, 3, 4, 1, 5, 5, 4, 6)]
+STAT_SCALE = [(0, 0, 0, 0), (5, .5, .1, .35), (4, .45, .2, .35), (4, .4, .25, .35), (3, .35, .35, .35), (3, .3, .35, .35), (2, .25, .4, .35), (2, .2, .4, .35)]
+_STATS = ("str", "dex", "vit", "agi", "int", "mnd", "chr")
+
+
+def _stat_part(grade: int, mlvl: int) -> float:
+    s = STAT_SCALE[grade]
+    up60 = mlvl - 1 if mlvl < 60 else 59
+    o60 = max(0, mlvl - 60)
+    o75 = 0 if mlvl < 75 else mlvl - 75
+    v = s[0] + s[1] * up60
+    if o60 > 0:
+        v += s[2] * o60
+        if o75 > 0:
+            v += s[3] * o75 - (0.01 if mlvl >= 75 else 0)
+    return v
+
+
+def base_stats(job: int, level: int, sjob: int, slevel: int, race: int) -> dict:
+    """Base STR..CHR before gear, as charutils::CalculateStats (no merits)."""
+    rr = RACE_GRADES[_RACE_ROW.get(race, 0)]
+    jg = JOB_GRADES.get(job)
+    if not jg or level < 1:
+        return {}
+    sg = JOB_GRADES.get(sjob) if slevel > 0 else None
+    out = {}
+    for i, k in enumerate(_STATS):
+        idx = i + 2
+        v = _stat_part(rr[idx], level) + _stat_part(jg[idx], level)
+        if sg:
+            s = STAT_SCALE[sg[idx]]
+            v += (s[0] + s[1] * (slevel - 1)) / 2
+        out[k] = int(v)
+    return out
+
+
+def traits_for(conn, job: int, level: int, sjob: int, slevel: int) -> list[dict]:
+    """Traits per battleutils::AddTraits: main then sub, highest rank per traitid wins, same rank+mod not doubled.
+    Rows with a content_tag are skipped (tagged content is gated by server settings)."""
+    out: list[dict] = []
+    for j, lv, src in ((job, level, "main"), (sjob, slevel, "sub")):
+        if not j or lv < 1:
+            continue
+        rows = _q(conn, "SELECT traitid, name, level, `rank`, modifier, value FROM traits WHERE job=%s AND traitid<255 AND content_tag IS NULL "
+                        "ORDER BY traitid, `rank` DESC", (j,))
+        for tid, name, tl, rank, mod, val in rows:
+            if not (0 < int(tl) <= lv):
+                continue
+            ex = next((e for e in out if e["id"] == int(tid)), None)
+            e = {"id": int(tid), "name": str(name), "rank": int(rank), "mod": int(mod), "value": int(val), "src": src, "job": JOBS.get(j, "?")}
+            if ex:
+                if ex["rank"] > e["rank"] or (ex["rank"] == e["rank"] and ex["mod"] == e["mod"]):
+                    continue
+                if ex["rank"] < e["rank"]:
+                    out.remove(ex)
+            out.append(e)
+    return out
+
+
+def profile_info(conn, prof: dict) -> dict:
+    j, l = int(prof.get("job") or 0), int(prof.get("level") or 0)
+    sj, sl = int(prof.get("sjob") or 0), int(prof.get("slevel") or 0)
+    sl = min(sl, max(1, (l + 1) // 2)) if sj and sl else sl
+    r = int(prof.get("race") or 1)
+    return {"job": j, "level": l, "sjob": sj, "slevel": sl, "race": r, "base": base_stats(j, l, sj, sl, r),
+            "traits": traits_for(conn, j, l, sj, sl) if j and l else []}
 
 
 def augment_options(root) -> list[dict]:
@@ -70,7 +158,7 @@ def item_info(conn, item_id: int) -> dict:
     return {"mods": [(int(m), int(v)) for m, v in mods], "weapon": ({"skill": int(wp[0][0]), "dmg": int(wp[0][1]), "delay": int(wp[0][2]), "hit": int(wp[0][3]), "dmg_type": int(wp[0][4])} if wp else None)}
 
 
-def totals(conn, root, loadout: list[dict]) -> dict:
+def totals(conn, root, loadout: list[dict], profile: dict | None = None) -> dict:
     """loadout: [{slot, item, augments:[{id, value}]}]. Returns summed stats, affinity, weapon info and a per-slot breakdown."""
     root = Path(root) if root else None
     names = _mod_names(root)
@@ -140,6 +228,18 @@ def totals(conn, root, loadout: list[dict]) -> dict:
         if info["weapon"] and int(ent.get("slot", -1)) in (2, 3):
             ranged_dmg[int(ent["slot"])] = info["weapon"]["dmg"]
         per_slot.append({"slot": int(ent.get("slot", -1)), "item": item, "lines": lines})
+    prof = profile_info(conn, profile) if profile and profile.get("job") else None
+    ineligible = []
+    if prof:
+        for ent in loadout or []:
+            item = int(ent.get("item") or 0)
+            row = _q(conn, "SELECT jobs, level, name FROM item_armor WHERE itemId=%s", (item,)) if item else []
+            if row and (not (int(row[0][0]) & (1 << (prof["job"] - 1))) or int(row[0][1]) > prof["level"]):
+                ineligible.append({"slot": int(ent.get("slot", -1)), "item": item, "name": str(row[0][2]).replace("_", " "), "level": int(row[0][1])})
+        for tr in prof["traits"]:
+            if tr["mod"] in MOD_STAT:
+                add(tr["mod"], tr["value"])
+                tr["stat"] = MOD_STAT[tr["mod"]]
     return {"stats": stat, "aff_dmg": aff_dmg, "aff_acc": aff_acc, "weapon": weapon, "sub_weapon": sub_weapon, "rdmg": sum(ranged_dmg.values()) if ranged_dmg else None, "per_slot": per_slot, "pet": pet, "pet_names": pet_names,
             "other": [{"mod": m, "name": _friendly(names.get(m, (None, ''))[0], m), "value": v} for m, v in sorted(other.items())],
-            "labels": STAT_LABEL}
+            "labels": STAT_LABEL, "profile": prof, "ineligible": ineligible}

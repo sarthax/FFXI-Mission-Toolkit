@@ -23,7 +23,7 @@
  <div>
   <fieldset><legend>Weapons</legend><div class="g" id="f_w"></div></fieldset>
   <fieldset><legend>Your stats (base, before gear)</legend><div class="g" id="f_s"></div></fieldset>
-  <fieldset><legend>Buffs and traits not on gear</legend><div class="g" id="f_b"></div></fieldset>
+  <fieldset><legend>Buffs, merits and traits not from your job or gear</legend><div class="g" id="f_b"></div></fieldset>
   <fieldset><legend>Target</legend><div class="g" id="f_t"></div></fieldset>
   <fieldset><legend>Enspell and spikes</legend><div class="g" id="f_e"></div></fieldset>
  </div>
@@ -46,6 +46,7 @@
  </div>
 </div>
 <script>
+window.PROFILE_LEVEL_KEY='level';
 const $=id=>document.getElementById(id);
 const num=(k,l,v)=>`<label>${l}<input data-k="${k}" type="number" step="any" value="${v}"></label>`;
 const sel=(k,l,opts)=>`<label>${l}<select data-k="${k}">${opts.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('')}</select></label>`;
