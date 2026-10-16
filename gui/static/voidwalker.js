@@ -91,15 +91,31 @@ function abyGraph(){
    if(k<2)s+='<line x1="'+(x0[k]+w)+'" y1="'+(y+28)+'" x2="'+(x0[k+1]-3)+'" y2="'+(y+28)+'" stroke="#888" stroke-width="2"/>';});
   var cz={zone:p.zone};s+='<g class="vwa" data-s=\''+abyKey(cz)+'\' style="cursor:pointer"><text x="'+(x0[2]+w+8)+'" y="'+(y+28)+'" font-size="11" font-weight="'+(isA(cz)?700:400)+'" fill="'+(isA(cz)?'#2a7de1':'currentColor')+'">&#9664; '+esc(p.zone)+'</text></g>';});
  $('vw2-abyg').innerHTML=s+'</svg>';
- Array.prototype.forEach.call($('vw2-abyg').querySelectorAll('.vwa'),function(g){g.addEventListener('click',function(){var c=JSON.parse(g.getAttribute('data-s'));abySel=isA(c)?null:c;abyGraph();abyDetail();});});abyDetail();
+ Array.prototype.forEach.call($('vw2-abyg').querySelectorAll('.vwa'),function(g){g.addEventListener('click',function(){var c=JSON.parse(g.getAttribute('data-s'));abySel=isA(c)?null:c;['vw2-aq','vw2-anm','vw2-az','vw2-at'].forEach(function(i){$(i).value='';});abyGraph();abyDetail();});});abyDetail();
 }
 function isA(c){return abySel&&JSON.stringify(abySel)===JSON.stringify(c);}
-function abyDetail(){var rows=abyRows().filter(abyOK);
- $('vw2-abyd').innerHTML='<div class="muted">'+rows.length+' of '+abyRows().length+' Abyssea NMs'+(abySel?' (click the selected box again to clear)':'; click a box, tier header or zone name to filter')+'</div><table><thead><tr><th>NM</th><th>Zone</th><th>Tier</th><th>Pop with</th><th>Drops</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td><span style="color:'+(r.tier===3?ACOL[r.colour]:r.tier===2?ACOL.Colorful:ACOL.Clear)+'">&#9679;</span> <b>'+esc(r.name)+'</b></td><td>'+esc(r.zone)+'</td><td>'+r.tier+'</td><td>'+esc(r.pop)+'</td><td>'+esc(r.drops)+'</td></tr>';}).join('')+'</tbody></table>';}
+function abyInit(){
+ var R=abyRows(),P=O.abyssea_paths||O.abyssea_nms||[];
+ var cards=[[new Set(R.map(function(r){return r.name;})).size,'Abyssea NMs'],[P.length,'zone paths'],[R.filter(function(r){return r.tier===1;}).length,'Tier I'],[R.filter(function(r){return r.tier===2;}).length,'Tier II'],[R.filter(function(r){return r.tier===3;}).length,'Tier III'],[P.length+2,'Demilune key items'],[P.length,'Atma drops'],[0,'built in DSP']];
+ $('vw2-abys').innerHTML=cards.map(function(x){return '<div class="cpcard"><b style="font-size:1.4em">'+x[0]+'</b><div class="muted">'+x[1]+'</div></div>';}).join('');
+ $('vw2-anm').innerHTML='<option value="">All NMs</option>'+Array.from(new Set(R.map(function(r){return r.name;}))).sort().map(function(n){return '<option>'+esc(n)+'</option>';}).join('');
+ $('vw2-az').innerHTML='<option value="">All zones</option>'+P.map(function(p){return '<option>'+esc(p.zone)+'</option>';}).join('');
+ ['vw2-aq','vw2-anm','vw2-az','vw2-at'].forEach(function(i){$(i).oninput=$(i).onchange=function(){abySel=null;abyGraph();abyDetail();};});
+ $('vw2-ax').onclick=function(){abySel=null;['vw2-aq','vw2-anm','vw2-az','vw2-at'].forEach(function(i){$(i).value='';});abyGraph();abyDetail();};
+ abyGraph();
+}
+function abyDetail(){var q=$('vw2-aq').value.toLowerCase(),nm=$('vw2-anm').value,z=$('vw2-az').value,tr=$('vw2-at').value,all=abyRows();
+ var rows=all.filter(function(r){return abyOK(r)&&(!q||(r.name+r.zone+r.drops+r.pop).toLowerCase().indexOf(q)>=0)&&(!nm||r.name===nm)&&(!z||r.zone===z)&&(!tr||String(r.tier)===tr);});
+ $('vw2-asum').textContent='Showing '+rows.length+' of '+all.length+' NMs'+(abySel?' (graph filter on)':'');
+ $('vw2-atb').innerHTML=rows.map(function(r){var nx=r.tier===1?'Colorful Demilune (1565)':r.tier===2?r.colour+' Demilune':'Atma';
+  return '<tr class="vwar" data-n="'+esc(r.name)+'" data-z="'+esc(r.zone)+'" style="cursor:pointer"><td><span style="color:'+(r.tier===3?ACOL[r.colour]:r.tier===2?ACOL.Colorful:ACOL.Clear)+'">&#9679;</span> <b>'+esc(r.name)+'</b></td><td>'+esc(r.zone)+'</td><td>'+r.tier+'</td><td>'+esc(r.pop)+'</td><td>'+esc(r.drops)+'</td><td>'+esc(nx)+'</td></tr>';}).join('');
+ Array.prototype.forEach.call(document.querySelectorAll('.vwar'),function(tr){tr.addEventListener('click',function(){var p=(O.abyssea_paths||O.abyssea_nms||[]).filter(function(x){return x.zone===tr.dataset.z;})[0];
+  $('vw2-ad').hidden=false;$('vw2-ad').innerHTML='<h3 style="margin:0">'+esc(tr.dataset.n)+'</h3><div class="muted">Abyssea - '+esc(p.zone)+', path: '+p.tiers.map(function(q){return 'Tier '+q.tier+' '+esc(q.nms.join(' / '));}).join(' &rarr; ')+'</div><div class="vwc vwc-warn">Not built in DSP. Data from FFXIclopedia/BG Wiki; spawn grid, HP and abilities are on the wiki page.'+(p.note?'<br>'+esc(p.note):'')+'</div>';});});
+}
 function more(){
  var n=O.npc;
  $('vw2-npc').innerHTML='<div class="vwc vwc-ok"><b>'+esc(n.name)+'</b>, '+esc(n.zone)+' ('+n.zone_id+'), '+esc(n.pos)+'. Event '+n.event+', price '+n.price+' gil.<br>'+esc(n.desc)+'<br><span class="mono">'+esc(n.script)+'</span></div>';
- $('vw2-aby').innerHTML='<div class="vwc vwc-warn">'+esc(O.abyssea)+'</div><div id="vw2-abyg"></div><div id="vw2-abyd"></div>';abyGraph();
+ $('vw2-aby').innerHTML='<div class="vwc vwc-warn">'+esc(O.abyssea)+'</div><div id="vw2-abys" class="cpcards"></div><div id="vw2-abyg" style="overflow-x:auto"></div><p class="muted">Each row is one zone path. Click a box, tier header or zone name to filter the table.</p><div><input id="vw2-aq" placeholder="Search NM, zone, drop"> <select id="vw2-anm"></select> <select id="vw2-az"></select> <select id="vw2-at"><option value="">Any tier</option><option value="1">Tier I</option><option value="2">Tier II</option><option value="3">Tier III</option></select> <button type="button" id="vw2-ax">Clear filter</button> <span id="vw2-asum" class="muted"></span></div><div class="table-wrap"><table><thead><tr><th>NM</th><th>Zone</th><th>Tier</th><th>Pop with</th><th>Drops</th><th>Next tier</th></tr></thead><tbody id="vw2-atb"></tbody></table></div><div id="vw2-ad" hidden></div>';abyInit();
  var sk=O.skills||{},ks=Object.keys(sk).sort();
  $('vw2-skills').innerHTML=ks.length?'<table><thead><tr><th>NM</th><th>Pool</th><th>List</th><th>Skills</th></tr></thead><tbody>'+ks.map(function(k){var q=sk[k];return '<tr><td>'+esc(k)+'</td><td class="mono">'+q.pool+'</td><td class="mono">'+q.list+(q.list>=9000?' (own)':'')+'</td><td>'+q.skills.map(function(s){return '<span style="color:'+(s.lua?'inherit':'#c0392b')+'" title="'+(s.lua?'Lua present':'no Lua')+'">'+esc(s.name)+'</span>';}).join(', ')+'</td></tr>';}).join('')+'</tbody></table>':'<div class="muted">No DB connection.</div>';
  var w=O.wiki||{},wk=Object.keys(w).sort(),miss=wk.filter(function(k){return w[k].indexOf('BGWiki')<0&&w[k].indexOf('FFXIclopedia')<0;});
