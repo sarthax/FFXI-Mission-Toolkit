@@ -33,7 +33,7 @@ source modification is required for the planned GM path.
 
 ## Slice 2: Browser (implemented)
 
-The Server sidebar now links to `/server/gm`, a searchable, copy-only GM command browser. `/server/gm/commands` lists metadata read from the active local server checkout. No game command submission endpoint exists. If the server root is missing or lacks `scripts/commands`, the page reports the catalog error. This first UI pass is standalone HTML; shared-shell visual integration may be refined later.
+The Server sidebar now links to `/server/gm`, a searchable, copy-only GM command browser. `/server/gm/commands` lists metadata read from the active local server checkout. No game command submission endpoint exists. If the server root is missing or lacks `scripts/commands`, the page reports the catalog error. The page extends the shared `workbench_page.html` shell (top navigation) via `gui/templates/server_gm_commands.html`.
 
 ## Categories, usage and ID lookup (2026-10-15)
 

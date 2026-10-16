@@ -1,19 +1,17 @@
-"""Static HTML for the GM Command Center (category tabs, command list, entry pane, ID picker)."""
-
-PAGE = r"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Server · GM Command Center</title>
+{% extends "workbench_page.html" %}
+{% block title %}GM Command Center{% endblock %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_heading %}GM Command Center{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Copy-only</span>{% endblock %}
+{% block page_help %}Browse the active server's GM commands by category, look up IDs from the server's own tables, and copy the finished command. No command transmission is enabled.{% endblock %}
+{% block page_body %}
 <style>
-:root{font-family:system-ui,sans-serif;color-scheme:dark;--bg:#12151a;--pn:#1a1f27;--bd:#2c333d;--tx:#dde3ea;--mu:#8b97a6;--ac:#5aa9ff}
-body{margin:0;background:var(--bg);color:var(--tx);font-size:14px}
-header{padding:10px 16px;border-bottom:1px solid var(--bd)}h1{margin:0;font-size:17px}
-.note{color:var(--mu);font-size:12px;margin-top:3px}
-#tabs{display:flex;gap:2px;flex-wrap:wrap;padding:8px 16px 0;border-bottom:1px solid var(--bd)}
+.gmc{--pn:#1a1f27;--bd:#2c333d;--mu:#8b97a6;--ac:#5aa9ff;--tx:inherit}
+#tabs{display:flex;gap:2px;flex-wrap:wrap;padding:0;border-bottom:1px solid var(--bd)}
 #tabs button{background:none;border:1px solid transparent;border-bottom:0;color:var(--mu);padding:6px 11px;cursor:pointer;border-radius:6px 6px 0 0}
 #tabs button.on{background:var(--pn);color:var(--tx);border-color:var(--bd)}
 #tabs b{font-weight:400;opacity:.6;margin-left:4px}
-main{display:grid;grid-template-columns:290px 1fr;height:calc(100vh - 112px)}
+.gmc-main{display:grid;grid-template-columns:290px 1fr;height:calc(100vh - 260px);min-height:420px}
 #list{border-right:1px solid var(--bd);overflow:auto;padding:8px}
 #list input{width:100%;box-sizing:border-box;margin-bottom:6px}
 .cmd{display:block;width:100%;text-align:left;background:none;border:0;color:var(--tx);padding:6px 8px;border-radius:5px;cursor:pointer}
@@ -28,12 +26,14 @@ button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}
 .res div{padding:4px 8px;cursor:pointer;display:flex;gap:10px}.res div:hover{background:#242c37}.res i{color:var(--ac);font-style:normal;min-width:80px}
 pre{background:var(--pn);border:1px solid var(--bd);padding:10px;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
 .mu{color:var(--mu);font-size:12px}
-</style></head><body>
-<header><h1>GM Command Center</h1>
-<div class="note">No command transmission is enabled. Build a command, look up IDs from the active server, then copy it into the game chat.</div></header>
+</style>
+<div class="gmc">
+<p class="note mu">No command transmission is enabled. Build a command, look up IDs from the active server, then copy it into the game chat.</p>
 <div id="tabs"></div>
-<main><div id="list"><input id="search" type="search" placeholder="Search all commands…" aria-label="Search commands"><div id="items"></div></div>
-<div id="pane"><p class="mu">Pick a category, then a command.</p></div></main>
+<div class="gmc-main"><div id="list"><input id="search" type="search" placeholder="Search all commands…" aria-label="Search commands"><div id="items"></div></div>
+<div id="pane"><p class="mu">Pick a category, then a command.</p></div></div>
+
+</div>
 <script>
 const $=id=>document.getElementById(id);let DATA=[],CATS=[],cat='',cur=null;
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -93,4 +93,5 @@ $('pane').addEventListener('click',e=>{
   if(e.target.id==='copy'){const r=cmdText();navigator.clipboard.writeText(r.text);e.target.textContent='Copied';setTimeout(()=>e.target.textContent='Copy command',1200)}
 });
 init();
-</script></body></html>"""
+</script>
+{% endblock %}

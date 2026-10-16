@@ -4,15 +4,31 @@ from __future__ import annotations
 from html import escape
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+import sys
+
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 from workbench.runtime.legacy_settings import get_active_server_root
 from .catalog import CATEGORIES, catalog_commands
 from .lookup import KINDS, lookup
-from ._page import PAGE
 
 router = APIRouter(prefix="/server/gm", tags=["Server GM Command Catalog"])
+from workbench.runtime.paths import GUI_ROOT
+
+_TEMPLATES = GUI_ROOT / "templates"
+templates = Jinja2Templates(directory=str(_TEMPLATES))
+
+
+def _sync_host_template_globals() -> None:
+    """Reuse the main GUI's shared base.html globals (top navigation) when hosted."""
+    for module_name in ("workbench.app.host", "__main__"):
+        host_env = getattr(getattr(sys.modules.get(module_name), "templates", None), "env", None)
+        host_globals = getattr(host_env, "globals", None)
+        if host_globals:
+            templates.env.globals.update(host_globals)
+            return
 
 
 def _catalog():
@@ -46,5 +62,7 @@ def id_lookup(kind: str, q: str = "", limit: int = 30):
 
 
 @router.get("", response_class=HTMLResponse)
-def gm_command_page():
-    return HTMLResponse(PAGE)
+def gm_command_page(request: Request):
+    _sync_host_template_globals()
+    return templates.TemplateResponse(request=request, name="server_gm_commands.html",
+                                      context={"title": "GM Command Center"})
