@@ -1,0 +1,64 @@
+Tier 3,,,,,,
+Trade,Result,Preset,Augments,,,
+"40+ Item, 6x Green Mog Pell (AGI)",NQ,A,AGI+4,DMG:+2,Attack+10,Haste+2%
+"40+ Item, 6x Green Mog Pell (AGI)",NQ,B,AGI/STR+3,R.DMG:+2,Ranged Accuracy+4,"Mag.Acc.+5 ""Mag.Atk.Bns.""+5"
+"40+ Item, 6x Green Mog Pell (AGI)",NQ,C,AGI/STR+3,R.DMG:+2,Ranged Accuracy+4,Snapshot+1
+"40+ Item, 6x Green Mog Pell (AGI)",NQ,D,AGI/STR+3,R.DMG:+2,Ranged Attack+10,Snapshot+1
+"40+ NQ, 6x Green Mog Pell (AGI), 1x Riftsand",HQ,A,AGI+5,DMG:+3,Attack+12,Haste+3%
+"40+ NQ, 6x Green Mog Pell (AGI), 1x Riftsand",HQ,B,AGI/STR+4,R.DMG:+3,Ranged Accuracy+6,"Mag.Acc.+6 ""Mag.Atk.Bns.""+6"
+"40+ NQ, 6x Green Mog Pell (AGI), 1x Riftsand",HQ,C,AGI/STR+4,R.DMG:+3,Ranged Accuracy+6,Snapshot+2
+"40+ NQ, 6x Green Mog Pell (AGI), 1x Riftsand",HQ,D,AGI/STR+4,R.DMG:+3,Ranged Attack+12,Snapshot+2
+,,,,,,
+"40+ Item, 6x Rainbow Mog Pell (CHR)",NQ,A, STR/DEX/VIT/AGI/INT/MND+2,CHR+4,DMG:+2,Attack+10
+"40+ Item, 6x Rainbow Mog Pell (CHR)",NQ,B, STR/DEX/VIT/AGI/INT/MND+2,CHR+4,DMG:+2,Haste+2%
+"40+ Item, 6x Rainbow Mog Pell (CHR)",NQ,C, STR/DEX/VIT/AGI/INT/MND+2,CHR+4,"Pet: Mag.Acc.+6 ""Mag.Atk.Bns.""+6",Pet: Dbl.Atk.+4 Crit.hit rate+4
+"40+ Item, 6x Rainbow Mog Pell (CHR)",NQ,D, STR/DEX/VIT/AGI/INT/MND+2,CHR+4,"Mag.Acc.+5 ""Mag.Atk.Bns.""+5",Magic skills +2
+"40+ NQ, 6x Rainbow Mog Pell (CHR), 1x Riftsand",HQ,A, STR/DEX/VIT/AGI/INT/MND+3,CHR+5,DMG:+3,Attack+10
+"40+ NQ, 6x Rainbow Mog Pell (CHR), 1x Riftsand",HQ,B, STR/DEX/VIT/AGI/INT/MND+3,CHR+5,DMG:+3,Haste+2%
+"40+ NQ, 6x Rainbow Mog Pell (CHR), 1x Riftsand",HQ,C, STR/DEX/VIT/AGI/INT/MND+3,CHR+5,"Pet: Mag.Acc.+7 ""Mag.Atk.Bns.""+7",Pet: Dbl.Atk.+5 Crit.hit rate+5
+"40+ NQ, 6x Rainbow Mog Pell (CHR), 1x Riftsand",HQ,D, STR/DEX/VIT/AGI/INT/MND+3,CHR+5,"Mag.Acc.+6 ""Mag.Atk.Bns.""+6",Magic skills +3
+,,,,,,
+"40+ Item, 6x Ochre Mog Pell (DEX)",NQ,A, DEX+4,DMG:+2,Accuracy+4,Haste+2%
+"40+ Item, 6x Ochre Mog Pell (DEX)",NQ,B, DEX+4,DMG:+2,Haste+2%,Pet: Dbl.Atk.+4 Crit.hit rate+4
+"40+ Item, 6x Ochre Mog Pell (DEX)",NQ,C, DEX+4,DMG:+2,Attack+10,Haste+2%
+"40+ Item, 6x Ochre Mog Pell (DEX)",NQ,D, DEX+4,DMG:+2,Attack+10,Dbl.Atk.+1
+"40+ NQ, 6x Ochre Mog Pell (DEX), 1x Riftsand",HQ,A, DEX+5,DMG:+3,Accuracy+6,Haste+3%
+"40+ NQ, 6x Ochre Mog Pell (DEX), 1x Riftsand",HQ,B, DEX+5,DMG:+3,Haste+3%,Pet: Dbl.Atk.+5 Crit.hit rate+5
+"40+ NQ, 6x Ochre Mog Pell (DEX), 1x Riftsand",HQ,C, DEX+5,DMG:+3,Attack+12,Haste+3%
+"40+ NQ, 6x Ochre Mog Pell (DEX), 1x Riftsand",HQ,D, DEX+5,DMG:+3,Attack+12,Dbl.Atk.+2
+,,,,,,
+"40+ Item, 6x Silver Mog Pell (INT)",NQ,A, INT+4,"Mag.Acc.+5 ""Mag.Atk.Bns.""+5",Fast Cast+2,Haste+2%
+"40+ Item, 6x Silver Mog Pell (INT)",NQ,B, INT+4,"Mag.Acc.+5 ""Mag.Atk.Bns.""+5",Blood Pact ability delay -1,"Pet: Mag.Acc.+6 ""Mag.Atk.Bns.""+6"
+"40+ Item, 6x Silver Mog Pell (INT)",NQ,C, INT+4,"Mag.Acc.+5 ""Mag.Atk.Bns.""+5",Blood Pact ability delay -1,Pet: Dbl.Atk.+4 Crit.hit rate+4
+"40+ Item, 6x Silver Mog Pell (INT)",NQ,D, INT+4,"Mag.Acc.+5 ""Mag.Atk.Bns.""+5",Fast Cast+2,Ninjutsu DMG:+3%
+"40+ NQ, 6x Silver Mog Pell (INT), 1x Riftsand",HQ,A, INT+5,"Mag.Acc.+6 ""Mag.Atk.Bns.""+6",Fast Cast+3,Haste+3%
+"40+ NQ, 6x Silver Mog Pell (INT), 1x Riftsand",HQ,B, INT+5,"Mag.Acc.+6 ""Mag.Atk.Bns.""+6",Blood Pact ability delay -2,"Pet: Mag.Acc.+7 ""Mag.Atk.Bns.""+7"
+"40+ NQ, 6x Silver Mog Pell (INT), 1x Riftsand",HQ,C, INT+5,"Mag.Acc.+6 ""Mag.Atk.Bns.""+6",Blood Pact ability delay -2,Pet: Dbl.Atk.+5 Crit.hit rate+5
+"40+ NQ, 6x Silver Mog Pell (INT), 1x Riftsand",HQ,D, INT+5,"Mag.Acc.+6 ""Mag.Atk.Bns.""+6",Fast Cast+3,Ninjutsu DMG:+4%
+,,,,,,
+"40+ Item, 6x Marble Mog Pell (MND)",NQ,A, MND+4,MP+10,Fast Cast+2,Cure Potency +1
+"40+ Item, 6x Marble Mog Pell (MND)",NQ,B, MND+4,MP+10,Fast Cast+2,"Mag.Acc.+5 ""Mag.Atk.Bns.""+5"
+"40+ Item, 6x Marble Mog Pell (MND)",NQ,C, MND/STR+3,DMG:+2,Attack+10,Accuracy+4
+"40+ Item, 6x Marble Mog Pell (MND)",NQ,D, MND/STR+3,DMG:+2,Attack+10,Haste+2%
+"40+ NQ, 6x Marble Mog Pell (MND), 1x Riftsand",HQ,A, MND+5,MP+12,Fast Cast+3,Cure Potency +2
+"40+ NQ, 6x Marble Mog Pell (MND), 1x Riftsand",HQ,B, MND+5,MP+12,Fast Cast+3,"Mag.Acc.+6 ""Mag.Atk.Bns.""+6"
+"40+ NQ, 6x Marble Mog Pell (MND), 1x Riftsand",HQ,C, MND/STR+4,DMG:+3,Attack+12,Accuracy+6
+"40+ NQ, 6x Marble Mog Pell (MND), 1x Riftsand",HQ,D, MND/STR+4,DMG:+3,Attack+12,Haste+3%
+,,,,,,
+"40+ Item, 6x Red Mog Pell (STR)",NQ,A, STR+4,DMG:+2,Attack+10,Haste+2%
+"40+ Item, 6x Red Mog Pell (STR)",NQ,B, STR+4,DMG:+2,Attack+10,Dbl.Atk.+1
+"40+ Item, 6x Red Mog Pell (STR)",NQ,C, STR+4,DMG:+2,Attack+10,Pet: Dbl.Atk.+4 Crit.hit rate+4
+"40+ Item, 6x Red Mog Pell (STR)",NQ,D, STR/AGI+4,R.DMG:+2,Ranged Attack+10,Snapshot+1
+"40+ NQ, 6x Red Mog Pell (STR), 1x Riftsand",HQ,A, STR+5,DMG:+3,Attack+12,Haste+3%
+"40+ NQ, 6x Red Mog Pell (STR), 1x Riftsand",HQ,B, STR+5,DMG:+3,Attack+12,Dbl.Atk.+2
+"40+ NQ, 6x Red Mog Pell (STR), 1x Riftsand",HQ,C, STR+5,DMG:+3,Attack+12,Pet: Dbl.Atk.+5 Crit.hit rate+5
+"40+ NQ, 6x Red Mog Pell (STR), 1x Riftsand",HQ,D, STR/AGI+5,R.DMG:+3,Ranged Attack+12,Snapshot+2
+,,,,,,
+"40+ Item, 6x Gold Mog Pell (VIT)",NQ,A, VIT+4,DMG:+2,Attack+10,Haste+2%
+"40+ Item, 6x Gold Mog Pell (VIT)",NQ,B, VIT+4,DMG:+2,DEF+10,HP+10
+"40+ Item, 6x Gold Mog Pell (VIT)",NQ,C, VIT+4,DEF+10,HP+10,Haste+2%
+"40+ Item, 6x Gold Mog Pell (VIT)",NQ,D, VIT+4,DEF+10,HP+10,Pet: Dbl.Atk.+4 Crit.hit rate+4
+"40+ NQ, 6x Gold Mog Pell (VIT), 1x Riftsand",HQ,A, VIT+5,DMG:+3,Attack+12,Haste+3%
+"40+ NQ, 6x Gold Mog Pell (VIT), 1x Riftsand",HQ,B, VIT+5,DMG:+3,DEF+12,HP+12
+"40+ NQ, 6x Gold Mog Pell (VIT), 1x Riftsand",HQ,C, VIT+5,DEF+12,HP+12,Haste+3%
+"40+ NQ, 6x Gold Mog Pell (VIT), 1x Riftsand",HQ,D, VIT+5,DEF+12,HP+12,Pet: Dbl.Atk.+5 Crit.hit rate+5

@@ -1,0 +1,87 @@
+{% extends "workbench_page.html" %}
+{% block title %}Magic Nuke Calculator{% endblock %}
+{% block page_archetype %}dashboard{% endblock %}
+{% block page_class %}magic-calc-page{% endblock %}
+{% block page_heading %}Magic Nuke Calculator{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">What-if only, never writes Lua</span>{% endblock %}
+{% block page_help %}Expected damage of DSP elemental nukes and ninjutsu, following magic.lua step by step (each step floored). Resist is the exact expected value for ninjutsu and an assumed average factor for elemental. Spell tables and mob families are a snapshot (spell_params + live mob_family_system); family elemental multipliers act as RES on hit chance only. Same model as the DSP_Nuke and DSP_Ninjutsu spreadsheets.{% endblock %}
+{% block page_body %}
+<style>
+.mc{display:grid;grid-template-columns:minmax(280px,1fr) minmax(320px,1.5fr);gap:16px}
+@media(max-width:900px){.mc{grid-template-columns:1fr}}
+.mc fieldset{border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin:0 0 12px}
+.mc legend{font-size:12px;color:var(--muted);text-transform:uppercase;padding:0 4px}
+.mc .g{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 10px}
+.mc label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.mc input,.mc select{padding:4px 6px;font-size:13px;width:100%;box-sizing:border-box}
+.mc td.n,.mc th.n{text-align:right;font-variant-numeric:tabular-nums}
+.mc .big{font-size:26px;font-weight:700;color:var(--accent)}
+.mc .tabs button{padding:6px 14px;margin-right:6px}
+.mc .tabs button.on{font-weight:700;border-bottom:2px solid var(--accent)}
+</style>
+{% include 'gear_panel.html' %}
+<div class="mc">
+ <div>
+  <div class="tabs" style="margin-bottom:10px"><button id="tn" class="on">Elemental</button><button id="ti">Ninjutsu</button></div>
+  <fieldset><legend>Spell and target</legend><div class="g">
+   <label>Spell <select id="spell"></select></label>
+   <label>Target family <select id="family"></select></label>
+  </div></fieldset>
+  <fieldset><legend>Caster and gear</legend><div class="g" id="f_cast"></div></fieldset>
+  <fieldset><legend>Augment mix (Your mix, max 16)</legend><div class="g" id="f_mix"></div></fieldset>
+  <fieldset><legend>Target</legend><div class="g" id="f_tgt"></div></fieldset>
+  <fieldset><legend>Conditions</legend><div class="g" id="f_cond"></div></fieldset>
+  <fieldset id="fs_nin" style="display:none"><legend>Ninjutsu engine</legend><div class="g" id="f_nin"></div></fieldset>
+ </div>
+ <div>
+  <div class="stats" style="grid-template-columns:repeat(2,1fr)">
+   <div class="stat"><div class="big" id="r_main">-</div><div class="l">Final damage (your mix)</div></div>
+   <div class="stat"><div class="big" id="r_hit">-</div><div class="l">Hit chance</div><div class="muted" id="r_sub"></div></div>
+  </div>
+  <h3>Augment mixes</h3><div class="table-wrap"><table id="mixes"></table></div>
+  <h3>All spells (your mix)</h3><div class="table-wrap"><table id="cmp"></table></div>
+  <div id="chainbox" style="display:none"><h3>Debuff chain (rows = previous nuke element, tier <select id="ctier" style="width:auto"><option>ichi</option><option>ni</option><option selected>san</option></select>)</h3><div class="table-wrap"><table id="chain"></table></div></div>
+ </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+window.GEAR_MAP={int:'int',matt:'matt',macc:'macc',nin_skill:'nin_skill'};
+const CAST=[['int','Caster INT (no augments)'],['matt','MATT (base)'],['macc','MACC (base)'],['lvl','Caster level'],['int_pp','INT / piece'],['matt_pp','MATT / piece'],['macc_pp','MACC / piece'],['mdmg_pp','Magic Dmg / piece'],['aff_pp','Affinity / set-F piece'],['burst_pp','Burst % / set-G piece'],['skill_pp','Elem skill / set-C piece'],['aff_cap','Affinity cap']];
+const MIX=[['C','Set C pieces'],['F','Set F pieces'],['G','Set G pieces']];
+const TGT=[['t_lvl','Target level'],['t_int','Target INT (blank = family)'],['meva','Target MEVA'],['mdef','Target MDEF'],['burst_step','Burst step (0-5)'],['nm_mult','NM stat multiplier'],['resist_factor','Elemental: resisted avg factor']];
+const E=['fire','ice','wind','earth','lightning','water','light','dark'];
+const sel=(k,l,opts)=>`<label>${l}<select data-k="${k}">${opts.map(o=>`<option>${o}</option>`).join('')}</select></label>`;
+const num=(k,l,v)=>`<label>${l}<input data-k="${k}" type="number" step="any" value="${v==null?'':v}"></label>`;
+let M=null,kind='nuke',timer=null;
+function build(){const d=M.defaults;
+ $('f_cast').innerHTML=CAST.map(([k,l])=>num(k,l,d[k])).join('');
+ $('f_mix').innerHTML=MIX.map(([k,l])=>num(k,l,d[k])).join('');
+ $('f_tgt').innerHTML=TGT.map(([k,l])=>num(k,l,d[k])).join('')+sel('nm','NM?',['false','true']);
+ $('f_cond').innerHTML=sel('day','Day element',E)+sel('weather','Weather element',E)+sel('wx_strength','Weather strength',['Double','Single','None'])+sel('proc','Proc mode',['Obi','Average'])+sel('irid','Iridescence staff',['false','true'])+num('day_bonus','Day nuke bonus %',d.day_bonus)+sel('aff_el','Affinity applies to',['Any',...E])+num('macc_per_aff','MACC per affinity level',d.macc_per_aff)+sel('enforce_cap','Enforce affinity cap',['true','false']);
+ $('f_nin').innerHTML=sel('engine','Engine mode',['As coded','Intended'])+sel('nin_main','NIN main',['true','false'])+num('nin_skill','Ninjutsu skill',d.nin_skill)+sel('futae','Futae',['false','true'])+num('extra_mab','Extra ninjutsu MAB',d.extra_mab)+sel('prev','Previous nuke element',['None',...E.slice(0,6)]);
+ document.querySelectorAll('.mc fieldset input,.mc fieldset select').forEach(i=>{i.oninput=i.onchange=sched});
+ $('family').innerHTML=M.mobs.map(m=>`<option>${m.family}</option>`).join('');
+}
+function cfg(){const c={};document.querySelectorAll('#f_cast input,#f_mix input,#f_tgt input,#f_cond input,#f_nin input').forEach(i=>{if(i.dataset.k)c[i.dataset.k]=i.value});
+ document.querySelectorAll('#f_tgt select,#f_cond select,#f_nin select').forEach(i=>{const v=i.value;c[i.dataset.k]=v==='true'?true:v==='false'?false:v});return c}
+function gearCfg(c){if(!window.GEAR||!GEAR.on||!GEAR.totals)return c;const g=k=>GEAR.stat(k),o={...c};
+ const add=(k,v)=>{o[k]=(parseFloat(o[k])||0)+v};
+ add('int',g('int'));add('matt',g('matt'));add('macc',g('macc'));add('nin_skill',g('nin_skill'));
+ o.mdmg_flat=g('mdmg');o.burst_flat=g('burst');o.skill_flat=g('elem_skill');o.aff_gear=GEAR.totals.aff_dmg;o.aff_flat=g('aff_all');o.nin_mab_gear=g('nin_mab');o.nin_macc_gear=g('nin_macc');return o}
+window.addEventListener('gearchange',sched);
+function setKind(k){kind=k;$('tn').className=k==='nuke'?'on':'';$('ti').className=k==='nin'?'on':'';
+ $('spell').innerHTML=M[k].map(s=>`<option>${s.name}</option>`).join('');$('spell').value=k==='nuke'?'fire_iv':'katon_san';
+ $('fs_nin').style.display=k==='nin'?'block':'none';$('chainbox').style.display=k==='nin'?'block':'none';sched()}
+const f0=x=>Math.round(x).toLocaleString();
+async function calc(){
+ const r=await(await fetch('/api/magic-calc/compute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind,spell:$('spell').value,family:$('family').value,cfg:gearCfg(cfg()),chain_tier:$('ctier').value})})).json();
+ const y=r.rows[0];$('r_main').textContent=f0(y.final);$('r_hit').textContent=(100*y.hit).toFixed(0)+'%';
+ $('r_sub').textContent='dINT '+y.dint.toFixed(0)+', base '+f0(y.base)+', weather x'+y.wx.toFixed(2)+', affinity '+y.aff;
+ $('mixes').innerHTML='<tr><th>Mix</th><th class="n">C/F/G</th><th class="n">INT</th><th class="n">dINT</th><th class="n">Hit</th><th class="n">Final</th></tr>'+r.rows.map(x=>`<tr><td>${x.mix}</td><td class="n">${x.pieces.join('/')}</td><td class="n">${f0(x.INT)}</td><td class="n">${x.dint.toFixed(0)}</td><td class="n">${(100*x.hit).toFixed(0)}%</td><td class="n"><b>${f0(x.final)}</b></td></tr>`).join('');
+ $('cmp').innerHTML='<tr><th>Spell</th><th>Element</th><th>Class</th><th class="n">Hit</th><th class="n">Final</th></tr>'+r.compare.map(x=>`<tr${x.spell===$('spell').value?' style="font-weight:700"':''}><td>${x.spell}</td><td>${x.element}</td><td>${x.cls}</td><td class="n">${(100*x.hit).toFixed(0)}%</td><td class="n">${f0(x.final)}</td></tr>`).join('');
+ if(r.chain){const ks=Object.keys(Object.values(r.chain)[0]);$('chain').innerHTML='<tr><th>Prev / next</th>'+ks.map(k=>`<th class="n">${k.split('_')[0]}</th>`).join('')+'</tr>'+Object.entries(r.chain).map(([p,v])=>`<tr><td>${p}</td>${ks.map(k=>`<td class="n">${f0(v[k])}</td>`).join('')}</tr>`).join('')}
+}
+function sched(){clearTimeout(timer);timer=setTimeout(calc,250)}
+(async()=>{M=await(await fetch('/api/magic-calc/meta')).json();build();$('tn').onclick=()=>setKind('nuke');$('ti').onclick=()=>setKind('nin');setKind('nuke')})();
+</script>
+{% endblock %}

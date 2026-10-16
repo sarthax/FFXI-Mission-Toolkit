@@ -1,0 +1,78 @@
+Tier 4,,,,,,
+Trade,Result,Preset,Augments,,,
+"60+ Item, 12x Green Mog Pell (AGI)",NQ,A,AGI+4,DMG:+2,Attack+15,Haste+2%
+"60+ Item, 12x Green Mog Pell (AGI)",NQ,B,AGI/STR+3,R.DMG:+2,Ranged Attack+15,Archery Skill+3
+"60+ Item, 12x Green Mog Pell (AGI)",NQ,C,AGI/DEX+3,DMG:+2,Crit.hit rate+2,Dbl.Atk.+4
+"60+ Item, 12x Green Mog Pell (AGI)",NQ,D,AGI/STR+3,R.DMG:+2,Ranged Accuracy+5,Snapshot+1
+"60+ Item, 12x Green Mog Pell (AGI)",NQ,E,AGI/STR+3,R.DMG:+2,Ranged Attack+15,Marksmanship Skill+3
+"60+ NQ, 12x Green Mog Pell (AGI), 1x Riftdross",HQ,A,AGI+5,DMG:+3,Attack+18,Haste+3%
+"60+ NQ, 12x Green Mog Pell (AGI), 1x Riftdross",HQ,B,AGI/STR+4,R.DMG:+3,Ranged Attack+18,Archery Skill+4
+"60+ NQ, 12x Green Mog Pell (AGI), 1x Riftdross",HQ,C,AGI/DEX+4,DMG:+3,Dbl.Atk.+3 Crit.hit rate+3,Attack+18
+"60+ NQ, 12x Green Mog Pell (AGI), 1x Riftdross",HQ,D,AGI/STR+4,R.DMG:+3,Ranged Accuracy+7,Snapshot+2
+"60+ NQ, 12x Green Mog Pell (AGI), 1x Riftdross",HQ,E,AGI/STR+4,R.DMG:+3,Ranged Attack+18,Marksmanship Skill+4
+,,,,,,
+"60+ Item, 12x Rainbow Mog Pell (CHR)",NQ,A, STR/DEX/VIT/AGI/INT/MND+3,CHR+4,DMG:+2,Attack+15
+"60+ Item, 12x Rainbow Mog Pell (CHR)",NQ,B, STR/DEX/VIT/AGI/INT/MND+3,CHR+4,DMG:+2,Haste+2%
+"60+ Item, 12x Rainbow Mog Pell (CHR)",NQ,C, Pet: Regen+4,Pet: Damage taken -4%,"Pet: Mag.Acc.+6 ""Mag.Atk.Bns.""+6",Pet: TP Bonus +60
+"60+ Item, 12x Rainbow Mog Pell (CHR)",NQ,D, INT+4,CHR+4,"Mag.Acc.+6 ""Mag.Atk.Bns.""+6",Magic skills +3
+"60+ Item, 12x Rainbow Mog Pell (CHR)",NQ,E, Pet: Regen+4,Pet: Damage taken -4%,Pet: Acc+20/R.Acc+20/Atk.+20/R.Atk.+20,Pet: Dbl.Atk.+4 Crit.hit rate+4
+"60+ NQ, 12x Rainbow Mog Pell (CHR), 1x Riftdross",HQ,A, STR/DEX/VIT/AGI/INT/MND+4,CHR+6,DMG:+3,Attack+18
+"60+ NQ, 12x Rainbow Mog Pell (CHR), 1x Riftdross",HQ,B, STR/DEX/VIT/AGI/INT/MND+4,CHR+6,DMG:+3,Haste+3%
+"60+ NQ, 12x Rainbow Mog Pell (CHR), 1x Riftdross",HQ,C, Pet: Regen+5,Pet: Damage taken -5%,"Pet: Mag.Acc.+7 ""Mag.Atk.Bns.""+7",Pet: TP Bonus +80
+"60+ NQ, 12x Rainbow Mog Pell (CHR), 1x Riftdross",HQ,D, INT+4,CHR+4,"Mag.Acc.+6 ""Mag.Atk.Bns.""+7",Magic skills +4
+"60+ NQ, 12x Rainbow Mog Pell (CHR), 1x Riftdross",HQ,E, Pet: Regen+5,Pet: Damage taken -5%,Pet: Acc+25/R.Acc+25/Atk.+25/R.Atk.+25,Pet: Dbl.Atk.+6 Crit.hit rate+6
+,,,,,,
+"60+ Item, 12x Ochre Mog Pell (DEX)",NQ,A, DEX+4,DMG:+2,Accuracy+4,Haste+2%
+"60+ Item, 12x Ochre Mog Pell (DEX)",NQ,B, DEX+4,DMG:+2,Haste+2%,Dbl.Atk.+4
+"60+ Item, 12x Ochre Mog Pell (DEX)",NQ,C, DEX+4,DMG:+2,Attack+15,Haste+2%
+"60+ Item, 12x Ochre Mog Pell (DEX)",NQ,D, DEX+4,DMG:+2,Attack+15,Dbl.Atk.+4
+"60+ Item, 12x Ochre Mog Pell (DEX)",NQ,E, STR/DEX+3,DMG:+2,Crit.hit rate+2,Dbl.Atk.+4
+"60+ NQ, 12x Ochre Mog Pell (DEX), 1x Riftdross",HQ,A, DEX+5,DMG:+3,Accuracy+6,Haste+3%
+"60+ NQ, 12x Ochre Mog Pell (DEX), 1x Riftdross",HQ,B, DEX+5,DMG:+3,Haste+3%,Dbl.Atk.+4
+"60+ NQ, 12x Ochre Mog Pell (DEX), 1x Riftdross",HQ,C, DEX+5,DMG:+3,Attack+18,Haste+3%
+"60+ NQ, 12x Ochre Mog Pell (DEX), 1x Riftdross",HQ,D, DEX+5,DMG:+3,Attack+18,Dbl.Atk.+4
+"60+ NQ, 12x Ochre Mog Pell (DEX), 1x Riftdross",HQ,E, STR/DEX+4,DMG:+3,Dbl.Atk.+3 Crit.hit rate+3,Store TP+3
+,,,,,,
+"60+ Item, 12x Silver Mog Pell (INT)",NQ,A, INT+4,"Mag.Acc.+6 ""Mag.Atk.Bns.""+6",Fast Cast+4,Haste+2%
+"60+ Item, 12x Silver Mog Pell (INT)",NQ,B, INT+4,"Mag.Acc.+6 ""Mag.Atk.Bns.""+6",Blood Pact ability delay -1,"Pet: Mag.Acc.+6 ""Mag.Atk.Bns.""+6"
+"60+ Item, 12x Silver Mog Pell (INT)",NQ,C, INT+4,"Mag.Acc.+6 ""Mag.Atk.Bns.""+6",Elem. magic skill+3,Magic Damage+5
+"60+ Item, 12x Silver Mog Pell (INT)",NQ,D, INT+4,"Mag.Acc.+6 ""Mag.Atk.Bns.""+6",Fast Cast+4,Ninjutsu DMG:+3%
+"60+ Item, 12x Silver Mog Pell (INT)",NQ,E, INT+4,"Mag.Acc.+6 ""Mag.Atk.Bns.""+6",Dark magic skill+3,"Drain and ""Aspir"" Potency +2"
+"60+ NQ, 12x Silver Mog Pell (INT), 1x Riftdross",HQ,A, INT+5,"Mag.Acc.+7 ""Mag.Atk.Bns.""+7",Fast Cast+4,Haste+3%
+"60+ NQ, 12x Silver Mog Pell (INT), 1x Riftdross",HQ,B, INT+5,"Mag.Acc.+7 ""Mag.Atk.Bns.""+7",Blood Pact ability delay -2,"Pet: Mag.Acc.+7 ""Mag.Atk.Bns.""+7"
+"60+ NQ, 12x Silver Mog Pell (INT), 1x Riftdross",HQ,C, INT+5,"Mag.Acc.+7 ""Mag.Atk.Bns.""+7",Elem. magic skill+4,Magic Damage+10
+"60+ NQ, 12x Silver Mog Pell (INT), 1x Riftdross",HQ,D, INT+5,"Mag.Acc.+7 ""Mag.Atk.Bns.""+7",Fast Cast+4,Ninjutsu DMG:+4%
+"60+ NQ, 12x Silver Mog Pell (INT), 1x Riftdross",HQ,E, INT+5,"Mag.Acc.+7 ""Mag.Atk.Bns.""+7",Dark magic skill+4,"Drain and ""Aspir"" Potency +3"
+,,,,,,
+"60+ Item, 12x Marble Mog Pell (MND)",NQ,A, MND+4,MP+10,Fast Cast+4,Quick Magic +1
+"60+ Item, 12x Marble Mog Pell (MND)",NQ,B, MND+4,MP+10,Fast Cast+4,"Mag.Acc.+6 ""Mag.Atk.Bns.""+6"
+"60+ Item, 12x Marble Mog Pell (MND)",NQ,C, MND/STR+3,DMG:+2,Attack+15,Accuracy+4
+"60+ Item, 12x Marble Mog Pell (MND)",NQ,D, MND/STR+3,DMG:+2,Attack+15,Haste+2%
+"60+ Item, 12x Marble Mog Pell (MND)",NQ,E, MND+4,MP+10,Cure potency+2%,Stoneskin HP+20
+"60+ NQ, 12x Marble Mog Pell (MND), 1x Riftdross",HQ,A, MND+5,MP+15,Fast Cast+4,Quick Magic +2
+"60+ NQ, 12x Marble Mog Pell (MND), 1x Riftdross",HQ,B, MND+5,MP+15,Fast Cast+4,"Mag.Acc.+7 ""Mag.Atk.Bns.""+7"
+"60+ NQ, 12x Marble Mog Pell (MND), 1x Riftdross",HQ,C, MND/STR+4,DMG:+3,Attack+18,Accuracy+6
+"60+ NQ, 12x Marble Mog Pell (MND), 1x Riftdross",HQ,D, MND/STR+4,DMG:+3,Attack+18,Haste+3%
+"60+ NQ, 12x Marble Mog Pell (MND), 1x Riftdross",HQ,E, MND+5,MP+15,Cure potency+2%,Stoneskin HP+20
+,,,,,,
+"60+ Item, 12x Red Mog Pell (STR)",NQ,A, STR+4,DMG:+2,Attack+15,Haste+2%
+"60+ Item, 12x Red Mog Pell (STR)",NQ,B, STR+4,DMG:+2,Attack+15,Dbl.Atk.+4
+"60+ Item, 12x Red Mog Pell (STR)",NQ,C, STR+4,DMG:+2,Crit.hit rate+2,Dbl.Atk.+4
+"60+ Item, 12x Red Mog Pell (STR)",NQ,D, STR/AGI+4,R.DMG:+2,Ranged Attack+15,Snapshot+2
+"60+ Item, 12x Red Mog Pell (STR)",NQ,E, STR+4,DMG:+2,Store TP+2,Dbl.Atk.+4
+"60+ NQ, 12x Red Mog Pell (STR), 1x Riftdross",HQ,A, STR+5,DMG:+3,Attack+18,Haste+3%
+"60+ NQ, 12x Red Mog Pell (STR), 1x Riftdross",HQ,B, STR+5,DMG:+3,Attack+18,Dbl.Atk.+5
+"60+ NQ, 12x Red Mog Pell (STR), 1x Riftdross",HQ,C, STR+5,DMG:+3,Attack+18,Dbl.Atk.+3 Crit.hit rate+3
+"60+ NQ, 12x Red Mog Pell (STR), 1x Riftdross",HQ,D, STR/AGI+5,R.DMG:+3,Ranged Attack+18,Snapshot+3
+"60+ NQ, 12x Red Mog Pell (STR), 1x Riftdross",HQ,E, STR+5,DMG:+3,Dbl.Atk.+3 Crit.hit rate+3,Store TP+3
+,,,,,,
+"60+ Item, 12x Gold Mog Pell (VIT)",NQ,A, VIT+4,DMG:+2,Attack+15,Haste+2%
+"60+ Item, 12x Gold Mog Pell (VIT)",NQ,B, VIT+4,DEF+15,HP+10,Spell Interrupt Down +1%
+"60+ Item, 12x Gold Mog Pell (VIT)",NQ,C, VIT+4,DEF+15,HP+10,Haste+2%
+"60+ Item, 12x Gold Mog Pell (VIT)",NQ,D, VIT+4,DEF+15,HP+10,Occ. inc. resist to stat ailments+10
+"60+ Item, 12x Gold Mog Pell (VIT)",NQ,E, VIT+4,DEF+15,HP+10,"Pet: ""Dbl.Atk.""+4 Crit. hit rate +4"
+"60+ NQ, 12x Gold Mog Pell (VIT), 1x Riftdross",HQ,A, VIT+5,DMG:+2,Attack+18,Haste+3%
+"60+ NQ, 12x Gold Mog Pell (VIT), 1x Riftdross",HQ,B, VIT+5,DEF+18,HP+15,Spell Interruption Rate Down +2%
+"60+ NQ, 12x Gold Mog Pell (VIT), 1x Riftdross",HQ,C, VIT+5,DEF+18,HP+15,Haste+3%
+"60+ NQ, 12x Gold Mog Pell (VIT), 1x Riftdross",HQ,D, VIT+5,DEF+18,HP+15,Occ. inc. resist to stat ailments+15
+"60+ NQ, 12x Gold Mog Pell (VIT), 1x Riftdross",HQ,E, VIT+5,DEF+18,HP+15,"Pet: ""Dbl.Atk.""+6 Crit. hit rate +6"

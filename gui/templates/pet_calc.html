@@ -1,0 +1,78 @@
+{% extends "workbench_page.html" %}
+{% block title %}Pet Gear Calculator{% endblock %}
+{% block page_archetype %}dashboard{% endblock %}
+{% block page_class %}pet-calc-page{% endblock %}
+{% block page_heading %}Pet Gear Calculator{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">What-if only, never writes Lua</span>{% endblock %}
+{% block page_help %}Gear and augment effects on avatars, wyverns, automatons, jug pets and charmed mobs. Pet bonuses come from item_mods_pet and pet augments; which rows apply follows CheckPetModType (All always, then the pet's own type, automaton frames also get the Automaton type; jug pets get only All; charmed mobs get every type). Pet base stats are your own numbers. Master-side mods (perpetuation, blood pact delay, summoning skill, maneuvers, repair) come from the master's gear. Latent and set-bonus effects are not counted.{% endblock %}
+{% block page_body %}
+<style>
+.pc{display:grid;grid-template-columns:minmax(280px,1fr) minmax(320px,1.6fr);gap:16px}
+@media(max-width:900px){.pc{grid-template-columns:1fr}}
+.pc fieldset{border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin:0 0 12px}
+.pc legend{font-size:12px;color:var(--muted);text-transform:uppercase;padding:0 4px}
+.pc .g{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 10px}
+.pc label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.pc input,.pc select{padding:4px 6px;font-size:13px;width:100%;box-sizing:border-box}
+.pc td.n,.pc th.n{text-align:right;font-variant-numeric:tabular-nums}
+.pc .big{font-size:24px;font-weight:700;color:var(--accent)}
+</style>
+{% include 'gear_panel.html' %}
+<div class="pc">
+ <div>
+  <fieldset><legend>Pet</legend><div class="g" id="f_kind"></div></fieldset>
+  <fieldset><legend>Pet base stats (your numbers, no gear)</legend><div class="g" id="f_pet"></div></fieldset>
+  <fieldset id="fs_sum"><legend>Summoner</legend><div class="g" id="f_sum"></div></fieldset>
+ </div>
+ <div>
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+   <div class="stat"><div class="big" id="r_a">-</div><div class="l" id="r_al"></div></div>
+   <div class="stat"><div class="big" id="r_b">-</div><div class="l" id="r_bl"></div></div>
+   <div class="stat"><div class="big" id="r_c">-</div><div class="l">Magic taken</div></div>
+  </div>
+  <div class="muted" id="applies" style="margin:6px 0"></div>
+  <h3>Pet stats with gear</h3><div class="table-wrap"><table id="stats"></table></div>
+  <h3>Offense and speed</h3><div class="table-wrap"><table id="off"></table></div>
+  <h3>Damage taken by the pet</h3><div class="table-wrap"><table id="taken"></table></div>
+  <h3>Sustain</h3><div class="table-wrap"><table id="sus"></table></div>
+  <div id="perpbox" style="display:none"><h3>Perpetuation and blood pact delay</h3><div class="table-wrap"><table id="perp"></table></div></div>
+  <h3>Master-side pet mods</h3><div class="table-wrap"><table id="master"></table></div>
+  <div id="otherbox" style="display:none"><h3>Other pet mods (unmapped)</h3><div class="table-wrap"><table id="other"></table></div></div>
+ </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const num=(k,l,v)=>`<label>${l}<input data-k="${k}" type="number" step="any" value="${v}"></label>`;
+const sel=(k,l,opts)=>`<label>${l}<select data-k="${k}">${opts.map(o=>Array.isArray(o)?`<option value="${o[0]}">${o[1]}</option>`:`<option>${o}</option>`).join('')}</select></label>`;
+const PET=[['pet_hp','HP'],['pet_mp','MP'],['pet_att','Attack'],['pet_acc','Accuracy'],['pet_ratt','Ranged attack'],['pet_racc','Ranged accuracy'],['pet_matt','Magic attack bonus'],['pet_macc','Magic accuracy'],['pet_def','Defense'],['pet_eva','Evasion'],['pet_delay','Weapon delay (1/60 s)'],['pet_str','STR'],['pet_dex','DEX'],['pet_int','INT'],['pet_mnd','MND']];
+let timer=null,tab=null;
+function build(M){const d=M.defaults;
+ $('f_kind').innerHTML=sel('kind','Pet type',Object.entries(M.kinds));
+ $('f_pet').innerHTML=PET.map(([k,l])=>num(k,l,d[k])).join('');
+ $('f_sum').innerHTML=num('master_level','Master level',d.master_level)+num('avatar_cost','Avatar base perp (0 = by level)',0)+sel('element','Avatar element',M.elements)+sel('day_match','Day matches element',['false','true'])+sel('weather_match','Weather matches element',['false','true'])+num('refresh_mp','Other refresh MP/tick',0)+num('bp_recast','Blood pact recast (s)',d.bp_recast);
+ document.querySelectorAll('.pc fieldset input,.pc fieldset select').forEach(i=>{i.oninput=i.onchange=()=>{if(i.dataset.k==='kind')toggle();sched()}});toggle()}
+function toggle(){const a=document.querySelector('[data-k=kind]').value==='avatar';$('fs_sum').style.display=a?'block':'none'}
+function val(i){const v=i.value;return v==='true'?true:v==='false'?false:v}
+function payload(){const cfg={};document.querySelectorAll('.pc [data-k]').forEach(i=>cfg[i.dataset.k]=val(i));
+ const t=window.GEAR&&GEAR.on&&GEAR.totals;return{cfg,pet:t?GEAR.totals.pet||{}:{},master:t?GEAR.totals.stats:{}}}
+const f0=x=>typeof x==='number'?Math.round(x*10)/10:x;
+const tbl=(id,head,rows)=>$(id).innerHTML=`<tr><th>${head}</th><th class="n">Value</th></tr>`+rows.map(([l,v])=>`<tr><td>${l}</td><td class="n">${f0(v)}</td></tr>`).join('');
+async function calc(){
+ const r=await(await fetch('/api/pet-calc/compute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload())})).json();
+ const S=Object.fromEntries(r.stats);
+ $('r_a').textContent=Math.round(S.HP).toLocaleString();$('r_al').textContent='Pet HP';
+ $('r_b').textContent=Math.round(S.Attack).toLocaleString();$('r_bl').textContent='Pet attack';
+ $('r_c').textContent=r.taken[1].reduction_pct.toFixed(0)+'%';
+ $('applies').textContent=r.kind+': item_mods_pet types applied '+r.applies.join(', ')+(r.applies.length===1?' (All only)':'');
+ tbl('stats','Stat',r.stats);tbl('off','Stat',r.offense);tbl('sus','Stat',r.sustain);tbl('master','Mod',r.master.filter(x=>x[1]));
+ $('taken').innerHTML='<tr><th>Type</th><th class="n">Takes</th><th class="n">Reduction</th></tr>'+r.taken.map(x=>`<tr><td>${x.kind}</td><td class="n">${(100*x.multiplier).toFixed(1)}%</td><td class="n"><b>${x.reduction_pct.toFixed(1)}%</b></td></tr>`).join('');
+ const o=Object.entries(r.other);$('otherbox').style.display=o.length?'block':'none';
+ const names=(GEAR.totals&&GEAR.totals.pet_names)||{};$('other').innerHTML='<tr><th>Mod</th><th class="n">Value</th></tr>'+o.map(([k,v])=>`<tr><td>${names[k]||k}</td><td class="n">${f0(v)}</td></tr>`).join('');
+ $('perpbox').style.display=r.perp?'block':'none';
+ if(r.perp){const p=r.perp,b=r.bp;$('perp').innerHTML='<tr><th>Item</th><th class="n">Value</th></tr>'+[['Base perpetuation',p.base],...p.parts,['Total reduction',p.reduction],['Cost per tick (min 1)',p.cost],['Net MP per tick (refresh - cost)',p.net],['Blood pact delay reduction (cap 15s)',b.reduction],['Blood pact recast',b.recast+'s'],['Delay past the cap (wasted)',b.wasted],['Blood Pact Delay II (not read by the engine)',b.bp2]].map(([l,v])=>`<tr><td>${l}</td><td class="n">${f0(v)}</td></tr>`).join('')}
+}
+function sched(){clearTimeout(timer);timer=setTimeout(calc,250)}
+window.addEventListener('gearchange',sched);
+(async()=>{build(await(await fetch('/api/pet-calc/meta')).json());sched()})();
+</script>
+{% endblock %}

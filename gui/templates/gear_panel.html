@@ -1,0 +1,139 @@
+<style>
+.gp{margin:0 0 14px;border:1px solid var(--border,#444);border-radius:10px;padding:10px 12px}
+.gp>summary{cursor:pointer;font-weight:700;font-size:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.gp .pill{font-size:11px;font-weight:600;padding:1px 8px;border-radius:10px;background:rgba(106,169,255,.18)}
+.gp .split{display:grid;grid-template-columns:minmax(300px,44%) minmax(0,1fr);gap:14px;align-items:start;margin-top:10px}
+@media(max-width:900px){.gp .split{grid-template-columns:1fr}}
+.gp h4{margin:10px 0 4px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;opacity:.7}
+.gp .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:6px}
+.gp .tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border:1px solid var(--border,#444);border-radius:6px;background:transparent;color:inherit;cursor:pointer;font-size:10px;text-align:center;min-height:74px}
+.gp .tile:hover{border-color:#6aa9ff}.gp .tile.active{border-color:#6aa9ff;background:rgba(106,169,255,.15)}
+.gp .tile.empty{border-style:dashed;opacity:.7}
+.gp .tile .nm{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.15;word-break:break-word}
+.gp .tile .sl{opacity:.65}.gp .tile .bd{position:absolute;top:2px;right:3px;font-size:10px;color:#f5c542;font-weight:700}
+.gp .ph{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.35}
+.gp .head{display:flex;gap:12px;align-items:center;margin-bottom:8px}.gp .head h3{margin:0;font-size:15px}
+.gp .muted{opacity:.7;font-size:12px}
+.gp input[type=search],.gp select{padding:3px 6px;font-size:12px;min-width:0;box-sizing:border-box}
+.gp .find{display:flex;gap:8px;margin:6px 0}.gp .find input{flex:1}
+.gp .res{max-height:240px;overflow:auto;margin-bottom:8px}
+.gp .res .tiles{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+.gp .nat ul{margin:4px 0 0;padding-left:18px;columns:2;font-size:12px}
+.gp .augcard{display:grid;grid-template-columns:78px minmax(120px,1.3fr) minmax(100px,1fr) auto;gap:8px;align-items:center;padding:8px;margin-bottom:6px;border:1px solid var(--border,#444);border-radius:6px}
+.gp .augcard.set{border-color:#8a6500;background:rgba(245,197,66,.08)}
+.gp .augnote{grid-column:1/-1;font-size:12px;opacity:.9}
+@media(max-width:600px){.gp .augcard{grid-template-columns:1fr 1fr}}
+.gp .tot{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.gp .chip{padding:2px 9px;border-radius:12px;background:rgba(255,255,255,.07);font-size:12px}
+.gp .chip b{font-variant-numeric:tabular-nums;color:#f5c542}
+
+.gh{color:#f5c542;font-size:11px;font-weight:600}
+fieldset.cx>legend{cursor:pointer;user-select:none}fieldset.cx>legend::before{content:'▾ ';opacity:.6}
+fieldset.cx.closed>legend::before{content:'▸ '}fieldset.cx.closed>*:not(legend){display:none}
+.wsc>div:last-child,.mc>div:last-child{position:sticky;top:8px;align-self:start;max-height:calc(100vh - 16px);overflow:auto}
+@media(max-width:900px){.wsc>div:last-child,.mc>div:last-child{position:static;max-height:none}}
+</style>
+<details class="gp" id="gp_d">
+ <summary>Gear loadout <span class="pill"><span id="gp_n">0</span> equipped</span>
+  <label style="font-weight:400;font-size:12px;display:inline-flex;gap:4px;align-items:center" onclick="event.stopPropagation()"><input type="checkbox" id="gp_on" checked> Apply gear to calculation</label>
+  <button type="button" id="gp_clear" style="font-weight:400" onclick="event.stopPropagation()">Clear all</button>
+  <span onclick="event.stopPropagation()" style="font-weight:400;display:inline-flex;gap:4px;align-items:center"><select id="gp_pre" style="max-width:150px"></select><button type="button" id="gp_load">Load</button><button type="button" id="gp_save">Save as...</button><button type="button" id="gp_del">Delete</button></span>
+  <span class="tot" id="gp_tot" style="margin:0;font-weight:400;flex-basis:100%"></span></summary>
+ <div class="split"><div id="gp_slots"></div><div id="gp_detail"></div></div>
+ <div class="muted" style="margin-top:6px">Item stats = server item_mods; augments follow CItemArmor::SetAugmentMod. Latent/conditional mods and set bonuses are not counted. Gear is added on top of the base values in the fields below.</div>
+</details>
+<script>
+(function(){
+const KEY='gearloadout_v2';let meta=null,cat=null,load={},sel=0,totals=null,qtxt='';
+const g=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const icon=id=>`/character-editor/client-cache/icons/${id}.png`;
+const img=(id,sz)=>`<img src="${icon(id)}" loading="lazy" style="width:${sz}px;height:${sz}px" onerror="this.style.visibility='hidden'">`;
+const pretty=n=>(n||'').replace(/_/g,' ').replace(/\b\w/g,m=>m.toUpperCase());
+const signed=n=>(n>=0?'+':'')+n;
+const GROUPS=[['Weapons',[0,1,2,3]],['Armor',[4,5,6,7,8]],['Accessories',[9,10,11,12,13,14,15]]];
+window.GEAR={totals:null,on:true,stat:k=>window.GEAR.on&&window.GEAR.totals?(window.GEAR.totals.stats[k]||0):0};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(load))}catch(e){}}
+function restore(){try{load=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){load={}}}
+const ent=s=>load[s]||(load[s]={slot:+s,item:0,name:'',augments:[{id:0,value:0},{id:0,value:0},{id:0,value:0},{id:0,value:0}]});
+const eff=(e,v)=>(e.value>=0?e.value+v:e.value-v)*(e.multiplier>1?e.multiplier:1);
+const effText=(e,v)=>`${e.mod_name}${e.pet?' (pet)':''} ${signed(eff(e,v))}`;
+function buildCat(rows){const byId=new Map(rows.map(r=>[r.id,r])),groups=new Map(),idGroup=new Map();
+ for(const r of rows){const e=r.effects[0],single=r.effects.length===1&&!e.pet,key=single?`s|${e.mod}|${e.multiplier>1?e.multiplier:1}`:`c|${r.id}`;
+  let G=groups.get(key);if(!G){G={key,label:single?e.mod_name:r.effects.map(x=>x.mod_name+(x.pet?' (pet)':'')).join(' + '),special:!single,options:new Map(),comment:single?(e.comment||''):''};groups.set(key,G)}
+  idGroup.set(r.id,key);
+  for(let v=0;v<32;v++){const amt=single?eff(e,v):v;if(!G.options.has(amt))G.options.set(amt,{id:r.id,v,text:single?signed(amt):r.effects.map(x=>effText(x,v)).join(', ')})}}
+ for(const G of groups.values())G.sorted=[...G.options.entries()].sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+ const list=[...groups.values()].sort((a,b)=>a.label.localeCompare(b.label));
+ return{byId,groups,idGroup,stats:list.filter(x=>!x.special),combined:list.filter(x=>x.special)}}
+const groupOf=a=>{const k=cat.idGroup.get(a.id);return k?cat.groups.get(k):null};
+const describe=a=>{if(!a.id)return'';const r=cat.byId.get(a.id);return r?r.effects.map(e=>effText(e,a.value)).join(', '):`Unrecognised augment #${a.id}`};
+function drawSlots(){
+ g('gp_slots').innerHTML=GROUPS.map(([gn,ids])=>`<h4>${gn}</h4><div class="tiles">${ids.map(i=>{const e=load[i]&&load[i].item?load[i]:null,n=e?(e.preset?1:e.augments.filter(a=>a.id).length):0;
+  return `<button type="button" class="tile${i===sel?' active':''}${e?'':' empty'}" data-s="${i}" title="${esc(e?pretty(e.name):'Empty')}">${n?`<span class="bd">✦${n}</span>`:''}${e?img(e.item,32):'<div class="ph">+</div>'}<span class="nm">${esc(e?pretty(e.name):'Empty')}</span><span class="sl">${meta.slots[i]}</span></button>`}).join('')}</div>`).join('');
+ g('gp_slots').querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{sel=+b.dataset.s;qtxt='';drawSlots();drawDetail()});
+}
+function natLines(slot){const p=totals&&totals.per_slot.find(x=>x.slot===slot);return p?p.lines.filter(l=>!l.startsWith('aug:')):[]}
+function drawDetail(){
+ const e=ent(sel),has=!!e.item,D=g('gp_detail');
+ D.innerHTML=`<div class="head">${has?img(e.item,48):'<div class="ph" style="width:48px;height:48px">+</div>'}<div><h3>${has?esc(pretty(e.name)):esc(meta.slots[sel])}</h3><div class="muted">${has?esc(meta.slots[sel])+' · item #'+e.item:'Nothing equipped'}</div></div>${has?'<button type="button" id="gp_rm" style="margin-left:auto">Unequip</button>':''}</div>
+  <div><strong style="font-size:12px">${has?'Change item':'Equip an item'}</strong> <span class="muted">- items that fit ${esc(meta.slots[sel])}</span>
+  <div class="find"><input type="search" id="gp_q" placeholder="Search by name..." value="${esc(qtxt)}"></div><div class="res" id="gp_res"></div></div>
+  ${has?`<div class="nat"><strong style="font-size:12px">Built-in bonuses</strong>${natLines(sel).length?`<ul>${natLines(sel).map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`:'<div class="muted">No unconditional stats defined for this item.</div>'}</div>
+  <h4>Augments</h4>${presetBox(e)}${e.preset?'':e.augments.map((a,i)=>augCard(a,i)).join('')}`:''}`;
+ const q=g('gp_q');let t;
+ const run=async()=>{const r=await(await fetch('/api/gear/items?slot='+sel+'&q='+encodeURIComponent(q.value))).json();
+  g('gp_res').innerHTML=r.items.length?`<div class="tiles">${r.items.map(it=>`<button type="button" class="tile" data-pick="${it.id}" data-n="${esc(it.name)}" title="${esc(pretty(it.name))}">${img(it.id,32)}<span class="nm">${esc(pretty(it.name))}</span><span class="sl">Lv${it.level}${it.ilevel?' i'+it.ilevel:''}</span></button>`).join('')}</div>`:'<div class="muted">No matching items.</div>';
+  g('gp_res').querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{e.item=+b.dataset.pick;e.name=b.dataset.n;e.preset='';e.augments=e.augments.map(()=>({id:0,value:0}));save();qtxt='';drawSlots();upd().then(drawDetail)})};
+ q.oninput=()=>{qtxt=q.value;clearTimeout(t);t=setTimeout(run,250)};run();
+ const rm=g('gp_rm');if(rm)rm.onclick=()=>{delete load[sel];save();drawSlots();upd().then(drawDetail)};
+ const ps=g('gp_ps');if(ps)ps.onchange=ev=>{e.preset=ev.target.value;if(e.preset)e.augments=e.augments.map(()=>({id:0,value:0}));save();upd().then(()=>{drawSlots();drawDetail()})};
+ D.querySelectorAll('.augcard').forEach(card=>{const i=+card.dataset.i,a=e.augments[i];
+  card.querySelector('.st').onchange=ev=>{const k=ev.target.value;if(!k){a.id=0;a.value=0}else{const G=cat.groups.get(k);const o=G.sorted[0];a.id=o.id;a.value=o.v}save();upd().then(()=>{drawSlots();drawDetail()})};
+  const am=card.querySelector('.am');if(am)am.onchange=ev=>{const[id,v]=ev.target.value.split(':').map(Number);a.id=id;a.value=v;save();upd().then(()=>{drawSlots();drawDetail()})};
+  card.querySelector('.cl').onclick=()=>{a.id=0;a.value=0;save();upd().then(()=>{drawSlots();drawDetail()})}});
+}
+function presetBox(e){const P=meta.presets||[];if(!P.length)return'';
+ const grp=new Map();P.forEach(x=>{const k=`Tier ${x.tier} - ${x.pell} Mog Pell (${x.stat})`;(grp.get(k)||grp.set(k,[]).get(k)).push(x)});
+ const opt=x=>`<option value="${esc(x.id)}"${e.preset===x.id?' selected':''}>${x.quality} ${x.letter}: ${esc(x.lines.map(l=>l.text).join(' | ')).slice(0,90)}</option>`;
+ const cur=P.find(x=>x.id===e.preset);
+ return `<div class="augcard${cur?' set':''}" style="grid-template-columns:1fr"><label style="display:block"><strong>Server augment preset</strong> <span class="muted">(or leave on custom and set augments below)</span>
+  <select id="gp_ps" style="width:100%"><option value="">(custom augments)</option>${[...grp].map(([k,v])=>`<optgroup label="${esc(k)}">${v.map(opt).join('')}</optgroup>`).join('')}</select></label>
+  ${cur?`<div class="augnote"><ul style="margin:4px 0 0 16px">${cur.lines.map(l=>`<li>${esc(l.text)}${l.modeled?'':' <span class="muted">(not modeled by the calculators)</span>'}</li>`).join('')}</ul>${cur.comment?`<div class="muted">${esc(cur.comment)}</div>`:''}</div>`:''}</div>`}
+function augCard(a,i){const G=a.id?groupOf(a):null;
+ const st=`<select class="st"><option value="">(none)</option><optgroup label="Stats">${cat.stats.map(x=>`<option value="${x.key}"${G&&G.key===x.key?' selected':''}>${esc(x.label)}</option>`).join('')}</optgroup><optgroup label="Combined / special">${cat.combined.map(x=>`<option value="${x.key}"${G&&G.key===x.key?' selected':''}>${esc(x.label)}</option>`).join('')}</optgroup></select>`;
+ const am=G?`<select class="am">${G.sorted.map(o=>`<option value="${o.id}:${o.v}"${o.id===a.id&&o.v===a.value?' selected':''}>${esc(o.text)}</option>`).join('')}</select>`:'<select disabled><option>-</option></select>';
+ return `<div class="augcard${a.id?' set':''}" data-i="${i}"><strong>Augment ${i+1}</strong>${st}${am}<button type="button" class="cl"${a.id?'':' disabled'}>Clear</button>${a.id?`<div class="augnote"><strong>${esc(describe(a))}</strong>${G&&G.comment&&G.comment.toLowerCase()!==G.label.toLowerCase()?' - '+esc(G.comment):''}</div>`:''}</div>`}
+async function upd(){
+ const lo=Object.values(load).filter(e=>e.item);g('gp_n').textContent=lo.length;
+ totals=await(await fetch('/api/gear/totals',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({loadout:lo})})).json();
+ window.GEAR.totals=totals;const L=meta.labels;
+ const parts=Object.entries(totals.stats).filter(([k,v])=>v).map(([k,v])=>`${esc(L[k]||k)} <b>${signed(v)}</b>`);
+ for(const[el,v]of Object.entries(totals.aff_dmg))parts.push(`${el} affinity <b>+${v}</b>`);
+ if(totals.weapon)parts.push(`Weapon dmg <b>${totals.weapon.dmg}</b> / delay <b>${totals.weapon.delay}</b>`);
+ g('gp_tot').innerHTML=parts.length?parts.map(p=>`<span class="chip">${p}</span>`).join(''):'<span class="muted">No calculator-relevant stats equipped yet.</span>';
+ window.dispatchEvent(new Event('gearchange'));
+}
+window.GEAR_MAP=window.GEAR_MAP||{};
+function hints(){document.querySelectorAll('label>input[data-k]').forEach(i=>{const lb=i.parentElement,old=lb.querySelector('.gh');if(old)old.remove();
+ const k=window.GEAR_MAP[i.dataset.k];if(!k)return;const v=window.GEAR.stat(k);if(!v)return;
+ const s=document.createElement('span');s.className='gh';s.textContent=`${signed(v)} from gear`;lb.insertBefore(s,i)})}
+window.addEventListener('gearchange',hints);
+document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('fieldset').forEach(f=>{const l=f.querySelector(':scope>legend');if(!l||f.closest('.gp'))return;f.classList.add('cx');l.onclick=()=>f.classList.toggle('closed')})});
+setInterval(()=>{if(document.querySelector('label>input[data-k]')&&!document.querySelector('.gh')&&window.GEAR.totals)hints()},1000);
+const PK='gearpresets_v2';
+const presets=()=>{try{return JSON.parse(localStorage.getItem(PK)||'{}')||{}}catch(e){return{}}};
+function drawPre(){const p=presets();g('gp_pre').innerHTML='<option value="">(saved loadouts)</option>'+Object.keys(p).map(n=>`<option>${esc(n)}</option>`).join('')}
+g('gp_save').onclick=()=>{const n=prompt('Name for this loadout?');if(!n)return;const p=presets();p[n]=JSON.parse(JSON.stringify(load));try{localStorage.setItem(PK,JSON.stringify(p))}catch(e){}drawPre();g('gp_pre').value=n};
+g('gp_load').onclick=()=>{const p=presets()[g('gp_pre').value];if(!p)return;load=JSON.parse(JSON.stringify(p));save();drawSlots();upd().then(drawDetail)};
+g('gp_del').onclick=()=>{const n=g('gp_pre').value;if(!n||!confirm('Delete saved loadout "'+n+'"?'))return;const p=presets();delete p[n];try{localStorage.setItem(PK,JSON.stringify(p))}catch(e){}drawPre()};
+try{g('gp_d').open=localStorage.getItem('gp_open')==='1'}catch(e){}
+g('gp_d').addEventListener('toggle',()=>{try{localStorage.setItem('gp_open',g('gp_d').open?'1':'0')}catch(e){}});
+drawPre();
+g('gp_clear').onclick=()=>{load={};save();drawSlots();upd().then(drawDetail)};
+g('gp_on').onchange=()=>{window.GEAR.on=g('gp_on').checked;window.dispatchEvent(new Event('gearchange'))};
+(async()=>{meta=await(await fetch('/api/gear/meta')).json();
+ cat=buildCat((await(await fetch('/character-editor/reference/augments.json')).json()).rows||[]);
+ restore();drawSlots();await upd();drawDetail()})();
+})();
+</script>

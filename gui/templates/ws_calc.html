@@ -1,0 +1,132 @@
+{% extends "workbench_page.html" %}
+{% block title %}Weapon Skill Calculator{% endblock %}
+{% block page_archetype %}dashboard{% endblock %}
+{% block page_class %}ws-calc-page{% endblock %}
+{% block page_heading %}Weapon Skill Calculator{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">What-if only, never writes Lua</span>{% endblock %}
+{% block page_help %}Expected physical weapon skill damage using DSP's own doPhysicalWeaponskill math, read live from the DSP checkout's weaponskills/*.lua. "Retail" mode shows what the BG-wiki-style formulas would give for the same inputs. Edit a skill's parameters to see the effect before changing the Lua. Magical skills (doMagicWeaponskill) use DSP formulas only: expected value over the resist roll, day/weather entered as a flat %. Ranged skills (doRangedWeaponskill) use ranged attack/accuracy/damage with uniform pDIF and crit on the first hit only, as coded. Special skills (Spirits Within, Myrkr, Moonlight, Starlight, Dagan, Energy Drain/Steal) have bespoke formulas and show an amount with its unit. Hybrid skills are the magical group in DSP (e.g. Trueflight, Wildfire) and appear under the Ranged/Other weapon groups.{% endblock %}
+{% block page_body %}
+<style>
+.wsc{display:grid;grid-template-columns:minmax(280px,1fr) minmax(320px,1.4fr);gap:16px}
+@media(max-width:900px){.wsc{grid-template-columns:1fr}}
+.wsc fieldset{border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin:0 0 12px}
+.wsc legend{font-size:12px;color:var(--muted);text-transform:uppercase;padding:0 4px}
+.wsc .g{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 10px}
+.wsc label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.wsc input,.wsc select{padding:4px 6px;font-size:13px;width:100%;box-sizing:border-box}
+.wsc .chg{background:var(--amber-soft)}
+.wsc table td.n,.wsc table th.n{text-align:right;font-variant-numeric:tabular-nums}
+.wsc .big{font-size:26px;font-weight:700;color:var(--accent)}
+.wsc canvas{width:100%;height:200px}
+</style>
+{% include 'gear_panel.html' %}
+<div class="wsc">
+ <div>
+  <fieldset><legend>Skill</legend>
+   <div class="g">
+    <label>Weapon type <select id="wtype"></select></label>
+    <label>Weapon skill <select id="skill"></select></label>
+    <label>TP <select id="tp"><option>1000</option><option>1500</option><option>2000</option><option>2500</option><option selected>3000</option></select></label>
+    <label>Adoulin changes <select id="ado"><option value="0">Off (server default)</option><option value="1">On</option></select></label>
+   </div>
+   <div id="cond" class="warn" style="display:none"></div>
+  </fieldset>
+  <fieldset><legend>Skill parameters (edit = what-if)</legend><div class="g" id="params"></div></fieldset>
+  <fieldset><legend>Attacker</legend><div class="g" id="att"></div></fieldset>
+  <fieldset><legend>Target</legend><div class="g" id="tgt"></div></fieldset>
+ </div>
+ <div>
+  <div class="stats" style="grid-template-columns:repeat(2,1fr)">
+   <div class="stat"><div class="big" id="r_dsp">-</div><div class="l">DSP as coded (edited)</div><div class="muted" id="r_dsp_o"></div></div>
+   <div class="stat"><div class="big" id="r_ret">-</div><div class="l">Retail formulas</div><div class="muted" id="r_ret_o"></div></div>
+  </div>
+  <div class="table-wrap"><table id="detail"></table></div>
+  <h3>Damage by TP</h3><canvas id="chart" width="640" height="220"></canvas>
+  <h3>All skills for this weapon</h3>
+  <div class="table-wrap"><table id="cmp"><tr><td class="muted">loading...</td></tr></table></div>
+ </div>
+</div>
+<script>
+const ATT=[['lvl','Level'],['str','STR'],['dex','DEX'],['vit','VIT'],['agi','AGI'],['int','INT'],['mnd','MND'],['chr','CHR'],['att','Attack'],['acc','Accuracy'],['wdmg','Weapon dmg'],['wdmg_rank','Weapon dmg rank (D/9)'],['crit_rate','Crit rate %'],['crit_dmg','Crit dmg % (max 100)'],['da','Double attack %'],['ta','Triple attack %'],['qa','Quad attack %'],['wsd','WS damage %'],['pdl','PDL (retail mode, 0.1=10%)'],['matt','Magic atk bonus (magical WS)'],['macc','Magic acc total (magical WS)'],['day_wx','Day/weather bonus % (magical WS)'],['ratt','Ranged attack (ranged WS)'],['racc','Ranged accuracy (ranged WS)'],['rdmg','Ranged+ammo dmg (ranged WS)'],['rdmg_rank','Ranged dmg rank (ranged WS)'],['hp','Current HP (Spirits Within)'],['max_hp','Max HP (Dagan)'],['max_mp','Max MP (Myrkr, Dagan)'],['club_skill','Club skill (Moonlight, Starlight)']];
+const TGT=[['t_lvl','Level'],['t_def','Defense'],['t_eva','Evasion'],['t_vit','VIT'],['t_agi','AGI'],['t_int','INT (magical WS)'],['mdef','Magic def bonus'],['meva','Magic evasion']];
+const PAR=['ftp100','ftp200','ftp300','atkmulti','numHits','str_wsc','dex_wsc','vit_wsc','agi_wsc','int_wsc','mnd_wsc','chr_wsc','crit100','crit200','crit300'];
+let D=null, cur=null, orig={}, timer=null;
+const $=id=>document.getElementById(id);
+const mk=(box,list,vals)=>{$(box).innerHTML=list.map(([k,l])=>`<label>${l}<input data-k="${k}" type="number" step="any" value="${vals[k]}"></label>`).join('')};
+window.GEAR_MAP=Object.fromEntries(['str','dex','vit','agi','int','mnd','chr','att','acc','matt','macc','crit_rate','crit_dmg','da','ta','qa','wsd','ratt','racc'].map(k=>[k,k]));
+const GK=['str','dex','vit','agi','int','mnd','chr','att','acc','matt','macc','crit_rate','crit_dmg','da','ta','qa','wsd','ratt','racc'];
+function stats(){const s={};document.querySelectorAll('#att input,#tgt input').forEach(i=>s[i.dataset.k]=parseFloat(i.value)||0);
+  if(window.GEAR){GK.forEach(k=>{if(k in s)s[k]+=GEAR.stat(k)});const w=GEAR.on&&GEAR.totals&&GEAR.totals.weapon;if(w)s.wdmg=w.dmg;const rd=GEAR.on&&GEAR.totals&&GEAR.totals.rdmg;if(rd)s.rdmg=rd}return s}
+window.addEventListener('gearchange',()=>{sched();schedCmp()});
+function overrides(){const o={};document.querySelectorAll('#params input').forEach(i=>{const k=i.dataset.k;const v=parseFloat(i.value);if(!isNaN(v)&&v!==orig[k]){o[k]=v;i.classList.add('chg')}else i.classList.remove('chg')});return o}
+function fillParams(){
+  const p={...cur.params,...($('ado').value==='1'?cur.adoulin:{})};orig={};
+  const keys=PAR.filter(k=>k in p);
+  $('params').innerHTML=keys.map(k=>{orig[k]=p[k];return `<label>${k}<input data-k="${k}" type="number" step="any" value="${p[k]}"></label>`}).join('');
+  $('cond').style.display=cur.conditionals.length?'block':'none';
+  $('cond').textContent=cur.conditionals.length?'This skill has extra script logic the calculator does not model: '+cur.conditionals.join(' | '):'';
+  document.querySelectorAll('#params input').forEach(i=>i.oninput=sched);
+}
+function fmt(x){return Math.round(x).toLocaleString()}
+async function calc(){
+  if(!cur)return;
+  const body={skill:cur.name,tp:+$('tp').value,adoulin:$('ado').value==='1',stats:stats(),overrides:overrides()};
+  const r=await (await fetch('/api/ws-calc/compute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+  if(r.kind==='special'){const d=r.dsp.edited;
+    $('r_dsp').textContent=d.total.toFixed(d.total<100?1:0).replace(/\B(?=(\d{3})+(?!\d))/g,',');$('r_ret').textContent='n/a';
+    $('r_dsp_o').textContent=d.unit;$('r_ret_o').textContent='bespoke formula, no retail model';
+    $('detail').innerHTML='<tr><th>Special WS</th><th class="n">Value</th></tr>'+d.parts.map(([l,v])=>`<tr><td>${l}</td><td class="n">${Number(v).toFixed(v%1?3:0)}</td></tr>`).join('')+(d.note?`<tr><td colspan="2" class="muted">${d.note}</td></tr>`:'');
+    draw(r.tp_curve.map(p=>({...p,retail:p.dsp})),true);return}
+  if(r.kind==='ranged'){const d=r.dsp.edited,o=r.dsp.original;
+    $('r_dsp').textContent=fmt(d.total);$('r_ret').textContent='n/a';
+    $('r_dsp_o').textContent='unedited: '+fmt(o.total)+' ('+(100*(d.total/o.total-1)).toFixed(1)+'%)';$('r_ret_o').textContent='no retail model for ranged WS';
+    const mr=(l,v,f)=>`<tr><td>${l}</td><td class="n">${f(v)}</td></tr>`;
+    $('detail').innerHTML='<tr><th>Ranged WS</th><th class="n">DSP</th></tr>'+mr('Base (ranged dmg+fSTR+WSC)',d.base,x=>x.toFixed(1))+mr('fSTR',d.fstr,x=>x.toFixed(2))+mr('fTP',d.ftp,x=>x.toFixed(3))+mr('WSC stat factor (alpha)',d.alpha,x=>x.toFixed(2))+mr('pDIF range',d.pdif,x=>x[0].toFixed(2)+'-'+x[1].toFixed(2))+mr('Hit rate',d.hit,x=>(100*x).toFixed(0)+'%')+mr('Crit rate (first hit only)',d.crit,x=>(100*x).toFixed(1)+'%');
+    draw(r.tp_curve.map(p=>({...p,retail:p.dsp})),true);return}
+  if(r.kind==='magical'){const d=r.dsp.edited,o=r.dsp.original;
+    $('r_dsp').textContent=fmt(d.total);$('r_ret').textContent='n/a';
+    $('r_dsp_o').textContent='unedited: '+fmt(o.total)+' ('+(100*(d.total/o.total-1)).toFixed(1)+'%)';$('r_ret_o').textContent='no retail model for magical WS';
+    const mr=(l,v,f)=>`<tr><td>${l}</td><td class="n">${f(v)}</td></tr>`;
+    $('detail').innerHTML='<tr><th>Magical WS</th><th class="n">DSP</th></tr>'+mr('Base (lvl+2+WSC+fINT)',d.base,x=>x.toFixed(1))+mr('fINT',d.fint,x=>x.toFixed(0))+mr('fTP',d.ftp,x=>x.toFixed(3))+mr('MAB ratio',d.mab,x=>x.toFixed(3))+mr('Magic hit rate',d.magic_hit,x=>x.toFixed(1)+'%')+mr('Expected resist multiplier',d.resist_ev,x=>x.toFixed(3));
+    draw(r.tp_curve.map(p=>({...p,retail:p.dsp})),true);return}
+  const d=r.dsp.edited,o=r.dsp.original,t=r.retail.edited,to=r.retail.original;
+  $('r_dsp').textContent=fmt(d.total);$('r_ret').textContent=fmt(t.total);
+  $('r_dsp_o').textContent='unedited: '+fmt(o.total)+' ('+(100*(d.total/o.total-1)).toFixed(1)+'%)';
+  $('r_ret_o').textContent='unedited: '+fmt(to.total)+' ('+(100*(t.total/to.total-1)).toFixed(1)+'%)';
+  const row=(l,a,b,f=x=>x.toFixed(3))=>`<tr><td>${l}</td><td class="n">${f(a)}</td><td class="n">${f(b)}</td></tr>`;
+  $('detail').innerHTML='<tr><th></th><th class="n">DSP</th><th class="n">Retail</th></tr>'+
+   row('Base (weapon+fSTR+WSC)',d.base,t.base,x=>x.toFixed(1))+row('fSTR',d.fstr,t.fstr,x=>x.toFixed(2))+row('fTP',d.ftp,t.ftp)+
+   row('WSC stat factor (alpha)',d.alpha,t.alpha,x=>x.toFixed(2))+
+   row('pDIF range',d.pdif[0],d.pdif[1]).replace(/<td class="n">[^<]*<\/td><td class="n">[^<]*<\/td>/,`<td class="n">${d.pdif[0].toFixed(2)}-${d.pdif[1].toFixed(2)}</td><td class="n">${t.pdif[0].toFixed(2)}-${t.pdif[1].toFixed(2)}</td>`)+
+   row('Hit rate (first / later)',d.hit1,t.hit1).replace(/<td class="n">[^<]*<\/td><td class="n">[^<]*<\/td>/,`<td class="n">${(100*d.hit1).toFixed(0)}% / ${(100*d.hitn).toFixed(0)}%</td><td class="n">${(100*t.hit1).toFixed(0)}% / ${(100*t.hitn).toFixed(0)}%</td>`)+
+   row('Crit rate (first / later)',d.crit1,t.crit1).replace(/<td class="n">[^<]*<\/td><td class="n">[^<]*<\/td>/,`<td class="n">${(100*d.crit1).toFixed(1)}% / ${(100*d.critn).toFixed(1)}%</td><td class="n">${(100*t.crit1).toFixed(1)}% / ${(100*t.critn).toFixed(1)}%</td>`);
+  draw(r.tp_curve);
+}
+function draw(c,single){
+  const cv=$('chart'),g=cv.getContext('2d'),W=cv.width,H=cv.height;g.clearRect(0,0,W,H);
+  const mx=Math.max(...c.map(p=>Math.max(p.dsp,p.retail)))*1.1||1,css=getComputedStyle(document.body);
+  g.strokeStyle=css.getPropertyValue('--border')||'#888';g.fillStyle=css.getPropertyValue('--muted')||'#888';g.font='11px sans-serif';
+  const X=i=>50+i*(W-70)/(c.length-1),Y=v=>H-24-(v/mx)*(H-40);
+  c.forEach((p,i)=>{g.fillText(p.tp,X(i)-12,H-8)});for(let i=0;i<=4;i++){const v=mx*i/4;g.fillText(fmt(v),2,Y(v)+4);g.beginPath();g.moveTo(48,Y(v));g.lineTo(W-10,Y(v));g.stroke()}
+  (single?[['dsp','#2a9d8f']]:[['dsp','#2a9d8f'],['retail','#e76f51']]).forEach(([k,col])=>{g.strokeStyle=col;g.lineWidth=2;g.beginPath();c.forEach((p,i)=>i?g.lineTo(X(i),Y(p[k])):g.moveTo(X(i),Y(p[k])));g.stroke();g.fillStyle=col;g.fillText(k==='dsp'?'DSP':'Retail',W-50,Y(c[c.length-1][k])-6)});
+}
+async function compare(){
+  const body={weapon:cur.weapon,tp:+$('tp').value,adoulin:$('ado').value==='1',stats:stats()};
+  const r=await (await fetch('/api/ws-calc/compare',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+  $('cmp').innerHTML='<tr><th>Skill</th><th class="n">DSP</th><th class="n">Retail</th><th></th></tr>'+r.rows.map(x=>`<tr${x.name===cur.name?' style="font-weight:700"':''}><td>${x.name.replace(/_/g,' ')}</td><td class="n">${fmt(x.dsp)}</td><td class="n">${x.retail==null?'n/a':fmt(x.retail)}</td><td>${x.magical?'<span class="pill">magical</span> ':''}${x.special?'<span class="pill no_real_entry" title="extra script logic not modeled">special</span>':''}</td></tr>`).join('');
+}
+function sched(){clearTimeout(timer);timer=setTimeout(()=>{calc();},250)}
+let cmpTimer=null;function schedCmp(){clearTimeout(cmpTimer);cmpTimer=setTimeout(compare,500)}
+function pick(){cur=D.skills.find(s=>s.name===$('skill').value);fillParams();calc();compare()}
+function fillSkills(){const w=$('wtype').value;$('skill').innerHTML=D.skills.filter(s=>s.weapon===w).map(s=>`<option value="${s.name}">${s.name.replace(/_/g,' ')}</option>`).join('');pick()}
+(async()=>{
+  D=await (await fetch('/api/ws-calc/skills')).json();
+  mk('att',ATT,D.defaults);mk('tgt',TGT,D.defaults);
+  const ws=[...new Set(D.skills.map(s=>s.weapon))].sort();
+  $('wtype').innerHTML=ws.map(w=>`<option>${w}</option>`).join('');
+  $('wtype').onchange=fillSkills;$('skill').onchange=pick;$('tp').onchange=()=>{calc();compare()};$('ado').onchange=()=>{fillParams();calc();compare()};
+  document.querySelectorAll('#att input,#tgt input').forEach(i=>i.oninput=()=>{sched();schedCmp()});
+  fillSkills();
+})();
+</script>
+{% endblock %}

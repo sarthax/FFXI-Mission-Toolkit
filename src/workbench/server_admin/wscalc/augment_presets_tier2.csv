@@ -1,0 +1,50 @@
+Tier 2,,,,,,
+Trade,Result,Preset,Augments,,,
+"20+ Item, 3x Green Mog Pell (AGI)",NQ,A,AGI+2,Attack+10,Evasion+1,Haste+2%
+"20+ Item, 3x Green Mog Pell (AGI)",NQ,B,AGI/STR+1,Ranged Accuracy+2,“Snapshot”+1,Pet: “Dbl.Atk.”+4 Crit. hit rate +4
+"20+ Item, 3x Green Mog Pell (AGI)",NQ,C,AGI/STR+1,Ranged Attack+10,Ranged Accuracy+2,“Snapshot”+1
+"20+ NQ, 3x Green Mog Pell (AGI), 1x Silver Mirror",HQ,A,AGI+3 ,Attack+12,Evasion+3,Haste+3%
+"20+ NQ, 3x Green Mog Pell (AGI), 1x Silver Mirror",HQ,B,AGI/STR+2,Ranged Accuracy+4,“Snapshot”+2,Pet: “Dbl.Atk.”+5 Crit. hit rate +5
+"20+ NQ, 3x Green Mog Pell (AGI), 1x Silver Mirror",HQ,C,AGI/STR+2,Ranged Attack+12,Ranged Accuracy+4,“Snapshot”+2
+,,,,,,
+"20+ Item, 3x Rainbow Mog Pell (CHR)",NQ,A,STR/DEX/VIT/AGI/INT/MND+1,CHR+2,Attack+10,Haste+2%
+"20+ Item, 3x Rainbow Mog Pell (CHR)",NQ,B,STR/DEX/VIT/AGI/INT/MND+1,CHR+2,Pet: Mag.Acc.+4 “Mag.Atk.Bns.”+4,Pet: “Dbl.Atk.”+4 Crit. hit rate +4
+"20+ Item, 3x Rainbow Mog Pell (CHR)",NQ,C,STR/DEX/VIT/AGI/INT/MND+1,CHR+2,Mag.Acc.+2 “Mag.Atk.Bns.”+2,“Fast Cast”+2
+"20+ NQ, 3x Rainbow Mog Pell (CHR), 1x Silver Mirror",HQ,A,STR/DEX/VIT/AGI/INT/MND+1,CHR+3,Attack+12,Haste+3%
+"20+ NQ, 3x Rainbow Mog Pell (CHR), 1x Silver Mirror",HQ,B,STR/DEX/VIT/AGI/INT/MND+1,CHR+3,Pet: Mag.Acc.+5 “Mag.Atk.Bns.”+5,Pet: “Dbl.Atk.”+5 Crit. hit rate +5
+"20+ NQ, 3x Rainbow Mog Pell (CHR), 1x Silver Mirror",HQ,C,STR/DEX/VIT/AGI/INT/MND+1,CHR+3,Mag.Acc.+3 “Mag.Atk.Bns.”+3,“Fast Cast”+3
+,,,,,,
+"20+ Item, 3x Ochre Mog Pell (DEX)",NQ,A,DEX+2,Accuracy+2,“Dbl.Atk.”+1,Haste+2%
+"20+ Item, 3x Ochre Mog Pell (DEX)",NQ,B,DEX+2,Accuracy+2,Haste+2%,Pet: “Dbl.Atk.”+4 Crit. hit rate +4
+"20+ Item, 3x Ochre Mog Pell (DEX)",NQ,C,DEX+2,Attack+10,Accuracy+2,Haste+2%
+"20+ NQ, 3x Ochre Mog Pell (DEX), 1x Silver Mirror",HQ,A,DEX+3,Accuracy+4,“Dbl.Atk.”+2,Haste+3%
+"20+ NQ, 3x Ochre Mog Pell (DEX), 1x Silver Mirror",HQ,B,DEX+3,Accuracy+4,Haste+3%,Pet: “Dbl.Atk.”+5 Crit. hit rate +5
+"20+ NQ, 3x Ochre Mog Pell (DEX), 1x Silver Mirror",HQ,C,DEX+3,Attack+12,Accuracy+4,Haste+3%
+,,,,,,
+"20+ Item, 3x Silver Mog Pell (INT)",NQ,A,INT+2,Mag.Acc.+2 “Mag.Atk.Bns.”+2,“Fast Cast”+2,Pet: “Dbl.Atk.”+4 Crit. hit rate +4
+"20+ Item, 3x Silver Mog Pell (INT)",NQ,B,INT+2,Mag.Acc.+2 “Mag.Atk.Bns.”+2,“Blood Pact” ability delay -1,Pet: Mag.Acc.+4 “Mag.Atk.Bns.”+4
+"20+ Item, 3x Silver Mog Pell (INT)",NQ,C,INT+2,Mag.Acc.+2 “Mag.Atk.Bns.”+2,“Blood Pact” ability delay -1,Pet: “Dbl.Atk.”+4 Crit. hit rate +4
+"20+ NQ, 3x Silver Mog Pell (INT), 1x Silver Mirror",HQ,A,INT+3,Mag.Acc.+3 “Mag.Atk.Bns.”+3,“Fast Cast”+3,Pet: “Dbl.Atk.”+5 Crit. hit rate +5
+"20+ NQ, 3x Silver Mog Pell (INT), 1x Silver Mirror",HQ,B,INT+3,Mag.Acc.+3 “Mag.Atk.Bns.”+3,“Blood Pact” ability delay -2,Pet: Mag.Acc.+5 “Mag.Atk.Bns.”+5
+"20+ NQ, 3x Silver Mog Pell (INT), 1x Silver Mirror",HQ,C,INT+3,Mag.Acc.+3 “Mag.Atk.Bns.”+3,“Blood Pact” ability delay -2,Pet: “Dbl.Atk.”+5 Crit. hit rate +5
+,,,,,,
+"20+ Item, 3x Marble Mog Pell (MND)",NQ,A,MND+2,Mag.Acc.+2 “Mag.Atk.Bns.”+2,“Fast Cast”+2,Enmity-2
+"20+ Item, 3x Marble Mog Pell (MND)",NQ,B,MND+2,“Fast Cast”+2,Enmity-2,“Cure” potency+1%
+"20+ Item, 3x Marble Mog Pell (MND)",NQ,C,MND+2,DEF+10,Enmity-2,Pet: “Dbl.Atk.”+4 Crit. hit rate +4
+"20+ NQ, 3x Marble Mog Pell (MND), 1x Silver Mirror",HQ,A,MND+3,Mag.Acc.+3 “Mag.Atk.Bns.”+3,“Fast Cast”+3,Enmity-3
+"20+ NQ, 3x Marble Mog Pell (MND), 1x Silver Mirror",HQ,B,MND+3,“Fast Cast”+3,Enmity-2,“Cure” potency+2%
+"20+ NQ, 3x Marble Mog Pell (MND), 1x Silver Mirror",HQ,C,MND+3,DEF+12,Enmity-3,Pet: “Dbl.Atk.”+5 Crit. hit rate +5
+,,,,,,
+"20+ Item, 3x Red Mog Pell (STR)",NQ,A,STR+2,Attack+10,“Dbl.Atk.”+1,Haste+2%
+"20+ Item, 3x Red Mog Pell (STR)",NQ,B,STR+2,Attack+10,“Dbl.Atk.”+1,Pet: “Dbl.Atk.”+4 Crit. hit rate+4
+"20+ Item, 3x Red Mog Pell (STR)",NQ,C,STR/AGI+1,Ranged Attack+10,Ranged Accuracy+2,“Snapshot”+1
+"20+ NQ, 3x Red Mog Pell (STR), 1x Silver Mirror",HQ,A,STR+3,Attack+12,“Dbl.Atk.”+2,Haste+3%
+"20+ NQ, 3x Red Mog Pell (STR), 1x Silver Mirror",HQ,B,STR+3,Attack+12,“Dbl.Atk.”+2,Pet: “Dbl.Atk.”+5 Crit. hit rate+5
+"20+ NQ, 3x Red Mog Pell (STR), 1x Silver Mirror",HQ,C,STR/AGI+2,Ranged Attack+12,Ranged Accuracy+4,“Snapshot”+2
+,,,,,,
+"20+ Item, 3x Gold Mog Pell (VIT)",NQ,A,VIT+2,DEF+10,Attack+10,Haste+2%
+"20+ Item, 3x Gold Mog Pell (VIT)",NQ,B,VIT+2,DEF+10,HP+5,Haste+2%
+"20+ Item, 3x Gold Mog Pell (VIT)",NQ,C,VIT+2,DEF+10,HP+5,Pet: “Dbl.Atk.”+4 Crit. hit rate +4
+"20+ NQ, 3x Gold Mog Pell (VIT), 1x Silver Mirror",HQ,A,VIT+3,DEF+12,Attack+12,Haste+3%
+"20+ NQ, 3x Gold Mog Pell (VIT), 1x Silver Mirror",HQ,B,VIT+3,DEF+12,HP+7,Haste+3%
+"20+ NQ, 3x Gold Mog Pell (VIT), 1x Silver Mirror",HQ,C,VIT+3,DEF+12,HP+7,Pet: “Dbl.Atk.”+5 Crit. hit rate +5

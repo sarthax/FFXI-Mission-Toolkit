@@ -1,0 +1,85 @@
+{% extends "workbench_page.html" %}
+{% block title %}Healing and Defense Overview{% endblock %}
+{% block page_archetype %}dashboard{% endblock %}
+{% block page_class %}heal-calc-page{% endblock %}
+{% block page_heading %}Healing and Defense Overview{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">What-if only, never writes Lua</span>{% endblock %}
+{% block page_help %}WHM/PLD defensive view of the loadout: Cure and Curaga output (magic.lua getCurePower / getCureFinal, tier tables parsed from the cure*/curaga* scripts), damage-taken multipliers with the real battleutils clamps, defense stats, element and status resists, and recovery mods. Offensive augments on the same gear are ignored here; use the WS / Magic calculators for those. Curaga I-V use the old cure formula in this engine; Cure I-VI use the new one (USE_OLD_CURE_FORMULA=false).{% endblock %}
+{% block page_body %}
+<style>
+.hc{display:grid;grid-template-columns:minmax(280px,1fr) minmax(320px,1.6fr);gap:16px}
+@media(max-width:900px){.hc{grid-template-columns:1fr}}
+.hc fieldset{border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin:0 0 12px}
+.hc legend{font-size:12px;color:var(--muted);text-transform:uppercase;padding:0 4px}
+.hc .g{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 10px}
+.hc label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.hc input,.hc select{padding:4px 6px;font-size:13px;width:100%;box-sizing:border-box}
+.hc td.n,.hc th.n{text-align:right;font-variant-numeric:tabular-nums}
+.hc .big{font-size:24px;font-weight:700;color:var(--accent)}
+.hc .warn{color:#c77700;font-size:12px;margin:2px 0}
+</style>
+{% include 'gear_panel.html' %}
+<div class="hc">
+ <div>
+  <fieldset><legend>Character (before gear)</legend><div class="g" id="f_char"></div></fieldset>
+  <fieldset><legend>Cure conditions</legend><div class="g" id="f_cond"></div></fieldset>
+  <fieldset><legend>Enemy (resist chance)</legend><div class="g" id="f_en"></div></fieldset>
+  <fieldset><legend>Extra mods on top of gear</legend><div class="g" id="f_mods"></div></fieldset>
+ </div>
+ <div>
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+   <div class="stat"><div class="big" id="r_cp">-</div><div class="l">Cure power (new)</div><div class="muted" id="r_cp2"></div></div>
+   <div class="stat"><div class="big" id="r_hp">-</div><div class="l">Max HP</div><div class="muted" id="r_mp"></div></div>
+   <div class="stat"><div class="big" id="r_pm">-</div><div class="l">Magic / physical taken</div></div>
+  </div>
+  <h3>Healing</h3><div class="table-wrap"><table id="heals"></table></div>
+  <h3>Damage taken</h3><div id="hints"></div><div class="table-wrap"><table id="taken"></table></div>
+  <h3>Defense and recovery</h3><div class="table-wrap"><table id="def"></table></div>
+  <h3>Element resists</h3><div class="table-wrap"><table id="els"></table></div>
+  <h3>Status resists</h3><div class="table-wrap"><table id="sts"></table></div>
+  <h3>Physical resists</h3><div class="table-wrap"><table id="phys"></table></div>
+ </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const num=(k,l,v)=>`<label>${l}<input data-k="${k}" type="number" step="any" value="${v}"></label>`;
+const sel=(k,l,opts)=>`<label>${l}<select data-k="${k}">${opts.map(o=>`<option>${o}</option>`).join('')}</select></label>`;
+window.GEAR_MAP={mnd:'mnd',vit:'vit',agi:'agi',heal_skill:'heal_skill'};
+const CHAR=[['mnd','MND (no gear)'],['vit','VIT (no gear)'],['agi','AGI (no gear)'],['heal_skill','Healing skill (no gear)'],['evasion_skill','Evasion skill'],['base_hp','Base HP (no gear)'],['base_mp','Base MP (no gear)']];
+const EXTRA=[['cure_pot','Cure potency % (cap 50)'],['cure_rcvd','Cure potency received %'],['dmg','Damage taken % (all)'],['dmg_phys','Physical taken %'],['dmg_magic','Magic taken %'],['dmg_magic2','Magic taken II %'],['dmg_breath','Breath taken %'],['dmg_range','Ranged taken %'],['meva','Magic evasion'],['mdef_self','Magic def bonus'],['def','Defense'],['eva','Evasion']];
+let timer=null,E=[],S=[];
+function build(M){const d=M.defaults;E=M.elements;S=M.statuses;
+ $('f_char').innerHTML=CHAR.map(([k,l])=>num(k,l,d[k])).join('');
+ $('f_cond').innerHTML=sel('day','Day',['light','dark','other'])+sel('weather','Weather',['light','dark','other'])+sel('wx_strength','Weather strength',['None','Single','Double'])+sel('proc','Proc mode',['Obi','Average'])+sel('irid','Iridescence staff',['false','true'])+sel('divine_seal','Divine Seal',['false','true'])+sel('rapture','Rapture',['false','true'])+num('rapture_amount','Rapture bonus %',d.rapture_amount)+num('missing_hp','Target missing HP (cap)',d.missing_hp)+sel('old_formula','Old cure formula (Cure only)',['false','true'])+num('cure_power_setting','Server CURE_POWER',d.cure_power_setting);
+ $('f_en').innerHTML=num('e_macc','Enemy magic accuracy',d.e_macc)+num('e_lvl_diff','Enemy level - yours',d.e_lvl_diff);
+ $('f_mods').innerHTML=EXTRA.map(([k,l])=>num('x_'+k,l,0)).join('');
+ document.querySelectorAll('.hc fieldset input,.hc fieldset select').forEach(i=>{i.oninput=i.onchange=sched});
+}
+function val(i){const v=i.value;return v==='true'?true:v==='false'?false:v}
+function payload(){const cfg={};document.querySelectorAll('#f_char [data-k],#f_cond [data-k],#f_en [data-k]').forEach(i=>cfg[i.dataset.k]=val(i));
+ const on=window.GEAR&&GEAR.on&&GEAR.totals,st=on?GEAR.totals.stats:{};
+ for(const[k,g]of[['mnd','mnd'],['vit','vit'],['agi','agi'],['heal_skill','heal_skill']])cfg[k]=(parseFloat(cfg[k])||0)+(st[g]||0);
+ const mods={...st};
+ document.querySelectorAll('#f_mods [data-k]').forEach(i=>{const k=i.dataset.k.slice(2),v=parseFloat(i.value)||0;if(v)mods[k]=(mods[k]||0)+v});
+ return{cfg,mods}}
+const f0=x=>Math.round(x).toLocaleString(),f1=x=>(+x).toFixed(1),sg=x=>x>0?'+'+x:''+x;
+async function calc(){
+ const r=await(await fetch('/api/heal-calc/compute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload())})).json();
+ $('r_cp').textContent=f0(r.cure_power);$('r_cp2').textContent='old formula '+f0(r.cure_power_old)+', day/weather x'+r.daywx.toFixed(2);
+ const d=r.defense;$('r_hp').textContent=f0(d.hp);$('r_mp').textContent='MP '+f0(d.mp);
+ const T=Object.fromEntries(r.taken.map(x=>[x.kind,x]));$('r_pm').textContent=T.Magical.reduction_pct.toFixed(0)+'% / '+T.Physical.reduction_pct.toFixed(0)+'%';
+ $('heals').innerHTML='<tr><th>Spell</th><th class="n">Power</th><th class="n">Base</th><th class="n">Heal</th><th class="n">% max HP</th><th class="n">Capped at missing HP</th></tr>'+r.heals.map(h=>h.note?`<tr><td>${h.spell}</td><td colspan="5" class="muted">${h.note}</td></tr>`:`<tr><td>${h.spell}</td><td class="n">${f0(h.power)}</td><td class="n">${f0(h.base)}</td><td class="n"><b>${f0(h.final)}</b></td><td class="n">${f1(h.pct_max_hp)}%</td><td class="n">${f0(h.capped)}</td></tr>`).join('');
+ $('hints').innerHTML=r.hints.map(h=>`<div class="warn">${h}</div>`).join('');
+ $('taken').innerHTML='<tr><th>Type</th><th class="n">Takes</th><th class="n">Reduction</th><th>Rule</th></tr>'+r.taken.map(x=>`<tr><td>${x.kind}</td><td class="n">${(100*x.multiplier).toFixed(1)}%</td><td class="n"><b>${x.reduction_pct.toFixed(1)}%</b></td><td class="muted">${x.note}</td></tr>`).join('');
+ const rows=[['Defense',d.defense],['Evasion',d.evasion],['Magic evasion',d.meva],['Magic def bonus',d.mdef],['Ranged defense',d.rdef],['Ranged evasion',d.reva],['Shield block rate',d.block],['Spell interruption down',d.spellint],['Fast cast',d.fastcast],['Cure cast time',d.cure_cast],['Enmity',d.enmity],['Conserve MP',d.conserve_mp],['Regen',d.regen],['Refresh',d.refresh],['Regain',d.regain],['HP heal (resting)',d.hpheal],['MP heal (resting)',d.mpheal],['Absorb damage chance',d.absorb_chance],['Magic absorb',d.magic_absorb],['Physical absorb',d.phys_absorb]];
+ $('def').innerHTML='<tr><th>Stat</th><th class="n">Value</th></tr>'+rows.map(([l,v])=>`<tr><td>${l}</td><td class="n">${f0(v)}</td></tr>`).join('');
+ const R=r.resists;
+ $('els').innerHTML='<tr><th>Element</th><th class="n">Resist</th><th class="n">Defense</th><th class="n">Enemy land %</th><th class="n">Avg resist factor</th></tr>'+R.elements.map(e=>`<tr><td>${e.element}</td><td class="n">${sg(e.res)}</td><td class="n">${sg(e.defense)}</td><td class="n">${e.land.toFixed(0)}%</td><td class="n">${e.resist_ev.toFixed(2)}</td></tr>`).join('');
+ $('sts').innerHTML='<tr><th>Status</th><th class="n">Resist</th><th class="n">Base land %</th><th class="n">Land % with gear</th></tr>'+R.statuses.map(s=>`<tr><td>${s.status}</td><td class="n">${sg(s.res)}</td><td class="n">${s.base_land.toFixed(0)}%</td><td class="n"><b>${s.land.toFixed(0)}%</b></td></tr>`).join('');
+ $('phys').innerHTML='<tr><th>Type</th><th class="n">Resist</th></tr>'+R.physical.map(p=>`<tr><td>${p.kind}</td><td class="n">${sg(p.res)}</td></tr>`).join('');
+}
+function sched(){clearTimeout(timer);timer=setTimeout(calc,250)}
+window.addEventListener('gearchange',sched);
+(async()=>{build(await(await fetch('/api/heal-calc/meta')).json());sched()})();
+</script>
+{% endblock %}

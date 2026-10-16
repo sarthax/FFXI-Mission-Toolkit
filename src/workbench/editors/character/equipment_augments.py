@@ -107,7 +107,7 @@ def augment_catalog(root: Path | str | None) -> dict[str, Any]:
             e = entries.setdefault(aug_id, {"id": aug_id, "effects": []})
             raw_name, comment = mods.get(mod_id, (None, ""))
             e["effects"].append({"mod": mod_id, "mod_name": _friendly(raw_name, mod_id), "value": value,
-                                 "multiplier": mult, "pet": bool(is_pet),
+                                 "multiplier": mult, "pet": bool(is_pet), "pet_type": _pet_type,
                                  "comment": comment or None, "unit": _explicit_mod_unit(comment) if comment else None})
     rows = [e for _, e in sorted(entries.items())]
     return {"available": bool(rows), "rows": rows}
