@@ -98,3 +98,20 @@ def test_api_requires_same_origin_and_maps_errors(tmp_path):
     app2 = FastAPI()
     app2.include_router(create_native_control_router(lambda: None))
     assert TestClient(app2).post("/live-client/native/stop", headers=ok).status_code in (403, 409)
+
+
+def test_chat_validation_and_double_opt_in(tmp_path):
+    for bad in ["/logout", "!", "! additem", "!additem 1;/logout", "!add\nitem", "!café", "!" + "a" * 130, ""]:
+        with pytest.raises(nc.NativeControlError) as e:
+            nc.build_command("chat", {"text": bad})
+        assert e.value.code == "invalid_chat_line"
+    assert nc.build_command("chat", {"text": "!additem 4096 12"}) == {"cmd": "chat", "text": "!additem 4096 12"}
+    _status(tmp_path)                                    # allow_file_commands=1 but no allow_chat_commands
+    with pytest.raises(nc.NativeControlError) as e:
+        nc.send_command(tmp_path, "chat", {"text": "!getid"}, wait_seconds=0.2)
+    assert e.value.code == "chat_disabled"
+    assert not (nc.channel_dir(tmp_path) / "command.txt").exists()
+    _status(tmp_path, allow_chat_commands=1)
+    assert nc.read_status(tmp_path)["chat_enabled"] is True
+    out = nc.send_command(tmp_path, "chat", {"text": "!getid"}, wait_seconds=0.2)
+    assert "text=!getid" in (nc.channel_dir(tmp_path) / "command.txt").read_text() and out["sent"]

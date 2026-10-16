@@ -69,3 +69,10 @@ def test_release_download_is_hash_pinned(tmp_path, monkeypatch):
     # non-github URLs are never trusted
     man.write_text(json.dumps({"tag": "t", "sha256": good, "url": "https://evil.example/x.dll"}))
     assert ni.preview(str(root))["release_available"] is False
+
+
+def test_settings_template_documents_both_opt_ins():
+    text = ni.render_settings(True, allow_chat_commands=False)
+    assert "allow_file_commands=1" in text and "allow_chat_commands=0" in text
+    assert "REQUIRED" in text and "stock" in text and "OPTIONAL" in text
+    assert "allow_chat_commands=1" in ni.render_settings(True, allow_chat_commands=True)

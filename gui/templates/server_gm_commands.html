@@ -1,0 +1,192 @@
+{% extends "workbench_page.html" %}
+{% block title %}GM Command Center{% endblock %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_heading %}GM Command Center{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Copy-only</span>{% endblock %}
+{% block page_help %}Browse the active server's GM commands by category, look up IDs from the server's own tables, and copy the finished command. Copy is always available; Send to game needs the native plugin with allow_chat_commands=1.{% endblock %}
+{% block page_body %}
+<style>
+.gmc{--pn:var(--surface);--bd:var(--border);--mu:var(--muted);--ac:var(--accent);--tx:var(--ink)}
+#tabs{display:flex;gap:2px;flex-wrap:wrap;padding:0;border-bottom:1px solid var(--bd)}
+#tabs button{background:none;border:1px solid transparent;border-bottom:0;color:var(--mu);padding:6px 11px;cursor:pointer;border-radius:6px 6px 0 0}
+#tabs button:hover{color:var(--ac)}#tabs button.on{background:var(--accent-soft);color:var(--ac);border-color:var(--bd);font-weight:600}
+#tabs b{font-weight:400;opacity:.6;margin-left:4px}
+.gmc-main{display:grid;grid-template-columns:290px 1fr;height:calc(100vh - 260px);min-height:420px}
+#list{border-right:1px solid var(--bd);overflow:auto;padding:8px}
+#list input{width:100%;box-sizing:border-box;margin-bottom:6px}
+.cmd{display:block;width:100%;text-align:left;background:none;border:0;color:var(--tx);padding:6px 8px;border-radius:5px;cursor:pointer}
+.cmd:hover,.cmd.on{background:var(--accent-soft)}.cmd.on{outline:1px solid var(--ac)}
+.cmd small{display:block;color:var(--mu);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pane{overflow:auto;padding:14px 18px}
+input,select,button{font:inherit;background:var(--pn);color:var(--tx);border:1px solid var(--bd);border-radius:5px;padding:5px 8px}
+button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}
+.p{margin:10px 0;max-width:640px}.p label{display:block;font-size:12px;color:var(--mu);margin-bottom:3px}
+.p .row{display:flex;gap:6px}.p .row input.v{flex:1}.req{color:var(--amber)}
+.res{border:1px solid var(--bd);background:var(--pn);border-radius:5px;margin-top:4px;max-height:200px;overflow:auto}
+.res div{padding:4px 8px;cursor:pointer;display:flex;gap:10px}.res div:hover{background:var(--accent-soft)}.res i{color:var(--ac);font-style:normal;min-width:80px}
+pre{background:var(--code-bg);border:1px solid var(--bd);padding:10px;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.mu{color:var(--mu);font-size:12px}
+</style>
+<div class="gmc">
+<p class="note mu">Build a command, look up IDs from the active server, then copy it or Send to game. Send requires the Ashita plugin online, <code>allow_chat_commands=1</code> in <code>config/workbench_native/settings.ini</code> (a stock install has neither), and a GM-permission character.</p>
+<div class="p" style="max-width:none;display:flex;gap:8px;align-items:center;margin:6px 0"><label style="margin:0" for="tgt">Target player</label><input id="tgt" list="tgtl" placeholder="blank = yourself" autocomplete="off" style="width:220px"><datalist id="tgtl"></datalist><span class="mu">Fills every <b>player</b> argument (55 commands). Blank = the GM running the command.</span></div>
+<div id="tabs"></div>
+<div class="gmc-main"><div id="list"><input id="search" type="search" placeholder="Search all commands…" aria-label="Search commands"><div id="items"></div></div>
+<div id="pane"><p class="mu">Pick a category, then a command.</p></div></div>
+
+</div>
+<script>
+const FAV='★ Favorites',HIST='🕘 History',PRE='📦 Presets';let curPre=-1;
+function lsGet(k,d){try{return JSON.parse(localStorage.getItem('gmc.'+k))||d}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem('gmc.'+k,JSON.stringify(v))}catch(e){}}
+function record(){const r=cmdText(),vals=[...document.querySelectorAll('#pane input.v')].map(i=>i.value);const h=lsGet('hist',[]).filter(x=>x.text!==r.text);h.unshift({name:cur.name,text:r.text,vals});lsSet('hist',h.slice(0,40))}
+function toggleFav(){const f=lsGet('fav',[]);const i=f.indexOf(cur.name);i<0?f.push(cur.name):f.splice(i,1);lsSet('fav',f);pane();tabs();list()}
+const $=id=>document.getElementById(id);let DATA=[],CATS=[],cat='',cur=null;
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function init(){
+  const r=await fetch('/server/gm/commands');
+  if(!r.ok){$('pane').textContent='Cannot load commands: '+r.status;return}
+  const j=await r.json();DATA=j.commands;CATS=j.categories.concat(DATA.some(c=>c.category==='Other')?['Other']:[]);
+  cat=CATS[0];tabs();list();
+}
+function tabs(){
+  $('tabs').innerHTML=[FAV,HIST,PRE].concat(CATS).map(c=>`<button data-c="${esc(c)}" class="${c===cat?'on':''}">${esc(c)}<b>${c===FAV?lsGet('fav',[]).length:c===HIST?lsGet('hist',[]).length:c===PRE?lsGet('pre',[]).length:DATA.filter(x=>x.category===c).length}</b></button>`).join('');
+}
+$('tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;cat=b.dataset.c;$('search').value='';tabs();list()};
+$('search').oninput=list;
+function list(){
+  const q=$('search').value.trim().toLowerCase();
+  if(!q&&cat===PRE){const P=lsGet('pre',[]);$('items').innerHTML='<button class="cmd" data-newpre="1">＋ New preset</button>'+P.map((x,i)=>`<button class="cmd ${i===curPre?'on':''}" data-p="${i}">${esc(x.name)}<small>${x.lines.length} command(s)</small></button>`).join('');return}
+  if(!q&&cat===HIST){const h=lsGet('hist',[]);$('items').innerHTML=h.map((x,i)=>`<button class="cmd" data-h="${i}">${esc(x.text)}<small>${esc(x.name)}</small></button>`).join('')||'<p class="mu">Nothing sent or copied yet.</p>';return}
+  const favs=lsGet('fav',[]);
+  const rows=cat===FAV&&!q?DATA.filter(c=>favs.includes(c.name)):DATA.filter(c=>q?(c.name+' '+c.description+' '+c.usage).toLowerCase().includes(q):c.category===cat);
+  $('items').innerHTML=rows.map(c=>`<button class="cmd ${cur&&cur.name===c.name?'on':''}" data-n="${esc(c.name)}">!${esc(c.name)}<small>${esc(q?c.category+' · ':'')}${esc(c.description)}</small></button>`).join('')||'<p class="mu">No matches.</p>';
+}
+$('items').onclick=e=>{const b=e.target.closest('.cmd');if(!b)return;
+  if(b.dataset.newpre){const P=lsGet('pre',[]);P.push({name:'New preset',lines:[]});lsSet('pre',P);curPre=P.length-1;tabs();list();prePane();return}
+  if(b.dataset.p!==undefined){curPre=+b.dataset.p;list();prePane();return}
+  if(b.dataset.h!==undefined){const h=lsGet('hist',[])[+b.dataset.h];cur=DATA.find(c=>c.name===h.name);if(!cur)return;pane();document.querySelectorAll('#pane input.v').forEach((i,k)=>i.value=h.vals[k]||'');preview();return}
+  cur=DATA.find(c=>c.name===b.dataset.n);list();pane()};
+function pane(){
+  const c=cur;
+  $('pane').innerHTML=`<h2 style="margin:0">!${esc(c.name)} <button id="fav" title="Toggle favorite" style="border:0;background:none;font-size:18px">${lsGet('fav',[]).includes(c.name)?'★':'☆'}</button></h2><div class="mu">${esc(c.category)} · permission ${c.permission}${c.permission>=3?' <b style="color:var(--red)">⚠ high-privilege</b>':''} · <span title="Server-relative Lua source">${esc(c.source_path)}</span> · <a href="/features/trace?q=${encodeURIComponent(c.name)}" target="_blank" style="border:1px solid var(--ac);color:var(--ac);border-radius:5px;padding:2px 8px;font-size:12px;text-decoration:none">Feature Trace ↗</a></div>
+  <p>${esc(c.description)}</p><div class="mu">Usage: <code>${esc(c.usage)}</code> &nbsp; (<span class="req">*</span> required, others optional)</div>
+  ${c.params.map((p,i)=>`<div class="p"><label>${esc(p.label)}${p.required?' <span class="req">*</span>':''} <span class="mu">(${p.type==='i'?'number':p.type==='b'?'auto-translate':'text'})</span></label>
+  ${p.hint||p.min!=null?`<div class="mu" style="margin:-1px 0 4px">${p.min!=null?'Range '+p.min+'–'+p.max+'. ':''}${p.hint&&!(p.min!=null&&/between/i.test(p.hint))?esc(p.hint):''}</div>`:''}
+  <div class="row"><input class="v" data-i="${i}" autocomplete="off">${p.lookup?`<input class="s" data-i="${i}" data-k="${p.lookup}" placeholder="Search ${p.lookup} by name or id…" style="width:230px">`:''}</div>
+  ${p.lookup?`<div class="res" data-r="${i}" hidden></div>`:''}</div>`).join('')}
+  <pre id="out"></pre>
+  <button id="copy">Copy command</button> <button id="addpre">Add to preset</button>${VIEW_FILL[c.name]?' <button id="vfill">Use 3D viewer selection</button>':''}<div class="mu" id="vnote"></div> <button id="send" disabled>Send to game</button> <span class="mu" id="sendnote"></span>
+  <p class="mu" id="sendhelp"></p>`;
+  tgtApply();preview();
+}
+const VIEW_FILL={pos:'point',checknav:'point',gotoentity:'entity',spawnmob:'entity',npchere:'entity'};
+function viewerSel(){try{return JSON.parse(localStorage.getItem('wb.viewer.selection')||'null')}catch(e){return null}}
+function viewerFill(){
+  const sel=viewerSel(),kind=VIEW_FILL[cur.name],note=$('vnote');
+  if(!sel){note.textContent='Nothing selected yet: open the 3D Zone Viewer, click a map point or an entity, then come back.';return}
+  const inp=[...document.querySelectorAll('#pane input.v')],set=(label,v)=>{const k=cur.params.findIndex(p=>p.label===label);if(k>=0&&v!=null)inp[k].value=String(v)};
+  const fmt=n=>Math.round(n*100)/100;
+  if(kind==='point'){
+    const q=sel.point||(sel.entity&&sel.entity.pos);
+    if(!q){note.textContent='Selection has no map point. Click terrain/navmesh in the viewer.';return}
+    set('x',fmt(q.x));set('y',fmt(q.y));set('z',fmt(q.z));set('zone ID',sel.zone);
+    note.textContent='Filled from the 3D viewer (zone '+sel.zone+', server coordinates). Verify with !checknav before writing it anywhere permanent.';
+  }else{
+    if(!sel.entity||sel.entity.id==null){note.textContent='No entity selected in the viewer (click a spawn marker).';return}
+    set(cur.name==='gotoentity'?'arg1':cur.params[0].label,sel.entity.id);
+    note.textContent='Filled entity '+sel.entity.id+(sel.entity.name?' ('+sel.entity.name+')':'')+' in zone '+sel.zone+'.';
+  }
+  preview();
+}
+function prePane(){
+  const x=lsGet('pre',[])[curPre];if(!x){$('pane').innerHTML='<p class="mu">Pick or create a preset.</p>';return}
+  $('pane').innerHTML=`<h2 style="margin:0">Preset</h2><p class="mu">One <code>!command</code> per line, sent in order. <code>{player}</code> is replaced by the Target player box (blank = yourself). Build lines on any command page with <b>Add to preset</b>.</p>
+  <div class="p"><label>Name</label><input id="pname" value="${esc(x.name)}" style="width:100%;box-sizing:border-box"></div>
+  <div class="p"><label>Commands</label><textarea id="plines" rows="12" style="width:100%;box-sizing:border-box;font-family:monospace;background:var(--pn);color:inherit;border:1px solid var(--bd);border-radius:5px">${esc(x.lines.join(String.fromCharCode(10)))}</textarea></div>
+  <button id="psave">Save</button> <button id="pcopy">Copy all</button> <button id="psend" disabled>Send all to game</button> <button id="pdel">Delete</button> <span class="mu" id="pnote"></span>`;
+  nativeStatus();
+}
+function preLines(){const t=$('tgt').value.trim();return $('plines').value.split(String.fromCharCode(10)).map(l=>l.trim()).filter(Boolean).map(l=>t?l.replace(/\{player\}/g,t):l.replace(/\s*\{player\}\s*$/,''))}
+function preSave(){const P=lsGet('pre',[]);P[curPre]={name:$('pname').value.trim()||'Preset',lines:$('plines').value.split(String.fromCharCode(10)).map(l=>l.trim()).filter(Boolean)};lsSet('pre',P);tabs();list();$('pnote').textContent='Saved.'}
+async function preSend(){
+  const L=preLines(),bad=L.find(l=>l.includes('{')||!/^![a-zA-Z0-9_]+( [ -~]*)?$/.test(l)||l.includes(';')||l.length>128);
+  if(bad){$('pnote').textContent='Invalid line (set Target player if {player} is not last; must be a single ASCII !command, no ";", max 128): '+bad;return}
+  if(!L.length||!confirm('Send '+L.length+' commands to game chat in order?'))return;
+  for(let i=0;i<L.length;i++){
+    $('pnote').textContent='Sending '+(i+1)+'/'+L.length+': '+L[i];
+    const r=await fetch('/live-client/native/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:L[i]})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||(j.outcome&&!j.outcome.ok)){$('pnote').textContent='Stopped at line '+(i+1)+': '+((j.outcome&&j.outcome.reason)||(j.detail&&j.detail.message)||j.detail||r.status);return}
+    await new Promise(z=>setTimeout(z,700));
+  }
+  $('pnote').textContent='Sent '+L.length+' commands.';
+}
+function cmdText(){
+  const vals=[...document.querySelectorAll('#pane input.v')].map(i=>i.value.trim());
+  while(vals.length&&!vals[vals.length-1])vals.pop();
+  const skip0=vals.length>1&&!vals[0]&&cur.params[0]&&!cur.params[0].required&&/player/i.test(cur.params[0].label);
+  const gaps=cur.params.filter((p,i)=>i<vals.length&&!vals[i]&&!(skip0&&i===0)).map(p=>p.label);
+  const sent=skip0?vals.slice(1):vals;
+  return {text:'!'+cur.name+(sent.length?' '+sent.map(v=>v||'0').join(' '):''),
+    warn:[...cur.params.map((p,i)=>p.min!=null&&vals[i]&&/^-?\d+$/.test(vals[i])&&(+vals[i]<p.min||+vals[i]>p.max)?p.label+' should be '+p.min+'–'+p.max:null).filter(Boolean),...cur.params.filter((p,i)=>p.required&&!vals[i]).map(p=>p.label+' is required'),...gaps.map(m=>m+' left blank (sent as 0)')]};
+}
+function preview(){const r=cmdText();$('out').textContent=r.text+(r.warn.length?'\n\n⚠ '+r.warn.join('\n⚠ '):'')}
+let timer;
+function tgtGet(){try{return JSON.parse(localStorage.getItem('gmc.tgt')||'{}')}catch(e){return {}}}
+function tgtSave(v){try{const o=tgtGet();o.cur=v;o.recent=[v,...(o.recent||[]).filter(x=>x!==v)].filter(Boolean).slice(0,8);localStorage.setItem('gmc.tgt',JSON.stringify(o))}catch(e){}}
+function tgtInit(){const o=tgtGet();$('tgt').value=o.cur||'';$('tgtl').innerHTML=(o.recent||[]).map(n=>`<option value="${esc(n)}">`).join('')}
+function tgtApply(){const v=$('tgt').value.trim();document.querySelectorAll('#pane input.v').forEach(i=>{if(cur&&cur.params[i.dataset.i].label==='player')i.value=v})}
+$('tgt').addEventListener('change',()=>{tgtSave($('tgt').value.trim());tgtInit();tgtApply();if(cur)preview()});
+tgtInit();
+$('pane').addEventListener('input',e=>{
+  const t=e.target;
+  if(t.classList.contains('v'))preview();
+  if(t.classList.contains('s')){clearTimeout(timer);timer=setTimeout(()=>search(t),180)}
+});
+$('pane').addEventListener('focusin',e=>{const t=e.target;if(t.classList&&t.classList.contains('s')&&['currency','questlog','missionlog'].includes(t.dataset.k)&&!t.value)search(t)});
+async function search(t){
+  const box=document.querySelector(`.res[data-r="${t.dataset.i}"]`);
+  const r=await fetch(`/server/gm/lookup?kind=${t.dataset.k}&q=${encodeURIComponent(t.value)}&limit=30`);
+  if(!r.ok){box.hidden=false;box.innerHTML='<div>Lookup unavailable ('+r.status+')</div>';return}
+  const j=await r.json();box.hidden=false;
+  box.innerHTML=j.results.map(x=>`<div data-id="${x.id}"><i>${x.id}</i><span>${esc(x.name)}</span></div>`).join('')||'<div>No results</div>';
+}
+$('pane').addEventListener('click',e=>{
+  const d=e.target.closest('.res div[data-id]');
+  if(d){const box=d.parentElement,i=box.dataset.r;document.querySelector(`input.v[data-i="${i}"]`).value=d.dataset.id;box.hidden=true;preview();return}
+  if(e.target.id==='send'){send();return}
+  if(e.target.id==='vfill'){viewerFill();return}
+  if(e.target.id==='fav'){toggleFav();return}
+  if(e.target.id==='psave'){preSave();return}
+  if(e.target.id==='psend'){preSend();return}
+  if(e.target.id==='pcopy'){navigator.clipboard.writeText(preLines().join(String.fromCharCode(10)));$('pnote').textContent='Copied.';return}
+  if(e.target.id==='pdel'){if(confirm('Delete this preset?')){const P=lsGet('pre',[]);P.splice(curPre,1);lsSet('pre',P);curPre=-1;tabs();list();prePane()}return}
+  if(e.target.id==='addpre'){const P=lsGet('pre',[]);const def=P[curPre>=0?curPre:P.length-1];const n=prompt('Add to which preset? (existing name, or a new name)',def?def.name:'My build');if(!n)return;let x=P.find(q=>q.name===n);if(!x){x={name:n,lines:[]};P.push(x)}x.lines.push(cmdText().text);lsSet('pre',P);curPre=P.indexOf(x);tabs();$('sendnote').textContent='Added to preset "'+n+'".';return}
+  if(e.target.id==='copy'){const r=cmdText();navigator.clipboard.writeText(r.text);record();tabs();e.target.textContent='Copied';setTimeout(()=>e.target.textContent='Copy command',1200)}
+});
+let NS=null;
+async function nativeStatus(){
+  try{NS=await (await fetch('/live-client/native/status')).json()}catch(e){NS=null}
+  const ok=NS&&NS.online&&NS.channel_enabled&&NS.chat_enabled&&NS.player_valid;
+  const why=!NS||!NS.online?'Native plugin offline (load workbench_native_probe).':!NS.channel_enabled?'Add allow_file_commands=1 to config/workbench_native/settings.ini.':!NS.chat_enabled?'Add allow_chat_commands=1 to config/workbench_native/settings.ini, then /reload the plugin (stock servers do not have this line).':!NS.player_valid?'No character in game.':'';
+  if($('psend')){$('psend').disabled=!ok}
+  const b=$('send');if(!b||!cur)return;
+  const c=cmdText();b.disabled=!ok||c.warn.some(w=>w.endsWith('is required'));
+  $('sendnote').textContent=ok?'':why;
+  $('sendhelp').textContent=ok?'Send queues this line into your game chat; the server reply appears in the game window.':'';
+}
+async function send(){
+  const c=cmdText();if(cur.permission>=3&&!confirm('HIGH-PRIVILEGE command (permission '+cur.permission+'): !'+cur.name+'. Continue?'))return;if(!confirm('Send to game chat:\n\n'+c.text))return;
+  $('sendnote').textContent='Sending…';
+  const r=await fetch('/live-client/native/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:c.text})});
+  const j=await r.json().catch(()=>({}));
+  if(r.ok){record();tabs()}
+  $('sendnote').textContent=r.ok?(j.outcome&&j.outcome.ok?'Sent.':'Plugin: '+(j.outcome?j.outcome.reason:'no outcome yet')):((j.detail&&j.detail.message)||j.detail||('Failed '+r.status));
+}
+const _pane=pane;pane=function(){_pane();nativeStatus()};
+const _prev=preview;preview=function(){_prev();nativeStatus()};
+setInterval(nativeStatus,4000);
+init();
+</script>
+{% endblock %}

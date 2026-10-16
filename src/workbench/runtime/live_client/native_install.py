@@ -82,14 +82,20 @@ def _dirs(ashita_root: str) -> tuple[Path, Path]:
     return plugins, root / "config" / "workbench_native"
 
 
-def render_settings(allow_file_commands: bool, auto_arm: str = "", speed_percent: int | None = None) -> str:
+def render_settings(allow_file_commands: bool, auto_arm: str = "", speed_percent: int | None = None,
+                    allow_chat_commands: bool = False) -> str:
     if auto_arm not in ("", "warp", "autorun", "local"):
         raise ValueError("auto_arm must be empty, warp, autorun or local")
     if speed_percent is not None and not 25 <= int(speed_percent) <= 400:
         raise ValueError("speed_percent must be 25..400")
     lines = [
         "; Workbench native plugin settings (private dev-server use only). Re-read every 2 s.",
+        "; REQUIRED: a stock Ashita/server install has no settings.ini. Without the line below the plugin ignores",
+        "; every Toolkit command (warp, speed, ...). Set to 1 to let the Toolkit move your character.",
         f"allow_file_commands={1 if allow_file_commands else 0}",
+        "; OPTIONAL, off by default: set to 1 to let the GM Command Center type '!' GM commands into your game",
+        "; chat (needs a character with GM permission). Independent of allow_file_commands; dev servers only.",
+        f"allow_chat_commands={1 if allow_chat_commands else 0}",
         f"auto_arm={auto_arm}",
         "enable_ttl_seconds=0" if auto_arm else "; enable_ttl_seconds=120",
         f"speed_percent={int(speed_percent)}" if speed_percent else "; speed_percent=120",
@@ -118,7 +124,7 @@ def preview(ashita_root: str) -> dict:
 
 
 def apply(ashita_root: str, expected_sha256: str, allow_file_commands: bool = False,
-          auto_arm: str = "", speed_percent: int | None = None) -> dict:
+          auto_arm: str = "", speed_percent: int | None = None, allow_chat_commands: bool = False) -> dict:
     plugins, cfg = _dirs(ashita_root)
     src = find_dll()
     pinned = (_manifest() or {}).get("sha256", "").lower()
@@ -147,7 +153,7 @@ def apply(ashita_root: str, expected_sha256: str, allow_file_commands: bool = Fa
     settings = cfg / "settings.ini"
     if not settings.exists():
         cfg.mkdir(parents=True, exist_ok=True)
-        settings.write_text(render_settings(allow_file_commands, auto_arm, speed_percent), encoding="utf-8", newline="\n")
+        settings.write_text(render_settings(allow_file_commands, auto_arm, speed_percent, allow_chat_commands), encoding="utf-8", newline="\n")
         result["settings_written"] = True
     result["load_command"] = "/load workbench_native_probe"
     return result

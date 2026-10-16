@@ -36,6 +36,7 @@ class AshitaInstallConfirmation(AshitaInstallSelection):
 class NativeInstallApply(AshitaInstallSelection):
     expected_sha256: str = Field(min_length=64, max_length=64)
     allow_file_commands: bool = False
+    allow_chat_commands: bool = False
     auto_arm: str = Field(default="", max_length=16)
     speed_percent: int | None = Field(default=None, ge=25, le=400)
 
@@ -120,7 +121,8 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
         require_same_origin(request)
         try:
             return native_install.apply(selection.ashita_root, selection.expected_sha256,
-                                        selection.allow_file_commands, selection.auto_arm, selection.speed_percent)
+                                        selection.allow_file_commands, selection.auto_arm, selection.speed_percent,
+                                        selection.allow_chat_commands)
         except (ValueError, OSError) as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 

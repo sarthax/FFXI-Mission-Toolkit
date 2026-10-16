@@ -1,4 +1,5 @@
 // Host-side tests for movement_adapter.h (no Ashita SDK, no game access).
+#include <vector>
 #include "movement_adapter.h"
 #include "native_control.h"
 #include <cstdio>
@@ -201,6 +202,15 @@ int main() {
         p.now += 2; r.Tick(); CHECK(!sp.active());                      // explicit off is not re-armed by config
         CHECK(r.Process(cmd(10, "cmd=speed\nvalue=10"), t) && r.last().reason == "invalid_speed");
         CHECK(r.Process(cmd(11, "cmd=disable"), t) && !a.enabled());
+        // chat: separate opt-in, GM "!" lines only, nothing queued unless every gate passes
+        std::vector<std::string> sent;
+        r.SetChatSink([&](const std::string& l) { sent.push_back(l); });
+        CHECK(r.Process(cmd(12, "cmd=chat\ntext=!getid"), t) && r.last().reason == "chat_disabled" && sent.empty());
+        r.SetSettings(ParseSettings("allow_file_commands=1\nallow_chat_commands=1\n"));
+        CHECK(r.Process(cmd(13, "cmd=chat\ntext=/logout"), t) && r.last().reason == "invalid_chat_line");
+        CHECK(r.Process(cmd(14, "cmd=chat\ntext=!a b;/logout"), t) && r.last().reason == "invalid_chat_line" && sent.empty());
+        CHECK(r.Process(cmd(15, "cmd=chat\ntext=!additem 4096 12"), t) && r.last().ok && sent.size() == 1 && sent[0] == "!additem 4096 12");
+        r.SetSettings(ParseSettings("allow_file_commands=1\nspeed_percent=120\n"));
         const Settings s = ParseSettings("allow_file_commands=1\nenable_ttl_seconds=0\nauto_arm=warp\nspeed_percent=900\n");
         CHECK(s.auto_arm == "warp" && s.enable_ttl_seconds == 0 && s.speed_percent == 0);
         CHECK(!ParseSettings("allow_file_commands=0").allow_file_commands && !ParseSettings("garbage").allow_file_commands);

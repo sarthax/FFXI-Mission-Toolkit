@@ -21,6 +21,10 @@ class ArmRequest(BaseModel):
     consent: str
 
 
+class ChatRequest(BaseModel):
+    text: str = Field(min_length=2, max_length=120)
+
+
 class SpeedRequest(BaseModel):
     value: float
 
@@ -45,7 +49,7 @@ def create_native_control_router(ashita_root_provider: Callable[[], str | None])
         try:
             return send_command(root(), cmd, fields)
         except NativeControlError as exc:
-            raise HTTPException(status_code=409 if exc.code in ("plugin_offline", "channel_disabled")
+            raise HTTPException(status_code=409 if exc.code in ("plugin_offline", "channel_disabled", "chat_disabled")
                                 else 422, detail={"code": exc.code, "message": str(exc)}) from exc
 
     @router.get("/status")
@@ -76,6 +80,11 @@ def create_native_control_router(ashita_root_provider: Callable[[], str | None])
     def warp(request: Request, target: WarpTarget) -> dict:
         same_origin(request)
         return run("warp_to", target.model_dump())
+
+    @router.post("/chat")
+    def chat(request: Request, body: ChatRequest) -> dict:
+        same_origin(request)
+        return run("chat", {"text": body.text})
 
     @router.post("/speed")
     def speed(request: Request, body: SpeedRequest) -> dict:
