@@ -87,6 +87,7 @@ $('pane').addEventListener('input',e=>{
   if(t.classList.contains('v'))preview();
   if(t.classList.contains('s')){clearTimeout(timer);timer=setTimeout(()=>search(t),180)}
 });
+$('pane').addEventListener('focusin',e=>{const t=e.target;if(t.classList&&t.classList.contains('s')&&['currency','questlog','missionlog'].includes(t.dataset.k)&&!t.value)search(t)});
 async function search(t){
   const box=document.querySelector(`.res[data-r="${t.dataset.i}"]`);
   const r=await fetch(`/server/gm/lookup?kind=${t.dataset.k}&q=${encodeURIComponent(t.value)}&limit=30`);

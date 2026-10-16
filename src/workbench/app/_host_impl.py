@@ -11574,6 +11574,10 @@ def _domain_roots():
     return {"topaz": settings_mod.get_topaz_root(), "dsp": settings_mod.get_dsp_root(), "lsb": build_lsb_index.LSB_ROOT}
 
 
+from workbench.server_admin.wscalc.router import create_wscalc_router
+app.include_router(create_wscalc_router(templates, lambda: settings_mod.get_dsp_root()))
+
+
 @app.get("/domains", response_class=HTMLResponse)
 def domains_index_page(request: Request):
     from workbench.domains import service as dsvc

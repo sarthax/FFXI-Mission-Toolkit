@@ -9,6 +9,7 @@
 <div class="table-wrap"><table>
 <tr><th>Domain</th><th>Archetype</th><th>Wiki pages</th>{% for r in roots %}<th>{{ r|upper }} entities present</th>{% endfor %}<th>Editors</th></tr>
 <tr><td><a href="/domains/assault">Assault</a></td><td>system.assault</td><td>-</td>{% for r in roots %}<td class="muted">see page</td>{% endfor %}<td>Built: Assault workspace</td></tr>
+<tr><td><a href="/tools/ws-calc">Weapon Skill Calculator</a></td><td>tool.ws_calc</td><td>-</td>{% for r in roots %}<td class="muted">see page</td>{% endfor %}<td>Built: what-if damage calculator</td></tr>
 <tr><td><a href="/nyzul">Nyzul Isle</a></td><td>system.nyzul</td><td>-</td>{% for r in roots %}<td class="muted">see page</td>{% endfor %}<td>Built: live layout editor</td></tr>
 {% for d in rows %}<tr><td><a href="/domains/{{ d.key }}">{{ d.label }}</a></td><td>{{ d.archetype }}</td><td>{{ d.wiki_pages }}</td>
 {% for r in roots %}<td>{% set s = d.status[r] %}{% if s.configured %}{{ s.present }}/{{ s.total }}{% else %}<span class="muted">not configured</span>{% endif %}</td>{% endfor %}

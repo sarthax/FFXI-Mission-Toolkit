@@ -32,3 +32,16 @@ def test_lookup_by_name_and_id(tmp_path):
     assert lookup(root, "keyitem", "zeruhn") == [{"id": 1, "name": "zeruhn report"}]
     assert lookup(root, "keyitem", "395")[0]["id"] == 395
     assert lookup(root, "item", "fire")[0] == {"id": 4096, "name": "fire crystal"}
+
+
+def test_enumerable_lookups_currency_and_logs(tmp_path):
+    from workbench.server_admin.gm_commands.lookup import lookup
+    (tmp_path / "sql").mkdir()
+    (tmp_path / "scripts" / "globals").mkdir(parents=True)
+    (tmp_path / "sql" / "char_points.sql").write_text(
+        "CREATE TABLE `char_points` (\n  `charid` int(10) NOT NULL,\n  `valor_point` int,\n  `scyld` int\n) ENGINE=MyISAM;\n")
+    (tmp_path / "scripts" / "globals" / "log_ids.lua").write_text(
+        'QUEST_LOGS = {\n    [0] = "SANDORIA",\n    [4] = "OTHER_AREAS",\n};\nMISSION_LOGS = {\n    [6] = "COP",\n};\n')
+    assert [r["id"] for r in lookup(tmp_path, "currency")] == ["valor_point", "scyld"]
+    assert lookup(tmp_path, "questlog", "other")[0] == {"id": 4, "name": "Other Areas"}
+    assert lookup(tmp_path, "missionlog", "6")[0]["name"] == "Cop"
