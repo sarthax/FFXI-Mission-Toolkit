@@ -55,3 +55,25 @@ The page can type a built command into the game chat through the native Ashita p
 3. The character must have GM permission on the server. Replies appear in game chat.
 
 Only single-line `!` commands (ASCII, no `;`, max 128 chars) are accepted; the plugin re-validates every line. The browser asks for confirmation before sending.
+
+## Workflow features (2026-10-15/16)
+
+All of this state is per-browser (localStorage); nothing is stored on the server.
+
+- **Target player** (`gmc.tgt`): one field at the top fills every `player` parameter. A blank leading optional `{player}`
+  is omitted so the command's own argument shift applies (`!setplayerlevel 75`, not `!setplayerlevel 0 75`). Other
+  blank middle arguments are still sent as `0` with a warning.
+- **Enumerable dropdowns**: currency (from `char_points` columns) and quest/mission log ids (from `log_ids.lua`) via
+  `/server/gm/lookup` kinds `currency`, `questlog`, `missionlog`. Per-log quest/mission ids are not covered yet.
+- **Favorites and history** (`gmc.fav`, `gmc.hist`): star a command; the last 40 sent/copied lines are kept with their
+  field values.
+- **Presets** (`gmc.pre`): named, ordered lists of command lines ("Add to preset"), with Send all for instant
+  character builds.
+- **Pull from 3D viewer**: clicking an entity in the zone viewer publishes `wb.viewer.selection`; position/mob/NPC
+  fields can fill from it.
+- **Hints and ranges**: parsed from each command's own Lua validation (`level < 1 or level > 99`, `must be between`
+  error text), never guessed. Out-of-range values show a warning.
+- **Permission badge**: commands with permission 3+ (for example `!exec`, `!reloadglobal`) show "high-privilege" and
+  require an extra confirmation before Send.
+- **Feature Trace** button on each command opens `/features/trace?q=<command>`.
+- Theme: the page uses the app's `--surface/--border/--accent` tokens, so it follows light/dark mode.
