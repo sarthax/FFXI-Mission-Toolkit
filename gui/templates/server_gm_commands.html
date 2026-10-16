@@ -125,8 +125,10 @@ async function preSend(){
 function cmdText(){
   const vals=[...document.querySelectorAll('#pane input.v')].map(i=>i.value.trim());
   while(vals.length&&!vals[vals.length-1])vals.pop();
-  const gaps=cur.params.filter((p,i)=>i<vals.length&&!vals[i]).map(p=>p.label);
-  return {text:'!'+cur.name+(vals.length?' '+vals.map(v=>v||'0').join(' '):''),
+  const skip0=vals.length>1&&!vals[0]&&cur.params[0]&&!cur.params[0].required&&/player/i.test(cur.params[0].label);
+  const gaps=cur.params.filter((p,i)=>i<vals.length&&!vals[i]&&!(skip0&&i===0)).map(p=>p.label);
+  const sent=skip0?vals.slice(1):vals;
+  return {text:'!'+cur.name+(sent.length?' '+sent.map(v=>v||'0').join(' '):''),
     warn:[...cur.params.map((p,i)=>p.min!=null&&vals[i]&&/^-?\d+$/.test(vals[i])&&(+vals[i]<p.min||+vals[i]>p.max)?p.label+' should be '+p.min+'–'+p.max:null).filter(Boolean),...cur.params.filter((p,i)=>p.required&&!vals[i]).map(p=>p.label+' is required'),...gaps.map(m=>m+' left blank (sent as 0)')]};
 }
 function preview(){const r=cmdText();$('out').textContent=r.text+(r.warn.length?'\n\n⚠ '+r.warn.join('\n⚠ '):'')}
