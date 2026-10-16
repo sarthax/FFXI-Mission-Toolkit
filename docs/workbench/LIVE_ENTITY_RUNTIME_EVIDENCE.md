@@ -66,3 +66,18 @@ allow browser/client-provided content. A real DSP instrumentation producer,
 safe atomic file replacement, transport trust verification, and instance
 identity validation are still required before claiming production runtime
 status or exposing this result in the GUI.
+
+## Atomic snapshot publishing primitive (trusted instrumentation only)
+
+`entity_runtime_snapshot_writer.publish_snapshot(directory, entities)` validates
+batch size and source fields, writes a bounded JSON file to a temporary file
+in the same directory, flushes it, then atomically replaces the fixed snapshot
+file. This avoids readers observing partially written JSON, and rejected
+updates do not destroy the previous snapshot.
+
+**Not a DSP server probe:** It only serializes values supplied by a trusted
+server-owned producer. Calling it with generated records, a static SQL spawn
+index, or client telemetry would create misleading runtime claims. The native
+DSP/Topaz map server still needs an instrumented read-only exporter that obtains
+actual in-memory entity state and instance identity. The producer directory
+must be accessible only to the trusted diagnostic process and toolkit reader.
