@@ -48,9 +48,7 @@ html{scroll-padding-top:56px}
 .aw-main{min-width:0;border:1px solid var(--border);border-radius:8px}
 .aw-head{position:sticky;top:44px;z-index:5;background:var(--bg,#14181d);border-bottom:1px solid var(--border);padding:9px 12px;border-radius:8px 8px 0 0}
 .aw-head h3{margin:0;font-size:16px}
-.aw-tabs{display:flex;gap:2px;flex-wrap:wrap;margin-top:8px}
-.aw-tabs button{border:1px solid transparent;border-bottom:0;border-radius:6px 6px 0 0;padding:5px 12px;background:transparent;color:inherit;cursor:pointer;opacity:.7}
-.aw-tabs button.on{opacity:1;font-weight:600;border-color:var(--border);background:rgba(106,169,255,.12)}
+.aw-tabs{margin-top:8px}
 .aw-body{padding:12px}
 .aw-pane{display:none}.aw-pane.on{display:block}
 .aw-tab{display:none}.aw-tab.on{display:block}
@@ -114,7 +112,7 @@ html{scroll-padding-top:56px}
           <a class="chip" href="/missions?q={{ mission.name|urlencode }}">Find mission</a>
           <a class="chip" href="/features/trace?q={{ mission.name|urlencode }}">Feature Trace</a>
         </div>
-        <div class="aw-tabs" role="tablist">
+        <div class="aw-tabs wb-tabs" role="tablist">
           <button type="button" data-tab="overview" class="on">Overview</button>
           <button type="button" data-tab="issues">Issues ({{ mission.issue_crossrefs|length }})</button>
           <button type="button" data-tab="deps">Dependencies ({{ mission.shared_dependencies|length }})</button>
