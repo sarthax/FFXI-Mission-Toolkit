@@ -1,0 +1,56 @@
+{
+  "voidwalker": {
+    "label": "Voidwalker",
+    "archetype": "system.voidwalker",
+    "summary": "Voidwalker (F-11e, LSB backport; NOT Voidwatch). Overworld NMs spawned by /heal while holding a plain colored Abyssite key item. STATUS 2026-10-16: ported on DSP branch feature/voidwalker (not yet merged/pushed). 300 NMs across 25 zones, Batallia Downs piloted in game: pop, hot/cold hint, fight, kill and Clear->Colorful upgrade confirmed. Open: !checknav on positions, per-NM mods, base-pool fallbacks (Dawon, Krabkatoa, Lord_Ruthven, Orcus, Blobdingnag), guessed skill numbers, Colorful/Black pop and a second-zone test. See the overview below.",
+    "wiki": {
+      "categories": [
+        "Voidwalker"
+      ],
+      "templates": [],
+      "headings": []
+    },
+    "children": [],
+    "entities": [
+      {
+        "kind": "Voidwalker NMs",
+        "fields": [
+          "name",
+          "zone",
+          "abyssite",
+          "pop position set"
+        ],
+        "server_globs": [
+          "scripts/zones/*/mobs/*.lua",
+          "sql/mob_groups.sql"
+        ],
+        "edit": "/zoneplot"
+      },
+      {
+        "kind": "Abyssite key items",
+        "fields": [
+          "key item id",
+          "name",
+          "colour tier"
+        ],
+        "server_globs": [
+          "scripts/globals/keyitems.lua"
+        ],
+        "edit": "/keyitems"
+      },
+      {
+        "kind": "Position sets",
+        "fields": [
+          "zone",
+          "positions"
+        ],
+        "server_globs": [
+          "scripts/globals/voidwalker.lua",
+          "scripts/globals/voidwalkerpos.lua"
+        ],
+        "edit": null
+      }
+    ],
+    "compare": "Check each key item id with id_bridge.py (90% drift risk) and each position with !checknav before building."
+  }
+}

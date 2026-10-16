@@ -1,0 +1,77 @@
+[
+ {
+  "title": "Verify positions with !checknav",
+  "status": "open",
+  "note": "All pop positions are LSB values, not navmesh-checked."
+ },
+ {
+  "title": "Verify abyssite key item ids against the client",
+  "status": "open",
+  "note": "Ids come from DSP keyitems.lua; use id_bridge.py."
+ },
+ {
+  "title": "Per-NM mods and mixins not ported",
+  "status": "open",
+  "note": "Only thin wrappers around voidwalker.lua exist."
+ },
+ {
+  "title": "Skill gap: Yilbegan has 12 skills with no Lua (ids 2519-2530)",
+  "status": "done",
+  "note": "12 Lua files written 2026-10-16 (damage = design guesses); untested in game."
+ },
+ {
+  "title": "Skill gap: Lord Ruthven decollation/eternal_damnation Lua; Dirty Breath, Minax Glare rows",
+  "status": "partial",
+  "note": "decollation + eternal_damnation Lua done; Dirty Breath/Minax Glare rows+Lua still open."
+ },
+ {
+  "title": "Skill gap: Norn Arrows (Verthandi), Mega Scissors/Venom Shower (Krabkatoa), Charged Whisker (Chesma), Somersault (Farruca Fly)",
+  "status": "partial",
+  "note": "Lists 9003-9007 applied (Krabkatoa, Lamprey Lord, Chesma, Farruca Fly, Verthandi + norn_arrows.lua); restart + test."
+ },
+ {
+  "title": "Skill gap: no DB row for Petrogaze, Petrifactive Breath, Frenzied Rage, Disorienting Waul",
+  "status": "open",
+  "note": "Need verified mob_skills ids before adding."
+ },
+ {
+  "title": "Add VWK_NM flag + gate shared skill Lua (metallic_body, acid_mist, recoil_dive, gravitic_horn...)",
+  "status": "partial",
+  "note": "Flag+vwkNM done; gated metallic_body, acid_mist, recoil_dive, Capricornus MS. Other gates/HP-JAs open."
+ },
+ {
+  "title": "Base-pool fallbacks: Dawon, Krabkatoa, Lord_Ruthven, Orcus, Blobdingnag",
+  "status": "open",
+  "note": "Some drop blocks (one_of) are not ported."
+ },
+ {
+  "title": "4 new mob skills use guessed damage numbers",
+  "status": "open",
+  "note": "sql/slices/voidwalker/skills.sql"
+ },
+ {
+  "title": "Colorful/Black abyssite pop and second-zone test",
+  "status": "open",
+  "note": "Only Clear abyssite tested so far."
+ },
+ {
+  "title": "Pool 7000 collision: RUN/GEO geo_luopan_pet vs Nyzul",
+  "status": "open",
+  "note": "Other session's work; tell the RUN/GEO side."
+ },
+ {
+  "title": "Pop, hint, fight, kill, upgrade in Batallia Downs",
+  "status": "done",
+  "note": "User-confirmed 2026-10-16."
+ },
+ {
+  "title": "Hidden NM un-hide uses status 1 (STATUS_UPDATE)",
+  "status": "done",
+  "note": "NORMAL(0) shows a green NPC."
+ },
+ {
+  "title": "Abyssea branch of the quest",
+  "status": "open",
+  "note": "Source found: FFXIclopedia Category Voidwalker NMs/Abyssea (31 pages, in wiki DB). Demilune Abyssite KIs 1564-1568, 1649-1654; NMs At'euvhi, Es'euvhi, Lusca, Tristitia, Brulo, Ketea, Maere, Ogopogo, Ruminator, Usurper etc. Not in LSB. Awaiting scope decision."
+ }
+]

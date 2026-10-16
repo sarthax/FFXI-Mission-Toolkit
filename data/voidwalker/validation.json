@@ -1,0 +1,74 @@
+{
+ "105:17207713": {
+  "areas": {
+   "drops": "untested",
+   "fight": "ok",
+   "hint": "ok",
+   "model": "ok",
+   "pop": "ok",
+   "upgrade": "untested"
+  },
+  "note": "",
+  "updated": "2026-10-16T12:59:33"
+ },
+ "105:17207714": {
+  "areas": {
+   "drops": "untested",
+   "fight": "ok",
+   "hint": "ok",
+   "model": "ok",
+   "pop": "ok",
+   "upgrade": "untested"
+  },
+  "note": "",
+  "updated": "2026-10-16T12:59:24"
+ },
+ "105:17207715": {
+  "areas": {
+   "drops": "untested",
+   "fight": "ok",
+   "hint": "ok",
+   "model": "ok",
+   "pop": "ok",
+   "upgrade": "ok"
+  },
+  "note": "Aither: popped, killed, upgrade confirmed in game 2026-10-16.",
+  "updated": "2026-10-16T00:00:00"
+ },
+ "105:17207716": {
+  "areas": {
+   "drops": "untested",
+   "fight": "ok",
+   "hint": "ok",
+   "model": "ok",
+   "pop": "ok",
+   "upgrade": "untested"
+  },
+  "note": "Deorc: model/pool/skills confirmed after status fix 2026-10-16.",
+  "updated": "2026-10-16T00:00:00"
+ },
+ "105:17207721": {
+  "areas": {
+   "drops": "untested",
+   "fight": "ok",
+   "hint": "ok",
+   "model": "ok",
+   "pop": "ok",
+   "upgrade": "ok"
+  },
+  "note": "Thunor: popped, fought, killed in game 2026-10-16 (Clear->Colorful).",
+  "updated": "2026-10-16T00:00:00"
+ },
+ "105:17207722": {
+  "areas": {
+   "drops": "untested",
+   "fight": "ok",
+   "hint": "ok",
+   "model": "ok",
+   "pop": "ok",
+   "upgrade": "ok"
+  },
+  "note": "",
+  "updated": "2026-10-16T12:59:01"
+ }
+}

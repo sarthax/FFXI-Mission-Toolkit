@@ -11766,6 +11766,34 @@ if __name__ == "__main__":
     uvicorn.run("workbench.app.host:app", host="127.0.0.1", port=_port, reload=False)
 
 
+@app.get("/domains/voidwalker/overview.json")
+def voidwalker_overview_json():
+    from workbench.domains import voidwalker as vw
+    conn = None
+    ctx = None
+    try:
+        from workbench.runtime.legacy_settings import get_active_server_root
+        from workbench.server_admin.auction_house.factory import open_auction_house
+        root = get_active_server_root()
+        if root is not None:
+            ctx = open_auction_house(root)
+            conn = ctx.service.connection
+    except Exception:
+        conn = None
+    try:
+        return JSONResponse(vw.overview(None, conn))
+    finally:
+        if ctx is not None:
+            ctx.close()
+
+
+@app.post("/domains/voidwalker/validation")
+async def voidwalker_validation_save(request: Request):
+    from workbench.domains import voidwalker as vw
+    b = await request.json()
+    return JSONResponse(vw.save_validation(str(b.get("key", "")), b.get("areas") or {}, str(b.get("note", ""))))
+
+
 @app.get("/domains/run_geo/overview.json")
 def run_geo_overview_json():
     from workbench.domains import run_geo as rg

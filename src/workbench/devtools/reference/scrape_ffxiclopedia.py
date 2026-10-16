@@ -22,6 +22,12 @@ except ImportError:
 API = "https://ffxiclopedia.fandom.com/api.php"
 UA = "mission-toolkit-ffxiclopedia-sync/1.0 (local FFXI private-server toolkit; polite incremental bot)"
 DELAY = 1.5
+VOIDWALKER_TITLES = ["Voidwalker", "Voidwalker NM", "Voidwalkers", "Making Contact", "Abyssite", "Clear Abyssite", "Colorful Abyssite",
+    "Blue Abyssite", "Orange Abyssite", "Brown Abyssite", "Yellow Abyssite", "Purple Abyssite", "Grey Abyssite", "Black Abyssite",
+    "Assai Nybaem", "Krabkatoa", "Blobdingnag", "Orcus", "Lord Ruthven", "Dawon", "Verthandi", "Yilbegan", "Capricornus", "Yacumama",
+    "Lamprey Lord", "Shoggoth", "Jyeshtha", "Farruca Fly", "Skuld", "Urd", "Erebus", "Feuerunke", "Chesma", "Tammuz", "Sunderclaw",
+    "Quagmire Pugil", "Globster", "Ground Guzzler", "Raker Bee", "Rummager Beetle", "Aither", "Pruina", "Beorht", "Deorc", "Thunor",
+    "Eorthe", "Lacus", "Puretos", "Gorehound", "Gjenganger", "Prickly Sheep", "Void Hare"]
 PRESETS = {
     "voidwatch": ["Voidwatch", "Voidwatch Notorious Monsters", "Voidwatch Quests", "Voidwatch Key Items",
                   "Voidwatch NPCs", "Voidwatch Rewards", "Stratum Abyssite", "Periapt", "Atmacite"],
@@ -99,7 +105,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--db", type=Path, default=Path("ffxi_zone_database.db"))
     ap.add_argument("--category", action="append", default=[])
-    ap.add_argument("--preset", choices=PRESETS)
+    ap.add_argument("--preset", choices=list(PRESETS) + ["voidwalker"])
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--changed", action="store_true")
     ap.add_argument("--skip-existing", action="store_true")
@@ -108,6 +114,7 @@ def main():
     con = sqlite3.connect(a.db); init_db(con)
     if a.changed: titles = list(changed_titles(con))
     elif a.all: titles = list(all_titles())
+    elif a.preset == "voidwalker": titles = list(VOIDWALKER_TITLES)
     else:
         cats = a.category + (PRESETS[a.preset] if a.preset else [])
         if not cats: ap.error("give --preset, --category, --all or --changed")
