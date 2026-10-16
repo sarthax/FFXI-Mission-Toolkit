@@ -50,10 +50,7 @@ local gm_capture = require('workbench_gm_capture').new({
     now = live_now,
     bridge_active = function() return bridge.active() end,
     send = function(json)
-        local id = bridge_options.client_id
-        -- The active client ID is supplied by the existing exporter context.
-        local ctx = exporter and exporter.context and exporter.context()
-        return bridge.capture(ctx and ctx.client_id or id, json)
+        return bridge.capture(bridge.client_id(), json)
     end,
     notify = function(msg) print('Workbench Live: '..msg) end,
 })
