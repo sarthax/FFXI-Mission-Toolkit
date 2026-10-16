@@ -119,9 +119,14 @@
   .wb-page-subtitle { color:var(--muted); font-size:11px; min-width:0; overflow:hidden; text-overflow:ellipsis; }
   .wb-page-status { display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
   .wb-page-actions { margin-left:auto; display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
-  .wb-page-help { margin:0; padding:0 6px; }
+  .wb-page-help { margin:0; padding:0 6px; position:relative; }
   .wb-page-help > summary { cursor:pointer; color:var(--muted); font-size:11px; }
-  .wb-page-help-body { padding:6px 2px; max-width:720px; color:var(--muted); }
+  .wb-page-help[open] > summary { color:var(--accent); }
+  .wb-page-help-body {
+    position:absolute; top:calc(100% + 8px); right:0; z-index:60; width:min(560px,90vw); max-height:60vh; overflow:auto;
+    padding:10px 12px; border:1px solid var(--border); border-radius:7px; background:var(--surface); color:var(--ink);
+    box-shadow:0 8px 24px rgba(0,0,0,.20); font-size:12px; line-height:1.5; font-weight:400; text-align:left;
+  }
   .wb-page-body { min-width:0; }
   .wb-filter-row {
     min-height:var(--wb-toolbar-h); display:flex; align-items:center; gap:5px; flex-wrap:wrap;
@@ -332,7 +337,7 @@
 
 <script>
 (() => {
-  const menus=[...document.querySelectorAll('#app-shell details.shell-menu')];
+  const menus=[...document.querySelectorAll('#app-shell details.shell-menu, details.wb-page-help')];
   document.addEventListener('click',ev=>{
     for(const menu of menus){
       if(menu.open && !menu.contains(ev.target)) menu.open=false;
