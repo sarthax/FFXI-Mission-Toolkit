@@ -212,6 +212,11 @@ WORKSPACES = (
             {"label": "Lookup & Decode: Packet Tools", "href": "/packets?shell=tools"},
             {"label": "Diagnostics: Gaps", "href": "/gaps?shell=tools"},
             {"label": "Diagnostics: ID Drift", "href": "/iddrift?shell=tools"},
+            {"label": "Calculators: Weapon Skill", "href": "/tools/ws-calc"},
+            {"label": "Calculators: Melee", "href": "/tools/melee-calc"},
+            {"label": "Calculators: Magic", "href": "/tools/magic-calc"},
+            {"label": "Calculators: Healing & Defense", "href": "/tools/heal-calc"},
+            {"label": "Calculators: Pet", "href": "/tools/pet-calc"},
         ),
     },
     {
@@ -224,6 +229,9 @@ WORKSPACES = (
         ),
     },
 )
+
+
+CALC_TABS_PATHS = ("/tools/ws-calc", "/tools/melee-calc", "/tools/magic-calc", "/tools/heal-calc", "/tools/pet-calc")
 
 
 def _route_pattern(path: str) -> re.Pattern[str]:
@@ -254,6 +262,8 @@ def route_owner(path: str, method: str = "GET") -> dict:
             "role": "page",
             "disposition": "KEEP",
         }
+    if method == "GET" and path in CALC_TABS_PATHS:
+        return {"home": "Tools", "section": "Calculators", "path": path, "method": method, "role": "page", "disposition": "KEEP"}
     if method == "GET" and path == "/live-client/replay/console":
         return {"home": "Client", "section": "Live Client", "path": path,
                 "method": method, "role": "page", "disposition": "KEEP"}

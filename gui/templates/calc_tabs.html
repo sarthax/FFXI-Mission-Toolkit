@@ -1,0 +1,7 @@
+<style>
+.calc-tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--border);margin:0 0 12px}
+.calc-tabs a{padding:6px 14px;border:1px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;color:var(--muted);text-decoration:none;font-size:13px}
+.calc-tabs a:hover{color:var(--text,inherit)}
+.calc-tabs a.on{border-color:var(--border);background:var(--surface,transparent);color:var(--accent);font-weight:600;margin-bottom:-1px}
+</style>
+<nav class="calc-tabs" aria-label="Calculators">{% for href,label in [('/tools/ws-calc','Weapon Skill'),('/tools/melee-calc','Melee'),('/tools/magic-calc','Magic'),('/tools/heal-calc','Healing &amp; Defense'),('/tools/pet-calc','Pet')] %}<a href="{{ href }}"{% if request.url.path == href %} class="on" aria-current="page"{% endif %}>{{ label|safe }}</a>{% endfor %}</nav>
