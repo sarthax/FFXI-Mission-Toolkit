@@ -161,6 +161,6 @@ function M.new(options, notify, load_error)
         if not ok then return fail('read-only heartbeat failed') end
         return true, 'authenticated read-only round-trip confirmed; no movement capability'
     end
-    return {start=start, observe=observe, capture=capture, ping=ping, stop=close, active=function() return source~=nil end, last_error=function() return last_error end}
+    return {start=start, observe=observe, capture=capture, client_id=function() return source end, ping=ping, stop=close, active=function() return source~=nil end, last_error=function() return last_error end}
 end
 return M
