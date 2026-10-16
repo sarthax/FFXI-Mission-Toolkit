@@ -1,0 +1,36 @@
+{
+  "run_geo": {
+    "label": "Rune Fencer & Geomancer",
+    "archetype": "system.run_geo",
+    "summary": "Rune Fencer (RUN) and Geomancer (GEO) job backport: stat grades, unlock quests, gear and weapon acquisition, spell scroll sources and open mechanics. One tracked row per finding with status, evidence tag and your notes. Findings come from the 2026-10 audit of DSP-Valhalla against the LSB snapshot.",
+    "wiki": {
+      "categories": [
+        "Geomancer",
+        "Rune Fencer"
+      ],
+      "templates": [],
+      "headings": []
+    },
+    "children": [],
+    "entities": [
+      {
+        "kind": "Gap items",
+        "fields": [
+          "area",
+          "title",
+          "status",
+          "evidence",
+          "note"
+        ],
+        "server_globs": [
+          "src/map/grades.cpp",
+          "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+          "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+          "scripts/quests/adoulin/Dances_with_Luopans.lua"
+        ],
+        "edit": "/zoneplot"
+      }
+    ],
+    "compare": "Verify each gap against the LSB snapshot and a fresh DAT/dialog pull before building; never invent ids, drop sources or quest flow."
+  }
+}

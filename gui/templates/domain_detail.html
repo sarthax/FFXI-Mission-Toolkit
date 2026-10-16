@@ -83,6 +83,19 @@ th.vwc1,td.vwc1,th.vwc2,td.vwc2{width:120px;min-width:120px;white-space:nowrap}.
 <script src="/static/super_kupopower.js?v=1"></script>
 {% endif %}
 
+{% if d.archetype == "system.run_geo" %}
+<style>
+.cpcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:8px 0}.cpcard{border:1px solid var(--border,#444);border-radius:8px;padding:8px;text-align:center}
+</style>
+<section id="rg-root">
+<h2>Rune Fencer &amp; Geomancer gaps <a class="chip" href="/domains/run_geo/overview.json" target="_blank">json</a></h2>
+<div id="rg-strip" class="cpcards"></div>
+<div id="rg-body"></div>
+<p class="muted">Source of truth is data/run_geo/gaps.json; only status and note are editable here. Evidence: V verified in source or DB, C capture, W wiki; blank = not yet evidenced. Unknowns stay unknown: do not invent ids, drop sources or quest flow.</p>
+</section>
+<script src="/static/run_geo.js?v=1"></script>
+{% endif %}
+
 {% if d.archetype == "system.survival_guides" %}
 <section id="sg-root">
 <h2>Survival Guides <a class="chip" href="/domains/survival_guides/overview.json" target="_blank">json</a></h2>

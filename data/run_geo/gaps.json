@@ -1,0 +1,202 @@
+[
+ {
+  "id": "g01",
+  "area": "Stats",
+  "title": "GEO/RUN job stat grades in DSP grades.cpp",
+  "status": "done",
+  "evidence": "V",
+  "detail": "Rows were all zero (NYI since a 2015 pad). Filled GEO {4,3,6,4,4,5,2,2,5} and RUN {2,6,3,4,5,2,4,4,6} from LSB data/grades.yaml (a=1..g=7). Merged to local DSP main (tag slice/geo-run-stat-grades-v1); not built, not pushed to valhalla.",
+  "source": "dsp-branches src/map/grades.cpp; LSB data/grades.yaml",
+  "note": ""
+ },
+ {
+  "id": "g02",
+  "area": "Stats",
+  "title": "In-game check of GEO/RUN HP/MP/stats at several levels",
+  "status": "missing",
+  "evidence": "",
+  "detail": "After the grades.cpp build + restart, compare character HP/MP/STR..CHR for GEO/RUN main and as subjob at 1/50/75/99 against the Toolkit calculator output. Subjob MP handling not yet reviewed.",
+  "source": "",
+  "note": ""
+ },
+ {
+  "id": "g03",
+  "area": "Stats",
+  "title": "Toolkit calculator JOB_GRADES had jobs 1-20 only",
+  "status": "done",
+  "evidence": "V",
+  "detail": "base_stats() returned {} for GEO/RUN. Fixed in PR #1040 with 102 parameterized tests (all 22 jobs, GEO/RUN at 1/50/75/99, cross-check against grades.cpp).",
+  "source": "FFXI-Mission-Toolkit PR #1040",
+  "note": ""
+ },
+ {
+  "id": "g04",
+  "area": "Unlock quests",
+  "title": "GEO unlock: Dances with Luopans (quest 118, Sylvie, Western Adoulin)",
+  "status": "missing",
+  "evidence": "V",
+  "detail": "LSB has a full script ending in unlockJob(GEO). DSP has the quest id and a Sylvie NPC row (zone 256) but no Sylvie script and no quest script, so the quest cannot run. Adoulin text/event ids must be verified against DSP client data.",
+  "source": "LSB scripts/quests/adoulin/Dances_with_Luopans.lua",
+  "note": ""
+ },
+ {
+  "id": "g05",
+  "area": "Unlock quests",
+  "title": "RUN unlock: Children of the Rune (quest 119, Octavien, Eastern Adoulin)",
+  "status": "missing",
+  "evidence": "V",
+  "detail": "LSB Octavien.lua drives it with the RUN_COTR char var and ends in unlockJob(RUN) plus the Rune Fencer job gesture key item. DSP has the quest id and an Octavien NPC row (zone 257) but no script. DSP Eastern Adoulin has 5 NPC scripts vs 14 in LSB.",
+  "source": "LSB scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+  "note": ""
+ },
+ {
+  "id": "g06",
+  "area": "Unlock quests",
+  "title": "Job gesture key items / job-unlock text for GEO and RUN",
+  "status": "hold",
+  "evidence": "",
+  "detail": "Key item names must be resolved with id_bridge.py keyitem and checked against the client; never guess ids. Tied to g04/g05.",
+  "source": "",
+  "note": ""
+ },
+ {
+  "id": "g07",
+  "area": "Gear",
+  "title": "115 GEO/RUN-only armor/weapon items have no acquisition source",
+  "status": "missing",
+  "evidence": "V",
+  "detail": "Items exist with correct job masks (111 are level 99): Bagua, Futhark, Azimuth, Erilaz, Geomancy/Runeist +2/+3, capes, Idris, Solstice, Dunna, Epeolatry, Aettir, Lionheart, handbells. None appears in mob_droplist or bcnm_loot in DSP, and none in LSB's mob_droplist either. Only LSB deeds.lua (+1 armor) references any. Needs a design decision per set (Sortie/Odyssey/WoE/Adoulin vendor/reforge).",
+  "source": "SQL: item_armor jobs mask; LSB scripts/globals/deeds.lua",
+  "note": ""
+ },
+ {
+  "id": "g08",
+  "area": "Gear",
+  "title": "Lower Jeuno Vingijard AF/relic exchange rows for GEO/RUN",
+  "status": "hold",
+  "evidence": "V",
+  "detail": "LSB jobGearTable, jobQuestsTable and jobCofferTable have GEO/RUN empty or commented out (upstream gap, not a DSP regression). DSP Vingijard is a stub.",
+  "source": "LSB scripts/zones/Lower_Jeuno/npcs/Vingijard.lua",
+  "note": ""
+ },
+ {
+  "id": "g09",
+  "area": "Gear",
+  "title": "Check whether DSP has deeds.lua (+1 armor path) or equivalent",
+  "status": "missing",
+  "evidence": "",
+  "detail": "Not checked. Item-reward scripts (Walk of Echoes, quest rewards, reforge) were not searched; only drop/loot tables and unlock scripts were.",
+  "source": "",
+  "note": ""
+ },
+ {
+  "id": "g10",
+  "area": "Gear",
+  "title": "Level-99-start gear gating vs 75-90 for older jobs",
+  "status": "hold",
+  "evidence": "",
+  "detail": "Expected for GEO/RUN: equipment is level 99. Characters below 99 have nothing job-specific to wear. Decide whether to expose lower-level substitutes.",
+  "source": "",
+  "note": ""
+ },
+ {
+  "id": "g11",
+  "area": "Spells",
+  "title": "Indi scrolls (Ishvad, Western Adoulin)",
+  "status": "done",
+  "evidence": "V",
+  "detail": "Ishvad sells 16 Indi scrolls in both LSB and DSP with matching prices.",
+  "source": "scripts/zones/Western_Adoulin/npcs/Ishvad.lua",
+  "note": ""
+ },
+ {
+  "id": "g12",
+  "area": "Spells",
+  "title": "Geo- scrolls (item ids 6102+): no vendor or drop found",
+  "status": "missing",
+  "evidence": "",
+  "detail": "Items exist; no source found in LSB or DSP by id search. Retail source not yet confirmed (check wikis/FFXIclopedia before building).",
+  "source": "",
+  "note": ""
+ },
+ {
+  "id": "g13",
+  "area": "Spells",
+  "title": "Scroll item naming: a few scrolls named plate_of_... in item_basic",
+  "status": "partial",
+  "evidence": "V",
+  "detail": "e.g. 6131 plate_of_indi-haste. Cosmetic/data inconsistency to normalize.",
+  "source": "item_basic",
+  "note": ""
+ },
+ {
+  "id": "g14",
+  "area": "Spells",
+  "title": "RUN spell/ability sources (Foil scroll, enhancing spells)",
+  "status": "hold",
+  "evidence": "",
+  "detail": "Not audited. Scroll of Foil exists (5102); other RUN spell sources unchecked.",
+  "source": "",
+  "note": ""
+ },
+ {
+  "id": "g15",
+  "area": "Mechanics",
+  "title": "Embolden power/duration hook",
+  "status": "hold",
+  "evidence": "",
+  "detail": "Deferred: DSP has no central enhancing-spell hook; needs edits to each white enhancing spell.",
+  "source": "docs/slices/run-geo-jobs/PLAN.md",
+  "note": ""
+ },
+ {
+  "id": "g16",
+  "area": "Mechanics",
+  "title": "Elemental Sforzo recast reduction; merit / job-point wiring",
+  "status": "hold",
+  "evidence": "",
+  "detail": "Open items from the run-geo-jobs slice.",
+  "source": "docs/slices/run-geo-jobs/PLAN.md",
+  "note": ""
+ },
+ {
+  "id": "g17",
+  "area": "Mechanics",
+  "title": "RUN abilities needing in-game test when unlocked",
+  "status": "partial",
+  "evidence": "",
+  "detail": "Pflug, Gambit, Liement, Rayke, Battuta untested. Vallation to retest after Lua revert. Message 666 text unverified in client.",
+  "source": "docs/slices/run-geo-jobs/RUN_LUA_GAPS.md",
+  "note": ""
+ },
+ {
+  "id": "g18",
+  "area": "Mechanics",
+  "title": "Unverified animation/model ids; Valhalla EquipItem/BuildingCharSkillsTable diff",
+  "status": "hold",
+  "evidence": "",
+  "detail": "Carried from the run-geo-jobs slice risk register.",
+  "source": "docs/slices/run-geo-jobs/PLAN.md",
+  "note": ""
+ },
+ {
+  "id": "g19",
+  "area": "Release",
+  "title": "Push DSP main + tags slice/run-geo-jobs-v1, slice/geo-run-stat-grades-v1 to valhalla",
+  "status": "hold",
+  "evidence": "",
+  "detail": "Awaiting user go-ahead. Never push to origin.",
+  "source": "",
+  "note": ""
+ },
+ {
+  "id": "g20",
+  "area": "Release",
+  "title": "Toolkit PR #1040 merge",
+  "status": "hold",
+  "evidence": "",
+  "detail": "Open against main; waiting on review/merge.",
+  "source": "PR #1040",
+  "note": ""
+ }
+]

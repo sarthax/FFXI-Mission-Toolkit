@@ -2502,6 +2502,22 @@
     },
     {
       "method": "GET",
+      "path": "/domains/run_geo/overview.json",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/domains/run_geo/save",
+      "home": "Server",
+      "section": "Domain Research",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
       "path": "/domains/survival_guides/overview.json",
       "home": "Server",
       "section": "Domain Research",
