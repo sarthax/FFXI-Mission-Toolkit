@@ -13,7 +13,7 @@ DEFAULTS = dict(
     wtype="auto", use_gear=True, level=99, skill=400, main_dmg=0, main_delay=0, main_hits=1, sub_dmg=0, sub_delay=0, sub_hits=1,
     base_str=100, base_dex=100, att_buff=0, attp_buff=0, acc_buff=0, haste_magic=0, haste_ability=0,
     da_trait=0, ta_trait=0, qa_trait=0, crit_trait=0, crit_dmg_trait=0, store_tp_trait=0, subtle_trait=0, dw_trait=0, regain_trait=0,
-    t_level=99, t_def=1000, t_eva=1000, t_vit=100, t_agi=100, t_pc=False,
+    t_level=99, t_def=400, t_eva=400, t_vit=100, t_agi=100, t_pc=False,
     ench=0, ench_base=0, ench_skill=0, spikes_dmg=0, mob_delay=240, mob_hit=75, ammo=False)
 
 
@@ -172,5 +172,9 @@ def compute(c, g, weapon, sub):
         magic=[("Enspell tier", c["ench"]), ("Enspell damage per hit", e_hit), ("Enspell damage per round", e_round), ("Enspell bonus mod", G("enspell_bonus")),
                ("Enspell proc chance %", chance * 100), ("Spike damage", sp_dmg), ("Spike procs per second", sp_ps * sp_ch if sp_dmg else 0),
                ("Spike damage per second", sp_dmg * sp_ps * sp_ch), ("Counter", G("counter")), ("Zanshin", G("zanshin"))],
+        gear=[(l, G(k)) for l, k in (("Attack", "att"), ("Attack %", "attp"), ("Accuracy", "acc"), ("STR", "str"), ("DEX", "dex"), ("Crit rate %", "crit_rate"),
+              ("Crit damage %", "crit_dmg"), ("Double attack %", "da"), ("Triple attack %", "ta"), ("Quad attack %", "qa"), ("Store TP", "store_tp"),
+              ("Regain", "regain"), ("Gear haste", "haste_gear"), ("Dual wield %", "dual_wield"), ("Subtle blow", "subtle_blow"), ("Delay -", "delay_mod"),
+              ("Delay %", "delayp"), ("Martial arts", "martial_arts"), ("Kick attacks %", "kick_attack"), ("Enspell bonus", "enspell_bonus")) if G(k)],
         notes=notes,
         other={kk: v for kk, v in g.items() if kk in ("da_double", "ta_triple", "zanshin_double", "samba_double", "wsacc", "item_spikes_type", "main_rating", "sub_rating") and v})
