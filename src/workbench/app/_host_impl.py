@@ -11766,6 +11766,24 @@ if __name__ == "__main__":
     uvicorn.run("workbench.app.host:app", host="127.0.0.1", port=_port, reload=False)
 
 
+@app.get("/domains/run_geo/overview.json")
+def run_geo_overview_json():
+    from workbench.domains import run_geo as rg
+    return JSONResponse(rg.overview())
+
+
+@app.post("/domains/run_geo/save")
+async def run_geo_save(request: Request):
+    from workbench.domains import run_geo as rg
+    b = await request.json()
+    try:
+        return JSONResponse(rg.save(str(b.get("id", "")), b.get("changes") or {}))
+    except KeyError as ex:
+        raise HTTPException(status_code=404, detail=str(ex))
+    except ValueError as ex:
+        raise HTTPException(status_code=400, detail=str(ex))
+
+
 @app.get("/domains/survival_guides/overview.json")
 def survival_guides_overview_json():
     from workbench.domains import survival_guides as sg
