@@ -1765,9 +1765,24 @@ function updateInspectorNavigation() {
   document.getElementById('zone3d-inspector-index').textContent = available ?
     `${index + 1} / ${spawnEntities.length} visible` : 'Not in visible markers';
 }
+// Hand the current map selection to other Toolkit pages (GM Command Center) via localStorage.
+function wbPublishSelection(part) {
+  try {
+    const key = 'wb.viewer.selection', prev = JSON.parse(localStorage.getItem(key) || '{}');
+    const next = Object.assign({}, prev.zone === {{ zoneid|tojson }} ? prev : {}, { zone: {{ zoneid|tojson }}, ts: Date.now() });
+    if (part.point) next.point = { x: part.point.x, y: part.point.y, z: part.point.z };
+    if (part.entity) {
+      const e = part.entity, id = e.live_observation ? e.server_entity_id : e.id;
+      next.entity = { id: id == null ? null : id, name: e.name || e.label || '', live: !!e.live_observation };
+      if ([e.x, e.y, e.z].every(Number.isFinite) && !e.live_observation) next.entity.pos = { x: e.x, y: e.y, z: e.z };
+    }
+    localStorage.setItem(key, JSON.stringify(next));
+  } catch (err) { /* storage unavailable: GM page just has nothing to import */ }
+}
 function inspectEntity(entity) {
   if (!entity) return;
   selectedEntity = entity;
+  wbPublishSelection({ entity });
   refreshInspectorLivePicker();
   if (entity.live_observation) {
     const index = liveObservedEntities.findIndex(e => e === entity);
@@ -2022,6 +2037,7 @@ function nwEnsureMarker() {
 }
 function nwSetTarget(server, source) {
   nw.target = { x: server.x, y: server.y, z: server.z };
+  wbPublishSelection({ point: nw.target });
   const m = nwEnsureMarker();
   m.position.set(server.x, -server.y + 1.5, -server.z);
   m.visible = true;

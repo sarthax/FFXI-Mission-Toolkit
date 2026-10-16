@@ -75,9 +75,28 @@ function pane(){
   <div class="row"><input class="v" data-i="${i}" autocomplete="off">${p.lookup?`<input class="s" data-i="${i}" data-k="${p.lookup}" placeholder="Search ${p.lookup} by name or id…" style="width:230px">`:''}</div>
   ${p.lookup?`<div class="res" data-r="${i}" hidden></div>`:''}</div>`).join('')}
   <pre id="out"></pre>
-  <button id="copy">Copy command</button> <button id="addpre">Add to preset</button> <button id="send" disabled>Send to game</button> <span class="mu" id="sendnote"></span>
+  <button id="copy">Copy command</button> <button id="addpre">Add to preset</button>${VIEW_FILL[c.name]?' <button id="vfill">Use 3D viewer selection</button>':''}<div class="mu" id="vnote"></div> <button id="send" disabled>Send to game</button> <span class="mu" id="sendnote"></span>
   <p class="mu" id="sendhelp"></p>`;
   tgtApply();preview();
+}
+const VIEW_FILL={pos:'point',checknav:'point',gotoentity:'entity',spawnmob:'entity',npchere:'entity'};
+function viewerSel(){try{return JSON.parse(localStorage.getItem('wb.viewer.selection')||'null')}catch(e){return null}}
+function viewerFill(){
+  const sel=viewerSel(),kind=VIEW_FILL[cur.name],note=$('vnote');
+  if(!sel){note.textContent='Nothing selected yet: open the 3D Zone Viewer, click a map point or an entity, then come back.';return}
+  const inp=[...document.querySelectorAll('#pane input.v')],set=(label,v)=>{const k=cur.params.findIndex(p=>p.label===label);if(k>=0&&v!=null)inp[k].value=String(v)};
+  const fmt=n=>Math.round(n*100)/100;
+  if(kind==='point'){
+    const q=sel.point||(sel.entity&&sel.entity.pos);
+    if(!q){note.textContent='Selection has no map point. Click terrain/navmesh in the viewer.';return}
+    set('x',fmt(q.x));set('y',fmt(q.y));set('z',fmt(q.z));set('zone ID',sel.zone);
+    note.textContent='Filled from the 3D viewer (zone '+sel.zone+', server coordinates). Verify with !checknav before writing it anywhere permanent.';
+  }else{
+    if(!sel.entity||sel.entity.id==null){note.textContent='No entity selected in the viewer (click a spawn marker).';return}
+    set(cur.name==='gotoentity'?'arg1':cur.params[0].label,sel.entity.id);
+    note.textContent='Filled entity '+sel.entity.id+(sel.entity.name?' ('+sel.entity.name+')':'')+' in zone '+sel.zone+'.';
+  }
+  preview();
 }
 function prePane(){
   const x=lsGet('pre',[])[curPre];if(!x){$('pane').innerHTML='<p class="mu">Pick or create a preset.</p>';return}
@@ -134,6 +153,7 @@ $('pane').addEventListener('click',e=>{
   const d=e.target.closest('.res div[data-id]');
   if(d){const box=d.parentElement,i=box.dataset.r;document.querySelector(`input.v[data-i="${i}"]`).value=d.dataset.id;box.hidden=true;preview();return}
   if(e.target.id==='send'){send();return}
+  if(e.target.id==='vfill'){viewerFill();return}
   if(e.target.id==='fav'){toggleFav();return}
   if(e.target.id==='psave'){preSave();return}
   if(e.target.id==='psend'){preSend();return}
