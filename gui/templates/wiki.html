@@ -376,7 +376,7 @@ mark.ct-term::after{content:"]";opacity:.6}
   {% if page_view.timestamp %}<span class="muted">rev {{ page_view.revision or '' }} · {{ page_view.timestamp }}</span>{% endif %}
   <span class="sp"></span>
   {% if page_view.url %}<a class="chip" href="{{ page_view.url }}" target="_blank" rel="noopener">Open source page ↗</a>{% endif %}
-  {% if page_view.is_ja %}<label>Model <select class="wiki-tr-model" aria-label="Ollama translation model"></select></label><button type="button" id="ct-toggle" data-source="{{ source }}" data-title="{{ title }}" title="Highlight official client terms (auto-translate phrases and item names) in the Japanese text">Highlight client terms</button><button type="button" id="ct-lang" hidden title="Swap highlighted terms between the Japanese text and the client's English">Show terms in English</button><button type="button" id="tr-btn" data-source="{{ source }}" data-title="{{ title }}">Translate to English (machine)</button>{% endif %}
+  {% if page_view.is_ja %}<label>Model <select class="wiki-tr-model" aria-label="Ollama translation model"></select></label><button type="button" id="ct-toggle" data-source="{{ source }}" data-title="{{ title }}" title="Highlight official client terms (auto-translate phrases and item names) in the Japanese text">Highlight client terms</button><button type="button" id="ct-lang" hidden title="Swap highlighted terms between the Japanese text and the client's English">Show terms in English</button><label>Section <select id="tr-section" aria-label="Translate one section" title="Translate just one section instead of the whole page"><option value="">Whole page</option></select></label><button type="button" id="tr-btn" data-source="{{ source }}" data-title="{{ title }}">Translate to English (machine)</button>{% endif %}
 </div>
 {% if page_view.is_ja %}
 <details id="ct-panel" hidden><summary id="ct-summary">Client terms</summary><div id="ct-list" class="table-wrap"></div></details>
@@ -1339,11 +1339,15 @@ mark.ct-term::after{content:"]";opacity:.6}
     showJobs();setInterval(showJobs,4000);
   }
   var tb=document.getElementById('tr-btn');
+  var trSec=document.getElementById('tr-section');
+  if(tb&&trSec){fetch('/wiki/translate/sections?source='+encodeURIComponent(tb.dataset.source)+'&title='+encodeURIComponent(tb.dataset.title))
+    .then(function(r){return r.ok?r.json():{sections:[]};}).then(function(d){(d.sections||[]).forEach(function(s){var o=document.createElement('option');o.value=s;o.textContent=s;trSec.appendChild(o);});}).catch(function(){});}
   if(tb){tb.addEventListener('click',function(){
     var output=document.getElementById('tr-out'), panel=document.getElementById('tr-bilingual');
     var aligned=document.getElementById('tr-aligned'), meta=document.getElementById('tr-meta');
     panel.hidden=true;output.hidden=false;output.textContent='Translating cached article…';tb.disabled=true;
-    fetch('/wiki/translate?source='+encodeURIComponent(tb.dataset.source)+'&title='+encodeURIComponent(tb.dataset.title))
+    var secSel=document.getElementById('tr-section');
+    fetch('/wiki/translate?source='+encodeURIComponent(tb.dataset.source)+'&title='+encodeURIComponent(tb.dataset.title)+(secSel&&secSel.value?'&section='+encodeURIComponent(secSel.value):''))
       .then(function(r){return r.json().then(function(d){if(!r.ok)throw Error(d.error||d.detail||'HTTP '+r.status);return d;});})
       .then(function(d){
         if(d.status!=='OK')throw Error(d.status==='NO_ENGINE'?'No translation model selected. Pick one from the Model dropdown.':(d.error||d.status));
@@ -1357,7 +1361,10 @@ mark.ct-term::after{content:"]";opacity:.6}
           var english=document.createElement('small');english.textContent='English · machine draft';
           var original=document.createElement('div'),translated=document.createElement('div');
           original.textContent=b.original||'';translated.textContent=b.text||'';
-          jp.append(heading,original);en.append(english,translated);row.append(jp,en);aligned.appendChild(row);
+          en.append(english,translated);
+          var ct=b.client_terms?Object.entries(b.client_terms):[];
+          if(ct.length){var terms=document.createElement('small');terms.className='muted';terms.title='Official client terms offered to the translator as hints for this block';terms.textContent='Client terms: '+ct.map(function(p){return p[0]+' → '+p[1];}).join(' · ');en.append(terms);}
+          jp.append(heading,original);row.append(jp,en);aligned.appendChild(row);
         });
         meta.textContent=d.blocks.length+' aligned blocks · '+(d.engine||'local translation');
         panel.hidden=false;

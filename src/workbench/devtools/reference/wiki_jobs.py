@@ -319,7 +319,8 @@ def cache_health(main_db) -> dict:
         con.close()
 
 
-def translate_cached(con: sqlite3.Connection, source_id: str, page_id: str, page_hash: str, text: str) -> dict:
+def translate_cached(con: sqlite3.Connection, source_id: str, page_id: str, page_hash: str, text: str,
+                     section: str = "") -> dict:
     """Display-time translation. The stored original is never modified; results are cached by page hash and
     are machine-generated. No engine is bundled: set WIKI_TRANSLATE_CMD to a command that reads Japanese on
     stdin and writes English on stdout."""
@@ -338,6 +339,10 @@ def translate_cached(con: sqlite3.Connection, source_id: str, page_id: str, page
             # instead of sending whole long articles through a single prompt.
             has_blocks = con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='reference_wiki_blocks'").fetchone()
             blocks = wiki_document.stored_blocks(con, source_id, page_id) if has_blocks else []
+            if section and blocks:
+                blocks = [b for b in blocks if (b.get("section_path") or "").startswith(section)]
+                if not blocks:
+                    return {"status": "ERROR", "error": "No blocks in that section"}
             if blocks:
                 from . import wiki_translation_cache
                 result = wiki_translation_cache.translate_cached_blocks(

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 322,
+  "route_count": 323,
   "routes": [
     {
       "method": "GET",
@@ -2119,6 +2119,14 @@
     {
       "method": "GET",
       "path": "/wiki/translate",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/wiki/translate/sections",
       "home": "Tools",
       "section": "Research > References",
       "role": "data",
