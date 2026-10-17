@@ -1,7 +1,7 @@
 """Static smoke guard for aligned Wiki JP translation interface."""
 from pathlib import Path
 
-template = (Path(__file__).resolve().parents[2] / "gui/templates/wiki.html").read_text(encoding="utf-8")
+template = (Path(__file__).resolve().parents[1] / "gui/templates/wiki.html").read_text(encoding="utf-8")
 assert 'id="tr-bilingual"' in template
 assert 'id="tr-aligned"' in template
 assert 'b.original||' in template

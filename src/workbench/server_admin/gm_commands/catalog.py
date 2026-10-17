@@ -48,6 +48,8 @@ def _lookup_kind(label: str, name: str) -> str | None:
     low = label.lower()
     if "currency" in low:
         return "currency"
+    if low in ("questid", "missionid"):
+        return low[:-2]
     if low == "logid":
         return "missionlog" if "mission" in name else "questlog"
     if name in ("hasitem", "delitem", "additem", "giveitem", "addtempitem", "addtreasure") and "item" in low:
