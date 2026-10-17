@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-KINDS = ("item", "keyitem", "title", "effect", "spell", "zone", "mob", "npc", "currency", "questlog", "missionlog")
+KINDS = ("item", "keyitem", "title", "effect", "spell", "zone", "mob", "npc", "currency", "questlog", "missionlog", "quest", "mission")
 # kind -> (relative file, regex with groups id,name). SQL rows start "(id,...'name'"; Lua "NAME = id;".
 _SQL_ROW = r"VALUES \((\d+),(?:[^,']*,)*?'([^']*)'"
 _SOURCES = {
@@ -17,11 +17,38 @@ _SOURCES = {
     "currency": ("sql/char_points.sql", None),
     "questlog": ("scripts/globals/log_ids.lua", None),
     "missionlog": ("scripts/globals/log_ids.lua", None),
+    "quest": ("scripts/globals/quests.lua", None),
+    "mission": ("scripts/globals/missions.lua", None),
     "keyitem": ("scripts/globals/keyitems.lua", None),
     "title": ("scripts/globals/titles.lua", None),
 }
 _LUA = re.compile(r"^\s*([A-Z][A-Z0-9_]*)\s*=\s*(\d+)\s*[;,]", re.M)
 _cache: dict[tuple, tuple[float, list]] = {}
+_LOG_HEAD = re.compile(r"^--\s+\S.*?[-(]\s*(\d+)\)?\s*$")
+_ENTRY = re.compile(r"^\s*([A-Z][A-Z0-9_]*)\s*=\s*(\d+)\s*;?")
+
+
+def _load_by_log(root: Path, kind: str) -> dict[int, list[tuple[int, str]]]:
+    """Quest/mission ids grouped by the numbered log section headers in quests.lua/missions.lua."""
+    path = root / _SOURCES[kind][0]
+    stamp = path.stat().st_mtime
+    hit = _cache.get((str(root), kind))
+    if hit and hit[0] == stamp:
+        return hit[1]
+    logs: dict[int, list[tuple[int, str]]] = {}
+    cur = None
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if re.match(r"^--\s{2}\S", line):
+            m = _LOG_HEAD.match(line)
+            cur = int(m.group(1)) if m else None
+        elif line.startswith(("function ", "local ")):
+            cur = None
+        elif cur is not None:
+            m = _ENTRY.match(line)
+            if m:
+                logs.setdefault(cur, []).append((int(m.group(2)), m.group(1).replace("_", " ").title()))
+    _cache[(str(root), kind)] = (stamp, logs)
+    return logs
 
 
 def _load(root: Path, kind: str) -> list[tuple[int, str]]:
@@ -53,12 +80,19 @@ def _load(root: Path, kind: str) -> list[tuple[int, str]]:
     return rows
 
 
-def lookup(server_root: str | Path, kind: str, query: str = "", limit: int = 30) -> list[dict]:
+def lookup(server_root: str | Path, kind: str, query: str = "", limit: int = 30, log: int | None = None) -> list[dict]:
     if kind not in KINDS:
         raise ValueError("Unknown lookup kind")
     limit = max(1, min(int(limit), 100))
     root = Path(server_root).resolve(strict=True)
-    rows = _load(root, kind)
+    if kind in ("quest", "mission"):
+        logs = _load_by_log(root, kind)
+        if log is None:
+            rows = []  # the log must be chosen first; ids repeat across logs
+        else:
+            rows = logs.get(int(log), [])
+    else:
+        rows = _load(root, kind)
     q = query.strip().lower().replace("_", " ")
     if not q:
         hits = rows[:limit]

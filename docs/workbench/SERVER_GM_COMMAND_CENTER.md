@@ -44,7 +44,8 @@ The Server sidebar now links to `/server/gm`, a searchable, copy-only GM command
   zone, mob, npc) by name or id prefix. IDs are read, never invented. Key item IDs come from the active server's
   `keyitems.lua` because they drift between LSB and Topaz/DSP.
 - The page has category tabs, a left command list, and a right entry pane with per-parameter inputs, ID pickers, a live
-  preview and Copy. "Send to game" stays disabled: no command transport exists (the native plugin only does warp/speed).
+  preview and Copy. "Send to game" is opt-in via the native Ashita plugin (see below).
+- `questID` / `missionID` parameters get a picker scoped to the chosen `logID` (parsed from the server's `quests.lua` / `missions.lua` log sections); pick the log first.
 
 ## Send to game
 

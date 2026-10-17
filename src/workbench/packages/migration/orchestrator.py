@@ -84,7 +84,7 @@ def convert_lua_tree(
             target=target,
         )
         dst.write_text(result.converted, encoding="utf-8", newline="\n")
-        converted.append(str(rel))
+        converted.append(rel.as_posix())
         if result.flagged:
             flagged.append((str(rel), len(result.flagged)))
             total_flags += len(result.flagged)

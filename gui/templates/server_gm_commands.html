@@ -140,10 +140,16 @@ $('pane').addEventListener('input',e=>{
   if(t.classList.contains('v'))preview();
   if(t.classList.contains('s')){clearTimeout(timer);timer=setTimeout(()=>search(t),180)}
 });
-$('pane').addEventListener('focusin',e=>{const t=e.target;if(t.classList&&t.classList.contains('s')&&['currency','questlog','missionlog'].includes(t.dataset.k)&&!t.value)search(t)});
+$('pane').addEventListener('focusin',e=>{const t=e.target;if(t.classList&&t.classList.contains('s')&&['currency','questlog','missionlog','quest','mission'].includes(t.dataset.k)&&!t.value)search(t)});
 async function search(t){
   const box=document.querySelector(`.res[data-r="${t.dataset.i}"]`);
-  const r=await fetch(`/server/gm/lookup?kind=${t.dataset.k}&q=${encodeURIComponent(t.value)}&limit=30`);
+  let lg='';
+  if(['quest','mission'].includes(t.dataset.k)){
+    const li=cur.params.findIndex(p=>/^log\s*id$/i.test(p.label)),lv=li>=0?(document.querySelector(`input.v[data-i="${li}"]`).value||'').trim():'';
+    if(!/^\d+$/.test(lv)){box.hidden=false;box.innerHTML='<div>Pick the logID first (it decides which '+t.dataset.k+'s apply)</div>';return}
+    lg='&log='+lv;
+  }
+  const r=await fetch(`/server/gm/lookup?kind=${t.dataset.k}&q=${encodeURIComponent(t.value)}&limit=30${lg}`);
   if(!r.ok){box.hidden=false;box.innerHTML='<div>Lookup unavailable ('+r.status+')</div>';return}
   const j=await r.json();box.hidden=false;
   box.innerHTML=j.results.map(x=>`<div data-id="${x.id}"><i>${x.id}</i><span>${esc(x.name)}</span></div>`).join('')||'<div>No results</div>';
