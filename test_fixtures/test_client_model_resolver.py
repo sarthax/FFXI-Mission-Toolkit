@@ -51,7 +51,7 @@ def main():
     backend = (ROOT / "src" / "workbench" / "client" / "models" / "viewer.py").read_text(encoding="utf-8")
     server = (ROOT / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
     viewer = (ROOT / "gui" / "templates" / "model_viewer.html").read_text(encoding="utf-8")
-    zone = (ROOT / "gui" / "templates" / "zone_plot.html").read_text(encoding="utf-8")
+    zone = (ROOT / "gui" / "templates" / "zone_plot2.html").read_text(encoding="utf-8")
 
     assert "0x100C513D" in resolver
     assert '(3500, 96907, "3000-3499 +96907")' in resolver

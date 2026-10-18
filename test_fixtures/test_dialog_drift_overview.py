@@ -3,7 +3,7 @@
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-import dialog_drift_overview as d
+from workbench.devtools.reference.dialog import drift_overview as d
 
 
 def main():
