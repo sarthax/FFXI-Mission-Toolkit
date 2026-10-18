@@ -33,3 +33,9 @@ Confirmed on `main`:
 ### Research stop/go criterion
 
 Proceed to server implementation only after confirming the 2026 0x1C packet layout and identifying the server's inventory ingress validation surface. Treat a general retail-client decompilation or 2021 binary backport as out of scope.
+
+## Packet 0x1C framing clarified (2026-10-18)
+
+[`src/map/packets/basic.h`](https://github.com/sarthax/darkstar-to-valhalla/blob/main/src/map/packets/basic.h) defines `length() = 2 * (ref<uint8>(1) & ~1)` and a setter that rounds packet length to a 4-byte boundary. Thus the existing `CInventorySizePacket` header value `size = 0x1A` corresponds to **52 bytes** (0x34), not 26. The final existing u16 capacity is written at offsets 0x2C–0x2D, within the 52-byte buffer. The 13 u8 entries occupy 0x04–0x10; 0x11–0x13 are not written by this constructor; the 13 u16 entries occupy 0x14–0x2D. The remaining bytes 0x2E–0x33 are initialized to zero by the base packet constructor. This resolves the previously open size-unit question.
+
+**Do not extrapolate** a new 18-container packet by simply appending five entries: the newer client's packet 0x1C handler must be inspected for exact wire offsets and expected length. The client-side *store* offsets (0x19891 and 0x198a4) from the binary report are not packet offsets. The current 13-container layout is proven from server source; the 18-container wire layout remains unverified.
