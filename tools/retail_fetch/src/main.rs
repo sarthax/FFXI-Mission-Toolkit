@@ -1,6 +1,7 @@
 //! Fetch one licensed FFXI retail patch file without updating an installation.
 use ffxi_install::manifest::{self, FileSig};
 use ffxi_install::patch_client::{decode_direct_payload, Server, Session, TITLE_FFXI};
+use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
 use std::io::Write;
@@ -94,8 +95,9 @@ fn run() -> Result<(), String> {
     }
     let parent = dest.parent().ok_or("invalid output path")?;
     fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    let sha256 = format!("{:x}", Sha256::digest(&decoded));
     save_new(parent, &dest, &decoded)?;
-    println!("saved {} [{}] ({} bytes)", dest.display(), version.stamp, decoded.len());
+    println!("saved {} [{}] ({} bytes) SHA-256={}", dest.display(), version.stamp, decoded.len(), sha256);
     Ok(())
 }
 
@@ -147,6 +149,12 @@ mod tests {
         assert!(save_new(dir.path(), &dest, b"data").is_err());
         assert!(!target.exists());
         assert!(fs::symlink_metadata(&dest).unwrap().file_type().is_symlink());
+    }
+
+    #[test]
+    fn sha256_fingerprint_is_stable() {
+        assert_eq!(format!("{:x}", Sha256::digest(b"abc")),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
     }
 
     #[test]
