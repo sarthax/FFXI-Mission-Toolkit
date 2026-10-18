@@ -9,7 +9,7 @@ The Feature Catalog is the structured inventory of **what the Toolkit exposes**.
 Implementation statuses: `implemented`, `partial`, `research`, `planned`.
 Validation statuses: `unverified`, `operator_reported`, `tested`.
 
-A route or source reference does not establish runtime acceptance. The first twelve records are a Help-derived seed, **not** an exhaustive module or subfeature census. The catalog is separate from Feature Trace's graph schema.
+A route or source reference does not establish runtime acceptance. The first eighteen records are a Help-derived seed, **not** an exhaustive module or subfeature census. The catalog is separate from Feature Trace's graph schema.
 
 ## GUI
 
@@ -30,3 +30,7 @@ A route or source reference does not establish runtime acceptance. The first twe
 - Introduce dedicated sidebar navigation and optional graph linkage after the catalog passes acceptance.
 
 This v1 does not scrape Help automatically or declare every route to be a capability.
+
+## Coverage diagnostics
+
+The Catalog page now shows an expandable **Coverage audit**. `workbench.core.services.feature_catalog_audit.audit_catalog()` compares global Help's static links to catalog routes and the maintained GET-route inventories, with explicit exceptions for the three mounted module routes. It reports unlisted Help destinations, unresolved catalog destinations, and entries lacking independent runtime validation. The test fails when global Help adds a module link without a catalog entry. This is **link-level coverage**, not an exhaustive audit of subfeatures, service methods or live behavior.
