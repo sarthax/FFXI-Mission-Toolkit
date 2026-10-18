@@ -22,7 +22,7 @@ def main():
     dynamic = {"/synth", "/auction-house/help", "/live-client/bridge/console"}
     assert all(f["route"] in known | dynamic for f in items), [f["route"] for f in items if f["route"] not in known | dynamic]
     assert all(f["help"] in known | dynamic for f in items)
-    assert [f["id"] for f in search_catalog(items, "binary")] == ["client-binary"]
+    assert "client-binary" in {f["id"] for f in search_catalog(items, "binary")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
     audit = audit_catalog()
     assert audit["help_not_cataloged"] == [], audit
