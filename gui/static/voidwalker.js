@@ -41,6 +41,7 @@ function graph(){
 function strip(){
  var n=O.nms,b=n.filter(function(x){return x.status==='built';}).length,v=n.filter(function(x){return x.validation==='validated';}).length,p=n.filter(function(x){return x.validation==='partial';}).length,bad=n.filter(function(x){return x.validation==='issue';}).length;
  var dn={};n.forEach(function(x){dn[x.name]=1;});var c=[[Object.keys(dn).length,'distinct NMs'],[n.length,'NM spawns (NM x zone)'],[O.zones.length,'zones'],[b,'spawns built'],[n.length-b,'with gaps'],[v,'validated'],[p,'partly validated'],[bad,'with issues'],[O.orphans.length,'orphan scripts']];
+ var cv=O.validation_coverage;if(cv){c.push([cv.untested_checks,'unverified checks']);c.push([cv.issue_checks,'checks with issues']);}
  $('vw2-strip').innerHTML=c.map(function(x){return '<div class="cpcard"><b style="font-size:1.4em">'+x[0]+'</b><div class="muted">'+x[1]+'</div></div>';}).join('');
  $('vw2-srv').textContent=(O.db_checked?'Live DB cross-check on. ':'No DB connection: pool/spawn checks skipped. ')+'Source: '+O.root;
 }
@@ -76,6 +77,7 @@ function extras(){
  $('vw2-back').innerHTML='<table><thead><tr><th>Item</th><th>Status</th><th>Note</th></tr></thead><tbody>'+O.backlog.map(function(b){return '<tr><td>'+esc(b.title)+'</td><td>'+chip(b.status)+'</td><td class="muted">'+esc(b.note)+'</td></tr>';}).join('')+'</tbody></table>';
  $('vw2-val').innerHTML=(O.orphans.length?'<div class="vwc vwc-warn"><b>'+O.orphans.length+' scripts call voidwalker.onMobDeath but are not in voidwalker_data.lua</b> (orphans or typos):<br><span class="mono">'+O.orphans.map(esc).join('<br>')+'</span></div>':'<div class="vwc vwc-ok">No orphan NM scripts.</div>')+
   (function(){var g=O.nms.filter(function(x){return x.gaps.length;});return g.length?'<div class="vwc vwc-warn"><b>'+g.length+' NMs have gaps:</b><br>'+g.slice(0,40).map(function(x){return esc(x.name)+' ('+esc(x.zone)+'): '+esc(x.gaps.join('; '));}).join('<br>')+(g.length>40?'<br>...':'')+'</div>':'<div class="vwc vwc-ok">Every NM has script, spawn row, group and pool.</div>';})()+
+  (function(){var cv=O.validation_coverage;if(!cv)return '';var rows=cv.next_tests||[];return '<div class="vwc vwc-warn"><b>Validation evidence gaps:</b> '+cv.untested_checks+' untested checks; '+cv.issue_checks+' recorded issue checks across '+cv.spawns+' spawn records. An untested check is not a confirmed failure.</div>'+'<div class="table-wrap"><table><thead><tr><th>Next NM to test</th><th>Zone</th><th>Untested areas</th><th>Recorded issues</th></tr></thead><tbody>'+rows.map(function(x){return '<tr><td>'+esc(x.name)+'</td><td>'+esc(x.zone)+'</td><td>'+esc(x.pending.join(', ')||'-')+'</td><td>'+esc(x.issues.join(', ')||'-')+'</td></tr>';}).join('')+'</tbody></table></div>'+(cv.truncated?'<div class="muted">Showing '+rows.length+' of '+cv.next_tests_total+' needing checks; filter the NM table for remaining entries.</div>':'');})()+
   '<div class="muted">'+esc(O.note)+'</div>';
 }
 var abySel=null;
