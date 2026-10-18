@@ -7,7 +7,9 @@ on:
       - "src/workbench/**"
       - "test_fixtures/**"
       - "gui/templates/**"
-      - "docs/workbench/UI_LEGACY_TEMPLATE_ALLOWLIST.txt"
+      - "docs/workbench/**"
+      - "docs/guides/**"
+      - "README.md"
       - "tests/legacy/**"
       - "feature_*.py"
       - "capture_*.py"
@@ -154,6 +156,7 @@ jobs:
           python test_fixtures/test_live_target_validation_cli.py
           python test_fixtures/test_entity_symbol_identity.py
           python test_fixtures/test_roadmap_phase8.py
+          python test_fixtures/test_current_documentation_references.py
           python test_fixtures/test_instance_feature_slice.py
           python test_fixtures/test_instance_slice_compare.py
           python test_fixtures/test_feature_trace_enum_nodes.py
