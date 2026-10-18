@@ -24,3 +24,7 @@ This is **synthetic contract coverage**, not a real-source audit. The next step 
 6. Relationship graph view with separate wiki-only and independently confirmed edges.
 
 Do not mark any of these items complete merely because this fixture passes.
+
+## Implementation increment
+
+Template and two-column table candidates now share the exact-label `REVIEW_FIELD_TYPES` mapping in `wiki_document.py`. Table candidates include `field_type` in addition to the existing raw field/value and locators. The field map includes the existing conservative English and Japanese drops, rewards, location, requirement, spawn, quest, and NM-identity labels. Unknown labels still do not become typed candidates. No schema migration, graph promotion, or translation-based authority change is involved.
