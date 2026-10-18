@@ -153,3 +153,20 @@ def unpacked_address_candidates(path: str, target_rva: int, *, image_base: int =
     """Conservative value matches in decoded code; not verified semantic xrefs."""
     from workbench.client.binary.address_candidates import address_candidates
     return address_candidates(path, target_rva, image_base=image_base, limit=limit)
+
+
+def list_protocol_records() -> list[dict]:
+    """Load packaged protocol-layout evidence; malformed records remain visible as errors."""
+    from workbench.client.protocol_compatibility import load_record, compare_builds
+    root = Path(__file__).resolve().parents[4] / "client_protocol_records"
+    rows = []
+    for path in sorted(root.glob("*.json")):
+        try:
+            record = load_record(path)
+            rows.append({"file": path.name, "name": record.get("name", record["packet_id"]),
+                         "packet_id": record["packet_id"], "direction": record["direction"],
+                         "builds": record["builds"], "changes": compare_builds(record) if len(record["builds"]) == 2 else [],
+                         "notes": record.get("notes", ""), "error": None})
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            rows.append({"file": path.name, "error": str(exc)})
+    return rows
