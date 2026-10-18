@@ -1,0 +1,32 @@
+name: Selective Retail Fetch Rust
+
+on:
+  pull_request:
+    paths:
+      - 'tools/retail_fetch/**'
+      - '.github/workflows/selective-retail-fetch.yml'
+  push:
+    branches:
+      - 'feature/selective-pol-retail-fetch-20261018'
+    paths:
+      - 'tools/retail_fetch/**'
+      - '.github/workflows/selective-retail-fetch.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain versions
+        run: |
+          rustc --version
+          cargo --version
+      - name: Check
+        run: cargo check --manifest-path tools/retail_fetch/Cargo.toml
+      - name: Test
+        run: cargo test --manifest-path tools/retail_fetch/Cargo.toml
