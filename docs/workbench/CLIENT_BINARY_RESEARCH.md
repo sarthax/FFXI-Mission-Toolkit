@@ -206,3 +206,17 @@ python -m workbench.client.cli.pol1_report "C:\\FFXI-Research\\2019\\FFXiMain.dl
 ```
 
 `--pattern`, `--target-rva`, and `--decode-rva` are independent optional checks. The script captures the unpacked-image SHA-256, decoded RVAs, context bytes, and explicit evidence caveats. `--decode-rva` requires optional Capstone. No assembly instruction, offset or ID pattern in this example is asserted to be wardrobe-specific. Reports should remain outside version control and original game files must not be overwritten.
+
+
+### Wardrobe command evidence report
+
+The POL1 research report now includes `wardrobe_commands`, an exact boundary-aware
+ASCII command scan of the on-disk DLL for `/wardrobe`, `/wardrobe2` through
+`/wardrobe8`. Each entry retains offsets and a VERIFIED_BYTES/UNKNOWN status;
+a lookalike prefix (for example `/wardrobe8x`) is not a match. The source
+DLL fingerprint is included so reports from multiple client builds can be
+compared without confusing versions. This scan is separate from the unpacked
+code section and remains *string evidence only*.
+
+Run `python -m workbench.client.cli.pol1_report "C:\\FFXI-Research\\2019\\FFXiMain.dll" --output ".workbench/client-binaries/2019-pol1.json"`.
+Self-test: `python test_fixtures/test_client_wardrobe_report.py`.
