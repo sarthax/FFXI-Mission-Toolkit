@@ -33,6 +33,7 @@ DEFAULTS = {
     "zoneplot_server": "topaz",
     "backport_root": "",
     "ffxi_install_path": "",
+    "retail_root": "",
     "item_dat_target": "live",
     "xi_pivot_root": "",
     "xi_model_viewer_url": "http://localhost:5173",

@@ -6,74 +6,151 @@
 {% block page_actions %}<a class="chip" href="/binaryinspector">Binary Inspector</a>{% endblock %}
 {% block page_help %}Browse PlayOnline retail file history, plan and confirm single-file downloads, and compare cataloged versions. Downloads go to a separate retail folder, never an installed client. Binaries are never executed or committed. The manifest check is a legacy checksum, not cryptographic authentication.{% endblock %}
 {% block page_body %}
-<nav class="wb-filter-row" aria-label="Retail Version Explorer tabs">
-{% for t in tabs %}<a class="chip{% if t == tab %} active{% endif %}" href="/retailversions?tab={{ t }}">{{ t|capitalize }}</a> {% endfor %}
+{% set valid_n = artifacts|selectattr('status','equalto','VALID')|list|length %}
+<style>
+  .rv-tabs { display:flex; gap:2px; flex-wrap:wrap; border-bottom:1px solid var(--border); margin:0 0 14px; }
+  .rv-tabs a { color:var(--muted); padding:6px 12px; border:1px solid transparent; border-bottom:0; border-radius:6px 6px 0 0; text-decoration:none; }
+  .rv-tabs a:hover { color:var(--accent); }
+  .rv-tabs a.on { background:var(--accent-soft); color:var(--accent); border-color:var(--border); font-weight:600; }
+  .rv-stats { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .rv-stats .stat .n { font-size:17px; overflow-wrap:anywhere; }
+  .rv-panel { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px 14px; margin:0 0 14px; }
+  .rv-panel h3 { margin:0 0 6px; }
+  .rv-steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin:0 0 14px; }
+  .rv-steps .rv-panel { margin:0; }
+  .rv-steps .num { font-size:20px; font-weight:700; color:var(--accent); }
+  .rv-form { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
+  .rv-form label { display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+  .rv-form label.rv-inline { flex-direction:row; align-items:center; gap:6px; text-transform:none; font-size:13px; letter-spacing:0; }
+  .rv-form input[type=text], .rv-form select { min-width:260px; }
+  .rv-plan { white-space:pre-wrap; background:var(--code-bg); border-radius:6px; padding:10px 12px; margin:6px 0 10px; }
+  button.rv-copy { color:inherit; cursor:pointer; }
+  .rv-num { text-align:right; font-variant-numeric:tabular-nums; }
+  @media (max-width:900px) { .rv-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+</style>
+
+<div class="stats rv-stats">
+  <div class="stat"><div class="n">{% if exe %}Ready{% else %}Not built{% endif %}</div><div class="l">Downloader</div></div>
+  <div class="stat"><div class="n">{{ valid_n }} <span class="muted" style="font-size:12px;font-weight:400;">of {{ artifacts|length }} valid</span></div><div class="l">Cataloged files</div></div>
+  <div class="stat"><div class="n">{% if cache.exists %}{{ cache.count }} files{% else %}No cache{% endif %}</div><div class="l">Manifest cache</div></div>
+  <div class="stat"><div class="n" title="{{ root }}">{{ root.name or root }}</div><div class="l">Retail folder</div></div>
+</div>
+
+<nav class="rv-tabs" aria-label="Retail Version Explorer tabs">
+{% for t in tabs %}<a class="{% if t == tab %}on{% endif %}" href="/retailversions?tab={{ t }}">{{ t|capitalize }}</a>{% endfor %}
 </nav>
 {% if done %}<p class="chip">{{ done }}</p>{% endif %}
-{% if error %}<p class="chip" style="color:#c33;">{{ error }}</p>{% endif %}
+{% if error %}<p class="wb-error">{{ error }}</p>{% endif %}
 
 {% if tab == "overview" %}
-<h2>Overview</h2>
-<ul>
-  <li>Downloader: {% if exe %}<code>{{ exe }}</code>{% else %}<strong>not built</strong>. Run <code>cargo build --release</code> in <code>tools/retail_fetch</code>.{% endif %}</li>
-  <li>Retail catalog folder: <code>{{ root }}</code> (gitignored, separate from DSP and capture artifacts)</li>
-  <li>Cataloged artifacts: {{ artifacts|length }} ({{ artifacts|selectattr('status','equalto','VALID')|list|length }} valid)</li>
-</ul>
-<p class="muted">Start with <a href="/retailversions?tab=manifest">Manifest</a> to find a file, then <a href="/retailversions?tab=planner">Planner</a> to confirm a download.</p>
+{% if not exe %}<p class="wb-error">The downloader is not built. Run <code>cargo build --release</code> in <code>tools/retail_fetch</code>, or set <code>RETAIL_FETCH_EXE</code>. Browsing the local catalog still works.</p>{% endif %}
+<div class="rv-steps">
+  <div class="rv-panel"><div class="num">1</div><h3>Find a file</h3>
+    <p class="muted">Search the PlayOnline manifest by name, for example <code>FFXiMain.dll</code> or <code>ROM/119</code>.{% if not cache.exists %} The first search needs one network read to build the local cache.{% endif %}</p>
+    <a class="chip" href="/retailversions?tab=manifest">Open Manifest</a></div>
+  <div class="rv-panel"><div class="num">2</div><h3>Plan a download</h3>
+    <p class="muted">Pick the file and one of its listed versions. The plan shows exactly what would be fetched; nothing is downloaded yet.</p>
+    <a class="chip" href="/retailversions?tab=planner">Open Planner</a></div>
+  <div class="rv-panel"><div class="num">3</div><h3>Catalog and compare</h3>
+    <p class="muted">Downloaded files are re-hashed and listed here. Two valid versions of one file can be compared.</p>
+    <a class="chip" href="/retailversions?tab=artifacts">Local artifacts</a> <a class="chip" href="/retailversions?tab=compare">Compare</a></div>
+</div>
+<div class="rv-panel"><h3>Retail folder</h3>
+  <p>Downloads and the catalog live in <code>{{ root }}</code>, one subfolder per version.</p>
+  <p class="muted">{% if root_info.source == 'env' %}Set by the <code>WORKBENCH_RETAIL_ROOT</code> environment variable, which overrides any folder chosen here.
+  {% elif root_info.source == 'setting' %}Chosen manually.
+  {% elif root_info.source == 'client' %}Default: <code>{{ root_info.default.name }}</code> inside your client folder <code>{{ root_info.client }}</code>.
+  {% else %}Built-in default. No client folder is configured: set one under Settings, or choose a folder below.{% endif %}
+  A subfolder is used rather than the client install itself, so scans stay fast and game files are never touched.</p>
+  <form method="post" action="/retailversions/root" class="rv-form">
+    <label style="flex:1;min-width:300px;">Alternate folder
+      <input type="text" id="rv-root" name="path" value="{{ root_info.saved }}" placeholder="{{ root_info.default }}" style="width:100%;"></label>
+    <button type="button" id="rv-browse">Browse...</button>
+    <button type="submit">Save folder</button>
+    {% if root_info.saved %}<button type="submit" name="reset" value="1" formnovalidate>Use default</button>{% endif %}
+  </form>
+  <div id="rv-chooser" hidden style="border:1px solid var(--border);border-radius:6px;padding:8px;margin-top:8px;max-height:320px;overflow:auto">
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+      <button type="button" id="rv-up">&#8593; Up</button><code id="rv-cpath" style="flex:1;word-break:break-all"></code>
+      <button type="button" id="rv-pick">Use this folder</button><button type="button" id="rv-close">Close</button></div>
+    <div id="rv-cinfo" class="muted"></div><div id="rv-clist"></div>
+  </div>
+</div>
 
 {% elif tab == "manifest" %}
-<h2>Manifest browser</h2>
-<form class="search wb-filter-row" method="get"><input type="hidden" name="tab" value="manifest">
-  <input type="text" name="q" value="{{ q }}" placeholder="filter, e.g. FFXiMain or ROM/119"> <button type="submit">Search</button>
-  <label><input type="checkbox" name="refresh" value="1"> refresh from server (one network read)</label></form>
+<div class="rv-panel">
+<form class="rv-form" method="get"><input type="hidden" name="tab" value="manifest">
+  <label>Filter by file name<input type="text" name="q" value="{{ q }}" placeholder="e.g. FFXiMain or ROM/119" autofocus></label>
+  <button type="submit">Search</button>
+  <label class="rv-inline"><input type="checkbox" name="refresh" value="1"> Refresh from server (one network read)</label>
+</form></div>
 {% if manifest %}{% if manifest.ok %}
-<p class="muted">{{ manifest.files|length }} shown (max 500){% if manifest.cached %}, from local cache{% endif %}.</p>
-<div class="table-wrap"><table><tr><th>File</th><th>Latest</th><th></th></tr>
+<p class="muted">{{ manifest.files|length }} shown{% if manifest.files|length >= 500 %} (limit 500, narrow the filter){% endif %}{% if manifest.cached %}, from the local cache{% endif %}.</p>
+{% if manifest.files %}
+<div class="table-wrap"><table><tr><th>File</th><th>Latest version</th><th></th></tr>
 {% for f in manifest.files %}<tr><td><code>{{ f.file }}</code></td><td>{{ f.latest }}</td>
-<td><a href="/retailversions?tab=manifest&q={{ q|urlencode }}&file={{ f.file|urlencode }}">history</a></td></tr>{% endfor %}</table></div>
-{% else %}<p class="chip" style="color:#c33;">{{ manifest.error }}</p>{% endif %}{% endif %}
+<td><a class="chip" href="/retailversions?tab=manifest&q={{ q|urlencode }}&file={{ f.file|urlencode }}">Versions</a>
+<a class="chip" href="/retailversions?tab=planner&file={{ f.file|urlencode }}">Plan</a></td></tr>{% endfor %}</table></div>
+{% else %}<p class="wb-empty">No manifest files match that filter.</p>{% endif %}
+{% else %}<p class="wb-error">{{ manifest.error }}</p>{% endif %}{% endif %}
 {% if hist %}{% if hist.ok %}
-<h3>Versions of {{ file }}</h3>
+<h3>Versions of <code>{{ file }}</code></h3>
 <p class="muted">Listed by the manifest. A listed version may no longer be served.</p>
-<div class="table-wrap"><table><tr><th>Version</th><th>Decoded bytes</th><th>Transfer bytes</th><th></th></tr>
-{% for v in hist.versions %}<tr><td>{{ v.version }}</td><td>{{ v.decoded_bytes }}</td><td>{{ v.transfer_bytes }}</td>
-<td><a href="/retailversions?tab=planner&file={{ v.file|urlencode }}&stamp={{ v.version }}&plan=1">plan</a></td></tr>{% endfor %}</table></div>
-{% else %}<p class="chip" style="color:#c33;">{{ hist.error }}</p>{% endif %}{% endif %}
+<div class="table-wrap"><table><tr><th>Version</th><th class="rv-num">Decoded size</th><th class="rv-num">Transfer size</th><th></th></tr>
+{% for v in hist.versions %}<tr><td>{{ v.version }}</td><td class="rv-num" title="{{ v.decoded_bytes }} bytes">{{ human(v.decoded_bytes) }}</td><td class="rv-num" title="{{ v.transfer_bytes }} bytes">{{ human(v.transfer_bytes) }}</td>
+<td><a class="chip" href="/retailversions?tab=planner&file={{ v.file|urlencode }}&stamp={{ v.version }}&plan=1">Plan this version</a></td></tr>{% endfor %}</table></div>
+{% else %}<p class="wb-error">{{ hist.error }}</p>{% endif %}{% endif %}
 
 {% elif tab == "planner" %}
-<h2>Download planner</h2>
-<form class="search wb-filter-row" method="get"><input type="hidden" name="tab" value="planner"><input type="hidden" name="plan" value="1">
-  <input type="text" name="file" value="{{ file }}" placeholder="manifest file, e.g. FFXiMain.dll" required>
-  <input type="text" name="stamp" value="{{ stamp }}" placeholder="version, e.g. 30261006_0" required>
-  <button type="submit">Plan (no download)</button></form>
+<div class="rv-panel">
+<form id="rv-plan-form" class="rv-form" method="get"><input type="hidden" name="tab" value="planner">
+  <label>Manifest file
+    <input type="text" id="rv-file" name="file" value="{{ file }}" list="rv-files" autocomplete="off" placeholder="Start typing, e.g. FFXiMain" required></label>
+  <datalist id="rv-files"></datalist>
+  <button type="submit" id="rv-load">Load versions</button>
+  {% if hist and hist.ok %}
+  <label>Version
+    <select name="stamp" required>
+      {% for v in hist.versions %}<option value="{{ v.version }}" {% if v.version == stamp %}selected{% endif %}>{{ v.version }} ({{ human(v.decoded_bytes) }}){% if loop.first %} newest listed{% endif %}</option>{% endfor %}
+    </select></label>
+  <button type="submit" name="plan" value="1">Plan (no download)</button>
+  {% endif %}
+</form>
+<p class="muted" id="rv-hint">{% if not (hist and hist.ok) %}Choose a file, then load its versions.{% endif %}{% if not cache.exists %} No manifest cache yet, so suggestions are empty. Refresh it once on the <a href="/retailversions?tab=manifest">Manifest tab</a>, or type the exact file name.{% endif %}</p>
+</div>
+{% if hist and not hist.ok %}<p class="wb-error">{{ hist.error }}</p>{% endif %}
+{% if hist and hist.ok and not hist.versions %}<p class="wb-empty">The manifest lists no versions for that file name.</p>{% endif %}
 {% if plan_out %}{% if plan_out.ok %}
-<pre>{{ plan_out.stdout }}</pre>
-<form method="post" action="/retailversions/download">
+<div class="rv-panel"><h3>Download plan</h3>
+<div class="rv-plan">{{ plan_out.stdout }}</div>
+<form method="post" action="/retailversions/download" class="rv-form">
   <input type="hidden" name="file" value="{{ file }}"><input type="hidden" name="stamp" value="{{ stamp }}">
-  <label><input type="checkbox" name="confirm" value="yes"> I confirm: download this one file into <code>{{ root }}/{{ stamp }}</code>. Existing files are never overwritten.</label>
-  <button type="submit">Download</button></form>
-{% else %}<p class="chip" style="color:#c33;">{{ plan_out.error }}</p>{% endif %}{% endif %}
+  <label class="rv-inline"><input type="checkbox" id="rv-confirm" name="confirm" value="yes"> I confirm: download this one file into <code>{{ root }}/{{ stamp }}</code>. Existing files are never overwritten.</label>
+  <button type="submit" id="rv-go" disabled>Download</button>
+</form></div>
+{% else %}<p class="wb-error">{{ plan_out.error }}</p>{% endif %}{% endif %}
 
 {% elif tab == "artifacts" %}
-<h2>Local artifacts</h2>
-{% if not artifacts %}<p class="muted">No cataloged retail artifacts yet. Download one from the Planner tab.</p>{% else %}
-<div class="table-wrap"><table><tr><th>File</th><th>Version</th><th>Status</th><th>Bytes</th><th>SHA-256</th><th>Retrieved (UTC)</th><th>Inspect</th></tr>
+{% if not artifacts %}<p class="wb-empty">No cataloged retail artifacts yet. Plan and download one from the <a href="/retailversions?tab=planner">Planner</a>.</p>{% else %}
+<div class="rv-panel"><div class="rv-form"><label>Filter<input type="text" id="rv-afilter" placeholder="file or version"></label>
+  <span class="muted">{{ valid_n }} valid of {{ artifacts|length }}</span></div></div>
+<div class="table-wrap"><table id="rv-atable"><tr><th>File</th><th>Version</th><th>Status</th><th class="rv-num">Size</th><th>SHA-256</th><th>Retrieved (UTC)</th><th></th></tr>
 {% for a in artifacts %}<tr><td>{{ a.file }}</td><td>{{ a.version }}</td>
-<td>{{ a.status }}{% if a.problems %}<br><span class="muted">{{ a.problems|join('; ') }}</span>{% endif %}{% if a.duplicates %}<br><span class="muted">{{ a.duplicates|length }} duplicate copy(ies) collapsed</span>{% endif %}</td>
-<td>{{ a.actual_bytes or '' }}</td><td><code>{{ (a.sha256 or '')[:16] }}</code></td><td>{{ a.retrieved_utc or '' }}</td>
-<td>{% if a.status == 'VALID' %}<a href="/binaryinspector?path={{ a.path|urlencode }}">open</a>{% endif %}</td></tr>{% endfor %}</table></div>{% endif %}
+<td><span class="pill {% if a.status == 'VALID' %}match{% elif a.status == 'MISSING' %}no_real_entry{% elif a.status in ['INVALID','INVALID_SIDECAR'] %}mismatch{% else %}unannotated{% endif %}">{{ a.status }}</span>{% if a.problems %}<br><span class="muted">{{ a.problems|join('; ') }}</span>{% endif %}{% if a.duplicates %}<br><span class="muted">{{ a.duplicates|length }} duplicate copy(ies) collapsed</span>{% endif %}</td>
+<td class="rv-num" title="{{ a.actual_bytes or '' }} bytes">{{ human(a.actual_bytes) }}</td><td><code title="{{ a.sha256 or '' }}">{{ (a.sha256 or '')[:16] }}</code></td><td>{{ a.retrieved_utc or '' }}</td>
+<td>{% if a.status == 'VALID' %}<a class="chip" href="/binaryinspector?path={{ a.path|urlencode }}">Inspect</a>{% endif %}{% if a.path %} <button type="button" class="chip rv-copy" data-path="{{ a.path }}">Copy path</button>{% endif %}</td></tr>{% endfor %}</table></div>{% endif %}
 
 {% elif tab == "compare" %}
-<h2>Version comparison</h2>
 {% set valid = artifacts|selectattr('status','equalto','VALID')|list %}
-{% if valid|length < 2 %}<p class="muted">Needs at least two valid cataloged versions of the same file.</p>{% else %}
-<form class="search wb-filter-row" method="get"><input type="hidden" name="tab" value="compare">
-  <select name="left">{% for a in valid %}<option value="{{ a.file }}|{{ a.version }}" {% if left == a.file ~ '|' ~ a.version %}selected{% endif %}>{{ a.file }} {{ a.version }}</option>{% endfor %}</select>
-  vs <select name="right">{% for a in valid %}<option value="{{ a.file }}|{{ a.version }}" {% if right == a.file ~ '|' ~ a.version %}selected{% endif %}>{{ a.file }} {{ a.version }}</option>{% endfor %}</select>
-  <button type="submit">Compare</button></form>{% endif %}
+{% if valid|length < 2 %}<p class="wb-empty">Comparison needs at least two valid cataloged versions of the same file.</p>{% else %}
+<div class="rv-panel">
+<form class="rv-form" method="get"><input type="hidden" name="tab" value="compare">
+  <label>Left<select name="left">{% for file_name, items in valid|groupby('file') %}<optgroup label="{{ file_name }}">{% for a in items %}<option value="{{ a.file }}|{{ a.version }}" {% if left == a.file ~ '|' ~ a.version %}selected{% endif %}>{{ a.version }}</option>{% endfor %}</optgroup>{% endfor %}</select></label>
+  <label>Right<select name="right">{% for file_name, items in valid|groupby('file') %}<optgroup label="{{ file_name }}">{% for a in items %}<option value="{{ a.file }}|{{ a.version }}" {% if right == a.file ~ '|' ~ a.version %}selected{% endif %}>{{ a.version }}</option>{% endfor %}</optgroup>{% endfor %}</select></label>
+  <button type="submit">Compare</button></form></div>{% endif %}
 {% if diff %}
 <p>Status: <strong>{{ diff.status }}</strong>. Uses the same engine as Binary Inspector diff and <code>client.binary-diff</code>.
-  <a href="/binaryinspector?path={{ pair[0].path|urlencode }}&diff_path={{ pair[1].path|urlencode }}">open in Binary Inspector</a></p>
+  <a class="chip" href="/binaryinspector?path={{ pair[0].path|urlencode }}&diff_path={{ pair[1].path|urlencode }}">Open in Binary Inspector</a></p>
 <h3>Confirmed (read from PE headers and tables)</h3>
 <div class="table-wrap"><table><tr><th>Field</th><th>Left</th><th>Right</th></tr>
 {% for k, v in diff.metadata_changes.items() %}<tr><td>{{ k }}</td><td>{{ v.left }}</td><td>{{ v.right }}</td></tr>{% endfor %}</table></div>
@@ -88,15 +165,70 @@ Imports removed: {% for i in diff.imports.removed[:30] %}<code>{{ i.dll }}!{{ i.
 {% endif %}
 
 {% elif tab == "diagnostics" %}
-<h2>Diagnostics and limitations</h2>
+<div class="rv-panel"><h3>Diagnostics and limitations</h3>
 <ul>
   <li>Downloader executable: {{ exe or 'not found (set RETAIL_FETCH_EXE or build tools/retail_fetch)' }}</li>
-  <li>Retail folder: <code>{{ root }}</code> (override with <code>WORKBENCH_RETAIL_ROOT</code>)</li>
+  <li>Retail folder: <code>{{ root }}</code> ({{ {'env':'environment variable','setting':'chosen manually','client':'default inside the client folder','builtin':'built-in default'}[root_info.source] }}). Change it on the Overview tab.</li>
+  <li>Manifest cache: {% if cache.exists %}{{ cache.count }} files{% else %}none yet{% endif %}. Tick refresh on the Manifest tab for one new network read.</li>
   <li>Network timeout per downloader call: {{ timeout }} s (maximum 600). The Rust client has a fixed 120 s socket timeout.</li>
-  <li>Manifest list is cached locally; tick refresh on the Manifest tab for one new network read.</li>
   <li>Integrity check is the legacy FileSig (length, byte sum, MD5 prefix), not cryptographic. The patch server is contacted over unauthenticated TCP.</li>
   <li>Open gap: the upstream manifest decoder has no output size cap.</li>
   <li>Never run downloaded binaries. Keep the retail folder out of Git.</li>
-</ul>
+</ul></div>
 {% endif %}
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var file=$('rv-file'), list=$('rv-files'), timer=null;
+  if(file&&list){
+    var form=$('rv-plan-form'), startVal=file.value;
+    var suggest=function(){
+      fetch('/retailversions/files.json?limit=50&q='+encodeURIComponent(file.value)).then(function(r){return r.json()}).then(function(j){
+        list.innerHTML='';
+        (j.files||[]).forEach(function(f){var o=document.createElement('option');o.value=f.file;o.label='latest '+f.latest;list.appendChild(o)});
+      }).catch(function(){});
+    };
+    file.addEventListener('input',function(){clearTimeout(timer);timer=setTimeout(suggest,200)});
+    file.addEventListener('focus',suggest);
+    file.addEventListener('change',function(){
+      var known=false;for(var i=0;i<list.options.length;i++){if(list.options[i].value===file.value){known=true}}
+      if(known&&file.value!==startVal){form.submit()}
+    });
+  }
+  var rb=$('rv-browse');
+  if(rb){
+    var cur='', parent=null;
+    var esc=function(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML};
+    var load=function(p){
+      fetch('/retailversions/browse?path='+encodeURIComponent(p)).then(function(r){return r.json().then(function(j){return [r.ok,j]})}).then(function(x){
+        if(!x[0]){$('rv-cinfo').textContent=x[1].error;return}
+        var j=x[1]; cur=j.path; parent=j.parent;
+        $('rv-cpath').textContent=cur||'(drives)'; $('rv-up').disabled=(parent===null); $('rv-pick').disabled=!cur;
+        $('rv-cinfo').textContent=cur?'':'Choose a drive. For a network path, type it in the box.';
+        $('rv-clist').innerHTML=j.dirs.map(function(d){return '<div><a href="#" data-p="'+esc(d.path).replace(/"/g,'&quot;')+'">&#128193; '+esc(d.name)+'</a></div>'}).join('')||'<div class="muted">No sub-folders.</div>';
+      });
+    };
+    rb.onclick=function(){$('rv-chooser').hidden=false;load($('rv-root').value||$('rv-root').placeholder||'')};
+    $('rv-close').onclick=function(){$('rv-chooser').hidden=true};
+    $('rv-up').onclick=function(){load(parent||'')};
+    $('rv-pick').onclick=function(){$('rv-root').value=cur;$('rv-chooser').hidden=true};
+    $('rv-clist').onclick=function(e){var a=e.target.closest('a');if(a){e.preventDefault();load(a.getAttribute('data-p'))}};
+  }
+  var c=$('rv-confirm'), g=$('rv-go');
+  if(c&&g){c.addEventListener('change',function(){g.disabled=!c.checked})}
+  var af=$('rv-afilter'), at=$('rv-atable');
+  if(af&&at){af.addEventListener('input',function(){
+    var t=af.value.toLowerCase();
+    Array.prototype.slice.call(at.rows,1).forEach(function(r){r.hidden=t&&r.textContent.toLowerCase().indexOf(t)<0});
+  })}
+  Array.prototype.forEach.call(document.querySelectorAll('.rv-copy'),function(b){
+    b.addEventListener('click',function(){
+      var p=b.getAttribute('data-path'), old=b.textContent;
+      var done=function(){b.textContent='Copied';setTimeout(function(){b.textContent=old},1200)};
+      if(navigator.clipboard){navigator.clipboard.writeText(p).then(done,function(){})}
+    });
+  });
+})();
+</script>
 {% endblock %}

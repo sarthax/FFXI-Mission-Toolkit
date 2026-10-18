@@ -77,25 +77,41 @@ def parse_history(text: str) -> list[dict[str, Any]]:
 
 def _filter(rows: list[dict[str, str]], text: str) -> list[dict[str, str]]:
     t = text.lower()
-    return [r for r in rows if t in r["file"].lower()][:500]
+    return [r for r in rows if t in r["file"].lower()]
 
 
-def manifest_list(filter_text: str = "", timeout: int = DEFAULT_TIMEOUT, refresh: bool = False) -> dict[str, Any]:
-    """File list from a local cache; one network read only on refresh or first use."""
+def cache_info() -> dict[str, Any]:
+    """Local manifest cache status: never touches the network."""
+    cache = retail_root() / CACHE_NAME
+    try:
+        count = len(json.loads(cache.read_text(encoding="utf-8"))["files"])
+        return {"exists": True, "count": count, "mtime": cache.stat().st_mtime}
+    except (OSError, ValueError, KeyError):
+        return {"exists": False, "count": 0, "mtime": None}
+
+
+def manifest_list(filter_text: str = "", timeout: int = DEFAULT_TIMEOUT, refresh: bool = False,
+                  cache_only: bool = False, limit: int = 500) -> dict[str, Any]:
+    """File list from a local cache; one network read only on refresh or first use.
+
+    ``cache_only`` never reads the network (used by pickers); it reports ``no_cache`` instead."""
     cache = retail_root() / CACHE_NAME
     if not refresh and cache.is_file():
         try:
             rows = json.loads(cache.read_text(encoding="utf-8"))["files"]
-            return {"ok": True, "cached": True, "files": _filter(rows, filter_text)}
+            return {"ok": True, "cached": True, "files": _filter(rows, filter_text)[:limit]}
         except (OSError, ValueError, KeyError):
             pass
+    if cache_only:
+        return {"ok": False, "no_cache": True, "files": [],
+                "error": "No manifest cache yet. Use Refresh on the Manifest tab (one network read)."}
     r = _run(["--list"], timeout)
     if not r["ok"]:
         return r
     rows = parse_list(r["stdout"])
     cache.parent.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps({"files": rows}), encoding="utf-8")
-    return {"ok": True, "cached": False, "files": _filter(rows, filter_text)}
+    return {"ok": True, "cached": False, "files": _filter(rows, filter_text)[:limit]}
 
 
 def history(file: str, timeout: int = DEFAULT_TIMEOUT) -> dict[str, Any]:
