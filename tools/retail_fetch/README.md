@@ -41,3 +41,5 @@ workflow and an explicitly permitted live network test both succeed.
 5. Record SHA-256 externally and analyze the DLL through the separate client Binary Inspector research workflow. No PlayOnline login is needed for the documented patch-server operation, but network access must be explicitly permitted.
 
 CI now checks and tests the crate on both Linux and Windows runners, with no PlayOnline network test. Do not mistake a green CI build for a successful retail download.
+
+A successful download now prints the final SHA-256 digest alongside its manifest version stamp and decoded byte count. Save that output with the binary research report; SHA-256 is a research fingerprint, while the PlayOnline manifest check remains a legacy integrity mechanism rather than cryptographic manifest authentication.
