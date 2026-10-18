@@ -43,3 +43,7 @@ workflow and an explicitly permitted live network test both succeed.
 CI now checks and tests the crate on both Linux and Windows runners, with no PlayOnline network test. Do not mistake a green CI build for a successful retail download.
 
 A successful download now prints the final SHA-256 digest alongside its manifest version stamp and decoded byte count. Save that output with the binary research report; SHA-256 is a research fingerprint, while the PlayOnline manifest check remains a legacy integrity mechanism rather than cryptographic manifest authentication.
+
+## Decoder memory bound
+
+The selective downloader now uses a locally bounded direct-payload decoder for stored, zlib and PlayOnline `.slc` formats. Decoding is constrained to the selected file's manifest-declared length (maximum 128 MiB), rejecting output beyond that limit before publication. Kuluu remains the source of the network transport and manifest parsing. This limit applies to selected file payloads; manifest retrieval/decoding within the upstream Kuluu library is not separately bounded here. The new decoder has synthetic malformed-stream and decompression-limit tests; real PlayOnline payload compatibility remains unverified pending a permitted network test.
