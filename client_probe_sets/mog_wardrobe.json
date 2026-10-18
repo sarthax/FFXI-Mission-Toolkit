@@ -1,6 +1,6 @@
 {
   "name": "Mog Wardrobe 5-8",
-  "description": "Is the newer wardrobe 5-8 feature present in this client? A miss is UNKNOWN, not absent (FFXiMain.dll is packed).",
+  "description": "Exact slash-command evidence; misses remain UNKNOWN for packed clients.",
   "binary": "FFXiMain.dll",
   "feature": {
     "feature_id": "feature:mog-wardrobe-5-8",
@@ -10,12 +10,44 @@
     "status": "DISCOVERED"
   },
   "probes": [
-    {"name": "/wardrobe command", "kind": "string", "needle": "/wardrobe"},
-    {"name": "/wardrobe2", "kind": "string", "needle": "/wardrobe2"},
-    {"name": "/wardrobe4", "kind": "string", "needle": "/wardrobe4"},
-    {"name": "/wardrobe5", "kind": "string", "needle": "/wardrobe5", "requires_feature": true},
-    {"name": "/wardrobe6", "kind": "string", "needle": "/wardrobe6", "requires_feature": true},
-    {"name": "/wardrobe7", "kind": "string", "needle": "/wardrobe7", "requires_feature": true},
-    {"name": "/wardrobe8", "kind": "string", "needle": "/wardrobe8", "requires_feature": true}
+    {
+      "name": "/wardrobe command",
+      "kind": "command",
+      "needle": "/wardrobe"
+    },
+    {
+      "name": "/wardrobe2",
+      "kind": "command",
+      "needle": "/wardrobe2"
+    },
+    {
+      "name": "/wardrobe4",
+      "kind": "command",
+      "needle": "/wardrobe4"
+    },
+    {
+      "name": "/wardrobe5",
+      "kind": "command",
+      "needle": "/wardrobe5",
+      "requires_feature": true
+    },
+    {
+      "name": "/wardrobe6",
+      "kind": "command",
+      "needle": "/wardrobe6",
+      "requires_feature": true
+    },
+    {
+      "name": "/wardrobe7",
+      "kind": "command",
+      "needle": "/wardrobe7",
+      "requires_feature": true
+    },
+    {
+      "name": "/wardrobe8",
+      "kind": "command",
+      "needle": "/wardrobe8",
+      "requires_feature": true
+    }
   ]
 }
