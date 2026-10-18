@@ -27,6 +27,10 @@ fn run() -> Result<(), String> {
     let args: Vec<String> = env::args().skip(1).collect();
     let file = argument("--file", &args);
     let list = args.iter().any(|x| x == "--list");
+    let history = args.iter().any(|x| x == "--history");
+    if history && file.is_none() {
+        return Err("--history requires --file MANIFEST_PATH".into());
+    }
     if !list && file.is_none() {
         return Err("usage: --list [--file SUBSTRING] OR --file MANIFEST_PATH --output DIRECTORY [--version EXACT_STAMP]".into());
     }
@@ -47,6 +51,12 @@ fn run() -> Result<(), String> {
     let requested = file.unwrap();
     let entry = manifest.files.iter().find(|e| e.path.eq_ignore_ascii_case(&requested))
         .ok_or_else(|| format!("file not listed in server manifest: {requested}"))?;
+    if history {
+        for version in &entry.versions {
+            println!("{}  {}  {} bytes  direct={} bytes", entry.path, version.stamp, version.sig.len, version.direct_len);
+        }
+        return Ok(());
+    }
     let version = if let Some(stamp) = argument("--version", &args) {
         entry.versions.iter().find(|v| v.stamp == stamp)
             .ok_or_else(|| format!("version {stamp} is not listed for {}", entry.path))?
