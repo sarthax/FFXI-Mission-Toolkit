@@ -215,7 +215,10 @@
       "route": "/auction-house/help",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Investigate historical and current Auction House item, seller, buyer, and transaction records.",
+      "how_to_use": "Open Auction House and select the relevant browse or history tab; filter by item or seller and inspect the linked record.",
+      "caveat": "Records reflect available server data; a missing result does not establish that a transaction never occurred."
     },
     {
       "id": "ah-economy",
@@ -226,7 +229,10 @@
       "route": "/auction-house/help",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Summarize auction activity, item supply, and other economy signals.",
+      "how_to_use": "Open Economy, inspect its summary charts, then drill into underlying items before changing listings.",
+      "caveat": "Aggregates are descriptive and should be verified against individual records before decisions."
     },
     {
       "id": "ah-item-picker",
@@ -237,7 +243,10 @@
       "route": "/auction-house/help",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Select an exact item identity while retaining icons, names, and contextual links.",
+      "how_to_use": "Use the shared item picker in the seller, buyer, restock or cleanup workflow; verify the selected ID before continuing.",
+      "caveat": "Visual item names can be ambiguous; the selected item ID is authoritative."
     },
     {
       "id": "ah-preferences",
@@ -248,7 +257,10 @@
       "route": "/auction-house/help",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Retain useful Auction House filters and selections and export read-only views.",
+      "how_to_use": "Select filters or favorites in the relevant tab, then use CSV export for external review.",
+      "caveat": "Exports are snapshots of the current filtered view, not backup/restore files."
     },
     {
       "id": "ah-restock",
@@ -259,7 +271,10 @@
       "route": "/auction-house/help",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Prepare and review controlled auction restock or cleanup changes.",
+      "how_to_use": "Use the Restock or Cleanup tab, choose exact items, inspect the preview, and confirm the requested guarded operation.",
+      "caveat": "Preview and authorization are required; do not treat a proposed change as already applied."
     },
     {
       "id": "ah-recovery",
@@ -270,7 +285,10 @@
       "route": "/auction-house/help",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Investigate delivery and recovery cases with durable attempt evidence.",
+      "how_to_use": "Open the recovery journal, select a case and inspect the recipient attempts and evidence before taking further action.",
+      "caveat": "The journal does not automatically retry or complete recovery."
     },
     {
       "id": "ah-scheduled-rewards",
@@ -281,7 +299,10 @@
       "route": "/auction-house/help",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Configure cancellable, profile-restricted scheduled rewards.",
+      "how_to_use": "Select a Test profile, review recipient and reward details, schedule the action, and verify status or cancellation.",
+      "caveat": "Delivery revalidates guards at execution time; scheduling alone is not proof of delivery."
     },
     {
       "id": "ah-augmented-rewards",
@@ -292,7 +313,10 @@
       "route": "/auction-house/help",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Preview and configure item rewards with augment parameters.",
+      "how_to_use": "Select an item and augments, inspect the generated reward preview and required acceptance conditions.",
+      "caveat": "Experimental Test delivery requires acceptance; previews are not delivered items."
     },
     {
       "id": "live-bridge",
@@ -303,7 +327,10 @@
       "route": "/live-client/bridge/console",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect the Ashita telemetry receiver, sender configuration, and event freshness.",
+      "how_to_use": "Open the bridge console, identify the connected client, confirm the current zone and inspect heartbeat/freshness.",
+      "caveat": "An absent or stale stream is not evidence that the client is offline; inspect bridge configuration first."
     },
     {
       "id": "live-entity-stream",
@@ -314,7 +341,10 @@
       "route": "/live-client/bridge/console",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect positions for multiple observed client entities and reconcile them with server records.",
+      "how_to_use": "Connect the live bridge, open the entity-enabled map, compare live versus server markers, and inspect identity matches.",
+      "caveat": "Live broadcasts depend on the installed addon and visibility; not every server spawn is a client observation."
     },
     {
       "id": "live-movement",
@@ -325,7 +355,10 @@
       "route": "/live-client/bridge/console",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Use guarded movement assistance and immediate STOP/disarm controls.",
+      "how_to_use": "Confirm client identity and zone, arm only the intended control, inspect movement feedback, then disarm or STOP.",
+      "caveat": "Controls affect the live client and must remain scoped to an authorized development/testing session."
     },
     {
       "id": "live-3d",
@@ -336,7 +369,10 @@
       "route": "/live-client/bridge/console",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "View the connected player's zone and observed activity within the external 3D map.",
+      "how_to_use": "Select the correct zone and instance, follow or center the player, then compare live markers to static server evidence.",
+      "caveat": "Geometry, static spawns, and live observations are separate layers with different provenance."
     },
     {
       "id": "trace-evidence",
@@ -347,7 +383,10 @@
       "route": "/features/trace",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Build a focused evidence dossier identifying why a feature behaves as it does.",
+      "how_to_use": "Enter a concrete feature or behavior in Feature Trace; review the prioritized sources, binding relationships, and source links.",
+      "caveat": "Ranked evidence is not a claim that every adjacent graph node is causal."
     },
     {
       "id": "trace-runtime",
@@ -358,7 +397,10 @@
       "route": "/features/trace",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Follow runtime and event handoffs through a hierarchical behavior path.",
+      "how_to_use": "From a Feature Trace result, expand the runtime path and navigate each source or event handoff in order.",
+      "caveat": "A predicted path is not a verified execution trace unless capture/runtime evidence exists."
     },
     {
       "id": "wiki-cache",
@@ -369,7 +411,10 @@
       "route": "/wiki",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Browse researched wiki content that has been imported and annotated with source provenance.",
+      "how_to_use": "Search the Wiki module, open cached results, and inspect source and cache status before relying on the content.",
+      "caveat": "Missing cache results may reflect import coverage, not absence from the original wiki."
     },
     {
       "id": "wiki-bulk",
@@ -380,7 +425,10 @@
       "route": "/wiki",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Control batch scraping and importing of research pages and observe cache health.",
+      "how_to_use": "Open the Wiki import/sync controls, choose the source and bounded batch, then inspect job progress and errors.",
+      "caveat": "Large batches need source-specific rate and error handling; imported pages require provenance."
     },
     {
       "id": "wiki-translation",
@@ -391,7 +439,10 @@
       "route": "/wiki",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Review Japanese terminology and translation evidence for client-research comparisons.",
+      "how_to_use": "Open the translation research view and compare the original term, proposed translation, and supporting sources.",
+      "caveat": "Machine or inferred translations require independent corroboration."
     },
     {
       "id": "ki-lua",
@@ -402,7 +453,10 @@
       "route": "/keyitems",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Locate script references that grant, require, or remove a key item.",
+      "how_to_use": "Open a key item's Lua evidence panel and inspect source paths, constants, and operation types.",
+      "caveat": "A reference proves use in source, not that a complete quest progression is live-tested."
     },
     {
       "id": "character-items",
@@ -519,7 +573,10 @@
       "route": "/retailversions/browse",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Browse file identities and exact historical revisions from retail manifest snapshots.",
+      "how_to_use": "Open the Retail Version Explorer's browse view, choose a file and listed revision, and inspect availability before selecting a download.",
+      "caveat": "A listed historical revision does not guarantee that the remote payload still exists."
     },
     {
       "id": "dialog-drift",
