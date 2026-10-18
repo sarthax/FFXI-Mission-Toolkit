@@ -13,7 +13,7 @@ A route or source reference does not establish runtime acceptance. The first sev
 
 ## GUI
 
-`/feature-catalog` renders searchable/filterable records. Help and Roadmap link to it. The current navigation does not yet include a dedicated sidebar entry; the catalog is reachable from Help and Roadmap.
+`/feature-catalog` renders searchable/filterable records. Help and Roadmap link to it. The catalog is listed in the Home / Project shell navigation and linked from Help and Roadmap.
 
 ## Adding a feature
 
@@ -46,3 +46,7 @@ Twenty additional operator-facing pages were added from the maintained GET route
 ## Active-page coverage gate
 
 The coverage audit also compares catalog destinations with the maintained GET-route inventories' static `role: page` entries. It excludes root/Help/Roadmap/Catalog and parameterized paths; uncataloged `LEGACY` or `MERGE` disposition pages are reported separately rather than treated as active feature gaps. The regression fixture requires zero uncataloged active static pages. At the October 18 source-level checkpoint, 75 curated records cover the static active page inventory, with `/items` and `/backport/package` retained as uncataloged legacy/merge-target routes. This is not full dynamic-router, subfeature, browser-rendering, or Windows/DSP runtime acceptance.
+
+## CI validation checkpoint
+
+The initial Workbench Regression run failed in the newly added catalog smoke test because the test incorrectly assumed the query `binary` would match only one record. As the inventory grew, multiple valid records matched. The test now asserts inclusion of Binary Inspector rather than exclusive equality. Keep the PR draft until a subsequent green core-regression run and browser rendering verification.
