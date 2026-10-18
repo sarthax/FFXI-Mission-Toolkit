@@ -626,7 +626,11 @@
       "route": "/captures/search",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Find packets, chat, entities, and other observations across imported capture evidence.",
+      "how_to_use": "Open Capture Search, choose a search term or filter, then inspect results in their original capture context.",
+      "caveat": "Search coverage depends on what was captured and indexed."
     },
     {
       "id": "capture-query",
@@ -636,7 +640,11 @@
       "route": "/captures/query",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Run structured queries against the indexed capture store.",
+      "how_to_use": "Open Capture Query, select available fields and predicates, and follow result links into source observations.",
+      "caveat": "Only captured and indexed fields can be queried reliably."
     },
     {
       "id": "validation-runs",
@@ -726,7 +734,11 @@
       "route": "/captures/help",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Understand which logger and packet export formats the importer recognizes.",
+      "how_to_use": "Open Capture Format Support before importing an unfamiliar source; compare the required input structure.",
+      "caveat": "Parsing support varies by source; unsupported records must not be silently treated as valid."
     },
     {
       "id": "capture-paths",
@@ -736,7 +748,11 @@
       "route": "/captures/plot",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Visualize player movement and other spatial paths recorded in captures.",
+      "how_to_use": "Open Capture Path Visualization, select a capture and zone, and inspect route points in sequence.",
+      "caveat": "Sparse updates and zoning can create apparent jumps; these are observations, not navigation instructions."
     },
     {
       "id": "capture-import",
@@ -746,7 +762,11 @@
       "route": "/captures/new",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Ingest a recorded gameplay package into the Toolkit's research index.",
+      "how_to_use": "Open Capture Import, select a supported recording, review the preview and parse diagnostics, then import.",
+      "caveat": "Import success does not guarantee every field was decoded or semantically interpreted."
     },
     {
       "id": "item-health",
@@ -816,7 +836,11 @@
       "route": "/captures/plot_all",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Compare recorded routes across multiple capture sessions.",
+      "how_to_use": "Open All Capture Paths, select a zone or relevant sessions, and compare their spatial evidence.",
+      "caveat": "Session coordinates and zone identity need reconciliation before comparing routes."
     },
     {
       "id": "capture-bulk-ingest",
@@ -826,7 +850,11 @@
       "route": "/captures/bulk-ingest",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Process multiple capture sources in one bounded import workflow.",
+      "how_to_use": "Select a source set, inspect the bulk-ingest plan, and review per-file failures or skipped records afterward.",
+      "caveat": "Large imports can contain mixed formats; review error summaries rather than assuming complete coverage."
     },
     {
       "id": "capture-metadata-import",
@@ -836,7 +864,11 @@
       "route": "/captures/metadata-import",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Associate supplementary metadata with already captured evidence.",
+      "how_to_use": "Import metadata using the matching capture identity and inspect the resulting link and provenance.",
+      "caveat": "Metadata alone does not prove its corresponding packet/event occurred."
     },
     {
       "id": "capture-review",
@@ -846,7 +878,11 @@
       "route": "/captures/review",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Inspect exceptions and uncertain ingestion results before trusting downstream analyses.",
+      "how_to_use": "Open Capture Review Queue, select a flagged record, and inspect the raw evidence and parser outcome.",
+      "caveat": "An exception can be a decode ambiguity rather than a faulty source capture."
     },
     {
       "id": "capture-zone-review",
@@ -856,7 +892,11 @@
       "route": "/captures/zone-review",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Review capture observations grouped by zone and spatial context.",
+      "how_to_use": "Open Capture Zone Review, choose a zone, then inspect its linked capture evidence and unresolved identities.",
+      "caveat": "Zone mapping may be incomplete for unknown or stale session metadata."
     },
     {
       "id": "shift-master",
