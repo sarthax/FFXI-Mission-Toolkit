@@ -2,15 +2,36 @@
 from __future__ import annotations
 import argparse
 import json
+import hashlib
+import re
 from pathlib import Path
 from workbench.client.pol1_unpack import inspect_pol1, search_unpacked
 from workbench.client.binary.address_candidates import address_candidates
 from workbench.client.binary.code_evidence import decode_window
 
 
+def wardrobe_command_evidence(binary: str) -> dict:
+    """Compare bounded exact ASCII slash-command tokens in on-disk client data."""
+    path = Path(binary)
+    if path.stat().st_size > 64 * 1024 * 1024:
+        return {"status": "SKIPPED", "reason": "File exceeds 64 MiB safety bound"}
+    data = path.read_bytes()
+    rows = []
+    for number in range(1, 9):
+        command = "/wardrobe" + (str(number) if number > 1 else "")
+        pattern = re.compile(rb"(?<![a-zA-Z0-9_/])" + re.escape(command.encode("ascii")) + rb"(?![a-zA-Z0-9_])")
+        offsets = [m.start() for _, m in zip(range(100), pattern.finditer(data))]
+        rows.append({"command": command, "status": "VERIFIED_BYTES" if offsets else "UNKNOWN",
+                     "offsets": offsets, "truncated": len(offsets) == 100})
+    return {"status": "SCANNED", "sha256": hashlib.sha256(data).hexdigest(),
+            "commands": rows,
+            "warning": "An on-disk string hit does not demonstrate command handling; misses do not prove absence."}
+
+
 def generate_report(binary: str, *, pattern: str | None = None,
                     target_rva: int | None = None, decode_rva: int | None = None) -> dict:
     result = {"binary_name": Path(binary).name, "unpacked": inspect_pol1(binary)}
+    result["wardrobe_commands"] = wardrobe_command_evidence(binary)
     if pattern is not None:
         result["byte_search"] = search_unpacked(binary, pattern)
     if target_rva is not None:
