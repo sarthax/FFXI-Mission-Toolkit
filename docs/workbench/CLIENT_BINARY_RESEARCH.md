@@ -195,3 +195,14 @@ Follow-up: pair candidate hits with independently verified x86 instruction
 decoding and the PE relocation table, then compare identical analyses on a
 verified 2022+ retail executable. Do not modify a live client based on these
 candidates.
+
+
+### One-command decoded-code report
+
+A local read-only JSON report is available using:
+
+```powershell
+python -m workbench.client.cli.pol1_report "C:\\FFXI-Research\\2019\\FFXiMain.dll" --pattern "83 F8 0C" --target-rva 0x1234 --output ".workbench/client-binaries/2019-pol1-report.json"
+```
+
+`--pattern`, `--target-rva`, and `--decode-rva` are independent optional checks. The script captures the unpacked-image SHA-256, decoded RVAs, context bytes, and explicit evidence caveats. `--decode-rva` requires optional Capstone. No assembly instruction, offset or ID pattern in this example is asserted to be wardrobe-specific. Reports should remain outside version control and original game files must not be overwritten.
