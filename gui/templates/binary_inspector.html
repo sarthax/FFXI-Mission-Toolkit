@@ -32,6 +32,38 @@
 {% for r in probe_result.rows %}<tr><td>{{ r.name }}</td><td>{{ r.kind }}</td><td><code>{{ r.needle }}</code></td><td>{{ r.status }}</td><td>{{ r.count }}</td><td><code>{{ r.sample|join(', ') }}</code></td></tr>{% endfor %}</table></div>
 {% endif %}
 
+<h2 id="protocol-compatibility">Protocol Compatibility</h2>
+<p class="muted">Read-only, versioned packet-layout research. INFERRED means static-analysis evidence that has not been independently validated. Differences do not prove runtime incompatibility or identify a connected client's build.</p>
+{% for rec in protocol_records %}
+{% if rec.error %}
+<p class="chip">Invalid protocol record <code>{{ rec.file }}</code>: {{ rec.error }}</p>
+{% else %}
+<details {% if loop.first %}open{% endif %}>
+  <summary><strong>{{ rec.name }}</strong> &mdash; packet <code>{{ rec.packet_id }}</code> ({{ rec.direction }}) &mdash; {{ rec.changes|length }} layout differences</summary>
+  <p class="muted">{{ rec.notes }}</p>
+  <div class="table-wrap"><table>
+    <tr><th>Build</th><th>SHA-256</th><th>Evidence</th><th>Field</th><th>Offset</th><th>Width</th><th>Count</th><th>Field confidence</th><th>Source</th></tr>
+    {% for b in rec.builds %}
+    {% for f in b.fields %}
+    <tr><td><code>{{ b.build }}</code></td><td><code>{{ b.sha256 }}</code></td><td>{{ b.status }}</td><td>{{ f.name }}</td><td><code>{{ f.offset }}</code></td><td>{{ f.width_bytes }}</td><td>{{ f.count }}</td><td>{{ f.status }}</td><td>{{ f.source }}</td></tr>
+    {% endfor %}
+    {% endfor %}
+  </table></div>
+  {% if rec.changes %}
+  <h3>Observed layout differences</h3>
+  <div class="table-wrap"><table><tr><th>Field</th><th>Change</th><th>Older layout</th><th>Newer layout</th></tr>
+  {% for c in rec.changes %}<tr><td>{{ c.field }}</td><td>{{ c.change }}</td><td><code>{{ c.old if c.old is defined else 'not present' }}</code></td><td><code>{{ c.new if c.new is defined else 'not present' }}</code></td></tr>{% endfor %}
+  </table></div>
+  {% endif %}
+  {% for b in rec.builds %}
+  <p class="muted"><strong>{{ b.build }} provenance:</strong> {{ b.sources|join('; ') }}</p>
+  {% endfor %}
+</details>
+{% endif %}
+{% else %}
+<p class="muted">No protocol research records have been installed.</p>
+{% endfor %}
+
 <h2>Running client version (memory scan)</h2>
 <p class="muted">Read-only scan of a running FFXI client (pol.exe) for its version string, the value <code>/ver</code> reports and the server checks. FFXiMain.dll is packed on disk, so this only works while the client is running. Not found = UNKNOWN.</p>
 <form method="get"><input type="hidden" name="scan_mem" value="1"><button type="submit">Scan running client</button></form>

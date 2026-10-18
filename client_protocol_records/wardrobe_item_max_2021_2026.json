@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "packet_id": "0x1C",
+  "direction": "server_to_client",
+  "name": "ITEM_MAX container capacity layout",
+  "notes": "Research fixture, not runtime packet capture or client-version detection. The 2021 17-byte copy overlaps the first u16-table byte; copy length does not imply 17 container IDs.",
+  "builds": [
+    {
+      "build": "30210706_0",
+      "sha256": "1ded20ac5df1b168220992365b63cfe7596af17326acf0e02f90a5a8388446ba",
+      "status": "INFERRED",
+      "sources": [
+        "HANDOFF_wardrobe5-8_decode.md (local decoded analysis; not committed)",
+        "https://github.com/sarthax/darkstar-to-valhalla/blob/main/src/map/packets/inventory_size.cpp"
+      ],
+      "fields": [
+        {
+          "name": "u8_copy",
+          "offset": "0x04",
+          "width_bytes": 1,
+          "count": 17,
+          "status": "INFERRED",
+          "source": "Decoded 2021 handler RVA 0xEA460; source listing requires independent validation"
+        },
+        {
+          "name": "u16_capacity",
+          "offset": "0x14",
+          "width_bytes": 2,
+          "count": 13,
+          "status": "INFERRED",
+          "source": "Decoded 2021 handler RVA 0xEA460; source listing requires independent validation"
+        }
+      ]
+    },
+    {
+      "build": "30261006_0",
+      "sha256": "042884888eea4fadac183e520f2ae9f8c4fa267860e685048e1880efd358e872",
+      "status": "INFERRED",
+      "sources": [
+        "HANDOFF_wardrobe5-8_decode.md (local decoded analysis; not committed)",
+        "XREF_SUMMARY.md (local decoded analysis; not committed)"
+      ],
+      "fields": [
+        {
+          "name": "u8_copy",
+          "offset": "0x04",
+          "width_bytes": 1,
+          "count": 18,
+          "status": "INFERRED",
+          "source": "Decoded 2026 handler RVA 0xEC4A0; source listing requires independent validation"
+        },
+        {
+          "name": "u16_capacity",
+          "offset": "0x24",
+          "width_bytes": 2,
+          "count": 18,
+          "status": "INFERRED",
+          "source": "Decoded 2026 handler RVA 0xEC4A0; source listing requires independent validation"
+        }
+      ]
+    }
+  ]
+}
