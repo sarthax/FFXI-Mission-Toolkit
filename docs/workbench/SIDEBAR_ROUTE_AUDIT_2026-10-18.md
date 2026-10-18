@@ -45,3 +45,13 @@ All five calculators listed in the sidebar have explicit GET page handlers in th
 | `/tools/pet-calc` | `src/workbench/server_admin/petcalc/router.py` |
 
 This narrows five of the 22 static inventory discrepancies to **defined source routes**, not established 404s. Runtime mounting, full template rendering, and numerical correctness still require separate validation. The other unlisted domain and character/editor/viewer routes remain unresolved by this pass.
+
+## Parameterized host-route reconciliation (2026-10-18)
+
+The 14 domain category sidebar URLs are backed by one source handler, `@app.get("/domains/{key}")` in `src/workbench/app/_host_impl.py`, and all 14 corresponding keys exist in `src/workbench/domains/definitions.json`. This demonstrates route-pattern and catalog coverage, **not** a successful live HTTP response for every domain.
+
+The 3D Viewer uses `@app.get("/zones/{zoneid}/view3d")`; `/zones/0/view3d` is a concrete sidebar example of that parameterized route. This establishes a route pattern but does not prove a zone 0 mesh is usable.
+
+The Character Editor mounts `src/workbench/editors/character/gui.py` through `app.include_router(character_editor_router)`; its prefix is `/character-editor`, and the page's `@router.get("")` forms the exact sidebar root.
+
+`test_fixtures/test_dynamic_sidebar_routes.py` now guards these source contracts and all 14 domain definition keys. With five calculator handlers and the replay-console source previously confirmed, **all 22 original sidebar inventory discrepancies have identifiable route source definitions or registered category keys**. The remaining work is route-map generation from the mounted app and an HTTP smoke test with runtime prerequisites; do not confuse source evidence with successful page rendering.
