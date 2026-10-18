@@ -11,6 +11,27 @@ from html.parser import HTMLParser
 import mwparserfromhell
 
 PARSER_VERSION = "wiki-doc-v3-table-fields"
+# Source-original, exact-label allowlist shared by template and table review hints.
+# Do not infer field semantics from translated prose or emit graph edges here.
+REVIEW_FIELD_TYPES={
+                "drops":"DROPS","drop":"DROPS","loot":"DROPS","戦利品":"DROPS","ドロップ":"DROPS",
+                "reward":"REWARDS","rewards":"REWARDS","報酬":"REWARDS",
+                "location":"LOCATION","zone":"LOCATION","場所":"LOCATION","エリア":"LOCATION",
+                "requirements":"REQUIRES","prerequisites":"REQUIRES","必要条件":"REQUIRES","参加条件":"REQUIRES",
+                "spawn conditions":"SPAWN_CONDITIONS","spawn condition":"SPAWN_CONDITIONS",
+                "spawn":"SPAWN_CONDITIONS","pop conditions":"SPAWN_CONDITIONS",
+                "出現条件":"SPAWN_CONDITIONS","ポップ条件":"SPAWN_CONDITIONS",
+                "quest":"QUEST","quests":"QUEST","mission":"QUEST","missions":"QUEST",
+                "クエスト":"QUEST","ミッション":"QUEST",
+                "notorious monster":"NM_IDENTITY","nm":"NM_IDENTITY","nm name":"NM_IDENTITY",
+                "ノートリアスモンスター":"NM_IDENTITY",
+            }
+
+
+def review_field_type(label: str) -> str | None:
+    return REVIEW_FIELD_TYPES.get(normalize_search(label))
+
+
 
 
 def normalize_search(value: str) -> str:
@@ -400,19 +421,7 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
             field_class=normalize_search(field_name)
             # Only literal named fields are eligible. These hints never become
             # claims or graph edges without subsequent evidence-backed review.
-            typed_fields={
-                "drops":"DROPS","drop":"DROPS","loot":"DROPS","戦利品":"DROPS","ドロップ":"DROPS",
-                "reward":"REWARDS","rewards":"REWARDS","報酬":"REWARDS",
-                "location":"LOCATION","zone":"LOCATION","場所":"LOCATION","エリア":"LOCATION",
-                "requirements":"REQUIRES","prerequisites":"REQUIRES","必要条件":"REQUIRES","参加条件":"REQUIRES",
-                "spawn conditions":"SPAWN_CONDITIONS","spawn condition":"SPAWN_CONDITIONS",
-                "spawn":"SPAWN_CONDITIONS","pop conditions":"SPAWN_CONDITIONS",
-                "出現条件":"SPAWN_CONDITIONS","ポップ条件":"SPAWN_CONDITIONS",
-                "quest":"QUEST","quests":"QUEST","mission":"QUEST","missions":"QUEST",
-                "クエスト":"QUEST","ミッション":"QUEST",
-                "notorious monster":"NM_IDENTITY","nm":"NM_IDENTITY","nm name":"NM_IDENTITY",
-                "ノートリアスモンスター":"NM_IDENTITY",
-            }
+            typed_fields=REVIEW_FIELD_TYPES
             candidate=({"field_type":typed_fields[field_class],"field":field_name,
                         "value":b.get("text") or "","value_raw":metadata.get("raw_value"),
                         "source_locator":b.get("source_locator"),"review_only":True,
@@ -442,18 +451,18 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
             # A heading and an explicit first-column label make a useful
             # *review candidate*, not proof of a gameplay relationship.
             # Keep these annotations purely in presentation, never in graph imports.
-            labels={"drops","drop","loot","rewards","reward","requirements","prerequisites","location","zone",
-                    "戦利品","ドロップ","報酬","必要条件","参加条件","場所","エリア"}
             candidates=[]
             for row_index, cells in enumerate(rows):
                 if len(cells)<2:
                     continue
                 label=normalize_search(cells[0]["text"])
-                if label not in labels:
+                field_type=review_field_type(label)
+                if field_type is None:
                     continue
                 value=cells[1]["text"].strip()
                 if value:
                     candidates.append({"row_index":row_index,"field":cells[0]["text"],
+                                       "field_type":field_type,
                                        "value":value,"review_only":True,
                                        "value_source_locator":cells[1].get("source_locator"),
                                        "value_raw":cells[1].get("raw_value"),
