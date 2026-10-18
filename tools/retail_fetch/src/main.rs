@@ -1,6 +1,8 @@
 //! Fetch one licensed FFXI retail patch file without updating an installation.
 use ffxi_install::manifest::{self, FileSig};
-use ffxi_install::patch_client::{decode_direct_payload, Server, Session, TITLE_FFXI};
+mod bounded_decode;
+use bounded_decode::decode_direct_bounded;
+use ffxi_install::patch_client::{Server, Session, TITLE_FFXI};
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
@@ -89,7 +91,7 @@ fn run() -> Result<(), String> {
     // Never trust a manifest-supplied server path without checking its syntax.
     let _ = relative_path(&version.direct)?;
     let payload = session.fetch(&version.direct, version.direct_len, &mut |_| {})?;
-    let decoded = decode_direct_payload(&payload)?;
+    let decoded = decode_direct_bounded(&payload, version.sig.len, MAX_BYTES)?;
     validate_decoded_size(decoded.len(), version.sig.len)?;
     let signature = FileSig::of(&decoded);
     if signature != version.sig {
