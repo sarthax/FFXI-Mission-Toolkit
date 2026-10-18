@@ -77,4 +77,33 @@ mod tests {
         assert!(decode_direct_bounded(&wire, 10, 128).is_err());
         assert_eq!(decode_direct_bounded(&wire, 8192, 8192).unwrap().len(), 8192);
     }
+    #[test]
+    fn rejects_empty_and_corrupt_payloads() {
+        assert!(decode_direct_bounded(b"", 1, 10).is_err());
+        // zlib flag followed by garbage
+        assert!(decode_direct_bounded(&[3, 0xde, 0xad, 0xbe, 0xef], 4, 10).is_err());
+        // zlib stream that is valid but shorter than the manifest length
+        use std::io::Write;
+        let mut z = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+        z.write_all(b"abc").unwrap();
+        let mut wire = vec![3];
+        wire.extend_from_slice(&z.finish().unwrap());
+        assert!(decode_direct_bounded(&wire, 10, 128).is_err());
+    }
+    #[test]
+    fn rejects_truncated_zlib_and_oversized_declaration() {
+        use std::io::Write;
+        let mut z = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+        z.write_all(&vec![b'y'; 4096]).unwrap();
+        let full = z.finish().unwrap();
+        let mut wire = vec![3];
+        wire.extend_from_slice(&full[..full.len() / 2]);
+        assert!(decode_direct_bounded(&wire, 4096, 4096).is_err());
+        assert!(decode_direct_bounded(b"abc", 200, 100).is_err());
+    }
+    #[test]
+    fn rejects_truncated_slc_stream() {
+        // Declared 25 bits but no literal/reference data behind the header.
+        assert!(decode_direct_bounded(&[2, 25, 0, 0, 0], 1, 10).is_err());
+    }
 }
