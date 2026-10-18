@@ -7,7 +7,7 @@ from workbench.devtools.reference import wiki_bulk_jobs as batch
 from workbench.devtools.reference import wiki_sync_schedule as schedule
 
 def main():
-    with tempfile.TemporaryDirectory() as folder:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
         db=Path(folder)/"wiki.db"
         schedule.configure(db,enabled=True,interval_hours=6,page_limit=50)
         with batch._connect(db) as con:

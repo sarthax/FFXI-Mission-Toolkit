@@ -7,7 +7,7 @@ from unittest.mock import patch
 from workbench.devtools.reference import wiki_sync_overview as overview
 
 def main():
-    with tempfile.TemporaryDirectory() as root:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as root:
         db=Path(root)/"wiki.db"
         with patch.object(overview.wiki_bulk_jobs,"status",return_value=[
             {"id":"fx","state":"completed","processed":50}]),patch.object(
@@ -30,7 +30,7 @@ def main():
         assert result["sources"][2]["recovery"][0]["checkpoint"]=="available"
         assert "scheduled" not in result["notice"].split("Japanese Wiki")[0]
     # Verify real persisted queue metadata rather than a status-only hint.
-    with tempfile.TemporaryDirectory() as root:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as root:
         db=Path(root)/"checkpoints.db"
         with sqlite3.connect(db) as con:
             con.execute("CREATE TABLE wiki_bulk_jobs(id TEXT,pending_json TEXT)")

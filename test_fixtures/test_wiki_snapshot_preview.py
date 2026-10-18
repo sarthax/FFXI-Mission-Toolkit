@@ -4,7 +4,7 @@ from pathlib import Path
 from workbench.devtools.reference.wiki_snapshot import export_snapshot,preview_snapshot
 
 def main():
-    with tempfile.TemporaryDirectory() as d:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d:
         a,b,s=[Path(d)/x for x in ("a.db","b.db","s.jsonl.gz")]
         ddl="CREATE TABLE reference_wiki_pages(source_id TEXT,page_id TEXT,title TEXT,norm_title TEXT,revision_id TEXT,revision_timestamp TEXT,page_text TEXT,page_hash TEXT)"
         for db in (a,b):

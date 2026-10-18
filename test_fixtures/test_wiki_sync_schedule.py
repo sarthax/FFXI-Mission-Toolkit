@@ -6,7 +6,7 @@ from unittest.mock import patch
 from workbench.devtools.reference import wiki_sync_schedule as schedule
 
 def main():
-    with tempfile.TemporaryDirectory() as d:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d:
         db=Path(d)/"wiki.db"
         assert schedule.settings(db)["enabled"]==0
         with patch.object(schedule.wiki_bulk_jobs,"start") as begin:

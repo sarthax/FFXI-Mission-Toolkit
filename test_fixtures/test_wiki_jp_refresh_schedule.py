@@ -7,7 +7,7 @@ from workbench.devtools.reference import wiki_jp_refresh_schedule as schedule
 from workbench.devtools.reference import wiki_jp_crawl_jobs as jp
 
 def main():
-    with tempfile.TemporaryDirectory() as root:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as root:
         db=Path(root)/"wiki.db"
         assert schedule.tick(db)["status"]=="disabled"
         schedule.configure(db,enabled=True,seed="クエスト",interval_hours=168,page_limit=50)

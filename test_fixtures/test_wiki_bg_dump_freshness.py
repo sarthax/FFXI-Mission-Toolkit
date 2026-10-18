@@ -4,7 +4,7 @@ from pathlib import Path
 from workbench.devtools.reference import wiki_bg_dump_jobs as bg
 
 def main():
-    with tempfile.TemporaryDirectory() as temp:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
         db=Path(temp)/"wiki.db"
         archive=Path(temp)/"bg.jsonl.gz"
         assert not bg.dump_refresh_status(db,archive)["available"]

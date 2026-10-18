@@ -6,7 +6,7 @@ from unittest.mock import patch
 from workbench.devtools.reference import wiki_jobs
 
 def main():
-    with tempfile.TemporaryDirectory() as directory:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as directory:
         destination=Path(directory)/"main.db"
         stage=Path(directory)/"stage.db"
         with sqlite3.connect(destination) as con:

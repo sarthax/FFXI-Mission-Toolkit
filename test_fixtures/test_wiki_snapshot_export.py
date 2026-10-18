@@ -8,7 +8,7 @@ from pathlib import Path
 from workbench.devtools.reference.wiki_snapshot import export_snapshot
 
 def main():
-    with tempfile.TemporaryDirectory() as folder:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
         db=Path(folder)/"toolkit.db"
         out=Path(folder)/"cache.jsonl.gz"
         content="== Medusa ==\nA test page"

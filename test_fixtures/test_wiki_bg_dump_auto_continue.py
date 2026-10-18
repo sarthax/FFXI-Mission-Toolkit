@@ -9,7 +9,7 @@ from workbench.devtools.reference import wiki_bg_dump_jobs as jobs
 
 
 def main():
-    with tempfile.TemporaryDirectory() as dirname:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as dirname:
         dump=Path(dirname)/"dump.jsonl.gz"
         db=Path(dirname)/"toolkit.db"
         with gzip.open(dump,"wt",encoding="utf-8") as out:
