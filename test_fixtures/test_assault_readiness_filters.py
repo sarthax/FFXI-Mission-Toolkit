@@ -24,3 +24,18 @@ def test_readiness_filter_ui_is_separate_from_issue_backlog():
     assert 'name="readiness_status"' in page
     assert 'name="backlog_status"' in page
     assert 'id="readiness-results"' in page
+
+def test_live_test_queue_requires_independent_issue_and_shared_port_evidence():
+    mission={"number":12,"zone":"Periqia",
+             "readiness":{"status":"needs_evidence"},
+             "reviews":{"implementation":{"state":"validated"},"port":{"state":"validated"},
+                        "validation":{"state":"pending"}},
+             "issue_crossrefs":[{"id":1,"reviews":{"dsp_port":{"state":"unreviewed"}}}],
+             "shared_dependencies":[{"title":"Portal","port":"fixed"}]}
+    assert filter_missions([mission],status="ready_for_live_test")==[]
+    mission["issue_crossrefs"][0]["reviews"]["dsp_port"]["state"]="fixed"
+    assert [m["number"] for m in filter_missions([mission],status="ready_for_live_test")]==[12]
+    mission["shared_dependencies"][0]["port"]="unreviewed"
+    assert filter_missions([mission],status="ready_for_live_test")==[]
+    mission["shared_dependencies"][0]["port"]="not_applicable"
+    assert [m["number"] for m in filter_missions([mission],status="ready_for_live_test")]==[12]

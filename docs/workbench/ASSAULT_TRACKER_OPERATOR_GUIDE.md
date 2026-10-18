@@ -17,3 +17,7 @@ The tracker imports the **Topaz release Assault issue inventory** and associated
 **Imported, fixed in Topaz, ported to DSP and validated in DSP are four distinct claims.** A matching fix-log entry alone does not certify successful porting or completion. Keep conflicting historical and runtime evidence rather than overwriting it.
 
 Related: `docs/workbench/ROADMAP_CURRENT.md` and `docs/workbench/ROADMAP_HELP_SYNC_AUDIT_2026-10-17.md`.
+
+## Live-test readiness safeguard (2026-10-18)
+
+The **Ready for live test** mission filter requires explicitly validated mission implementation and DSP port reviews, a pending/not-yet-complete mission test, no known blocker, **and** explicit DSP port review (`fixed` or `not_applicable`) for every linked issue and shared dependency. An unreviewed historical Topaz issue or shared subsystem cannot silently qualify a mission for DSP testing merely because its mission-level port review is positive. This is a triage gate, not proof that an Assault works in-game. Continue using per-issue port and DSP-validation reviews to record outcomes.
