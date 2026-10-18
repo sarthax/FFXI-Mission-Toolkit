@@ -31,3 +31,17 @@ This inventory is from static repository source, not a running Windows client.
 - The other calculator and domain destinations, plus `/zones/0/view3d` and `/character-editor`, remain pending a systematic mounted-router audit; do not mark them broken from inventory absence.
 
 The distinction is between **defined route**, **mounted route**, **renderable response** and **actual runtime behavior**. Those are four separate validation levels.
+
+## Five calculator page handlers — source verification
+
+All five calculators listed in the sidebar have explicit GET page handlers in their respective module source:
+
+| Sidebar route | Source |
+| --- | --- |
+| `/tools/ws-calc` | `src/workbench/server_admin/wscalc/router.py` |
+| `/tools/melee-calc` | `src/workbench/server_admin/meleecalc/router.py` |
+| `/tools/magic-calc` | `src/workbench/server_admin/wscalc/magic_router.py` |
+| `/tools/heal-calc` | `src/workbench/server_admin/healcalc/router.py` |
+| `/tools/pet-calc` | `src/workbench/server_admin/petcalc/router.py` |
+
+This narrows five of the 22 static inventory discrepancies to **defined source routes**, not established 404s. Runtime mounting, full template rendering, and numerical correctness still require separate validation. The other unlisted domain and character/editor/viewer routes remain unresolved by this pass.
