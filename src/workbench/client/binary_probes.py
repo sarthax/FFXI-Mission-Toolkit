@@ -12,6 +12,7 @@ import re
 from pathlib import Path
 
 from workbench.client.binary_deep import byte_search
+from workbench.client.command_evidence import exact_command_probe
 from workbench.client.binary_index import index_binary
 from workbench.core import graph
 from workbench.core.schema import Capability, CapabilityObservation, CapabilityRequirement, Evidence
@@ -23,6 +24,8 @@ def _slug(s: str) -> str:
 
 def run_probe(path: Path, idx: dict, probe: dict) -> dict:
     kind, needle = probe["kind"], probe["needle"]
+    if kind == "command":
+        return exact_command_probe(path.read_bytes(), needle)
     if kind == "string":
         n = needle.lower()
         hits = [s for s in idx["strings"] if n in s["text"].lower()]
@@ -34,7 +37,7 @@ def run_probe(path: Path, idx: dict, probe: dict) -> dict:
 
 
 def persist_probes(con, binary_path: str, snapshot_id: str | None, probes: list[dict]) -> list[dict]:
-    """probes: [{"name","kind":"string"|"bytes","needle", optional "feature" (feature_id; adds a
+    """probes: [{"name","kind":"string"|"bytes"|"command","needle", optional "feature" (feature_id; adds a
     CapabilityRequirement so Feature Checker sees it) and "required" (default True)}]. Returns per-probe results."""
     path = Path(binary_path)
     idx = index_binary(path, max_strings=25000)

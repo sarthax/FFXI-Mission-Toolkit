@@ -237,3 +237,13 @@ and per-command evidence changes with `UNCHANGED`, `DIFFERENT_EVIDENCE` or
 claim; a changed hash or string does not identify a patch or semantic capability.
 A verified newer FFXiMain.dll and its matching DAT table files are still needed
 for an actual cross-build investigation.
+
+## Bounded DAT command evidence and exact binary probes (2026-10-18)
+
+The read-only DAT Inspector now includes a bounded ASCII slash-command evidence table with raw file offsets, 12-byte hex context on each side and a NUL-termination flag. The default query is `wardrobe`. This supplements, rather than replaces, the existing parser results and block-chain view. The scanner is limited to files of at most 64 MiB and at most 200 displayed hits; it does not claim a decoded menu format.
+
+Binary probe sets additionally support `kind: "command"`, which checks an exact ASCII slash-command token at raw byte boundaries instead of substring matching. The wardrobe probe set uses this kind, avoiding `/wardrobe` incorrectly matching `/wardrobe2`. A positive observation verifies bytes only; missing evidence remains UNKNOWN on packed FFXiMain. Any saved probe observations should be re-run for the updated kind.
+
+Self-test: `python test_fixtures/test_client_command_evidence.py`.
+
+Next research requires a known 2022+ reference build and decoded DAT comparison; current evidence does not establish viable DAT-only backport support.
