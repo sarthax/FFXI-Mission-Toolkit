@@ -11853,7 +11853,7 @@ def binaryinspector_page(request: Request, path: str = "", q: str = "", imp: str
            "path": path, "q": q, "imp": imp, "pattern": pattern, "exec_only": exec_only,
            "diff_path": diff_path, "idx": None, "error": None, "strings": None,
            "imports": None, "psearch": None, "diff": None,
-           "probe_sets": bi.list_probe_sets(), "probe_result": None, "saved": saved, "run_set_file": run_set, "mem_scan": None}
+           "probe_sets": bi.list_probe_sets(), "protocol_records": bi.list_protocol_records(), "probe_result": None, "saved": saved, "run_set_file": run_set, "mem_scan": None}
     try:
         if scan_mem:
             ctx["mem_scan"] = bi.scan_running_client_version()
