@@ -31,8 +31,9 @@ def main():
     assert "ZONE_OUT" in kinds,kinds
     alias_guard=next(t for t in raw.transitions if t.metadata.get("actor")=="Chasalvige" and t.trigger=="NPC_INTERACT")
     assert any(c.subject=="mission_status:SANDORIA" for c in alias_guard.gate.conditions),alias_guard
-    spawned=next(t for t in raw.transitions if t.metadata.get("actor")=="Guilloud" and t.trigger=="NPC_INTERACT")
-    assert any(c.operator=="ENTITY_NOT_SPAWNED" for c in spawned.gate.conditions),spawned
+    guilloud=[t for t in raw.transitions if t.metadata.get("actor")=="Guilloud" and t.trigger=="NPC_INTERACT"]
+    # The extractor now emits one transition per branch; the spawn guard is on its own branch.
+    assert any(c.operator=="ENTITY_NOT_SPAWNED" for t in guilloud for c in t.gate.conditions),guilloud
     loose_sand_rows=[t for t in raw.transitions if t.metadata.get("actor")=="Loose_Sand" and t.trigger=="NPC_INTERACT"]
     loose_sand=next(t for t in loose_sand_rows if t.metadata.get("helper_calls")==("jewelTimer",))
     assert sum(t.metadata.get("helper_calls")==("jewelTimer",) for t in loose_sand_rows)==1,loose_sand_rows
