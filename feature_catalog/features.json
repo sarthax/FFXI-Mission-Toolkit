@@ -10,7 +10,10 @@
       "route": "/features/trace",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Follow a behavior from a named feature to its most relevant implementation and evidence.",
+      "how_to_use": "Start with a specific feature or behavior; inspect high-signal evidence and follow source links into related tools.",
+      "caveat": "Use the runtime and evidence drill-down sections to narrow findings rather than treating every graph connection as equally relevant."
     },
     {
       "id": "behavior-inspector",
@@ -40,7 +43,10 @@
       "route": "/captures",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Research previously recorded client packets, events, entities, and timelines.",
+      "how_to_use": "Open Captures, choose a capture package, and use the appropriate packet, event, entity, search, or spatial view.",
+      "caveat": "Captured observations are evidence from a particular session; do not assume they prove general client behavior."
     },
     {
       "id": "key-items",
@@ -50,7 +56,10 @@
       "route": "/keyitems",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Examine key-item identities and how client/server data and scripts reference them.",
+      "how_to_use": "Browse or search the Key Items page, then inspect the item's details and source references.",
+      "caveat": "Historical TPZ script names and DSP behavior must not be conflated."
     },
     {
       "id": "auction-house",
@@ -60,7 +69,10 @@
       "route": "/auction-house/help",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Investigate and administer the DSP auction economy through read and guarded write workflows.",
+      "how_to_use": "Use the Auction House module Help and select the sellers, buyers, restock, or cleanup workflow that matches the task.",
+      "caveat": "Review item identity and server impact before invoking guarded mutations."
     },
     {
       "id": "live-client",
@@ -70,7 +82,10 @@
       "route": "/live-client/bridge/console",
       "implementation": "implemented",
       "validation": "operator_reported",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect a connected Ashita bridge, real-time state, entity telemetry, and authorized movement controls.",
+      "how_to_use": "Start at the bridge console, confirm client connection and zone, then choose live view or movement/validation controls.",
+      "caveat": "Live telemetry and active control capabilities depend on the running addon and bridge configuration."
     },
     {
       "id": "synth",
@@ -80,7 +95,10 @@
       "route": "/synth",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect recipes, ingredients, synthesis availability, and associated server evidence.",
+      "how_to_use": "Open Synth & Crafting and select the recipe or ingredient area before reviewing source and availability.",
+      "caveat": "Recipe presence does not independently establish that synthesis works in a live server."
     },
     {
       "id": "client-binary",
@@ -90,7 +108,10 @@
       "route": "/binaryinspector",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect retail client executable and DLL metadata without executing the binaries.",
+      "how_to_use": "Open Binary Inspector, select an isolated binary file, index its PE evidence, then compare build-specific indexes as needed.",
+      "caveat": "A binary signature or cross-reference is evidence, not proof of a runtime behavior."
     },
     {
       "id": "validation",
@@ -100,7 +121,10 @@
       "route": "/validation",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect planned and completed validation work with recorded results and evidence.",
+      "how_to_use": "Open Validation, choose a run or target, then inspect results and unresolved checks.",
+      "caveat": "Unrun tests are unknown, not failed; distinguish automated checks from live acceptance."
     },
     {
       "id": "research",
@@ -418,7 +442,10 @@
       "route": "/domains/assault",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Track Assault missions, issue cross-references, shared dependencies, port status, and live-test readiness.",
+      "how_to_use": "Open Assault, select a mission or zone, review the issue/fix-log evidence, and work from its next action.",
+      "caveat": "Historical Topaz fixes do not automatically establish DSP fixes or validation."
     },
     {
       "id": "nyzul",
@@ -478,7 +505,10 @@
       "route": "/retailversions",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Discover and selectively acquire versioned retail files for offline client research.",
+      "how_to_use": "Open Retail Version Explorer, browse known files and revisions, then download into a dedicated research location before indexing.",
+      "caveat": "Manifest history is not proof that every historical payload remains downloadable."
     },
     {
       "id": "retail-versions-browse",
