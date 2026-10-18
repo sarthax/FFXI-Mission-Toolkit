@@ -29,3 +29,7 @@ The Mission Readiness table now derives a suggested **Next action** for each mis
 ## Zone next-action dashboard (2026-10-18)
 
 The Development Progress table now summarizes next steps per Assault zone: mission implementation review, mission DSP port review, linked issue/shared-dependency port review, ready-for-DSP-live-test triage, and recorded blockers. Click a zone to open its filtered Mission Readiness table. These are **review-driven workload counts**, not claims that the listed missions have failed or that a Topaz fix was ported. A mission belongs to one derived next-action bucket. The existing DSP port/test validated counts remain separate, and no server changes are performed.
+
+## Shared dependency impact dashboard (2026-10-18)
+
+The shared-dependency table orders confirmed blocked DSP port/validation reviews first, then by the number of explicitly linked missions or evidence-backed zone scopes. Counts deduplicate a mission when directly linked and zone-scoped. Missing links mean unknown impact, not proof of irrelevance. Unreviewed is not treated as blocked. Topaz fixes do not prove DSP port or validation. This is a read-only prioritization view; no DSP changes are made.

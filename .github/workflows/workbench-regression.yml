@@ -164,6 +164,7 @@ jobs:
           python test_fixtures/test_assault_live_test_gate.py
           python test_fixtures/test_assault_next_action.py
           python test_fixtures/test_assault_zone_actions.py
+          python test_fixtures/test_assault_shared_priority.py
           python test_fixtures/test_mounted_sidebar_routes.py
           python test_fixtures/test_instance_feature_slice.py
           python test_fixtures/test_instance_slice_compare.py
