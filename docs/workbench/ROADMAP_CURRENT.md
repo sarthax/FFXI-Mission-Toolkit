@@ -1,13 +1,26 @@
 # Current Workbench Roadmap
 
 Status: ACTIVE REWORK  
-Last fully reconciled against merged PR and branch history: **2026-10-06** (full-repository sweep); targeted Key Items / AH / Live Client / Synth docs audit **2026-10-10**  
+Last full-repository capability sweep: **2026-10-06**; targeted module audit **2026-10-10**; recent merged-commit/tree documentation reconciliation **2026-10-17** (not a new full runtime audit)  
 Authoritative repository: `sarthax/FFXI-Mission-Toolkit`  
 Authoritative branch: `main`
 
 This is the authoritative current planning and capability inventory for the Mission Toolkit / Workbench. It is organized by durable capability, not by the chronological order of individual pull requests.
 
 `ROADMAP.md` remains the historical implementation ledger. `AUDIT_STATUS.md` remains a historical/implementation audit log. When older status text conflicts with this file, use this file plus merged `main` history.
+
+## 2026-10-17 recent merged capability reconciliation
+
+See [scope, evidence, and follow-up matrix](ROADMAP_HELP_SYNC_AUDIT_2026-10-17.md). The statuses below describe merged code, **not automatic proof of live DSP/Windows acceptance**.
+
+- [x] **GM Command Center:** command categories, player target, command lookups, favorites/history/presets, parsed Lua parameter hints, opt-in live send and privileged confirmation; operator guide: [SERVER_GM_COMMAND_CENTER.md](SERVER_GM_COMMAND_CENTER.md).
+- [x] **Calculators:** gear-aware melee and related weapon skill, magic, healing and pet calculation work, including RUN/GEO job-grade updates; source parity and representative combat/casting tests remain.
+- [x] **RUN / GEO toolkit domain:** tracking page and gaps inventory merged. These are *already added to the user's server* per operator; gap tracking must not be confused with missing server job support.
+- [x] **Voidwalker domain UI:** zone/spawn and NM filtering, tier/path progression graphs and Abyssea branch presentation merged; full data/runtime behavior validation remains open.
+- [x] **3D Zone Viewer/Live Client improvements:** multiple zone geometry DATs, instance selector and texture transparency correction; live-client auto-zone/player centering, stable live picker, headless receiver freshness and combat/dialog activity panel merged. Repeatable client acceptance for zone variants, reconnect, multiple entities, and DSP server confirmation remains open.
+- [~] **Assault tracking:** imported Topaz issues and fix-log comparisons facilitate development; per-instance DSP porting and validation are not thereby complete.
+- [~] **Feature Trace / Wiki:** existing evidence and research tooling remains under quality and runtime-acceptance review. Do not mark all relevance, scrape, batch-import or source-line correlation goals complete on the basis of UI availability.
+- [ ] **Documentation completion:** dedicated operator walkthroughs for newer domains/calculators, exhaustive route/help link checks, and fresh integrated end-to-end acceptance evidence.
 
 ## 2026-10-11 Live Client movement status correction
 
