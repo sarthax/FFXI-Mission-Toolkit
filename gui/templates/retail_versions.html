@@ -1,0 +1,102 @@
+{% extends "workbench_page.html" %}
+{% block title %}Retail Version Explorer{% endblock %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_heading %}Retail Version Explorer{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Read-only research</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/binaryinspector">Binary Inspector</a>{% endblock %}
+{% block page_help %}Browse PlayOnline retail file history, plan and confirm single-file downloads, and compare cataloged versions. Downloads go to a separate retail folder, never an installed client. Binaries are never executed or committed. The manifest check is a legacy checksum, not cryptographic authentication.{% endblock %}
+{% block page_body %}
+<nav class="wb-filter-row" aria-label="Retail Version Explorer tabs">
+{% for t in tabs %}<a class="chip{% if t == tab %} active{% endif %}" href="/retailversions?tab={{ t }}">{{ t|capitalize }}</a> {% endfor %}
+</nav>
+{% if done %}<p class="chip">{{ done }}</p>{% endif %}
+{% if error %}<p class="chip" style="color:#c33;">{{ error }}</p>{% endif %}
+
+{% if tab == "overview" %}
+<h2>Overview</h2>
+<ul>
+  <li>Downloader: {% if exe %}<code>{{ exe }}</code>{% else %}<strong>not built</strong>. Run <code>cargo build --release</code> in <code>tools/retail_fetch</code>.{% endif %}</li>
+  <li>Retail catalog folder: <code>{{ root }}</code> (gitignored, separate from DSP and capture artifacts)</li>
+  <li>Cataloged artifacts: {{ artifacts|length }} ({{ artifacts|selectattr('status','equalto','VALID')|list|length }} valid)</li>
+</ul>
+<p class="muted">Start with <a href="/retailversions?tab=manifest">Manifest</a> to find a file, then <a href="/retailversions?tab=planner">Planner</a> to confirm a download.</p>
+
+{% elif tab == "manifest" %}
+<h2>Manifest browser</h2>
+<form class="search wb-filter-row" method="get"><input type="hidden" name="tab" value="manifest">
+  <input type="text" name="q" value="{{ q }}" placeholder="filter, e.g. FFXiMain or ROM/119"> <button type="submit">Search</button>
+  <label><input type="checkbox" name="refresh" value="1"> refresh from server (one network read)</label></form>
+{% if manifest %}{% if manifest.ok %}
+<p class="muted">{{ manifest.files|length }} shown (max 500){% if manifest.cached %}, from local cache{% endif %}.</p>
+<div class="table-wrap"><table><tr><th>File</th><th>Latest</th><th></th></tr>
+{% for f in manifest.files %}<tr><td><code>{{ f.file }}</code></td><td>{{ f.latest }}</td>
+<td><a href="/retailversions?tab=manifest&q={{ q|urlencode }}&file={{ f.file|urlencode }}">history</a></td></tr>{% endfor %}</table></div>
+{% else %}<p class="chip" style="color:#c33;">{{ manifest.error }}</p>{% endif %}{% endif %}
+{% if hist %}{% if hist.ok %}
+<h3>Versions of {{ file }}</h3>
+<p class="muted">Listed by the manifest. A listed version may no longer be served.</p>
+<div class="table-wrap"><table><tr><th>Version</th><th>Decoded bytes</th><th>Transfer bytes</th><th></th></tr>
+{% for v in hist.versions %}<tr><td>{{ v.version }}</td><td>{{ v.decoded_bytes }}</td><td>{{ v.transfer_bytes }}</td>
+<td><a href="/retailversions?tab=planner&file={{ v.file|urlencode }}&stamp={{ v.version }}&plan=1">plan</a></td></tr>{% endfor %}</table></div>
+{% else %}<p class="chip" style="color:#c33;">{{ hist.error }}</p>{% endif %}{% endif %}
+
+{% elif tab == "planner" %}
+<h2>Download planner</h2>
+<form class="search wb-filter-row" method="get"><input type="hidden" name="tab" value="planner"><input type="hidden" name="plan" value="1">
+  <input type="text" name="file" value="{{ file }}" placeholder="manifest file, e.g. FFXiMain.dll" required>
+  <input type="text" name="stamp" value="{{ stamp }}" placeholder="version, e.g. 30261006_0" required>
+  <button type="submit">Plan (no download)</button></form>
+{% if plan_out %}{% if plan_out.ok %}
+<pre>{{ plan_out.stdout }}</pre>
+<form method="post" action="/retailversions/download">
+  <input type="hidden" name="file" value="{{ file }}"><input type="hidden" name="stamp" value="{{ stamp }}">
+  <label><input type="checkbox" name="confirm" value="yes"> I confirm: download this one file into <code>{{ root }}/{{ stamp }}</code>. Existing files are never overwritten.</label>
+  <button type="submit">Download</button></form>
+{% else %}<p class="chip" style="color:#c33;">{{ plan_out.error }}</p>{% endif %}{% endif %}
+
+{% elif tab == "artifacts" %}
+<h2>Local artifacts</h2>
+{% if not artifacts %}<p class="muted">No cataloged retail artifacts yet. Download one from the Planner tab.</p>{% else %}
+<div class="table-wrap"><table><tr><th>File</th><th>Version</th><th>Status</th><th>Bytes</th><th>SHA-256</th><th>Retrieved (UTC)</th><th>Inspect</th></tr>
+{% for a in artifacts %}<tr><td>{{ a.file }}</td><td>{{ a.version }}</td>
+<td>{{ a.status }}{% if a.problems %}<br><span class="muted">{{ a.problems|join('; ') }}</span>{% endif %}{% if a.duplicates %}<br><span class="muted">{{ a.duplicates|length }} duplicate copy(ies) collapsed</span>{% endif %}</td>
+<td>{{ a.actual_bytes or '' }}</td><td><code>{{ (a.sha256 or '')[:16] }}</code></td><td>{{ a.retrieved_utc or '' }}</td>
+<td>{% if a.status == 'VALID' %}<a href="/binaryinspector?path={{ a.path|urlencode }}">open</a>{% endif %}</td></tr>{% endfor %}</table></div>{% endif %}
+
+{% elif tab == "compare" %}
+<h2>Version comparison</h2>
+{% set valid = artifacts|selectattr('status','equalto','VALID')|list %}
+{% if valid|length < 2 %}<p class="muted">Needs at least two valid cataloged versions of the same file.</p>{% else %}
+<form class="search wb-filter-row" method="get"><input type="hidden" name="tab" value="compare">
+  <select name="left">{% for a in valid %}<option value="{{ a.file }}|{{ a.version }}" {% if left == a.file ~ '|' ~ a.version %}selected{% endif %}>{{ a.file }} {{ a.version }}</option>{% endfor %}</select>
+  vs <select name="right">{% for a in valid %}<option value="{{ a.file }}|{{ a.version }}" {% if right == a.file ~ '|' ~ a.version %}selected{% endif %}>{{ a.file }} {{ a.version }}</option>{% endfor %}</select>
+  <button type="submit">Compare</button></form>{% endif %}
+{% if diff %}
+<p>Status: <strong>{{ diff.status }}</strong>. Uses the same engine as Binary Inspector diff and <code>client.binary-diff</code>.
+  <a href="/binaryinspector?path={{ pair[0].path|urlencode }}&diff_path={{ pair[1].path|urlencode }}">open in Binary Inspector</a></p>
+<h3>Confirmed (read from PE headers and tables)</h3>
+<div class="table-wrap"><table><tr><th>Field</th><th>Left</th><th>Right</th></tr>
+{% for k, v in diff.metadata_changes.items() %}<tr><td>{{ k }}</td><td>{{ v.left }}</td><td>{{ v.right }}</td></tr>{% endfor %}</table></div>
+<p>Sections changed: {{ diff.section_change_count }}
+ &middot; imports +{{ diff.imports.added_count }}/-{{ diff.imports.removed_count }}
+ &middot; exports +{{ diff.exports.added_count }}/-{{ diff.exports.removed_count }}</p>
+{% if diff.imports.added or diff.imports.removed %}<p>Imports added: {% for i in diff.imports.added[:30] %}<code>{{ i.dll }}!{{ i.name }}</code> {% endfor %}<br>
+Imports removed: {% for i in diff.imports.removed[:30] %}<code>{{ i.dll }}!{{ i.name }}</code> {% endfor %}</p>{% endif %}
+<h3>Heuristic only</h3>
+<p>Strings: +{{ diff.strings.added_count }} / -{{ diff.strings.removed_count }}. Packed sections produce many meaningless strings; a string change does not identify behavior.</p>
+{% for n in diff.notes %}<p class="muted">{{ n }}</p>{% endfor %}
+{% endif %}
+
+{% elif tab == "diagnostics" %}
+<h2>Diagnostics and limitations</h2>
+<ul>
+  <li>Downloader executable: {{ exe or 'not found (set RETAIL_FETCH_EXE or build tools/retail_fetch)' }}</li>
+  <li>Retail folder: <code>{{ root }}</code> (override with <code>WORKBENCH_RETAIL_ROOT</code>)</li>
+  <li>Network timeout per downloader call: {{ timeout }} s (maximum 600). The Rust client has a fixed 120 s socket timeout.</li>
+  <li>Manifest list is cached locally; tick refresh on the Manifest tab for one new network read.</li>
+  <li>Integrity check is the legacy FileSig (length, byte sum, MD5 prefix), not cryptographic. The patch server is contacted over unauthenticated TCP.</li>
+  <li>Open gap: the upstream manifest decoder has no output size cap.</li>
+  <li>Never run downloaded binaries. Keep the retail folder out of Git.</li>
+</ul>
+{% endif %}
+{% endblock %}
