@@ -23,3 +23,11 @@ Reviewed the literal `href` entries in `src/workbench/gui_shell.py` on the merge
 5. Only after resolution, extend the CI link check to the complete sidebar. Do not hard-fail on these 22 unknowns before registration is verified.
 
 This inventory is from static repository source, not a running Windows client.
+
+## Verified source contracts — follow-up
+
+- `/live-client/replay/console`: `create_replay_console_router` creates an APIRouter with prefix `/live-client/replay` and a GET `/console` handler; `tests/test_live_client_replay_console.py` also checks HTTP 200. It is not merely an invented sidebar path.
+- `/tools/ws-calc`: `create_wscalc_router` defines `@r.get("/tools/ws-calc")` in `src/workbench/server_admin/wscalc/router.py`. Confirm actual host inclusion separately.
+- The other calculator and domain destinations, plus `/zones/0/view3d` and `/character-editor`, remain pending a systematic mounted-router audit; do not mark them broken from inventory absence.
+
+The distinction is between **defined route**, **mounted route**, **renderable response** and **actual runtime behavior**. Those are four separate validation levels.
