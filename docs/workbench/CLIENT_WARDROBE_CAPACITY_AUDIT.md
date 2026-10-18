@@ -39,3 +39,21 @@ Proceed to server implementation only after confirming the 2026 0x1C packet layo
 [`src/map/packets/basic.h`](https://github.com/sarthax/darkstar-to-valhalla/blob/main/src/map/packets/basic.h) defines `length() = 2 * (ref<uint8>(1) & ~1)` and a setter that rounds packet length to a 4-byte boundary. Thus the existing `CInventorySizePacket` header value `size = 0x1A` corresponds to **52 bytes** (0x34), not 26. The final existing u16 capacity is written at offsets 0x2C–0x2D, within the 52-byte buffer. The 13 u8 entries occupy 0x04–0x10; 0x11–0x13 are not written by this constructor; the 13 u16 entries occupy 0x14–0x2D. The remaining bytes 0x2E–0x33 are initialized to zero by the base packet constructor. This resolves the previously open size-unit question.
 
 **Do not extrapolate** a new 18-container packet by simply appending five entries: the newer client's packet 0x1C handler must be inspected for exact wire offsets and expected length. The client-side *store* offsets (0x19891 and 0x198a4) from the binary report are not packet offsets. The current 13-container layout is proven from server source; the 18-container wire layout remains unverified.
+
+## Decoded client ITEM_MAX comparison (2026-10-18)
+
+Evidence source: local read-only analysis artifacts `HANDOFF_wardrobe5-8_decode.md` and `XREF_SUMMARY.md` (Addenda 5–6), comparing decoded retail builds 30210706_0 and 30261006_0. The binaries were not executed and are not included in this repository.
+
+| Field | 2021 client 30210706_0 | 2026 client 30261006_0 |
+| --- | --- | --- |
+| Handler RVA | `0xEA460` | `0xEC4A0` |
+| u8 capacity source | packet `+0x04`, 17 copied bytes (13 container capacities) | packet `+0x04`, 18 copied bytes (18 container capacities) |
+| u16 capacity source | packet `+0x14`, 13 entries (26 bytes) | packet `+0x24`, 18 entries (36 bytes) |
+| Last source byte used by u16 copy | `0x2D` | `0x47` |
+| Minimum byte span needed by these reads | `0x2E` | `0x48` |
+
+**Implementation consequence:** the new u16 capacity table is relocated by 0x10 bytes, so merely extending the existing 52-byte server packet's old u16 table is incorrect. A modern-format capacity packet must cover at least 72 bytes (0x48); given Valhalla's 4-byte packet-length rounding, 72 is representable, but exact emitted header and any intervening reserved bytes require tests. Do not infer that the 17/18 copied u8 bytes all represent independent capacity IDs: the old 17-byte copy overlaps the first u16 table byte at 0x14; inspect the decoded handler for precise copy semantics if implementing a writer.
+
+**Safety/compatibility:** this is static evidence of two different inbound client layouts, **not** evidence that Valhalla can identify the client build or that modern-format packets can be safely sent to legacy clients. Gate format selection on a verified per-session capability signal, or maintain separate compatible server/client deployments. The newer client's behavior with a legacy-format 0x1C packet has not been runtime tested.
+
+Next work: verify exact handler instruction listings and capture a real 2026 packet 0x1C; map session/version detection and tests before any wardrobe enablement. Do not commit DLLs or decoded executable images.
