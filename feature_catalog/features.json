@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "description": "Curated initial inventory based on in-app Help. Route links require independent source/route checks; no runtime acceptance is implied.",
+  "features": [
+    {
+      "id": "feature-trace",
+      "module": "Research & Evidence",
+      "name": "Feature Trace",
+      "summary": "Trace implementation and evidence across server, client, captures and packages.",
+      "route": "/features/trace",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "behavior-inspector",
+      "module": "Research & Evidence",
+      "name": "Behavior Inspector",
+      "summary": "Inspect Lua-backed behavior, guards, callbacks and source evidence.",
+      "route": "/behavior",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "feature-checker",
+      "module": "Research & Evidence",
+      "name": "Feature Checker",
+      "summary": "Check evidence coverage and required capabilities.",
+      "route": "/features/check",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-browser",
+      "module": "Captures",
+      "name": "Capture Browser",
+      "summary": "Inspect recorded packets, events, entities and timelines.",
+      "route": "/captures",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "key-items",
+      "module": "Character & Items",
+      "name": "Key Items",
+      "summary": "Browse key-item identities and static Lua evidence.",
+      "route": "/keyitems",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House",
+      "summary": "Auction House management, inspection and guarded operations.",
+      "route": "/auction-house/help",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "live-client",
+      "module": "Live Client",
+      "name": "Live Client Bridge",
+      "summary": "Inspect client bridge, telemetry and movement controls.",
+      "route": "/live-client/bridge/console",
+      "implementation": "implemented",
+      "validation": "operator_reported",
+      "help": "/help"
+    },
+    {
+      "id": "synth",
+      "module": "Server Administration",
+      "name": "Synth & Crafting",
+      "summary": "Browse recipes, ingredients and source availability.",
+      "route": "/synth",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "client-binary",
+      "module": "Client Research",
+      "name": "Binary Inspector",
+      "summary": "Inspect PE evidence, command probes and binary comparisons.",
+      "route": "/binaryinspector",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "validation",
+      "module": "Validation",
+      "name": "Validation",
+      "summary": "Inspect validation runs and results.",
+      "route": "/validation",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "research",
+      "module": "Research & Evidence",
+      "name": "Research Sessions",
+      "summary": "Record unresolved questions and supporting evidence.",
+      "route": "/research",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "id-drift",
+      "module": "Migration",
+      "name": "ID Drift",
+      "summary": "Compare server identifiers and migration mappings.",
+      "route": "/iddrift",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    }
+  ]
+}
