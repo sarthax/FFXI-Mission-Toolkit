@@ -709,6 +709,66 @@
       "implementation": "partial",
       "validation": "unverified",
       "help": "/help"
+    },
+    {
+      "id": "capture-all-paths",
+      "module": "Captures",
+      "name": "All Capture Paths",
+      "summary": "Review spatial paths across available captures.",
+      "route": "/captures/plot_all",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-bulk-ingest",
+      "module": "Captures",
+      "name": "Bulk Capture Ingestion",
+      "summary": "Manage bulk capture import workflow.",
+      "route": "/captures/bulk-ingest",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-metadata-import",
+      "module": "Captures",
+      "name": "Capture Metadata Import",
+      "summary": "Import supplementary capture metadata.",
+      "route": "/captures/metadata-import",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-review",
+      "module": "Captures",
+      "name": "Capture Review Queue",
+      "summary": "Review capture exceptions and ingestion evidence.",
+      "route": "/captures/review",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-zone-review",
+      "module": "Captures",
+      "name": "Capture Zone Review",
+      "summary": "Review zone-linked capture evidence.",
+      "route": "/captures/zone-review",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "shift-master",
+      "module": "Progression",
+      "name": "Shift Master",
+      "summary": "Inspect Shift Master domain workflow.",
+      "route": "/shift-master",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
     }
   ]
 }
