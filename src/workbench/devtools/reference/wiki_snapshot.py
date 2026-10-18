@@ -1,5 +1,6 @@
 """Read-only portable snapshot export of imported Wiki pages (not main DB)."""
 from __future__ import annotations
+import contextlib
 import gzip
 import hashlib
 import json
@@ -74,7 +75,7 @@ def import_snapshot(database, snapshot):
     try:
         with tempfile.NamedTemporaryFile(prefix="wiki_snapshot_stage_",suffix=".db",delete=False) as output:
             temp=Path(output.name)
-        with sqlite3.connect(temp) as staging:
+        with contextlib.closing(sqlite3.connect(temp)) as staging, staging:
             staging.execute(wiki_jobs._PAGES_DDL)
             with gzip.open(path,"rt",encoding="utf-8") as stream:
                 header=json.loads(next(stream))
@@ -105,7 +106,7 @@ def import_snapshot(database, snapshot):
             return {"pages":0,"inserted":0,"updated":0,"unchanged":0}
         changes=wiki_jobs._merge(str(target),str(temp),lambda _:None)
         # Project retained raw text into structured documents, without refetching.
-        with sqlite3.connect(str(target),timeout=30) as con, sqlite3.connect(temp) as staging:
+        with contextlib.closing(sqlite3.connect(str(target),timeout=30)) as con, con, contextlib.closing(sqlite3.connect(temp)) as staging:
             for source,page_id,title,text in staging.execute(
                 "SELECT source_id,page_id,title,page_text FROM reference_wiki_pages"
             ):
