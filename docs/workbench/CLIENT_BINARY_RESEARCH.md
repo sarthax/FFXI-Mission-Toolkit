@@ -177,3 +177,21 @@ client modification takes place.
 Self-test: `python test_fixtures/test_client_code_evidence.py`.
 Next: correlate validated instructions with command-table references and inventory
 packet/container checks; do not conclude Wardrobe 5-8 can be patched from byte scans.
+
+
+### Data-address candidate references (2026-10-18)
+
+`workbench.client.binary.address_candidates.address_candidates` and Binary Inspector service
+`unpacked_address_candidates` look for exact little-endian 32-bit RVA and VA values
+in the recovered .text image, returning bounded contextual evidence with source
+RVAs and the decoded-image SHA-256. This does not inspect relocations or assert
+instruction boundaries, and thus does **not** prove a true xref, function, or
+Wardrobe 5-8 support. The scanner defaults to image base 0x10000000; callers
+must supply a verified base for other builds.
+
+Self-test: `python test_fixtures/test_client_address_candidates.py`.
+
+Follow-up: pair candidate hits with independently verified x86 instruction
+decoding and the PE relocation table, then compare identical analyses on a
+verified 2022+ retail executable. Do not modify a live client based on these
+candidates.
