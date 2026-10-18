@@ -9763,6 +9763,8 @@ def assault_domain_page(request: Request, zone: str = "", backlog_status: str = 
                 mission[field] = mission["reviews"][stage]["state"]
     from workbench.domains.assault_dependency_projection import project
     project(tracker["missions"], tracker["shared"])
+    from workbench.domains.assault_shared_priority import prioritize
+    tracker["shared_impact"] = prioritize(tracker["missions"])
     from workbench.domains.assault_readiness import assess_all
     tracker["readiness_counts"] = assess_all(tracker["missions"])
     from workbench.domains.assault_summary import summarize
