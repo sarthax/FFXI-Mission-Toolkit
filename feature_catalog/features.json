@@ -121,6 +121,66 @@
       "implementation": "implemented",
       "validation": "unverified",
       "help": "/help"
+    },
+    {
+      "id": "entity-lookup",
+      "module": "Server Data",
+      "name": "Entity Lookup",
+      "summary": "Resolve server entity IDs and names and follow linked evidence.",
+      "route": "/entity",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "sql-browser",
+      "module": "Server Data",
+      "name": "SQL Browser",
+      "summary": "Inspect indexed server SQL data and related records.",
+      "route": "/sql",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "client-overview",
+      "module": "Client Research",
+      "name": "Client Overview",
+      "summary": "Navigate client asset, DAT and binary inspection tools.",
+      "route": "/clientoverview",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "packages",
+      "module": "Migration",
+      "name": "Packages",
+      "summary": "Inspect migration packages and source evidence.",
+      "route": "/packages",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "wiki",
+      "module": "Research & Evidence",
+      "name": "Wiki",
+      "summary": "Browse cached wiki research and supporting source material.",
+      "route": "/wiki",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "settings",
+      "module": "Configuration",
+      "name": "Settings",
+      "summary": "Configure Toolkit sources, profiles and local integrations.",
+      "route": "/settings",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
     }
   ]
 }
