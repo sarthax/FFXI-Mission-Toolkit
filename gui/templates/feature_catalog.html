@@ -6,6 +6,13 @@
 {% block page_actions %}<a class="chip" href="/help">Help</a> <a class="chip" href="/roadmap">Roadmap</a>{% endblock %}
 {% block page_body %}
 <p class="muted">Curated from Help and source-route references. This initial inventory is not exhaustive; use Help for instructions and Roadmap for remaining work.</p>
+<details>
+<summary><strong>Coverage audit</strong> &mdash; {{ coverage.feature_count }} catalog entries; {{ coverage.help_not_cataloged|length }} Help-linked routes not cataloged; {{ coverage.invalid_catalog_routes|length }} unresolved catalog routes</summary>
+<p class="muted">{{ coverage.note }}</p>
+{% if coverage.help_not_cataloged %}<p>Help-linked routes not cataloged: <code>{{ coverage.help_not_cataloged|join(', ') }}</code></p>{% endif %}
+{% if coverage.invalid_catalog_routes %}<p>Catalog routes absent from maintained GET inventory: <code>{{ coverage.invalid_catalog_routes|join(', ') }}</code></p>{% endif %}
+<p class="muted">{{ coverage.unverified_features|length }} entries still lack independent runtime validation. {{ coverage.catalog_not_help_linked|length }} catalog destinations are not directly linked from global Help (some are documented in module Help).</p>
+</details>
 <form method="get" class="search wb-filter-row">
   <input type="search" name="q" value="{{ q }}" placeholder="Search capabilities">
   <select name="module"><option value="">All modules</option>{% for m in modules %}<option value="{{ m }}" {% if module == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select>
