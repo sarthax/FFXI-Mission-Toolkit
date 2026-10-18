@@ -9,6 +9,23 @@ This is the authoritative current planning and capability inventory for the Miss
 
 `ROADMAP.md` remains the historical implementation ledger. `AUDIT_STATUS.md` remains a historical/implementation audit log. When older status text conflicts with this file, use this file plus merged `main` history.
 
+## 2026-10-18 capability-inventory gap correction (targeted)
+
+**Important:** The October 17–18 documentation/navigation cleanup was not a comprehensive feature census. This roadmap, the in-app `gui/templates/roadmap.html`, and historical ledgers are manually maintained and can diverge. Do not interpret the number of recent roadmap entries as the number of shipped features.
+
+Recent **merged-main** capabilities missing or insufficiently represented in the in-app roadmap at this checkpoint:
+
+- [x] **Retail Version Explorer** — historical PlayOnline manifest browsing, planning, downloaded artifact catalog and version comparison; merged PR #1073. This is a research/asset workflow, not proof of full retail patch reconstruction.
+- [x] **Selective PlayOnline retail downloader** — manifest inspection and bounded file retrieval, staging/non-overwrite safeguards, integrity and provenance validation, and cross-platform CI work; merged PRs #1069, #1071, #1072. Successful live download validation is recorded separately from universal compatibility.
+- [x] **Read-only POL1 unpack/code evidence** — bounded decoded-text inspection and cross-build evidence tools; merged PR #1068. Decoding evidence is not executable validation.
+- [x] **Client DAT command evidence** — exact command lookup and cross-build wardrobe research; merged PR #1067.
+- [x] **Kuluu/headless client comparison research** — audit documentation merged PR #1070, not a shipped client integration.
+- [x] **Assault shared-dependency impact ranking** — merged PR #1074, a prioritization aid rather than port/acceptance completion.
+- [~] **Wardrobe 5–8 compatibility research** — server/client gap research on main (#1075); full modern packet implementation and runtime acceptance are not complete.
+- [~] **Protocol Compatibility evidence model and Binary Inspector view** — draft PR #1085; **not merged** at this checkpoint. Do not present as a shipped feature.
+
+**Remaining gap:** This list is a verified sample of recent omissions, not an exhaustive reconciliation of every route, merged PR, help page, and domain. Follow-up should inventory merged changes by capability, associate each with a visible module/route and documentation owner, and flag missing GUI roadmap entries automatically.
+
 ## 2026-10-18 documentation and navigation housekeeping (targeted reconciliation)
 
 **Scope:** GitHub main merges #1047–#1059 (including #1061 merged into #1059), operator guides, Help/roadmap and navigation regressions. This is a targeted source and reported local acceptance update, **not** another full-repository runtime audit. The October 6 full-sweep date remains unchanged.
