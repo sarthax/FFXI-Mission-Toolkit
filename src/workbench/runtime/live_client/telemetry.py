@@ -44,6 +44,50 @@ class TelemetryFrame:
     entities: tuple[EntityObservation, ...]
     observation_scope: str = "unspecified"
     entities_truncated: bool = False
+    activity: dict | None = None
+
+
+def _activity(data: Any, observed_at: float) -> dict | None:
+    """Optional combat/dialog block. Untrusted: every field is type- and size-bounded; bad input is dropped,
+    never raised, so a malformed activity block cannot take down position telemetry."""
+    if not isinstance(data, dict):
+        return None
+
+    def num(row: Any, key: str, default: int = 0) -> int:
+        v = row.get(key, default) if isinstance(row, dict) else default
+        return v if type(v) is int and -2**40 < v < 2**40 else default
+
+    def rows(key: str, limit: int, build) -> list:
+        raw = data.get(key)
+        if not isinstance(raw, list):
+            return []
+        out = []
+        for row in raw[:limit]:
+            if isinstance(row, dict):
+                out.append(build(row))
+        return out
+
+    def stamp(row: dict) -> float:
+        return round(observed_at - num(row, "age_ms") / 1000.0, 3)
+
+    def text(row: dict, key: str, limit: int) -> str:
+        v = row.get(key)
+        return v[:limit] if isinstance(v, str) else ""
+
+    ev = data.get("event") if isinstance(data.get("event"), dict) else {}
+    return {
+        "hp": num(data, "hp"), "max_hp": num(data, "max_hp"), "mp": num(data, "mp"), "max_mp": num(data, "max_mp"),
+        "tp": num(data, "tp"), "hpp": num(data, "hpp"), "mpp": num(data, "mpp"),
+        "server_status": num(data, "server_status"), "target_id": num(data, "target_id"),
+        "attackers": rows("attackers", 16, lambda r: {"actor": num(r, "actor"), "target": num(r, "target"), "at": stamp(r)}),
+        "combat": rows("combat", 32, lambda r: {"seq": num(r, "seq"), "target": num(r, "target"), "amount": num(r, "amount"),
+                                                 "kind": num(r, "kind"), "at": stamp(r)}),
+        "speech": rows("speech", 16, lambda r: {"seq": num(r, "seq"), "actor": num(r, "actor"), "client_index": num(r, "client_index"),
+                                                 "message_id": num(r, "message_id"), "name_hidden": bool(r.get("name_hidden")), "at": stamp(r)}),
+        "chat": rows("chat", 16, lambda r: {"kind": num(r, "kind"), "sender": text(r, "sender", 32), "message": text(r, "message", 150), "at": stamp(r)}),
+        "event": {"active": bool(ev.get("active")), "npc_id": num(ev, "npc_id"), "client_index": num(ev, "client_index"),
+                  "event_id": num(ev, "event_id"), "form34": bool(ev.get("form34"))},
+    }
 
 
 def decode_frame(payload: dict, *, max_entities: int = 4096) -> TelemetryFrame:
@@ -101,4 +145,4 @@ def decode_frame(payload: dict, *, max_entities: int = 4096) -> TelemetryFrame:
         raise ValueError("invalid entity observation scope")
     if scope == "bounded_loaded_entities" and len(entities) > 256:
         raise ValueError("bounded inventory exceeds 32 entities")
-    return TelemetryFrame(snapshot, tuple(entities), scope, truncated)
+    return TelemetryFrame(snapshot, tuple(entities), scope, truncated, _activity(payload.get("activity"), observed_at))

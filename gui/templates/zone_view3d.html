@@ -172,6 +172,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
   <span id="ashita-live-samples" class="chip mono" role="status">0/2 points</span>
   <a class="inline" href="/live-client/bridge/console" target="_blank" rel="noopener">Bridge setup ↗</a>
   <span id="ashita-live-status" class="chip mono" role="status">Off</span>
+  <div id="ashita-live-activity" class="mono" role="log" aria-live="off" hidden style="flex-basis:100%;max-height:170px;overflow:auto;white-space:pre-wrap;font-size:12px;padding:6px 8px;border:1px solid var(--border,#444);border-radius:6px"></div>
   <label><input type="checkbox" id="ashita-other-clients"> Show other clients in this zone</label>
   <span id="ashita-other-client-status" class="muted mono" role="status">Other clients off</span>
   <label>Observed client <select id="ashita-secondary-client"><option value="">Choose visible client</option></select></label>
@@ -948,6 +949,32 @@ function applyAxesForClient(id) {
   const headless = d && d.source === 'file_feed' && String(d.adapter || '').startsWith('xiheadless');
   liveAxes.value = headless ? 'legacy' : 'x-z-y';
 }
+// Combat/dialog panel from the optional telemetry "activity" block (headless bots). All text via textContent.
+const liveActivityEl = document.getElementById('ashita-live-activity');
+function renderLiveActivity(data) {
+  const act = data && data.activity;
+  if (!act) { liveActivityEl.hidden = true; return; }
+  const byId = new Map((data.entities || []).filter(e => e.server_entity_id != null).map(e => [e.server_entity_id, e]));
+  const nameOf = id => { const e = byId.get(id); return e ? (e.name || ('#' + id)) : (id ? '#' + id.toString(16).toUpperCase() : '—'); };
+  const t = ts => new Date(ts * 1000).toLocaleTimeString([], {hour12:false});
+  const lines = [];
+  const me = data.player && data.player.character || 'Player';
+  lines.push(me + '  HP ' + act.hp + '/' + act.max_hp + ' (' + act.hpp + '%)  MP ' + act.mp + '/' + act.max_mp + '  TP ' + act.tp +
+    (act.server_status === 1 ? '  ENGAGED' : act.server_status === 2 || act.server_status === 3 ? '  DEAD' : ''));
+  const tgt = byId.get(act.target_id);
+  if (act.target_id) lines.push('Target: ' + nameOf(act.target_id) + (tgt && tgt.raw_status != null ? '  HP ' + tgt.raw_status + '%' : ''));
+  if (act.attackers.length) lines.push('Attacked by: ' + [...new Set(act.attackers.map(a => nameOf(a.actor)))].join(', '));
+  if (act.event && act.event.active) lines.push('Event active: id ' + act.event.event_id + ' from ' + nameOf(act.event.npc_id));
+  const log = [];
+  for (const c of act.combat) log.push([c.at, (c.kind === 1 ? '+' : c.kind === 2 ? 'miss ' : '-') + c.amount + ' ' + nameOf(c.target)]);
+  for (const sp of act.speech) log.push([sp.at, nameOf(sp.actor) + ': dialog #' + sp.message_id + (sp.name_hidden ? ' (no name)' : '')]);
+  for (const ch of act.chat) log.push([ch.at, '[' + ch.kind + '] ' + (ch.sender ? ch.sender + ': ' : '') + ch.message]);
+  log.sort((a, b) => a[0] - b[0]);
+  for (const [ts, msg] of log.slice(-14)) lines.push(t(ts) + '  ' + msg);
+  liveActivityEl.textContent = lines.join('\n');
+  liveActivityEl.hidden = false;
+  liveActivityEl.scrollTop = liveActivityEl.scrollHeight;
+}
 function clearLiveEntities(preservePicker = false) {
   for (const child of liveEntityPool) child.visible = false;
   liveObservedEntities.length = 0;
@@ -974,6 +1001,7 @@ function clearLiveMarker() {
   liveLastSampleAt = 0;
   lastLivePosition = null;
   lastLiveDiagnostic = null;
+  if (liveActivityEl) liveActivityEl.hidden = true;
   liveSelectedEntityId = '';
   clearLiveEntities();
   if (!liveMarker) return;
@@ -1118,6 +1146,7 @@ async function pollAshitaPosition() {
     updateLiveEntityVisibility();
     updateEntityPair();
     refreshZoneCorrelation();
+    renderLiveActivity(data);
     liveStatus.textContent = (data.player.character || clientId) + ' · live · ' +
       position.x.toFixed(1) + ', ' + position.y.toFixed(1) + ', ' + position.z.toFixed(1) +
       (liveEntitiesToggle.checked ? ' · entities ' + entityCount +
