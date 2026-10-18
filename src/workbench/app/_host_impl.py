@@ -11767,6 +11767,59 @@ def binaryinspector_save_probes(request: Request, run_set: str = Form(...)):
     return RedirectResponse(f"/binaryinspector?run_set={run_set}&saved={quote(note)}", status_code=303)
 
 
+_RETAIL_TABS = ("overview", "manifest", "planner", "artifacts", "compare", "diagnostics")
+
+
+@app.get("/retailversions", response_class=HTMLResponse)
+def retailversions_page(request: Request, tab: str = "overview", q: str = "", file: str = "", stamp: str = "",
+                        refresh: str = "", plan: str = "", left: str = "", right: str = "", done: str = ""):
+    """Retail Version Explorer: browse PlayOnline history, plan downloads, catalog and compare binaries.
+    Reads are local except Manifest/Planner, which call the downloader (read-only network)."""
+    from workbench.client.binary import inspector as bi
+    from workbench.client.retail import catalog, downloader as dl
+    tab = tab if tab in _RETAIL_TABS else "overview"
+    artifacts = catalog.scan()
+    ctx = {"request": request, "tab": tab, "tabs": _RETAIL_TABS, "q": q, "file": file, "stamp": stamp,
+           "artifacts": artifacts, "exe": dl.find_exe(), "root": catalog.retail_root(), "error": None,
+           "manifest": None, "hist": None, "plan_out": None, "diff": None, "left": left, "right": right,
+           "done": done, "timeout": dl.DEFAULT_TIMEOUT}
+    try:
+        if tab == "manifest":
+            ctx["manifest"] = dl.manifest_list(q, refresh=bool(refresh))
+            if file:
+                ctx["hist"] = dl.history(file)
+        elif tab == "planner" and file and stamp and plan:
+            ctx["plan_out"] = dl.plan(file, stamp)
+        elif tab == "compare" and left and right:
+            lf, lv = left.split("|", 1)
+            rf, rv = right.split("|", 1)
+            a, b = catalog.find(lf, lv), catalog.find(rf, rv)
+            if not a or not b:
+                ctx["error"] = "Both versions must be VALID catalog entries."
+            elif lf.lower() != rf.lower():
+                ctx["error"] = "Compare two versions of the same file."
+            else:
+                ctx["diff"] = bi.diff(a["path"], b["path"])
+                ctx["pair"] = (a, b)
+    except Exception as ex:
+        ctx["error"] = f"{type(ex).__name__}: {ex}"
+    return templates.TemplateResponse(request, "retail_versions.html", ctx)
+
+
+@app.post("/retailversions/download")
+def retailversions_download(file: str = Form(...), stamp: str = Form(...), confirm: str = Form("")):
+    """Explicit-confirmation download of one file version into the retail catalog root."""
+    from workbench.client.retail import downloader as dl
+    if confirm != "yes":
+        return RedirectResponse("/retailversions?tab=planner&done=" + quote("Confirmation required; nothing downloaded."), status_code=303)
+    try:
+        r = dl.download(file, stamp)
+        note = (r.get("stdout") or "").strip() if r["ok"] else "FAILED: " + str(r.get("error"))
+    except ValueError as ex:
+        note = f"REJECTED: {ex}"
+    return RedirectResponse("/retailversions?tab=artifacts&done=" + quote(note[:400]), status_code=303)
+
+
 @app.get("/binaryinspector", response_class=HTMLResponse)
 def binaryinspector_page(request: Request, path: str = "", q: str = "", imp: str = "", pattern: str = "",
                          exec_only: str = "", diff_path: str = "", run_set: str = "", saved: str = "",
