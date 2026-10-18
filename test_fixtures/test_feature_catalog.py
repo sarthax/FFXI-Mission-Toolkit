@@ -7,11 +7,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from workbench.core.services.feature_catalog import load_catalog, search_catalog
+from workbench.core.services.feature_catalog_audit import audit_catalog
 
 
 def main():
     items = load_catalog()
-    assert len(items) >= 12
+    assert len(items) >= 18
     assert len({f["id"] for f in items}) == len(items)
     routes = json.loads((ROOT / "docs/workbench/GUI_ROUTE_MAP.json").read_text())["routes"]
     routes += json.loads((ROOT / "docs/workbench/GUI_ROUTE_MAP_AUXILIARY.json").read_text())["routes"]
@@ -22,6 +23,9 @@ def main():
     assert all(f["help"] in known | dynamic for f in items)
     assert [f["id"] for f in search_catalog(items, "binary")] == ["client-binary"]
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
+    audit = audit_catalog()
+    assert audit["help_not_cataloged"] == [], audit
+    assert audit["invalid_catalog_routes"] == [], audit
     assert "/feature-catalog" in known
     for page in ("help.html", "roadmap.html"):
         assert 'href="/feature-catalog"' in (ROOT / "gui/templates" / page).read_text()
