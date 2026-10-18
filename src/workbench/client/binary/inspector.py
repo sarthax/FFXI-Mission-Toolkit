@@ -14,7 +14,7 @@ from pathlib import Path
 from workbench.client.binary_deep import byte_search
 from workbench.client.binary_diff import diff_binary_indexes
 from workbench.client.binary_index import index_binary
-from workbench.client.pol1_unpack import inspect_pol1, Pol1Error
+from workbench.client.pol1_unpack import inspect_pol1, search_unpacked, Pol1Error
 from workbench.runtime.paths import CLIENT_PROBE_SETS_ROOT
 
 _CACHE: dict[tuple[str, float, int], dict] = {}
@@ -136,3 +136,8 @@ def unpacked_code_evidence(path: str) -> dict:
         return {"status": "VERIFIED", **inspect_pol1(path)}
     except (Pol1Error, OSError) as exc:
         return {"status": "UNKNOWN", "reason": str(exc)}
+
+
+def search_unpacked_code(path: str, pattern: str, limit: int = 100) -> dict:
+    """RVA-aware code evidence against decoded .text; no disassembly claims."""
+    return search_unpacked(path, pattern, max_hits=limit)
