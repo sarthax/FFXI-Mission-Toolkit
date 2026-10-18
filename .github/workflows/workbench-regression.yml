@@ -35,7 +35,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install core regression test dependencies
-        run: python -m pip install --disable-pip-version-check jinja2 pyyaml pillow mwparserfromhell
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
       - name: Run Workbench core regression fixtures
         env:
           PYTHONPATH: .
