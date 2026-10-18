@@ -181,6 +181,204 @@
       "implementation": "implemented",
       "validation": "unverified",
       "help": "/help"
+    },
+    {
+      "id": "ah-browse",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House browsing and history",
+      "summary": "Inspect items, sellers, buyers, prices and activity.",
+      "route": "/auction-house/help",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "ah-economy",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House economy insights",
+      "summary": "Review economy health and market information.",
+      "route": "/auction-house/help",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "ah-item-picker",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House item selection",
+      "summary": "Use icon-backed item selection, browser links and contextual actions.",
+      "route": "/auction-house/help",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "ah-preferences",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House preferences and exports",
+      "summary": "Use remembered filters, favorites and read-only CSV exports.",
+      "route": "/auction-house/help",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "ah-restock",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House restock and cleanup",
+      "summary": "Preview guarded restock and cleanup operations.",
+      "route": "/auction-house/help",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "ah-recovery",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House recovery journal",
+      "summary": "Review durable case evidence and recipient attempt records; no automatic retry.",
+      "route": "/auction-house/help",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "ah-scheduled-rewards",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House scheduled rewards",
+      "summary": "Schedule cancellable Test-profile rewards with revalidation.",
+      "route": "/auction-house/help",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "ah-augmented-rewards",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House augmented rewards",
+      "summary": "Configure and preview augments; experimental Test delivery requires acceptance.",
+      "route": "/auction-house/help",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "live-bridge",
+      "parent_id": "live-client",
+      "module": "Live Client",
+      "name": "Ashita bridge telemetry",
+      "summary": "Inspect receiver, sender configuration and live-client freshness.",
+      "route": "/live-client/bridge/console",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "live-entity-stream",
+      "parent_id": "live-client",
+      "module": "Live Client",
+      "name": "Live multi-entity streaming",
+      "summary": "Reconcile observed entities with the live viewer and server evidence.",
+      "route": "/live-client/bridge/console",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "live-movement",
+      "parent_id": "live-client",
+      "module": "Live Client",
+      "name": "Live movement and controls",
+      "summary": "Use armed movement and STOP/disarm controls with zone and identity safeguards.",
+      "route": "/live-client/bridge/console",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "live-3d",
+      "parent_id": "live-client",
+      "module": "Live Client",
+      "name": "Live 3D zone integration",
+      "summary": "Use player centering, zone switching, instance selection and live activity.",
+      "route": "/live-client/bridge/console",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "trace-evidence",
+      "parent_id": "feature-trace",
+      "module": "Research & Evidence",
+      "name": "Feature Trace evidence dossier",
+      "summary": "Review prioritized source and relationship evidence rather than raw graph breadth.",
+      "route": "/features/trace",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "trace-runtime",
+      "parent_id": "feature-trace",
+      "module": "Research & Evidence",
+      "name": "Feature Trace runtime drill-down",
+      "summary": "Inspect runtime paths and hierarchical behavior handoff.",
+      "route": "/features/trace",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "wiki-cache",
+      "parent_id": "wiki",
+      "module": "Research & Evidence",
+      "name": "Wiki cache and browsing",
+      "summary": "Search and browse cached research with provenance.",
+      "route": "/wiki",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "wiki-bulk",
+      "parent_id": "wiki",
+      "module": "Research & Evidence",
+      "name": "Wiki bulk import and sync",
+      "summary": "Manage background scrape/import jobs and cache health.",
+      "route": "/wiki",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "wiki-translation",
+      "parent_id": "wiki",
+      "module": "Research & Evidence",
+      "name": "Wiki translation research",
+      "summary": "Inspect Japanese translation and client terminology evidence.",
+      "route": "/wiki",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "ki-lua",
+      "parent_id": "key-items",
+      "module": "Character & Items",
+      "name": "Key Item Lua evidence",
+      "summary": "Inspect require, grant and remove references and source paths.",
+      "route": "/keyitems",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
     }
   ]
 }
