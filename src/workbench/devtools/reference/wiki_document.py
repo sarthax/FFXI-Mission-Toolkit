@@ -48,6 +48,11 @@ def init_db(con: sqlite3.Connection) -> None:
     CREATE INDEX IF NOT EXISTS idx_reference_wiki_topic_page
       ON reference_wiki_topic_pages(source_id,page_id);
     """)
+    # Provenance columns added later; nullable so pre-existing rows stay valid (unknown, not guessed).
+    have = {r[1] for r in con.execute("PRAGMA table_info(reference_wiki_documents)")}
+    for col in ("retrieved_at", "source_revision"):
+        if col not in have:
+            con.execute(f"ALTER TABLE reference_wiki_documents ADD COLUMN {col} TEXT")
     con.execute("""CREATE TABLE IF NOT EXISTS reference_wiki_topic_dismissals(
       source_id TEXT NOT NULL,page_id TEXT NOT NULL,topic_id TEXT NOT NULL,
       dismissed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -289,7 +294,10 @@ def build_blocks(page: dict, *, source_format: str | None = None, raw_source: st
     return page_id, source_format or "legacy_text", blocks
 
 
-def store_document(con, *, source_id, page_id, source_format, raw_source, blocks):
+def store_document(con, *, source_id, page_id, source_format, raw_source, blocks,
+                   retrieved_at=None, source_revision=None):
+    """retrieved_at: UTC ISO-8601 fetch time; source_revision: wiki revision id or
+    Last-Modified-style stamp when the source exposes one. Both optional, never invented."""
     init_db(con)
     raw_hash = hashlib.sha256((raw_source or "").encode("utf-8")).hexdigest()
     # A repeat scrape of identical source under the same parser must not churn
@@ -301,11 +309,16 @@ def store_document(con, *, source_id, page_id, source_format, raw_source, blocks
         "SELECT 1 FROM reference_wiki_blocks WHERE source_id=? AND page_id=? LIMIT 1",
         (source_id, page_id),
     ).fetchone():
+        if retrieved_at:  # identical source: refresh provenance only, keep block identities
+            con.execute("""UPDATE reference_wiki_documents SET retrieved_at=?,
+              source_revision=COALESCE(?,source_revision) WHERE source_id=? AND page_id=?""",
+              (retrieved_at, source_revision, source_id, page_id))
+            con.commit()
         return
     con.execute("""INSERT OR REPLACE INTO reference_wiki_documents
-      (source_id,page_id,source_format,raw_source,raw_hash,parser_version,parsed_at)
-      VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP)""",
-      (source_id,page_id,source_format,raw_source,raw_hash,PARSER_VERSION))
+      (source_id,page_id,source_format,raw_source,raw_hash,parser_version,parsed_at,retrieved_at,source_revision)
+      VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,?,?)""",
+      (source_id,page_id,source_format,raw_source,raw_hash,PARSER_VERSION,retrieved_at,source_revision))
     con.execute("DELETE FROM reference_wiki_blocks WHERE source_id=? AND page_id=?", (source_id,page_id))
     con.executemany("""INSERT INTO reference_wiki_blocks
       (source_id,page_id,block_id,ordinal,block_type,heading_level,section_path,text,target,metadata_json,source_locator)
