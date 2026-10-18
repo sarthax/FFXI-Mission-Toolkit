@@ -11,17 +11,8 @@ from workbench.runtime.paths import DATABASE_PATH, VENDOR_ROOT
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def load_root():
-    spec = importlib.util.spec_from_file_location("build_npc_index", REPO_ROOT / "build_npc_index.py")
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["build_npc_index"] = module
-    spec.loader.exec_module(module)
-    return sys.modules["build_npc_index"]
-
-
 def main() -> None:
-    assert load_root() is canonical
+    assert not (REPO_ROOT / "build_npc_index.py").exists()
     assert canonical.DB_PATH == DATABASE_PATH
     assert canonical.DAT_EXTRACTOR_EXE == VENDOR_ROOT / "dat-extractor" / "bin" / "Debug" / "net9.0" / "dat-extractor.exe"
     assert canonical.npclist_id_for_zone(77) == 6797

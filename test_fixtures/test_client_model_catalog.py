@@ -77,7 +77,7 @@ def main():
 
     server = (ROOT / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
     viewer = (ROOT / "gui" / "templates" / "model_viewer.html").read_text(encoding="utf-8")
-    zone = (ROOT / "gui" / "templates" / "zone_plot.html").read_text(encoding="utf-8")
+    zone = (ROOT / "gui" / "templates" / "zone_plot2.html").read_text(encoding="utf-8")
     route_map = (ROOT / "docs" / "workbench" / "GUI_ROUTE_MAP.json").read_text(encoding="utf-8")
 
     for route in (

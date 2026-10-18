@@ -3,7 +3,7 @@
 import sqlite3, sys, tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-import research_gaps as rg
+from workbench.devtools.research import gaps as rg
 
 
 def main():
