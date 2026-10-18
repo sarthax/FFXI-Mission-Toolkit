@@ -6,7 +6,7 @@ from workbench.devtools.reference import wiki_document
 
 
 def main():
-    with tempfile.TemporaryDirectory() as temp:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
         path = Path(temp) / "wiki.db"
         with sqlite3.connect(path) as con:
             wiki_document.init_db(con)

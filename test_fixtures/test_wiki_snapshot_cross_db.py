@@ -15,7 +15,7 @@ def seed(path, rows):
                         (source,pid,title,title,"1","",body,hashlib.sha256(body.encode()).hexdigest()))
 
 def main():
-    with tempfile.TemporaryDirectory() as folder:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
         src, dst, archive = (Path(folder)/name for name in ("source.db","destination.db","wiki.jsonl.gz"))
         seed(src,[("BGWiki","42","Medusa","New article"),
                   ("FFXIclopedia","57","Nyzul Isle","Quest info"),

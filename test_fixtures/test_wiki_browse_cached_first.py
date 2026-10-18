@@ -5,7 +5,7 @@ from unittest.mock import patch
 from workbench.devtools.reference import wiki_evidence
 
 def main():
-    with tempfile.TemporaryDirectory() as directory:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as directory:
         with sqlite3.connect(Path(directory)/"wiki.db") as con:
             wiki_evidence.init_db(con)
             con.execute("""INSERT INTO reference_wiki_pages

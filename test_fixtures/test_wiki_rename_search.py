@@ -6,7 +6,7 @@ from pathlib import Path
 from workbench.devtools.reference import wiki_jobs, wiki_document
 
 def main():
-    with tempfile.TemporaryDirectory() as directory:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as directory:
         db=Path(directory)/"main.db"
         incoming=Path(directory)/"incoming.db"
         text="Same article content"

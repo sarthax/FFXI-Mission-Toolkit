@@ -7,7 +7,7 @@ from unittest.mock import patch
 from workbench.devtools.reference import wiki_bulk_jobs as batch
 
 def main():
-    with tempfile.TemporaryDirectory() as root:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as root:
         db=Path(root)/"wiki.db"
         with batch._connect(db) as con:
             con.execute("""INSERT INTO wiki_bulk_jobs
@@ -25,7 +25,7 @@ def main():
             ).fetchone()
         assert state=="error" and json.loads(pending)==["Medusa","Other"] and processed==0
     # Non-rate-limit failures must also retain the page and block completion.
-    with tempfile.TemporaryDirectory() as root:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as root:
         db=Path(root)/"wiki.db"
         with batch._connect(db) as con:
             con.execute("""INSERT INTO wiki_bulk_jobs

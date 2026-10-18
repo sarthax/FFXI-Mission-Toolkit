@@ -5,7 +5,7 @@ from pathlib import Path
 from workbench.devtools.reference import wiki_document, wiki_jobs
 
 def main():
-    with tempfile.TemporaryDirectory() as directory:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as directory:
         with sqlite3.connect(Path(directory)/"wiki.db") as con:
             con.execute(wiki_jobs._PAGES_DDL)
             for i in range(180):

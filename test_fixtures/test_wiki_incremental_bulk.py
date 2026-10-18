@@ -7,7 +7,7 @@ from workbench.devtools.reference import wiki_bulk_jobs as bulk
 from workbench.devtools.reference import wiki_jobs
 
 def main():
-    with tempfile.TemporaryDirectory() as root:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as root:
         db=Path(root)/"wiki.db"
         with sqlite3.connect(db) as con:
             con.execute(wiki_jobs._PAGES_DDL)

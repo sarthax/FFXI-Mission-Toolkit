@@ -8,7 +8,7 @@ from workbench.devtools.reference import wiki_jobs
 
 
 def main():
-    with tempfile.TemporaryDirectory() as root:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as root:
         db = os.path.join(root, "main.db")
         temp = os.path.join(root, "scrape.db")
         with sqlite3.connect(temp) as con:

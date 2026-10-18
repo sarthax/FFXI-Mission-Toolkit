@@ -9,7 +9,7 @@ from workbench.devtools.reference.wiki_snapshot import import_snapshot
 
 
 def main():
-    with tempfile.TemporaryDirectory() as folder:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
         db=Path(folder)/"toolkit.db"
         snapshot=Path(folder)/"wiki.jsonl.gz"
         with sqlite3.connect(db) as con:

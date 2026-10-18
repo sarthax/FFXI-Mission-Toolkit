@@ -6,7 +6,7 @@ from unittest.mock import patch
 from workbench.devtools.reference import wiki_jobs
 
 def main():
-    with tempfile.TemporaryDirectory() as folder:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
         db=Path(folder)/"test.db"
         with sqlite3.connect(db) as con:
             con.execute(wiki_jobs._PAGES_DDL)

@@ -7,7 +7,7 @@ from workbench.devtools.reference import wiki_sync_coordination as shared
 from workbench.devtools.reference import wiki_sync_schedule as schedule
 
 def main():
-    with tempfile.TemporaryDirectory() as d:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d:
         db=Path(d)/"wiki.db"
         schedule.configure(db,enabled=True,interval_hours=24,page_limit=50)
         with patch.object(shared.wiki_bg_dump_jobs,"_RUNNING",{"bg-job"}),patch.object(

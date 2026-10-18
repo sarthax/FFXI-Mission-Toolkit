@@ -3,7 +3,7 @@ from pathlib import Path
 from workbench.devtools.reference import wiki_document, wiki_jobs
 
 def main():
-    with tempfile.TemporaryDirectory() as d:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d:
         with sqlite3.connect(Path(d)/"wiki.db") as con:
             con.execute(wiki_jobs._PAGES_DDL)
             body="Medusa is an NM"

@@ -8,7 +8,7 @@ from workbench.devtools.reference import wiki_bulk_jobs as bulk
 
 
 def main():
-    with tempfile.TemporaryDirectory() as directory:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as directory:
         db=Path(directory)/"toolkit.db"
         assert bulk.status(db)==[]
         with patch.object(bulk.threading.Thread, "start"):
