@@ -28,11 +28,12 @@ fn run() -> Result<(), String> {
     let file = argument("--file", &args);
     let list = args.iter().any(|x| x == "--list");
     let history = args.iter().any(|x| x == "--history");
-    if history && list {
-        return Err("choose --history or --list, not both".into());
+    let plan = args.iter().any(|x| x == "--plan");
+    if [history, list, plan].iter().filter(|&&enabled| enabled).count() > 1 {
+        return Err("choose only one of --list, --history, or --plan".into());
     }
-    if history && file.is_none() {
-        return Err("--history requires --file MANIFEST_PATH".into());
+    if (history || plan) && file.is_none() {
+        return Err("--history and --plan require --file MANIFEST_PATH".into());
     }
     if !list && file.is_none() {
         return Err("usage: --list [--file SUBSTRING] OR --file MANIFEST_PATH --output DIRECTORY [--version EXACT_STAMP]".into());
@@ -70,6 +71,12 @@ fn run() -> Result<(), String> {
     };
     if version.sig.len > MAX_BYTES || version.direct_len > MAX_BYTES {
         return Err("file exceeds 128 MiB per-file safety bound".into());
+    }
+    if plan {
+        let safe_path = relative_path(&entry.path)?;
+        println!("plan: {} version={} decoded_bytes={} transfer_bytes={} server_path={} (nothing downloaded)",
+            safe_path.display(), version.stamp, version.sig.len, version.direct_len, version.direct);
+        return Ok(());
     }
     let output = argument("--output", &args).ok_or("provide --output DIRECTORY")?;
     let root = PathBuf::from(output);
