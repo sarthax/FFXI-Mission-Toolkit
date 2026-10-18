@@ -55,3 +55,9 @@ The 3D Viewer uses `@app.get("/zones/{zoneid}/view3d")`; `/zones/0/view3d` is a 
 The Character Editor mounts `src/workbench/editors/character/gui.py` through `app.include_router(character_editor_router)`; its prefix is `/character-editor`, and the page's `@router.get("")` forms the exact sidebar root.
 
 `test_fixtures/test_dynamic_sidebar_routes.py` now guards these source contracts and all 14 domain definition keys. With five calculator handlers and the replay-console source previously confirmed, **all 22 original sidebar inventory discrepancies have identifiable route source definitions or registered category keys**. The remaining work is route-map generation from the mounted app and an HTTP smoke test with runtime prerequisites; do not confuse source evidence with successful page rendering.
+
+## Mounted route smoke test — proposed 2026-10-18
+
+`test_fixtures/test_mounted_sidebar_routes.py` imports the real `workbench.app.host:app` and checks the final GET route table for the domain, character editor, 3D viewer, replay/bridge, AH/Synth/Capture and calculator page patterns. It also verifies fourteen domain configuration keys. This is stronger than searching static strings. CI execution is required before considering this test passed; it deliberately does not render pages, connect to DSP or command the client.
+
+**CI portability caveat (2026-10-18):** The mounted-app smoke needs the compiled `xi_tinkerer` package when importing `workbench.app.host`. The Linux core regression runner does not contain that native wheel. The smoke explicitly reports **NOT RUN** and exits without claiming mounted-route acceptance when the package is missing; the earlier static-source route checks continue to run. Run the mounted smoke in an installed Toolkit environment with `xi_tinkerer` and all runtime dependencies to obtain a real PASS. An HTTP test remains separate.
