@@ -10,7 +10,7 @@ from workbench.devtools.reference import wiki_bg_dump_jobs as jobs
 
 
 def main():
-    with tempfile.TemporaryDirectory() as directory:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as directory:
         dump=Path(directory)/"bg-wiki.jsonl.gz"
         db=Path(directory)/"toolkit.db"
         records=[{"title":"Medusa","pageid":101,"wikitext":"== Medusa ==\nTest","revid":4,
@@ -41,7 +41,7 @@ def main():
         assert result["imported"]==0,result
     # A corrupt source record must not disappear from a checkpoint or allow
     # a partial import to report successful completion.
-    with tempfile.TemporaryDirectory() as directory:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as directory:
         dump=Path(directory)/"mixed.jsonl.gz"
         db=Path(directory)/"mixed.db"
         with gzip.open(dump,"wt",encoding="utf-8") as file:
@@ -69,7 +69,7 @@ def main():
         assert repeated["processed"]==1,repeated
 
     # Archive replacement must be rejected before a resumed worker is launched.
-    with tempfile.TemporaryDirectory() as directory:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as directory:
         dump=Path(directory)/"source.jsonl.gz"
         db=Path(directory)/"source.db"
         with gzip.open(dump,"wt",encoding="utf-8") as stream:

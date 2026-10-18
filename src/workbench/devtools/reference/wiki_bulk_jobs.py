@@ -52,7 +52,7 @@ def status(db):
         if not _RUNNING:
             con.execute("UPDATE wiki_bulk_jobs SET state='interrupted' WHERE state IN ('queued','discovering','running','pausing')")
         rows = con.execute("""SELECT id,source,state,mode,page_limit,discovered,processed,imported,failed,last_error
-            ,started_at,completed_at FROM wiki_bulk_jobs ORDER BY updated_at DESC LIMIT 8""").fetchall()
+            ,started_at,completed_at FROM wiki_bulk_jobs ORDER BY updated_at DESC, rowid DESC LIMIT 8""").fetchall()
     cols = ("id","source","state","mode","page_limit","discovered","processed","imported","failed","last_error","started_at","completed_at")
     return [dict(zip(cols, row)) for row in rows]
 
@@ -64,7 +64,7 @@ def sync_summary(db):
                               FROM wiki_bulk_jobs WHERE state='completed'
                               GROUP BY mode""").fetchall()
         latest = con.execute("""SELECT mode,state,processed,imported,failed,updated_at
-                                FROM wiki_bulk_jobs ORDER BY updated_at DESC LIMIT 1""").fetchone()
+                                FROM wiki_bulk_jobs ORDER BY updated_at DESC, rowid DESC LIMIT 1""").fetchone()
     return {"last_success": {mode: {"at": completed, "runs": count}
                              for mode,completed,count in rows},
             "latest": dict(zip(("mode","state","processed","imported","failed","updated_at"),latest)) if latest else None}
@@ -91,7 +91,7 @@ def latest_recoverable(db, *, job_id=None):
                                 WHERE id=?""",(job_id,)).fetchall()
         else:
             rows=con.execute("""SELECT id,mode,state,pending_json,processed FROM wiki_bulk_jobs
-                                WHERE state='interrupted' ORDER BY updated_at DESC LIMIT 1""").fetchall()
+                                WHERE state='interrupted' ORDER BY updated_at DESC, rowid DESC LIMIT 1""").fetchall()
     for ident,mode,state,pending_raw,processed in rows:
         if state != 'interrupted' or not pending_raw:
             continue
