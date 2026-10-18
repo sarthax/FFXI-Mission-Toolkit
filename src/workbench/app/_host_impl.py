@@ -986,10 +986,11 @@ def capture_review_flag_decide(
 def feature_catalog_page(request: Request, q: str = "", module: str = ""):
     """Curated, read-only inventory; separate from development roadmap and operator Help."""
     from workbench.core.services.feature_catalog import load_catalog, search_catalog
+    from workbench.core.services.feature_catalog_audit import audit_catalog
     all_features = load_catalog()
     return templates.TemplateResponse(request, "feature_catalog.html", {
         "q": q, "module": module, "features": search_catalog(all_features, q, module),
-        "modules": sorted({f["module"] for f in all_features}),
+        "modules": sorted({f["module"] for f in all_features}), "coverage": audit_catalog(),
     })
 
 
