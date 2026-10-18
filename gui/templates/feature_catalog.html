@@ -22,7 +22,7 @@
 <div class="table-wrap"><table>
 <thead><tr><th>Capability</th><th>Module</th><th>Implementation</th><th>Validation</th><th>Usage</th></tr></thead>
 <tbody>{% for f in features %}<tr>
-<td><a href="{{ f.route }}"><strong>{{ f.name }}</strong></a><div class="muted">{{ f.summary }}</div></td>
+<td>{% if f.parent_id %}<span class="muted">↳ Subfeature of {{ f.parent_id }}</span> {% endif %}<a href="{{ f.route }}"><strong>{{ f.name }}</strong></a><div class="muted">{{ f.summary }}</div></td>
 <td>{{ f.module }}</td><td>{{ f.implementation }}</td><td>{{ f.validation }}</td>
 <td><a href="{{ f.help }}">Help</a></td>
 </tr>{% else %}<tr><td colspan="5">No matching capabilities.</td></tr>{% endfor %}</tbody>
