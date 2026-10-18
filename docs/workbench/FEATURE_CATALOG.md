@@ -9,7 +9,7 @@ The Feature Catalog is the structured inventory of **what the Toolkit exposes**.
 Implementation statuses: `implemented`, `partial`, `research`, `planned`.
 Validation statuses: `unverified`, `operator_reported`, `tested`.
 
-A route or source reference does not establish runtime acceptance. The first fifty-six records are a Help-derived seed, **not** an exhaustive module or subfeature census. The catalog is separate from Feature Trace's graph schema.
+A route or source reference does not establish runtime acceptance. The first seventy-five records are a Help-derived seed, **not** an exhaustive module or subfeature census. The catalog is separate from Feature Trace's graph schema.
 
 ## GUI
 
@@ -42,3 +42,7 @@ The first expansion adds 18 Help-documented subfeatures across Auction House, Li
 ## Source-route expansion (October 18)
 
 Twenty additional operator-facing pages were added from the maintained GET route inventory, bringing the curated inventory to 56 records. These include missions, Assault, Nyzul, zones, client inspection, retail versions, dialog, capture search/query, migration converters, package review and validation runs. Static catalog route references were checked against the maintained route inventories; the Workbench regression workflow now runs `test_fixtures/test_feature_catalog.py` and triggers when `feature_catalog/**` changes. This still does not verify that the pages render in a configured Windows/DSP installation, or that every UI operation works.
+
+## Active-page coverage gate
+
+The coverage audit also compares catalog destinations with the maintained GET-route inventories' static `role: page` entries. It excludes root/Help/Roadmap/Catalog and parameterized paths; uncataloged `LEGACY` or `MERGE` disposition pages are reported separately rather than treated as active feature gaps. The regression fixture requires zero uncataloged active static pages. At the October 18 source-level checkpoint, 75 curated records cover the static active page inventory, with `/items` and `/backport/package` retained as uncataloged legacy/merge-target routes. This is not full dynamic-router, subfeature, browser-rendering, or Windows/DSP runtime acceptance.
