@@ -160,6 +160,7 @@ jobs:
           python test_fixtures/test_help_route_inventory.py
           python test_fixtures/test_calculator_sidebar_routes.py
           python test_fixtures/test_dynamic_sidebar_routes.py
+          python test_fixtures/test_voidwalker_coverage.py
           python test_fixtures/test_mounted_sidebar_routes.py
           python test_fixtures/test_instance_feature_slice.py
           python test_fixtures/test_instance_slice_compare.py
