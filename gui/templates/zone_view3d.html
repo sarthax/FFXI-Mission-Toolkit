@@ -1692,7 +1692,8 @@ function zoneCorrelationRows() {
     let kind = 'ambiguous', separation = null;
     const telemetryUsable = liveToggle.checked && liveEntitiesToggle.checked &&
       liveEntitySnapshotAt > 0 && now - liveEntitySnapshotAt <= 3;
-    if (!live.length && !telemetryUsable) kind = 'unverified';
+    if (map.length > 1 || live.length > 1) kind = 'ambiguous';
+    else if (!live.length && !telemetryUsable) kind = 'unverified';
     else if (!map.length) kind = 'live_only';
     else if (!live.length) kind = 'server_only';
     else if (map.length === 1 && live.length === 1) {
@@ -1704,7 +1705,7 @@ function zoneCorrelationRows() {
     }
     const previous = lastLiveEntitiesById.get(id);
     const lastSeenSeconds = !live.length && previous ? Math.max(0, now - previous.seenAt) : null;
-    if (!live.length && telemetryUsable && previous && now - previous.seenAt <= OBSERVATION_HISTORY_SECONDS) kind = 'last_seen';
+    if (!live.length && telemetryUsable && previous && now - previous.seenAt <= OBSERVATION_HISTORY_SECONDS && map.length <= 1) kind = 'last_seen';
     return {id, kind, separation, entity:live[0] || map[0] || previous?.entity,
       map:map.length, live:live.length, lastSeenSeconds};
   });
@@ -1744,7 +1745,7 @@ function refreshZoneCorrelation() {
     btn.style.cssText = 'display:block;width:100%;text-align:left;margin:2px 0;font-size:12px;';
     btn.disabled = row.kind === 'unverified';
     const name = row.entity?.n || 'Unnamed';
-    btn.textContent = row.kind.replace('_',' ') + ' · ' + name + ' [' + (row.id || 'unknown') + ']' +
+    btn.textContent = row.kind.replace('_',' ') + (row.kind === 'ambiguous' ? ' (' + row.map + ' map / ' + row.live + ' live)' : '') + ' · ' + name + ' [' + (row.id || 'unknown') + ']' +
       (row.separation === null || row.separation === undefined ? '' : ' · ' + row.separation.toFixed(1) + ' units') +
       (row.lastSeenSeconds === null || row.lastSeenSeconds === undefined ? '' : ' · last seen ' + Math.round(row.lastSeenSeconds) + 's ago (not proof of despawn)');
     btn.addEventListener('click', () => {
