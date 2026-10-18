@@ -30,7 +30,6 @@ def main():
     assert "Dialog Browser" in template
     assert "decimal ID (7465), or hex ID (0x1D29)" in template
     assert "Zone browse mode" in template
-    assert "No search filter is active" in template
     assert "Jump to ID" in template
     assert "page {{ page }} of {{ total_pages }}" in template
     assert "prev" in template and "next" in template

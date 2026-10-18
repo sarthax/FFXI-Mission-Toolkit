@@ -76,10 +76,10 @@ def main():
 
     assert EventIdentity("Zone A",149,"Actor A").key != EventIdentity("Zone B",149,"Actor A").key
     try:
-        MissionStateMachine("bad","f",(MissionState("a","A"),),(MissionTransition("t","a","missing","X"),),("a",)).validate()
+        MissionStateMachine("bad","f",(MissionState("a","A"),),(MissionTransition("t","a","missing","ZONE_IN"),),("a",)).validate()
     except Exception:
         raise AssertionError("validate returns errors rather than raising")
-    assert MissionStateMachine("bad","f",(MissionState("a","A"),),(MissionTransition("t","a","missing","X"),),("a",)).validate()
+    assert MissionStateMachine("bad","f",(MissionState("a","A"),),(MissionTransition("t","a","missing","ZONE_IN"),),("a",)).validate()
     print("generic mission state-machine self-test: PASS")
 
 

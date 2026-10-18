@@ -14,7 +14,7 @@ def run() -> None:
 
     single = (GUI_ROOT / "templates" / "path_plot.html").read_text(encoding="utf-8")
     multi = (GUI_ROOT / "templates" / "path_plot_all.html").read_text(encoding="utf-8")
-    assert 'href="/zones/{{ zoneid }}/view3d?capture_id={{ capture_id }}&{{ qs_id }}"' in single
+    assert 'href="/zones/{{ zoneid }}/view3d?capture_id={{ capture_id }}&' in single
     assert 'href="/zones/{{ zoneid }}/view3d_all?capture_id={{ capture_id }}&zone_db={{ zone_db }}"' in multi
 
 

@@ -33,7 +33,7 @@ def main():
         assert label in template,label
     assert "/features/trace/closure.json" in template
     assert "REQUIREMENT_GATE" in template
-    assert "Canonical root" in template
+    assert "Trace canonical root" in template
     assert "closure-scene" in template  # pan/zoom scene, not a static grid
     assert "marker-end:url(#closure-arrow)" in template
     assert "e.preventDefault()" in template
