@@ -1,7 +1,7 @@
 # Current Workbench Roadmap
 
 Status: ACTIVE REWORK  
-Last full-repository capability sweep: **2026-10-06**; targeted module audit **2026-10-10**; recent merged-commit/tree documentation reconciliation **2026-10-17** (not a new full runtime audit)  
+Last fully reconciled against merged PR and branch history: **2026-10-06** (full-repository sweep); targeted module audit **2026-10-10**; recent merged-commit/tree documentation reconciliation **2026-10-17** (not a new full runtime audit)  
 Authoritative repository: `sarthax/FFXI-Mission-Toolkit`  
 Authoritative branch: `main`
 
