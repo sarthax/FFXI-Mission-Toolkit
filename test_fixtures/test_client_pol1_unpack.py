@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Self-test for bounded read-only POL1 unpacker."""
 import struct
+import tempfile
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-from workbench.client.pol1_unpack import unpack_pol1, Pol1Error
+from workbench.client.pol1_unpack import unpack_pol1, search_unpacked, Pol1Error
 
 
 def make_pe(packed, expected):
@@ -37,6 +38,20 @@ def main():
             pass
         else:
             raise AssertionError("corrupt input accepted")
+    with tempfile.TemporaryDirectory() as td:
+        path = Path(td) / "sample.dll"
+        path.write_bytes(make_pe(packed, 6))
+        found = search_unpacked(path, "61 62 63")
+        assert [hit["rva"] for hit in found["hits"]] == [0x1000, 0x1003]
+        assert found["unpacked_sha256"] == out["sha256"]
+        assert search_unpacked(path, "ff")["status"] == "UNKNOWN"
+        for invalid in ("", "GG", "aa ?", "aa " * 65):
+            try:
+                search_unpacked(path, invalid)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError(f"invalid pattern accepted: {invalid!r}")
     print("POL1 unpack self-test: PASS")
 
 
