@@ -14,8 +14,10 @@ Host: Windows 10 Pro 10.0.19043, rustc/cargo 1.98.0, pinned Kuluu rev `a7752b3a`
 | Manifest listing (`--list --file FFXiMain.dll`) | PASS | `FFXiMain.dll latest=30261006_0`; `pc001.pol.com` resolved to 124.150.156.107, TCP 53001 reachable, no auth needed |
 | Version history (`--history`) | PASS | 5 versions, below |
 | Plan (`--plan`) | PASS | Printed "nothing downloaded"; output dir unchanged |
-| Single-file download | **BLOCKED** | Not run: the session's auto-mode classifier denied the command. Not retried or worked around |
-| SHA-256 / PE header / size / manifest consistency on a real file | NOT TESTED | Needs the download |
+| Single-file download | **PASS** | First attempt was blocked by the session classifier; rerun after explicit user permission. `FFXiMain.dll` [30261006_0], 2901584 bytes, exit 0 |
+| SHA-256 / PE header / size / manifest consistency | PASS | Size equals manifest decoded bytes (2901584); independent `sha256sum` matches the printed digest `042884888eea4fadac183e520f2ae9f8c4fa267860e685048e1880efd358e872`; MZ/PE signature, machine 0x14c (x86), DLL flag set; FileSig check passed inside the tool |
+| Re-run against existing output | PASS | Refused to overwrite, exit 1, file unchanged, no stray temp files |
+| Toolkit `binary_index` import | PASS | Index produced (3.8 MB JSON, kept in gitignored `exports/`); PDB string `FFXiMain___Win32_Retail` found. File never executed or loaded |
 | Overwrite prevention | PASS (unit) | `publishes_without_replacing_existing_files` |
 | Path traversal | PASS (unit) | `disallows_escape_paths` |
 | Corrupt / truncated / oversized payloads | PASS (unit) | 3 tests added here; 10/10 total |
@@ -63,8 +65,7 @@ Plan for current: `30261006_0/Direct/FFXiMain.dll.slc`.
 
 ## Next slice
 
-1. Run the single-file download manually (or grant permission) into the isolated directory, then record the SHA-256, size,
-   PE header check and `binary_index` result here.
+1. (Done above.) Download one older stamp (e.g. `30210706_0`) to confirm historical payloads are still served, then diff with `client.binary-diff`.
 2. Add a `.provenance.json` sidecar written by the downloader.
 3. Commit `Cargo.lock`, ignore `target/`, and cap the manifest decode (patch upstream or wrap).
 4. Make the fixture test for signature mismatch reachable by moving the verify step out of `run()`.
