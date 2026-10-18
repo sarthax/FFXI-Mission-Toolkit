@@ -87,3 +87,37 @@ def inspect_pol1(path: str | Path) -> dict:
     """Metadata-only API for the Binary Inspector; never returns code to a template."""
     result = unpack_pol1(Path(path).read_bytes())
     return {key: value for key, value in result.items() if key != "bytes"}
+
+
+def search_unpacked(path: str | Path, pattern: str, max_hits: int = 100) -> dict:
+    """Find exact byte patterns in decoded .text, returning bounded RVA evidence.
+
+    Patterns are two-digit hexadecimal bytes separated by spaces. The .text
+    base is an RVA, not an offset into the packed DLL or a live address.
+    """
+    import re
+    pieces = pattern.strip().split()
+    if not 1 <= len(pieces) <= 64 or any(not re.fullmatch(r"[0-9a-fA-F]{2}", x) for x in pieces):
+        raise ValueError("pattern requires 1-64 full hexadecimal bytes")
+    needle = bytes.fromhex("".join(pieces))
+    max_hits = max(1, min(int(max_hits), 200))
+    decoded = unpack_pol1(Path(path).read_bytes())
+    code = decoded["bytes"]
+    hits = []
+    offset = 0
+    while len(hits) < max_hits:
+        offset = code.find(needle, offset)
+        if offset < 0:
+            break
+        start = max(0, offset - 12)
+        end = min(len(code), offset + len(needle) + 12)
+        hits.append({"rva": decoded["base_rva"] + offset,
+                     "rva_hex": f"0x{decoded['base_rva'] + offset:X}",
+                     "section_offset": offset,
+                     "context_rva": decoded["base_rva"] + start,
+                     "context_hex": code[start:end].hex(" ")})
+        offset += 1
+    return {"status": "VERIFIED_BYTES" if hits else "UNKNOWN",
+            "pattern": pattern, "hits": hits, "limit_reached": len(hits) == max_hits,
+            "unpacked_sha256": decoded["sha256"], "text_base_rva": decoded["base_rva"],
+            "caution": "Byte matches do not establish instruction boundaries, execution, or semantic feature support."}
