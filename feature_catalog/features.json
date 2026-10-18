@@ -481,6 +481,17 @@
       "help": "/help"
     },
     {
+      "id": "retail-versions-browse",
+      "parent_id": "retail-versions",
+      "module": "Client Research",
+      "name": "Retail Version Browser",
+      "summary": "Browse discovered retail files and versions from a selected research snapshot.",
+      "route": "/retailversions/browse",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
       "id": "dialog-drift",
       "module": "Client Research",
       "name": "Dialog Drift",
