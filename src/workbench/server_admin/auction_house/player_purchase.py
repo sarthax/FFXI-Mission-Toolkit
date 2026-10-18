@@ -10,10 +10,6 @@ from dataclasses import asdict, dataclass
 import time
 from typing import Any
 
-from workbench.editors.character.adapters.inventory import build_basic_insert_plan, inspect_inventory_contract
-from workbench.editors.character.inventory_slots import inspect_slots
-from workbench.editors.character.schema import discover_character_schema
-from workbench.editors.character.session_state import detect_online_state
 
 from .legacy_test_executor import LegacyTestExecutionBlocked, evaluate_legacy_test_write_gate
 from .write_probe import probe_write_readiness
@@ -118,6 +114,12 @@ def execute_legacy_test_player_purchase(
     if any(not a.get(name) for name in required):
         raise LegacyTestExecutionBlocked("Legacy Auction House schema is missing player-purchase columns")
 
+    # Deferred: workbench.editors.character's package init imports this module's API router,
+    # so a module-level import here makes importing this module first circular.
+    from workbench.editors.character.adapters.inventory import build_basic_insert_plan, inspect_inventory_contract
+    from workbench.editors.character.inventory_slots import inspect_slots
+    from workbench.editors.character.schema import discover_character_schema
+    from workbench.editors.character.session_state import detect_online_state
     char_schema = discover_character_schema(service.connection)
     family = str(environment.get("family") or "").strip().lower()
     inventory_contract = inspect_inventory_contract(char_schema, family)
