@@ -220,3 +220,20 @@ code section and remains *string evidence only*.
 
 Run `python -m workbench.client.cli.pol1_report "C:\\FFXI-Research\\2019\\FFXiMain.dll" --output ".workbench/client-binaries/2019-pol1.json"`.
 Self-test: `python test_fixtures/test_client_wardrobe_report.py`.
+
+
+### Comparing separately generated client reports
+
+Run `pol1_report` once per local client build (2019 and a verified 2022+
+reference), saving independent JSON reports. Then:
+
+```powershell
+python -m workbench.client.cli.pol1_compare .workbench/client-binaries/2019-pol1.json .workbench/client-binaries/newer-pol1.json --output .workbench/client-binaries/wardrobe-build-diff.json
+```
+
+The comparison includes source file fingerprints, decompressed code fingerprints,
+and per-command evidence changes with `UNCHANGED`, `DIFFERENT_EVIDENCE` or
+`NOT_MEASURED` classifications. An UNKNOWN command probe is *not* an absence
+claim; a changed hash or string does not identify a patch or semantic capability.
+A verified newer FFXiMain.dll and its matching DAT table files are still needed
+for an actual cross-build investigation.
