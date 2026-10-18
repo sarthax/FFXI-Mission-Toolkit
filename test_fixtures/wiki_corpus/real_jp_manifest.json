@@ -1,0 +1,371 @@
+{
+ "extract_version": "wiki-corpus-extract-v1",
+ "samples": [
+  {
+   "sample_id": "jp-vw-loot-table",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "WikiWikiJP",
+   "page_title": "ヴォイドウォッチ/第一章/戦利品",
+   "page_id": "ヴォイドウォッチ/第一章/戦利品",
+   "source_url": "https://wikiwiki.jp/ffxi/%E3%83%B4%E3%82%A9%E3%82%A4%E3%83%89%E3%82%A6%E3%82%A9%E3%83%83%E3%83%81/%E7%AC%AC%E4%B8%80%E7%AB%A0/%E6%88%A6%E5%88%A9%E5%93%81",
+   "revision_id": "none-exposed",
+   "revision_timestamp": null,
+   "source_revision": null,
+   "retrieved_at": "2026-10-18T23:46:52Z",
+   "retrieval_note": "revision id not exposed by PukiWiki HTML; retrieved_at recorded at crawl",
+   "raw_source_sha256": "a2cf69ebabb60d49320f23c0eba1b54e9945c2cdc877f6c94680ef2c95435418",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 86879,
+   "license_note": "terms not verified; minimal structural excerpt only, check before wider redistribution",
+   "categories": [
+    "table",
+    "drops",
+    "japanese-label"
+   ],
+   "note": "Loot list table; header is not a label/value pair",
+   "excerpt_kind": "html_table",
+   "source_format": "html",
+   "table_index": 0,
+   "excerpt_wikitext": "<table><thead><tr><th>種類</th><th>名称</th><th>説明</th><th colspan=\"3\">Step / エリア / NM</th></tr></thead><tbody><tr><th>短剣</th><td>カラビニアダガー <span style=\"color:#FFDD33\">●</span></td><td>Ｄ26 隔186 STR+5 飛攻+12 敵対心+4<br class=\"spacer\">Lv88～ 戦黒赤シナ暗獣吟狩侍忍竜召学</td><td>3</td><td>ジャグナー森林</td><td><a href=\"/ffxi/%E3%83%B4%E3%82%A9%E3%82%A4%E3%83%89%E3%82%A6%E3%82%A9%E3%83%83%E3%83%81/%E7%AC%AC%E4%B8%80%E7%AB%A0/%E3%83%AB%E3%83%BC%E3%83%88%EF%BC%9A%E3%82%B5%E3%83%B3%E3%83%89%E3%83%AA%E3%82%A2#e9d7ea1d\" title=\"ヴォイドウォッチ/第一章/ルート：サンドリア\" class=\"rel-wiki-page\">Belphoebe</a></td></tr><tr><th>片手棍</th><td>テフヌトステッキ <span style=\"color:#FFDD33\">●</span></td><td>Ｄ42 隔216 MND+10 回復魔法スキル+5<br class=\"spacer\">ケアル回復量+15%<br class=\"spacer\">Lv87～ 白黒赤召学</td><td>3</td><td>ジャグナー森林</td><td><a href=\"/ffxi/%E3%83%B4%E3%82%A9%E3%82%A4%E3%83%89%E3%82%A6%E3%82%A9%E3%83%83%E3%83%81/%E7%AC%AC%E4%B8%80%E7%AB%A0/%E3%83%AB%E3%83%BC%E3%83%88%EF%BC%9A%E3%82%B5%E3%83%B3%E3%83%89%E3%83%AA%E3%82%A2#e9d7ea1d\" title=\"ヴォイドウォッチ/第一章/ルート：サンドリア\" class=\"rel-wiki-page\">Belphoebe</a></td></tr></tbody></table>",
+   "excerpt_sha256": "f4d57911818e06d8527fb749b4dade52c5f695ce44e533ce8b28bec837d368d7",
+   "cells": [
+    [
+     "th",
+     "種類"
+    ],
+    [
+     "th",
+     "名称"
+    ],
+    [
+     "th",
+     "説明"
+    ],
+    [
+     "th",
+     "Step / エリア / NM"
+    ],
+    [
+     "th",
+     "短剣"
+    ],
+    [
+     "td",
+     "カラビニアダガー ●"
+    ],
+    [
+     "td",
+     "Ｄ26 隔186 STR+5 飛攻+12 敵対心+4 Lv88～ 戦黒赤シナ暗獣吟狩侍忍竜召学"
+    ],
+    [
+     "td",
+     "3"
+    ],
+    [
+     "td",
+     "ジャグナー森林"
+    ],
+    [
+     "td",
+     "Belphoebe"
+    ],
+    [
+     "th",
+     "片手棍"
+    ],
+    [
+     "td",
+     "テフヌトステッキ ●"
+    ],
+    [
+     "td",
+     "Ｄ42 隔216 MND+10 回復魔法スキル+5 ケアル回復量+15% Lv87～ 白黒赤召学"
+    ],
+    [
+     "td",
+     "3"
+    ],
+    [
+     "td",
+     "ジャグナー森林"
+    ],
+    [
+     "td",
+     "Belphoebe"
+    ]
+   ]
+  },
+  {
+   "sample_id": "jp-vw-npc-table",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "WikiWikiJP",
+   "page_title": "ヴォイドウォッチ/NPC",
+   "page_id": "ヴォイドウォッチ/NPC",
+   "source_url": "https://wikiwiki.jp/ffxi/%E3%83%B4%E3%82%A9%E3%82%A4%E3%83%89%E3%82%A6%E3%82%A9%E3%83%83%E3%83%81/NPC",
+   "revision_id": "none-exposed",
+   "revision_timestamp": null,
+   "source_revision": null,
+   "retrieved_at": "2026-10-18T23:38:57Z",
+   "retrieval_note": "revision id not exposed by PukiWiki HTML; retrieved_at recorded at crawl",
+   "raw_source_sha256": "d6760a33eb2491aec0fdbf79a6c8501ea6c318c2855896bf7e9590456bf3149c",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 71913,
+   "license_note": "terms not verified; minimal structural excerpt only, check before wider redistribution",
+   "categories": [
+    "table",
+    "rowspan"
+   ],
+   "note": "Exchange table with rowspan/colspan cells",
+   "excerpt_kind": "html_table",
+   "source_format": "html",
+   "table_index": 0,
+   "excerpt_wikitext": "<table><thead><tr><th>時代</th><th>エリア</th><th>座標</th><th>備考</th></tr></thead><tbody><tr><th rowspan=\"12\">現代</th><td>南サンドリア</td><td style=\"text-align:center;\">(F-9)</td><td>西ロンフォール出口付近。</td></tr><tr><td>バストゥーク商業区</td><td style=\"text-align:center;\">(D-11)</td><td>南グスタベルグ出口付近。</td></tr></tbody></table>",
+   "excerpt_sha256": "1a76cc77711c3f6e4fecd83fd72fa1eefdfcfcdc378598972c1192d35bb75f38",
+   "cells": [
+    [
+     "th",
+     "時代"
+    ],
+    [
+     "th",
+     "エリア"
+    ],
+    [
+     "th",
+     "座標"
+    ],
+    [
+     "th",
+     "備考"
+    ],
+    [
+     "th",
+     "現代"
+    ],
+    [
+     "td",
+     "南サンドリア"
+    ],
+    [
+     "td",
+     "(F-9)"
+    ],
+    [
+     "td",
+     "西ロンフォール出口付近。"
+    ],
+    [
+     "td",
+     "バストゥーク商業区"
+    ],
+    [
+     "td",
+     "(D-11)"
+    ],
+    [
+     "td",
+     "南グスタベルグ出口付近。"
+    ]
+   ]
+  },
+  {
+   "sample_id": "jp-vw-weakness-table",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "WikiWikiJP",
+   "page_title": "ヴォイドウォッチ/弱点",
+   "page_id": "ヴォイドウォッチ/弱点",
+   "source_url": "https://wikiwiki.jp/ffxi/%E3%83%B4%E3%82%A9%E3%82%A4%E3%83%89%E3%82%A6%E3%82%A9%E3%83%83%E3%83%81/%E5%BC%B1%E7%82%B9",
+   "revision_id": "none-exposed",
+   "revision_timestamp": null,
+   "source_revision": null,
+   "retrieved_at": "2026-10-18T23:45:50Z",
+   "retrieval_note": "revision id not exposed by PukiWiki HTML; retrieved_at recorded at crawl",
+   "raw_source_sha256": "717e067958dc9e7a4fd4e4526e14165a468d2aa734799fd51301a04b8be28810",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 134403,
+   "license_note": "terms not verified; minimal structural excerpt only, check before wider redistribution",
+   "categories": [
+    "table",
+    "row-header"
+   ],
+   "note": "Row-header (th) first column",
+   "excerpt_kind": "html_table",
+   "source_format": "html",
+   "table_index": 0,
+   "excerpt_wikitext": "<table><thead><tr><th rowspan=\"2\">名称</th><th rowspan=\"2\">初期値</th><th colspan=\"3\">限界</th><th rowspan=\"2\">効果</th><th rowspan=\"2\">ライズアイテム</th><th rowspan=\"2\">タリスマンジェイド</th></tr><tr><th>弱点</th><th>ライズ</th><th>上限</th></tr></thead><tbody><tr><td>ブルーアラインメント</td><td style=\"text-align:right;\">100%</td><td>350%</td><td style=\"text-align:right;\">+150%</td><td>550%</td><td>戦利品の数が増える。</td><td>青霧の真輝管</td><td><span class=\"wikicolor\" style=\"color:blue\">凝縮の明色ジェイド</span><br class=\"spacer\"><span class=\"wikicolor\" style=\"color:blue\">凝縮の暗色ジェイド</span></td></tr><tr><td>レッドアラインメント</td><td style=\"text-align:right;\">100%</td><td>350%</td><td style=\"text-align:right;\">+150%</td><td>550%</td><td>戦利品の質が向上する。</td><td>赤霧の真輝管</td><td><span class=\"wikicolor\" style=\"color:blue\">栄光の明色ジェイド</span><br class=\"spacer\"><span class=\"wikicolor\" style=\"color:blue\">栄光の暗色ジェイド</span></td></tr></tbody></table>",
+   "excerpt_sha256": "9ab829ca9c488048e9cfa0f775494e3aa4c12238ef05c30ec7c6129d1339235e",
+   "cells": [
+    [
+     "th",
+     "名称"
+    ],
+    [
+     "th",
+     "初期値"
+    ],
+    [
+     "th",
+     "限界"
+    ],
+    [
+     "th",
+     "効果"
+    ],
+    [
+     "th",
+     "ライズアイテム"
+    ],
+    [
+     "th",
+     "タリスマンジェイド"
+    ],
+    [
+     "th",
+     "弱点"
+    ],
+    [
+     "th",
+     "ライズ"
+    ],
+    [
+     "th",
+     "上限"
+    ],
+    [
+     "td",
+     "ブルーアラインメント"
+    ],
+    [
+     "td",
+     "100%"
+    ],
+    [
+     "td",
+     "350%"
+    ],
+    [
+     "td",
+     "+150%"
+    ],
+    [
+     "td",
+     "550%"
+    ],
+    [
+     "td",
+     "戦利品の数が増える。"
+    ],
+    [
+     "td",
+     "青霧の真輝管"
+    ],
+    [
+     "td",
+     "凝縮の明色ジェイド 凝縮の暗色ジェイド"
+    ],
+    [
+     "td",
+     "レッドアラインメント"
+    ],
+    [
+     "td",
+     "100%"
+    ],
+    [
+     "td",
+     "350%"
+    ],
+    [
+     "td",
+     "+150%"
+    ],
+    [
+     "td",
+     "550%"
+    ],
+    [
+     "td",
+     "戦利品の質が向上する。"
+    ],
+    [
+     "td",
+     "赤霧の真輝管"
+    ],
+    [
+     "td",
+     "栄光の明色ジェイド 栄光の暗色ジェイド"
+    ]
+   ]
+  },
+  {
+   "sample_id": "jp-vw-route-table",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "WikiWikiJP",
+   "page_title": "ヴォイドウォッチ/第一章/ルート：ウィンダス",
+   "page_id": "ヴォイドウォッチ/第一章/ルート：ウィンダス",
+   "source_url": "https://wikiwiki.jp/ffxi/%E3%83%B4%E3%82%A9%E3%82%A4%E3%83%89%E3%82%A6%E3%82%A9%E3%83%83%E3%83%81/%E7%AC%AC%E4%B8%80%E7%AB%A0/%E3%83%AB%E3%83%BC%E3%83%88%EF%BC%9A%E3%82%A6%E3%82%A3%E3%83%B3%E3%83%80%E3%82%B9",
+   "revision_id": "none-exposed",
+   "revision_timestamp": null,
+   "source_revision": null,
+   "retrieved_at": "2026-10-18T23:46:15Z",
+   "retrieval_note": "revision id not exposed by PukiWiki HTML; retrieved_at recorded at crawl",
+   "raw_source_sha256": "e42e09ac92c7db5b40d62bc87da13e5f46b77eb6cdaf244441362967f322a4e3",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 88906,
+   "license_note": "terms not verified; minimal structural excerpt only, check before wider redistribution",
+   "categories": [
+    "table",
+    "nested-links",
+    "map-grid"
+   ],
+   "note": "Route table with in-page anchors and grid references",
+   "excerpt_kind": "html_table",
+   "source_format": "html",
+   "table_index": 0,
+   "excerpt_wikitext": "<table><thead><tr><th>Step</th><th>ヴォイドウォーカー</th><th>エリア</th><th>Planar Rift 位置</th></tr></thead><tbody><tr><th rowspan=\"2\" style=\"text-align:center;\">1</th><td><a href=\"#d9a1a5a7\">Virvatuli (カヒライス)</a></td><td>西サルタバルタ</td><td rowspan=\"2\">(H-5) テンキー8<br class=\"spacer\">(E-10) テンキー3<br class=\"spacer\">(I-11) テンキー4</td></tr><tr><td><a href=\"#gfe8054d\">Pancimanci (マンドラゴラ)</a></td><td>西サルタバルタ〔Ｓ〕</td></tr></tbody></table>",
+   "excerpt_sha256": "411e2de0ad08771552c33999142e6a74ddba25e4c7749e11c440f6b3d73ebd23",
+   "cells": [
+    [
+     "th",
+     "Step"
+    ],
+    [
+     "th",
+     "ヴォイドウォーカー"
+    ],
+    [
+     "th",
+     "エリア"
+    ],
+    [
+     "th",
+     "Planar Rift 位置"
+    ],
+    [
+     "th",
+     "1"
+    ],
+    [
+     "td",
+     "Virvatuli (カヒライス)"
+    ],
+    [
+     "td",
+     "西サルタバルタ"
+    ],
+    [
+     "td",
+     "(H-5) テンキー8 (E-10) テンキー3 (I-11) テンキー4"
+    ],
+    [
+     "td",
+     "Pancimanci (マンドラゴラ)"
+    ],
+    [
+     "td",
+     "西サルタバルタ〔Ｓ〕"
+    ]
+   ]
+  }
+ ]
+}
