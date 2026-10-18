@@ -8,6 +8,7 @@ From `tools/retail_fetch`:
 
 ```powershell
 cargo run --release -- --list --file FFXiMain.dll
+cargo run --release -- --history --file FFXiMain.dll
 cargo run --release -- --file FFXiMain.dll --output D:\\FFXI-Research\\retail
 cargo run --release -- --file ROM/119/51.DAT --output D:\\FFXI-Research\\retail
 ```
@@ -20,3 +21,12 @@ Existing files are never overwritten. It validates each reconstructed file
 against Kuluu's manifest signature and uses a verified temporary file with create-new semantics.
 
 No network calls happen during import; the fetch only occurs when explicitly run.
+
+Use `--history --file FFXiMain.dll` to enumerate every version stamp and
+complete-file compressed size advertised by the current patch manifest before
+selecting `--version EXACT_STAMP`. A listed historical entry does not guarantee
+that the server still serves its payload.
+
+**Validation:** GitHub Actions runs `cargo check` and `cargo test` using a
+Linux Rust runner. Never claim successful compilation or downloading until the
+workflow and an explicitly permitted live network test both succeed.
