@@ -29,6 +29,9 @@ def main():
     assert audit["invalid_catalog_routes"] == [], audit
     assert audit["uncataloged_active_pages"] == [], audit
     assert "/feature-catalog" in known
+    from workbench.gui_shell import WORKSPACES
+    assert any(section.get("href") == "/feature-catalog"
+               for workspace in WORKSPACES for section in workspace["sections"])
     for page in ("help.html", "roadmap.html"):
         assert 'href="/feature-catalog"' in (ROOT / "gui/templates" / page).read_text()
     print("feature catalog smoke: PASS")
