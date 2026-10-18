@@ -9,7 +9,7 @@ The Feature Catalog is the structured inventory of **what the Toolkit exposes**.
 Implementation statuses: `implemented`, `partial`, `research`, `planned`.
 Validation statuses: `unverified`, `operator_reported`, `tested`.
 
-A route or source reference does not establish runtime acceptance. The first thirty-six records are a Help-derived seed, **not** an exhaustive module or subfeature census. The catalog is separate from Feature Trace's graph schema.
+A route or source reference does not establish runtime acceptance. The first fifty-six records are a Help-derived seed, **not** an exhaustive module or subfeature census. The catalog is separate from Feature Trace's graph schema.
 
 ## GUI
 
@@ -38,3 +38,7 @@ The Catalog page now shows an expandable **Coverage audit**. `workbench.core.ser
 ## Initial subfeature coverage
 
 The first expansion adds 18 Help-documented subfeatures across Auction House, Live Client, Feature Trace, Wiki and Key Items. These entries are manually curated from operator-facing descriptions, not inferred from every API endpoint. The catalog remains incomplete for other large modules, and all newly added child records retain `unverified` runtime acceptance until evidence is recorded.
+
+## Source-route expansion (October 18)
+
+Twenty additional operator-facing pages were added from the maintained GET route inventory, bringing the curated inventory to 56 records. These include missions, Assault, Nyzul, zones, client inspection, retail versions, dialog, capture search/query, migration converters, package review and validation runs. Static catalog route references were checked against the maintained route inventories; the Workbench regression workflow now runs `test_fixtures/test_feature_catalog.py` and triggers when `feature_catalog/**` changes. This still does not verify that the pages render in a configured Windows/DSP installation, or that every UI operation works.
