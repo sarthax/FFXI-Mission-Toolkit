@@ -51,6 +51,10 @@ DEFAULTS = {
     "live_client_replay_file": "",
     "live_client_replay_client": "",
     "live_client_auto_connect": "0",
+    "headless_observe_enabled": "0",
+    "headless_project_path": "",
+    "headless_telemetry_dir": "",
+    "headless_character": "",
 }
 
 AH_FLAGS = {

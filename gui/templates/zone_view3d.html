@@ -148,8 +148,8 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
 </div>
 <div id="ashita-live-controls" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:5px 0;padding:6px;border:1px solid var(--border);border-radius:6px;">
   <label><input id="ashita-live-toggle" type="checkbox" checked> Live Ashita position (read only)</label>
-  <label>Client ID <input id="ashita-live-client" value="ashita-a" list="ashita-live-clients" style="width:120px"></label>
-  <datalist id="ashita-live-clients"></datalist>
+  <label title="Show only the spawn markers linked to this instance in instance_entities (e.g. Assault missions)">Instance <select id="zone-instance" style="max-width:260px"><option value="0">All rows</option></select></label>
+  <label>Client <select id="ashita-live-client" style="min-width:180px;max-width:320px"><option value="ashita-a">ashita-a</option></select></label>
   <label>Refresh <select id="ashita-live-refresh"><option value="1000">1 Hz</option><option value="200">5 Hz</option><option value="100" selected>10 Hz</option><option value="50">20 Hz</option></select></label>
   <label><input id="ashita-live-entities" type="checkbox" checked> Nearby entities</label>
   <label>Find live entity <input id="ashita-entity-search" type="search" placeholder="Name, server ID or slot" style="width:165px" aria-label="Filter observed entities"></label>
@@ -473,6 +473,7 @@ import { parseZoneFile } from '/static/ffxi-dat/index.js';
 const LIVE_PARSE_AVAILABLE = {{ 'true' if live_parse_available else 'false' }};
 const FFXI_PATH = {{ ffxi_path_json | safe }};
 const GEOMETRY_ROM_PATH = {{ geometry_rom_path_json | safe }};
+const GEOMETRY_ROM_PATHS = {{ geometry_rom_paths_json | default('[]') | safe }};
 
 const paths = {{ paths_json | safe }};
 const ZONEID = {{ zoneid }};
@@ -544,11 +545,29 @@ const flyLabelProj = new THREE.Vector3();
 const wallMaterials = [];
 
 const entityDataUrl = CAPTURE_SPATIAL_URL || `/zoneplot/${ZONEID}/data.json`;
-fetch(entityDataUrl).then(r => r.json()).then(d => {
-  spawnEntitiesAll = (d.entities || []).filter(e => !e.zero);
-  refreshCaptureSpatialResults();
-  refreshZoneCorrelation();
-}).catch(() => {});
+const zoneInstanceSel = document.getElementById('zone-instance');
+function loadSpawnMarkers() {
+  let url = entityDataUrl;
+  const inst = +zoneInstanceSel.value || 0;
+  if (!CAPTURE_SPATIAL_URL && inst) url += '?instance=' + inst;
+  return fetch(url).then(r => r.json()).then(d => {
+    spawnEntitiesAll = (d.entities || []).filter(e => !e.zero);
+    refreshCaptureSpatialResults();
+    refreshZoneCorrelation();
+  }).catch(() => {});
+}
+zoneInstanceSel.addEventListener('change', () => {
+  const u = new URL(location.href);
+  if (+zoneInstanceSel.value) u.searchParams.set('instance', zoneInstanceSel.value); else u.searchParams.delete('instance');
+  history.replaceState(null, '', u);
+  loadSpawnMarkers();
+});
+fetch('/zoneplot/zones.json').then(r => r.json()).then(zl => {
+  for (const i of (zl.instances || []).filter(i => i.zone === ZONEID))
+    zoneInstanceSel.appendChild(new Option(i.id + ' ' + (i.instance_name || i.name || ''), i.id));
+  const want = new URLSearchParams(location.search).get('instance');
+  if (want && [...zoneInstanceSel.options].some(o => o.value === want)) zoneInstanceSel.value = want;
+}).catch(() => {}).finally(loadSpawnMarkers);
 
 // Navmesh remains zone data, regardless of whether markers came from the live server or a capture.
 fetch(`/zoneplot/${ZONEID}/data.json`).then(r => r.json()).then(d => {
@@ -577,8 +596,12 @@ const liveStatus = document.getElementById('ashita-live-status');
 const liveEntitiesToggle = document.getElementById('ashita-live-entities');
 const liveFollowToggle = document.getElementById('ashita-live-follow');
 const liveAutoZoneToggle = document.getElementById('ashita-live-autozone');
+function ensureLiveClientOption(id) {
+  if (![...liveClient.options].some(o => o.value === id)) liveClient.appendChild(new Option(id, id));
+}
 const liveQuery = new URLSearchParams(location.search);
 if (liveQuery.get('live') === '1' && /^[a-zA-Z0-9_-]{1,64}$/.test(liveQuery.get('client') || '')) {
+  ensureLiveClientOption(liveQuery.get('client'));
   liveClient.value = liveQuery.get('client');
   liveToggle.checked = true;
   liveAutoZoneToggle.checked = liveQuery.get('autozone') === '1';
@@ -894,18 +917,36 @@ function updateLiveDisplay(frameSeconds) {
     controls.update();
   }
 }
+let liveClientDetails = new Map();
 async function refreshLiveClients() {
   try {
     const response = await fetch('/live-client/bridge/clients');
     if (!response.ok) return;
     const body = await response.json();
-    const list = document.getElementById('ashita-live-clients');
-    list.replaceChildren();
     knownClientIds = (body.clients || []).filter(id => typeof id === 'string');
-    for (const id of knownClientIds) {
-      const option = document.createElement('option'); option.value = id; list.appendChild(option);
+    try {
+      const dr = await fetch('/live-client/bridge/clients/details');
+      if (dr.ok) liveClientDetails = new Map(((await dr.json()).details || []).map(d => [d.id, d]));
+    } catch (_) {}
+    const current = liveClient.value;
+    const ids = [...new Set(['ashita-a', ...knownClientIds, ...(current ? [current] : [])])];
+    liveClient.replaceChildren();
+    for (const id of ids) {
+      const d = liveClientDetails.get(id);
+      let label = id;
+      if (d && d.source === 'file_feed') {
+        label = id + ' · ' + (d.character || 'headless') + ' (file feed' + (d.connected ? ', live' : ', idle') + ')';
+      } else if (d) label = id + ' (Ashita)';
+      liveClient.appendChild(new Option(label, id));
     }
+    liveClient.value = current || 'ashita-a';
   } catch (_) {}
+}
+// Headless bots line up with server-reported markers under Legacy X,-Y,-Z (verified live); Ashita needs its own mapping.
+function applyAxesForClient(id) {
+  const d = liveClientDetails.get(id);
+  const headless = d && d.source === 'file_feed' && String(d.adapter || '').startsWith('xiheadless');
+  liveAxes.value = headless ? 'legacy' : 'x-z-y';
 }
 function clearLiveEntities(preservePicker = false) {
   for (const child of liveEntityPool) child.visible = false;
@@ -1148,6 +1189,7 @@ liveAutoZoneToggle.addEventListener('change', pollAshitaPosition);
 liveAxes.addEventListener('change', () => { ++lastLiveRequest; clearLiveMarker(); pollAshitaPosition(); });
 liveHeading.addEventListener('change', pollAshitaPosition);
 liveClient.addEventListener('change', () => {
+  applyAxesForClient(liveClient.value);
   pendingLiveZoneFocus = liveFollowToggle.checked;
   ++lastLiveRequest; clearLiveMarker(); liveAlignmentSamples = [];
   liveSampleCount.textContent = '0/2 points'; pollAshitaPosition();
@@ -2925,30 +2967,60 @@ function loadObjFallback() {
 }
 
 if (LIVE_PARSE_AVAILABLE) {
-  const datUrl = `/modelviewer/dat?ffxi_path=${encodeURIComponent(FFXI_PATH)}&rom_path=${encodeURIComponent(GEOMETRY_ROM_PATH)}`;
-  loadingEl.textContent = 'Fetching zone DAT…';
-  fetch(datUrl).then(r => {
-    if (!r.ok) throw new Error(`dat fetch ${r.status}`);
-    return r.arrayBuffer();
-  }).then(buffer => {
-    loadingEl.textContent = 'Parsing zone geometry…';
-    const zoneData = parseZoneFile(buffer, (msg) => { loadingEl.textContent = msg; });
-    if (zoneData.prefabs.length === 0 || zoneData.instances.length === 0) throw new Error('live parse produced no geometry');
-    const group = buildLiveZoneGroup(zoneData);
+  // City zones are split across several geometry DATs (one per area); load and merge them all.
+  // Each DAT carries its own textures, so every chunk is parsed and built independently.
+  const romPaths = (GEOMETRY_ROM_PATHS && GEOMETRY_ROM_PATHS.length) ? GEOMETRY_ROM_PATHS : [GEOMETRY_ROM_PATH];
+  (async () => {
+    const merged = new THREE.Group();
+    const audit = { total: 0, accepted: 0, missingPrefab: 0, invalidTransform: 0, mirrored: 0 };
+    const materials = {};
+    const unresolved = [];
+    let alias = 0, loaded = 0;
+    const perDat = [];
+    for (let n = 0; n < romPaths.length; n++) {
+      const rom = romPaths[n];
+      loadingEl.textContent = `Fetching zone DAT ${n + 1}/${romPaths.length}…`;
+      let zoneData;
+      try {
+        const r = await fetch(`/modelviewer/dat?ffxi_path=${encodeURIComponent(FFXI_PATH)}&rom_path=${encodeURIComponent(rom)}`);
+        if (!r.ok) throw new Error(`dat fetch ${r.status}`);
+        loadingEl.textContent = `Parsing zone geometry ${n + 1}/${romPaths.length}…`;
+        zoneData = parseZoneFile(await r.arrayBuffer(), (msg) => { loadingEl.textContent = msg; });
+      } catch (err) {
+        if (romPaths.length === 1 || n === 0) throw err;
+        perDat.push({ rom_path: rom, skipped: String(err?.message || err) });
+        continue;
+      }
+      if (zoneData.prefabs.length === 0 || zoneData.instances.length === 0) {
+        if (romPaths.length === 1) throw new Error('live parse produced no geometry');
+        perDat.push({ rom_path: rom, skipped: 'no geometry' });
+        continue;
+      }
+      const g = buildLiveZoneGroup(zoneData);
+      merged.add(g);
+      loaded++;
+      const ta = g.userData.transformAudit, ma = g.userData.materialAudit;
+      for (const k of Object.keys(audit)) audit[k] += ta[k] || 0;
+      for (const k of Object.keys(ma)) materials[k] = (materials[k] || 0) + (ma[k] || 0);
+      alias += zoneData.textureDiagnostics?.aliasMatchedCount || 0;
+      for (const u of zoneData.textureDiagnostics?.unresolvedNames || []) unresolved.push({ ...u, rom_path: rom });
+      perDat.push({ rom_path: rom, instances: ta.accepted, prefabs: zoneData.prefabs.length });
+    }
     // Raw parseZoneFile() output uses the client's own coordinate convention, which does not
     // match the (x, -y, -z) convention this app's spawn markers/capture paths/legacy OBJ bake
-    // all use (confirmed empirically against zone_plot.html's navmesh overlay for zone 77 —
+    // all use (confirmed empirically against zone_plot.html's navmesh overlay for zone 77 --
     // the live mesh was Z-mirrored). All materials here are DoubleSide, so the winding flip
     // from a negative scale doesn't affect visibility.
-    group.scale.set(1, -1, -1);
-    const audit = group.userData.transformAudit;
+    merged.scale.set(1, -1, -1);
+    merged.userData.transformAudit = audit;
+    merged.userData.materialAudit = materials;
     const discarded = audit.missingPrefab + audit.invalidTransform;
-    showMeshSource(`Client DAT · ${audit.accepted}/${audit.total} instances · ${audit.mirrored} mirrored${discarded ? ' · ' + discarded + ' skipped' : ''}`);
-    const materials = group.userData.materialAudit;
+    showMeshSource(`Client DAT · ${audit.accepted}/${audit.total} instances · ${audit.mirrored} mirrored${loaded > 1 ? ' · ' + loaded + ' DATs' : ''}${discarded ? ' · ' + discarded + ' skipped' : ''}`);
     setMeshDiagnostics('client_dat', {
-      rom_path: GEOMETRY_ROM_PATH, instances: audit, materials,
-      alias_matched_textures: zoneData.textureDiagnostics?.aliasMatchedCount || 0,
-      unresolved_texture_names: zoneData.textureDiagnostics?.unresolvedNames || []
+      rom_path: romPaths.length > 1 ? romPaths : romPaths[0], dats: romPaths.length > 1 ? perDat : undefined,
+      instances: audit, materials,
+      alias_matched_textures: alias,
+      unresolved_texture_names: unresolved
     });
     console.info('[ZoneViewer] zone material audit:', materials);
     if (materials.missingTexture || materials.invalidTexture) {
@@ -2956,8 +3028,8 @@ if (LIVE_PARSE_AVAILABLE) {
     }
     if (discarded) console.warn('[ZoneViewer] excluded unrenderable instances (no fallback transform invented):', audit);
     if (!audit.accepted) throw new Error('No valid zone instance transforms');
-    onZoneMeshReady(group);
-  }).catch(err => {
+    onZoneMeshReady(merged);
+  })().catch(err => {
     console.warn('[ZoneViewer] live parse failed, falling back to cached OBJ:', err);
     loadingEl.textContent = 'Live parse failed — loading cached mesh…';
     loadObjFallback();

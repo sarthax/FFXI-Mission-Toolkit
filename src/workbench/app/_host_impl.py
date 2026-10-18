@@ -659,7 +659,8 @@ def current_theme() -> str:
 
 
 templates.env.globals["current_theme"] = current_theme
-app.include_router(create_bridge_management_router(live_client_bridge_manager, templates))
+app.include_router(create_bridge_management_router(live_client_bridge_manager, templates,
+                                                 registry=live_client_replay_registry))
 app.include_router(create_native_control_router(live_client_bridge_manager.remembered_ashita_root))
 
 
@@ -6912,6 +6913,43 @@ def zoneid_for_zone_db(con, zone_db: str) -> int | None:
     return row[0] if row else None
 
 
+
+_ALTANA_ZONES_CSV = TOOLS_ROOT / "vendor" / "ffxi" / "reference" / "AltanaViewer_zones.csv"
+_ALTANA_ROM_CACHE: dict | None = None
+
+
+def _geometry_rom_paths(zone_name: str, primary: str | None) -> list[str]:
+    """Every ROM DAT AltanaViewer lists for a zone. City zones are split into per-area geometry
+    chunks (e.g. Bastok Markets = ROM/1/61..74); loading only the one in zones.geometry_rom_path
+    shows a single shell/building. Only two-part ROM\a\b.DAT entries are merged; the primary
+    path always comes first and everything else is de-duplicated and sorted."""
+    global _ALTANA_ROM_CACHE
+    if _ALTANA_ROM_CACHE is None:
+        table: dict[str, set] = {}
+        try:
+            for line in _ALTANA_ZONES_CSV.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line or line.startswith("@") or "," not in line:
+                    continue
+                path, name = line.split(",", 1)
+                parts = path.split("/")
+                if len(parts) not in (2, 3) or not all(x.isdigit() for x in parts):
+                    continue
+                table.setdefault(re.sub(r"[^a-z0-9]", "", name.lower()), set()).add(tuple(int(x) for x in parts))
+        except OSError:
+            pass
+        _ALTANA_ROM_CACHE = table
+    extra = sorted(_ALTANA_ROM_CACHE.get(re.sub(r"[^a-z0-9]", "", (zone_name or "").lower()), ()))
+    out = [primary] if primary else []
+    for ent in extra:
+        if len(ent) == 3:  # a/b/c -> ROM<a>\b\c.DAT (ROM2, ROM3...); a == 1 is plain ROM
+            path = ("ROM" if ent[0] == 1 else "ROM" + str(ent[0])) + "\\" + str(ent[1]) + "\\" + str(ent[2]) + ".DAT"
+        else:
+            path = "ROM\\" + str(ent[0]) + "\\" + str(ent[1]) + ".DAT"
+        if path not in out:
+            out.append(path)
+    return out if len(extra) > 1 else ([primary] if primary else [])
+
 @app.get("/zones/{zoneid}/view3d", response_class=HTMLResponse)
 def zone_view3d(request: Request, zoneid: int, capture_id: int = 0, entity_id: int = 0,
                  pc: int = 0, zone_db: str = ""):
@@ -6966,6 +7004,7 @@ def zone_view3d(request: Request, zoneid: int, capture_id: int = 0, entity_id: i
         "live_parse_available": live_parse_available,
         "ffxi_path_json": json.dumps(ffxi_path or ""),
         "geometry_rom_path_json": json.dumps(geometry_rom_path or ""),
+        "geometry_rom_paths_json": json.dumps(_geometry_rom_paths(zone_name, geometry_rom_path)),
         "all_zones": [{"zoneid": z[0], "name": z[1]} for z in all_zones],
         "capture_spatial_url_json": json.dumps(
             f"/captures/{capture_id}/spatial.json?zone_db={quote(zone_db)}"
@@ -7079,6 +7118,7 @@ def zone_view3d_all(request: Request, zoneid: int, capture_id: int, zone_db: str
         "live_parse_available": live_parse_available,
         "ffxi_path_json": json.dumps(ffxi_path or ""),
         "geometry_rom_path_json": json.dumps(geometry_rom_path or ""),
+        "geometry_rom_paths_json": json.dumps(_geometry_rom_paths(zone_name, geometry_rom_path)),
         "all_zones": [],
         "capture_spatial_url_json": json.dumps(
             f"/captures/{capture_id}/spatial.json?zone_db={zone_db}"

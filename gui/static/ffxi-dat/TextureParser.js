@@ -89,7 +89,20 @@ function decompressDXT3(data, width, height) {
       }
     }
   }
+  normalizeHalfRangeAlpha(rgba);
   return rgba;
+}
+// Many city/indoor FFXI DXT3 textures encode alpha on a 0..128 scale (128 = opaque, so the 4-bit
+// values dither between 7 and 8 => 119/136). Read as 0..255 every surface looks ~50% transparent
+// and renders washed-out grey. Only rescale when the texture never exceeds that range.
+function normalizeHalfRangeAlpha(rgba) {
+  let max = 0;
+  for (let i = 3; i < rgba.length; i += 4) if (rgba[i] > max) max = rgba[i];
+  if (max === 0 || max > 136) return;
+  for (let i = 3; i < rgba.length; i += 4) {
+    const a = Math.min(255, rgba[i] * 2);
+    rgba[i] = a >= 236 ? 255 : a;
+  }
 }
 const B1_HEADER_SIZE = 64;
 const B1_PALETTE_ENTRIES = 256;
