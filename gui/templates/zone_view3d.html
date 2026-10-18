@@ -1190,7 +1190,10 @@ liveAxes.addEventListener('change', () => { ++lastLiveRequest; clearLiveMarker()
 liveHeading.addEventListener('change', pollAshitaPosition);
 liveClient.addEventListener('change', () => {
   applyAxesForClient(liveClient.value);
-  pendingLiveZoneFocus = liveFollowToggle.checked;
+  // Picking a client is an explicit "take me to that player": turn on the overlay, follow and
+  // auto-zone so the viewer switches to the player's zone, loads it, and centres on them.
+  liveToggle.checked = true; liveFollowToggle.checked = true; liveAutoZoneToggle.checked = true;
+  pendingLiveZoneFocus = true;
   ++lastLiveRequest; clearLiveMarker(); liveAlignmentSamples = [];
   liveSampleCount.textContent = '0/2 points'; pollAshitaPosition();
 });
