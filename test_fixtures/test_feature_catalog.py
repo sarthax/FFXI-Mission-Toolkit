@@ -12,7 +12,7 @@ from workbench.core.services.feature_catalog_audit import audit_catalog
 
 def main():
     items = load_catalog()
-    assert len(items) >= 69
+    assert len(items) >= 75
     assert len([f for f in items if f.get('parent_id')]) >= 18
     assert len({f["id"] for f in items}) == len(items)
     routes = json.loads((ROOT / "docs/workbench/GUI_ROUTE_MAP.json").read_text())["routes"]
