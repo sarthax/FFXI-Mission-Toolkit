@@ -1,0 +1,785 @@
+{
+  "schema_version": 1,
+  "description": "Curated initial inventory based on in-app Help. Route links require independent source/route checks; no runtime acceptance is implied.",
+  "features": [
+    {
+      "id": "feature-trace",
+      "module": "Research & Evidence",
+      "name": "Feature Trace",
+      "summary": "Trace implementation and evidence across server, client, captures and packages.",
+      "route": "/features/trace",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "behavior-inspector",
+      "module": "Research & Evidence",
+      "name": "Behavior Inspector",
+      "summary": "Inspect Lua-backed behavior, guards, callbacks and source evidence.",
+      "route": "/behavior",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "feature-checker",
+      "module": "Research & Evidence",
+      "name": "Feature Checker",
+      "summary": "Check evidence coverage and required capabilities.",
+      "route": "/features/check",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-browser",
+      "module": "Captures",
+      "name": "Capture Browser",
+      "summary": "Inspect recorded packets, events, entities and timelines.",
+      "route": "/captures",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "key-items",
+      "module": "Character & Items",
+      "name": "Key Items",
+      "summary": "Browse key-item identities and static Lua evidence.",
+      "route": "/keyitems",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House",
+      "summary": "Auction House management, inspection and guarded operations.",
+      "route": "/auction-house/help",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "live-client",
+      "module": "Live Client",
+      "name": "Live Client Bridge",
+      "summary": "Inspect client bridge, telemetry and movement controls.",
+      "route": "/live-client/bridge/console",
+      "implementation": "implemented",
+      "validation": "operator_reported",
+      "help": "/help"
+    },
+    {
+      "id": "synth",
+      "module": "Server Administration",
+      "name": "Synth & Crafting",
+      "summary": "Browse recipes, ingredients and source availability.",
+      "route": "/synth",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "client-binary",
+      "module": "Client Research",
+      "name": "Binary Inspector",
+      "summary": "Inspect PE evidence, command probes and binary comparisons.",
+      "route": "/binaryinspector",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "validation",
+      "module": "Validation",
+      "name": "Validation",
+      "summary": "Inspect validation runs and results.",
+      "route": "/validation",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "research",
+      "module": "Research & Evidence",
+      "name": "Research Sessions",
+      "summary": "Record unresolved questions and supporting evidence.",
+      "route": "/research",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "id-drift",
+      "module": "Migration",
+      "name": "ID Drift",
+      "summary": "Compare server identifiers and migration mappings.",
+      "route": "/iddrift",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "entity-lookup",
+      "module": "Server Data",
+      "name": "Entity Lookup",
+      "summary": "Resolve server entity IDs and names and follow linked evidence.",
+      "route": "/entity",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "sql-browser",
+      "module": "Server Data",
+      "name": "SQL Browser",
+      "summary": "Inspect indexed server SQL data and related records.",
+      "route": "/sql",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "client-overview",
+      "module": "Client Research",
+      "name": "Client Overview",
+      "summary": "Navigate client asset, DAT and binary inspection tools.",
+      "route": "/clientoverview",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "packages",
+      "module": "Migration",
+      "name": "Packages",
+      "summary": "Inspect migration packages and source evidence.",
+      "route": "/packages",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "wiki",
+      "module": "Research & Evidence",
+      "name": "Wiki",
+      "summary": "Browse cached wiki research and supporting source material.",
+      "route": "/wiki",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "settings",
+      "module": "Configuration",
+      "name": "Settings",
+      "summary": "Configure Toolkit sources, profiles and local integrations.",
+      "route": "/settings",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "ah-browse",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House browsing and history",
+      "summary": "Inspect items, sellers, buyers, prices and activity.",
+      "route": "/auction-house/help",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "ah-economy",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House economy insights",
+      "summary": "Review economy health and market information.",
+      "route": "/auction-house/help",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "ah-item-picker",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House item selection",
+      "summary": "Use icon-backed item selection, browser links and contextual actions.",
+      "route": "/auction-house/help",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "ah-preferences",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House preferences and exports",
+      "summary": "Use remembered filters, favorites and read-only CSV exports.",
+      "route": "/auction-house/help",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "ah-restock",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House restock and cleanup",
+      "summary": "Preview guarded restock and cleanup operations.",
+      "route": "/auction-house/help",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "ah-recovery",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House recovery journal",
+      "summary": "Review durable case evidence and recipient attempt records; no automatic retry.",
+      "route": "/auction-house/help",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "ah-scheduled-rewards",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House scheduled rewards",
+      "summary": "Schedule cancellable Test-profile rewards with revalidation.",
+      "route": "/auction-house/help",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "ah-augmented-rewards",
+      "parent_id": "auction-house",
+      "module": "Server Administration",
+      "name": "Auction House augmented rewards",
+      "summary": "Configure and preview augments; experimental Test delivery requires acceptance.",
+      "route": "/auction-house/help",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/auction-house/help"
+    },
+    {
+      "id": "live-bridge",
+      "parent_id": "live-client",
+      "module": "Live Client",
+      "name": "Ashita bridge telemetry",
+      "summary": "Inspect receiver, sender configuration and live-client freshness.",
+      "route": "/live-client/bridge/console",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "live-entity-stream",
+      "parent_id": "live-client",
+      "module": "Live Client",
+      "name": "Live multi-entity streaming",
+      "summary": "Reconcile observed entities with the live viewer and server evidence.",
+      "route": "/live-client/bridge/console",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "live-movement",
+      "parent_id": "live-client",
+      "module": "Live Client",
+      "name": "Live movement and controls",
+      "summary": "Use armed movement and STOP/disarm controls with zone and identity safeguards.",
+      "route": "/live-client/bridge/console",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "live-3d",
+      "parent_id": "live-client",
+      "module": "Live Client",
+      "name": "Live 3D zone integration",
+      "summary": "Use player centering, zone switching, instance selection and live activity.",
+      "route": "/live-client/bridge/console",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "trace-evidence",
+      "parent_id": "feature-trace",
+      "module": "Research & Evidence",
+      "name": "Feature Trace evidence dossier",
+      "summary": "Review prioritized source and relationship evidence rather than raw graph breadth.",
+      "route": "/features/trace",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "trace-runtime",
+      "parent_id": "feature-trace",
+      "module": "Research & Evidence",
+      "name": "Feature Trace runtime drill-down",
+      "summary": "Inspect runtime paths and hierarchical behavior handoff.",
+      "route": "/features/trace",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "wiki-cache",
+      "parent_id": "wiki",
+      "module": "Research & Evidence",
+      "name": "Wiki cache and browsing",
+      "summary": "Search and browse cached research with provenance.",
+      "route": "/wiki",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "wiki-bulk",
+      "parent_id": "wiki",
+      "module": "Research & Evidence",
+      "name": "Wiki bulk import and sync",
+      "summary": "Manage background scrape/import jobs and cache health.",
+      "route": "/wiki",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "wiki-translation",
+      "parent_id": "wiki",
+      "module": "Research & Evidence",
+      "name": "Wiki translation research",
+      "summary": "Inspect Japanese translation and client terminology evidence.",
+      "route": "/wiki",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "ki-lua",
+      "parent_id": "key-items",
+      "module": "Character & Items",
+      "name": "Key Item Lua evidence",
+      "summary": "Inspect require, grant and remove references and source paths.",
+      "route": "/keyitems",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "character-items",
+      "module": "Character & Items",
+      "name": "Item Browser",
+      "summary": "Browse item records and inspect item data.",
+      "route": "/itembrowser",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "item-editor",
+      "module": "Character & Items",
+      "name": "Item Editor",
+      "summary": "Inspect and edit supported item data using guarded workflows.",
+      "route": "/itemedit",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "mission-browser",
+      "module": "Progression",
+      "name": "Missions",
+      "summary": "Browse mission and progression evidence.",
+      "route": "/missions",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "assault",
+      "module": "Progression",
+      "name": "Assault Tracker",
+      "summary": "Track Assault issues, source evidence and validation gaps.",
+      "route": "/domains/assault",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "nyzul",
+      "module": "Progression",
+      "name": "Nyzul Isle",
+      "summary": "Inspect Nyzul Isle domain data and related progression.",
+      "route": "/nyzul",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "zone-browser",
+      "module": "Zones & 3D",
+      "name": "Zones",
+      "summary": "Browse zone data and linked research evidence.",
+      "route": "/zones",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "zone-editor",
+      "module": "Zones & 3D",
+      "name": "Zone Editor",
+      "summary": "Inspect zone entities and spatial evidence.",
+      "route": "/zoneplot2",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "model-viewer",
+      "module": "Client Research",
+      "name": "Model Viewer",
+      "summary": "Inspect available client model assets.",
+      "route": "/modelviewer",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "dat-inspector",
+      "module": "Client Research",
+      "name": "DAT Inspector",
+      "summary": "Inspect client DAT file evidence.",
+      "route": "/datinspector",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "retail-versions",
+      "module": "Client Research",
+      "name": "Retail Version Explorer",
+      "summary": "Inspect retail manifest history and compare available versions.",
+      "route": "/retailversions",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "retail-versions-browse",
+      "parent_id": "retail-versions",
+      "module": "Client Research",
+      "name": "Retail Version Browser",
+      "summary": "Browse discovered retail files and versions from a selected research snapshot.",
+      "route": "/retailversions/browse",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "dialog-drift",
+      "module": "Client Research",
+      "name": "Dialog Drift",
+      "summary": "Compare client dialog and text evidence.",
+      "route": "/dialogdrift",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "research-gaps",
+      "module": "Research & Evidence",
+      "name": "Research Gaps",
+      "summary": "Review missing or unresolved client research evidence.",
+      "route": "/researchgaps",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "dialog-browser",
+      "module": "Server Data",
+      "name": "Dialog Browser",
+      "summary": "Inspect dialog and text records.",
+      "route": "/dialog",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "event-browser",
+      "module": "Server Data",
+      "name": "Event Browser",
+      "summary": "Inspect event and cutscene identifiers.",
+      "route": "/events",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-search",
+      "module": "Captures",
+      "name": "Capture Search",
+      "summary": "Search and correlate capture evidence.",
+      "route": "/captures/search",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-query",
+      "module": "Captures",
+      "name": "Capture Query",
+      "summary": "Query indexed capture data.",
+      "route": "/captures/query",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "validation-runs",
+      "module": "Validation",
+      "name": "Validation Runs",
+      "summary": "Browse recorded validation results.",
+      "route": "/validation/runs",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "package-review",
+      "module": "Migration",
+      "name": "Package Review",
+      "summary": "Review migration package readiness and evidence.",
+      "route": "/packages/review",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "lua-converter",
+      "module": "Migration",
+      "name": "Lua Converter",
+      "summary": "Convert supported Lua references for backport workflows.",
+      "route": "/backport/lua-convert",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "sql-converter",
+      "module": "Migration",
+      "name": "SQL Converter",
+      "summary": "Convert supported SQL content for backport workflows.",
+      "route": "/backport/sql-convert",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "bindings",
+      "module": "Migration",
+      "name": "Binding Converter",
+      "summary": "Inspect source binding and identifier conversion evidence.",
+      "route": "/backport/bindings",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "live-validation",
+      "module": "Validation",
+      "name": "Live Target Validation",
+      "summary": "Review live target validation workflow and its guarded operations.",
+      "route": "/validation/live-target",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "package-scope",
+      "module": "Migration",
+      "name": "Package Scope Review",
+      "summary": "Review selected package content and dependency scope.",
+      "route": "/packages/scope",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "package-create",
+      "module": "Migration",
+      "name": "Package Creation",
+      "summary": "Prepare a package from reviewed source evidence.",
+      "route": "/packages/create",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-formats",
+      "module": "Captures",
+      "name": "Capture Format Support",
+      "summary": "Review capture ingestion formats and known limitations.",
+      "route": "/captures/help",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-paths",
+      "module": "Captures",
+      "name": "Capture Path Visualization",
+      "summary": "Inspect recorded spatial paths and visualizations.",
+      "route": "/captures/plot",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-import",
+      "module": "Captures",
+      "name": "Capture Import",
+      "summary": "Import recorded gameplay evidence into the capture workspace.",
+      "route": "/captures/new",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "item-health",
+      "module": "Character & Items",
+      "name": "Item Health",
+      "summary": "Inspect item catalog health and evidence coverage.",
+      "route": "/itemhealth",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "research-contradictions",
+      "module": "Research & Evidence",
+      "name": "Research Contradictions",
+      "summary": "Review conflicting research evidence.",
+      "route": "/research/contradictions",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "research-evidence",
+      "module": "Research & Evidence",
+      "name": "Research Evidence",
+      "summary": "Browse recorded research evidence.",
+      "route": "/research/evidence",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "domain-overview",
+      "module": "Progression",
+      "name": "Domains Overview",
+      "summary": "Navigate domain-specific research and progression tools.",
+      "route": "/domains",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "video-ocr",
+      "module": "Captures",
+      "name": "Video OCR",
+      "summary": "Inspect video-derived text research.",
+      "route": "/ocr",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "llm-research",
+      "module": "Research & Evidence",
+      "name": "LLM Research",
+      "summary": "Explore local LLM-assisted research with source evidence safeguards.",
+      "route": "/llm",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-all-paths",
+      "module": "Captures",
+      "name": "All Capture Paths",
+      "summary": "Review spatial paths across available captures.",
+      "route": "/captures/plot_all",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-bulk-ingest",
+      "module": "Captures",
+      "name": "Bulk Capture Ingestion",
+      "summary": "Manage bulk capture import workflow.",
+      "route": "/captures/bulk-ingest",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-metadata-import",
+      "module": "Captures",
+      "name": "Capture Metadata Import",
+      "summary": "Import supplementary capture metadata.",
+      "route": "/captures/metadata-import",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-review",
+      "module": "Captures",
+      "name": "Capture Review Queue",
+      "summary": "Review capture exceptions and ingestion evidence.",
+      "route": "/captures/review",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-zone-review",
+      "module": "Captures",
+      "name": "Capture Zone Review",
+      "summary": "Review zone-linked capture evidence.",
+      "route": "/captures/zone-review",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "shift-master",
+      "module": "Progression",
+      "name": "Shift Master",
+      "summary": "Inspect Shift Master domain workflow.",
+      "route": "/shift-master",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    }
+  ]
+}

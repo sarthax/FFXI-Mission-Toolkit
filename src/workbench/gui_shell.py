@@ -20,6 +20,7 @@ WORKSPACES = (
         "href": "/",
         "sections": (
             {"label": "Dashboard", "href": "/"},
+            {"label": "Feature Catalog", "href": "/feature-catalog"},
             {"label": "Roadmap", "href": "/roadmap"},
             {"label": "Help", "href": "/help"},
         ),
