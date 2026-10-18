@@ -42,7 +42,7 @@ def _guard(fn):
 
 @router.get("/synth", response_class=HTMLResponse)
 def synth_page(request: Request):
-    for name in ("gui_server", "__main__"):
+    for name in ("workbench.app.host", "gui_server", "__main__"):
         env = getattr(getattr(sys.modules.get(name), "templates", None), "env", None)
         if getattr(env, "globals", None):
             templates.env.globals.update(env.globals)
