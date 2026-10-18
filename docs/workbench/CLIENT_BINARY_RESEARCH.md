@@ -161,3 +161,19 @@ Kuluu's documented POL1 LZSS decoding enabled an independent, read-only proof of
 `workbench.client.pol1_unpack.unpack_pol1` recovers bounded bytes and metadata, and `search_unpacked` performs bounded exact hex-byte searches with recovered .text RVAs and context. `workbench.client.binary.inspector` exposes metadata via `unpacked_code_evidence` and searches via `search_unpacked_code`. These are service APIs; a GUI search panel, instruction decoder and xref interpretation are not yet included. Missing matches remain UNKNOWN; bytes alone cannot establish instruction alignment, execution, or wardrobe semantics. No proprietary executable image is committed.
 
 Use a local, licensed client installation; never modify original files. Self-test: `python test_fixtures/test_client_pol1_unpack.py`.
+
+
+### Optional x86 decode evidence
+
+`workbench.client.binary.code_evidence.decode_window(path, rva, window=160, max_instructions=48)`
+disassembles an explicitly selected unpacked .text RVA using optional Python `capstone`
+(x86 32-bit). Install `capstone` separately when desired; otherwise it returns
+`DECODER_UNAVAILABLE`. The service caps the requested byte window at 512 bytes and
+instructions at 100. It emits instruction RVAs, raw bytes, mnemonics and operands,
+with an explicit warning that the start address and decoded instruction boundaries
+are not confirmed by control flow. No automatic semantic labeling, hooking or
+client modification takes place.
+
+Self-test: `python test_fixtures/test_client_code_evidence.py`.
+Next: correlate validated instructions with command-table references and inventory
+packet/container checks; do not conclude Wardrobe 5-8 can be patched from byte scans.
