@@ -19,3 +19,7 @@ Scope: literal local `href="/..."` links in global Help, in-app Roadmap, Capture
 4. Keep the smoke check in CI and avoid describing missing inventory entries as runtime 404s.
 
 A curated check runs as `test_fixtures/test_help_route_inventory.py`.
+
+## Source follow-up (2026-10-18)
+
+The maintained `GUI_ROUTE_MAP_AUXILIARY.json` has an explicit GET entry for `/captures/review`; the CI smoke test now uses both inventories and removes that exception. The source also exposes `@router.get("/auction-house/help")` in `src/workbench/server_admin/auction_house/status_ui.py` and `@router.get("/synth")` in `src/workbench/server_admin/synth/api.py`. These two are present as route handlers even though not listed in the combined static route map; final router inclusion and live HTTP responses still require verification. `/live-client/bridge/console` is supported by an existing HTTP 200 integration test in `tests/test_live_client_bridge_management_api.py`; live environment setup remains a separate acceptance concern. The three remaining inventory exceptions represent **inventory completeness** follow-ups, not established broken links.
