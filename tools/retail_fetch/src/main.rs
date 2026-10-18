@@ -28,6 +28,9 @@ fn run() -> Result<(), String> {
     let file = argument("--file", &args);
     let list = args.iter().any(|x| x == "--list");
     let history = args.iter().any(|x| x == "--history");
+    if history && list {
+        return Err("choose --history or --list, not both".into());
+    }
     if history && file.is_none() {
         return Err("--history requires --file MANIFEST_PATH".into());
     }
@@ -43,7 +46,9 @@ fn run() -> Result<(), String> {
         let filter = file.unwrap_or_default().to_lowercase();
         for entry in &manifest.files {
             if entry.path.to_lowercase().contains(&filter) {
-                println!("{}  latest={}", entry.path, entry.current().stamp);
+                if let Some(latest) = entry.versions.last() {
+                    println!("{}  latest={}", entry.path, latest.stamp);
+                }
             }
         }
         return Ok(());
