@@ -1,5 +1,6 @@
 """Checkpointed, polite WikiWikiJP crawl using the shared Wiki import pipeline."""
 from __future__ import annotations
+import contextlib
 import json
 import sqlite3
 import tempfile
@@ -46,7 +47,7 @@ def status(db):
             con.execute("UPDATE wiki_jp_crawl_jobs SET state='interrupted' WHERE state IN ('queued','running','pausing')")
         rows=con.execute("""SELECT id,state,seed,page_limit,processed,imported,failed,mode,
                            last_error,queue_json FROM wiki_jp_crawl_jobs
-                           ORDER BY updated_at DESC LIMIT 8""").fetchall()
+                           ORDER BY updated_at DESC, rowid DESC LIMIT 8""").fetchall()
     return [dict(id=r[0],state=r[1],seed=r[2],page_limit=r[3],processed=r[4],
                  imported=r[5],failed=r[6],mode=r[7],last_error=r[8],pending=len(json.loads(r[9]))) for r in rows]
 
@@ -116,11 +117,11 @@ def _save_page(db,title,raw):
     try:
         with tempfile.NamedTemporaryFile(suffix=".db",prefix="wiki_jp_",delete=False) as handle:
             filename=handle.name
-        with sqlite3.connect(filename) as con:
+        with contextlib.closing(sqlite3.connect(filename)) as con, con:
             con.execute(wiki_jobs._PAGES_DDL)
             con.execute("INSERT INTO reference_wiki_pages VALUES(?,?,?,?,?,?,?,?)",record)
         wiki_jobs._merge(str(db),filename,lambda msg:None)
-        with sqlite3.connect(str(db),timeout=30) as con:
+        with contextlib.closing(sqlite3.connect(str(db),timeout=30)) as con, con:
             page={"page_id":title,"title":title,"page_text":text}
             page_id,fmt,blocks=wiki_document.build_blocks(page,source_format="html",raw_source=raw)
             wiki_document.store_document(con,source_id="WikiWikiJP",page_id=page_id,
