@@ -184,6 +184,20 @@
   {% endif %}
 </section>
 
+<section class="dat-card" style="margin-top:14px">
+  <h3>Exact slash-command evidence (read-only)</h3>
+  <div class="body">
+    <p class="muted">Bounded search for raw ASCII command-like tokens containing “wardrobe”. Offsets are file offsets; a hit does not prove a supported command, and a miss does not prove absence. Packed or encoded resource data may not be visible as ASCII.</p>
+    <div class="dat-chips"><span class="chip">{{ result.command_evidence.total }} candidate{{ '' if result.command_evidence.total == 1 else 's' }}</span><span class="chip">{{ result.command_evidence.status }}</span></div>
+    {% if result.command_evidence.reason %}<p class="muted">{{ result.command_evidence.reason }}</p>{% endif %}
+    {% if result.command_evidence.hits %}
+    <div class="table-wrap"><table><tr><th>Token</th><th>File offset</th><th>NUL-terminated</th><th>Hex context</th></tr>
+    {% for hit in result.command_evidence.hits %}<tr><td class="mono">{{ hit.token }}</td><td class="mono">{{ hit.offset_hex }}</td><td>{{ 'yes' if hit.terminated_nul else 'no' }}</td><td class="mono" style="word-break:break-all">{{ hit.context_hex }}</td></tr>{% endfor %}
+    </table></div>
+    {% endif %}
+  </div>
+</section>
+
 {% if result.matches %}
 <div class="dat-match-grid">
   {% for m in result.matches %}

@@ -22,7 +22,7 @@ templates = Jinja2Templates(directory=str(GUI_ROOT / "templates"))
 
 
 def _sync_host_template_globals() -> None:
-    for module_name in ("gui_server", "__main__"):
+    for module_name in ("workbench.app.host", "gui_server", "__main__"):
         host = sys.modules.get(module_name)
         host_templates = getattr(host, "templates", None) if host is not None else None
         host_env = getattr(host_templates, "env", None)

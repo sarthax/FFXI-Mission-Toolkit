@@ -9,6 +9,19 @@ This is the authoritative current planning and capability inventory for the Miss
 
 `ROADMAP.md` remains the historical implementation ledger. `AUDIT_STATUS.md` remains a historical/implementation audit log. When older status text conflicts with this file, use this file plus merged `main` history.
 
+## 2026-10-18 documentation and navigation housekeeping (targeted reconciliation)
+
+**Scope:** GitHub main merges #1047–#1059 (including #1061 merged into #1059), operator guides, Help/roadmap and navigation regressions. This is a targeted source and reported local acceptance update, **not** another full-repository runtime audit. The October 6 full-sweep date remains unchanged.
+
+- [x] **Help and operator documentation:** Guides for Synth, Assault, RUN/GEO, Voidwalker, Live Client/3D and Feature Trace merged (#1047–#1050). GM Command Center guide corrected for implemented opt-in command sending (#1051).
+- [x] **Documentation safeguards:** CI triggers on documentation changes and checks guide references, Help links and source-level sidebar routes (#1052–#1058).
+- [x] **Sidebar route audit:** All 22 formerly unexplained sidebar paths have source-level route explanations (parameterized domains/viewer, Character Editor, replay, calculators). Historical route-map omissions did not establish 404s. See [sidebar audit](SIDEBAR_ROUTE_AUDIT_2026-10-18.md).
+- [x] **Mounted route and representative HTTP checks:** #1059 incorporated the local agent fixes in #1061: FastAPI included-router matching and template globals for Synth and nine Auction House modules. Local Windows agent reported mounted-route PASS with xi_tinkerer 0.141.1 and HTTP 200 for Help, Roadmap, Abyssea, Character Editor, Live Client replay/bridge, WS calculator, Synth and Auction House Help. Zone 0 3D redirected to zone 44 with the configured database; a bare worktree without zones data failed on missing DB. ASGI calls did not run lifespan startup.
+- [~] **CI qualification:** Linux lacks the optional compiled xi_tinkerer wheel, so the mounted-app test reports NOT RUN there. Seven CI checks passed on #1059; that is not a separate Linux mounted-route PASS.
+- [~] **Outstanding acceptance and upkeep:** Continue updating guides/help/roadmap on functional PRs; broader dynamic link/browser testing, dedicated walkthroughs for newer domains/calculators, and live DSP/Windows end-to-end acceptance are still open.
+
+**Status precedence:** October 10/17 entries below are dated baselines. This update supersedes their pending documentation/navigation claims only, not the unfinished product capabilities.
+
 ## 2026-10-17 recent merged capability reconciliation
 
 See [scope, evidence, and follow-up matrix](ROADMAP_HELP_SYNC_AUDIT_2026-10-17.md). The statuses below describe merged code, **not automatic proof of live DSP/Windows acceptance**.
@@ -17,10 +30,11 @@ See [scope, evidence, and follow-up matrix](ROADMAP_HELP_SYNC_AUDIT_2026-10-17.m
 - [x] **Calculators:** gear-aware melee and related weapon skill, magic, healing and pet calculation work, including RUN/GEO job-grade updates; source parity and representative combat/casting tests remain.
 - [x] **RUN / GEO toolkit domain:** tracking page and gaps inventory merged. These are *already added to the user's server* per operator; gap tracking must not be confused with missing server job support.
 - [x] **Voidwalker domain UI:** zone/spawn and NM filtering, tier/path progression graphs and Abyssea branch presentation merged; full data/runtime behavior validation remains open.
+- [~] **Voidwalker coverage follow-up (2026-10-18, PR #1063):** read-only six-area validation counts and prioritized NM test queue proposed; this summarizes recorded per-NM results, not live DPS/DSP acceptance or complete source coverage. The outstanding backlog includes position checks, skill/script parity, colored abyssite transitions, other zones and Abyssea scope.
 - [x] **3D Zone Viewer/Live Client improvements:** multiple zone geometry DATs, instance selector and texture transparency correction; live-client auto-zone/player centering, stable live picker, headless receiver freshness and combat/dialog activity panel merged. Repeatable client acceptance for zone variants, reconnect, multiple entities, and DSP server confirmation remains open.
 - [~] **Assault tracking:** imported Topaz issues and fix-log comparisons facilitate development; per-instance DSP porting and validation are not thereby complete.
 - [~] **Feature Trace / Wiki:** existing evidence and research tooling remains under quality and runtime-acceptance review. Do not mark all relevance, scrape, batch-import or source-line correlation goals complete on the basis of UI availability.
-- [ ] **Documentation completion:** dedicated operator walkthroughs for newer domains/calculators, exhaustive route/help link checks, and fresh integrated end-to-end acceptance evidence.
+- [~] **Documentation follow-ups:** initial operator walkthroughs and navigation checks merged; targeted newer-domain/calculator guides, broader dynamic-link/browser coverage, and integrated DSP/Windows acceptance remain. See October 18 update.
 
 ## 2026-10-11 Live Client movement status correction
 
@@ -38,7 +52,7 @@ See [scope, evidence, and follow-up matrix](ROADMAP_HELP_SYNC_AUDIT_2026-10-17.m
 - [x] **Auction House DSP core:** existing authoritative status and integrated help already document browse/transactions/economy/rewards, player actions and scoped Test-write safety. Preserve maintenance designation and explicit Test-profile/write gates; no new write capability is asserted here. See `docs/workbench/AUCTION_HOUSE_CAPABILITY_STATUS.md` and `/auction-house/help`.
 - [~] **Live Client:** documented Ashita-side bridge, managed local receiver, replay/waypoints and 3D spatial alignment diagnostics on `main`. Live Windows read/write compatibility and map coordinate calibration still require environment-specific testing. See `docs/workbench/LIVE_CLIENT_BRIDGE.md`; synthetic CI does not prove in-game operation.
 - [~] **Synth & Crafting:** `/synth` recipe browse/audit/preview workflows and legacy schema adapters are present; distinguish source-based recipe/ingredient auditing from verified in-game crafting and guard Test-only mutation paths. Usage is summarized in `/auction-house/help` and the module UI; dedicated operator validation remains.
-- [ ] **Cross-module documentation discipline:** on every functional PR update this file, the relevant module guide, in-tool help, and GUI roadmap summary. Reconcile the historical `ROADMAP.md` only as a dated ledger, not by rewriting old entries.
+- [~] **Cross-module documentation discipline (ongoing):** on every functional PR update this file, the relevant module guide, in-tool help, and GUI roadmap summary. Reconcile the historical `ROADMAP.md` only as a dated ledger, not by rewriting old entries.
 
 ## Status rules
 

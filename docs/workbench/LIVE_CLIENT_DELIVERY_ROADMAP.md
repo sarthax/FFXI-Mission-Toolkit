@@ -248,3 +248,7 @@ The unified inspector's exact reported-server-ID comparison now checks the **com
 ### 2026-10-18 — Correlation ambiguity hardening
 
 The existing zone correlation panel now retains **ambiguous** classification whenever an exact reported ID occurs more than once on either the loaded map side or the fresh live side, even when the other side is absent. A last-seen observation cannot override a duplicate-map ambiguity. Ambiguous rows show both map and live record counts. This prevents duplicate IDs from being incorrectly reported as simple live-only or server-only differences. This is not an authoritative DSP spawn-database join; source coverage, instance and dynamic spawn lifecycle still require validation.
+
+### 2026-10-18 — Headless client vs Kuluu audit (research only)
+
+An evidence-based comparison of our DSP headless client (XiHeadless-DSP) against the external GPL-3.0-or-later Kuluu headless client is in `docs/workbench/research/kuluu_headless_comparison/` (start with `EXECUTIVE_SUMMARY.md`). Finding: Kuluu cannot authenticate against the DSP server without a GPL fork (33-byte plain-TCP auth vs its 102-byte/TLS flavours), so nothing is replaced. Recommended direction is a backend-neutral automation contract with our own adapter; Kuluu stays an optional LSB-only backend across a process boundary. **No integration has been built or accepted**; the proposed first milestone is an offline contract test with synthetic fixtures (`POC_PLAN.md`).
