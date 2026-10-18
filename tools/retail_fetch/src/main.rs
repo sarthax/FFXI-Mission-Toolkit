@@ -65,6 +65,7 @@ fn run() -> Result<(), String> {
     }
     let payload = session.fetch(&version.direct, version.direct_len, &mut |_| {})?;
     let decoded = decode_direct_payload(&payload)?;
+    validate_decoded_size(decoded.len(), version.sig.len)?;
     let signature = FileSig::of(&decoded);
     if signature != version.sig {
         return Err(format!("manifest signature mismatch for {} at {}", entry.path, version.stamp));
@@ -73,6 +74,13 @@ fn run() -> Result<(), String> {
     fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     save_new(parent, &dest, &decoded)?;
     println!("saved {} [{}] ({} bytes)", dest.display(), version.stamp, decoded.len());
+    Ok(())
+}
+
+fn validate_decoded_size(actual: usize, expected: u64) -> Result<(), String> {
+    if actual as u64 > MAX_BYTES || actual as u64 != expected {
+        return Err(format!("decoded file size mismatch or over limit: got {actual}, expected {expected}"));
+    }
     Ok(())
 }
 
@@ -117,6 +125,13 @@ mod tests {
         assert!(save_new(dir.path(), &dest, b"data").is_err());
         assert!(!target.exists());
         assert!(fs::symlink_metadata(&dest).unwrap().file_type().is_symlink());
+    }
+
+    #[test]
+    fn rejects_incorrect_decoded_size() {
+        assert!(validate_decoded_size(3, 3).is_ok());
+        assert!(validate_decoded_size(4, 3).is_err());
+        assert!(validate_decoded_size(3, MAX_BYTES + 1).is_err());
     }
 
     #[test]
