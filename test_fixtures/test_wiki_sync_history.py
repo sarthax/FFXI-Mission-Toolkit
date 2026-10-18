@@ -5,18 +5,18 @@ from pathlib import Path
 from workbench.devtools.reference import wiki_bulk_jobs as jobs
 
 def main():
-    with tempfile.TemporaryDirectory() as folder:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
         db=Path(folder)/"cache.db"
         with jobs._connect(db) as con:
             con.execute("""INSERT INTO wiki_bulk_jobs
-                (id,source,state,mode,page_limit,started_at,completed_at)
-                VALUES (?,?,?,?,?,?,?)""",
+                (id,source,state,mode,page_limit,started_at,completed_at,updated_at)
+                VALUES (?,?,?,?,?,?,?,?)""",
                 ("complete","FFXIclopedia","completed","changed",50,
-                 "2026-10-09 08:00:00","2026-10-09 09:00:00"))
+                 "2026-10-09 08:00:00","2026-10-09 09:00:00","2026-10-09 09:00:00"))
             con.execute("""INSERT INTO wiki_bulk_jobs
-                (id,source,state,mode,page_limit,started_at)
-                VALUES (?,?,?,?,?,?)""",
-                ("failure","FFXIclopedia","error","changed",50,"2026-10-09 10:00:00"))
+                (id,source,state,mode,page_limit,started_at,updated_at)
+                VALUES (?,?,?,?,?,?,?)""",
+                ("failure","FFXIclopedia","error","changed",50,"2026-10-09 10:00:00","2026-10-09 10:00:00"))
         summary=jobs.sync_summary(db)
         assert summary["last_success"]["changed"]["at"]=="2026-10-09 09:00:00"
         assert summary["last_success"]["changed"]["runs"]==1

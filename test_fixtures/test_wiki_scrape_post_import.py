@@ -8,10 +8,11 @@ from workbench.devtools.reference import wiki_jobs
 
 
 def main():
-    with tempfile.TemporaryDirectory() as tmp:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
         db = Path(tmp) / "main.db"
         with sqlite3.connect(db) as con:
             con.execute(wiki_jobs._PAGES_DDL)
+            wiki_jobs.wiki_document.init_db(con)
         row = ("BGWiki", "123", "Medusa", "medusa", "7", "2026-01-01", "Some wiki text", "hash")
         item = {"row": row, "source_format": "mediawiki", "raw_source": "Some wiki text"}
         job = {"id": "testpostimport", "source": "BGWiki", "title": "Medusa",
