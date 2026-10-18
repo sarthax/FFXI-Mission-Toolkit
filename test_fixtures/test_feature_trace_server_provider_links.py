@@ -14,7 +14,7 @@ def test_item_subtype_links_to_base_item_across_server_lineages():
         links = provider_relationships(con, f"catalog:{prefix}_item_equipment:100")
 
         assert links == [{
-            "relationship": "EXTENDS_ITEM_BASIC",
+            "relationship": "ITEM_DETAIL_FOR",
             "source_node": f"catalog:{prefix}_item_equipment:100",
             "target_node": f"catalog:{prefix}_item_basic:100",
             "target_name": "base item",
@@ -31,7 +31,7 @@ def test_mob_group_links_to_unique_pool_and_blue_spell_links_to_mob_skill():
     con.execute("INSERT INTO topaz_mob_pools VALUES (55, 'pool')")
 
     group_links = provider_relationships(con, "catalog:topaz_mob_groups:zoneid=1&groupid=7")
-    assert group_links[0]["relationship"] == "USES_MOB_POOL"
+    assert group_links[0]["relationship"] == "GROUP_USES_POOL"
     assert group_links[0]["target_node"] == "catalog:topaz_mob_pools:55"
 
     con.execute("CREATE TABLE dsp_blue_spell_list (spellid INTEGER, mob_skill_id INTEGER)")
@@ -40,7 +40,7 @@ def test_mob_group_links_to_unique_pool_and_blue_spell_links_to_mob_skill():
     con.execute("INSERT INTO dsp_mob_skills VALUES (400, 'mob skill')")
 
     spell_links = provider_relationships(con, "catalog:dsp_blue_spell_list:10")
-    assert spell_links[0]["relationship"] == "USES_MOB_SKILL"
+    assert spell_links[0]["relationship"] == "BLUE_SPELL_MOB_SKILL"
     assert spell_links[0]["target_node"] == "catalog:dsp_mob_skills:400"
 
 

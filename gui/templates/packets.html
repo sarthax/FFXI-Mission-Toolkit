@@ -3,7 +3,7 @@
 {% block page_archetype %}workbench{% endblock %}
 {% block page_class %}packet-tools-page{% endblock %}
 {% block page_heading %}Packet Tools{% endblock %}
-{% block page_actions %}<a class="chip" href="/packets/decode?mode=bulk">Bulk decode</a>{% endblock %}
+{% block page_actions %}<a class="chip" href="/captures">Captured packets (Packet Browser)</a> <a class="chip" href="/packets/decode?mode=bulk">Bulk decode</a>{% endblock %}
 {% block page_help %}Decode arbitrary plaintext FFXI packet bytes into named typed fields using the indexed opcode definitions. Capture-native Packet Viewer remains the preferred path for already-ingested packets because it preserves session context and provenance.{% endblock %}
 {% block page_body %}
 <style>.packet-tools-page h2{margin:10px 0 6px}</style>
