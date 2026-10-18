@@ -3,6 +3,7 @@ use ffxi_install::manifest::{self, FileSig};
 use ffxi_install::patch_client::{decode_direct_payload, Server, Session, TITLE_FFXI};
 use std::env;
 use std::fs;
+use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 
 const MAX_BYTES: u64 = 128 * 1024 * 1024;
@@ -70,23 +71,19 @@ fn run() -> Result<(), String> {
     }
     let parent = dest.parent().ok_or("invalid output path")?;
     fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    let tmp = dest.with_extension("download.tmp");
-    if tmp.exists() {
-        return Err(format!("temporary file already exists: {}", tmp.display()));
-    }
-    fs::write(&tmp, &decoded).map_err(|e| e.to_string())?;
-    if dest.exists() {
-        let _ = fs::remove_file(&tmp);
-        return Err("destination appeared during download; refusing overwrite".into());
-    }
-    // Hard-link the completed temporary file to guarantee create-new semantics.
-    // Never replace an existing client file.
-    if let Err(e) = fs::hard_link(&tmp, &dest) {
-        let _ = fs::remove_file(&tmp);
-        return Err(format!("cannot create destination safely: {e}"));
-    }
-    let _ = fs::remove_file(&tmp);
+    save_new(parent, &dest, &decoded)?;
     println!("saved {} [{}] ({} bytes)", dest.display(), version.stamp, decoded.len());
+    Ok(())
+}
+
+fn save_new(parent: &Path, dest: &Path, decoded: &[u8]) -> Result<(), String> {
+    let mut tmp = tempfile::NamedTempFile::new_in(parent).map_err(|e| e.to_string())?;
+    tmp.write_all(decoded).map_err(|e| e.to_string())?;
+    tmp.flush().map_err(|e| e.to_string())?;
+    // Linking is atomic and fails if the destination already exists, including
+    // dangling symlinks. NamedTempFile owns and cleans up its exclusive staging file.
+    fs::hard_link(tmp.path(), &dest)
+        .map_err(|e| format!("cannot create destination safely: {e}"))?;
     Ok(())
 }
 
@@ -100,6 +97,28 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn publishes_without_replacing_existing_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let dest = dir.path().join("FFXiMain.dll");
+        save_new(dir.path(), &dest, b"first").unwrap();
+        assert!(save_new(dir.path(), &dest, b"second").is_err());
+        assert_eq!(fs::read(&dest).unwrap(), b"first");
+        assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn refuses_dangling_destination_symlink() {
+        let dir = tempfile::tempdir().unwrap();
+        let dest = dir.path().join("FFXiMain.dll");
+        let target = dir.path().join("missing");
+        std::os::unix::fs::symlink(&target, &dest).unwrap();
+        assert!(save_new(dir.path(), &dest, b"data").is_err());
+        assert!(!target.exists());
+        assert!(fs::symlink_metadata(&dest).unwrap().file_type().is_symlink());
+    }
+
     #[test]
     fn disallows_escape_paths() {
         for value in ["../FFXiMain.dll", "/tmp/escape", "C:/bad", "ROM/../bad", "ROM\\1\\2.DAT", ""] {
