@@ -141,3 +141,9 @@ def unpacked_code_evidence(path: str) -> dict:
 def search_unpacked_code(path: str, pattern: str, limit: int = 100) -> dict:
     """RVA-aware code evidence against decoded .text; no disassembly claims."""
     return search_unpacked(path, pattern, max_hits=limit)
+
+
+def decode_unpacked_code(path: str, rva: int, *, window: int = 160, limit: int = 48) -> dict:
+    """Optional Capstone x86 decoder at an explicitly selected .text RVA."""
+    from workbench.client.binary.code_evidence import decode_window
+    return decode_window(path, rva, window=window, max_instructions=limit)
