@@ -162,6 +162,7 @@ jobs:
           python test_fixtures/test_dynamic_sidebar_routes.py
           python test_fixtures/test_voidwalker_coverage.py
           python test_fixtures/test_assault_live_test_gate.py
+          python test_fixtures/test_assault_next_action.py
           python test_fixtures/test_mounted_sidebar_routes.py
           python test_fixtures/test_instance_feature_slice.py
           python test_fixtures/test_instance_slice_compare.py
