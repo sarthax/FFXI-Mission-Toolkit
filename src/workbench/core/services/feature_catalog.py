@@ -36,7 +36,15 @@ def load_catalog(path: Path = CATALOG) -> list[dict]:
             raise ValueError(f"{feature_id}: route/help must be local paths")
         if item.get("implementation") not in IMPLEMENTATION or item.get("validation") not in VALIDATION:
             raise ValueError(f"{feature_id}: invalid implementation or validation status")
+        parent = item.get("parent_id")
+        if parent is not None and (not isinstance(parent, str) or not ID_RE.fullmatch(parent)):
+            raise ValueError(f"{feature_id}: invalid parent ID")
         out.append(dict(item))
+    for item in out:
+        if item.get("parent_id") and item["parent_id"] not in seen:
+            raise ValueError(f"{item['id']}: unknown parent ID")
+        if item.get("parent_id") == item["id"]:
+            raise ValueError(f"{item['id']}: self-parenting feature")
     return out
 
 
