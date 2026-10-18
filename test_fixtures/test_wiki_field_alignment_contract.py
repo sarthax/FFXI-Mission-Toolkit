@@ -4,7 +4,7 @@ Run: python test_fixtures/test_wiki_field_alignment_contract.py
 Candidates remain presentation-only and must preserve original source locators.
 """
 from workbench.devtools.reference.wiki_document import (
-    mediawiki_blocks, presentation_groups, normalize_search,
+    mediawiki_blocks, presentation_groups, normalize_search, review_field_type,
 )
 
 
@@ -45,6 +45,10 @@ def main():
     table_candidates = tables[0]["field_candidates"]
     assert {c["field"] for c in table_candidates} == {"Drops", "報酬"}
     assert all(c["review_only"] is True for c in table_candidates)
+    assert {c["field_type"] for c in table_candidates} == {"DROPS", "REWARDS"}
+    assert review_field_type("出現条件") == "SPAWN_CONDITIONS"
+    assert review_field_type("クエスト") == "QUEST"
+    assert review_field_type("備考") is None
     assert normalize_search("　報酬　") == "報酬"
     print("Wiki field alignment source-contract regression: PASS")
 
