@@ -28,7 +28,11 @@ python test_fixtures/test_client_protocol_compatibility.py
 
 1. Verify the precise `0x1C` handler reads with a versioned disassembler transcript and/or read-only packet capture.
 2. Add a source-backed server packet-layout record and compare the server against each client build.
-3. Add a Protocol Compatibility tab to Binary Inspector using these validated records, with source links and uncertainty shown explicitly.
+3. Extend the new read-only Protocol Compatibility section in Binary Inspector into a dedicated tab, with filterable records and navigable evidence links. The first section is implemented on `/binaryinspector`; it does not yet offer file uploads, editable records, or capture ingestion.
 4. Investigate a reliable session client-build capability signal **before** enabling a modern packet format.
 
 This milestone does not change any client or server binary, packet, SQL schema, or inventory behavior.
+
+## Initial GUI integration
+
+The Binary Inspector page now renders packaged JSON protocol records and field-level layout differences without requiring a local DLL path. The records are loaded via `workbench.client.binary.inspector.list_protocol_records()`; invalid records are shown as errors instead of silently treated as compatible. Build hashes, evidence status and source references remain visible. This is a **section** in the existing page, not yet a tab. No protocol record is persisted to the graph by merely viewing the page.
