@@ -90,6 +90,24 @@ def main() -> None:
     h = downloader.parse_history("FFXiMain.dll  30210706_0  2878544 bytes  direct=2151611 bytes\n")
     assert h == [{"file": "FFXiMain.dll", "version": "30210706_0", "decoded_bytes": 2878544, "transfer_bytes": 2151611}]
 
+    # manifest cache: status without network, cache_only picker reads, limit
+    with tempfile.TemporaryDirectory() as t:
+        os.environ["WORKBENCH_RETAIL_ROOT"] = t
+        try:
+            assert downloader.cache_info() == {"exists": False, "count": 0, "mtime": None}
+            r = downloader.manifest_list("rom", cache_only=True)
+            assert r["ok"] is False and r["no_cache"] is True and r["files"] == [], r
+            rows = [{"file": f"ROM/{i}/1.DAT", "latest": "30210706_0"} for i in range(600)] + [{"file": "FFXiMain.dll", "latest": "30261006_0"}]
+            (Path(t) / downloader.CACHE_NAME).write_text(json.dumps({"files": rows}), encoding="utf-8")
+            info = downloader.cache_info()
+            assert info["exists"] and info["count"] == 601 and info["mtime"], info
+            assert len(downloader.manifest_list("rom", cache_only=True)["files"]) == 500
+            assert len(downloader.manifest_list("rom", cache_only=True, limit=50)["files"]) == 50
+            r = downloader.manifest_list("ffxi", cache_only=True)
+            assert r["ok"] and r["cached"] and [f["file"] for f in r["files"]] == ["FFXiMain.dll"], r
+        finally:
+            del os.environ["WORKBENCH_RETAIL_ROOT"]
+
     # missing executable is reported, not raised
     os.environ["RETAIL_FETCH_EXE"] = str(ROOT / "definitely" / "missing.exe")
     old = downloader.REPO_ROOT

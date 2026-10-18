@@ -11793,6 +11793,37 @@ def binaryinspector_save_probes(request: Request, run_set: str = Form(...)):
 _RETAIL_TABS = ("overview", "manifest", "planner", "artifacts", "compare", "diagnostics")
 
 
+def _human_bytes(n) -> str:
+    try:
+        n = float(n)
+    except (TypeError, ValueError):
+        return ""
+    for unit in ("B", "KB", "MB", "GB"):
+        if n < 1024 or unit == "GB":
+            return f"{int(n)} B" if unit == "B" else f"{n:.1f} {unit}"
+        n /= 1024
+    return ""
+
+
+@app.get("/retailversions/files.json")
+def retailversions_files(q: str = "", limit: int = 50):
+    """Manifest file-name suggestions for the Planner picker. Local cache only: never reads the network."""
+    from workbench.client.retail import downloader as dl
+    r = dl.manifest_list(q, cache_only=True, limit=max(1, min(limit, 200)))
+    return {"ok": r.get("ok", False), "files": r.get("files", []), "error": r.get("error")}
+
+
+@app.get("/retailversions/versions.json")
+def retailversions_versions(file: str = ""):
+    """Versions the manifest lists for one file (one explicit network read via the downloader)."""
+    from workbench.client.retail import downloader as dl
+    try:
+        r = dl.history(file)
+    except ValueError as ex:
+        return JSONResponse({"ok": False, "error": str(ex), "versions": []}, status_code=400)
+    return {"ok": r.get("ok", False), "versions": r.get("versions", []), "error": r.get("error")}
+
+
 @app.get("/retailversions", response_class=HTMLResponse)
 def retailversions_page(request: Request, tab: str = "overview", q: str = "", file: str = "", stamp: str = "",
                         refresh: str = "", plan: str = "", left: str = "", right: str = "", done: str = ""):
@@ -11805,14 +11836,16 @@ def retailversions_page(request: Request, tab: str = "overview", q: str = "", fi
     ctx = {"request": request, "tab": tab, "tabs": _RETAIL_TABS, "q": q, "file": file, "stamp": stamp,
            "artifacts": artifacts, "exe": dl.find_exe(), "root": catalog.retail_root(), "error": None,
            "manifest": None, "hist": None, "plan_out": None, "diff": None, "left": left, "right": right,
-           "done": done, "timeout": dl.DEFAULT_TIMEOUT}
+           "done": done, "timeout": dl.DEFAULT_TIMEOUT, "cache": dl.cache_info(), "human": _human_bytes}
     try:
         if tab == "manifest":
             ctx["manifest"] = dl.manifest_list(q, refresh=bool(refresh))
             if file:
                 ctx["hist"] = dl.history(file)
-        elif tab == "planner" and file and stamp and plan:
-            ctx["plan_out"] = dl.plan(file, stamp)
+        elif tab == "planner" and file:
+            ctx["hist"] = dl.history(file)
+            if stamp and plan:
+                ctx["plan_out"] = dl.plan(file, stamp)
         elif tab == "compare" and left and right:
             lf, lv = left.split("|", 1)
             rf, rv = right.split("|", 1)
