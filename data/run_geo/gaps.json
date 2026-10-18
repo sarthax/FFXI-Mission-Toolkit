@@ -33,29 +33,29 @@
   "id": "g04",
   "area": "Unlock quests",
   "title": "GEO unlock: Dances with Luopans (quest 118, Sylvie, Western Adoulin)",
-  "status": "missing",
+  "status": "partial",
   "evidence": "V",
-  "detail": "LSB has a full script ending in unlockJob(GEO). DSP has the quest id and a Sylvie NPC row (zone 256) but no Sylvie script and no quest script, so the quest cannot run. Adoulin text/event ids must be verified against DSP client data.",
-  "source": "LSB scripts/quests/adoulin/Dances_with_Luopans.lua",
+  "detail": "Sylvie.lua written (events 31-37, 39), Ceizak/Yahse rest step (dances_with_luopans.lua + regions + healing hook), Ergon Locus soil triggers in Konschtat/La Theine/Tahrongi. Ids verified vs client. Committed on feature/run-geo-unlock-quests, not pushed, not tested in game.",
+  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
   "note": ""
  },
  {
   "id": "g05",
   "area": "Unlock quests",
   "title": "RUN unlock: Children of the Rune (quest 119, Octavien, Eastern Adoulin)",
-  "status": "missing",
+  "status": "partial",
   "evidence": "V",
-  "detail": "LSB Octavien.lua drives it with the RUN_COTR char var and ends in unlockJob(RUN) plus the Rune Fencer job gesture key item. DSP has the quest id and an Octavien NPC row (zone 257) but no script. DSP Eastern Adoulin has 5 NPC scripts vs 14 in LSB.",
-  "source": "LSB scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+  "detail": "Octavien.lua written (events 23-29) plus Yahse_Wildflower.lua petal NPC. Ids verified vs client. Committed on feature/run-geo-unlock-quests, not pushed, not tested in game.",
+  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
   "note": ""
  },
  {
   "id": "g06",
   "area": "Unlock quests",
   "title": "Job gesture key items / job-unlock text for GEO and RUN",
-  "status": "hold",
-  "evidence": "",
-  "detail": "Key item names must be resolved with id_bridge.py keyitem and checked against the client; never guess ids. Tied to g04/g05.",
+  "status": "done",
+  "evidence": "V",
+  "detail": "Verified in client ROM/175/35.DAT: LUOPAN 2290, FISTFUL_OF_HOMELAND_SOIL 2278, YAHSE_WILDFLOWER_PETAL 2279, JOB_GESTURE_GEOMANCER 2963, JOB_GESTURE_RUNE_FENCER 2964. TextID 7009 (YOU_CAN_NOW_BECOME) verified in both Adoulin zones.",
   "source": "",
   "note": ""
  },
@@ -197,6 +197,66 @@
   "evidence": "",
   "detail": "Open against main; waiting on review/merge.",
   "source": "PR #1040",
+  "note": ""
+ },
+ {
+  "id": "g21",
+  "area": "Unlock quests",
+  "title": "Run SQL: rename La Theine / Tahrongi Ergon Locus scripts name",
+  "status": "missing",
+  "evidence": "V",
+  "detail": "UPDATE npc_list SET name='Ergon_Locus' WHERE npcid IN (17195723,17257120); needed because '???' names cannot be script filenames. Edited in sql/npc_list.sql, no live effect until run. Then confirm nameplates look right in game.",
+  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
+  "note": ""
+ },
+ {
+  "id": "g22",
+  "area": "Unlock quests",
+  "title": "Octavien position mismatch",
+  "status": "hold",
+  "evidence": "V",
+  "detail": "DSP row (2.444,-11.442,-16.595) differs from LSB !pos (100.58,-40.15,-63.83). Left as captured; settle with !checknav or capture.",
+  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
+  "note": ""
+ },
+ {
+  "id": "g23",
+  "area": "Unlock quests",
+  "title": "Ceizak/Yahse Ergon Locus region radii and heal timing",
+  "status": "partial",
+  "evidence": "",
+  "detail": "Circles use NPC row coordinates, radii 11/8/7 from LSB cylinders; untested. Rest timing assumes ~3s healing tick (9s to 480s wait).",
+  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
+  "note": ""
+ },
+ {
+  "id": "g24",
+  "area": "Unlock quests",
+  "title": "In-game test of both quests end to end",
+  "status": "missing",
+  "evidence": "",
+  "detail": "Offer, decline, soil trade, rest step, Luopan, reward, Matre Bell purchase; Octavien offer, petal, HP/MP halving, reward, full-inventory retry.",
+  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
+  "note": ""
+ },
+ {
+  "id": "g25",
+  "area": "Unlock quests",
+  "title": "Western Adoulin BAYLD_OBTAINED = 7002 wrong",
+  "status": "missing",
+  "evidence": "V",
+  "detail": "Client text id should be 7005/7006. Not touched in the quest commit.",
+  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
+  "note": ""
+ },
+ {
+  "id": "g26",
+  "area": "Release",
+  "title": "Push feature/run-geo-unlock-quests to valhalla and merge to main",
+  "status": "hold",
+  "evidence": "",
+  "detail": "Awaiting user go-ahead. Never push to origin.",
+  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
   "note": ""
  }
 ]
