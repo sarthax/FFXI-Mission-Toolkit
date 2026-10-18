@@ -788,6 +788,22 @@ const inspectorLiveSearch = document.getElementById('zone3d-inspector-live-searc
 const inspectorLiveSelect = document.getElementById('zone3d-inspector-live-select');
 const inspectorLiveOpen = document.getElementById('zone3d-inspector-live-open');
 const inspectorLiveCount = document.getElementById('zone3d-inspector-live-count');
+// Option values are stable entity identities (never array indices, which reshuffle every frame).
+function liveEntityById(id) {
+  return id === '' || id == null ? undefined : liveObservedEntities.find(e => liveEntityIdentity(e) === String(id));
+}
+// Diff the <select> in place so an open menu is never destroyed; only add/remove what changed.
+function syncSelectOptions(select, placeholder, items) {
+  if (select === document.activeElement && select.dataset.syncing === 'open') return;
+  const want = new Map(items.map(i => [i.value, i.label]));
+  for (const opt of [...select.options]) {
+    if (opt.value === '') { opt.textContent = placeholder; continue; }
+    if (!want.has(opt.value)) opt.remove();
+    else { if (opt.textContent !== want.get(opt.value)) opt.textContent = want.get(opt.value); want.delete(opt.value); }
+  }
+  if (!select.options.length || select.options[0].value !== '') select.insertBefore(new Option(placeholder, ''), select.firstChild);
+  for (const [value, label] of want) select.add(new Option(label, value));
+}
 function liveEntityIdentity(e) {
   return String(e.server_entity_id ?? ('slot:' + e.client_index));
 }
@@ -797,16 +813,10 @@ function refreshInspectorLivePicker() {
     .filter(({e}) => liveEntityAgeSeconds(e) <= 3 &&
       (!needle || [e.n, e.server_entity_id, e.client_index].some(
         value => value != null && String(value).toLowerCase().includes(needle))));
-  // Keep an open native select stable through 10 Hz telemetry.
-  const signature = JSON.stringify(visible.map(({e,index}) => [index, liveEntityIdentity(e), e.n]));
-  if (inspectorLiveSelect.dataset.signature !== signature) {
-    const current = inspectorLiveSelect.value;
-    inspectorLiveSelect.replaceChildren(new Option('Select a live entity…', ''));
-    visible.forEach(({e,index}) => inspectorLiveSelect.add(
-      new Option((e.n || 'Unnamed') + ' [' + liveEntityIdentity(e) + ']', String(index))));
-    inspectorLiveSelect.dataset.signature = signature;
-    if (visible.some(({index}) => String(index) === current)) inspectorLiveSelect.value = current;
-  }
+  const current = inspectorLiveSelect.value;
+  syncSelectOptions(inspectorLiveSelect, 'Select a live entity…', visible.map(({e}) =>
+    ({value: liveEntityIdentity(e), label: (e.n || 'Unnamed') + ' [' + liveEntityIdentity(e) + ']'})));
+  if (current && [...inspectorLiveSelect.options].some(o => o.value === current)) inspectorLiveSelect.value = current;
   inspectorLiveCount.textContent = visible.length + ' current live entities' +
     (needle ? ' matching search' : '') + ' · hidden when telemetry is stale';
   inspectorLiveOpen.disabled = !inspectorLiveSelect.value;
@@ -821,7 +831,7 @@ inspectorLiveSelect.addEventListener('change', () => {
   inspectorLiveOpen.disabled = !inspectorLiveSelect.value;
 });
 inspectorLiveOpen.addEventListener('click', () => {
-  const e = liveObservedEntities[Number(inspectorLiveSelect.value)];
+  const e = liveEntityById(inspectorLiveSelect.value);
   if (!inspectorLiveSelect.value || !e || liveEntityAgeSeconds(e) > 3) return;
   liveSelectedEntityId = liveEntityIdentity(e);
   inspectEntity(e);
@@ -873,27 +883,24 @@ function updateLiveEntityPicker() {
     ({value: String(e.server_entity_id ?? ('slot:' + e.client_index)), label: (e.n || 'Unnamed') + ' [' + (e.server_entity_id ?? ('slot ' + e.client_index)) + ']', index: i}))
     .filter(e => liveEntityMatchesFilter(liveObservedEntities[e.index]) &&
       liveEntityAgeSeconds(liveObservedEntities[e.index]) <= 3);
-  const signature = JSON.stringify(options.map(e => [e.value, e.label]));
-  if (liveEntitySelect.dataset.signature !== signature) {
-    liveEntitySelect.replaceChildren(new Option('Select observed entity', ''));
-    options.forEach(e => liveEntitySelect.appendChild(new Option(e.label, String(e.index))));
-    liveEntitySelect.dataset.signature = signature;
-  }
-  const restored = selectedId ? liveObservedEntities.findIndex(e => String(e.server_entity_id ?? ('slot:' + e.client_index)) === selectedId) : -1;
-  if (liveEntitySelect.value !== (restored >= 0 ? String(restored) : ''))
-    liveEntitySelect.value = restored >= 0 ? String(restored) : '';
+  const menuOpen = liveEntitySelect === document.activeElement;
+  const typed = liveEntitySelect.value;
+  syncSelectOptions(liveEntitySelect, 'Select observed entity', options);
+  // While the user is working the menu, never overwrite their choice from telemetry.
+  const want = menuOpen ? typed : selectedId;
+  if (want && [...liveEntitySelect.options].some(o => o.value === want)) liveEntitySelect.value = want;
+  else if (!menuOpen) liveEntitySelect.value = '';
   liveEntityInspect.disabled = liveEntitySelect.value === '';
   updateLiveEntityVisibility();
   refreshInspectorLivePicker();
 }
 liveEntitySelect.addEventListener('change', () => {
-  liveSelectedEntityId = liveEntitySelect.value === '' ? '' :
-    String(liveObservedEntities[Number(liveEntitySelect.value)]?.server_entity_id ?? ('slot:' + liveObservedEntities[Number(liveEntitySelect.value)]?.client_index));
+  liveSelectedEntityId = liveEntitySelect.value;
   liveEntityInspect.disabled = liveEntitySelect.value === '';
   highlightObservedEntity();
 });
 liveEntityInspect.addEventListener('click', () => {
-  const entity = liveObservedEntities[Number(liveEntitySelect.value)];
+  const entity = liveEntityById(liveEntitySelect.value);
   if (liveEntitySelect.value === '' || !entity) return;
   inspectEntity(entity);
   highlightObservedEntity();
@@ -2079,8 +2086,9 @@ renderer.domElement.addEventListener('click', (event) => {
     const entity = liveObservedEntities[entityIndex];
     if (entity) {
       inspectEntity(entity);
-      liveEntitySelect.value = String(entityIndex);
-      liveSelectedEntityId = String(entity.server_entity_id ?? ('slot:' + entity.client_index));
+      liveSelectedEntityId = liveEntityIdentity(entity);
+      updateLiveEntityPicker();
+      liveEntitySelect.value = liveSelectedEntityId;
       liveEntityInspect.disabled = false;
       highlightObservedEntity();
       // Camera must use the exact same Ashita-to-scene projection as the clicked marker.
