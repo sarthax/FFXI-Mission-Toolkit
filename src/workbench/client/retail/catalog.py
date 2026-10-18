@@ -18,9 +18,57 @@ from workbench.runtime.paths import REPO_ROOT
 SIDECAR_SUFFIX = ".provenance.json"
 
 
-def retail_root() -> Path:
+BUILTIN_ROOT = REPO_ROOT / ".workbench" / "client-binaries" / "retail"
+CLIENT_SUBDIR = "RetailVersions"
+
+
+def _saved_root() -> str:
+    """Folder chosen manually on the Retail Version Explorer page ('' when none)."""
+    try:
+        import sqlite3
+        from workbench.runtime import settings_store
+        con = sqlite3.connect(str(settings_store.DB_PATH))
+        try:
+            return (settings_store.get(con, "retail_root") or "").strip()
+        finally:
+            con.close()
+    except Exception:
+        return ""
+
+
+def _client_folder() -> str | None:
+    """The FFXI client folder configured in Settings (or auto-detected from the registry)."""
+    try:
+        from workbench.runtime import settings_store
+        return settings_store.get_ffxi_install()
+    except Exception:
+        return None
+
+
+def retail_root_info() -> dict[str, Any]:
+    """Resolve the retail catalog folder and say where the choice came from.
+
+    Order: WORKBENCH_RETAIL_ROOT, a folder chosen on the page, <client folder>/RetailVersions,
+    then the repo-local built-in folder. A subfolder of the client install is used (not the
+    install itself) so catalog scans stay small and downloads stay out of the game files."""
+    client = _client_folder()
+    client_default = Path(client) / CLIENT_SUBDIR if client else None
+    default = client_default or BUILTIN_ROOT
     env = os.environ.get("WORKBENCH_RETAIL_ROOT")
-    return Path(env) if env else REPO_ROOT / ".workbench" / "client-binaries" / "retail"
+    saved = _saved_root()
+    if env:
+        path, source = Path(env), "env"
+    elif saved:
+        path, source = Path(saved), "setting"
+    elif client_default:
+        path, source = client_default, "client"
+    else:
+        path, source = BUILTIN_ROOT, "builtin"
+    return {"path": path, "source": source, "default": default, "client": client, "saved": saved}
+
+
+def retail_root() -> Path:
+    return retail_root_info()["path"]
 
 
 def _sha256(path: Path) -> str:

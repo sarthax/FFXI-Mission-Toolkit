@@ -11805,6 +11805,44 @@ def _human_bytes(n) -> str:
     return ""
 
 
+@app.get("/retailversions/browse")
+def retailversions_browse(path: str = ""):
+    """Server-side folder chooser for the retail folder (the browser cannot see real paths)."""
+    from workbench.captures import bulk_ingest as bi
+    try:
+        return bi.browse(path)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+
+@app.post("/retailversions/root")
+def retailversions_set_root(path: str = Form(""), reset: str = Form("")):
+    """Save (or clear) the manually chosen retail folder. Clearing returns to the client-folder default."""
+    import os
+    from pathlib import Path as _P
+    def back(note):
+        return RedirectResponse("/retailversions?tab=overview&done=" + quote(note[:400]), status_code=303)
+    con = get_con()
+    try:
+        if reset or not path.strip():
+            settings_mod.set_many(con, {"retail_root": ""})
+            return back("Retail folder reset to the default.")
+        raw = path.strip().strip('"')
+        if not os.path.isabs(raw):
+            return back("Not saved: enter a full path such as D:\FFXI\RetailVersions.")
+        p = _P(os.path.abspath(raw))
+        if p.parent == p:
+            return back("Not saved: choose a folder, not a drive root.")
+        try:
+            p.mkdir(parents=True, exist_ok=True)
+        except OSError as ex:
+            return back(f"Not saved: cannot use that folder ({ex}).")
+        settings_mod.set_many(con, {"retail_root": str(p)})
+        return back(f"Retail folder set to {p}.")
+    finally:
+        con.close()
+
+
 @app.get("/retailversions/files.json")
 def retailversions_files(q: str = "", limit: int = 50):
     """Manifest file-name suggestions for the Planner picker. Local cache only: never reads the network."""
@@ -11832,9 +11870,10 @@ def retailversions_page(request: Request, tab: str = "overview", q: str = "", fi
     from workbench.client.binary import inspector as bi
     from workbench.client.retail import catalog, downloader as dl
     tab = tab if tab in _RETAIL_TABS else "overview"
-    artifacts = catalog.scan()
+    root_info = catalog.retail_root_info()
+    artifacts = catalog.scan(root_info["path"])
     ctx = {"request": request, "tab": tab, "tabs": _RETAIL_TABS, "q": q, "file": file, "stamp": stamp,
-           "artifacts": artifacts, "exe": dl.find_exe(), "root": catalog.retail_root(), "error": None,
+           "artifacts": artifacts, "exe": dl.find_exe(), "root": root_info["path"], "root_info": root_info, "error": None,
            "manifest": None, "hist": None, "plan_out": None, "diff": None, "left": left, "right": right,
            "done": done, "timeout": dl.DEFAULT_TIMEOUT, "cache": dl.cache_info(), "human": _human_bytes}
     try:

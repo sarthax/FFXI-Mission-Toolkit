@@ -25,6 +25,30 @@ def put(root: Path, stamp: str, data: bytes, *, name="FFXiMain.dll", sha=None, v
     return d / name
 
 
+def test_retail_root_precedence(tmp_path=None):
+    import tempfile
+    from workbench.client.retail import catalog
+    saved_fns = (catalog._saved_root, catalog._client_folder)
+    old_env = os.environ.pop("WORKBENCH_RETAIL_ROOT", None)
+    try:
+        catalog._client_folder = lambda: None
+        catalog._saved_root = lambda: ""
+        assert catalog.retail_root_info()["source"] == "builtin"
+        catalog._client_folder = lambda: "C:/FFXI"
+        i = catalog.retail_root_info()
+        assert i["source"] == "client" and i["path"] == Path("C:/FFXI") / "RetailVersions"
+        catalog._saved_root = lambda: "D:/Alt"
+        i = catalog.retail_root_info()
+        assert i["source"] == "setting" and i["path"] == Path("D:/Alt") and i["default"] == Path("C:/FFXI") / "RetailVersions"
+        os.environ["WORKBENCH_RETAIL_ROOT"] = "E:/Env"
+        assert catalog.retail_root_info()["source"] == "env"
+    finally:
+        catalog._saved_root, catalog._client_folder = saved_fns
+        os.environ.pop("WORKBENCH_RETAIL_ROOT", None)
+        if old_env is not None:
+            os.environ["WORKBENCH_RETAIL_ROOT"] = old_env
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory() as t:
         root = Path(t)

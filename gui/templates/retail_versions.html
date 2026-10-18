@@ -55,8 +55,27 @@
     <p class="muted">Downloaded files are re-hashed and listed here. Two valid versions of one file can be compared.</p>
     <a class="chip" href="/retailversions?tab=artifacts">Local artifacts</a> <a class="chip" href="/retailversions?tab=compare">Compare</a></div>
 </div>
-<div class="rv-panel"><h3>Where files go</h3>
-  <p><code>{{ root }}</code> <span class="muted">(gitignored, separate from DSP and capture artifacts; override with <code>WORKBENCH_RETAIL_ROOT</code>)</span></p></div>
+<div class="rv-panel"><h3>Retail folder</h3>
+  <p>Downloads and the catalog live in <code>{{ root }}</code>, one subfolder per version.</p>
+  <p class="muted">{% if root_info.source == 'env' %}Set by the <code>WORKBENCH_RETAIL_ROOT</code> environment variable, which overrides any folder chosen here.
+  {% elif root_info.source == 'setting' %}Chosen manually.
+  {% elif root_info.source == 'client' %}Default: <code>{{ root_info.default.name }}</code> inside your client folder <code>{{ root_info.client }}</code>.
+  {% else %}Built-in default. No client folder is configured: set one under Settings, or choose a folder below.{% endif %}
+  A subfolder is used rather than the client install itself, so scans stay fast and game files are never touched.</p>
+  <form method="post" action="/retailversions/root" class="rv-form">
+    <label style="flex:1;min-width:300px;">Alternate folder
+      <input type="text" id="rv-root" name="path" value="{{ root_info.saved }}" placeholder="{{ root_info.default }}" style="width:100%;"></label>
+    <button type="button" id="rv-browse">Browse...</button>
+    <button type="submit">Save folder</button>
+    {% if root_info.saved %}<button type="submit" name="reset" value="1" formnovalidate>Use default</button>{% endif %}
+  </form>
+  <div id="rv-chooser" hidden style="border:1px solid var(--border);border-radius:6px;padding:8px;margin-top:8px;max-height:320px;overflow:auto">
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+      <button type="button" id="rv-up">&#8593; Up</button><code id="rv-cpath" style="flex:1;word-break:break-all"></code>
+      <button type="button" id="rv-pick">Use this folder</button><button type="button" id="rv-close">Close</button></div>
+    <div id="rv-cinfo" class="muted"></div><div id="rv-clist"></div>
+  </div>
+</div>
 
 {% elif tab == "manifest" %}
 <div class="rv-panel">
@@ -149,7 +168,7 @@ Imports removed: {% for i in diff.imports.removed[:30] %}<code>{{ i.dll }}!{{ i.
 <div class="rv-panel"><h3>Diagnostics and limitations</h3>
 <ul>
   <li>Downloader executable: {{ exe or 'not found (set RETAIL_FETCH_EXE or build tools/retail_fetch)' }}</li>
-  <li>Retail folder: <code>{{ root }}</code> (override with <code>WORKBENCH_RETAIL_ROOT</code>)</li>
+  <li>Retail folder: <code>{{ root }}</code> ({{ {'env':'environment variable','setting':'chosen manually','client':'default inside the client folder','builtin':'built-in default'}[root_info.source] }}). Change it on the Overview tab.</li>
   <li>Manifest cache: {% if cache.exists %}{{ cache.count }} files{% else %}none yet{% endif %}. Tick refresh on the Manifest tab for one new network read.</li>
   <li>Network timeout per downloader call: {{ timeout }} s (maximum 600). The Rust client has a fixed 120 s socket timeout.</li>
   <li>Integrity check is the legacy FileSig (length, byte sum, MD5 prefix), not cryptographic. The patch server is contacted over unauthenticated TCP.</li>
@@ -176,6 +195,25 @@ Imports removed: {% for i in diff.imports.removed[:30] %}<code>{{ i.dll }}!{{ i.
       var known=false;for(var i=0;i<list.options.length;i++){if(list.options[i].value===file.value){known=true}}
       if(known&&file.value!==startVal){form.submit()}
     });
+  }
+  var rb=$('rv-browse');
+  if(rb){
+    var cur='', parent=null;
+    var esc=function(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML};
+    var load=function(p){
+      fetch('/retailversions/browse?path='+encodeURIComponent(p)).then(function(r){return r.json().then(function(j){return [r.ok,j]})}).then(function(x){
+        if(!x[0]){$('rv-cinfo').textContent=x[1].error;return}
+        var j=x[1]; cur=j.path; parent=j.parent;
+        $('rv-cpath').textContent=cur||'(drives)'; $('rv-up').disabled=(parent===null); $('rv-pick').disabled=!cur;
+        $('rv-cinfo').textContent=cur?'':'Choose a drive. For a network path, type it in the box.';
+        $('rv-clist').innerHTML=j.dirs.map(function(d){return '<div><a href="#" data-p="'+esc(d.path).replace(/"/g,'&quot;')+'">&#128193; '+esc(d.name)+'</a></div>'}).join('')||'<div class="muted">No sub-folders.</div>';
+      });
+    };
+    rb.onclick=function(){$('rv-chooser').hidden=false;load($('rv-root').value||$('rv-root').placeholder||'')};
+    $('rv-close').onclick=function(){$('rv-chooser').hidden=true};
+    $('rv-up').onclick=function(){load(parent||'')};
+    $('rv-pick').onclick=function(){$('rv-root').value=cur;$('rv-chooser').hidden=true};
+    $('rv-clist').onclick=function(e){var a=e.target.closest('a');if(a){e.preventDefault();load(a.getAttribute('data-p'))}};
   }
   var c=$('rv-confirm'), g=$('rv-go');
   if(c&&g){c.addEventListener('change',function(){g.disabled=!c.checked})}
