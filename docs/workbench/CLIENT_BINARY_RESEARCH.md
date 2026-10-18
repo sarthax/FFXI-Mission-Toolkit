@@ -152,3 +152,12 @@ Not built: GUI to create/edit probe sets, Client Overview / Build page showing f
 ## Client Overview / Build page (2026-09-26)
 
 `/clientoverview` (Client > Client Overview, `client_overview.py`) fingerprints the installed client read-only: every root DLL/EXE (size, PE link time, SHA-256), FTABLE/VTABLE sizes, ROM folder list, and a **build id** = first 12 hex of `FFXiMain.dll` SHA-256. That build id is the same one used in probe snapshot ids (`snapshot:client-<build id>`), and the page lists any probe observations already saved for the build from `workbench.db` (opened read-only; never created). Captures/ID tables can cite the build id to say which client they came from.
+
+
+## POL1 decoded-code evidence (2026-10-18)
+
+Kuluu's documented POL1 LZSS decoding enabled an independent, read-only proof of concept against the archived December 2019 FFXiMain.dll: exactly 3,264,206 bytes were recovered from .text, SHA-256 `af2126c057d86559bfad2e164f7f7fd0a26bbc89ab29ea9cbde5cea807c7d2b8`. Source reference: https://github.com/jondwillis/kuluu-ffxi/blob/main/ffxi-dat/src/pol1.rs (GPL-3.0-or-later; review licensing before redistribution).
+
+`workbench.client.pol1_unpack.unpack_pol1` recovers bounded bytes and metadata, and `search_unpacked` performs bounded exact hex-byte searches with recovered .text RVAs and context. `workbench.client.binary.inspector` exposes metadata via `unpacked_code_evidence` and searches via `search_unpacked_code`. These are service APIs; a GUI search panel, instruction decoder and xref interpretation are not yet included. Missing matches remain UNKNOWN; bytes alone cannot establish instruction alignment, execution, or wardrobe semantics. No proprietary executable image is committed.
+
+Use a local, licensed client installation; never modify original files. Self-test: `python test_fixtures/test_client_pol1_unpack.py`.
