@@ -39,6 +39,6 @@ jobs:
         with:
           workspaces: tools/retail_fetch -> target
       - name: Check
-        run: cargo check --manifest-path tools/retail_fetch/Cargo.toml
+        run: cargo check --locked --manifest-path tools/retail_fetch/Cargo.toml
       - name: Test
-        run: cargo test --manifest-path tools/retail_fetch/Cargo.toml
+        run: cargo test --locked --manifest-path tools/retail_fetch/Cargo.toml

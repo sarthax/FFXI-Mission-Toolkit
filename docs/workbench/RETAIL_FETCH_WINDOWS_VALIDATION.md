@@ -69,3 +69,53 @@ Plan for current: `30261006_0/Direct/FFXiMain.dll.slc`.
 2. Add a `.provenance.json` sidecar written by the downloader.
 3. Commit `Cargo.lock`, ignore `target/`, and cap the manifest decode (patch upstream or wrap).
 4. Make the fixture test for signature mismatch reachable by moving the verify step out of `run()`.
+
+## Update: historical retrieval, comparison, provenance (2026-10-18, later)
+
+### Historical retrieval: PASS
+`--history` lists `30210706_0`; its payload is **still served**. Downloaded once (then re-downloaded for the
+sidecar test with an identical hash, so retrieval is reproducible).
+
+| Version | Decoded bytes | SHA-256 | PE |
+|---|---|---|---|
+| 30210706_0 | 2878544 | `1ded20ac5df1b168220992365b63cfe7596af17326acf0e02f90a5a8388446ba` | DLL, x86 |
+| 30261006_0 | 2901584 | `042884888eea4fadac183e520f2ae9f8c4fa267860e685048e1880efd358e872` | DLL, x86 |
+
+Both pass the FileSig check, size check and independent `sha256sum`. Neither was executed or loaded.
+
+### Binary comparison (Toolkit `inspector.diff` = `client.binary-diff` engine)
+Confirmed (read directly from PE headers/tables):
+- PE timestamps: 2021-07-05 vs 2026-10-05. Size +23040 bytes. Entry point RVA and SizeOfImage both grew.
+- Sections: same set (.data, .data1, .rdata, .reloc, .rsrc, .text, POL1). `.text` 3272270 to 3307054 virtual bytes,
+  `.data` 6741353 to 6989417, `POL1` 1967464 to 1989368; `.data1` and `.rsrc` unchanged in size.
+- Imports: +3 (`CreateProcessA`, `CLSIDFromString`, `FindWindowA`), -1 (`GlobalFree`). Exports: no change.
+Heuristic only:
+- Strings: +11578 / -11375 changes, mostly short junk in `POL1` (packed/encrypted-looking section). Not meaningful semantics.
+Limitations: the engine compares indexes (metadata, imports, exports, strings), not function bodies, so there is no
+function-level or xref diff here; the `client_build` field was null because the ad-hoc call did not pass it; the diff JSON
+is local under gitignored `exports/`.
+
+### Provenance sidecar: implemented
+`<file>.provenance.json` is written with create-new semantics only after the size and signature checks pass and the
+file is published. Fields: file, retail_version, source, retrieved_utc, expected/actual bytes, sha256,
+manifest_signature_verified (+ kind), downloader version, `indexer`/`index_result` (null; for the Toolkit to fill).
+It contains no local paths. Real sample verified live. `Cargo.lock` is committed, CI uses `--locked`,
+and `tools/retail_fetch/.gitignore` ignores `target/`.
+
+### Security validation
+- Signature mismatch: PASS (new unit test via `verify_signature`).
+- Windows symlink (dangling destination): PASS (test ran; creation succeeded here; it self-skips without privilege).
+- Corrupt/truncated/oversized payloads: PASS (see earlier tests).
+- Connection failure: PASS (closed local port fails fast). A stalling-server timeout test is NOT feasible: the
+  upstream `IO_TIMEOUT` is a hard-coded 120 s and not configurable.
+- Junctions/directory reparse points in the output *parent*: NOT TESTED; the tool documents that output dirs must be trusted.
+- Manifest decode bound: still OPEN. `Session::manifest()` calls unbounded `lz::decode_direct` internally, and the
+  frame cap is 1 GiB. Proposed fix: add `lz::decode_direct_bounded(coded, cap)` and a `manifest_bounded(cap)` to the
+  Kuluu fork we already pin, with a cap of 32 MiB, then bump the rev. We can't bound it from this crate because the
+  frame is read inside the private `exchange()`.
+
+### Recommended Retail Version Explorer
+A Toolkit page reusing Binary Inspector: list manifest history (`--history`), show which are downloaded locally
+(from sidecars), one-click fetch of a chosen stamp into `.workbench/client-binaries/<stamp>/`, auto-run `binary_index`
+with `--client-build <stamp>` and write the index path back into the sidecar, pick two stamps for `client.binary-diff`.
+Run the downloader as a subprocess (never in-process) and show only sidecar fields, not local paths.
