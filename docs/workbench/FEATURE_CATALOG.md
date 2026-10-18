@@ -4,12 +4,12 @@ The Feature Catalog is the structured inventory of **what the Toolkit exposes**.
 
 ## Canonical data
 
-`feature_catalog/features.json` is the curated v1 source. Each record has a stable `id`, `module`, `name`, `summary`, primary `route`, `help` route, `implementation` status and independent `validation` status.
+`feature_catalog/features.json` is the curated v1 source. Subfeatures use an optional `parent_id` pointing to an existing module record. The loader rejects duplicate IDs, missing parents and direct self-parenting. Parent records and child records may share a module route because a dedicated subfeature deep-link is not always available.\n\nEach record has a stable `id`, `module`, `name`, `summary`, primary `route`, `help` route, `implementation` status and independent `validation` status.
 
 Implementation statuses: `implemented`, `partial`, `research`, `planned`.
 Validation statuses: `unverified`, `operator_reported`, `tested`.
 
-A route or source reference does not establish runtime acceptance. The first eighteen records are a Help-derived seed, **not** an exhaustive module or subfeature census. The catalog is separate from Feature Trace's graph schema.
+A route or source reference does not establish runtime acceptance. The first thirty-six records are a Help-derived seed, **not** an exhaustive module or subfeature census. The catalog is separate from Feature Trace's graph schema.
 
 ## GUI
 
@@ -34,3 +34,7 @@ This v1 does not scrape Help automatically or declare every route to be a capabi
 ## Coverage diagnostics
 
 The Catalog page now shows an expandable **Coverage audit**. `workbench.core.services.feature_catalog_audit.audit_catalog()` compares global Help's static links to catalog routes and the maintained GET-route inventories, with explicit exceptions for the three mounted module routes. It reports unlisted Help destinations, unresolved catalog destinations, and entries lacking independent runtime validation. The test fails when global Help adds a module link without a catalog entry. This is **link-level coverage**, not an exhaustive audit of subfeatures, service methods or live behavior.
+
+## Initial subfeature coverage
+
+The first expansion adds 18 Help-documented subfeatures across Auction House, Live Client, Feature Trace, Wiki and Key Items. These entries are manually curated from operator-facing descriptions, not inferred from every API endpoint. The catalog remains incomplete for other large modules, and all newly added child records retain `unverified` runtime acceptance until evidence is recorded.
