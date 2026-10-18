@@ -23,6 +23,18 @@ class FileTelemetryBridge:
         self._offset = 0
         self._identity = None
 
+    def skip_to_recent(self, keep_bytes: int = 262144) -> None:
+        """On first attach to a long-running feed, start near the end instead of replaying history."""
+        if self._offset != 0:
+            return
+        with self.path.open("rb") as stream:
+            size = self.path.stat().st_size
+            if size <= keep_bytes:
+                return
+            stream.seek(size - keep_bytes)
+            stream.readline()  # discard the partial line so decoding starts on a frame boundary
+            self._offset = stream.tell()
+
     def poll(self, *, max_frames: int = 100) -> int:
         if type(max_frames) is not int or not 1 <= max_frames <= 1000:
             raise ValueError("invalid frame count")
