@@ -62,6 +62,12 @@ class ReplayRegistry:
         self._generations[client_id] = (bridge, uuid4().hex)
         self._feeds[client_id] = bridge
 
+    def feed_ids(self) -> tuple[str, ...]:
+        return tuple(sorted(self._feeds))
+
+    def feed_bridge(self, client_id: str) -> FileTelemetryBridge | None:
+        return self._feeds.get(client_id)
+
     def poll_feed(self, client_id: str, *, max_frames: int = 100) -> int:
         return self._feeds[client_id].poll(max_frames=max_frames)
 

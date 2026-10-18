@@ -6,9 +6,16 @@ The project began as a mission/data lookup utility. It has grown into a broader 
 
 The guiding rule is simple: **preserve what was observed, keep inference separate, and do not manufacture certainty when the evidence is incomplete.**
 
+> **October 17 documentation reconciliation:** [`docs/workbench/ROADMAP_HELP_SYNC_AUDIT_2026-10-17.md`](docs/workbench/ROADMAP_HELP_SYNC_AUDIT_2026-10-17.md)  
 > **Current planning/status:** [`docs/workbench/ROADMAP_CURRENT.md`](docs/workbench/ROADMAP_CURRENT.md)  
 > **Recent merged changes:** [`docs/workbench/RECENT_CHANGES_2026-10-03.md`](docs/workbench/RECENT_CHANGES_2026-10-03.md)  
 > **Historical implementation ledger:** [`docs/workbench/ROADMAP.md`](docs/workbench/ROADMAP.md)
+
+## Latest merged capability highlights (October 2026)
+
+Recent merged work includes the native Ashita Live Client bridge and guarded movement controls; live entity/telemetry observation; a 3D Zone Viewer with multiple geometry DATs, instance selection and automatic live-player zone/centering; the GM Command Center; shared combat/crafting calculators; RUN/GEO toolkit gap tracking and job-grade updates; and an expanded Voidwalker domain with progression graphs.
+
+**Implementation and runtime acceptance are different.** Local server and FFXI client behavior is build-, zone- and schema-dependent; native control acknowledgments are not independent server-side proof. RUN and GEO are reported added to the user's server: the toolkit's source/catalog parity backlog is not a claim that those jobs are unavailable server-side. See the [October 17 audit](docs/workbench/ROADMAP_HELP_SYNC_AUDIT_2026-10-17.md), [live-client delivery ledger](docs/workbench/LIVE_CLIENT_DELIVERY_ROADMAP.md), and [GM guide](docs/workbench/SERVER_GM_COMMAND_CENTER.md).
 
 ## What it is for
 

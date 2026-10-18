@@ -659,7 +659,8 @@ def current_theme() -> str:
 
 
 templates.env.globals["current_theme"] = current_theme
-app.include_router(create_bridge_management_router(live_client_bridge_manager, templates))
+app.include_router(create_bridge_management_router(live_client_bridge_manager, templates,
+                                                 registry=live_client_replay_registry))
 app.include_router(create_native_control_router(live_client_bridge_manager.remembered_ashita_root))
 
 
@@ -6933,6 +6934,43 @@ def zoneid_for_zone_db(con, zone_db: str) -> int | None:
     return row[0] if row else None
 
 
+
+_ALTANA_ZONES_CSV = TOOLS_ROOT / "vendor" / "ffxi" / "reference" / "AltanaViewer_zones.csv"
+_ALTANA_ROM_CACHE: dict | None = None
+
+
+def _geometry_rom_paths(zone_name: str, primary: str | None) -> list[str]:
+    """Every ROM DAT AltanaViewer lists for a zone. City zones are split into per-area geometry
+    chunks (e.g. Bastok Markets = ROM/1/61..74); loading only the one in zones.geometry_rom_path
+    shows a single shell/building. Only two-part ROM\a\b.DAT entries are merged; the primary
+    path always comes first and everything else is de-duplicated and sorted."""
+    global _ALTANA_ROM_CACHE
+    if _ALTANA_ROM_CACHE is None:
+        table: dict[str, set] = {}
+        try:
+            for line in _ALTANA_ZONES_CSV.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line or line.startswith("@") or "," not in line:
+                    continue
+                path, name = line.split(",", 1)
+                parts = path.split("/")
+                if len(parts) not in (2, 3) or not all(x.isdigit() for x in parts):
+                    continue
+                table.setdefault(re.sub(r"[^a-z0-9]", "", name.lower()), set()).add(tuple(int(x) for x in parts))
+        except OSError:
+            pass
+        _ALTANA_ROM_CACHE = table
+    extra = sorted(_ALTANA_ROM_CACHE.get(re.sub(r"[^a-z0-9]", "", (zone_name or "").lower()), ()))
+    out = [primary] if primary else []
+    for ent in extra:
+        if len(ent) == 3:  # a/b/c -> ROM<a>\b\c.DAT (ROM2, ROM3...); a == 1 is plain ROM
+            path = ("ROM" if ent[0] == 1 else "ROM" + str(ent[0])) + "\\" + str(ent[1]) + "\\" + str(ent[2]) + ".DAT"
+        else:
+            path = "ROM\\" + str(ent[0]) + "\\" + str(ent[1]) + ".DAT"
+        if path not in out:
+            out.append(path)
+    return out if len(extra) > 1 else ([primary] if primary else [])
+
 @app.get("/zones/{zoneid}/view3d", response_class=HTMLResponse)
 def zone_view3d(request: Request, zoneid: int, capture_id: int = 0, entity_id: int = 0,
                  pc: int = 0, zone_db: str = ""):
@@ -6987,6 +7025,7 @@ def zone_view3d(request: Request, zoneid: int, capture_id: int = 0, entity_id: i
         "live_parse_available": live_parse_available,
         "ffxi_path_json": json.dumps(ffxi_path or ""),
         "geometry_rom_path_json": json.dumps(geometry_rom_path or ""),
+        "geometry_rom_paths_json": json.dumps(_geometry_rom_paths(zone_name, geometry_rom_path)),
         "all_zones": [{"zoneid": z[0], "name": z[1]} for z in all_zones],
         "capture_spatial_url_json": json.dumps(
             f"/captures/{capture_id}/spatial.json?zone_db={quote(zone_db)}"
@@ -7100,6 +7139,7 @@ def zone_view3d_all(request: Request, zoneid: int, capture_id: int, zone_db: str
         "live_parse_available": live_parse_available,
         "ffxi_path_json": json.dumps(ffxi_path or ""),
         "geometry_rom_path_json": json.dumps(geometry_rom_path or ""),
+        "geometry_rom_paths_json": json.dumps(_geometry_rom_paths(zone_name, geometry_rom_path)),
         "all_zones": [],
         "capture_spatial_url_json": json.dumps(
             f"/captures/{capture_id}/spatial.json?zone_db={zone_db}"
@@ -11746,6 +11786,59 @@ def binaryinspector_save_probes(request: Request, run_set: str = Form(...)):
     except Exception as ex:
         note = f"Save failed: {type(ex).__name__}: {ex}"
     return RedirectResponse(f"/binaryinspector?run_set={run_set}&saved={quote(note)}", status_code=303)
+
+
+_RETAIL_TABS = ("overview", "manifest", "planner", "artifacts", "compare", "diagnostics")
+
+
+@app.get("/retailversions", response_class=HTMLResponse)
+def retailversions_page(request: Request, tab: str = "overview", q: str = "", file: str = "", stamp: str = "",
+                        refresh: str = "", plan: str = "", left: str = "", right: str = "", done: str = ""):
+    """Retail Version Explorer: browse PlayOnline history, plan downloads, catalog and compare binaries.
+    Reads are local except Manifest/Planner, which call the downloader (read-only network)."""
+    from workbench.client.binary import inspector as bi
+    from workbench.client.retail import catalog, downloader as dl
+    tab = tab if tab in _RETAIL_TABS else "overview"
+    artifacts = catalog.scan()
+    ctx = {"request": request, "tab": tab, "tabs": _RETAIL_TABS, "q": q, "file": file, "stamp": stamp,
+           "artifacts": artifacts, "exe": dl.find_exe(), "root": catalog.retail_root(), "error": None,
+           "manifest": None, "hist": None, "plan_out": None, "diff": None, "left": left, "right": right,
+           "done": done, "timeout": dl.DEFAULT_TIMEOUT}
+    try:
+        if tab == "manifest":
+            ctx["manifest"] = dl.manifest_list(q, refresh=bool(refresh))
+            if file:
+                ctx["hist"] = dl.history(file)
+        elif tab == "planner" and file and stamp and plan:
+            ctx["plan_out"] = dl.plan(file, stamp)
+        elif tab == "compare" and left and right:
+            lf, lv = left.split("|", 1)
+            rf, rv = right.split("|", 1)
+            a, b = catalog.find(lf, lv), catalog.find(rf, rv)
+            if not a or not b:
+                ctx["error"] = "Both versions must be VALID catalog entries."
+            elif lf.lower() != rf.lower():
+                ctx["error"] = "Compare two versions of the same file."
+            else:
+                ctx["diff"] = bi.diff(a["path"], b["path"])
+                ctx["pair"] = (a, b)
+    except Exception as ex:
+        ctx["error"] = f"{type(ex).__name__}: {ex}"
+    return templates.TemplateResponse(request, "retail_versions.html", ctx)
+
+
+@app.post("/retailversions/download")
+def retailversions_download(file: str = Form(...), stamp: str = Form(...), confirm: str = Form("")):
+    """Explicit-confirmation download of one file version into the retail catalog root."""
+    from workbench.client.retail import downloader as dl
+    if confirm != "yes":
+        return RedirectResponse("/retailversions?tab=planner&done=" + quote("Confirmation required; nothing downloaded."), status_code=303)
+    try:
+        r = dl.download(file, stamp)
+        note = (r.get("stdout") or "").strip() if r["ok"] else "FAILED: " + str(r.get("error"))
+    except ValueError as ex:
+        note = f"REJECTED: {ex}"
+    return RedirectResponse("/retailversions?tab=artifacts&done=" + quote(note[:400]), status_code=303)
 
 
 @app.get("/binaryinspector", response_class=HTMLResponse)

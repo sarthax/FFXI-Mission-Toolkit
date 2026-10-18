@@ -1,5 +1,11 @@
 # Mission Toolkit — Roadmap
 
+## Cross-project status correction — 2026-10-17
+
+Current merged-product capability details are maintained in [ROADMAP_CURRENT](../workbench/ROADMAP_CURRENT.md), with the [October 17 source/documentation reconciliation](../workbench/ROADMAP_HELP_SYNC_AUDIT_2026-10-17.md). The dated September 29 plan and legacy phase items below are a **historical baseline**; for example, early unchecked "live Windower/Ashita ingestion" and blank system-domain entries are not reliable statements that the current Live Client, Assault tracker or Voidwalker domain are absent. Those areas have substantial merged implementation but retain explicit integration/acceptance work.
+
+Recent additions: GM Command Center, gear-aware calculator suite, RUN/GEO toolkit gap tracking, Voidwalker path/Abyssea UI, and 3D Zone Viewer multi-DAT, live-client selection and telemetry improvements. RUN/GEO server support is operator-reported; toolkit gap grades are separate.
+
 ## Current direction roadmap — 2026-09-29
 
 This is the authoritative forward-looking roadmap. Older phase/status sections remain below as

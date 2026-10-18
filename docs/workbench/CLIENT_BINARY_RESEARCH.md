@@ -152,3 +152,13 @@ Not built: GUI to create/edit probe sets, Client Overview / Build page showing f
 ## Client Overview / Build page (2026-09-26)
 
 `/clientoverview` (Client > Client Overview, `client_overview.py`) fingerprints the installed client read-only: every root DLL/EXE (size, PE link time, SHA-256), FTABLE/VTABLE sizes, ROM folder list, and a **build id** = first 12 hex of `FFXiMain.dll` SHA-256. That build id is the same one used in probe snapshot ids (`snapshot:client-<build id>`), and the page lists any probe observations already saved for the build from `workbench.db` (opened read-only; never created). Captures/ID tables can cite the build id to say which client they came from.
+
+## Bounded DAT command evidence and exact binary probes (2026-10-18)
+
+The read-only DAT Inspector now includes a bounded ASCII slash-command evidence table with raw file offsets, 12-byte hex context on each side and a NUL-termination flag. The default query is `wardrobe`. This supplements, rather than replaces, the existing parser results and block-chain view. The scanner is limited to files of at most 64 MiB and at most 200 displayed hits; it does not claim a decoded menu format.
+
+Binary probe sets additionally support `kind: "command"`, which checks an exact ASCII slash-command token at raw byte boundaries instead of substring matching. The wardrobe probe set uses this kind, avoiding `/wardrobe` incorrectly matching `/wardrobe2`. A positive observation verifies bytes only; missing evidence remains UNKNOWN on packed FFXiMain. Any saved probe observations should be re-run for the updated kind.
+
+Self-test: `python test_fixtures/test_client_command_evidence.py`.
+
+Next research requires a known 2022+ reference build and decoded DAT comparison; current evidence does not establish viable DAT-only backport support.

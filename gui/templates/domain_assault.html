@@ -59,6 +59,7 @@ html{scroll-padding-top:56px}
 .aw-empty{padding:40px;text-align:center;opacity:.7}
 @media(max-width:900px){.aw{grid-template-columns:1fr}.aw-list{position:static;max-height:360px}}
 </style>
+<p class="muted">Operator guide: <code>docs/workbench/ASSAULT_TRACKER_OPERATOR_GUIDE.md</code>. Imported Topaz issues, historical fix-log resolutions, DSP port status and verified DSP runtime acceptance are separate findings.</p>
 <div class="dense-toolbar">
   <strong>{{ tracker.count }} imported missions</strong>
   <span class="sp"></span>
@@ -214,7 +215,7 @@ html{scroll-padding-top:56px}
 <div class="assault-status">
   <span>✅ Topaz playthrough confirmed</span><span>🟢 Topaz built / untested</span><span>🟡 Topaz gaps</span><span>🔴 Topaz broken</span><span>❔ Unclassified</span>
 </div>
-<h2 id="assault-sec-readiness">Mission readiness</h2>
+<h2 id="assault-sec-readiness">Mission readiness and next actions</h2>
 <p class="muted">Derived from reviewed mission stages, individual issues and confirmed shared dependencies. Unknown evidence never counts as a pass.</p>
 <div class="assault-status">
   <span>Validated: <strong>{{ tracker.readiness_counts.get('validated',0) }}</strong></span>
@@ -235,19 +236,20 @@ html{scroll-padding-top:56px}
 </form>
 <div id="readiness-results" class="dense-toolbar"><strong>{{ tracker.readiness_results|length }} matching mission(s)</strong></div>
 <div class="table-wrap" style="max-height:470px;overflow:auto"><table>
-<thead><tr><th>Mission</th><th>Zone / rank</th><th>Readiness</th><th>Implementation</th><th>DSP port</th><th>DSP test</th><th>Evidence gaps</th></tr></thead>
+<thead><tr><th>Mission</th><th>Zone / rank</th><th>Readiness</th><th>Next action</th><th>Implementation</th><th>DSP port</th><th>DSP test</th><th>Evidence gaps</th></tr></thead>
 <tbody>{% for mission in tracker.readiness_results %}
 <tr><td><a href="#assault-{{ mission.number }}">#{{ mission.number }} {{ mission.name }}</a></td>
 <td>{{ mission.zone }} / {{ mission.rank }}</td>
 <td>{{ mission.readiness.status|replace('_',' ') }}</td>
+<td><strong>{{ mission.readiness.next_action.label }}</strong><div class="muted">{{ mission.readiness.next_action.detail }}</div></td>
 <td>{{ mission.dsp_implementation|replace('_',' ') }}</td>
 <td>{{ mission.dsp_port|replace('_',' ') }}</td>
 <td>{{ mission.dsp_validation|replace('_',' ') }}</td>
 <td>{{ mission.readiness.blockers|length }} blockers · {{ mission.readiness.unknown|length }} unknown</td></tr>
-{% else %}<tr><td colspan="7" class="muted">No missions match the selected readiness criteria. This does not indicate that unreviewed missions have passed.</td></tr>{% endfor %}
+{% else %}<tr><td colspan="8" class="muted">No missions match the selected readiness criteria. This does not indicate that unreviewed missions have passed.</td></tr>{% endfor %}
 </tbody></table></div>
 <h2 id="assault-sec-progress">Development progress</h2>
-<p class="muted">Counts are calculated from recorded reviews, not inferred from Topaz checkmarks. Unreviewed means no DSP evidence recorded, not confirmed broken.</p>
+<p class="muted">Counts are calculated from recorded reviews, not inferred from Topaz checkmarks. Action columns identify the next evidence or test step per mission and never imply DSP completion. Click a zone to filter mission readiness. Unreviewed means unknown, not confirmed broken.</p>
 <div class="assault-status">
   <span><strong>{{ tracker.progress.total.missions }}</strong> missions</span>
   <span><strong>{{ tracker.progress.total.issues }}</strong> imported issue bullets</span>
@@ -257,10 +259,10 @@ html{scroll-padding-top:56px}
   <span><strong>{{ tracker.progress.total.get('blocked_issues', 0) }}</strong> explicitly blocked issues</span>
 </div>
 <div class="table-wrap"><table>
-<thead><tr><th>Zone</th><th>Missions</th><th>Issue bullets</th><th>DSP ports validated</th><th>DSP tests validated</th><th>Issues fully reviewed</th><th>Explicit blocks</th></tr></thead>
+<thead><tr><th>Zone</th><th>Missions</th><th>Implementation review</th><th>Port review</th><th>Issue / dependency ports</th><th>DSP live test</th><th>Resolve blockers</th><th>Issue bullets</th><th>DSP ports validated</th><th>DSP tests validated</th><th>Issues fully reviewed</th><th>Explicit blocks</th></tr></thead>
 <tbody>{% for zone in tracker.zones %}
 {% set progress = tracker.progress.zones[zone] %}
-<tr><td>{{ zone }}</td><td>{{ progress.missions }}</td><td>{{ progress.issues }}</td>
+<tr><td><a href="/domains/assault?readiness_zone={{ zone|urlencode }}#readiness-results">{{ zone }}</a></td><td>{{ progress.missions }}</td><td>{{ progress.get("next_implementation_review", 0) }}</td><td>{{ progress.get("next_port_review", 0) }}</td><td>{{ progress.get("next_dependency_review", 0) }}</td><td>{{ progress.get("next_live_test", 0) }}</td><td>{{ progress.get("next_resolve_blocker", 0) }}</td><td>{{ progress.issues }}</td>
 <td>{{ progress.get('mission_port_validated', 0) }}</td>
 <td>{{ progress.get('mission_validation_validated', 0) }}</td>
 <td>{{ progress.get('fully_reviewed_issues', 0) }}</td>

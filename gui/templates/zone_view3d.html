@@ -148,8 +148,8 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
 </div>
 <div id="ashita-live-controls" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:5px 0;padding:6px;border:1px solid var(--border);border-radius:6px;">
   <label><input id="ashita-live-toggle" type="checkbox" checked> Live Ashita position (read only)</label>
-  <label>Client ID <input id="ashita-live-client" value="ashita-a" list="ashita-live-clients" style="width:120px"></label>
-  <datalist id="ashita-live-clients"></datalist>
+  <label title="Show only the spawn markers linked to this instance in instance_entities (e.g. Assault missions)">Instance <select id="zone-instance" style="max-width:260px"><option value="0">All rows</option></select></label>
+  <label>Client <select id="ashita-live-client" style="min-width:180px;max-width:320px"><option value="ashita-a">ashita-a</option></select></label>
   <label>Refresh <select id="ashita-live-refresh"><option value="1000">1 Hz</option><option value="200">5 Hz</option><option value="100" selected>10 Hz</option><option value="50">20 Hz</option></select></label>
   <label><input id="ashita-live-entities" type="checkbox" checked> Nearby entities</label>
   <label>Find live entity <input id="ashita-entity-search" type="search" placeholder="Name, server ID or slot" style="width:165px" aria-label="Filter observed entities"></label>
@@ -172,6 +172,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
   <span id="ashita-live-samples" class="chip mono" role="status">0/2 points</span>
   <a class="inline" href="/live-client/bridge/console" target="_blank" rel="noopener">Bridge setup ↗</a>
   <span id="ashita-live-status" class="chip mono" role="status">Off</span>
+  <div id="ashita-live-activity" class="mono" role="log" aria-live="off" hidden style="flex-basis:100%;max-height:170px;overflow:auto;white-space:pre-wrap;font-size:12px;padding:6px 8px;border:1px solid var(--border,#444);border-radius:6px"></div>
   <label><input type="checkbox" id="ashita-other-clients"> Show other clients in this zone</label>
   <span id="ashita-other-client-status" class="muted mono" role="status">Other clients off</span>
   <label>Observed client <select id="ashita-secondary-client"><option value="">Choose visible client</option></select></label>
@@ -473,6 +474,7 @@ import { parseZoneFile } from '/static/ffxi-dat/index.js';
 const LIVE_PARSE_AVAILABLE = {{ 'true' if live_parse_available else 'false' }};
 const FFXI_PATH = {{ ffxi_path_json | safe }};
 const GEOMETRY_ROM_PATH = {{ geometry_rom_path_json | safe }};
+const GEOMETRY_ROM_PATHS = {{ geometry_rom_paths_json | default('[]') | safe }};
 
 const paths = {{ paths_json | safe }};
 const ZONEID = {{ zoneid }};
@@ -544,11 +546,29 @@ const flyLabelProj = new THREE.Vector3();
 const wallMaterials = [];
 
 const entityDataUrl = CAPTURE_SPATIAL_URL || `/zoneplot/${ZONEID}/data.json`;
-fetch(entityDataUrl).then(r => r.json()).then(d => {
-  spawnEntitiesAll = (d.entities || []).filter(e => !e.zero);
-  refreshCaptureSpatialResults();
-  refreshZoneCorrelation();
-}).catch(() => {});
+const zoneInstanceSel = document.getElementById('zone-instance');
+function loadSpawnMarkers() {
+  let url = entityDataUrl;
+  const inst = +zoneInstanceSel.value || 0;
+  if (!CAPTURE_SPATIAL_URL && inst) url += '?instance=' + inst;
+  return fetch(url).then(r => r.json()).then(d => {
+    spawnEntitiesAll = (d.entities || []).filter(e => !e.zero);
+    refreshCaptureSpatialResults();
+    refreshZoneCorrelation();
+  }).catch(() => {});
+}
+zoneInstanceSel.addEventListener('change', () => {
+  const u = new URL(location.href);
+  if (+zoneInstanceSel.value) u.searchParams.set('instance', zoneInstanceSel.value); else u.searchParams.delete('instance');
+  history.replaceState(null, '', u);
+  loadSpawnMarkers();
+});
+fetch('/zoneplot/zones.json').then(r => r.json()).then(zl => {
+  for (const i of (zl.instances || []).filter(i => i.zone === ZONEID))
+    zoneInstanceSel.appendChild(new Option(i.id + ' ' + (i.instance_name || i.name || ''), i.id));
+  const want = new URLSearchParams(location.search).get('instance');
+  if (want && [...zoneInstanceSel.options].some(o => o.value === want)) zoneInstanceSel.value = want;
+}).catch(() => {}).finally(loadSpawnMarkers);
 
 // Navmesh remains zone data, regardless of whether markers came from the live server or a capture.
 fetch(`/zoneplot/${ZONEID}/data.json`).then(r => r.json()).then(d => {
@@ -577,8 +597,12 @@ const liveStatus = document.getElementById('ashita-live-status');
 const liveEntitiesToggle = document.getElementById('ashita-live-entities');
 const liveFollowToggle = document.getElementById('ashita-live-follow');
 const liveAutoZoneToggle = document.getElementById('ashita-live-autozone');
+function ensureLiveClientOption(id) {
+  if (![...liveClient.options].some(o => o.value === id)) liveClient.appendChild(new Option(id, id));
+}
 const liveQuery = new URLSearchParams(location.search);
 if (liveQuery.get('live') === '1' && /^[a-zA-Z0-9_-]{1,64}$/.test(liveQuery.get('client') || '')) {
+  ensureLiveClientOption(liveQuery.get('client'));
   liveClient.value = liveQuery.get('client');
   liveToggle.checked = true;
   liveAutoZoneToggle.checked = liveQuery.get('autozone') === '1';
@@ -764,6 +788,22 @@ const inspectorLiveSearch = document.getElementById('zone3d-inspector-live-searc
 const inspectorLiveSelect = document.getElementById('zone3d-inspector-live-select');
 const inspectorLiveOpen = document.getElementById('zone3d-inspector-live-open');
 const inspectorLiveCount = document.getElementById('zone3d-inspector-live-count');
+// Option values are stable entity identities (never array indices, which reshuffle every frame).
+function liveEntityById(id) {
+  return id === '' || id == null ? undefined : liveObservedEntities.find(e => liveEntityIdentity(e) === String(id));
+}
+// Diff the <select> in place so an open menu is never destroyed; only add/remove what changed.
+function syncSelectOptions(select, placeholder, items) {
+  if (select === document.activeElement && select.dataset.syncing === 'open') return;
+  const want = new Map(items.map(i => [i.value, i.label]));
+  for (const opt of [...select.options]) {
+    if (opt.value === '') { opt.textContent = placeholder; continue; }
+    if (!want.has(opt.value)) opt.remove();
+    else { if (opt.textContent !== want.get(opt.value)) opt.textContent = want.get(opt.value); want.delete(opt.value); }
+  }
+  if (!select.options.length || select.options[0].value !== '') select.insertBefore(new Option(placeholder, ''), select.firstChild);
+  for (const [value, label] of want) select.add(new Option(label, value));
+}
 function liveEntityIdentity(e) {
   return String(e.server_entity_id ?? ('slot:' + e.client_index));
 }
@@ -773,16 +813,10 @@ function refreshInspectorLivePicker() {
     .filter(({e}) => liveEntityAgeSeconds(e) <= 3 &&
       (!needle || [e.n, e.server_entity_id, e.client_index].some(
         value => value != null && String(value).toLowerCase().includes(needle))));
-  // Keep an open native select stable through 10 Hz telemetry.
-  const signature = JSON.stringify(visible.map(({e,index}) => [index, liveEntityIdentity(e), e.n]));
-  if (inspectorLiveSelect.dataset.signature !== signature) {
-    const current = inspectorLiveSelect.value;
-    inspectorLiveSelect.replaceChildren(new Option('Select a live entity…', ''));
-    visible.forEach(({e,index}) => inspectorLiveSelect.add(
-      new Option((e.n || 'Unnamed') + ' [' + liveEntityIdentity(e) + ']', String(index))));
-    inspectorLiveSelect.dataset.signature = signature;
-    if (visible.some(({index}) => String(index) === current)) inspectorLiveSelect.value = current;
-  }
+  const current = inspectorLiveSelect.value;
+  syncSelectOptions(inspectorLiveSelect, 'Select a live entity…', visible.map(({e}) =>
+    ({value: liveEntityIdentity(e), label: (e.n || 'Unnamed') + ' [' + liveEntityIdentity(e) + ']'})));
+  if (current && [...inspectorLiveSelect.options].some(o => o.value === current)) inspectorLiveSelect.value = current;
   inspectorLiveCount.textContent = visible.length + ' current live entities' +
     (needle ? ' matching search' : '') + ' · hidden when telemetry is stale';
   inspectorLiveOpen.disabled = !inspectorLiveSelect.value;
@@ -797,7 +831,7 @@ inspectorLiveSelect.addEventListener('change', () => {
   inspectorLiveOpen.disabled = !inspectorLiveSelect.value;
 });
 inspectorLiveOpen.addEventListener('click', () => {
-  const e = liveObservedEntities[Number(inspectorLiveSelect.value)];
+  const e = liveEntityById(inspectorLiveSelect.value);
   if (!inspectorLiveSelect.value || !e || liveEntityAgeSeconds(e) > 3) return;
   liveSelectedEntityId = liveEntityIdentity(e);
   inspectEntity(e);
@@ -849,27 +883,24 @@ function updateLiveEntityPicker() {
     ({value: String(e.server_entity_id ?? ('slot:' + e.client_index)), label: (e.n || 'Unnamed') + ' [' + (e.server_entity_id ?? ('slot ' + e.client_index)) + ']', index: i}))
     .filter(e => liveEntityMatchesFilter(liveObservedEntities[e.index]) &&
       liveEntityAgeSeconds(liveObservedEntities[e.index]) <= 3);
-  const signature = JSON.stringify(options.map(e => [e.value, e.label]));
-  if (liveEntitySelect.dataset.signature !== signature) {
-    liveEntitySelect.replaceChildren(new Option('Select observed entity', ''));
-    options.forEach(e => liveEntitySelect.appendChild(new Option(e.label, String(e.index))));
-    liveEntitySelect.dataset.signature = signature;
-  }
-  const restored = selectedId ? liveObservedEntities.findIndex(e => String(e.server_entity_id ?? ('slot:' + e.client_index)) === selectedId) : -1;
-  if (liveEntitySelect.value !== (restored >= 0 ? String(restored) : ''))
-    liveEntitySelect.value = restored >= 0 ? String(restored) : '';
+  const menuOpen = liveEntitySelect === document.activeElement;
+  const typed = liveEntitySelect.value;
+  syncSelectOptions(liveEntitySelect, 'Select observed entity', options);
+  // While the user is working the menu, never overwrite their choice from telemetry.
+  const want = menuOpen ? typed : selectedId;
+  if (want && [...liveEntitySelect.options].some(o => o.value === want)) liveEntitySelect.value = want;
+  else if (!menuOpen) liveEntitySelect.value = '';
   liveEntityInspect.disabled = liveEntitySelect.value === '';
   updateLiveEntityVisibility();
   refreshInspectorLivePicker();
 }
 liveEntitySelect.addEventListener('change', () => {
-  liveSelectedEntityId = liveEntitySelect.value === '' ? '' :
-    String(liveObservedEntities[Number(liveEntitySelect.value)]?.server_entity_id ?? ('slot:' + liveObservedEntities[Number(liveEntitySelect.value)]?.client_index));
+  liveSelectedEntityId = liveEntitySelect.value;
   liveEntityInspect.disabled = liveEntitySelect.value === '';
   highlightObservedEntity();
 });
 liveEntityInspect.addEventListener('click', () => {
-  const entity = liveObservedEntities[Number(liveEntitySelect.value)];
+  const entity = liveEntityById(liveEntitySelect.value);
   if (liveEntitySelect.value === '' || !entity) return;
   inspectEntity(entity);
   highlightObservedEntity();
@@ -894,18 +925,62 @@ function updateLiveDisplay(frameSeconds) {
     controls.update();
   }
 }
+let liveClientDetails = new Map();
 async function refreshLiveClients() {
   try {
     const response = await fetch('/live-client/bridge/clients');
     if (!response.ok) return;
     const body = await response.json();
-    const list = document.getElementById('ashita-live-clients');
-    list.replaceChildren();
     knownClientIds = (body.clients || []).filter(id => typeof id === 'string');
-    for (const id of knownClientIds) {
-      const option = document.createElement('option'); option.value = id; list.appendChild(option);
+    try {
+      const dr = await fetch('/live-client/bridge/clients/details');
+      if (dr.ok) liveClientDetails = new Map(((await dr.json()).details || []).map(d => [d.id, d]));
+    } catch (_) {}
+    const current = liveClient.value;
+    const ids = [...new Set(['ashita-a', ...knownClientIds, ...(current ? [current] : [])])];
+    liveClient.replaceChildren();
+    for (const id of ids) {
+      const d = liveClientDetails.get(id);
+      let label = id;
+      if (d && d.source === 'file_feed') {
+        label = id + ' · ' + (d.character || 'headless') + ' (file feed' + (d.connected ? ', live' : ', idle') + ')';
+      } else if (d) label = id + ' (Ashita)';
+      liveClient.appendChild(new Option(label, id));
     }
+    liveClient.value = current || 'ashita-a';
   } catch (_) {}
+}
+// Headless bots line up with server-reported markers under Legacy X,-Y,-Z (verified live); Ashita needs its own mapping.
+function applyAxesForClient(id) {
+  const d = liveClientDetails.get(id);
+  const headless = d && d.source === 'file_feed' && String(d.adapter || '').startsWith('xiheadless');
+  liveAxes.value = headless ? 'legacy' : 'x-z-y';
+}
+// Combat/dialog panel from the optional telemetry "activity" block (headless bots). All text via textContent.
+const liveActivityEl = document.getElementById('ashita-live-activity');
+function renderLiveActivity(data) {
+  const act = data && data.activity;
+  if (!act) { liveActivityEl.hidden = true; return; }
+  const byId = new Map((data.entities || []).filter(e => e.server_entity_id != null).map(e => [e.server_entity_id, e]));
+  const nameOf = id => { const e = byId.get(id); return e ? (e.name || ('#' + id)) : (id ? '#' + id.toString(16).toUpperCase() : '—'); };
+  const t = ts => new Date(ts * 1000).toLocaleTimeString([], {hour12:false});
+  const lines = [];
+  const me = data.player && data.player.character || 'Player';
+  lines.push(me + '  HP ' + act.hp + '/' + act.max_hp + ' (' + act.hpp + '%)  MP ' + act.mp + '/' + act.max_mp + '  TP ' + act.tp +
+    (act.server_status === 1 ? '  ENGAGED' : act.server_status === 2 || act.server_status === 3 ? '  DEAD' : ''));
+  const tgt = byId.get(act.target_id);
+  if (act.target_id) lines.push('Target: ' + nameOf(act.target_id) + (tgt && tgt.raw_status != null ? '  HP ' + tgt.raw_status + '%' : ''));
+  if (act.attackers.length) lines.push('Attacked by: ' + [...new Set(act.attackers.map(a => nameOf(a.actor)))].join(', '));
+  if (act.event && act.event.active) lines.push('Event active: id ' + act.event.event_id + ' from ' + nameOf(act.event.npc_id));
+  const log = [];
+  for (const c of act.combat) log.push([c.at, (c.kind === 1 ? '+' : c.kind === 2 ? 'miss ' : '-') + c.amount + ' ' + nameOf(c.target)]);
+  for (const sp of act.speech) log.push([sp.at, nameOf(sp.actor) + ': dialog #' + sp.message_id + (sp.name_hidden ? ' (no name)' : '')]);
+  for (const ch of act.chat) log.push([ch.at, '[' + ch.kind + '] ' + (ch.sender ? ch.sender + ': ' : '') + ch.message]);
+  log.sort((a, b) => a[0] - b[0]);
+  for (const [ts, msg] of log.slice(-14)) lines.push(t(ts) + '  ' + msg);
+  liveActivityEl.textContent = lines.join('\n');
+  liveActivityEl.hidden = false;
+  liveActivityEl.scrollTop = liveActivityEl.scrollHeight;
 }
 function clearLiveEntities(preservePicker = false) {
   for (const child of liveEntityPool) child.visible = false;
@@ -933,6 +1008,7 @@ function clearLiveMarker() {
   liveLastSampleAt = 0;
   lastLivePosition = null;
   lastLiveDiagnostic = null;
+  if (liveActivityEl) liveActivityEl.hidden = true;
   liveSelectedEntityId = '';
   clearLiveEntities();
   if (!liveMarker) return;
@@ -1077,6 +1153,7 @@ async function pollAshitaPosition() {
     updateLiveEntityVisibility();
     updateEntityPair();
     refreshZoneCorrelation();
+    renderLiveActivity(data);
     liveStatus.textContent = (data.player.character || clientId) + ' · live · ' +
       position.x.toFixed(1) + ', ' + position.y.toFixed(1) + ', ' + position.z.toFixed(1) +
       (liveEntitiesToggle.checked ? ' · entities ' + entityCount +
@@ -1148,7 +1225,11 @@ liveAutoZoneToggle.addEventListener('change', pollAshitaPosition);
 liveAxes.addEventListener('change', () => { ++lastLiveRequest; clearLiveMarker(); pollAshitaPosition(); });
 liveHeading.addEventListener('change', pollAshitaPosition);
 liveClient.addEventListener('change', () => {
-  pendingLiveZoneFocus = liveFollowToggle.checked;
+  applyAxesForClient(liveClient.value);
+  // Picking a client is an explicit "take me to that player": turn on the overlay, follow and
+  // auto-zone so the viewer switches to the player's zone, loads it, and centres on them.
+  liveToggle.checked = true; liveFollowToggle.checked = true; liveAutoZoneToggle.checked = true;
+  pendingLiveZoneFocus = true;
   ++lastLiveRequest; clearLiveMarker(); liveAlignmentSamples = [];
   liveSampleCount.textContent = '0/2 points'; pollAshitaPosition();
 });
@@ -2005,8 +2086,9 @@ renderer.domElement.addEventListener('click', (event) => {
     const entity = liveObservedEntities[entityIndex];
     if (entity) {
       inspectEntity(entity);
-      liveEntitySelect.value = String(entityIndex);
-      liveSelectedEntityId = String(entity.server_entity_id ?? ('slot:' + entity.client_index));
+      liveSelectedEntityId = liveEntityIdentity(entity);
+      updateLiveEntityPicker();
+      liveEntitySelect.value = liveSelectedEntityId;
       liveEntityInspect.disabled = false;
       highlightObservedEntity();
       // Camera must use the exact same Ashita-to-scene projection as the clicked marker.
@@ -2925,30 +3007,60 @@ function loadObjFallback() {
 }
 
 if (LIVE_PARSE_AVAILABLE) {
-  const datUrl = `/modelviewer/dat?ffxi_path=${encodeURIComponent(FFXI_PATH)}&rom_path=${encodeURIComponent(GEOMETRY_ROM_PATH)}`;
-  loadingEl.textContent = 'Fetching zone DAT…';
-  fetch(datUrl).then(r => {
-    if (!r.ok) throw new Error(`dat fetch ${r.status}`);
-    return r.arrayBuffer();
-  }).then(buffer => {
-    loadingEl.textContent = 'Parsing zone geometry…';
-    const zoneData = parseZoneFile(buffer, (msg) => { loadingEl.textContent = msg; });
-    if (zoneData.prefabs.length === 0 || zoneData.instances.length === 0) throw new Error('live parse produced no geometry');
-    const group = buildLiveZoneGroup(zoneData);
+  // City zones are split across several geometry DATs (one per area); load and merge them all.
+  // Each DAT carries its own textures, so every chunk is parsed and built independently.
+  const romPaths = (GEOMETRY_ROM_PATHS && GEOMETRY_ROM_PATHS.length) ? GEOMETRY_ROM_PATHS : [GEOMETRY_ROM_PATH];
+  (async () => {
+    const merged = new THREE.Group();
+    const audit = { total: 0, accepted: 0, missingPrefab: 0, invalidTransform: 0, mirrored: 0 };
+    const materials = {};
+    const unresolved = [];
+    let alias = 0, loaded = 0;
+    const perDat = [];
+    for (let n = 0; n < romPaths.length; n++) {
+      const rom = romPaths[n];
+      loadingEl.textContent = `Fetching zone DAT ${n + 1}/${romPaths.length}…`;
+      let zoneData;
+      try {
+        const r = await fetch(`/modelviewer/dat?ffxi_path=${encodeURIComponent(FFXI_PATH)}&rom_path=${encodeURIComponent(rom)}`);
+        if (!r.ok) throw new Error(`dat fetch ${r.status}`);
+        loadingEl.textContent = `Parsing zone geometry ${n + 1}/${romPaths.length}…`;
+        zoneData = parseZoneFile(await r.arrayBuffer(), (msg) => { loadingEl.textContent = msg; });
+      } catch (err) {
+        if (romPaths.length === 1 || n === 0) throw err;
+        perDat.push({ rom_path: rom, skipped: String(err?.message || err) });
+        continue;
+      }
+      if (zoneData.prefabs.length === 0 || zoneData.instances.length === 0) {
+        if (romPaths.length === 1) throw new Error('live parse produced no geometry');
+        perDat.push({ rom_path: rom, skipped: 'no geometry' });
+        continue;
+      }
+      const g = buildLiveZoneGroup(zoneData);
+      merged.add(g);
+      loaded++;
+      const ta = g.userData.transformAudit, ma = g.userData.materialAudit;
+      for (const k of Object.keys(audit)) audit[k] += ta[k] || 0;
+      for (const k of Object.keys(ma)) materials[k] = (materials[k] || 0) + (ma[k] || 0);
+      alias += zoneData.textureDiagnostics?.aliasMatchedCount || 0;
+      for (const u of zoneData.textureDiagnostics?.unresolvedNames || []) unresolved.push({ ...u, rom_path: rom });
+      perDat.push({ rom_path: rom, instances: ta.accepted, prefabs: zoneData.prefabs.length });
+    }
     // Raw parseZoneFile() output uses the client's own coordinate convention, which does not
     // match the (x, -y, -z) convention this app's spawn markers/capture paths/legacy OBJ bake
-    // all use (confirmed empirically against zone_plot.html's navmesh overlay for zone 77 —
+    // all use (confirmed empirically against zone_plot.html's navmesh overlay for zone 77 --
     // the live mesh was Z-mirrored). All materials here are DoubleSide, so the winding flip
     // from a negative scale doesn't affect visibility.
-    group.scale.set(1, -1, -1);
-    const audit = group.userData.transformAudit;
+    merged.scale.set(1, -1, -1);
+    merged.userData.transformAudit = audit;
+    merged.userData.materialAudit = materials;
     const discarded = audit.missingPrefab + audit.invalidTransform;
-    showMeshSource(`Client DAT · ${audit.accepted}/${audit.total} instances · ${audit.mirrored} mirrored${discarded ? ' · ' + discarded + ' skipped' : ''}`);
-    const materials = group.userData.materialAudit;
+    showMeshSource(`Client DAT · ${audit.accepted}/${audit.total} instances · ${audit.mirrored} mirrored${loaded > 1 ? ' · ' + loaded + ' DATs' : ''}${discarded ? ' · ' + discarded + ' skipped' : ''}`);
     setMeshDiagnostics('client_dat', {
-      rom_path: GEOMETRY_ROM_PATH, instances: audit, materials,
-      alias_matched_textures: zoneData.textureDiagnostics?.aliasMatchedCount || 0,
-      unresolved_texture_names: zoneData.textureDiagnostics?.unresolvedNames || []
+      rom_path: romPaths.length > 1 ? romPaths : romPaths[0], dats: romPaths.length > 1 ? perDat : undefined,
+      instances: audit, materials,
+      alias_matched_textures: alias,
+      unresolved_texture_names: unresolved
     });
     console.info('[ZoneViewer] zone material audit:', materials);
     if (materials.missingTexture || materials.invalidTexture) {
@@ -2956,8 +3068,8 @@ if (LIVE_PARSE_AVAILABLE) {
     }
     if (discarded) console.warn('[ZoneViewer] excluded unrenderable instances (no fallback transform invented):', audit);
     if (!audit.accepted) throw new Error('No valid zone instance transforms');
-    onZoneMeshReady(group);
-  }).catch(err => {
+    onZoneMeshReady(merged);
+  })().catch(err => {
     console.warn('[ZoneViewer] live parse failed, falling back to cached OBJ:', err);
     loadingEl.textContent = 'Live parse failed — loading cached mesh…';
     loadObjFallback();

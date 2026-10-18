@@ -47,6 +47,7 @@ def viewer_projection(frame: TelemetryFrame, *, zone_id: int,
         "observation_scope": frame.observation_scope,
         "entities_truncated": frame.entities_truncated,
         "client_version": snapshot.version,
+        "activity": frame.activity,
         "player": {"character": snapshot.character,
                    "position": asdict(snapshot.position)},
         "entities": [
