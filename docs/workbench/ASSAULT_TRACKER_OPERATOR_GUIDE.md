@@ -21,3 +21,7 @@ Related: `docs/workbench/ROADMAP_CURRENT.md` and `docs/workbench/ROADMAP_HELP_SY
 ## Live-test readiness safeguard (2026-10-18)
 
 The **Ready for live test** mission filter requires explicitly validated mission implementation and DSP port reviews, a pending/not-yet-complete mission test, no known blocker, **and** explicit DSP port review (`fixed` or `not_applicable`) for every linked issue and shared dependency. An unreviewed historical Topaz issue or shared subsystem cannot silently qualify a mission for DSP testing merely because its mission-level port review is positive. This is a triage gate, not proof that an Assault works in-game. Continue using per-issue port and DSP-validation reviews to record outcomes.
+
+## Mission next-action queue (2026-10-18)
+
+The Mission Readiness table now derives a suggested **Next action** for each mission from recorded reviews: resolve blockers, review DSP implementation, verify the DSP port, resolve linked issue/shared-dependency port evidence, then run DSP live validation. This is triage, not proof of port completion or the result of an executed server test. Unreviewed is unknown, not broken. Topaz historical fixes never automatically advance a DSP stage. Use the existing readiness zone/status filters and open the mission detail to update the appropriate evidence-backed review.
