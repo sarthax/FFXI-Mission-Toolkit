@@ -2,6 +2,8 @@
 
 > **Current status (2026-10-18):** Searchable command catalog, parameter/ID lookup, favorites, history, presets, targeted player selection, native Ashita **opt-in Send to game**, and high-privilege confirmations are implemented on Toolkit `main`. Sending requires configured local native plugin controls and actual server GM authorization. The original slices below are preserved as historical development notes; earlier “no command transport” descriptions are superseded by **Send to game** and **Workflow features**.
 
+For current global status and remaining acceptance gaps, consult [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md). The legacy no-transport statements below are dated milestones, not current limitations.
+
 ## Current operator workflow
 
 1. Select the intended local server profile; open **Server → GM Command Center** and verify the command catalog is from that checkout.
