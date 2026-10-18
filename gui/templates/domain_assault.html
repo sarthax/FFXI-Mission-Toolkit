@@ -313,6 +313,17 @@ html{scroll-padding-top:56px}
 {% endfor %}
 </tbody></table></div>
 <h2 id="assault-shared">System-wide and shared dependencies</h2>
+<p class="muted">Confirmed blocked reviews first, then by explicitly linked mission impact. Zone scope requires evidence; unlinked historical topics have unknown impact, not zero impact.</p>
+<div class="table-wrap"><table><thead><tr><th>Shared system</th><th>Impacted missions</th><th>Zones</th><th>Direct links</th><th>Zone-scope links</th><th>DSP port</th><th>DSP validation</th><th>Recorded blocker</th></tr></thead><tbody>
+{% for row in tracker.shared_impact %}<tr>
+<td><a href="#assault-shared-{{ row.section_id }}">{{ row.title }}</a></td>
+<td>{{ row.affected_missions }}</td><td>{{ row.affected_zones|join(', ') }}</td>
+<td>{{ row.explicit_missions }}</td><td>{{ row.zone_scoped_missions }}</td>
+<td>{{ row.port }}{% if row.needs_port_evidence %} (evidence needed){% endif %}</td>
+<td>{{ row.validation }}{% if row.needs_test_evidence %} (evidence needed){% endif %}</td>
+<td>{{ 'Yes' if row.confirmed_blocker else 'No recorded blocker' }}</td>
+</tr>{% else %}<tr><td colspan="8">No confirmed shared mission or zone scope links yet.</td></tr>{% endfor %}
+</tbody></table></div>
 <p class="muted">Issues here may affect all missions (including appraisal, runic portals, timeouts, navigation meshes, GM warp tooling, and other infrastructure). Historical comments remain intact.</p>
 {% for section in tracker.shared %}
 <details class="assault-detail assault-shared" id="assault-shared-{{ loop.index }}">
