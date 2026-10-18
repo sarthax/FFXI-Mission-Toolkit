@@ -5,8 +5,6 @@ from dataclasses import asdict, dataclass
 import time
 from typing import Any
 
-from workbench.editors.character.schema import discover_character_schema
-from workbench.editors.character.session_state import detect_online_state
 
 from .config_policy import load_active_legacy_policy
 from .invariants import legacy_listing_fee
@@ -106,6 +104,10 @@ def execute_legacy_test_player_listing(
     required_quantity = stack_size if stack else 1
     fee = legacy_listing_fee(price, stack=stack, policy=policy)
 
+    # Deferred: workbench.editors.character's package init imports this module's API router,
+    # so a module-level import here makes importing this module first circular.
+    from workbench.editors.character.schema import discover_character_schema
+    from workbench.editors.character.session_state import detect_online_state
     char_schema = discover_character_schema(service.connection)
     session = detect_online_state(service.connection, char_schema, seller_id)
     if session.online is not False:
