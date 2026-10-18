@@ -7,10 +7,12 @@
 {% block page_body %}
 <p class="muted">Curated from Help and source-route references. This initial inventory is not exhaustive; use Help for instructions and Roadmap for remaining work.</p>
 <details>
-<summary><strong>Coverage audit</strong> &mdash; {{ coverage.feature_count }} catalog entries; {{ coverage.help_not_cataloged|length }} Help-linked routes not cataloged; {{ coverage.invalid_catalog_routes|length }} unresolved catalog routes</summary>
+<summary><strong>Coverage audit</strong> &mdash; {{ coverage.feature_count }} catalog entries; {{ coverage.help_not_cataloged|length }} Help-linked routes not cataloged; {{ coverage.invalid_catalog_routes|length }} unresolved catalog routes; {{ coverage.uncataloged_active_pages|length }} uncataloged active pages</summary>
 <p class="muted">{{ coverage.note }}</p>
 {% if coverage.help_not_cataloged %}<p>Help-linked routes not cataloged: <code>{{ coverage.help_not_cataloged|join(', ') }}</code></p>{% endif %}
 {% if coverage.invalid_catalog_routes %}<p>Catalog routes absent from maintained GET inventory: <code>{{ coverage.invalid_catalog_routes|join(', ') }}</code></p>{% endif %}
+{% if coverage.uncataloged_active_pages %}<p>Active inventory pages not cataloged: <code>{{ coverage.uncataloged_active_pages|join(', ') }}</code></p>{% endif %}
+{% if coverage.excluded_legacy_or_merge_pages %}<p class="muted">Legacy/merge-target pages awaiting manual classification: <code>{{ coverage.excluded_legacy_or_merge_pages|join(', ') }}</code></p>{% endif %}
 <p class="muted">{{ coverage.unverified_features|length }} entries still lack independent runtime validation. {{ coverage.catalog_not_help_linked|length }} catalog destinations are not directly linked from global Help (some are documented in module Help).</p>
 </details>
 <form method="get" class="search wb-filter-row">
