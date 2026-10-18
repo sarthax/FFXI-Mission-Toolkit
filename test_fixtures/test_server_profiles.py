@@ -47,7 +47,7 @@ def test_profiles_can_switch_between_live_test_and_backup():
 
     assert get_active_profile(con).profile_id == live.profile_id
     assert set_active_profile(con, test.profile_id).name == "Test"
-    assert get_active_profile(con).server_root == "C:/servers/lsb-test"
+    assert Path(get_active_profile(con).server_root) == Path("C:/servers/lsb-test")  # str(Path) is OS-normalized
     assert set_active_profile(con, backup.profile_id).family == "dsp"
     assert get_active_profile(con).environment == "backup"
 

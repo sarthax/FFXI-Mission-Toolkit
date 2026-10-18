@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import contextlib, tempfile, types
 import json
 import tempfile
 from pathlib import Path
@@ -8,7 +9,7 @@ from workbench.core.schema import Function, Binding, EnumDefinition, BuildTarget
 
 
 def main():
-    with tempfile.NamedTemporaryFile(suffix=".db") as tmp:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as _tmpdir, contextlib.nullcontext(types.SimpleNamespace(name=str(Path(_tmpdir) / "t.db"))) as tmp:
         con=graph.init_db(Path(tmp.name))
         graph.insert_record(con,Function(
             "fn:handler",

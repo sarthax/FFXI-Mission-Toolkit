@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import contextlib, tempfile, types
 """Regression for the reusable multi-zone progression / hunt framework."""
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -135,7 +136,7 @@ def main():
         for edge in projection.edges
     ),projection.edges
 
-    with NamedTemporaryFile(suffix=".db") as tmp:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as _tmpdir, contextlib.nullcontext(types.SimpleNamespace(name=str(Path(_tmpdir) / "t.db"))) as tmp:
         con=graph_store.init_db(Path(tmp.name))
         graph_store.insert_record(con,Feature(
             model.feature_id,"Existing Mission Feature","MISSION","mission",

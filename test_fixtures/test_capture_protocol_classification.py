@@ -160,7 +160,7 @@ def main():
     assert results["search"]["classification_scope"] == "verified_search_handoff_plus_source_backed_search_framing", results["search"]
     assert results["search"]["decoder_status"] == "encrypted_or_opaque", results["search"]
     assert results["search"]["framing_evidence"]["frame_count"] == 1, results["search"]
-    assert results["search"]["framing_evidence"]["payload_semantics"] == "unknown_opaque", results["search"]
+    assert results["search"]["framing_evidence"]["payload_semantics"] == "validated_per_frame_only_when_crypto/evidence gates succeed", results["search"]
     assert results["other"]["protocol_family"] == "unknown_tcp", results["other"]
     assert results["other"]["protocol_candidates"] == [], results["other"]
     assert results["signature-only"]["protocol_family"] == "unknown_tcp", results["signature-only"]

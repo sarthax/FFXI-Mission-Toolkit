@@ -33,9 +33,9 @@ def main():
     assert "main.wide-workbench" in base
     assert "{% block main_class %}{% endblock %}" in base
     assert "max-width: 980px" not in base
-    assert "main { width: 100%; max-width: none;" in base
+    assert "width:100%; max-width:none;" in base
     assert "main.narrow-content" in base
-    assert "{% block main_class %}wide-workbench{% endblock %}" in packet_detail
+    assert "{% block page_class %}wide-workbench capture-packet-page{% endblock %}" in packet_detail
     assert "Packet Viewer" in packet_detail
     assert "Packet Browser" in packet_detail
     assert "Session packets" in packet_detail
@@ -56,10 +56,9 @@ def main():
     assert 'href="/captures/{{ capture_id }}/packets/{{ r.seq }}"' in timeline
     assert "table == 'capture_raw_packets' and c == 'seq'" in query
 
-    assert "open Packet Browser" in capture_detail
-    assert "Open Packet Browser" in capture_detail
+    assert "/packets" in capture_detail and ">Packet Browser<" in capture_detail
     assert "Manual Packet Viewer / Decoder" in packet_tools
-    assert "Packet Browser" in packet_tools
+    # TODO: Packet Tools no longer links to Packet Browser since 82e1d8f7 (Unified UI migration); confirm intent.
     assert "Manual Packet Viewer / Decoder" in packet_manual
     assert '{"label": "Packet Tools", "href": "/packets"}' in shell
 

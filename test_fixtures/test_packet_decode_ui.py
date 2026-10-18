@@ -47,7 +47,7 @@ def main():
     server = (ROOT / "src" / "workbench" / "app" / "_host_impl.py").read_text(encoding="utf-8")
     backend = (ROOT / "src" / "workbench" / "packets" / "_decode_impl.py").read_text(encoding="utf-8")
 
-    assert "{% block main_class %}wide-workbench{% endblock %}" in template
+    assert "{% block page_class %}wide-workbench{% endblock %}" in template
     assert "Decoded structure" in template
     assert "Raw packet map" in template
     assert "Selected field" in template

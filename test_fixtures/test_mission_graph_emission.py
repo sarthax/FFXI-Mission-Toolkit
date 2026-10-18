@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Mission source extraction -> canonical graph emission regression."""
 from __future__ import annotations
+import contextlib, tempfile, types
 
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -145,7 +146,7 @@ def main():
         "mission-subject:mission:test:post-effect:mission_status:B",
     },post_edges
 
-    with NamedTemporaryFile(suffix=".db") as tmp:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as _tmpdir, contextlib.nullcontext(types.SimpleNamespace(name=str(Path(_tmpdir) / "t.db"))) as tmp:
         con=graph_store.init_db(Path(tmp.name))
         persist_mission_graph(con,projection)
         feature_row=con.execute("SELECT name,feature_type FROM features WHERE feature_id=?",(projection.feature.feature_id,)).fetchone()

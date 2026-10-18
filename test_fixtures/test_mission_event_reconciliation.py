@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Mission event reconciliation regression."""
 from __future__ import annotations
+import contextlib, tempfile, types
 
 import sqlite3
 from pathlib import Path
@@ -50,7 +51,7 @@ def _machine():
 
 
 def main():
-    with NamedTemporaryFile(suffix=".db") as tmp:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as _tmpdir, contextlib.nullcontext(types.SimpleNamespace(name=str(Path(_tmpdir) / "t.db"))) as tmp:
         con=graph_store.init_db(Path(tmp.name))
         ensure_schema(con)
         projection=project_mission_graph(

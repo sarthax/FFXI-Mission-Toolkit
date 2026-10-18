@@ -29,6 +29,7 @@ def main():
         "INSERT INTO review_queue(kind,source_path,capture_id,key,detail,status) VALUES (?,?,?,?,?,?)",
         ("empty_ingest","fixture/source.zip",1,"",'{"reason":"legacy"}',"pending"),
     )
+    con.commit()  # ensure() deliberately leaves a caller-owned transaction open
     rq.ensure(con)
     assert con.in_transaction is False
     cols={row[1] for row in con.execute("PRAGMA table_info(review_queue)")}

@@ -102,7 +102,7 @@ def test_external_symlink_is_not_scanned(tmp_path: Path):
 
 
 def test_lua_source_cache_invalidation(tmp_path: Path):
-    from workbench.devtools.features.key_item_references import _read_lua_lines
+    from workbench.devtools.features.key_item_references import _indexed_lua_lines as _read_lua_lines  # file reads are now cached behind the symbol index
     scripts = tmp_path / "scripts"
     scripts.mkdir()
     target = scripts / "changing.lua"

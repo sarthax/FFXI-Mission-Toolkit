@@ -6,8 +6,8 @@ def main():
     template = (Path(__file__).resolve().parents[1] / "gui/templates/wiki.html").read_text(encoding="utf-8")
     nav = '<div class="wiki-actions dense-toolbar" style="margin:6px 0">'
     browse = '<a class="chip {% if tab == \'browse\' %}active{% endif %}"'
-    recovery = "{% if tab == 'recovery' %}"
-    review = "{% if tab == 'review' %}"
+    recovery = "\n{% if tab == 'recovery' %}"
+    review = "\n{% if tab == 'review' %}"
     notice = "{% if review_result == 'approved' %}"
 
     assert template.count(nav) == 1
