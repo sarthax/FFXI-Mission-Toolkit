@@ -28,6 +28,22 @@ def main():
     assert audit["help_not_cataloged"] == [], audit
     assert audit["invalid_catalog_routes"] == [], audit
     assert audit["uncataloged_active_pages"] == [], audit
+    # Render the actual Jinja page through the existing GUI shell fixture.
+    # This checks template inheritance, context keys, filtering, and coverage UI.
+    from test_gui_shell import render
+    page = render("feature_catalog.html", "/feature-catalog",
+                  features=items, modules=sorted({f["module"] for f in items}),
+                  q="", module="", coverage=audit)
+    assert "Coverage audit" in page
+    assert "uncataloged active pages" in page
+    assert "Feature Trace" in page
+    assert "Feature Catalog" in page
+    filtered = search_catalog(items, "binary")
+    filtered_page = render("feature_catalog.html", "/feature-catalog",
+                           features=filtered, modules=sorted({f["module"] for f in items}),
+                           q="binary", module="", coverage=audit)
+    assert "Binary Inspector" in filtered_page
+    assert "No matching capabilities." not in filtered_page
     assert "/feature-catalog" in known
     from workbench.gui_shell import WORKSPACES
     assert any(section.get("href") == "/feature-catalog"
