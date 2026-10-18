@@ -58,6 +58,7 @@ The Server sidebar now links to `/server/gm`, a searchable, copy-only GM command
   `keyitems.lua` because they drift between LSB and Topaz/DSP.
 - The page has category tabs, a left command list, and a right entry pane with per-parameter inputs, ID pickers, a live
   preview and Copy. At the time of this milestone, "Send to game" was disabled; native command transport has since been implemented (see below).
+- `questID` / `missionID` parameters get a picker scoped to the chosen `logID` (parsed from the server's `quests.lua` / `missions.lua` log sections); pick the log first.
 
 ## Send to game
 

@@ -6344,15 +6344,36 @@ async def wiki_translate_model_save(request: Request):
     return {"status": "OK", "selected": model}
 
 
+@app.get("/wiki/translate/sections")
+def wiki_translate_sections(source: str, title: str):
+    """Section paths of a stored page so one section can be translated on its own."""
+    con = get_con()
+    try:
+        view = _wiki_page_view(con, source, title)
+        if not view:
+            return JSONResponse({"status": "NOT_FOUND"}, status_code=404)
+        has_blocks = con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='reference_wiki_blocks'").fetchone()
+        blocks = wiki_document.stored_blocks(con, source, view["page_id"]) if has_blocks else []
+        seen, out = set(), []
+        for b in blocks:
+            sp = b.get("section_path")
+            if sp and sp not in seen:
+                seen.add(sp)
+                out.append(sp)
+        return {"sections": out}
+    finally:
+        con.close()
+
+
 @app.get("/wiki/translate")
-def wiki_translate(source: str, title: str):
+def wiki_translate(source: str, title: str, section: str = ""):
     """Machine translation of a stored page, display-only; the stored original is untouched."""
     con = get_con()
     try:
         view = _wiki_page_view(con, source, title)
         if not view:
             return JSONResponse({"status": "NOT_FOUND"}, status_code=404)
-        return wiki_jobs.translate_cached(con, source, view["page_id"], view["hash"], view["text"])
+        return wiki_jobs.translate_cached(con, source, view["page_id"], view["hash"], view["text"], section[:300])
     finally:
         con.close()
 

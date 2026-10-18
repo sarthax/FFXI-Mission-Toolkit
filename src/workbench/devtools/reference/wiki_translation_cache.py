@@ -107,7 +107,8 @@ def translate_cached_blocks(con: sqlite3.Connection, *, source_id: str,
         output.append({"block_id": block_id, "ordinal": block.get("ordinal"),
                        "block_type": kind, "original": original, "text": translated,
                        "section_path": block.get("section_path"),
-                       "source_locator": block.get("source_locator")})
+                       "source_locator": block.get("source_locator"),
+                       "client_terms": client_terms.terms_in(original)})
         warnings.extend(block_id + ": " + issue for issue in issue_list)
     if not output:
         return {"status": "ERROR", "error": "No translatable blocks"}

@@ -48,7 +48,7 @@ def commands():
 
 
 @router.get("/lookup")
-def id_lookup(kind: str, q: str = "", limit: int = 30):
+def id_lookup(kind: str, q: str = "", limit: int = 30, log: int | None = None):
     """Search the active server's own tables for IDs (items, key items, zones, ...)."""
     root = get_active_server_root()
     if kind not in KINDS:
@@ -56,7 +56,7 @@ def id_lookup(kind: str, q: str = "", limit: int = 30):
     if not root or not Path(root).is_dir():
         raise HTTPException(409, "Configure an active local DSP server checkout first")
     try:
-        return {"kind": kind, "results": lookup(root, kind, q[:64], limit)}
+        return {"kind": kind, "results": lookup(root, kind, q[:64], limit, log)}
     except (OSError, ValueError) as exc:
         raise HTTPException(409, "Lookup source missing in the active server checkout") from exc
 
