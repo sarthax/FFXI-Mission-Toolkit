@@ -7,6 +7,10 @@ def summarize(missions):
     for mission in missions:
         zone = mission["zone"]
         c = zones.setdefault(zone, Counter())
+        action = (mission.get("readiness") or {}).get("next_action") or {}
+        key = action.get("key", "implementation_review")
+        for bucket in (totals, c):
+            bucket["next_" + key] += 1
         for bucket in (totals, c):
             bucket["missions"] += 1
             for stage in ("implementation", "port", "validation"):
