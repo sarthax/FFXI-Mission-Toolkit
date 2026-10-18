@@ -172,6 +172,7 @@ document.getElementById('zone-select')?.addEventListener('change', (e) => {
   <span id="ashita-live-samples" class="chip mono" role="status">0/2 points</span>
   <a class="inline" href="/live-client/bridge/console" target="_blank" rel="noopener">Bridge setup ↗</a>
   <span id="ashita-live-status" class="chip mono" role="status">Off</span>
+  <div id="ashita-live-activity" class="mono" role="log" aria-live="off" hidden style="flex-basis:100%;max-height:170px;overflow:auto;white-space:pre-wrap;font-size:12px;padding:6px 8px;border:1px solid var(--border,#444);border-radius:6px"></div>
   <label><input type="checkbox" id="ashita-other-clients"> Show other clients in this zone</label>
   <span id="ashita-other-client-status" class="muted mono" role="status">Other clients off</span>
   <label>Observed client <select id="ashita-secondary-client"><option value="">Choose visible client</option></select></label>
@@ -787,6 +788,22 @@ const inspectorLiveSearch = document.getElementById('zone3d-inspector-live-searc
 const inspectorLiveSelect = document.getElementById('zone3d-inspector-live-select');
 const inspectorLiveOpen = document.getElementById('zone3d-inspector-live-open');
 const inspectorLiveCount = document.getElementById('zone3d-inspector-live-count');
+// Option values are stable entity identities (never array indices, which reshuffle every frame).
+function liveEntityById(id) {
+  return id === '' || id == null ? undefined : liveObservedEntities.find(e => liveEntityIdentity(e) === String(id));
+}
+// Diff the <select> in place so an open menu is never destroyed; only add/remove what changed.
+function syncSelectOptions(select, placeholder, items) {
+  if (select === document.activeElement && select.dataset.syncing === 'open') return;
+  const want = new Map(items.map(i => [i.value, i.label]));
+  for (const opt of [...select.options]) {
+    if (opt.value === '') { opt.textContent = placeholder; continue; }
+    if (!want.has(opt.value)) opt.remove();
+    else { if (opt.textContent !== want.get(opt.value)) opt.textContent = want.get(opt.value); want.delete(opt.value); }
+  }
+  if (!select.options.length || select.options[0].value !== '') select.insertBefore(new Option(placeholder, ''), select.firstChild);
+  for (const [value, label] of want) select.add(new Option(label, value));
+}
 function liveEntityIdentity(e) {
   return String(e.server_entity_id ?? ('slot:' + e.client_index));
 }
@@ -796,16 +813,10 @@ function refreshInspectorLivePicker() {
     .filter(({e}) => liveEntityAgeSeconds(e) <= 3 &&
       (!needle || [e.n, e.server_entity_id, e.client_index].some(
         value => value != null && String(value).toLowerCase().includes(needle))));
-  // Keep an open native select stable through 10 Hz telemetry.
-  const signature = JSON.stringify(visible.map(({e,index}) => [index, liveEntityIdentity(e), e.n]));
-  if (inspectorLiveSelect.dataset.signature !== signature) {
-    const current = inspectorLiveSelect.value;
-    inspectorLiveSelect.replaceChildren(new Option('Select a live entity…', ''));
-    visible.forEach(({e,index}) => inspectorLiveSelect.add(
-      new Option((e.n || 'Unnamed') + ' [' + liveEntityIdentity(e) + ']', String(index))));
-    inspectorLiveSelect.dataset.signature = signature;
-    if (visible.some(({index}) => String(index) === current)) inspectorLiveSelect.value = current;
-  }
+  const current = inspectorLiveSelect.value;
+  syncSelectOptions(inspectorLiveSelect, 'Select a live entity…', visible.map(({e}) =>
+    ({value: liveEntityIdentity(e), label: (e.n || 'Unnamed') + ' [' + liveEntityIdentity(e) + ']'})));
+  if (current && [...inspectorLiveSelect.options].some(o => o.value === current)) inspectorLiveSelect.value = current;
   inspectorLiveCount.textContent = visible.length + ' current live entities' +
     (needle ? ' matching search' : '') + ' · hidden when telemetry is stale';
   inspectorLiveOpen.disabled = !inspectorLiveSelect.value;
@@ -820,7 +831,7 @@ inspectorLiveSelect.addEventListener('change', () => {
   inspectorLiveOpen.disabled = !inspectorLiveSelect.value;
 });
 inspectorLiveOpen.addEventListener('click', () => {
-  const e = liveObservedEntities[Number(inspectorLiveSelect.value)];
+  const e = liveEntityById(inspectorLiveSelect.value);
   if (!inspectorLiveSelect.value || !e || liveEntityAgeSeconds(e) > 3) return;
   liveSelectedEntityId = liveEntityIdentity(e);
   inspectEntity(e);
@@ -872,27 +883,24 @@ function updateLiveEntityPicker() {
     ({value: String(e.server_entity_id ?? ('slot:' + e.client_index)), label: (e.n || 'Unnamed') + ' [' + (e.server_entity_id ?? ('slot ' + e.client_index)) + ']', index: i}))
     .filter(e => liveEntityMatchesFilter(liveObservedEntities[e.index]) &&
       liveEntityAgeSeconds(liveObservedEntities[e.index]) <= 3);
-  const signature = JSON.stringify(options.map(e => [e.value, e.label]));
-  if (liveEntitySelect.dataset.signature !== signature) {
-    liveEntitySelect.replaceChildren(new Option('Select observed entity', ''));
-    options.forEach(e => liveEntitySelect.appendChild(new Option(e.label, String(e.index))));
-    liveEntitySelect.dataset.signature = signature;
-  }
-  const restored = selectedId ? liveObservedEntities.findIndex(e => String(e.server_entity_id ?? ('slot:' + e.client_index)) === selectedId) : -1;
-  if (liveEntitySelect.value !== (restored >= 0 ? String(restored) : ''))
-    liveEntitySelect.value = restored >= 0 ? String(restored) : '';
+  const menuOpen = liveEntitySelect === document.activeElement;
+  const typed = liveEntitySelect.value;
+  syncSelectOptions(liveEntitySelect, 'Select observed entity', options);
+  // While the user is working the menu, never overwrite their choice from telemetry.
+  const want = menuOpen ? typed : selectedId;
+  if (want && [...liveEntitySelect.options].some(o => o.value === want)) liveEntitySelect.value = want;
+  else if (!menuOpen) liveEntitySelect.value = '';
   liveEntityInspect.disabled = liveEntitySelect.value === '';
   updateLiveEntityVisibility();
   refreshInspectorLivePicker();
 }
 liveEntitySelect.addEventListener('change', () => {
-  liveSelectedEntityId = liveEntitySelect.value === '' ? '' :
-    String(liveObservedEntities[Number(liveEntitySelect.value)]?.server_entity_id ?? ('slot:' + liveObservedEntities[Number(liveEntitySelect.value)]?.client_index));
+  liveSelectedEntityId = liveEntitySelect.value;
   liveEntityInspect.disabled = liveEntitySelect.value === '';
   highlightObservedEntity();
 });
 liveEntityInspect.addEventListener('click', () => {
-  const entity = liveObservedEntities[Number(liveEntitySelect.value)];
+  const entity = liveEntityById(liveEntitySelect.value);
   if (liveEntitySelect.value === '' || !entity) return;
   inspectEntity(entity);
   highlightObservedEntity();
@@ -948,6 +956,32 @@ function applyAxesForClient(id) {
   const headless = d && d.source === 'file_feed' && String(d.adapter || '').startsWith('xiheadless');
   liveAxes.value = headless ? 'legacy' : 'x-z-y';
 }
+// Combat/dialog panel from the optional telemetry "activity" block (headless bots). All text via textContent.
+const liveActivityEl = document.getElementById('ashita-live-activity');
+function renderLiveActivity(data) {
+  const act = data && data.activity;
+  if (!act) { liveActivityEl.hidden = true; return; }
+  const byId = new Map((data.entities || []).filter(e => e.server_entity_id != null).map(e => [e.server_entity_id, e]));
+  const nameOf = id => { const e = byId.get(id); return e ? (e.name || ('#' + id)) : (id ? '#' + id.toString(16).toUpperCase() : '—'); };
+  const t = ts => new Date(ts * 1000).toLocaleTimeString([], {hour12:false});
+  const lines = [];
+  const me = data.player && data.player.character || 'Player';
+  lines.push(me + '  HP ' + act.hp + '/' + act.max_hp + ' (' + act.hpp + '%)  MP ' + act.mp + '/' + act.max_mp + '  TP ' + act.tp +
+    (act.server_status === 1 ? '  ENGAGED' : act.server_status === 2 || act.server_status === 3 ? '  DEAD' : ''));
+  const tgt = byId.get(act.target_id);
+  if (act.target_id) lines.push('Target: ' + nameOf(act.target_id) + (tgt && tgt.raw_status != null ? '  HP ' + tgt.raw_status + '%' : ''));
+  if (act.attackers.length) lines.push('Attacked by: ' + [...new Set(act.attackers.map(a => nameOf(a.actor)))].join(', '));
+  if (act.event && act.event.active) lines.push('Event active: id ' + act.event.event_id + ' from ' + nameOf(act.event.npc_id));
+  const log = [];
+  for (const c of act.combat) log.push([c.at, (c.kind === 1 ? '+' : c.kind === 2 ? 'miss ' : '-') + c.amount + ' ' + nameOf(c.target)]);
+  for (const sp of act.speech) log.push([sp.at, nameOf(sp.actor) + ': dialog #' + sp.message_id + (sp.name_hidden ? ' (no name)' : '')]);
+  for (const ch of act.chat) log.push([ch.at, '[' + ch.kind + '] ' + (ch.sender ? ch.sender + ': ' : '') + ch.message]);
+  log.sort((a, b) => a[0] - b[0]);
+  for (const [ts, msg] of log.slice(-14)) lines.push(t(ts) + '  ' + msg);
+  liveActivityEl.textContent = lines.join('\n');
+  liveActivityEl.hidden = false;
+  liveActivityEl.scrollTop = liveActivityEl.scrollHeight;
+}
 function clearLiveEntities(preservePicker = false) {
   for (const child of liveEntityPool) child.visible = false;
   liveObservedEntities.length = 0;
@@ -974,6 +1008,7 @@ function clearLiveMarker() {
   liveLastSampleAt = 0;
   lastLivePosition = null;
   lastLiveDiagnostic = null;
+  if (liveActivityEl) liveActivityEl.hidden = true;
   liveSelectedEntityId = '';
   clearLiveEntities();
   if (!liveMarker) return;
@@ -1118,6 +1153,7 @@ async function pollAshitaPosition() {
     updateLiveEntityVisibility();
     updateEntityPair();
     refreshZoneCorrelation();
+    renderLiveActivity(data);
     liveStatus.textContent = (data.player.character || clientId) + ' · live · ' +
       position.x.toFixed(1) + ', ' + position.y.toFixed(1) + ', ' + position.z.toFixed(1) +
       (liveEntitiesToggle.checked ? ' · entities ' + entityCount +
@@ -1190,7 +1226,10 @@ liveAxes.addEventListener('change', () => { ++lastLiveRequest; clearLiveMarker()
 liveHeading.addEventListener('change', pollAshitaPosition);
 liveClient.addEventListener('change', () => {
   applyAxesForClient(liveClient.value);
-  pendingLiveZoneFocus = liveFollowToggle.checked;
+  // Picking a client is an explicit "take me to that player": turn on the overlay, follow and
+  // auto-zone so the viewer switches to the player's zone, loads it, and centres on them.
+  liveToggle.checked = true; liveFollowToggle.checked = true; liveAutoZoneToggle.checked = true;
+  pendingLiveZoneFocus = true;
   ++lastLiveRequest; clearLiveMarker(); liveAlignmentSamples = [];
   liveSampleCount.textContent = '0/2 points'; pollAshitaPosition();
 });
@@ -2047,8 +2086,9 @@ renderer.domElement.addEventListener('click', (event) => {
     const entity = liveObservedEntities[entityIndex];
     if (entity) {
       inspectEntity(entity);
-      liveEntitySelect.value = String(entityIndex);
-      liveSelectedEntityId = String(entity.server_entity_id ?? ('slot:' + entity.client_index));
+      liveSelectedEntityId = liveEntityIdentity(entity);
+      updateLiveEntityPicker();
+      liveEntitySelect.value = liveSelectedEntityId;
       liveEntityInspect.disabled = false;
       highlightObservedEntity();
       // Camera must use the exact same Ashita-to-scene projection as the clicked marker.

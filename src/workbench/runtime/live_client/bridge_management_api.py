@@ -92,7 +92,10 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
         error = None
         with _feed_lock:
             try:
-                bridge.poll(max_frames=500)
+                bridge.skip_to_recent()
+                for _ in range(40):  # drain to the newest frame; a 500-frame page per call never catches a live feed
+                    if bridge.poll(max_frames=500) < 500:
+                        break
             except (OSError, ValueError, RuntimeError) as exc:
                 error = type(exc).__name__ + ": " + str(exc)[:160]
             frame = bridge.feed._latest
