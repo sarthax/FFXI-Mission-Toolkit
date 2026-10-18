@@ -1,0 +1,193 @@
+{
+ "_comment": "Independently authored SYNTHETIC samples modeled on observed Wiki structure. Not source evidence. Run scripts/wiki_corpus_extract.py --synthetic to regenerate synthetic_manifest.json (field expectations come from the frozen policy, not the parser).",
+ "samples": [
+  {
+   "sample_id": "syn-jp-labels",
+   "source_wiki": "WikiWikiJP",
+   "modeled_on": "WikiWikiJP page labels (NM/BFNM/mission lists) rendered as MediaWiki template parameters",
+   "categories": [
+    "japanese-label",
+    "nm",
+    "drops",
+    "rewards",
+    "requirements"
+   ],
+   "excerpt_wikitext": "{{NM情報\n|ノートリアスモンスター=[[テスト用NM]]\n|出現条件=テスト用アイテムをトレード\n|ポップ条件=夜間のみ\n|戦利品=[[テスト用の指輪]]\n|報酬=経験値\n|必要条件=ミッション進行\n|ミッション=テスト用ミッション\n|エリア=テスト用エリア\n|備考=これは説明文です\n}}",
+   "note": "Original Japanese labels and values must survive verbatim"
+  },
+  {
+   "sample_id": "syn-jp-links-original",
+   "source_wiki": "WikiWikiJP",
+   "modeled_on": "Japanese value with wiki link and display label",
+   "categories": [
+    "japanese-label",
+    "nested-links"
+   ],
+   "excerpt_wikitext": "{{クエスト情報\n|報酬=[[テスト素材|素材]]と[[ギル]]\n|場所=[[テスト村]]の北\n}}",
+   "note": "source_links must keep target and markup in original language"
+  },
+  {
+   "sample_id": "syn-ambiguous-prose",
+   "source_wiki": "BGWiki",
+   "modeled_on": "free-prose spawn/notes fields and ambiguous link targets",
+   "categories": [
+    "ambiguous",
+    "unsupported-prose",
+    "nested-links"
+   ],
+   "excerpt_wikitext": "{{NM\n|Spawn Conditions=Spawns at night, or maybe when [[Ice]] weather is active.\n|Notes=Unverified player report.\n|Drops=[[Ice]], [[Fire]]\n}}",
+   "note": "Links remain review-only; ambiguous titles never resolve automatically"
+  },
+  {
+   "sample_id": "syn-label-case-space",
+   "source_wiki": "BGWiki",
+   "modeled_on": "label whitespace/case variants",
+   "categories": [
+    "label-normalization"
+   ],
+   "excerpt_wikitext": "{{NM\n| DROPS =[[Test Ring]]\n|  Reward  =Test XP\n|LOCATION=Test Zone\n}}",
+   "note": "Exact-label policy ignores case and surrounding whitespace only"
+  },
+  {
+   "sample_id": "syn-near-miss-labels",
+   "source_wiki": "BGWiki",
+   "modeled_on": "near-miss labels seen on real pages (DropsB, Zone Name, ...)",
+   "categories": [
+    "unsupported-labels",
+    "tiered-drop-labels"
+   ],
+   "excerpt_wikitext": "{{NM\n|DropsB=[[Test Ring]]\n|Drops:=[[Test Ring]]\n|Drop Rate=10%\n|Zone Name=Test Zone\n|Quest Name=Test Quest\n|Location (JP)=テスト\n|Rewards List=Test\n}}",
+   "note": "None of these are exact allowlist labels; all must be rejected"
+  },
+  {
+   "sample_id": "syn-embedded-heading",
+   "source_wiki": "BGWiki",
+   "modeled_on": "Medusa/Absolute Virtue: Notes parameter that embeds ===heading=== lines",
+   "categories": [
+    "nested-structure",
+    "quirk"
+   ],
+   "excerpt_wikitext": "{{Adversary Description\n|Class=NM\n|Notes=\n===Getting There===\nLocated behind a door.\n|Location=Test Zone\n}}",
+   "note": "Template parameter text is also scanned for headings by the line parser; fields must still be extracted"
+  },
+  {
+   "sample_id": "syn-nested-template-value",
+   "source_wiki": "BGWiki",
+   "modeled_on": "Reward values containing nested templates and links",
+   "categories": [
+    "nested-template",
+    "rewards"
+   ],
+   "excerpt_wikitext": "{{Quest Header\n|Reward={{Item|Test Ring}} and [[Gil]]\n|Zone={{Zone|Test Zone}}\n}}",
+   "note": "Raw value is preserved including nested template markup"
+  },
+  {
+   "sample_id": "syn-empty-and-positional",
+   "source_wiki": "BGWiki",
+   "modeled_on": "empty values and positional-only parameters",
+   "categories": [
+    "missing-content"
+   ],
+   "excerpt_wikitext": "{{NM|Drops|bar\n|Drops=\n|Location=   \n}}",
+   "note": "No candidate from empty values; positional params have no label"
+  },
+  {
+   "sample_id": "syn-malformed-unclosed",
+   "source_wiki": "BGWiki",
+   "modeled_on": "Goblin Headsman style unbalanced braces",
+   "categories": [
+    "malformed"
+   ],
+   "excerpt_wikitext": "{{NM\n|Drops=[[Test Ring]]\n|Zone=Test Zone\n",
+   "note": "Unclosed template; behavior pinned, must not raise"
+  },
+  {
+   "sample_id": "syn-table-label-value",
+   "source_wiki": "BGWiki",
+   "modeled_on": "two-column label/value table",
+   "categories": [
+    "table",
+    "two-column",
+    "drops",
+    "rewards"
+   ],
+   "excerpt_wikitext": "{| class=\"wikitable\"\n|-\n!Drops\n|[[Test Ring]]\n|-\n|Location\n|Test Zone\n|-\n|Notes\n|Unverified\n|}\n",
+   "note": "Row-oriented table: only the exact first-column label rows are candidates",
+   "table_expect": [
+    {
+     "label": "Location",
+     "value": "Test Zone",
+     "candidate": true
+    },
+    {
+     "label": "Notes",
+     "value": "Unverified",
+     "candidate": false
+    }
+   ]
+  },
+  {
+   "sample_id": "syn-table-jp",
+   "source_wiki": "WikiWikiJP",
+   "modeled_on": "Japanese two-column label/value table",
+   "categories": [
+    "table",
+    "japanese-label",
+    "two-column"
+   ],
+   "excerpt_wikitext": "{| class=\"wikitable\"\n|-\n|場所\n|テスト用エリア\n|-\n|ドロップ\n|[[テスト用の指輪]]\n|-\n|備考\n|説明文\n|}\n",
+   "note": "Original Japanese labels/values preserved",
+   "table_expect": [
+    {
+     "label": "場所",
+     "value": "テスト用エリア",
+     "candidate": true
+    },
+    {
+     "label": "ドロップ",
+     "value": "テスト用の指輪",
+     "candidate": true
+    },
+    {
+     "label": "備考",
+     "value": "説明文",
+     "candidate": false
+    }
+   ]
+  },
+  {
+   "sample_id": "syn-table-header-attrs",
+   "source_wiki": "BGWiki",
+   "modeled_on": "header cells carrying width/style attributes before the pipe",
+   "categories": [
+    "table",
+    "quirk"
+   ],
+   "excerpt_wikitext": "{| class=\"wikitable\"\n! width=20% | Drops\n! width=80% | Value\n|-\n|style=\"width:30%\" | Location\n|Test Zone\n|}\n",
+   "note": "Observed on real BG tables: cell attribute prefixes stay in cell text (gap, reported not fixed)",
+   "table_expect": [
+    {
+     "label": "Location",
+     "value": "Test Zone",
+     "candidate": true
+    }
+   ],
+   "header_text_expect": [
+    "Drops",
+    "Value"
+   ]
+  },
+  {
+   "sample_id": "syn-legacy-flattened-jp",
+   "source_wiki": "WikiWikiJP",
+   "modeled_on": "WikiWikiJP page_text rows (html-crawl, no raw source stored)",
+   "categories": [
+    "legacy-flattened",
+    "japanese-label"
+   ],
+   "source_format": "legacy_text",
+   "excerpt_wikitext": "テスト用NM\nLast-modified: 2026-01-01\n\n出現条件\nテスト用アイテム\n\n戦利品\nテスト用の指輪\n",
+   "note": "Flattened text: no labels can be trusted; only degraded legacy_text blocks and zero candidates"
+  }
+ ]
+}

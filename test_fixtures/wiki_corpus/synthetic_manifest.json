@@ -1,0 +1,496 @@
+{
+ "extract_version": "wiki-corpus-extract-v1",
+ "samples": [
+  {
+   "evidence_type": "synthetic",
+   "source_format": "mediawiki",
+   "excerpt_sha256": "4acbc2201a474e3859da80fc7514bc2ec8cdfea9e9a35b673d877c8e931ec95c",
+   "sample_id": "syn-jp-labels",
+   "source_wiki": "WikiWikiJP",
+   "modeled_on": "WikiWikiJP page labels (NM/BFNM/mission lists) rendered as MediaWiki template parameters",
+   "categories": [
+    "japanese-label",
+    "nm",
+    "drops",
+    "rewards",
+    "requirements"
+   ],
+   "excerpt_wikitext": "{{NM情報\n|ノートリアスモンスター=[[テスト用NM]]\n|出現条件=テスト用アイテムをトレード\n|ポップ条件=夜間のみ\n|戦利品=[[テスト用の指輪]]\n|報酬=経験値\n|必要条件=ミッション進行\n|ミッション=テスト用ミッション\n|エリア=テスト用エリア\n|備考=これは説明文です\n}}",
+   "note": "Original Japanese labels and values must survive verbatim",
+   "fields": [
+    {
+     "label": "ノートリアスモンスター",
+     "raw_value": "[[テスト用NM]]",
+     "locator": "section::template:1:field:1",
+     "expected_type": "NM_IDENTITY",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "出現条件",
+     "raw_value": "テスト用アイテムをトレード",
+     "locator": "section::template:1:field:2",
+     "expected_type": "SPAWN_CONDITIONS",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "ポップ条件",
+     "raw_value": "夜間のみ",
+     "locator": "section::template:1:field:3",
+     "expected_type": "SPAWN_CONDITIONS",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "戦利品",
+     "raw_value": "[[テスト用の指輪]]",
+     "locator": "section::template:1:field:4",
+     "expected_type": "DROPS",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "報酬",
+     "raw_value": "経験値",
+     "locator": "section::template:1:field:5",
+     "expected_type": "REWARDS",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "必要条件",
+     "raw_value": "ミッション進行",
+     "locator": "section::template:1:field:6",
+     "expected_type": "REQUIRES",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "ミッション",
+     "raw_value": "テスト用ミッション",
+     "locator": "section::template:1:field:7",
+     "expected_type": "QUEST",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "エリア",
+     "raw_value": "テスト用エリア",
+     "locator": "section::template:1:field:8",
+     "expected_type": "LOCATION",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "備考",
+     "raw_value": "これは説明文です",
+     "locator": "section::template:1:field:9",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "evidence_type": "synthetic",
+   "source_format": "mediawiki",
+   "excerpt_sha256": "d34c7cb6f516e11e8855e65d5f2aae4dbe9038d1a41ef7c7edba5d36bf8180f7",
+   "sample_id": "syn-jp-links-original",
+   "source_wiki": "WikiWikiJP",
+   "modeled_on": "Japanese value with wiki link and display label",
+   "categories": [
+    "japanese-label",
+    "nested-links"
+   ],
+   "excerpt_wikitext": "{{クエスト情報\n|報酬=[[テスト素材|素材]]と[[ギル]]\n|場所=[[テスト村]]の北\n}}",
+   "note": "source_links must keep target and markup in original language",
+   "fields": [
+    {
+     "label": "報酬",
+     "raw_value": "[[テスト素材|素材]]と[[ギル]]",
+     "locator": "section::template:1:field:1",
+     "expected_type": "REWARDS",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "場所",
+     "raw_value": "[[テスト村]]の北",
+     "locator": "section::template:1:field:2",
+     "expected_type": "LOCATION",
+     "review_only": true,
+     "reject_reason": null
+    }
+   ]
+  },
+  {
+   "evidence_type": "synthetic",
+   "source_format": "mediawiki",
+   "excerpt_sha256": "8fe83fc58fef1e64f2e29dd5a79246e136a95f57c670ccc91450878f13c2fd15",
+   "sample_id": "syn-ambiguous-prose",
+   "source_wiki": "BGWiki",
+   "modeled_on": "free-prose spawn/notes fields and ambiguous link targets",
+   "categories": [
+    "ambiguous",
+    "unsupported-prose",
+    "nested-links"
+   ],
+   "excerpt_wikitext": "{{NM\n|Spawn Conditions=Spawns at night, or maybe when [[Ice]] weather is active.\n|Notes=Unverified player report.\n|Drops=[[Ice]], [[Fire]]\n}}",
+   "note": "Links remain review-only; ambiguous titles never resolve automatically",
+   "fields": [
+    {
+     "label": "Spawn Conditions",
+     "raw_value": "Spawns at night, or maybe when [[Ice]] weather is active.",
+     "locator": "section::template:1:field:1",
+     "expected_type": "SPAWN_CONDITIONS",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "Notes",
+     "raw_value": "Unverified player report.",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Drops",
+     "raw_value": "[[Ice]], [[Fire]]",
+     "locator": "section::template:1:field:3",
+     "expected_type": "DROPS",
+     "review_only": true,
+     "reject_reason": null
+    }
+   ]
+  },
+  {
+   "evidence_type": "synthetic",
+   "source_format": "mediawiki",
+   "excerpt_sha256": "30ead71faa263e8ce96ffb04389bc3498eaa42c24e11b0c391934859313e95cd",
+   "sample_id": "syn-label-case-space",
+   "source_wiki": "BGWiki",
+   "modeled_on": "label whitespace/case variants",
+   "categories": [
+    "label-normalization"
+   ],
+   "excerpt_wikitext": "{{NM\n| DROPS =[[Test Ring]]\n|  Reward  =Test XP\n|LOCATION=Test Zone\n}}",
+   "note": "Exact-label policy ignores case and surrounding whitespace only",
+   "fields": [
+    {
+     "label": "DROPS",
+     "raw_value": "[[Test Ring]]",
+     "locator": "section::template:1:field:1",
+     "expected_type": "DROPS",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "Reward",
+     "raw_value": "Test XP",
+     "locator": "section::template:1:field:2",
+     "expected_type": "REWARDS",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "LOCATION",
+     "raw_value": "Test Zone",
+     "locator": "section::template:1:field:3",
+     "expected_type": "LOCATION",
+     "review_only": true,
+     "reject_reason": null
+    }
+   ]
+  },
+  {
+   "evidence_type": "synthetic",
+   "source_format": "mediawiki",
+   "excerpt_sha256": "45949515e63005530f8cec047cca952ea952a38623996372957a6079a225c2d7",
+   "sample_id": "syn-near-miss-labels",
+   "source_wiki": "BGWiki",
+   "modeled_on": "near-miss labels seen on real pages (DropsB, Zone Name, ...)",
+   "categories": [
+    "unsupported-labels",
+    "tiered-drop-labels"
+   ],
+   "excerpt_wikitext": "{{NM\n|DropsB=[[Test Ring]]\n|Drops:=[[Test Ring]]\n|Drop Rate=10%\n|Zone Name=Test Zone\n|Quest Name=Test Quest\n|Location (JP)=テスト\n|Rewards List=Test\n}}",
+   "note": "None of these are exact allowlist labels; all must be rejected",
+   "fields": [
+    {
+     "label": "DropsB",
+     "raw_value": "[[Test Ring]]",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Drops:",
+     "raw_value": "[[Test Ring]]",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Drop Rate",
+     "raw_value": "10%",
+     "locator": "section::template:1:field:3",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Zone Name",
+     "raw_value": "Test Zone",
+     "locator": "section::template:1:field:4",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Quest Name",
+     "raw_value": "Test Quest",
+     "locator": "section::template:1:field:5",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Location (JP)",
+     "raw_value": "テスト",
+     "locator": "section::template:1:field:6",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Rewards List",
+     "raw_value": "Test",
+     "locator": "section::template:1:field:7",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "evidence_type": "synthetic",
+   "source_format": "mediawiki",
+   "excerpt_sha256": "2b8fdd8d00b641f6cdddc50e10760df4720f68923b073697fd3c69bd45d4e6b8",
+   "sample_id": "syn-embedded-heading",
+   "source_wiki": "BGWiki",
+   "modeled_on": "Medusa/Absolute Virtue: Notes parameter that embeds ===heading=== lines",
+   "categories": [
+    "nested-structure",
+    "quirk"
+   ],
+   "excerpt_wikitext": "{{Adversary Description\n|Class=NM\n|Notes=\n===Getting There===\nLocated behind a door.\n|Location=Test Zone\n}}",
+   "note": "Template parameter text is also scanned for headings by the line parser; fields must still be extracted",
+   "fields": [
+    {
+     "label": "Class",
+     "raw_value": "NM",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Notes",
+     "raw_value": "===Getting There===\nLocated behind a door.",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Location",
+     "raw_value": "Test Zone",
+     "locator": "section::template:1:field:3",
+     "expected_type": "LOCATION",
+     "review_only": true,
+     "reject_reason": null
+    }
+   ]
+  },
+  {
+   "evidence_type": "synthetic",
+   "source_format": "mediawiki",
+   "excerpt_sha256": "12d9894c798fcb305e6790cb4363e7f3e52d9081ae79c36ca3cc5a52f83651bc",
+   "sample_id": "syn-nested-template-value",
+   "source_wiki": "BGWiki",
+   "modeled_on": "Reward values containing nested templates and links",
+   "categories": [
+    "nested-template",
+    "rewards"
+   ],
+   "excerpt_wikitext": "{{Quest Header\n|Reward={{Item|Test Ring}} and [[Gil]]\n|Zone={{Zone|Test Zone}}\n}}",
+   "note": "Raw value is preserved including nested template markup",
+   "fields": [
+    {
+     "label": "Reward",
+     "raw_value": "{{Item|Test Ring}} and [[Gil]]",
+     "locator": "section::template:1:field:1",
+     "expected_type": "REWARDS",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "Zone",
+     "raw_value": "{{Zone|Test Zone}}",
+     "locator": "section::template:1:field:2",
+     "expected_type": "LOCATION",
+     "review_only": true,
+     "reject_reason": null
+    }
+   ]
+  },
+  {
+   "evidence_type": "synthetic",
+   "source_format": "mediawiki",
+   "excerpt_sha256": "6faf5e2e11b0ff3aed76861f982a03605fd2498d26670ce7946eba145d2a4036",
+   "sample_id": "syn-empty-and-positional",
+   "source_wiki": "BGWiki",
+   "modeled_on": "empty values and positional-only parameters",
+   "categories": [
+    "missing-content"
+   ],
+   "excerpt_wikitext": "{{NM|Drops|bar\n|Drops=\n|Location=   \n}}",
+   "note": "No candidate from empty values; positional params have no label",
+   "fields": [
+    {
+     "label": "Drops",
+     "raw_value": "",
+     "locator": "section::template:1:field:3",
+     "expected_type": "DROPS",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "Location",
+     "raw_value": "",
+     "locator": "section::template:1:field:4",
+     "expected_type": "LOCATION",
+     "review_only": true,
+     "reject_reason": null
+    }
+   ]
+  },
+  {
+   "evidence_type": "synthetic",
+   "source_format": "mediawiki",
+   "excerpt_sha256": "dd534229fefd4c7a637553ab785a8bdb635b6334bdc252a06039b4167f49a808",
+   "sample_id": "syn-malformed-unclosed",
+   "source_wiki": "BGWiki",
+   "modeled_on": "Goblin Headsman style unbalanced braces",
+   "categories": [
+    "malformed"
+   ],
+   "excerpt_wikitext": "{{NM\n|Drops=[[Test Ring]]\n|Zone=Test Zone\n",
+   "note": "Unclosed template; behavior pinned, must not raise",
+   "fields": []
+  },
+  {
+   "evidence_type": "synthetic",
+   "source_format": "mediawiki",
+   "excerpt_sha256": "28d5f0f3c330efbe32cfea40e955cf99fe8d14b31042f279fe6df9863c368fd2",
+   "sample_id": "syn-table-label-value",
+   "source_wiki": "BGWiki",
+   "modeled_on": "two-column label/value table",
+   "categories": [
+    "table",
+    "two-column",
+    "drops",
+    "rewards"
+   ],
+   "excerpt_wikitext": "{| class=\"wikitable\"\n|-\n!Drops\n|[[Test Ring]]\n|-\n|Location\n|Test Zone\n|-\n|Notes\n|Unverified\n|}\n",
+   "note": "Row-oriented table: only the exact first-column label rows are candidates",
+   "table_expect": [
+    {
+     "label": "Location",
+     "value": "Test Zone",
+     "candidate": true
+    },
+    {
+     "label": "Notes",
+     "value": "Unverified",
+     "candidate": false
+    }
+   ]
+  },
+  {
+   "evidence_type": "synthetic",
+   "source_format": "mediawiki",
+   "excerpt_sha256": "8a5848d941d72f5ca2a9c86646b8fd926e88ad3d1099fa8f65f40c3019ded1c8",
+   "sample_id": "syn-table-jp",
+   "source_wiki": "WikiWikiJP",
+   "modeled_on": "Japanese two-column label/value table",
+   "categories": [
+    "table",
+    "japanese-label",
+    "two-column"
+   ],
+   "excerpt_wikitext": "{| class=\"wikitable\"\n|-\n|場所\n|テスト用エリア\n|-\n|ドロップ\n|[[テスト用の指輪]]\n|-\n|備考\n|説明文\n|}\n",
+   "note": "Original Japanese labels/values preserved",
+   "table_expect": [
+    {
+     "label": "場所",
+     "value": "テスト用エリア",
+     "candidate": true
+    },
+    {
+     "label": "ドロップ",
+     "value": "テスト用の指輪",
+     "candidate": true
+    },
+    {
+     "label": "備考",
+     "value": "説明文",
+     "candidate": false
+    }
+   ]
+  },
+  {
+   "evidence_type": "synthetic",
+   "source_format": "mediawiki",
+   "excerpt_sha256": "48734b6dd0bc9e06d6405cd29a451472cd61b021f6a55398c46cd315f9362eed",
+   "sample_id": "syn-table-header-attrs",
+   "source_wiki": "BGWiki",
+   "modeled_on": "header cells carrying width/style attributes before the pipe",
+   "categories": [
+    "table",
+    "quirk"
+   ],
+   "excerpt_wikitext": "{| class=\"wikitable\"\n! width=20% | Drops\n! width=80% | Value\n|-\n|style=\"width:30%\" | Location\n|Test Zone\n|}\n",
+   "note": "Observed on real BG tables: cell attribute prefixes stay in cell text (gap, reported not fixed)",
+   "table_expect": [
+    {
+     "label": "Location",
+     "value": "Test Zone",
+     "candidate": true
+    }
+   ],
+   "header_text_expect": [
+    "Drops",
+    "Value"
+   ]
+  },
+  {
+   "evidence_type": "synthetic",
+   "source_format": "legacy_text",
+   "excerpt_sha256": "c9cb57890982cd5c9b3c890367dfec55697a2cfec61ec2448e0d971c4b4796e8",
+   "sample_id": "syn-legacy-flattened-jp",
+   "source_wiki": "WikiWikiJP",
+   "modeled_on": "WikiWikiJP page_text rows (html-crawl, no raw source stored)",
+   "categories": [
+    "legacy-flattened",
+    "japanese-label"
+   ],
+   "excerpt_wikitext": "テスト用NM\nLast-modified: 2026-01-01\n\n出現条件\nテスト用アイテム\n\n戦利品\nテスト用の指輪\n",
+   "note": "Flattened text: no labels can be trusted; only degraded legacy_text blocks and zero candidates"
+  }
+ ]
+}
