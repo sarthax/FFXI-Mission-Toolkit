@@ -19,6 +19,7 @@ except ModuleNotFoundError:
     xi_tinkerer = None
 
 from workbench.client.dat.extractor_bin import ensure_dat_extractor
+from workbench.client.command_evidence import command_evidence
 
 PARSERS = (
     "parse_dialog", "parse_dmsg_table", "parse_xistring_table", "parse_entity_names",
@@ -398,6 +399,7 @@ def _inspect_path(
         "classification": classification,
         "parser_capabilities": parser_capabilities(),
         "section_scan": section_scan,
+        "command_evidence": command_evidence(data),
         "matches": matches,
         "rejected": rejected,
         "parser_match_count": len(matches),
