@@ -249,7 +249,7 @@ html{scroll-padding-top:56px}
 {% else %}<tr><td colspan="8" class="muted">No missions match the selected readiness criteria. This does not indicate that unreviewed missions have passed.</td></tr>{% endfor %}
 </tbody></table></div>
 <h2 id="assault-sec-progress">Development progress</h2>
-<p class="muted">Counts are calculated from recorded reviews, not inferred from Topaz checkmarks. Unreviewed means no DSP evidence recorded, not confirmed broken.</p>
+<p class="muted">Counts are calculated from recorded reviews, not inferred from Topaz checkmarks. Action columns identify the next evidence or test step per mission and never imply DSP completion. Click a zone to filter mission readiness. Unreviewed means unknown, not confirmed broken.</p>
 <div class="assault-status">
   <span><strong>{{ tracker.progress.total.missions }}</strong> missions</span>
   <span><strong>{{ tracker.progress.total.issues }}</strong> imported issue bullets</span>
@@ -259,10 +259,10 @@ html{scroll-padding-top:56px}
   <span><strong>{{ tracker.progress.total.get('blocked_issues', 0) }}</strong> explicitly blocked issues</span>
 </div>
 <div class="table-wrap"><table>
-<thead><tr><th>Zone</th><th>Missions</th><th>Issue bullets</th><th>DSP ports validated</th><th>DSP tests validated</th><th>Issues fully reviewed</th><th>Explicit blocks</th></tr></thead>
+<thead><tr><th>Zone</th><th>Missions</th><th>Implementation review</th><th>Port review</th><th>Issue / dependency ports</th><th>DSP live test</th><th>Resolve blockers</th><th>Issue bullets</th><th>DSP ports validated</th><th>DSP tests validated</th><th>Issues fully reviewed</th><th>Explicit blocks</th></tr></thead>
 <tbody>{% for zone in tracker.zones %}
 {% set progress = tracker.progress.zones[zone] %}
-<tr><td>{{ zone }}</td><td>{{ progress.missions }}</td><td>{{ progress.issues }}</td>
+<tr><td><a href="/domains/assault?readiness_zone={{ zone|urlencode }}#readiness-results">{{ zone }}</a></td><td>{{ progress.missions }}</td><td>{{ progress.get("next_implementation_review", 0) }}</td><td>{{ progress.get("next_port_review", 0) }}</td><td>{{ progress.get("next_dependency_review", 0) }}</td><td>{{ progress.get("next_live_test", 0) }}</td><td>{{ progress.get("next_resolve_blocker", 0) }}</td><td>{{ progress.issues }}</td>
 <td>{{ progress.get('mission_port_validated', 0) }}</td>
 <td>{{ progress.get('mission_validation_validated', 0) }}</td>
 <td>{{ progress.get('fully_reviewed_issues', 0) }}</td>
