@@ -1,4 +1,17 @@
-# Server → GM Command Center — implementation roadmap
+# Server → GM Command Center — operator and implementation guide
+
+> **Current status (2026-10-18):** Searchable command catalog, parameter/ID lookup, favorites, history, presets, targeted player selection, native Ashita **opt-in Send to game**, and high-privilege confirmations are implemented on Toolkit `main`. Sending requires configured local native plugin controls and actual server GM authorization. The original slices below are preserved as historical development notes; earlier “no command transport” descriptions are superseded by **Send to game** and **Workflow features**.
+
+For current global status and remaining acceptance gaps, consult [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md). The legacy no-transport statements below are dated milestones, not current limitations.
+
+## Current operator workflow
+
+1. Select the intended local server profile; open **Server → GM Command Center** and verify the command catalog is from that checkout.
+2. Choose a category/command, set optional Target player, and fill fields with supported lookup results and Lua-derived hints.
+3. Review the generated command and use **Copy** by default. Favorites, History and Presets are stored in this browser, not the server.
+4. Only on an authorized test client, enable the documented native/plugin options and check GM privileges before using **Send to game**. High-privilege commands require an additional confirmation.
+5. Verify game/server response independently; a client-side typed command is not proof that the operation succeeded. Maintain records for state-changing commands.
+
 
 ## Slice 1: Local command catalog (implemented)
 
@@ -15,7 +28,7 @@ Verified reference repository: `sarthax/darkstar-to-valhalla`, branch `main`,
 read from a local checkout, not directly from GitHub at runtime. Future UI must
 show which configured checkout and branch/version the catalog represents.
 
-## Next slices
+## Historical proposed next slices (superseded in part)
 
 1. Server module page with searchable catalog, source links, selected server
    profile and copy-only command preview (no execution).
@@ -31,9 +44,9 @@ show which configured checkout and branch/version the catalog represents.
 The existing Ashita addon's GM response capture remains separate. No server
 source modification is required for the planned GM path.
 
-## Slice 2: Browser (implemented)
+## Slice 2: Browser (historical implementation milestone)
 
-The Server sidebar now links to `/server/gm`, a searchable, copy-only GM command browser. `/server/gm/commands` lists metadata read from the active local server checkout. No game command submission endpoint exists. If the server root is missing or lacks `scripts/commands`, the page reports the catalog error. The page extends the shared `workbench_page.html` shell (top navigation) via `gui/templates/server_gm_commands.html`.
+The Server sidebar now links to `/server/gm`, a searchable, copy-only GM command browser. `/server/gm/commands` lists metadata read from the active local server checkout. At this historical stage, no game command submission endpoint existed; see current Send to game section. If the server root is missing or lacks `scripts/commands`, the page reports the catalog error. The page extends the shared `workbench_page.html` shell (top navigation) via `gui/templates/server_gm_commands.html`.
 
 ## Categories, usage and ID lookup (2026-10-15)
 
@@ -44,7 +57,7 @@ The Server sidebar now links to `/server/gm`, a searchable, copy-only GM command
   zone, mob, npc) by name or id prefix. IDs are read, never invented. Key item IDs come from the active server's
   `keyitems.lua` because they drift between LSB and Topaz/DSP.
 - The page has category tabs, a left command list, and a right entry pane with per-parameter inputs, ID pickers, a live
-  preview and Copy. "Send to game" stays disabled: no command transport exists (the native plugin only does warp/speed).
+  preview and Copy. At the time of this milestone, "Send to game" was disabled; native command transport has since been implemented (see below).
 
 ## Send to game
 
