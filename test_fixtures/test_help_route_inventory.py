@@ -12,11 +12,12 @@ PAGES = ("help.html", "roadmap.html", "capture_help.html", "auction_house_help.h
 # Present in shipped Help but not in the 322-route GUI_ROUTE_MAP baseline.
 # Do not silently call these broken URLs; validate route ownership separately.
 UNRESOLVED_INVENTORY = {
-    "/auction-house/help", "/live-client/bridge/console", "/synth", "/captures/review",
+    "/auction-house/help", "/live-client/bridge/console", "/synth",
 }
 def main():
     route_map = json.loads((ROOT / "docs/workbench/GUI_ROUTE_MAP.json").read_text(encoding="utf-8"))
-    gets = {r["path"] for r in route_map["routes"] if r["method"] == "GET"}
+    auxiliary = json.loads((ROOT / "docs/workbench/GUI_ROUTE_MAP_AUXILIARY.json").read_text(encoding="utf-8"))
+    gets = {r["path"] for inventory in (route_map, auxiliary) for r in inventory["routes"] if r["method"] == "GET"}
     seen = set()
     for page in PAGES:
         html = (ROOT / "gui/templates" / page).read_text(encoding="utf-8")
@@ -25,6 +26,6 @@ def main():
         missing = links - gets - UNRESOLVED_INVENTORY
         assert not missing, f"{page}: new Help links absent from route inventory: {sorted(missing)}"
     assert UNRESOLVED_INVENTORY <= seen, "Review and remove stale inventory exceptions"
-    print(f"Help static route inventory smoke: PASS ({len(seen)} links; {len(UNRESOLVED_INVENTORY)} follow-ups)")
+    print(f"Help static route inventory smoke: PASS ({len(seen)} links; {len(UNRESOLVED_INVENTORY)} main/auxiliary inventory omissions)")
 if __name__ == "__main__":
     main()
