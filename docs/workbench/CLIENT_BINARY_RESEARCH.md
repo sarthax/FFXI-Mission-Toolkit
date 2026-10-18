@@ -153,6 +153,91 @@ Not built: GUI to create/edit probe sets, Client Overview / Build page showing f
 
 `/clientoverview` (Client > Client Overview, `client_overview.py`) fingerprints the installed client read-only: every root DLL/EXE (size, PE link time, SHA-256), FTABLE/VTABLE sizes, ROM folder list, and a **build id** = first 12 hex of `FFXiMain.dll` SHA-256. That build id is the same one used in probe snapshot ids (`snapshot:client-<build id>`), and the page lists any probe observations already saved for the build from `workbench.db` (opened read-only; never created). Captures/ID tables can cite the build id to say which client they came from.
 
+
+## POL1 decoded-code evidence (2026-10-18)
+
+Kuluu's documented POL1 LZSS decoding enabled an independent, read-only proof of concept against the archived December 2019 FFXiMain.dll: exactly 3,264,206 bytes were recovered from .text, SHA-256 `af2126c057d86559bfad2e164f7f7fd0a26bbc89ab29ea9cbde5cea807c7d2b8`. Source reference: https://github.com/jondwillis/kuluu-ffxi/blob/main/ffxi-dat/src/pol1.rs (GPL-3.0-or-later; review licensing before redistribution).
+
+`workbench.client.pol1_unpack.unpack_pol1` recovers bounded bytes and metadata, and `search_unpacked` performs bounded exact hex-byte searches with recovered .text RVAs and context. `workbench.client.binary.inspector` exposes metadata via `unpacked_code_evidence` and searches via `search_unpacked_code`. These are service APIs; a GUI search panel, instruction decoder and xref interpretation are not yet included. Missing matches remain UNKNOWN; bytes alone cannot establish instruction alignment, execution, or wardrobe semantics. No proprietary executable image is committed.
+
+Use a local, licensed client installation; never modify original files. Self-test: `python test_fixtures/test_client_pol1_unpack.py`.
+
+
+### Optional x86 decode evidence
+
+`workbench.client.binary.code_evidence.decode_window(path, rva, window=160, max_instructions=48)`
+disassembles an explicitly selected unpacked .text RVA using optional Python `capstone`
+(x86 32-bit). Install `capstone` separately when desired; otherwise it returns
+`DECODER_UNAVAILABLE`. The service caps the requested byte window at 512 bytes and
+instructions at 100. It emits instruction RVAs, raw bytes, mnemonics and operands,
+with an explicit warning that the start address and decoded instruction boundaries
+are not confirmed by control flow. No automatic semantic labeling, hooking or
+client modification takes place.
+
+Self-test: `python test_fixtures/test_client_code_evidence.py`.
+Next: correlate validated instructions with command-table references and inventory
+packet/container checks; do not conclude Wardrobe 5-8 can be patched from byte scans.
+
+
+### Data-address candidate references (2026-10-18)
+
+`workbench.client.binary.address_candidates.address_candidates` and Binary Inspector service
+`unpacked_address_candidates` look for exact little-endian 32-bit RVA and VA values
+in the recovered .text image, returning bounded contextual evidence with source
+RVAs and the decoded-image SHA-256. This does not inspect relocations or assert
+instruction boundaries, and thus does **not** prove a true xref, function, or
+Wardrobe 5-8 support. The scanner defaults to image base 0x10000000; callers
+must supply a verified base for other builds.
+
+Self-test: `python test_fixtures/test_client_address_candidates.py`.
+
+Follow-up: pair candidate hits with independently verified x86 instruction
+decoding and the PE relocation table, then compare identical analyses on a
+verified 2022+ retail executable. Do not modify a live client based on these
+candidates.
+
+
+### One-command decoded-code report
+
+A local read-only JSON report is available using:
+
+```powershell
+python -m workbench.client.cli.pol1_report "C:\\FFXI-Research\\2019\\FFXiMain.dll" --pattern "83 F8 0C" --target-rva 0x1234 --output ".workbench/client-binaries/2019-pol1-report.json"
+```
+
+`--pattern`, `--target-rva`, and `--decode-rva` are independent optional checks. The script captures the unpacked-image SHA-256, decoded RVAs, context bytes, and explicit evidence caveats. `--decode-rva` requires optional Capstone. No assembly instruction, offset or ID pattern in this example is asserted to be wardrobe-specific. Reports should remain outside version control and original game files must not be overwritten.
+
+
+### Wardrobe command evidence report
+
+The POL1 research report now includes `wardrobe_commands`, an exact boundary-aware
+ASCII command scan of the on-disk DLL for `/wardrobe`, `/wardrobe2` through
+`/wardrobe8`. Each entry retains offsets and a VERIFIED_BYTES/UNKNOWN status;
+a lookalike prefix (for example `/wardrobe8x`) is not a match. The source
+DLL fingerprint is included so reports from multiple client builds can be
+compared without confusing versions. This scan is separate from the unpacked
+code section and remains *string evidence only*.
+
+Run `python -m workbench.client.cli.pol1_report "C:\\FFXI-Research\\2019\\FFXiMain.dll" --output ".workbench/client-binaries/2019-pol1.json"`.
+Self-test: `python test_fixtures/test_client_wardrobe_report.py`.
+
+
+### Comparing separately generated client reports
+
+Run `pol1_report` once per local client build (2019 and a verified 2022+
+reference), saving independent JSON reports. Then:
+
+```powershell
+python -m workbench.client.cli.pol1_compare .workbench/client-binaries/2019-pol1.json .workbench/client-binaries/newer-pol1.json --output .workbench/client-binaries/wardrobe-build-diff.json
+```
+
+The comparison includes source file fingerprints, decompressed code fingerprints,
+and per-command evidence changes with `UNCHANGED`, `DIFFERENT_EVIDENCE` or
+`NOT_MEASURED` classifications. An UNKNOWN command probe is *not* an absence
+claim; a changed hash or string does not identify a patch or semantic capability.
+A verified newer FFXiMain.dll and its matching DAT table files are still needed
+for an actual cross-build investigation.
+
 ## Bounded DAT command evidence and exact binary probes (2026-10-18)
 
 The read-only DAT Inspector now includes a bounded ASCII slash-command evidence table with raw file offsets, 12-byte hex context on each side and a NUL-termination flag. The default query is `wardrobe`. This supplements, rather than replaces, the existing parser results and block-chain view. The scanner is limited to files of at most 64 MiB and at most 200 displayed hits; it does not claim a decoded menu format.

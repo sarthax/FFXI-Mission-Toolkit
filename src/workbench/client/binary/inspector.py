@@ -14,6 +14,7 @@ from pathlib import Path
 from workbench.client.binary_deep import byte_search
 from workbench.client.binary_diff import diff_binary_indexes
 from workbench.client.binary_index import index_binary
+from workbench.client.pol1_unpack import inspect_pol1, search_unpacked, Pol1Error
 from workbench.runtime.paths import CLIENT_PROBE_SETS_ROOT
 
 _CACHE: dict[tuple[str, float, int], dict] = {}
@@ -127,3 +128,28 @@ def save_probe_set(file: str, install_dir: str, db_path) -> dict:
     finally:
         con.close()
     return {"saved": len(rows), "db": str(db_path)}
+
+
+def unpacked_code_evidence(path: str) -> dict:
+    """Read-only decoded .text metadata (never exposes or executes unpacked bytes)."""
+    try:
+        return {"status": "VERIFIED", **inspect_pol1(path)}
+    except (Pol1Error, OSError) as exc:
+        return {"status": "UNKNOWN", "reason": str(exc)}
+
+
+def search_unpacked_code(path: str, pattern: str, limit: int = 100) -> dict:
+    """RVA-aware code evidence against decoded .text; no disassembly claims."""
+    return search_unpacked(path, pattern, max_hits=limit)
+
+
+def decode_unpacked_code(path: str, rva: int, *, window: int = 160, limit: int = 48) -> dict:
+    """Optional Capstone x86 decoder at an explicitly selected .text RVA."""
+    from workbench.client.binary.code_evidence import decode_window
+    return decode_window(path, rva, window=window, max_instructions=limit)
+
+
+def unpacked_address_candidates(path: str, target_rva: int, *, image_base: int = 0x10000000, limit: int = 100) -> dict:
+    """Conservative value matches in decoded code; not verified semantic xrefs."""
+    from workbench.client.binary.address_candidates import address_candidates
+    return address_candidates(path, target_rva, image_base=image_base, limit=limit)
