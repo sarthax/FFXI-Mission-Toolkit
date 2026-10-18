@@ -15,6 +15,20 @@
 {% if coverage.excluded_legacy_or_merge_pages %}<p class="muted">Legacy/merge-target pages awaiting manual classification: <code>{{ coverage.excluded_legacy_or_merge_pages|join(', ') }}</code></p>{% endif %}
 <p class="muted">{{ coverage.unverified_features|length }} entries still lack independent runtime validation. {{ coverage.catalog_not_help_linked|length }} catalog destinations are not directly linked from global Help (some are documented in module Help).</p>
 </details>
+{% if detail %}
+<section class="wb-card" id="feature-details" aria-label="Feature details">
+<p class="muted"><a href="/feature-catalog">All features</a>{% if detail.parent %} / <a href="/feature-catalog?feature={{ detail.parent.id|urlencode }}">{{ detail.parent.name }}</a>{% endif %} / {{ detail.feature.name }}</p>
+<h2>{{ detail.feature.name }}</h2>
+<p>{{ detail.feature.purpose or detail.feature.summary }}</p>
+<p><strong>Implementation:</strong> {{ detail.feature.implementation }} &nbsp; <strong>Validation:</strong> {{ detail.feature.validation }}</p>
+<h3>How to use</h3>
+{% if detail.feature.how_to_use %}<p>{{ detail.feature.how_to_use }}</p>{% else %}<p class="muted">Detailed operator workflow has not been documented for this capability yet. Use the linked module Help where available.</p>{% endif %}
+{% if detail.feature.caveat %}<p><strong>Evidence and limits:</strong> {{ detail.feature.caveat }}</p>{% endif %}
+<h3>Functions in this module</h3>
+{% if detail.children %}<ul>{% for child in detail.children %}<li><a href="/feature-catalog?feature={{ child.id|urlencode }}">{{ child.name }}</a> — {{ child.summary }} ({{ child.implementation }}, {{ child.validation }})</li>{% endfor %}</ul>{% else %}<p class="muted">No child functions have been cataloged for this entry.</p>{% endif %}
+<p><a href="{{ detail.feature.route }}">Open module</a> · <a href="{{ detail.feature.help }}">Module Help</a></p>
+</section>
+{% endif %}
 <form method="get" class="search wb-filter-row">
   <input type="search" name="q" value="{{ q }}" placeholder="Search capabilities">
   <select name="module"><option value="">All modules</option>{% for m in modules %}<option value="{{ m }}" {% if module == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select>
@@ -24,9 +38,9 @@
 <div class="table-wrap"><table>
 <thead><tr><th>Capability</th><th>Module</th><th>Implementation</th><th>Validation</th><th>Usage</th></tr></thead>
 <tbody>{% for f in features %}<tr>
-<td>{% if f.parent_id %}<span class="muted">↳ Subfeature of {{ f.parent_id }}</span> {% endif %}<a href="{{ f.route }}"><strong>{{ f.name }}</strong></a><div class="muted">{{ f.summary }}</div></td>
+<td>{% if f.parent_id %}<span class="muted">↳ Subfeature of {{ f.parent_id }}</span> {% endif %}<a href="/feature-catalog?feature={{ f.id|urlencode }}"><strong>{{ f.name }}</strong></a><div class="muted">{{ f.summary }}</div></td>
 <td>{{ f.module }}</td><td>{{ f.implementation }}</td><td>{{ f.validation }}</td>
-<td><a href="{{ f.help }}">Help</a></td>
+<td><a href="{{ f.route }}">Open</a> · <a href="{{ f.help }}">Help</a></td>
 </tr>{% else %}<tr><td colspan="5">No matching capabilities.</td></tr>{% endfor %}</tbody>
 </table></div>
 {% endblock %}
