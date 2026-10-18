@@ -7,3 +7,18 @@ Mission Toolkit already maps location IDs 13–16 to Mog Wardrobe 5–8 in `src/
 Before changing DSP, inspect the authoritative server source for packet 0x1C layout and capacity serialization, inventory load packets 0x1E–0x20, item movement, equipment sets, and persistence. Capture a compatible 2026 login packet sequence and compare capacities with UI state. Avoid sending containers 13–16 to the 2021 client until bounds safety is established.
 
 Evidence handoff: `HANDOFF_wardrobe5-8_decode.md` and `XREF_SUMMARY.md` under local gitignored `exports/retail_downloader_validation/decoded_reports/`. Keep retail binaries and decoded executable images out of Git.
+
+## Authoritative server source inspection (2026-10-18)
+
+Repo: [sarthax/darkstar-to-valhalla, main](https://github.com/sarthax/darkstar-to-valhalla/tree/main). **Important:** GitHub metadata advertises `master` as default, but `main` exists and is explicitly the inspected ref; do not accidentally substitute `master`.
+
+Confirmed on `main`:
+
+- [`src/map/item_container.h`](https://github.com/sarthax/darkstar-to-valhalla/blob/main/src/map/item_container.h) enumerates locations 0–12 only; `MAX_CONTAINER_ID = 13`.
+- [`src/map/entities/charentity.cpp`](https://github.com/sarthax/darkstar-to-valhalla/blob/main/src/map/entities/charentity.cpp) constructs per-character container objects only through wardrobe4; `getStorage` switch only covers these known containers, with a debug check against `MAX_CONTAINER_ID`. [`charentity.h`](https://github.com/sarthax/darkstar-to-valhalla/blob/main/src/map/entities/charentity.h) declares only four wardrobe pointers.
+- [`sql/char_storage.sql`](https://github.com/sarthax/darkstar-to-valhalla/blob/main/sql/char_storage.sql) has wardrobe, wardrobe2, wardrobe3, wardrobe4 columns, but no wardrobe5–8 columns.
+- [`src/map/packets/inventory_size.cpp`](https://github.com/sarthax/darkstar-to-valhalla/blob/main/src/map/packets/inventory_size.cpp) sends packet 0x1C capacity entries only for containers 0–12; u8 entries at offsets 0x04–0x10 and u16 entries at 0x14–0x2C. It sets packet `size = 0x1A`, whose unit/header convention must be checked before changing the layout. It uses `1 + GetSize()` and `1 + GetBuff()`; do not infer that an all-zero uninitialized container is advertised as zero without checking packet semantics.
+- [`src/map/utils/charutils.cpp`](https://github.com/sarthax/darkstar-to-valhalla/blob/main/src/map/utils/charutils.cpp) `LoadCharStorage`, `SendInventory`, and `SaveCharInventoryCapacity` enumerate only through wardrobe4. Other inventory loops depend on `MAX_CONTAINER_ID`.
+- [`src/map/packets/inventory_assign.cpp`](https://github.com/sarthax/darkstar-to-valhalla/blob/main/src/map/packets/inventory_assign.cpp) emits type 0x1F from item location/slot; [`inventory_item.cpp`](https://github.com/sarthax/darkstar-to-valhalla/blob/main/src/map/packets/inventory_item.cpp) emits type 0x20 with location at packet offset 0x0E. Existing individual packet classes are not, by themselves, proof of compatibility with 13–16.
+
+**Conclusion:** `main` is missing end-to-end Wardrobe 5–8 support at enum/object/schema/load/save/0x1C capacity level. This is a confirmed source gap, not merely a hypothesis from the DLL. Do not patch 0x1C alone. Prior to implementation, inspect inventory movement validation, equip paths, SQL migrations, packet framing, and compatibility with older clients; add regression fixtures, then test with a newer client in a controlled environment.
