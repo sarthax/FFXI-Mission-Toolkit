@@ -7,7 +7,15 @@ server DB credentials or a running FFXI client. This is NOT a browser/render tes
 from __future__ import annotations
 
 import json
+import importlib.util
 from pathlib import Path
+
+# The full application host imports xi_tinkerer, an optional native wheel not
+# installable from requirements.txt on the Linux regression runner. Explicitly
+# record this as NOT RUN instead of pretending routes were verified.
+if importlib.util.find_spec('xi_tinkerer') is None:
+    print('Mounted sidebar GET route smoke: NOT RUN (xi_tinkerer native wheel unavailable)')
+    raise SystemExit(0)
 
 from workbench.app.host import app
 from workbench.runtime.paths import REPO_ROOT
