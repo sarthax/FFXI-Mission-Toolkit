@@ -22,3 +22,14 @@ Confirmed on `main`:
 - [`src/map/packets/inventory_assign.cpp`](https://github.com/sarthax/darkstar-to-valhalla/blob/main/src/map/packets/inventory_assign.cpp) emits type 0x1F from item location/slot; [`inventory_item.cpp`](https://github.com/sarthax/darkstar-to-valhalla/blob/main/src/map/packets/inventory_item.cpp) emits type 0x20 with location at packet offset 0x0E. Existing individual packet classes are not, by themselves, proof of compatibility with 13–16.
 
 **Conclusion:** `main` is missing end-to-end Wardrobe 5–8 support at enum/object/schema/load/save/0x1C capacity level. This is a confirmed source gap, not merely a hypothesis from the DLL. Do not patch 0x1C alone. Prior to implementation, inspect inventory movement validation, equip paths, SQL migrations, packet framing, and compatibility with older clients; add regression fixtures, then test with a newer client in a controlled environment.
+
+## Inventory operation safety follow-up (2026-10-18)
+
+- [`packet_system.cpp`](https://github.com/sarthax/darkstar-to-valhalla/blob/main/src/map/packet_system.cpp), `SmallPacket0x029` near line 921: explicitly rejects source/destination locations `>= MAX_CONTAINER_ID` before calling `getStorage`.
+- Same file, `SmallPacket0x03A` near line 1296: directly calls `PChar->getStorage(RBUFB(data,0x04))` and then dereferences `PItemContainer->GetSize()` with no intervening null check. `CCharEntity::getStorage` returns null for unsupported IDs. **Potential invalid-container crash path; source-derived risk, not runtime reproduced.** Fix independently with early bounds/null validation and regression tests before extending container support.
+- `charutils::MoveItem` also assumes its caller supplied a valid location and dereferences `getStorage`; review all entry points before broadening IDs.
+- `CBasicPacket` holds a 0x104-byte buffer; `CInventorySizePacket` uses `size = 0x1A`, while writing u16 capacities through byte offset 0x2C. The size-field unit and client 0x1C wire framing still need verification; these are **not** necessarily contradictory.
+
+### Research stop/go criterion
+
+Proceed to server implementation only after confirming the 2026 0x1C packet layout and identifying the server's inventory ingress validation surface. Treat a general retail-client decompilation or 2021 binary backport as out of scope.
