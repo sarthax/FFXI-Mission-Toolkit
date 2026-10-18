@@ -379,6 +379,206 @@
       "implementation": "implemented",
       "validation": "unverified",
       "help": "/help"
+    },
+    {
+      "id": "character-items",
+      "module": "Character & Items",
+      "name": "Item Browser",
+      "summary": "Browse item records and inspect item data.",
+      "route": "/itembrowser",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "item-editor",
+      "module": "Character & Items",
+      "name": "Item Editor",
+      "summary": "Inspect and edit supported item data using guarded workflows.",
+      "route": "/itemedit",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "mission-browser",
+      "module": "Progression",
+      "name": "Missions",
+      "summary": "Browse mission and progression evidence.",
+      "route": "/missions",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "assault",
+      "module": "Progression",
+      "name": "Assault Tracker",
+      "summary": "Track Assault issues, source evidence and validation gaps.",
+      "route": "/domains/assault",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "nyzul",
+      "module": "Progression",
+      "name": "Nyzul Isle",
+      "summary": "Inspect Nyzul Isle domain data and related progression.",
+      "route": "/nyzul",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "zone-browser",
+      "module": "Zones & 3D",
+      "name": "Zones",
+      "summary": "Browse zone data and linked research evidence.",
+      "route": "/zones",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "zone-editor",
+      "module": "Zones & 3D",
+      "name": "Zone Editor",
+      "summary": "Inspect zone entities and spatial evidence.",
+      "route": "/zoneplot2",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "model-viewer",
+      "module": "Client Research",
+      "name": "Model Viewer",
+      "summary": "Inspect available client model assets.",
+      "route": "/modelviewer",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "dat-inspector",
+      "module": "Client Research",
+      "name": "DAT Inspector",
+      "summary": "Inspect client DAT file evidence.",
+      "route": "/datinspector",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "retail-versions",
+      "module": "Client Research",
+      "name": "Retail Version Explorer",
+      "summary": "Inspect retail manifest history and compare available versions.",
+      "route": "/retailversions",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "dialog-drift",
+      "module": "Client Research",
+      "name": "Dialog Drift",
+      "summary": "Compare client dialog and text evidence.",
+      "route": "/dialogdrift",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "research-gaps",
+      "module": "Research & Evidence",
+      "name": "Research Gaps",
+      "summary": "Review missing or unresolved client research evidence.",
+      "route": "/researchgaps",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "dialog-browser",
+      "module": "Server Data",
+      "name": "Dialog Browser",
+      "summary": "Inspect dialog and text records.",
+      "route": "/dialog",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "event-browser",
+      "module": "Server Data",
+      "name": "Event Browser",
+      "summary": "Inspect event and cutscene identifiers.",
+      "route": "/events",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-search",
+      "module": "Captures",
+      "name": "Capture Search",
+      "summary": "Search and correlate capture evidence.",
+      "route": "/captures/search",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-query",
+      "module": "Captures",
+      "name": "Capture Query",
+      "summary": "Query indexed capture data.",
+      "route": "/captures/query",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "validation-runs",
+      "module": "Validation",
+      "name": "Validation Runs",
+      "summary": "Browse recorded validation results.",
+      "route": "/validation/runs",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "package-review",
+      "module": "Migration",
+      "name": "Package Review",
+      "summary": "Review migration package readiness and evidence.",
+      "route": "/packages/review",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "lua-converter",
+      "module": "Migration",
+      "name": "Lua Converter",
+      "summary": "Convert supported Lua references for backport workflows.",
+      "route": "/backport/lua-convert",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "sql-converter",
+      "module": "Migration",
+      "name": "SQL Converter",
+      "summary": "Convert supported SQL content for backport workflows.",
+      "route": "/backport/sql-convert",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
     }
   ]
 }
