@@ -93,16 +93,76 @@ fn run() -> Result<(), String> {
     let payload = session.fetch(&version.direct, version.direct_len, &mut |_| {})?;
     let decoded = decode_direct_bounded(&payload, version.sig.len, MAX_BYTES)?;
     validate_decoded_size(decoded.len(), version.sig.len)?;
-    let signature = FileSig::of(&decoded);
-    if signature != version.sig {
-        return Err(format!("manifest signature mismatch for {} at {}", entry.path, version.stamp));
-    }
+    verify_signature(&decoded, &version.sig, &entry.path, &version.stamp)?;
     let parent = dest.parent().ok_or("invalid output path")?;
     fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     let sha256 = format!("{:x}", Sha256::digest(&decoded));
     save_new(parent, &dest, &decoded)?;
+    // Written only after size and manifest-signature validation and a successful publish.
+    let sidecar = PathBuf::from(format!("{}.provenance.json", dest.display()));
+    let record = provenance_json(&entry.path, &version.stamp, version.sig.len, decoded.len() as u64, &sha256, unix_now());
+    save_new(parent, &sidecar, record.as_bytes())?;
     println!("saved {} [{}] ({} bytes) SHA-256={}", dest.display(), version.stamp, decoded.len(), sha256);
     Ok(())
+}
+
+fn verify_signature(decoded: &[u8], expected: &FileSig, path: &str, stamp: &str) -> Result<(), String> {
+    if FileSig::of(decoded) != *expected {
+        return Err(format!("manifest signature mismatch for {path} at {stamp}"));
+    }
+    Ok(())
+}
+
+fn unix_now() -> u64 {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
+}
+
+/// Civil UTC date-time from a unix timestamp (Howard Hinnant's algorithm).
+fn utc_iso(secs: u64) -> String {
+    let days = (secs / 86400) as i64;
+    let rem = secs % 86400;
+    let z = days + 719468;
+    let era = z.div_euclid(146097);
+    let doe = z.rem_euclid(146097);
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = yoe + era * 400 + if m <= 2 { 1 } else { 0 };
+    format!("{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}Z", rem / 3600, rem % 3600 / 60, rem % 60)
+}
+
+fn json_escape(v: &str) -> String {
+    v.chars().flat_map(|c| match c {
+        '"' => "\\\"".chars().collect::<Vec<_>>(),
+        '\\' => "\\\\".chars().collect(),
+        c if (c as u32) < 0x20 => format!("\\u{:04x}", c as u32).chars().collect(),
+        c => vec![c],
+    }).collect()
+}
+
+/// Provenance sidecar. Contains no local filesystem paths. Indexer fields are
+/// filled in later by the Toolkit, not by this tool.
+fn provenance_json(file: &str, stamp: &str, expected: u64, actual: u64, sha256: &str, when: u64) -> String {
+    format!(
+        "{{
+  \"schema\": 1,
+  \"file\": \"{}\",
+  \"retail_version\": \"{}\",
+  \"source\": \"playonline-patch-manifest:ffxi\",
+  \"retrieved_utc\": \"{}\",
+  \"expected_decoded_bytes\": {},
+  \"actual_decoded_bytes\": {},
+  \"sha256\": \"{}\",
+  \"manifest_signature_verified\": true,
+  \"manifest_signature_kind\": \"legacy FileSig (length, byte sum, md5 prefix); not cryptographic\",
+  \"downloader\": \"ffxi-retail-selective {}\",
+  \"indexer\": null,
+  \"index_result\": null
+}}
+",
+        json_escape(file), json_escape(stamp), utc_iso(when), expected, actual, sha256, env!("CARGO_PKG_VERSION"))
 }
 
 fn validate_decoded_size(actual: usize, expected: u64) -> Result<(), String> {
@@ -174,5 +234,48 @@ mod tests {
             assert!(relative_path(value).is_err(), "{value}");
         }
         assert!(relative_path("ROM/119/51.DAT").is_ok());
+    }
+
+    #[test]
+    fn signature_mismatch_is_rejected() {
+        let good = FileSig::of(b"hello world");
+        assert!(verify_signature(b"hello world", &good, "f", "1").is_ok());
+        assert!(verify_signature(b"hello w0rld", &good, "f", "1").is_err());
+        assert!(verify_signature(b"hello world!", &good, "f", "1").is_err());
+    }
+
+    #[test]
+    fn provenance_has_expected_fields_and_no_paths() {
+        let j = provenance_json("FFXiMain.dll", "30261006_0", 3, 3, "ab", 1791195206);
+        assert!(j.contains("\"retrieved_utc\": \"2026-10-05T"), "{j}");
+        assert!(j.contains("\"manifest_signature_verified\": true"));
+        assert!(!j.contains("D:") && !j.contains(":\\"));
+        assert_eq!(utc_iso(0), "1970-01-01T00:00:00Z");
+    }
+
+    #[test]
+    fn closed_port_fails_fast() {
+        let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = l.local_addr().unwrap().port();
+        drop(l);
+        let mut server = Server::for_title(TITLE_FFXI);
+        server.host = "127.0.0.1".into();
+        server.port = port;
+        assert!(Session::connect(&server).is_err());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn refuses_dangling_destination_symlink_windows() {
+        let dir = tempfile::tempdir().unwrap();
+        let dest = dir.path().join("FFXiMain.dll");
+        let target = dir.path().join("missing");
+        // Symlink creation needs Developer Mode or elevation; skip when unavailable.
+        if std::os::windows::fs::symlink_file(&target, &dest).is_err() {
+            eprintln!("skipped: cannot create symlink without privilege");
+            return;
+        }
+        assert!(save_new(dir.path(), &dest, b"data").is_err());
+        assert!(!target.exists());
     }
 }
