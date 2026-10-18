@@ -20,14 +20,14 @@ PACKET_EARLY = """[2026-09-28 12:34:00] Packet 0x032
 
 
 def main():
-    with TemporaryDirectory() as tmp:
+    with TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
         root = Path(tmp)
         incoming = root / "PacketLogger" / "incoming"
         incoming.mkdir(parents=True)
         late_path = incoming / "0x034.log"
         early_path = incoming / "0x032.log"
-        late_path.write_text(PACKET_LATE, encoding="utf-8")
-        early_path.write_text(PACKET_EARLY, encoding="utf-8")
+        late_path.write_bytes(PACKET_LATE.encode("utf-8"))
+        early_path.write_bytes(PACKET_EARLY.encode("utf-8"))
 
         con = sqlite3.connect(root / "capture.db")
         build_capture_index.init_db(con)

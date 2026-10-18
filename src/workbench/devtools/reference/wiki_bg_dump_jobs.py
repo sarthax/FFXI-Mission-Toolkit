@@ -66,7 +66,7 @@ def status(db):
                 WHERE state IN ('queued','running','pausing')""")
         rows = con.execute("""SELECT id,state,page_limit,cursor,processed,imported,
             skipped,failed,last_error FROM wiki_bg_dump_jobs
-            ORDER BY updated_at DESC LIMIT 8""").fetchall()
+            ORDER BY updated_at DESC, rowid DESC LIMIT 8""").fetchall()
     names = ("id","state","page_limit","cursor","processed","imported","skipped","failed","last_error")
     return [dict(zip(names, row)) for row in rows]
 
@@ -82,9 +82,9 @@ def dump_refresh_status(db, dump_path):
     with _db(db) as con:
         latest=con.execute("""SELECT id,state,dump_signature,processed,imported,skipped,
                 updated_at FROM wiki_bg_dump_jobs WHERE dump_path=?
-                ORDER BY updated_at DESC LIMIT 1""",(str(path),)).fetchone()
+                ORDER BY updated_at DESC, rowid DESC LIMIT 1""",(str(path),)).fetchone()
         matching=con.execute("""SELECT id,state FROM wiki_bg_dump_jobs
-                WHERE dump_path=? AND dump_signature=? ORDER BY updated_at DESC LIMIT 1""",
+                WHERE dump_path=? AND dump_signature=? ORDER BY updated_at DESC, rowid DESC LIMIT 1""",
                 (str(path),signature)).fetchone()
     return {"available":True,"path":str(path),"signature":signature,
             "changed":bool(latest and latest[2]!=signature),
