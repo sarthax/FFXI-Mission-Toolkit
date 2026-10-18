@@ -147,3 +147,9 @@ def decode_unpacked_code(path: str, rva: int, *, window: int = 160, limit: int =
     """Optional Capstone x86 decoder at an explicitly selected .text RVA."""
     from workbench.client.binary.code_evidence import decode_window
     return decode_window(path, rva, window=window, max_instructions=limit)
+
+
+def unpacked_address_candidates(path: str, target_rva: int, *, image_base: int = 0x10000000, limit: int = 100) -> dict:
+    """Conservative value matches in decoded code; not verified semantic xrefs."""
+    from workbench.client.binary.address_candidates import address_candidates
+    return address_candidates(path, target_rva, image_base=image_base, limit=limit)
