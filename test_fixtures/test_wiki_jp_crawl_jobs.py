@@ -7,7 +7,7 @@ from workbench.devtools.reference import wiki_jp_crawl_jobs as crawler
 
 
 def main():
-    with tempfile.TemporaryDirectory() as folder:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
         db=Path(folder)/"test.db"
         with patch.object(crawler.threading.Thread,"start"):
             job=crawler.start(db,"ヴォイドウォッチ",50)
@@ -42,7 +42,7 @@ def main():
     assert not crawler._in_subtree("Medusa_Extra", "Medusa")
 
     # SQLite LIKE metacharacters in a seed must remain literal, not wildcards.
-    with tempfile.TemporaryDirectory() as folder:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
         db=Path(folder)/"refresh.db"
         with sqlite3.connect(db) as con:
             con.execute("""CREATE TABLE reference_wiki_pages (
@@ -63,7 +63,7 @@ def main():
 
     # HTTP access failures are visible in counters and must retain the queue.
     import urllib.error
-    with tempfile.TemporaryDirectory() as folder:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
         db=Path(folder)/"http.db"
         with patch.object(crawler.threading.Thread,"start"):
             job=crawler.start(db,"Blocked",50)
