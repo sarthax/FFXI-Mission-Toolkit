@@ -244,3 +244,7 @@ The existing 3D Viewer Live panel adds a bounded name/server-ID/client-slot sear
 ### 2026-10-14 — 3D Viewer entity provenance and matching correction
 
 The unified inspector's exact reported-server-ID comparison now checks the **complete loaded map data**, not just currently visible/filtered markers. It distinguishes a normal `/zoneplot/{zone}/data.json` map record from `CAPTURE_SPATIAL_URL` capture-derived spatial observations; the latter must never be called configured server spawn coordinates. Match basis and unresolved/ambiguous IDs are shown explicitly. Live-to-record distance is diagnostic context, not a data-integrity verdict. This is still read-only UI comparison, **not** independent catalog ID validation or a Data Gaps write. Browser/live-client acceptance remains pending. Next: audited source-backed entity ID reconciliation against DSP/Topaz catalog, including zone/instance and entity-type namespaces.
+
+### 2026-10-18 — Correlation ambiguity hardening
+
+The existing zone correlation panel now retains **ambiguous** classification whenever an exact reported ID occurs more than once on either the loaded map side or the fresh live side, even when the other side is absent. A last-seen observation cannot override a duplicate-map ambiguity. Ambiguous rows show both map and live record counts. This prevents duplicate IDs from being incorrectly reported as simple live-only or server-only differences. This is not an authoritative DSP spawn-database join; source coverage, instance and dynamic spawn lifecycle still require validation.
