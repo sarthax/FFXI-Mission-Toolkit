@@ -579,6 +579,136 @@
       "implementation": "implemented",
       "validation": "unverified",
       "help": "/help"
+    },
+    {
+      "id": "bindings",
+      "module": "Migration",
+      "name": "Binding Converter",
+      "summary": "Inspect source binding and identifier conversion evidence.",
+      "route": "/backport/bindings",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "live-validation",
+      "module": "Validation",
+      "name": "Live Target Validation",
+      "summary": "Review live target validation workflow and its guarded operations.",
+      "route": "/validation/live-target",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "package-scope",
+      "module": "Migration",
+      "name": "Package Scope Review",
+      "summary": "Review selected package content and dependency scope.",
+      "route": "/packages/scope",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "package-create",
+      "module": "Migration",
+      "name": "Package Creation",
+      "summary": "Prepare a package from reviewed source evidence.",
+      "route": "/packages/create",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-formats",
+      "module": "Captures",
+      "name": "Capture Format Support",
+      "summary": "Review capture ingestion formats and known limitations.",
+      "route": "/captures/help",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-paths",
+      "module": "Captures",
+      "name": "Capture Path Visualization",
+      "summary": "Inspect recorded spatial paths and visualizations.",
+      "route": "/captures/plot",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "capture-import",
+      "module": "Captures",
+      "name": "Capture Import",
+      "summary": "Import recorded gameplay evidence into the capture workspace.",
+      "route": "/captures/new",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "item-health",
+      "module": "Character & Items",
+      "name": "Item Health",
+      "summary": "Inspect item catalog health and evidence coverage.",
+      "route": "/itemhealth",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "research-contradictions",
+      "module": "Research & Evidence",
+      "name": "Research Contradictions",
+      "summary": "Review conflicting research evidence.",
+      "route": "/research/contradictions",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "research-evidence",
+      "module": "Research & Evidence",
+      "name": "Research Evidence",
+      "summary": "Browse recorded research evidence.",
+      "route": "/research/evidence",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "domain-overview",
+      "module": "Progression",
+      "name": "Domains Overview",
+      "summary": "Navigate domain-specific research and progression tools.",
+      "route": "/domains",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "video-ocr",
+      "module": "Captures",
+      "name": "Video OCR",
+      "summary": "Inspect video-derived text research.",
+      "route": "/ocr",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
+    },
+    {
+      "id": "llm-research",
+      "module": "Research & Evidence",
+      "name": "LLM Research",
+      "summary": "Explore local LLM-assisted research with source evidence safeguards.",
+      "route": "/llm",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help"
     }
   ]
 }
