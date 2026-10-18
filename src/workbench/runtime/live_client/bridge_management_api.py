@@ -69,7 +69,8 @@ class ClientSelection(BaseModel):
     client_id: str = Field(min_length=1, max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
 
 
-def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jinja2Templates | None = None) -> APIRouter:
+def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jinja2Templates | None = None,
+                                    registry=None) -> APIRouter:
     if templates is None:
         templates = Jinja2Templates(directory=str(Path(__file__).resolve().parents[4] / "gui" / "templates"))
         templates.env.globals["current_theme"] = lambda: "light"
@@ -78,6 +79,25 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
             "snapshot_context": [], "brand": {"enabled": False}
         }
     router = APIRouter(prefix="/live-client/bridge", tags=["Live Client Bridge"])
+
+    import threading
+    _feed_lock = threading.Lock()
+    FEED_FRESH_SECONDS = 10.0
+
+    def file_feed_state(client_id: str):
+        """(connected, frame, error) for a file-feed client (e.g. a headless bot), polling it on demand."""
+        bridge = registry.feed_bridge(client_id) if registry is not None else None
+        if bridge is None:
+            return None
+        error = None
+        with _feed_lock:
+            try:
+                bridge.poll(max_frames=500)
+            except (OSError, ValueError, RuntimeError) as exc:
+                error = type(exc).__name__ + ": " + str(exc)[:160]
+            frame = bridge.feed._latest
+        connected = frame is not None and (time.time() - frame.snapshot.observed_at) <= FEED_FRESH_SECONDS
+        return connected, frame, error
 
     def require_same_origin(request: Request) -> None:
         if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
@@ -91,6 +111,60 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
         if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
             raise HTTPException(status_code=403, detail="bridge setup requires local browser")
         return templates.TemplateResponse(request, "live_client_bridge.html")
+
+    _HEADLESS_KEYS = ("headless_observe_enabled", "headless_project_path", "headless_telemetry_dir", "headless_character")
+
+    @router.get("/headless")
+    def headless_get(request: Request) -> dict:
+        if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
+            raise HTTPException(status_code=403, detail="local browser required")
+        import sqlite3
+        from workbench.runtime import settings_store as ss
+        con = sqlite3.connect(str(ss.DB_PATH))
+        try:
+            values = ss.get_all(con)
+        finally:
+            con.close()
+        return {k: values.get(k, "") for k in _HEADLESS_KEYS}
+
+    @router.post("/headless")
+    def headless_save(request: Request, body: dict) -> dict:
+        """Persist headless-observation options and point the file feed at the bot's telemetry file."""
+        require_same_origin(request)
+        import re
+        import sqlite3
+        from pathlib import Path
+        from workbench.runtime import settings_store as ss
+        char = re.sub(r"[^A-Za-z0-9_-]", "", str(body.get("character", "")).strip())[:32]
+        folder = str(body.get("telemetry_dir", "")).strip()[:1024]
+        enabled = bool(body.get("enabled"))
+        update = {
+            "headless_observe_enabled": "1" if enabled else "0",
+            "headless_project_path": str(body.get("project_path", "")).strip()[:1024],
+            "headless_telemetry_dir": folder,
+            "headless_character": char,
+        }
+        feed = None
+        if enabled:
+            if not char or not folder:
+                raise HTTPException(status_code=400, detail="character and telemetry folder are required")
+            feed = Path(folder) / f"{char.lower()}.jsonl"
+            try:
+                feed.parent.mkdir(parents=True, exist_ok=True)
+                feed.touch(exist_ok=True)
+            except OSError as exc:
+                raise HTTPException(status_code=400, detail=f"cannot create feed file: {exc}")
+            update.update({"live_client_source": "file_feed", "live_client_feed_file": str(feed),
+                           "live_client_feed_client": f"xiheadless-{char.lower()}",
+                           "live_client_auto_connect": "1"})
+        con = sqlite3.connect(str(ss.DB_PATH))
+        try:
+            ss.set_many(con, update)
+        finally:
+            con.close()
+        return {"saved": True, "feed_file": str(feed) if feed else "",
+                "client_id": f"xiheadless-{char.lower()}" if enabled else "",
+                "restart_required": True}
 
     @router.post("/installer/preview")
     def installer_preview(request: Request, selection: AshitaInstallSelection) -> dict:
@@ -234,7 +308,26 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
 
     @router.get("/clients")
     def clients() -> dict:
-        return {"clients": manager.clients()}
+        ids = list(manager.clients())
+        if registry is not None:
+            ids += [c for c in registry.feed_ids() if c not in ids]
+        return {"clients": ids}
+
+    @router.get("/clients/details")
+    def client_details() -> dict:
+        details = [{"id": cid, "source": "ashita"} for cid in manager.clients()]
+        if registry is not None:
+            for cid in registry.feed_ids():
+                state = file_feed_state(cid)
+                frame = state[1] if state else None
+                details.append({
+                    "id": cid, "source": "file_feed",
+                    "connected": bool(state and state[0]),
+                    "character": frame.snapshot.character if frame else None,
+                    "adapter": frame.snapshot.adapter if frame else None,
+                    "zone_id": frame.snapshot.position.zone_id if frame else None,
+                })
+        return {"clients": [d["id"] for d in details], "details": details}
 
     @router.get("/projection")
     def projection(
@@ -243,6 +336,14 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
         instance_hint: str | None = Query(default=None, min_length=1, max_length=200),
     ) -> dict:
         """Live-only spatial projection; never show stale or wrong-zone markers."""
+        ff = file_feed_state(client_id)
+        if ff is not None:
+            connected, frame, _error = ff
+            if not connected:
+                return {"visible": False, "player": None, "entities": [],
+                        "reason": "receiver_disconnected_or_stale"}
+            return viewer_projection(frame, zone_id=zone_id, client_id=client_id,
+                                     instance_hint=instance_hint)
         state = manager.status(client_id)
         if not state["connected"]:
             return {"visible": False, "player": None, "entities": [],
@@ -261,10 +362,19 @@ def create_bridge_management_router(manager: ManagedLiveReceiver, templates: Jin
     def status(client_id: str) -> dict:
         if not 0 < len(client_id) <= 64 or not client_id.replace("_", "").replace("-", "").isalnum():
             raise HTTPException(status_code=422, detail="invalid client ID")
-        result = manager.status(client_id)
-        snapshot = result.pop("snapshot", None)
-        frame = manager.feeds.feed(client_id)
-        frame = frame._latest if frame else None
+        ff = file_feed_state(client_id)
+        if ff is not None:
+            connected, ff_frame, ff_error = ff
+            result = {"running": True, "connected": connected, "last_error": ff_error,
+                      "age_seconds": (time.time() - ff_frame.snapshot.observed_at) if ff_frame else None,
+                      "source": "file_feed"}
+            snapshot = ff_frame.snapshot if ff_frame else None
+            frame = ff_frame
+        else:
+            result = manager.status(client_id)
+            snapshot = result.pop("snapshot", None)
+            frame = manager.feeds.feed(client_id)
+            frame = frame._latest if frame else None
         if snapshot is None:
             result["snapshot"] = None
         else:
