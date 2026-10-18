@@ -32,6 +32,12 @@ type, per-field label/raw value/locator/expected type, categories and license no
 omitted parameters are listed. Licensing is believed CC BY-NC-SA (BG) / CC BY-SA (FFXIclopedia); verify before
 wider redistribution.
 
+`real_jp_manifest.json` (4 real WikiWikiJP HTML table excerpts from the ヴォイドウォッチ subtree, added after the
+pilot crawl recorded raw HTML and `retrieved_at`): a header plus two body rows each, with an independent
+parser-free cell inventory. Pukiwiki exposes no revision id, so `revision_id` is `none-exposed`. The runner checks that
+every cell survives in order and that real JP layout tables yield **no** typed hints. The 27-page subtree produced zero
+typed candidates; the labelled JP samples remain synthetic. Licence terms for WikiWikiJP were not verified.
+
 `synthetic_manifest.json` (13 samples) is generated from `synthetic_sources.json`, is marked
 `evidence_type: synthetic`, has no URL/hash/revision, and states which real structure it models. **All
 WikiWikiJP samples are synthetic** because no WikiWikiJP structure is stored locally.

@@ -21,12 +21,14 @@ import json
 import re
 import sqlite3
 import sys
+import urllib.parse
 from pathlib import Path
 
 import mwparserfromhell
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "test_fixtures" / "wiki_corpus" / "real_manifest.json"
+JP_OUT = ROOT / "test_fixtures" / "wiki_corpus" / "real_jp_manifest.json"
 MAX_VALUE = 220  # characters kept per parameter value
 EXTRACT_VERSION = "wiki-corpus-extract-v1"
 
@@ -72,6 +74,37 @@ SPECS = [
     ("ffx-table-abs", "FFXIclopedia", '"A" - Abs', "table", None, ["table"], ""),
     ("ffx-table-bloodpact", "FFXIclopedia", '"Blood Pact" Ability Delay', "table", None, ["table"], ""),
 ]
+
+
+# Real WikiWikiJP HTML table excerpts: (sample_id, page title, table index, tags, note).
+JP_BASE = "https://wikiwiki.jp/ffxi/"
+JP_SPECS = [
+    ("jp-vw-loot-table", "ヴォイドウォッチ/第一章/戦利品", 0, ["table", "drops", "japanese-label"], "Loot list table; header is not a label/value pair"),
+    ("jp-vw-npc-table", "ヴォイドウォッチ/NPC", 0, ["table", "rowspan"], "Exchange table with rowspan/colspan cells"),
+    ("jp-vw-weakness-table", "ヴォイドウォッチ/弱点", 0, ["table", "row-header"], "Row-header (th) first column"),
+    ("jp-vw-route-table", "ヴォイドウォッチ/第一章/ルート：ウィンダス", 0, ["table", "nested-links", "map-grid"], "Route table with in-page anchors and grid references"),
+]
+JP_TABLE_ROWS = 2  # body rows kept after the header
+
+
+def html_table_excerpt(raw: str, index: int):
+    tabs = re.findall(r"<table.*?</table>", raw, re.S | re.I)
+    if index >= len(tabs):
+        return None
+    t = tabs[index]
+    head = re.search(r"<thead>.*?</thead>", t, re.S | re.I)
+    rows = re.findall(r"<tr>.*?</tr>", re.sub(r"<thead>.*?</thead>", "", t, flags=re.S | re.I), re.S | re.I)
+    body = "".join(rows[:JP_TABLE_ROWS])
+    return "<table>" + (head.group(0) if head else "") + "<tbody>" + body + "</tbody></table>"
+
+
+def html_cells(excerpt: str):
+    """Independent (parser-free) cell inventory: [(tag, plain text)]."""
+    out = []
+    for m in re.finditer(r"<(th|td)(?: [^>]*)?>(.*?)</(?:th|td)>", excerpt, re.S | re.I):
+        text = re.sub(r"<[^>]+>", " ", m.group(2))
+        out.append((m.group(1).lower(), " ".join(text.split())))
+    return out
 
 
 def norm(label: str) -> str:
@@ -203,6 +236,32 @@ def main() -> int:
             "categories": tags, "note": note, "excerpt_kind": kind,
             "excerpt_wikitext": excerpt, "excerpt_sha256": sha(excerpt), **detail,
         })
+    jp_samples = []
+    for sid, title, idx, tags, note in JP_SPECS:
+        row = con.execute(
+            "select d.raw_source,d.raw_hash,d.retrieved_at,d.source_revision from reference_wiki_documents d "
+            "where d.source_id='WikiWikiJP' and d.page_id=?", (title,)).fetchone()
+        if not row or not row[0] or not row[2]:
+            skipped.append((sid, "no raw source / retrieved_at (re-crawl the page first)"))
+            continue
+        raw, rhash, rat, rrev = row
+        excerpt = html_table_excerpt(raw, idx)
+        if not excerpt:
+            skipped.append((sid, "table not found"))
+            continue
+        jp_samples.append({
+            "sample_id": sid, "evidence_type": "real_excerpt", "source_wiki": "WikiWikiJP",
+            "page_title": title, "page_id": title, "source_url": JP_BASE + urllib.parse.quote(title, safe="/"),
+            "revision_id": "none-exposed", "revision_timestamp": None, "source_revision": rrev,
+            "retrieved_at": rat, "retrieval_note": "revision id not exposed by PukiWiki HTML; retrieved_at recorded at crawl",
+            "raw_source_sha256": rhash, "raw_source_sha256_verified": sha(raw) == rhash,
+            "raw_source_chars": len(raw), "license_note": "terms not verified; minimal structural excerpt only, check before wider redistribution",
+            "categories": tags, "note": note, "excerpt_kind": "html_table", "source_format": "html",
+            "table_index": idx, "excerpt_wikitext": excerpt, "excerpt_sha256": sha(excerpt),
+            "cells": [list(c) for c in html_cells(excerpt)],
+        })
+    JP_OUT.write_text(json.dumps({"extract_version": EXTRACT_VERSION, "samples": jp_samples}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(f"wrote {len(jp_samples)} JP samples -> {JP_OUT}")
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps({"extract_version": EXTRACT_VERSION, "samples": samples}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"wrote {len(samples)} samples -> {OUT}")

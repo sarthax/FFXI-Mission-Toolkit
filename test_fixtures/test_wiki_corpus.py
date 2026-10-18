@@ -17,6 +17,7 @@ import json
 from pathlib import Path
 
 from workbench.devtools.reference.wiki_document import (
+    html_blocks,
     legacy_text_blocks,
     mediawiki_blocks,
     presentation_groups,
@@ -32,7 +33,7 @@ LINK_KEYS_FORBIDDEN = {"resolved", "target_key", "target_table", "mapping_status
 
 def _load():
     samples = []
-    for name in ("real_manifest.json", "synthetic_manifest.json"):
+    for name in ("real_manifest.json", "real_jp_manifest.json", "synthetic_manifest.json"):
         samples += json.loads((CORPUS / name).read_text(encoding="utf-8"))["samples"]
     gaps = json.loads((CORPUS / "known_gaps.json").read_text(encoding="utf-8"))
     return samples, gaps
@@ -46,6 +47,8 @@ def _parse(sample):
     text = sample["excerpt_wikitext"]
     if sample.get("source_format") == "legacy_text":
         blocks = legacy_text_blocks(sample["sample_id"], text)
+    elif sample.get("source_format") == "html":
+        blocks = html_blocks(sample["sample_id"], text)
     else:
         blocks = mediawiki_blocks(sample["sample_id"], text)
     return blocks, presentation_groups(blocks)
@@ -222,6 +225,25 @@ def test_real_tables_do_not_invent_candidates():
             continue
         _, groups = _parse(s)
         assert _table_candidates(groups) == [], f"{s['sample_id']}: real layout table produced a field candidate"
+
+
+def test_real_jp_html_tables_preserve_text_and_invent_nothing():
+    """Real WikiWikiJP HTML table excerpts: every cell survives in order, no label/value hints appear."""
+    samples, _ = _load()
+    jp = [s for s in samples if s["source_wiki"] == "WikiWikiJP" and s["evidence_type"] == "real_excerpt"]
+    assert len(jp) >= 3, "corpus must keep real WikiWikiJP excerpts"
+    for s in jp:
+        sid = s["sample_id"]
+        assert s["retrieved_at"], f"{sid}: real JP sample needs retrieved_at"
+        blocks, groups = _parse(s)
+        got = [(("th" if b["block_type"] == "table_header_cell" else "td"), " ".join(b["text"].split()))
+               for b in blocks if b["block_type"] in {"table_header_cell", "table_cell"}]
+        want = [tuple(c) for c in s["cells"]]
+        assert got == want, f"{sid}: cell text/order changed: {got} vs {want}"
+        assert any(ord(ch) > 0x2E80 for _, t in want for ch in t), f"{sid}: no Japanese text in sample"
+        no_hints = _table_candidates(groups) == [] and _template_candidates(groups) == []
+        assert no_hints, f"{sid}: real JP layout table produced a field hint"
+        _assert_no_graph(s, blocks, groups)
 
 
 def test_legacy_flattened_text_is_degraded_and_untyped():
