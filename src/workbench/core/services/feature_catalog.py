@@ -39,6 +39,9 @@ def load_catalog(path: Path = CATALOG) -> list[dict]:
         parent = item.get("parent_id")
         if parent is not None and (not isinstance(parent, str) or not ID_RE.fullmatch(parent)):
             raise ValueError(f"{feature_id}: invalid parent ID")
+        for key in ("purpose", "how_to_use", "caveat"):
+            if key in item and (not isinstance(item[key], str) or not item[key].strip()):
+                raise ValueError(f"{feature_id}: invalid {key}")
         out.append(dict(item))
     for item in out:
         if item.get("parent_id") and item["parent_id"] not in seen:
@@ -48,7 +51,18 @@ def load_catalog(path: Path = CATALOG) -> list[dict]:
     return out
 
 
+def feature_detail(features: list[dict], feature_id: str) -> dict | None:
+    """Build a single module detail with direct child functions and parent breadcrumb."""
+    by_id = {f["id"]: f for f in features}
+    selected = by_id.get(feature_id)
+    if selected is None:
+        return None
+    return {"feature": selected,
+            "parent": by_id.get(selected.get("parent_id")),
+            "children": [f for f in features if f.get("parent_id") == feature_id]}
+
+
 def search_catalog(features: list[dict], query: str = "", module: str = "") -> list[dict]:
     needle = query.strip().casefold()
     return [f for f in features if (not module or f["module"] == module)
-            and (not needle or any(needle in f[key].casefold() for key in ("name", "module", "summary", "id")))]
+            and (not needle or any(needle in f[key].casefold() for key in ("name", "module", "summary", "id", "purpose", "how_to_use") if key in f))]
