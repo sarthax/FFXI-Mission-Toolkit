@@ -86,6 +86,8 @@ fn run() -> Result<(), String> {
     if dest.exists() {
         return Err(format!("refusing to overwrite {}", dest.display()));
     }
+    // Never trust a manifest-supplied server path without checking its syntax.
+    let _ = relative_path(&version.direct)?;
     let payload = session.fetch(&version.direct, version.direct_len, &mut |_| {})?;
     let decoded = decode_direct_payload(&payload)?;
     validate_decoded_size(decoded.len(), version.sig.len)?;
