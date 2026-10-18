@@ -16,16 +16,24 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: retail-fetch-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   rust-check:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - name: Toolchain versions
         run: |
           rustc --version
           cargo --version
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/retail_fetch -> target
       - name: Check
         run: cargo check --manifest-path tools/retail_fetch/Cargo.toml
       - name: Test
