@@ -131,7 +131,7 @@ def main():
     assert pair["outbound_capture_interval"] == [11, 11], pair
     assert pair["predecessor_request_type_name"] == "SEARCH_COMMENT", pair
     assert pair["outbound_crypto"]["validated"] is True, pair
-    assert pair["response"]["semantics_promoted"] is True, pair
+    assert pair["response"]["semantic_promotion_validated"] is True, pair
     assert pair["response"]["response_type_name"] == "search_comment", pair
     assert pair["response"]["fields"]["player_id"] == 0x11223344, pair
 

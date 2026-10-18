@@ -281,6 +281,11 @@ def _catalog_entity_id(row: dict) -> int | None:
 
 
 def _entity_catalog_match(row: dict, numeric_id: int) -> bool:
+    if row.get("node_type") == "CLIENT_IDENTITY":
+        # Client EVENT ids share the numeric space; only ENTITY identities describe an entity.
+        namespace = (row.get("details") or {}).get("namespace") or (row.get("aliases") or {}).get("namespace")
+        if str(namespace or "").upper() != "ENTITY":
+            return False
     resolved = _catalog_entity_id(row)
     if resolved is not None:
         return resolved == numeric_id

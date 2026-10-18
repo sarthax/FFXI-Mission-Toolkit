@@ -11,7 +11,6 @@ from copy import deepcopy
 
 from workbench.captures import (
     search_crypto_envelope,
-    search_response_decode,
     search_response_evidence,
 )
 
@@ -203,11 +202,8 @@ def sequence_validated_session(scanned: dict, directions: dict, server_role: str
         outbound["outbound_decryption"] = outbound_crypto
 
         if outbound_crypto.get("validated"):
-            structural = search_response_decode.decode_validated_outbound(
+            evidence = search_response_evidence.decode_validated_outbound(
                 outbound_crypto, predecessor.get("validated_request")
-            )
-            evidence = search_response_evidence.apply_evidence_policy(
-                structural, predecessor.get("validated_request")
             )
             pair["response"] = evidence
             outbound["validated_response"] = evidence

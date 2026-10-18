@@ -58,7 +58,8 @@ def main():
 
     assert "/packets" in capture_detail and ">Packet Browser<" in capture_detail
     assert "Manual Packet Viewer / Decoder" in packet_tools
-    # TODO: Packet Tools no longer links to Packet Browser since 82e1d8f7 (Unified UI migration); confirm intent.
+    # Packet Browser is per-capture, so Packet Tools links to the capture list that leads to it.
+    assert 'href="/captures">Captured packets (Packet Browser)' in packet_tools
     assert "Manual Packet Viewer / Decoder" in packet_manual
     assert '{"label": "Packet Tools", "href": "/packets"}' in shell
 

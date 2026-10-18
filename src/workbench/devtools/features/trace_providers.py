@@ -83,11 +83,11 @@ def _prefixed(prefix: str) -> tuple[CatalogTable,...]:
 def _common_server_links(prefix: str) -> tuple[CatalogLink, ...]:
     """Exact cross-table links shared by supported server SQL lineages."""
     return (
-        CatalogLink(f"{prefix}_item_equipment","itemid",f"{prefix}_item_basic","itemid","EXTENDS_ITEM_BASIC"),
-        CatalogLink(f"{prefix}_item_weapon","itemid",f"{prefix}_item_basic","itemid","EXTENDS_ITEM_BASIC"),
-        CatalogLink(f"{prefix}_item_usable","itemid",f"{prefix}_item_basic","itemid","EXTENDS_ITEM_BASIC"),
-        CatalogLink(f"{prefix}_mob_groups","poolid",f"{prefix}_mob_pools","poolid","USES_MOB_POOL"),
-        CatalogLink(f"{prefix}_blue_spell_list","mob_skill_id",f"{prefix}_mob_skills","mob_skill_id","USES_MOB_SKILL"),
+        CatalogLink(f"{prefix}_item_equipment","itemid",f"{prefix}_item_basic","itemid","ITEM_DETAIL_FOR"),
+        CatalogLink(f"{prefix}_item_weapon","itemid",f"{prefix}_item_basic","itemid","ITEM_DETAIL_FOR"),
+        CatalogLink(f"{prefix}_item_usable","itemid",f"{prefix}_item_basic","itemid","ITEM_DETAIL_FOR"),
+        CatalogLink(f"{prefix}_mob_groups","poolid",f"{prefix}_mob_pools","poolid","GROUP_USES_POOL"),
+        CatalogLink(f"{prefix}_blue_spell_list","mob_skill_id",f"{prefix}_mob_skills","mob_skill_id","BLUE_SPELL_MOB_SKILL"),
     )
 
 PROVIDERS=(

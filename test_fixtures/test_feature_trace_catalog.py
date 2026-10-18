@@ -252,7 +252,7 @@ def main():
         row for row in feature_trace.search_nodes(con,"16974347")
         if row.get("table")=="identity_records"
     ]
-    assert {row.get("aliases",{}).get("namespace") for row in numeric_identity_rows}=={"EVENT","ENTITY"},numeric_identity_rows
+    assert {row.get("details",{}).get("namespace") for row in numeric_identity_rows}=={"EVENT","ENTITY"},numeric_identity_rows
     assert all(row.get("aliases",{}).get("numeric_id")=="16974347" for row in numeric_identity_rows),numeric_identity_rows
     assert all("numeric_id" not in row for row in numeric_identity_rows),numeric_identity_rows
     graph=sqlite3.connect(":memory:")
@@ -270,7 +270,7 @@ def main():
         if (branch.get("root") or {}).get("table")=="identity_records"
     ]
     assert len(client_identity_branches)==1,client_entity_path
-    assert client_identity_branches[0]["root"]["aliases"]["namespace"]=="ENTITY",client_entity_path
+    assert client_identity_branches[0]["root"]["details"]["namespace"]=="ENTITY",client_entity_path
     graph_trace=feature_trace.trace(graph,"catalog:validation_results:validation:graph",3,"both",con)
     graph_dossier=build_dossier(graph_trace)
     assert graph_dossier["identity"]["provider"]=="validation"
@@ -316,8 +316,8 @@ def main():
     assert "grouped without expanding semantic topology" in template
     assert "Evidence Dossier" in template
     assert "Implementation Path" in template
-    assert "canonical graph identity mapped" in template
-    assert "no canonical graph identity mapping yet" in template
+    assert "canonical identity mapped" in template
+    assert "canonical traversal withheld" in template
     assert "Open Entity Dossier" in template
     assert "Canonical Dependency Map" in template
     assert "No canonical root selected" in template
@@ -346,11 +346,23 @@ def main():
     assert bounded["limit"]==250
     assert any(s["name"]=="Other / Unclassified" for s in sections)
     # Both production databases may differ in schema; discovery must tolerate that.
-    with sqlite3.connect(Path(__file__).resolve().parents[1]/"workbench.db") as graph_db, sqlite3.connect(Path(__file__).resolve().parents[1]/"ffxi_zone_database.db") as index_db:
-        feature_trace.search_nodes(graph_db,"coiler",index_db)
-        real=feature_trace.trace(graph_db,"npc:16974347",3,"both",index_db)
-        assert real["runtime_observation_count"] > 0
-        assert any(group["capture_count"] > 0 for group in real["runtime_hierarchy"]["groups"])
+    root=Path(__file__).resolve().parents[1]
+    def has_graph(path):
+        if not path.exists() or path.stat().st_size==0:
+            return False
+        con=sqlite3.connect(f"file:{path.as_posix()}?mode=ro",uri=True)
+        try:
+            return con.execute("SELECT 1 FROM sqlite_master WHERE name='entity_relationships'").fetchone() is not None
+        finally:
+            con.close()
+    if not (has_graph(root/"workbench.db") and (root/"ffxi_zone_database.db").exists()):
+        print("SKIP real-database discovery check: production workbench.db not present in this checkout")
+    else:
+        with sqlite3.connect(Path(__file__).resolve().parents[1]/"workbench.db") as graph_db, sqlite3.connect(Path(__file__).resolve().parents[1]/"ffxi_zone_database.db") as index_db:
+            feature_trace.search_nodes(graph_db,"coiler",index_db)
+            real=feature_trace.trace(graph_db,"npc:16974347",3,"both",index_db)
+            assert real["runtime_observation_count"] > 0
+            assert any(group["capture_count"] > 0 for group in real["runtime_hierarchy"]["groups"])
     print("feature trace catalog self-test: PASS")
 
 
