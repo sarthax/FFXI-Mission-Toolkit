@@ -12,7 +12,7 @@ from workbench.core.services.feature_catalog_audit import audit_catalog
 
 def main():
     items = load_catalog()
-    assert len(items) >= 36
+    assert len(items) >= 69
     assert len([f for f in items if f.get('parent_id')]) >= 18
     assert len({f["id"] for f in items}) == len(items)
     routes = json.loads((ROOT / "docs/workbench/GUI_ROUTE_MAP.json").read_text())["routes"]
@@ -27,6 +27,7 @@ def main():
     audit = audit_catalog()
     assert audit["help_not_cataloged"] == [], audit
     assert audit["invalid_catalog_routes"] == [], audit
+    assert audit["uncataloged_active_pages"] == [], audit
     assert "/feature-catalog" in known
     for page in ("help.html", "roadmap.html"):
         assert 'href="/feature-catalog"' in (ROOT / "gui/templates" / page).read_text()
