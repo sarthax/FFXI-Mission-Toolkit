@@ -24,7 +24,8 @@ def main():
         assert router_name in integration, f"Missing module registration: {route}"
         gets.add(route)
     bridge_src = (ROOT / "src/workbench/runtime/live_client/bridge_management_api.py").read_text(encoding="utf-8")
-    assert "/live-client/bridge/console" in bridge_src
+    assert 'APIRouter(prefix="/live-client/bridge"' in bridge_src
+    assert '@router.get("/console"' in bridge_src
     bridge_test = (ROOT / "tests/test_live_client_bridge_management_api.py").read_text(encoding="utf-8")
     assert 'client.get("/live-client/bridge/console")' in bridge_test
     assert 'assert html.status_code == 200' in bridge_test
