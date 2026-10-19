@@ -2,25 +2,70 @@
 {% block title %}Feature Testing & Validation{% endblock %}
 {% block page_archetype %}workbench{% endblock %}
 {% block page_heading %}Feature Testing & Validation{% endblock %}
-{% block page_status %}<span class="wb-readonly-badge">Planning only</span>{% endblock %}
-{% block page_help %}Read-only plans, scenarios, command candidates and blockers. No live execution or results ingestion.{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Evidence review · read-only</span>{% endblock %}
+{% block page_help %}Explore planned scenarios and imported results. The Toolkit does not initiate gameplay tests from this dashboard.{% endblock %}
 {% block page_body %}
-<section class="wb-panel"><h2>Run history</h2>
-<p>Imported evidence only. No tests are initiated from this page; passing imports do not establish authenticated runtime execution.</p>
+<style>
+.ft-nav{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1rem}
+.ft-nav a{padding:.65rem 1rem;border:1px solid var(--wb-border,#777);border-radius:.5rem;text-decoration:none}
+.ft-nav a[aria-current="page"]{font-weight:700;background:var(--wb-surface,#e4e8ed);text-decoration:underline}
+.ft-filters{display:flex;align-items:flex-end;flex-wrap:wrap;gap:.75rem;margin:1rem 0}
+.ft-filters label{display:flex;flex-direction:column;gap:.3rem;min-width:9rem}
+.ft-filters input,.ft-filters select{padding:.5rem;min-height:2.25rem;max-width:18rem}
+.ft-table-scroll{max-width:100%;overflow-x:auto}
+.ft-table-scroll table{width:100%}
+.ft-toolbar{display:flex;gap:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.ft-pages{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin-top:1rem}
+.ft-note{opacity:.8;font-size:.92rem}
+</style>
+<nav class="ft-nav" aria-label="Feature testing sections">
+<a href="/feature-testing?tab=runs" {% if tab == "runs" %}aria-current="page"{% endif %}>Run history</a>
+<a href="/feature-testing?tab=catalog" {% if tab == "catalog" %}aria-current="page"{% endif %}>Test catalog</a>
+<a href="/feature-testing?tab=guide" {% if tab == "guide" %}aria-current="page"{% endif %}>Setup &amp; supervisor</a>
+</nav>
+{% if tab == "runs" %}
+<section class="wb-panel">
+<div class="ft-toolbar"><h2>Imported test runs</h2><span>{{ total_runs }} matching runs · {{ evidence_count }} recent evidence records</span></div>
+<p class="ft-note">Results are imported observations, not independently authenticated proof of live gameplay. Showing up to 500 recent evidence records.</p>
+<form class="ft-filters" method="get" action="/feature-testing">
+<input type="hidden" name="tab" value="runs">
+<label for="ft-run-search">Run ID contains<input id="ft-run-search" name="query" value="{{ query_filter }}" placeholder="Search run ID"></label>
+<label for="ft-feature-filter">Feature<select id="ft-feature-filter" name="feature"><option value="">All features</option>{% for feature in features %}<option value="{{ feature.id }}" {% if feature_filter == feature.id %}selected{% endif %}>{{ feature.name }}</option>{% endfor %}</select></label>
+<label for="ft-verdict-filter">Contains verdict<select id="ft-verdict-filter" name="verdict"><option value="">All verdicts</option>{% for option in ['PASS','FAIL','BLOCKED','SKIPPED'] %}<option value="{{ option }}" {% if verdict_filter == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></label>
+<button type="submit">Apply filters</button><a href="/feature-testing?tab=runs">Clear</a>
+</form>
 {% if runs %}
-<table><thead><tr><th>Run</th><th>Latest observation</th><th>Features</th><th>Verdict counts</th><th>Records</th></tr></thead><tbody>
-{% for run in runs %}<tr><td><a href="/feature-testing/run/{{ run.run_id }}">{{ run.run_id }}</a></td><td>{{ run.latest }}</td><td>{{ run.features|join(', ') }}</td><td>{% for verdict, total in run.verdicts.items() %}{{ verdict }}: {{ total }} {% endfor %}</td><td>{{ run.count }}</td></tr>{% endfor %}
-</tbody></table>
-{% else %}<p>No test runs imported yet. Set <code>MISSION_TOOLKIT_TEST_RESULTS_DB</code> to your local evidence database and import a trusted report.</p>{% endif %}
+<div class="ft-table-scroll"><table><thead><tr><th scope="col">Run ID</th><th scope="col">Last observation (UTC)</th><th scope="col">Features</th><th scope="col">Verdicts</th><th scope="col">Records</th></tr></thead><tbody>
+{% for run in runs %}<tr><td><a href="/feature-testing/run/{{ run.run_id|urlencode }}">{{ run.run_id }}</a></td><td>{{ run.latest }}</td><td>{{ run.features|join(', ') }}</td><td>{% for verdict, total in run.verdicts.items() %}<strong>{{ verdict }}</strong> {{ total }}{% if not loop.last %} · {% endif %}{% endfor %}</td><td>{{ run.count }}</td></tr>{% endfor %}
+</tbody></table></div>
+<div class="ft-pages"><span>Page {{ page }} of {{ max_page }}</span>
+{% if page > 1 %}<a href="/feature-testing?tab=runs&amp;feature={{ feature_filter|urlencode }}&amp;verdict={{ verdict_filter|urlencode }}&amp;query={{ query_filter|urlencode }}&amp;page={{ page - 1 }}">← Previous</a>{% endif %}
+{% if page < max_page %}<a href="/feature-testing?tab=runs&amp;feature={{ feature_filter|urlencode }}&amp;verdict={{ verdict_filter|urlencode }}&amp;query={{ query_filter|urlencode }}&amp;page={{ page + 1 }}">Next →</a>{% endif %}</div>
+{% else %}<p>{% if not results_configured %}No evidence database configured. Set <code>MISSION_TOOLKIT_TEST_RESULTS_DB</code> and import a validated report.{% elif evidence_count == 0 %}No results imported yet.{% else %}No imported runs match these filters.{% endif %}</p>{% endif %}
 </section>
-<section class="wb-panel"><h2>Test catalog</h2><p><a href="/feature-testing/catalog">Catalog API</a> · All cases are planning records, not proven successes.</p>
+{% elif tab == "catalog" %}
+<section class="wb-panel"><h2>Test catalog</h2><p>Scenario plans describe acceptance criteria, sources, and current blockers. Opening a scenario does not execute it.</p>
 {% for feature in features %}
-<details style="padding:1rem;border:1px solid var(--wb-border, #777);margin:1rem 0" {% if loop.first %}open{% endif %}>
+<details style="padding:1rem;border:1px solid var(--wb-border,#777);margin:.75rem 0" {% if loop.first %}open{% endif %}>
 <summary><strong>{{ feature.name }}</strong> — {{ feature.cases|length }} scenarios</summary>
-<p><strong>GM candidates:</strong> {{ feature.commands|join(', ') }}</p>
-<h3>Blockers</h3><ul>{% for gap in feature.gaps %}<li>{{ gap }}</li>{% endfor %}</ul>
-<table><thead><tr><th>ID</th><th>Type</th><th>Scenario</th><th>Status</th></tr></thead><tbody>
-{% for case in feature.cases %}<tr><td><a href="/feature-testing/scenario/{{ feature.id }}/{{ case.id }}">{{ case.id }}</a></td><td>{{ case.kind }}</td><td>{{ case.title }}</td><td>{{ case.status }}</td></tr>{% endfor %}
-</tbody></table></details>
+<p><strong>GM command candidates:</strong> {{ feature.commands|join(', ') if feature.commands else 'None recorded' }}</p>
+{% if feature.gaps %}<h3>Blockers</h3><ul>{% for gap in feature.gaps %}<li>{{ gap }}</li>{% endfor %}</ul>{% endif %}
+<div class="ft-table-scroll"><table><thead><tr><th>ID</th><th>Type</th><th>Scenario</th><th>Plan status</th></tr></thead><tbody>
+{% for case in feature.cases %}<tr><td><a href="/feature-testing/scenario/{{ feature.id|urlencode }}/{{ case.id|urlencode }}">{{ case.id }}</a></td><td>{{ case.kind }}</td><td>{{ case.title }}</td><td>{{ case.status }}</td></tr>{% endfor %}
+</tbody></table></div></details>
 {% endfor %}</section>
+{% else %}
+<section class="wb-panel"><h2>Testing workspace and supervisor</h2>
+<p>The dashboard reviews plans and imported evidence. Deterministic test execution occurs in a separately controlled XiHeadless runner; there is no live execution button here.</p>
+<h3>Evidence setup</h3><p>Set <code>MISSION_TOOLKIT_TEST_RESULTS_DB</code> to a local SQLite evidence database, then import validated reports using the supported local importer. No database is created from this page.</p>
+<p><strong>Evidence storage:</strong> {{ 'Configured' if results_configured else 'Not configured' }}</p>
+<h3>Read-only interfaces</h3><ul>
+<li><a href="/feature-testing/runs">Run summaries (JSON)</a></li>
+<li><a href="/feature-testing/results">Recent results (JSON)</a></li>
+<li><a href="/feature-testing/catalog">Scenario catalog (JSON)</a></li>
+<li><a href="/api/supervisor/openapi.json">Restricted supervisor OpenAPI definition</a> — actual diagnostic operations require authentication.</li>
+</ul>
+<p>Local configuration guide: <code>docs/workbench/LOCAL_TEST_SUPERVISOR_SETUP.md</code>. Do not expose the full Toolkit API or place credentials in prompts.</p>
+</section>
+{% endif %}
 {% endblock %}
