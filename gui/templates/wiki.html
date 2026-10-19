@@ -526,9 +526,20 @@ document.addEventListener('DOMContentLoaded', function () {
   const original = article.dataset.focusSection || '';
   const wanted = original.split(' > ').pop().trim();
   if (!wanted) return;
-  const section = Array.from(article.querySelectorAll('[data-wiki-section]'))
-    .find(element => element.dataset.wikiSection === wanted);
-  if (!section) return; // No guessed fallback to an unrelated heading.
+  const matches = Array.from(article.querySelectorAll('[data-wiki-section]'))
+    .filter(element => element.dataset.wikiSection === wanted);
+  // A repeated heading cannot be disambiguated by this source locator alone.
+  // Do not highlight the first match as though it were verified evidence.
+  if (matches.length !== 1) {
+    if (matches.length > 1) {
+      const note = document.createElement('p');
+      note.className = 'muted';
+      note.textContent = 'The cited section heading is ambiguous on this page; no section was selected.';
+      article.prepend(note);
+    }
+    return;
+  }
+  const section = matches[0];
   section.id = 'wiki-focused-source-section';
   section.scrollIntoView({block:'start'});
   section.style.outline = '2px solid var(--accent)';
