@@ -1227,6 +1227,76 @@
       "purpose": "Reach the precise Wiki page linked from an evidence record without matching an ambiguous title.",
       "how_to_use": "From the Feature Trace dossier open the exact Wiki source page; inspect the focused section and original excerpt; verify source identity.",
       "caveat": "Section focus is conservative with duplicate headings; not every imported page retains all source fields."
+    },
+    {
+      "id": "ki-mapping-comparison",
+      "parent_id": "key-items",
+      "module": "Character & Items",
+      "name": "Key Item lineage comparison",
+      "summary": "Compare DSP, LSB and Topaz key-item references and mapping readiness.",
+      "route": "/keyitems",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help",
+      "purpose": "Inspect which source mapping corresponds to a client key-item identity.",
+      "how_to_use": "Search Key Items, select a record and compare Active DSP, LSB and optional Topaz mappings and recorded evidence.",
+      "caveat": "Reference mappings and backport readiness are not proof of in-game behavior."
+    },
+    {
+      "id": "ki-operation-dependencies",
+      "parent_id": "key-items",
+      "module": "Character & Items",
+      "name": "Key Item Lua operation dependencies",
+      "summary": "Inspect Lua requires, grants and removes for selected key items.",
+      "route": "/keyitems",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help",
+      "purpose": "Find source-backed key-item condition and mutation references.",
+      "how_to_use": "Open the Key Item inspector, select a source lineage and filter Lua operations to require, grant or remove.",
+      "caveat": "References depend on indexed script lineage, not runtime observation."
+    },
+    {
+      "id": "ki-evidence-handoff",
+      "parent_id": "key-items",
+      "module": "Character & Items",
+      "name": "Key Item evidence and research handoff",
+      "summary": "Open related Feature Trace, Wiki and Character Editor investigations.",
+      "route": "/keyitems",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help",
+      "purpose": "Continue a specific key-item investigation without losing its source identity.",
+      "how_to_use": "In Key Items, review recorded evidence and use Feature Trace, Wiki or Character Editor links for the relevant follow-up.",
+      "caveat": "Cross-module navigation does not establish that a captured or reference occurrence is causally related."
+    },
+    {
+      "id": "validation-run-history",
+      "parent_id": "validation",
+      "module": "Validation",
+      "name": "Validation run history",
+      "summary": "Review prior validation outcomes and evidence at the run level.",
+      "route": "/validation",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help",
+      "purpose": "Identify completed or incomplete validation work and its available evidence.",
+      "how_to_use": "Open Validation Runs to review previous runs and inspect their recorded statuses and artifacts.",
+      "caveat": "Run status and stored evidence must be reviewed; no validation is implied by route availability."
+    },
+    {
+      "id": "validation-live-target",
+      "parent_id": "validation",
+      "module": "Validation",
+      "name": "Live target validation",
+      "summary": "Inspect an explicitly configured target and its supported validation checks.",
+      "route": "/validation",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help",
+      "purpose": "Distinguish validation of a configured live target from source-level inspection.",
+      "how_to_use": "Open Live Target Validation and review target identity, prerequisites, and the result of any explicitly executed checks.",
+      "caveat": "A configured target or plan is not an executed or passing validation."
     }
   ]
 }
