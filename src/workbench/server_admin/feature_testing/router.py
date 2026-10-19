@@ -60,6 +60,39 @@ def scenario_page(request: Request, feature_id: str, case_id: str):
                                       context={"title": "Test Scenario", "detail": scenario_detail(feature_id, case_id)})
 
 
+def _history():
+    db = _results_db()
+    return recent_results(db, limit=500) if db else []
+
+
+def _run_summary(rows: list[dict]) -> list[dict]:
+    groups = {}
+    for row in rows:
+        key = row["run_id"]
+        group = groups.setdefault(key, {"run_id": key, "latest": row["observed_at"],
+                                       "verdicts": {}, "features": set(), "count": 0})
+        group["count"] += 1
+        group["features"].add(row["feature_id"])
+        group["verdicts"][row["verdict"]] = group["verdicts"].get(row["verdict"], 0) + 1
+        group["latest"] = max(group["latest"], row["observed_at"])
+    return [{**v, "features": sorted(v["features"])} for v in sorted(
+        groups.values(), key=lambda v: (v["latest"], v["run_id"]), reverse=True)]
+
+
+@router.get("/runs")
+def run_history_api():
+    return {"runs": _run_summary(_history()), "execution_enabled": False}
+
+
+@router.get("/run/{run_id}", response_class=HTMLResponse)
+def run_page(request: Request, run_id: str):
+    rows = [r for r in _history() if r["run_id"] == run_id]
+    if not rows:
+        raise HTTPException(404, "Run not found")
+    return templates.TemplateResponse(request=request, name="feature_testing_run.html",
+                                      context={"title": "Test Run", "run_id": run_id, "records": rows})
+
+
 def _summaries() -> list[dict]:
     features = []
     for f in load_test_catalog()["features"]:
@@ -89,4 +122,4 @@ def results_api(feature_id: str | None = None, case_id: str | None = None):
 def dashboard(request: Request):
     return templates.TemplateResponse(request=request, name="feature_testing.html",
                                       context={"title": "Feature Testing & Validation",
-                                               "features": _summaries(), "execution_enabled": False})
+                                               "features": _summaries(), "runs": _run_summary(_history()), "execution_enabled": False})
