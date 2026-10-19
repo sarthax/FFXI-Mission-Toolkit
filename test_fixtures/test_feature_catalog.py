@@ -47,6 +47,14 @@ def main():
     assert all(child.get("how_to_use") and child.get("caveat") for child in testing["children"])
     assert feature_detail(items, "trace-wiki-provenance")["parent"]["id"] == "feature-trace"
     assert feature_detail(items, "wiki-source-navigation")["parent"]["id"] == "wiki"
+    assert len(feature_detail(items, "key-items")["children"]) >= 4
+    assert len(feature_detail(items, "validation")["children"]) >= 2
+    for subfeature_id in ("ki-mapping-comparison", "ki-operation-dependencies",
+                          "ki-evidence-handoff", "validation-run-history",
+                          "validation-live-target"):
+        detail = feature_detail(items, subfeature_id)
+        assert detail["parent"] and detail["feature"]["how_to_use"]
+        assert detail["feature"]["validation"] == "unverified"
     assert feature_detail(items, "missing-capability") is None
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
