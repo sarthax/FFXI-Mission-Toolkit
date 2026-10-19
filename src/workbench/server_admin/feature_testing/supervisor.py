@@ -52,3 +52,20 @@ def failed_assertions(authorization: str | None = Header(default=None)):
          "evaluation": r["evidence"].get("evaluation", {})}
         for r in rows if r["verdict"] in ("FAIL", "BLOCKED")
     ], "limit": 100}
+
+# A dedicated specification prevents agent clients from discovering unrelated
+# and potentially state-changing Toolkit application endpoints.
+@router.get("/openapi.json", include_in_schema=False)
+def supervisor_openapi():
+    from fastapi.openapi.utils import get_openapi
+    from fastapi import FastAPI
+    isolated = FastAPI(title="Mission Toolkit Read-only Test Supervisor", version="0.1.0")
+    isolated.include_router(router)
+    # Do not include this metadata route itself.
+    spec = get_openapi(title=isolated.title, version=isolated.version, routes=[
+        route for route in isolated.routes
+        if getattr(route, "path", "").startswith("/api/supervisor/")
+        and getattr(route, "include_in_schema", False)
+    ])
+    spec["servers"] = [{"url": "http://127.0.0.1:8420"}]
+    return spec
