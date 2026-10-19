@@ -39,6 +39,7 @@ def test_isolated_openapi_contains_only_read_only_supervisor_tools():
         "/api/supervisor/test-runs",
         "/api/supervisor/failed-assertions",
         "/api/supervisor/log-errors",
+        "/api/supervisor/service-health",
     }
     assert all(set(methods) == {"get"} for methods in spec["paths"].values())
     assert "/wiki" not in str(spec["paths"])
@@ -62,3 +63,22 @@ def test_supervisor_log_errors_requires_authentication(tmp_path, monkeypatch):
     with pytest.raises(HTTPException) as exc:
         supervisor.log_errors(source="dsp", authorization=None)
     assert exc.value.status_code == 403
+
+
+def test_service_health_rejects_remote_hosts(monkeypatch):
+    from workbench.server_admin.feature_testing.service_health import service_health
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DB_HOST", "192.168.1.1")
+    with pytest.raises(ValueError, match="loopback"):
+        service_health("database")
+
+
+def test_service_health_reports_unconfigured_dsp(monkeypatch):
+    from workbench.server_admin.feature_testing.service_health import service_health
+    monkeypatch.delenv("MISSION_TOOLKIT_SUPERVISOR_DSP_PORT", raising=False)
+    assert service_health("dsp_map")["configured"] is False
+
+
+def test_service_health_only_allows_known_services(monkeypatch):
+    from workbench.server_admin.feature_testing.service_health import service_health
+    with pytest.raises(ValueError, match="unknown"):
+        service_health("arbitrary")
