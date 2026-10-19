@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "source": {
+    "repository": "sarthax/darkstar-to-valhalla",
+    "branch": "main",
+    "path": "src/map/entities/charentity.cpp",
+    "method": "moghancementMods",
+    "secondary": [
+      "src/map/utils/synthutils.cpp",
+      "src/map/utils/gardenutils.cpp"
+    ]
+  },
+  "status": "source_reviewed_not_live_verified",
+  "levels": [
+    "key_item_transition",
+    "modifier_state",
+    "behavior_effect"
+  ],
+  "groups": [
+    {
+      "name": "crafting_skill",
+      "key_items": [
+        "MOGHANCEMENT_FISHING",
+        "MOGLIFICATION_FISHING",
+        "MOGHANCEMENT_WOODWORKING",
+        "MOGLIFICATION_WOODWORKING",
+        "MOGHANCEMENT_SMITHING",
+        "MOGLIFICATION_SMITHING",
+        "MOGHANCEMENT_GOLDSMITHING",
+        "MOGLIFICATION_GOLDSMITHING",
+        "MOGHANCEMENT_CLOTHCRAFT",
+        "MOGLIFICATION_CLOTHCRAFT",
+        "MOGHANCEMENT_LEATHERCRAFT",
+        "MOGLIFICATION_LEATHERCRAFT",
+        "MOGHANCEMENT_BONECRAFT",
+        "MOGLIFICATION_BONECRAFT",
+        "MOGHANCEMENT_ALCHEMY",
+        "MOGLIFICATION_ALCHEMY",
+        "MOGHANCEMENT_COOKING",
+        "MOGLIFICATION_COOKING"
+      ],
+      "modifier_value": 1,
+      "mods": [
+        "FISH",
+        "WOOD",
+        "SMITH",
+        "GOLDSMITH",
+        "CLOTH",
+        "LEATHER",
+        "BONE",
+        "ALCHEMY",
+        "COOK"
+      ],
+      "behavior": "check effective craft skill and actual synthesis outcomes"
+    },
+    {
+      "name": "mega_crafting",
+      "key_items": [
+        "MEGA_MOGLIFICATION_FISHING",
+        "MEGA_MOGLIFICATION_WOODWORKING",
+        "MEGA_MOGLIFICATION_SMITHING",
+        "MEGA_MOGLIFICATION_GOLDSMITHING",
+        "MEGA_MOGLIFICATION_CLOTHCRAFT",
+        "MEGA_MOGLIFICATION_LEATHERCRAFT",
+        "MEGA_MOGLIFICATION_BONECRAFT",
+        "MEGA_MOGLIFICATION_ALCHEMY",
+        "MEGA_MOGLIFICATION_COOKING"
+      ],
+      "modifier_value": 5,
+      "behavior": "effective skill and craft outcomes"
+    },
+    {
+      "name": "gardening",
+      "key_item": "MOGHANCEMENT_GARDENING",
+      "mod": "GARDENING_WILT_BONUS",
+      "value": 36,
+      "behavior": "test with and without KI near wilt threshold, controlled stage advancement"
+    },
+    {
+      "name": "gil",
+      "key_items": [
+        "MOGHANCEMENT_MONEY",
+        "MOGHANCEMENT_MONEY_II"
+      ],
+      "mod": "GILFINDER",
+      "values": [
+        10,
+        15
+      ],
+      "behavior": "controlled gil award compared with no effect"
+    },
+    {
+      "name": "experience",
+      "key_item": "MOGHANCEMENT_EXPERIENCE",
+      "mod": "EXPERIENCE_RETAINED",
+      "value": 5,
+      "behavior": "controlled death/XP loss; reset on disposable character"
+    },
+    {
+      "name": "synthesis",
+      "key_items": [
+        "MOGHANCEMENT_DESYNTHESIS",
+        "MOGHANCEMENT_FIRE",
+        "MOGHANCEMENT_EARTH",
+        "MOGHANCEMENT_WATER",
+        "MOGHANCEMENT_WIND",
+        "MOGHANCEMENT_ICE",
+        "MOGHANCEMENT_LIGHTNING",
+        "MOGHANCEMENT_LIGHT",
+        "MOGHANCEMENT_DARK"
+      ],
+      "mod": "DESYNTH_SUCCESS for desynthesis only",
+      "value": 2,
+      "behavior": "inspect synthesis direct KI consumer and measure failure outcomes; do not assume visible numeric modifier for element effects"
+    },
+    {
+      "name": "conquest",
+      "key_items": [
+        "MOGHANCEMENT_CONQUEST",
+        "MOGHANCEMENT_REGION",
+        "MOGHANCEMENT_SANDORIA_CONQUEST",
+        "MOGHANCEMENT_BASTOK_CONQUEST",
+        "MOGHANCEMENT_WINDURST_CONQUEST"
+      ],
+      "mods": [
+        "CONQUEST_BONUS",
+        "CONQUEST_REGION_BONUS"
+      ],
+      "values": [
+        6,
+        10
+      ],
+      "behavior": "nation gating and conquest point/region credit"
+    },
+    {
+      "name": "other",
+      "key_items": [
+        "MOGHANCEMENT_CAMPAIGN",
+        "MOGHANCEMENT_SKILL_GAINS",
+        "MOGHANCEMENT_BOUNTY",
+        "MOGLIFICATION_EXPERIENCE_BOOST",
+        "MOGLIFICATION_CAPACITY_BOOST"
+      ],
+      "mods": [
+        "CAMPAIGN_BONUS",
+        "COMBAT_SKILLUP_RATE",
+        "MAGIC_SKILLUP_RATE",
+        "EXP_BONUS",
+        "CAPACITY_BONUS"
+      ],
+      "values": [
+        5,
+        25,
+        10,
+        15
+      ],
+      "behavior": "actual award/skill gain and duplicate-mod prevention"
+    },
+    {
+      "name": "resists",
+      "key_items": [
+        "MOGLIFICATION_RESIST_POISON",
+        "MOGLIFICATION_RESIST_PARALYSIS",
+        "MOGLIFICATION_RESIST_SILENCE",
+        "MOGLIFICATION_RESIST_PETRIFICATION",
+        "MOGLIFICATION_RESIST_VIRUS",
+        "MOGLIFICATION_RESIST_CURSE"
+      ],
+      "mods": [
+        "POISONRES",
+        "PARALYZERES",
+        "SILENCERES",
+        "PETRIFYRES",
+        "VIRUSRES",
+        "CURSERES"
+      ],
+      "value": 20,
+      "warning": "DSP comments mark these numbers placeholders",
+      "behavior": "effective resistance modifier and repeatable status application trials"
+    }
+  ],
+  "testing": {
+    "first": "assert KI and modifier exactly, replacement removes prior mod, idempotent recalc and relog",
+    "second": "confirm actual gameplay consumers and quantitative behavior using controlled fixtures",
+    "negative": [
+      "wrong nation",
+      "replaced furnishing keeps old mod",
+      "remove KI but modifier persists",
+      "recalc stacks modifiers",
+      "elemental KI has no visible mod but synthesis path not exercised"
+    ],
+    "blockers": [
+      "resolve symbolic KI to actual IDs and furnishing sets",
+      "verify source branch deployed",
+      "command !getmod syntax and modifier IDs from active DSP",
+      "headless furniture install and gameplay observation gaps"
+    ]
+  }
+}
