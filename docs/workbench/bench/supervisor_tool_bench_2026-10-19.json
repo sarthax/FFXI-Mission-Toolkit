@@ -1,0 +1,2564 @@
+{
+ "truth_run_ids": [
+  "obs-20261019T070215Z",
+  "obs-20261019T065856Z"
+ ],
+ "inv_rows": 27,
+ "results": [
+  {
+   "model": "qwen2.5:7b",
+   "task": "health",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 1.5,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "Mission Toolkit supervisor gateway"
+     }
+    ]
+   ],
+   "text": "I encountered an issue while checking the health of the Mission Toolkit supervisor gateway. The response code was HTTP 400, which typically indicates a bad request. Could you please provide more details or try again later?",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "health",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 1.2,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "Mission Toolkit supervisor gateway"
+     }
+    ]
+   ],
+   "text": "I encountered an issue while checking the health of the Mission Toolkit supervisor gateway. The response indicates an HTTP 400 error, which typically means there was a bad request. Could you please provide more details or try again?",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "health",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 1.2,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "Mission Toolkit supervisor gateway"
+     }
+    ]
+   ],
+   "text": "I encountered an issue while checking the health of the Mission Toolkit supervisor gateway. The response indicates an HTTP 400 error, which typically means there was a bad request. Could you please provide more details or try again later?",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "test_runs",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 2.8,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "The latest test runs are as follows:\n\n1. Run ID: obs-20261019T070215Z, Latest: 2026-10-19T07:04:25.757936Z, Verdict: PASS\n2. Run ID: obs-20261019T065856Z, Latest: 2026-10-19T07:01:03.725143Z, Verdict: PASS\n\nBoth runs have a single PASS verdict and are associated with the feature \"moghancement\".",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "test_runs",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 2.7,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "The latest test runs are as follows:\n\n1. Run ID: obs-20261019T070215Z, Latest: 2026-10-19T07:04:25.757936Z, Verdict: PASS\n2. Run ID: obs-20261019T065856Z, Latest: 2026-10-19T07:01:03.725143Z, Verdict: PASS\n\nBoth runs have a single PASS verdict and include the feature \"moghancement\".",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "test_runs",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 2.8,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "The latest test runs are as follows:\n\n1. Run ID: obs-20261019T070215Z, Latest: 2026-10-19T07:04:25.757936Z, Verdict: PASS\n2. Run ID: obs-20261019T065856Z, Latest: 2026-10-19T07:01:03.725143Z, Verdict: PASS\n\nBoth runs have a single feature \"moghancement\" and have passed all tests.",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "failures",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 0.6,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "There were no failed assertions in the recorded test results.",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "failures",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 0.5,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "There were no failed assertions in the recorded test results.",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "failures",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 0.6,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "There were no failed assertions in the recorded test results.",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "ollama",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 0.9,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "ollama"
+     }
+    ]
+   ],
+   "text": "The ollama service is reachable right now. It has been configured and is currently reachable using a TCP connect only check.",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "ollama",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 0.9,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "ollama"
+     }
+    ]
+   ],
+   "text": "The ollama service is reachable right now. It has been configured and a TCP connect only check confirms its reachability.",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "ollama",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 0.8,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "ollama"
+     }
+    ]
+   ],
+   "text": "The ollama service is reachable right now. It has been configured and a TCP connection check was successful.",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "inventory",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 1.2,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "The test character 21836 has a total of 50 persisted inventory rows.",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "inventory",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 1.2,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "The test character 21836 has a total of 50 persisted inventory rows.",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "inventory",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 1.2,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "The test character 21836 has a total of 50 persisted inventory rows.",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "logs",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 7.1,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_log_errors",
+     {
+      "source": "dsp"
+     }
+    ]
+   ],
+   "text": "Here are some recent error lines from the DSP log:\n\n- [18/Oct] [15:23:58] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [15:37:56] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [15:41:56] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [15:54:56] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [18:06:08] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [18:13:14] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [18:24:54] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [18:3",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "logs",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 6.8,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_log_errors",
+     {
+      "source": "dsp"
+     }
+    ]
+   ],
+   "text": "Here are some recent error lines from the DSP log:\n\n- [18/Oct] [15:23:58] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [15:37:56] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [15:41:56] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [15:54:56] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [18:06:08] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [18:13:14] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [18:24:54] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [18:3",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "logs",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 6.9,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_log_errors",
+     {
+      "source": "dsp"
+     }
+    ]
+   ],
+   "text": "Here are some recent error lines from the DSP log:\n\n- [18/Oct] [15:23:58] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [15:37:56] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [15:41:56] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [15:54:56] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [18:06:08] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [18:13:14] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [18:24:54] [Error] GetPlayerByName :: Input string is not valid.\n- [18/Oct] [18:3",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "unavailable",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 7.2,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "Character 21836 is holding the following items:\n\n- Item ID 65535, Quantity: 10\n- Item ID 12636, Quantity: 1\n- Item ID 12757, Quantity: 1\n- Item ID 12887, Quantity: 1\n- Item ID 13008, Quantity: 1\n- Item ID 16534, Quantity: 1\n- Item ID 13496, Quantity: 1\n- Item ID 536, Quantity: 1\n- Item ID 4112, Quantity: 1\n\nIn the inventory slots 1-7 of the secondary inventory (slots 9-17), there are multiple items including:\n- Item ID 1, Quantity: 1\n- Item ID 2, Quantity: 1\n- Item ID 3, Quantity: 1\n- Item ID 4, Quantity: 1\n- Item ID 5, Quantity: 1\n- Item ID 6, Quantity: 1\n- Item ID 216, Quantity: 1\n- Item ID ",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "unavailable",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 3.9,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "Character 21836 is holding the following items:\n\n- Item ID 65535, Quantity: 10\n- Item ID 12636, Quantity: 1\n- Item ID 12757, Quantity: 1\n- Item ID 12887, Quantity: 1\n- Item ID 13008, Quantity: 1\n- Item ID 16534, Quantity: 1\n- Item ID 13496, Quantity: 1\n- Item ID 536, Quantity: 1\n- Item ID 4112, Quantity: 1\n\nIn the inventory slots 9 and 10, there are 12 and 4 of item ID 936 respectively. Other items are distributed across various slots in the secondary inventory.",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "unavailable",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 6.8,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "Character 21836 is holding the following items:\n\n- Item ID 65535, Quantity: 10\n- Item ID 12636, Quantity: 1\n- Item ID 12757, Quantity: 1\n- Item ID 12887, Quantity: 1\n- Item ID 13008, Quantity: 1\n- Item ID 16534, Quantity: 1\n- Item ID 13496, Quantity: 1\n- Item ID 536, Quantity: 1\n- Item ID 4112, Quantity: 1\n\nIn inventory slots 9 and 10, there are 12 and 4 of item ID 936 respectively.\n\nAdditionally, in the secondary inventory, the following items are present:\n\n- Item ID 1, Quantity: 1\n- Item ID 2, Quantity: 1\n- Item ID 3, Quantity: 1\n- Item ID 4, Quantity: 1\n- Item ID 5, Quantity: 1\n- Item ID 6,",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "multi",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 3.0,
+   "ncalls": 3,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ],
+    [
+     "supervisor_test_runs",
+     {}
+    ],
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "The supervisor health is currently showing that the gateway is ready, execution is not enabled, and results configuration is set to true.\n\nThe latest test run is identified by the run ID \"obs-20261019T070215Z\" with a timestamp of 2026-10-19T07:04:25.757936Z. This run includes 1 feature named \"moghancement\" and has a verdict of 1 PASS.\n\nThere are no failed assertions found in the latest test run.",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "multi",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 2.8,
+   "ncalls": 3,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ],
+    [
+     "supervisor_test_runs",
+     {}
+    ],
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "The supervisor is currently in a ready state with execution disabled, but results configuration is enabled.\n\nThe latest test run is identified by the run ID \"obs-20261019T070215Z\" and it occurred at 2026-10-19T07:04:25.757936Z. This run includes 1 feature named \"moghancement\" and has passed all tests.\n\nThere are no failed assertions reported for the latest test run.",
+   "error": null
+  },
+  {
+   "model": "qwen2.5:7b",
+   "task": "multi",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 3.0,
+   "ncalls": 3,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ],
+    [
+     "supervisor_test_runs",
+     {}
+    ],
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "The supervisor is currently in a state where gateway is ready, execution is not enabled, but results configuration is set to true.\n\nThe latest test run is identified by the run_id \"obs-20261019T070215Z\" and it occurred at 2026-10-19T07:04:25.757936Z. This run included 1 feature named \"moghancement\" and had 1 test pass.\n\nThere were no failed assertions found in the latest test run.",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "health",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 4.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_service_health\", \"arguments\": {\"service\": \"mission-toolkit-supervisor-gateway\"}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "health",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.4,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_service_health\", \"arguments\": {\"service\": \"mission_toolkit_supervisor_gateway\"}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "health",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.4,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_service_health\", \"arguments\": {\"service\": \"mission-toolkit-supervisor-gateway\"}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "test_runs",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.3,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_test_runs\", \"arguments\": {}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "test_runs",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.3,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_test_runs\", \"arguments\": {}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "test_runs",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.3,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_test_runs\", \"arguments\": {}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "failures",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.3,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_failed_assertions\", \"arguments\": {}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "failures",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.3,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_failed_assertions\", \"arguments\": {}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "failures",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.3,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_failed_assertions\", \"arguments\": {}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "ollama",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.4,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_service_health\", \"arguments\": {\"service\": \"ollama\"}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "ollama",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.3,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_service_health\", \"arguments\": {\"service\": \"ollama\"}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "ollama",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.3,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_service_health\", \"arguments\": {\"service\": \"ollama\"}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "inventory",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.4,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_test_character_inventory\", \"arguments\": {\"charid\": 21836}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "inventory",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.4,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_test_character_inventory\", \"arguments\": {\"charid\": 21836}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "inventory",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.4,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_test_character_inventory\", \"arguments\": {\"charid\": 21836}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "logs",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.3,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_log_errors\", \"arguments\": {\"source\": \"dsp\"}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "logs",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.3,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_log_errors\", \"arguments\": {\"source\": \"dsp\"}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "logs",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.3,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_log_errors\", \"arguments\": {\"source\": \"dsp\"}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "unavailable",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 0.4,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_test_character_inventory\", \"arguments\": {\"charid\": 21836}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "unavailable",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 0.4,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_test_character_inventory\", \"arguments\": {\"charid\": 21836}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "unavailable",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 0.4,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_test_character_inventory\", \"arguments\": {\"charid\": 21836}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "multi",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.7,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_health\", \"arguments\": {}}\n{\"name\": \"supervisor_test_runs\", \"arguments\": {}}\n{\"name\": \"supervisor_failed_assertions\", \"arguments\": {}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "multi",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.7,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_health\", \"arguments\": {}}\n{\"name\": \"supervisor_test_runs\", \"arguments\": {}}\n{\"name\": \"supervisor_failed_assertions\", \"arguments\": {}}",
+   "error": null
+  },
+  {
+   "model": "qwen2.5-coder:7b",
+   "task": "multi",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.7,
+   "ncalls": 0,
+   "calls": [],
+   "text": "{\"name\": \"supervisor_health\", \"arguments\": {}}\n{\"name\": \"supervisor_test_runs\", \"arguments\": {}}\n{\"name\": \"supervisor_failed_assertions\", \"arguments\": {}}",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "health",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 8.2,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ]
+   ],
+   "text": "The Mission Toolkit supervisor gateway is healthy and is in a \"ready\" state. However, execution is currently disabled.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "health",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 6.8,
+   "ncalls": 0,
+   "calls": [],
+   "text": "I cannot directly check the health of the Mission Toolkit supervisor gateway or its execution status with the provided tools. You may need to use additional tools or system-specific commands to verify the gateway's health and execution status.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "health",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 1.1,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ]
+   ],
+   "text": "The Mission Toolkit supervisor gateway is healthy and \"ready\". However, execution is currently disabled.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "test_runs",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 6.9,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "The latest test runs and their verdicts are as follows:\n\n1. **Run ID:** `obs-20261019T070215Z`  \n   - **Latest:** `2026-10-19T07:04:25.757936Z`  \n   - **Verdicts:** `PASS` (1 test passed)  \n   - **Features:** `moghancement`  \n   - **Count:** 1  \n\n2. **Run ID:** `obs-20261019T065856Z`  \n   - **Latest:** `2026-10-19T07:01:03.725143Z`  \n   - **Verdicts:** `PASS` (1 test passed)  \n   - **Features:** `moghancement`  \n   - **Count:** 1  \n\nNote: The execution is currently disabled, and the records are imported but not independently authenticated.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "test_runs",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 7.0,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "The latest test runs and their verdicts are as follows:\n\n1. **Run ID:** `obs-20261019T070215Z`  \n   - **Latest:** `2026-10-19T07:04:25.757936Z`  \n   - **Verdicts:** `PASS` (1 test passed)  \n   - **Features:** `moghancement`  \n   - **Count:** 1  \n\n2. **Run ID:** `obs-20261019T065856Z`  \n   - **Latest:** `2026-10-19T07:01:03.725143Z`  \n   - **Verdicts:** `PASS` (1 test passed)  \n   - **Features:** `moghancement`  \n   - **Count:** 1  \n\nNote: The execution is currently disabled, and the records are imported but not independently authenticated.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "test_runs",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 6.7,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "The latest test runs and their verdicts are as follows:\n\n1. **Run ID:** `obs-20261019T070215Z`  \n   - **Latest:** `2026-10-19T07:04:25.757936Z`  \n   - **Verdicts:** `PASS` (1 test passed)  \n   - **Features:** `moghancement`  \n   - **Count:** 1  \n\n2. **Run ID:** `obs-20261019T065856Z`  \n   - **Latest:** `2026-10-19T07:01:03.725143Z`  \n   - **Verdicts:** `PASS` (1 test passed)  \n   - **Features:** `moghancement`  \n   - **Count:** 1  \n\nNote: Imported records are not independently authenticated.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "failures",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 1.0,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "There were no failed assertions in the recorded test results.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "failures",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 0.9,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "There were no failed assertions in the recorded test results.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "failures",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 0.9,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "There were no failed assertions in the recorded test results.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "ollama",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 1.0,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "ollama"
+     }
+    ]
+   ],
+   "text": "The ollama service is currently reachable.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "ollama",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 1.0,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "ollama"
+     }
+    ]
+   ],
+   "text": "The ollama service is currently reachable.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "ollama",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 1.0,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "ollama"
+     }
+    ]
+   ],
+   "text": "The ollama service is currently reachable.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "inventory",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 1.8,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "Test character 21836 has 35 persisted inventory rows.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "inventory",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 1.8,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "Test character 21836 has 35 persisted inventory rows.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "inventory",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 1.7,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "Test character 21836 has 34 persisted inventory rows.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "logs",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 12.0,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_log_errors",
+     {
+      "source": "dsp"
+     }
+    ]
+   ],
+   "text": "Here are the recent error lines from the dsp log:\n\n1. `[18/Oct] [15:23:58] [Error] GetPlayerByName :: Input string is not valid.`\n2. `[18/Oct] [15:37:56] [Error] GetPlayerByName :: Input string is not valid.`\n3. `[18/Oct] [15:41:56] [Error] GetPlayerByName :: Input string is not valid.`\n4. `[18/Oct] [15:54:56] [Error] GetPlayerByName :: Input string is not valid.`\n5. `[18/Oct] [18:06:08] [Error] GetPlayerByName :: Input string is not valid.`\n6. `[18/Oct] [18:13:14] [Error] GetPlayerByName :: Input string is not valid.`\n7. `[18/Oct] [18:24:54] [Error] GetPlayerByName :: Input string is not vali",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "logs",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 12.1,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_log_errors",
+     {
+      "source": "dsp"
+     }
+    ]
+   ],
+   "text": "Here are the recent error lines from the `dsp` log:\n\n1. `[18/Oct] [15:23:58] [Error] GetPlayerByName :: Input string is not valid.`\n2. `[18/Oct] [15:37:56] [Error] GetPlayerByName :: Input string is not valid.`\n3. `[18/Oct] [15:41:56] [Error] GetPlayerByName :: Input string is not valid.`\n4. `[18/Oct] [15:54:56] [Error] GetPlayerByName :: Input string is not valid.`\n5. `[18/Oct] [18:06:08] [Error] GetPlayerByName :: Input string is not valid.`\n6. `[18/Oct] [18:13:14] [Error] GetPlayerByName :: Input string is not valid.`\n7. `[18/Oct] [18:24:54] [Error] GetPlayerByName :: Input string is not va",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "logs",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 12.0,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_log_errors",
+     {
+      "source": "dsp"
+     }
+    ]
+   ],
+   "text": "Here are the recent error lines from the `dsp` log:\n\n1. `[18/Oct] [15:23:58] [Error] GetPlayerByName :: Input string is not valid.`\n2. `[18/Oct] [15:37:56] [Error] GetPlayerByName :: Input string is not valid.`\n3. `[18/Oct] [15:41:56] [Error] GetPlayerByName :: Input string is not valid.`\n4. `[18/Oct] [15:54:56] [Error] GetPlayerByName :: Input string is not valid.`\n5. `[18/Oct] [18:06:08] [Error] GetPlayerByName :: Input string is not valid.`\n6. `[18/Oct] [18:13:14] [Error] GetPlayerByName :: Input string is not valid.`\n7. `[18/Oct] [18:24:54] [Error] GetPlayerByName :: Input string is not va",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "unavailable",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 15.6,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "Character 21836 is holding the following key items:\n\n1. **ItemId 65535** - Quantity: 10\n2. **ItemId 12636** - Quantity: 1\n3. **ItemId 12757** - Quantity: 1\n4. **ItemId 12887** - Quantity: 1\n5. **ItemId 13008** - Quantity: 1\n6. **ItemId 16534** - Quantity: 1\n7. **ItemId 13496** - Quantity: 1\n8. **ItemId 536** - Quantity: 1\n9. **ItemId 4112** - Quantity: 1\n10. **ItemId 1** - Quantity: 1\n11. **ItemId 2** - Quantity: 1\n12. **ItemId 3** - Quantity: 1\n13. **ItemId 4** - Quantity: 1\n14. **ItemId 5** - Quantity: 1\n15. **ItemId 6** - Quantity: 1\n16. **ItemId 216** - Quantity: 1\n17. **ItemId 936** - Qua",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "unavailable",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 15.7,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "Character 21836 is holding the following key items:\n\n1. **ItemId 65535** - Quantity: 10\n2. **ItemId 12636** - Quantity: 1\n3. **ItemId 12757** - Quantity: 1\n4. **ItemId 12887** - Quantity: 1\n5. **ItemId 13008** - Quantity: 1\n6. **ItemId 16534** - Quantity: 1\n7. **ItemId 13496** - Quantity: 1\n8. **ItemId 536** - Quantity: 1\n9. **ItemId 4112** - Quantity: 1\n10. **ItemId 1** - Quantity: 1\n11. **ItemId 2** - Quantity: 1\n12. **ItemId 3** - Quantity: 1\n13. **ItemId 4** - Quantity: 1\n14. **ItemId 5** - Quantity: 1\n15. **ItemId 6** - Quantity: 1\n16. **ItemId 216** - Quantity: 1\n17. **ItemId 936** - Qua",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "unavailable",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 15.6,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "Character 21836 is holding the following key items:\n\n1. **ItemId 65535** - Quantity: 10\n2. **ItemId 12636** - Quantity: 1\n3. **ItemId 12757** - Quantity: 1\n4. **ItemId 12887** - Quantity: 1\n5. **ItemId 13008** - Quantity: 1\n6. **ItemId 16534** - Quantity: 1\n7. **ItemId 13496** - Quantity: 1\n8. **ItemId 536** - Quantity: 1\n9. **ItemId 4112** - Quantity: 1\n10. **ItemId 1** - Quantity: 1\n11. **ItemId 2** - Quantity: 1\n12. **ItemId 3** - Quantity: 1\n13. **ItemId 4** - Quantity: 1\n14. **ItemId 5** - Quantity: 1\n15. **ItemId 6** - Quantity: 1\n16. **ItemId 216** - Quantity: 1\n17. **ItemId 936** - Qua",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "multi",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 2.8,
+   "ncalls": 3,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ],
+    [
+     "supervisor_test_runs",
+     {
+      "limit": 1
+     }
+    ],
+    [
+     "supervisor_test_runs",
+     {
+      "limit": 1
+     }
+    ]
+   ],
+   "text": "The function `supervisor_test_runs` is unable to accept the `limit` argument. Please try a different approach to retrieve the latest test run.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "multi",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 4.4,
+   "ncalls": 2,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ],
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "The supervisor health is as follows:\n- Gateway: Ready\n- Execution Enabled: False\n- Results Configured: True\n\nThe latest test run is:\n- Run ID: obs-20261019T070215Z\n- Latest: 2026-10-19T07:04:25.757936Z\n- Verdicts: PASS (1)\n- Features: moghancement\n- Count: 1\n\nNote: Imported records are not independently authenticated.",
+   "error": null
+  },
+  {
+   "model": "qwen3:8b",
+   "task": "multi",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 4.5,
+   "ncalls": 2,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ],
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "The supervisor health is as follows:\n- Gateway: Ready\n- Execution Enabled: False\n- Results Configured: True\n\nThe latest test run is:\n- Run ID: obs-20261019T070215Z\n- Latest: 2026-10-19T07:04:25.757936Z\n- Verdicts: 1 PASS\n- Features: moghancement\n- Count: 1\n\nNote: Imported records are not independently authenticated.",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "health",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 10.7,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "Mission Toolkit supervisor gateway"
+     }
+    ]
+   ],
+   "text": "The Mission Toolkit supervisor gateway is not healthy, and execution is not enabled.",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "health",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 2.4,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "Mission Toolkit supervisor gateway"
+     }
+    ]
+   ],
+   "text": "The Mission Toolkit supervisor gateway is not healthy, and execution is not enabled.",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "health",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 2.3,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "Mission Toolkit supervisor gateway"
+     }
+    ]
+   ],
+   "text": "The Mission Toolkit supervisor gateway is not healthy, and execution is not enabled.",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "test_runs",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 8.9,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "The latest test runs and their verdicts are:\n\n1. Run ID: obs-20261019T070215Z\n   Latest: 2026-10-19T07:04:25.757936Z\n   Verdicts: PASS (1)\n   Features: moghancement\n   Count: 1\n\n2. Run ID: obs-20261019T065856Z\n   Latest: 2026-10-19T07:01:03.725143Z\n   Verdicts: PASS (1)\n   Features: moghancement\n   Count: 1",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "test_runs",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 9.5,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "The latest test runs and their verdicts are:\n\n* Run ID: obs-20261019T070215Z\n* Latest: 2026-10-19T07:04:25.757936Z\n* Verdicts: PASS (1)\n* Features: moghancement\n* Count: 1\n\n* Run ID: obs-20261019T065856Z\n* Latest: 2026-10-19T07:01:03.725143Z\n* Verdicts: PASS (1)\n* Features: moghancement\n* Count: 1",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "test_runs",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 10.2,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "The latest test runs and their verdicts are as follows:\n\n- Run ID: obs-20261019T070215Z\n- Latest: 2026-10-19T07:04:25.757936Z\n- Verdicts: PASS (1)\n- Features: moghancement\n- Count: 1\n\n- Run ID: obs-20261019T065856Z\n- Latest: 2026-10-19T07:01:03.725143Z\n- Verdicts: PASS (1)\n- Features: moghancement\n- Count: 1",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "failures",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 2.2,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "There were no failed assertions in the recorded test results.",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "failures",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 1.9,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "There were no failed assertions in the recorded test results.",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "failures",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 1.9,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "There were no failed assertions in the recorded test results.",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "ollama",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 2.1,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "ollama"
+     }
+    ]
+   ],
+   "text": "The Ollama service is currently reachable.",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "ollama",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 2.1,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "ollama"
+     }
+    ]
+   ],
+   "text": "The ollama service is reachable right now.",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "ollama",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 2.1,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "ollama"
+     }
+    ]
+   ],
+   "text": "The Ollama service is currently reachable.",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "inventory",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 2.9,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": "21836"
+     }
+    ]
+   ],
+   "text": "The test character 21836 has 28 persisted inventory rows.",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "inventory",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 2.5,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": "21836"
+     }
+    ]
+   ],
+   "text": "The test character 21836 has 30 persisted inventory rows.",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "inventory",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 2.4,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": "21836"
+     }
+    ]
+   ],
+   "text": "The test character 21836 has 30 persisted inventory rows.",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "logs",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": false,
+   "grounded": true,
+   "secs": 2.5,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_log_errors",
+     {
+      "source": "dsp log"
+     }
+    ]
+   ],
+   "text": "The recent error lines from the dsp log are:\n\nHTTP 400",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "logs",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 27.7,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_log_errors",
+     {
+      "source": "dsp"
+     }
+    ]
+   ],
+   "text": "The recent error lines from the DSP log are:\n\n* [18/Oct] [15:23:58] [Error] GetPlayerByName :: Input string is not valid.\n* [18/Oct] [15:37:56] [Error] GetPlayerByName :: Input string is not valid.\n* [18/Oct] [15:41:56] [Error] GetPlayerByName :: Input string is not valid.\n* [18/Oct] [15:54:56] [Error] GetPlayerByName :: Input string is not valid.\n* [18/Oct] [16:52:00] [Debug] Message: Received message\n* [18/Oct] [16:52:06] [Debug] UpdateNMSpawnPoint: SQL error: No entries for mobid <17211702> found.\n* [18/Oct] [18:06:08] [Error] GetPlayerByName :: Input string is not valid.\n* [18/Oct] [18:13:",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "logs",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 7.0,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_log_errors",
+     {
+      "source": "dsp"
+     }
+    ]
+   ],
+   "text": "Recent error lines from the dsp log:\n\n* [Error] GetPlayerByName :: Input string is not valid. (repeated multiple times)\n* [Error] UpdateNMSpawnPoint: SQL error: No entries for mobid <17211702> found.\n* [Error] cmdhandler::call: (addgil): cannot open scripts/commands/addgil.lua: No such file or directory",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "unavailable",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 19.8,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": "21836"
+     }
+    ]
+   ],
+   "text": "The key items held by character 21836 are:\n\n* 10 x Item ID 65535\n* 1 x Item ID 12636\n* 1 x Item ID 12757\n* 1 x Item ID 12887\n* 1 x Item ID 13008\n* 1 x Item ID 16534\n* 1 x Item ID 13496\n* 1 x Item ID 536\n* 1 x Item ID 4112\n* 1 x Item ID 1\n* 1 x Item ID 2\n* 1 x Item ID 3\n* 1 x Item ID 4\n* 1 x Item ID 5\n* 1 x Item ID 6\n* 1 x Item ID 216\n* 12 x Item ID 936\n* 4 x Item ID 936\n* 1 x Item ID 4386\n* 12 x Item ID 936\n* 4 x Item ID 936\n* 1 x Item ID 4373\n* 1 x Item ID 4449\n* 1 x Item ID 770\n* 12 x Item ID 936\n* 4 x Item ID 936\n* 1 x Item ID 4448",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "unavailable",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 20.2,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": "21836"
+     }
+    ]
+   ],
+   "text": "The key items held by character 21836 are:\n\n* 10 x Item ID 65535\n* 1 x Item ID 12636\n* 1 x Item ID 12757\n* 1 x Item ID 12887\n* 1 x Item ID 13008\n* 1 x Item ID 16534\n* 1 x Item ID 13496\n* 1 x Item ID 536\n* 1 x Item ID 4112\n* 1 x Item ID 1\n* 1 x Item ID 2\n* 1 x Item ID 3\n* 1 x Item ID 4\n* 1 x Item ID 5\n* 1 x Item ID 6\n* 1 x Item ID 216\n* 12 x Item ID 936\n* 4 x Item ID 936\n* 1 x Item ID 4386\n* 12 x Item ID 936\n* 4 x Item ID 936\n* 1 x Item ID 4373\n* 1 x Item ID 4449\n* 1 x Item ID 770\n* 12 x Item ID 936\n* 4 x Item ID 936\n* 1 x Item ID 4448",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "unavailable",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 20.8,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": "21836"
+     }
+    ]
+   ],
+   "text": "The key items held by character 21836 are:\n\n* 10 x Item ID 65535\n* 1 x Item ID 12636\n* 1 x Item ID 12757\n* 1 x Item ID 12887\n* 1 x Item ID 13008\n* 1 x Item ID 16534\n* 1 x Item ID 13496\n* 1 x Item ID 536\n* 1 x Item ID 4112\n* 1 x Item ID 1\n* 1 x Item ID 2\n* 1 x Item ID 3\n* 1 x Item ID 4\n* 1 x Item ID 5\n* 1 x Item ID 6\n* 1 x Item ID 216\n* 12 x Item ID 936\n* 4 x Item ID 936\n* 1 x Item ID 4386\n* 12 x Item ID 936\n* 4 x Item ID 936\n* 1 x Item ID 4373\n* 1 x Item ID 4449\n* 1 x Item ID 770\n* 12 x Item ID 936\n* 4 x Item ID 936\n* 1 x Item ID 4448",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "multi",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": false,
+   "secs": 7.0,
+   "ncalls": 3,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ],
+    [
+     "supervisor_test_runs",
+     {}
+    ],
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "The supervisor is healthy.\n\nThe latest test run is obs-20261019T070215Z, which was run on 2026-10-19T07:04:25.757936Z.\n\nThere were no failures in the latest test run.",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "multi",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 7.9,
+   "ncalls": 3,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ],
+    [
+     "supervisor_test_runs",
+     {}
+    ],
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "The supervisor's health is ready and execution is enabled.\n\nThe latest test run is obs-20261019T070215Z, which was run on 2026-10-19T07:04:25.757936Z. This run had 1 PASS verdict.\n\nThere were no failed assertions in the latest test run.",
+   "error": null
+  },
+  {
+   "model": "llama3.1:latest",
+   "task": "multi",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 8.3,
+   "ncalls": 3,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ],
+    [
+     "supervisor_test_runs",
+     {}
+    ],
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "The supervisor's health is ready, execution is disabled, and results are configured.\n\nThe latest test run is obs-20261019T070215Z, which was executed on 2026-10-19T07:04:25.757936Z. This run had 1 PASS verdict.\n\nThere are no failed assertions.",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "health",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 10.8,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ]
+   ],
+   "text": "Based on the health check:\n\n- **Gateway status**: \u2705 **Healthy** \u2014 the supervisor gateway is `ready`\n- **Execution**: \u274c **Not enabled** \u2014 `execution_enabled` is `false`\n\nSo the Mission Toolkit supervisor gateway itself is healthy and operational, but **execution is currently disabled**. If you need the gateway to run tests, execution would need to be enabled.",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "health",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 3.4,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ]
+   ],
+   "text": "Based on the health check:\n\n- **Gateway status**: \u2705 **Healthy** \u2014 the supervisor gateway is `ready`.\n- **Execution**: \u274c **Not enabled** \u2014 `execution_enabled` is `false`.\n\nSo the Mission Toolkit supervisor gateway is healthy and ready, but **execution is currently disabled**. If you need the gateway to run tests, execution would need to be enabled.",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "health",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 2.9,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ]
+   ],
+   "text": "Based on the health check:\n\n- **Gateway status**: **Ready** (healthy)\n- **Execution enabled**: **No** (`execution_enabled: false`)\n- **Results configured**: Yes\n\nSo the Mission Toolkit supervisor gateway is **healthy/ready**, but **execution is not enabled**.",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "test_runs",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 6.4,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "Here are the latest test runs and their verdicts:\n\n| Run ID | Latest Timestamp | Verdicts | Features | Count |\n|---|---|---|---|---|\n| `obs-20261019T070215Z` | 2026-10-19 07:04:25 UTC | PASS (1) | moghancement | 1 |\n| `obs-20261019T065856Z` | 2026-10-19 07:01:03 UTC | PASS (1) | moghancement | 1 |\n\n**Summary:**\n- Both runs passed (1 PASS each).\n- Both runs exercise the **moghancement** feature.\n- The most recent run is `obs-20261019T070215Z` at 07:04:25 UTC.\n- Test execution is currently **disabled** (`execution_enabled: false`).\n\n> Note: These are imported records and are not independently au",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "test_runs",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 7.6,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "Here are the latest test runs and their verdicts:\n\n| Run ID | Latest Timestamp | Verdict | Features | Count |\n|---|---|---|---|---|\n| `obs-20261019T070215Z` | 2026-10-19 07:04:25 UTC | **PASS** (1) | moghancement | 1 |\n| `obs-20261019T065856Z` | 2026-10-19 07:01:03 UTC | **PASS** (1) | moghancement | 1 |\n\n**Summary:**\n- Both latest runs resulted in a **PASS** verdict.\n- The most recent run (`obs-20261019T070215Z`) ran at 07:04:25 UTC and passed 1 assertion.\n- The prior run (`obs-20261019T065856Z`) ran at 07:01:03 UTC and also passed 1 assertion.\n- Both runs exercised the **moghancement** featu",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "test_runs",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 7.5,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "Here are the latest test runs and their verdicts:\n\n| Run ID | Latest Timestamp | Verdict | Features | Count |\n|---|---|---|---|---|\n| `obs-20261019T070215Z` | 2026-10-19 07:04:25 UTC | **PASS** (1) | moghancement | 1 |\n| `obs-20261019T065856Z` | 2026-10-19 07:01:03 UTC | **PASS** (1) | moghancement | 1 |\n\n**Summary:**\n- Both most recent runs passed.\n- The most recent run (`obs-20261019T070215Z`) ran at 07:04:25 UTC and passed 1 test.\n- The prior run (`obs-20261019T065856Z`) ran at 07:01:03 UTC and also passed 1 test.\n- Both runs exercised the **moghancement** feature.\n- Test execution is curre",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "failures",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 5.2,
+   "ncalls": 2,
+   "calls": [
+    [
+     "supervisor_failed_assertions",
+     {}
+    ],
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "No, there were **no failed assertions** in the recorded test results.\n\nThe failed assertions query returned an empty list, and the test runs confirm this \u2014 both recorded runs (`obs-20261019T070215Z` and `obs-20261019T065856Z`) show only `PASS` verdicts, with no failures recorded.",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "failures",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 7.7,
+   "ncalls": 2,
+   "calls": [
+    [
+     "supervisor_failed_assertions",
+     {}
+    ],
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "Based on the recorded test results, **no, there were no failed assertions.**\n\nHere's the evidence:\n\n1. **Failed Assertions query** \u2014 returned an empty results list (0 failed assertions).\n\n2. **Test Runs** \u2014 two recorded runs, both with a verdict of **PASS: 1** and no failures:\n   - `obs-20261019T070215Z` (latest: 2026-10-19T07:04:25Z) \u2014 1 PASS\n   - `obs-20261019T065856Z` (latest: 2026-10-19T07:01:03Z) \u2014 1 PASS\n\nBoth runs used the `moghancement` feature and both passed. There were no failures recorded.",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "failures",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 5.8,
+   "ncalls": 2,
+   "calls": [
+    [
+     "supervisor_failed_assertions",
+     {}
+    ],
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "Based on the recorded test results, **no, there were no failed assertions.**\n\nHere's the evidence:\n\n1. **Failed Assertions query** \u2014 returned an empty results list (0 failed assertions).\n\n2. **Test Runs** \u2014 the two recorded runs both show only passing verdicts:\n   - `obs-20261019T070215Z` \u2014 1 PASS\n   - `obs-20261019T065856Z` \u2014 1 PASS\n\nBoth runs recorded a single passing test each, with no failures.",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "ollama",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 3.5,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "ollama"
+     }
+    ]
+   ],
+   "text": "Yes, the **ollama** service is reachable right now.\n\n- **Reachable:** \u2705 Yes\n- **Check type:** `tcp_connect_only` (TCP connectivity check)\n- **Configured:** Yes\n\nNote that this check is TCP-connect-only, so it confirms the service is listening and accepting connections, but doesn't verify that it responds correctly to API requests.",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "ollama",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 3.2,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "ollama"
+     }
+    ]
+   ],
+   "text": "Yes, the **ollama service is reachable right now**. The health check reports:\n- **Reachable:** \u2705 true\n- **Check type:** TCP connect only\n\nNote that this check is TCP-connect-only, meaning it confirms the service is listening on its port but does not validate deeper functionality (e.g., that it can actually serve model requests).",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "ollama",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 3.1,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_service_health",
+     {
+      "service": "ollama"
+     }
+    ]
+   ],
+   "text": "Yes, the **ollama** service is reachable right now. The health check reports:\n\n- **Configured:** yes\n- **Reachable:** yes\n- **Check type:** `tcp_connect_only`\n\nNote that this check is a TCP connection test only \u2014 it confirms the service is listening and accepting connections, but does not verify that model inference is actually functioning correctly.",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "inventory",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 13.8,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "Test character 21836 has **27 persisted inventory rows**.\n\nBreakdown by location:\n- **Location 0**: 9 rows (slots 0\u20137, 9)\n- **Location 1**: 18 rows (slots 1\u201318)",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "inventory",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 14.2,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "Test character 21836 has **27 persisted inventory rows**.\n\nBreakdown:\n- **Location 0**: 9 rows (slots 0\u20137 and slot 9)\n- **Location 1**: 18 rows (slots 1\u201318)",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "inventory",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 10.7,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "Test character 21836 has **27 persisted inventory rows**.\n\nThe inventory snapshot is from the persisted database (`snapshot_kind: \"persisted_db_not_live_memory\"`), containing 9 rows in location 0 and 18 rows in location 1.",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "logs",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 15.0,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_log_errors",
+     {
+      "source": "dsp"
+     }
+    ]
+   ],
+   "text": "Here are the recent error lines from the **dsp** log (tail):\n\n| Timestamp | Error |\n|---|---|\n| 18/Oct 15:23:58 | `GetPlayerByName :: Input string is not valid.` |\n| 18/Oct 15:37:56 | `GetPlayerByName :: Input string is not valid.` |\n| 18/Oct 15:41:56 | `GetPlayerByName :: Input string is not valid.` |\n| 18/Oct 15:54:56 | `GetPlayerByName :: Input string is not valid.` |\n| 18/Oct 16:52:00 | `UpdateNMSpawnPoint: SQL error: No entries for mobid <17211702> found.` |\n| 18/Oct 18:06:08 | `GetPlayerByName :: Input string is not valid.` |\n| 18/Oct 18:13:14 | `GetPlayerByName :: Input string is not va",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "logs",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 15.8,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_log_errors",
+     {
+      "source": "dsp"
+     }
+    ]
+   ],
+   "text": "Here are the recent error lines from the **dsp** log (tail):\n\n| Timestamp | Error |\n|---|---|\n| 18/Oct 15:23:58 | `GetPlayerByName :: Input string is not valid.` |\n| 18/Oct 15:37:56 | `GetPlayerByName :: Input string is not valid.` |\n| 18/Oct 15:41:56 | `GetPlayerByName :: Input string is not valid.` |\n| 18/Oct 15:54:56 | `GetPlayerByName :: Input string is not valid.` |\n| 18/Oct 16:52:00 | `[Debug] Message: Received message` |\n| 18/Oct 16:52:06 | `[Debug] UpdateNMSpawnPoint: SQL error: No entries for mobid <17211702> found.` |\n| 18/Oct 18:06:08 | `GetPlayerByName :: Input string is not valid.",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "logs",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 15.6,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_log_errors",
+     {
+      "source": "dsp"
+     }
+    ]
+   ],
+   "text": "Here are the recent error lines from the **dsp** log:\n\n| Timestamp | Error |\n|---|---|\n| 18/Oct 15:23:58 | `GetPlayerByName :: Input string is not valid.` |\n| 18/Oct 15:37:56 | `GetPlayerByName :: Input string is not valid.` |\n| 18/Oct 15:41:56 | `GetPlayerByName :: Input string is not valid.` |\n| 18/Oct 15:54:56 | `GetPlayerByName :: Input string is not valid.` |\n| 18/Oct 16:52:00 | `[Debug] Message: Received message` |\n| 18/Oct 16:52:06 | `UpdateNMSpawnPoint: SQL error: No entries for mobid <17211702> found.` |\n| 18/Oct 18:06:08 | `GetPlayerByName :: Input string is not valid.` |\n| 18/Oct 18",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "unavailable",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 14.8,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "Character **21836** holds the following items (as returned by the inventory snapshot):\n\n**Location 0 (main inventory):**\n| Slot | Item ID | Quantity |\n|------|---------|----------|\n| 0 | 65535 | 10 |\n| 1 | 12636 | 1 |\n| 2 | 12757 | 1 |\n| 3 | 12887 | 1 |\n| 4 | 13008 | 1 |\n| 5 | 16534 | 1 |\n| 6 | 13496 | 1 |\n| 7 | 536 | 1 |\n| 9 | 4112 | 1 |\n\n**Location 1 (backpack):**\n| Slot | Item ID | Quantity |\n|------|---------|----------|\n| 1 | 1 | 1 |\n| 2 | 2 | 1 |\n| 3 | 3 | 1 |\n| 4 | 4 | 1 |\n| 5 | 5 | 1 |\n| 6 | 6 | 1 |\n| 7 | 216 | 1 |\n| 8 | 936 | 12 |\n| 9 | 936 | 4 |\n| 10 | 4386 | 1 |\n| 11 | 936 | 12 |\n| ",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "unavailable",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 14.9,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "Here are the items held by character **21836**, listed by inventory slot with their item IDs and quantities:\n\n**Location 0:**\n| Slot | Item ID | Quantity |\n|------|---------|----------|\n| 0 | 65535 | 10 |\n| 1 | 12636 | 1 |\n| 2 | 12757 | 1 |\n| 3 | 12887 | 1 |\n| 4 | 13008 | 1 |\n| 5 | 16534 | 1 |\n| 6 | 13496 | 1 |\n| 7 | 536 | 1 |\n| 9 | 4112 | 1 |\n\n**Location 1:**\n| Slot | Item ID | Quantity |\n|------|---------|----------|\n| 1 | 1 | 1 |\n| 2 | 2 | 1 |\n| 3 | 3 | 1 |\n| 4 | 4 | 1 |\n| 5 | 5 | 1 |\n| 6 | 6 | 1 |\n| 7 | 216 | 1 |\n| 8 | 936 | 12 |\n| 9 | 936 | 4 |\n| 10 | 4386 | 1 |\n| 11 | 936 | 12 |\n| 12 | 9",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "unavailable",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 12.5,
+   "ncalls": 1,
+   "calls": [
+    [
+     "supervisor_test_character_inventory",
+     {
+      "charid": 21836
+     }
+    ]
+   ],
+   "text": "Character **21836** is configured, and its inventory contains the following items (identified by item ID and quantity):\n\n**Location 0:**\n| Slot | Item ID | Quantity |\n|------|---------|----------|\n| 0 | 65535 | 10 |\n| 1 | 12636 | 1 |\n| 2 | 12757 | 1 |\n| 3 | 12887 | 1 |\n| 4 | 13008 | 1 |\n| 5 | 16534 | 1 |\n| 6 | 13496 | 1 |\n| 7 | 536 | 1 |\n| 9 | 4112 | 1 |\n\n**Location 1:**\n| Slot | Item ID | Quantity |\n|------|---------|----------|\n| 1 | 1 | 1 |\n| 2 | 2 | 1 |\n| 3 | 3 | 1 |\n| 4 | 4 | 1 |\n| 5 | 5 | 1 |\n| 6 | 6 | 1 |\n| 7 | 216 | 1 |\n| 8 | 936 | 12 |\n| 9 | 936 | 4 |\n| 10 | 4386 | 1 |\n| 11 | 936 | 12",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "multi",
+   "trial": 0,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 10.7,
+   "ncalls": 2,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ],
+    [
+     "supervisor_test_runs",
+     {}
+    ]
+   ],
+   "text": "## Supervisor Health\n\n| Metric | Status |\n|---|---|\n| Gateway | \u2705 ready |\n| Execution Enabled | \u26a0\ufe0f **disabled** |\n| Results Configured | \u2705 true |\n\nThe gateway is up and results are configured, but **test execution is currently disabled**.\n\n## Latest Test Run\n\n**Run ID:** `obs-20261019T070215Z`\n**Latest timestamp:** `2026-10-19T07:04:25.757936Z`\n**Features:** `moghancement`\n**Test count:** 1\n\n### Failures\n**None.** The latest run (and the previous run `obs-20261019T065856Z`) both returned a clean verdict:\n\n- **PASS: 1** \u2014 no failures recorded.\n\n### Summary\nBoth runs are green with a single pass",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "multi",
+   "trial": 1,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 12.3,
+   "ncalls": 3,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ],
+    [
+     "supervisor_test_runs",
+     {}
+    ],
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "## Supervisor Health\n\n| Component | Status |\n|-----------|--------|\n| Gateway | \u2705 ready |\n| Execution | \u26a0\ufe0f disabled |\n| Results configured | \u2705 yes |\n\nThe supervisor gateway is **ready**, and results are configured. However, **execution is currently disabled**, meaning no new tests are being run automatically.\n\n---\n\n## Latest Test Run Summary\n\nThe most recent test run is **`obs-20261019T070215Z`**, with the latest timestamp of **2026-10-19T07:04:25Z**.\n\n**Verdicts:**\n- \u2705 **PASS: 1**\n- \u274c **FAIL: 0**\n\n**Details:**\n- **Feature tested:** `moghancement`\n- **Test count:** 1\n- **Failed assertions:** N",
+   "error": null
+  },
+  {
+   "model": "ornith-1.5:9b",
+   "task": "multi",
+   "trial": 2,
+   "tool_ok": true,
+   "args_ok": true,
+   "grounded": true,
+   "secs": 13.8,
+   "ncalls": 3,
+   "calls": [
+    [
+     "supervisor_health",
+     {}
+    ],
+    [
+     "supervisor_test_runs",
+     {}
+    ],
+    [
+     "supervisor_failed_assertions",
+     {}
+    ]
+   ],
+   "text": "## Supervisor Health\n\n| Component | Status |\n|-----------|--------|\n| Gateway | \u2705 Ready |\n| Execution Enabled | \u26a0\ufe0f **Disabled** |\n| Results Configured | \u2705 Yes |\n\nThe gateway is up and results are configured, but **execution is currently disabled** \u2014 meaning no new tests are being run.\n\n## Latest Test Run\n\n**Run ID:** `obs-20261019T070215Z`\n**Latest timestamp:** `2026-10-19T07:04:25.757936Z`\n**Feature:** `moghancement`\n**Test count:** 1\n\n### Failures\n**None.** The latest run returned a verdict of **1 PASS** and there are **no failed assertions** recorded.\n\n### Summary\n- The most recent run (`ob",
+   "error": null
+  },
+  {
+   "model": "qwen:latest",
+   "task": "health",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.5,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "health",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "health",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "test_runs",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "test_runs",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "test_runs",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "failures",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "failures",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "failures",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "ollama",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "ollama",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "ollama",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "inventory",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "inventory",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "inventory",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "logs",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "logs",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "logs",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "unavailable",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "unavailable",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "unavailable",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "multi",
+   "trial": 0,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "multi",
+   "trial": 1,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  },
+  {
+   "model": "qwen:latest",
+   "task": "multi",
+   "trial": 2,
+   "tool_ok": false,
+   "args_ok": false,
+   "grounded": false,
+   "secs": 0.0,
+   "ncalls": 0,
+   "calls": [],
+   "text": "",
+   "error": "{\"error\":\"registry.ollama.ai/library/qwen:latest does not support tools\"}"
+  }
+ ]
+}
