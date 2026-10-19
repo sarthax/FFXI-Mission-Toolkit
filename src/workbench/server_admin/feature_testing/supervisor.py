@@ -17,6 +17,7 @@ from .service_health import service_health
 from .database_diagnostics import inventory_snapshot
 from .source_diagnostics import search_source
 from .failure_diagnostics import failure_summary
+from .investigation_dossier import investigation_dossier
 
 router = APIRouter(prefix="/api/supervisor", tags=["Local Test Supervisor"])
 
@@ -134,6 +135,23 @@ def supervisor_search_source(term: str, repository: str = "toolkit",
     _authorize(authorization)
     try:
         return search_source(repository, term)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/investigation/{run_id}", operation_id="supervisor_investigation_dossier")
+def supervisor_investigation_dossier(run_id: str, repository: str = "dsp",
+                                     authorization: str | None = Header(default=None)):
+    """Inspect imported failures and candidate source locations; never execute."""
+    _authorize(authorization)
+    db = _results_db()
+    if not db:
+        raise HTTPException(status_code=503, detail="Results database not configured")
+    try:
+        records = results_for_run(db, run_id)
+        if not records:
+            raise HTTPException(status_code=404, detail="Run not found")
+        return investigation_dossier(records, repository=repository)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
