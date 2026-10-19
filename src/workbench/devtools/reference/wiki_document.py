@@ -10,7 +10,7 @@ from html.parser import HTMLParser
 
 import mwparserfromhell
 
-PARSER_VERSION = "wiki-doc-v4-table-cell-attributes"
+PARSER_VERSION = "wiki-doc-v5-simple-template-values"
 # Source-original, exact-label allowlist shared by template and table review hints.
 # Do not infer field semantics from translated prose or emit graph edges here.
 REVIEW_FIELD_TYPES={
@@ -106,6 +106,29 @@ def _block(page_id: str, ordinal: int, block_type: str, text: str = "", **kw) ->
         "metadata": kw.get("metadata") or {},
         "source_locator": kw.get("source_locator"),
     }
+
+
+def _template_display_value(raw_value: str) -> str:
+    """Render a simple wrapper template's visible argument for review only.
+
+    Never guess complex parser-function output or a template's actual expansion.
+    The unmodified source remains the authority for downstream review.
+    """
+    code = mwparserfromhell.parse(raw_value or "")
+    rendered = str(code.strip_code(normalize=True, collapse=True)).strip()
+    if rendered or not (raw_value or "").strip():
+        return rendered
+    nodes = code.filter_templates(recursive=False)
+    if len(nodes) != 1 or str(code).strip() != str(nodes[0]).strip():
+        return rendered
+    node = nodes[0]
+    # Only wrappers with exactly one positional, nonempty, non-nested argument.
+    if len(node.params) != 1 or node.params[0].showkey:
+        return rendered
+    value = str(node.params[0].value).strip()
+    if not value or "{{" in value or "}}" in value or "<" in value:
+        return rendered
+    return str(mwparserfromhell.parse(value).strip_code(normalize=True, collapse=True)).strip()
 
 
 def _mediawiki_cell_parts(raw_cell: str) -> tuple[str, str | None]:
@@ -226,7 +249,7 @@ def mediawiki_blocks(page_id: str, wikitext: str) -> list[dict]:
                 if not field_name:
                     continue
                 raw_value=str(param.value).strip()
-                display=str(mwparserfromhell.parse(raw_value).strip_code(normalize=True,collapse=True)).strip()
+                display=_template_display_value(raw_value)
                 ordinal+=1
                 blocks.append(_block(
                     page_id,ordinal,"template_field",display,
