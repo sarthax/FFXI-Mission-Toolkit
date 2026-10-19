@@ -173,6 +173,21 @@ def launch_test(request: Request, payload: LaunchRequest,
     return {"job_id": job_id, "status": "QUEUED", "case_id": "MOG-09"}
 
 
+class RecoveryRequest(BaseModel):
+    acknowledged: bool = False
+
+
+@router.post("/builder/jobs/{job_id}/reconcile", include_in_schema=False)
+def reconcile_execution_job(request: Request, job_id: str, payload: RecoveryRequest,
+                            x_test_operator_token: str | None = Header(default=None)):
+    _operator_auth(request, x_test_operator_token)
+    from .execution_jobs import recover_interrupted
+    try:
+        return recover_interrupted(job_id, acknowledged=payload.acknowledged)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
 @router.get("/builder/jobs", include_in_schema=False)
 def execution_jobs(request: Request, x_test_operator_token: str | None = Header(default=None)):
     _operator_auth(request, x_test_operator_token)
