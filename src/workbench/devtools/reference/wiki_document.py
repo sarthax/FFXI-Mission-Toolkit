@@ -10,7 +10,7 @@ from html.parser import HTMLParser
 
 import mwparserfromhell
 
-PARSER_VERSION = "wiki-doc-v5-simple-template-values"
+PARSER_VERSION = "wiki-doc-v6-table-spans"
 # Source-original, exact-label allowlist shared by template and table review hints.
 # Do not infer field semantics from translated prose or emit graph edges here.
 REVIEW_FIELD_TYPES={
@@ -315,8 +315,8 @@ class _HTMLBlocks(HTMLParser):
             elif tag == "li": self.emit("list_item", text, metadata={"depth": 1})
             elif tag == "dt": self.emit("definition_term", text)
             elif tag == "dd": self.emit("definition", text)
-            elif tag == "th": self.emit("table_header_cell", text)
-            elif tag == "td": self.emit("table_cell", text)
+            elif tag == "th": self.emit("table_header_cell", text, metadata={"html_attributes":state["attrs"]})
+            elif tag == "td": self.emit("table_cell", text, metadata={"html_attributes":state["attrs"]})
             elif tag == "a":
                 href = state["attrs"].get("href")
                 if href: self.emit("link", text or href, target=href, metadata={"hidden": True})
@@ -498,31 +498,67 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
                     headers=headers or tk=="table_header_cell"
                     row.append({"text":tb.get("text") or "","header":tk=="table_header_cell",
                                 "source_locator":tb.get("source_locator"),
-                                "raw_value":(tb.get("metadata") or {}).get("raw_value")})
+                                "raw_value":(tb.get("metadata") or {}).get("raw_value"),
+                                "html_attributes":(tb.get("metadata") or {}).get("html_attributes"),
+                                "cell_attributes":(tb.get("metadata") or {}).get("cell_attributes")})
                 i+=1
             if row: rows.append(row)
             # A heading and an explicit first-column label make a useful
             # *review candidate*, not proof of a gameplay relationship.
             # Keep these annotations purely in presentation, never in graph imports.
             candidates=[]
-            col_headers={}  # column index -> (field_type, header cell, header row index)
+            col_headers={}  # absolute column index -> (field_type, header cell, header row)
+            # HTML/PukiWiki rowspan cells occupy columns in subsequent rows.
+            # Preserve the physical cells for display; align only review hints.
+            active_spans={}  # absolute column -> remaining subsequent rows
             for row_index, cells in enumerate(rows):
+                occupied=set(active_spans)
+                positioned={}
+                pending={}
+                next_col=0
+                for cell in cells:
+                    while next_col in occupied:
+                        next_col+=1
+                    attrs=cell.get("html_attributes") or {}
+                    mw_attrs=cell.get("cell_attributes") or ""
+                    def span_size(name):
+                        raw=attrs.get(name)
+                        if raw is None:
+                            match=re.search(r"\\b"+name+r'\\s*=\\s*["\\']?(\\d+)', mw_attrs, re.I)
+                            raw=match.group(1) if match else 1
+                        try:
+                            n=int(raw)
+                            return n if 1 <= n <= 100 else 1
+                        except (ValueError,TypeError):
+                            return 1
+                    colspan=span_size("colspan")
+                    rowspan=span_size("rowspan")
+                    positioned[next_col]=cell
+                    for col in range(next_col,next_col+colspan):
+                        occupied.add(col)
+                        if rowspan>1:
+                            pending[col]=max(pending.get(col,0),rowspan-1)
+                    next_col+=colspan
+                active_spans={col:n-1 for col,n in active_spans.items() if n>1}
+                for col,n in pending.items():
+                    active_spans[col]=max(active_spans.get(col,0),n)
                 if cells and all(c["header"] for c in cells):
                     # Column-header semantics: a policy label in a header row types the cells beneath it.
                     col_headers={}
-                    for col, hc in enumerate(cells):
+                    for col, hc in positioned.items():
                         ftype=review_field_type(hc["text"])
                         if ftype:
                             col_headers[col]=(ftype,hc,row_index)
                     continue
                 for col,(ftype,hc,hrow) in col_headers.items():
-                    if col < len(cells) and not cells[col]["header"] and cells[col]["text"].strip():
+                    if col in positioned and not positioned[col]["header"] and positioned[col]["text"].strip():
+                        value_cell=positioned[col]
                         candidates.append({"row_index":row_index,"column_index":col,"header_row_index":hrow,
                                            "field":hc["text"],"field_type":ftype,
-                                           "value":cells[col]["text"].strip(),"review_only":True,
+                                           "value":value_cell["text"].strip(),"review_only":True,
                                            "orientation":"column",
-                                           "value_source_locator":cells[col].get("source_locator"),
-                                           "value_raw":cells[col].get("raw_value"),
+                                           "value_source_locator":value_cell.get("source_locator"),
+                                           "value_raw":value_cell.get("raw_value"),
                                            "field_source_locator":hc.get("source_locator")})
                 if len(cells)<2:
                     continue
