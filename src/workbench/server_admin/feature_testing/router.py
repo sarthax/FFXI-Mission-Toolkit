@@ -118,8 +118,38 @@ def results_api(feature_id: str | None = None, case_id: str | None = None):
             if _results_db() else [], "execution_enabled": False}
 
 
+def dashboard_view(*, tab: str = "runs", feature: str = "", verdict: str = "",
+                   query: str = "", page: int = 1) -> dict:
+    """Build a bounded view without altering the append-only evidence store."""
+    tab = tab if tab in {"runs", "catalog", "guide"} else "runs"
+    verdict = verdict.upper()
+    if verdict not in {"PASS", "FAIL", "BLOCKED", "SKIPPED"}:
+        verdict = ""
+    feature = feature[:64]
+    query = query.strip()[:100]
+    page = min(max(int(page), 1), 1000)
+    records = _history()
+    runs = _run_summary(records)
+    if feature:
+        runs = [run for run in runs if feature in run["features"]]
+    if verdict:
+        runs = [run for run in runs if run["verdicts"].get(verdict, 0)]
+    if query:
+        runs = [run for run in runs if query.casefold() in run["run_id"].casefold()]
+    page_size = 20
+    total = len(runs)
+    max_page = max(1, (total + page_size - 1) // page_size)
+    page = min(page, max_page)
+    return {"tab": tab, "runs": runs[(page - 1) * page_size:page * page_size],
+            "total_runs": total, "page": page, "max_page": max_page,
+            "feature_filter": feature, "verdict_filter": verdict, "query_filter": query,
+            "features": _summaries(), "evidence_count": len(records),
+            "results_configured": bool(_results_db()), "execution_enabled": False}
+
+
 @router.get("", response_class=HTMLResponse)
-def dashboard(request: Request):
+def dashboard(request: Request, tab: str = "runs", feature: str = "",
+              verdict: str = "", query: str = "", page: int = 1):
+    view = dashboard_view(tab=tab, feature=feature, verdict=verdict, query=query, page=page)
     return templates.TemplateResponse(request=request, name="feature_testing.html",
-                                      context={"title": "Feature Testing & Validation",
-                                               "features": _summaries(), "runs": _run_summary(_history()), "execution_enabled": False})
+                                      context={"title": "Feature Testing & Validation", **view})
