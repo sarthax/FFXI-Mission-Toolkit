@@ -15,12 +15,12 @@ templates = Jinja2Templates(directory=str(GUI_ROOT / "templates"))
 _REPO = Path(__file__).resolve().parents[4]
 
 
-def test_catalog() -> dict:
+def load_test_catalog() -> dict:
     return json.loads((_REPO / "data/testing/feature_test_readiness.json").read_text(encoding="utf-8"))
 
 
 def scenario_detail(feature_id: str, case_id: str) -> dict:
-    catalog = test_catalog()
+    catalog = load_test_catalog()
     feature = next((f for f in catalog["features"] if f["id"] == feature_id), None)
     if feature is None:
         raise HTTPException(404, "Unknown feature")
@@ -55,7 +55,7 @@ def scenario_page(request: Request, feature_id: str, case_id: str):
 
 def _summaries() -> list[dict]:
     features = []
-    for f in test_catalog()["features"]:
+    for f in load_test_catalog()["features"]:
         counts = {}
         for case in f.get("cases", []):
             key = case.get("status", "planned")
