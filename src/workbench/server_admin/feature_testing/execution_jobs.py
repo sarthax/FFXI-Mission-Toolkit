@@ -1,0 +1,99 @@
+"""Opt-in local operator-only MOG-09 execution and durable job history.
+
+No model tools, arbitrary commands, or general-purpose scripting. The separate
+operator token is never returned by this module; HTTP routes must require it.
+"""
+from __future__ import annotations
+
+import hmac
+import json
+import os
+import sqlite3
+import threading
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+
+from .execution_cli import execute_mog09
+
+_LOCK = threading.Lock()
+
+
+def _db_path() -> Path:
+    configured = os.environ.get("MISSION_TOOLKIT_TEST_JOBS_DB", "")
+    if not configured:
+        raise ValueError("MISSION_TOOLKIT_TEST_JOBS_DB not configured")
+    path = Path(configured)
+    if not path.is_absolute() or not path.parent.is_dir():
+        raise ValueError("job database path must be absolute and parent must exist")
+    return path
+
+
+def authorize_operator(token: str | None) -> None:
+    expected = os.environ.get("MISSION_TOOLKIT_TEST_OPERATOR_TOKEN", "")
+    if len(expected) < 32 or not token or not hmac.compare_digest(token, expected):
+        raise PermissionError("Operator execution not configured or unauthorized")
+
+
+def _connect() -> sqlite3.Connection:
+    conn = sqlite3.connect(str(_db_path()), timeout=5)
+    conn.execute("""CREATE TABLE IF NOT EXISTS feature_test_jobs (
+        id TEXT PRIMARY KEY, created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+        case_id TEXT NOT NULL, status TEXT NOT NULL, account TEXT NOT NULL,
+        charid INTEGER NOT NULL, run_id TEXT, verdict TEXT, error TEXT)""")
+    return conn
+
+
+def _stamp() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def jobs(limit: int = 20) -> list[dict]:
+    if not 1 <= limit <= 50:
+        raise ValueError("invalid job history limit")
+    with _LOCK, _connect() as db:
+        db.row_factory = sqlite3.Row
+        rows = db.execute("SELECT * FROM feature_test_jobs ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+    return [dict(row) for row in rows]
+
+
+def _set_status(job_id: str, status: str, *, run_id=None, verdict=None, error=None) -> None:
+    with _LOCK, _connect() as db:
+        db.execute("UPDATE feature_test_jobs SET status=?, updated_at=?, run_id=?, verdict=?, error=? WHERE id=?",
+                   (status, _stamp(), run_id, verdict, error, job_id))
+
+
+def _run(job_id: str, account: str, charid: int, port: int, artifacts: Path) -> None:
+    _set_status(job_id, "RUNNING")
+    try:
+        outcome = execute_mog09(account=account, charid=charid, out_dir=artifacts,
+                                supervisor=f"http://127.0.0.1:{port}", approved=True)
+    except Exception:
+        # Diagnostics remain in local artifacts; do not disclose command output or credentials.
+        _set_status(job_id, "ERROR", error="Runner failed; inspect local test artifacts and service logs")
+    else:
+        _set_status(job_id, "COMPLETED", run_id=outcome["run_id"], verdict=outcome["verdict"])
+
+
+def enqueue(account: str, charid: int, port: int) -> str:
+    from .test_builder import build_plan
+    plan = build_plan(account, charid, port)
+    if not plan["ready_for_operator_review"]:
+        raise ValueError("Test is not ready for operator launch or character not approved")
+    folder = os.environ.get("MISSION_TOOLKIT_TEST_ARTIFACTS_ROOT", "")
+    root = Path(folder)
+    if not folder or not root.is_absolute() or not root.is_dir() or root.is_symlink():
+        raise ValueError("MISSION_TOOLKIT_TEST_ARTIFACTS_ROOT must be an existing absolute directory")
+    with _LOCK, _connect() as db:
+        active = db.execute("SELECT COUNT(*) FROM feature_test_jobs WHERE status IN ('QUEUED','RUNNING')").fetchone()[0]
+        if active:
+            raise ValueError("Another test job is already active; investigate stale jobs before retrying")
+        job_id = uuid.uuid4().hex
+        stamp = _stamp()
+        db.execute("INSERT INTO feature_test_jobs (id, created_at, updated_at, case_id, status, account, charid) VALUES (?,?,?,?,?,?,?)",
+                   (job_id, stamp, stamp, "MOG-09", "QUEUED", account, charid))
+    artifacts = root / ("mog09-" + job_id)
+    thread = threading.Thread(target=_run, args=(job_id, account, charid, port, artifacts),
+                              name="mog09-" + job_id[:8], daemon=True)
+    thread.start()
+    return job_id
