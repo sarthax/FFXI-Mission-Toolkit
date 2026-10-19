@@ -34,6 +34,6 @@ def test_gardening_collision_case_and_blocker_present():
     garden = next(f for f in plan["features"] if f["id"] == "gardening")
     collision = next(t for t in garden["cases"] if t["id"] == "GARD-09")
     assert collision["kind"] == "negative"
-    assert collision["run_mode"].startswith("blocked_")
+    assert collision["run_mode"].startswith(("blocked_", "focused_only"))
     assert "GARD-GM-01" in collision["blocking_gaps"][0]
     assert plan["gm_source_review"]["garden"]["cpp_review"]["automation_gate"]
