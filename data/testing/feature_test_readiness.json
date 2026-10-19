@@ -1,0 +1,1043 @@
+{
+  "schema_version": 1,
+  "description": "Planning inventory only: all commands are candidates until local DSP Lua semantics and privileges are verified. No commands auto-executable.",
+  "source_repos": {
+    "toolkit": "sarthax/FFXI-Mission-Toolkit",
+    "headless": "sarthax/xiheadless-dsp",
+    "dsp": "selected local DSP checkout, revision not verified"
+  },
+  "execution_policy": {
+    "default": "manual_only",
+    "require": "authorized disposable test characters; explicit operator approval; verified server profile/revision; before/after state assertions; safe cleanup and audit trail",
+    "forbid": "unreviewed global clocks, production database edits, automatic high privilege execution"
+  },
+  "features": [
+    {
+      "id": "gardening",
+      "name": "Mog House gardening",
+      "existing_gm_candidates": [
+        "garden",
+        "moghancement",
+        "timeoffset",
+        "additem",
+        "delitem",
+        "hasitem"
+      ],
+      "headless_candidates": [
+        "inventory",
+        "use_item",
+        "talk_to_npc",
+        "event_select",
+        "snapshot",
+        "logout"
+      ],
+      "cases": [
+        {
+          "id": "GARD-01",
+          "kind": "positive",
+          "title": "place pot and plant valid seed",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "GARD-02",
+          "kind": "positive",
+          "title": "feed permitted crystal at valid growth stage",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "GARD-03",
+          "kind": "positive",
+          "title": "advance growth with garden diagnostic and harvest valid yield",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "GARD-04",
+          "kind": "negative",
+          "title": "reject crystal at invalid stage",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "GARD-05",
+          "kind": "negative",
+          "title": "reject plant without pot or seed",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "GARD-06",
+          "kind": "negative",
+          "title": "full inventory harvest does not lose or duplicate reward",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "GARD-07",
+          "kind": "persistence",
+          "title": "growth and treatment survive relog",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "GARD-08",
+          "kind": "negative",
+          "title": "repeat harvest cannot duplicate rewards",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "GARD-09",
+          "kind": "negative",
+          "title": "Same numeric slot in Mog Safe and Safe 2 must not cause unintended dual-pot mutation",
+          "status": "planned",
+          "evidence_required": [
+            "pre/post garden info with both container IDs",
+            "authoritative pot storage state"
+          ],
+          "blocking_gaps": [
+            "GARD-GM-01 scoped command or unique-slot preflight"
+          ],
+          "negative_invariant": "only explicitly addressed container+slot changes",
+          "run_mode": "focused_only_not_required_for_batch",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        }
+      ],
+      "gaps": [
+        "verify !garden local Lua syntax and side effects",
+        "headless furnishing/gardening menu interaction and growth-state observation",
+        "fixture-safe day advance scoped to disposable character",
+        "GARD-GM-01: container+slot-specific inspect/mutate operations; current !garden slot may affect both safes"
+      ],
+      "new_command_review": [
+        "garden state query and bounded per-character stage advance only if existing !garden lacks them",
+        "GARD-GM-01 scoped garden-state diagnostic or safe extension with explicit container+slot; preserve existing command behavior for manual use (focused-only optional; NOT a batch blocker)"
+      ],
+      "command_verification": "pending_local_lua_audit",
+      "preferred_execution_mode": "batch_moghouse",
+      "batch_plan": "data/testing/gardening_batch_plan.json"
+    },
+    {
+      "id": "voidwalker",
+      "name": "Voidwalker",
+      "existing_gm_candidates": [
+        "addkeyitem",
+        "delkeyitem",
+        "haskeyitem",
+        "checknav",
+        "mobskilldiag",
+        "getmobaction",
+        "spawnmob"
+      ],
+      "headless_candidates": [
+        "move_to",
+        "nearby_entities",
+        "talk_to_npc",
+        "engage",
+        "inventory",
+        "wait_for_event"
+      ],
+      "cases": [
+        {
+          "id": "VWK-01",
+          "kind": "positive",
+          "title": "clear abyssite track pop defeat and tier transition",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "VWK-02",
+          "kind": "positive",
+          "title": "colorful/black progression and second zone",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "VWK-03",
+          "kind": "negative",
+          "title": "no abyssite prevents pop",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "VWK-04",
+          "kind": "negative",
+          "title": "wrong zone or tier does not trigger target NM",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "VWK-05",
+          "kind": "negative",
+          "title": "repeat pop/cooldown cannot duplicate NM",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "VWK-06",
+          "kind": "negative",
+          "title": "death, disengage, and zoning clean up encounter state",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "VWK-07",
+          "kind": "positive",
+          "title": "skill effects and rewards match server definitions",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        }
+      ],
+      "gaps": [
+        "confirm feature branch is deployed in active DSP server",
+        "tracking hint and abyssite progression observation",
+        "special-skill outcome assertions"
+      ],
+      "new_command_review": [
+        "read-only voidwalker per-character tracking/tier diagnostic if existing commands cannot expose state"
+      ],
+      "command_verification": "pending_local_lua_audit"
+    },
+    {
+      "id": "assault_nyzul",
+      "name": "Assault and Nyzul",
+      "existing_gm_candidates": [
+        "warpassault",
+        "setstage",
+        "testmine",
+        "nyzuldebug",
+        "nyzulflorlayout",
+        "nyzulnavsweep"
+      ],
+      "headless_candidates": [
+        "zone_to",
+        "move_to",
+        "engage",
+        "party",
+        "wait_for_event"
+      ],
+      "cases": [
+        {
+          "id": "ASLT-01",
+          "kind": "positive",
+          "title": "enter eligible instance and complete objective",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "ASLT-02",
+          "kind": "negative",
+          "title": "missing permit or eligibility rejects entry",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "ASLT-03",
+          "kind": "negative",
+          "title": "expired timer fails without reward",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "ASLT-04",
+          "kind": "negative",
+          "title": "repeat completion does not duplicate rewards",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "NYZ-01",
+          "kind": "positive",
+          "title": "floor layout and objective completion",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "NYZ-02",
+          "kind": "negative",
+          "title": "invalid floor transitions rejected",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        }
+      ],
+      "gaps": [
+        "instance entry/exit packet and objective-state visibility",
+        "authoritative reward/time assertions"
+      ],
+      "new_command_review": [
+        "read-only instance objective/timer diagnostic if nyzuldebug lacks it"
+      ],
+      "command_verification": "pending_local_lua_audit"
+    },
+    {
+      "id": "missions_quests",
+      "name": "Missions and quests",
+      "existing_gm_candidates": [
+        "addmission",
+        "delmission",
+        "checkmission",
+        "completemission",
+        "addquest",
+        "delquest",
+        "checkquest",
+        "completequest",
+        "checkvar",
+        "setplayervar",
+        "addkeyitem"
+      ],
+      "headless_candidates": [
+        "talk_to_npc",
+        "event_select",
+        "inventory",
+        "wait_for_event",
+        "move_to"
+      ],
+      "cases": [
+        {
+          "id": "MQ-01",
+          "kind": "positive",
+          "title": "complete eligible NPC progression",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "MQ-02",
+          "kind": "negative",
+          "title": "prerequisite missing blocks progression",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "MQ-03",
+          "kind": "negative",
+          "title": "wrong dialog choice leaves state unchanged",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "MQ-04",
+          "kind": "persistence",
+          "title": "relog retains progression and KIs",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        },
+        {
+          "id": "MQ-05",
+          "kind": "negative",
+          "title": "repeat reward not duplicated",
+          "status": "planned",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
+        }
+      ],
+      "gaps": [
+        "per-feature variable mapping and server-side readback"
+      ],
+      "new_command_review": [],
+      "command_verification": "pending_local_lua_audit"
+    },
+    {
+      "id": "moghancement",
+      "name": "Moghancement / Moglification",
+      "existing_gm_candidates": [
+        "moghancement",
+        "additem",
+        "hasitem",
+        "addkeyitem",
+        "delkeyitem",
+        "getmod"
+      ],
+      "headless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "command_verification": "moghancement_source_reviewed_main_runtime_not_verified",
+      "oracle": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+      "source_sql": "sql/item_furnishing.sql",
+      "cases": [
+        {
+          "id": "MOG-01",
+          "title": "single furnishing produces its configured KI",
+          "kind": "positive",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": null
+        },
+        {
+          "id": "MOG-02",
+          "title": "same element strongest installed furniture determines KI",
+          "kind": "positive",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": null
+        },
+        {
+          "id": "MOG-03",
+          "title": "aggregate dominant element calculation",
+          "kind": "positive",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": null
+        },
+        {
+          "id": "MOG-04",
+          "title": "installed furniture across both safes",
+          "kind": "positive",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": null
+        },
+        {
+          "id": "MOG-05",
+          "title": "replacing prior KI removes stale KI and modifiers",
+          "kind": "positive",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": null
+        },
+        {
+          "id": "MOG-06",
+          "title": "uninstall/relog persistence",
+          "kind": "persistence",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": null
+        },
+        {
+          "id": "MOG-07",
+          "title": "match GM info aura breakdown",
+          "kind": "positive",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": null
+        },
+        {
+          "id": "MOG-08",
+          "title": "elemental tie clears KI",
+          "kind": "negative",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": "incorrect or duplicated furniture KI must not remain"
+        },
+        {
+          "id": "MOG-09",
+          "title": "stored but uninstalled furnishing grants none",
+          "kind": "negative",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": "incorrect or duplicated furniture KI must not remain"
+        },
+        {
+          "id": "MOG-10",
+          "title": "empty layout clears KI",
+          "kind": "negative",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": "incorrect or duplicated furniture KI must not remain"
+        },
+        {
+          "id": "MOG-11",
+          "title": "repeated recompute never duplicates effects",
+          "kind": "negative",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": "incorrect or duplicated furniture KI must not remain"
+        },
+        {
+          "id": "MOG-12",
+          "title": "invalid forced KI rejected",
+          "kind": "negative",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": "incorrect or duplicated furniture KI must not remain"
+        },
+        {
+          "id": "MOG-13",
+          "title": "duplicate furnishings change aura but not KI count",
+          "kind": "negative",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": "incorrect or duplicated furniture KI must not remain"
+        },
+        {
+          "id": "MOG-14",
+          "title": "equal strongest furnishings follow DSP scan order",
+          "kind": "negative",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": "incorrect or duplicated furniture KI must not remain"
+        }
+      ],
+      "gaps": [
+        "verified headless furnishing install/uninstall and menu exit packets",
+        "installed furniture manifest from both safes",
+        "read-only KI and modifier observation in MCP bridge",
+        "confirm DSP server running same item_furnishing SQL and C++"
+      ],
+      "new_command_review": [
+        "no new GM command needed initially: !moghancement info and recalc already exist"
+      ]
+    }
+  ],
+  "headless_baseline": {
+    "repo": "sarthax/xiheadless-dsp",
+    "commit": "c51e0f80f721aa4d3a7731a1f4a72e85889137e5",
+    "mcp_observed_from_source": [
+      "snapshot",
+      "nearby_entities",
+      "inventory",
+      "talk_to_npc",
+      "trade_npc",
+      "event_select",
+      "wait_for_event",
+      "move_to",
+      "engage",
+      "capabilities",
+      "logout"
+    ],
+    "regression_note": "Current live suite uses nearby_entities.isMob and excludes certain flying mobs in fight case; live tests not rerun in this review."
+  },
+  "gm_source_review": {
+    "garden": {
+      "branch": "feature/mog-house-gardening",
+      "path": "scripts/commands/garden.lua",
+      "permission": 1,
+      "parameters": "sii",
+      "scope_warning": "omitted slot targets all pots",
+      "operations": [
+        "info",
+        "plant",
+        "stage",
+        "grow",
+        "mature",
+        "wilt",
+        "ready",
+        "crystal1",
+        "crystal2",
+        "strength",
+        "dry",
+        "examined",
+        "results",
+        "clean"
+      ],
+      "review_status": "source_reviewed_not_runtime_verified",
+      "gameplay_warning": "debug crystal1 and plant bypass player-facing gameplay; never treat as gameplay acceptance",
+      "cpp_review": {
+        "path": "src/map/utils/gardenutils.cpp",
+        "branch": "feature/mog-house-gardening",
+        "state_persistence": "SavePot on mutation plus furniture and inventory update packets",
+        "hazard": "slotFilter matches numeric slot independently in both Mog Safe and Mog Safe 2",
+        "accelerator": "grow calls GrowToNextStage max(1,value); zero still grows once",
+        "results": "random and config-dependent preview",
+        "automation_gate": "Batch mode intentionally addresses all pots; per-pot preflight applies only when focused operation explicitly needs one pot"
+      }
+    },
+    "nyzuldebug": {
+      "branch": "feature/assault-gm-debug-tools",
+      "path": "scripts/commands/nyzuldebug.lua",
+      "permission": 1,
+      "parameters": "ss",
+      "precondition": "live instance id 51",
+      "review_status": "source_reviewed_not_runtime_verified",
+      "cleanup": [
+        "layout clear",
+        "leader clear"
+      ],
+      "warning": "complete forces objective; floor N primes next rune interaction"
+    },
+    "mobskilldiag": {
+      "branch": "feature/voidwalker",
+      "path": "scripts/commands/mobskilldiag.lua",
+      "permission": 1,
+      "parameters": "",
+      "review_status": "source_reviewed_not_runtime_verified",
+      "precondition": "cursor target is mob"
+    }
+  }
+}

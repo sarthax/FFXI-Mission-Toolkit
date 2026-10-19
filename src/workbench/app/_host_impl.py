@@ -12033,3 +12033,7 @@ async def survival_guides_mark(request: Request):
         raise HTTPException(status_code=404, detail=str(ex))
     except ValueError as ex:
         raise HTTPException(status_code=400, detail=str(ex))
+
+# Read-only feature testing plans; execution intentionally unavailable.
+from workbench.server_admin.feature_testing.router import router as feature_testing_router
+app.include_router(feature_testing_router)

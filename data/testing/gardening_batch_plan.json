@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "mode": "batch_moghouse",
+  "execution_enabled": false,
+  "description": "Configurable combinatorial gardening acceptance campaign. Planning only; server command syntax and player-facing interactions must be validated before execution.",
+  "setup": {
+    "environment": "disposable_character_mog_house",
+    "pot_layout": "mixed_or_uniform",
+    "pot_types": [
+      216,
+      217,
+      218,
+      219,
+      220,
+      221
+    ],
+    "pot_count": "all_placed",
+    "reset_between_batches": true
+  },
+  "inputs": {
+    "plant_types": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "crystal1": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "crystal2": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "strength": null,
+    "growth_method": "grow",
+    "growth_until": "mature",
+    "random_seed_recording": true
+  },
+  "sampling": {
+    "strategy": "pairwise_then_targeted",
+    "max_runs": 300,
+    "repeat_per_case": 1,
+    "filter": {
+      "pot_type": null,
+      "plant_type": null,
+      "crystal1": null,
+      "crystal2": null
+    },
+    "allow_full_cartesian": false
+  },
+  "steps": [
+    "verify_disposable_character_and_current_moghouse",
+    "record_initial_pot_manifest_all_containers",
+    "reset_and_prepare_pots",
+    "plant_or_stage_selected_seed_conditions",
+    "feed_crystals_using_player_interaction_when_testing_feeding",
+    "accelerate_growth_using_garden_grow",
+    "harvest_via_player_interaction",
+    "compare_inventory_delta_and_pot_state",
+    "record_server_and_client_evidence",
+    "clean_up_and_repeat"
+  ],
+  "assertions": [
+    "every_selected_pot_has_known_starting_state",
+    "normal_feeding_consumes_expected_crystals",
+    "growth_progresses_or_reports_known_blocker",
+    "harvest_yield_is_within_server_defined_valid_outcomes",
+    "harvest_inventory_delta_is_consistent",
+    "no_duplicate_reward_on_repeat",
+    "state_persists_when_relog_test_selected"
+  ],
+  "negative_cases": [
+    "feeding_at_wrong_stage",
+    "repeated_crystal_feed",
+    "harvest_before_mature",
+    "harvest_with_full_inventory",
+    "harvest_twice",
+    "invalid_seed_state"
+  ],
+  "classification": {
+    "gm_direct_mutations": "setup_and_acceleration_only",
+    "actual_client_plant_feed_harvest": "required_for_gameplay_acceptance",
+    "random_harvest": "validate_allowed_outcomes_not_fixed_roll"
+  },
+  "blockers": [
+    "headless placement/feeding/harvest interactions need verification",
+    "pot provisioning and clearing must be isolated",
+    "define authoritative inventory and growth state readback",
+    "validate actual runtime gardening branch and command permissions"
+  ]
+}
