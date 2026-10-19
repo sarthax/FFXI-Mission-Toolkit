@@ -206,16 +206,17 @@ def test_table_candidates_match_policy():
         _assert_no_graph(s, blocks, groups)
 
 
-def test_table_cell_attribute_prefix_gap_pinned():
-    samples, gaps = _load()
+def test_table_cell_attributes_are_metadata_not_field_labels():
+    samples, _ = _load()
     for s in samples:
         if "header_text_expect" not in s:
             continue
-        blocks, _ = _parse(s)
-        texts = [b["text"] for b in blocks if b["block_type"] in {"table_header_cell", "table_cell"}][:len(s["header_text_expect"]) + 1]
-        pin = gaps["header_text"][s["sample_id"]]["observed"]
-        assert texts[:len(pin)] == pin, f"{s['sample_id']}: cell text changed {texts}"
-        assert texts[:len(s["header_text_expect"])] != s["header_text_expect"], "gap fixed - remove from known_gaps.json"
+        blocks, groups = _parse(s)
+        cells = [b for b in blocks if b["block_type"] in {"table_header_cell", "table_cell"}]
+        assert [b["text"] for b in cells[:len(s["header_text_expect"])]] == s["header_text_expect"], s["sample_id"]
+        assert any((b.get("metadata") or {}).get("cell_attributes") for b in cells), s["sample_id"]
+        assert all((b.get("metadata") or {}).get("raw_value") for b in cells), s["sample_id"]
+        _assert_no_graph(s, blocks, groups)
 
 
 def test_real_tables_do_not_invent_candidates():
