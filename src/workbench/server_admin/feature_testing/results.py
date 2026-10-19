@@ -63,3 +63,32 @@ def recent_results(path: str | Path, *, feature_id: str | None = None,
         db.row_factory = sqlite3.Row
         rows = db.execute(query, args).fetchall()
     return [{**dict(r), "evidence": json.loads(r["evidence_json"])} for r in rows]
+
+
+def results_for_run(path: str | Path, run_id: str, *, limit: int = 25) -> list[dict]:
+    """Exact run lookup, independent of the global recent-history window."""
+    if not isinstance(run_id, str) or not run_id.strip() or len(run_id) > 256:
+        raise ValueError("invalid run identifier")
+    if not isinstance(limit, int) or not 1 <= limit <= 25:
+        raise ValueError("limit must be 1..25")
+    if not Path(path).is_file():
+        return []
+    with sqlite3.connect(str(path)) as db:
+        db.row_factory = sqlite3.Row
+        rows = db.execute(
+            "SELECT * FROM feature_test_results WHERE run_id = ? ORDER BY observed_at DESC, case_id, stage LIMIT ?",
+            (run_id, limit + 1),
+        ).fetchall()
+    if len(rows) > limit:
+        raise ValueError("run exceeds supervisor evidence record limit")
+    results = []
+    for row in rows:
+        record = dict(row)
+        try:
+            evidence = json.loads(record.pop("evidence_json"))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("invalid stored evidence JSON") from exc
+        if not isinstance(evidence, dict):
+            raise ValueError("invalid stored evidence object")
+        results.append({**record, "evidence": evidence})
+    return results
