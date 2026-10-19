@@ -1,4 +1,5 @@
 {% extends "workbench_page.html" %}
+{% block page_archetype %}workbench{% endblock %}
 {% block title %}{{ detail.scenario.id }} — Feature Testing{% endblock %}
 {% block page_heading %}{{ detail.scenario.id }} — {{ detail.feature_name }}{% endblock %}
 {% block page_status %}<span class="wb-readonly-badge">Not executed</span>{% endblock %}
