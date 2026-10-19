@@ -13,6 +13,7 @@ from fastapi import APIRouter, Header, HTTPException
 from workbench.server_admin.feature_testing.router import _results_db, _run_summary
 from workbench.server_admin.feature_testing.results import recent_results
 from .log_diagnostics import read_log
+from .service_health import service_health
 
 router = APIRouter(prefix="/api/supervisor", tags=["Local Test Supervisor"])
 
@@ -59,6 +60,15 @@ def log_errors(source: str = "dsp", authorization: str | None = Header(default=N
     _authorize(authorization)
     try:
         return read_log(source, errors_only=True, lines=80)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/service-health", operation_id="supervisor_service_health")
+def supervisor_service_health(service: str = "ollama", authorization: str | None = Header(default=None)):
+    _authorize(authorization)
+    try:
+        return service_health(service)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
