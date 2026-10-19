@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from workbench.server_admin.feature_testing.router import test_catalog, _summaries
+from workbench.server_admin.feature_testing.router import load_test_catalog, _summaries
 
 
 def test_feature_testing_catalog_loads_real_plans():
-    source = test_catalog()
+    source = load_test_catalog()
     ids = {feature["id"] for feature in source["features"]}
     assert {"gardening", "moghancement", "voidwalker", "assault_nyzul"} <= ids
     rows = _summaries()
