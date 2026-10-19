@@ -94,11 +94,24 @@ def run_history_api():
 
 @router.get("/run/{run_id}", response_class=HTMLResponse)
 def run_page(request: Request, run_id: str):
-    rows = [r for r in _history() if r["run_id"] == run_id]
+    from .results import results_for_run
+    try:
+        rows = results_for_run(_results_db(), run_id) if _results_db() else []
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
     if not rows:
         raise HTTPException(404, "Run not found")
+    from .normalized_evidence import evaluate_imported_mog09
+    reevaluations = {}
+    for index, row in enumerate(rows):
+        if (row["feature_id"], row["case_id"]) == ("moghancement", "MOG-09"):
+            try:
+                reevaluations[index] = evaluate_imported_mog09(row)
+            except ValueError as exc:
+                reevaluations[index] = {"error": str(exc)}
     return templates.TemplateResponse(request=request, name="feature_testing_run.html",
-                                      context={"title": "Test Run", "run_id": run_id, "records": rows})
+                                      context={"title": "Test Run", "run_id": run_id, "records": rows,
+                                               "reevaluations": reevaluations})
 
 
 def _summaries() -> list[dict]:
