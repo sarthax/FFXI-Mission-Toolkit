@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from fastapi import APIRouter, Request, HTTPException
@@ -9,6 +10,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from workbench.runtime.paths import GUI_ROOT
+from .results import recent_results
 
 router = APIRouter(prefix="/feature-testing", tags=["Feature Testing"])
 templates = Jinja2Templates(directory=str(GUI_ROOT / "templates"))
@@ -17,6 +19,11 @@ _REPO = Path(__file__).resolve().parents[4]
 
 def load_test_catalog() -> dict:
     return json.loads((_REPO / "data/testing/feature_test_readiness.json").read_text(encoding="utf-8"))
+
+
+def _results_db():
+    # No implicit creation of a database under source control.
+    return os.environ.get('MISSION_TOOLKIT_TEST_RESULTS_DB')
 
 
 def scenario_detail(feature_id: str, case_id: str) -> dict:
@@ -39,7 +46,7 @@ def scenario_detail(feature_id: str, case_id: str) -> dict:
             "scenario": case, "feature_gaps": feature.get("gaps", []),
             "gm_candidates": feature.get("existing_gm_candidates", []),
             "expected_reference": reference, "execution_enabled": False,
-            "observed_results": []}
+            "observed_results": recent_results(_results_db(), feature_id=feature_id, case_id=case_id) if _results_db() else []}
 
 
 @router.get("/catalog/{feature_id}/{case_id}")
@@ -68,7 +75,14 @@ def _summaries() -> list[dict]:
 
 @router.get("/catalog")
 def catalog_api():
-    return {"features": _summaries(), "execution_enabled": False, "results": []}
+    return {"features": _summaries(), "execution_enabled": False,
+            "results": recent_results(_results_db()) if _results_db() else []}
+
+
+@router.get("/results")
+def results_api(feature_id: str | None = None, case_id: str | None = None):
+    return {"results": recent_results(_results_db(), feature_id=feature_id, case_id=case_id)
+            if _results_db() else [], "execution_enabled": False}
 
 
 @router.get("", response_class=HTMLResponse)
