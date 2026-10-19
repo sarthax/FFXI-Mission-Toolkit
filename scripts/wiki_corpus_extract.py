@@ -83,8 +83,19 @@ JP_SPECS = [
     ("jp-vw-npc-table", "ヴォイドウォッチ/NPC", 0, ["table", "rowspan"], "Exchange table with rowspan/colspan cells"),
     ("jp-vw-weakness-table", "ヴォイドウォッチ/弱点", 0, ["table", "row-header"], "Row-header (th) first column"),
     ("jp-vw-route-table", "ヴォイドウォッチ/第一章/ルート：ウィンダス", 0, ["table", "nested-links", "map-grid"], "Route table with in-page anchors and grid references"),
+    ("jp-bfnm-area-npc-table", "BFNM", 1, ["table", "header-pair-hint", "japanese-label"], "Header row エリア|NPC is paired as label/value by the table hinting"),
+    ("jp-bfnm-location-monster-table", "BFNM", 5, ["table", "header-pair-hint", "japanese-label"], "Header row 場所|モンスター名称"),
+    ("jp-nm-abyssean-area-table", "NM/アビセアン", 0, ["table", "header-pair-hint", "nm"], "Header row エリア|無色 (colour columns), not a label/value table"),
+    ("jp-nm-index-list", "NM", "list", ["list", "nm", "no-structure"], "NM index is plain list items with links: no labels, no hints"),
 ]
 JP_TABLE_ROWS = 2  # body rows kept after the header
+JP_LIST_ITEMS = 4
+
+
+def html_list_excerpt(raw: str):
+    items = re.findall(r"<li>.*?</li>", raw, re.S | re.I)
+    items = [i for i in items if "<li>" not in i[4:] and len(i) < 400][:JP_LIST_ITEMS]
+    return "<ul>" + "".join(items) + "</ul>" if items else None
 
 
 def html_table_excerpt(raw: str, index: int):
@@ -101,7 +112,7 @@ def html_table_excerpt(raw: str, index: int):
 def html_cells(excerpt: str):
     """Independent (parser-free) cell inventory: [(tag, plain text)]."""
     out = []
-    for m in re.finditer(r"<(th|td)(?: [^>]*)?>(.*?)</(?:th|td)>", excerpt, re.S | re.I):
+    for m in re.finditer(r"<(th|td|li)(?: [^>]*)?>(.*?)</(?:th|td|li)>", excerpt, re.S | re.I):
         text = re.sub(r"<[^>]+>", " ", m.group(2))
         out.append((m.group(1).lower(), " ".join(text.split())))
     return out
@@ -245,9 +256,10 @@ def main() -> int:
             skipped.append((sid, "no raw source / retrieved_at (re-crawl the page first)"))
             continue
         raw, rhash, rat, rrev = row
-        excerpt = html_table_excerpt(raw, idx)
+        is_list = idx == "list"
+        excerpt = html_list_excerpt(raw) if is_list else html_table_excerpt(raw, idx)
         if not excerpt:
-            skipped.append((sid, "table not found"))
+            skipped.append((sid, "excerpt not found"))
             continue
         jp_samples.append({
             "sample_id": sid, "evidence_type": "real_excerpt", "source_wiki": "WikiWikiJP",
@@ -256,8 +268,8 @@ def main() -> int:
             "retrieved_at": rat, "retrieval_note": "revision id not exposed by PukiWiki HTML; retrieved_at recorded at crawl",
             "raw_source_sha256": rhash, "raw_source_sha256_verified": sha(raw) == rhash,
             "raw_source_chars": len(raw), "license_note": "terms not verified; minimal structural excerpt only, check before wider redistribution",
-            "categories": tags, "note": note, "excerpt_kind": "html_table", "source_format": "html",
-            "table_index": idx, "excerpt_wikitext": excerpt, "excerpt_sha256": sha(excerpt),
+            "categories": tags, "note": note, "excerpt_kind": "html_list" if is_list else "html_table", "source_format": "html",
+            "table_index": None if is_list else idx, "excerpt_wikitext": excerpt, "excerpt_sha256": sha(excerpt),
             "cells": [list(c) for c in html_cells(excerpt)],
         })
     JP_OUT.write_text(json.dumps({"extract_version": EXTRACT_VERSION, "samples": jp_samples}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")

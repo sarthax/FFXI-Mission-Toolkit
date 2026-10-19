@@ -236,13 +236,27 @@ def test_real_jp_html_tables_preserve_text_and_invent_nothing():
         sid = s["sample_id"]
         assert s["retrieved_at"], f"{sid}: real JP sample needs retrieved_at"
         blocks, groups = _parse(s)
-        got = [(("th" if b["block_type"] == "table_header_cell" else "td"), " ".join(b["text"].split()))
-               for b in blocks if b["block_type"] in {"table_header_cell", "table_cell"}]
-        want = [tuple(c) for c in s["cells"]]
+        if s["excerpt_kind"] == "html_list":
+            got = [("li", " ".join(b["text"].split())) for b in blocks if b["block_type"] == "list_item"]
+        else:
+            got = [(("th" if b["block_type"] == "table_header_cell" else "td"), " ".join(b["text"].split()))
+                   for b in blocks if b["block_type"] in {"table_header_cell", "table_cell"}]
+        # Pinned behaviour: the parser emits no block for empty cells (e.g. blank spacer th), so compare non-empty cells.
+        want = [tuple(c) for c in s["cells"] if c[1]]
         assert got == want, f"{sid}: cell text/order changed: {got} vs {want}"
         assert any(ord(ch) > 0x2E80 for _, t in want for ch in t), f"{sid}: no Japanese text in sample"
-        no_hints = _table_candidates(groups) == [] and _template_candidates(groups) == []
-        assert no_hints, f"{sid}: real JP layout table produced a field hint"
+        assert _template_candidates(groups) == [], f"{sid}: unexpected template hint"
+        cands = _table_candidates(groups)
+        if "header-pair-hint" in s["categories"]:
+            # Pinned behaviour: the first two header cells are paired as a review-only field/value hint
+            # (e.g. エリア -> NPC). Not a real label/value row; it must stay review-only and untyped.
+            ths = [t for tag, t in want if tag == "th"]
+            assert len(cands) == 1, f"{sid}: expected exactly one header-pair hint, got {cands}"
+            c = cands[0]
+            assert (c["field"], c["value"]) == (ths[0], ths[1]), f"{sid}: header pair changed: {c}"
+            assert c["review_only"] is True and not c.get("field_type"), f"{sid}: hint must stay review-only/untyped"
+        else:
+            assert cands == [], f"{sid}: real JP layout table produced a field hint"
         _assert_no_graph(s, blocks, groups)
 
 

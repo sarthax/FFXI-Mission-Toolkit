@@ -366,6 +366,294 @@
      "西サルタバルタ〔Ｓ〕"
     ]
    ]
+  },
+  {
+   "sample_id": "jp-bfnm-area-npc-table",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "WikiWikiJP",
+   "page_title": "BFNM",
+   "page_id": "BFNM",
+   "source_url": "https://wikiwiki.jp/ffxi/BFNM",
+   "revision_id": "none-exposed",
+   "revision_timestamp": null,
+   "source_revision": null,
+   "retrieved_at": "2026-10-18T23:56:52Z",
+   "retrieval_note": "revision id not exposed by PukiWiki HTML; retrieved_at recorded at crawl",
+   "raw_source_sha256": "536f3cf2f946d0e1f84d23604413ee6a10e36a229e7e8d740a64ad8027e3dc03",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 187041,
+   "license_note": "terms not verified; minimal structural excerpt only, check before wider redistribution",
+   "categories": [
+    "table",
+    "header-pair-hint",
+    "japanese-label"
+   ],
+   "note": "Header row エリア|NPC is paired as label/value by the table hinting",
+   "excerpt_kind": "html_table",
+   "source_format": "html",
+   "table_index": 1,
+   "excerpt_wikitext": "<table><thead><tr><th>エリア</th><th>NPC</th><th>位置</th></tr></thead><tbody><tr><td>北サンドリア</td><td>Trisvain</td><td style=\"text-align:center;\">(J-7)</td></tr><tr><td>バストゥーク港</td><td>Raving Opossum</td><td style=\"text-align:center;\">(J-11)</td></tr></tbody></table>",
+   "excerpt_sha256": "e29e2ce151f5a99cc9729f68dbdd5d82302797ea2e4896bf066a4edbeaea79f3",
+   "cells": [
+    [
+     "th",
+     "エリア"
+    ],
+    [
+     "th",
+     "NPC"
+    ],
+    [
+     "th",
+     "位置"
+    ],
+    [
+     "td",
+     "北サンドリア"
+    ],
+    [
+     "td",
+     "Trisvain"
+    ],
+    [
+     "td",
+     "(J-7)"
+    ],
+    [
+     "td",
+     "バストゥーク港"
+    ],
+    [
+     "td",
+     "Raving Opossum"
+    ],
+    [
+     "td",
+     "(J-11)"
+    ]
+   ]
+  },
+  {
+   "sample_id": "jp-bfnm-location-monster-table",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "WikiWikiJP",
+   "page_title": "BFNM",
+   "page_id": "BFNM",
+   "source_url": "https://wikiwiki.jp/ffxi/BFNM",
+   "revision_id": "none-exposed",
+   "revision_timestamp": null,
+   "source_revision": null,
+   "retrieved_at": "2026-10-18T23:56:52Z",
+   "retrieval_note": "revision id not exposed by PukiWiki HTML; retrieved_at recorded at crawl",
+   "raw_source_sha256": "536f3cf2f946d0e1f84d23604413ee6a10e36a229e7e8d740a64ad8027e3dc03",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 187041,
+   "license_note": "terms not verified; minimal structural excerpt only, check before wider redistribution",
+   "categories": [
+    "table",
+    "header-pair-hint",
+    "japanese-label"
+   ],
+   "note": "Header row 場所|モンスター名称",
+   "excerpt_kind": "html_table",
+   "source_format": "html",
+   "table_index": 5,
+   "excerpt_wikitext": "<table><thead><tr><th colspan=\"2\">場所</th><th>モンスター名称</th></tr></thead><tbody><tr><td>ヨアトル大森林</td><td>寺院のテラス</td><td>Tonberry Jinxer</td></tr><tr><td>ウガレピ寺院</td><td>奥？</td><td>Tonberry Maledictor</td></tr></tbody></table>",
+   "excerpt_sha256": "cff151a57065bc2f097ebd7f7e3fcea93c1b4b293260a1000e74ce525671201f",
+   "cells": [
+    [
+     "th",
+     "場所"
+    ],
+    [
+     "th",
+     "モンスター名称"
+    ],
+    [
+     "td",
+     "ヨアトル大森林"
+    ],
+    [
+     "td",
+     "寺院のテラス"
+    ],
+    [
+     "td",
+     "Tonberry Jinxer"
+    ],
+    [
+     "td",
+     "ウガレピ寺院"
+    ],
+    [
+     "td",
+     "奥？"
+    ],
+    [
+     "td",
+     "Tonberry Maledictor"
+    ]
+   ]
+  },
+  {
+   "sample_id": "jp-nm-abyssean-area-table",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "WikiWikiJP",
+   "page_title": "NM/アビセアン",
+   "page_id": "NM/アビセアン",
+   "source_url": "https://wikiwiki.jp/ffxi/NM/%E3%82%A2%E3%83%93%E3%82%BB%E3%82%A2%E3%83%B3",
+   "revision_id": "none-exposed",
+   "revision_timestamp": null,
+   "source_revision": null,
+   "retrieved_at": "2026-10-18T23:58:07Z",
+   "retrieval_note": "revision id not exposed by PukiWiki HTML; retrieved_at recorded at crawl",
+   "raw_source_sha256": "e7269fbfe1faa33c0bf91e916ceedb8fc0a892ea468f4e7f40ac17a22dc8fb06",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 67401,
+   "license_note": "terms not verified; minimal structural excerpt only, check before wider redistribution",
+   "categories": [
+    "table",
+    "header-pair-hint",
+    "nm"
+   ],
+   "note": "Header row エリア|無色 (colour columns), not a label/value table",
+   "excerpt_kind": "html_table",
+   "source_format": "html",
+   "table_index": 0,
+   "excerpt_wikitext": "<table><thead><tr><th>エリア</th><th>無色</th><th></th><th>変色</th><th></th><th>有色</th><th></th><th>黒色</th></tr></thead><tbody><tr><th>サンドリア方面</th><td><a href=\"/ffxi/NM/%E3%82%A2%E3%83%93%E3%82%BB%E3%82%A2%E3%83%B3/%E3%82%B5%E3%83%B3%E3%83%89%E3%83%AA%E3%82%A2%E6%96%B9%E9%9D%A2#p2d823b5\" title=\"NM/アビセアン/サンドリア方面\" class=\"rel-wiki-page\">Quagmire Pugil</a><br class=\"spacer\"><a href=\"/ffxi/NM/%E3%82%A2%E3%83%93%E3%82%BB%E3%82%A2%E3%83%B3/%E3%82%B5%E3%83%B3%E3%83%89%E3%83%AA%E3%82%A2%E6%96%B9%E9%9D%A2#a078c622\" title=\"NM/アビセアン/サンドリア方面\" class=\"rel-wiki-page\">Sunderclaw</a></td><td rowspan=\"6\">→</td><td><a href=\"/ffxi/NM/%E3%82%A2%E3%83%93%E3%82%BB%E3%82%A2%E3%83%B3/%E3%82%B5%E3%83%B3%E3%83%89%E3%83%AA%E3%82%A2%E6%96%B9%E9%9D%A2#x767b233\" title=\"NM/アビセアン/サンドリア方面\" class=\"rel-wiki-page\">Yacumama</a><br class=\"spacer\"><a href=\"/ffxi/NM/%E3%82%A2%E3%83%93%E3%82%BB%E3%82%A2%E3%83%B3/%E3%82%B5%E3%83%B3%E3%83%89%E3%83%AA%E3%82%A2%E6%96%B9%E9%9D%A2#s8cc80d7\" title=\"NM/アビセアン/サンドリア方面\" class=\"rel-wiki-page\">Capricornus</a></td><td>→</td><td>水色 <a href=\"/ffxi/NM/%E3%82%A2%E3%83%93%E3%82%BB%E3%82%A2%E3%83%B3/%E3%82%B5%E3%83%B3%E3%83%89%E3%83%AA%E3%82%A2%E6%96%B9%E9%9D%A2#he2f385f\" title=\"NM/アビセアン/サンドリア方面\" class=\"rel-wiki-page\">Krabkatoa</a></td><td rowspan=\"6\">→</td><td rowspan=\"6\"><a href=\"/ffxi/NM/%E3%82%A2%E3%83%93%E3%82%BB%E3%82%A2%E3%83%B3/%E9%BB%92%E8%89%B2#i7b13fc4\" title=\"NM/アビセアン/黒色\" class=\"rel-wiki-page\">Yilbegan</a></td></tr><tr><th>バストゥーク方面</th><td><a href=\"/ffxi/NM/%E3%82%A2%E3%83%93%E3%82%BB%E3%82%A2%E3%83%B3/%E3%83%90%E3%82%B9%E3%83%88%E3%82%A5%E3%83%BC%E3%82%AF%E6%96%B9%E9%9D%A2#sad06d35\" title=\"NM/アビセアン/バストゥーク方面\" class=\"rel-wiki-page\">Ground Guzzler</a><br class=\"spacer\"><a href=\"/ffxi/NM/%E3%82%A2%E3%83%93%E3%82%BB%E3%82%A2%E3%83%B3/%E3%83%90%E3%82%B9%E3%83%88%E3%82%A5%E3%83%BC%E3%82%AF%E6%96%B9%E9%9D%A2#a2f2327b\" title=\"NM/アビセアン/バストゥーク方面\" class=\"rel-wiki-page\">Globster</a></td><td><a href=\"/ffxi/NM/%E3%82%A2%E3%83%93%E3%82%BB%E3%82%A2%E3%83%B3/%E3%83%90%E3%82%B9%E3%83%88%E3%82%A5%E3%83%BC%E3%82%AF%E6%96%B9%E9%9D%A2#n0c34fd4\" title=\"NM/アビセアン/バストゥーク方面\" class=\"rel-wiki-page\">Shoggoth</a><br class=\"spacer\"><a href=\"/ffxi/NM/%E3%82%A2%E3%83%93%E3%82%BB%E3%82%A2%E3%83%B3/%E3%83%90%E3%82%B9%E3%83%88%E3%82%A5%E3%83%BC%E3%82%AF%E6%96%B9%E9%9D%A2#t04b550f\" title=\"NM/アビセアン/バストゥーク方面\" class=\"rel-wiki-page\">Lamprey Lord</a></td><td>→</td><td>橙色 <a href=\"/ffxi/NM/%E3%82%A2%E3%83%93%E3%82%BB%E3%82%A2%E3%83%B3/%E3%83%90%E3%82%B9%E3%83%88%E3%82%A5%E3%83%BC%E3%82%AF%E6%96%B9%E9%9D%A2#kebb82c5\" title=\"NM/アビセアン/バストゥーク方面\" class=\"rel-wiki-page\">Blobdingnag</a></td></tr></tbody></table>",
+   "excerpt_sha256": "9c4958c24a0d3051a37ce2ea5154f8dadd354b90104cb64bc7d2be3154567352",
+   "cells": [
+    [
+     "th",
+     "エリア"
+    ],
+    [
+     "th",
+     "無色"
+    ],
+    [
+     "th",
+     ""
+    ],
+    [
+     "th",
+     "変色"
+    ],
+    [
+     "th",
+     ""
+    ],
+    [
+     "th",
+     "有色"
+    ],
+    [
+     "th",
+     ""
+    ],
+    [
+     "th",
+     "黒色"
+    ],
+    [
+     "th",
+     "サンドリア方面"
+    ],
+    [
+     "td",
+     "Quagmire Pugil Sunderclaw"
+    ],
+    [
+     "td",
+     "→"
+    ],
+    [
+     "td",
+     "Yacumama Capricornus"
+    ],
+    [
+     "td",
+     "→"
+    ],
+    [
+     "td",
+     "水色 Krabkatoa"
+    ],
+    [
+     "td",
+     "→"
+    ],
+    [
+     "td",
+     "Yilbegan"
+    ],
+    [
+     "th",
+     "バストゥーク方面"
+    ],
+    [
+     "td",
+     "Ground Guzzler Globster"
+    ],
+    [
+     "td",
+     "Shoggoth Lamprey Lord"
+    ],
+    [
+     "td",
+     "→"
+    ],
+    [
+     "td",
+     "橙色 Blobdingnag"
+    ]
+   ]
+  },
+  {
+   "sample_id": "jp-nm-index-list",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "WikiWikiJP",
+   "page_title": "NM",
+   "page_id": "NM",
+   "source_url": "https://wikiwiki.jp/ffxi/NM",
+   "revision_id": "none-exposed",
+   "revision_timestamp": null,
+   "source_revision": null,
+   "retrieved_at": "2026-10-18T23:57:54Z",
+   "retrieval_note": "revision id not exposed by PukiWiki HTML; retrieved_at recorded at crawl",
+   "raw_source_sha256": "9eed16bd68904a2e9a74245ca26f7892c35411f00be4e623a4de5b2c0418b3cd",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 68970,
+   "license_note": "terms not verified; minimal structural excerpt only, check before wider redistribution",
+   "categories": [
+    "list",
+    "nm",
+    "no-structure"
+   ],
+   "note": "NM index is plain list items with links: no labels, no hints",
+   "excerpt_kind": "html_list",
+   "source_format": "html",
+   "table_index": null,
+   "excerpt_wikitext": "<ul><li><a href=\"/ffxi/::cmd/newpage?refer=NM\" rel=\"nofollow\"><span class='system-icon toolbar new'></span> 新規</a></li><li><a href=\"/ffxi/::cmd/edit?page=NM\" rel=\"nofollow\"><span class='system-icon toolbar edit'></span> 編集</a></li><li><a href=\"/ffxi/::cmd/attach?page=NM\" rel=\"nofollow\"><span class='system-icon toolbar upload'></span> 添付</a></li><li><a href=\"/ffxi/::cmd/list\" rel=\"nofollow\"><span class='system-icon toolbar list'></span> 一覧</a></li></ul>",
+   "excerpt_sha256": "d746a08baa50fe3604f82e0fc051ef3258269bbcdc2518880ce5b8baf82415aa",
+   "cells": [
+    [
+     "li",
+     "新規"
+    ],
+    [
+     "li",
+     "編集"
+    ],
+    [
+     "li",
+     "添付"
+    ],
+    [
+     "li",
+     "一覧"
+    ]
+   ]
   }
  ]
 }
