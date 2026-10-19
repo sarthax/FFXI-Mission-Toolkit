@@ -103,3 +103,52 @@ $env:MISSION_TOOLKIT_SUPERVISOR_DB_PORT = "3306"
 Install the optional Python package `PyMySQL` into the same Toolkit environment before enabling this endpoint. The connection is pinned to `127.0.0.1`, with short connection and read timeouts and read-only transaction mode. **The read-only account's actual database GRANT permissions are the primary safety boundary**, not a Python transaction setting. If the database is hosted on another machine, do not change the binding to reach it without a separate reviewed design.
 
 If the account or schema is unconfigured, the response reports `configured=false`. An unexpected connection failure is an error, not a successful blank inventory. Values may be stale relative to character state in memory; cross-check with XiHeadless snapshots before making gameplay conclusions. No key-item decoder, safe/house layout semantics, or direct live client telemetry is implemented in this phase.
+
+
+## Operator-controlled deterministic test launch (first supported case)
+
+The Feature Testing scenario page now shows preflight checks and a read-only readiness API:
+`GET /feature-testing/preflight/moghancement/MOG-09`. These checks are informational
+and do not grant execution. The supervisor/Open WebUI tool API remains GET-only.
+
+Only **MOG-09** is wired to an executable local runner in this slice; other
+catalog scenarios are planning entries, not runnable tests. XiHeadless PR #3
+must first be merged/pulled into the local checkout, or an explicitly reviewed
+checkout of that branch must be selected.
+
+From an operator-owned PowerShell session, with the Toolkit Python venv active:
+
+```powershell
+$env:MISSION_TOOLKIT_TEST_HEADLESS_ROOT = "D:\\Claude\\xiheadless-dsp"
+$env:MISSION_TOOLKIT_TEST_RESULTS_DB = "D:\\MissionToolkitData\\test_results.sqlite"
+$env:MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS = "21836"
+# MISSION_TOOLKIT_SUPERVISOR_TOKEN must already be configured securely.
+
+python -m workbench.server_admin.feature_testing.execution_cli `
+  --case MOG-09 --account xitest07 --charid 21836 `
+  --supervisor http://127.0.0.1:8420 `
+  --out-dir D:\\MissionToolkitData\\artifacts\\mog09-operator-01 `
+  --approve-mog09
+```
+
+Replace paths, account and character ID with values approved for **your**
+disposable DSP test environment. Use a new output directory for every run.
+The CLI executes a fixed runner script with a fixed argument list, refuses
+unapproved characters, requires a local loopback supervisor URL, and validates
+the generated report against the Toolkit catalog before importing into the
+append-only results database. The runner itself refuses dirty XiHeadless
+source by default and writes provenance, but a recorded Git SHA does not
+prove the DLL was rebuilt from that SHA unless independently checked.
+
+The CLI may log into a disposable character and issues the **read-only**
+`!moghancement info` GM diagnostic. It is not a generic gameplay test
+executor. Running the CLI is an explicit local-operator action: it is not
+exposed to Open WebUI or via a Toolkit HTTP POST route. No arbitrary
+shell/script invocation is accepted. Inspect the imported record under
+`/feature-testing?tab=runs` and review its assertions before accepting it.
+
+**Next development:** Persist editable *draft* test definitions separately
+from the immutable source-backed catalog; add a more general runner registry,
+operator authorization and cancellation/status reporting; only then expose
+a GUI dispatch action. Keep model-triggered dispatch behind a separate
+explicit approval gate.
