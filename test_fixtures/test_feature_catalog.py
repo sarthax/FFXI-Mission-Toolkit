@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from workbench.core.services.feature_catalog import load_catalog, search_catalog, feature_detail
 from workbench.core.services.feature_catalog_audit import audit_catalog
+from workbench.core.services.feature_catalog_gui_audit import audit_gui_controls
 
 
 def main():
@@ -44,6 +45,9 @@ def main():
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
     audit = audit_catalog()
+    gui_audit = audit_gui_controls()
+    assert gui_audit["sample_count"] >= 10
+    assert gui_audit["missing"] == [], gui_audit["missing"]
     assert audit["help_not_cataloged"] == [], audit
     assert audit["invalid_catalog_routes"] == [], audit
     assert audit["uncataloged_active_pages"] == [], audit
@@ -59,7 +63,8 @@ def main():
     assert "Feature Catalog" in page
     detail_page = render("feature_catalog.html", "/feature-catalog",
                          features=items, modules=sorted({f["module"] for f in items}),
-                         q="", module="", coverage=audit, detail=details)
+                         q="", module="", coverage=audit, detail=details, gui_audit=gui_audit)
+    assert "GUI control coverage audit" in detail_page
     assert "Functions in this module" in detail_page
     assert "How to use" in detail_page
     assert "/feature-catalog?feature=" in detail_page
