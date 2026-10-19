@@ -17,6 +17,7 @@ from pathlib import Path
 from .execution_cli import execute_mog09
 
 _LOCK = threading.Lock()
+_THREADS: dict[str, threading.Thread] = {}
 
 
 def _db_path() -> Path:
@@ -95,5 +96,38 @@ def enqueue(account: str, charid: int, port: int) -> str:
     artifacts = root / ("mog09-" + job_id)
     thread = threading.Thread(target=_run, args=(job_id, account, charid, port, artifacts),
                               name="mog09-" + job_id[:8], daemon=True)
-    thread.start()
+    _THREADS[job_id] = thread
+    try:
+        thread.start()
+    except RuntimeError:
+        _set_status(job_id, "ERROR", error="Could not start local runner thread")
+        _THREADS.pop(job_id, None)
+        raise
     return job_id
+
+
+def recover_interrupted(job_id: str, *, acknowledged: bool) -> dict:
+    """Explicit operator reconciliation; never kill a process or claim cancellation.
+
+    Only jobs with no live thread in this worker may be acknowledged. An operator
+    must separately confirm no other Toolkit worker or XiHeadless runner is
+    executing this character before calling this endpoint.
+    """
+    if not acknowledged:
+        raise ValueError("Operator must acknowledge external runner/process inspection")
+    if not isinstance(job_id, str) or len(job_id) != 32 or any(c not in "0123456789abcdef" for c in job_id):
+        raise ValueError("invalid job identifier")
+    with _LOCK, _connect() as db:
+        db.row_factory = sqlite3.Row
+        row = db.execute("SELECT * FROM feature_test_jobs WHERE id = ?", (job_id,)).fetchone()
+        if row is None:
+            raise ValueError("unknown job")
+        if row["status"] not in ("QUEUED", "RUNNING"):
+            raise ValueError("only active jobs can be reconciled")
+        active_thread = _THREADS.get(job_id)
+        if active_thread and active_thread.is_alive():
+            raise ValueError("job is still running in this Toolkit process")
+        db.execute("UPDATE feature_test_jobs SET status='INTERRUPTED', updated_at=?, error=? WHERE id=? AND status IN ('QUEUED','RUNNING')",
+                   (_stamp(), "Operator reconciled after confirming no external runner is active; evidence not automatically authenticated", job_id))
+        return {"job_id": job_id, "status": "INTERRUPTED",
+                "note": "Manual reconciliation only; no subprocess termination occurred"}

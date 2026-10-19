@@ -182,3 +182,15 @@ be investigated before starting another. Cancellation, recovery, and richer
 progress events are separate backlog milestones. The browser launch must
 be acceptance-tested with the local XiHeadless runner (PR #3) before
 considering it operationally validated.
+
+## Interrupted GUI jobs (manual recovery)
+
+Job states now include `INTERRUPTED`. If Toolkit restarts mid-run,
+its job-history database can still show `QUEUED` or `RUNNING`. A
+separately authenticated operator can use **Reconcile interrupted job**
+on the Build & Run tab, but **only after manually confirming no external
+XiHeadless runner or other Toolkit worker is active**. The operation
+records `INTERRUPTED` and lifts the outstanding-job blocker; it does
+not kill a process, replay a run, import uncertain evidence or certify
+cleanup. Active threads in the current process cannot be reconciled.
+Restart recovery and true process cancellation remain unimplemented.
