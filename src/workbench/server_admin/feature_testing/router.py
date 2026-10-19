@@ -125,10 +125,21 @@ def results_api(feature_id: str | None = None, case_id: str | None = None):
             if _results_db() else [], "execution_enabled": False}
 
 
+def _builder_preflight():
+    from .execution_preflight import preflight
+    return preflight("moghancement", "MOG-09")
+
+
+@router.get("/builder/plan")
+def test_builder_plan(account: str = "", charid: int = 0, supervisor_port: int = 8420):
+    from .test_builder import build_plan
+    return build_plan(account, charid, supervisor_port)
+
+
 def dashboard_view(*, tab: str = "runs", feature: str = "", verdict: str = "",
                    query: str = "", page: int = 1) -> dict:
     """Build a bounded view without altering the append-only evidence store."""
-    tab = tab if tab in {"runs", "catalog", "guide"} else "runs"
+    tab = tab if tab in {"runs", "catalog", "guide", "builder"} else "runs"
     verdict = verdict.upper()
     if verdict not in {"PASS", "FAIL", "BLOCKED", "SKIPPED"}:
         verdict = ""
@@ -151,6 +162,7 @@ def dashboard_view(*, tab: str = "runs", feature: str = "", verdict: str = "",
             "total_runs": total, "page": page, "max_page": max_page,
             "feature_filter": feature, "verdict_filter": verdict, "query_filter": query,
             "features": _summaries(), "evidence_count": len(records),
+            "builder_preflight": _builder_preflight(),
             "results_configured": bool(_results_db()), "execution_enabled": False}
 
 

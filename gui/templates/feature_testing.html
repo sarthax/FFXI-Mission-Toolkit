@@ -20,6 +20,7 @@
 </style>
 <nav class="ft-nav" aria-label="Feature testing sections">
 <a href="/feature-testing?tab=runs" {% if tab == "runs" %}aria-current="page"{% endif %}>Run history</a>
+<a href="/feature-testing?tab=builder" {% if tab == "builder" %}aria-current="page"{% endif %}>Build &amp; run</a>
 <a href="/feature-testing?tab=catalog" {% if tab == "catalog" %}aria-current="page"{% endif %}>Test catalog</a>
 <a href="/feature-testing?tab=guide" {% if tab == "guide" %}aria-current="page"{% endif %}>Setup &amp; supervisor</a>
 </nav>
@@ -42,6 +43,23 @@
 {% if page > 1 %}<a href="/feature-testing?tab=runs&amp;feature={{ feature_filter|urlencode }}&amp;verdict={{ verdict_filter|urlencode }}&amp;query={{ query_filter|urlencode }}&amp;page={{ page - 1 }}">← Previous</a>{% endif %}
 {% if page < max_page %}<a href="/feature-testing?tab=runs&amp;feature={{ feature_filter|urlencode }}&amp;verdict={{ verdict_filter|urlencode }}&amp;query={{ query_filter|urlencode }}&amp;page={{ page + 1 }}">Next →</a>{% endif %}</div>
 {% else %}<p>{% if not results_configured %}No evidence database configured. Set <code>MISSION_TOOLKIT_TEST_RESULTS_DB</code> and import a validated report.{% elif evidence_count == 0 %}No results imported yet.{% else %}No imported runs match these filters.{% endif %}</p>{% endif %}
+</section>
+{% elif tab == "builder" %}
+<section class="wb-panel">
+<h2>Build a deterministic test</h2>
+<p>Start from a verified runner contract, not an arbitrary script. The first executable case is <strong>MOG-09</strong>: read-only Mog House observations and client/persisted inventory checks.</p>
+<p><strong>Availability:</strong> {{ 'Prerequisites detected' if builder_preflight.ready_for_operator_review else 'Missing prerequisites' }}. Planning does not launch a client, approve a character, or execute the scenario.</p>
+<ul>{% for check in builder_preflight.checks %}<li><strong>{{ 'Ready' if check.ok else 'Blocked' }}:</strong> {{ check.detail }}</li>{% endfor %}</ul>
+<h3>Test definition</h3>
+<form class="ft-filters" id="ft-test-builder" action="/feature-testing/builder/plan" method="get">
+<label>Scenario<select disabled><option>MOG-09 — Stored furnishing, no active effect</option></select></label>
+<label>Approved test account<input type="text" name="account" pattern="[A-Za-z0-9_-]{1,32}" maxlength="32" required placeholder="xitest07" autocomplete="off"></label>
+<label>Character ID<input type="number" name="charid" min="1" max="2147483647" required placeholder="21836"></label>
+<label>Supervisor port<input type="number" name="supervisor_port" min="1" max="65535" value="8420" required></label>
+<button type="submit">Review test plan (JSON)</button>
+</form>
+<p>The review endpoint verifies character allowlisting, a registered runner, and local preflight requirements. It returns a plan with expected observation steps; it does not issue execution authorization. Use the <a href="/feature-testing/scenario/moghancement/MOG-09">scenario detail</a> to inspect assertions, then launch the reviewed plan through the local operator CLI documented in <code>docs/workbench/LOCAL_TEST_SUPERVISOR_SETUP.md</code>.</p>
+<h3>Execution boundary</h3><p>No browser or LLM launch is exposed yet. Actual execution requires a trusted local operator, a fresh artifact directory, and the explicit <code>--approve-mog09</code> flag. Additional tests will be registered only after their runners and acceptance criteria are verified.</p>
 </section>
 {% elif tab == "catalog" %}
 <section class="wb-panel"><h2>Test catalog</h2><p>Scenario plans describe acceptance criteria, sources, and current blockers. Opening a scenario does not execute it.</p>
