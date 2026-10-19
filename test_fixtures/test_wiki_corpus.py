@@ -243,7 +243,7 @@ def test_real_tables_do_not_invent_candidates():
 
 
 JP_EXPECTED_HITS = {
-    "jp-vw-npc-table": [("エリア", "LOCATION", "南サンドリア"), ("エリア", "LOCATION", "(D-11)")],
+    "jp-vw-npc-table": [("エリア", "LOCATION", "南サンドリア"), ("エリア", "LOCATION", "バストゥーク商業区")],
     "jp-vw-route-table": [("エリア", "LOCATION", "西サルタバルタ")],
     "jp-bfnm-area-npc-table": [("エリア", "LOCATION", "北サンドリア"), ("エリア", "LOCATION", "バストゥーク港")],
     "jp-bfnm-location-monster-table": [("場所", "LOCATION", "ヨアトル大森林"), ("場所", "LOCATION", "ウガレピ寺院")],
@@ -271,14 +271,33 @@ def test_real_jp_html_tables_preserve_text_and_invent_nothing():
         assert _template_candidates(groups) == [], f"{sid}: unexpected template hint"
         cands = _table_candidates(groups)
         # Column-header semantics: a policy label in an all-header row types the cells beneath it
-        # (review-only). Header cells never become the value. Rowspan tables are only positionally
-        # indexed (known limitation: jp-vw-npc-table's second hit is a shifted column).
+        # (review-only). Header cells never become values even with rowspans.
         got_hits = [(c["field"], c["field_type"], c["value"]) for c in cands]
         assert got_hits == JP_EXPECTED_HITS.get(sid, []), f"{sid}: column-header hits changed: {got_hits}"
         for c in cands:
             assert c["review_only"] is True and c["orientation"] == "column", f"{sid}: {c}"
             assert c["value"] not in {t for tag, t in want if tag == "th"}, f"{sid}: header used as value"
         _assert_no_graph(s, blocks, groups)
+
+
+def test_html_rowspan_and_colspan_column_alignment():
+    """Spanning cells must not shift review-only LOCATION values."""
+    raw = (
+        "<table><tr><th>時代</th><th>エリア</th><th>座標</th></tr>"
+        "<tr><th rowspan='2'>現代</th><td>南サンドリア</td><td>(F-9)</td></tr>"
+        "<tr><td>バストゥーク商業区</td><td>(D-11)</td></tr></table>"
+    )
+    hits = _table_candidates(presentation_groups(html_blocks("span-test", raw)))
+    assert [(c["field"], c["value"], c["column_index"]) for c in hits] == [
+        ("エリア", "南サンドリア", 1), ("エリア", "バストゥーク商業区", 1)]
+    assert all(c["review_only"] is True for c in hits)
+    raw2 = (
+        "<table><tr><th colspan='2'>Notes</th><th>場所</th></tr>"
+        "<tr><td>A</td><td>B</td><td>ヨアトル大森林</td></tr></table>"
+    )
+    hits2 = _table_candidates(presentation_groups(html_blocks("colspan-test", raw2)))
+    assert [(c["field"], c["value"], c["column_index"]) for c in hits2] == [
+        ("場所", "ヨアトル大森林", 2)]
 
 
 def test_legacy_flattened_text_is_degraded_and_untyped():
