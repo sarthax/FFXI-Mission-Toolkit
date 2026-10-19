@@ -9,6 +9,21 @@ This is the authoritative current planning and capability inventory for the Miss
 
 `ROADMAP.md` remains the historical implementation ledger. `AUDIT_STATUS.md` remains a historical/implementation audit log. When older status text conflicts with this file, use this file plus merged `main` history.
 
+## 2026-10-19 — AI test supervisor root-cause investigation backlog (planned)
+
+**Status:** planned, not implemented. The current authenticated /api/supervisor gateway deliberately exposes read-only monitoring and has `execution_enabled: false`. Local Open WebUI with `ornith-1.5:9b` has demonstrated grounded tool use. Keep this research backlog separate from any future operator-authorized test execution.
+
+- [ ] **Run evidence drill-down:** Add `supervisor_run_evidence` with bounded, run-ID-scoped assertions, expected/observed values, client/server snapshots, timestamps, revisions, DLL provenance, and evidence references. Support both `evidence.assertions` and legacy `evidence.evaluation`; current `failed-assertions` only forwards `evaluation` and loses the local observation-runner assertion arrays.
+- [ ] **Approved source search:** Add `supervisor_search_source` against allowlisted, pinned DSP, XiHeadless, and Toolkit source checkouts or existing indexed evidence. Return concise source paths, line numbers, revision and context; prevent traversal, secrets exposure, arbitrary filesystem search or execution.
+- [ ] **Behavior/Feature Trace research:** Add `supervisor_trace_behavior` as a narrow read-only adapter to existing Feature Trace/Behavior Inspector evidence ranking, scoped to the assertion and relevant implementations rather than an unfiltered graph dump. Explicitly distinguish verified evidence from candidates.
+- [ ] **Fixed-query diagnostic catalog:** Add `supervisor_query_diagnostics` with allowlisted characters, per-query parameter schemas, SELECT-only credentials and bounded results. Validate the DSP schema first (including `chars.keyitems` raw `keyitems_t` layout, blob size/endianness/seen bits, and safe read-only decoding); no free-form model SQL. Audit inventory location numbering and truncation (Safe 2 vs wardrobes) before reporting comparisons as complete.
+- [ ] **Investigation dossier:** Add `supervisor_investigation_dossier` structured with failing assertions, candidate mechanisms, supporting/refuting citations, source revision, confidence/uncertainty, proposed code/test fix, and a discriminating validation plan. Do not manufacture root-cause certainty when source, packets, or state are missing.
+- [ ] **GUI integration and tests:** Add an investigation detail view linked from test-run assertions; exercise empty/malformed evidence, access denial, bounded responses, redaction, SQL nonmutation, version mismatch and LLM tool-use grounding. Test locally with deliberately mismatched synthetic assertions before relying on gameplay failure cases.
+
+**Acceptance gate:** the supervisor can explain one real failed imported run with linked original assertions, bounded log evidence, cited source locations and a falsifiable fix recommendation. Execution, raw MCP control, shell commands, direct code edits and arbitrary DB access remain unavailable to the model.
+
+**Local evidence milestone:** the XiHeadless agent reported two additional clean-build MOG-09 runs, 6/6 assertions each, DLL hash `ef3927a379f5b96f72329418fb12282da7c680a03dbf843fac213219b683a86b`, and imported run IDs `obs-20261019T081629Z` / `obs-20261019T082001Z`; these are agent-reported local observations, not independently replicated by CI. PR #1112 (OpenAPI repair and pipeline report) is merged. Dedicated inventory catalog test `INV-OBS-01` and its run inspector are merged; actual INV-OBS-01 execution and key-item persistence decoding remain unverified. XiHeadless observation-runner PR #3 requires final review.
+
 ## 2026-10-18 capability-inventory gap correction (targeted)
 
 **Important:** The October 17–18 documentation/navigation cleanup was not a comprehensive feature census. This roadmap, the in-app `gui/templates/roadmap.html`, and historical ledgers are manually maintained and can diverge. Do not interpret the number of recent roadmap entries as the number of shipped features.
