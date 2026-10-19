@@ -21,7 +21,7 @@ def test_operator_routes_require_auth_and_approval(monkeypatch):
     body = {"account": "xitest07", "charid": 21836, "supervisor_port": 8420, "approval": True}
     assert client.post("/feature-testing/builder/launch", json=body).status_code == 403
     headers = {"X-Test-Operator-Token": "a" * 64}
-    assert client.post("/feature-testing/builder/launch", json={**body, "approval": False}, headers=headers).status_code == 403 or client.post("/feature-testing/builder/launch", json={**body, "approval": False}, headers=headers).status_code == 400
+    assert client.post("/feature-testing/builder/launch", json={**body, "approval": False}, headers=headers).status_code == 400
     assert client.get("/feature-testing/builder/jobs").status_code == 403
 
 
