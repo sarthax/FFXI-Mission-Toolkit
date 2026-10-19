@@ -360,7 +360,7 @@
       ],
       "reference_url": "https://github.com/LandSandBoat/server/blob/base/scripts/globals/hobbies/chocobo_raising/README.md",
       "tracker_url": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
-      "source_note": "Baseline: LSB inspected 2026-10-19; DSP target not yet verified. sarthax/xiheadless-dsp is the headless client, not the DSP server."
+      "source_note": "Baseline: LSB inspected 2026-10-19; DSP target dsp-branches f2d771e0 audited 2026-10-19 by source-read only (none validated; see docs/workbench/chocobo_audit). sarthax/xiheadless-dsp is the headless client, not the DSP server."
     }
   }
 }
