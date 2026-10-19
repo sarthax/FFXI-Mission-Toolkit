@@ -11,7 +11,7 @@ import os
 from fastapi import APIRouter, Header, HTTPException
 
 from workbench.server_admin.feature_testing.router import _results_db, _run_summary
-from workbench.server_admin.feature_testing.results import recent_results
+from workbench.server_admin.feature_testing.results import recent_results, results_for_run
 from .log_diagnostics import read_log
 from .service_health import service_health
 from .database_diagnostics import inventory_snapshot
@@ -41,6 +41,38 @@ def test_runs(authorization: str | None = Header(default=None)):
     rows = recent_results(path, limit=100) if path else []
     return {"runs": _run_summary(rows), "execution_enabled": False,
             "note": "Imported records are not independently authenticated"}
+
+
+
+@router.get("/run-evidence/{run_id}", operation_id="supervisor_run_evidence")
+def run_evidence(run_id: str, authorization: str | None = Header(default=None)):
+    """Retrieve all bounded imported evidence for one exact run ID; no execution."""
+    _authorize(authorization)
+    db_path = _results_db()
+    if not db_path:
+        raise HTTPException(status_code=503, detail="Results database not configured")
+    try:
+        records = results_for_run(db_path, run_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not records:
+        raise HTTPException(status_code=404, detail="Run not found")
+    # The importer bounds each record, but a run may have many records.
+    # Reject oversized responses instead of silently dropping evidence.
+    import json
+    payload = json.dumps(records, ensure_ascii=False)
+    if len(payload.encode("utf-8")) > 524288:
+        raise HTTPException(status_code=413, detail="Run evidence exceeds supervisor response limit")
+    for record in records:
+        evidence = record["evidence"]
+        assertions = evidence.get("assertions", [])
+        record["assertions"] = assertions if isinstance(assertions, list) else []
+        evaluation = evidence.get("evaluation", {})
+        record["evaluation"] = evaluation if isinstance(evaluation, dict) else {}
+        record.pop("evidence_json", None)
+    return {"run_id": run_id, "records": records, "count": len(records),
+            "source": "imported_evidence_not_independently_authenticated",
+            "execution_enabled": False}
 
 
 @router.get("/failed-assertions", operation_id="supervisor_failed_assertions")
