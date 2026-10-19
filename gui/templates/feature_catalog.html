@@ -42,6 +42,20 @@
 </tbody></table></div>
 </details>
 {% endif %}
+{% if gui_inventory is defined %}
+<details id="gui-automatic-inventory">
+<summary><strong>Automatic GUI control candidates</strong> &mdash; {{ gui_inventory.control_count }} static controls across {{ gui_inventory.pages|length }} sampled templates</summary>
+<p class="muted">{{ gui_inventory.note }}</p>
+{% for page in gui_inventory.pages %}
+<details><summary>{{ page.module }} — {{ page.count }} candidates{% if page.truncated %} (display cap reached){% endif %}</summary>
+<div class="table-wrap"><table><thead><tr><th>Kind</th><th>Label</th><th>Target</th></tr></thead><tbody>
+{% for control in page.controls %}
+<tr><td>{{ control.kind }}</td><td>{{ control.label or 'Unlabeled' }}</td><td><code>{{ control.target or 'Inline action / dynamic' }}</code></td></tr>
+{% endfor %}
+</tbody></table></div></details>
+{% endfor %}
+</details>
+{% endif %}
 <form method="get" class="search wb-filter-row">
   <input type="search" name="q" value="{{ q }}" placeholder="Search capabilities">
   <select name="module"><option value="">All modules</option>{% for m in modules %}<option value="{{ m }}" {% if module == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select>
