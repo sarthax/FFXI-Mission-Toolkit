@@ -42,6 +42,11 @@ def _connect() -> sqlite3.Connection:
         id TEXT PRIMARY KEY, created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
         case_id TEXT NOT NULL, status TEXT NOT NULL, account TEXT NOT NULL,
         charid INTEGER NOT NULL, run_id TEXT, verdict TEXT, error TEXT)""")
+    existing = {row[1] for row in conn.execute("PRAGMA table_info(feature_test_jobs)")}
+    if "phase" not in existing:
+        conn.execute("ALTER TABLE feature_test_jobs ADD COLUMN phase TEXT NOT NULL DEFAULT 'not_started'")
+    if "phase_updated_at" not in existing:
+        conn.execute("ALTER TABLE feature_test_jobs ADD COLUMN phase_updated_at TEXT")
     return conn
 
 
@@ -58,6 +63,14 @@ def jobs(limit: int = 20) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def _set_phase(job_id: str, phase: str) -> None:
+    if phase not in {"not_started", "runner_invoked", "runner_finished", "report_validated", "evidence_imported", "operator_reconciled", "failed"}:
+        raise ValueError("unknown execution phase")
+    with _LOCK, _connect() as db:
+        db.execute("UPDATE feature_test_jobs SET phase=?, phase_updated_at=?, updated_at=? WHERE id=? AND status IN ('QUEUED','RUNNING')",
+                   (phase, _stamp(), _stamp(), job_id))
+
+
 def _set_status(job_id: str, status: str, *, run_id=None, verdict=None, error=None) -> None:
     with _LOCK, _connect() as db:
         db.execute("UPDATE feature_test_jobs SET status=?, updated_at=?, run_id=?, verdict=?, error=? WHERE id=?",
@@ -66,10 +79,13 @@ def _set_status(job_id: str, status: str, *, run_id=None, verdict=None, error=No
 
 def _run(job_id: str, account: str, charid: int, port: int, artifacts: Path) -> None:
     _set_status(job_id, "RUNNING")
+    _set_phase(job_id, "runner_invoked")
     try:
         outcome = execute_mog09(account=account, charid=charid, out_dir=artifacts,
-                                supervisor=f"http://127.0.0.1:{port}", approved=True)
+                                supervisor=f"http://127.0.0.1:{port}", approved=True,
+                                progress=lambda phase: _set_phase(job_id, phase))
     except Exception:
+        _set_phase(job_id, "failed")
         # Diagnostics remain in local artifacts; do not disclose command output or credentials.
         _set_status(job_id, "ERROR", error="Runner failed; inspect local test artifacts and service logs")
     else:
@@ -127,7 +143,7 @@ def recover_interrupted(job_id: str, *, acknowledged: bool) -> dict:
         active_thread = _THREADS.get(job_id)
         if active_thread and active_thread.is_alive():
             raise ValueError("job is still running in this Toolkit process")
-        db.execute("UPDATE feature_test_jobs SET status='INTERRUPTED', updated_at=?, error=? WHERE id=? AND status IN ('QUEUED','RUNNING')",
-                   (_stamp(), "Operator reconciled after confirming no external runner is active; evidence not automatically authenticated", job_id))
+        db.execute("UPDATE feature_test_jobs SET status='INTERRUPTED', phase='operator_reconciled', phase_updated_at=?, updated_at=?, error=? WHERE id=? AND status IN ('QUEUED','RUNNING')",
+                   (_stamp(), _stamp(), "Operator reconciled after confirming no external runner is active; evidence not automatically authenticated", job_id))
         return {"job_id": job_id, "status": "INTERRUPTED",
                 "note": "Manual reconciliation only; no subprocess termination occurred"}
