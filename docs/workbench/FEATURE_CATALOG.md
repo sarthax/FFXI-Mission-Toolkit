@@ -66,3 +66,7 @@ All six new records remain **unverified** for local runtime acceptance. The desc
 ## Key Items and Validation operator function crosswalk (October 19)
 
 Five additional guided subfunctions are proposed: Key Item lineage comparison, Lua operation dependencies, evidence handoff, validation run history, and live target validation. The inventory will reach **96 curated records** if this PR merges. Each new entry separates its purpose, operator steps and limitations, and retains `unverified` runtime validation. Key Item inspector labels and operation controls are checked in the curated template audit; Validation is grounded in existing `/validation/runs` and `/validation/live-target` routes. This is a documentation and route-contract expansion, not a claim that the user's live server or test harness has been exercised.
+
+## Source/test provenance crosswalk (October 19)
+
+A focused subset of Feature Trace, Feature Testing and Key Items records now carries `source_refs` and `test_refs` pointing to checked-in files. The loader verifies that paths exist and rejects invalid references; the detail view displays these under **Source and regression references**. These are implementation and offline-test pointers only: they do **not** upgrade a record to `tested` or prove live DSP, client, or GUI acceptance. More modules will be mapped in later slices.
