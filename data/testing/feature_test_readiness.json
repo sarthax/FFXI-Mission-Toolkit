@@ -707,6 +707,262 @@
       ],
       "new_command_review": [],
       "command_verification": "pending_local_lua_audit"
+    },
+    {
+      "id": "moghancement",
+      "name": "Moghancement / Moglification",
+      "existing_gm_candidates": [
+        "moghancement",
+        "additem",
+        "hasitem",
+        "addkeyitem",
+        "delkeyitem",
+        "getmod"
+      ],
+      "headless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "command_verification": "moghancement_source_reviewed_main_runtime_not_verified",
+      "oracle": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+      "source_sql": "sql/item_furnishing.sql",
+      "cases": [
+        {
+          "id": "MOG-01",
+          "title": "single furnishing produces its configured KI",
+          "kind": "positive",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": null
+        },
+        {
+          "id": "MOG-02",
+          "title": "same element strongest installed furniture determines KI",
+          "kind": "positive",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": null
+        },
+        {
+          "id": "MOG-03",
+          "title": "aggregate dominant element calculation",
+          "kind": "positive",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": null
+        },
+        {
+          "id": "MOG-04",
+          "title": "installed furniture across both safes",
+          "kind": "positive",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": null
+        },
+        {
+          "id": "MOG-05",
+          "title": "replacing prior KI removes stale KI and modifiers",
+          "kind": "positive",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": null
+        },
+        {
+          "id": "MOG-06",
+          "title": "uninstall/relog persistence",
+          "kind": "persistence",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": null
+        },
+        {
+          "id": "MOG-07",
+          "title": "match GM info aura breakdown",
+          "kind": "positive",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": null
+        },
+        {
+          "id": "MOG-08",
+          "title": "elemental tie clears KI",
+          "kind": "negative",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": "incorrect or duplicated furniture KI must not remain"
+        },
+        {
+          "id": "MOG-09",
+          "title": "stored but uninstalled furnishing grants none",
+          "kind": "negative",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": "incorrect or duplicated furniture KI must not remain"
+        },
+        {
+          "id": "MOG-10",
+          "title": "empty layout clears KI",
+          "kind": "negative",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": "incorrect or duplicated furniture KI must not remain"
+        },
+        {
+          "id": "MOG-11",
+          "title": "repeated recompute never duplicates effects",
+          "kind": "negative",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": "incorrect or duplicated furniture KI must not remain"
+        },
+        {
+          "id": "MOG-12",
+          "title": "invalid forced KI rejected",
+          "kind": "negative",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": "incorrect or duplicated furniture KI must not remain"
+        },
+        {
+          "id": "MOG-13",
+          "title": "duplicate furnishings change aura but not KI count",
+          "kind": "negative",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": "incorrect or duplicated furniture KI must not remain"
+        },
+        {
+          "id": "MOG-14",
+          "title": "equal strongest furnishings follow DSP scan order",
+          "kind": "negative",
+          "status": "planned",
+          "run_mode": "blocked_pending_furniture_client_capability",
+          "evidence_required": [
+            "installed_furniture_manifest",
+            "expected_ki_oracle",
+            "actual_keyitem_set",
+            "gm_info_before_after",
+            "modifier_delta",
+            "server_commit"
+          ],
+          "negative_invariant": "incorrect or duplicated furniture KI must not remain"
+        }
+      ],
+      "gaps": [
+        "verified headless furnishing install/uninstall and menu exit packets",
+        "installed furniture manifest from both safes",
+        "read-only KI and modifier observation in MCP bridge",
+        "confirm DSP server running same item_furnishing SQL and C++"
+      ],
+      "new_command_review": [
+        "no new GM command needed initially: !moghancement info and recalc already exist"
+      ]
     }
   ],
   "headless_baseline": {
