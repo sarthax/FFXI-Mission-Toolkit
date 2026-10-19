@@ -10,6 +10,7 @@ import time
 import urllib.error
 import uuid
 import hashlib
+from datetime import datetime, timezone
 from pathlib import Path
 from . import wiki_jobs, wiki_document, scrape_wikiwiki_jp as jp
 
@@ -125,7 +126,8 @@ def _save_page(db,title,raw):
             page={"page_id":title,"title":title,"page_text":text}
             page_id,fmt,blocks=wiki_document.build_blocks(page,source_format="html",raw_source=raw)
             wiki_document.store_document(con,source_id="WikiWikiJP",page_id=page_id,
-                                        source_format=fmt,raw_source=raw,blocks=blocks)
+                                        source_format=fmt,raw_source=raw,blocks=blocks,
+                                        retrieved_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
             wiki_document.ensure_title_alias(con,"WikiWikiJP",page_id,title)
     finally:
         if filename and os.path.exists(filename):

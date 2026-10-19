@@ -1,0 +1,1969 @@
+{
+ "extract_version": "wiki-corpus-extract-v1",
+ "samples": [
+  {
+   "sample_id": "bg-nm-medusa",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "BGWiki",
+   "page_title": "Medusa",
+   "page_id": "37229",
+   "source_url": "https://www.bg-wiki.com/ffxi/Medusa",
+   "revision_id": "771556",
+   "revision_timestamp": "2026-07-06T16:31:15Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "b989c9d3e32827b3d1a5b54c6a50c86c18bfed0e269794ef634cf47fd5b76ca3",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 3086,
+   "license_note": "see site footer (CC BY-NC-SA believed); attribution retained",
+   "categories": [
+    "nm",
+    "infobox",
+    "research-example"
+   ],
+   "note": "Known research example; Notes param embeds ===headings===",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Adversary Description\n|Image=\n|Class=NM\n|Type=\n|Family=Lamiae\n|Main.Job=Ranger\n|Sub.Job=\n|Crystal=Water\n|Detects=True Sight\n}}",
+   "excerpt_sha256": "0da6ed26643d4f9229baffedf9b0b5f0a8710a155cae9c1086636b68fe94bd37",
+   "template": "Adversary Description",
+   "kept_params": [
+    "Image",
+    "Class",
+    "Type",
+    "Family",
+    "Main.Job",
+    "Sub.Job",
+    "Crystal",
+    "Detects"
+   ],
+   "omitted_params": [
+    "Notes"
+   ],
+   "fields": [
+    {
+     "label": "Image",
+     "raw_value": "",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Class",
+     "raw_value": "NM",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Type",
+     "raw_value": "",
+     "locator": "section::template:1:field:3",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Family",
+     "raw_value": "Lamiae",
+     "locator": "section::template:1:field:4",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Main.Job",
+     "raw_value": "Ranger",
+     "locator": "section::template:1:field:5",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Sub.Job",
+     "raw_value": "",
+     "locator": "section::template:1:field:6",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Crystal",
+     "raw_value": "Water",
+     "locator": "section::template:1:field:7",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Detects",
+     "raw_value": "True Sight",
+     "locator": "section::template:1:field:8",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "bg-nm-absolute-virtue",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "BGWiki",
+   "page_title": "Absolute Virtue",
+   "page_id": "535",
+   "source_url": "https://www.bg-wiki.com/ffxi/Absolute_Virtue",
+   "revision_id": "758915",
+   "revision_timestamp": "2026-02-18T16:02:35Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "9b98c78b86a1aec7c9c977cbc9434ea22260abf6e5fa4c106c1b801aa75589a3",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 5728,
+   "license_note": "see site footer (CC BY-NC-SA believed); attribution retained",
+   "categories": [
+    "nm",
+    "infobox",
+    "research-example"
+   ],
+   "note": "Known research example",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Adversary Description\n|Image=\n|Class=NM\n|Type=Luminians\n|Family=Aern\n|Main.Job=DRG\n|Sub.Job=\n|Crystal=Wind\n|Detects=\n}}",
+   "excerpt_sha256": "21d584a6608975e8cc8af16d3acda9420215a24812ad6a8bb36134009739d5e7",
+   "template": "Adversary Description",
+   "kept_params": [
+    "Image",
+    "Class",
+    "Type",
+    "Family",
+    "Main.Job",
+    "Sub.Job",
+    "Crystal",
+    "Detects"
+   ],
+   "omitted_params": [
+    "Notes"
+   ],
+   "fields": [
+    {
+     "label": "Image",
+     "raw_value": "",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Class",
+     "raw_value": "NM",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Type",
+     "raw_value": "Luminians",
+     "locator": "section::template:1:field:3",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Family",
+     "raw_value": "Aern",
+     "locator": "section::template:1:field:4",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Main.Job",
+     "raw_value": "DRG",
+     "locator": "section::template:1:field:5",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Sub.Job",
+     "raw_value": "",
+     "locator": "section::template:1:field:6",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Crystal",
+     "raw_value": "Wind",
+     "locator": "section::template:1:field:7",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Detects",
+     "raw_value": "",
+     "locator": "section::template:1:field:8",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "bg-quest-header",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "BGWiki",
+   "page_title": "Granddaddy Dearest",
+   "page_id": "101756",
+   "source_url": "https://www.bg-wiki.com/ffxi/Granddaddy_Dearest",
+   "revision_id": "675369",
+   "revision_timestamp": "2023-03-26T05:45:04Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "283b33e393e47bc9f3681c84412fe0686169b9237ac606d9cc69417fc7b72972",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 1375,
+   "license_note": "see site footer (CC BY-NC-SA believed); attribution retained",
+   "categories": [
+    "quest",
+    "rewards",
+    "nested-links"
+   ],
+   "note": "",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Quest Header\n|Expansion=Adoulin\n|Start=[[Alienor]], [[Western Adoulin]] (E-8)\n|Description=Alienor wants to send a care package containing Adoulinian delicacies to her grandfather in Jeuno, and also wishes to know about the ongoing expedition he leads.\n|Fame=Adoulin\n|FLevel=3\n|Quest Reqs=\n|Item Reqs=\n|Level=\n|Repeatable=Yes\n|Previous=[[Researchers from the West]]\n|Next=\n|Title=\n|Image={{PAGENAME}}.jpg\n}}",
+   "excerpt_sha256": "46c8d5238072ef3e115e93c749a90aba493433dcb53b69c8e7fdecc0f49226d3",
+   "template": "Quest Header",
+   "kept_params": [
+    "Expansion",
+    "Start",
+    "Description",
+    "Fame",
+    "FLevel",
+    "Quest Reqs",
+    "Item Reqs",
+    "Level",
+    "Repeatable",
+    "Previous",
+    "Next",
+    "Title",
+    "Image"
+   ],
+   "omitted_params": [
+    "Reward"
+   ],
+   "fields": [
+    {
+     "label": "Expansion",
+     "raw_value": "Adoulin",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Start",
+     "raw_value": "[[Alienor]], [[Western Adoulin]] (E-8)",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Description",
+     "raw_value": "Alienor wants to send a care package containing Adoulinian delicacies to her grandfather in Jeuno, and also wishes to know about the ongoing expedition he leads.",
+     "locator": "section::template:1:field:3",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Fame",
+     "raw_value": "Adoulin",
+     "locator": "section::template:1:field:4",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "FLevel",
+     "raw_value": "3",
+     "locator": "section::template:1:field:5",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Quest Reqs",
+     "raw_value": "",
+     "locator": "section::template:1:field:6",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Item Reqs",
+     "raw_value": "",
+     "locator": "section::template:1:field:7",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Level",
+     "raw_value": "",
+     "locator": "section::template:1:field:8",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Repeatable",
+     "raw_value": "Yes",
+     "locator": "section::template:1:field:9",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Previous",
+     "raw_value": "[[Researchers from the West]]",
+     "locator": "section::template:1:field:10",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Next",
+     "raw_value": "",
+     "locator": "section::template:1:field:11",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Title",
+     "raw_value": "",
+     "locator": "section::template:1:field:12",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Image",
+     "raw_value": "{{PAGENAME}}.jpg",
+     "locator": "section::template:1:field:13",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "bg-mission-header",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "BGWiki",
+   "page_title": "Seekers of Adoulin Mission 2-1",
+   "page_id": "101748",
+   "source_url": "https://www.bg-wiki.com/ffxi/Seekers_of_Adoulin_Mission_2-1",
+   "revision_id": "729896",
+   "revision_timestamp": "2025-02-28T09:15:07Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "45c52dac03f633135cb0c118ab28e30c44c6f67f111e335c6e32d515cd5dd502",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 1226,
+   "license_note": "see site footer (CC BY-NC-SA believed); attribution retained",
+   "categories": [
+    "mission",
+    "rewards"
+   ],
+   "note": "",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Mission Header\n|Mission Name=Budding Prospects\n|Expansion=Seekers of Adoulin\n|Start=[[Levil]], [[Western Adoulin]] (E-8)\n|Level=\n|Repeatable=\n|Previous=Seekers of Adoulin Mission 1-8{{!}}Arciela Appears Again\n|Next=Seekers of Adoulin Mission 2-1-1{{!}}The Light Shining in Your Eyes\n|Title=\n|Reward=\n|Image=\n}}",
+   "excerpt_sha256": "a8304df96d643ef035b9a9c08308880b53a54d831fb3ea73cf2d4f65ae4d5097",
+   "template": "Mission Header",
+   "kept_params": [
+    "Mission Name",
+    "Expansion",
+    "Start",
+    "Level",
+    "Repeatable",
+    "Previous",
+    "Next",
+    "Title",
+    "Reward",
+    "Image"
+   ],
+   "omitted_params": [
+    "Description"
+   ],
+   "fields": [
+    {
+     "label": "Mission Name",
+     "raw_value": "Budding Prospects",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Expansion",
+     "raw_value": "Seekers of Adoulin",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Start",
+     "raw_value": "[[Levil]], [[Western Adoulin]] (E-8)",
+     "locator": "section::template:1:field:3",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Level",
+     "raw_value": "",
+     "locator": "section::template:1:field:4",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Repeatable",
+     "raw_value": "",
+     "locator": "section::template:1:field:5",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Previous",
+     "raw_value": "Seekers of Adoulin Mission 1-8{{!}}Arciela Appears Again",
+     "locator": "section::template:1:field:6",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Next",
+     "raw_value": "Seekers of Adoulin Mission 2-1-1{{!}}The Light Shining in Your Eyes",
+     "locator": "section::template:1:field:7",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Title",
+     "raw_value": "",
+     "locator": "section::template:1:field:8",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Reward",
+     "raw_value": "",
+     "locator": "section::template:1:field:9",
+     "expected_type": "REWARDS",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "Image",
+     "raw_value": "",
+     "locator": "section::template:1:field:10",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "bg-keyitem-header",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "BGWiki",
+   "page_title": "Insulator tablet",
+   "page_id": "102003",
+   "source_url": "https://www.bg-wiki.com/ffxi/Insulator_tablet",
+   "revision_id": "560784",
+   "revision_timestamp": "2018-07-16T22:11:03Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "60864f5fdedfa196924c6bd7ec7422ad8e14e712dc987627b5792ba50d6e614b",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 788,
+   "license_note": "see site footer (CC BY-NC-SA believed); attribution retained",
+   "categories": [
+    "key-item"
+   ],
+   "note": "",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Key Item Header\n|Name=Insulator tablet\n|Type=Temporary Key Items\n}}",
+   "excerpt_sha256": "22b9787f297b78efa8356c42e58454fe835f89f44724697e4e247b129d6fc377",
+   "template": "Key Item Header",
+   "kept_params": [
+    "Name",
+    "Type"
+   ],
+   "omitted_params": [
+    "Description"
+   ],
+   "fields": [
+    {
+     "label": "Name",
+     "raw_value": "Insulator tablet",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Type",
+     "raw_value": "Temporary Key Items",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "bg-npc-template",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "BGWiki",
+   "page_title": "Fariska Lokhmi",
+   "page_id": "100200",
+   "source_url": "https://www.bg-wiki.com/ffxi/Fariska_Lokhmi",
+   "revision_id": "642623",
+   "revision_timestamp": "2022-04-22T05:01:07Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "9b3f7213be08d6f40c5ed52e620a32a351a348af439b612b94774643ad353cda",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 776,
+   "license_note": "see site footer (CC BY-NC-SA believed); attribution retained",
+   "categories": [
+    "npc",
+    "location"
+   ],
+   "note": "",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{NPC\n|Name=Fariska Lokhmi\n|Type=Map Marker NPC\n|Location=Eastern Adoulin\n|Position=G-9) (Just outside the Scouts' Coalition\n|Description=Adds markers onto [[Ulbuka]] area maps\n}}",
+   "excerpt_sha256": "781ece436a80e672b7cd8be293c16ee94fc3a60df5869f5a72541f24b18b3c3b",
+   "template": "NPC",
+   "kept_params": [
+    "Name",
+    "Type",
+    "Location",
+    "Position",
+    "Description"
+   ],
+   "omitted_params": [],
+   "fields": [
+    {
+     "label": "Name",
+     "raw_value": "Fariska Lokhmi",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Type",
+     "raw_value": "Map Marker NPC",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Location",
+     "raw_value": "Eastern Adoulin",
+     "locator": "section::template:1:field:3",
+     "expected_type": "LOCATION",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "Position",
+     "raw_value": "G-9) (Just outside the Scouts' Coalition",
+     "locator": "section::template:1:field:4",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Description",
+     "raw_value": "Adds markers onto [[Ulbuka]] area maps",
+     "locator": "section::template:1:field:5",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "bg-bcnm-drops",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "BGWiki",
+   "page_title": "Divine Might II",
+   "page_id": "106619",
+   "source_url": "https://www.bg-wiki.com/ffxi/Divine_Might_II",
+   "revision_id": "762346",
+   "revision_timestamp": "2026-04-10T21:00:58Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "d5b63b1f92059a61d55dd3d91a0f4181d89d56fb6add7bca38d733d556eb9506",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 3460,
+   "license_note": "see site footer (CC BY-NC-SA believed); attribution retained",
+   "categories": [
+    "drops",
+    "treasure",
+    "location",
+    "tiered-drop-labels"
+   ],
+   "note": "DropsB/DropsC style labels are not exact allowlist matches",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{BCNMv2\n|Image=File:La%27Loff_Amphitheater_header.jpg\n|Size=400\n|Type=HTBF\n|Zone=La'Loff Amphitheater\n|EntryItemImage=\n|EntryItem=Pentacide Perpetrator Phantom Gem\n|EntryCurrencyImage=\n|EntryCurrencyAmmount=20\n|EntryCurrencyType=Merit Points\n|Level=Uncapped\n|Time=30\n|Members=18\n|Title=\n|PersonalB=\n|PersonalC=\n|PrimaryEvent=<!--If items drop from a special event. State the event in bold before the drops -->\n|DropsEvent=\n}}",
+   "excerpt_sha256": "4251b49ddd3d66edbd2c2f0c10cb5b3bad0237ffd5402fe846fcbffb81c410a0",
+   "template": "BCNMv2",
+   "kept_params": [
+    "Image",
+    "Size",
+    "Type",
+    "Zone",
+    "EntryItemImage",
+    "EntryItem",
+    "EntryCurrencyImage",
+    "EntryCurrencyAmmount",
+    "EntryCurrencyType",
+    "Level",
+    "Time",
+    "Members",
+    "Title",
+    "PersonalB",
+    "PersonalC",
+    "PrimaryEvent",
+    "DropsEvent"
+   ],
+   "omitted_params": [
+    "PrimaryDrops",
+    "DropsA",
+    "DropsB",
+    "DropsC",
+    "PrimaryPersonal",
+    "PersonalA"
+   ],
+   "fields": [
+    {
+     "label": "Image",
+     "raw_value": "File:La%27Loff_Amphitheater_header.jpg",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Size",
+     "raw_value": "400",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Type",
+     "raw_value": "HTBF",
+     "locator": "section::template:1:field:3",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Zone",
+     "raw_value": "La'Loff Amphitheater",
+     "locator": "section::template:1:field:4",
+     "expected_type": "LOCATION",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "EntryItemImage",
+     "raw_value": "",
+     "locator": "section::template:1:field:5",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "EntryItem",
+     "raw_value": "Pentacide Perpetrator Phantom Gem",
+     "locator": "section::template:1:field:6",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "EntryCurrencyImage",
+     "raw_value": "",
+     "locator": "section::template:1:field:7",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "EntryCurrencyAmmount",
+     "raw_value": "20",
+     "locator": "section::template:1:field:8",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "EntryCurrencyType",
+     "raw_value": "Merit Points",
+     "locator": "section::template:1:field:9",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Level",
+     "raw_value": "Uncapped",
+     "locator": "section::template:1:field:10",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Time",
+     "raw_value": "30",
+     "locator": "section::template:1:field:11",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Members",
+     "raw_value": "18",
+     "locator": "section::template:1:field:12",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Title",
+     "raw_value": "",
+     "locator": "section::template:1:field:13",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "PersonalB",
+     "raw_value": "",
+     "locator": "section::template:1:field:14",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "PersonalC",
+     "raw_value": "",
+     "locator": "section::template:1:field:15",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "PrimaryEvent",
+     "raw_value": "<!--If items drop from a special event. State the event in bold before the drops -->",
+     "locator": "section::template:1:field:16",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "DropsEvent",
+     "raw_value": "",
+     "locator": "section::template:1:field:17",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "bg-trial-magians",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "BGWiki",
+   "page_title": "Trial 4999",
+   "page_id": "103391",
+   "source_url": "https://www.bg-wiki.com/ffxi/Trial_4999",
+   "revision_id": "461486",
+   "revision_timestamp": "2016-11-22T17:59:19Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "d1a305b17edd3670386b4ae3b269111edbb111f942414da85e67a368f38584d9",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 504,
+   "license_note": "see site footer (CC BY-NC-SA believed); attribution retained",
+   "categories": [
+    "requirements",
+    "rewards",
+    "location"
+   ],
+   "note": "",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Trial of the Magians\n|NPC=Magian Moogle\n|Location=Ru'Lude Gardens\n|Position=H-5\n|Previous Trial=[[Trial 4744]]/[[Trial 4745]]\n|Next Trial=None.\n|Requirements=[[File:Brd. Roundlet +2 description.png]]\n|Reward=[[File:Brd. Roundlet +2 (Aug.) description.png]]\n|Augments=\n}}",
+   "excerpt_sha256": "1f32a996d5b825cae9406e654510a80b4b4d8080fe5ff5f5cdfa0974c427af14",
+   "template": "Trial of the Magians",
+   "kept_params": [
+    "NPC",
+    "Location",
+    "Position",
+    "Previous Trial",
+    "Next Trial",
+    "Requirements",
+    "Reward",
+    "Augments"
+   ],
+   "omitted_params": [],
+   "fields": [
+    {
+     "label": "NPC",
+     "raw_value": "Magian Moogle",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Location",
+     "raw_value": "Ru'Lude Gardens",
+     "locator": "section::template:1:field:2",
+     "expected_type": "LOCATION",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "Position",
+     "raw_value": "H-5",
+     "locator": "section::template:1:field:3",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Previous Trial",
+     "raw_value": "[[Trial 4744]]/[[Trial 4745]]",
+     "locator": "section::template:1:field:4",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Next Trial",
+     "raw_value": "None.",
+     "locator": "section::template:1:field:5",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Requirements",
+     "raw_value": "[[File:Brd. Roundlet +2 description.png]]",
+     "locator": "section::template:1:field:6",
+     "expected_type": "REQUIRES",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "Reward",
+     "raw_value": "[[File:Brd. Roundlet +2 (Aug.) description.png]]",
+     "locator": "section::template:1:field:7",
+     "expected_type": "REWARDS",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "Augments",
+     "raw_value": "",
+     "locator": "section::template:1:field:8",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "bg-campaign-header",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "BGWiki",
+   "page_title": "Fiat Lux (W)",
+   "page_id": "111290",
+   "source_url": "https://www.bg-wiki.com/ffxi/Fiat_Lux_(W)",
+   "revision_id": "751836",
+   "revision_timestamp": "2025-11-30T23:38:08Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "de51e0d116c7905547f29671f4ac02d061afc3a485d76f933fda7ef2d38e077d",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 2558,
+   "license_note": "see site footer (CC BY-NC-SA believed); attribution retained",
+   "categories": [
+    "rewards",
+    "location"
+   ],
+   "note": "",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Campaign Header\n|Image=File:Throne Room Area.jpg\n|Size=400\n|NPC Name=Emhi Tchaoryo\n|Zone=Windurst Waters (S)\n|pos=H-9\n|Campaign Type=Offensive operations\n|Campaign Rank=[[Medal of Altana §§§§]]\n|Orders=\n|Time=30 Minutes\n|Level=75+\n}}",
+   "excerpt_sha256": "c339143aeefce059a2e0e850b68f97f163df362abd0ad1ea82c80c54c05983bc",
+   "template": "Campaign Header",
+   "kept_params": [
+    "Image",
+    "Size",
+    "NPC Name",
+    "Zone",
+    "pos",
+    "Campaign Type",
+    "Campaign Rank",
+    "Orders",
+    "Time",
+    "Level"
+   ],
+   "omitted_params": [
+    "Description",
+    "Rewards",
+    "Event Rewards"
+   ],
+   "fields": [
+    {
+     "label": "Image",
+     "raw_value": "File:Throne Room Area.jpg",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Size",
+     "raw_value": "400",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "NPC Name",
+     "raw_value": "Emhi Tchaoryo",
+     "locator": "section::template:1:field:3",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Zone",
+     "raw_value": "Windurst Waters (S)",
+     "locator": "section::template:1:field:4",
+     "expected_type": "LOCATION",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "pos",
+     "raw_value": "H-9",
+     "locator": "section::template:1:field:5",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Campaign Type",
+     "raw_value": "Offensive operations",
+     "locator": "section::template:1:field:6",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Campaign Rank",
+     "raw_value": "[[Medal of Altana §§§§]]",
+     "locator": "section::template:1:field:7",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Orders",
+     "raw_value": "",
+     "locator": "section::template:1:field:8",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Time",
+     "raw_value": "30 Minutes",
+     "locator": "section::template:1:field:9",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Level",
+     "raw_value": "75+",
+     "locator": "section::template:1:field:10",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "bg-two-columns",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "BGWiki",
+   "page_title": "Gua. Lumber",
+   "page_id": "101808",
+   "source_url": "https://www.bg-wiki.com/ffxi/Gua._Lumber",
+   "revision_id": "488191",
+   "revision_timestamp": "2017-03-10T04:08:40Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "118ea55c30609817d99f03669eec5e0b538af43648257cdb9541e7f1eaf3cb6a",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 1991,
+   "license_note": "see site footer (CC BY-NC-SA believed); attribution retained",
+   "categories": [
+    "two-column",
+    "unsupported-labels"
+   ],
+   "note": "heading/content labels are layout, not semantics",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Two Columns\n|heading=\n}}",
+   "excerpt_sha256": "8b269d2aa84ef5470ca24a8c993aeb395c2da6894603fe9da0b303fd18f50cad",
+   "template": "Two Columns",
+   "kept_params": [
+    "heading"
+   ],
+   "omitted_params": [
+    "content"
+   ],
+   "fields": [
+    {
+     "label": "heading",
+     "raw_value": "",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "bg-insert-template-table",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "BGWiki",
+   "page_title": "Leviathan's Couse",
+   "page_id": "10002",
+   "source_url": "https://www.bg-wiki.com/ffxi/Leviathan's_Couse",
+   "revision_id": "576404",
+   "revision_timestamp": "2019-04-28T18:17:38Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "29359e51c1987c0160e27664d3f6b9d5538171d485a74f4568e85d4b83803b05",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 908,
+   "license_note": "see site footer (CC BY-NC-SA believed); attribution retained",
+   "categories": [
+    "rewards",
+    "nested-template",
+    "unsupported-labels"
+   ],
+   "note": "Value is an 'Insert ... List Template' macro name",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Item Quest Reward Table\n|Type=Q\n}}",
+   "excerpt_sha256": "5a35360ac23f6b8415d4ed73443eb334ed3958a3ddbe9d5195aabe6ef8a3efe2",
+   "template": "Item Quest Reward Table",
+   "kept_params": [
+    "Type"
+   ],
+   "omitted_params": [
+    "Insert Quest List Template"
+   ],
+   "fields": [
+    {
+     "label": "Type",
+     "raw_value": "Q",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "bg-adversary-2-japanese",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "BGWiki",
+   "page_title": "Magh Bihu",
+   "page_id": "143859",
+   "source_url": "https://www.bg-wiki.com/ffxi/Magh_Bihu",
+   "revision_id": "662302",
+   "revision_timestamp": "2022-11-06T00:22:29Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "7bedc684a062225135014842afa245bcb3ab260df0a6c4659dc0bdb1f31648a5",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 2446,
+   "license_note": "see site footer (CC BY-NC-SA believed); attribution retained",
+   "categories": [
+    "nm",
+    "japanese-label"
+   ],
+   "note": "Contains a Japanese= field value",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Adversary Description 2\n|Image=\n|Japanese=マンドラゴラ\n|Class=Mission\n|Type=Plantoid\n|Family=Mandragora\n|Main Job=BLM\n|Sub Job=RDM\n}}",
+   "excerpt_sha256": "a2c86537304736866d5365d6f89c6dd406ab64b691ea10844892c8dd34742fd4",
+   "template": "Adversary Description 2",
+   "kept_params": [
+    "Image",
+    "Japanese",
+    "Class",
+    "Type",
+    "Family",
+    "Main Job",
+    "Sub Job"
+   ],
+   "omitted_params": [
+    "Adversary Description 2 Row",
+    "Notes"
+   ],
+   "fields": [
+    {
+     "label": "Image",
+     "raw_value": "",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Japanese",
+     "raw_value": "マンドラゴラ",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Class",
+     "raw_value": "Mission",
+     "locator": "section::template:1:field:3",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Type",
+     "raw_value": "Plantoid",
+     "locator": "section::template:1:field:4",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Family",
+     "raw_value": "Mandragora",
+     "locator": "section::template:1:field:5",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Main Job",
+     "raw_value": "BLM",
+     "locator": "section::template:1:field:6",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Sub Job",
+     "raw_value": "RDM",
+     "locator": "section::template:1:field:7",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "bg-malformed-unclosed",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "BGWiki",
+   "page_title": "Goblin Headsman",
+   "page_id": "127954",
+   "source_url": "https://www.bg-wiki.com/ffxi/Goblin_Headsman",
+   "revision_id": "459751",
+   "revision_timestamp": "2016-11-10T18:32:35Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "01dda33272ccdef063ef6e66caff14a11d930348b42925ed9a9bfaecfb6e5795",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 650,
+   "license_note": "see site footer (CC BY-NC-SA believed); attribution retained",
+   "categories": [
+    "malformed"
+   ],
+   "note": "Source has 3 '{{' vs 4 '}}'",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Adversary Description\n|Image=\n|Class=\n|Type=Beastmen\n|Family=Goblin\n|Main.Job=WAR\n|Sub.Job=\n|Crystal=Lightning\n|Detects=Sight\n|Notes=\n}}",
+   "excerpt_sha256": "3cb59bb88ad29559ad6fa577bb3ef4f993abfc6d50110ae8c724c4d55a287954",
+   "template": "Adversary Description",
+   "kept_params": [
+    "Image",
+    "Class",
+    "Type",
+    "Family",
+    "Main.Job",
+    "Sub.Job",
+    "Crystal",
+    "Detects",
+    "Notes"
+   ],
+   "omitted_params": [],
+   "fields": [
+    {
+     "label": "Image",
+     "raw_value": "",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Class",
+     "raw_value": "",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Type",
+     "raw_value": "Beastmen",
+     "locator": "section::template:1:field:3",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Family",
+     "raw_value": "Goblin",
+     "locator": "section::template:1:field:4",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Main.Job",
+     "raw_value": "WAR",
+     "locator": "section::template:1:field:5",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Sub.Job",
+     "raw_value": "",
+     "locator": "section::template:1:field:6",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Crystal",
+     "raw_value": "Lightning",
+     "locator": "section::template:1:field:7",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Detects",
+     "raw_value": "Sight",
+     "locator": "section::template:1:field:8",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "Notes",
+     "raw_value": "",
+     "locator": "section::template:1:field:9",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "bg-table-shikaree-x",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "BGWiki",
+   "page_title": "Shikaree X",
+   "page_id": "40991",
+   "source_url": "https://www.bg-wiki.com/ffxi/Shikaree_X",
+   "revision_id": "777823",
+   "revision_timestamp": "2026-09-05T04:12:49Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "902f3a379bb1df2e8ef68deb90dfed1d78749f39b526fdd55a3a520ad81f7c20",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 1456,
+   "license_note": "see site footer (CC BY-NC-SA believed); attribution retained",
+   "categories": [
+    "table",
+    "two-column"
+   ],
+   "note": "",
+   "excerpt_kind": "table",
+   "excerpt_wikitext": "{| border=\"0\" cellspacing=\"0\" cellpadding=\"2\" width=100%|\n! width=60%; style=\"text-align:left;\"|\n! width=40%; style=\"text-align:left;\"|\n|- \n*''Crystal Affinity'': Earth\n*''Job'': [[Beastmaster]]\n*''Weak to'': \n*''Strong to'': \n*''Immune to'': \n*''Detects by'': \n*''Tracks by'': \n|}",
+   "excerpt_sha256": "37c0f3338f9f40fda346d9a0a27924fa902c6261305c8618d56d99081d0e3f8b",
+   "table": true
+  },
+  {
+   "sample_id": "bg-table-dryptotaur",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "BGWiki",
+   "page_title": "Dryptotaur",
+   "page_id": "47338",
+   "source_url": "https://www.bg-wiki.com/ffxi/Dryptotaur",
+   "revision_id": "116284",
+   "revision_timestamp": "2009-07-22T09:47:25Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "b6f784266af6deb594d7dfce1040d2019f497766c04283994678baed58eb31d7",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 1266,
+   "license_note": "see site footer (CC BY-NC-SA believed); attribution retained",
+   "categories": [
+    "table",
+    "nm",
+    "drops"
+   ],
+   "note": "",
+   "excerpt_kind": "table",
+   "excerpt_wikitext": "{| border=\"0\" cellspacing=\"0\" cellpadding=\"2\" width=100%|\n! width=60%; style=\"text-align:left;\"|\n! width=40%; style=\"text-align:left;\"|\n|-\n|Monster Species flavor text (if any). \n*''Crystal Affinity'': {{Dark}}\n*''Job'': [[Monk]]\n*''Weak to'': {{Light}}\n*''Strong to'': {{Dark}}\n*''Immune to'': \n*''Detects by'': True Sight\n*''Tracks by'': {{question}}\n|[[Image:{{PAGENAME}}.jpg|thumb|{{PAGENAME}}]]\n|}",
+   "excerpt_sha256": "8ab582b6ee26b52ceca1750ae11d5cb312bf56d1e730dba50ea62f011a754c47",
+   "table": true
+  },
+  {
+   "sample_id": "ffx-keyitem-infobox",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "FFXIclopedia",
+   "page_title": "\"Adoulin's Topiary Treasures\"",
+   "page_id": "202804",
+   "source_url": "https://ffxiclopedia.fandom.com/wiki/\"Adoulin's_Topiary_Treasures\"",
+   "revision_id": "1571456",
+   "revision_timestamp": "2017-05-20T20:35:44Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "148752fdd08879469f7787ff402fba1a07f9f6590e5370bdb8c6b6df9d17e162",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 1145,
+   "license_note": "see site footer (CC BY-SA believed); attribution retained",
+   "categories": [
+    "key-item",
+    "infobox",
+    "quest"
+   ],
+   "note": "",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Infobox Key Item\n|name=\n|image=Adoulin's_Topiary_Treasures.jpg\n|quest=\n|mission=\n|bcnm=\n|obtained=[[Zenicca]] for 3,000 [[Bayld|bayld]]<br>[[Skipper Moogle]] for 20,000 [[Gil|gil]]\n|drops-from=\n|location=\n|zones=\n|armor set=\n|effects=\n|notes=<!-- Type indicators -->\n|is-temp=<!-- Y = Temporary Key Item -->\n|is-perm=<!-- Y = Permanent Key Item -->\n|is-claim=<!-- Y = Claim Slip -->\n|is-map=<!-- Y = Magical Map -->\n|is-abyssite=<!-- Y = Abyssite -->\n|sub-category=Mog Garden\n|sub-category2=\n|sub-category3=\n|sub-category4=\n}}",
+   "excerpt_sha256": "2c31a83c189bf6d3410b92379097d8818e9ae3ac5e4cc5705c056659cdbe60d8",
+   "template": "Infobox Key Item",
+   "kept_params": [
+    "name",
+    "image",
+    "quest",
+    "mission",
+    "bcnm",
+    "obtained",
+    "drops-from",
+    "location",
+    "zones",
+    "armor set",
+    "effects",
+    "notes",
+    "is-temp",
+    "is-perm",
+    "is-claim",
+    "is-map",
+    "is-abyssite",
+    "sub-category",
+    "sub-category2",
+    "sub-category3",
+    "sub-category4"
+   ],
+   "omitted_params": [
+    "description",
+    "is-atma"
+   ],
+   "fields": [
+    {
+     "label": "name",
+     "raw_value": "",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "image",
+     "raw_value": "Adoulin's_Topiary_Treasures.jpg",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "quest",
+     "raw_value": "",
+     "locator": "section::template:1:field:3",
+     "expected_type": "QUEST",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "mission",
+     "raw_value": "",
+     "locator": "section::template:1:field:4",
+     "expected_type": "QUEST",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "bcnm",
+     "raw_value": "",
+     "locator": "section::template:1:field:5",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "obtained",
+     "raw_value": "[[Zenicca]] for 3,000 [[Bayld|bayld]]<br>[[Skipper Moogle]] for 20,000 [[Gil|gil]]",
+     "locator": "section::template:1:field:6",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "drops-from",
+     "raw_value": "",
+     "locator": "section::template:1:field:7",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "location",
+     "raw_value": "",
+     "locator": "section::template:1:field:8",
+     "expected_type": "LOCATION",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "zones",
+     "raw_value": "",
+     "locator": "section::template:1:field:9",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "armor set",
+     "raw_value": "",
+     "locator": "section::template:1:field:10",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "effects",
+     "raw_value": "",
+     "locator": "section::template:1:field:11",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "notes",
+     "raw_value": "<!-- Type indicators -->",
+     "locator": "section::template:1:field:12",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "is-temp",
+     "raw_value": "<!-- Y = Temporary Key Item -->",
+     "locator": "section::template:1:field:13",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "is-perm",
+     "raw_value": "<!-- Y = Permanent Key Item -->",
+     "locator": "section::template:1:field:14",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "is-claim",
+     "raw_value": "<!-- Y = Claim Slip -->",
+     "locator": "section::template:1:field:15",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "is-map",
+     "raw_value": "<!-- Y = Magical Map -->",
+     "locator": "section::template:1:field:16",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "is-abyssite",
+     "raw_value": "<!-- Y = Abyssite -->",
+     "locator": "section::template:1:field:17",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "sub-category",
+     "raw_value": "Mog Garden",
+     "locator": "section::template:1:field:18",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "sub-category2",
+     "raw_value": "",
+     "locator": "section::template:1:field:19",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "sub-category3",
+     "raw_value": "",
+     "locator": "section::template:1:field:20",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "sub-category4",
+     "raw_value": "",
+     "locator": "section::template:1:field:21",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "ffx-keyitem-infobox-2",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "FFXIclopedia",
+   "page_title": "\"Climbing\"",
+   "page_id": "201093",
+   "source_url": "https://ffxiclopedia.fandom.com/wiki/\"Climbing\"",
+   "revision_id": "1773275",
+   "revision_timestamp": "2024-01-21T19:12:48Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "bfc25612fe7760eb20dfd60cb3d2f00ed9522ab1baadec8a958a2eaaaf71a9c4",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 512,
+   "license_note": "see site footer (CC BY-SA believed); attribution retained",
+   "categories": [
+    "key-item",
+    "infobox"
+   ],
+   "note": "",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Infobox Key Item\n|name=\n|image=Climbing.jpg\n|description=''A survival skill that grants the<br>ability to climb vines and cliffs<br>that dot the landscape of Eastern<br>Ulbuka.''\n|obtained=[[Hide and Go Peak]]\n|location=[[Marjami Ravine]]\n|notes=Together with a {{KeyItem}}[[Pair of Velkk gloves]], allows you to climb vines called [[Scalable Area]]s located throughout the [[:Category:East Ulbuka Territory|East Ulbuka Territory]].\n|is-perm=Y\n}}",
+   "excerpt_sha256": "fe7f229b9ccabbe6c525759e2cc90eab5c65edc84659376464d7df8c3c21ec9f",
+   "template": "Infobox Key Item",
+   "kept_params": [
+    "name",
+    "image",
+    "description",
+    "obtained",
+    "location",
+    "notes",
+    "is-perm"
+   ],
+   "omitted_params": [],
+   "fields": [
+    {
+     "label": "name",
+     "raw_value": "",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "image",
+     "raw_value": "Climbing.jpg",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "description",
+     "raw_value": "''A survival skill that grants the<br>ability to climb vines and cliffs<br>that dot the landscape of Eastern<br>Ulbuka.''",
+     "locator": "section::template:1:field:3",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "obtained",
+     "raw_value": "[[Hide and Go Peak]]",
+     "locator": "section::template:1:field:4",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "location",
+     "raw_value": "[[Marjami Ravine]]",
+     "locator": "section::template:1:field:5",
+     "expected_type": "LOCATION",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "notes",
+     "raw_value": "Together with a {{KeyItem}}[[Pair of Velkk gloves]], allows you to climb vines called [[Scalable Area]]s located throughout the [[:Category:East Ulbuka Territory|East Ulbuka Territory]].",
+     "locator": "section::template:1:field:6",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "is-perm",
+     "raw_value": "Y",
+     "locator": "section::template:1:field:7",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "ffx-item-statistics",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "FFXIclopedia",
+   "page_title": "\"A\" Egg",
+   "page_id": "32227",
+   "source_url": "https://ffxiclopedia.fandom.com/wiki/\"A\"_Egg",
+   "revision_id": "1794361",
+   "revision_timestamp": "2026-04-16T20:04:37Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "24cefeffa6c08255d3f5257327130339a1668d03a52aaf257df9e80753044014",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 667,
+   "license_note": "see site footer (CC BY-SA believed); attribution retained",
+   "categories": [
+    "item",
+    "infobox"
+   ],
+   "note": "",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Item Statistics\n|icon id=01488\n|name=\"A\" egg\n|tags={{Sendable}}\n|description=This [[Bird Egg|bird egg]] has a small \"A\" printed<br>on the bottom.\n|stackable=12\n|notes=Cannot be eaten.\n}}",
+   "excerpt_sha256": "378e57cacd9301ab74b5828588e6fbd77570c4b95b44cc5143557efd88690b8c",
+   "template": "Item Statistics",
+   "kept_params": [
+    "icon id",
+    "name",
+    "tags",
+    "description",
+    "stackable",
+    "notes"
+   ],
+   "omitted_params": [],
+   "fields": [
+    {
+     "label": "icon id",
+     "raw_value": "01488",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "name",
+     "raw_value": "\"A\" egg",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "tags",
+     "raw_value": "{{Sendable}}",
+     "locator": "section::template:1:field:3",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "description",
+     "raw_value": "This [[Bird Egg|bird egg]] has a small \"A\" printed<br>on the bottom.",
+     "locator": "section::template:1:field:4",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "stackable",
+     "raw_value": "12",
+     "locator": "section::template:1:field:5",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "notes",
+     "raw_value": "Cannot be eaten.",
+     "locator": "section::template:1:field:6",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "ffx-quest",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "FFXIclopedia",
+   "page_title": "\"Always more,\" Quoth the Ravenous",
+   "page_id": "199109",
+   "source_url": "https://ffxiclopedia.fandom.com/wiki/\"Always_more,\"_Quoth_the_Ravenous",
+   "revision_id": "1444441",
+   "revision_timestamp": "2013-06-19T05:11:39Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "95340e26a6609a2a2240fe18c75153085474eb80e3d13befc2f999000f273493",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 877,
+   "license_note": "see site footer (CC BY-SA believed); attribution retained",
+   "categories": [
+    "quest",
+    "rewards",
+    "requirements"
+   ],
+   "note": "",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Quest\n|startnpc=[[Westerly Breeze]] [[Western Adoulin]] (I-5)\n|requirements=[[Adoulin]] [[Reputation]] 3\n|items=[[Cursed Beverage]]\n|title=Friend to Gluttons\n|repeatable=No\n|reward=1,500 [[Experience Points]]<br>1,000 [[bayld]]\n|previous=[[The Starving]]<br>\n|next=None\n}}",
+   "excerpt_sha256": "b9a3d24eed43a541df2c90accb3ada818cbe20da5ee93dd590e28abbc48c938d",
+   "template": "Quest",
+   "kept_params": [
+    "startnpc",
+    "requirements",
+    "items",
+    "title",
+    "repeatable",
+    "reward",
+    "previous",
+    "next"
+   ],
+   "omitted_params": [],
+   "fields": [
+    {
+     "label": "startnpc",
+     "raw_value": "[[Westerly Breeze]] [[Western Adoulin]] (I-5)",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "requirements",
+     "raw_value": "[[Adoulin]] [[Reputation]] 3",
+     "locator": "section::template:1:field:2",
+     "expected_type": "REQUIRES",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "items",
+     "raw_value": "[[Cursed Beverage]]",
+     "locator": "section::template:1:field:3",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "title",
+     "raw_value": "Friend to Gluttons",
+     "locator": "section::template:1:field:4",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "repeatable",
+     "raw_value": "No",
+     "locator": "section::template:1:field:5",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "reward",
+     "raw_value": "1,500 [[Experience Points]]<br>1,000 [[bayld]]",
+     "locator": "section::template:1:field:6",
+     "expected_type": "REWARDS",
+     "review_only": true,
+     "reject_reason": null
+    },
+    {
+     "label": "previous",
+     "raw_value": "[[The Starving]]<br>",
+     "locator": "section::template:1:field:7",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "next",
+     "raw_value": "None",
+     "locator": "section::template:1:field:8",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "ffx-quest-description",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "FFXIclopedia",
+   "page_title": "\"Always more,\" Quoth the Ravenous",
+   "page_id": "199109",
+   "source_url": "https://ffxiclopedia.fandom.com/wiki/\"Always_more,\"_Quoth_the_Ravenous",
+   "revision_id": "1444441",
+   "revision_timestamp": "2013-06-19T05:11:39Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "95340e26a6609a2a2240fe18c75153085474eb80e3d13befc2f999000f273493",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 877,
+   "license_note": "see site footer (CC BY-SA believed); attribution retained",
+   "categories": [
+    "quest",
+    "nested-template"
+   ],
+   "note": "",
+   "excerpt_kind": "template",
+   "excerpt_wikitext": "{{Quest/Description\n|client=[[Westerly Breeze]] [[Western Adoulin]] (I-5)\n|summary=The third time may be a charm for some things, but the infamous starving Couriers' Coalition member brings only bad tidings--this time in the form of a sparkling pink beverage. Will it be his last request ever?\n}}",
+   "excerpt_sha256": "0e429de8090f7c866b8663f38032ce4e6487f29be38f9c6b29bd008595705889",
+   "template": "Quest/Description",
+   "kept_params": [
+    "client",
+    "summary"
+   ],
+   "omitted_params": [],
+   "fields": [
+    {
+     "label": "client",
+     "raw_value": "[[Westerly Breeze]] [[Western Adoulin]] (I-5)",
+     "locator": "section::template:1:field:1",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    },
+    {
+     "label": "summary",
+     "raw_value": "The third time may be a charm for some things, but the infamous starving Couriers' Coalition member brings only bad tidings--this time in the form of a sparkling pink beverage. Will it be his last request ever?",
+     "locator": "section::template:1:field:2",
+     "expected_type": null,
+     "review_only": true,
+     "reject_reason": "label not in exact-label policy"
+    }
+   ]
+  },
+  {
+   "sample_id": "ffx-table-abs",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "FFXIclopedia",
+   "page_title": "\"A\" - Abs",
+   "page_id": "223232",
+   "source_url": "https://ffxiclopedia.fandom.com/wiki/\"A\"_-_Abs",
+   "revision_id": "1789580",
+   "revision_timestamp": "2025-12-10T16:39:08Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "5ec485a8011039abff2083c3786f3efd1f6221d9f104e316bc56388c3a7e0714",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 18901,
+   "license_note": "see site footer (CC BY-SA believed); attribution retained",
+   "categories": [
+    "table"
+   ],
+   "note": "",
+   "excerpt_kind": "table",
+   "excerpt_wikitext": "{| class=ffxi-table width=100% align=center\n! ID !! Icon !! Article !! Graphic\n|-\n| 1488 || [[File:01488.png]] || [[\"A\" Egg]] || {{#lst:\"A\" Egg|Item Image}}\n|-\n| 1489 || [[File:01489.png]] || [[\"B\" Egg]] || {{#lst:\"B\" Egg|Item Image}}\n|-\n| 1490 || [[File:01490.png]] || [[\"C\" Egg]] || {{#lst:\"C\" Egg|Item Image}}\n|-\n| 1491 || [[File:01491.png]] || [[\"D\" Egg]] || {{#lst:\"D\" Egg|Item Image}}\n|-\n| 1492 || [[File:01492.png]] || [[\"E\" Egg]] || {{#lst:\"E\" Egg|Item Image}}\n|-\n| 1493 || [[File:01493.png]] || [[\"F\" Egg]] || {{#lst:\"F\" Egg|Item Image}}\n|}",
+   "excerpt_sha256": "46e80e29e486fcc48f56bfb3654fa6e6b74a05e3931767ac6b38435360b81c9b",
+   "table": true
+  },
+  {
+   "sample_id": "ffx-table-bloodpact",
+   "evidence_type": "real_excerpt",
+   "source_wiki": "FFXIclopedia",
+   "page_title": "\"Blood Pact\" Ability Delay",
+   "page_id": "34333",
+   "source_url": "https://ffxiclopedia.fandom.com/wiki/\"Blood_Pact\"_Ability_Delay",
+   "revision_id": "1717822",
+   "revision_timestamp": "2020-03-17T02:19:45Z",
+   "retrieved_at": null,
+   "retrieval_note": "local snapshot import time not recorded per page",
+   "raw_source_sha256": "6e12b667ed4ab24a21eaf1f90edffd16af8e8a5ecfd7de493bc3d65436631873",
+   "raw_source_sha256_verified": true,
+   "raw_source_chars": 4958,
+   "license_note": "see site footer (CC BY-SA believed); attribution retained",
+   "categories": [
+    "table"
+   ],
+   "note": "",
+   "excerpt_kind": "table",
+   "excerpt_wikitext": "{| border=\"0\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" valign=\"top\"\n|width=\"50%\" valign=\"top\"|\n====Weapons====\n{| class=sortable border=\"0\" width=\"100%\" cellpadding=\"2\" cellspacing=\"2\"\n|- BGCOLOR=\"#d87093\"\n!Name\n!Lvl\n!Type\n!Reduction\n|- BGCOLOR=\"#ffd9d9\"\n|[[Himmel Stock]]\n|40\n|[[Staff]]\n|{{sort|00|\"Blood Pact\" Ability Delay +3}}\n|}",
+   "excerpt_sha256": "d207ceb06dd306cf4e0a12b8e8c772b6510a9a8c8a3c715692ba877be92fb446",
+   "table": true
+  }
+ ]
+}

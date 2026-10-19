@@ -212,6 +212,7 @@ def _run(job: dict, main_db: str) -> None:
                 wiki_document.store_document(
                     con, source_id=row[0], page_id=page_id, source_format=source_format,
                     raw_source=item["raw_source"], blocks=blocks,
+                    retrieved_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 )
                 wiki_document.ensure_title_alias(con, row[0], page_id, row[2])
         finally:

@@ -184,6 +184,7 @@ jobs:
           python test_fixtures/test_ocr_layout_profiles.py
           python test_fixtures/test_wiki_evidence_mapping.py
           python test_fixtures/test_wiki_document_v2.py
+          python test_fixtures/test_wiki_corpus.py
           python test_fixtures/test_wiki_multilingual_reference_graph.py
           python test_fixtures/test_feature_trace_wiki_structured_links.py
           python test_fixtures/test_wiki_typed_relations.py
@@ -206,6 +207,7 @@ jobs:
           python test_fixtures/test_wiki_topic_suggestion_ui.py
           python test_fixtures/test_wiki_topic_approval_ui.py
           python test_fixtures/test_wiki_idempotent_documents.py
+          python test_fixtures/test_wiki_retrieved_at.py
           python test_fixtures/test_wiki_page_history.py
           python test_fixtures/test_wiki_jp_cached_refresh.py
           python test_fixtures/test_wiki_bg_metadata_refresh.py
