@@ -115,82 +115,179 @@
         {
           "name": "Eggs and inventory exdata",
           "upstream": "upstream-implemented",
-          "dsp": "unknown",
+          "dsp": "partial",
           "priority": "P0",
           "finding": "LSB structured egg genes / item exdata; compare DSP item serializer and trade payloads",
-          "source": "src/map/items/exdata/chocobo_egg.h"
+          "source": "src/map/items/exdata/chocobo_egg.h",
+          "dsp_evidence": [
+            "source:sql/item_basic.sql:2198 (egg 2312; also 2314, 2317-2319 at 2200-2205)",
+            "source:sql/item_basic.sql:2225 (chococard M 2339), :2228 (chococard F 2342), :12191 (whistle 15533), :2252 (whistle coupon 2366)",
+            "source:src/map/items/item.h:128 (generic uint8 m_extra[0x18])",
+            "source:src/map/utils/charutils.cpp:892-894 (extra loaded from char_inventory), :1227-1237 (extra saved on insert)",
+            "source:src/map/packets/inventory_item.cpp:48 (m_extra copied into the 0x020 item packet)",
+            "source:src/map/lua/lua_item.cpp (method list: no getExData/setExData; only getID/getSubID/getFlag/getName/getMod/getAugment/...)",
+            "source:src/map/lua/lua_trade_container.cpp (method list: no per-slot item/extra accessor; getItem/getItemId/getSlotCount only)"
+          ],
+          "dsp_note": "Source-read only. Egg/card items exist and the generic 24-byte extra blob persists and is sent to the client, but there is no ChocoboEgg/ChocoboCard exdata struct, no Lua getExData/setExData, and no way for an NPC onTrade script to read a traded item's extra bytes. Item-to-item bit layout (DNA1-3/Ability/Plan/IsBred) cannot be applied until those accessors exist. LSB ref: src/map/items/exdata/chocobo_egg.h, chocobo_card.cpp (commit 73e01519). Not runtime tested; inventory-save paths other than insert (e.g. quantity-only UpdateItem) not audited for extra preservation on stack/move.",
+          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
         },
         {
           "name": "Stable NPCs and event dialogue",
           "upstream": "upstream-implemented",
-          "dsp": "unknown",
+          "dsp": "partial",
           "priority": "P0",
           "finding": "Verify NPC row, CSID, start/update/finish and client option support for Hantileon, Zopago, Pulonono",
-          "source": "scripts/globals/hobbies/chocobo_raising/event_vm.lua"
+          "source": "scripts/globals/hobbies/chocobo_raising/event_vm.lua",
+          "dsp_evidence": [
+            "source:sql/npc_list.sql:1762 (Hantileon, San d'Oria, pos -2.675 -0.100 -105.287 = LSB README pos)",
+            "source:sql/npc_list.sql:27036 (Zopago, Bastok Mines, pos 51.706 0.874 -109.065 = LSB)",
+            "source:sql/npc_list.sql:29353 (Pulonono, Windurst Woods, pos 130.124 -5.350 -119.341; LSB README says -6.35 y)",
+            "source:sql/npc_list.sql:1791 (Arvilauge), :27058 (Gonija), :29375 (Kiria-Romaria), :29951 (Dabih Jajalioh), :30366 (Finbarr)",
+            "source:sql/npc_list.sql:30440 (Mapitoto only as a commented NOT_CAPTURED row; no live row)",
+            "source:sql/npc_list.sql:1779,1781,27051,27053,29372,29374,30363 (0,0,0 placeholder duplicates of the trainers in other zones)",
+            "source:scripts/zones/Southern_San_dOria/npcs/Hantileon.lua:15-36 (empty onTrade; startEvent 0x335/0x336/0x331 = 821/822/817)",
+            "source:scripts/zones/Bastok_Mines/npcs/Zopago.lua:18-29 (empty onTrade, 0x202 trade event commented out; startEvent 0x1FC = 508)",
+            "source:scripts/zones/Windurst_Woods/npcs/Pulonono.lua:12-20 (empty onTrade; startEvent 0x2E5 = 741)",
+            "source:scripts/zones/Southern_San_dOria/npcs/Arvilauge.lua, scripts/zones/Bastok_Mines/npcs/Gonija.lua (present); scripts/zones/Windurst_Woods/npcs has no Kiria-Romaria.lua",
+            "source:scripts/globals/hobbies/chocobo_raising/constants.lua (LSB csidTable intro csids 817/508/741, checked against the DSP trigger csids)"
+          ],
+          "dsp_note": "Source-read only. All three trainers have real positioned rows and trigger scripts, and DSP's default trigger csids equal LSB's intro csids (817/508/741), which is encouraging for client-DAT CSID parity in these zones, but the other 9 csids per trainer (main 823/509/742, trade 826/512/745, rejection 831/515/748, chick, walks, watch, debug) are NOT verified against this client build; run mission_toolkit/dat-extractor per CLAUDE.md before using any. DSP's 0x335/0x336 are the unrelated Chocobo-on-the-Loose quest. onTrade/onEventUpdate/onEventFinish are stubs, so none of LSB's event_vm option protocol exists. Gaps: Kiria-Romaria script, Mapitoto NPC row (uncaptured), cross-zone 0,0,0 duplicates should be left alone (status 2/6 hidden). Pulonono SQL y -5.35 vs LSB -6.35 needs !checknav/!logpos before trusting either.",
+          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
         },
         {
           "name": "NPC packet sequences",
           "upstream": "upstream-implemented",
-          "dsp": "unknown",
+          "dsp": "partial",
           "priority": "P0",
           "finding": "Record DSP packet IDs, option masks, string parameters and retail trace evidence; no claim that all are covered",
-          "source": "scripts/globals/hobbies/chocobo_raising/event_playout.lua"
+          "source": "scripts/globals/hobbies/chocobo_raising/event_playout.lua",
+          "dsp_evidence": [
+            "source:src/map/packets/event.cpp:5-60 (0x032/0x034, eight u32 params, ActIndex/EventNum/Mode at LSB-equivalent offsets)",
+            "source:src/map/lua/lua_baseentity.cpp:2857-2930 (startEvent: EventID + up to 8 params + optional textTable arg 10; argument-count guard n>10)",
+            "source:src/map/lua/lua_baseentity.h:214-216 (startEventString 0x033, updateEvent, updateEventString)",
+            "source:src/map/packet_system.cpp:2626-2650 (0x05B: EndPara@0x08, Mode@0x0E, EventPara@0x12; Mode!=0 -> onEventUpdate else onEventFinish; EventID must match m_event)",
+            "source:src/map/packet_system.cpp:2631-2634 (m_event.Option overrides the client's EndPara when nonzero)",
+            "source:src/map/lua/lua_baseentity.h:274-275 (tradeComplete, confirmTrade), packet_system 0x036 trade path"
+          ],
+          "dsp_note": "Source-read only. The generic event start/update/finish, string-event and trade machinery match the field layout of LSB's GP_SERV_COMMAND_EVENTNUM (8 nums) and GP_CLI_COMMAND_EVENTEND, so no new packet classes appear to be required for the trainer menus; this is NOT proof that the chocobo option sequence works. Specific risks: (1) m_event.Option sticky override can swallow option values the VM reads; (2) LSB's event_playout relies on a dedicated Mode=UpdatePending flow and startEventString for naming/debug; DSP has startEventString but the name-entry reply fields were never exercised; (3) retail/capture evidence for the actual trainer sequence is absent in this repo; check D:/Claude/Playthrough Captures for chocobo raising captures first. Per CLAUDE.md, startEvent padding must follow capture evidence per csid.",
+          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
         },
         {
           "name": "Persistent character state",
           "upstream": "upstream-implemented",
-          "dsp": "unknown",
+          "dsp": "missing",
           "priority": "P0",
           "finding": "LSB char_chocobos plus char_pet.chocobo_user_data; audit DSP schema, Lua bindings and cleanup",
-          "source": "sql/char_chocobos.sql"
+          "source": "sql/char_chocobos.sql",
+          "dsp_evidence": [
+            "source:sql/char_pet.sql:8-18 (columns: wyvernid, automatonid, attachments, adventuringfellowid, chocoboid; no chocobo_user_data)",
+            "source:sql/ (no char_chocobos.sql; grep -li chocobo sql/*.sql shows only item/ability/pet tables)",
+            "source:src/map/lua/lua_baseentity.cpp:3515-3533 (only existing chocobo write: packs a name pair into char_pet.chocoboid)",
+            "source:src/map/utils/petutils.cpp:1194-1210 (chocoboid is read back only as a pet-name pair)",
+            "source:src/map/lua/lua_baseentity.h (no getChocoboRaisingInfo/setChocoboRaisingInfo/deleteRaisedChocobo/getChocoboUserData/setChocoboUserData/registerChocobo)",
+            "source:src/map/entities/charentity.h (no m_chocoboUserData member)"
+          ],
+          "dsp_note": "Source-read only. DSP has nothing equivalent to LSB's char_chocobos table (29 columns), char_pet.chocobo_user_data 32-byte blob, or the six bindings. Additive migration is feasible: CREATE TABLE char_chocobos and ALTER TABLE char_pet ADD COLUMN chocobo_user_data blob NULL; live DB is MyISAM (no FK/cascade) so character-deletion cleanup must be explicit in the delete-char path. See docs/workbench/chocobo_audit/PERSISTENCE_GAP_REPORT.md. Nothing was executed against the live database.",
+          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
         },
         {
           "name": "Daily care and progression",
           "upstream": "upstream-implemented",
-          "dsp": "unknown",
+          "dsp": "missing",
           "priority": "P1",
           "finding": "LSB elapsed-day model, stage advancement, feeding, care plans and condition effects",
-          "source": "scripts/globals/hobbies/chocobo_raising/model.lua"
+          "source": "scripts/globals/hobbies/chocobo_raising/model.lua",
+          "dsp_evidence": [
+            "source:scripts/globals/ (no hobbies/ directory; no chocobo_raising module)",
+            "source:scripts/globals/chocobo.lua (90 lines, rental/zone-eligibility only)",
+            "source:src/map/luautils.cpp:121 (VanadielTime global exists for day arithmetic)",
+            "source:src/map/lua/luautils.cpp:103 (luaL_openlibs; scripts already use bit.band/bit.bor, e.g. scripts/globals/conquest.lua)"
+          ],
+          "dsp_note": "Source-read only. No raising logic exists. LSB's model/care_plan/choco_data/condense_events/settings are ~7,233 Lua lines across the module; they are pure-Lua except for the xi.* namespace, utils.getDebugPlayerPrinter, xi.settings, getCharVar/setCharVar (DSP: getVar/setVar), and the missing C++ bindings listed in the persistence finding. A bounded API-name diff against DSP shows ~14 LSB method names absent (getChocoboRaisingInfo/setChocoboRaisingInfo/deleteRaisedChocobo/getChocoboUserData/setChocoboUserData/registerChocobo/getFieldChocobo/sendChocoboRace/registerCylindricalTriggerArea/isInEvent/hasCompletedQuest/messageName plus the char-var aliases getCharVar/setCharVar and getTrade); several have DSP aliases. Port is mostly mechanical translation plus a compatibility shim, gated on persistence.",
+          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
         },
         {
           "name": "Personal whistle and mount",
           "upstream": "upstream-implemented",
-          "dsp": "unknown",
+          "dsp": "partial",
           "priority": "P1",
           "finding": "Check Chocobo License, personal appearance packed flags, registration, inventory and riding support",
-          "source": "src/map/utils/mountutils.h"
+          "source": "src/map/utils/mountutils.h",
+          "dsp_evidence": [
+            "source:scripts/globals/items/chocobo_whistle.lua:6-18 (rental: onItemCheck -> canUseChocobo; onItemUse adds EFFECT_MOUNTED 900/1800 s by level)",
+            "source:src/map/lua/lua_baseentity.cpp:4848-4860 (canUseChocobo: key item 138 Chocobo License, zone MISC_CHOCOBO)",
+            "source:src/map/zone.cpp:866-871 (mount removed on zone without MISC_CHOCOBO)",
+            "source:src/map/entities/battleentity.cpp:198 (mounted speed fixed at 40 + map_config.speed_mod; no per-player speed)",
+            "source:src/map/packets/char.cpp:114 (0x34 mount word hard-coded 0x010CA248 for every PC; no custom properties)",
+            "source:src/map/packets/zone_in.cpp:151 (hard-coded 0xD4 at 0x5E)",
+            "source:scripts/globals/keyitems.lua:144 (CHOCOBO_LICENSE = 138)"
+          ],
+          "dsp_note": "Source-read only. Rental mount, License check and zone gating work in source. Personal chocobo is missing entirely: no ChocoboCustomProperties bitfield (beak/talons/tail/color/speed/minutes), no mountutils equivalent, no MOUNTED subPower personal flag (LSB 0x40), no ChocoboIndex 2 packet path, and speed/time are constants. LSB ref: src/map/utils/mountutils.{h,cpp}, packets/char_update.cpp:283-300, char_sync.cpp:55-57, battle_entity.cpp:360, charutils.cpp:2046/3180. The DSP 0x00D layout is the older fixed-offset writer, so the LSB bit layout for the mount fields must be re-derived/captured for this client build (CLIENT_VER 30170905_5) before use. Existing whistle behaviour must be preserved when no registered chocobo exists.",
+          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
         },
         {
           "name": "Breeding, cards and retirement",
           "upstream": "upstream-implemented",
-          "dsp": "unknown",
+          "dsp": "missing",
           "priority": "P2",
           "finding": "Validate DNA exdata, chococards, Finbarr, retirement rewards and inventory-full handling",
-          "source": "scripts/globals/hobbies/chocobo_raising/breeding.lua"
+          "source": "scripts/globals/hobbies/chocobo_raising/breeding.lua",
+          "dsp_evidence": [
+            "source:scripts/globals/ (no breeding/retirement modules)",
+            "source:scripts/zones/Upper_Jeuno/npcs/ (no Finbarr/Mapitoto scripts located; npc_list.sql:30366 Finbarr row only; :30440 Mapitoto not captured)",
+            "source:sql/item_basic.sql:2225,2228 (chococards exist as items only)"
+          ],
+          "dsp_note": "Source-read only. Depends on egg/card exdata accessors and persistence. LSB itself carries approximations noted in its README; those must be tracked separately from DSP gaps (LSB bred eggs carry genes, bought/ISNM eggs carry none; retirement holds card/plaque for full inventory).",
+          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
         },
         {
           "name": "Walks, stories and digging",
           "upstream": "upstream-partial",
-          "dsp": "unknown",
+          "dsp": "partial",
           "priority": "P2",
           "finding": "Upstream itself lists uncertain behavior and cross-map weather IPC TODOs",
-          "source": "scripts/globals/hobbies/chocobo_raising/README.md"
+          "source": "scripts/globals/hobbies/chocobo_raising/README.md",
+          "dsp_evidence": [
+            "source:scripts/globals/chocobo_digging.lua (222 lines), scripts/globals/chocobo.lua (90 lines)",
+            "source:src/map/packet_system.cpp:751-767 (case 0x11 chocobo dig handler -> luautils::OnChocoboDig)",
+            "source:src/map/packets/chocobo_digging.cpp (dig result packet)",
+            "source:src/map/lua/luautils.cpp:4633 (OnChocoboDig)"
+          ],
+          "dsp_note": "Source-read only. Rental-chocobo digging is present and reusable as a baseline; LSB's walks, meetings, lost chick, stories and per-chocobo digging stats are absent. Weather queries and skill systems exist generally but were not audited for walk reuse. LSB's own limitations (README: cross-map weather IPC TODOs, uncertain behaviours) are separate from DSP gaps.",
+          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
         },
         {
           "name": "Chocobo racing",
           "upstream": "upstream-implemented",
-          "dsp": "unknown",
+          "dsp": "missing",
           "priority": "P3",
           "finding": "Separate scope; dedicated race packets and related NPC flow need DSP review",
-          "source": "src/map/packets/s2c/0x069_chocobo_racing.h"
+          "source": "src/map/packets/s2c/0x069_chocobo_racing.h",
+          "dsp_evidence": [
+            "source:src/map/packet_system.cpp:3364 (DSP 0x074 is the party-invite answer, not LSB's s2c chocobo list)",
+            "source:src/map/packets/ (no 0x069/0x073/0x074 s2c chocobo race packets, no 0x09B request handler)",
+            "source:sql/npc_list.sql:1801 (Gate_Chocobo_Circuit NPC exists); scripts/zones/Chocobo_Circuit/ (Zone.lua, TextIDs.lua only)"
+          ],
+          "dsp_note": "Source-read only. No race packet structures or handlers; only a zone stub and gate NPC. LSB ref: packets/s2c/0x069_chocobo_racing, 0x073_chocobo_toteboard, 0x074_chocobo_list, c2s/0x09b_chocobo_race_req, sql/chocobo_race_*.sql, scripts/globals/hobbies/chocobo_racing/. Separate later milestone; not a raising prerequisite.",
+          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
         },
         {
           "name": "Headless regression coverage",
           "upstream": "upstream-tested",
-          "dsp": "unknown",
+          "dsp": "partial",
           "priority": "P0",
           "finding": "Adapt LSB client-driven suite; inspect xiheadless-dsp event, trade and mount support",
-          "source": "scripts/tests/systems/chocobo_raising/client.lua"
+          "source": "scripts/tests/systems/chocobo_raising/client.lua",
+          "dsp_evidence": [
+            "source:sarthax/xiheadless-dsp Mcp/McpBrain.cs (tools talk_to_npc, event_select, trade_npc, use_item, inventory, container_items, key_items, snapshot, logout, say, recent_chat, entity_raw)",
+            "source:sarthax/xiheadless-dsp Capabilities/Events.cs (UpdateEvent/FinishEvent/Finish builders for 0x05B; MCP exposes event_select only as a finishing answer)",
+            "source:sarthax/xiheadless-dsp Capabilities/TradeNpc.cs (0x036 NPC trade)",
+            "source:sarthax/xiheadless-dsp Game/PacketParsers.cs:446-458 (EventStart records EventParams[8] for 0x034 only; 0x033 string params dropped)",
+            "source:sarthax/xiheadless-dsp Game/PacketParsers.cs:537-543 (ItemAttr 0x020 reads qty/id/container/slot only; extdata bytes discarded)",
+            "source:sarthax/xiheadless-dsp Game/WorldState.cs:40 (IsMounted only from status icon 252)"
+          ],
+          "dsp_note": "Source-read only; headless client not run. Can already do trigger, finish, trade-to-NPC, use item, inventory and logout. Blockers for acceptance tests: no MCP exposure of mid-event update (0x05B Mode=1) with chosen option, no capture of received 0x034/0x032 param/EventNum sequences per step, no 0x020 extdata exposure (needed to assert egg/card genes), no mount model/subPower/ChocoboIndex readout, no explicit relogin tool (logout ends the process). Per the task rules the headless client was not modified.",
+          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
         }
       ],
       "pipeline": [
