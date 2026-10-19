@@ -5883,7 +5883,7 @@ def _wiki_page_view(con, source: str, title: str) -> dict | None:
 
 
 @app.get("/wiki", response_class=HTMLResponse)
-def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = "", tab: str = "browse", q: str = "", review_status: str = "all", review_page: int = 1, review_origin: bool = False, review_result: str = "", recovery_page: int = 1, recovery_result: str = ""):
+def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = "", tab: str = "browse", q: str = "", review_status: str = "all", review_page: int = 1, review_origin: bool = False, review_result: str = "", recovery_page: int = 1, recovery_result: str = "", page_id: str = "", focus_section: str = ""):
     report = None
     evidence = None
     comparison = None
@@ -5893,6 +5893,19 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
     wiki_evidence.init_db(con)
     wiki_claim_compare.init_db(con)
     wiki_document.init_db(con)
+    # A trace evidence deep link identifies a source + page ID, never a title
+    # shared by multiple reference providers. Reject mismatches rather than
+    # silently falling through to another source or article.
+    if page_id:
+        match = con.execute(
+            "SELECT title FROM reference_wiki_pages WHERE source_id=? AND page_id=?",
+            (source, page_id),
+        ).fetchone()
+        if match:
+            title = match[0]
+        else:
+            title = ""
+            error = "The source-qualified Wiki page was not found."
     if q.strip():
         search_results = wiki_document.search_pages(con, q.strip(), limit=60, source_id=source)
     if title:
@@ -5903,6 +5916,14 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         evidence = wiki_evidence.page_evidence(con, source, title)
         comparison = wiki_claim_compare.alignment_report(con, title)
         page_view = _wiki_page_view(con, source, title)
+        if page_id and (not page_view or str(page_view.get("page_id")) != str(page_id)):
+            # Title lookup is not sufficient when duplicate titles exist inside a
+            # provider. Never display a different page as the traced evidence.
+            page_view = None
+            report = None
+            evidence = None
+            comparison = None
+            error = "The exact Wiki source page could not be opened."
 
     def _have(sid):
         return con.execute("SELECT 1 FROM reference_wiki_pages WHERE source_id=? LIMIT 1", (sid,)).fetchone() is not None
@@ -5958,6 +5979,7 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         "review_has_more": review_has_more,
         "review_status": review_status if review_status in ("all", "pending", "dismissed") else "all",
         "page_view": page_view,
+        "focus_section": focus_section[:500] if page_id else "",
         "site_links": site_links,
         "jobs": wiki_jobs.recent_jobs(),
     })

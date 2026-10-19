@@ -13,6 +13,13 @@ def main():
     assert ev["source_id"]=="WikiWikiJP" and ev["page_id"]=="42",ev
     assert ev["section"]=="攻略 > 条件" and ev["locator"]=="section:攻略:block:1",ev
     assert ev["excerpt"]=="原文の記述" and ev["review_only"] is True,ev
+    from urllib.parse import urlsplit, parse_qs
+    parsed=urlsplit(ev["browse_href"])
+    query=parse_qs(parsed.query)
+    assert parsed.path=="/wiki"
+    assert query["source"]==["WikiWikiJP"] and query["page_id"]==["42"],query
+    assert query["focus_section"]==["攻略 > 条件"],query
+    assert query["tab"]==["browse"]
     assert d["semantic_relationship_count"]==0 and d["provider_relationship_count"]==0
     result["nodes"][0]["representations"][0]["metadata"]["provider"]="server-sql"
     assert build_dossier(result)["wiki_section_evidence"] is None
