@@ -39,6 +39,7 @@ def test_isolated_openapi_contains_only_read_only_supervisor_tools():
         "/api/supervisor/test-runs",
         "/api/supervisor/run-evidence/{run_id}",
         "/api/supervisor/search-source",
+        "/api/supervisor/investigation/{run_id}",
         "/api/supervisor/failed-assertions",
         "/api/supervisor/log-errors",
         "/api/supervisor/service-health",
