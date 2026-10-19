@@ -45,3 +45,19 @@ def test_validated_requires_runtime_evidence():
     report = record(status="validated", evidence=["test:pytest test_chocobo_packet.py::test_egg"])
     updated, _ = mod.merge(domain(), report)
     assert updated["domains"]["chocobo_raising"]["findings"][0]["dsp"] == "validated"
+
+
+def test_inventory_cannot_erase_reviewed_status():
+    existing = domain()
+    existing["domains"]["chocobo_raising"]["findings"][0]["dsp"] = "present"
+    with pytest.raises(ValueError, match="replace reviewed"):
+        mod.merge(existing, record(status="unknown"))
+
+
+def test_validated_cannot_silently_change_commit():
+    existing = domain()
+    f = existing["domains"]["chocobo_raising"]["findings"][0]
+    f["dsp"] = "validated"
+    f["dsp_target_commit"] = "000000000000000"
+    with pytest.raises(ValueError, match="target commit changed"):
+        mod.merge(existing, record(status="validated", evidence=["test:test_chocobo.py::test_mount"]))
