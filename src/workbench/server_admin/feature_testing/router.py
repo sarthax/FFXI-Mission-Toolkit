@@ -131,6 +131,21 @@ def _builder_preflight():
     return preflight("moghancement", "MOG-09")
 
 
+@router.get("/builder/specifications")
+def test_specifications_api():
+    from .test_specifications import specifications
+    return {"schema_version": 1, "specifications": specifications(), "execution_enabled": False}
+
+
+@router.get("/builder/specifications/{feature_id}/{case_id}")
+def test_specification_api(feature_id: str, case_id: str):
+    from .test_specifications import specification
+    result = specification(feature_id, case_id)
+    if result is None:
+        raise HTTPException(404, "Unknown test specification")
+    return result
+
+
 @router.get("/builder/plan")
 def test_builder_plan(account: str = "", charid: int = 0, supervisor_port: int = 8420):
     from .test_builder import build_plan
