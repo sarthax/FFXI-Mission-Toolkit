@@ -65,6 +65,47 @@
 <button type="submit">Review test plan (JSON)</button>
 </form>
 <p>The review endpoint verifies character allowlisting, a registered runner, and local preflight requirements. It returns a plan with expected observation steps; it does not issue execution authorization. Use the <a href="/feature-testing/scenario/moghancement/MOG-09">scenario detail</a> to inspect assertions, then launch the reviewed plan through the local operator CLI documented in <code>docs/workbench/LOCAL_TEST_SUPERVISOR_SETUP.md</code>.</p>
+<h3>Design-only specification editor</h3>
+<p>Create a versioned draft using an allowlisted JSON specification. Drafts cannot override published tests or enable execution. Saving requires the independent operator token above and <code>MISSION_TOOLKIT_TEST_DRAFTS_DB</code>.</p>
+<form id="ft-draft-editor">
+<label for="ft-draft-revision">Expected revision (0 for new drafts)</label>
+<input id="ft-draft-revision" type="number" min="0" value="0" required>
+<label for="ft-draft-json">Specification JSON</label>
+<textarea id="ft-draft-json" rows="12" style="width:100%" maxlength="32768" required></textarea>
+<button type="submit">Validate and save draft</button>
+<button id="ft-list-drafts" type="button">List saved drafts</button>
+</form>
+<pre id="ft-draft-status" aria-live="polite" style="white-space:pre-wrap;overflow-wrap:anywhere">No draft saved.</pre>
+<script>
+(function(){
+ const status=document.getElementById('ft-draft-status'), input=document.getElementById('ft-draft-json');
+ const token=()=>document.getElementById('ft-operator-token').value;
+ async function send(method,body){
+  const resp=await fetch('/feature-testing/builder/drafts',{method,credentials:'same-origin',
+   headers:{'X-Test-Operator-Token':token(),'Content-Type':'application/json'},
+   ...(body?{body:JSON.stringify(body)}:{})});
+  const data=await resp.json();
+  if(!resp.ok)throw new Error(data.detail||'Draft request failed');
+  return data;
+ }
+ document.getElementById('ft-draft-editor').addEventListener('submit',async e=>{
+  e.preventDefault();
+  try{
+   const specification=JSON.parse(input.value);
+   const expected_revision=Number(document.getElementById('ft-draft-revision').value);
+   const data=await send('POST',{specification,expected_revision});
+   document.getElementById('ft-draft-revision').value=data.revision;
+   status.textContent='Saved '+data.feature_id+'/'+data.case_id+' revision '+data.revision+' (design only)';
+  }catch(err){status.textContent='Draft not saved: '+err.message;}
+ });
+ document.getElementById('ft-list-drafts').addEventListener('click',async()=>{
+  try{
+   const data=await send('GET');
+   status.textContent=data.drafts.length?JSON.stringify(data.drafts.map(d=>({feature_id:d.feature_id,case_id:d.case_id,revision:d.revision})),null,2):'No saved drafts.';
+  }catch(err){status.textContent='Cannot list drafts: '+err.message;}
+ });
+})();
+</script>
 <h3>Assertion preview (no execution)</h3>
 <p>Paste a normalized observation JSON object to evaluate against a versioned contract. This does not contact XiHeadless, execute tests, or import evidence.</p>
 <form id="ft-evaluation-form">
