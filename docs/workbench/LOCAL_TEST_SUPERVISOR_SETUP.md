@@ -152,3 +152,33 @@ from the immutable source-backed catalog; add a more general runner registry,
 operator authorization and cancellation/status reporting; only then expose
 a GUI dispatch action. Keep model-triggered dispatch behind a separate
 explicit approval gate.
+
+## Operator GUI execution (MOG-09 only)
+
+The **Feature Testing → Build & Run** page offers an opt-in operator-only
+launch control for the known read-only MOG-09 runner. Set these **separate**
+environment variables before starting the loopback-bound Toolkit process:
+
+- `MISSION_TOOLKIT_TEST_OPERATOR_TOKEN`: random token of at least 32 characters, **different** from the read-only supervisor token used by Ornith.
+- `MISSION_TOOLKIT_TEST_JOBS_DB`: absolute local SQLite job-history path; its parent directory must already exist.
+- `MISSION_TOOLKIT_TEST_ARTIFACTS_ROOT`: existing absolute, operator-owned artifact directory.
+- The existing `MISSION_TOOLKIT_TEST_HEADLESS_ROOT`, `MISSION_TOOLKIT_TEST_RESULTS_DB`, `MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS`, and `MISSION_TOOLKIT_SUPERVISOR_TOKEN` must also be configured.
+
+Open `http://127.0.0.1:8420/feature-testing?tab=builder` from the local
+browser. The operator enters the independent token, account, character ID
+and supervisor port, checks the explicit disposable-character approval,
+and clicks **Launch approved MOG-09**. Use **Refresh job status** to see
+QUEUED / RUNNING / COMPLETED / ERROR and a link to imported evidence.
+
+The launch and job-history endpoints are deliberately excluded from the
+restricted supervisor OpenAPI schema, require a localhost caller and the
+separate operator token, and do not accept arbitrary executable paths,
+commands, or scripts. Do not give the operator token to the LLM or add
+the full Toolkit OpenAPI schema as model tools.
+
+Current limitations: job history persists to SQLite, but threads do not
+survive a Toolkit restart; an interrupted job can remain RUNNING and must
+be investigated before starting another. Cancellation, recovery, and richer
+progress events are separate backlog milestones. The browser launch must
+be acceptance-tested with the local XiHeadless runner (PR #3) before
+considering it operationally validated.

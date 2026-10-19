@@ -5,7 +5,8 @@ import json
 import os
 from pathlib import Path
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Header
+from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -134,6 +135,52 @@ def _builder_preflight():
 def test_builder_plan(account: str = "", charid: int = 0, supervisor_port: int = 8420):
     from .test_builder import build_plan
     return build_plan(account, charid, supervisor_port)
+
+
+
+class LaunchRequest(BaseModel):
+    account: str
+    charid: int
+    supervisor_port: int = 8420
+    approval: bool = False
+
+
+def _operator_auth(request: Request, operator_token: str | None) -> None:
+    from .execution_jobs import authorize_operator
+    host = request.client.host if request.client else ""
+    if host not in ("127.0.0.1", "::1"):
+        raise HTTPException(403, "Local operator access only")
+    origin = request.headers.get("origin", "")
+    if origin and origin != str(request.base_url).rstrip("/"):
+        raise HTTPException(403, "Cross-origin execution denied")
+    try:
+        authorize_operator(operator_token)
+    except PermissionError as exc:
+        raise HTTPException(403, str(exc)) from exc
+
+
+@router.post("/builder/launch", include_in_schema=False)
+def launch_test(request: Request, payload: LaunchRequest,
+                x_test_operator_token: str | None = Header(default=None)):
+    _operator_auth(request, x_test_operator_token)
+    if payload.approval is not True:
+        raise HTTPException(400, "Explicit operator confirmation required")
+    from .execution_jobs import enqueue
+    try:
+        job_id = enqueue(payload.account, payload.charid, payload.supervisor_port)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return {"job_id": job_id, "status": "QUEUED", "case_id": "MOG-09"}
+
+
+@router.get("/builder/jobs", include_in_schema=False)
+def execution_jobs(request: Request, x_test_operator_token: str | None = Header(default=None)):
+    _operator_auth(request, x_test_operator_token)
+    from .execution_jobs import jobs
+    try:
+        return {"jobs": jobs()}
+    except ValueError as exc:
+        raise HTTPException(503, str(exc)) from exc
 
 
 def dashboard_view(*, tab: str = "runs", feature: str = "", verdict: str = "",

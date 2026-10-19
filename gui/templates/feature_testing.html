@@ -59,7 +59,60 @@
 <button type="submit">Review test plan (JSON)</button>
 </form>
 <p>The review endpoint verifies character allowlisting, a registered runner, and local preflight requirements. It returns a plan with expected observation steps; it does not issue execution authorization. Use the <a href="/feature-testing/scenario/moghancement/MOG-09">scenario detail</a> to inspect assertions, then launch the reviewed plan through the local operator CLI documented in <code>docs/workbench/LOCAL_TEST_SUPERVISOR_SETUP.md</code>.</p>
-<h3>Execution boundary</h3><p>No browser or LLM launch is exposed yet. Actual execution requires a trusted local operator, a fresh artifact directory, and the explicit <code>--approve-mog09</code> flag. Additional tests will be registered only after their runners and acceptance criteria are verified.</p>
+<h3>Operator-approved local execution</h3>
+<p>Only MOG-09 is available. Launch requires a separate operator token, a disposable allowlisted character and explicit approval. The token stays in this browser page's memory and is not stored.</p>
+<form id="ft-launch-form" class="ft-filters">
+<label>Operator token<input id="ft-operator-token" type="password" autocomplete="off" required></label>
+<label>Test account<input id="ft-run-account" pattern="[A-Za-z0-9_-]{1,32}" required autocomplete="off"></label>
+<label>Character ID<input id="ft-run-character" type="number" min="1" required></label>
+<label>Supervisor port<input id="ft-run-port" type="number" min="1" max="65535" value="8420" required></label>
+<label><input id="ft-run-approval" type="checkbox" required> I authorize the read-only MOG-09 run on this disposable character</label>
+<button type="submit">Launch approved MOG-09</button>
+<button type="button" id="ft-refresh-jobs">Refresh job status</button>
+</form>
+<pre id="ft-job-feedback" aria-live="polite">No operator action submitted.</pre>
+<div id="ft-job-history"></div>
+<script>
+(function () {
+const form=document.getElementById('ft-launch-form'), note=document.getElementById('ft-job-feedback'), listing=document.getElementById('ft-job-history');
+const token=()=>document.getElementById('ft-operator-token').value;
+async function request(path, options) {
+ const response=await fetch(path,{...options,headers:{'X-Test-Operator-Token':token(),...(options&&options.headers||{})},credentials:'same-origin'});
+ const body=await response.json();
+ if(!response.ok) throw new Error(body.detail||'Request failed');
+ return body;
+}
+async function refresh() {
+ try {
+  const result=await request('/feature-testing/builder/jobs');
+  listing.replaceChildren();
+  const title=document.createElement('h4');title.textContent='Recent operator jobs';listing.appendChild(title);
+  for(const job of result.jobs) {
+   const item=document.createElement('p');
+   item.textContent=job.case_id+' · '+job.status+' · '+job.created_at+(job.verdict?' · '+job.verdict:'');
+   if(job.run_id){const a=document.createElement('a');a.href='/feature-testing/run/'+encodeURIComponent(job.run_id);a.textContent=' View evidence';item.appendChild(a);}
+   listing.appendChild(item);
+  }
+ } catch(err){note.textContent='Job status: '+err.message;}
+}
+form.addEventListener('submit',async event=>{
+ event.preventDefault();
+ if(!form.reportValidity())return;
+ note.textContent='Submitting operator-approved test…';
+ try {
+  const body={account:document.getElementById('ft-run-account').value,
+    charid:Number(document.getElementById('ft-run-character').value),
+    supervisor_port:Number(document.getElementById('ft-run-port').value),
+    approval:document.getElementById('ft-run-approval').checked};
+  const result=await request('/feature-testing/builder/launch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  note.textContent='Queued job '+result.job_id+'. Refresh status to see results.';
+  await refresh();
+ } catch(err){note.textContent='Launch not accepted: '+err.message;}
+});
+document.getElementById('ft-refresh-jobs').addEventListener('click',refresh);
+})();
+</script>
+<p>Operator actions are only available from loopback with a separately configured <code>MISSION_TOOLKIT_TEST_OPERATOR_TOKEN</code>. Ornith does not receive the launch operation in its restricted OpenAPI tools.</p>
 </section>
 {% elif tab == "catalog" %}
 <section class="wb-panel"><h2>Test catalog</h2><p>Scenario plans describe acceptance criteria, sources, and current blockers. Opening a scenario does not execute it.</p>
