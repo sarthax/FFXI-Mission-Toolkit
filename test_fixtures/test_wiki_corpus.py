@@ -243,7 +243,7 @@ def test_real_tables_do_not_invent_candidates():
 
 
 JP_EXPECTED_HITS = {
-    "jp-vw-npc-table": [("エリア", "LOCATION", "南サンドリア"), ("エリア", "LOCATION", "(D-11)")],
+    "jp-vw-npc-table": [("エリア", "LOCATION", "南サンドリア"), ("エリア", "LOCATION", "バストゥーク商業区")],
     "jp-vw-route-table": [("エリア", "LOCATION", "西サルタバルタ")],
     "jp-bfnm-area-npc-table": [("エリア", "LOCATION", "北サンドリア"), ("エリア", "LOCATION", "バストゥーク港")],
     "jp-bfnm-location-monster-table": [("場所", "LOCATION", "ヨアトル大森林"), ("場所", "LOCATION", "ウガレピ寺院")],
