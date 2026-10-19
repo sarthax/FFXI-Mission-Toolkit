@@ -22,7 +22,7 @@ def main():
     routes += json.loads((ROOT / "docs/workbench/GUI_ROUTE_MAP_AUXILIARY.json").read_text())["routes"]
     known = {r["path"] for r in routes if r["method"] == "GET"}
     # Dynamic routers are covered by the existing Help route test.
-    dynamic = {"/synth", "/auction-house/help", "/live-client/bridge/console"}
+    dynamic = {"/synth", "/auction-house/help", "/live-client/bridge/console", "/feature-testing"}
     assert all(f["route"] in known | dynamic for f in items), [f["route"] for f in items if f["route"] not in known | dynamic]
     assert all(f["help"] in known | dynamic for f in items)
     assert "client-binary" in {f["id"] for f in search_catalog(items, "binary")}
@@ -42,6 +42,11 @@ def main():
     assert len(feature_detail(items, "retail-versions")["children"]) >= 5
     assert all(f.get("how_to_use") and f.get("caveat")
                for f in feature_detail(items, "client-binary")["children"])
+    testing = feature_detail(items, "feature-testing")
+    assert testing and len(testing["children"]) >= 3
+    assert all(child.get("how_to_use") and child.get("caveat") for child in testing["children"])
+    assert feature_detail(items, "trace-wiki-provenance")["parent"]["id"] == "feature-trace"
+    assert feature_detail(items, "wiki-source-navigation")["parent"]["id"] == "wiki"
     assert feature_detail(items, "missing-capability") is None
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
