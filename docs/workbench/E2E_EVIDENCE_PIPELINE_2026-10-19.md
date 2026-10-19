@@ -1,7 +1,7 @@
 # End-to-end evidence pipeline validation — 2026-10-19
 
 Goal: one reproducible XiHeadless -> Toolkit evidence run, no LLM-driven gameplay.
-Result: **achieved** for the deterministic path; tool server registered, but model-driven tool use not demonstrated (section 7).
+Result: **achieved** for the deterministic path; tool server registered and a grounded model-driven tool call demonstrated (section 7).
 
 ## 1. Revisions and workspace
 
@@ -73,18 +73,22 @@ Both reports imported (`Imported 1 evidence records`). Visible in `/feature-test
 
 Open WebUI 0.11.0 on `127.0.0.1:3000` (8080 is another service). The user signed in; the agent registered the tool server in Admin -> Integrations -> External Tool Servers: type OpenAPI, base URL `http://127.0.0.1:8421`, spec path `api/supervisor/openapi.json` (the filtered spec only), auth Bearer, token entered in the API Key field only. "Verify" and Save both reported **Connection successful**. No CORS or auth changes were made (Open WebUI calls the tool server from its backend).
 
-Prompt test ("Check the Mission Toolkit supervisor health, retrieve the latest test run, and summarize any failures..."), model `qwen2.5-coder:7b` (models over 9B cannot run on this machine; `qwen3.8` 27B was abandoned and the Open WebUI task model switched to the 7B so it stopped being reloaded):
+Prompt test ("Check the Mission Toolkit supervisor health, retrieve the latest test run, and summarize any failures. Use the configured tools and cite the observations you actually retrieved."). Models over 9B cannot run on this machine (`qwen3.8` 27B abandoned; task model set to `qwen2.5-coder:7b`).
+
+**Attempt 1** (`qwen2.5-coder:7b`, default function calling): tool calls were printed as JSON text, with `"authorization": "string"` placeholders; nothing executed; reply ungrounded.
+Root cause of the placeholders: the spec exposed `authorization` as a model-visible parameter. Fixed in `supervisor.py`: header param removed, `bearerAuth` security scheme declared per operation (valid token 200, no token 403; runtime auth unchanged).
+
+**Attempt 2** (`qwen2.5:7b`, 7.6B, Function Calling = Native, only "Mission Toolkit Supervisor" enabled):
 
 | Question | Observation |
 |---|---|
-| Tool discovery | Partial: the model named `supervisor_health`, `supervisor_test_runs`, `supervisor_failed_assertions` correctly. |
-| Valid parameters | **No**: it emitted `"authorization": "string"` placeholders. |
-| Real data retrieved | **No**: tool calls were printed as literal JSON text, not executed; no supervisor data appeared in the reply. |
-| Missing evidence vs failure | Not demonstrated; it produced generic follow-up questions about "failed assertions" without having retrieved any. |
-| Invented facts | It implied failures existed; the real answer is 2 runs, 0 failures. Treat this reply as ungrounded. |
+| Tool discovery | Yes: called `supervisor_health`, `supervisor_test_runs`, `supervisor_failed_assertions`. |
+| Valid parameters | Yes: calls executed with no token parameter. |
+| Real data retrieved | Yes: gateway ready, execution disabled, results configured; runs `obs-20261019T070215Z` and `obs-20261019T065856Z`, both PASS, moghancement. |
+| Missing evidence vs failure | Reported "no failures" from the empty failed-assertions list; correct. |
+| Invented facts | None material. Mild embellishment: follow-up suggestions only. |
 
-Finding: the OpenAPI spec exposes `authorization` as a model-visible parameter on every operation (the token is meant to come from the connection, not the model). This invites the model to ask for / invent a token. Follow-up: declare Bearer as a security scheme so the header is not a tool parameter.
-Conclusion: registration works securely; end-to-end grounded tool use is **not demonstrated** with a <=9B model. Try `qwen3.5:latest`/another native tool-calling model with the Open WebUI "Native" function-calling mode after the spec fix.
+Conclusion: registration is secure and end-to-end grounded tool use works with a <=9B model once Function Calling is Native and the spec has no `authorization` parameter. One run only; reliability across prompts is not measured.
 
 ## 8. Gaps and blockers
 
@@ -97,7 +101,7 @@ Conclusion: registration works securely; end-to-end grounded tool use is **not d
 ## 9. Recommended next steps
 
 1. Merge the OpenAPI fix; restart 8420 with the supervisor env.
-2. Complete Open WebUI registration manually, then run the summarization prompt and record tool discovery / grounding.
+2. Open WebUI done; repeat the prompt test a few times / with other tools to measure reliability. Note `qwen3:8b` is in the Admin model list but missing from the chat selector (uninvestigated).
 3. Add a supervisor key-item and furniture-layout read (fixed-query, allowlisted charid).
 4. Add `results_db_exists` to `/health`.
 5. Commit the other agent's headless work, then re-run so `headless_commit` is clean.
