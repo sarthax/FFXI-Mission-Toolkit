@@ -34,8 +34,12 @@ Template and two-column table candidates now share the exact-label `REVIEW_FIELD
 A table row made only of header cells now types the cells beneath each policy-labelled header
 (review-only, `orientation: "column"`, with `column_index` and `header_row_index`). Previously the first two cells of a
 header row were paired (`エリア` -> `NPC`), which used a header as a value. Row-style pairs (first cell label, second
-cell value) are unchanged and now carry `orientation: "row"`. Rowspan/colspan tables are indexed positionally.
+cell value) are unchanged and now carry `orientation: "row"`. Historical v3 limitation: rowspan/colspan tables were indexed positionally. The merged v6 HTML parser now aligns physical columns; #1110 adds focused span regressions.
 
 ## Merged HTML cell alignment reconciliation (2026-10-19)
 
 The current `main` parser already uses `wiki-doc-v6-html-table-spans`, retaining original cell/source locators and assigning physical columns across `rowspan` and `colspan`. The older draft PR #1106 used a separate `wiki-doc-v6-table-spans` implementation; it must not replace the newer code. Regression coverage pins a Japanese-style two-row rowspan and a colspan column-header case, ensuring only review-only candidates are emitted and coordinate cells are not mislabeled as areas. Remaining limitations around blank cells and compound header interpretation are unchanged.
+
+## Reconciliation checkpoint (2026-10-19)
+
+Merged #1098 (table attributes), #1099 (simple wrapper text), #1101 (JP physical-column rowspan/colspan), and #1110 (reconciled span tests) address previously documented parser-level deficiencies. The remaining open work is actual source and database acceptance: full JP/FFXIclopedia structured retention, missing/blank cells and multi-level headers, reviewed per-source label mappings, Feature Trace source-native drill-down, freshness inspection and translation UX. Preserve original-language values and the review-only boundary. See `WIKI_REAL_SOURCE_CORPUS.md` for the distinction between the historical local DB and current offline fixtures.
