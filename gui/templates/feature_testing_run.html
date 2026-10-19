@@ -1,0 +1,16 @@
+{% extends "workbench_page.html" %}
+{% block title %}Test Run {{ run_id }}{% endblock %}
+{% block page_heading %}Test Run {{ run_id }}{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Recorded evidence</span>{% endblock %}
+{% block page_body %}
+<p><a href="/feature-testing">← Feature Testing</a></p>
+<section class="wb-panel"><h2>Imported results</h2>
+<p>Imported records are not independently authenticated. PASS means a validator accepted the supplied observations, not that gameplay execution was verified.</p>
+<table><thead><tr><th>Scenario</th><th>Stage</th><th>Verdict</th><th>Observed UTC</th><th>Revisions</th></tr></thead><tbody>
+{% for result in records %}
+<tr><td><a href="/feature-testing/scenario/{{ result.feature_id }}/{{ result.case_id }}">{{ result.case_id }}</a></td>
+<td>{{ result.stage }}</td><td>{{ result.verdict }}</td><td>{{ result.observed_at }}</td>
+<td><small>DSP {{ result.dsp_commit[:12] }} / Headless {{ result.headless_commit[:12] }} / Toolkit {{ result.toolkit_commit[:12] }}</small></td></tr>
+<tr><td colspan="5"><details><summary>Validation and captured evidence</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{ result.evidence | tojson(indent=2) }}</pre></details></td></tr>
+{% endfor %}</tbody></table></section>
+{% endblock %}
