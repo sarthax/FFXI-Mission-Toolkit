@@ -47,6 +47,13 @@ def merge(domain: dict, report: dict) -> tuple[dict, list[str]]:
             raise ValueError(f"non-empty note required for {name}")
         if status == "validated" and not any(x.startswith(("test:", "capture:", "runtime:")) for x in evidence):
             raise ValueError(f"validated status needs test:, capture: or runtime: evidence for {name}")
+        previous = mapping[name].get("dsp", "unknown")
+        if previous != "unknown" and status == "unknown":
+            raise ValueError(f"refusing to replace reviewed DSP status with unknown for {name}")
+        if previous == "validated" and status != "validated":
+            raise ValueError(f"refusing to downgrade validated status for {name}; use a reviewed manual correction")
+        if previous == "validated" and mapping[name].get("dsp_target_commit") != commit.strip():
+            raise ValueError(f"target commit changed for previously validated {name}; require manual revalidation")
         mapping[name]["dsp"] = status
         mapping[name]["dsp_evidence"] = evidence
         mapping[name]["dsp_note"] = note.strip()
