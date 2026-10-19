@@ -84,9 +84,17 @@
 <label>Observed field<select id="ft-design-field"><option value="client_bag">Client bag</option><option value="client_safe">Client Safe</option><option value="session">Session</option><option value="gm_active_ki">Active KI</option><option value="gm_aura">Aura</option><option value="stored_furnishings">Stored furnishings</option></select></label>
 <label>Expected value or reference<input id="ft-design-expected" value="db_bag" required></label>
 <button type="button" id="ft-design-add">Add assertion</button>
+<button type="button" id="ft-design-update">Update selected assertion</button>
+<button type="button" id="ft-design-remove">Remove selected assertion</button>
 <button type="button" id="ft-design-generate">Generate design-only JSON</button>
 </form>
+<label for="ft-design-assertion-list">Assertions (select to edit)</label>
+<select id="ft-design-assertion-list" size="5" style="width:100%" aria-label="Draft assertion rows"></select>
 <pre id="ft-design-assertions" aria-live="polite">No assertions added.</pre>
+<button id="ft-design-load" type="button">Load JSON into guided designer</button>
+<label for="ft-design-saved">Saved draft</label><select id="ft-design-saved"><option value="">Choose a saved draft</option></select>
+<button id="ft-design-refresh-saved" type="button">Refresh saved drafts</button>
+<button id="ft-design-load-saved" type="button">Load selected saved draft</button>
 <label for="ft-design-sample">Optional normalized sample observations for preview</label>
 <textarea id="ft-design-sample" rows="3" style="width:100%" placeholder='{"client_bag":[],"db_bag":[]}'></textarea>
 <button id="ft-design-preview" type="button">Preview draft assertions</button>
@@ -95,6 +103,10 @@
 <script>
 (function(){
 const $=id=>document.getElementById(id);let assertions=[];
+function paint(){const list=$('ft-design-assertion-list');const selected=list.selectedIndex;list.replaceChildren();assertions.forEach((a,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=a.id+' — '+a.operation+' ('+a.observed+')';list.appendChild(o);});if(selected>=0&&selected<assertions.length)list.selectedIndex=selected;$('ft-design-assertions').textContent=JSON.stringify(assertions,null,2);}
+function readAssertion(){return {id:$('ft-design-assertion').value,operation:$('ft-design-op').value,observed:$('ft-design-field').value,expected:expected($('ft-design-expected').value)};}
+function showAssertion(a){$('ft-design-assertion').value=a.id;$('ft-design-op').value=a.operation;$('ft-design-field').value=a.observed;$('ft-design-expected').value=typeof a.expected==='string'?a.expected:JSON.stringify(a.expected);}
+function loadSpec(s){if(s.runner!=='unassigned'||s.execution_status!=='design_only')throw Error('Only design-only drafts may be loaded');$('ft-design-feature').value=s.feature_id;$('ft-design-case').value=s.case_id;$('ft-design-name').value=s.name;$('ft-design-pre').value=s.preconditions.join('\n');$('ft-design-clean').value=s.cleanup.join('\n');for(const o of $('ft-design-obs').options)o.selected=s.observations.includes(o.value);assertions=s.assertions.map(a=>({...a}));paint();}
 const lines=id=>$(id).value.split('\n').map(x=>x.trim()).filter(Boolean);
 function expected(s){if(s==='null')return null;if(/^-?\d+$/.test(s))return Number(s);if(s.startsWith('['))return JSON.parse(s);return s;}
 function spec(){
@@ -105,13 +117,14 @@ function spec(){
  preconditions:lines('ft-design-pre'),cleanup:lines('ft-design-clean'),
  observations,assertions};
 }
-$('ft-design-add').addEventListener('click',()=>{
- try{const a={id:$('ft-design-assertion').value,operation:$('ft-design-op').value,
- observed:$('ft-design-field').value,expected:expected($('ft-design-expected').value)};
- if(!a.id||assertions.some(item=>item.id===a.id))throw Error('Assertion ID must be unique and nonempty');
- assertions.push(a);$('ft-design-assertions').textContent=JSON.stringify(assertions,null,2);
- }catch(e){$('ft-design-assertions').textContent='Cannot add assertion: '+e.message;}
-});
+$('ft-design-add').addEventListener('click',()=>{try{const a=readAssertion();if(!a.id||assertions.some(item=>item.id===a.id))throw Error('Assertion ID must be unique and nonempty');assertions.push(a);paint();}catch(e){$('ft-design-assertions').textContent='Cannot add assertion: '+e.message;}});
+$('ft-design-assertion-list').addEventListener('change',()=>{const a=assertions[Number($('ft-design-assertion-list').value)];if(a)showAssertion(a);});
+$('ft-design-update').addEventListener('click',()=>{try{const n=$('ft-design-assertion-list').selectedIndex;if(n<0)throw Error('Select an assertion');const a=readAssertion();if(!a.id||assertions.some((v,i)=>i!==n&&v.id===a.id))throw Error('Duplicate assertion ID');assertions[n]=a;paint();}catch(e){$('ft-design-assertions').textContent='Update rejected: '+e.message;}});
+$('ft-design-remove').addEventListener('click',()=>{const n=$('ft-design-assertion-list').selectedIndex;if(n>=0){assertions.splice(n,1);paint();}});
+$('ft-design-load').addEventListener('click',()=>{try{loadSpec(JSON.parse($('ft-draft-json').value));$('ft-draft-status').textContent='Loaded JSON into designer';}catch(e){$('ft-draft-status').textContent='Load rejected: '+e.message;}});
+async function fetchDrafts(){const res=await fetch('/feature-testing/builder/drafts',{headers:{'X-Test-Operator-Token':$('ft-operator-token').value},credentials:'same-origin'});const body=await res.json();if(!res.ok)throw Error(body.detail||'Draft retrieval failed');const select=$('ft-design-saved');select.replaceChildren();for(const d of body.drafts){const option=document.createElement('option');option.value=d.feature_id+'/'+d.case_id;option.textContent=d.feature_id+'/'+d.case_id+' (rev '+d.revision+')';option._draft=d;select.appendChild(option);}return body.drafts;}
+$('ft-design-refresh-saved').addEventListener('click',async()=>{try{const ds=await fetchDrafts();$('ft-draft-status').textContent='Loaded '+ds.length+' draft entries';}catch(e){$('ft-draft-status').textContent=e.message;}});
+$('ft-design-load-saved').addEventListener('click',()=>{try{const option=$('ft-design-saved').selectedOptions[0];if(!option||!option._draft)throw Error('Choose a saved draft');loadSpec(option._draft.specification);$('ft-draft-json').value=JSON.stringify(option._draft.specification,null,2);$('ft-draft-revision').value=option._draft.revision;$('ft-draft-status').textContent='Loaded '+option._draft.case_id+' revision '+option._draft.revision;}catch(e){$('ft-draft-status').textContent=e.message;}});
 $('ft-design-generate').addEventListener('click',()=>{
  try{$('ft-draft-json').value=JSON.stringify(spec(),null,2);
  $('ft-draft-status').textContent='Draft generated. Review JSON and save using the operator token.';}
