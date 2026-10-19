@@ -29,6 +29,19 @@
 <p><a href="{{ detail.feature.route }}">Open module</a> · <a href="{{ detail.feature.help }}">Module Help</a></p>
 </section>
 {% endif %}
+{% if gui_audit is defined %}
+<details id="gui-control-audit">
+<summary><strong>GUI control coverage audit</strong> &mdash; {{ gui_audit.sample_count }} curated template markers in {{ gui_audit.pages|length }} modules; {{ gui_audit.missing|length }} missing marker or catalog links</summary>
+<p class="muted">{{ gui_audit.note }}</p>
+<div class="table-wrap"><table><thead><tr><th>Module</th><th>Template marker</th><th>Catalog entry</th><th>Template</th><th>Catalog</th></tr></thead><tbody>
+{% for page in gui_audit.pages %}{% for control in page.controls %}
+<tr><td>{{ page.module }}</td><td><code>{{ control.marker }}</code></td>
+<td><a href="/feature-catalog?feature={{ control.feature_id|urlencode }}">{{ control.feature_id }}</a></td>
+<td>{{ 'Found' if control.template_present else 'Missing' }}</td><td>{{ 'Found' if control.catalog_present else 'Missing' }}</td></tr>
+{% endfor %}{% endfor %}
+</tbody></table></div>
+</details>
+{% endif %}
 <form method="get" class="search wb-filter-row">
   <input type="search" name="q" value="{{ q }}" placeholder="Search capabilities">
   <select name="module"><option value="">All modules</option>{% for m in modules %}<option value="{{ m }}" {% if module == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select>
