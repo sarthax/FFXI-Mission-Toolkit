@@ -35,3 +35,14 @@ The importer modifies only the tracker JSON on the local development branch. Do 
 Use the actual DSP/Valhalla server checkout, not `xiheadless-dsp` (which is a headless client) and not an older fork. Log `git remote -v`, `git rev-parse HEAD`, `git status --short`, and client build identifier. Audit schema/migrations, `getChocoboRaisingInfo` equivalents, item exdata, NPC event start/update/finish, trade, personal mount flag and appearance, and racing packet capability; record exact path/line for each claim. Attach packet captures and runnable test command/output separately. Compare against the pinned LSB reference. Label unsupported behavior `unknown` or `partial`, never `validated` based on file presence.
 
 The importer does **not** run server tests or automatically discover DSP source. Use the existing headless client only for controlled tests after the source audit. Maintain no-write guarantees to live DSP and database.
+
+## Read-only local source inventory (first step)
+
+The inventory collector only reads the DSP source and writes a candidate report **outside** its checkout. It records the Git commit, dirty state, optional origin, and matching path names; all ten subsystem DSP statuses remain `unknown`. It cannot demonstrate that a missing glob means missing functionality or that existing source is compatible with the retail client.
+
+```powershell
+python scripts/inventory_chocobo_dsp.py "D:\\path\\to\\actual-DSP-checkout" --output "D:\\temp\\chocobo-dsp-inventory.json"
+python scripts/import_chocobo_audit.py "D:\\temp\\chocobo-dsp-inventory.json" --check
+```
+
+The second command is a **preview**, not approval. Review the inventory with a human or local agent and add exact references to relevant code paths, packet traces and runtime results before promotion. Once verified, run `--apply` on a feature branch and inspect its diff. Do not run `--apply` on mere source inventories to claim validation.
