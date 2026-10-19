@@ -9,6 +9,18 @@ contract test). The only shared file is `workbench-regression.yml`: this PR adds
 `test_wiki_document_v2.py`, #1092 adds one after `test_wiki_named_template_candidates.py`, so they should
 merge cleanly. Table assertions treat `field_type` as optional so the corpus passes before and after #1092.
 
+## Current parser status (2026-10-18)
+
+The inventory and aggregate field counts below are a **historical local-DB snapshot**, not post-fix measurements.
+The corpus contains 22 attributed BG/FFXIclopedia excerpts, 8 attributed real WikiWikiJP HTML excerpts, and 13 synthetic samples. Synthetic samples are not source evidence.
+
+- **Merged #1098:** MediaWiki table-cell attributes separated from display labels; raw markup retained. Table/header gap pins retired.
+- **Merged #1099:** Simple wrapper template values retain reviewable text; complex expansion remains unsupported. Nested-wrapper gap pin retired.
+- **Merged #1101:** WikiWikiJP HTML rowspan/colspan tracked as physical columns; NPC area/coordinate mismatch corrected, both Voidwatch route areas retained.
+
+All extracted field hints remain **review-only** and are not verified gameplay relationships. Next: multi-level merged headers, blank cells, and real two-column label/value examples.
+The audit below documents its original baseline; this status supersedes outdated parser limitations.
+
 ## 1. Local Wiki source inventory (`ffxi_zone_database.db`, read-only)
 
 | Source | Pages | Raw MediaWiki source (`reference_wiki_documents`) | Structured blocks | Revision ids | Hashes | Limitations |
