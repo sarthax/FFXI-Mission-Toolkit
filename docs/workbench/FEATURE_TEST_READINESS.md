@@ -134,3 +134,39 @@ The DSP repository's `sql/gardening_results.sql` exists on `main` and the `featu
 The new `garden_rewards.py` parser takes the SQL text **from the selected DSP checkout** and builds the per-combination allowed item/quantity oracle, without executing SQL. The `validate_harvest` result is `PASS` for an allowed item within an allowed quantity range; `FAIL` for a forbidden item or amount; and `BLOCKED` if that combination is absent from the SQL. This validates **individual recorded pot rewards**; mixed-pot, aggregated inventory deltas cannot be assigned to a seed/crystal combination without per-pot harvesting observations. The oracle does **not** validate RNG weight distributions, exact expected item for a random roll, or whether the server actually loaded the same SQL contents at startup.
 
 Live test preflight must record the actual server SQL hash and reload/restart state; if the SQL used by a running server cannot be tied to the checkout, the reward verdict must remain provisional. Longer statistical campaigns can separately compare observed frequencies to configured weights after auditing the exact C++ strength/selection algorithm; do not equate SQL weight with direct per-roll probability.
+
+## Moghancement / Moglification acceptance suite (source-backed)
+
+DSP main sources reviewed:
+- `sql/item_furnishing.sql`: itemid, name, storage, moghancement key item, element (0..7), aura strength.
+- `src/map/entities/charentity.cpp`: `UpdateMoghancement`, `ChangeMoghancement`, `SetMoghancement`, `MoghancementDebug`.
+- `scripts/commands/moghancement.lua`: level-1 GM helper `info`, `set <keyitemid>`, `clear`, `recalc`.
+
+The **real oracle** is `moghancement_oracle.py`, loading furnishing metadata from the selected DSP SQL revision. Sum aura for *installed* furnishings across Mog Safe 1 and Mog Safe 2 (not merely stored). A tied dominant element or zero aura produces key item 0. Otherwise choose the highest-aura installed eligible furnishing of that element, breaking ties by the server iteration order: Mog Safe first, then Mog Safe 2, ascending slot. Replacing the active effect removes the old furniture KI, grants the new KI, applies the new modifiers, updates KI packets and persists via `SaveKeyItems`. The oracle's container labels 1/2 mean logical **Safe 1/Safe 2**, not verified raw `LOC_MOGSAFE` packet IDs; map them explicitly at the adapter boundary.
+
+Run three campaign tiers:
+1. **Direct calculation**, offline: every furnishing SQL item individually; same-element combinations, mixed-element dominance, exact element ties, strongest-item ties, zero aura, inactive furniture. Generate item combinations bounded by a budget, with targeted coverage of every distinct KI in SQL. Assert `predict_moghancement` result.
+2. **GM-assisted mechanics**, live isolated Mog House: place real furniture in both safes; use `!moghancement info` before/after and `!moghancement recalc` to test the server's calculation. `!moghancement set` is fixture setup only and must not count as furnishing gameplay acceptance.
+3. **Player gameplay**, live: use XiHeadless to install/uninstall furniture, exit furnishing menu, and verify the grant/removal of the KI without triggering `recalc` manually. Repeat across layout transitions and re-login persistence. **Headless furnishing/menu support is not yet verified**; mark blocked until built and demonstrated.
+
+Positive IDs:
+- `MOG-01` single furnishing for every distinct Moghancement KI.
+- `MOG-02` two furnishings same element; largest aura furnishing selects KI.
+- `MOG-03` several furniture items; total aura of dominant element wins while strongest eligible piece chooses KI.
+- `MOG-04` furniture in each Mog Safe contributes.
+- `MOG-05` layout A→layout B replaces prior temporary KI and its modifier.
+- `MOG-06` uninstallation removes old KI; relog preserves new active effect.
+- `MOG-07` compare `info` aura breakdown and active KI with offline oracle.
+
+Negative IDs:
+- `MOG-08` equal maximum aura between two elements yields no Moghancement and clears old KI.
+- `MOG-09` only stored, not installed, furniture yields no effect.
+- `MOG-10` no furniture yields no effect and removes previous KI.
+- `MOG-11` repeat menu exit/recalc does not duplicate KIs or stack modifiers.
+- `MOG-12` invalid `set <keyitemid>` refuses unknown KI and leaves state intact.
+- `MOG-13` duplicate copies of an item raise aggregate aura but do not duplicate KI grants.
+- `MOG-14` strongest-item tie selects first in actual server scan order (regression vs placement-order assumptions).
+
+**Evidence:** selected server SQL SHA, server/headless/Toolkit commits, installed inventory manifest (container+slot), item element/aura and KI metadata, before/after `!moghancement info`, exact held furniture key item set, modifier snapshot and relog outcome. Absence of headless installed-state observation is a BLOCKER, never an inferred PASS. The FFXIclopedia wiki is a useful gameplay reference, but the running DSP source and its SQL are authoritative for expected outcomes.
+
+Moghancement can affect gardening via furnishing auras and `GARDENING_WILT_BONUS`; record the Mog House layout and active KI in each gardening campaign to avoid hidden cross-feature variation.
