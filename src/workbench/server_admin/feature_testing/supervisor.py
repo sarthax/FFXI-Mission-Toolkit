@@ -98,4 +98,13 @@ def supervisor_openapi():
         and getattr(route, "include_in_schema", False)
     ])
     spec["servers"] = [{"url": "http://127.0.0.1:8420"}]
+    # The token belongs to the client connection, not the model: hide the header
+    # parameter and declare Bearer auth so tool clients never ask for a token.
+    for item in spec["paths"].values():
+        for op in item.values():
+            op["parameters"] = [p for p in op.get("parameters", []) if p.get("name") != "authorization"]
+            if not op["parameters"]:
+                del op["parameters"]
+            op["security"] = [{"bearerAuth": []}]
+    spec.setdefault("components", {}).setdefault("securitySchemes", {})["bearerAuth"] = {"type": "http", "scheme": "bearer"}
     return spec
