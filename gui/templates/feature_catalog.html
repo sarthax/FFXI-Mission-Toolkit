@@ -33,6 +33,12 @@
 <h3>How to use</h3>
 {% if detail.feature.how_to_use %}<p>{{ detail.feature.how_to_use }}</p>{% else %}<p class="muted">Detailed operator workflow has not been documented for this capability yet. Use the linked module Help where available.</p>{% endif %}
 {% if detail.feature.caveat %}<p><strong>Evidence and limits:</strong> {{ detail.feature.caveat }}</p>{% endif %}
+{% if detail.feature.source_refs or detail.feature.test_refs %}
+<h3>Source and regression references</h3>
+<p class="muted">Repository source pointers and offline test coverage, not proof of in-game validation.</p>
+{% if detail.feature.source_refs %}<p><strong>Implementation files:</strong> {% for ref in detail.feature.source_refs %}<code>{{ ref }}</code>{% if not loop.last %}; {% endif %}{% endfor %}</p>{% endif %}
+{% if detail.feature.test_refs %}<p><strong>Regression tests:</strong> {% for ref in detail.feature.test_refs %}<code>{{ ref }}</code>{% if not loop.last %}; {% endif %}{% endfor %}</p>{% endif %}
+{% endif %}
 <h3>Functions in this module</h3>
 {% if detail.children %}<ul>{% for child in detail.children %}<li><a href="/feature-catalog?feature={{ child.id|urlencode }}">{{ child.name }}</a> — {{ child.summary }} ({{ child.implementation }}, {{ child.validation }})</li>{% endfor %}</ul>{% else %}<p class="muted">No child functions have been cataloged for this entry.</p>{% endif %}
 <p><a href="{{ detail.feature.route }}">Open module</a> · <a href="{{ detail.feature.help }}">Module Help</a></p>
