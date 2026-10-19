@@ -27,5 +27,15 @@ echo Starting the Mission Toolkit...
 echo Once you see "Uvicorn running on http://127.0.0.1:8420", open that address
 echo in your web browser. Close this window to stop the server.
 echo.
-"%PY%" -m workbench.app.host
+REM Optional local supervisor settings (token, results DB, read-only DB account) live OUTSIDE the repo.
+REM Override the location with MISSION_TOOLKIT_ENV_PS1. Without the file the supervisor gateway stays disabled.
+if "%MISSION_TOOLKIT_ENV_PS1%"=="" set MISSION_TOOLKIT_ENV_PS1=D:\MissionToolkitData\supervisor.env.ps1
+if exist "%MISSION_TOOLKIT_ENV_PS1%" (
+    echo Loading supervisor settings from %MISSION_TOOLKIT_ENV_PS1%
+    if exist "D:\MissionToolkitData\extra_site" set PYTHONPATH=D:\MissionToolkitData\extra_site;%PYTHONPATH%
+    powershell -NoProfile -ExecutionPolicy Bypass -Command ". '%MISSION_TOOLKIT_ENV_PS1%'; & '%PY%' -m workbench.app.host"
+) else (
+    echo No supervisor env file found -- supervisor gateway disabled.
+    "%PY%" -m workbench.app.host
+)
 pause
