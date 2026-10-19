@@ -9,6 +9,12 @@
 <section class="wb-panel">
 <h2>{{ detail.scenario.title }}</h2>
 <p><strong>Classification:</strong> {{ detail.scenario.kind }} · <strong>Plan status:</strong> {{ detail.scenario.status }}</p>
+<h3>Execution readiness</h3>
+<p><strong>Registered runner:</strong> {{ preflight.runner or 'None (planning only)' }}</p>
+<p><strong>Preflight:</strong> {{ 'Ready for operator review' if preflight.ready_for_operator_review else 'Blocked' }} · Execution from this page is not enabled.</p>
+<ul>{% for check in preflight.checks %}<li><strong>{{ 'Ready' if check.ok else 'Blocked' }}:</strong> {{ check.detail }}</li>{% endfor %}</ul>
+<p><a href="/feature-testing/preflight/{{ detail.feature_id|urlencode }}/{{ detail.scenario.id|urlencode }}">View machine-readable readiness</a></p>
+{% if preflight.ready_for_operator_review %}<p>Approved local operators may run the allowlisted scenario using <code>python -m workbench.server_admin.feature_testing.execution_cli</code>. This page does not grant execution permission.</p>{% endif %}
 <h3>Expected result</h3>
 {% if detail.expected_reference %}
 <p>{{ detail.expected_reference.detail }}</p>
