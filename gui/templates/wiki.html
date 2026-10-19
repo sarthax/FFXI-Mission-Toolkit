@@ -450,9 +450,9 @@ mark.ct-term::after{content:"]";opacity:.6}
 {% else %}
 <p class="muted">Structured on demand from the existing source snapshot; no network re-scrape was required.</p>
 {% endif %}
-<div class="wiki-article">
+<div class="wiki-article" id="wiki-source-article" data-focus-section="{{ focus_section }}">
 {% for section in page_view.groups %}
-<section class="wiki-article-section">
+<section class="wiki-article-section" data-wiki-section="{{ section.title }}">
   {% if section.title != 'Overview' %}
     {% if section.level <= 2 %}<h2>{{ section.title }}</h2>
     {% elif section.level == 3 %}<h3>{{ section.title }}</h3>
@@ -518,6 +518,24 @@ mark.ct-term::after{content:"]";opacity:.6}
 </section>
 {% endfor %}
 </div>
+{% if focus_section %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const article = document.getElementById('wiki-source-article');
+  if (!article) return;
+  const original = article.dataset.focusSection || '';
+  const wanted = original.split(' > ').pop().trim();
+  if (!wanted) return;
+  const section = Array.from(article.querySelectorAll('[data-wiki-section]'))
+    .find(element => element.dataset.wikiSection === wanted);
+  if (!section) return; // No guessed fallback to an unrelated heading.
+  section.id = 'wiki-focused-source-section';
+  section.scrollIntoView({block:'start'});
+  section.style.outline = '2px solid var(--accent)';
+  section.style.scrollMarginTop = '80px';
+});
+</script>
+{% endif %}
 {% endif %}
 {% endif %}
 
