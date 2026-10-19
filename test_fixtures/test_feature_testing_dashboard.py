@@ -76,3 +76,14 @@ def test_dashboard_navigation_and_setup_tabs_present():
     for expected in ('tab=runs', 'tab=catalog', 'tab=guide', 'name="verdict"', 'name="feature"',
                      'name="query"', 'Run history', 'MISSION_TOOLKIT_TEST_RESULTS_DB'):
         assert expected in html
+
+
+def test_feature_testing_discoverable_in_shared_shell_and_home():
+    from workbench.gui_shell import WORKSPACES
+    validation = next(w for w in WORKSPACES if w["name"] == "Validation")
+    testing = next(s for s in validation["sections"] if s["href"] == "/feature-testing")
+    assert testing["label"] == "Feature Testing & Validation"
+    assert any("feature-testing" in pattern for pattern in testing["active_patterns"])
+    home = (Path(__file__).resolve().parents[1] / "gui/templates/home.html").read_text(encoding="utf-8")
+    assert 'href="/feature-testing?tab=runs"' in home
+    assert 'href="/feature-testing?tab=catalog"' in home
