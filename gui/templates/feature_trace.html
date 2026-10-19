@@ -486,6 +486,7 @@
   <div class="muted">Literal source evidence for the selected Wiki record, not independently validated gameplay behavior.</div>
   {% set ev = dossier.wiki_section_evidence %}
   {% if ev.source_id and ev.page_id %}<div><strong>Source page:</strong> {{ ev.source_id }} / {{ ev.page_id }}</div>{% endif %}
+  {% if ev.browse_href %}<div><a class="zonelink" href="{{ ev.browse_href }}">Open exact Wiki source page{% if ev.section %} / section{% endif %} ↗</a></div>{% endif %}
   {% if ev.section %}<div><strong>Section:</strong> {{ ev.section }}</div>{% endif %}
   {% if ev.locator %}<div><strong>Source locator:</strong> <code>{{ ev.locator }}</code></div>{% endif %}
   {% if ev.revision_id %}<div><strong>Revision:</strong> {{ ev.revision_id }}</div>{% endif %}
