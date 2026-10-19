@@ -36,11 +36,11 @@ wider redistribution.
 added after the pilot crawls recorded raw HTML and `retrieved_at`): a header plus two body rows (or four list items)
 each, with an independent parser-free cell inventory. Pukiwiki exposes no revision id, so `revision_id` is
 `none-exposed`. The runner checks that every non-empty cell survives in order (the parser emits no block for empty
-cells, e.g. blank spacer headers; pinned). Voidwatch tables and the NM list yield **no** typed hints. The three
-BFNM/NM tables tagged `header-pair-hint` each yield exactly one review-only, untyped candidate that pairs the first two
-header cells (`エリア`→`NPC`, `場所`→`モンスター名称`, `エリア`→`無色`). That is a header row, not a label/value row, so
-it is pinned as current behaviour and must stay review-only; deciding whether header rows should hint at all is an
-open design question. The labelled JP samples remain synthetic. Licence terms for WikiWikiJP were not verified.
+cells, e.g. blank spacer headers; pinned). Voidwatch tables and the NM list yield **no** typed hints. Header
+rows use column-header semantics: a policy label in an all-header row (`エリア`, `場所`) yields review-only, typed
+(`LOCATION`) hints whose values are the cells beneath that column, never the next header (`orientation: column`). Pinned
+per sample in `JP_EXPECTED_HITS`. Known limitation: rowspan/colspan tables are indexed positionally, so
+`jp-vw-npc-table`'s second hit (`(D-11)`) is a shifted column. The labelled JP samples remain synthetic. Licence terms for WikiWikiJP were not verified.
 
 `synthetic_manifest.json` (13 samples) is generated from `synthetic_sources.json`, is marked
 `evidence_type: synthetic`, has no URL/hash/revision, and states which real structure it models. **All
