@@ -205,3 +205,11 @@ Required negative scenarios: replace KI A with KI B and verify KI A and modifier
 - **MOG-BEH-05 Replacement and idempotence:** repeatedly switch Money ↔ Gardening layouts; prove both KIs and modifier states transition exclusively and no bonus accumulates after multiple menu exits or relogs.
 
 Each live execution requires (a) approved disposable environment and fixture, (b) server version and configuration fingerprint, (c) original modifier baseline, (d) KI plus modifier evidence, (e) observed game behavior, (f) cleanup results. Do not treat a diagnostic value as proof of actual gameplay outcome.
+
+## Durable feature test results — initial implementation
+
+`src/workbench/server_admin/feature_testing/results.py` provides an append-only SQLite local evidence store. Every result is keyed by `(run_id, case_id, stage)` and captures verdict, UTC timestamp supplied by importer, exact DSP/headless/Toolkit revisions, and structured evidence. Valid verdicts: PASS, FAIL, BLOCKED, SKIPPED. Stages distinguish key_item, modifier, behavior, mechanics and gameplay. Duplicate keys are rejected, never overwritten.
+
+The dashboard serves **read-only** `GET /feature-testing/results` with optional `feature_id` and `case_id` filtering, and displays history on scenario pages. Set `MISSION_TOOLKIT_TEST_RESULTS_DB` to an **absolute local SQLite file path** to view records imported by a trusted local harness. With no configured file, results remain empty; the UI never fabricates green outcomes. This page has no test execution or write API.
+
+No provenance authentication, signed evidence or automatic headless ingestion is provided yet. Importing test records should be restricted to trusted local agents; do not upload raw credentials or player account secrets. Test outcome display does **not** itself validate evidence authenticity. The next slice is a secure local artifact importer with evidence schema validation, run manifest and per-stage verification.
