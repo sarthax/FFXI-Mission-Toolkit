@@ -994,6 +994,7 @@ def feature_catalog_page(request: Request, q: str = "", module: str = "", featur
         "q": q, "module": module, "features": search_catalog(all_features, q, module),
         "modules": sorted({f["module"] for f in all_features}), "coverage": audit_catalog(),
         "gui_audit": audit_gui_controls(),
+        "gui_inventory": inventory_gui(),
         "detail": feature_detail(all_features, feature),
     })
 
