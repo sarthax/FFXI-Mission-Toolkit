@@ -77,3 +77,20 @@ All negative tests must snapshot the pre-state and assert both the refused playe
 - `permission=1`, no args; reports targeted mob's ID, pool, job, HP%, TP and skill list / TP-use mods. Requires the player to **target a mob**; not a generic spawn/abyssite progression query.
 - `!checknav x y z` on the reviewed Assault diagnostics branch is a diagnostic for valid nav position and path from the player; does not validate Voidwalker hint logic.
 - Neither operation by itself proves a tier upgrade, specific skill effect, or drop. Treat missing abyssite state readback as a **candidate** for a scoped read-only utility after checking the current Voidwalker Lua and any existing `!checkvar` / `!haskeyitem` commands.
+
+## Gardening C++ implementation audit (source verified)
+
+Reviewed `sarthax/darkstar-to-valhalla:feature/mog-house-gardening:src/map/utils/gardenutils.cpp`, specifically `gardenutils::DebugCommand` called by `CLuaBaseEntity::gardenDebug`.
+
+- **Container collision:** the loop visits **both** `LOC_MOGSAFE` and `LOC_MOGSAFE2`; `slotFilter` compares only the numeric slot ID within each container. Thus **`!garden grow 1 5` could affect two pots** if both safes contain a flowerpot in slot 5. The operator should treat all state-changing `!garden` actions as *potentially multi-container*. A slot is NOT a unique per-pot identifier. Automated state-changing calls must be blocked until either (a) a unique matching pot is verified across both containers, or (b) DSP receives a reviewed container-scoped command argument. Verify this via read-only `!garden info` before/after.
+- **State persistence:** each successful state-changing debug action calls `SavePot(PChar, PPot, containerID, slotID)`, followed by `CFurnitureInteractPacket` and `CInventoryFinishPacket`. This supports same-session persistence, but relog durability remains a runtime assertion.
+- **`grow` path:** loops through `GrowToNextStage(PPot)`, using `max(1, value)` so a value of 0 or negative does not mean no-op. Add a negative test preventing accidental stage advance from zero count and make the harness reject count less than 1.
+- **`results` action:** directly invokes `CalculateResults`, which includes random choice and configuration-dependent influences (weekday, pot element, moon phase, furnishing auras). Do not treat consecutive `!garden results` outputs as deterministic expected yields.
+- **`ready` action:** sets the stage due timestamp to now but does not itself move to the next stage. Normal tick may wait for a feeding requirement.
+- **`stage`/`mature`/`wilt` and `crystal1/2`** directly manipulate state, not gameplay checks. Test normal crystal feeding and harvesting through the client, with these actions reserved for explicit fixture or acceleration stages.
+
+### Missing GM utility requirement GARD-GM-01 (candidate; no implementation yet)
+
+A scoped `gardenstate` or extension to `garden` should address **one pot by both container ID and slot ID**, with a read-only structured state output. For mutating operations, require explicit container ID, slot, and a unique flowerpot lookup; reject nonexistent pots, out-of-range values, and non-Mog-House calls with **no side effects**. Keep permission at or above the existing level 1 and provide structured confirmation including affected container+slot, action, before/after stage and update result. Review existing `gardenDebug` signature and client update packets before introducing the new command. Avoid global-clock manipulation.
+
+**Until this is addressed, tests requiring an isolated pot must preflight both safe containers and abort if the slot has more than one matching pot.** This is now a concrete, source-proven GM command improvement candidate rather than speculative test infrastructure.
