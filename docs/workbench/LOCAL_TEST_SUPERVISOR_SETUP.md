@@ -85,3 +85,21 @@ $env:MISSION_TOOLKIT_SUPERVISOR_DSP_PORT = "<actual deployed DSP map port>"
 ```
 
 The DSP map probe returns `configured=false` until its port is set. For remote databases or servers, use a separate audited diagnostic adapter with explicit administrator-approved endpoints instead of weakening this restriction. Reachability does not imply the database is authenticated or that the DSP server is functioning.
+
+## Phase 1: fixed-query test-character inventory
+
+The protected `GET /api/supervisor/test-character-inventory?charid=101` endpoint returns up to 100 **persisted** inventory rows from DSP's `char_inventory` table (`location`, `slot`, `itemId`, `quantity`). It never accepts SQL or a database host from the caller, and rejects character IDs outside the explicitly configured disposable-character allowlist.
+
+Configure only after your local agent identifies the real disposable test-character IDs and database settings. Create a **separate SELECT-only DB account** (do not reuse the DSP application's write-capable login). Keep credentials out of the repository and avoid printing them in diagnostic logs.
+
+```powershell
+$env:MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS = "101,102" # REPLACE after validation
+$env:MISSION_TOOLKIT_SUPERVISOR_DB_USER = "<read_only_db_user>"
+$env:MISSION_TOOLKIT_SUPERVISOR_DB_PASSWORD = "<secret_from_private_store>"
+$env:MISSION_TOOLKIT_SUPERVISOR_DB_NAME = "<deployed_dsp_schema>"
+$env:MISSION_TOOLKIT_SUPERVISOR_DB_PORT = "3306"
+```
+
+Install the optional Python package `PyMySQL` into the same Toolkit environment before enabling this endpoint. The connection is pinned to `127.0.0.1`, with short connection and read timeouts and read-only transaction mode. **The read-only account's actual database GRANT permissions are the primary safety boundary**, not a Python transaction setting. If the database is hosted on another machine, do not change the binding to reach it without a separate reviewed design.
+
+If the account or schema is unconfigured, the response reports `configured=false`. An unexpected connection failure is an error, not a successful blank inventory. Values may be stale relative to character state in memory; cross-check with XiHeadless snapshots before making gameplay conclusions. No key-item decoder, safe/house layout semantics, or direct live client telemetry is implemented in this phase.
