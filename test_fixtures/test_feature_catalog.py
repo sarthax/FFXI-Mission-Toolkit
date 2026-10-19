@@ -9,6 +9,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from workbench.core.services.feature_catalog import load_catalog, search_catalog, feature_detail
 from workbench.core.services.feature_catalog_audit import audit_catalog
 from workbench.core.services.feature_catalog_gui_audit import audit_gui_controls
+from workbench.core.services.feature_catalog_gui_inventory import inventory_gui, discover_controls
 
 
 def main():
@@ -46,6 +47,13 @@ def main():
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
     audit = audit_catalog()
     gui_audit = audit_gui_controls()
+    inventory = inventory_gui()
+    assert inventory["control_count"] > 0
+    assert any(p["controls"] for p in inventory["pages"])
+    assert discover_controls('<button type="submit">Run test</button><a href="/help">Help</a>') == [
+        {"kind": "button", "label": "Run test", "target": ""},
+        {"kind": "a", "label": "Help", "target": "/help"}]
+
     assert gui_audit["sample_count"] >= 29
     assert len(gui_audit["pages"]) >= 9
     assert gui_audit["missing"] == [], gui_audit["missing"]
@@ -64,8 +72,9 @@ def main():
     assert "Feature Catalog" in page
     detail_page = render("feature_catalog.html", "/feature-catalog",
                          features=items, modules=sorted({f["module"] for f in items}),
-                         q="", module="", coverage=audit, detail=details, gui_audit=gui_audit)
+                         q="", module="", coverage=audit, detail=details, gui_audit=gui_audit, gui_inventory=inventory)
     assert "GUI control coverage audit" in detail_page
+    assert "Automatic GUI control candidates" in detail_page
     assert "Functions in this module" in detail_page
     assert "How to use" in detail_page
     assert "/feature-catalog?feature=" in detail_page
