@@ -116,7 +116,7 @@ def _mediawiki_cell_parts(raw_cell: str) -> tuple[str, str | None]:
     """
     parts = raw_cell.split("|", 1)
     if len(parts) == 2 and re.match(
-        r'^\\s*(?:(?:style|class|id|width|height|align|valign|colspan|rowspan|bgcolor)\\s*=)',
+        r'^\s*(?:(?:style|class|id|width|height|align|valign|colspan|rowspan|bgcolor)\s*=)',
         parts[0], re.I,
     ):
         return parts[1].strip(), parts[0].strip()
