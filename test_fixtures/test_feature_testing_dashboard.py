@@ -50,6 +50,29 @@ def test_feature_testing_html_pages_render_through_host_app(monkeypatch, tmp_pat
     app = host.app
     monkeypatch.setenv("MISSION_TOOLKIT_TEST_RESULTS_DB", str(tmp_path / "absent.db"))
     client = TestClient(app)
-    for path in ("/feature-testing", "/feature-testing/scenario/moghancement/MOG-01",
+    for path in ("/feature-testing", "/feature-testing?tab=catalog", "/feature-testing?tab=guide", "/feature-testing?tab=runs&verdict=FAIL", "/feature-testing/scenario/moghancement/MOG-01",
                  "/feature-testing/scenario/gardening/GARD-01"):
         assert client.get(path).status_code == 200, path
+
+
+def test_dashboard_tabs_filter_runs_and_bound_pages(monkeypatch):
+    from workbench.server_admin.feature_testing import router
+    rows = [
+        {"run_id": "run-a", "observed_at": "2026-10-19T10:00:00Z", "feature_id": "gardening", "verdict": "FAIL"},
+        {"run_id": "run-b", "observed_at": "2026-10-18T10:00:00Z", "feature_id": "moghancement", "verdict": "PASS"},
+    ]
+    monkeypatch.setattr(router, "_history", lambda: rows)
+    view = router.dashboard_view(feature="gardening", verdict="FAIL", query="RUN-A", page=100)
+    assert view["tab"] == "runs"
+    assert view["total_runs"] == 1 and view["page"] == 1
+    assert [item["run_id"] for item in view["runs"]] == ["run-a"]
+    assert router.dashboard_view(tab="unknown")["tab"] == "runs"
+    assert router.dashboard_view(tab="catalog")["tab"] == "catalog"
+    assert router.dashboard_view(feature="moghancement", verdict="FAIL")["runs"] == []
+
+
+def test_dashboard_navigation_and_setup_tabs_present():
+    html = (Path(__file__).resolve().parents[1] / "gui/templates/feature_testing.html").read_text(encoding="utf-8")
+    for expected in ('tab=runs', 'tab=catalog', 'tab=guide', 'name="verdict"', 'name="feature"',
+                     'name="query"', 'Run history', 'MISSION_TOOLKIT_TEST_RESULTS_DB'):
+        assert expected in html
