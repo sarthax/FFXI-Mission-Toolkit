@@ -144,6 +144,32 @@ def _builder_preflight():
     return preflight("moghancement", "MOG-09")
 
 
+class DraftSaveRequest(BaseModel):
+    specification: dict
+    expected_revision: int = 0
+
+
+@router.get("/builder/drafts", include_in_schema=False)
+def draft_list(request: Request, x_test_operator_token: str | None = Header(default=None)):
+    _operator_auth(request, x_test_operator_token)
+    from .spec_drafts import get_drafts
+    try:
+        return {"drafts": get_drafts(), "execution_enabled": False}
+    except ValueError as exc:
+        raise HTTPException(503, str(exc)) from exc
+
+
+@router.post("/builder/drafts", include_in_schema=False)
+def draft_save(request: Request, payload: DraftSaveRequest,
+               x_test_operator_token: str | None = Header(default=None)):
+    _operator_auth(request, x_test_operator_token)
+    from .spec_drafts import save_draft
+    try:
+        return save_draft(payload.specification, payload.expected_revision)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
 class EvaluationPreviewRequest(BaseModel):
     feature_id: str
     case_id: str
