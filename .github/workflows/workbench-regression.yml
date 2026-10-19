@@ -191,6 +191,7 @@ jobs:
           python test_fixtures/test_feature_trace_wiki_dossier.py
           python test_fixtures/test_feature_trace_wiki_section_dossier.py
           python test_fixtures/test_wiki_trace_real_corpus_acceptance.py
+          python test_fixtures/test_wiki_trace_operator_scorecard.py
           python test_fixtures/test_wiki_typed_relations.py
           python test_fixtures/test_wiki_template_inspection.py
           python test_fixtures/test_wiki_table_provenance.py
