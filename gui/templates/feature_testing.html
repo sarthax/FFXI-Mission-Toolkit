@@ -65,6 +65,68 @@
 <button type="submit">Review test plan (JSON)</button>
 </form>
 <p>The review endpoint verifies character allowlisting, a registered runner, and local preflight requirements. It returns a plan with expected observation steps; it does not issue execution authorization. Use the <a href="/feature-testing/scenario/moghancement/MOG-09">scenario detail</a> to inspect assertions, then launch the reviewed plan through the local operator CLI documented in <code>docs/workbench/LOCAL_TEST_SUPERVISOR_SETUP.md</code>.</p>
+<details open><summary><strong>Guided test designer</strong></summary>
+<p>Build a design-only specification using form controls. The advanced JSON editor below remains available for reviewing and saving.</p>
+<form id="ft-guided-designer" class="ft-filters">
+<label>Feature ID<input id="ft-design-feature" pattern="[A-Za-z0-9_-]+" value="inventory_observation" required></label>
+<label>Case ID<input id="ft-design-case" pattern="[A-Za-z0-9_-]+" placeholder="INV-CUSTOM-01" required></label>
+<label>Test name<input id="ft-design-name" maxlength="120" required></label>
+<label>Prerequisites (one per line)<textarea id="ft-design-pre" rows="3" required>Approved disposable character</textarea></label>
+<label>Cleanup (one per line)<textarea id="ft-design-clean" rows="3" required>No mutation; disconnect test client</textarea></label>
+<label>Observation sources<select id="ft-design-obs" multiple size="7">
+<option value="session">Session</option><option value="client_bag">Client bag</option><option value="db_bag">DB bag</option>
+<option value="client_safe">Client Safe</option><option value="db_safe">DB Safe</option><option value="gm_active_ki">Active KI</option>
+<option value="gm_aura">Aura</option><option value="stored_furnishings">Stored furnishings</option>
+<option value="installed_layout">Installed layout</option><option value="client_key_items">Client key items</option>
+<option value="db_key_items">DB key items</option></select></label>
+<label>Assertion ID<input id="ft-design-assertion" value="bag_equal" required></label>
+<label>Comparison<select id="ft-design-op"><option value="same_rows">Inventory rows match</option><option value="equals">Equals</option><option value="nonempty">Nonempty</option><option value="all_zero">Eight aura values zero</option></select></label>
+<label>Observed field<select id="ft-design-field"><option value="client_bag">Client bag</option><option value="client_safe">Client Safe</option><option value="session">Session</option><option value="gm_active_ki">Active KI</option><option value="gm_aura">Aura</option><option value="stored_furnishings">Stored furnishings</option></select></label>
+<label>Expected value or reference<input id="ft-design-expected" value="db_bag" required></label>
+<button type="button" id="ft-design-add">Add assertion</button>
+<button type="button" id="ft-design-generate">Generate design-only JSON</button>
+</form>
+<pre id="ft-design-assertions" aria-live="polite">No assertions added.</pre>
+<label for="ft-design-sample">Optional normalized sample observations for preview</label>
+<textarea id="ft-design-sample" rows="3" style="width:100%" placeholder='{"client_bag":[],"db_bag":[]}'></textarea>
+<button id="ft-design-preview" type="button">Preview draft assertions</button>
+<pre id="ft-design-preview-output" aria-live="polite"></pre>
+</details>
+<script>
+(function(){
+const $=id=>document.getElementById(id);let assertions=[];
+const lines=id=>$(id).value.split('\n').map(x=>x.trim()).filter(Boolean);
+function expected(s){if(s==='null')return null;if(/^-?\d+$/.test(s))return Number(s);if(s.startsWith('['))return JSON.parse(s);return s;}
+function spec(){
+ const observations=[...$('ft-design-obs').selectedOptions].map(o=>o.value);
+ for(const item of assertions)if(!observations.includes(item.observed))observations.push(item.observed);
+ return {schema_version:1,feature_id:$('ft-design-feature').value,case_id:$('ft-design-case').value,
+ name:$('ft-design-name').value,runner:'unassigned',execution_status:'design_only',
+ preconditions:lines('ft-design-pre'),cleanup:lines('ft-design-clean'),
+ observations,assertions};
+}
+$('ft-design-add').addEventListener('click',()=>{
+ try{const a={id:$('ft-design-assertion').value,operation:$('ft-design-op').value,
+ observed:$('ft-design-field').value,expected:expected($('ft-design-expected').value)};
+ if(!a.id||assertions.some(item=>item.id===a.id))throw Error('Assertion ID must be unique and nonempty');
+ assertions.push(a);$('ft-design-assertions').textContent=JSON.stringify(assertions,null,2);
+ }catch(e){$('ft-design-assertions').textContent='Cannot add assertion: '+e.message;}
+});
+$('ft-design-generate').addEventListener('click',()=>{
+ try{$('ft-draft-json').value=JSON.stringify(spec(),null,2);
+ $('ft-draft-status').textContent='Draft generated. Review JSON and save using the operator token.';}
+ catch(e){$('ft-draft-status').textContent='Generation failed: '+e.message;}
+});
+$('ft-design-preview').addEventListener('click',async()=>{
+ try{const observations=JSON.parse($('ft-design-sample').value);
+ const response=await fetch('/feature-testing/builder/drafts/preview',{method:'POST',
+ headers:{'Content-Type':'application/json'},credentials:'same-origin',
+ body:JSON.stringify({specification:spec(),observations})});
+ const body=await response.json();$('ft-design-preview-output').textContent=response.ok?JSON.stringify(body,null,2):'Rejected: '+(body.detail||response.status);
+ }catch(e){$('ft-design-preview-output').textContent='Invalid preview: '+e.message;}
+});
+})();
+</script>
 <h3>Design-only specification editor</h3>
 <p>Create a versioned draft using an allowlisted JSON specification. Drafts cannot override published tests or enable execution. Saving requires the independent operator token above and <code>MISSION_TOOLKIT_TEST_DRAFTS_DB</code>.</p>
 <form id="ft-draft-editor">
