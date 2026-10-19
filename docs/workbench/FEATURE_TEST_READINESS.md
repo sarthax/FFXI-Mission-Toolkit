@@ -256,3 +256,9 @@ Supported observation kinds:
 - `mog_replacement`: `case_id`, `baseline`, `old_active`, `new_active`, `old_effect`, `new_effect`.
 
 This adapter is deliberately **offline**: it does not connect to DSP, validate a player's identity, make GM calls, or operate the Headless client. It records `capture_provenance: unverified_external_observation` to prevent misinterpreting syntactically valid imports as authenticated runs. `PASS` is only a *validator verdict against supplied observations*, not proof the server actually produced them. Full live capture, attestation, runtime configuration checks, and behavior-level game assertions remain future milestones.
+
+## Read-only run history views
+
+The `/feature-testing` homepage now includes a run-history table grouped by run ID, latest observation timestamp, covered feature IDs, verdict counts and imported record count. Individual runs open at `/feature-testing/run/{run_id}`, where each stage verdict, source revisions and structured evidence can be inspected. `GET /feature-testing/runs` exposes the read-only grouped summaries. When no database is configured or reports have not yet been imported, the UI shows an explicit empty state rather than implying all tests passed.
+
+These views reflect **imported report records**, not authenticated server executions. The first history implementation reads up to 500 recent records for grouping; it is not yet a complete paginated history for larger campaigns. Test inventory/variable editors and the execution launcher remain separate future slices, with live execution still disabled.
