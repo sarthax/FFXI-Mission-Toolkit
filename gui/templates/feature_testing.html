@@ -1,0 +1,18 @@
+{% extends "workbench_page.html" %}
+{% block title %}Feature Testing & Validation{% endblock %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_heading %}Feature Testing & Validation{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Planning only</span>{% endblock %}
+{% block page_help %}Read-only plans, scenarios, command candidates and blockers. No live execution or results ingestion.{% endblock %}
+{% block content %}
+<section class="wb-panel"><h2>Test catalog</h2><p><a href="/feature-testing/catalog">Catalog API</a> · All cases are planning records, not proven successes.</p>
+{% for feature in features %}
+<details style="padding:1rem;border:1px solid var(--wb-border, #777);margin:1rem 0" {% if loop.first %}open{% endif %}>
+<summary><strong>{{ feature.name }}</strong> — {{ feature.cases|length }} scenarios</summary>
+<p><strong>GM candidates:</strong> {{ feature.commands|join(', ') }}</p>
+<h3>Blockers</h3><ul>{% for gap in feature.gaps %}<li>{{ gap }}</li>{% endfor %}</ul>
+<table><thead><tr><th>ID</th><th>Type</th><th>Scenario</th><th>Status</th></tr></thead><tbody>
+{% for case in feature.cases %}<tr><td>{{ case.id }}</td><td>{{ case.kind }}</td><td>{{ case.title }}</td><td>{{ case.status }}</td></tr>{% endfor %}
+</tbody></table></details>
+{% endfor %}</section>
+{% endblock %}
