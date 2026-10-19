@@ -14,6 +14,7 @@ from workbench.server_admin.feature_testing.router import _results_db, _run_summ
 from workbench.server_admin.feature_testing.results import recent_results
 from .log_diagnostics import read_log
 from .service_health import service_health
+from .database_diagnostics import inventory_snapshot
 
 router = APIRouter(prefix="/api/supervisor", tags=["Local Test Supervisor"])
 
@@ -71,6 +72,17 @@ def supervisor_service_health(service: str = "ollama", authorization: str | None
         return service_health(service)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/test-character-inventory", operation_id="supervisor_test_character_inventory")
+def test_character_inventory(charid: int, authorization: str | None = Header(default=None)):
+    _authorize(authorization)
+    try:
+        return inventory_snapshot(charid)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 # A dedicated specification prevents agent clients from discovering unrelated
