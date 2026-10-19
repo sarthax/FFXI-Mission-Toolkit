@@ -245,3 +245,14 @@ Report schema version 1:
 These all-a/b/c commit IDs are **format examples only**, not real evidence; never import them as production provenance. The importer checks known catalog feature/case IDs, stage/verdict, UTC timestamps, full 40-hex SHA format, nonempty structured evidence, duplicate identities, max sizes and atomic commit/rollback. A PASS record also requires `assertions` and `observations` keys; this is only a structural guard, **not an authenticity or truth check**. Trusted source attribution and independent assertion verification remain separate work.
 
 Point `MISSION_TOOLKIT_TEST_RESULTS_DB` at the same SQLite file to view imported history in the Toolkit. No network write route or test execution is enabled. The report must be produced in a trusted environment; guard database access and do not include credentials, tokens or identifiable private account data.
+
+## Captured-observation report adapter
+
+`workbench.server_admin.feature_testing.observation_adapter` now converts **externally captured** observation dictionaries into validated report schema v1 records, via the existing SQL gardening and Moghancement modifier/replacement oracles. Inputs are a run manifest (run ID, UTC observation time, exact 40-character Git revisions), a list of observations, the test catalog and optionally `sql/gardening_results.sql` from the **deployed** DSP checkout. Call `build_report_file(manifest_path, observations_path, catalog_path, output_path, gardening_sql=...)` from a trusted local Python integration; then import its JSON output with the offline importer CLI.
+
+Supported observation kinds:
+- `garden_harvest`: `case_id`, `inputs: {seed, crystal1, crystal2}`, `actual: {item_id, quantity}`.
+- `mog_modifier`: `case_id`, `baseline`, `active`, `removed`, `expected_delta` (modifier name → integer).
+- `mog_replacement`: `case_id`, `baseline`, `old_active`, `new_active`, `old_effect`, `new_effect`.
+
+This adapter is deliberately **offline**: it does not connect to DSP, validate a player's identity, make GM calls, or operate the Headless client. It records `capture_provenance: unverified_external_observation` to prevent misinterpreting syntactically valid imports as authenticated runs. `PASS` is only a *validator verdict against supplied observations*, not proof the server actually produced them. Full live capture, attestation, runtime configuration checks, and behavior-level game assertions remain future milestones.
