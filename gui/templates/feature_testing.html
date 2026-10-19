@@ -12,7 +12,7 @@
 <p><strong>GM candidates:</strong> {{ feature.commands|join(', ') }}</p>
 <h3>Blockers</h3><ul>{% for gap in feature.gaps %}<li>{{ gap }}</li>{% endfor %}</ul>
 <table><thead><tr><th>ID</th><th>Type</th><th>Scenario</th><th>Status</th></tr></thead><tbody>
-{% for case in feature.cases %}<tr><td>{{ case.id }}</td><td>{{ case.kind }}</td><td>{{ case.title }}</td><td>{{ case.status }}</td></tr>{% endfor %}
+{% for case in feature.cases %}<tr><td><a href="/feature-testing/scenario/{{ feature.id }}/{{ case.id }}">{{ case.id }}</a></td><td>{{ case.kind }}</td><td>{{ case.title }}</td><td>{{ case.status }}</td></tr>{% endfor %}
 </tbody></table></details>
 {% endfor %}</section>
 {% endblock %}
