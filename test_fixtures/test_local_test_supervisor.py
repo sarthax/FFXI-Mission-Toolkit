@@ -38,6 +38,27 @@ def test_isolated_openapi_contains_only_read_only_supervisor_tools():
         "/api/supervisor/health",
         "/api/supervisor/test-runs",
         "/api/supervisor/failed-assertions",
+        "/api/supervisor/log-errors",
     }
     assert all(set(methods) == {"get"} for methods in spec["paths"].values())
     assert "/wiki" not in str(spec["paths"])
+
+
+def test_supervisor_log_errors_redacts_credentials(tmp_path, monkeypatch):
+    file = tmp_path / "dsp.log"
+    file.write_text("INFO start\\nERROR authorization: BearerTokenExample\\nException password=letmein\\n")
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DSP_LOG", str(file))
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TOKEN", "a" * 64)
+    result = supervisor.log_errors(source="dsp", authorization="Bearer " + "a" * 64)
+    assert result["configured"]
+    assert len(result["lines"]) == 2
+    assert all("[REDACTED]" in line for line in result["lines"])
+    assert "letmein" not in repr(result)
+
+
+def test_supervisor_log_errors_requires_authentication(tmp_path, monkeypatch):
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DSP_LOG", str(tmp_path / "secret.log"))
+    monkeypatch.delenv("MISSION_TOOLKIT_SUPERVISOR_TOKEN", raising=False)
+    with pytest.raises(HTTPException) as exc:
+        supervisor.log_errors(source="dsp", authorization=None)
+    assert exc.value.status_code == 403
