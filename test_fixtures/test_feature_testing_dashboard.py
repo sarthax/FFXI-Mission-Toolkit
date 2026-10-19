@@ -87,3 +87,22 @@ def test_feature_testing_discoverable_in_shared_shell_and_home():
     home = (Path(__file__).resolve().parents[1] / "gui/templates/home.html").read_text(encoding="utf-8")
     assert 'href="/feature-testing?tab=runs"' in home
     assert 'href="/feature-testing?tab=catalog"' in home
+
+
+def test_inventory_observation_contract_is_read_only_and_discoverable():
+    from workbench.server_admin.feature_testing.router import scenario_detail
+    detail = scenario_detail("inventory_observation", "INV-OBS-01")
+    assert detail["execution_enabled"] is False
+    case = detail["scenario"]
+    assert case["run_mode"] == "local_read_only_observation"
+    assert "persisted_char_inventory_rows" in case["evidence_required"]
+    assert "headless_dll_sha256" in case["required_artifacts"]
+    assert "truncated DB snapshot" in case["negative_invariant"]
+
+
+def test_run_inspector_exposes_assertions_and_provenance():
+    html = (Path(__file__).resolve().parents[1] / "gui/templates/feature_testing_run.html").read_text(encoding="utf-8")
+    for fragment in ("assertion.ok", "assertion.expected", "assertion.observed",
+                     "headless_dll_sha256", "headless_dirty_files",
+                     "capability_gaps", "Full original evidence"):
+        assert fragment in html
