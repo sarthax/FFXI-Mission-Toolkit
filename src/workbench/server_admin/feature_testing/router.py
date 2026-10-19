@@ -155,6 +155,24 @@ async def evaluate_test_preview(request: Request, payload: EvaluationPreviewRequ
         raise HTTPException(400, str(exc)) from exc
 
 
+@router.get("/builder/imported-evaluation/{run_id}")
+def imported_evaluation_preview(run_id: str):
+    from .normalized_evidence import evaluate_imported_mog09
+    from .results import results_for_run
+    db = _results_db()
+    if not db:
+        raise HTTPException(503, "Results database not configured")
+    try:
+        records = results_for_run(db, run_id)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    matches = [r for r in records if (r["feature_id"], r["case_id"]) == ("moghancement", "MOG-09")]
+    if len(matches) != 1:
+        raise HTTPException(404, "Exactly one MOG-09 record required for this run")
+    result = evaluate_imported_mog09(matches[0])
+    return {"run_id": run_id, **result, "preview_only": True, "persisted": False}
+
+
 @router.get("/builder/specifications")
 def test_specifications_api():
     from .test_specifications import specifications
