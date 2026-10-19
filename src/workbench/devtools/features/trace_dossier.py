@@ -20,6 +20,14 @@ def build_dossier(result: dict) -> dict:
     provider_links=list(result.get("provider_relationships") or ())
     if runtime.get("observation_count",0):
         facets.append({"name":"Runtime / Captures & Packets","count":runtime["observation_count"],"capture_count":runtime.get("capture_count",0),"group_count":runtime.get("group_count",0)})
+    wiki_links=[
+        link for link in provider_links
+        if link.get("adapter")=="reference-wiki" and
+        link.get("relationship") in {
+            "HAS_SOURCE_DOCUMENT","DOCUMENT_FOR_REFERENCE_PAGE",
+            "IN_REFERENCE_PAGE","FROM_REFERENCE_PAGE","TOPIC_MEMBER_PAGE"
+        }
+    ]
     if provider_links:
         facets.append({"name":"Source-native links","count":len(provider_links)})
     return {
@@ -32,4 +40,5 @@ def build_dossier(result: dict) -> dict:
         "runtime_group_count":runtime.get("group_count",0),
         "provider_relationship_count":len(provider_links),
         "provider_relationships":provider_links,
+        "wiki_source_navigation":wiki_links,
     }
