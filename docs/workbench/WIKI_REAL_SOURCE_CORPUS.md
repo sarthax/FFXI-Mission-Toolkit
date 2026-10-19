@@ -24,7 +24,7 @@ No new scraper was built.
 
 ## 2. Corpus
 
-`real_manifest.json` (22 attributed minimal excerpts: 15 BG, 7 FFXIclopedia) is produced by
+`real_manifest.json` (24 attributed minimal excerpts: 17 BG, 7 FFXIclopedia) is produced by
 `scripts/wiki_corpus_extract.py --db ffxi_zone_database.db`. Each carries source wiki, page title/id, URL,
 revision id/timestamp, full-page raw SHA-256 (+ `raw_source_sha256_verified`), excerpt SHA-256, template/table
 type, per-field label/raw value/locator/expected type, categories and license note. Retrieval timestamp is
@@ -120,3 +120,7 @@ py -3.11 scripts/wiki_corpus_extract.py --db ffxi_zone_database.db   # real exce
 py -3.11 scripts/wiki_corpus_extract.py --synthetic                  # synthetic manifest
 PYTHONPATH=".;src" py -3.11 test_fixtures/test_wiki_corpus.py
 ```
+
+## 8. Full-corpus validation
+
+See [WIKI_FULL_CORPUS_VALIDATION.md](WIKI_FULL_CORPUS_VALIDATION.md) for the whole-database reparse with parser `wiki-doc-v6-html-table-spans` (the table-attribute, nested-template and JP rowspan gaps above are now fixed; gaps 1-2 in section 6 are closed).

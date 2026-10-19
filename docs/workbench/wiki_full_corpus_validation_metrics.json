@@ -1,0 +1,437 @@
+{
+ "parser_version": "wiki-doc-v6-html-table-spans",
+ "elapsed_s": 320.9,
+ "failures": [],
+ "sources": {
+  "BGWiki": {
+   "docs": 47601,
+   "before": {
+    "blocks": 1883769,
+    "bt:paragraph": 136678,
+    "bt:table_start": 9643,
+    "bt:table_row": 64356,
+    "bt:table_cell": 215094,
+    "table_cells": 235181,
+    "bt:table_end": 7936,
+    "bt:table_header_cell": 20087,
+    "bt:list_item": 233378,
+    "bt:definition": 23058,
+    "bt:link": 545214,
+    "bt:heading": 52032,
+    "bt:template_field": 576160,
+    "template_fields": 576160,
+    "typed_fields": 19854,
+    "template_candidates": 18304,
+    "typed_empty": 1550,
+    "table_candidates": 3041,
+    "bt:definition_term": 133
+   },
+   "after": {
+    "blocks": 1874925,
+    "bt:paragraph": 136678,
+    "bt:table_start": 9643,
+    "bt:table_row": 64356,
+    "bt:table_cell": 206735,
+    "table_cells": 226337,
+    "cells_with_attrs": 62222,
+    "bt:table_end": 7936,
+    "bt:table_header_cell": 19602,
+    "bt:list_item": 233378,
+    "bt:definition": 23058,
+    "bt:link": 545214,
+    "bt:heading": 52032,
+    "bt:template_field": 576160,
+    "template_fields": 576160,
+    "typed_fields": 19854,
+    "template_candidates": 18311,
+    "typed_empty": 1543,
+    "table_candidates": 4465,
+    "bt:definition_term": 133
+   },
+   "typed_before": {
+    "LOCATION": 8814,
+    "QUEST": 482,
+    "REWARDS": 6160,
+    "REQUIRES": 4383,
+    "DROPS": 15
+   },
+   "typed_after": {
+    "LOCATION": 8814,
+    "QUEST": 482,
+    "REWARDS": 6160,
+    "REQUIRES": 4383,
+    "DROPS": 15
+   },
+   "tcand_before": {
+    "LOCATION": 749,
+    "REWARDS": 1767,
+    "QUEST": 110,
+    "NM_IDENTITY": 161,
+    "REQUIRES": 104,
+    "SPAWN_CONDITIONS": 42,
+    "DROPS": 108
+   },
+   "tcand_after": {
+    "LOCATION": 1702,
+    "REWARDS": 1658,
+    "DROPS": 257,
+    "NM_IDENTITY": 476,
+    "QUEST": 219,
+    "REQUIRES": 111,
+    "SPAWN_CONDITIONS": 42
+   },
+   "unrec_after": {
+    "Type": 26881,
+    "type": 26375,
+    "description": 24267,
+    "flags": 23101,
+    "stack size": 23101,
+    "singular log name": 23101,
+    "ffxiah": 19614,
+    "ffxidb": 18851,
+    "level": 16158,
+    "jobs": 15488,
+    "races": 15439,
+    "ilevel": 12451,
+    "sulevel": 12448,
+    "slot": 10272,
+    "shield size": 9061
+   },
+   "locator_changed_pages": 709,
+   "pages_changed": 1398,
+   "parser_versions_before": {
+    "wiki-doc-v3-table-fields": 47601
+   }
+  },
+  "FFXIclopedia": {
+   "docs": 24,
+   "before": {
+    "blocks": 1899,
+    "bt:link": 545,
+    "bt:template_field": 292,
+    "template_fields": 292,
+    "typed_fields": 42,
+    "typed_empty": 37,
+    "template_candidates": 5,
+    "bt:heading": 27,
+    "bt:list_item": 14,
+    "bt:paragraph": 20,
+    "bt:table_start": 10,
+    "bt:table_header_cell": 29,
+    "table_cells": 725,
+    "bt:table_row": 257,
+    "bt:table_cell": 696,
+    "bt:table_end": 9
+   },
+   "after": {
+    "blocks": 1898,
+    "bt:link": 545,
+    "bt:template_field": 292,
+    "template_fields": 292,
+    "typed_fields": 42,
+    "typed_empty": 37,
+    "template_candidates": 5,
+    "bt:heading": 27,
+    "bt:list_item": 14,
+    "bt:paragraph": 20,
+    "bt:table_start": 10,
+    "bt:table_header_cell": 29,
+    "table_cells": 724,
+    "bt:table_row": 257,
+    "bt:table_cell": 695,
+    "bt:table_end": 9,
+    "cells_with_attrs": 4,
+    "table_candidates": 1
+   },
+   "typed_before": {
+    "QUEST": 32,
+    "REQUIRES": 1,
+    "REWARDS": 1,
+    "LOCATION": 8
+   },
+   "typed_after": {
+    "QUEST": 32,
+    "REQUIRES": 1,
+    "REWARDS": 1,
+    "LOCATION": 8
+   },
+   "tcand_before": {},
+   "tcand_after": {
+    "LOCATION": 1
+   },
+   "unrec_after": {
+    "name": 20,
+    "description": 20,
+    "notes": 20,
+    "image": 17,
+    "obtained": 17,
+    "zones": 16,
+    "armor set": 16,
+    "sub-category": 16,
+    "is-perm": 8,
+    "bcnm": 7,
+    "drops-from": 7,
+    "effects": 7,
+    "is-temp": 7,
+    "is-claim": 7,
+    "is-map": 7
+   },
+   "locator_changed_pages": 1,
+   "pages_changed": 2,
+   "parser_versions_before": {
+    "wiki-doc-v3-table-fields": 24
+   }
+  },
+  "WikiWikiJP": {
+   "docs": 36,
+   "before": {
+    "blocks": 28166,
+    "bt:heading": 696,
+    "bt:table_start": 508,
+    "bt:table_row": 3955,
+    "bt:link": 3572,
+    "bt:table_header_cell": 3203,
+    "table_cells": 14182,
+    "bt:table_cell": 10979,
+    "bt:table_end": 508,
+    "bt:paragraph": 365,
+    "bt:definition_term": 364,
+    "bt:definition": 363,
+    "bt:list_item": 3653,
+    "table_candidates": 332
+   },
+   "after": {
+    "blocks": 28166,
+    "bt:heading": 696,
+    "bt:table_start": 508,
+    "bt:table_row": 3955,
+    "bt:link": 3572,
+    "bt:table_header_cell": 3203,
+    "table_cells": 14182,
+    "bt:table_cell": 10979,
+    "bt:table_end": 508,
+    "bt:paragraph": 365,
+    "bt:definition_term": 364,
+    "bt:definition": 363,
+    "bt:list_item": 3653,
+    "table_candidates": 357
+   },
+   "typed_before": {},
+   "typed_after": {},
+   "tcand_before": {
+    "LOCATION": 317,
+    "REWARDS": 15
+   },
+   "tcand_after": {
+    "LOCATION": 342,
+    "REWARDS": 15
+   },
+   "unrec_after": {},
+   "locator_changed_pages": 0,
+   "pages_changed": 7,
+   "parser_versions_before": {
+    "wiki-doc-v3-table-fields": 36
+   }
+  }
+ },
+ "inventory_before": {
+  "BGWiki": {
+   "pages": 47608,
+   "docs": 47607,
+   "docs_with_raw": 47601,
+   "docs_empty_raw": 6,
+   "pages_without_doc": 1,
+   "pages_with_blocks": 47577,
+   "parser_versions": {
+    "wiki-doc-v3-table-fields": 47607
+   },
+   "source_formats": {
+    "mediawiki": 47607
+   },
+   "blocks_by_type": {
+    "definition": 23058,
+    "definition_term": 133,
+    "heading": 52032,
+    "link": 545214,
+    "list_item": 233378,
+    "paragraph": 136678,
+    "table_cell": 215094,
+    "table_end": 7936,
+    "table_header_cell": 20087,
+    "table_row": 64356,
+    "table_start": 9643,
+    "template_field": 576160
+   },
+   "missing_retrieved_at": 47607,
+   "missing_revision": 0,
+   "blocks_without_locator": 475182
+  },
+  "FFXIclopedia": {
+   "pages": 540,
+   "docs": 24,
+   "docs_with_raw": 24,
+   "docs_empty_raw": 0,
+   "pages_without_doc": 516,
+   "pages_with_blocks": 24,
+   "parser_versions": {
+    "wiki-doc-v3-table-fields": 24
+   },
+   "source_formats": {
+    "mediawiki": 24
+   },
+   "blocks_by_type": {
+    "heading": 27,
+    "link": 545,
+    "list_item": 14,
+    "paragraph": 20,
+    "table_cell": 696,
+    "table_end": 9,
+    "table_header_cell": 29,
+    "table_row": 257,
+    "table_start": 10,
+    "template_field": 292
+   },
+   "missing_retrieved_at": 24,
+   "missing_revision": 0,
+   "blocks_without_locator": 310
+  },
+  "WikiWikiJP": {
+   "pages": 637,
+   "docs": 36,
+   "docs_with_raw": 36,
+   "docs_empty_raw": 0,
+   "pages_without_doc": 601,
+   "pages_with_blocks": 36,
+   "parser_versions": {
+    "wiki-doc-v3-table-fields": 36
+   },
+   "source_formats": {
+    "html": 36
+   },
+   "blocks_by_type": {
+    "definition": 363,
+    "definition_term": 364,
+    "heading": 696,
+    "link": 3572,
+    "list_item": 3653,
+    "paragraph": 365,
+    "table_cell": 10979,
+    "table_end": 508,
+    "table_header_cell": 3203,
+    "table_row": 3955,
+    "table_start": 508
+   },
+   "missing_retrieved_at": 0,
+   "missing_revision": 637,
+   "blocks_without_locator": 27470
+  }
+ },
+ "inventory_after": {
+  "BGWiki": {
+   "pages": 47608,
+   "docs": 47607,
+   "docs_with_raw": 47601,
+   "docs_empty_raw": 6,
+   "pages_without_doc": 1,
+   "pages_with_blocks": 47577,
+   "parser_versions": {
+    "wiki-doc-v3-table-fields": 6,
+    "wiki-doc-v6-html-table-spans": 47601
+   },
+   "source_formats": {
+    "mediawiki": 47607
+   },
+   "blocks_by_type": {
+    "definition": 23058,
+    "definition_term": 133,
+    "heading": 52032,
+    "link": 545214,
+    "list_item": 233378,
+    "paragraph": 136678,
+    "table_cell": 206735,
+    "table_end": 7936,
+    "table_header_cell": 19602,
+    "table_row": 64356,
+    "table_start": 9643,
+    "template_field": 576160
+   },
+   "missing_retrieved_at": 47607,
+   "missing_revision": 0,
+   "blocks_without_locator": 475182
+  },
+  "FFXIclopedia": {
+   "pages": 540,
+   "docs": 24,
+   "docs_with_raw": 24,
+   "docs_empty_raw": 0,
+   "pages_without_doc": 516,
+   "pages_with_blocks": 24,
+   "parser_versions": {
+    "wiki-doc-v6-html-table-spans": 24
+   },
+   "source_formats": {
+    "mediawiki": 24
+   },
+   "blocks_by_type": {
+    "heading": 27,
+    "link": 545,
+    "list_item": 14,
+    "paragraph": 20,
+    "table_cell": 695,
+    "table_end": 9,
+    "table_header_cell": 29,
+    "table_row": 257,
+    "table_start": 10,
+    "template_field": 292
+   },
+   "missing_retrieved_at": 24,
+   "missing_revision": 0,
+   "blocks_without_locator": 310
+  },
+  "WikiWikiJP": {
+   "pages": 637,
+   "docs": 36,
+   "docs_with_raw": 36,
+   "docs_empty_raw": 0,
+   "pages_without_doc": 601,
+   "pages_with_blocks": 36,
+   "parser_versions": {
+    "wiki-doc-v6-html-table-spans": 36
+   },
+   "source_formats": {
+    "html": 36
+   },
+   "blocks_by_type": {
+    "definition": 363,
+    "definition_term": 364,
+    "heading": 696,
+    "link": 3572,
+    "list_item": 3653,
+    "paragraph": 365,
+    "table_cell": 10979,
+    "table_end": 508,
+    "table_header_cell": 3203,
+    "table_row": 3955,
+    "table_start": 508
+   },
+   "missing_retrieved_at": 0,
+   "missing_revision": 637,
+   "blocks_without_locator": 27470
+  }
+ },
+ "preserved_tables_equal": true,
+ "preserved_tables": {
+  "reference_wiki_claims": 74,
+  "reference_wiki_mappings": 167,
+  "reference_wiki_mapping_reviews": 0,
+  "reference_wiki_page_alignments": 3,
+  "reference_wiki_claim_alignments": 48,
+  "reference_wiki_relations": 0,
+  "reference_wiki_relation_mappings": 0,
+  "reference_wiki_aliases": 47668,
+  "reference_wiki_topics": 1,
+  "reference_wiki_topic_pages": 1,
+  "reference_wiki_translations": 0,
+  "reference_wiki_pages": 48785
+ }
+}
