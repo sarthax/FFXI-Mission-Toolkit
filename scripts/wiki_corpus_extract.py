@@ -66,6 +66,8 @@ SPECS = [
     ("bg-malformed-unclosed", "BGWiki", "Goblin Headsman", "template", "*", ["malformed"], "Source has 3 '{{' vs 4 '}}'"),
     ("bg-table-shikaree-x", "BGWiki", "Shikaree X", "table", None, ["table", "two-column"], ""),
     ("bg-table-dryptotaur", "BGWiki", "Dryptotaur", "table", None, ["table", "nm", "drops"], ""),
+    ("bg-table-attrs-rowspan", "BGWiki", "id:100195", "table", None, ["table", "cell-attributes", "rowspan", "colspan"], "Cell attributes (colspan/BGCOLOR/width) must not leak into cell text"),
+    ("bg-table-nm-column-header", "BGWiki", "Easy Button", "table", None, ["table", "column-header-hit", "nm"], "Header cell NM types the cells beneath it (review-only)"),
     ("ffx-keyitem-infobox", "FFXIclopedia", '"Adoulin\'s Topiary Treasures"', "template", "Infobox Key Item", ["key-item", "infobox", "quest"], ""),
     ("ffx-keyitem-infobox-2", "FFXIclopedia", '"Climbing"', "template", "Infobox Key Item", ["key-item", "infobox"], ""),
     ("ffx-item-statistics", "FFXIclopedia", '"A" Egg', "template", "Item Statistics", ["item", "infobox"], ""),

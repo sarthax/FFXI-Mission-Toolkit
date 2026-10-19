@@ -239,6 +239,12 @@ def test_real_tables_do_not_invent_candidates():
         if s.get("excerpt_kind") != "table":
             continue
         _, groups = _parse(s)
+        if "column-header-hit" in s["categories"]:
+            hits = _table_candidates(groups)
+            assert hits and all(c["orientation"] == "column" and c["review_only"] for c in hits), s["sample_id"]
+            assert {c["field_type"] for c in hits} == {"NM_IDENTITY"}, s["sample_id"]
+            assert [c["value"] for c in hits][:3] == ["Maju", "Neak", "Yakshi"], s["sample_id"]
+            continue
         assert _table_candidates(groups) == [], f"{s['sample_id']}: real layout table produced a field candidate"
 
 
