@@ -90,6 +90,17 @@ async function refresh() {
   for(const job of result.jobs) {
    const item=document.createElement('p');
    item.textContent=job.case_id+' · '+job.status+' · '+job.created_at+(job.verdict?' · '+job.verdict:'');
+   if(job.status==='QUEUED'||job.status==='RUNNING'){
+    const button=document.createElement('button');button.type='button';button.textContent='Reconcile interrupted job';
+    button.addEventListener('click',async()=>{
+      if(!confirm('Only continue after inspecting local XiHeadless and Toolkit processes, and confirming no runner is active. This does not cancel or stop a process. Mark this job INTERRUPTED?'))return;
+      try {await request('/feature-testing/builder/jobs/'+encodeURIComponent(job.id)+'/reconcile',
+        {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({acknowledged:true})});
+        note.textContent='Reconciled '+job.id+' as interrupted';await refresh();
+      } catch(err){note.textContent='Reconciliation refused: '+err.message;}
+    });
+    item.appendChild(document.createTextNode(' '));item.appendChild(button);
+   }
    if(job.run_id){const a=document.createElement('a');a.href='/feature-testing/run/'+encodeURIComponent(job.run_id);a.textContent=' View evidence';item.appendChild(a);}
    listing.appendChild(item);
   }
