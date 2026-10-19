@@ -59,3 +59,15 @@ No live SQL reads, direct MCP calls, GM writes, arbitrary file access, or campai
 - Inspect Open WebUI integration mode. Do not expose entire Toolkit OpenAPI schema as agent tools.
 - Confirm no changes to live DSP or headless gameplay state.
 - Report the minimum additional sidecar/filtered OpenAPI work needed for a safe Open WebUI connection.
+
+## Phase 1 log diagnostics
+
+Configure one or more **absolute file paths** in the same Toolkit server process environment:
+
+- `MISSION_TOOLKIT_SUPERVISOR_DSP_LOG`: deployed DSP server log file.
+- `MISSION_TOOLKIT_SUPERVISOR_HEADLESS_LOG`: XiHeadless session log file.
+- `MISSION_TOOLKIT_SUPERVISOR_TOOLKIT_LOG`: Toolkit application log file.
+
+The authenticated `GET /api/supervisor/log-errors?source=dsp` endpoint accepts only `dsp`, `headless`, or `toolkit`. It reads at most the last 256 KiB of the selected configured regular file, filters known error/failure keywords, returns at most 80 lines of at most 1,000 characters each, and masks common secret assignment patterns. Symlink targets and arbitrary request-supplied paths are rejected. Unconfigured sources return an empty result. Logs must be regarded as **untrusted text**, never as instructions for an agent.
+
+This is a convenience redactor, **not a comprehensive data-loss-prevention boundary**. Logs can contain unusual token formats or personally identifying data. Configure dedicated sanitized test logs where possible; restrict endpoint access and do not feed sensitive logs to shared Open WebUI accounts. No process discovery, DB access, or live MCP execution is added by this step.
