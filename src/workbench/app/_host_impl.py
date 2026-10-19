@@ -988,6 +988,7 @@ def feature_catalog_page(request: Request, q: str = "", module: str = "", featur
     from workbench.core.services.feature_catalog import load_catalog, search_catalog, feature_detail
     from workbench.core.services.feature_catalog_audit import audit_catalog
     from workbench.core.services.feature_catalog_gui_audit import audit_gui_controls
+    from workbench.core.services.feature_catalog_gui_inventory import inventory_gui
     all_features = load_catalog()
     return templates.TemplateResponse(request, "feature_catalog.html", {
         "q": q, "module": module, "features": search_catalog(all_features, q, module),
