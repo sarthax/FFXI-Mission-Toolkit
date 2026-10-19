@@ -215,7 +215,10 @@
       "route": "/auction-house/help",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Investigate historical and current Auction House item, seller, buyer, and transaction records.",
+      "how_to_use": "Open Auction House and select the relevant browse or history tab; filter by item or seller and inspect the linked record.",
+      "caveat": "Records reflect available server data; a missing result does not establish that a transaction never occurred."
     },
     {
       "id": "ah-economy",
@@ -226,7 +229,10 @@
       "route": "/auction-house/help",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Summarize auction activity, item supply, and other economy signals.",
+      "how_to_use": "Open Economy, inspect its summary charts, then drill into underlying items before changing listings.",
+      "caveat": "Aggregates are descriptive and should be verified against individual records before decisions."
     },
     {
       "id": "ah-item-picker",
@@ -237,7 +243,10 @@
       "route": "/auction-house/help",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Select an exact item identity while retaining icons, names, and contextual links.",
+      "how_to_use": "Use the shared item picker in the seller, buyer, restock or cleanup workflow; verify the selected ID before continuing.",
+      "caveat": "Visual item names can be ambiguous; the selected item ID is authoritative."
     },
     {
       "id": "ah-preferences",
@@ -248,7 +257,10 @@
       "route": "/auction-house/help",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Retain useful Auction House filters and selections and export read-only views.",
+      "how_to_use": "Select filters or favorites in the relevant tab, then use CSV export for external review.",
+      "caveat": "Exports are snapshots of the current filtered view, not backup/restore files."
     },
     {
       "id": "ah-restock",
@@ -259,7 +271,10 @@
       "route": "/auction-house/help",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Prepare and review controlled auction restock or cleanup changes.",
+      "how_to_use": "Use the Restock or Cleanup tab, choose exact items, inspect the preview, and confirm the requested guarded operation.",
+      "caveat": "Preview and authorization are required; do not treat a proposed change as already applied."
     },
     {
       "id": "ah-recovery",
@@ -270,7 +285,10 @@
       "route": "/auction-house/help",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Investigate delivery and recovery cases with durable attempt evidence.",
+      "how_to_use": "Open the recovery journal, select a case and inspect the recipient attempts and evidence before taking further action.",
+      "caveat": "The journal does not automatically retry or complete recovery."
     },
     {
       "id": "ah-scheduled-rewards",
@@ -281,7 +299,10 @@
       "route": "/auction-house/help",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Configure cancellable, profile-restricted scheduled rewards.",
+      "how_to_use": "Select a Test profile, review recipient and reward details, schedule the action, and verify status or cancellation.",
+      "caveat": "Delivery revalidates guards at execution time; scheduling alone is not proof of delivery."
     },
     {
       "id": "ah-augmented-rewards",
@@ -292,7 +313,10 @@
       "route": "/auction-house/help",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/auction-house/help"
+      "help": "/auction-house/help",
+      "purpose": "Preview and configure item rewards with augment parameters.",
+      "how_to_use": "Select an item and augments, inspect the generated reward preview and required acceptance conditions.",
+      "caveat": "Experimental Test delivery requires acceptance; previews are not delivered items."
     },
     {
       "id": "live-bridge",
@@ -303,7 +327,10 @@
       "route": "/live-client/bridge/console",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect the Ashita telemetry receiver, sender configuration, and event freshness.",
+      "how_to_use": "Open the bridge console, identify the connected client, confirm the current zone and inspect heartbeat/freshness.",
+      "caveat": "An absent or stale stream is not evidence that the client is offline; inspect bridge configuration first."
     },
     {
       "id": "live-entity-stream",
@@ -314,7 +341,10 @@
       "route": "/live-client/bridge/console",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect positions for multiple observed client entities and reconcile them with server records.",
+      "how_to_use": "Connect the live bridge, open the entity-enabled map, compare live versus server markers, and inspect identity matches.",
+      "caveat": "Live broadcasts depend on the installed addon and visibility; not every server spawn is a client observation."
     },
     {
       "id": "live-movement",
@@ -325,7 +355,10 @@
       "route": "/live-client/bridge/console",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Use guarded movement assistance and immediate STOP/disarm controls.",
+      "how_to_use": "Confirm client identity and zone, arm only the intended control, inspect movement feedback, then disarm or STOP.",
+      "caveat": "Controls affect the live client and must remain scoped to an authorized development/testing session."
     },
     {
       "id": "live-3d",
@@ -336,7 +369,10 @@
       "route": "/live-client/bridge/console",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "View the connected player's zone and observed activity within the external 3D map.",
+      "how_to_use": "Select the correct zone and instance, follow or center the player, then compare live markers to static server evidence.",
+      "caveat": "Geometry, static spawns, and live observations are separate layers with different provenance."
     },
     {
       "id": "trace-evidence",
@@ -347,7 +383,10 @@
       "route": "/features/trace",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Build a focused evidence dossier identifying why a feature behaves as it does.",
+      "how_to_use": "Enter a concrete feature or behavior in Feature Trace; review the prioritized sources, binding relationships, and source links.",
+      "caveat": "Ranked evidence is not a claim that every adjacent graph node is causal."
     },
     {
       "id": "trace-runtime",
@@ -358,7 +397,10 @@
       "route": "/features/trace",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Follow runtime and event handoffs through a hierarchical behavior path.",
+      "how_to_use": "From a Feature Trace result, expand the runtime path and navigate each source or event handoff in order.",
+      "caveat": "A predicted path is not a verified execution trace unless capture/runtime evidence exists."
     },
     {
       "id": "wiki-cache",
@@ -369,7 +411,10 @@
       "route": "/wiki",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Browse researched wiki content that has been imported and annotated with source provenance.",
+      "how_to_use": "Search the Wiki module, open cached results, and inspect source and cache status before relying on the content.",
+      "caveat": "Missing cache results may reflect import coverage, not absence from the original wiki."
     },
     {
       "id": "wiki-bulk",
@@ -380,7 +425,10 @@
       "route": "/wiki",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Control batch scraping and importing of research pages and observe cache health.",
+      "how_to_use": "Open the Wiki import/sync controls, choose the source and bounded batch, then inspect job progress and errors.",
+      "caveat": "Large batches need source-specific rate and error handling; imported pages require provenance."
     },
     {
       "id": "wiki-translation",
@@ -391,7 +439,10 @@
       "route": "/wiki",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Review Japanese terminology and translation evidence for client-research comparisons.",
+      "how_to_use": "Open the translation research view and compare the original term, proposed translation, and supporting sources.",
+      "caveat": "Machine or inferred translations require independent corroboration."
     },
     {
       "id": "ki-lua",
@@ -402,7 +453,10 @@
       "route": "/keyitems",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Locate script references that grant, require, or remove a key item.",
+      "how_to_use": "Open a key item's Lua evidence panel and inspect source paths, constants, and operation types.",
+      "caveat": "A reference proves use in source, not that a complete quest progression is live-tested."
     },
     {
       "id": "character-items",
@@ -519,7 +573,10 @@
       "route": "/retailversions/browse",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Browse file identities and exact historical revisions from retail manifest snapshots.",
+      "how_to_use": "Open the Retail Version Explorer's browse view, choose a file and listed revision, and inspect availability before selecting a download.",
+      "caveat": "A listed historical revision does not guarantee that the remote payload still exists."
     },
     {
       "id": "dialog-drift",
@@ -569,7 +626,11 @@
       "route": "/captures/search",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Find packets, chat, entities, and other observations across imported capture evidence.",
+      "how_to_use": "Open Capture Search, choose a search term or filter, then inspect results in their original capture context.",
+      "caveat": "Search coverage depends on what was captured and indexed."
     },
     {
       "id": "capture-query",
@@ -579,7 +640,11 @@
       "route": "/captures/query",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Run structured queries against the indexed capture store.",
+      "how_to_use": "Open Capture Query, select available fields and predicates, and follow result links into source observations.",
+      "caveat": "Only captured and indexed fields can be queried reliably."
     },
     {
       "id": "validation-runs",
@@ -669,7 +734,11 @@
       "route": "/captures/help",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Understand which logger and packet export formats the importer recognizes.",
+      "how_to_use": "Open Capture Format Support before importing an unfamiliar source; compare the required input structure.",
+      "caveat": "Parsing support varies by source; unsupported records must not be silently treated as valid."
     },
     {
       "id": "capture-paths",
@@ -679,7 +748,11 @@
       "route": "/captures/plot",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Visualize player movement and other spatial paths recorded in captures.",
+      "how_to_use": "Open Capture Path Visualization, select a capture and zone, and inspect route points in sequence.",
+      "caveat": "Sparse updates and zoning can create apparent jumps; these are observations, not navigation instructions."
     },
     {
       "id": "capture-import",
@@ -689,7 +762,11 @@
       "route": "/captures/new",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Ingest a recorded gameplay package into the Toolkit's research index.",
+      "how_to_use": "Open Capture Import, select a supported recording, review the preview and parse diagnostics, then import.",
+      "caveat": "Import success does not guarantee every field was decoded or semantically interpreted."
     },
     {
       "id": "item-health",
@@ -759,7 +836,11 @@
       "route": "/captures/plot_all",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Compare recorded routes across multiple capture sessions.",
+      "how_to_use": "Open All Capture Paths, select a zone or relevant sessions, and compare their spatial evidence.",
+      "caveat": "Session coordinates and zone identity need reconciliation before comparing routes."
     },
     {
       "id": "capture-bulk-ingest",
@@ -769,7 +850,11 @@
       "route": "/captures/bulk-ingest",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Process multiple capture sources in one bounded import workflow.",
+      "how_to_use": "Select a source set, inspect the bulk-ingest plan, and review per-file failures or skipped records afterward.",
+      "caveat": "Large imports can contain mixed formats; review error summaries rather than assuming complete coverage."
     },
     {
       "id": "capture-metadata-import",
@@ -779,7 +864,11 @@
       "route": "/captures/metadata-import",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Associate supplementary metadata with already captured evidence.",
+      "how_to_use": "Import metadata using the matching capture identity and inspect the resulting link and provenance.",
+      "caveat": "Metadata alone does not prove its corresponding packet/event occurred."
     },
     {
       "id": "capture-review",
@@ -789,7 +878,11 @@
       "route": "/captures/review",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Inspect exceptions and uncertain ingestion results before trusting downstream analyses.",
+      "how_to_use": "Open Capture Review Queue, select a flagged record, and inspect the raw evidence and parser outcome.",
+      "caveat": "An exception can be a decode ambiguity rather than a faulty source capture."
     },
     {
       "id": "capture-zone-review",
@@ -799,7 +892,11 @@
       "route": "/captures/zone-review",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "parent_id": "capture-browser",
+      "purpose": "Review capture observations grouped by zone and spatial context.",
+      "how_to_use": "Open Capture Zone Review, choose a zone, then inspect its linked capture evidence and unresolved identities.",
+      "caveat": "Zone mapping may be incomplete for unknown or stale session metadata."
     },
     {
       "id": "shift-master",
@@ -810,6 +907,132 @@
       "implementation": "partial",
       "validation": "unverified",
       "help": "/help"
+    },
+    {
+      "id": "binary-pe-inspection",
+      "parent_id": "client-binary",
+      "module": "Client Research",
+      "name": "PE headers, imports and string evidence",
+      "summary": "Inspect static PE sections, import/export tables, strings and byte patterns.",
+      "route": "/binaryinspector",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help",
+      "purpose": "Inspect static PE sections, import/export tables, strings and byte patterns.",
+      "how_to_use": "Open Binary Inspector, choose an isolated EXE/DLL path, optionally enter string or byte filters, and inspect evidence locations.",
+      "caveat": "A match shows bytes present, not that the feature executes at runtime."
+    },
+    {
+      "id": "binary-probe-sets",
+      "parent_id": "client-binary",
+      "module": "Client Research",
+      "name": "Binary feature probe sets",
+      "summary": "Run predefined evidence searches against a selected client binary.",
+      "route": "/binaryinspector",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help",
+      "purpose": "Run predefined evidence searches against a selected client binary.",
+      "how_to_use": "Open Binary Inspector, choose a saved probe set, inspect its hit rows, then explicitly save observations to the graph only when intended.",
+      "caveat": "A missed probe remains UNKNOWN and does not establish feature absence."
+    },
+    {
+      "id": "binary-compare",
+      "parent_id": "client-binary",
+      "module": "Client Research",
+      "name": "Binary version comparison",
+      "summary": "Compare two isolated retail binary versions without executing them.",
+      "route": "/binaryinspector",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help",
+      "purpose": "Compare two isolated retail binary versions without executing them.",
+      "how_to_use": "Inspect the first client binary, set the diff-against path, and examine structural differences and supporting evidence.",
+      "caveat": "Packed sections or changed compiler layouts can limit function-level conclusions."
+    },
+    {
+      "id": "binary-protocol-evidence",
+      "parent_id": "client-binary",
+      "module": "Client Research",
+      "name": "Protocol compatibility evidence",
+      "summary": "Inspect versioned, read-only packet layout research and its confidence labels.",
+      "route": "/binaryinspector",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help",
+      "purpose": "Inspect versioned, read-only packet layout research and its confidence labels.",
+      "how_to_use": "Open Binary Inspector's Protocol Compatibility section, compare build fingerprints, field offsets and source references.",
+      "caveat": "INFERRED packet layouts must not be treated as runtime-verified compatibility."
+    },
+    {
+      "id": "binary-running-version",
+      "parent_id": "client-binary",
+      "module": "Client Research",
+      "name": "Running client version scan",
+      "summary": "Read a running client's version-string observations in a development session.",
+      "route": "/binaryinspector",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help",
+      "purpose": "Read a running client's version-string observations in a development session.",
+      "how_to_use": "From Binary Inspector select Scan running client, then examine reported process and address evidence.",
+      "caveat": "Requires a running client and compatible access; an empty scan means UNKNOWN."
+    },
+    {
+      "id": "retail-manifest",
+      "parent_id": "retail-versions",
+      "module": "Client Research",
+      "name": "Retail manifest browser",
+      "summary": "Find exact retail file names and revision stamps from the manifest.",
+      "route": "/retailversions",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help",
+      "purpose": "Find exact retail file names and revision stamps from the manifest.",
+      "how_to_use": "Open Retail Version Explorer's Manifest tab, search for a file, and inspect available revision history.",
+      "caveat": "A listed historical version may not be downloadable."
+    },
+    {
+      "id": "retail-download-plan",
+      "parent_id": "retail-versions",
+      "module": "Client Research",
+      "name": "Selective download planning",
+      "summary": "Review a single-file retrieval plan before any bytes are acquired.",
+      "route": "/retailversions",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help",
+      "purpose": "Review a single-file retrieval plan before any bytes are acquired.",
+      "how_to_use": "Open the Planner tab, choose a precise file and revision, inspect the plan, then explicitly confirm any download.",
+      "caveat": "Network operations require an authorized patch source; the plan itself is not a downloaded artifact."
+    },
+    {
+      "id": "retail-artifacts",
+      "parent_id": "retail-versions",
+      "module": "Client Research",
+      "name": "Downloaded artifact catalog",
+      "summary": "Inspect isolated retail files with recorded verification evidence.",
+      "route": "/retailversions",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help",
+      "purpose": "Inspect isolated retail files with recorded verification evidence.",
+      "how_to_use": "Open Local artifacts, verify hash, signature and provenance records, then open the file in Binary Inspector.",
+      "caveat": "A matching SHA-256 against the local output is not independently authenticated provenance."
+    },
+    {
+      "id": "retail-compare",
+      "parent_id": "retail-versions",
+      "module": "Client Research",
+      "name": "Retail version comparison",
+      "summary": "Compare cataloged revisions of the same client file.",
+      "route": "/retailversions",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help",
+      "purpose": "Compare cataloged revisions of the same client file.",
+      "how_to_use": "Open Compare after at least two verified versions are available; select both versions and inspect the reported differences.",
+      "caveat": "Structural differences require additional evidence before making behavioral claims."
     }
   ]
 }

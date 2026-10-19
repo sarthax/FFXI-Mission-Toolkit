@@ -26,6 +26,19 @@ def main():
     details = feature_detail(items, "auction-house")
     assert details["feature"]["how_to_use"]
     assert details["children"]
+    capture = feature_detail(items, "capture-browser")
+    assert len(capture["children"]) >= 10
+    assert all(child.get("how_to_use") and child.get("purpose") and child.get("caveat")
+               for child in capture["children"])
+    for module_id in ("auction-house", "live-client", "feature-trace", "wiki"):
+        children = feature_detail(items, module_id)["children"]
+        assert children, module_id
+        assert all(child.get("how_to_use") and child.get("purpose") for child in children), module_id
+    assert feature_detail(items, "retail-versions-browse")["parent"]["id"] == "retail-versions"
+    assert len(feature_detail(items, "client-binary")["children"]) >= 5
+    assert len(feature_detail(items, "retail-versions")["children"]) >= 5
+    assert all(f.get("how_to_use") and f.get("caveat")
+               for f in feature_detail(items, "client-binary")["children"])
     assert feature_detail(items, "missing-capability") is None
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))

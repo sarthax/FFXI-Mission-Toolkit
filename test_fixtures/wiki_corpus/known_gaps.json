@@ -1,13 +1,7 @@
 {
- "_comment": "Pinned deviations between the frozen label policy (expectations) and current wiki_document.py behaviour. Observed values are asserted so a fix must delete the entry. Do not add aliases to hide these.",
- "field_type": {
-  "syn-nested-template-value::Zone": {"observed": null, "reason": "value_raw is '{{Zone|Test Zone}}' but strip_code() leaves display text empty, so no typed hint is produced; the label/raw value are still preserved"}
- },
- "table": {
-  "syn-table-header-attrs": {"observed": [], "reason": "label cell text keeps its attribute prefix ('style=\"width:30%\" | Location'), so the exact-label match fails"}
- },
- "header_text": {
-  "syn-table-header-attrs": {"observed": ["width=20% | Drops", "width=80% | Value", "style=\"width:30%\" | Location"], "reason": "table cell attribute prefixes are not separated from cell text (also seen on real BG headers such as 'width=20%; style=... | drops')"}
- },
- "parse_count": {}
+  "_comment": "Pinned deviations between the frozen label policy (expectations) and current wiki_document.py behaviour. Observed values are asserted so a fix must delete the entry. Do not add aliases to hide these.",
+  "field_type": {},
+  "table": {},
+  "header_text": {},
+  "parse_count": {}
 }

@@ -10,7 +10,7 @@ from html.parser import HTMLParser
 
 import mwparserfromhell
 
-PARSER_VERSION = "wiki-doc-v3-table-fields"
+PARSER_VERSION = "wiki-doc-v5-simple-template-values"
 # Source-original, exact-label allowlist shared by template and table review hints.
 # Do not infer field semantics from translated prose or emit graph edges here.
 REVIEW_FIELD_TYPES={
@@ -108,6 +108,44 @@ def _block(page_id: str, ordinal: int, block_type: str, text: str = "", **kw) ->
     }
 
 
+def _template_display_value(raw_value: str) -> str:
+    """Render a simple wrapper template's visible argument for review only.
+
+    Never guess complex parser-function output or a template's actual expansion.
+    The unmodified source remains the authority for downstream review.
+    """
+    code = mwparserfromhell.parse(raw_value or "")
+    rendered = str(code.strip_code(normalize=True, collapse=True)).strip()
+    if rendered or not (raw_value or "").strip():
+        return rendered
+    nodes = code.filter_templates(recursive=False)
+    if len(nodes) != 1 or str(code).strip() != str(nodes[0]).strip():
+        return rendered
+    node = nodes[0]
+    # Only wrappers with exactly one positional, nonempty, non-nested argument.
+    if len(node.params) != 1 or node.params[0].showkey:
+        return rendered
+    value = str(node.params[0].value).strip()
+    if not value or "{{" in value or "}}" in value or "<" in value:
+        return rendered
+    return str(mwparserfromhell.parse(value).strip_code(normalize=True, collapse=True)).strip()
+
+
+def _mediawiki_cell_parts(raw_cell: str) -> tuple[str, str | None]:
+    """Separate explicit table-cell attributes from value markup.
+
+    A single pipe is an attribute separator only for recognizable HTML-like
+    attribute assignments; a normal cell's text must remain unchanged.
+    """
+    parts = raw_cell.split("|", 1)
+    if len(parts) == 2 and re.match(
+        r'^\s*(?:(?:style|class|id|width|height|align|valign|colspan|rowspan|bgcolor)\s*=)',
+        parts[0], re.I,
+    ):
+        return parts[1].strip(), parts[0].strip()
+    return raw_cell, None
+
+
 def mediawiki_blocks(page_id: str, wikitext: str) -> list[dict]:
     code = mwparserfromhell.parse(wikitext or "")
     blocks, stack, paragraph = [], [], []
@@ -153,8 +191,10 @@ def mediawiki_blocks(page_id: str, wikitext: str) -> list[dict]:
             kind = "table_header_cell" if line.startswith("!") else "table_cell"
             for cell in re.split(r"!!|\|\|", line[1:]):
                 raw_cell=cell.strip()
-                clean = str(mwparserfromhell.parse(raw_cell).strip_code(normalize=True, collapse=True)).strip()
-                emit(kind, clean, metadata={"raw_value":raw_cell, "review_only":True},
+                value_markup, cell_attributes = _mediawiki_cell_parts(raw_cell)
+                clean = str(mwparserfromhell.parse(value_markup).strip_code(normalize=True, collapse=True)).strip()
+                emit(kind, clean, metadata={"raw_value":raw_cell, "value_markup":value_markup,
+                                            "cell_attributes":cell_attributes, "review_only":True},
                      source_locator=f"block:{page_id}:table-cell:{ordinal + 1}")
             continue
         lm = re.match(r"^\s*([*#;:]+)\s*(.*)$", line)
@@ -209,7 +249,7 @@ def mediawiki_blocks(page_id: str, wikitext: str) -> list[dict]:
                 if not field_name:
                     continue
                 raw_value=str(param.value).strip()
-                display=str(mwparserfromhell.parse(raw_value).strip_code(normalize=True,collapse=True)).strip()
+                display=_template_display_value(raw_value)
                 ordinal+=1
                 blocks.append(_block(
                     page_id,ordinal,"template_field",display,
