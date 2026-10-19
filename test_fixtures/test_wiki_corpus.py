@@ -26,7 +26,7 @@ from workbench.devtools.reference.wiki_document import (
 CORPUS = Path(__file__).parent / "wiki_corpus"
 # Keys a review hint may carry. Anything graph-like (relation/claim/mapping/edge) is a failure.
 CANDIDATE_KEYS = {"field_type", "field", "value", "value_raw", "source_locator", "review_only", "source_links",
-                  "row_index", "value_source_locator", "field_source_locator"}
+                  "row_index", "value_source_locator", "field_source_locator", "orientation", "column_index", "header_row_index"}
 GRAPH_WORDS = ("relation", "claim", "mapping", "edge", "graph", "target_key", "resolved")
 LINK_KEYS_FORBIDDEN = {"resolved", "target_key", "target_table", "mapping_status", "confidence"}
 
@@ -227,6 +227,14 @@ def test_real_tables_do_not_invent_candidates():
         assert _table_candidates(groups) == [], f"{s['sample_id']}: real layout table produced a field candidate"
 
 
+JP_EXPECTED_HITS = {
+    "jp-vw-npc-table": [("エリア", "LOCATION", "南サンドリア"), ("エリア", "LOCATION", "(D-11)")],
+    "jp-vw-route-table": [("エリア", "LOCATION", "西サルタバルタ")],
+    "jp-bfnm-area-npc-table": [("エリア", "LOCATION", "北サンドリア"), ("エリア", "LOCATION", "バストゥーク港")],
+    "jp-bfnm-location-monster-table": [("場所", "LOCATION", "ヨアトル大森林"), ("場所", "LOCATION", "ウガレピ寺院")],
+}
+
+
 def test_real_jp_html_tables_preserve_text_and_invent_nothing():
     """Real WikiWikiJP HTML table excerpts: every cell survives in order, no label/value hints appear."""
     samples, _ = _load()
@@ -247,16 +255,14 @@ def test_real_jp_html_tables_preserve_text_and_invent_nothing():
         assert any(ord(ch) > 0x2E80 for _, t in want for ch in t), f"{sid}: no Japanese text in sample"
         assert _template_candidates(groups) == [], f"{sid}: unexpected template hint"
         cands = _table_candidates(groups)
-        if "header-pair-hint" in s["categories"]:
-            # Pinned behaviour: the first two header cells are paired as a review-only field/value hint
-            # (e.g. エリア -> NPC). Not a real label/value row; it must stay review-only and untyped.
-            ths = [t for tag, t in want if tag == "th"]
-            assert len(cands) == 1, f"{sid}: expected exactly one header-pair hint, got {cands}"
-            c = cands[0]
-            assert (c["field"], c["value"]) == (ths[0], ths[1]), f"{sid}: header pair changed: {c}"
-            assert c["review_only"] is True and not c.get("field_type"), f"{sid}: hint must stay review-only/untyped"
-        else:
-            assert cands == [], f"{sid}: real JP layout table produced a field hint"
+        # Column-header semantics: a policy label in an all-header row types the cells beneath it
+        # (review-only). Header cells never become the value. Rowspan tables are only positionally
+        # indexed (known limitation: jp-vw-npc-table's second hit is a shifted column).
+        got_hits = [(c["field"], c["field_type"], c["value"]) for c in cands]
+        assert got_hits == JP_EXPECTED_HITS.get(sid, []), f"{sid}: column-header hits changed: {got_hits}"
+        for c in cands:
+            assert c["review_only"] is True and c["orientation"] == "column", f"{sid}: {c}"
+            assert c["value"] not in {t for tag, t in want if tag == "th"}, f"{sid}: header used as value"
         _assert_no_graph(s, blocks, groups)
 
 
