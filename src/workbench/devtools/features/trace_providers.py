@@ -107,6 +107,13 @@ PROVIDERS=(
         CatalogTable("keyitems_external","id","name","KEY_ITEM_REFERENCE",search_columns=("norm_name",)),
     )),
     CatalogProvider("reference-wiki","reference",(
+        # Source-native document provenance is inspectable, not an asserted gameplay edge.
+        CatalogTable("reference_wiki_documents","page_id",None,"REFERENCE_DOCUMENT",
+                     ("source_id","source_format","raw_hash","parser_version","parsed_at",
+                      "retrieved_at","source_revision"),
+                     "/wiki",key_columns=("source_id","page_id"),
+                     search_columns=("source_id","page_id","source_format","parser_version"),
+                     display_template="{source_id}: {page_id} source document"),
         CatalogTable("reference_wiki_pages","page_id","title","REFERENCE_PAGE",
                      ("source_id","norm_title","revision_id","revision_timestamp","page_hash"),
                      "/wiki",key_columns=("source_id","page_id"),
