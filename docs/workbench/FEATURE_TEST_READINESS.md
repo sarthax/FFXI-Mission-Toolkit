@@ -213,3 +213,35 @@ Each live execution requires (a) approved disposable environment and fixture, (b
 The dashboard serves **read-only** `GET /feature-testing/results` with optional `feature_id` and `case_id` filtering, and displays history on scenario pages. Set `MISSION_TOOLKIT_TEST_RESULTS_DB` to an **absolute local SQLite file path** to view records imported by a trusted local harness. With no configured file, results remain empty; the UI never fabricates green outcomes. This page has no test execution or write API.
 
 No provenance authentication, signed evidence or automatic headless ingestion is provided yet. Importing test records should be restricted to trusted local agents; do not upload raw credentials or player account secrets. Test outcome display does **not** itself validate evidence authenticity. The next slice is a secure local artifact importer with evidence schema validation, run manifest and per-stage verification.
+
+## Local report import (no live execution)
+
+A trusted local runner can now submit JSON evidence through the **offline CLI importer**, rather than through an unauthenticated HTTP write endpoint:
+
+```powershell
+python -m workbench.server_admin.feature_testing.importer --catalog data/testing/feature_test_readiness.json --database D:\\MissionToolkitData\\feature_results.sqlite --report D:\\MissionToolkitData\\run-001.json
+```
+
+Report schema version 1:
+```json
+{
+  "schema_version": 1,
+  "results": [
+    {
+      "run_id": "run-001",
+      "feature_id": "moghancement",
+      "case_id": "MOG-01",
+      "stage": "modifier",
+      "verdict": "BLOCKED",
+      "observed_at": "2026-10-18T21:05:00Z",
+      "dsp_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "headless_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "toolkit_commit": "cccccccccccccccccccccccccccccccccccccccc",
+      "evidence": {"reason": "Headless furnishing menu interaction not verified"}
+    }
+  ]
+}
+```
+These all-a/b/c commit IDs are **format examples only**, not real evidence; never import them as production provenance. The importer checks known catalog feature/case IDs, stage/verdict, UTC timestamps, full 40-hex SHA format, nonempty structured evidence, duplicate identities, max sizes and atomic commit/rollback. A PASS record also requires `assertions` and `observations` keys; this is only a structural guard, **not an authenticity or truth check**. Trusted source attribution and independent assertion verification remain separate work.
+
+Point `MISSION_TOOLKIT_TEST_RESULTS_DB` at the same SQLite file to view imported history in the Toolkit. No network write route or test execution is enabled. The report must be produced in a trusted environment; guard database access and do not include credentials, tokens or identifiable private account data.
