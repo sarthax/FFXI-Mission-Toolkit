@@ -1,0 +1,23 @@
+{% extends "workbench_page.html" %}
+{% block title %}{{ detail.scenario.id }} — Feature Testing{% endblock %}
+{% block page_heading %}{{ detail.scenario.id }} — {{ detail.feature_name }}{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Not executed</span>{% endblock %}
+{% block page_help %}Source-backed test planning only. Results shown here are not live execution evidence.{% endblock %}
+{% block page_body %}
+<p><a href="/feature-testing">← Back to testing catalog</a></p>
+<section class="wb-panel">
+<h2>{{ detail.scenario.title }}</h2>
+<p><strong>Classification:</strong> {{ detail.scenario.kind }} · <strong>Plan status:</strong> {{ detail.scenario.status }}</p>
+<h3>Expected result</h3>
+{% if detail.expected_reference %}
+<p>{{ detail.expected_reference.detail }}</p>
+<p><strong>DSP source:</strong> <code>{{ detail.expected_reference.source }}</code></p>
+{% if detail.expected_reference.effect_catalog %}<p><strong>Effect catalog:</strong> <code>{{ detail.expected_reference.effect_catalog }}</code></p>{% endif %}
+{% else %}<p>Scenario-specific expected result still requires a verified source or acceptance contract.</p>{% endif %}
+<h3>Required evidence</h3><ul>{% for item in detail.scenario.evidence_required|default([]) %}<li>{{ item }}</li>{% else %}<li>No per-case evidence contract recorded.</li>{% endfor %}</ul>
+<h3>Test blockers</h3><ul>{% for item in detail.scenario.blocking_gaps|default([]) %}<li>{{ item }}</li>{% endfor %}{% for item in detail.feature_gaps %}<li>{{ item }}</li>{% endfor %}</ul>
+{% if detail.scenario.negative_invariant %}<h3>Negative test invariant</h3><p>{{ detail.scenario.negative_invariant }}</p>{% endif %}
+<h3>Candidate GM utilities</h3><p>{{ detail.gm_candidates|join(', ') }}</p>
+<h3>Recorded results</h3><p>No execution evidence has been recorded for this scenario.</p>
+</section>
+{% endblock %}
