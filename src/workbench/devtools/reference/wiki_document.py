@@ -10,7 +10,7 @@ from html.parser import HTMLParser
 
 import mwparserfromhell
 
-PARSER_VERSION = "wiki-doc-v5-simple-template-values"
+PARSER_VERSION = "wiki-doc-v6-html-table-spans"
 # Source-original, exact-label allowlist shared by template and table review hints.
 # Do not infer field semantics from translated prose or emit graph edges here.
 REVIEW_FIELD_TYPES={
@@ -315,8 +315,8 @@ class _HTMLBlocks(HTMLParser):
             elif tag == "li": self.emit("list_item", text, metadata={"depth": 1})
             elif tag == "dt": self.emit("definition_term", text)
             elif tag == "dd": self.emit("definition", text)
-            elif tag == "th": self.emit("table_header_cell", text)
-            elif tag == "td": self.emit("table_cell", text)
+            elif tag == "th": self.emit("table_header_cell", text, metadata={"rowspan": state["attrs"].get("rowspan", "1"), "colspan": state["attrs"].get("colspan", "1")})
+            elif tag == "td": self.emit("table_cell", text, metadata={"rowspan": state["attrs"].get("rowspan", "1"), "colspan": state["attrs"].get("colspan", "1")})
             elif tag == "a":
                 href = state["attrs"].get("href")
                 if href: self.emit("link", text or href, target=href, metadata={"hidden": True})
@@ -498,31 +498,56 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
                     headers=headers or tk=="table_header_cell"
                     row.append({"text":tb.get("text") or "","header":tk=="table_header_cell",
                                 "source_locator":tb.get("source_locator"),
-                                "raw_value":(tb.get("metadata") or {}).get("raw_value")})
+                                "raw_value":(tb.get("metadata") or {}).get("raw_value"), "metadata":tb.get("metadata") or {}})
                 i+=1
             if row: rows.append(row)
             # A heading and an explicit first-column label make a useful
             # *review candidate*, not proof of a gameplay relationship.
             # Keep these annotations purely in presentation, never in graph imports.
+            # Physical column coordinates account for merged HTML cells.
+            pending_spans={}
+            for cells in rows:
+                occupied=set(pending_spans)
+                next_spans={col: count-1 for col,count in pending_spans.items() if count>1}
+                col=0
+                for cell in cells:
+                    while col in occupied:
+                        col+=1
+                    md=cell.get("metadata") or {}
+                    def span(name):
+                        try:
+                            return max(1,min(100,int(md.get(name) or 1)))
+                        except (ValueError,TypeError):
+                            return 1
+                    width,height=span("colspan"),span("rowspan")
+                    cell["column_index"]=col
+                    for offset in range(width):
+                        occupied.add(col+offset)
+                        if height>1:
+                            next_spans[col+offset]=height-1
+                    col+=width
+                pending_spans=next_spans
             candidates=[]
             col_headers={}  # column index -> (field_type, header cell, header row index)
             for row_index, cells in enumerate(rows):
                 if cells and all(c["header"] for c in cells):
                     # Column-header semantics: a policy label in a header row types the cells beneath it.
                     col_headers={}
-                    for col, hc in enumerate(cells):
+                    for hc in cells:
+                        col=hc["column_index"]
                         ftype=review_field_type(hc["text"])
                         if ftype:
                             col_headers[col]=(ftype,hc,row_index)
                     continue
                 for col,(ftype,hc,hrow) in col_headers.items():
-                    if col < len(cells) and not cells[col]["header"] and cells[col]["text"].strip():
+                    if any(cell["column_index"]==col and not cell["header"] and cell["text"].strip() for cell in cells):
+                        value_cell=next(cell for cell in cells if cell["column_index"]==col and not cell["header"] and cell["text"].strip())
                         candidates.append({"row_index":row_index,"column_index":col,"header_row_index":hrow,
                                            "field":hc["text"],"field_type":ftype,
-                                           "value":cells[col]["text"].strip(),"review_only":True,
+                                           "value":value_cell["text"].strip(),"review_only":True,
                                            "orientation":"column",
-                                           "value_source_locator":cells[col].get("source_locator"),
-                                           "value_raw":cells[col].get("raw_value"),
+                                           "value_source_locator":value_cell.get("source_locator"),
+                                           "value_raw":value_cell.get("raw_value"),
                                            "field_source_locator":hc.get("source_locator")})
                 if len(cells)<2:
                     continue
