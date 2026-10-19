@@ -524,7 +524,7 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
                     def span_size(name):
                         raw=attrs.get(name)
                         if raw is None:
-                            match=re.search(r"\\b"+name+r'\\s*=\\s*["\\']?(\\d+)', mw_attrs, re.I)
+                            match = re.search(r'\\b' + name + r"""\\s*=\\s*["']?(\\d+)""", mw_attrs, re.I)
                             raw=match.group(1) if match else 1
                         try:
                             n=int(raw)
