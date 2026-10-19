@@ -49,3 +49,31 @@ Do not introduce replacement gardening or Voidwalker GM commands simply because 
 ## Negative-test fixture discipline
 
 All negative tests must snapshot the pre-state and assert both the refused player action and **no forbidden post-state mutation**. Cover repeated calls, wrong stage/tier, missing prerequisites, full inventory, relog, zoning during events, and attempts by non-GM accounts where appropriate. GM setup commands should be run in disposable test contexts, not by the normal gameplay actor; store explicit fixtures and cleanup/rollback requirements. Treat aborted or interrupted tests as `BLOCKED` or `FAIL` with a clear reason, never as a positive verdict.
+
+## Source-backed GM command review (feature branches, 2026-10-18)
+
+**Provenance:** `sarthax/darkstar-to-valhalla`, **feature branches**, not verified deployed to the running test server. Recheck these exact files against the local checkout before executing.
+
+### Gardening: `feature/mog-house-gardening:scripts/commands/garden.lua`
+
+- `permission=1`; `parameters="sii"`; syntax `!garden <action> {value} {slot}`; omitted slot uses `-1` (all pots), meaning **tests must specify a slot** when isolation matters.
+- Preconditions: inside **Mog House**; command delegates to `player:gardenDebug(action, value or 0, slot or -1)`. Inspect the C++ `gardenDebug` implementation before asserting which side effects persist.
+- Diagnostic actions: `info` (plant, stage, crystals, strength, dried/examined state, remaining time), `results` (a **random-roll preview**, not a deterministic expected reward).
+- Acceleration/setup actions: `plant 1..8` (directly sows), `stage 1..11` (10 mature, 11 wilted), `grow [n]` (normal growth path), `mature`, `wilt`, `ready` (next tick due), `crystal1 0..8`, `crystal2 0..8`, `strength 0..31`, `dry 0|1`, `examined 0|1`, `clean`.
+- **Critical positive/negative split:** `!garden crystal1` directly **sets** a crystal value and cannot validate player-facing crystal feeding constraints. To test feeding, execute the actual client operation through the headless client and assert inventory consumption + plant state; use `!garden info` only as postcondition evidence. `!garden plant` bypasses normal pot/seed interaction and is suitable for fixture setup, not planting acceptance. `!garden grow` is appropriate for acceleration when it follows normal growth logic, but verify stage effects in C++.
+- Focused test plan: (1) pot+seed via normal game operation; (2) `info` before state; (3) valid/invalid normal crystal feeding; (4) `grow` with exact slot, stage observation, harvest; (5) negative mature/wilted feeding and duplicate harvest; (6) logoff/relogin persistence and a second untouched slot. Existing `GARD-01..08` IDs track these scenarios.
+
+### Nyzul: `feature/assault-gm-debug-tools:scripts/commands/nyzuldebug.lua`
+
+- `permission=1`, `parameters="ss"`; requires a **live instance with ID 51**.
+- `complete` directly forces the floor objective: **fixture/acceleration only**, not proof that the objective was solved by gameplay.
+- `floor N` for `1..100` primes floor `N-1` and lights the current transfer rune; player must actually use the rune to reach the target floor.
+- `reroll` regenerates objective/spawns. `layout N` for `1..16`, or `layout clear`, pins/unpins layouts; `leader <name>` and `leader clear` pin/unpin leader spawns. **Always clear test pins during cleanup.**
+- Negative cases: invalid floor `0`/`101`, invalid layout `0`/`17`, unknown leader, invocation outside instance 51; verify no state mutation. Test an objective naturally before using `complete` to exercise win conditions.
+- `!warpassault` is also available on the feature branch and bypasses standard entry; it may first warp the character to the required zone and **require a second invocation** after zoning. Do not count a GM-assisted entry as proof of ordinary Assault entry eligibility.
+
+### Voidwalker: `feature/voidwalker:scripts/commands/mobskilldiag.lua`
+
+- `permission=1`, no args; reports targeted mob's ID, pool, job, HP%, TP and skill list / TP-use mods. Requires the player to **target a mob**; not a generic spawn/abyssite progression query.
+- `!checknav x y z` on the reviewed Assault diagnostics branch is a diagnostic for valid nav position and path from the player; does not validate Voidwalker hint logic.
+- Neither operation by itself proves a tier upgrade, specific skill effect, or drop. Treat missing abyssite state readback as a **candidate** for a scoped read-only utility after checking the current Voidwalker Lua and any existing `!checkvar` / `!haskeyitem` commands.
