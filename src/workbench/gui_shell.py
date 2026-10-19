@@ -186,6 +186,7 @@ WORKSPACES = (
         "sections": (
             {"label": "Dashboard", "href": "/validation"},
             {"label": "Runs & Results", "href": "/validation/runs"},
+            {"label": "Feature Testing & Validation", "href": "/feature-testing", "active_patterns": (r"^/feature-testing(?:/.*)?$",)},
             {"label": "Live Target", "href": "/validation/live-target"},
         ),
     },
