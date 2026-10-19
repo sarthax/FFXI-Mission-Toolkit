@@ -5,6 +5,14 @@
 {% block page_status %}<span class="wb-readonly-badge">Planning only</span>{% endblock %}
 {% block page_help %}Read-only plans, scenarios, command candidates and blockers. No live execution or results ingestion.{% endblock %}
 {% block page_body %}
+<section class="wb-panel"><h2>Run history</h2>
+<p>Imported evidence only. No tests are initiated from this page; passing imports do not establish authenticated runtime execution.</p>
+{% if runs %}
+<table><thead><tr><th>Run</th><th>Latest observation</th><th>Features</th><th>Verdict counts</th><th>Records</th></tr></thead><tbody>
+{% for run in runs %}<tr><td><a href="/feature-testing/run/{{ run.run_id }}">{{ run.run_id }}</a></td><td>{{ run.latest }}</td><td>{{ run.features|join(', ') }}</td><td>{% for verdict, total in run.verdicts.items() %}{{ verdict }}: {{ total }} {% endfor %}</td><td>{{ run.count }}</td></tr>{% endfor %}
+</tbody></table>
+{% else %}<p>No test runs imported yet. Set <code>MISSION_TOOLKIT_TEST_RESULTS_DB</code> to your local evidence database and import a trusted report.</p>{% endif %}
+</section>
 <section class="wb-panel"><h2>Test catalog</h2><p><a href="/feature-testing/catalog">Catalog API</a> · All cases are planning records, not proven successes.</p>
 {% for feature in features %}
 <details style="padding:1rem;border:1px solid var(--wb-border, #777);margin:1rem 0" {% if loop.first %}open{% endif %}>
