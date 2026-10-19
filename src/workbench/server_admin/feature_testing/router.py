@@ -144,6 +144,26 @@ def _builder_preflight():
     return preflight("moghancement", "MOG-09")
 
 
+class DraftPreviewRequest(BaseModel):
+    specification: dict
+    observations: dict
+    context: dict = {}
+
+
+@router.post("/builder/drafts/preview", include_in_schema=False)
+def draft_evaluation_preview(request: Request, payload: DraftPreviewRequest):
+    if not request.client or request.client.host not in ("127.0.0.1", "::1"):
+        raise HTTPException(403, "Local draft preview only")
+    origin = request.headers.get("origin")
+    if origin and origin != str(request.base_url).rstrip("/"):
+        raise HTTPException(403, "Cross-origin preview denied")
+    from .draft_preview import preview_draft
+    try:
+        return preview_draft(payload.specification, payload.observations, payload.context)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
 class DraftSaveRequest(BaseModel):
     specification: dict
     expected_revision: int = 0
