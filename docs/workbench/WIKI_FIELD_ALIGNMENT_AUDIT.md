@@ -35,3 +35,7 @@ A table row made only of header cells now types the cells beneath each policy-la
 (review-only, `orientation: "column"`, with `column_index` and `header_row_index`). Previously the first two cells of a
 header row were paired (`エリア` -> `NPC`), which used a header as a value. Row-style pairs (first cell label, second
 cell value) are unchanged and now carry `orientation: "row"`. Rowspan/colspan tables are indexed positionally.
+
+## Merged HTML cell alignment reconciliation (2026-10-19)
+
+The current `main` parser already uses `wiki-doc-v6-html-table-spans`, retaining original cell/source locators and assigning physical columns across `rowspan` and `colspan`. The older draft PR #1106 used a separate `wiki-doc-v6-table-spans` implementation; it must not replace the newer code. Regression coverage pins a Japanese-style two-row rowspan and a colspan column-header case, ensuring only review-only candidates are emitted and coordinate cells are not mislabeled as areas. Remaining limitations around blank cells and compound header interpretation are unchanged.
