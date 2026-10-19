@@ -9,7 +9,7 @@ from pathlib import Path
 from workbench.core.services.feature_catalog import ROOT, load_catalog
 
 LINK = re.compile(r"""href=["'](\/[^"'#?{}\s]+)""")
-DYNAMIC_ROUTES = frozenset({"/synth", "/auction-house/help", "/live-client/bridge/console"})
+DYNAMIC_ROUTES = frozenset({"/synth", "/auction-house/help", "/live-client/bridge/console", "/feature-testing"})
 EXCLUDED = frozenset({"/roadmap", "/feature-catalog"})
 
 
