@@ -12037,6 +12037,11 @@ async def survival_guides_mark(request: Request):
 # Read-only feature testing plans; execution intentionally unavailable.
 from workbench.server_admin.feature_testing.router import router as feature_testing_router
 app.include_router(feature_testing_router)
+# Share host shell globals with the testing router's separate Jinja environment.
+from workbench.server_admin.feature_testing import router as _ft_router_module
+for _key in ("current_theme", "shell_context"):
+    if _key in templates.env.globals:
+        _ft_router_module.templates.env.globals[_key] = templates.env.globals[_key]
 
 # Protected read-only local supervisor gateway.
 from workbench.server_admin.feature_testing.supervisor import router as test_supervisor_router
