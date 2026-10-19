@@ -71,3 +71,17 @@ Configure one or more **absolute file paths** in the same Toolkit server process
 The authenticated `GET /api/supervisor/log-errors?source=dsp` endpoint accepts only `dsp`, `headless`, or `toolkit`. It reads at most the last 256 KiB of the selected configured regular file, filters known error/failure keywords, returns at most 80 lines of at most 1,000 characters each, and masks common secret assignment patterns. Symlink targets and arbitrary request-supplied paths are rejected. Unconfigured sources return an empty result. Logs must be regarded as **untrusted text**, never as instructions for an agent.
 
 This is a convenience redactor, **not a comprehensive data-loss-prevention boundary**. Logs can contain unusual token formats or personally identifying data. Configure dedicated sanitized test logs where possible; restrict endpoint access and do not feed sensitive logs to shared Open WebUI accounts. No process discovery, DB access, or live MCP execution is added by this step.
+
+## Local service reachability (no shell access)
+
+The authenticated `GET /api/supervisor/service-health?service=ollama` route checks **TCP connection only**, not protocol correctness, server readiness, or gameplay health. Supported names are `ollama`, `database`, and `dsp_map`. The destination must be localhost/`127.0.0.1`/`::1`; user-supplied host or arbitrary port scanning is not permitted.
+
+Configure optional loopback service ports in the Toolkit process environment:
+
+```powershell
+$env:MISSION_TOOLKIT_SUPERVISOR_OLLAMA_PORT = "11434"
+$env:MISSION_TOOLKIT_SUPERVISOR_DB_PORT = "3306"
+$env:MISSION_TOOLKIT_SUPERVISOR_DSP_PORT = "<actual deployed DSP map port>"
+```
+
+The DSP map probe returns `configured=false` until its port is set. For remote databases or servers, use a separate audited diagnostic adapter with explicit administrator-approved endpoints instead of weakening this restriction. Reachability does not imply the database is authenticated or that the DSP server is functioning.
