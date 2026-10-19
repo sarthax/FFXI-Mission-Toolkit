@@ -213,7 +213,7 @@
             "GARD-GM-01 scoped command or unique-slot preflight"
           ],
           "negative_invariant": "only explicitly addressed container+slot changes",
-          "run_mode": "blocked_pending_scoped_utility",
+          "run_mode": "focused_only_not_required_for_batch",
           "required_artifacts": [
             "server_commit",
             "headless_commit",
@@ -232,9 +232,11 @@
       ],
       "new_command_review": [
         "garden state query and bounded per-character stage advance only if existing !garden lacks them",
-        "GARD-GM-01 scoped garden-state diagnostic or safe extension with explicit container+slot; preserve existing command behavior for manual use"
+        "GARD-GM-01 scoped garden-state diagnostic or safe extension with explicit container+slot; preserve existing command behavior for manual use (focused-only optional; NOT a batch blocker)"
       ],
-      "command_verification": "pending_local_lua_audit"
+      "command_verification": "pending_local_lua_audit",
+      "preferred_execution_mode": "batch_moghouse",
+      "batch_plan": "data/testing/gardening_batch_plan.json"
     },
     {
       "id": "voidwalker",
@@ -757,7 +759,7 @@
         "hazard": "slotFilter matches numeric slot independently in both Mog Safe and Mog Safe 2",
         "accelerator": "grow calls GrowToNextStage max(1,value); zero still grows once",
         "results": "random and config-dependent preview",
-        "automation_gate": "require unique pot match across both containers before state mutation"
+        "automation_gate": "Batch mode intentionally addresses all pots; per-pot preflight applies only when focused operation explicitly needs one pot"
       }
     },
     "nyzuldebug": {
