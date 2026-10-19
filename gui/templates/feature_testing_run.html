@@ -2,16 +2,60 @@
 {% block page_archetype %}workbench{% endblock %}
 {% block title %}Test Run {{ run_id }}{% endblock %}
 {% block page_heading %}Test Run {{ run_id }}{% endblock %}
-{% block page_status %}<span class="wb-readonly-badge">Recorded evidence</span>{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Imported evidence · read-only</span>{% endblock %}
 {% block page_body %}
+<style>
+.ft-result{border:1px solid var(--border,#ccc);border-radius:8px;margin:1rem 0;padding:1rem}
+.ft-result-head{display:flex;gap:1rem;flex-wrap:wrap;justify-content:space-between;align-items:center}
+.ft-result table{width:100%}
+.ft-result td,.ft-result th{vertical-align:top;text-align:left}
+.ft-evidence-json{white-space:pre-wrap;overflow-wrap:anywhere;max-height:24rem;overflow:auto}
+.ft-metadata{display:flex;flex-wrap:wrap;gap:.6rem 1.5rem;margin:.75rem 0}
+.ft-assertions{overflow-x:auto}
+.ft-inspect{max-width:100%;overflow-wrap:anywhere}
+</style>
 <p><a href="/feature-testing?tab=runs">← Run history</a> · <a href="/feature-testing?tab=catalog">Test catalog</a></p>
-<section class="wb-panel"><h2>Imported results ({{ records|length }})</h2>
-<p>Imported records are not independently authenticated. PASS means a validator accepted the supplied observations, not that gameplay execution was verified.</p>
-<table><thead><tr><th>Scenario</th><th>Stage</th><th>Verdict</th><th>Observed UTC</th><th>Revisions</th></tr></thead><tbody>
+<section class="wb-panel">
+<h2>Recorded results ({{ records|length }})</h2>
+<p>Imported reports are not independently authenticated runtime execution. A PASS verdict reflects supplied evidence and validation, not an independent gameplay attestation.</p>
 {% for result in records %}
-<tr><td><a href="/feature-testing/scenario/{{ result.feature_id }}/{{ result.case_id }}">{{ result.case_id }}</a></td>
-<td>{{ result.stage }}</td><td><strong>{{ result.verdict }}</strong></td><td>{{ result.observed_at }}</td>
-<td><small>DSP {{ result.dsp_commit[:12] }} / Headless {{ result.headless_commit[:12] }} / Toolkit {{ result.toolkit_commit[:12] }}</small></td></tr>
-<tr><td colspan="5"><details><summary>Inspect {{ result.case_id }} · {{ result.stage }} evidence</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:28rem;overflow-y:auto">{{ result.evidence | tojson(indent=2) }}</pre></details></td></tr>
-{% endfor %}</tbody></table></section>
+<article class="ft-result">
+<div class="ft-result-head">
+<h3><a href="/feature-testing/scenario/{{ result.feature_id|urlencode }}/{{ result.case_id|urlencode }}">{{ result.case_id }}</a> — {{ result.feature_id }}</h3>
+<strong>{{ result.verdict }}</strong>
+</div>
+<div class="ft-metadata"><span><strong>Stage:</strong> {{ result.stage }}</span><span><strong>Observed UTC:</strong> {{ result.observed_at }}</span></div>
+<h4>Assertions</h4>
+{% set assertions = result.evidence.get('assertions', []) %}
+{% if assertions is sequence and assertions is not string and assertions %}
+<div class="ft-assertions"><table><thead><tr><th>Result</th><th>Assertion</th><th>Expected</th><th>Observed</th></tr></thead><tbody>
+{% for assertion in assertions %}
+<tr><td>{% if assertion.ok is sameas true %}PASS{% elif assertion.ok is sameas false %}FAIL{% else %}UNKNOWN{% endif %}</td>
+<td>{{ assertion.name|default('Unnamed assertion') }}</td>
+<td class="ft-inspect"><code>{{ assertion.expected|default('Not supplied')|tojson }}</code></td>
+<td class="ft-inspect"><code>{{ assertion.observed|default('Not supplied')|tojson }}</code></td></tr>
+{% endfor %}</tbody></table></div>
+{% else %}<p>No structured assertions supplied in this imported record.</p>{% endif %}
+<h4>Source revisions</h4>
+<div class="ft-metadata"><span><strong>DSP:</strong> <code title="{{ result.dsp_commit }}">{{ result.dsp_commit[:12] }}</code></span>
+<span><strong>XiHeadless:</strong> <code title="{{ result.headless_commit }}">{{ result.headless_commit[:12] }}</code></span>
+<span><strong>Toolkit:</strong> <code title="{{ result.toolkit_commit }}">{{ result.toolkit_commit[:12] }}</code></span></div>
+{% set observations = result.evidence.get('observations', {}) %}
+{% if observations is mapping %}
+{% set provenance = observations.get('provenance', {}) %}
+{% if provenance is mapping and provenance.get('headless_dll_sha256') %}
+<p><strong>Tested Headless DLL SHA-256:</strong> <code class="ft-inspect">{{ provenance.headless_dll_sha256 }}</code></p>
+{% endif %}
+{% if provenance is mapping and provenance.get('headless_dirty_files') %}
+<p><strong>Build reproducibility:</strong> The report records uncommitted Headless files. The Git revision alone is insufficient to reproduce this binary.</p>
+{% endif %}
+{% if observations.get('capability_gaps') %}
+<h4>Observation gaps</h4><ul>{% for gap in observations.capability_gaps %}<li>{{ gap }}</li>{% endfor %}</ul>
+{% endif %}
+<details><summary>Client and server observations</summary><pre class="ft-evidence-json">{{ observations|tojson(indent=2) }}</pre></details>
+{% endif %}
+<details><summary>Full original evidence (JSON)</summary><pre class="ft-evidence-json">{{ result.evidence|tojson(indent=2) }}</pre></details>
+</article>
+{% endfor %}
+</section>
 {% endblock %}

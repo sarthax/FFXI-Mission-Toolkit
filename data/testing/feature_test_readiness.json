@@ -963,6 +963,52 @@
       "new_command_review": [
         "no new GM command needed initially: !moghancement info and recalc already exist"
       ]
+    },
+    {
+      "id": "inventory_observation",
+      "name": "Inventory observation (client vs persisted DSP)",
+      "existing_gm_candidates": [],
+      "headless_candidates": [
+        "snapshot",
+        "container_items",
+        "inventory",
+        "logout"
+      ],
+      "cases": [
+        {
+          "id": "INV-OBS-01",
+          "kind": "observation",
+          "title": "Compare bag and Mog Safe slots, item IDs, and quantities with persisted DSP inventory",
+          "status": "planned",
+          "run_mode": "local_read_only_observation",
+          "evidence_required": [
+            "character_identity_and_session",
+            "client_container_items",
+            "persisted_char_inventory_rows",
+            "persistence_save_boundary",
+            "field_level_assertions",
+            "revision_and_binary_provenance"
+          ],
+          "blocking_gaps": [
+            "Persisted DB is not live memory; save/logout and polling must be recorded",
+            "A headless DLL built from uncommitted changes is not source-reproducible"
+          ],
+          "negative_invariant": "A mismatch, missing container, or truncated DB snapshot must never be recorded as PASS.",
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "toolkit_commit",
+            "headless_dll_sha256",
+            "client_observations",
+            "db_observations",
+            "assertions"
+          ]
+        }
+      ],
+      "gaps": [
+        "Runner and independent database query must be validated locally on an approved disposable character"
+      ],
+      "description": "Read-only comparison; no movement, GM mutation or SQL writes."
     }
   ],
   "headless_baseline": {
