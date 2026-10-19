@@ -15,6 +15,7 @@ from workbench.server_admin.feature_testing.results import recent_results, resul
 from .log_diagnostics import read_log
 from .service_health import service_health
 from .database_diagnostics import inventory_snapshot
+from .source_diagnostics import search_source
 
 router = APIRouter(prefix="/api/supervisor", tags=["Local Test Supervisor"])
 
@@ -71,6 +72,15 @@ def run_evidence(run_id: str, authorization: str | None = Header(default=None)):
         record["evaluation"] = evaluation if isinstance(evaluation, dict) else {}
         record.pop("evidence_json", None)
     return {"run_id": run_id, "records": records, "count": len(records),
+            "result_records": len(records),
+            "assertion_count": sum(len(record["assertions"]) for record in records),
+            "interpretation_notes": [
+                "A PASS result record may contain multiple assertions; inspect each assertion separately.",
+                "A client key_items list represents held key items, not necessarily the active Moghancement effect.",
+                "An oracle key_item of 0 means no selected furnishing effect; it does not imply zero held key items.",
+                "Imported evidence is historical; execution_enabled false does not invalidate the recorded result.",
+                "An empty layout assumed by an oracle is not independently verified installed-furniture layout.",
+            ],
             "source": "imported_evidence_not_independently_authenticated",
             "execution_enabled": False}
 
@@ -115,6 +125,18 @@ def test_character_inventory(charid: int, authorization: str | None = Header(def
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+
+@router.get("/search-source", operation_id="supervisor_search_source")
+def supervisor_search_source(term: str, repository: str = "toolkit",
+                             authorization: str | None = Header(default=None)):
+    """Search bounded, allowlisted local source snapshots. Never execute or modify files."""
+    _authorize(authorization)
+    try:
+        return search_source(repository, term)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 # A dedicated specification prevents agent clients from discovering unrelated

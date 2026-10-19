@@ -38,6 +38,7 @@ def test_isolated_openapi_contains_only_read_only_supervisor_tools():
         "/api/supervisor/health",
         "/api/supervisor/test-runs",
         "/api/supervisor/run-evidence/{run_id}",
+        "/api/supervisor/search-source",
         "/api/supervisor/failed-assertions",
         "/api/supervisor/log-errors",
         "/api/supervisor/service-health",
@@ -164,3 +165,38 @@ def test_run_evidence_rejects_malformed_stored_json(tmp_path, monkeypatch):
     with pytest.raises(HTTPException) as exc:
         supervisor.run_evidence("bad", authorization="Bearer " + "a" * 64)
     assert exc.value.status_code == 400
+
+
+def test_supervisor_source_search_scoped_and_authenticated(tmp_path, monkeypatch):
+    root = tmp_path / "src"
+    root.mkdir()
+    (root / "handler.py").write_text("def SaveKeyItems(): pass\\npassword = 'hidden' # SaveKeyItems\\n", encoding="utf-8")
+    (root / "secret.env").write_text("SaveKeyItems", encoding="utf-8")
+    (root / "hidden.py").symlink_to(root / "handler.py")
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DSP_SOURCE_ROOT", str(root))
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TOKEN", "a" * 64)
+    token = "Bearer " + "a" * 64
+    result = supervisor.supervisor_search_source("SaveKeyItems", repository="dsp", authorization=token)
+    assert [(row["path"], row["line"]) for row in result["matches"]] == [("handler.py", 1)]
+    assert result["source_revision"] == "local_checkout_unverified"
+    with pytest.raises(HTTPException) as exc:
+        supervisor.supervisor_search_source("SaveKeyItems", repository="dsp", authorization=None)
+    assert exc.value.status_code == 403
+    with pytest.raises(HTTPException) as exc:
+        supervisor.supervisor_search_source("SaveKeyItems", repository="remote", authorization=token)
+    assert exc.value.status_code == 400
+
+
+def test_run_evidence_explains_assertion_count_and_ki_semantics(tmp_path, monkeypatch):
+    from workbench.server_admin.feature_testing.results import append_result
+    db = tmp_path / "runs.db"
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_RESULTS_DB", str(db))
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TOKEN", "a" * 64)
+    append_result(db, {"run_id": "r1", "case_id": "MOG-09", "feature_id": "moghancement",
+                       "stage": "key_item", "verdict": "PASS", "observed_at": "2026-10-19T00:00:00Z",
+                       "dsp_commit": "d", "headless_commit": "h", "toolkit_commit": "t",
+                       "evidence": {"assertions": [{"ok": True}, {"ok": True}],
+                                    "observations": {"client_key_items": [387], "oracle": {"key_item": 0}}}})
+    response = supervisor.run_evidence("r1", authorization="Bearer " + "a" * 64)
+    assert response["result_records"] == 1 and response["assertion_count"] == 2
+    assert any("held key items" in note for note in response["interpretation_notes"])
