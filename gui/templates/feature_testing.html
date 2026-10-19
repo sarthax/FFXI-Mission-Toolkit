@@ -65,6 +65,34 @@
 <button type="submit">Review test plan (JSON)</button>
 </form>
 <p>The review endpoint verifies character allowlisting, a registered runner, and local preflight requirements. It returns a plan with expected observation steps; it does not issue execution authorization. Use the <a href="/feature-testing/scenario/moghancement/MOG-09">scenario detail</a> to inspect assertions, then launch the reviewed plan through the local operator CLI documented in <code>docs/workbench/LOCAL_TEST_SUPERVISOR_SETUP.md</code>.</p>
+<h3>Assertion preview (no execution)</h3>
+<p>Paste a normalized observation JSON object to evaluate against a versioned contract. This does not contact XiHeadless, execute tests, or import evidence.</p>
+<form id="ft-evaluation-form">
+<label for="ft-evaluation-case">Specification</label>
+<select id="ft-evaluation-case"><option value="moghancement/MOG-09">MOG-09</option><option value="inventory_observation/INV-OBS-01">INV-OBS-01 (design-only)</option></select>
+<label for="ft-preview-character">Approved character ID (optional for expected-character assertion)</label>
+<input id="ft-preview-character" type="number" min="1" placeholder="21836">
+<label for="ft-preview-json">Normalized observations (JSON)</label>
+<textarea id="ft-preview-json" rows="8" maxlength="32000" style="width:100%" placeholder='{"session":21836,"gm_active_ki":0}' required></textarea>
+<button type="submit">Evaluate supplied observations</button>
+</form>
+<pre id="ft-preview-result" style="white-space:pre-wrap;overflow-wrap:anywhere" aria-live="polite">No preview evaluated.</pre>
+<script>
+document.getElementById('ft-evaluation-form').addEventListener('submit',async function(event){
+ event.preventDefault();
+ const output=document.getElementById('ft-preview-result');
+ try{
+  const [feature_id,case_id]=document.getElementById('ft-evaluation-case').value.split('/');
+  const observations=JSON.parse(document.getElementById('ft-preview-json').value);
+  const raw=document.getElementById('ft-preview-character').value;
+  const context=raw?{approved_charid:Number(raw)}:{};
+  const response=await fetch('/feature-testing/builder/evaluate',{method:'POST',credentials:'same-origin',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({feature_id,case_id,observations,context})});
+  const result=await response.json();
+  output.textContent=response.ok?JSON.stringify(result,null,2):'Preview rejected: '+(result.detail||response.status);
+ }catch(err){output.textContent='Invalid preview input: '+err.message;}
+});
+</script>
 <h3>Operator-approved local execution</h3>
 <p>Only MOG-09 is available. Launch requires a separate operator token, a disposable allowlisted character and explicit approval. The token stays in this browser page's memory and is not stored.</p>
 <form id="ft-launch-form" class="ft-filters">

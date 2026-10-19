@@ -131,6 +131,30 @@ def _builder_preflight():
     return preflight("moghancement", "MOG-09")
 
 
+class EvaluationPreviewRequest(BaseModel):
+    feature_id: str
+    case_id: str
+    observations: dict
+    context: dict = {}
+
+
+@router.post("/builder/evaluate", include_in_schema=False)
+async def evaluate_test_preview(request: Request, payload: EvaluationPreviewRequest):
+    # Preview is local-only, deliberately absent from the Ornith tool schema.
+    if not request.client or request.client.host not in ("127.0.0.1", "::1"):
+        raise HTTPException(403, "Local preview only")
+    origin = request.headers.get("origin")
+    if origin and origin != str(request.base_url).rstrip("/"):
+        raise HTTPException(403, "Cross-origin preview denied")
+    if int(request.headers.get("content-length", "0") or 0) > 32768:
+        raise HTTPException(413, "Preview request too large")
+    from .evaluation_preview import preview
+    try:
+        return preview(payload.feature_id, payload.case_id, payload.observations, payload.context)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
 @router.get("/builder/specifications")
 def test_specifications_api():
     from .test_specifications import specifications
