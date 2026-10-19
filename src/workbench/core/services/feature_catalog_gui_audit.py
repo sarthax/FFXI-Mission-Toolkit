@@ -43,6 +43,20 @@ SAMPLES = (
         ("/wiki/cache-health", "wiki-cache"),
         ("/wiki/scrape", "wiki-bulk"),
     )),
+    ("Feature Testing", "gui/templates/feature_testing.html", (
+        ("ft-design-preset", "testing-scenario-builder"),
+        ("ft-observation-guide", "testing-scenario-builder"),
+        ("Run history", "testing-run-inspector"),
+        ("/feature-testing/run/", "testing-run-inspector"),
+    )),
+    ("Feature Trace", "gui/templates/feature_trace.html", (
+        ("Wiki evidence path", "trace-wiki-provenance"),
+        ("Open exact Wiki source", "trace-wiki-provenance"),
+    )),
+    ("Wiki source navigation", "gui/templates/wiki.html", (
+        ("data-focus-section", "wiki-source-navigation"),
+        ("wiki-focused-source-section", "wiki-source-navigation"),
+    )),
     ("Captures", "gui/templates/captures.html", (
         ("/captures/search", "capture-search"),
         ("/captures/bulk-ingest", "capture-bulk-ingest"),
