@@ -16,6 +16,7 @@ from .log_diagnostics import read_log
 from .service_health import service_health
 from .database_diagnostics import inventory_snapshot
 from .source_diagnostics import search_source
+from .failure_diagnostics import failure_summary
 
 router = APIRouter(prefix="/api/supervisor", tags=["Local Test Supervisor"])
 
@@ -90,13 +91,11 @@ def failed_assertions(authorization: str | None = Header(default=None)):
     _authorize(authorization)
     path = _results_db()
     rows = recent_results(path, limit=100) if path else []
-    return {"results": [
-        {"run_id": r["run_id"], "feature_id": r["feature_id"],
-         "case_id": r["case_id"], "stage": r["stage"],
-         "verdict": r["verdict"], "observed_at": r["observed_at"],
-         "evaluation": r["evidence"].get("evaluation", {})}
-        for r in rows if r["verdict"] in ("FAIL", "BLOCKED")
-    ], "limit": 100}
+    summaries = [failure_summary(row) for row in rows]
+    return {"results": [item for item in summaries if item is not None],
+            "limit": 100, "source": "imported_evidence_not_independently_authenticated",
+            "execution_enabled": False}
+
 
 @router.get("/log-errors", operation_id="supervisor_log_errors")
 def log_errors(source: str = "dsp", authorization: str | None = Header(default=None)):
