@@ -82,7 +82,7 @@
 <label>Assertion ID<input id="ft-design-assertion" value="bag_equal" required></label>
 <label>Comparison<select id="ft-design-op"><option value="same_rows">Inventory rows match</option><option value="equals">Equals</option><option value="nonempty">Nonempty</option><option value="all_zero">Eight aura values zero</option></select></label>
 <label>Observed field<select id="ft-design-field"><option value="client_bag">Client bag</option><option value="client_safe">Client Safe</option><option value="session">Session</option><option value="gm_active_ki">Active KI</option><option value="gm_aura">Aura</option><option value="stored_furnishings">Stored furnishings</option></select></label>
-<label>Expected value or reference<input id="ft-design-expected" value="db_bag" required></label>
+<label>Expected source<select id="ft-design-kind"><option value="reference">Reference</option><option value="literal">Literal</option></select></label><label>Reference<select id="ft-design-reference"><option value="db_bag">DB bag</option><option value="db_safe">DB Safe</option><option value="approved_charid">Approved character</option></select></label><label>Literal expected<input id="ft-design-expected" value="0"></label><p id="ft-design-validation" role="status" aria-live="polite"></p>
 <button type="button" id="ft-design-add">Add assertion</button>
 <button type="button" id="ft-design-update">Update selected assertion</button>
 <button type="button" id="ft-design-remove">Remove selected assertion</button>
@@ -104,12 +104,12 @@
 (function(){
 const $=id=>document.getElementById(id);let assertions=[];
 function paint(){const list=$('ft-design-assertion-list');const selected=list.selectedIndex;list.replaceChildren();assertions.forEach((a,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=a.id+' — '+a.operation+' ('+a.observed+')';list.appendChild(o);});if(selected>=0&&selected<assertions.length)list.selectedIndex=selected;$('ft-design-assertions').textContent=JSON.stringify(assertions,null,2);}
-function readAssertion(){return {id:$('ft-design-assertion').value,operation:$('ft-design-op').value,observed:$('ft-design-field').value,expected:expected($('ft-design-expected').value)};}
+function readAssertion(){return {id:$('ft-design-assertion').value,operation:$('ft-design-op').value,observed:$('ft-design-field').value,expected:$('ft-design-kind').value==='reference'?$('ft-design-reference').value:expected($('ft-design-expected').value)};}
 function showAssertion(a){$('ft-design-assertion').value=a.id;$('ft-design-op').value=a.operation;$('ft-design-field').value=a.observed;$('ft-design-expected').value=typeof a.expected==='string'?a.expected:JSON.stringify(a.expected);}
 function loadSpec(s){if(s.runner!=='unassigned'||s.execution_status!=='design_only')throw Error('Only design-only drafts may be loaded');$('ft-design-feature').value=s.feature_id;$('ft-design-case').value=s.case_id;$('ft-design-name').value=s.name;$('ft-design-pre').value=s.preconditions.join('\n');$('ft-design-clean').value=s.cleanup.join('\n');for(const o of $('ft-design-obs').options)o.selected=s.observations.includes(o.value);assertions=s.assertions.map(a=>({...a}));paint();}
 const lines=id=>$(id).value.split('\n').map(x=>x.trim()).filter(Boolean);
 function expected(s){if(s==='null')return null;if(/^-?\d+$/.test(s))return Number(s);if(s.startsWith('['))return JSON.parse(s);return s;}
-function spec(){
+function spec(){const errors=[];if(!assertions.length)errors.push('Add at least one assertion');if(!/^[A-Za-z0-9_-]+$/.test($('ft-design-case').value))errors.push('Enter a valid case ID');if(!lines('ft-design-pre').length)errors.push('Add a prerequisite');if(!lines('ft-design-clean').length)errors.push('Add a cleanup expectation');$('ft-design-validation').textContent=errors.length?errors.join('; '):'Ready for server-side validation';if(errors.length)throw Error(errors.join('; '));
  const observations=[...$('ft-design-obs').selectedOptions].map(o=>o.value);
  for(const item of assertions)if(!observations.includes(item.observed))observations.push(item.observed);
  return {schema_version:1,feature_id:$('ft-design-feature').value,case_id:$('ft-design-case').value,
