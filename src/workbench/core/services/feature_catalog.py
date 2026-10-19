@@ -42,6 +42,14 @@ def load_catalog(path: Path = CATALOG) -> list[dict]:
         for key in ("purpose", "how_to_use", "caveat"):
             if key in item and (not isinstance(item[key], str) or not item[key].strip()):
                 raise ValueError(f"{feature_id}: invalid {key}")
+        for key in ("source_refs", "test_refs"):
+            references=item.get(key, [])
+            if not isinstance(references,list) or len(references)>12 or any(
+                not isinstance(ref,str) or not ref or ref.startswith("/") or
+                "\\\\" in ref or ".." in Path(ref).parts or not (ROOT / ref).is_file()
+                for ref in references
+            ):
+                raise ValueError(f"{feature_id}: invalid {key}")
         out.append(dict(item))
     for item in out:
         if item.get("parent_id") and item["parent_id"] not in seen:
