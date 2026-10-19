@@ -1,0 +1,37 @@
+# Chocobo Raising domain: DSP audit handoff
+
+Route: `/domains/chocobo_raising` (Domain index), tracker: [issue #1129](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129).
+
+## Evidence model
+
+The tracker distinguishes **upstream** code coverage from **DSP** compatibility; all ten DSP statuses initially remain `unknown`. The Domain framework's glob-based "present" signals file existence only, not gameplay readiness.
+
+Use `scripts/import_chocobo_audit.py` to import **reviewed** findings, not synthetic probe results. It accepts one JSON report, bound to the actual DSP checkout commit, with findings matching existing subsystem names. Status values: `unknown`, `present`, `partial`, `missing`, `validated`. Validation requires a reference prefixed `test:`, `runtime:`, or `capture:`, but **a prefix is not itself proof**: a reviewer must inspect the artifact and ensure it corresponds to the pinned DSP commit and client build.
+
+### Example report (illustrative, not a DSP audit result)
+
+```json
+{
+  "target_commit": "0123456789abcdef",
+  "findings": [{
+    "name": "Eggs and inventory exdata",
+    "dsp": "unknown",
+    "evidence": ["source:src/map/items/exdata/chocobo_egg.h:12"],
+    "note": "Example only; not verified against live DSP."
+  }]
+}
+```
+
+```sh
+python scripts/import_chocobo_audit.py audit.json --check
+python scripts/import_chocobo_audit.py audit.json --apply
+pytest test_fixtures/test_chocobo_domain_import.py
+```
+
+The importer modifies only the tracker JSON on the local development branch. Do not import onto `main` without review. Preserve pre-existing local changes.
+
+## Local agent instructions
+
+Use the actual DSP/Valhalla server checkout, not `xiheadless-dsp` (which is a headless client) and not an older fork. Log `git remote -v`, `git rev-parse HEAD`, `git status --short`, and client build identifier. Audit schema/migrations, `getChocoboRaisingInfo` equivalents, item exdata, NPC event start/update/finish, trade, personal mount flag and appearance, and racing packet capability; record exact path/line for each claim. Attach packet captures and runnable test command/output separately. Compare against the pinned LSB reference. Label unsupported behavior `unknown` or `partial`, never `validated` based on file presence.
+
+The importer does **not** run server tests or automatically discover DSP source. Use the existing headless client only for controlled tests after the source audit. Maintain no-write guarantees to live DSP and database.
