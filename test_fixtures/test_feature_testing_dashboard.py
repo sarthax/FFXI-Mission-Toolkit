@@ -40,3 +40,16 @@ def test_scenario_page_template_exists():
     html = (root / "gui/templates/feature_testing_scenario.html").read_text(encoding="utf-8")
     assert "block page_body" in html
     assert "Recorded results" in html
+
+
+def test_feature_testing_html_pages_render_through_host_app(monkeypatch, tmp_path):
+    """Regression: router templates lacked the host's shell globals, so HTML pages returned HTTP 500."""
+    import pytest
+    host = pytest.importorskip("workbench.app.host", exc_type=Exception, reason="host app needs the venv dependencies")
+    from fastapi.testclient import TestClient
+    app = host.app
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_RESULTS_DB", str(tmp_path / "absent.db"))
+    client = TestClient(app)
+    for path in ("/feature-testing", "/feature-testing/scenario/moghancement/MOG-01",
+                 "/feature-testing/scenario/gardening/GARD-01"):
+        assert client.get(path).status_code == 200, path
