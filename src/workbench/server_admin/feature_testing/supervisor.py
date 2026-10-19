@@ -12,6 +12,7 @@ from fastapi import APIRouter, Header, HTTPException
 
 from workbench.server_admin.feature_testing.router import _results_db, _run_summary
 from workbench.server_admin.feature_testing.results import recent_results
+from .log_diagnostics import read_log
 
 router = APIRouter(prefix="/api/supervisor", tags=["Local Test Supervisor"])
 
@@ -52,6 +53,15 @@ def failed_assertions(authorization: str | None = Header(default=None)):
          "evaluation": r["evidence"].get("evaluation", {})}
         for r in rows if r["verdict"] in ("FAIL", "BLOCKED")
     ], "limit": 100}
+
+@router.get("/log-errors", operation_id="supervisor_log_errors")
+def log_errors(source: str = "dsp", authorization: str | None = Header(default=None)):
+    _authorize(authorization)
+    try:
+        return read_log(source, errors_only=True, lines=80)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
 
 # A dedicated specification prevents agent clients from discovering unrelated
 # and potentially state-changing Toolkit application endpoints.
