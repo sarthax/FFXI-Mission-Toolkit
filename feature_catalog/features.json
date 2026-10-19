@@ -23,7 +23,10 @@
       "route": "/behavior",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect Lua-backed behavior, guards, callbacks and source evidence.",
+      "how_to_use": "Select a Lua-backed behavior, inspect its guard conditions, callbacks, and linked source references; follow unresolved paths back to source.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "feature-checker",
@@ -33,7 +36,10 @@
       "route": "/features/check",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Check evidence coverage and required capabilities.",
+      "how_to_use": "Choose a feature or capability, inspect its required evidence and coverage gaps, and record remaining validation needs.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "capture-browser",
@@ -134,7 +140,10 @@
       "route": "/research",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Record unresolved questions and supporting evidence.",
+      "how_to_use": "Open a research session, add a question and supporting evidence, and revisit unresolved conclusions with their sources.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "id-drift",
@@ -144,7 +153,10 @@
       "route": "/iddrift",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Compare server identifiers and migration mappings.",
+      "how_to_use": "Select an identifier family, compare source and target mappings, and inspect mismatches before proposing any migration.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "entity-lookup",
@@ -154,7 +166,10 @@
       "route": "/entity",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Resolve server entity IDs and names and follow linked evidence.",
+      "how_to_use": "Search by server entity ID or name, inspect the resolved identity, then follow source and zone links.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "sql-browser",
@@ -164,7 +179,10 @@
       "route": "/sql",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect indexed server SQL data and related records.",
+      "how_to_use": "Find a server table or record, inspect the indexed fields and linked evidence, and verify the source snapshot.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "client-overview",
@@ -174,7 +192,10 @@
       "route": "/clientoverview",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Navigate client asset, DAT and binary inspection tools.",
+      "how_to_use": "Start from the Client Overview and choose DAT, binary, model, or retail-version research for the file type at hand.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "packages",
@@ -184,7 +205,10 @@
       "route": "/packages",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect migration packages and source evidence.",
+      "how_to_use": "Select an existing migration package and review its sources, scope, and validation evidence before any application.",
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
     },
     {
       "id": "wiki",
@@ -194,7 +218,10 @@
       "route": "/wiki",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Browse cached wiki research and supporting source material.",
+      "how_to_use": "Search cached wiki pages, inspect their source and freshness, and follow the cache/import controls when a result is missing.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "settings",
@@ -204,7 +231,10 @@
       "route": "/settings",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Configure Toolkit sources, profiles and local integrations.",
+      "how_to_use": "Review data paths, profile selection, and integration configuration before enabling a workflow that depends on local resources.",
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
     },
     {
       "id": "ah-browse",
@@ -466,7 +496,10 @@
       "route": "/itembrowser",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Browse item records and inspect item data.",
+      "how_to_use": "Search by item name or ID, open the matching item, and check its record and related data references.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "item-editor",
@@ -476,7 +509,10 @@
       "route": "/itemedit",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect and edit supported item data using guarded workflows.",
+      "how_to_use": "Select an item by verified ID, review its supported editable fields and change preview, and use the guarded save workflow.",
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
     },
     {
       "id": "mission-browser",
@@ -486,7 +522,10 @@
       "route": "/missions",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Browse mission and progression evidence.",
+      "how_to_use": "Choose a nation or mission chain, inspect stage and script evidence, and follow relevant progression links.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "assault",
@@ -509,7 +548,10 @@
       "route": "/nyzul",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect Nyzul Isle domain data and related progression.",
+      "how_to_use": "Browse Nyzul floors, objectives, and tracked issues; inspect the associated script or server evidence before marking status.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "zone-browser",
@@ -519,7 +561,10 @@
       "route": "/zones",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Browse zone data and linked research evidence.",
+      "how_to_use": "Search for a zone, inspect identity and source records, then open linked entities and spatial views.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "zone-editor",
@@ -529,7 +574,10 @@
       "route": "/zoneplot2",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect zone entities and spatial evidence.",
+      "how_to_use": "Open a zone map, inspect entities or spawn points, compare server and observed locations, and apply edits only through guarded controls.",
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
     },
     {
       "id": "model-viewer",
@@ -539,7 +587,10 @@
       "route": "/modelviewer",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect available client model assets.",
+      "how_to_use": "Choose an available client model asset, inspect its viewer output, and retain the source asset identity.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "dat-inspector",
@@ -549,7 +600,10 @@
       "route": "/datinspector",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect client DAT file evidence.",
+      "how_to_use": "Select a client DAT file, inspect parsed structure and raw evidence, and compare results only across correctly identified client builds.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "retail-versions",
@@ -586,7 +640,10 @@
       "route": "/dialogdrift",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Compare client dialog and text evidence.",
+      "how_to_use": "Select dialogue records from two source snapshots, compare text or IDs, and inspect evidence for each difference.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "research-gaps",
@@ -596,7 +653,10 @@
       "route": "/researchgaps",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Review missing or unresolved client research evidence.",
+      "how_to_use": "Filter unresolved research questions by domain, follow evidence links, and record what still needs verification.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "dialog-browser",
@@ -606,7 +666,10 @@
       "route": "/dialog",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect dialog and text records.",
+      "how_to_use": "Search dialogue identifiers or text, open source records, and inspect linked zone and event context.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "event-browser",
@@ -616,7 +679,10 @@
       "route": "/events",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect event and cutscene identifiers.",
+      "how_to_use": "Select an event or cutscene ID, inspect source and zone associations, then follow implementation references.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "capture-search",
@@ -654,7 +720,10 @@
       "route": "/validation/runs",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Browse recorded validation results.",
+      "how_to_use": "Select a validation run, review its results and evidence, then identify failed versus unexecuted checks.",
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
     },
     {
       "id": "package-review",
@@ -664,7 +733,10 @@
       "route": "/packages/review",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Review migration package readiness and evidence.",
+      "how_to_use": "Open a migration package, inspect source mapping and readiness findings, and resolve blockers before promotion.",
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
     },
     {
       "id": "lua-converter",
@@ -674,7 +746,10 @@
       "route": "/backport/lua-convert",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Convert supported Lua references for backport workflows.",
+      "how_to_use": "Select Lua source for supported conversion, inspect generated output and unresolved transformations, then review before applying.",
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
     },
     {
       "id": "sql-converter",
@@ -684,7 +759,10 @@
       "route": "/backport/sql-convert",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Convert supported SQL content for backport workflows.",
+      "how_to_use": "Select SQL input and target conventions, inspect conversion output and warnings, and validate against the intended schema.",
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
     },
     {
       "id": "bindings",
@@ -694,7 +772,10 @@
       "route": "/backport/bindings",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect source binding and identifier conversion evidence.",
+      "how_to_use": "Inspect identifier or binding mappings, review proposed conversions and ambiguous matches before using converted content.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "live-validation",
@@ -704,7 +785,10 @@
       "route": "/validation/live-target",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Review live target validation workflow and its guarded operations.",
+      "how_to_use": "Choose an authorized target and validation plan, inspect safeguards, execute permitted checks, and retain results.",
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
     },
     {
       "id": "package-scope",
@@ -714,7 +798,10 @@
       "route": "/packages/scope",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Review selected package content and dependency scope.",
+      "how_to_use": "Inspect a proposed package's files and dependencies, remove out-of-scope changes, and verify coverage.",
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
     },
     {
       "id": "package-create",
@@ -724,7 +811,10 @@
       "route": "/packages/create",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Prepare a package from reviewed source evidence.",
+      "how_to_use": "Choose reviewed source evidence and a target scope, generate a package candidate, then inspect its content before use.",
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
     },
     {
       "id": "capture-formats",
@@ -776,7 +866,10 @@
       "route": "/itemhealth",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect item catalog health and evidence coverage.",
+      "how_to_use": "Inspect item catalog diagnostics and inconsistent records; trace flagged issues to their data source.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "research-contradictions",
@@ -786,7 +879,10 @@
       "route": "/research/contradictions",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Review conflicting research evidence.",
+      "how_to_use": "Open a conflicting research claim, compare the underlying sources, and leave the disagreement unresolved until evidence warrants a decision.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "research-evidence",
@@ -796,7 +892,10 @@
       "route": "/research/evidence",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Browse recorded research evidence.",
+      "how_to_use": "Browse evidence artifacts, inspect provenance and relationships, and follow source links for verification.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "domain-overview",
@@ -806,7 +905,10 @@
       "route": "/domains",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Navigate domain-specific research and progression tools.",
+      "how_to_use": "Choose a game-system domain, review its tracked implementation and validation state, and navigate to linked records.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "video-ocr",
@@ -816,7 +918,10 @@
       "route": "/ocr",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect video-derived text research.",
+      "how_to_use": "Select a video-derived text capture, inspect extracted text alongside source context, and confirm uncertain readings manually.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "llm-research",
@@ -826,7 +931,10 @@
       "route": "/llm",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Explore local LLM-assisted research with source evidence safeguards.",
+      "how_to_use": "Provide a focused research question, review model-assisted findings with linked sources, and independently verify claims.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "capture-all-paths",
@@ -906,7 +1014,10 @@
       "route": "/shift-master",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help"
+      "help": "/help",
+      "purpose": "Inspect Shift Master domain workflow.",
+      "how_to_use": "Open Shift Master domain research, inspect available workflow records and source evidence, and identify unvalidated behavior.",
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
     },
     {
       "id": "binary-pe-inspection",
