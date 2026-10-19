@@ -79,6 +79,13 @@
 <option value="gm_aura">Aura</option><option value="stored_furnishings">Stored furnishings</option>
 <option value="installed_layout">Installed layout</option><option value="client_key_items">Client key items</option>
 <option value="db_key_items">DB key items</option></select></label>
+<details id="ft-observation-guide"><summary><strong>Observation field guide</strong></summary>
+<p>Select a field to inspect its meaning, recommended comparison and representative shape. Examples are illustrative, not live readings.</p>
+<label for="ft-guide-field">Observation</label>
+<select id="ft-guide-field"><option value="session">Session</option><option value="client_bag">Client bag</option><option value="db_bag">Database bag</option><option value="client_safe">Client Safe</option><option value="db_safe">Database Safe</option><option value="gm_active_ki">Active Moghancement KI</option><option value="gm_aura">Aura</option><option value="stored_furnishings">Stored furnishings</option><option value="installed_layout">Installed layout</option><option value="client_key_items">Client held key items</option><option value="db_key_items">Database held key items</option></select>
+<pre id="ft-guide-description" style="white-space:pre-wrap" aria-live="polite"></pre>
+<button type="button" id="ft-guide-use-field">Use field in assertion</button>
+</details>
 <label>Assertion ID<input id="ft-design-assertion" value="bag_equal" required></label>
 <label>Comparison<select id="ft-design-op"><option value="same_rows">Inventory rows match</option><option value="equals">Equals</option><option value="nonempty">Nonempty</option><option value="all_zero">Eight aura values zero</option></select></label>
 <label>Observed field<select id="ft-design-field"><option value="client_bag">Client bag</option><option value="client_safe">Client Safe</option><option value="session">Session</option><option value="gm_active_ki">Active KI</option><option value="gm_aura">Aura</option><option value="stored_furnishings">Stored furnishings</option></select></label>
@@ -104,6 +111,23 @@
 (function(){
 const $=id=>document.getElementById(id);let assertions=[];
 function paint(){const list=$('ft-design-assertion-list');const selected=list.selectedIndex;list.replaceChildren();assertions.forEach((a,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=a.id+' — '+a.operation+' ('+a.observed+')';list.appendChild(o);});if(selected>=0&&selected<assertions.length)list.selectedIndex=selected;$('ft-design-assertions').textContent=JSON.stringify(assertions,null,2);}
+const fieldGuide={
+ session:['Character identifier reported by a client session.','equals',21836],
+ client_bag:['Client-observed bag rows, [slot,item_id,quantity].','same_rows',[[1,42,1]]],
+ db_bag:['Persisted bag rows from DSP; not independent if copied from one report.','same_rows',[[1,42,1]]],
+ client_safe:['Client-observed Mog Safe slot rows.','same_rows',[[7,216,1]]],
+ db_safe:['Persisted Mog Safe rows.','same_rows',[[7,216,1]]],
+ gm_active_ki:['Active Moghancement key item, not all held key items.','equals',0],
+ gm_aura:['Eight measured furnishing-aura values.','all_zero',[0,0,0,0,0,0,0,0]],
+ stored_furnishings:['Furnishings stored in Safe, not proof of installed layout.','nonempty',[216]],
+ installed_layout:['Independently captured furnishings placed in Mog House.','nonempty',[216]],
+ client_key_items:['Client-held key item IDs; distinct from active effect.','nonempty',[387]],
+ db_key_items:['Persisted key item IDs.','nonempty',[387]]
+};
+function showFieldGuide(){const name=$('ft-guide-field').value;const entry=fieldGuide[name];$('ft-guide-description').textContent=entry[0]+'\nSuggested assertion: '+entry[1]+'\nExample: '+JSON.stringify(entry[2])+'\nCapture availability must be verified separately.';}
+$('ft-guide-field').addEventListener('change',showFieldGuide);
+$('ft-guide-use-field').addEventListener('click',()=>{const name=$('ft-guide-field').value;$('ft-design-field').value=name;$('ft-design-op').value=fieldGuide[name][1];for(const option of $('ft-design-obs').options)if(option.value===name)option.selected=true;});
+showFieldGuide();
 function readAssertion(){return {id:$('ft-design-assertion').value,operation:$('ft-design-op').value,observed:$('ft-design-field').value,expected:$('ft-design-kind').value==='reference'?$('ft-design-reference').value:expected($('ft-design-expected').value)};}
 function showAssertion(a){$('ft-design-assertion').value=a.id;$('ft-design-op').value=a.operation;$('ft-design-field').value=a.observed;const ref=['db_bag','db_safe','approved_charid'].includes(a.expected);$('ft-design-kind').value=ref?'reference':'literal';if(ref)$('ft-design-reference').value=a.expected;else $('ft-design-expected').value=typeof a.expected==='string'?a.expected:JSON.stringify(a.expected);}
 function loadSpec(s){if(s.runner!=='unassigned'||s.execution_status!=='design_only')throw Error('Only design-only drafts may be loaded');$('ft-design-feature').value=s.feature_id;$('ft-design-case').value=s.case_id;$('ft-design-name').value=s.name;$('ft-design-pre').value=s.preconditions.join('\n');$('ft-design-clean').value=s.cleanup.join('\n');for(const o of $('ft-design-obs').options)o.selected=s.observations.includes(o.value);assertions=s.assertions.map(a=>({...a}));paint();}
