@@ -199,15 +199,40 @@
             "before_after_server_state",
             "cleanup_result"
           ]
+        },
+        {
+          "id": "GARD-09",
+          "kind": "negative",
+          "title": "Same numeric slot in Mog Safe and Safe 2 must not cause unintended dual-pot mutation",
+          "status": "planned",
+          "evidence_required": [
+            "pre/post garden info with both container IDs",
+            "authoritative pot storage state"
+          ],
+          "blocking_gaps": [
+            "GARD-GM-01 scoped command or unique-slot preflight"
+          ],
+          "negative_invariant": "only explicitly addressed container+slot changes",
+          "run_mode": "blocked_pending_scoped_utility",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         }
       ],
       "gaps": [
         "verify !garden local Lua syntax and side effects",
         "headless furnishing/gardening menu interaction and growth-state observation",
-        "fixture-safe day advance scoped to disposable character"
+        "fixture-safe day advance scoped to disposable character",
+        "GARD-GM-01: container+slot-specific inspect/mutate operations; current !garden slot may affect both safes"
       ],
       "new_command_review": [
-        "garden state query and bounded per-character stage advance only if existing !garden lacks them"
+        "garden state query and bounded per-character stage advance only if existing !garden lacks them",
+        "GARD-GM-01 scoped garden-state diagnostic or safe extension with explicit container+slot; preserve existing command behavior for manual use"
       ],
       "command_verification": "pending_local_lua_audit"
     },
@@ -724,7 +749,16 @@
         "clean"
       ],
       "review_status": "source_reviewed_not_runtime_verified",
-      "gameplay_warning": "debug crystal1 and plant bypass player-facing gameplay; never treat as gameplay acceptance"
+      "gameplay_warning": "debug crystal1 and plant bypass player-facing gameplay; never treat as gameplay acceptance",
+      "cpp_review": {
+        "path": "src/map/utils/gardenutils.cpp",
+        "branch": "feature/mog-house-gardening",
+        "state_persistence": "SavePot on mutation plus furniture and inventory update packets",
+        "hazard": "slotFilter matches numeric slot independently in both Mog Safe and Mog Safe 2",
+        "accelerator": "grow calls GrowToNextStage max(1,value); zero still grows once",
+        "results": "random and config-dependent preview",
+        "automation_gate": "require unique pot match across both containers before state mutation"
+      }
     },
     "nyzuldebug": {
       "branch": "feature/assault-gm-debug-tools",
