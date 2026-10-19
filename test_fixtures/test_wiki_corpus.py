@@ -137,6 +137,20 @@ def test_template_fields_labels_values_locators_and_classification():
         _assert_no_graph(s, blocks, groups)
 
 
+def test_simple_nested_wrapper_value_review_only():
+    samples, _ = _load()
+    sample = next(s for s in samples if s["sample_id"] == "syn-nested-template-value")
+    blocks, groups = _parse(sample)
+    fields = [b for b in blocks if b["block_type"] == "template_field"]
+    zone = next(b for b in fields if b["metadata"]["field"] == "Zone")
+    assert zone["text"] == "Test Zone"
+    assert zone["metadata"]["raw_value"] == "{{Zone|Test Zone}}"
+    hints = [c for _, c in _template_candidates(groups) if c and c["field"] == "Zone"]
+    assert len(hints) == 1 and hints[0]["field_type"] == "LOCATION"
+    assert hints[0]["review_only"] is True
+    _assert_no_graph(sample, blocks, groups)
+
+
 def test_japanese_labels_and_values_preserved():
     samples, _ = _load()
     jp = [s for s in samples if "japanese-label" in s["categories"] and s.get("fields")]
