@@ -28,3 +28,10 @@ Do not mark any of these items complete merely because this fixture passes.
 ## Implementation increment
 
 Template and two-column table candidates now share the exact-label `REVIEW_FIELD_TYPES` mapping in `wiki_document.py`. Table candidates include `field_type` in addition to the existing raw field/value and locators. The field map includes the existing conservative English and Japanese drops, rewards, location, requirement, spawn, quest, and NM-identity labels. Unknown labels still do not become typed candidates. No schema migration, graph promotion, or translation-based authority change is involved.
+
+## Column-header semantics (table candidates)
+
+A table row made only of header cells now types the cells beneath each policy-labelled header
+(review-only, `orientation: "column"`, with `column_index` and `header_row_index`). Previously the first two cells of a
+header row were paired (`エリア` -> `NPC`), which used a header as a value. Row-style pairs (first cell label, second
+cell value) are unchanged and now carry `orientation: "row"`. Rowspan/colspan tables are indexed positionally.

@@ -465,7 +465,25 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
             # *review candidate*, not proof of a gameplay relationship.
             # Keep these annotations purely in presentation, never in graph imports.
             candidates=[]
+            col_headers={}  # column index -> (field_type, header cell, header row index)
             for row_index, cells in enumerate(rows):
+                if cells and all(c["header"] for c in cells):
+                    # Column-header semantics: a policy label in a header row types the cells beneath it.
+                    col_headers={}
+                    for col, hc in enumerate(cells):
+                        ftype=review_field_type(hc["text"])
+                        if ftype:
+                            col_headers[col]=(ftype,hc,row_index)
+                    continue
+                for col,(ftype,hc,hrow) in col_headers.items():
+                    if col < len(cells) and not cells[col]["header"] and cells[col]["text"].strip():
+                        candidates.append({"row_index":row_index,"column_index":col,"header_row_index":hrow,
+                                           "field":hc["text"],"field_type":ftype,
+                                           "value":cells[col]["text"].strip(),"review_only":True,
+                                           "orientation":"column",
+                                           "value_source_locator":cells[col].get("source_locator"),
+                                           "value_raw":cells[col].get("raw_value"),
+                                           "field_source_locator":hc.get("source_locator")})
                 if len(cells)<2:
                     continue
                 label=normalize_search(cells[0]["text"])
@@ -476,7 +494,7 @@ def presentation_groups(blocks: list[dict]) -> list[dict]:
                 if value:
                     candidates.append({"row_index":row_index,"field":cells[0]["text"],
                                        "field_type":field_type,
-                                       "value":value,"review_only":True,
+                                       "value":value,"review_only":True,"orientation":"row",
                                        "value_source_locator":cells[1].get("source_locator"),
                                        "value_raw":cells[1].get("raw_value"),
                                        "field_source_locator":cells[0].get("source_locator")})
