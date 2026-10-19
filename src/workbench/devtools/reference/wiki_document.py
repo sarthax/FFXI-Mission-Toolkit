@@ -10,7 +10,7 @@ from html.parser import HTMLParser
 
 import mwparserfromhell
 
-PARSER_VERSION = "wiki-doc-v3-table-fields"
+PARSER_VERSION = "wiki-doc-v4-table-cell-attributes"
 # Source-original, exact-label allowlist shared by template and table review hints.
 # Do not infer field semantics from translated prose or emit graph edges here.
 REVIEW_FIELD_TYPES={
@@ -108,6 +108,21 @@ def _block(page_id: str, ordinal: int, block_type: str, text: str = "", **kw) ->
     }
 
 
+def _mediawiki_cell_parts(raw_cell: str) -> tuple[str, str | None]:
+    """Separate explicit table-cell attributes from value markup.
+
+    A single pipe is an attribute separator only for recognizable HTML-like
+    attribute assignments; a normal cell's text must remain unchanged.
+    """
+    parts = raw_cell.split("|", 1)
+    if len(parts) == 2 and re.match(
+        r'^\s*(?:(?:style|class|id|width|height|align|valign|colspan|rowspan|bgcolor)\s*=)',
+        parts[0], re.I,
+    ):
+        return parts[1].strip(), parts[0].strip()
+    return raw_cell, None
+
+
 def mediawiki_blocks(page_id: str, wikitext: str) -> list[dict]:
     code = mwparserfromhell.parse(wikitext or "")
     blocks, stack, paragraph = [], [], []
@@ -153,8 +168,10 @@ def mediawiki_blocks(page_id: str, wikitext: str) -> list[dict]:
             kind = "table_header_cell" if line.startswith("!") else "table_cell"
             for cell in re.split(r"!!|\|\|", line[1:]):
                 raw_cell=cell.strip()
-                clean = str(mwparserfromhell.parse(raw_cell).strip_code(normalize=True, collapse=True)).strip()
-                emit(kind, clean, metadata={"raw_value":raw_cell, "review_only":True},
+                value_markup, cell_attributes = _mediawiki_cell_parts(raw_cell)
+                clean = str(mwparserfromhell.parse(value_markup).strip_code(normalize=True, collapse=True)).strip()
+                emit(kind, clean, metadata={"raw_value":raw_cell, "value_markup":value_markup,
+                                            "cell_attributes":cell_attributes, "review_only":True},
                      source_locator=f"block:{page_id}:table-cell:{ordinal + 1}")
             continue
         lm = re.match(r"^\s*([*#;:]+)\s*(.*)$", line)
