@@ -12037,3 +12037,7 @@ async def survival_guides_mark(request: Request):
 # Read-only feature testing plans; execution intentionally unavailable.
 from workbench.server_admin.feature_testing.router import router as feature_testing_router
 app.include_router(feature_testing_router)
+
+# Protected read-only local supervisor gateway.
+from workbench.server_admin.feature_testing.supervisor import router as test_supervisor_router
+app.include_router(test_supervisor_router)
