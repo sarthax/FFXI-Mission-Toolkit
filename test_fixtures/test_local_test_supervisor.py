@@ -29,3 +29,15 @@ def test_supervisor_read_only_empty_state(monkeypatch):
 
 def test_supervisor_routes_are_get_only():
     assert {method for route in supervisor.router.routes for method in route.methods} == {"GET"}
+
+
+def test_isolated_openapi_contains_only_read_only_supervisor_tools():
+    spec = supervisor.supervisor_openapi()
+    assert spec["servers"] == [{"url": "http://127.0.0.1:8420"}]
+    assert set(spec["paths"]) == {
+        "/api/supervisor/health",
+        "/api/supervisor/test-runs",
+        "/api/supervisor/failed-assertions",
+    }
+    assert all(set(methods) == {"get"} for methods in spec["paths"].values())
+    assert "/wiki" not in str(spec["paths"])
