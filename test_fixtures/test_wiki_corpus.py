@@ -277,8 +277,8 @@ def test_real_jp_html_tables_preserve_text_and_invent_nothing():
         assert _template_candidates(groups) == [], f"{sid}: unexpected template hint"
         cands = _table_candidates(groups)
         # Column-header semantics: a policy label in an all-header row types the cells beneath it
-        # (review-only). Header cells never become the value. Rowspan tables are only positionally
-        # indexed (known limitation: jp-vw-npc-table's second hit is a shifted column).
+        # (review-only). Header cells never become the value. Merged HTML cells
+        # preserve physical column alignment for source-backed review hints.
         got_hits = [(c["field"], c["field_type"], c["value"]) for c in cands]
         assert got_hits == JP_EXPECTED_HITS.get(sid, []), f"{sid}: column-header hits changed: {got_hits}"
         for c in cands:
@@ -286,6 +286,28 @@ def test_real_jp_html_tables_preserve_text_and_invent_nothing():
             assert c["value"] not in {t for tag, t in want if tag == "th"}, f"{sid}: header used as value"
         _assert_no_graph(s, blocks, groups)
 
+
+
+def test_html_rowspan_and_colspan_review_alignment():
+    """Merged cells must not shift the policy label to unrelated columns."""
+    cases = [
+        ('<table><tr><th>エリア</th><th>NPC</th><th>座標</th></tr>'
+         '<tr><td rowspan="2">南サンドリア</td><td>NPC A</td><td>(D-11)</td></tr>'
+         '<tr><td>NPC B</td><td>(E-5)</td></tr></table>',
+         ["南サンドリア"]),
+        ('<table><tr><th colspan="2">NPC</th><th>エリア</th></tr>'
+         '<tr><td colspan="2">NPC C</td><td>バストゥーク港</td></tr></table>',
+         ["バストゥーク港"]),
+    ]
+    for index, (html, expected) in enumerate(cases):
+        blocks = html_blocks(f"synthetic-merged-{index}", html)
+        groups = presentation_groups(blocks)
+        hits = _table_candidates(groups)
+        values = [c["value"] for c in hits if c["field_type"] == "LOCATION"]
+        assert values == expected, (index, values)
+        assert all(c["review_only"] and c["orientation"] == "column" for c in hits)
+        assert all("column_index" in c and "source_locator" in c for c in hits)
+        assert not any(c["value"] in {"(D-11)", "(E-5)", "NPC C"} for c in hits)
 
 def test_legacy_flattened_text_is_degraded_and_untyped():
     samples, _ = _load()
