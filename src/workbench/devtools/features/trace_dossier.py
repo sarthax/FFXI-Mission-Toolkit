@@ -5,6 +5,7 @@ declares implementation completeness, or manufactures cross-source identity.
 """
 from __future__ import annotations
 from collections import Counter
+from urllib.parse import urlencode
 from workbench.devtools.features.trace_catalog import relationship_section
 
 FACET_ORDER=("Dependencies / Requirements","Acquisition / Progression","Implementation / Server","Client","Validation","Evidence / References","Other / Unclassified")
@@ -47,6 +48,12 @@ def build_dossier(result: dict) -> dict:
             "authority":details.get("authority"),
             "review_only":True,
         }
+    if wiki_evidence and wiki_evidence["source_id"] and wiki_evidence["page_id"]:
+        params={"source":str(wiki_evidence["source_id"]),
+                "page_id":str(wiki_evidence["page_id"]), "tab":"browse"}
+        if wiki_evidence["section"]:
+            params["focus_section"]=str(wiki_evidence["section"])
+        wiki_evidence["browse_href"]="/wiki?"+urlencode(params)
     if provider_links:
         facets.append({"name":"Source-native links","count":len(provider_links)})
     return {
