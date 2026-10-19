@@ -306,7 +306,7 @@ def test_html_rowspan_and_colspan_review_alignment():
         values = [c["value"] for c in hits if c["field_type"] == "LOCATION"]
         assert values == expected, (index, values)
         assert all(c["review_only"] and c["orientation"] == "column" for c in hits)
-        assert all("column_index" in c and "source_locator" in c for c in hits)
+        assert all("column_index" in c and "value_source_locator" in c and "field_source_locator" in c for c in hits)
         assert not any(c["value"] in {"(D-11)", "(E-5)", "NPC C"} for c in hits)
 
 def test_legacy_flattened_text_is_degraded_and_untyped():
