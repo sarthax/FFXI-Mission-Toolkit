@@ -32,11 +32,15 @@ type, per-field label/raw value/locator/expected type, categories and license no
 omitted parameters are listed. Licensing is believed CC BY-NC-SA (BG) / CC BY-SA (FFXIclopedia); verify before
 wider redistribution.
 
-`real_jp_manifest.json` (4 real WikiWikiJP HTML table excerpts from the ヴォイドウォッチ subtree, added after the
-pilot crawl recorded raw HTML and `retrieved_at`): a header plus two body rows each, with an independent
-parser-free cell inventory. Pukiwiki exposes no revision id, so `revision_id` is `none-exposed`. The runner checks that
-every cell survives in order and that real JP layout tables yield **no** typed hints. The 27-page subtree produced zero
-typed candidates; the labelled JP samples remain synthetic. Licence terms for WikiWikiJP were not verified.
+`real_jp_manifest.json` (8 real WikiWikiJP HTML excerpts: 4 ヴォイドウォッチ tables, 3 BFNM/NM tables, 1 NM list;
+added after the pilot crawls recorded raw HTML and `retrieved_at`): a header plus two body rows (or four list items)
+each, with an independent parser-free cell inventory. Pukiwiki exposes no revision id, so `revision_id` is
+`none-exposed`. The runner checks that every non-empty cell survives in order (the parser emits no block for empty
+cells, e.g. blank spacer headers; pinned). Voidwatch tables and the NM list yield **no** typed hints. The three
+BFNM/NM tables tagged `header-pair-hint` each yield exactly one review-only, untyped candidate that pairs the first two
+header cells (`エリア`→`NPC`, `場所`→`モンスター名称`, `エリア`→`無色`). That is a header row, not a label/value row, so
+it is pinned as current behaviour and must stay review-only; deciding whether header rows should hint at all is an
+open design question. The labelled JP samples remain synthetic. Licence terms for WikiWikiJP were not verified.
 
 `synthetic_manifest.json` (13 samples) is generated from `synthetic_sources.json`, is marked
 `evidence_type: synthetic`, has no URL/hash/revision, and states which real structure it models. **All
