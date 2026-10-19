@@ -43,7 +43,11 @@ class FileTelemetryBridge:
             stat = self.path.stat()
             identity = (stat.st_dev, stat.st_ino)
             if self._identity is not None and (identity != self._identity or stat.st_size < self._offset):
-                raise RuntimeError("telemetry feed was rotated or truncated; reconnect explicitly")
+                # A new run recreates/truncates the file: restart from the top instead of failing forever.
+                self._offset = 0
+                self.feed._latest = None
+                stream.close()
+                return self.poll(max_frames=max_frames)
             self._identity = identity
             stream.seek(self._offset)
             for _ in range(max_frames):
@@ -59,8 +63,10 @@ class FileTelemetryBridge:
                 try:
                     payload = json.loads(line.decode("utf-8"))
                     self.feed.ingest(payload)
-                except (ValueError, TypeError, KeyError, UnicodeError) as exc:
-                    raise ValueError(f"invalid telemetry frame at byte {start}") from exc
+                except (ValueError, TypeError, KeyError, UnicodeError):
+                    # Skip one bad frame; raising here without advancing wedged the feed permanently.
+                    self._offset = stream.tell()
+                    continue
                 self._offset = stream.tell()
                 accepted += 1
         return accepted

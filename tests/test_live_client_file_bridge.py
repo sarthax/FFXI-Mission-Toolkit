@@ -38,12 +38,11 @@ class FileBridgeTests(unittest.TestCase):
             self.assertEqual(bridge.poll(), 1)
             with path.open("a") as out:
                 out.write(json.dumps(frame(2, "other")) + "\n")
-            with self.assertRaises(ValueError):
-                bridge.poll()
+            self.assertEqual(bridge.poll(), 0)  # mismatched frame is skipped, not wedging the feed
             self.assertEqual(bridge.feed.snapshot().observed_at, 1)
-            path.write_text("")
-            with self.assertRaises(RuntimeError):
-                bridge.poll()
+            path.write_text(json.dumps(frame(3)) + "\n")  # new run truncates/recreates: recover from the top
+            self.assertEqual(bridge.poll(), 1)
+            self.assertEqual(bridge.feed.snapshot().observed_at, 3)
 
     def test_limit_validation(self):
         with tempfile.TemporaryDirectory() as tmp:

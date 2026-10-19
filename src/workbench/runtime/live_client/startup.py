@@ -22,8 +22,23 @@ def initialize_live_client(registry: ReplayRegistry, settings: Mapping[str, str]
             if not Path(path).is_file():
                 raise FileNotFoundError("configured telemetry feed file does not exist")
             registry.add_feed(client, FileTelemetryBridge(Path(path), client))
+            _add_headless_dir_feeds(registry, settings.get("headless_telemetry_dir", "").strip())
         else:
             register_configured_replay(registry, effective_replay_configuration(settings, environment))
     except (OSError, ValueError, PermissionError, RuntimeError) as exc:
         return f"Live Client unavailable: {exc}"
     return None
+
+
+def _add_headless_dir_feeds(registry: ReplayRegistry, folder: str) -> None:
+    """Register every <name>.jsonl in the headless telemetry dir as client xiheadless-<name> (multi-bot viewing)."""
+    if not folder or not Path(folder).is_dir():
+        return
+    for feed in sorted(Path(folder).glob("*.jsonl")):
+        client = f"xiheadless-{feed.stem.lower()}"
+        if client in registry.client_ids():
+            continue
+        try:
+            registry.add_feed(client, FileTelemetryBridge(feed, client))
+        except (OSError, ValueError):
+            continue
