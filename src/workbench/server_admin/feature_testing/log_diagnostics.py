@@ -9,8 +9,8 @@ import re
 SOURCES = {"dsp": "MISSION_TOOLKIT_SUPERVISOR_DSP_LOG",
            "headless": "MISSION_TOOLKIT_SUPERVISOR_HEADLESS_LOG",
            "toolkit": "MISSION_TOOLKIT_SUPERVISOR_TOOLKIT_LOG"}
-SECRET = re.compile(r"(?i)(password|authorization|bearer|api[_-]?key|token|secret)(\\s*[:=]\\s*|\\s+)([^\\s,;]+)")
-ERROR = re.compile(r"(?i)\\b(error|exception|fatal|traceback|failed)\\b")
+SECRET = re.compile(r"(?i)(password|authorization|bearer|api[_-]?key|token|secret)(\s*[:=]\s*|\s+)([^\s,;]+)")
+ERROR = re.compile(r"(?i)\b(error|exception|fatal|traceback|failed)\b")
 
 
 def redact(line: str) -> str:
@@ -37,7 +37,7 @@ def read_log(source: str, *, errors_only: bool = True, lines: int = 80) -> dict:
         raw = handle.read(size)
     chunk = raw.decode("utf-8", errors="replace")
     if end > size:
-        chunk = chunk.partition("\\n")[2]
+        chunk = chunk.partition("\n")[2]
     candidates = deque(maxlen=lines)
     for entry in chunk.splitlines():
         if not errors_only or ERROR.search(entry):
