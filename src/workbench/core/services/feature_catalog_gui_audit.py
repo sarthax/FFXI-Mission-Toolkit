@@ -19,6 +19,36 @@ SAMPLES = (
         ('tab == "artifacts"', "retail-artifacts"),
         ('tab == "compare"', "retail-compare"),
     )),
+    ("Auction House", "gui/templates/auction_house.html", (
+        ("Economy health", "ah-economy"),
+        ("Administrative action preview", "ah-restock"),
+        ("Item detail", "ah-browse"),
+    )),
+    ("Auction House Cleanup", "gui/templates/auction_house_cleanup.html", (
+        ("Target rules", "ah-restock"),
+        ("Last action", "ah-restock"),
+    )),
+    ("Auction House Reward History", "gui/templates/auction_house_reward_history.html", (
+        ("Interrupted delivery attempts", "ah-recovery"),
+        ("DSP MyISAM recovery cases", "ah-recovery"),
+    )),
+    ("Live Client Bridge", "gui/templates/live_client_bridge.html", (
+        ("Install Ashita addon locally", "live-bridge"),
+        ("Headless client observation", "live-bridge"),
+        ("Nearby observed entities", "live-entity-stream"),
+    )),
+    ("Wiki", "gui/templates/wiki.html", (
+        ("tab == 'browse'", "wiki-cache"),
+        ("tab == 'translation'", "wiki-translation"),
+        ("/wiki/cache-health", "wiki-cache"),
+        ("/wiki/scrape", "wiki-bulk"),
+    )),
+    ("Captures", "gui/templates/captures.html", (
+        ("/captures/search", "capture-search"),
+        ("/captures/bulk-ingest", "capture-bulk-ingest"),
+        ("/captures/metadata-import", "capture-metadata-import"),
+        ("/captures/review", "capture-review"),
+    )),
     ("Assault Tracker", "gui/templates/domain_assault.html", (
         ("Mission readiness and next actions", "assault"),
         ("System-wide and shared dependencies", "assault"),
