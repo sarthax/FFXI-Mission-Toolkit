@@ -1,0 +1,269 @@
+{
+  "domains": {
+    "chocobo_raising": {
+      "label": "Chocobo Raising",
+      "archetype": "system.chocobo_raising",
+      "summary": "Evidence-led DSP compatibility and implementation tracker for raising, caring for, registering, breeding and riding personal chocobos. An upstream file being present is not proof of DSP functionality.",
+      "wiki": {
+        "categories": [
+          "Chocobo Raising",
+          "Chocobo Breeding",
+          "Chocobo Racing"
+        ],
+        "templates": [],
+        "headings": [
+          "Overview",
+          "Care Plans",
+          "Raising",
+          "Breeding",
+          "Rewards"
+        ]
+      },
+      "children": [
+        "Audit",
+        "Eggs and Events",
+        "Raising",
+        "Whistle and Mounts",
+        "Breeding and Retirement",
+        "Racing"
+      ],
+      "entities": [
+        {
+          "kind": "Stable NPC / dialogue",
+          "fields": [
+            "NPC",
+            "zone",
+            "script",
+            "CSID",
+            "event option",
+            "packet proof"
+          ],
+          "server_globs": [
+            "scripts/zones/*/npcs/Hantileon.lua",
+            "scripts/zones/*/npcs/Zopago.lua",
+            "scripts/zones/*/npcs/Pulonono.lua"
+          ],
+          "edit": "/zoneplot"
+        },
+        {
+          "kind": "Raising and care logic",
+          "fields": [
+            "life stage",
+            "daily growth",
+            "care plan",
+            "feeding",
+            "affection",
+            "conditions"
+          ],
+          "server_globs": [
+            "scripts/globals/hobbies/chocobo_raising/*.lua",
+            "scripts/globals/chocobo*.lua"
+          ],
+          "edit": null
+        },
+        {
+          "kind": "Persistence",
+          "fields": [
+            "character id",
+            "active chocobo",
+            "gene",
+            "care history",
+            "registered mount",
+            "cleanup"
+          ],
+          "server_globs": [
+            "sql/char_chocobos.sql",
+            "sql/char_pet.sql",
+            "src/map/lua/lua_base_entity.*"
+          ],
+          "edit": null
+        },
+        {
+          "kind": "Chocobo items and mount",
+          "fields": [
+            "egg exdata",
+            "chococard",
+            "whistle",
+            "mount appearance",
+            "speed",
+            "time"
+          ],
+          "server_globs": [
+            "scripts/items/chocobo_whistle.lua",
+            "src/map/items/exdata/chocobo_egg.*",
+            "src/map/utils/mountutils.*"
+          ],
+          "edit": "/itemedit"
+        },
+        {
+          "kind": "Breeding and racing",
+          "fields": [
+            "genes",
+            "ticket",
+            "retirement",
+            "race events and packets"
+          ],
+          "server_globs": [
+            "scripts/globals/hobbies/chocobo_raising/breeding.lua",
+            "src/map/packets/s2c/*chocobo*"
+          ],
+          "edit": null
+        }
+      ],
+      "compare": "Compare authoritative live DSP checkout against pinned LSB reference for Lua logic, SQL schema, event traffic, item exdata and mount representation. Unknown must not be treated as missing.",
+      "findings": [
+        {
+          "name": "Eggs and inventory exdata",
+          "upstream": "upstream-implemented",
+          "dsp": "unknown",
+          "priority": "P0",
+          "finding": "LSB structured egg genes / item exdata; compare DSP item serializer and trade payloads",
+          "source": "src/map/items/exdata/chocobo_egg.h"
+        },
+        {
+          "name": "Stable NPCs and event dialogue",
+          "upstream": "upstream-implemented",
+          "dsp": "unknown",
+          "priority": "P0",
+          "finding": "Verify NPC row, CSID, start/update/finish and client option support for Hantileon, Zopago, Pulonono",
+          "source": "scripts/globals/hobbies/chocobo_raising/event_vm.lua"
+        },
+        {
+          "name": "NPC packet sequences",
+          "upstream": "upstream-implemented",
+          "dsp": "unknown",
+          "priority": "P0",
+          "finding": "Record DSP packet IDs, option masks, string parameters and retail trace evidence; no claim that all are covered",
+          "source": "scripts/globals/hobbies/chocobo_raising/event_playout.lua"
+        },
+        {
+          "name": "Persistent character state",
+          "upstream": "upstream-implemented",
+          "dsp": "unknown",
+          "priority": "P0",
+          "finding": "LSB char_chocobos plus char_pet.chocobo_user_data; audit DSP schema, Lua bindings and cleanup",
+          "source": "sql/char_chocobos.sql"
+        },
+        {
+          "name": "Daily care and progression",
+          "upstream": "upstream-implemented",
+          "dsp": "unknown",
+          "priority": "P1",
+          "finding": "LSB elapsed-day model, stage advancement, feeding, care plans and condition effects",
+          "source": "scripts/globals/hobbies/chocobo_raising/model.lua"
+        },
+        {
+          "name": "Personal whistle and mount",
+          "upstream": "upstream-implemented",
+          "dsp": "unknown",
+          "priority": "P1",
+          "finding": "Check Chocobo License, personal appearance packed flags, registration, inventory and riding support",
+          "source": "src/map/utils/mountutils.h"
+        },
+        {
+          "name": "Breeding, cards and retirement",
+          "upstream": "upstream-implemented",
+          "dsp": "unknown",
+          "priority": "P2",
+          "finding": "Validate DNA exdata, chococards, Finbarr, retirement rewards and inventory-full handling",
+          "source": "scripts/globals/hobbies/chocobo_raising/breeding.lua"
+        },
+        {
+          "name": "Walks, stories and digging",
+          "upstream": "upstream-partial",
+          "dsp": "unknown",
+          "priority": "P2",
+          "finding": "Upstream itself lists uncertain behavior and cross-map weather IPC TODOs",
+          "source": "scripts/globals/hobbies/chocobo_raising/README.md"
+        },
+        {
+          "name": "Chocobo racing",
+          "upstream": "upstream-implemented",
+          "dsp": "unknown",
+          "priority": "P3",
+          "finding": "Separate scope; dedicated race packets and related NPC flow need DSP review",
+          "source": "src/map/packets/s2c/0x069_chocobo_racing.h"
+        },
+        {
+          "name": "Headless regression coverage",
+          "upstream": "upstream-tested",
+          "dsp": "unknown",
+          "priority": "P0",
+          "finding": "Adapt LSB client-driven suite; inspect xiheadless-dsp event, trade and mount support",
+          "source": "scripts/tests/systems/chocobo_raising/client.lua"
+        }
+      ],
+      "pipeline": [
+        {
+          "stage": "Source & packet compatibility audit",
+          "status": "in-progress",
+          "summary": "Collect authoritative live DSP checkout commit and evidence-linked matrix.",
+          "handoffs": [
+            {
+              "href": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
+              "label": "Audit issue"
+            }
+          ]
+        },
+        {
+          "stage": "Stable NPC and egg proof of concept",
+          "status": "blocked",
+          "summary": "Dependent on event protocol and inventory exdata inventory.",
+          "handoffs": [
+            {
+              "href": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
+              "label": "Audit issue"
+            }
+          ]
+        },
+        {
+          "stage": "Persistence and day simulation",
+          "status": "blocked",
+          "summary": "Needs safe migrations, C++ Lua bindings, rollover tests.",
+          "handoffs": [
+            {
+              "href": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
+              "label": "Audit issue"
+            }
+          ]
+        },
+        {
+          "stage": "Whistle and personal mount",
+          "status": "blocked",
+          "summary": "Needs registered mount flags, appearance and movement packet support.",
+          "handoffs": [
+            {
+              "href": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
+              "label": "Audit issue"
+            }
+          ]
+        },
+        {
+          "stage": "Breeding, retirement and peripheral systems",
+          "status": "not-started",
+          "summary": "Requires verified storage and event VM.",
+          "handoffs": [
+            {
+              "href": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
+              "label": "Audit issue"
+            }
+          ]
+        },
+        {
+          "stage": "Racing (separate workstream)",
+          "status": "deferred",
+          "summary": "Not a launch prerequisite for raising.",
+          "handoffs": [
+            {
+              "href": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
+              "label": "Audit issue"
+            }
+          ]
+        }
+      ],
+      "reference_url": "https://github.com/LandSandBoat/server/blob/base/scripts/globals/hobbies/chocobo_raising/README.md",
+      "tracker_url": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
+      "source_note": "Baseline: LSB inspected 2026-10-19; DSP target not yet verified. sarthax/xiheadless-dsp is the headless client, not the DSP server."
+    }
+  }
+}
