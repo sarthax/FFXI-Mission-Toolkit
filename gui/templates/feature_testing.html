@@ -89,7 +89,7 @@ async function refresh() {
   const title=document.createElement('h4');title.textContent='Recent operator jobs';listing.appendChild(title);
   for(const job of result.jobs) {
    const item=document.createElement('p');
-   item.textContent=job.case_id+' · '+job.status+' · '+job.created_at+(job.verdict?' · '+job.verdict:'');
+   item.textContent=job.case_id+' · '+job.status+' · '+job.created_at+(job.verdict?' · '+job.verdict:'')+(job.phase?' · phase: '+job.phase:'');
    if(job.status==='QUEUED'||job.status==='RUNNING'){
     const button=document.createElement('button');button.type='button';button.textContent='Reconcile interrupted job';
     button.addEventListener('click',async()=>{

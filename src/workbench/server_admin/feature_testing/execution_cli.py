@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import sys
+from typing import Callable
 from urllib.parse import urlparse
 
 from .execution_preflight import preflight
@@ -19,7 +20,8 @@ from .router import _REPO
 
 
 def execute_mog09(*, account: str, charid: int, out_dir: Path,
-                  supervisor: str, approved: bool, timeout: int = 900) -> dict:
+                  supervisor: str, approved: bool, timeout: int = 900,
+                  progress: Callable[[str], None] | None = None) -> dict:
     if not approved:
         raise ValueError("explicit operator approval required")
     if not re.fullmatch(r"[A-Za-z0-9_\-]{1,32}", account):
@@ -60,6 +62,8 @@ def execute_mog09(*, account: str, charid: int, out_dir: Path,
         raise RuntimeError("observation runner timed out; check client cleanup and artifacts") from exc
     if result.returncode:
         raise RuntimeError(f"observation runner exited with status {result.returncode}; inspect local artifacts (no subprocess output returned)")
+    if progress:
+        progress("runner_finished")
     report = out / "report.json"
     if not report.is_file() or report.is_symlink():
         raise RuntimeError("runner did not produce a report")
@@ -73,8 +77,12 @@ def execute_mog09(*, account: str, charid: int, out_dir: Path,
     provenance = rows[0]["evidence"].get("observations", {}).get("provenance", {})
     if provenance.get("charid") != charid or provenance.get("account") != account:
         raise ValueError("runner identity does not match operator approval")
+    if progress:
+        progress("report_validated")
     count = import_report(os.environ["MISSION_TOOLKIT_TEST_RESULTS_DB"],
                           _REPO / "data/testing/feature_test_readiness.json", report)
+    if progress:
+        progress("evidence_imported")
     return {"run_id": rows[0]["run_id"], "verdict": rows[0]["verdict"],
             "imported_records": count, "artifacts": str(out)}
 
