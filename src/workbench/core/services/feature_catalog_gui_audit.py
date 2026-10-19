@@ -57,6 +57,12 @@ SAMPLES = (
         ("data-focus-section", "wiki-source-navigation"),
         ("wiki-focused-source-section", "wiki-source-navigation"),
     )),
+    ("Key Items", "gui/templates/keyitems.html", (
+        ("<h4>Topaz mapping", "ki-mapping-comparison"),
+        ("<h4>Recorded evidence", "ki-evidence-handoff"),
+        ("<h4>Lua dependencies", "ki-operation-dependencies"),
+        ("ki-lua-operation", "ki-operation-dependencies"),
+    )),
     ("Captures", "gui/templates/captures.html", (
         ("/captures/search", "capture-search"),
         ("/captures/bulk-ingest", "capture-bulk-ingest"),
