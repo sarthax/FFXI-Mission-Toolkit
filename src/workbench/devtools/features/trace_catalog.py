@@ -340,7 +340,19 @@ def _wiki_composite_relationships(
                 }[table]
                 target_node("reference_wiki_pages",{"source_id":row[0],"page_id":row[1]},rel)
 
+    if table=="reference_wiki_documents":
+        source_id=identity.get("source_id")
+        page_id=identity.get("page_id")
+        if source_id is not None and page_id is not None:
+            target_node("reference_wiki_pages",{"source_id":source_id,"page_id":page_id},
+                        "DOCUMENT_FOR_REFERENCE_PAGE")
+
     if table=="reference_wiki_pages":
+        source_id=identity.get("source_id")
+        page_id=identity.get("page_id")
+        if source_id is not None and page_id is not None:
+            target_node("reference_wiki_documents",{"source_id":source_id,"page_id":page_id},
+                        "HAS_SOURCE_DOCUMENT")
         source_id=identity.get("source_id")
         page_id=identity.get("page_id")
         if source_id is not None and page_id is not None and "reference_wiki_topic_pages" in specs:
