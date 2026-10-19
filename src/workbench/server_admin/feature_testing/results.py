@@ -1,0 +1,65 @@
+"""SQLite-backed, append-only feature testing evidence records.
+
+Storage is local and is never populated with fabricated demonstration results.
+Only trusted local importers should call append_result; no public write route.
+"""
+from __future__ import annotations
+
+import json
+import sqlite3
+from pathlib import Path
+
+VERDICTS = frozenset({"PASS", "FAIL", "BLOCKED", "SKIPPED"})
+STAGES = frozenset({"key_item", "modifier", "behavior", "mechanics", "gameplay"})
+
+
+def init_db(path: str | Path) -> None:
+    with sqlite3.connect(str(path)) as db:
+        db.execute("""CREATE TABLE IF NOT EXISTS feature_test_results (
+            run_id TEXT NOT NULL, case_id TEXT NOT NULL, feature_id TEXT NOT NULL,
+            stage TEXT NOT NULL, verdict TEXT NOT NULL, observed_at TEXT NOT NULL,
+            dsp_commit TEXT NOT NULL, headless_commit TEXT NOT NULL,
+            toolkit_commit TEXT NOT NULL, evidence_json TEXT NOT NULL,
+            PRIMARY KEY (run_id, case_id, stage))""")
+
+
+def append_result(path: str | Path, result: dict) -> None:
+    fields = ("run_id", "case_id", "feature_id", "stage", "verdict",
+              "observed_at", "dsp_commit", "headless_commit", "toolkit_commit", "evidence")
+    if any(k not in result for k in fields):
+        raise ValueError("result missing required evidence fields")
+    if result["verdict"] not in VERDICTS or result["stage"] not in STAGES:
+        raise ValueError("invalid stage or verdict")
+    if any(not isinstance(result[k], str) or not result[k].strip() or len(result[k]) > 256
+           for k in fields if k != "evidence"):
+        raise ValueError("invalid record identifier or revision")
+    evidence = result["evidence"]
+    if not isinstance(evidence, dict) or not evidence:
+        raise ValueError("structured evidence required; empty run cannot pass")
+    payload = json.dumps(evidence, separators=(",", ":"), sort_keys=True)
+    if len(payload) > 262144:
+        raise ValueError("evidence too large")
+    init_db(path)
+    with sqlite3.connect(str(path)) as db:
+        db.execute("""INSERT INTO feature_test_results VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                   tuple(result[k] for k in fields if k != "evidence") + (payload,))
+
+
+def recent_results(path: str | Path, *, feature_id: str | None = None,
+                   case_id: str | None = None, limit: int = 100) -> list[dict]:
+    if not isinstance(limit, int) or not 1 <= limit <= 500:
+        raise ValueError("limit must be 1..500")
+    if not Path(path).is_file():
+        return []
+    query = "SELECT * FROM feature_test_results WHERE 1=1"
+    args: list = []
+    for name, value in (("feature_id", feature_id), ("case_id", case_id)):
+        if value is not None:
+            query += f" AND {name} = ?"
+            args.append(value)
+    query += " ORDER BY observed_at DESC, run_id DESC LIMIT ?"
+    args.append(limit)
+    with sqlite3.connect(str(path)) as db:
+        db.row_factory = sqlite3.Row
+        rows = db.execute(query, args).fetchall()
+    return [{**dict(r), "evidence": json.loads(r["evidence_json"])} for r in rows]
