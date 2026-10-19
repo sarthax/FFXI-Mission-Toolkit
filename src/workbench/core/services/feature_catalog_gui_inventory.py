@@ -10,7 +10,7 @@ from workbench.core.services.feature_catalog import ROOT
 from workbench.core.services.feature_catalog_gui_audit import SAMPLES
 
 TAG = re.compile(r"<(button|form|a|summary)\\b([^>]*)>(.*?)</\\1>|<form\\b([^>]*)>", re.I | re.S)
-ATTR = re.compile(r'([\\w-]+)\\s*=\\s*["\\']([^"\\']*)["\\']')
+ATTR = re.compile(r"""([\w-]+)\s*=\s*["']([^"']*)["']""")
 STRIP = re.compile(r"<[^>]*>|\\{%.*?%\\}|\\{\\{.*?\\}\\}", re.S)
 SPACES = re.compile(r"\\s+")
 MAX_CONTROLS_PER_PAGE = 200
