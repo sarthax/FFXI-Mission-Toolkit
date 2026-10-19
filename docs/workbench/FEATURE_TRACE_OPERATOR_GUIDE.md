@@ -18,3 +18,7 @@ Feature Trace is primarily an **implementation and dependency navigation tool**,
 A benchmark passing relationship counts does not prove ranking or relevance. Score real-package identity accuracy, top-result usefulness, source locator accuracy and click-through burden separately. Never call an unrun scenario “validated.”
 
 References: `docs/workbench/BEHAVIOR_FEATURE_TRACE_GUIDE.md`, `docs/workbench/FEATURE_TRACE_CLOSEOUT_2026-10-04.md`.
+
+## Wiki source-document drill-down
+
+For a Wiki-backed subject, select the source-qualified `REFERENCE_PAGE` catalog entry and follow `HAS_SOURCE_DOCUMENT` to inspect its recorded source format, retrieval timestamp, revision and parser version. Use `DOCUMENT_FOR_REFERENCE_PAGE` to return to the page and its existing block/claim paths. Both links are provider-native navigational relationships matched on the exact `(source_id,page_id)` pair, not canonical graph assertions. Missing raw document rows yield no document link; do not infer that an absent revision or timestamp has been validated. Same-numbered pages on BGWiki and WikiWikiJP must never cross-link through the numeric page ID alone.
