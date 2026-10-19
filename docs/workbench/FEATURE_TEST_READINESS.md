@@ -191,3 +191,17 @@ Verified source mapping highlights:
 Catalog: `data/testing/moghancement_effect_validation.json` is an initial source-derived mapping and behavioral test plan. Numeric modifier tests are deterministic; crafting failure rates, resist procs and skill gains need statistically controlled repetitions or an injected deterministic test RNG on an isolated server. Never assert that 10% means every 10th individual event is boosted.
 
 Required negative scenarios: replace KI A with KI B and verify KI A and modifier A gone; remove all installed furnishings and confirm zero related mods; repeat recalc and relog to detect stacking; verify wrong-nation restrictions; confirm equivalent KI effects restored on login; confirm client receives appropriate update after furniture menu exit. Each result needs SQL furnishing set, player nation, active KI, modifier pre/post, gameplay events and server code revision. Distinguish `KEY_ITEM_PASS`, `MODIFIER_PASS`, and `BEHAVIOR_PASS` independently.
+
+## Implemented modifier-delta oracle and behavior pilots
+
+`moghancement_effects.py` now verifies numeric modifiers relative to a measured character baseline, not absolute zero. `evaluate_modifiers` compares baseline → active KI → removed KI to prove correct delta and cleanup. `evaluate_replacement` compares baseline → effect A → effect B to catch leaked A modifiers, even when different effects alter different numeric stats. Missing diagnostic values are `BLOCKED`, never implicitly zero. Synthetic tests cover success, wrong delta, stacking/leak, and missing observations.
+
+### Initial behavioral pilots (not yet run)
+
+- **MOG-BEH-01 Gardening:** baseline `GARDENING_WILT_BONUS`, install Gardening enhancement and assert +36; stage matched disposable pots near the native wilt boundary under the same config, advance normal gardening ticks and compare state with an untreated control; remove furnishing and verify bonus returns to baseline. Avoid `!garden wilt` because it bypasses the timing check.
+- **MOG-BEH-02 Money:** compare controlled same-source gil awards with baseline versus Money (+10 GILFINDER) and Money II (+15). Do not assert precise gil increase until confirming award rounding and the actual source path; use stable repeatable rewards.
+- **MOG-BEH-03 Skill:** verify +1 crafting modifier for the relevant Moghancement, +5 for Mega Moglification, and effective skill in synthesis calculations. Avoid pretending a single success/failure demonstrates a statistical effect.
+- **MOG-BEH-04 Elemental synthesis:** verify the KI is consulted directly in `synthutils::doSynthFail` under correct element and Mog House state, using controlled synthesis trials and a no-enhancement baseline. A missing numeric modifier is expected here.
+- **MOG-BEH-05 Replacement and idempotence:** repeatedly switch Money ↔ Gardening layouts; prove both KIs and modifier states transition exclusively and no bonus accumulates after multiple menu exits or relogs.
+
+Each live execution requires (a) approved disposable environment and fixture, (b) server version and configuration fingerprint, (c) original modifier baseline, (d) KI plus modifier evidence, (e) observed game behavior, (f) cleanup results. Do not treat a diagnostic value as proof of actual gameplay outcome.
