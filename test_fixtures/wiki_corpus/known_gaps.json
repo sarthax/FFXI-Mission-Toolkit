@@ -1,11 +1,6 @@
 {
   "_comment": "Pinned deviations between the frozen label policy (expectations) and current wiki_document.py behaviour. Observed values are asserted so a fix must delete the entry. Do not add aliases to hide these.",
-  "field_type": {
-    "syn-nested-template-value::Zone": {
-      "observed": null,
-      "reason": "value_raw is '{{Zone|Test Zone}}' but strip_code() leaves display text empty, so no typed hint is produced; the label/raw value are still preserved"
-    }
-  },
+  "field_type": {},
   "table": {},
   "header_text": {},
   "parse_count": {}
