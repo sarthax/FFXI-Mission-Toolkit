@@ -40,6 +40,7 @@ def test_isolated_openapi_contains_only_read_only_supervisor_tools():
         "/api/supervisor/failed-assertions",
         "/api/supervisor/log-errors",
         "/api/supervisor/service-health",
+        "/api/supervisor/test-character-inventory",
     }
     assert all(set(methods) == {"get"} for methods in spec["paths"].values())
     assert "/wiki" not in str(spec["paths"])
@@ -82,3 +83,27 @@ def test_service_health_only_allows_known_services(monkeypatch):
     from workbench.server_admin.feature_testing.service_health import service_health
     with pytest.raises(ValueError, match="unknown"):
         service_health("arbitrary")
+
+
+def test_inventory_disallows_unapproved_characters(monkeypatch):
+    from workbench.server_admin.feature_testing.database_diagnostics import inventory_snapshot
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS", "101,102")
+    with pytest.raises(ValueError, match="not approved"):
+        inventory_snapshot(103)
+
+
+def test_inventory_requires_db_config_and_never_guesses_credentials(monkeypatch):
+    from workbench.server_admin.feature_testing.database_diagnostics import inventory_snapshot
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS", "101")
+    for variable in ("MISSION_TOOLKIT_SUPERVISOR_DB_USER", "MISSION_TOOLKIT_SUPERVISOR_DB_PASSWORD",
+                     "MISSION_TOOLKIT_SUPERVISOR_DB_NAME"):
+        monkeypatch.delenv(variable, raising=False)
+    assert inventory_snapshot(101) == {"configured": False, "charid": 101, "items": []}
+
+
+def test_inventory_requires_gateway_auth_before_character_lookup(monkeypatch):
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS", "101")
+    monkeypatch.delenv("MISSION_TOOLKIT_SUPERVISOR_TOKEN", raising=False)
+    with pytest.raises(HTTPException) as exc:
+        supervisor.test_character_inventory(charid=101, authorization=None)
+    assert exc.value.status_code == 403
