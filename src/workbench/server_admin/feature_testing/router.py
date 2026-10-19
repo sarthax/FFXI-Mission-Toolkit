@@ -49,6 +49,12 @@ def scenario_detail(feature_id: str, case_id: str) -> dict:
             "observed_results": recent_results(_results_db(), feature_id=feature_id, case_id=case_id) if _results_db() else []}
 
 
+@router.get("/preflight/{feature_id}/{case_id}")
+def scenario_preflight(feature_id: str, case_id: str):
+    from .execution_preflight import preflight
+    return preflight(feature_id, case_id)
+
+
 @router.get("/catalog/{feature_id}/{case_id}")
 def scenario_api(feature_id: str, case_id: str):
     return scenario_detail(feature_id, case_id)
@@ -57,7 +63,8 @@ def scenario_api(feature_id: str, case_id: str):
 @router.get("/scenario/{feature_id}/{case_id}", response_class=HTMLResponse)
 def scenario_page(request: Request, feature_id: str, case_id: str):
     return templates.TemplateResponse(request=request, name="feature_testing_scenario.html",
-                                      context={"title": "Test Scenario", "detail": scenario_detail(feature_id, case_id)})
+                                      context={"title": "Test Scenario", "detail": scenario_detail(feature_id, case_id),
+                                               "preflight": scenario_preflight(feature_id, case_id)})
 
 
 def _history():
