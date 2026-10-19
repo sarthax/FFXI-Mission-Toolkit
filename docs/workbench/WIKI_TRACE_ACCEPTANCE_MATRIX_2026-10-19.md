@@ -21,3 +21,26 @@ Run offline: `PYTHONPATH=src:. python test_fixtures/test_wiki_trace_real_corpus_
 5. Record identity correctness, locator correctness, whether the intended section was focused, unrelated content encountered and click count. Compare to the operator's intended behavior question. Mark each case PASS/FAIL/BLOCKED with screenshots/logs and commit/database provenance.
 
 **Limitation:** Real corpus fixtures are short extracts. Passing offline checks does not prove a deployed Wiki UI resolves every original page, that source locators are exact document positions, or that Feature Trace ranking is useful. Preserve this gap in the roadmap until user-local acceptance succeeds.
+
+## Machine-readable operator scorecard
+
+Capture measurements in a private JSON file outside Git, then run
+`python scripts/wiki_trace_acceptance_score.py path/to/observations.json`.
+The evaluator requires four independent checks (`identity_correct`, `locator_correct`,
+`navigation_correct`, `review_only`), observed click count, environment and source
+revision for each PASS/FAIL. BLOCKED and NOT_RUN remain explicitly unvalidated.
+The four required case keys are `medusa`, `absolute-virtue`, `wrong-source`
+and `duplicate-heading`. All four must PASS before `all_passed` is true.
+
+Example unexecuted checklist (not an acceptance result):
+```json
+[
+  {"case":"medusa","status":"NOT_RUN"},
+  {"case":"absolute-virtue","status":"NOT_RUN"},
+  {"case":"wrong-source","status":"NOT_RUN"},
+  {"case":"duplicate-heading","status":"NOT_RUN"}
+]
+```
+
+Keep local connection paths, private captures and server secrets out of the report.
+A passing synthetic CI test of the scorecard itself **does not** change these operator statuses.
