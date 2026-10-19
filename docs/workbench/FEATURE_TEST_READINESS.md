@@ -114,3 +114,15 @@ The plan lives at `data/testing/gardening_batch_plan.json`. Pairwise coverage is
 For each iteration: snapshot baseline → provision/reset → choose input combination → plant/feed through client (or mark fixture-only subtest) → accelerate via `!garden grow` → verify mature → harvest via client → inventory diff, outcomes, and pot-state check → cleanup. Add separate negative campaigns for invalid crystal timing, multiple feeds, premature harvest, full inventory, and duplicate harvest. No global time adjustments.
 
 Goal: hundreds of independent iterations in roughly an hour **subject to actual client interaction speed and session stability**, not a claimed measured throughput. Avoid relog between every case; sample persistence with dedicated relog cases. Existing GM debug `results` is random, so validate rewards against authoritative allowed outcome tables rather than treating its prediction as deterministic.
+
+## Offline gardening campaign generator implemented
+
+`workbench.server_admin.gm_commands.garden_campaign.generate_campaign(plan)` generates bounded, deterministic cases from `data/testing/gardening_batch_plan.json`. Pairwise coverage spans pot type, seed family, first crystal and tree-only second crystal; non-tree cases have second crystal 0. Optional field filters isolate exact failures; full-cartesian mode requires explicit opt-in and respects max run count. Repetitions get distinct case IDs and remain `NOT_RUN`.
+
+This is *test planning*, not a client/server runner. It intentionally does not send GM commands, invent a harvest result, change the clock, or certify a client operation. Underlying DSP random yields and config effects require runtime-aware expected-outcome validation.
+
+### Headless protocol gap reviewed
+
+`sarthax/xiheadless-dsp` main `Interfaces/IInventory.cs` exposes container-item use, move, count and related bag actions. This is **not proof of gardening furniture menu support**. Before promoting the campaign to live execution, inspect client 0x? furniture interaction packets, Mog House eligibility and the corresponding DSP handlers for normal pot placement, sowing, feeding and harvesting; then add a narrow capability implementation and explicit observations/rewards. Maintain separate `fixture_mechanics` and `gameplay_acceptance` verdicts.
+
+Do not assume hundreds of trials/hour until a timed disposable-server pilot measures setup, tick advancement, harvest, inventory cleanup and login overhead. Keep one login per batch where possible and run persistence separately.
