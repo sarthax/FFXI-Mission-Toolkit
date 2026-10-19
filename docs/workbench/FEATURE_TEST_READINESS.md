@@ -170,3 +170,24 @@ Negative IDs:
 **Evidence:** selected server SQL SHA, server/headless/Toolkit commits, installed inventory manifest (container+slot), item element/aura and KI metadata, before/after `!moghancement info`, exact held furniture key item set, modifier snapshot and relog outcome. Absence of headless installed-state observation is a BLOCKER, never an inferred PASS. The FFXIclopedia wiki is a useful gameplay reference, but the running DSP source and its SQL are authoritative for expected outcomes.
 
 Moghancement can affect gardening via furnishing auras and `GARDENING_WILT_BONUS`; record the Mog House layout and active KI in each gardening campaign to avoid hidden cross-feature variation.
+
+## Moghancement effect verification (three-stage acceptance)
+
+**Critical user requirement:** receiving the Moghancement/Moglification KI is not sufficient. Validate (A) correct exclusive KI, (B) numeric modifiers correctly applied/removed and persisted, and (C) **real gameplay outcomes** demonstrating the intended modifier actually affects behavior.
+
+Source reviewed: `sarthax/darkstar-to-valhalla` main `src/map/entities/charentity.cpp:moghancementMods`; `SetMoghancement` removes modifiers associated with the prior KI before adding those of the new KI. `!moghancement info` prints active KI, held furniture KIs and nonzero relevant modifiers. Use `!getmod` where available to measure individual values against a before-state baseline; a modifier could already have unrelated contributions.
+
+Verified source mapping highlights:
+- Gardening: `GARDENING_WILT_BONUS +36` (consumed by `src/map/utils/gardenutils.cpp` in wilt timing).
+- Fishing/crafting Moghancement/Moglification: craft-skill modifiers +1. Mega Moglification: +5.
+- Money/Money II: `GILFINDER +10/+15` (consumed in `charutils.cpp` gil awards).
+- Experience: `EXPERIENCE_RETAINED +5`; Desynthesis: `DESYNTH_SUCCESS +2`.
+- Conquest +6, Region +10; matching-nation conquest +6 and nonmatching-nation no benefit.
+- Campaign +5; Skill Gains `COMBAT_SKILLUP_RATE +25` and `MAGIC_SKILLUP_RATE +25`.
+- Bounty `EXP_BONUS +10`, `CAPACITY_BONUS +10`; Moglification Experience Boost +15; Capacity Boost +15.
+- Status resistance Moglifications: resistance mods +20; **server source calls the amounts placeholders**, so treat as implementation behavior, not proven retail fidelity.
+- **Elemental synthesis failure modifiers are checked via KI directly in `synthutils::doSynthFail`, not `moghancementMods`**. The absence of a numeric Mod for these is expected; behavioral validation must inspect/execute the synthesis path.
+
+Catalog: `data/testing/moghancement_effect_validation.json` is an initial source-derived mapping and behavioral test plan. Numeric modifier tests are deterministic; crafting failure rates, resist procs and skill gains need statistically controlled repetitions or an injected deterministic test RNG on an isolated server. Never assert that 10% means every 10th individual event is boosted.
+
+Required negative scenarios: replace KI A with KI B and verify KI A and modifier A gone; remove all installed furnishings and confirm zero related mods; repeat recalc and relog to detect stacking; verify wrong-nation restrictions; confirm equivalent KI effects restored on login; confirm client receives appropriate update after furniture menu exit. Each result needs SQL furnishing set, player nation, active KI, modifier pre/post, gameplay events and server code revision. Distinguish `KEY_ITEM_PASS`, `MODIFIER_PASS`, and `BEHAVIOR_PASS` independently.
