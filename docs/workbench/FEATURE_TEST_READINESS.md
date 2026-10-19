@@ -94,3 +94,11 @@ Reviewed `sarthax/darkstar-to-valhalla:feature/mog-house-gardening:src/map/utils
 A scoped `gardenstate` or extension to `garden` should address **one pot by both container ID and slot ID**, with a read-only structured state output. For mutating operations, require explicit container ID, slot, and a unique flowerpot lookup; reject nonexistent pots, out-of-range values, and non-Mog-House calls with **no side effects**. Keep permission at or above the existing level 1 and provide structured confirmation including affected container+slot, action, before/after stage and update result. Review existing `gardenDebug` signature and client update packets before introducing the new command. Avoid global-clock manipulation.
 
 **Until this is addressed, tests requiring an isolated pot must preflight both safe containers and abort if the slot has more than one matching pot.** This is now a concrete, source-proven GM command improvement candidate rather than speculative test infrastructure.
+
+## Initial executable preflight (planning only)
+
+Added `workbench.server_admin.gm_commands.garden_preflight` and synthetic tests. It parses the actual `[c<container> s<slot>] pot <item>: plant=... stage=...` lines emitted by DSP `gardenutils::Describe`, and refuses to produce an allowed preview if more than one pot shares the requested numeric slot, if none match, if the expected item/container differs, or if `grow` uses zero/negative count. This avoids a concrete hazard in the existing debug command.
+
+The preflight **does not transmit or execute** commands. `allow=true` indicates only that a supplied diagnostic snapshot is consistent with one observed pot. The caller must independently ensure `!garden info` is complete, fresh, from the correct character and server, and that permissions/side effects are approved. Chat response truncation, races between preflight and execution, or other concurrent bot actions are not solved; therefore the safe long-term fix is the container-scoped GARD-GM-01 utility, with server-side atomic validation.
+
+If the runtime is unable to capture a complete pot list from both safes, the operator must treat the preflight as unavailable and **not automate a mutation**.
