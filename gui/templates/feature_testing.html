@@ -4,7 +4,7 @@
 {% block page_heading %}Feature Testing & Validation{% endblock %}
 {% block page_status %}<span class="wb-readonly-badge">Planning only</span>{% endblock %}
 {% block page_help %}Read-only plans, scenarios, command candidates and blockers. No live execution or results ingestion.{% endblock %}
-{% block content %}
+{% block page_body %}
 <section class="wb-panel"><h2>Test catalog</h2><p><a href="/feature-testing/catalog">Catalog API</a> · All cases are planning records, not proven successes.</p>
 {% for feature in features %}
 <details style="padding:1rem;border:1px solid var(--wb-border, #777);margin:1rem 0" {% if loop.first %}open{% endif %}>
