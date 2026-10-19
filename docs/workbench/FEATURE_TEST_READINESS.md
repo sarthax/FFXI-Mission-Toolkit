@@ -31,3 +31,21 @@ Avoid storing account passwords, full connection credentials or unredacted secre
 
 ## Immediate next engineering slice
 Implement a **read-only GM command resolution report** joining the JSON candidates to the local catalog parser's `catalog_commands(server_root)`; add tests using synthetic Lua fixtures. Then expose test planning in the Toolkit UI; execution remains disabled until scope, privileges, side effects and cleanup are reviewed.
+
+## Headless refresh from GitHub (2026-10-18)
+
+Reviewed `sarthax/xiheadless-dsp` main at commit `c51e0f80`. The live suite now selects named, unclaimed mobs with `nearby_entities.isMob` rather than relying on a short hard-coded name set. It still excludes certain flying mobs from the dedicated fight test because melee reach can be misleading. This **improves selection robustness**, but does not validate arbitrary mob mechanics or close the known unreachable/stuck edge cases.
+
+The checked-in headless project already provides an MCP brain, `snapshot`, `nearby_entities`, `inventory`, `talk_to_npc`, `trade_npc`, `event_select`, `wait_for_event`, `move_to`, `engage`, `capabilities`, persistent goal/checkpoint tools, and the live scenario client `tools/mcp_client.py`. Reuse these; don't create a second protocol client in Toolkit. The documented `McpBot.gm()` test helper can submit GM chat commands, **but that is not evidence of a safe, authorized command**.
+
+For the Toolkit bridge, record exact headless commit and `capabilities` output in readiness results, and explicitly verify the `isMob` field before depending on it. Client-side `ok` confirms an accepted request at most, never an authoritative server effect.
+
+## Outstanding GM source verification
+
+Toolkit's `src/workbench/server_admin/gm_commands/catalog.py` currently categorizes `garden`, `moghancement`, `nyzuldebug`, `mobskilldiag` and other names, but the category table is **only a display map**. The connected `sarthax/darkstar-to-valhalla` GitHub repository did not expose the expected `scripts/commands/garden.lua` on its default `master` branch. Therefore the exact gardening command arguments, scope, and crystal-feeding semantics remain **unverified here**; they must be extracted from the authoritative *local* DSP checkout and its actual runtime branch.
+
+Do not introduce replacement gardening or Voidwalker GM commands simply because the public-facing GitHub path was missing. First run `resolve_test_utilities(server_root, plan_path)` against the configured local checkout and inspect the concrete files; add utility requests only when a verified gap remains.
+
+## Negative-test fixture discipline
+
+All negative tests must snapshot the pre-state and assert both the refused player action and **no forbidden post-state mutation**. Cover repeated calls, wrong stage/tier, missing prerequisites, full inventory, relog, zoning during events, and attempts by non-GM accounts where appropriate. GM setup commands should be run in disposable test contexts, not by the normal gameplay actor; store explicit fixtures and cleanup/rollback requirements. Treat aborted or interrupted tests as `BLOCKED` or `FAIL` with a clear reason, never as a positive verdict.
