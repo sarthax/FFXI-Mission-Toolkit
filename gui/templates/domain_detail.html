@@ -221,6 +221,45 @@ th.vwc1,td.vwc1,th.vwc2,td.vwc2{width:120px;min-width:120px;white-space:nowrap}.
 </details>
 {% endif %}
 
+{% if d.archetype == "system.chocobo_raising" %}
+<section id="chocobo-raising-tracker">
+<style>
+.cr-summary{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}.cr-card{border:1px solid var(--border,#555);border-radius:8px;padding:10px 14px;min-width:150px}
+.cr-card strong{display:block;font-size:1.4em}.cr-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.cr-toolbar input{min-width:220px;flex:1}
+.cr-pill{display:inline-block;border:1px solid var(--border,#555);padding:2px 8px;border-radius:10px}
+.cr-row{cursor:pointer}.cr-row:hover{background:var(--surface-hover,#8882)}.cr-details{border:1px solid var(--border,#555);border-radius:8px;padding:10px;margin:8px 0}
+</style>
+<h2>Chocobo Raising implementation tracker <span class="chip">research baseline</span></h2>
+<p>{{ d.source_note }}</p>
+<p><a class="chip" href="{{ d.tracker_url }}" target="_blank" rel="noopener">GitHub audit / progress issue</a> <a class="chip" href="{{ d.reference_url }}" target="_blank" rel="noopener">Upstream implementation reference</a></p>
+<div class="cr-summary" id="cr-summary"></div>
+<div class="cr-toolbar"><input type="search" id="cr-search" placeholder="Filter subsystem, finding or source" aria-label="Filter chocobo subsystems">
+<select id="cr-filter" aria-label="DSP verification state"><option value="">All DSP statuses</option><option value="unknown">Unknown</option><option value="present">Present</option><option value="partial">Partial</option><option value="missing">Missing</option><option value="validated">Validated</option></select>
+<select id="cr-priority" aria-label="Priority"><option value="">All priorities</option><option>P0</option><option>P1</option><option>P2</option><option>P3</option></select></div>
+<p class="muted">Upstream status is source-based. DSP status remains unknown until evidence from the authoritative checkout is recorded. Rows are research records, not runtime validation.</p>
+<div class="table-wrap"><table><thead><tr><th>Subsystem</th><th>Upstream</th><th>DSP status</th><th>Priority</th><th>Finding / next evidence</th></tr></thead><tbody id="cr-rows">
+{% for item in d.findings %}<tr class="cr-row" data-search="{{ (item.name ~ ' ' ~ item.finding ~ ' ' ~ item.source)|lower }}" data-status="{{ item.dsp }}" data-priority="{{ item.priority }}"><td><b>{{ item.name }}</b></td><td><span class="cr-pill">{{ item.upstream }}</span></td><td><span class="cr-pill">{{ item.dsp }}</span></td><td>{{ item.priority }}</td><td>{{ item.finding }}<div><small>LSB source: <code>{{ item.source }}</code></small></div>{% if item.dsp_note %}<div><b>DSP evidence note:</b> {{ item.dsp_note }}</div>{% endif %}{% if item.dsp_target_commit %}<div><small>Target commit: <code>{{ item.dsp_target_commit }}</code></small></div>{% endif %}{% for evidence in item.dsp_evidence|default([]) %}<div><small>Evidence: <code>{{ evidence }}</code></small></div>{% endfor %}</td></tr>{% endfor %}
+</tbody></table></div>
+<details class="cr-details"><summary><b>Implementation milestones and acceptance gates</b></summary>
+<div class="table-wrap"><table><thead><tr><th>Milestone</th><th>Status</th><th>Gate</th></tr></thead><tbody>
+{% for stage in d.pipeline %}<tr><td>{{ stage.stage }}</td><td><span class="cr-pill">{{ stage.status }}</span></td><td>{{ stage.summary }}</td></tr>{% endfor %}
+</tbody></table></div>
+<p>Require packet trace, replayed/invalid event option guards, character save/reload, full-inventory handling, accelerated growth tests and mount rendering checks before reporting validated.</p></details>
+<p class="muted">Tracking is version-controlled in <code>src/workbench/domains/definitions.d/chocobo_raising.json</code>. Change statuses only alongside a concrete source or test artifact; use the linked issue for progress and evidence review.</p>
+<script>
+(function(){
+ const section=document.getElementById('chocobo-raising-tracker');
+ const rows=[...section.querySelectorAll('#cr-rows tr')];
+ const summary=section.querySelector('#cr-summary');
+ const count=(status)=>rows.filter(r=>r.dataset.status===status).length;
+ summary.innerHTML='<div class="cr-card"><strong>'+rows.length+'</strong>Subsystems</div><div class="cr-card"><strong>'+count('unknown')+'</strong>DSP unknown</div><div class="cr-card"><strong>'+count('validated')+'</strong>Validated</div><div class="cr-card"><strong>'+rows.filter(r=>r.dataset.priority==='P0').length+'</strong>P0 audit targets</div>';
+ const update=()=>{const query=section.querySelector('#cr-search').value.trim().toLowerCase(),status=section.querySelector('#cr-filter').value,priority=section.querySelector('#cr-priority').value;rows.forEach(r=>{r.hidden=!!((query&&!r.dataset.search.includes(query))||(status&&r.dataset.status!==status)||(priority&&r.dataset.priority!==priority));});};
+ ['cr-search','cr-filter','cr-priority'].forEach(id=>section.querySelector('#'+id).addEventListener('input',update));
+})();
+</script>
+</section>
+{% endif %}
+
 {% if d.pipeline %}
 <h2>Implementation pipeline</h2>
 <div class="table-wrap"><table>
