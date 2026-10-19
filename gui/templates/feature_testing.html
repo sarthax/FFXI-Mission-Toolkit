@@ -50,6 +50,12 @@
 <p>Start from a verified runner contract, not an arbitrary script. The first executable case is <strong>MOG-09</strong>: read-only Mog House observations and client/persisted inventory checks.</p>
 <p><strong>Availability:</strong> {{ 'Prerequisites detected' if builder_preflight.ready_for_operator_review else 'Missing prerequisites' }}. Planning does not launch a client, approve a character, or execute the scenario.</p>
 <ul>{% for check in builder_preflight.checks %}<li><strong>{{ 'Ready' if check.ok else 'Blocked' }}:</strong> {{ check.detail }}</li>{% endfor %}</ul>
+<h3>Versioned test definitions</h3>
+<p>Source-controlled specification contracts describe preconditions, observations, assertions, cleanup and runner compatibility. These are descriptive plans—not executable scripts.</p>
+<ul>
+<li><a href="/feature-testing/builder/specifications/moghancement/MOG-09">MOG-09 specification · verified runner binding</a></li>
+<li><a href="/feature-testing/builder/specifications/inventory_observation/INV-OBS-01">INV-OBS-01 specification · design only, no runner</a></li>
+</ul>
 <h3>Test definition</h3>
 <form class="ft-filters" id="ft-test-builder" action="/feature-testing/builder/plan" method="get">
 <label>Scenario<select disabled><option>MOG-09 — Stored furnishing, no active effect</option></select></label>
