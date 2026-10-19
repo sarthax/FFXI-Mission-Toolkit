@@ -28,6 +28,25 @@ def build_dossier(result: dict) -> dict:
             "IN_REFERENCE_PAGE","FROM_REFERENCE_PAGE","TOPIC_MEMBER_PAGE"
         }
     ]
+    # Focused, literal source evidence for an inspected Wiki block/claim/relation.
+    # Do not infer claims, validate accuracy, or synthesize missing locators.
+    meta=primary.get("metadata") or {}
+    details=meta.get("details") or {}
+    wiki_evidence=None
+    if meta.get("provider")=="reference-wiki" and primary.get("node_type") in {
+        "REFERENCE_BLOCK","REFERENCE_CLAIM","REFERENCE_RELATION"
+    }:
+        wiki_evidence={
+            "node_type":primary.get("node_type"),
+            "section":details.get("section_path") or details.get("section_title"),
+            "locator":details.get("source_locator"),
+            "excerpt":details.get("excerpt") or (primary.get("display_name") if primary.get("node_type")=="REFERENCE_BLOCK" else None),
+            "source_id":(meta.get("identity") or {}).get("source_id") or details.get("source_id"),
+            "page_id":(meta.get("identity") or {}).get("page_id") or details.get("page_id"),
+            "revision_id":details.get("revision_id"),
+            "authority":details.get("authority"),
+            "review_only":True,
+        }
     if provider_links:
         facets.append({"name":"Source-native links","count":len(provider_links)})
     return {
@@ -41,4 +60,5 @@ def build_dossier(result: dict) -> dict:
         "provider_relationship_count":len(provider_links),
         "provider_relationships":provider_links,
         "wiki_source_navigation":wiki_links,
+        "wiki_section_evidence":wiki_evidence,
     }
