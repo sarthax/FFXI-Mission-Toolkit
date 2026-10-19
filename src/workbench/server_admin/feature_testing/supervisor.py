@@ -90,12 +90,10 @@ def test_character_inventory(charid: int, authorization: str | None = Header(def
 @router.get("/openapi.json", include_in_schema=False)
 def supervisor_openapi():
     from fastapi.openapi.utils import get_openapi
-    from fastapi import FastAPI
-    isolated = FastAPI(title="Mission Toolkit Read-only Test Supervisor", version="0.1.0")
-    isolated.include_router(router)
-    # Do not include this metadata route itself.
-    spec = get_openapi(title=isolated.title, version=isolated.version, routes=[
-        route for route in isolated.routes
+    # Read the router's own routes: FastAPI >= 0.141 wraps included routers in
+    # lazy objects, so filtering an app's route list yielded an empty spec.
+    spec = get_openapi(title="Mission Toolkit Read-only Test Supervisor", version="0.1.0", routes=[
+        route for route in router.routes
         if getattr(route, "path", "").startswith("/api/supervisor/")
         and getattr(route, "include_in_schema", False)
     ])
