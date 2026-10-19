@@ -25,6 +25,31 @@
 <strong>{{ result.verdict }}</strong>
 </div>
 <div class="ft-metadata"><span><strong>Stage:</strong> {{ result.stage }}</span><span><strong>Observed UTC:</strong> {{ result.observed_at }}</span></div>
+{% set reevaluation = reevaluations.get(loop.index0) %}
+{% if reevaluation %}
+<section class="ft-result" aria-label="Specification reevaluation">
+<h4>Reevaluate with Specification</h4>
+{% if reevaluation.error %}
+<p>Reevaluation blocked: {{ reevaluation.error }}</p>
+{% else %}
+<p><strong>Recorded verdict:</strong> {{ reevaluation.recorded_verdict }} · <strong>Recalculated verdict:</strong> {{ reevaluation.evaluation.verdict }}
+{% if reevaluation.recorded_verdict != reevaluation.evaluation.verdict %} <strong>Verdict mismatch — investigate</strong>{% endif %}</p>
+<p>Evaluation uses imported observations, not a fresh authenticated execution.</p>
+<div class="ft-assertions"><table><thead><tr><th>Assertion</th><th>Reevaluated</th><th>Explanation</th></tr></thead><tbody>
+{% for assertion in reevaluation.evaluation.assertions %}
+<tr><td>{{ assertion.id }}</td><td>{{ assertion.status }}</td><td>{{ assertion.reason }}</td></tr>
+{% endfor %}
+</tbody></table></div>
+{% if reevaluation.normalization.missing_fields %}
+<p><strong>Missing observations:</strong> {{ reevaluation.normalization.missing_fields|join(', ') }}</p>
+{% endif %}
+{% if reevaluation.normalization.warnings %}
+<ul>{% for warning in reevaluation.normalization.warnings %}<li>{{ warning }}</li>{% endfor %}</ul>
+{% endif %}
+<details><summary>Normalized field provenance</summary><pre class="ft-evidence-json">{{ reevaluation.normalization.field_sources|tojson(indent=2) }}</pre></details>
+{% endif %}
+</section>
+{% endif %}
 <h4>Assertions</h4>
 {% set assertions = result.evidence.get('assertions', []) %}
 {% if assertions is sequence and assertions is not string and assertions %}
