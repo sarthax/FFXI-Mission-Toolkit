@@ -699,5 +699,53 @@
       "logout"
     ],
     "regression_note": "Current live suite uses nearby_entities.isMob and excludes certain flying mobs in fight case; live tests not rerun in this review."
+  },
+  "gm_source_review": {
+    "garden": {
+      "branch": "feature/mog-house-gardening",
+      "path": "scripts/commands/garden.lua",
+      "permission": 1,
+      "parameters": "sii",
+      "scope_warning": "omitted slot targets all pots",
+      "operations": [
+        "info",
+        "plant",
+        "stage",
+        "grow",
+        "mature",
+        "wilt",
+        "ready",
+        "crystal1",
+        "crystal2",
+        "strength",
+        "dry",
+        "examined",
+        "results",
+        "clean"
+      ],
+      "review_status": "source_reviewed_not_runtime_verified",
+      "gameplay_warning": "debug crystal1 and plant bypass player-facing gameplay; never treat as gameplay acceptance"
+    },
+    "nyzuldebug": {
+      "branch": "feature/assault-gm-debug-tools",
+      "path": "scripts/commands/nyzuldebug.lua",
+      "permission": 1,
+      "parameters": "ss",
+      "precondition": "live instance id 51",
+      "review_status": "source_reviewed_not_runtime_verified",
+      "cleanup": [
+        "layout clear",
+        "leader clear"
+      ],
+      "warning": "complete forces objective; floor N primes next rune interaction"
+    },
+    "mobskilldiag": {
+      "branch": "feature/voidwalker",
+      "path": "scripts/commands/mobskilldiag.lua",
+      "permission": 1,
+      "parameters": "",
+      "review_status": "source_reviewed_not_runtime_verified",
+      "precondition": "cursor target is mob"
+    }
   }
 }
