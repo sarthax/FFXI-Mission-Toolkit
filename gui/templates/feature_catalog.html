@@ -9,6 +9,15 @@
 <details>
 <summary><strong>Coverage audit</strong> &mdash; {{ coverage.feature_count }} catalog entries; {{ coverage.help_not_cataloged|length }} Help-linked routes not cataloged; {{ coverage.invalid_catalog_routes|length }} unresolved catalog routes; {{ coverage.uncataloged_active_pages|length }} uncataloged active pages</summary>
 <p class="muted">{{ coverage.note }}</p>
+{% if coverage.status_totals is defined %}
+<p><strong>Catalog depth:</strong> {{ coverage.module_count }} modules, {{ coverage.subfeature_count }} documented subfunctions.
+<strong>Implementation:</strong> {% for state, count in coverage.status_totals.implementation.items() %}{{ count }} {{ state }}{% if not loop.last %}; {% endif %}{% endfor %}.
+<strong>Validation:</strong> {% for state, count in coverage.status_totals.validation.items() %}{{ count }} {{ state }}{% if not loop.last %}; {% endif %}{% endfor %}.</p>
+<p class="muted">Implementation means a capability is represented in the code/catalog; validation is tracked separately and is not inferred from CI route checks.</p>
+{% if coverage.missing_operator_detail %}
+<p><strong>Missing operator instructions:</strong> {% for feature_id, keys in coverage.missing_operator_detail.items() %}<a href="/feature-catalog?feature={{ feature_id|urlencode }}">{{ feature_id }}</a> ({{ keys|join(', ') }}){% if not loop.last %}; {% endif %}{% endfor %}</p>
+{% else %}<p>Every curated entry has purpose, usage and caveat fields.</p>{% endif %}
+{% endif %}
 {% if coverage.help_not_cataloged %}<p>Help-linked routes not cataloged: <code>{{ coverage.help_not_cataloged|join(', ') }}</code></p>{% endif %}
 {% if coverage.invalid_catalog_routes %}<p>Catalog routes absent from maintained GET inventory: <code>{{ coverage.invalid_catalog_routes|join(', ') }}</code></p>{% endif %}
 {% if coverage.uncataloged_active_pages %}<p>Active inventory pages not cataloged: <code>{{ coverage.uncataloged_active_pages|join(', ') }}</code></p>{% endif %}

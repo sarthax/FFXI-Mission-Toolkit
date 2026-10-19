@@ -46,6 +46,13 @@ def main():
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
     audit = audit_catalog()
+    assert audit["feature_count"] == len(items)
+    assert audit["module_count"] == len({f["module"] for f in items})
+    assert audit["subfeature_count"] == sum(bool(f.get("parent_id")) for f in items)
+    assert sum(audit["status_totals"]["implementation"].values()) == len(items)
+    assert sum(audit["status_totals"]["validation"].values()) == len(items)
+    assert audit["missing_operator_detail"] == {}, audit["missing_operator_detail"]
+    assert audit["status_totals"]["validation"]["tested"] == sum(f["validation"] == "tested" for f in items)
     gui_audit = audit_gui_controls()
     inventory = inventory_gui()
     assert inventory["control_count"] > 0
@@ -67,6 +74,8 @@ def main():
                   features=items, modules=sorted({f["module"] for f in items}),
                   q="", module="", coverage=audit)
     assert "Coverage audit" in page
+    assert "Catalog depth:" in page
+    assert "unverified" in page
     assert "uncataloged active pages" in page
     assert "Feature Trace" in page
     assert "Feature Catalog" in page
