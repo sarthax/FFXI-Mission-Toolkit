@@ -5916,6 +5916,14 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         evidence = wiki_evidence.page_evidence(con, source, title)
         comparison = wiki_claim_compare.alignment_report(con, title)
         page_view = _wiki_page_view(con, source, title)
+        if page_id and (not page_view or str(page_view.get("page_id")) != str(page_id)):
+            # Title lookup is not sufficient when duplicate titles exist inside a
+            # provider. Never display a different page as the traced evidence.
+            page_view = None
+            report = None
+            evidence = None
+            comparison = None
+            error = "The exact Wiki source page could not be opened."
 
     def _have(sid):
         return con.execute("SELECT 1 FROM reference_wiki_pages WHERE source_id=? LIMIT 1", (sid,)).fetchone() is not None
