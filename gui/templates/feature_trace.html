@@ -481,6 +481,16 @@
 {% if dossier.identity.details %}
 <tr><th>Source details</th><td>{% for key,value in dossier.identity.details.items() %}{% if value is not none and value != "" %}<div><span class="chip">{{ key }}</span> {{ value }}</div>{% endif %}{% endfor %}</td></tr>
 {% endif %}
+{% if dossier.wiki_source_navigation %}
+<tr><th>Wiki evidence path</th><td>
+  <div class="muted">Exact source-native page/document navigation for provenance inspection. Wiki evidence is not independently verified DSP behavior.</div>
+  {% for link in dossier.wiki_source_navigation %}
+  <div><span class="chip">{{ link.relationship }}</span>
+    <a class="zonelink" href="/features/trace?q={{ link.target_node|urlencode }}">{{ link.target_name }}</a>
+    <span class="muted">({{ link.target_type }})</span></div>
+  {% endfor %}
+</td></tr>
+{% endif %}
 {% if dossier.provider_relationships %}
 <tr><th>Source-native links</th><td>
   <div class="muted">Exact relationships stored by the source schema; these are navigation links, not canonical semantic graph edges.</div>
