@@ -9,7 +9,7 @@ The Feature Catalog is the structured inventory of **what the Toolkit exposes**.
 Implementation statuses: `implemented`, `partial`, `research`, `planned`.
 Validation statuses: `unverified`, `operator_reported`, `tested`.
 
-A route or source reference does not establish runtime acceptance. The first seventy-five records are a Help-derived seed, **not** an exhaustive module or subfeature census. The catalog is separate from Feature Trace's graph schema.
+A route or source reference does not establish runtime acceptance. The inventory began as a Help-derived seed, **not** an exhaustive module or subfeature census. The catalog is separate from Feature Trace's graph schema.
 
 ## GUI
 
@@ -41,7 +41,7 @@ The first expansion adds 18 Help-documented subfeatures across Auction House, Li
 
 ## Source-route expansion (October 18)
 
-Twenty additional operator-facing pages were added from the maintained GET route inventory, bringing the curated inventory to 56 records. These include missions, Assault, Nyzul, zones, client inspection, retail versions, dialog, capture search/query, migration converters, package review and validation runs. Static catalog route references were checked against the maintained route inventories; the Workbench regression workflow now runs `test_fixtures/test_feature_catalog.py` and triggers when `feature_catalog/**` changes. This still does not verify that the pages render in a configured Windows/DSP installation, or that every UI operation works.
+Twenty additional operator-facing pages were added from the maintained GET route inventory, bringing the curated inventory to 56 records at that historical checkpoint. These include missions, Assault, Nyzul, zones, client inspection, retail versions, dialog, capture search/query, migration converters, package review and validation runs. Static catalog route references were checked against the maintained route inventories; the Workbench regression workflow now runs `test_fixtures/test_feature_catalog.py` and triggers when `feature_catalog/**` changes. This still does not verify that the pages render in a configured Windows/DSP installation, or that every UI operation works.
 
 ## Active-page coverage gate
 
@@ -49,4 +49,10 @@ The coverage audit also compares catalog destinations with the maintained GET-ro
 
 ## CI validation checkpoint
 
-The initial Workbench Regression run failed in the newly added catalog smoke test because the test incorrectly assumed the query `binary` would match only one record. As the inventory grew, multiple valid records matched. The test now asserts inclusion of Binary Inspector rather than exclusive equality. Keep the PR draft until a subsequent green core-regression run and browser rendering verification.
+The initial Workbench Regression run failed in the newly added catalog smoke test because the test incorrectly assumed the query `binary` would match only one record. As the inventory grew, multiple valid records matched. The test now asserts inclusion of Binary Inspector rather than exclusive equality. That historical failure was fixed; later Workbench Regression runs passed. This does not constitute local Windows/browser acceptance.
+
+## Quality and validation audit — October 19, 2026
+
+The current curated inventory has **85 records**, comprising **38 subfeatures**; **67** are labelled implemented and **18** partial. Validation remains independent: **84 unverified**, **1 operator-reported**, **0 tested**. These numbers describe the catalog labels, not a claim about runtime capability. They supersede the historical record-count snapshots above.
+
+The Coverage audit now displays module and subfeature totals, per-status counts, and missing purpose/usage/caveat fields. CI asserts status accounting against the actual JSON, rather than pinning record counts likely to change. UI-control inventory remains sampled and is not a claim of complete subfunction coverage. The next content-oriented slice is to attach real source/test references and review module-by-module whether key GUI actions have corresponding guided subfunction entries; runtime validation requires a separate observed acceptance record.
