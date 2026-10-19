@@ -35,3 +35,7 @@ A table row made only of header cells now types the cells beneath each policy-la
 (review-only, `orientation: "column"`, with `column_index` and `header_row_index`). Previously the first two cells of a
 header row were paired (`エリア` -> `NPC`), which used a header as a value. Row-style pairs (first cell label, second
 cell value) are unchanged and now carry `orientation: "row"`. Rowspan/colspan tables are indexed positionally.
+
+## Follow-up: merged-cell table alignment (2026-10-18)
+
+A dedicated parser regression now aligns review-only table field candidates by physical column, accounting for HTML `rowspan` and `colspan` attributes while leaving rendered rows and original source locators intact. The real WikiWikiJP Voidwatch NPC sample formerly mis-associated `(D-11)` with `エリア`; the expected area in that row is now `バストゥーク商業区`. A synthetic colspan example pins the same behavior. Invalid/missing span values are conservatively treated as 1; empty cells previously omitted from parsed structural blocks and compound header structures require separate coverage. Neither the new alignment nor its tests imply that review candidates are verified gameplay facts.
