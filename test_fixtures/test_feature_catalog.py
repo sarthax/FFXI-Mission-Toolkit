@@ -46,7 +46,8 @@ def main():
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
     audit = audit_catalog()
     gui_audit = audit_gui_controls()
-    assert gui_audit["sample_count"] >= 10
+    assert gui_audit["sample_count"] >= 29
+    assert len(gui_audit["pages"]) >= 9
     assert gui_audit["missing"] == [], gui_audit["missing"]
     assert audit["help_not_cataloged"] == [], audit
     assert audit["invalid_catalog_routes"] == [], audit
