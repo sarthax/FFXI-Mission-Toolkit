@@ -41,7 +41,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "GARD-02",
@@ -52,7 +62,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "GARD-03",
@@ -63,7 +83,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "GARD-04",
@@ -74,7 +104,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "GARD-05",
@@ -85,7 +125,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "GARD-06",
@@ -96,7 +146,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "GARD-07",
@@ -107,7 +167,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "GARD-08",
@@ -118,7 +188,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         }
       ],
       "gaps": [
@@ -161,7 +241,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "VWK-02",
@@ -172,7 +262,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "VWK-03",
@@ -183,7 +283,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "VWK-04",
@@ -194,7 +304,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "VWK-05",
@@ -205,7 +325,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "VWK-06",
@@ -216,7 +346,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "VWK-07",
@@ -227,7 +367,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         }
       ],
       "gaps": [
@@ -268,7 +418,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "ASLT-02",
@@ -279,7 +439,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "ASLT-03",
@@ -290,7 +460,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "ASLT-04",
@@ -301,7 +481,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "NYZ-01",
@@ -312,7 +502,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "NYZ-02",
@@ -323,7 +523,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         }
       ],
       "gaps": [
@@ -368,7 +578,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "MQ-02",
@@ -379,7 +599,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "MQ-03",
@@ -390,7 +620,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "MQ-04",
@@ -401,7 +641,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         },
         {
           "id": "MQ-05",
@@ -412,7 +662,17 @@
             "headless_event_or_snapshot",
             "authoritative_server_effect"
           ],
-          "blocking_gaps": []
+          "blocking_gaps": [],
+          "negative_invariant": "capture authoritative state before and after attempted invalid transition; prohibited mutation must not occur",
+          "run_mode": "blocked_pending_verified_server_command_and_assertions",
+          "required_artifacts": [
+            "server_commit",
+            "headless_commit",
+            "gm_command_transcript_redacted",
+            "client_event_timeline",
+            "before_after_server_state",
+            "cleanup_result"
+          ]
         }
       ],
       "gaps": [
@@ -421,5 +681,23 @@
       "new_command_review": [],
       "command_verification": "pending_local_lua_audit"
     }
-  ]
+  ],
+  "headless_baseline": {
+    "repo": "sarthax/xiheadless-dsp",
+    "commit": "c51e0f80f721aa4d3a7731a1f4a72e85889137e5",
+    "mcp_observed_from_source": [
+      "snapshot",
+      "nearby_entities",
+      "inventory",
+      "talk_to_npc",
+      "trade_npc",
+      "event_select",
+      "wait_for_event",
+      "move_to",
+      "engage",
+      "capabilities",
+      "logout"
+    ],
+    "regression_note": "Current live suite uses nearby_entities.isMob and excludes certain flying mobs in fight case; live tests not rerun in this review."
+  }
 }
