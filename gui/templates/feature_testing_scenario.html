@@ -18,6 +18,14 @@
 <h3>Test blockers</h3><ul>{% for item in detail.scenario.blocking_gaps|default([]) %}<li>{{ item }}</li>{% endfor %}{% for item in detail.feature_gaps %}<li>{{ item }}</li>{% endfor %}</ul>
 {% if detail.scenario.negative_invariant %}<h3>Negative test invariant</h3><p>{{ detail.scenario.negative_invariant }}</p>{% endif %}
 <h3>Candidate GM utilities</h3><p>{{ detail.gm_candidates|join(', ') }}</p>
-<h3>Recorded results</h3><p>No execution evidence has been recorded for this scenario.</p>
+<h3>Recorded results</h3>
+{% if detail.observed_results %}
+<table><thead><tr><th>Observed</th><th>Stage</th><th>Verdict</th><th>Run</th><th>DSP</th><th>Headless</th><th>Toolkit</th></tr></thead><tbody>
+{% for row in detail.observed_results %}
+<tr><td>{{ row.observed_at }}</td><td>{{ row.stage }}</td><td>{{ row.verdict }}</td><td>{{ row.run_id }}</td>
+<td><code>{{ row.dsp_commit[:12] }}</code></td><td><code>{{ row.headless_commit[:12] }}</code></td><td><code>{{ row.toolkit_commit[:12] }}</code></td></tr>
+{% endfor %}</tbody></table>
+<p>Structured evidence is accessible in the read-only results API. No run can be started here.</p>
+{% else %}<p>No imported execution evidence has been recorded for this scenario.</p>{% endif %}
 </section>
 {% endblock %}
