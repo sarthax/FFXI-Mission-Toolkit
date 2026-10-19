@@ -1,7 +1,7 @@
 # End-to-end evidence pipeline validation — 2026-10-19
 
 Goal: one reproducible XiHeadless -> Toolkit evidence run, no LLM-driven gameplay.
-Result: **achieved** for the deterministic path; Open WebUI/Ollama step **not done** (login required, see section 7).
+Result: **achieved** for the deterministic path; tool server registered, but model-driven tool use not demonstrated (section 7).
 
 ## 1. Revisions and workspace
 
@@ -71,7 +71,20 @@ Both reports imported (`Imported 1 evidence records`). Visible in `/feature-test
 
 ## 7. Open WebUI / Ollama
 
-Open WebUI 0.11.0 is on `127.0.0.1:3000` (not 8080; 8080 is another service returning "API Key Required"). Ollama on 11434 is reachable; 13 models installed. The Open WebUI UI sits behind a login and no credentials were available, so **registration and the model prompt test were not attempted** (no credential entry by the agent). To do manually: Admin Settings -> Integrations -> add OpenAPI tool server, URL `http://127.0.0.1:8420` (spec path `/api/supervisor/openapi.json`), auth type Bearer with the supervisor token. For this to work the 8420 Toolkit must be restarted from `supervisor.env.ps1`'s environment on the fixed code.
+Open WebUI 0.11.0 on `127.0.0.1:3000` (8080 is another service). The user signed in; the agent registered the tool server in Admin -> Integrations -> External Tool Servers: type OpenAPI, base URL `http://127.0.0.1:8421`, spec path `api/supervisor/openapi.json` (the filtered spec only), auth Bearer, token entered in the API Key field only. "Verify" and Save both reported **Connection successful**. No CORS or auth changes were made (Open WebUI calls the tool server from its backend).
+
+Prompt test ("Check the Mission Toolkit supervisor health, retrieve the latest test run, and summarize any failures..."), model `qwen2.5-coder:7b` (models over 9B cannot run on this machine; `qwen3.8` 27B was abandoned and the Open WebUI task model switched to the 7B so it stopped being reloaded):
+
+| Question | Observation |
+|---|---|
+| Tool discovery | Partial: the model named `supervisor_health`, `supervisor_test_runs`, `supervisor_failed_assertions` correctly. |
+| Valid parameters | **No**: it emitted `"authorization": "string"` placeholders. |
+| Real data retrieved | **No**: tool calls were printed as literal JSON text, not executed; no supervisor data appeared in the reply. |
+| Missing evidence vs failure | Not demonstrated; it produced generic follow-up questions about "failed assertions" without having retrieved any. |
+| Invented facts | It implied failures existed; the real answer is 2 runs, 0 failures. Treat this reply as ungrounded. |
+
+Finding: the OpenAPI spec exposes `authorization` as a model-visible parameter on every operation (the token is meant to come from the connection, not the model). This invites the model to ask for / invent a token. Follow-up: declare Bearer as a security scheme so the header is not a tool parameter.
+Conclusion: registration works securely; end-to-end grounded tool use is **not demonstrated** with a <=9B model. Try `qwen3.5:latest`/another native tool-calling model with the Open WebUI "Native" function-calling mode after the spec fix.
 
 ## 8. Gaps and blockers
 
