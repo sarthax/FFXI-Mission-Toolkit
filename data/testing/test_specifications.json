@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "specifications": [
+    {
+      "schema_version": 1,
+      "feature_id": "moghancement",
+      "case_id": "MOG-09",
+      "name": "Stored furnishings have no active effect",
+      "runner": "xiheadless_observation_v1",
+      "execution_status": "verified_runner",
+      "preconditions": [
+        "Authorized disposable character; stored furnishings with nonzero aura",
+        "Mog House installed layout is assumed empty; not independently observed"
+      ],
+      "observations": [
+        "session",
+        "stored_furnishings",
+        "gm_active_ki",
+        "gm_aura",
+        "client_bag",
+        "db_bag",
+        "client_safe",
+        "db_safe",
+        "client_key_items"
+      ],
+      "assertions": [
+        {
+          "id": "expected_character",
+          "operation": "equals",
+          "observed": "session",
+          "expected": "approved_charid"
+        },
+        {
+          "id": "safe_contains_furnishing",
+          "operation": "nonempty",
+          "observed": "stored_furnishings",
+          "expected": null
+        },
+        {
+          "id": "empty_layout_ki",
+          "operation": "equals",
+          "observed": "gm_active_ki",
+          "expected": 0
+        },
+        {
+          "id": "zero_aura",
+          "operation": "all_zero",
+          "observed": "gm_aura",
+          "expected": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "id": "bag_matches_persisted",
+          "operation": "same_rows",
+          "observed": "client_bag",
+          "expected": "db_bag"
+        },
+        {
+          "id": "safe_matches_persisted",
+          "operation": "same_rows",
+          "observed": "client_safe",
+          "expected": "db_safe"
+        }
+      ],
+      "cleanup": [
+        "Read-only GM diagnostic; client session must disconnect",
+        "Do not claim installed-layout agreement or held-key-item equivalence"
+      ]
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "inventory_observation",
+      "case_id": "INV-OBS-01",
+      "name": "Inventory client versus persisted DSP",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "preconditions": [
+        "Authorized disposable character",
+        "Capture save boundary and full inventory container mapping"
+      ],
+      "observations": [
+        "client_bag",
+        "db_bag",
+        "client_safe",
+        "db_safe"
+      ],
+      "assertions": [
+        {
+          "id": "bag_equal",
+          "operation": "same_rows",
+          "observed": "client_bag",
+          "expected": "db_bag"
+        },
+        {
+          "id": "safe_equal",
+          "operation": "same_rows",
+          "observed": "client_safe",
+          "expected": "db_safe"
+        }
+      ],
+      "cleanup": [
+        "Observation only; no item movement",
+        "Reject truncated server snapshots as incomplete"
+      ]
+    }
+  ]
+}
