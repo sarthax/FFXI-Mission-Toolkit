@@ -25,9 +25,17 @@ def audit_documentation(root: Path = ROOT) -> dict:
             raise ValueError("unsafe review template path")
         template = root / relative
         present = template.is_file() and case["marker"] in template.read_text(encoding="utf-8")
-        if case["status"] != "template_verified_handler_unverified":
+        if case["status"] != "handler_source_verified_runtime_unverified":
             raise ValueError("unsupported review status")
+        handler_relative = Path(case["handler_file"])
+        if handler_relative.is_absolute() or ".." in handler_relative.parts:
+            raise ValueError("unsafe handler source path")
+        handler = root / handler_relative
+        handler_source = handler.read_text(encoding="utf-8") if handler.is_file() else ""
+        handler_present = (case["handler_marker"] in handler_source
+                           and ("def " + case["handler_name"] + "(") in handler_source)
         reviewed.append({**case, "template_marker_present": present,
+                         "handler_marker_present": handler_present,
                          "catalog_route": known[case["feature_id"]]["route"]})
 
     findings: list[dict] = []
@@ -65,7 +73,7 @@ def audit_documentation(root: Path = ROOT) -> dict:
         "stage": "source_review",
         "review_cases": reviewed,
         "review_case_count": len(reviewed),
-        "review_case_missing_markers": [case["id"] for case in reviewed if not case["template_marker_present"]],
+        "review_case_missing_markers": [case["id"] for case in reviewed if not case["template_marker_present"] or not case["handler_marker_present"]],
         "features_checked": len(features),
         "findings": findings,
         "finding_count": len(findings),
