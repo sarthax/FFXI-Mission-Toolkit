@@ -78,6 +78,12 @@ def main():
     assert sum(audit["status_totals"]["validation"].values()) == len(items)
     assert audit["missing_operator_detail"] == {}, audit["missing_operator_detail"]
     assert audit["status_totals"]["validation"]["tested"] == sum(f["validation"] == "tested" for f in items)
+    help_cov = audit["help_coverage"]
+    assert sum(help_cov["counts"].values()) == len(items)
+    assert set(help_cov["contextual"]) == {f["id"] for f in items if f["help"].startswith("/help#")}
+    assert set(help_cov["generic"]) == {f["id"] for f in items if f["help"] == "/help"}
+    assert set(help_cov["module_specific"]) == {f["id"] for f in items if not f["help"].startswith("/help")}
+    assert all(f_id in help_cov["generic"] for ids in help_cov["generic_by_module"].values() for f_id in ids)
     gui_audit = audit_gui_controls()
     inventory = inventory_gui()
     assert inventory["control_count"] > 0
@@ -100,6 +106,8 @@ def main():
                   q="", module="", coverage=audit)
     assert "Coverage audit" in page
     assert "Catalog depth:" in page
+    assert "Help depth:" in page
+    assert "Prioritize generic Help links by module" in page
     assert "unverified" in page
     assert "uncataloged active pages" in page
     assert "Feature Trace" in page

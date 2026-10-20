@@ -50,8 +50,22 @@ def audit_catalog(root: Path = ROOT) -> dict:
         "validation":{state:sum(f["validation"]==state for f in features)
                       for state in ("unverified","operator_reported","tested")},
     }
+    help_coverage = {
+        "contextual": sorted(f["id"] for f in features if f["help"].startswith("/help#")),
+        "generic": sorted(f["id"] for f in features if f["help"] == "/help"),
+        "module_specific": sorted(f["id"] for f in features
+                                  if not f["help"].startswith("/help")),
+    }
+    help_coverage["counts"] = {k: len(help_coverage[k])
+                               for k in ("contextual", "generic", "module_specific")}
+    help_coverage["generic_by_module"] = {
+        module: sorted(f["id"] for f in features if f["module"] == module and f["help"] == "/help")
+        for module in sorted({f["module"] for f in features})
+        if any(f["module"] == module and f["help"] == "/help" for f in features)
+    }
     return {
         "feature_count": len(features),
+        "help_coverage": help_coverage,
         "module_count": len({f["module"] for f in features}),
         "subfeature_count": sum(bool(f.get("parent_id")) for f in features),
         "status_totals": status_totals,

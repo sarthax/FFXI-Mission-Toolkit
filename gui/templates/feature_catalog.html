@@ -9,6 +9,24 @@
 <details>
 <summary><strong>Coverage audit</strong> &mdash; {{ coverage.feature_count }} catalog entries; {{ coverage.help_not_cataloged|length }} Help-linked routes not cataloged; {{ coverage.invalid_catalog_routes|length }} unresolved catalog routes; {{ coverage.uncataloged_active_pages|length }} uncataloged active pages</summary>
 <p class="muted">{{ coverage.note }}</p>
+{% if coverage.help_coverage is defined %}
+<p><strong>Help depth:</strong> {{ coverage.help_coverage.counts.contextual }} contextual section links;
+{{ coverage.help_coverage.counts.module_specific }} module-specific links;
+{{ coverage.help_coverage.counts.generic }} generic Help links.</p>
+{% if coverage.help_coverage.generic_by_module %}
+<details><summary>Prioritize generic Help links by module</summary>
+{% for module, ids in coverage.help_coverage.generic_by_module.items() %}
+<p><strong>{{ module }}</strong> — {{ ids|length }} entries:</p>
+<ul>
+{% for feature_id in ids %}
+<li><a href="/feature-catalog?feature={{ feature_id|urlencode }}">{{ feature_id }}</a></li>
+{% endfor %}
+</ul>
+{% endfor %}
+</details>
+{% endif %}
+<p class="muted">A contextual link reaches a specific section; it does not establish that instructions are complete or runtime-tested.</p>
+{% endif %}
 {% if coverage.status_totals is defined %}
 <p><strong>Catalog depth:</strong> {{ coverage.module_count }} modules, {{ coverage.subfeature_count }} documented subfunctions.
 <strong>Implementation:</strong> {% for state, count in coverage.status_totals.implementation.items() %}{{ count }} {{ state }}{% if not loop.last %}; {% endif %}{% endfor %}.
