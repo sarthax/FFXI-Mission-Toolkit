@@ -82,3 +82,7 @@ The Catalog coverage panel now counts and classifies each record by its Help des
 ## Client Research contextual Help (October 19)
 
 Sixteen Binary Inspector, Retail Version and client-asset research entries now point to three grounded Help sections. The documentation covers PE evidence, version/probe comparisons, manifest and selective download planning, and DAT/model/dialog research, while explicitly distinguishing artifact/source inspection from the running client's behavior. Existing Help anchor and route inventory regression contracts apply. This does not change runtime validation labels.
+
+## Capture workflow Help links (October 19)
+
+Twelve Captures records now deep-link to operator Help for browsing/search/path projection, ingestion and metadata, review/zone evidence, and video OCR. These preserve provenance and distinguish session observations from verified server behavior. Link/anchor checks remain part of the Feature Catalog regression suite, and none of the entries is promoted to runtime-tested.
