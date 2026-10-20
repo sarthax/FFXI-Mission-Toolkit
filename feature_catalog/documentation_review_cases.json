@@ -408,6 +408,10 @@
           "field": "caveat",
           "term": "writes"
         }
+      ],
+      "contract_source_markers": [
+        "save_scope_decision(",
+        "set_scope_review_status("
       ]
     },
     {
@@ -444,6 +448,10 @@
           "field": "caveat",
           "term": "writes"
         }
+      ],
+      "contract_source_markers": [
+        "\"REVIEWED\"",
+        "\"MANUAL_REQUIRED\""
       ]
     },
     {
@@ -481,6 +489,10 @@
           "field": "caveat",
           "term": "SELECT"
         }
+      ],
+      "contract_source_markers": [
+        "preview_list_item(",
+        "SELECTs only"
       ]
     }
   ]
