@@ -67,6 +67,20 @@ def audit_documentation(root: Path = ROOT) -> dict:
                          "contract_source_present": contract_source_present,
                          "catalog_route": known[case["feature_id"]]["route"]})
 
+    lifecycle_data = json.loads((root / "feature_catalog/reward_delivery_lifecycle.json").read_text(encoding="utf-8"))
+    if lifecycle_data.get("schema_version") != 1 or not lifecycle_data.get("stages"):
+        raise ValueError("invalid reward delivery lifecycle")
+    lifecycle_stages = []
+    for stage in lifecycle_data["stages"]:
+        source_path = Path(stage["file"])
+        if source_path.is_absolute() or ".." in source_path.parts:
+            raise ValueError("unsafe reward lifecycle source path")
+        source = root / source_path
+        source_text = source.read_text(encoding="utf-8") if source.is_file() else ""
+        lifecycle_stages.append({**stage, "source_markers_present": all(
+            marker in source_text for marker in stage["markers"]
+        )})
+
     findings: list[dict] = []
     for feature in features:
         reasons = []
@@ -100,6 +114,8 @@ def audit_documentation(root: Path = ROOT) -> dict:
             })
     return {
         "stage": "source_review",
+        "reward_lifecycle": lifecycle_stages,
+        "reward_lifecycle_missing_markers": [x["state"] for x in lifecycle_stages if not x["source_markers_present"]],
         "review_cases": reviewed,
         "review_case_count": len(reviewed),
         "documentation_discrepancy_count": sum(len(row["documentation_discrepancies"]) for row in reviewed),
