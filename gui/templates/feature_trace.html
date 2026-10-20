@@ -529,7 +529,7 @@
 <div class="impl-meta"><span class="chip">direction {{ result.direction }}</span><span class="chip">depth {{ result.max_depth }}</span></div>
 
 {% if result.runtime_hierarchy.observation_count %}
-<details class="dense-card">
+<details id="trace-runtime-observations" class="dense-card">
 <summary><strong>Runtime / Captures &amp; Packets</strong> · {{ result.runtime_hierarchy.observation_count }} observation(s) / {{ result.runtime_hierarchy.capture_count }} capture(s)</summary>
 <p class="muted">{{ result.runtime_hierarchy.observation_count }} observations across {{ result.runtime_hierarchy.capture_count }} capture(s), grouped without expanding semantic topology. Raw observations load only when requested.</p>
 {% for group in result.runtime_hierarchy.groups %}
@@ -580,10 +580,7 @@ document.querySelectorAll('.runtime-load').forEach(button=>button.addEventListen
   {% for group in section.runtime_groups %}
   <details class="trace-runtime-group">
     <summary>{{ group.opcode }}{% if group.direction %} · {{ group.direction }}{% endif %} — {{ group.observation_count }} observation(s) — {{ group.capture_count }} capture(s)</summary>
-    <div class="table-wrap">
-    <table><thead><tr><th>Relationship</th><th>From</th><th>To</th><th>Evidence</th></tr></thead><tbody>
-    {% for edge in group.edges %}<tr><td>{{ edge.relationship }}</td><td><code>{{ edge.from_node }}</code></td><td><code>{{ edge.to_node }}</code></td><td><code>{{ edge.evidence_id or "" }}</code></td></tr>{% endfor %}
-    </tbody></table></div>
+    <p class="muted">These are bounded observation counts, not expanded semantic edges. To inspect recorded packet or capture rows, use <a class="zonelink" href="#trace-runtime-observations">Runtime / Captures &amp; Packets</a> above and expand a capture. An empty list is not proof that no events occurred.</p>
   </details>
   {% endfor %}
 {% else %}
@@ -593,13 +590,21 @@ document.querySelectorAll('.runtime-load').forEach(button=>button.addEventListen
 <tbody>
 {% for edge in section.edges %}
 <tr>
-  <td>{{ edge.depth }}</td>
-  <td><span class="chip">{{ edge.relationship }}</span></td>
+  <td>{{ edge.depth if edge.depth is not none else '—' }}</td>
+  <td><span class="chip">{{ edge.relationship }}</span>{% if edge.generated %}<div class="muted"><span class="chip">Provider-generated · read-only</span> {{ edge.generator or 'unknown generator' }}</div>{% endif %}</td>
   <td><a class="zonelink mono" href="/features/trace?q={{ edge.from_node|urlencode }}">{{ edge.from_node }}</a></td>
   <td><a class="zonelink mono" href="/features/trace?q={{ edge.to_node|urlencode }}">{{ edge.to_node }}</a></td>
   <td>{{ edge.status or "UNKNOWN" }}</td>
   <td>{{ edge.confidence or "UNKNOWN" }}</td>
-  <td><code>{{ edge.evidence_id or "" }}</code></td>
+  <td>
+  {% if edge.generated %}
+    {% for evidence in (edge.evidence or [])[:3] %}
+    <div class="muted">{% if evidence.kind %}<span class="chip">{{ evidence.kind }}</span>{% endif %}{% if evidence.basis %} {{ evidence.basis }}{% endif %}{% if evidence.file %} <code>{{ evidence.file }}{% if evidence.line is not none %}:{{ evidence.line }}{% endif %}</code>{% endif %}</div>
+    {% else %}<span class="muted">Provider metadata only; no detailed locator</span>{% endfor %}
+  {% elif edge.evidence_id %}
+    <a class="zonelink mono" href="/research/evidence?evidence_id={{ edge.evidence_id|urlencode }}">{{ edge.evidence_id }}</a>
+  {% else %}<span class="muted">No linked evidence ID</span>{% endif %}
+  </td>
 </tr>
 {% endfor %}
 </tbody>
