@@ -356,6 +356,21 @@
               "label": "Audit issue"
             }
           ]
+        },
+        {
+          "stage": "Phase 0 core: exdata + persistence (feature/chocobo-raising-core)",
+          "status": "in-progress",
+          "summary": "Exdata accessors, char_chocobos, chocobo_user_data and 7 bindings committed on valhalla; syntax-checked only, migration not applied. Scenarios: docs/workbench/chocobo_audit/TEST_SCENARIOS.json.",
+          "handoffs": [
+            {
+              "href": "https://github.com/sarthax/darkstar-to-valhalla/issues/55",
+              "label": "Slice issue"
+            },
+            {
+              "href": "https://github.com/sarthax/darkstar-to-valhalla/tree/feature/chocobo-raising-core",
+              "label": "DSP branch"
+            }
+          ]
         }
       ],
       "reference_url": "https://github.com/LandSandBoat/server/blob/base/scripts/globals/hobbies/chocobo_raising/README.md",
