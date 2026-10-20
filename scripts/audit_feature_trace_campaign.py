@@ -12,7 +12,7 @@ import json
 import re
 from pathlib import Path
 
-from audit_feature_trace_relevance import score
+from audit_feature_trace_relevance import audit_edge_ids, score
 
 CASES = {
     "absolute-virtue": ("implementation", "entity"),
@@ -21,6 +21,8 @@ CASES = {
 }
 STATUS = frozenset({"NOT_RUN", "BLOCKED", "REVIEWED"})
 SHA = re.compile(r"^[0-9a-fA-F]{40}$")
+EXPORT_SCHEMA = "feature-trace-relevance-export-v1"
+
 
 
 def template() -> dict:
@@ -40,6 +42,50 @@ def template() -> dict:
 
 def _nonempty(value) -> bool:
     return isinstance(value, str) and bool(value.strip())
+
+
+
+def validate_export_binding(trace: dict, *, case_id: str, root_id: str,
+                            mode: str, root_kind: str) -> dict:
+    """Require the *actual exported payload* to agree with the reviewed campaign.
+
+    The old scorer accepts generic edge lists by design. A three-case real-object
+    campaign must not silently score an unrelated raw graph, renamed root,
+    reversed mode or changed/duplicated edge set. No data is persisted.
+    """
+    if trace.get("schema") != EXPORT_SCHEMA:
+        raise ValueError(f"{case_id}: not a versioned exact-root P0 trace export")
+    expected = {
+        "case_id": case_id, "root": root_id,
+        "mode": mode, "root_kind": root_kind,
+    }
+    for field, value in expected.items():
+        if trace.get(field) != value:
+            raise ValueError(f"{case_id}: exported {field} disagrees with campaign")
+    depth = trace.get("depth")
+    if type(depth) is not int or depth not in (1, 2):
+        raise ValueError(f"{case_id}: unrecognized export depth")
+    if trace.get("direction") not in {"in", "out", "both"}:
+        raise ValueError(f"{case_id}: unrecognized export direction")
+    max_nodes = trace.get("max_nodes")
+    if type(max_nodes) is not int or not (1 <= max_nodes <= 500):
+        raise ValueError(f"{case_id}: unbounded export node budget")
+    if type(trace.get("truncated")) is not bool:
+        raise ValueError(f"{case_id}: missing trace truncation indicator")
+    edges = trace.get("edges")
+    ids = trace.get("edge_audit_ids")
+    if not isinstance(edges, list) or not isinstance(ids, list):
+        raise ValueError(f"{case_id}: missing edge list or audit identities")
+    calculated = audit_edge_ids(trace)
+    if ids != calculated:
+        raise ValueError(f"{case_id}: exported edge identities no longer match graph evidence")
+    return {
+        "export_schema": EXPORT_SCHEMA,
+        "export_depth": depth,
+        "export_direction": trace["direction"],
+        "export_truncated": trace["truncated"],
+        "export_edge_count": len(edges),
+    }
 
 
 def _case_entry(raw: dict, base: Path) -> dict:
@@ -89,7 +135,12 @@ def _case_entry(raw: dict, base: Path) -> dict:
             raise ValueError(f"{key}: {name} must contain a JSON object")
         return value
 
-    scored = score(load("trace_json"), load("annotations_json"))
+    trace = load("trace_json")
+    export = validate_export_binding(
+        trace, case_id=key, root_id=raw["resolved_root_id"],
+        mode=mode, root_kind=root_kind,
+    )
+    scored = score(trace, load("annotations_json"))
     # The scorer itself NEVER validates source truth. Even a complete reviewer
     # ledger remains a measurement, not a verified feature implementation.
     all_reviewed = scored["initial_edges"] > 0 and scored["review_coverage"] == 1.0
@@ -99,6 +150,7 @@ def _case_entry(raw: dict, base: Path) -> dict:
         "status": "MEASURED_REVIEW_REQUIRED" if ready else "INCOMPLETE_ANNOTATIONS",
         "scored": True,
         "root_resolution": "unique",
+        **export,
         "toolkit_sha": raw["toolkit_sha"].lower(),
         "server_sha": raw["server_sha"].lower(),
         "source_family_count": len(families),
@@ -122,8 +174,11 @@ def evaluate(manifest: dict, manifest_dir: Path) -> dict:
     names = [v.get("case_id") if isinstance(v, dict) else None for v in entries]
     if len(names) != len(set(names)) or set(names) != set(CASES):
         raise ValueError("Campaign has missing, duplicated or unknown cases")
+    reviewed_roots = [row["resolved_root_id"] for row in entries
+                      if row["status"] == "REVIEWED"]
+    if len(reviewed_roots) != len(set(reviewed_roots)):
+        raise ValueError("Different campaign cases cannot reuse one resolved root ID")
     items = [_case_entry(entry, manifest_dir) for entry in entries]
-    statuses = {v["case_id"]: v["status"] for v in items}
     ready = all(v["status"] == "MEASURED_REVIEW_REQUIRED" for v in items)
     return {
         "schema_version": 1, "audit": "feature-trace-relevance-real-object-baseline",
