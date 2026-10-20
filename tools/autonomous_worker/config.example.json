@@ -1,0 +1,34 @@
+{
+  "database": "/persistent/ffxi-controller/jobs.sqlite3",
+  "maximum_workers": 3,
+  "isolated_host": false,
+  "timeout_seconds": 1800,
+  "heartbeat_timeout_seconds": 180,
+  "approved_issues": {},
+  "repositories": {
+    "sarthax/xiheadless-dsp": {
+      "mirror": "/read-only-mirrors/xiheadless-dsp.git",
+      "tests": [
+        [
+          "dotnet",
+          "test",
+          "tests/XiHeadless.Tests/XiHeadless.Tests.csproj",
+          "-c",
+          "Release"
+        ]
+      ]
+    },
+    "sarthax/darkstar-to-valhalla": {
+      "mirror": "/read-only-mirrors/darkstar-to-valhalla.git",
+      "tests": []
+    },
+    "sarthax/FFXI-Mission-Toolkit": {
+      "mirror": "/read-only-mirrors/FFXI-Mission-Toolkit.git",
+      "tests": []
+    }
+  },
+  "image": "registry.example.invalid/ffxi-offline-worker@sha256:REPLACE_WITH_REVIEWED_DIGEST",
+  "model_network": "operator-model-egress-only",
+  "log_directory": "/persistent/ffxi-controller/private-logs",
+  "model_proxy_url": "https://private-inference-proxy.example.invalid/v1"
+}
