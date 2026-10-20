@@ -223,3 +223,16 @@ A separate curated crosswalk now verifies **11 literal GUI-to-Python source path
 Documentation accuracy triage shows the associated operator intent and a safety boundary for read-only research, telemetry inspection, guarded local-settings writes, scrape-job creation, and snapshot export. Contextual operator Help summarizes the corresponding safe workflow. These are **static, curated source matches only**: they do not prove live JavaScript listener execution, form submission, permissions, network success, completed exports, gameplay results or DSP writes. A scrape-job receipt does not establish that pages were imported, and sampled live telemetry is not authoritative server entity state.
 
 Regression coverage rejects decorators bound to the wrong handler, a form control outside the matching form, incorrect nested router prefixes, and malformed handler source. The next review should check negative/error paths and collect separate authorized browser acceptance evidence; never infer live validation from static crosswalk coverage. Keep Catalog, Help and Roadmap separate.
+
+## Failure and recovery evidence — October 20 (next stage)
+
+The **11 curated operator paths** now contain **20 explicit source-reviewed failure, pending and empty/degraded-state conditions**, tied to their named handler function rather than an unrelated marker elsewhere in a large route module. For guarded Live Client settings, the audit also resolves the named same-scope guard helper and checks its local-origin rejection evidence. The Feature Catalog's Documentation accuracy triage displays trigger/signal and safe operator recovery for each path.
+
+Operator distinctions:
+
+- **Feature Trace:** missing canonical graph is an availability error (GET page error, runtime JSON 404); multiple name matches require a better node ID, not an invented root.
+- **Wiki:** a source/page ID mismatch is not license to substitute a title match; a rejected scrape returns 400, while a returned job object remains *pending external outcome*. Snapshot export errors clean temporary state; a source validation error is not an exported file.
+- **Live Client:** the console and settings write have local-origin restrictions. A headless settings save can reject missing fields or feed creation; a null status snapshot and an invalid client ID (422) are distinct. None of these outcomes establish a gameplay action.
+- **Captures:** event searches and packet searches each need their own filters. Category with zero known opcodes produces a zero-result predicate. Empty queues and indexes must not be described as complete evidence.
+
+**Evidence boundary:** these are deterministic static checks against handler-local literals and lexical guard scope, *not* executed HTTP error tests, browser validation, live DSP acceptance, successful jobs, or verified recovery steps. A missing marker is reported as source drift and downgrades the workflow evidence, not silently treated as passing. Future work should add independent negative-path integration tests and owner-run real-client checks where safe; retain the Roadmap for unfinished implementation.
