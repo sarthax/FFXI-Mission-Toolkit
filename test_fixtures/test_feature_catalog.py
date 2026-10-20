@@ -361,6 +361,37 @@ def main():
     assert "Implementation and test evidence" in trace_page
     assert "test_feature_trace_wiki_dossier.py" in trace_page
     assert "/feature-catalog?feature=" in detail_page
+    # The feature detail must expose only that capability's curated action
+    # contracts and its direct children, not the complete global audit.
+    def action_fragment(feature_id):
+        rendered = render("feature_catalog.html", "/feature-catalog",
+                          features=items, modules=sorted({f["module"] for f in items}),
+                          q="", module="", coverage=audit, detail=feature_detail(items, feature_id))
+        return rendered.split('id="feature-details"', 1)[1].split("</section>", 1)[0]
+
+    for feature_id, included, excluded in (
+        ("feature-trace", ("trace-query", "trace-runtime-observations",
+                           "Graph unavailable", "HTTP contract"), ("wiki-scrape-job",)),
+        ("wiki", ("wiki-exact-page-link", "wiki-scrape-job",
+                  "Job accepted, result pending"), ("bridge-headless-save",)),
+        ("live-client", ("bridge-headless-save", "bridge-entity-status",
+                         "403: nonlocal client"), ("capture-events-search",)),
+        ("capture-browser", ("capture-events-search", "capture-packets-search",
+                             "GET /captures/search"), ("wiki-scrape-job",)),
+        ("wiki-source-navigation", ("wiki-exact-page-link",),
+                                   ("wiki-scrape-job", "trace-query")),
+    ):
+        fragment = action_fragment(feature_id)
+        assert 'id="selected-operator-actions"' in fragment, feature_id
+        assert "Source-reviewed operator actions" in fragment, feature_id
+        assert "runtime unverified" in fragment.lower(), feature_id
+        for term in included:
+            assert term in fragment, (feature_id, term)
+        for term in excluded:
+            assert term not in fragment, (feature_id, term)
+    unreviewed = action_fragment("retail-versions-browse")
+    assert "No specific UI-to-handler action contract has been curated" in unreviewed
+    assert "No specific" in unreviewed and "source markers present" not in unreviewed
     filtered = search_catalog(items, "binary")
     filtered_page = render("feature_catalog.html", "/feature-catalog",
                            features=filtered, modules=sorted({f["module"] for f in items}),
