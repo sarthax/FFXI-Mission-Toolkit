@@ -213,6 +213,85 @@
           "term": "index"
         }
       ]
+    },
+    {
+      "id": "package-scope-filter",
+      "feature_id": "package-scope",
+      "template": "gui/templates/packages_scope.html",
+      "marker": "action=\"/packages/scope\"",
+      "route": "/packages/scope",
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "Scope GET filters migration ID, query, decision and bounded dependency depth; separate POST forms perform other operations.",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_marker": "@app.get(\"/packages/scope\"",
+      "handler_name": "packages_scope_review",
+      "observed_contract": "GET migration_id, q, decision, depth; builds filtered read-only dependency scope or reports missing graph.",
+      "contract": {
+        "method": "GET",
+        "inputs": [
+          "migration_id",
+          "q",
+          "decision",
+          "depth"
+        ],
+        "outputs": [
+          "scope",
+          "error"
+        ],
+        "boundary": "read_only_review",
+        "error_evidence": "Missing graph produces error; scope GET is distinct from decision/review POST forms."
+      },
+      "documentation_checks": [
+        {
+          "field": "how_to_use",
+          "term": "decision"
+        },
+        {
+          "field": "caveat",
+          "term": "read-only"
+        }
+      ]
+    },
+    {
+      "id": "capture-search-filter",
+      "feature_id": "capture-search",
+      "template": "gui/templates/capture_search.html",
+      "marker": "action=\"/captures/search\"",
+      "route": "/captures/search",
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "GET search spans indexed captures, with independent events and packets modes; source query freshness depends on available imports.",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_marker": "@app.get(\"/captures/search\"",
+      "handler_name": "captures_search",
+      "observed_contract": "GET event/packet modes and filters such as entity, opcode, module, q and page; returns search results from indexed recordings.",
+      "contract": {
+        "method": "GET",
+        "inputs": [
+          "mode",
+          "entity",
+          "ev_opcodes",
+          "pk_opcode",
+          "module",
+          "q",
+          "page"
+        ],
+        "outputs": [
+          "events",
+          "packets"
+        ],
+        "boundary": "read_only_review",
+        "error_evidence": "Missing indexed captures or empty matches must not be represented as observed absence."
+      },
+      "documentation_checks": [
+        {
+          "field": "how_to_use",
+          "term": "events"
+        },
+        {
+          "field": "caveat",
+          "term": "indexed"
+        }
+      ]
     }
   ]
 }
