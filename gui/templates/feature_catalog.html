@@ -16,7 +16,12 @@
 {% if coverage.help_coverage.generic_by_module %}
 <details><summary>Prioritize generic Help links by module</summary>
 {% for module, ids in coverage.help_coverage.generic_by_module.items() %}
-<p><strong>{{ module }}</strong> — {{ ids|length }} entries: {% for id in ids %}<a href="/feature-catalog?feature={{ id|urlencode }}">{{ id }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+<p><strong>{{ module }}</strong> — {{ ids|length }} entries:</p>
+<ul>
+{% for feature_id in ids %}
+<li><a href="/feature-catalog?feature={{ feature_id|urlencode }}">{{ feature_id }}</a></li>
+{% endfor %}
+</ul>
 {% endfor %}
 </details>
 {% endif %}
