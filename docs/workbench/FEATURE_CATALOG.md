@@ -118,3 +118,7 @@ The final 14 generic Help destinations now point to focused operator guidance fo
 ## Focused source-provenance follow-up (October 19)
 
 Verified GUI implementation pointers were added for Capture Search, Capture Review, Wiki browsing, Wiki exact-source navigation, and Feature Trace runtime drill-down. The Wiki exact-source link contract also has a narrowly applicable dossier regression reference. Capture Search/Review remain without named test references because merely having an implementation template is not test coverage. Remaining Research and Migration references require a separate source-to-handler crosswalk; no references were fabricated. Local runtime validation remains unverified.
+
+## Research and Migration provenance crosswalk (October 19)
+
+The catalog now references checked-in GUI and selected service implementations for Research sessions, contradictions, evidence browsing, ID Drift, package review/scope/create, Lua and SQL conversion, and bindings. Named regression pointers are limited to the existing research-session GUI test and Lua/SQL converter tests; other entries deliberately retain missing-test status. Static references demonstrate traceability, not passing local client/server workflows or runtime acceptance.
