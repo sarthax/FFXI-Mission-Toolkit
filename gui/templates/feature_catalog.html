@@ -125,6 +125,52 @@
 <h3>Operator workflow</h3>
 {% if detail.feature.how_to_use %}<p>{{ detail.feature.how_to_use }}</p>{% else %}<p class="muted">Detailed operator workflow has not been documented for this capability yet. Use the linked module Help where available.</p>{% endif %}
 {% if detail.feature.caveat %}<h3>Limitations and interpretation</h3><p>{{ detail.feature.caveat }}</p>{% endif %}
+{% if coverage.documentation_audit is defined %}
+{% set relevant_feature_ids = [detail.feature.id] + (detail.children | map(attribute='id') | list) %}
+{% set action_rows = coverage.documentation_audit.operator_workflows.cases | selectattr('feature_id', 'in', relevant_feature_ids) | list %}
+{% set handler_rows = coverage.documentation_audit.review_cases | selectattr('feature_id', 'in', relevant_feature_ids) | list %}
+<h3 id="selected-operator-actions">Source-reviewed operator actions</h3>
+<p class="muted">These are curated examples for this capability{% if detail.children %} and its listed subfunctions{% endif %}, not a complete control inventory. Source checks and isolated synthetic HTTP tests are not browser, DSP, live client or end-to-end acceptance.</p>
+{% if action_rows %}
+{% for item in action_rows %}
+<details class="wb-card" id="catalog-action-{{ item.id }}">
+<summary><strong>{{ item.id | replace('-', ' ') | title }}</strong> &mdash; <code>{{ item.method }} {{ item.route }}</code>{% if not item.source_verified %} (source drift to review){% endif %}</summary>
+{% if item.feature_id != detail.feature.id %}<p class="muted">Subfunction: <a href="/feature-catalog?feature={{ item.feature_id|urlencode }}">{{ item.feature_id }}</a></p>{% endif %}
+<p><strong>What it does:</strong> {{ item.interpretation }}</p>
+<p><strong>Safety boundary:</strong> {{ item.boundary | replace('_', ' ') }}. <strong>Evidence:</strong> {{ 'Reviewed UI-to-handler markers present' if item.source_verified else 'Review source drift before relying on this contract' }}; runtime unverified.</p>
+<p class="muted">Control: <code>{{ item.kind }}</code> in <code>{{ item.template }}</code> &rarr; <code>{{ item.handler_file }}</code>, <code>{{ item.handler_name }}</code>{% if item.helper %} &rarr; <code>{{ item.helper.file }}</code>, <code>{{ item.helper.name }}</code>{% endif %}.</p>
+<h4>When the result is missing, rejected or pending</h4>
+<ul>
+{% for failure in item.failure_paths %}
+<li><strong>{{ failure.label }}</strong> ({{ failure.state | replace('_', ' ') }}): {{ failure.signal }} <strong>Next:</strong> {{ failure.recovery }}
+{% if not failure.source_verified %}<span class="muted">Source-branch drift requires review.</span>{% endif %}
+{% if failure.http_contract_found %}<div class="muted">Isolated synthetic HTTP contract test declared: <code>{{ failure.http_contract_test }}</code>. See CI for execution status.</div>
+{% elif failure.http_contract_declared %}<div class="muted">HTTP test reference not confirmed: <code>{{ failure.http_contract_test }}</code>.</div>
+{% else %}<div class="muted">Source review only; no linked HTTP response test.</div>{% endif %}</li>
+{% endfor %}
+</ul>
+</details>
+{% endfor %}
+{% else %}
+<p class="muted">No specific UI-to-handler action contract has been curated for this entry yet. This is a documentation coverage gap, not evidence that the action is unavailable.</p>
+{% endif %}
+{% if handler_rows %}
+<details>
+<summary>Additional backend contract reviews ({{ handler_rows | length }})</summary>
+<p class="muted">HTTP decorators are bound to named Python handlers; outputs and delegated symbols may still require tracing. These checks do not prove the UI invokes the backend or a mutation succeeded.</p>
+<ul>
+{% for case in handler_rows %}
+<li><code>{{ case.contract.method }} {{ case.route }}</code> ({{ case.contract.boundary | replace('_', ' ') }}){% if case.feature_id != detail.feature.id %} &mdash; <a href="/feature-catalog?feature={{ case.feature_id|urlencode }}">{{ case.feature_id }}</a>{% endif %}
+<div>{{ case.observed_contract }}</div>
+<div class="muted">Inputs: {{ case.contract.inputs | join(', ') }}; outputs/operations: {{ case.contract.outputs | join(', ') }}.</div>
+<div class="muted">{{ case.contract.error_evidence }}</div>
+<div class="muted">Handler: <code>{{ case.handler_file }}</code> &rarr; <code>{{ case.handler_name }}</code>; {{ 'source markers present' if case.template_marker_present and case.handler_marker_present and case.contract_source_present else 'source or template drift to review' }}.
+{% if case.module_only_source_markers %}Module-only/delegated matches: {{ case.module_only_source_markers | join(', ') }}.{% endif %} Runtime unverified.</div></li>
+{% endfor %}
+</ul>
+</details>
+{% endif %}
+{% endif %}
 <h3>Implementation and test evidence</h3>
 {% if detail.feature.source_refs or detail.feature.test_refs %}
 <p class="muted">Repository source pointers and offline test coverage, not proof of in-game validation.</p>
