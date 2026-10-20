@@ -793,7 +793,7 @@
       "help": "/help#help-migration-packages",
       "purpose": "Review migration package readiness and evidence.",
       "how_to_use": "Select the package and target root, run Review package, then examine the package summary, dependency scope, detailed decision ledger, execution plan and validation package before proposing promotion.",
-      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance.",
+      "caveat": "Package review is read-only: it requires a valid target root for readiness checks, reports review errors, and does not promote or write a package to the target.",
       "source_refs": [
         "gui/templates/packages_review.html"
       ]
@@ -809,7 +809,7 @@
       "help": "/help#help-migration-convert",
       "purpose": "Convert supported Lua references for backport workflows.",
       "how_to_use": "Paste Topaz Lua source, choose the conversion target and, if needed, supply the zone ID-table name/shape and require() rename. Run Convert, inspect generated Lua and outstanding transformations, then manually compare identifiers and callbacks against the target tree before using the output.",
-      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance.",
+      "caveat": "This conversion preview does not write target files; review flagged transformations, source identifiers, and target profile before applying changes separately.",
       "source_refs": [
         "gui/templates/backport_lua_convert.html",
         "src/workbench/packages/migration/_lua_convert_impl.py"
@@ -829,7 +829,7 @@
       "help": "/help#help-migration-convert",
       "purpose": "Convert supported SQL content for backport workflows.",
       "how_to_use": "Choose a target table, paste one or more Topaz SQL statements, and run Convert. Examine converted SQL alongside ID collision and content-duplication checks; validate table/schema assumptions before applying output to any database.",
-      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance.",
+      "caveat": "The conversion preview may read a configured index for collision and content-duplication checks, but does not apply converted SQL to a server database. Review the schema and permissions before any separate write.",
       "source_refs": [
         "gui/templates/backport_sql_convert.html",
         "src/workbench/packages/migration/_sql_convert_impl.py"
@@ -1269,7 +1269,7 @@
       "help": "/help#help-feature-testing",
       "purpose": "Construct a clear, source-aware set of checks before requesting operator execution.",
       "how_to_use": "Choose a versioned test definition and scenario, identify the approved account/context and review the generated test plan JSON. Check observation guides and assertions before saving a design; plan creation does not execute the scenario.",
-      "caveat": "The field guide documents expected evidence; it does not guarantee collection or support in a particular runner.",
+      "caveat": "The test plan is design-only and does not execute a scenario. The field guide documents expected evidence; a separate guarded launch requires authorization and approval.",
       "source_refs": [
         "gui/templates/feature_testing.html"
       ],
@@ -1289,7 +1289,7 @@
       "help": "/help#help-feature-testing",
       "purpose": "Inspect which assertions passed, failed or lack sufficient observation evidence.",
       "how_to_use": "Filter imported test runs by run ID, feature or verdict, open the exact run and inspect recorded observations, assertions and artifacts. Distinguish a failed assertion from a missing observation or unavailable test environment.",
-      "caveat": "Imported observations are scoped to the run and cannot by themselves establish general gameplay correctness.",
+      "caveat": "Imported observations are scoped to the run; filters and paginated history do not establish a passing run or general gameplay correctness.",
       "source_refs": [
         "src/workbench/server_admin/feature_testing/router.py"
       ],

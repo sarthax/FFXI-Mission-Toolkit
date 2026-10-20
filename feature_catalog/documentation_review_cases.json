@@ -28,7 +28,21 @@
         ],
         "boundary": "read_only_review",
         "error_evidence": "Target root is required; missing paths and review exceptions appear as error text."
-      }
+      },
+      "documentation_checks": [
+        {
+          "field": "how_to_use",
+          "term": "target root"
+        },
+        {
+          "field": "how_to_use",
+          "term": "dependency"
+        },
+        {
+          "field": "caveat",
+          "term": "read-only"
+        }
+      ]
     },
     {
       "id": "testing-run-filter",
@@ -59,7 +73,21 @@
         ],
         "boundary": "read_only_history",
         "error_evidence": "Unknown filters are normalized and results paginated; empty history is not a passing run."
-      }
+      },
+      "documentation_checks": [
+        {
+          "field": "how_to_use",
+          "term": "verdict"
+        },
+        {
+          "field": "how_to_use",
+          "term": "run ID"
+        },
+        {
+          "field": "caveat",
+          "term": "run"
+        }
+      ]
     },
     {
       "id": "testing-builder-plan",
@@ -85,7 +113,21 @@
         ],
         "boundary": "design_only",
         "error_evidence": "Plan generation is not execution; launch requires separate guarded endpoint."
-      }
+      },
+      "documentation_checks": [
+        {
+          "field": "how_to_use",
+          "term": "test plan"
+        },
+        {
+          "field": "how_to_use",
+          "term": "does not execute"
+        },
+        {
+          "field": "caveat",
+          "term": "plan"
+        }
+      ]
     },
     {
       "id": "lua-converter-form",
@@ -114,7 +156,21 @@
         ],
         "boundary": "conversion_preview",
         "error_evidence": "Flagged transformations require inspection; no target file write is performed by this handler."
-      }
+      },
+      "documentation_checks": [
+        {
+          "field": "how_to_use",
+          "term": "ID-table"
+        },
+        {
+          "field": "how_to_use",
+          "term": "transformations"
+        },
+        {
+          "field": "caveat",
+          "term": "does not write"
+        }
+      ]
     },
     {
       "id": "sql-converter-form",
@@ -142,7 +198,21 @@
         ],
         "boundary": "conversion_with_index_reads",
         "error_evidence": "Collision checks may open configured indexed data; results are rendered, not applied to a server database."
-      }
+      },
+      "documentation_checks": [
+        {
+          "field": "how_to_use",
+          "term": "collision"
+        },
+        {
+          "field": "how_to_use",
+          "term": "duplication"
+        },
+        {
+          "field": "caveat",
+          "term": "index"
+        }
+      ]
     }
   ]
 }
