@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "note": "Curated source-level state evidence only; not live execution proof.",
+  "stages": [
+    {
+      "state": "blocked_preflight",
+      "file": "src/workbench/server_admin/auction_house/reward_delivery.py",
+      "markers": [
+        "if not gate.ready:",
+        "Reward preview is stale",
+        "claim_replay_once("
+      ],
+      "interpretation": "Guard, stale preview and replay claim rejection occur before recipient writes; claimed replay is not evidence of delivery.",
+      "next": "Do not retry without reviewing claim and preview state."
+    },
+    {
+      "state": "attempt_running",
+      "file": "src/workbench/server_admin/auction_house/reward_attempt_journal.py",
+      "markers": [
+        "def begin_attempt(",
+        "status='running'"
+      ],
+      "interpretation": "A durable attempt is recorded before per-recipient database writes.",
+      "next": "Locate replay ID and attempt evidence."
+    },
+    {
+      "state": "recipient_in_flight",
+      "file": "src/workbench/server_admin/auction_house/reward_delivery.py",
+      "markers": [
+        "mark_recipient(str(replay_id), char_id, \"in_flight\")",
+        "except RewardDeliveryUncertain:"
+      ],
+      "interpretation": "A possible interruption is ambiguous; in_flight must not be treated as retryable failure.",
+      "next": "Reconcile actual delivery_box/game state before retry."
+    },
+    {
+      "state": "recipient_committed_or_failed",
+      "file": "src/workbench/server_admin/auction_house/reward_delivery.py",
+      "markers": [
+        "mark_recipient(str(replay_id), char_id, \"committed\")",
+        "mark_recipient(str(replay_id), char_id, \"failed\""
+      ],
+      "interpretation": "Per-recipient result records are distinct; multiple recipients can produce partial outcomes.",
+      "next": "Compare recipient records and external state."
+    },
+    {
+      "state": "attempt_terminal_or_reconciliation",
+      "file": "src/workbench/server_admin/auction_house/reward_attempt_journal.py",
+      "markers": [
+        "status = \"reconciliation_required\"",
+        "status = \"partial\"",
+        "\"automatic_retry_safe\": False"
+      ],
+      "interpretation": "Completed, failed and partial outcomes differ from reconciliation_required; the journal explicitly denies automatic retry safety.",
+      "next": "Review recipient states and unknown count."
+    }
+  ]
+}
