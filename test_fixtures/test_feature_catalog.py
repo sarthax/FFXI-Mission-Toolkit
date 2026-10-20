@@ -116,6 +116,36 @@ def main():
         "package-create": "missing and skipped artifacts",
     }.items():
         assert expected in feature_detail(items, capability)["feature"]["how_to_use"]
+    # Subfunction operator guidance must cover inputs, review/interpretation and bounds.
+    reviewed = {
+        "live-bridge": "credential configuration",
+        "live-entity-stream": "ambiguous identities",
+        "live-movement": "stop/disarm",
+        "live-3d": "coordinate alignment",
+        "wiki-cache": "missing-page diagnostics",
+        "wiki-bulk": "bounded batch",
+        "wiki-translation": "uncertain terms",
+        "capture-query": "capture IDs",
+        "capture-formats": "required metadata",
+        "capture-paths": "coordinate provenance",
+        "capture-import": "parser diagnostics",
+        "capture-all-paths": "coordinate frame",
+        "capture-bulk-ingest": "skipped/failed",
+        "capture-metadata-import": "join keys",
+        "capture-zone-review": "unresolved entity",
+        "retail-versions-browse": "manifest",
+        "retail-download-plan": "overwrite/hash",
+        "retail-artifacts": "signature",
+        "retail-compare": "file identities",
+        "testing-scenario-builder": "test plan JSON",
+        "testing-run-inspector": "missing observation",
+        "testing-supervisor": "raw evidence",
+    }
+    assert len(reviewed) == 22
+    for feature_id, keyword in reviewed.items():
+        entry = feature_detail(items, feature_id)["feature"]
+        assert entry.get("parent_id") and keyword in entry["how_to_use"], feature_id
+        assert entry["validation"] != "tested"
     assert feature_detail(items, "missing-capability") is None
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
