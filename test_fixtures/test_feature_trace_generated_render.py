@@ -131,8 +131,8 @@ def test_rendered_trace_shows_actual_edges_and_read_only_provenance():
     response = app.get("/features/trace", params={"q": "synthetic-root", "depth": 1})
     assert response.status_code == 200
     html = response.text
-    assert 'href="/features/trace?q=synthetic-source"' in html
-    assert 'href="/features/trace?q=synthetic-target"' in html
+    assert 'href="/features/trace?q=synthetic-source&amp;depth=1&amp;direction=both"' in html
+    assert 'href="/features/trace?q=synthetic-target&amp;depth=1&amp;direction=both"' in html
     assert "Provider-generated · read-only" in html
     assert "PROVIDER_NATIVE" in html
     assert unsafe not in html
