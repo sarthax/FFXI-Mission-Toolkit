@@ -69,7 +69,7 @@
 {% endfor %}
 </tbody></table></div>
 </details>
-<details id="operator-workflow-bindings"><summary>Operator workflow bindings ({{ coverage.documentation_audit.operator_workflows.case_count }} curated source paths; {{ coverage.documentation_audit.operator_workflows.failure_count }} failure/degraded-state checks)</summary>
+<details id="operator-workflow-bindings"><summary>Operator workflow bindings ({{ coverage.documentation_audit.operator_workflows.case_count }} curated source paths; {{ coverage.documentation_audit.operator_workflows.failure_count }} failure/degraded-state checks; {{ coverage.documentation_audit.operator_workflows.http_contract_count }} with isolated HTTP tests)</summary>
 <p class="muted">{{ coverage.documentation_audit.operator_workflows.limitations }}</p>
 <div class="table-wrap"><table><thead><tr><th>Capability / operator control</th><th>HTTP handler</th><th>Safety boundary and interpretation</th><th>Failure states and recovery</th><th>Evidence result</th></tr></thead><tbody>
 {% for item in coverage.documentation_audit.operator_workflows.cases %}
@@ -81,6 +81,13 @@
 <p><strong>{{ failure.label }}</strong> <span class="muted">({{ failure.state|replace('_', ' ') }})</span>
 {% if not failure.source_verified %}<strong>— Source drift</strong>{% endif %}</p>
 <p class="muted">{{ failure.signal }}</p>
+{% if failure.http_contract_found %}
+<p class="muted"><strong>Offline HTTP contract:</strong> <code>{{ failure.http_contract_test }}</code> — synthetic boundaries only; see CI.</p>
+{% elif failure.http_contract_declared %}
+<p class="muted"><strong>HTTP test link needs review:</strong> {{ failure.http_contract_test }}</p>
+{% else %}
+<p class="muted">Source-only; HTTP response not exercised by this suite.</p>
+{% endif %}
 <p><strong>Next:</strong> {{ failure.recovery }}</p>
 {% if failure.missing_handler_markers or failure.missing_guard_markers %}
 <p class="muted">Unmatched source markers: {{ (failure.missing_handler_markers + failure.missing_guard_markers)|join(', ') }}</p>
