@@ -75,6 +75,14 @@
 <p>Open <a href="/retailversions">Retail Version Explorer</a> to browse known manifests and versioned files, plan a selective download, inspect the downloaded artifact catalog, and compare version metadata. Review a plan before fetching files; existing-file overwrite and file-integrity restrictions still apply. An artifact's PE metadata or version match does not prove the running client uses it.</p>
 <h2 id="help-client-research-other">Client assets and dialog research</h2>
 <p>Use the Client Overview, Model Viewer, DAT Inspector and Dialog Drift tools to inspect indexed client assets and compare representation changes. Verify the selected client version and provenance of imported files before linking findings to server behavior. Static views, animation/model previews and dialog diffs are research evidence, not runtime acceptance.</p>
+<h2 id="help-capture-browse">Capture browsing, search and paths</h2>
+<p>Open <a href="/captures">Captures</a> to select an imported session, review its source and timestamp, and browse the available packet, event and entity views. Use <a href="/captures/search">Capture Search</a> or the Query view to narrow specific fields instead of interpreting all captured traffic as one behavior. Path visualizations are projections of recorded observations, not complete routes or verified server state.</p>
+<h2 id="help-capture-import">Capture ingestion, formats and metadata</h2>
+<p>Use <a href="/captures/new">Capture Import</a> for a single supported package, <a href="/captures/bulk-ingest">Bulk Capture Ingestion</a> for bounded batches, and <a href="/captures/metadata-import">Metadata Import</a> for associated descriptions. Check <a href="/captures/help">Capture Format Support</a> before import. Inspect errors, origin and decoding limitations; incomplete captures must not be labelled complete.</p>
+<h2 id="help-capture-review">Capture review and zone evidence</h2>
+<p>Use <a href="/captures/review">Capture Review</a> to triage observations and their evidence, then open the zone-oriented review where supported. Keep source/run identity and conflicts visible. Captured events demonstrate what was observed in a session; they do not establish generic gameplay rules or independently validate a proposed server implementation.</p>
+<h2 id="help-video-ocr">Video OCR and evidence alignment</h2>
+<p>Use <a href="/ocr">Video OCR</a> to inspect extracted on-screen text and timestamp alignment alongside capture events. Review ambiguous OCR strings and timing offsets before linking dialogue or UI text to packets. OCR output remains fallible observational evidence.</p>
 <h2 id="help-workspaces">Workspaces</h2>
 <p class="muted">The top navigation is organized by job rather than by individual database table.</p>
 <div class="table-wrap"><table>
