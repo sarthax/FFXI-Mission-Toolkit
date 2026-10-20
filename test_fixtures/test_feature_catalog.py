@@ -200,6 +200,13 @@ def main():
     assert documentation["features_checked"] == len(items)
     assert documentation["finding_count"] == len(documentation["findings"])
     assert documentation["review_case_count"] == 17
+    assert len(documentation["reward_lifecycle"]) == 5
+    assert documentation["reward_lifecycle_missing_markers"] == []
+    assert {x["state"] for x in documentation["reward_lifecycle"]} == {
+        "blocked_preflight", "attempt_running", "recipient_in_flight",
+        "recipient_committed_or_failed", "attempt_terminal_or_reconciliation",
+    }
+
     assert documentation["review_case_missing_markers"] == []
     assert all(case["status"] == "handler_source_verified_runtime_unverified" for case in documentation["review_cases"])
     assert all(case["handler_marker_present"] for case in documentation["review_cases"])
