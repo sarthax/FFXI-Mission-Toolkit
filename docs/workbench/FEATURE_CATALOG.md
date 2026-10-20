@@ -195,3 +195,7 @@ Two additional source-backed review cases extend the audit to operations that in
 ## Administrative preview and scope-state audit — October 20
 
 Three additional source reviews cover the two package-scope POST actions and the Auction House admin listing preview. Scope decision POST saves a node decision and resets its review to DRAFT; scope review POST checks closure before recording REVIEWED. Both update Workbench graph review state and must not be described as GET-only or as target server deployment. The Auction House listing-preview handler performs SELECT-only snapshot lookups, not a listing mutation. The AH UI panel and handler were observed separately; the static marker does not prove the exact frontend-to-endpoint binding. All three remain runtime unverified, with explicit source markers and discrepancy checks.
+
+## Auction House purchase-preview source review — October 20
+
+Two additional reviewed routes cover the purchase/cleanup preview and the lineage-specific validation preview. Both are POST routes for read-only/SELECT-only inspection; neither posts an auction, completes a purchase or authorizes a mutation. Missing/invalid inputs and unavailable environments have distinct error paths. The Auction House preview panel and handlers are currently verified separately, not as a proven frontend-to-endpoint binding. Recovery-journal language now emphasizes diagnosis and independent idempotency checks instead of implied retries. No administrative operation or live server action was executed.
