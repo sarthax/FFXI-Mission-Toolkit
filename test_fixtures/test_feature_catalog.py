@@ -146,6 +146,31 @@ def main():
         entry = feature_detail(items, feature_id)["feature"]
         assert entry.get("parent_id") and keyword in entry["how_to_use"], feature_id
         assert entry["validation"] != "tested"
+    # Remaining priority subfunctions must give a concrete review action and evidence boundary.
+    reviewed_subfunctions = {
+        "ah-browse": "historical context",
+        "ah-economy": "underlying transactions",
+        "ah-item-picker": "exact item ID",
+        "ah-preferences": "export CSV",
+        "ah-restock": "guarded confirmation",
+        "ah-recovery": "delivery attempts",
+        "ah-scheduled-rewards": "queued reward",
+        "ah-augmented-rewards": "augment parameters",
+        "trace-evidence": "provider branches",
+        "trace-runtime": "unresolved branches",
+        "trace-wiki-provenance": "section locator",
+        "ki-lua": "guard context",
+        "ki-mapping-comparison": "Active DSP",
+        "ki-operation-dependencies": "call site",
+        "ki-evidence-handoff": "originating IDs",
+        "validation-run-history": "case ID",
+        "validation-live-target": "prerequisites",
+    }
+    assert len(reviewed_subfunctions) == 17
+    for feature_id, expected in reviewed_subfunctions.items():
+        entry = feature_detail(items, feature_id)["feature"]
+        assert entry.get("parent_id") and expected in entry["how_to_use"], feature_id
+        assert entry["validation"] != "tested"
     assert feature_detail(items, "missing-capability") is None
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
