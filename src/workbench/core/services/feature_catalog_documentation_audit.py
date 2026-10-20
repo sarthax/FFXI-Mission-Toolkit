@@ -34,8 +34,23 @@ def audit_documentation(root: Path = ROOT) -> dict:
         handler_source = handler.read_text(encoding="utf-8") if handler.is_file() else ""
         handler_present = (case["handler_marker"] in handler_source
                            and ("def " + case["handler_name"] + "(") in handler_source)
+        contract = case.get("contract", {})
+        if (contract.get("method") not in {"GET", "POST"}
+                or contract.get("boundary") not in {
+                    "read_only_review", "read_only_history", "design_only",
+                    "conversion_preview", "conversion_with_index_reads"
+                } or not contract.get("inputs") or not contract.get("outputs")
+                or not contract.get("error_evidence")):
+            raise ValueError("incomplete or unsupported source behavior contract")
+        # Symbol checks are drift guards, not a parser or a proof of successful execution.
+        contract_markers = [case["handler_marker"]] + [
+            ('"' + name + '"') for name in contract["outputs"]
+            if name != "build_plan"
+        ]
+        contract_source_present = all(marker in handler_source for marker in contract_markers)
         reviewed.append({**case, "template_marker_present": present,
                          "handler_marker_present": handler_present,
+                         "contract_source_present": contract_source_present,
                          "catalog_route": known[case["feature_id"]]["route"]})
 
     findings: list[dict] = []
@@ -73,7 +88,7 @@ def audit_documentation(root: Path = ROOT) -> dict:
         "stage": "source_review",
         "review_cases": reviewed,
         "review_case_count": len(reviewed),
-        "review_case_missing_markers": [case["id"] for case in reviewed if not case["template_marker_present"] or not case["handler_marker_present"]],
+        "review_case_missing_markers": [case["id"] for case in reviewed if not case["template_marker_present"] or not case["handler_marker_present"] or not case["contract_source_present"]],
         "features_checked": len(features),
         "findings": findings,
         "finding_count": len(findings),

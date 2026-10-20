@@ -13,7 +13,22 @@
       "handler_file": "src/workbench/app/_host_impl.py",
       "handler_marker": "@app.get(\"/packages/review\"",
       "handler_name": "packages_review",
-      "observed_contract": "GET package and target_root; resolves package and target paths, produces review/manifest/validation or records an error."
+      "observed_contract": "GET package and target_root; resolves package and target paths, produces review/manifest/validation or records an error.",
+      "contract": {
+        "method": "GET",
+        "inputs": [
+          "package",
+          "target_root"
+        ],
+        "outputs": [
+          "review",
+          "manifest",
+          "validation",
+          "error"
+        ],
+        "boundary": "read_only_review",
+        "error_evidence": "Target root is required; missing paths and review exceptions appear as error text."
+      }
     },
     {
       "id": "testing-run-filter",
@@ -26,7 +41,25 @@
       "handler_file": "src/workbench/server_admin/feature_testing/router.py",
       "handler_marker": "@router.get(\"\", response_class=HTMLResponse)",
       "handler_name": "dashboard",
-      "observed_contract": "GET dashboard filters tab, feature, verdict, query and page through dashboard_view, using recorded history."
+      "observed_contract": "GET dashboard filters tab, feature, verdict, query and page through dashboard_view, using recorded history.",
+      "contract": {
+        "method": "GET",
+        "inputs": [
+          "tab",
+          "feature",
+          "verdict",
+          "query",
+          "page"
+        ],
+        "outputs": [
+          "runs",
+          "total_runs",
+          "page",
+          "max_page"
+        ],
+        "boundary": "read_only_history",
+        "error_evidence": "Unknown filters are normalized and results paginated; empty history is not a passing run."
+      }
     },
     {
       "id": "testing-builder-plan",
@@ -39,7 +72,20 @@
       "handler_file": "src/workbench/server_admin/feature_testing/router.py",
       "handler_marker": "@router.get(\"/builder/plan\")",
       "handler_name": "test_builder_plan",
-      "observed_contract": "GET account, charid and supervisor_port are passed to build_plan; plan generation is distinct from launching execution."
+      "observed_contract": "GET account, charid and supervisor_port are passed to build_plan; plan generation is distinct from launching execution.",
+      "contract": {
+        "method": "GET",
+        "inputs": [
+          "account",
+          "charid",
+          "supervisor_port"
+        ],
+        "outputs": [
+          "build_plan"
+        ],
+        "boundary": "design_only",
+        "error_evidence": "Plan generation is not execution; launch requires separate guarded endpoint."
+      }
     },
     {
       "id": "lua-converter-form",
@@ -52,7 +98,23 @@
       "handler_file": "src/workbench/app/_host_impl.py",
       "handler_marker": "@app.post(\"/backport/lua-convert\"",
       "handler_name": "lua_convert_submit",
-      "observed_contract": "POST source, zone_table, id_shape, target and id_file_hint to converter, then renders converted text and flagged findings."
+      "observed_contract": "POST source, zone_table, id_shape, target and id_file_hint to converter, then renders converted text and flagged findings.",
+      "contract": {
+        "method": "POST",
+        "inputs": [
+          "source",
+          "zone_table",
+          "id_shape",
+          "target",
+          "id_file_hint"
+        ],
+        "outputs": [
+          "converted",
+          "flagged"
+        ],
+        "boundary": "conversion_preview",
+        "error_evidence": "Flagged transformations require inspection; no target file write is performed by this handler."
+      }
     },
     {
       "id": "sql-converter-form",
@@ -65,7 +127,22 @@
       "handler_file": "src/workbench/app/_host_impl.py",
       "handler_marker": "@app.post(\"/backport/sql-convert\"",
       "handler_name": "sql_convert_submit",
-      "observed_contract": "POST source and table to converter, optionally checks ID collisions and content duplication against configured index, then renders results and warnings."
+      "observed_contract": "POST source and table to converter, optionally checks ID collisions and content duplication against configured index, then renders results and warnings.",
+      "contract": {
+        "method": "POST",
+        "inputs": [
+          "source",
+          "table"
+        ],
+        "outputs": [
+          "converted",
+          "warnings",
+          "collisions",
+          "duplication"
+        ],
+        "boundary": "conversion_with_index_reads",
+        "error_evidence": "Collision checks may open configured indexed data; results are rendered, not applied to a server database."
+      }
     }
   ]
 }
