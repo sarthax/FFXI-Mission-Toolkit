@@ -280,3 +280,20 @@ The final five formerly source-only conditions are now exercised through FastAPI
 - **Capture Review:** an empty filtered queue must not be mistaken for absence of existing pending/resolved exceptions; the test proves All statuses still returns the synthetic records. Nothing is auto-resolved or written.
 
 The test suite continues to run as part of the Workbench CI core regression. Passing it verifies **isolated HTTP behavior on synthetic fixtures**, not bootability of the entire Toolkit host, real DAT/capture imports, connected Ashita status, or client/DSP behavior. Consult the linked PR's checks for actual execution results rather than equating a Catalog test link with a passed run.
+
+
+## Native-free rendered ASGI integration stage — October 20
+
+The next regression layer, \`test_fixtures/test_feature_catalog_render_asgi.py\`, sends genuine FastAPI TestClient requests into the **actual decorated host route functions**, using **real production Jinja templates and shared shell context** (rather than the JSON-only template stand-in of the previous 21-case suite). The Workbench core CI job executes this suite alongside \`test_feature_catalog_http_contract.py\`.
+
+Read-only acceptance probes cover:
+
+- Help and Roadmap response type, navigational links, and shared-shell rendering;
+- Feature Catalog route rendering, 21-case operator recovery table and feature-detail navigation;
+- Escaping untrusted Catalog search text so it cannot become HTML;
+- Feature Trace graph unavailable as an HTML error state (200, not a runtime JSON 404) and HTML escaping of the requested trace;
+- Capture Review's status/kind filtering, truthful pending counts, surfaced synthetic evidence, and escaping of untrusted capture text. All capture rows and SQLite records are synthetic, with no persistent writes.
+
+**Boundary:** the test app mounts unchanged route functions extracted from the real host's source; it is NOT the full \`workbench.app.host\` import. The CI runner cannot import the complete host because it lacks the optional native \`xi_tinkerer\` wheel. \`test_mounted_sidebar_routes.py\` reports that genuine full-host route execution as **NOT RUN**, rather than pretending registration/rendering was verified. Do not treat a passing rendered-ASGI suite as full-host startup, native DAT decoding, authorized browser/Windows acceptance, Ashita bridge validation, or DSP gameplay acceptance.
+
+**Next owner/local acceptance:** in an environment with the real native wheel and approved local sandbox paths, run \`python test_fixtures/test_mounted_sidebar_routes.py\` and a manual browser smoke for \`/feature-catalog\`, \`/help\`, \`/features/trace\`, and \`/captures/review\`. Record actual runtime results separately from these synthetic CI checks.
