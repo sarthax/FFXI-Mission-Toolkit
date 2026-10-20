@@ -356,8 +356,8 @@
       "validation": "unverified",
       "help": "/auction-house/help",
       "purpose": "Investigate delivery and recovery cases with durable attempt evidence.",
-      "how_to_use": "Open the recovery journal, select the affected case and inspect delivery attempts and recipient evidence. Distinguish pending, failed and completed states before choosing any authorized follow-up.",
-      "caveat": "Recovery history is diagnostic evidence, not a replay command or proof of recovery. Check original delivery state and idempotency before any separately authorized retry."
+      "how_to_use": "Open Reward History, inspect delivery attempts and DSP MyISAM recovery cases by identity and delivery state, then correlate preview_id, replay_id and recipient evidence with independently observed game state. Reward execution requires a separate guarded request and may record campaign metadata; it is not a recovery retry command.",
+      "caveat": "Attempt and MyISAM recovery journals are diagnostic evidence, not replay commands or proof of settlement. Require independent delivery verification, authorization and idempotency checks before any retry. Pending cases can represent interrupted non-atomic operations."
     },
     {
       "id": "ah-scheduled-rewards",
