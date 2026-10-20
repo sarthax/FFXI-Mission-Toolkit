@@ -67,6 +67,14 @@ def main():
             fragment=feature["help"].split("#", 1)[1]
             assert f'id="{fragment}"' in help_html, feature["id"]
     assert feature_detail(items, "feature-testing")["feature"]["help"] == "/help#help-feature-testing"
+    assert feature_detail(items, "capture-browser")["feature"]["source_refs"] == ["gui/templates/captures.html"]
+    bridge = feature_detail(items, "live-bridge")["feature"]
+    assert "tests/test_live_client_bridge_protocol.py" in bridge["test_refs"]
+    assert bridge["validation"] == "unverified"
+    for feature_id in ("entity-lookup", "sql-browser"):
+        entry = feature_detail(items, feature_id)["feature"]
+        assert entry.get("source_refs")
+        assert not entry.get("test_refs"), "Do not imply specific regression coverage"
     assert feature_detail(items, "missing-capability") is None
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
