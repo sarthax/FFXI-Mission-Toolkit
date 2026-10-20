@@ -1,6 +1,25 @@
-# Feature Catalog v1
+# Feature Catalog — Operator Reference and Maintenance
 
 The Feature Catalog is the structured inventory of **what the Toolkit exposes**. It is deliberately distinct from the Roadmap (remaining development and validation) and Help (usage instructions).
+
+## Current catalog snapshot (October 19, 2026)
+
+The current curated inventory contains **96 capabilities**, including **48 child capabilities**, across modules. Of these, **74** are labelled implemented and **22** partial. Validation is **95 unverified**, **1 operator-reported**, and **0 tested**. All 96 have either a contextual Help section or a module-specific Help link; **31** have implementation references and **17** have named automated-test references. These are catalog counts, not assertions of comprehensive coverage or live runtime acceptance. Recalculate from `feature_catalog/features.json` rather than treating this paragraph as an evergreen dashboard.
+
+## How operators should read each entry
+
+- **Purpose:** what the capability is intended to help inspect or perform; a concise summary is not proof of behavior.
+- **Operator workflow:** a starting sequence and navigational advice, with full procedural detail in the linked Help section.
+- **Documented subfunctions:** entries linked by `parent_id`; absence of children means not yet documented, not necessarily absent.
+- **Implementation references:** checked-in code pointers for deeper inspection, not a demonstration that the feature works live.
+- **Regression references:** named offline tests applicable to the capability. An empty list means specific test evidence has not been attached, not that no tests exist.
+- **Limitations and validation:** assumptions and interpretation warnings. `unverified` remains the default without independent runtime evidence.
+
+The detail page displays missing implementation/test links explicitly rather than hiding the evidence section. A reference's presence must not silently promote validation status.
+
+## Documentation upkeep
+
+When editing capabilities, keep `purpose`, `how_to_use` and `caveat` specific to the user workflow and avoid rephrasing the summary three times. Split genuinely distinct operator subfunctions into child entries when evidence supports them. Prefer verified paths and narrowly applicable tests; leave mappings absent when unresolved. Check links and focused regressions before merging. Historical checkpoints below document earlier development passes, **not current totals**.
 
 ## Canonical data
 
@@ -53,7 +72,7 @@ The initial Workbench Regression run failed in the newly added catalog smoke tes
 
 ## Quality and validation audit — October 19, 2026
 
-The current curated inventory has **85 records**, comprising **38 subfeatures**; **67** are labelled implemented and **18** partial. Validation remains independent: **84 unverified**, **1 operator-reported**, **0 tested**. These numbers describe the catalog labels, not a claim about runtime capability. They supersede the historical record-count snapshots above.
+At that historical checkpoint, the curated inventory had **85 records**, comprising **38 subfeatures**; **67** are labelled implemented and **18** partial. Validation remains independent: **84 unverified**, **1 operator-reported**, **0 tested**. These numbers described the catalog labels at that checkpoint, not runtime capability. Refer to the current snapshot above for the latest counts.
 
 The Coverage audit now displays module and subfeature totals, per-status counts, and missing purpose/usage/caveat fields. CI asserts status accounting against the actual JSON, rather than pinning record counts likely to change. UI-control inventory remains sampled and is not a claim of complete subfunction coverage. The next content-oriented slice is to attach real source/test references and review module-by-module whether key GUI actions have corresponding guided subfunction entries; runtime validation requires a separate observed acceptance record.
 
