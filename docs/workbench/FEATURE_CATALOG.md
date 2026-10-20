@@ -149,3 +149,7 @@ The Feature Trace, Live Client, Wiki, Zone Editor, Lua Converter and SQL Convert
 ## Operator-workflow review: Captures, Research and Migration (October 19)
 
 The Capture Browser/Search/Review, Research Sessions/Evidence, ID Drift and package create/review catalog descriptions now identify practical controls and evidence handoffs. Search results and parser suggestions retain original capture provenance; reviews must inspect dependency ledgers and missing/skipped artifacts before promotion. These are static operator guidance updates grounded in the checked-in templates where available, not runtime acceptance. Research evidence and ID Drift descriptions remain cautious about assuming a particular data source or result was verified.
+
+## Large-batch subfunction workflow review (October 19)
+
+Twenty-two child-capability operator workflows were expanded across Live Client (4), Wiki (3), Captures (8), Retail Versions (4), and Feature Testing (3). Each now directs operators to specific input and review steps and distinguishes evidence from inference or actual execution. The changes are documentation-only and do not claim that controls were exercised against a live Windows client, DSP server, or locally held retail/capture files. Checked-in GUI controls were sampled for representative parent tools; individual behavior and input availability remain subject to local acceptance. The regression checks stable review concepts and keeps runtime validation separate.
