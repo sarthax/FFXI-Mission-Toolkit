@@ -248,7 +248,10 @@
       "help": "/help#help-wiki-evidence",
       "purpose": "Browse cached wiki research and supporting source material.",
       "how_to_use": "Search cached wiki pages, inspect their source and freshness, and follow the cache/import controls when a result is missing.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/wiki.html"
+      ]
     },
     {
       "id": "settings",
@@ -469,7 +472,10 @@
       "help": "/help#help-feature-trace",
       "purpose": "Follow runtime and event handoffs through a hierarchical behavior path.",
       "how_to_use": "From a Feature Trace result, expand the runtime path and navigate each source or event handoff in order.",
-      "caveat": "A predicted path is not a verified execution trace unless capture/runtime evidence exists."
+      "caveat": "A predicted path is not a verified execution trace unless capture/runtime evidence exists.",
+      "source_refs": [
+        "gui/templates/feature_trace.html"
+      ]
     },
     {
       "id": "wiki-cache",
@@ -735,7 +741,10 @@
       "parent_id": "capture-browser",
       "purpose": "Find packets, chat, entities, and other observations across imported capture evidence.",
       "how_to_use": "Open Capture Search, choose a search term or filter, then inspect results in their original capture context.",
-      "caveat": "Search coverage depends on what was captured and indexed."
+      "caveat": "Search coverage depends on what was captured and indexed.",
+      "source_refs": [
+        "gui/templates/capture_search.html"
+      ]
     },
     {
       "id": "capture-query",
@@ -1029,7 +1038,10 @@
       "parent_id": "capture-browser",
       "purpose": "Inspect exceptions and uncertain ingestion results before trusting downstream analyses.",
       "how_to_use": "Open Capture Review Queue, select a flagged record, and inspect the raw evidence and parser outcome.",
-      "caveat": "An exception can be a decode ambiguity rather than a faulty source capture."
+      "caveat": "An exception can be a decode ambiguity rather than a faulty source capture.",
+      "source_refs": [
+        "gui/templates/capture_review.html"
+      ]
     },
     {
       "id": "capture-zone-review",
@@ -1295,7 +1307,13 @@
       "help": "/help#help-wiki-evidence",
       "purpose": "Reach the precise Wiki page linked from an evidence record without matching an ambiguous title.",
       "how_to_use": "From the Feature Trace dossier open the exact Wiki source page; inspect the focused section and original excerpt; verify source identity.",
-      "caveat": "Section focus is conservative with duplicate headings; not every imported page retains all source fields."
+      "caveat": "Section focus is conservative with duplicate headings; not every imported page retains all source fields.",
+      "source_refs": [
+        "gui/templates/wiki.html"
+      ],
+      "test_refs": [
+        "test_fixtures/test_feature_trace_wiki_section_dossier.py"
+      ]
     },
     {
       "id": "ki-mapping-comparison",
