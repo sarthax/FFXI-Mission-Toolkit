@@ -573,6 +573,119 @@
           "term": "not"
         }
       ]
+    },
+    {
+      "id": "ah-reward-execute",
+      "feature_id": "ah-recovery",
+      "template": "gui/templates/auction_house_reward_history.html",
+      "marker": "Interrupted delivery attempts",
+      "route": "/auction-house/rewards/execute.json",
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "Reward history page and API source separately identified; exact frontend binding is not asserted. Execution delegates to guarded reward delivery and records a campaign on return; a response is not independent delivery acceptance.",
+      "handler_file": "src/workbench/server_admin/auction_house/reward_api.py",
+      "handler_marker": "@router.post(\"/execute.json\"",
+      "handler_name": "reward_execute",
+      "observed_contract": "Execution delegates to guarded reward delivery and records a campaign on return; a response is not independent delivery acceptance.",
+      "contract_source_markers": [
+        "execute_reward_delivery(",
+        "record_campaign("
+      ],
+      "contract": {
+        "method": "POST",
+        "inputs": [
+          "preview_token",
+          "preview_id",
+          "replay_id",
+          "confirmation",
+          "character_ids"
+        ],
+        "outputs": [
+          "result",
+          "campaign"
+        ],
+        "boundary": "guarded_reward_execution",
+        "error_evidence": "Execution delegates to guarded reward delivery and records a campaign on return; a response is not independent delivery acceptance."
+      },
+      "documentation_checks": [
+        {
+          "field": "caveat",
+          "term": "authorization"
+        },
+        {
+          "field": "how_to_use",
+          "term": "delivery"
+        }
+      ]
+    },
+    {
+      "id": "ah-reward-attempts",
+      "feature_id": "ah-recovery",
+      "template": "gui/templates/auction_house_reward_history.html",
+      "marker": "Interrupted delivery attempts",
+      "route": "/auction-house/rewards/attempts.json",
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "Reward history page and API source separately identified; exact frontend binding is not asserted. Lists attempt journal rows for diagnosis, not retry or compensation.",
+      "handler_file": "src/workbench/server_admin/auction_house/reward_api.py",
+      "handler_marker": "@router.get(\"/attempts.json\"",
+      "handler_name": "reward_attempts_list",
+      "observed_contract": "Lists attempt journal rows for diagnosis, not retry or compensation.",
+      "contract_source_markers": [
+        "\"rows\": list_attempts()"
+      ],
+      "contract": {
+        "method": "GET",
+        "inputs": [],
+        "outputs": [
+          "rows"
+        ],
+        "boundary": "read_only_history",
+        "error_evidence": "Lists attempt journal rows for diagnosis, not retry or compensation."
+      },
+      "documentation_checks": [
+        {
+          "field": "caveat",
+          "term": "diagnostic"
+        },
+        {
+          "field": "caveat",
+          "term": "retry"
+        }
+      ]
+    },
+    {
+      "id": "ah-myisam-recovery",
+      "feature_id": "ah-recovery",
+      "template": "gui/templates/auction_house_reward_history.html",
+      "marker": "DSP MyISAM recovery cases",
+      "route": "/auction-house/rewards/myisam-recovery.json",
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "Reward history page and API source separately identified; exact frontend binding is not asserted. Persistent MyISAM recovery cases identify possible interruptions; pending does not establish transaction success or failure.",
+      "handler_file": "src/workbench/server_admin/auction_house/reward_api.py",
+      "handler_marker": "@router.get(\"/myisam-recovery.json\"",
+      "handler_name": "myisam_recovery_cases",
+      "observed_contract": "Persistent MyISAM recovery cases identify possible interruptions; pending does not establish transaction success or failure.",
+      "contract_source_markers": [
+        "\"rows\": list_cases()"
+      ],
+      "contract": {
+        "method": "GET",
+        "inputs": [],
+        "outputs": [
+          "rows"
+        ],
+        "boundary": "read_only_history",
+        "error_evidence": "Persistent MyISAM recovery cases identify possible interruptions; pending does not establish transaction success or failure."
+      },
+      "documentation_checks": [
+        {
+          "field": "caveat",
+          "term": "idempotency"
+        },
+        {
+          "field": "caveat",
+          "term": "recovery"
+        }
+      ]
     }
   ]
 }
