@@ -82,3 +82,7 @@ The Catalog coverage panel now counts and classifies each record by its Help des
 ## Client Research contextual Help (October 19)
 
 Sixteen Binary Inspector, Retail Version and client-asset research entries now point to three grounded Help sections. The documentation covers PE evidence, version/probe comparisons, manifest and selective download planning, and DAT/model/dialog research, while explicitly distinguishing artifact/source inspection from the running client's behavior. Existing Help anchor and route inventory regression contracts apply. This does not change runtime validation labels.
+
+## Source provenance pilot: Captures, Live Client, Server Data
+
+The Capture Browser, Live Client bridge and Server Data entity/SQL browser entries now carry inspected repository GUI source pointers. Live Client bridge entries also cite an existing protocol regression. No tests are attached to the entity/SQL browser entries without verified matching tests. Presence of code and passing protocol regression do not establish operator or gameplay acceptance. This pilot is independent of the pending Help quality audit and documentation branches.
