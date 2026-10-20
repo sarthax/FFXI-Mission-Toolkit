@@ -55,13 +55,43 @@ def load(con, path, cid, name, cat):
     print(f"{name}: {len(posts)} posts {ts[0] if ts else ''}..{ts[-1] if ts else ''}")
 
 
+def url_key(u):
+    """Stable id for a capture link: YouTube id, Dropbox file/folder id, OneDrive path (query stripped)."""
+    u = (u or "").strip()
+    m = re.search(r"(?:youtu\.be/|[?&]v=)([\w-]{6,})", u)
+    if m: return "yt:" + m.group(1)
+    m = re.search(r"dropbox\.com/(?:s|scl/fi|scl/fo|sh)/([\w]+)", u)
+    if m: return "db:" + m.group(1)
+    m = re.search(r"(1drv\.ms/[^?\s]+)", u)
+    if m: return "od:" + m.group(1)
+    m = re.search(r"drive\.google\.com/(?:file/d/|drive/folders/|open\?id=)([\w-]+)", u)
+    if m: return "gd:" + m.group(1)
+    return ""
+
+
 def link(con):
+    """Attach discord_posts.capture_id/ingest_status='ingested' by matching any shared link key
+    (video_url, capture_post_meta file/video/extra urls). Unmatched posts stay 'indexed'."""
+    keys = {}
+    rows = list(con.execute("SELECT capture_id, video_url FROM captures WHERE video_url IS NOT NULL"))
+    try:
+        for cid, f, v, ex in con.execute("SELECT capture_id,file_url,video_url,extra_video_urls FROM capture_post_meta"):
+            rows += [(cid, f), (cid, v)] + [(cid, x) for x in (ex or "").split()]
+    except sqlite3.OperationalError:
+        pass
+    for cid, u in rows:
+        k = url_key(u)
+        if k: keys.setdefault(k, cid)
     n = 0
-    for cid, vurl in con.execute("SELECT capture_id, video_url FROM captures WHERE video_url IS NOT NULL").fetchall():
-        key = vurl.rsplit("/", 1)[-1].replace("watch?v=", "")
-        for (mid,) in con.execute("SELECT message_id FROM discord_posts WHERE urls LIKE ?", (f"%{key}%",)).fetchall():
-            con.execute("UPDATE discord_posts SET capture_id=?, ingest_status='ingested' WHERE message_id=?", (cid, mid))
-            n += 1
+    for mid, urls in con.execute("SELECT message_id, urls FROM discord_posts WHERE ingest_status='indexed'").fetchall():
+        try: ul = json.loads(urls or "[]")
+        except Exception: continue
+        for u in ul:
+            cid = keys.get(url_key(u))
+            if cid:
+                con.execute("UPDATE discord_posts SET capture_id=?, ingest_status='ingested' WHERE message_id=?", (cid, mid))
+                n += 1
+                break
     con.commit()
     print(f"linked {n} posts")
 

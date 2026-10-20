@@ -141,6 +141,7 @@ WORKSPACES = (
             {"label": "Import", "href": "/captures/new"},
             {"label": "Evidence Search", "href": "/captures/search"},
             {"label": "Data Explorer", "href": "/captures/query"},
+            {"label": "Discord Archive", "href": "/captures/discord"},
             {"label": "YouTube OCR", "href": "/ocr"},
             {"label": "Help / Supported Formats", "href": "/captures/help"},
         ),

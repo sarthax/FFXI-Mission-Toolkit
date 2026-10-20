@@ -9,6 +9,8 @@
 {% block page_actions %}{% if prev_id %}<a class="chip" href="/captures/{{ prev_id }}?content_type={{ content_type }}&q={{ q }}">&larr;</a>{% endif %}{% if position %}<span class="muted mono">{{ position }}</span>{% endif %}{% if next_id %}<a class="chip" href="/captures/{{ next_id }}?content_type={{ content_type }}&q={{ q }}">&rarr;</a>{% endif %}{% endblock %}
 {% block page_help %}Capture dossier over ingested evidence, integrity diagnostics, provenance, derived views, and maintenance actions. Mutation controls remain explicit within their individual sections.{% endblock %}
 {% block page_body %}
+{% if detail.discord_posts %}<div class="warn" style="background:var(--surface-2,transparent)"><b>Discord post{{ 's' if detail.discord_posts|length>1 }}:</b>
+{% for d in detail.discord_posts %}<div>{{ (d.posted_at or '')[:10] }} · {{ d.channel }} · {{ d.author }} · <i>{{ d.ingest_status }}</i> — <a href="/captures/discord?mid={{ d.message_id|urlencode }}">view in archive</a>{% for u in (d.urls|fromjson)[:3] %} · <a href="{{ u }}" target="_blank" rel="noopener">link</a>{% endfor %}</div>{% endfor %}</div>{% endif %}
 <style>
 .capture-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
 .capture-head .title{font-size:15px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
