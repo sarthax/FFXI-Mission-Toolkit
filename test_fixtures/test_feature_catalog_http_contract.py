@@ -259,3 +259,171 @@ def test_capture_unknown_packet_category_returns_zero_not_all_rows():
                           params={"module": "packets", "pk_category": "unknown-category"})
     assert response.status_code == 200
     assert response.json()["total"] == 0 and response.json()["packets"] == []
+
+
+# A second tranche covers the five recovery paths that previously had only
+# handler-local source markers. No DSP, DAT, or local capture state is consumed.
+
+class _RecoveryContextAsJson:
+    def TemplateResponse(self, request, _name, context):
+        keys = ("error", "matches", "result", "title", "page_view", "evidence",
+                "report", "comparison", "rows", "counts", "kind_counts")
+        return JSONResponse({k: context[k] for k in keys if k in context})
+
+
+def _trace_page_client(*, graph_available, matches=()):
+    closed = []
+    graph = SimpleNamespace(close=lambda: closed.append("graph"))
+    catalog = SimpleNamespace(close=lambda: closed.append("catalog"))
+
+    def should_not_trace(*_args, **_kwargs):
+        pytest.fail("An absent or ambiguous graph root must not execute a trace")
+
+    trace = SimpleNamespace(
+        entity_query_diagnostics=lambda *_args: {"status": "synthetic-ambiguous"},
+        entity_implementation_path=lambda *_args: None,
+        node_info=lambda *_args: {"known": False},
+        search_nodes=lambda *_args: list(matches),
+        trace=should_not_trace,
+    )
+    client = _isolated_host(
+        ("feature_trace_page",), templates=_RecoveryContextAsJson(),
+        _workbench_graph_connection=lambda: graph if graph_available else None,
+        get_con=lambda: catalog,
+        feature_trace=trace,
+        _feature_trace_branch_source_drilldown=lambda _path: None,
+        present_relationships=lambda _edges: [],
+        build_dossier=lambda _result: None,
+    )
+    return client, closed
+
+
+def test_trace_page_missing_graph_exposes_error_without_searching():
+    client, closed = _trace_page_client(graph_available=False)
+    response = client.get("/features/trace", params={"q": "synthetic"})
+    assert response.status_code == 200  # HTML page with an error, not an HTTP 404.
+    assert "Canonical Workbench graph is not available" in response.json()["error"]
+    assert response.json()["matches"] == []
+    assert response.json()["result"] is None
+    assert closed == ["catalog"]
+
+
+def test_trace_page_ambiguous_nodes_avoids_arbitrary_root():
+    matches = [{"node_id": "synthetic:A"}, {"node_id": "synthetic:B"}]
+    client, closed = _trace_page_client(graph_available=True, matches=matches)
+    response = client.get("/features/trace", params={"q": "synthetic"})
+    assert response.status_code == 200
+    assert response.json()["matches"] == matches
+    assert response.json()["result"] is None
+    assert response.json()["error"] is None
+    assert closed == ["graph", "catalog"]
+
+
+def _wiki_page_client(*, existing_page=False, mismatch=False):
+    source = "synthetic-bg"
+    linked_page_id = "synthetic-page"
+    observed_calls = []
+
+    def get_con():
+        con = sqlite3.connect(":memory:")
+        con.execute("CREATE TABLE reference_wiki_pages (source_id TEXT, page_id TEXT, title TEXT)")
+        if existing_page:
+            con.execute("INSERT INTO reference_wiki_pages VALUES (?, ?, ?)",
+                        (source, linked_page_id, "Synthetic Wiki Entry"))
+        return con
+
+    wiki_evidence = SimpleNamespace(
+        SOURCE_BG=source, SOURCE_FFXICLOPEDIA="synthetic-clopedia",
+        SOURCE_WIKIWIKI_JP="synthetic-jp", init_db=lambda _con: None,
+        page_evidence=lambda *_args: {"synthetic": "evidence"},
+    )
+    wiki_document = SimpleNamespace(init_db=lambda _con: None)
+    wiki_claim_compare = SimpleNamespace(
+        init_db=lambda _con: None,
+        alignment_report=lambda *_args: {"synthetic": "comparison"},
+    )
+    wiki_compile = SimpleNamespace(compile_report=lambda *_args: {"synthetic": "report"})
+
+    def page_view(*_args):
+        observed_calls.append("opened")
+        return {"page_id": "wrong-page-id" if mismatch else linked_page_id,
+                "title": "Synthetic Wiki Entry"}
+
+    client = _isolated_host(
+        ("wiki_browse",), templates=_RecoveryContextAsJson(),
+        get_con=get_con, wiki_evidence=wiki_evidence,
+        wiki_document=wiki_document, wiki_claim_compare=wiki_claim_compare,
+        wiki_compile=wiki_compile, _wiki_page_view=page_view,
+        wiki_jobs=SimpleNamespace(SITES={}, recent_jobs=lambda: []),
+    )
+    return client, observed_calls, source, linked_page_id
+
+
+def test_wiki_source_qualified_page_not_found_never_falls_back_by_title():
+    client, observed, source, page_id = _wiki_page_client()
+    response = client.get("/wiki", params={
+        "source": source, "page_id": page_id, "title": "Someone Else's Title",
+    })
+    assert response.status_code == 200  # Error rendered on Wiki page.
+    data = response.json()
+    assert data["error"] == "The source-qualified Wiki page was not found."
+    assert data["title"] == ""
+    assert data["page_view"] is None
+    assert data["evidence"] is None
+    assert observed == [], "missing page IDs may not fall back to a title lookup"
+
+
+def test_wiki_same_title_wrong_page_id_is_rejected():
+    client, observed, source, page_id = _wiki_page_client(existing_page=True, mismatch=True)
+    response = client.get("/wiki", params={"source": source, "page_id": page_id})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["title"] == "Synthetic Wiki Entry"
+    assert data["error"] == "The exact Wiki source page could not be opened."
+    assert data["page_view"] is None
+    assert data["report"] is None and data["evidence"] is None
+    assert data["comparison"] is None
+    assert observed == ["opened"], "the mismatched result must not be displayed"
+
+
+def test_capture_review_filters_empty_without_resolving_findings(monkeypatch):
+    from workbench.captures import review_queue as rq
+    raw_records = [
+        {"status": "pending", "kind": "metadata", "capture_id": 1,
+         "detail": {"candidates": ["synthetic candidate"]}},
+        {"status": "resolved", "kind": "metadata", "capture_id": 1,
+         "detail": {"candidates": []}},
+    ]
+    calls = []
+    def items(_con, status):
+        calls.append(status)
+        return [
+            {**row, "detail": dict(row["detail"])}
+            for row in raw_records
+        ]
+    monkeypatch.setattr(rq, "items", items)
+    monkeypatch.setattr(rq, "KINDS", ("metadata",), raising=False)
+
+    def get_con():
+        con = sqlite3.connect(":memory:")
+        con.execute("CREATE TABLE zones (name TEXT)")
+        con.execute("CREATE TABLE captures (capture_id INTEGER, capture_label TEXT)")
+        con.execute("INSERT INTO captures VALUES (1, 'Synthetic capture')")
+        return con
+
+    client = _isolated_host(
+        ("capture_review_queue",), get_con=get_con,
+        templates=_RecoveryContextAsJson(),
+    )
+    empty = client.get("/captures/review", params={"status": "pending", "kind": "other"})
+    assert empty.status_code == 200 and empty.json()["rows"] == []
+    assert empty.json()["counts"] == {
+        "pending": 1, "resolved": 1, "dismissed": 0, "auto_resolved": 0,
+    }
+    all_rows = client.get("/captures/review", params={"status": "all"})
+    assert all_rows.status_code == 200
+    assert len(all_rows.json()["rows"]) == 2
+    assert all_rows.json()["rows"][0]["detail"]["candidates"] == [
+        {"title": "synthetic candidate"}
+    ]
+    assert calls == ["all", "all"]
