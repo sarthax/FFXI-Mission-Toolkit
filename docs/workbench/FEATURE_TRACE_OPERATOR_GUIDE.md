@@ -15,6 +15,8 @@ Feature Trace is primarily an **implementation and dependency navigation tool**,
 - **WotG Cait Sith:** show initiator, gates, state changes and next actionable evidence without drowning in all same-zone NPCs.
 - **Ordinary NPC:** recover onTrigger/onTrade semantics and source lines before generic zone-wide context.
 
+For a coordinated real-data baseline, see [P0 issue #1228](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1228). The three-case local campaign gate is `scripts/audit_feature_trace_campaign.py`: generate a `NOT_RUN` manifest using `--template`, collect and independently annotate real traces outside Git, then evaluate the manifest. `MEASURED_PENDING_OPERATOR_ACCEPTANCE` is an aggregate report requiring manual review, not a UI or game validation PASS.
+
 A benchmark passing relationship counts does not prove ranking or relevance. Score real-package identity accuracy, top-result usefulness, source locator accuracy and click-through burden separately. Never call an unrun scenario “validated.”
 
 References: `docs/workbench/BEHAVIOR_FEATURE_TRACE_GUIDE.md`, `docs/workbench/FEATURE_TRACE_CLOSEOUT_2026-10-04.md`.
