@@ -12,7 +12,7 @@
       "validation": "unverified",
       "help": "/help#help-feature-trace",
       "purpose": "Follow a behavior from a named feature to its most relevant implementation and evidence.",
-      "how_to_use": "Start with a specific feature or behavior; inspect high-signal evidence and follow source links into related tools.",
+      "how_to_use": "Enter a narrow feature, entity, or behavior query. Use Branch search and provider/domain controls to restrict the result, then inspect Implementation Path, source excerpts, entity-resolution diagnostics and evidence coverage cues. Expand only relevant dependency-map branches; open linked source/provider records to verify each finding.",
       "caveat": "Use the runtime and evidence drill-down sections to narrow findings rather than treating every graph connection as equally relevant.",
       "source_refs": [
         "src/workbench/devtools/features/_trace_impl.py"
@@ -105,7 +105,7 @@
       "validation": "operator_reported",
       "help": "/help#help-live-bridge",
       "purpose": "Inspect a connected Ashita bridge, real-time state, entity telemetry, and authorized movement controls.",
-      "how_to_use": "Start at the bridge console, confirm client connection and zone, then choose live view or movement/validation controls.",
+      "how_to_use": "At Direct Live Bridge, choose the Ashita client ID and verify receiver status, credentials/configuration and live position sampling. Preview any addon/plugin installation or replacement before applying it. Use the live dashboard and read-only health/alignment checks to assess telemetry before attempting guarded client controls.",
       "caveat": "Live telemetry and active control capabilities depend on the running addon and bridge configuration.",
       "source_refs": [
         "gui/templates/live_client_bridge.html"
@@ -256,7 +256,7 @@
       "validation": "unverified",
       "help": "/help#help-wiki-evidence",
       "purpose": "Browse cached wiki research and supporting source material.",
-      "how_to_use": "Search cached wiki pages, inspect their source and freshness, and follow the cache/import controls when a result is missing.",
+      "how_to_use": "Use Search and select the source to inspect a cached article. Check sync/health and missing-page diagnostics if content is absent. For new material, choose scrape, batch imports, or snapshot preview/validation as appropriate; review import changes before applying them and preserve source identity.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
       "source_refs": [
         "gui/templates/wiki.html"
@@ -630,7 +630,7 @@
       "validation": "unverified",
       "help": "/help#help-zones-editor",
       "purpose": "Inspect zone entities and spatial evidence.",
-      "how_to_use": "Open a zone map, inspect entities or spawn points, compare server and observed locations, and apply edits only through guarded controls.",
+      "how_to_use": "Open the Zone Editor from a selected zone, identify the data source and target profile, then compare plotted server entities with live observations only when those observations are available. Inspect the selected spawn or entity before proposing changes and use guarded editing controls; do not interpret map alignment as runtime validation.",
       "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
     },
     {
@@ -808,7 +808,7 @@
       "validation": "unverified",
       "help": "/help#help-migration-convert",
       "purpose": "Convert supported Lua references for backport workflows.",
-      "how_to_use": "Select Lua source for supported conversion, inspect generated output and unresolved transformations, then review before applying.",
+      "how_to_use": "Paste Topaz Lua source, choose the conversion target and, if needed, supply the zone ID-table name/shape and require() rename. Run Convert, inspect generated Lua and outstanding transformations, then manually compare identifiers and callbacks against the target tree before using the output.",
       "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance.",
       "source_refs": [
         "gui/templates/backport_lua_convert.html",
@@ -828,7 +828,7 @@
       "validation": "unverified",
       "help": "/help#help-migration-convert",
       "purpose": "Convert supported SQL content for backport workflows.",
-      "how_to_use": "Select SQL input and target conventions, inspect conversion output and warnings, and validate against the intended schema.",
+      "how_to_use": "Choose a target table, paste one or more Topaz SQL statements, and run Convert. Examine converted SQL alongside ID collision and content-duplication checks; validate table/schema assumptions before applying output to any database.",
       "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance.",
       "source_refs": [
         "gui/templates/backport_sql_convert.html",
