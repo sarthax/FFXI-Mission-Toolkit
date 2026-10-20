@@ -111,6 +111,8 @@ def test_rendered_trace_shows_actual_edges_and_read_only_provenance():
     }
     closed = []
     service = SimpleNamespace(
+        clear_query_mode=lambda: None,
+        split_mode_query=feature_trace.split_mode_query,
         entity_query_diagnostics=lambda *_args: None,
         entity_implementation_path=lambda *_args: None,
         node_info=lambda *_args: {"known": True},
