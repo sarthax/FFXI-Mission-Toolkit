@@ -370,6 +370,118 @@
           "term": "materialization"
         }
       ]
+    },
+    {
+      "id": "scope-decision-write",
+      "feature_id": "package-scope",
+      "template": "gui/templates/packages_scope.html",
+      "marker": "action=\"/packages/scope/decision\"",
+      "route": "/packages/scope/decision",
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "POST persists a per-node scope decision and resets review to DRAFT; it is not read-only.",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_marker": "@app.post(\"/packages/scope/decision\"",
+      "handler_name": "packages_scope_decision",
+      "observed_contract": "POST migration_id, node_id, decision, reason, tags; calls save_scope_decision and resets review status DRAFT.",
+      "contract": {
+        "method": "POST",
+        "inputs": [
+          "migration_id",
+          "node_id",
+          "decision",
+          "reason",
+          "tags"
+        ],
+        "outputs": [
+          "save_scope_decision",
+          "set_scope_review_status"
+        ],
+        "boundary": "guarded_scope_write",
+        "error_evidence": "Requires canonical graph; updates Workbench scope state and invalidates prior review."
+      },
+      "documentation_checks": [
+        {
+          "field": "how_to_use",
+          "term": "DRAFT"
+        },
+        {
+          "field": "caveat",
+          "term": "writes"
+        }
+      ]
+    },
+    {
+      "id": "scope-mark-reviewed",
+      "feature_id": "package-scope",
+      "template": "gui/templates/packages_scope.html",
+      "marker": "action=\"/packages/scope/review\"",
+      "route": "/packages/scope/review",
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "POST marks scope REVIEWED only after closure gate permits it.",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_marker": "@app.post(\"/packages/scope/review\"",
+      "handler_name": "packages_scope_mark_reviewed",
+      "observed_contract": "POST migration_id, notes; rejects BLOCKED or MANUAL_REQUIRED closure then saves REVIEWED with scope hash.",
+      "contract": {
+        "method": "POST",
+        "inputs": [
+          "migration_id",
+          "notes"
+        ],
+        "outputs": [
+          "build_dependency_scope",
+          "set_scope_review_status"
+        ],
+        "boundary": "guarded_scope_write",
+        "error_evidence": "BLOCKED/MANUAL_REQUIRED closure rejects review status promotion; requires canonical graph."
+      },
+      "documentation_checks": [
+        {
+          "field": "how_to_use",
+          "term": "closure"
+        },
+        {
+          "field": "caveat",
+          "term": "writes"
+        }
+      ]
+    },
+    {
+      "id": "ah-list-preview",
+      "feature_id": "ah-restock",
+      "template": "gui/templates/auction_house.html",
+      "marker": "Administrative action preview",
+      "route": "/auction-house/admin/list/preview.json",
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "Verified admin preview panel exists and read-only listing preview route exists; direct control binding not established by this marker.",
+      "handler_file": "src/workbench/server_admin/auction_house/gui.py",
+      "handler_marker": "@router.post(\"/admin/list/preview.json\"",
+      "handler_name": "preview_admin_listing",
+      "observed_contract": "POST item_id,seller_id,price,stack; snapshots item/seller and returns preview policy result. SELECT-only handler, not posting listing.",
+      "contract": {
+        "method": "POST",
+        "inputs": [
+          "item_id",
+          "seller_id",
+          "price",
+          "stack"
+        ],
+        "outputs": [
+          "preview_list_item"
+        ],
+        "boundary": "read_only_preview",
+        "error_evidence": "Invalid numeric payload yields HTTP 400; other failures return HTTP 503."
+      },
+      "documentation_checks": [
+        {
+          "field": "how_to_use",
+          "term": "preview"
+        },
+        {
+          "field": "caveat",
+          "term": "SELECT"
+        }
+      ]
     }
   ]
 }
