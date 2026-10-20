@@ -53,11 +53,11 @@
 </details>
 <details><summary>Curated template reviews ({{ coverage.documentation_audit.review_case_count }})</summary>
 <p class="muted">These rows verify literal template and route-handler markers in checked-in source. Runtime behavior and permissions require separate acceptance.</p>
-<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Template</th><th>Marker</th><th>Handler</th><th>Status</th></tr></thead><tbody>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Template</th><th>Marker</th><th>Handler</th><th>Contract</th><th>Status</th></tr></thead><tbody>
 {% for case in coverage.documentation_audit.review_cases %}
 <tr><td><a href="/feature-catalog?feature={{ case.feature_id|urlencode }}">{{ case.feature_id }}</a></td>
 <td><code>{{ case.template }}</code></td><td><code>{{ case.marker }}</code></td>
-<td><code>{{ case.handler_file }}</code> — {{ case.handler_name }}</td><td>{{ 'Source verified' if case.template_marker_present and case.handler_marker_present else 'Review marker missing' }} — runtime unverified</td></tr>
+<td><code>{{ case.handler_file }}</code> — {{ case.handler_name }}</td><td>{{ case.contract.method }} · {{ case.contract.boundary }}<div class="muted">Inputs: {{ case.contract.inputs|join(', ') }}; outputs: {{ case.contract.outputs|join(', ') }}</div><div class="muted">{{ case.contract.error_evidence }}</div></td><td>{{ 'Source markers present' if case.template_marker_present and case.handler_marker_present and case.contract_source_present else 'Review marker missing' }} — runtime unverified</td></tr>
 {% endfor %}
 </tbody></table></div>
 </details>
