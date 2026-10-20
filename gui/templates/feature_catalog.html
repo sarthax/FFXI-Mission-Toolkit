@@ -133,7 +133,7 @@
 <p class="muted">These are curated examples for this capability{% if detail.children %} and its listed subfunctions{% endif %}, not a complete control inventory. Source checks and isolated synthetic HTTP tests are not browser, DSP, live client or end-to-end acceptance.</p>
 {% if action_rows %}
 {% for item in action_rows %}
-<details class="wb-card">
+<details class="wb-card" id="catalog-action-{{ item.id }}">
 <summary><strong>{{ item.id | replace('-', ' ') | title }}</strong> &mdash; <code>{{ item.method }} {{ item.route }}</code>{% if not item.source_verified %} (source drift to review){% endif %}</summary>
 {% if item.feature_id != detail.feature.id %}<p class="muted">Subfunction: <a href="/feature-catalog?feature={{ item.feature_id|urlencode }}">{{ item.feature_id }}</a></p>{% endif %}
 <p><strong>What it does:</strong> {{ item.interpretation }}</p>
@@ -144,7 +144,7 @@
 {% for failure in item.failure_paths %}
 <li><strong>{{ failure.label }}</strong> ({{ failure.state | replace('_', ' ') }}): {{ failure.signal }} <strong>Next:</strong> {{ failure.recovery }}
 {% if not failure.source_verified %}<span class="muted">Source-branch drift requires review.</span>{% endif %}
-{% if failure.http_contract_found %}<div class="muted">Isolated synthetic HTTP test declared: <code>{{ failure.http_contract_test }}</code>. See CI for execution status.</div>
+{% if failure.http_contract_found %}<div class="muted">Isolated synthetic HTTP contract test declared: <code>{{ failure.http_contract_test }}</code>. See CI for execution status.</div>
 {% elif failure.http_contract_declared %}<div class="muted">HTTP test reference not confirmed: <code>{{ failure.http_contract_test }}</code>.</div>
 {% else %}<div class="muted">Source review only; no linked HTTP response test.</div>{% endif %}</li>
 {% endfor %}
