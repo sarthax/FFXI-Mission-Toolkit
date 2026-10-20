@@ -179,3 +179,7 @@ Five previously template-only controls now have checked-in handler references: p
 ## Behavioral source contracts — stage 4
 
 The five curated handler review cases now document observed HTTP method, input names, returned fields, error/uncertainty notes and a bounded behavior class. Package and Feature Testing filters are read-only history/review; the test builder plan is design-only; Lua conversion produces a preview; SQL conversion may read a configured index for collision/duplication checks. These are source-level interpretations, checked by literal source markers to detect drift. They do not establish that errors or authorization were exercised end-to-end, nor permit execution against live targets. Investigate any failed marker manually before changing documentation or validation statuses.
+
+## Documentation discrepancy detection — stage 5
+
+Five reviewed GUI-to-handler contracts now carry explicit, case-specific documentation checks. The audit compares required operator terms against the relevant catalog purpose, workflow or caveat, and reports missing terms as **reviewable documentation gaps**, not runtime defects. Corrections clarify read-only package review, filter limitations for test history, test plan versus guarded execution, preview-only Lua conversion, and index-reading (but not database-writing) SQL conversion. CI asserts no discrepancies in these curated cases. This is a bounded contract/content check, not a semantic guarantee of all code paths; further expansion requires independently verified handler behavior and error cases.
