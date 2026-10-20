@@ -52,6 +52,13 @@
 </tbody></table></div>
 </details>
 <p><strong>Documentation contract checks:</strong> {{ coverage.documentation_audit.documentation_discrepancy_count }} reviewable wording gaps across {{ coverage.documentation_audit.review_case_count }} source-backed review cases. A missing phrase requests review; it does not prove a functional defect.</p>
+<details id="reward-lifecycle-audit"><summary>Auction House reward delivery lifecycle ({{ coverage.documentation_audit.reward_lifecycle|length }} source-reviewed stages)</summary>
+<p class="muted">Read-only source evidence. No delivery, retry, rollback or game-state validation was performed.</p>
+<div class="table-wrap"><table><thead><tr><th>State</th><th>Meaning</th><th>Operator follow-up</th><th>Source check</th></tr></thead><tbody>
+{% for item in coverage.documentation_audit.reward_lifecycle %}
+<tr><td><code>{{ item.state }}</code></td><td>{{ item.interpretation }}</td><td>{{ item.next }}</td><td>{{ 'Present' if item.source_markers_present else 'Review drift' }}<div class="muted">{{ item.file }}</div></td></tr>
+{% endfor %}
+</tbody></table></div></details>
 <details><summary>Curated template reviews ({{ coverage.documentation_audit.review_case_count }})</summary>
 <p class="muted">These rows verify literal template and route-handler markers in checked-in source. Runtime behavior and permissions require separate acceptance.</p>
 <div class="table-wrap"><table><thead><tr><th>Capability</th><th>Template</th><th>Marker</th><th>Handler</th><th>Contract</th><th>Status</th></tr></thead><tbody>
