@@ -82,3 +82,7 @@ The Catalog coverage panel now counts and classifies each record by its Help des
 ## Client Research contextual Help (October 19)
 
 Sixteen Binary Inspector, Retail Version and client-asset research entries now point to three grounded Help sections. The documentation covers PE evidence, version/probe comparisons, manifest and selective download planning, and DAT/model/dialog research, while explicitly distinguishing artifact/source inspection from the running client's behavior. Existing Help anchor and route inventory regression contracts apply. This does not change runtime validation labels.
+
+## Migration Help deep links (October 19)
+
+Eight Migration entries now point to focused operator guidance on ID drift, Lua/SQL/binding conversion, and package generation/scope/review. The instructions distinguish read-only investigation and generated plans from authorized apply operations. Runtime validation status remains unchanged; existing Help fragment and route-inventory smoke tests cover the destinations.
