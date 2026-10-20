@@ -74,3 +74,7 @@ A focused subset of Feature Trace, Feature Testing and Key Items records now car
 ## Contextual Help deep links — October 19
 
 Twenty-two existing capabilities in Feature Trace/Behavior Inspector, Wiki, Key Items, Feature Testing and Validation now point to anchored in-app guidance rather than generic `/help`. Each anchor covers a bounded operator workflow and explicitly states the distinction between source references, design-only plans and observed validation. The catalog regression confirms that every referenced Help anchor is present. This is a navigation and documentation improvement, not a runtime validation claim.
+
+## Help-link coverage diagnostic (October 19)
+
+The Catalog coverage panel now counts and classifies each record by its Help destination: a contextual `/help#section` link, a direct module-specific Help route, or a generic `/help` link. The audit also groups generic destinations by module with links to their exact catalog entries for targeted documentation work. Regression compares these counts to live `features.json`; it does not hardcode an expected number of contextual links. This is link-depth coverage only, not a quality or runtime-acceptance score.
