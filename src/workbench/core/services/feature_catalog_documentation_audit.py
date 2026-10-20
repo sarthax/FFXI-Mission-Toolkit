@@ -40,8 +40,8 @@ def audit_documentation(root: Path = ROOT) -> dict:
                     "read_only_review", "read_only_history", "design_only",
                     "conversion_preview", "conversion_with_index_reads",
                     "guarded_execution_enqueue", "guarded_package_materialization",
-                    "guarded_scope_write", "read_only_preview"
-                } or not contract.get("inputs") or not contract.get("outputs")
+                    "guarded_scope_write", "read_only_preview", "guarded_reward_execution"
+                } or not isinstance(contract.get("inputs"), list) or not contract.get("outputs")
                 or not contract.get("error_evidence")):
             raise ValueError("incomplete or unsupported source behavior contract")
         # Symbol checks are drift guards, not a parser or a proof of successful execution.
