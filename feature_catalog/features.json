@@ -58,7 +58,10 @@
       "help": "/help",
       "purpose": "Research previously recorded client packets, events, entities, and timelines.",
       "how_to_use": "Open Captures, choose a capture package, and use the appropriate packet, event, entity, search, or spatial view.",
-      "caveat": "Captured observations are evidence from a particular session; do not assume they prove general client behavior."
+      "caveat": "Captured observations are evidence from a particular session; do not assume they prove general client behavior.",
+      "source_refs": [
+        "gui/templates/captures.html"
+      ]
     },
     {
       "id": "key-items",
@@ -103,7 +106,13 @@
       "help": "/help",
       "purpose": "Inspect a connected Ashita bridge, real-time state, entity telemetry, and authorized movement controls.",
       "how_to_use": "Start at the bridge console, confirm client connection and zone, then choose live view or movement/validation controls.",
-      "caveat": "Live telemetry and active control capabilities depend on the running addon and bridge configuration."
+      "caveat": "Live telemetry and active control capabilities depend on the running addon and bridge configuration.",
+      "source_refs": [
+        "gui/templates/live_client_bridge.html"
+      ],
+      "test_refs": [
+        "tests/test_live_client_bridge_protocol.py"
+      ]
     },
     {
       "id": "synth",
@@ -181,7 +190,10 @@
       "help": "/help",
       "purpose": "Resolve server entity IDs and names and follow linked evidence.",
       "how_to_use": "Search by server entity ID or name, inspect the resolved identity, then follow source and zone links.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/entity.html"
+      ]
     },
     {
       "id": "sql-browser",
@@ -194,7 +206,10 @@
       "help": "/help",
       "purpose": "Inspect indexed server SQL data and related records.",
       "how_to_use": "Find a server table or record, inspect the indexed fields and linked evidence, and verify the source snapshot.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/sql.html"
+      ]
     },
     {
       "id": "client-overview",
@@ -372,7 +387,13 @@
       "help": "/help",
       "purpose": "Inspect the Ashita telemetry receiver, sender configuration, and event freshness.",
       "how_to_use": "Open the bridge console, identify the connected client, confirm the current zone and inspect heartbeat/freshness.",
-      "caveat": "An absent or stale stream is not evidence that the client is offline; inspect bridge configuration first."
+      "caveat": "An absent or stale stream is not evidence that the client is offline; inspect bridge configuration first.",
+      "source_refs": [
+        "gui/templates/live_client_bridge.html"
+      ],
+      "test_refs": [
+        "tests/test_live_client_bridge_protocol.py"
+      ]
     },
     {
       "id": "live-entity-stream",
