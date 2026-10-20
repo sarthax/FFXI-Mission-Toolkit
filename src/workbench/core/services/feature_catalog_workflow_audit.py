@@ -11,9 +11,9 @@ import re
 from pathlib import Path
 from workbench.core.services.feature_catalog import ROOT, load_catalog
 
-FORM = re.compile(r"<form\\b[^>]*>[\\s\\S]*?</form\\s*>", re.I)
-LINK = re.compile(r"<a\\b[^>]*>", re.I)
-ATTR = re.compile(r"""\\b([\\w-]+)=["']([^"']*)["']""")
+FORM = re.compile(r"<form\b[^>]*>[\s\S]*?</form\s*>", re.I)
+LINK = re.compile(r"<a\b[^>]*>", re.I)
+ATTR = re.compile(r"""\b([\w-]+)=["']([^"']*)["']""")
 
 
 def _source(root: Path, relative: str) -> str:
@@ -133,7 +133,7 @@ def audit_workflow_bindings(root: Path = ROOT) -> dict:
         if helper:
             helper_text = read(helper["file"])
             helper_found = (helper["call"] in function_text and
-                            re.search(r"^def " + re.escape(helper["name"]) + r"\\(",
+                            re.search(r"^def " + re.escape(helper["name"]) + r"\(",
                                       helper_text, re.M) is not None)
         cases.append({
             **item, "ui_found": ui_found, "route_found": route_found,
