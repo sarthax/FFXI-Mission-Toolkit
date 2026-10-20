@@ -128,10 +128,21 @@ def _generated_display_edge(row: dict) -> dict:
         "provider_evidence": True,
     })
     evidence = list(row.get("evidence") or ())
+    # The Relationships HTML table consumes the canonical traversal's from_node,
+    # to_node and depth fields. Keep provider-edge direction and source-recorded
+    # depth explicit rather than rendering blank endpoints or inventing a hop.
+    source = row.get("source_node")
+    target = row.get("target_node")
+    recorded_depth = metadata.get("depth")
+    depth = recorded_depth if type(recorded_depth) is int and recorded_depth > 0 else None
     return {
         "relationship_id": None,
-        "source_node": row.get("source_node"),
-        "target_node": row.get("target_node"),
+        "source_node": source,
+        "target_node": target,
+        "from_node": source,
+        "to_node": target,
+        "traversed_direction": "out",
+        "depth": depth,
         "relationship": row.get("relationship"),
         "evidence_id": None,
         "confidence": row.get("confidence") or "STRONG",
