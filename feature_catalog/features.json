@@ -13,7 +13,13 @@
       "help": "/help",
       "purpose": "Follow a behavior from a named feature to its most relevant implementation and evidence.",
       "how_to_use": "Start with a specific feature or behavior; inspect high-signal evidence and follow source links into related tools.",
-      "caveat": "Use the runtime and evidence drill-down sections to narrow findings rather than treating every graph connection as equally relevant."
+      "caveat": "Use the runtime and evidence drill-down sections to narrow findings rather than treating every graph connection as equally relevant.",
+      "source_refs": [
+        "src/workbench/devtools/features/_trace_impl.py"
+      ],
+      "test_refs": [
+        "test_fixtures/test_feature_trace_catalog.py"
+      ]
     },
     {
       "id": "behavior-inspector",
@@ -65,7 +71,13 @@
       "help": "/help",
       "purpose": "Examine key-item identities and how client/server data and scripts reference them.",
       "how_to_use": "Browse or search the Key Items page, then inspect the item's details and source references.",
-      "caveat": "Historical TPZ script names and DSP behavior must not be conflated."
+      "caveat": "Historical TPZ script names and DSP behavior must not be conflated.",
+      "source_refs": [
+        "gui/templates/keyitems.html"
+      ],
+      "test_refs": [
+        "test_fixtures/test_feature_catalog.py"
+      ]
     },
     {
       "id": "auction-house",
@@ -416,7 +428,13 @@
       "help": "/help",
       "purpose": "Build a focused evidence dossier identifying why a feature behaves as it does.",
       "how_to_use": "Enter a concrete feature or behavior in Feature Trace; review the prioritized sources, binding relationships, and source links.",
-      "caveat": "Ranked evidence is not a claim that every adjacent graph node is causal."
+      "caveat": "Ranked evidence is not a claim that every adjacent graph node is causal.",
+      "source_refs": [
+        "src/workbench/devtools/features/trace_dossier.py"
+      ],
+      "test_refs": [
+        "test_fixtures/test_feature_trace_wiki_dossier.py"
+      ]
     },
     {
       "id": "trace-runtime",
@@ -1156,7 +1174,13 @@
       "help": "/help",
       "purpose": "Prepare test specifications and inspect run results without granting unapproved execution.",
       "how_to_use": "Open Feature Testing, choose a readiness case, build a scenario and review preflight, observed results and assertion differences.",
-      "caveat": "Design-only plans are not executable tests; execution support and live result evidence must be verified separately."
+      "caveat": "Design-only plans are not executable tests; execution support and live result evidence must be verified separately.",
+      "source_refs": [
+        "src/workbench/server_admin/feature_testing/router.py"
+      ],
+      "test_refs": [
+        "test_fixtures/test_feature_testing_builder.py"
+      ]
     },
     {
       "id": "testing-scenario-builder",
@@ -1170,7 +1194,13 @@
       "help": "/help",
       "purpose": "Construct a clear, source-aware set of checks before requesting operator execution.",
       "how_to_use": "In Feature Testing, use the builder, observation guide and assertion templates; save or inspect the design-only specification.",
-      "caveat": "The field guide documents expected evidence; it does not guarantee collection or support in a particular runner."
+      "caveat": "The field guide documents expected evidence; it does not guarantee collection or support in a particular runner.",
+      "source_refs": [
+        "gui/templates/feature_testing.html"
+      ],
+      "test_refs": [
+        "test_fixtures/test_feature_testing_assertion_presets.py"
+      ]
     },
     {
       "id": "testing-run-inspector",
@@ -1184,7 +1214,13 @@
       "help": "/help",
       "purpose": "Inspect which assertions passed, failed or lack sufficient observation evidence.",
       "how_to_use": "Open Feature Testing run history, select a run, and inspect case identity, evidence, observed values and failure diagnostics.",
-      "caveat": "Imported observations are scoped to the run and cannot by themselves establish general gameplay correctness."
+      "caveat": "Imported observations are scoped to the run and cannot by themselves establish general gameplay correctness.",
+      "source_refs": [
+        "src/workbench/server_admin/feature_testing/router.py"
+      ],
+      "test_refs": [
+        "test_fixtures/test_feature_testing_operator_jobs.py"
+      ]
     },
     {
       "id": "testing-supervisor",
@@ -1198,7 +1234,13 @@
       "help": "/help",
       "purpose": "Examine a failing assertion with its original run evidence and read-only source investigation.",
       "how_to_use": "Open the supervisor investigation for an exact run ID after configuring authorized local credentials and results storage; review candidates and uncertainty.",
-      "caveat": "The gateway is authenticated and read-only; source ranking is not causal proof and does not enable execution."
+      "caveat": "The gateway is authenticated and read-only; source ranking is not causal proof and does not enable execution.",
+      "source_refs": [
+        "src/workbench/server_admin/feature_testing/investigation_dossier.py"
+      ],
+      "test_refs": [
+        "test_fixtures/test_supervisor_investigation_dossier.py"
+      ]
     },
     {
       "id": "trace-wiki-provenance",
@@ -1212,7 +1254,13 @@
       "help": "/help",
       "purpose": "Follow original Wiki citations while preserving the distinction between reference and server behavior.",
       "how_to_use": "In a Wiki-backed Feature Trace record, open the Evidence Dossier, inspect source locator and revision, and follow the exact Wiki page/section link.",
-      "caveat": "Source assertions remain review-only and duplicated headings may not be resolvable; local GUI acceptance is pending."
+      "caveat": "Source assertions remain review-only and duplicated headings may not be resolvable; local GUI acceptance is pending.",
+      "source_refs": [
+        "src/workbench/devtools/features/trace_dossier.py"
+      ],
+      "test_refs": [
+        "test_fixtures/test_feature_trace_wiki_section_dossier.py"
+      ]
     },
     {
       "id": "wiki-source-navigation",
@@ -1240,7 +1288,13 @@
       "help": "/help",
       "purpose": "Inspect which source mapping corresponds to a client key-item identity.",
       "how_to_use": "Search Key Items, select a record and compare Active DSP, LSB and optional Topaz mappings and recorded evidence.",
-      "caveat": "Reference mappings and backport readiness are not proof of in-game behavior."
+      "caveat": "Reference mappings and backport readiness are not proof of in-game behavior.",
+      "source_refs": [
+        "gui/templates/keyitems.html"
+      ],
+      "test_refs": [
+        "test_fixtures/test_feature_catalog.py"
+      ]
     },
     {
       "id": "ki-operation-dependencies",
@@ -1254,7 +1308,13 @@
       "help": "/help",
       "purpose": "Find source-backed key-item condition and mutation references.",
       "how_to_use": "Open the Key Item inspector, select a source lineage and filter Lua operations to require, grant or remove.",
-      "caveat": "References depend on indexed script lineage, not runtime observation."
+      "caveat": "References depend on indexed script lineage, not runtime observation.",
+      "source_refs": [
+        "gui/templates/keyitems.html"
+      ],
+      "test_refs": [
+        "test_fixtures/test_feature_catalog.py"
+      ]
     },
     {
       "id": "ki-evidence-handoff",
@@ -1268,7 +1328,13 @@
       "help": "/help",
       "purpose": "Continue a specific key-item investigation without losing its source identity.",
       "how_to_use": "In Key Items, review recorded evidence and use Feature Trace, Wiki or Character Editor links for the relevant follow-up.",
-      "caveat": "Cross-module navigation does not establish that a captured or reference occurrence is causally related."
+      "caveat": "Cross-module navigation does not establish that a captured or reference occurrence is causally related.",
+      "source_refs": [
+        "gui/templates/keyitems.html"
+      ],
+      "test_refs": [
+        "test_fixtures/test_feature_catalog.py"
+      ]
     },
     {
       "id": "validation-run-history",

@@ -55,6 +55,12 @@ def main():
         detail = feature_detail(items, subfeature_id)
         assert detail["parent"] and detail["feature"]["how_to_use"]
         assert detail["feature"]["validation"] == "unverified"
+    for feature_id in ("feature-trace", "trace-evidence", "trace-wiki-provenance",
+                       "feature-testing", "testing-scenario-builder", "testing-run-inspector",
+                       "testing-supervisor", "key-items", "ki-operation-dependencies"):
+        entry = feature_detail(items, feature_id)["feature"]
+        assert entry.get("source_refs") and entry.get("test_refs"), feature_id
+        assert entry["validation"] != "tested", feature_id
     assert feature_detail(items, "missing-capability") is None
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
@@ -99,6 +105,12 @@ def main():
     assert "Automatic GUI control candidates" in detail_page
     assert "Functions in this module" in detail_page
     assert "How to use" in detail_page
+    assert "Source and regression references" not in detail_page  # Auction House not mapped yet
+    trace_page = render("feature_catalog.html", "/feature-catalog", features=items,
+                        modules=sorted({f["module"] for f in items}), q="", module="",
+                        coverage=audit, detail=feature_detail(items, "trace-evidence"))
+    assert "Source and regression references" in trace_page
+    assert "test_feature_trace_wiki_dossier.py" in trace_page
     assert "/feature-catalog?feature=" in detail_page
     filtered = search_catalog(items, "binary")
     filtered_page = render("feature_catalog.html", "/feature-catalog",
