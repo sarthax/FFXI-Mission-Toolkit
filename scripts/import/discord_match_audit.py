@@ -1,6 +1,6 @@
 """Audit: match Discord capture posts to ingested captures by NAME (filename vs post title/URL filename).
 
-Read-only. Writes a CSV report; does not touch the database.
+Read-only. Writes a CSV of possible matches; never updates capture IDs or ingestion state.
   py -3 scripts/import/discord_match_audit.py [--out exports/discord_match_audit.csv]
 Tiers: exact (normalized names equal), high (>=0.88), possible (>=0.72). Everything is a candidate, never auto-linked.
 """
@@ -48,34 +48,24 @@ def body_title(text):
     return ls[0] if ls else ""
 
 
-def apply_csv(con, path):
-    n = {"ingested": 0, "probable": 0}
-    for r in csv.DictReader(open(path, encoding="utf-8-sig")):
-        st = {"exact": "ingested", "high": "probable"}.get(r["tier"])
-        if not st or not r["capture_id"]: continue
-        cur = con.execute("UPDATE discord_posts SET capture_id=?, ingest_status=? WHERE message_id=? AND capture_id IS NULL AND ingest_status='indexed'",
-                          (int(r["capture_id"]), st, r["message_id"]))
-        n[st] += cur.rowcount
-    con.commit(); print("applied", n)
-
-
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--out", default="exports/discord_match_audit.csv")
-    ap.add_argument("--apply", metavar="CSV", help="apply a previously written audit CSV: exact->ingested, high->probable (never overwrites a post that already has a capture_id)")
+    # No --apply action: even a high string similarity is not evidence of ingestion.
     a = ap.parse_args()
     con = sqlite3.connect(DB)
-    if a.apply:
-        return apply_csv(con, a.apply)
     caps = []
     for cid, label, mission, sp in con.execute("SELECT capture_id,capture_label,mission_name,source_path FROM captures"):
         base = os.path.basename((sp or "").split("::")[0].replace("\\", "/"))
-        names = {n for n in (label, mission and label, base) if n}
+        names = {n for n in (label, mission, base) if n}
         caps.append((cid, label or base, base, names))
     posts = []
     for mid, ch, dt, au, text, urls, st in con.execute(
             "SELECT p.message_id,c.name,p.posted_at,p.author,p.text,p.urls,p.ingest_status FROM discord_posts p "
             "LEFT JOIN discord_channels c USING(channel_id) WHERE p.ingest_status='indexed'"):
-        ul = json.loads(urls or "[]")
+        try: ul = json.loads(urls or "[]")
+        except (TypeError, ValueError): continue
+        if not isinstance(ul, list): continue
+        ul = [u for u in ul if isinstance(u, str)]
         if not any(HOST.search(u) for u in ul): continue
         names = url_names(ul) + [body_title(text)]
         posts.append((mid, ch, dt, au, [n for n in names if n], ul))
@@ -95,8 +85,13 @@ def main():
                      "capture_label": best[2] if tier != "none" else "", "url": ul[0] if ul else ""})
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     with open(a.out, "w", newline="", encoding="utf-8-sig") as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0].keys())); w.writeheader()
-        w.writerows(sorted(rows, key=lambda r: -r["score"]))
+        w = csv.DictWriter(f, fieldnames=["tier", "score", "message_id", "channel",
+                                          "posted", "author", "post_name", "capture_id",
+                                          "capture_label", "url"])
+        w.writeheader()
+        for row in sorted(rows, key=lambda row: -row["score"]):
+            w.writerow({k: ("'" + v if isinstance(v, str) and v.lstrip().startswith(("=", "+", "-", "@")) else v)
+                        for k, v in row.items()})
     print("posts with file/video links:", len(posts), "captures:", len(caps)); print(tier_n); print("wrote", a.out)
 
 
