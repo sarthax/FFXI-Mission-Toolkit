@@ -12,7 +12,7 @@ from workbench.core.services.feature_catalog_gui_audit import audit_gui_controls
 from workbench.core.services.feature_catalog_gui_inventory import inventory_gui, discover_controls
 from workbench.core.services.feature_catalog_documentation_audit import inspect_handler_source
 from workbench.core.services.feature_catalog_workflow_audit import (
-    inspect_route_binding, inspect_ui_binding,
+    inspect_route_binding, inspect_ui_binding, inspect_guard_helper_source,
 )
 
 
@@ -258,9 +258,9 @@ def main():
     assert inspect_guard_helper_source(nested, nested_case, "status").lstrip().startswith("def status")
     assert not inspect_guard_helper_source(nested, nested_case, "unknown")
     # Guard source from another factory or elsewhere in the module cannot satisfy the reviewed scope.
-    wrong_scope = ('def other():\\n'
-                   '    def require_same_origin():\\n'
-                   '        raise ValueError("fake")\\n'
+    wrong_scope = ('def other():\n'
+                   '    def require_same_origin():\n'
+                   '        raise ValueError("fake")\n'
                    + nested)
     assert not inspect_guard_helper_source(wrong_scope, nested_case, "require_same_origin")
     assert not inspect_guard_helper_source("def broken(:", nested_case, "status")
