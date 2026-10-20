@@ -69,13 +69,24 @@
 {% endfor %}
 </tbody></table></div>
 </details>
-<details id="operator-workflow-bindings"><summary>Operator workflow bindings ({{ coverage.documentation_audit.operator_workflows.case_count }} curated source paths)</summary>
+<details id="operator-workflow-bindings"><summary>Operator workflow bindings ({{ coverage.documentation_audit.operator_workflows.case_count }} curated source paths; {{ coverage.documentation_audit.operator_workflows.failure_count }} failure/degraded-state checks)</summary>
 <p class="muted">{{ coverage.documentation_audit.operator_workflows.limitations }}</p>
-<div class="table-wrap"><table><thead><tr><th>Capability / operator control</th><th>HTTP handler</th><th>Safety boundary and interpretation</th><th>Evidence result</th></tr></thead><tbody>
+<div class="table-wrap"><table><thead><tr><th>Capability / operator control</th><th>HTTP handler</th><th>Safety boundary and interpretation</th><th>Failure states and recovery</th><th>Evidence result</th></tr></thead><tbody>
 {% for item in coverage.documentation_audit.operator_workflows.cases %}
 <tr><td><a href="/feature-catalog?feature={{ item.feature_id|urlencode }}">{{ item.feature_id }}</a><div class="muted"><code>{{ item.id }}</code> · {{ item.kind }} · {{ item.template }}</div></td>
 <td><code>{{ item.method }} {{ item.route }}</code><div class="muted">{{ item.handler_file }} → {{ item.handler_name }}{% if item.helper %} → {{ item.helper.file }}:{{ item.helper.name }}{% endif %}</div></td>
 <td><strong>{{ item.boundary|replace('_', ' ') }}</strong><div class="muted">{{ item.interpretation }}</div></td>
+<td><details><summary>{{ item.failure_paths|length }} reviewed paths{% if not item.failure_sources_verified %} · inspect source drift{% endif %}</summary>
+{% for failure in item.failure_paths %}
+<p><strong>{{ failure.label }}</strong> <span class="muted">({{ failure.state|replace('_', ' ') }})</span>
+{% if not failure.source_verified %}<strong>— Source drift</strong>{% endif %}</p>
+<p class="muted">{{ failure.signal }}</p>
+<p><strong>Next:</strong> {{ failure.recovery }}</p>
+{% if failure.missing_handler_markers or failure.missing_guard_markers %}
+<p class="muted">Unmatched source markers: {{ (failure.missing_handler_markers + failure.missing_guard_markers)|join(', ') }}</p>
+{% endif %}
+{% endfor %}
+</details></td>
 <td>{{ 'Literal UI/handler sources present' if item.source_verified else 'Review source drift' }}<div class="muted">Browser/runtime not tested</div>{% if item.missing_handler_markers %}<div class="muted">Missing handler markers: {{ item.missing_handler_markers|join(', ') }}</div>{% endif %}</td></tr>
 {% endfor %}
 </tbody></table></div>
