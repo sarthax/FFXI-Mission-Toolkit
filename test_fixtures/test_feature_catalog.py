@@ -24,7 +24,7 @@ def main():
     # Dynamic routers are covered by the existing Help route test.
     dynamic = {"/synth", "/auction-house/help", "/live-client/bridge/console", "/feature-testing"}
     assert all(f["route"] in known | dynamic for f in items), [f["route"] for f in items if f["route"] not in known | dynamic]
-    assert all(f["help"] in known | dynamic for f in items)
+    assert all(f["help"].split("#", 1)[0] in known | dynamic for f in items)
     assert "client-binary" in {f["id"] for f in search_catalog(items, "binary")}
     details = feature_detail(items, "auction-house")
     assert details["feature"]["how_to_use"]
@@ -61,6 +61,12 @@ def main():
         entry = feature_detail(items, feature_id)["feature"]
         assert entry.get("source_refs") and entry.get("test_refs"), feature_id
         assert entry["validation"] != "tested", feature_id
+    help_html = (ROOT / "gui/templates/help.html").read_text(encoding="utf-8")
+    for feature in items:
+        if "#" in feature["help"]:
+            fragment=feature["help"].split("#", 1)[1]
+            assert f'id="{fragment}"' in help_html, feature["id"]
+    assert feature_detail(items, "feature-testing")["feature"]["help"] == "/help#help-feature-testing"
     assert feature_detail(items, "missing-capability") is None
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
