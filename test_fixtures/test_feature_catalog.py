@@ -67,6 +67,14 @@ def main():
             fragment=feature["help"].split("#", 1)[1]
             assert f'id="{fragment}"' in help_html, feature["id"]
     assert feature_detail(items, "feature-testing")["feature"]["help"] == "/help#help-feature-testing"
+    assert feature_detail(items, "capture-browser")["feature"]["source_refs"] == ["gui/templates/captures.html"]
+    bridge = feature_detail(items, "live-bridge")["feature"]
+    assert "tests/test_live_client_bridge_protocol.py" in bridge["test_refs"]
+    assert bridge["validation"] == "unverified"
+    for feature_id in ("entity-lookup", "sql-browser"):
+        entry = feature_detail(items, feature_id)["feature"]
+        assert entry.get("source_refs")
+        assert not entry.get("test_refs"), "Do not imply specific regression coverage"
     assert feature_detail(items, "missing-capability") is None
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
@@ -84,6 +92,13 @@ def main():
     assert set(help_cov["generic"]) == {f["id"] for f in items if f["help"] == "/help"}
     assert set(help_cov["module_specific"]) == {f["id"] for f in items if not f["help"].startswith("/help")}
     assert all(f_id in help_cov["generic"] for ids in help_cov["generic_by_module"].values() for f_id in ids)
+    quality = audit["quality_by_module"]
+    assert sum(row["entries"] for row in quality.values()) == len(items)
+    assert sum(row["source_refs"] for row in quality.values()) == sum(bool(f.get("source_refs")) for f in items)
+    assert sum(row["test_refs"] for row in quality.values()) == sum(bool(f.get("test_refs")) for f in items)
+    assert set(audit["provenance_gaps"]) == {
+        f["id"] for f in items if not f.get("source_refs") or not f.get("test_refs")
+    }
     gui_audit = audit_gui_controls()
     inventory = inventory_gui()
     assert inventory["control_count"] > 0

@@ -63,8 +63,27 @@ def audit_catalog(root: Path = ROOT) -> dict:
         for module in sorted({f["module"] for f in features})
         if any(f["module"] == module and f["help"] == "/help" for f in features)
     }
+    # Navigation and operator detail are distinct: links, instructions and evidence
+    # pointers are assessed separately. These are triage signals, not QA verdicts.
+    quality_by_module = {}
+    for feature in features:
+        module = feature["module"]
+        row = quality_by_module.setdefault(module, {
+            "entries": 0, "generic_help": 0, "contextual_help": 0,
+            "source_refs": 0, "test_refs": 0, "instruction_gaps": 0,
+        })
+        row["entries"] += 1
+        row["generic_help"] += feature["help"] == "/help"
+        row["contextual_help"] += "#" in feature["help"]
+        row["source_refs"] += bool(feature.get("source_refs"))
+        row["test_refs"] += bool(feature.get("test_refs"))
+        row["instruction_gaps"] += bool(missing_operator_detail.get(feature["id"]))
+    provenance_gaps = sorted(feature["id"] for feature in features
+                             if not feature.get("source_refs") or not feature.get("test_refs"))
     return {
         "feature_count": len(features),
+        "quality_by_module": quality_by_module,
+        "provenance_gaps": provenance_gaps,
         "help_coverage": help_coverage,
         "module_count": len({f["module"] for f in features}),
         "subfeature_count": sum(bool(f.get("parent_id")) for f in features),

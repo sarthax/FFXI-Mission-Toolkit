@@ -83,6 +83,30 @@
 <p>Use <a href="/captures/review">Capture Review</a> to triage observations and their evidence, then open the zone-oriented review where supported. Keep source/run identity and conflicts visible. Captured events demonstrate what was observed in a session; they do not establish generic gameplay rules or independently validate a proposed server implementation.</p>
 <h2 id="help-video-ocr">Video OCR and evidence alignment</h2>
 <p>Use <a href="/ocr">Video OCR</a> to inspect extracted on-screen text and timestamp alignment alongside capture events. Review ambiguous OCR strings and timing offsets before linking dialogue or UI text to packets. OCR output remains fallible observational evidence.</p>
+<h2 id="help-migration-drift">Migration identity and ID drift</h2>
+<p>Open <a href="/iddrift">ID Drift</a> to compare source and target identifier mappings before preparing any backport. Inspect collisions and unknown mappings as review findings; do not assume identical numeric IDs refer to the same entity across server forks.</p>
+<h2 id="help-migration-convert">Lua, SQL and binding conversion</h2>
+<p>Use <a href="/backport/lua-convert">Lua Converter</a>, <a href="/backport/sql-convert">SQL Converter</a> or <a href="/backport/bindings">Binding Converter</a> to inspect source-to-target adaptations. Review unsupported constructs, symbol resolutions and emitted diffs before accepting a conversion. Source conversion is not an approved deployment or successful runtime validation.</p>
+<h2 id="help-migration-packages">Migration packages, scope and review</h2>
+<p>Open <a href="/packages">Packages</a> to inspect migration artifacts and their provenance. Use package creation and scope review to define candidate files and relationships, then Package Review to inspect collisions, approvals and proposed changes. Keep package generation, review and any separately authorized apply stage distinct; a reviewed plan does not write to a server.</p>
+<h2 id="help-research-sessions">Research sessions and evidence</h2>
+<p>Use <a href="/research">Research Sessions</a> to scope an investigation, gather source-qualified evidence and inspect citations before recording conclusions. In <a href="/research/evidence">Research Evidence</a>, check the originating source and the evidence links; observations and inferred relationships are not interchangeable. A missing link may indicate incomplete indexing rather than absent functionality.</p>
+<h2 id="help-research-gaps">Research gaps and contradictions</h2>
+<p>Open <a href="/researchgaps">Research Gaps</a> to identify unresolved questions and missing evidence. Use <a href="/research/contradictions">Research Contradictions</a> to compare conflicting assertions, versions and sources. Keep contradictions open when the source versions, runtime context or identities differ; do not manufacture a single definitive verdict from incomplete records.</p>
+<h2 id="help-research-checker">Feature Checker and LLM research</h2>
+<p>Use <a href="/features/check">Feature Checker</a> to inspect evidence requirements and implementation coverage for a selected feature. <a href="/llm">LLM Research</a> can help navigate retrieved source material, but suggestions and summaries require source verification. Neither a coverage score nor a model response is independent gameplay validation.</p>
+<h2 id="help-live-bridge">Live Client bridge and observations</h2>
+<p>Open <a href="/live-client/bridge/console">Live Client Bridge</a> to inspect client connectivity, selected source and observation status. Configure the authorized Ashita addon or headless observation source separately. Check source identity, timestamps and connection freshness before trusting a live projection; a connected bridge does not prove complete capture coverage.</p>
+<h2 id="help-live-entities">Observed entities and movement</h2>
+<p>In the Live Client console, inspect nearby observed entities and position updates. Distinguish observed client broadcasts from DSP spawn records; entity name, identity and timing may not align across sources. Movement paths reflect sampled observations and can be incomplete between polling intervals.</p>
+<h2 id="help-live-3d">Live 3D map and zone viewer</h2>
+<p>Use the Live Client 3D/zone viewer to inspect observed positions alongside mapped server entities, keeping source colors and zone identity in view. Missing positions can indicate visibility or capture gaps, not missing spawns. Viewer navigation and overlays do not validate server behavior or execute client commands.</p>
+<h2 id="help-server-entity">Server entity lookup</h2>
+<p>Use <a href="/entity">Entity Lookup</a> to inspect server-side entity identities, placements and related data. Confirm the active DSP database/profile and zone before comparing results with live client observations. A database row is configured state, not proof that an entity spawned in a recorded session.</p>
+<h2 id="help-server-sql">Server SQL browsing</h2>
+<p>Open <a href="/sql">SQL Browser</a> to inspect selected schema tables and source rows. Use narrowly scoped queries and distinguish loaded database values from reference SQL scripts or migrations. Read-only inspection does not authorize database changes or establish runtime behavior.</p>
+<h2 id="help-server-dialog-events">Server dialog and event references</h2>
+<p>Use <a href="/dialog">Dialog Browser</a> to locate dialog references and <a href="/events">Event Browser</a> to examine event identifiers and associated source context. Correlate IDs with zone, NPC and script lineage before drawing conclusions. An indexed reference may be unused, version-specific or unreachable without further capture/runtime evidence.</p>
 <h2 id="help-workspaces">Workspaces</h2>
 <p class="muted">The top navigation is organized by job rather than by individual database table.</p>
 <div class="table-wrap"><table>
