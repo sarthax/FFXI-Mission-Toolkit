@@ -183,3 +183,7 @@ The five curated handler review cases now document observed HTTP method, input n
 ## Documentation discrepancy detection — stage 5
 
 Five reviewed GUI-to-handler contracts now carry explicit, case-specific documentation checks. The audit compares required operator terms against the relevant catalog purpose, workflow or caveat, and reports missing terms as **reviewable documentation gaps**, not runtime defects. Corrections clarify read-only package review, filter limitations for test history, test plan versus guarded execution, preview-only Lua conversion, and index-reading (but not database-writing) SQL conversion. CI asserts no discrepancies in these curated cases. This is a bounded contract/content check, not a semantic guarantee of all code paths; further expansion requires independently verified handler behavior and error cases.
+
+## Expanded behavioral reviews — Package Scope and Capture Search
+
+Two more source-backed audit cases cover Package Scope GET filtering and cross-capture Search GET across event and packet modes. The Package Scope page contains separate POST decision/review forms; the documented GET filter must not imply those operations are executed. Capture Search results depend on available indexed recordings. Curated documentation contract checks protect these boundaries, while handler-symbol checks remain static source drift guards rather than runtime execution tests.
