@@ -2,6 +2,12 @@
 
 Feature Trace is primarily an **implementation and dependency navigation tool**, not a dump of every catalog relationship. The October 11 [relevance audit](FEATURE_TRACE_RELEVANCE_AUDIT_2026-10-11.md) established a test protocol; its real-package execution and scored user-facing acceptance remained pending at that baseline.
 
+## Provider evidence presentation correction (October 20)
+
+Focused-mode generated provider relationships now carry their actual `from_node`, `to_node` and source-recorded traversal depth into the Relationships table. A missing provider depth remains unknown (shown as a dash), not a fabricated hop. Provider-generated edges are visibly marked **read-only** with their generator and up to three escaped source-evidence summaries; persisted canonical edges retain their evidence ID/link separately. The Runtime relationship section presents a count/inspection handoff instead of an empty per-edge table because the indexed runtime hierarchy intentionally retains summary groups, not expanded raw packet rows.
+
+This is a **rendering/interpretation fix**, not a relevance-ranker change, new identity closure, successful source-locator validation or real DSP acceptance. The baseline under [P0 #1228](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1228) remains NOT RUN until a local reviewer returns actual three-case observations.
+
 ## Recommended workflow
 1. Start with one concrete question (e.g. “what controls this NM behavior?” or “what gates this mission?”).
 2. Search Feature Trace by a specific ID/name, verify the selected root's source family and exact identity. Do not collapse ambiguous NPC/spawn/group/pool IDs into one object.
