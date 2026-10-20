@@ -293,8 +293,8 @@
       "pipeline": [
         {
           "stage": "Source & packet compatibility audit",
-          "status": "in-progress",
-          "summary": "Collect authoritative live DSP checkout commit and evidence-linked matrix.",
+          "status": "source-audited",
+          "summary": "DSP f2d771e0 source audit complete; 6 partial and 4 missing, 0 runtime-validated. Event-option sequence, client CSIDs, item-exdata moves and personal mount layout still need live checks.",
           "handoffs": [
             {
               "href": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
@@ -305,7 +305,7 @@
         {
           "stage": "Stable NPC and egg proof of concept",
           "status": "blocked",
-          "summary": "Dependent on event protocol and inventory exdata inventory.",
+          "summary": "Requires Phase 0 exdata accessors and character persistence, plus trainer option/CSID client validation.",
           "handoffs": [
             {
               "href": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
@@ -316,7 +316,7 @@
         {
           "stage": "Persistence and day simulation",
           "status": "blocked",
-          "summary": "Needs safe migrations, C++ Lua bindings, rollover tests.",
+          "summary": "Add char_chocobos schema and char_pet user blob with explicit MyISAM deletion cleanup; port LSB care/day model after save/load test.",
           "handoffs": [
             {
               "href": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
@@ -327,7 +327,7 @@
         {
           "stage": "Whistle and personal mount",
           "status": "blocked",
-          "summary": "Needs registered mount flags, appearance and movement packet support.",
+          "summary": "Requires DSP mount custom-property bitfield, dynamic 0x00D mount word, and headless or live-client appearance verification.",
           "handoffs": [
             {
               "href": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
@@ -338,7 +338,7 @@
         {
           "stage": "Breeding, retirement and peripheral systems",
           "status": "not-started",
-          "summary": "Requires verified storage and event VM.",
+          "summary": "Requires working care model, genetic egg/card exdata, and reviewed Finbarr/Mapitoto NPC coverage.",
           "handoffs": [
             {
               "href": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
@@ -349,7 +349,7 @@
         {
           "stage": "Racing (separate workstream)",
           "status": "deferred",
-          "summary": "Not a launch prerequisite for raising.",
+          "summary": "Dedicated racing packets and DSP 0x074 opcode direction ambiguity require separate protocol review; not a raising-launch blocker.",
           "handoffs": [
             {
               "href": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
