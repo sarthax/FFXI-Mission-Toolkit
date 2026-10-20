@@ -67,6 +67,8 @@ def test_catalog_route_renders_curated_recovery_table_through_jinja():
     assert 'id="operator-workflow-bindings"' in response.text
     assert "21 failure/degraded-state checks" in response.text
     assert "21 with isolated HTTP tests" in response.text
+    assert 'id="catalog-verification-ladder"' in response.text
+    assert "local acceptance required" in response.text
     assert "Feature Catalog" in response.text
     assert 'href="/help"' in response.text
 
