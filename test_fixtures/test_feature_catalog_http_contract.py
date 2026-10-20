@@ -427,3 +427,15 @@ def test_capture_review_filters_empty_without_resolving_findings(monkeypatch):
         {"title": "synthetic candidate"}
     ]
     assert calls == ["all", "all"]
+
+
+def test_wiki_correct_source_and_page_id_retains_matching_evidence():
+    client, observed, source, page_id = _wiki_page_client(existing_page=True, mismatch=False)
+    response = client.get("/wiki", params={"source": source, "page_id": page_id})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["error"] == ""
+    assert data["page_view"]["page_id"] == page_id
+    assert data["evidence"] == {"synthetic": "evidence"}
+    assert data["comparison"] == {"synthetic": "comparison"}
+    assert observed == ["opened"]
