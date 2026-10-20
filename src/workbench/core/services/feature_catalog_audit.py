@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 
 from workbench.core.services.feature_catalog import ROOT, load_catalog
+from workbench.core.services.feature_catalog_documentation_audit import audit_documentation
 
 LINK = re.compile(r"""href=["'](\/[^"'#?{}\s]+)""")
 DYNAMIC_ROUTES = frozenset({"/synth", "/auction-house/help", "/live-client/bridge/console", "/feature-testing"})
@@ -82,6 +83,7 @@ def audit_catalog(root: Path = ROOT) -> dict:
                              if not feature.get("source_refs") or not feature.get("test_refs"))
     return {
         "feature_count": len(features),
+        "documentation_audit": audit_documentation(root),
         "quality_by_module": quality_by_module,
         "provenance_gaps": provenance_gaps,
         "help_coverage": help_coverage,
