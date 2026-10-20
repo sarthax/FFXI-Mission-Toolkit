@@ -8227,6 +8227,14 @@ def captures_search(
     selected_module = module or mode or "events"
     if selected_module not in CAPTURE_EVIDENCE_MODULES:
         selected_module = "events"
+    # Validate before opening a database cursor; malformed user filters must not
+    # become an unhandled int() exception or leak a connection.
+    message_id_filter = None
+    if selected_module == "events" and message_id:
+        try:
+            message_id_filter = int(message_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="message_id must be an integer") from exc
     con = get_con()
     events = []
     packets = []
@@ -8246,7 +8254,7 @@ def captures_search(
             params.append(f"%{entity}%")
         if message_id:
             where_sql += " AND e.message_id = ?"
-            params.append(int(message_id))
+            params.append(message_id_filter)
         if ev_opcodes:
             where_sql += f" AND e.opcode IN ({','.join('?' * len(ev_opcodes))})"
             params.extend(ev_opcodes)

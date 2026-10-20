@@ -207,9 +207,16 @@ def main():
     workflows = documentation["operator_workflows"]
     assert workflows["case_count"] == 11
     assert workflows["missing"] == [], workflows["missing"]
-    assert workflows["failure_count"] == 20, workflows["failure_count"]
+    assert workflows["failure_count"] == 21, workflows["failure_count"]
+    assert workflows["http_contract_count"] == 16, workflows["http_contract_count"]
+    assert workflows["http_contract_ci_wired"] is True
+    assert workflows["http_contract_drift"] == [], workflows["http_contract_drift"]
+    assert sum(f["http_contract_scope"] == "isolated_fastapi_with_synthetic_boundaries"
+               for c in workflows["cases"] for f in c["failure_paths"]) == 16
+    assert sum(not f["http_contract_declared"] for c in workflows["cases"]
+               for f in c["failure_paths"]) == 5
     assert workflows["failure_source_drift"] == [], workflows["failure_source_drift"]
-    assert sum(len(case["failure_paths"]) for case in workflows["cases"]) == 20
+    assert sum(len(case["failure_paths"]) for case in workflows["cases"]) == 21
     assert all(case["failure_sources_verified"] for case in workflows["cases"])
     failure_ids = [failure["id"] for case in workflows["cases"]
                    for failure in case["failure_paths"]]

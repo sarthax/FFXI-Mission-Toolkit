@@ -226,7 +226,7 @@ Regression coverage rejects decorators bound to the wrong handler, a form contro
 
 ## Failure and recovery evidence — October 20 (next stage)
 
-The **11 curated operator paths** now contain **20 explicit source-reviewed failure, pending and empty/degraded-state conditions**, tied to their named handler function rather than an unrelated marker elsewhere in a large route module. For guarded Live Client settings, the audit also resolves the named same-scope guard helper and checks its local-origin rejection evidence. The Feature Catalog's Documentation accuracy triage displays trigger/signal and safe operator recovery for each path.
+The **11 curated operator paths** now contain **21 explicit source-reviewed failure, pending and empty/degraded-state conditions**, tied to their named handler function rather than an unrelated marker elsewhere in a large route module. For guarded Live Client settings, the audit also resolves the named same-scope guard helper and checks its local-origin rejection evidence. The Feature Catalog's Documentation accuracy triage displays trigger/signal and safe operator recovery for each path.
 
 Operator distinctions:
 
@@ -236,3 +236,11 @@ Operator distinctions:
 - **Captures:** event searches and packet searches each need their own filters. Category with zero known opcodes produces a zero-result predicate. Empty queues and indexes must not be described as complete evidence.
 
 **Evidence boundary:** these are deterministic static checks against handler-local literals and lexical guard scope, *not* executed HTTP error tests, browser validation, live DSP acceptance, successful jobs, or verified recovery steps. A missing marker is reported as source drift and downgrades the workflow evidence, not silently treated as passing. Future work should add independent negative-path integration tests and owner-run real-client checks where safe; retain the Roadmap for unfinished implementation.
+
+## Offline HTTP negative-path contracts — October 20
+
+Following the source-backed work above, `test_fixtures/test_feature_catalog_http_contract.py` executes **16 of the 21** documented failure/degraded-state conditions through actual decorated Python route functions mounted in isolated FastAPI test apps. The Workbench Regression workflow runs this pytest suite with `httpx`. The Catalog exposes the exact associated test function for each covered condition, while retaining **5 explicitly source-only** conditions.
+
+Coverage includes Feature Trace missing graph (HTTP 404); Wiki scrape rejected (400) versus accepted-but-pending receipt, and invalid/failed snapshot export (400 with temporary cleanup); Live Bridge remote and cross-origin rejection (403), headless settings validation and local file errors (400), invalid client ID (422) versus a legitimate null snapshot; and Capture Search empty or category-unmatched results. Event `message_id` conversion now returns an explicit **422** before opening the capture database when input is nonnumeric, rather than an uncaught parsing exception. A positive, tiny synthetic capture fixture also checks that correctly formed filters retrieve indexed evidence.
+
+These tests compile the **unmodified actual decorated handler AST** from `src/workbench/app/_host_impl.py` and supply synthetic service boundaries, or mount the real Live Bridge router with a stubbed manager. They do **not** boot the complete host, run browser JavaScript, inspect personal capture files, open real server/client connections, import real Wiki pages, or prove game behavior. The workflow audit checks that test names exist and the CI command is wired, but this *source declaration is not proof that a particular CI run passed*; check the PR workflow result for that. Five cases without HTTP tests remain explicitly static source evidence.

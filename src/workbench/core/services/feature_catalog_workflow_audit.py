@@ -126,6 +126,18 @@ def audit_workflow_bindings(root: Path = ROOT) -> dict:
     seen: set[str] = set()
     seen_failure_ids: set[str] = set()
     source_cache: dict[str, str] = {}
+    # Parse actual test function declarations, not prose references or comments.
+    contract_file = "test_fixtures/test_feature_catalog_http_contract.py"
+    contract_source = _source(root, contract_file)
+    contract_tree = ast.parse(contract_source)
+    contract_tests = {node.name for node in contract_tree.body
+                      if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                      and node.name.startswith("test_")}
+    ci_workflow = _source(root, ".github/workflows/workbench-regression.yml")
+    contract_ci_wired = (
+        "python -m pytest -q " + contract_file in ci_workflow
+        and "pytest httpx" in ci_workflow
+    )
     cases = []
     for item in curated["cases"]:
         if item["id"] in seen or item["feature_id"] not in features:
@@ -175,8 +187,20 @@ def audit_workflow_bindings(root: Path = ROOT) -> dict:
                     raise ValueError("Incomplete failure guard source evidence")
                 guard_text = inspect_guard_helper_source(handler, item, guard["name"])
                 missing_guard = [marker for marker in guard["markers"] if marker not in guard_text]
+            contract_test = failure.get("http_contract_test")
+            if contract_test is not None and (
+                not isinstance(contract_test, str) or
+                not contract_test.startswith("test_")
+            ):
+                raise ValueError("Invalid operator HTTP contract test identifier")
+            contract_found = bool(contract_test and contract_test in contract_tests
+                                  and contract_ci_wired)
             failures.append({
-                **failure, "missing_handler_markers": missing,
+                **failure, "http_contract_declared": bool(contract_test),
+                "http_contract_found": contract_found,
+                "http_contract_scope": ("isolated_fastapi_with_synthetic_boundaries"
+                                        if contract_found else "source_only"),
+                "missing_handler_markers": missing,
                 "missing_guard_markers": missing_guard,
                 "source_verified": bool(route_found and not missing and not missing_guard),
                 "verification": "static_handler_branch_only_runtime_unverified",
@@ -198,13 +222,19 @@ def audit_workflow_bindings(root: Path = ROOT) -> dict:
         "failure_source_drift": [
             f["id"] for c in cases for f in c["failure_paths"] if not f["source_verified"]
         ],
+        "http_contract_count": sum(bool(f["http_contract_found"])
+                                   for c in cases for f in c["failure_paths"]),
+        "http_contract_drift": [f["id"] for c in cases for f in c["failure_paths"]
+                                if f["http_contract_declared"] and not f["http_contract_found"]],
+        "http_contract_ci_wired": contract_ci_wired,
         "missing": [c["id"] for c in cases if not c["source_verified"]],
         "boundary_counts": {
             boundary: sum(c["boundary"] == boundary for c in cases)
             for boundary in sorted({c["boundary"] for c in cases})
         },
-        "limitations": "Literal form/link/fetch evidence and bound Python handlers only. "
-                       "Failure and degraded-state signals are handler-local static branch evidence, "
-                       "not exercised HTTP error paths. JavaScript/Jinja, external jobs, "
-                       "permissions, DB state and client/server acceptance remain unverified.",
+        "limitations": "Literal UI/handler bindings and recovery signals use static source evidence. "
+                       "Selected conditions have isolated FastAPI HTTP contracts with synthetic "
+                       "SQLite, receiver and job boundaries; test declarations do not themselves "
+                       "prove CI passed. Complete host boot, JavaScript/Jinja browser behavior, "
+                       "external jobs, real databases and client/server acceptance remain unverified.",
     }
