@@ -82,3 +82,7 @@ The Catalog coverage panel now counts and classifies each record by its Help des
 ## Client Research contextual Help (October 19)
 
 Sixteen Binary Inspector, Retail Version and client-asset research entries now point to three grounded Help sections. The documentation covers PE evidence, version/probe comparisons, manifest and selective download planning, and DAT/model/dialog research, while explicitly distinguishing artifact/source inspection from the running client's behavior. Existing Help anchor and route inventory regression contracts apply. This does not change runtime validation labels.
+
+## Research & Evidence contextual Help — October 19
+
+Six remaining Research & Evidence entries now link to sections for scoped research sessions and evidence, gaps and contradictory claims, and Feature Checker/LLM-assisted research. Guidance keeps source identity, indexing gaps and independent runtime acceptance separate. Existing catalog and Help route regressions validate navigation.
