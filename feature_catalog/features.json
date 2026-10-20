@@ -100,7 +100,7 @@
       "route": "/live-client/bridge/console",
       "implementation": "implemented",
       "validation": "operator_reported",
-      "help": "/help",
+      "help": "/help#help-live-bridge",
       "purpose": "Inspect a connected Ashita bridge, real-time state, entity telemetry, and authorized movement controls.",
       "how_to_use": "Start at the bridge console, confirm client connection and zone, then choose live view or movement/validation controls.",
       "caveat": "Live telemetry and active control capabilities depend on the running addon and bridge configuration."
@@ -369,7 +369,7 @@
       "route": "/live-client/bridge/console",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-live-bridge",
       "purpose": "Inspect the Ashita telemetry receiver, sender configuration, and event freshness.",
       "how_to_use": "Open the bridge console, identify the connected client, confirm the current zone and inspect heartbeat/freshness.",
       "caveat": "An absent or stale stream is not evidence that the client is offline; inspect bridge configuration first."
@@ -383,7 +383,7 @@
       "route": "/live-client/bridge/console",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-live-entities",
       "purpose": "Inspect positions for multiple observed client entities and reconcile them with server records.",
       "how_to_use": "Connect the live bridge, open the entity-enabled map, compare live versus server markers, and inspect identity matches.",
       "caveat": "Live broadcasts depend on the installed addon and visibility; not every server spawn is a client observation."
@@ -397,7 +397,7 @@
       "route": "/live-client/bridge/console",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-live-entities",
       "purpose": "Use guarded movement assistance and immediate STOP/disarm controls.",
       "how_to_use": "Confirm client identity and zone, arm only the intended control, inspect movement feedback, then disarm or STOP.",
       "caveat": "Controls affect the live client and must remain scoped to an authorized development/testing session."
@@ -411,7 +411,7 @@
       "route": "/live-client/bridge/console",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-live-3d",
       "purpose": "View the connected player's zone and observed activity within the external 3D map.",
       "how_to_use": "Select the correct zone and instance, follow or center the player, then compare live markers to static server evidence.",
       "caveat": "Geometry, static spawns, and live observations are separate layers with different provenance."
