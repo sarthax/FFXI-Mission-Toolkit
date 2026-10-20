@@ -4436,10 +4436,19 @@ def feature_trace_page(
     q: str = "",
     depth: int = 3,
     direction: str = "both",
+    mode: str = "",
 ):
     depth = max(0, min(depth, 8))
     if direction not in {"out", "in", "both"}:
         direction = "both"
+    # Empty selection preserves the existing all-recorded (legacy) trace.
+    # Explicit focused modes are opt-in; invalid selections cannot silently
+    # become a different investigation question.
+    supported_modes = {
+        "implementation", "mission", "triggers", "effects", "dependencies",
+        "runtime", "identity", "diagnose", "all",
+    }
+    selected_mode = mode if mode in supported_modes else ""
     result = None
     matches = []
     implementation_path = None
@@ -4450,21 +4459,29 @@ def feature_trace_page(
     if con is None:
         error = "Canonical Workbench graph is not available. Build/import workbench.db before tracing features."
     elif q.strip():
-        query = q.strip()
+        # Compatibility for existing @mode searches, now surfaced as a readable
+        # dropdown. Strip the prefix before root resolution so its context is
+        # explicit, rather than leaking through hidden thread-local state.
+        feature_trace.clear_query_mode()
+        prefix_mode, query = feature_trace.split_mode_query(q.strip())
+        if not selected_mode and prefix_mode:
+            selected_mode = prefix_mode
+        q = query
+        trace_kwargs = {"mode": selected_mode} if selected_mode else {}
         query_diagnostics = feature_trace.entity_query_diagnostics(con, catalog_con, query)
         implementation_path = feature_trace.entity_implementation_path(con, catalog_con, query)
         _feature_trace_branch_source_drilldown(implementation_path)
         exact = feature_trace.node_info(con, query, catalog_con)
         if exact["known"]:
-            result = feature_trace.trace(con, query, depth, direction, catalog_con)
+            result = feature_trace.trace(con, query, depth, direction, catalog_con, **trace_kwargs)
         elif implementation_path and implementation_path.get("canonical_root"):
             result = feature_trace.trace(
-                con, implementation_path["canonical_root"], depth, direction, catalog_con
+                con, implementation_path["canonical_root"], depth, direction, catalog_con, **trace_kwargs
             )
         else:
             matches = feature_trace.search_nodes(con, query, catalog_con)
             if len(matches) == 1:
-                result = feature_trace.trace(con, matches[0]["node_id"], depth, direction, catalog_con)
+                result = feature_trace.trace(con, matches[0]["node_id"], depth, direction, catalog_con, **trace_kwargs)
             elif implementation_path:
                 # Exact entity IDs often have multiple source representations by design.
                 # Keep those in the Implementation Path instead of presenting them as unresolved ambiguity.
@@ -4518,6 +4535,7 @@ def feature_trace_page(
         "q": q,
         "depth": depth,
         "direction": direction,
+        "selected_mode": selected_mode,
         "result": result,
         "matches": matches,
         "error": error,

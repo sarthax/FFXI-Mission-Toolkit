@@ -49,6 +49,20 @@
 </style>
 <form id="featureTraceTop" class="search wb-filter-row" method="get" action="/features/trace">
   <input type="text" name="q" value="{{ q }}" placeholder="Canonical node ID or partial name">
+  <label for="trace-question-mode">Question
+    <select id="trace-question-mode" name="mode" aria-label="Feature Trace investigation question">
+      <option value=""{% if not selected_mode %} selected{% endif %}>All recorded (legacy)</option>
+      <option value="implementation"{% if selected_mode == 'implementation' %} selected{% endif %}>Where is it implemented?</option>
+      <option value="mission"{% if selected_mode == 'mission' %} selected{% endif %}>What advances the mission?</option>
+      <option value="triggers"{% if selected_mode == 'triggers' %} selected{% endif %}>What triggers this?</option>
+      <option value="effects"{% if selected_mode == 'effects' %} selected{% endif %}>What does it change?</option>
+      <option value="dependencies"{% if selected_mode == 'dependencies' %} selected{% endif %}>What depends on this?</option>
+      <option value="runtime"{% if selected_mode == 'runtime' %} selected{% endif %}>What was observed?</option>
+      <option value="identity"{% if selected_mode == 'identity' %} selected{% endif %}>Client/server identity</option>
+      <option value="diagnose"{% if selected_mode == 'diagnose' %} selected{% endif %}>What might be broken?</option>
+      <option value="all"{% if selected_mode == 'all' %} selected{% endif %}>All evidence (focused pipeline)</option>
+    </select>
+  </label>
   <select name="direction">
     <option value="both"{% if direction == "both" %} selected{% endif %}>Both directions</option>
     <option value="out"{% if direction == "out" %} selected{% endif %}>Outgoing</option>
@@ -61,6 +75,7 @@
   </select>
   <button type="submit">Trace</button>
 </form>
+<p id="trace-mode-help" class="muted">Choose a question to inspect a focused subset of existing evidence, or retain All recorded (legacy) for the original unfiltered trace. Changing the question does not prove behavior or remove stored relationships.</p>
 {% if error %}
 <div class="warn">{{ error }}</div>
 {% endif %}
@@ -84,7 +99,7 @@
       {% endif %}
       <a class="chip" href="/entity/{{ implementation_path.numeric_id }}">Open Entity Dossier</a>
       {% if implementation_path.canonical_root %}
-        <a class="chip" href="/features/trace?q={{ implementation_path.canonical_root|urlencode }}">Trace canonical root</a>
+        <a class="chip" href="/features/trace?q={{ implementation_path.canonical_root|urlencode }}{% if selected_mode %}&amp;mode={{ selected_mode|urlencode }}{% endif %}&amp;depth={{ depth }}&amp;direction={{ direction }}">Trace canonical root</a>
       {% endif %}
     </div>
 
@@ -184,9 +199,9 @@
           <td><span class="chip">{{ edge.relationship }}</span></td>
           <td>
             {% if edge.source_node == implementation_path.canonical.root %}
-              <a class="zonelink mono" href="/features/trace?q={{ edge.target_node|urlencode }}">{{ edge.target_node }}</a>
+              <a class="zonelink mono" href="/features/trace?q={{ edge.target_node|urlencode }}{% if selected_mode %}&amp;mode={{ selected_mode|urlencode }}{% endif %}&amp;depth={{ depth }}&amp;direction={{ direction }}">{{ edge.target_node }}</a>
             {% else %}
-              <a class="zonelink mono" href="/features/trace?q={{ edge.source_node|urlencode }}">{{ edge.source_node }}</a>
+              <a class="zonelink mono" href="/features/trace?q={{ edge.source_node|urlencode }}{% if selected_mode %}&amp;mode={{ selected_mode|urlencode }}{% endif %}&amp;depth={{ depth }}&amp;direction={{ direction }}">{{ edge.source_node }}</a>
             {% endif %}
           </td>
           <td>{{ edge.status or 'UNKNOWN' }}</td>
@@ -239,7 +254,7 @@
           <code>{{ branch.root.node_id }}</code>
           <div class="muted" style="font-size:11px;margin-top:3px">source: {{ branch.root.table }}</div>
           <div class="impl-workflow">
-            <a class="chip" href="/features/trace?q={{ branch.root.node_id|urlencode }}">Trace this representation</a>
+            <a class="chip" href="/features/trace?q={{ branch.root.node_id|urlencode }}{% if selected_mode %}&amp;mode={{ selected_mode|urlencode }}{% endif %}&amp;depth={{ depth }}&amp;direction={{ direction }}">Trace this representation</a>
             {% if branch.root.inspect_href %}<a class="chip" href="{{ branch.root.inspect_href }}">Open source view</a>{% endif %}
             {% if branch.root.sql_href %}<a class="chip" href="{{ branch.root.sql_href }}">Open indexed SQL row</a>{% endif %}
           </div>
@@ -381,7 +396,7 @@
             {% if step.basis %}<div class="muted" style="font-size:11px">{{ step.basis }}</div>{% endif %}
           </div>
           <div>
-            <a class="zonelink" href="/features/trace?q={{ step.target_node|urlencode }}">{{ step.target_name }}</a>
+            <a class="zonelink" href="/features/trace?q={{ step.target_node|urlencode }}{% if selected_mode %}&amp;mode={{ selected_mode|urlencode }}{% endif %}&amp;depth={{ depth }}&amp;direction={{ direction }}">{{ step.target_name }}</a>
             <div><span class="chip">{{ step.target_type }}</span> <code>{{ step.target_node }}</code></div>
             <div class="impl-workflow">
               {% if step.target_sql_href %}<a class="chip" href="{{ step.target_sql_href }}">Indexed SQL row</a>{% endif %}
@@ -459,7 +474,7 @@
 <tbody>
 {% for row in matches %}
 <tr>
-  <td><a class="zonelink mono" href="/features/trace?q={{ row.node_id|urlencode }}">{{ row.node_id }}</a></td>
+  <td><a class="zonelink mono" href="/features/trace?q={{ row.node_id|urlencode }}{% if selected_mode %}&amp;mode={{ selected_mode|urlencode }}{% endif %}&amp;depth={{ depth }}&amp;direction={{ direction }}">{{ row.node_id }}</a></td>
   <td>{{ row.node_type or "UNKNOWN" }}</td>
   <td>{{ row.display_name or "" }}</td>
   <td>{% for field in row.matched_on or [] %}<span class="chip">{{ field }}</span>{% else %}<span class="muted">—</span>{% endfor %}</td>
@@ -474,6 +489,12 @@
 {% endif %}
 
 {% if result %}
+{% if selected_mode %}
+<div id="trace-focused-mode" class="impl-diagnostic">
+  <strong>Question-focused view: {{ (result.trace_mode.label if result.trace_mode else selected_mode) }}</strong>
+  <p class="muted">This is a read-only presentation filter over indexed relationships, not proof that relevant paths are complete. Missing paths remain unknown. For the original full trace, <a class="zonelink" href="/features/trace?q={{ q|urlencode }}&amp;depth={{ depth }}&amp;direction={{ direction }}">open All recorded (legacy)</a>.</p>
+</div>
+{% endif %}
 <details class="dense-card" open>
 <summary><strong>Evidence Dossier</strong> · {{ dossier.identity.display_name }}</summary>
 <div class="table-wrap" style="margin-top:6px"><table>
@@ -499,7 +520,7 @@
   <div class="muted">Exact source-native page/document navigation for provenance inspection. Wiki evidence is not independently verified DSP behavior.</div>
   {% for link in dossier.wiki_source_navigation %}
   <div><span class="chip">{{ link.relationship }}</span>
-    <a class="zonelink" href="/features/trace?q={{ link.target_node|urlencode }}">{{ link.target_name }}</a>
+    <a class="zonelink" href="/features/trace?q={{ link.target_node|urlencode }}{% if selected_mode %}&amp;mode={{ selected_mode|urlencode }}{% endif %}&amp;depth={{ depth }}&amp;direction={{ direction }}">{{ link.target_name }}</a>
     <span class="muted">({{ link.target_type }})</span></div>
   {% endfor %}
 </td></tr>
@@ -508,7 +529,7 @@
 <tr><th>Source-native links</th><td>
   <div class="muted">Exact relationships stored by the source schema; these are navigation links, not canonical semantic graph edges.</div>
   {% for link in dossier.provider_relationships %}
-  <div><span class="chip">{{ link.relationship }}</span> <a class="zonelink" href="/features/trace?q={{ link.target_node|urlencode }}">{{ link.target_name }}</a> <span class="muted">({{ link.target_type }}){% if link.basis %} — {{ link.basis }}{% endif %}</span></div>
+  <div><span class="chip">{{ link.relationship }}</span> <a class="zonelink" href="/features/trace?q={{ link.target_node|urlencode }}{% if selected_mode %}&amp;mode={{ selected_mode|urlencode }}{% endif %}&amp;depth={{ depth }}&amp;direction={{ direction }}">{{ link.target_name }}</a> <span class="muted">({{ link.target_type }}){% if link.basis %} — {{ link.basis }}{% endif %}</span></div>
   {% endfor %}
 </td></tr>
 {% endif %}
@@ -592,8 +613,8 @@ document.querySelectorAll('.runtime-load').forEach(button=>button.addEventListen
 <tr>
   <td>{{ edge.depth if edge.depth is not none else '—' }}</td>
   <td><span class="chip">{{ edge.relationship }}</span>{% if edge.generated %}<div class="muted"><span class="chip">Provider-generated · read-only</span> {{ edge.generator or 'unknown generator' }}</div>{% endif %}</td>
-  <td><a class="zonelink mono" href="/features/trace?q={{ edge.from_node|urlencode }}">{{ edge.from_node }}</a></td>
-  <td><a class="zonelink mono" href="/features/trace?q={{ edge.to_node|urlencode }}">{{ edge.to_node }}</a></td>
+  <td><a class="zonelink mono" href="/features/trace?q={{ edge.from_node|urlencode }}{% if selected_mode %}&amp;mode={{ selected_mode|urlencode }}{% endif %}&amp;depth={{ depth }}&amp;direction={{ direction }}">{{ edge.from_node }}</a></td>
+  <td><a class="zonelink mono" href="/features/trace?q={{ edge.to_node|urlencode }}{% if selected_mode %}&amp;mode={{ selected_mode|urlencode }}{% endif %}&amp;depth={{ depth }}&amp;direction={{ direction }}">{{ edge.to_node }}</a></td>
   <td>{{ edge.status or "UNKNOWN" }}</td>
   <td>{{ edge.confidence or "UNKNOWN" }}</td>
   <td>

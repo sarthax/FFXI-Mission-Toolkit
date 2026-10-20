@@ -8,6 +8,14 @@ Focused-mode generated provider relationships now carry their actual `from_node`
 
 This is a **rendering/interpretation fix**, not a relevance-ranker change, new identity closure, successful source-locator validation or real DSP acceptance. The baseline under [P0 #1228](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1228) remains NOT RUN until a local reviewer returns actual three-case observations.
 
+## Question-first navigation (October 20)
+
+The Feature Trace search form now has a **Question** selector. It exposes existing focused trace modes without requiring a typed `@mode` prefix: Implementation, Mission, Triggers, Effects, Dependencies, Runtime, Identity, Diagnosis and All Evidence. The default **All recorded (legacy)** deliberately preserves the historical unfiltered trace, while explicit questions use the previously implemented focused-mode evidence/filter contract. Choosing a mode does **not** itself validate relevance, runtime behavior or absence of missing paths.
+
+The selected question, depth and traversal direction carry through node, provider, and relationship links, so following an implementation path does not silently reset the investigation. The focus notice includes an explicit **open All recorded (legacy)** link to compare excluded/peripheral material without changing stored evidence. Existing `@mission <root>` style searches remain supported: the query prefix becomes the selected visible question and is removed from the search text. Explicit dropdown selection overrides a conflicting legacy prefix. Invalid selectors revert to the unchanged legacy mode rather than selecting another question.
+
+This is a discoverability and navigation milestone, **not** the future relevance-first projection. Before changing the default or claiming useful first-screen ranking, complete the locally reviewed Absolute Virtue, WotG Cait Sith and ordinary NPC scorecards on [P0 issue #1228](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1228).
+
 ## Recommended workflow
 1. Start with one concrete question (e.g. “what controls this NM behavior?” or “what gates this mission?”).
 2. Search Feature Trace by a specific ID/name, verify the selected root's source family and exact identity. Do not collapse ambiguous NPC/spawn/group/pool IDs into one object.
