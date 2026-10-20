@@ -38,7 +38,8 @@ def audit_documentation(root: Path = ROOT) -> dict:
         if (contract.get("method") not in {"GET", "POST"}
                 or contract.get("boundary") not in {
                     "read_only_review", "read_only_history", "design_only",
-                    "conversion_preview", "conversion_with_index_reads"
+                    "conversion_preview", "conversion_with_index_reads",
+                    "guarded_execution_enqueue", "guarded_package_materialization"
                 } or not contract.get("inputs") or not contract.get("outputs")
                 or not contract.get("error_evidence")):
             raise ValueError("incomplete or unsupported source behavior contract")

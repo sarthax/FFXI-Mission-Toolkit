@@ -292,6 +292,84 @@
           "term": "indexed"
         }
       ]
+    },
+    {
+      "id": "testing-builder-launch",
+      "feature_id": "testing-scenario-builder",
+      "template": "gui/templates/feature_testing.html",
+      "marker": "/feature-testing/builder/launch",
+      "route": "/feature-testing/builder/launch",
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "POST is a separately guarded test enqueue, not the GET builder plan.",
+      "handler_file": "src/workbench/server_admin/feature_testing/router.py",
+      "handler_marker": "@router.post(\"/builder/launch\"",
+      "handler_name": "launch_test",
+      "observed_contract": "Operator token authorization and approval True precede enqueue; returns job_id, QUEUED, MOG-09, not a test verdict.",
+      "contract": {
+        "method": "POST",
+        "inputs": [
+          "approval",
+          "account",
+          "charid",
+          "supervisor_port"
+        ],
+        "outputs": [
+          "job_id",
+          "status",
+          "case_id"
+        ],
+        "boundary": "guarded_execution_enqueue",
+        "error_evidence": "Operator authorization and explicit approval are required; invalid enqueue returns HTTP 400."
+      },
+      "documentation_checks": [
+        {
+          "field": "caveat",
+          "term": "authorization"
+        },
+        {
+          "field": "caveat",
+          "term": "queued"
+        }
+      ]
+    },
+    {
+      "id": "package-create-run",
+      "feature_id": "package-create",
+      "template": "gui/templates/packages_create.html",
+      "marker": "action=\"/packages/create\"",
+      "route": "/packages/create",
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "POST package materialization follows migration scope gate and existing action checks; not a target deployment.",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_marker": "@app.post(\"/packages/create\"",
+      "handler_name": "packages_create_run",
+      "observed_contract": "Requires migration_id/source_root/source_family/target_family/package_path; checks canonical graph, migration and reviewed dependency scope before creating package candidate.",
+      "contract": {
+        "method": "POST",
+        "inputs": [
+          "migration_id",
+          "source_root",
+          "source_family",
+          "target_family",
+          "package_path"
+        ],
+        "outputs": [
+          "result",
+          "error"
+        ],
+        "boundary": "guarded_package_materialization",
+        "error_evidence": "Missing migration/graph, unreviewed scope and absent actions block package creation; separate target deployment is not implied."
+      },
+      "documentation_checks": [
+        {
+          "field": "how_to_use",
+          "term": "reviewed"
+        },
+        {
+          "field": "caveat",
+          "term": "materialization"
+        }
+      ]
     }
   ]
 }

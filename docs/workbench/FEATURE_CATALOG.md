@@ -187,3 +187,7 @@ Five reviewed GUI-to-handler contracts now carry explicit, case-specific documen
 ## Expanded behavioral reviews — Package Scope and Capture Search
 
 Two more source-backed audit cases cover Package Scope GET filtering and cross-capture Search GET across event and packet modes. The Package Scope page contains separate POST decision/review forms; the documented GET filter must not imply those operations are executed. Capture Search results depend on available indexed recordings. Curated documentation contract checks protect these boundaries, while handler-symbol checks remain static source drift guards rather than runtime execution tests.
+
+## Higher-risk source contracts — guarded enqueue and package creation (October 20)
+
+Two additional source-backed review cases extend the audit to operations that initiate work. The Feature Testing POST launch requires operator authorization and explicit approval before enqueueing; a QUEUED result is not a test verdict. Package creation POST requires a canonical graph, migration actions and reviewed dependency scope before materializing a package candidate; it does not deploy to the server. These boundaries are documented in the operator catalog and checked by static handler-marker assertions. They have **not** been exercised against a configured runtime. The form's visible presence is not authorization, and failing a source-marker check must be investigated rather than bypassed.
