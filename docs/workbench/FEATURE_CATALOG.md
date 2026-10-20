@@ -114,3 +114,7 @@ The Capture Browser, Live Client bridge and Server Data entity/SQL browser entri
 ## Contextual Help completion — October 19
 
 The final 14 generic Help destinations now point to focused operator guidance for configuration and synthesis, items, progression, zones and validation history. The catalog regression explicitly rejects generic `/help` destinations and checks contextual anchors. These links improve navigation and workflow descriptions; they are not a substitute for independent instruction review, implementation provenance or live DSP/client testing.
+
+## Focused source-provenance follow-up (October 19)
+
+Verified GUI implementation pointers were added for Capture Search, Capture Review, Wiki browsing, Wiki exact-source navigation, and Feature Trace runtime drill-down. The Wiki exact-source link contract also has a narrowly applicable dossier regression reference. Capture Search/Review remain without named test references because merely having an implementation template is not test coverage. Remaining Research and Migration references require a separate source-to-handler crosswalk; no references were fabricated. Local runtime validation remains unverified.
