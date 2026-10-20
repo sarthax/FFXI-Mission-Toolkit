@@ -3,6 +3,45 @@ from __future__ import annotations
 
 from pathlib import Path
 import json
+import ast
+
+
+def inspect_handler_source(source: str, handler_name: str, route_marker: str,
+                           markers: list[str]) -> dict:
+    """Bind the literal route decorator to the named top-level handler.
+
+    Delegated/module-wide symbol matches are not direct handler evidence.
+    """
+    result = {"route_bound": False, "handler_source_markers": [],
+              "module_only_source_markers": [], "missing_source_markers": []}
+    try:
+        module = ast.parse(source)
+    except SyntaxError:
+        result["missing_source_markers"] = list(markers)
+        return result
+    handlers = [node for node in module.body
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and node.name == handler_name]
+    if len(handlers) != 1 or not route_marker.startswith("@"):
+        result["missing_source_markers"] = list(markers)
+        return result
+    handler = handlers[0]
+    expected_decorator = route_marker[1:]
+    result["route_bound"] = any(
+        expected_decorator in (ast.get_source_segment(source, decorator) or "")
+        for decorator in handler.decorator_list
+    )
+    body = ast.get_source_segment(source, handler) or ""
+    result["handler_source_markers"] = [marker for marker in markers if marker in body]
+    result["module_only_source_markers"] = [
+        marker for marker in markers if marker not in body and marker in source
+    ]
+    result["missing_source_markers"] = [
+        marker for marker in markers if marker not in source
+    ]
+    return result
+
+
 from workbench.core.services.feature_catalog import ROOT, load_catalog
 from workbench.core.services.feature_catalog_gui_inventory import inventory_gui
 
@@ -32,8 +71,6 @@ def audit_documentation(root: Path = ROOT) -> dict:
             raise ValueError("unsafe handler source path")
         handler = root / handler_relative
         handler_source = handler.read_text(encoding="utf-8") if handler.is_file() else ""
-        handler_present = (case["handler_marker"] in handler_source
-                           and ("def " + case["handler_name"] + "(") in handler_source)
         contract = case.get("contract", {})
         if (contract.get("method") not in {"GET", "POST"}
                 or contract.get("boundary") not in {
@@ -49,7 +86,12 @@ def audit_documentation(root: Path = ROOT) -> dict:
             ('"' + name + '"') for name in contract["outputs"]
             if name != "build_plan"
         ])
-        contract_source_present = all(marker in handler_source for marker in contract_markers)
+        evidence = inspect_handler_source(
+            handler_source, case["handler_name"], case["handler_marker"], contract_markers
+        )
+        handler_present = (evidence["route_bound"] and
+                           ("." + contract["method"].lower() + "(") in case["handler_marker"])
+        contract_source_present = not evidence["missing_source_markers"]
         checks = case.get("documentation_checks", [])
         if not isinstance(checks, list) or not checks:
             raise ValueError("missing documentation checks")
@@ -61,7 +103,7 @@ def audit_documentation(root: Path = ROOT) -> dict:
             if term.casefold() not in known[case["feature_id"]].get(field, "").casefold():
                 discrepancies.append({"field": field, "expected_term": term,
                                       "kind": "documentation_review_needed"})
-        reviewed.append({**case, "documentation_discrepancies": discrepancies,
+        reviewed.append({**case, **evidence, "documentation_discrepancies": discrepancies,
                          "template_marker_present": present,
                          "handler_marker_present": handler_present,
                          "contract_source_present": contract_source_present,
@@ -118,6 +160,10 @@ def audit_documentation(root: Path = ROOT) -> dict:
         "reward_lifecycle_missing_markers": [x["state"] for x in lifecycle_stages if not x["source_markers_present"]],
         "review_cases": reviewed,
         "review_case_count": len(reviewed),
+        "review_case_delegated_markers": {
+            case["id"]: case["module_only_source_markers"] for case in reviewed
+            if case["module_only_source_markers"]
+        },
         "documentation_discrepancy_count": sum(len(row["documentation_discrepancies"]) for row in reviewed),
         "review_case_missing_markers": [case["id"] for case in reviewed if not case["template_marker_present"] or not case["handler_marker_present"] or not case["contract_source_present"]],
         "features_checked": len(features),
@@ -128,7 +174,9 @@ def audit_documentation(root: Path = ROOT) -> dict:
         "truncated_templates": sorted(p["template"] for p in gui["pages"] if p["truncated"]),
         "limitations": (
             "Static source/catalog checks and curated template observations only. Controls are review candidates, not "
-            "confirmed missing functions. Jinja branches, handler behavior and live runtime "
+            "confirmed missing functions. Named HTTP decorators are checked on their actual "
+            "functions, but module-level helper evidence is not direct handler evidence. "
+            "Jinja branches, handler behavior and live runtime "
             "acceptance require separate review."
         ),
     }

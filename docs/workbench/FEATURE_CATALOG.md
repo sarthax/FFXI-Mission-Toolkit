@@ -23,7 +23,9 @@ When editing capabilities, keep `purpose`, `how_to_use` and `caveat` specific to
 
 ## Canonical data
 
-`feature_catalog/features.json` is the curated v1 source. Subfeatures use an optional `parent_id` pointing to an existing module record. The loader rejects duplicate IDs, missing parents and direct self-parenting. Parent records and child records may share a module route because a dedicated subfeature deep-link is not always available.\n\nEach record has a stable `id`, `module`, `name`, `summary`, primary `route`, `help` route, `implementation` status and independent `validation` status.
+`feature_catalog/features.json` is the curated v1 source. Subfeatures use an optional `parent_id` pointing to an existing module record. The loader rejects duplicate IDs, missing parents and direct self-parenting. Parent records and child records may share a module route because a dedicated subfeature deep-link is not always available.
+
+Each record has a stable `id`, `module`, `name`, `summary`, primary `route`, `help` route, `implementation` status and independent `validation` status.
 
 Implementation statuses: `implemented`, `partial`, `research`, `planned`.
 Validation statuses: `unverified`, `operator_reported`, `tested`.
@@ -207,3 +209,9 @@ Three new source-backed audit cases trace the reward execution POST and read-onl
 ## Reward delivery failure-state source audit (October 20)
 
 The documentation audit now displays five curated reward-delivery lifecycle states, with static source-drift markers: blocked preflight, durable attempt creation, per-recipient in-flight state, committed/failed recipient result, and terminal/required-reconciliation journal state. The reward executor claims a replay once, creates a durable journal before recipient database mutation, records `in_flight` before delivery, and retains ambiguity when an uncertain outcome occurs. Journal `completed`, `failed`, `partial`, and `reconciliation_required` statuses are **not** equivalent; `automatic_retry_safe` remains false. Operators must compare replay ID, recipient rows, `delivery_box`, and actual item state before any separately approved recovery. A passed static source check does not constitute a live delivery, failure-injection test, or authorization review.
+
+## Route-to-handler documentation evidence integrity — October 20
+
+The 17 curated HTTP contract reviews now verify that the **specified GET/POST decorator is attached to the named top-level Python handler**, rather than passing because decorator and function name occur independently somewhere in a large module. The audit also separates symbols found inside that function from symbols found elsewhere in the source file, which may originate in helpers or unrelated functions. A module-only symbol is a **follow-up trace**, not direct handler evidence. The Feature Testing run dashboard delegates total/page fields to a separate view builder and is identified as such in the audit panel.
+
+Offline regressions exercise mismatched decorators and handlers, delegated symbols, valid bindings and malformed source. This strengthens static evidence, **not** frontend JavaScript wiring, authorization outcomes, exception paths, target DB effects or live client/server acceptance. A missing binding or changed marker requires source review; do not waive it or promote validation labels. The next milestone should trace delegated helpers and template-to-route bindings on prioritized GUI controls.

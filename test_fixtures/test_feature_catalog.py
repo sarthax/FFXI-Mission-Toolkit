@@ -10,6 +10,7 @@ from workbench.core.services.feature_catalog import load_catalog, search_catalog
 from workbench.core.services.feature_catalog_audit import audit_catalog
 from workbench.core.services.feature_catalog_gui_audit import audit_gui_controls
 from workbench.core.services.feature_catalog_gui_inventory import inventory_gui, discover_controls
+from workbench.core.services.feature_catalog_documentation_audit import inspect_handler_source
 
 
 def main():
@@ -208,6 +209,30 @@ def main():
     }
 
     assert documentation["review_case_missing_markers"] == []
+    assert all(case["route_bound"] for case in documentation["review_cases"])
+    # The dashboard delegates result fields to dashboard_view. Do not describe
+    # module-level matches as directly observed in its HTTP handler.
+    delegated = documentation["review_case_delegated_markers"]
+    assert {"testing-run-filter"} <= set(delegated)
+    assert {'"total_runs"', '"page"', '"max_page"'} <= set(delegated["testing-run-filter"])
+    assert all(any(case["id"] == case_id for case in documentation["review_cases"])
+               for case_id in delegated)
+    # A route decorator on the wrong function is a documentation source drift.
+    fake = ('@app.get("/target")\n'
+            'def unrelated():\n    return {"rows": []}\n'
+            '@app.get("/other")\n'
+            'def target():\n    return helper()\n')
+    bad = inspect_handler_source(fake, "target", '@app.get("/target"', ['"rows"'])
+    assert not bad["route_bound"]
+    assert bad["module_only_source_markers"] == ['"rows"']
+    assert bad["handler_source_markers"] == []
+    good = inspect_handler_source(fake, "unrelated", '@app.get("/target"', ['"rows"'])
+    assert good["route_bound"]
+    assert good["handler_source_markers"] == ['"rows"']
+    assert not good["missing_source_markers"]
+    assert not inspect_handler_source(
+        "def invalid(:\n", "target", '@app.get("/target"', ['"rows"']
+    )["route_bound"]
     assert all(case["status"] == "handler_source_verified_runtime_unverified" for case in documentation["review_cases"])
     assert all(case["handler_marker_present"] for case in documentation["review_cases"])
     assert all(case["contract_source_present"] for case in documentation["review_cases"])
