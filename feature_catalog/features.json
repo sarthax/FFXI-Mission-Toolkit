@@ -343,7 +343,7 @@
       "help": "/auction-house/help",
       "purpose": "Prepare and review controlled auction restock or cleanup changes.",
       "how_to_use": "Select the exact Restock or Cleanup scope, inspect the proposed change and its preview, then use only the authorized guarded confirmation. Recheck resulting state rather than equating preview with execution.",
-      "caveat": "Preview and authorization are required; do not treat a proposed change as already applied."
+      "caveat": "Auction House admin listing preview performs SELECT-only snapshot lookups and does not post a listing. Review actual confirmation/authorization on each subsequent mutation route independently; a proposed or previewed change is not applied."
     },
     {
       "id": "ah-recovery",
@@ -877,8 +877,8 @@
       "validation": "unverified",
       "help": "/help#help-migration-packages",
       "purpose": "Review selected package content and dependency scope.",
-      "how_to_use": "Choose a migration ID in Package Scope, filter by query or dependency decision and inspect the bounded dependency graph. The GET scope review is read-only; decision or review POST controls are separate operations requiring their own authorization and evidence.",
-      "caveat": "The GET dependency review is read-only and depends on the canonical Workbench graph. A missing graph or unresolved dependency does not establish migration readiness.",
+      "how_to_use": "Select a migration ID and inspect the read-only GET dependency scope with query, decision and depth filters. A separate decision POST writes a node decision and resets the scope review to DRAFT. The review POST marks scope REVIEWED only when its closure checks permit it; inspect the resulting status before package creation.",
+      "caveat": "GET scope filtering is read-only, but decision and review POST actions write canonical Workbench graph review state. The closure gate rejects BLOCKED or MANUAL_REQUIRED scope. These are not target server deployment operations.",
       "source_refs": [
         "gui/templates/packages_scope.html"
       ]
