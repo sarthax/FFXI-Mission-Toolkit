@@ -60,12 +60,12 @@
 {% endfor %}
 </tbody></table></div></details>
 <details><summary>Curated template reviews ({{ coverage.documentation_audit.review_case_count }})</summary>
-<p class="muted">These rows verify literal template and route-handler markers in checked-in source. Runtime behavior and permissions require separate acceptance.</p>
+<p class="muted">Literal HTTP decorators are bound to named Python handlers; handler-local source markers are distinguished from module-only/delegated markers. Neither proves frontend wiring, authorization, database effects or runtime acceptance.</p>
 <div class="table-wrap"><table><thead><tr><th>Capability</th><th>Template</th><th>Marker</th><th>Handler</th><th>Contract</th><th>Status</th></tr></thead><tbody>
 {% for case in coverage.documentation_audit.review_cases %}
 <tr><td><a href="/feature-catalog?feature={{ case.feature_id|urlencode }}">{{ case.feature_id }}</a></td>
 <td><code>{{ case.template }}</code></td><td><code>{{ case.marker }}</code></td>
-<td><code>{{ case.handler_file }}</code> — {{ case.handler_name }}</td><td>{{ case.contract.method }} · {{ case.contract.boundary }}<div class="muted">Inputs: {{ case.contract.inputs|join(', ') }}; outputs: {{ case.contract.outputs|join(', ') }}</div><div class="muted">{{ case.contract.error_evidence }}</div>{% if case.documentation_discrepancies %}<div class="muted">Review documentation: {% for gap in case.documentation_discrepancies %}{{ gap.field }} ({{ gap.expected_term }}){% if not loop.last %}; {% endif %}{% endfor %}</div>{% endif %}</td><td>{{ 'Source markers present' if case.template_marker_present and case.handler_marker_present and case.contract_source_present else 'Review marker missing' }} — runtime unverified</td></tr>
+<td><code>{{ case.handler_file }}</code> — {{ case.handler_name }}</td><td>{{ case.contract.method }} · {{ case.contract.boundary }}<div class="muted">Inputs: {{ case.contract.inputs|join(', ') }}; outputs: {{ case.contract.outputs|join(', ') }}</div><div class="muted">{{ case.contract.error_evidence }}</div>{% if case.documentation_discrepancies %}<div class="muted">Review documentation: {% for gap in case.documentation_discrepancies %}{{ gap.field }} ({{ gap.expected_term }}){% if not loop.last %}; {% endif %}{% endfor %}</div>{% endif %}</td><td>{{ 'Bound route/source markers present' if case.template_marker_present and case.handler_marker_present and case.contract_source_present else 'Review route/source drift' }}{% if case.module_only_source_markers %}<div class="muted">Module-only markers (helper trace needed): {{ case.module_only_source_markers|join(', ') }}</div>{% endif %} — runtime unverified</td></tr>
 {% endfor %}
 </tbody></table></div>
 </details>
