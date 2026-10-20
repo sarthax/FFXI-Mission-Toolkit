@@ -178,7 +178,7 @@
       "route": "/entity",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-server-entity",
       "purpose": "Resolve server entity IDs and names and follow linked evidence.",
       "how_to_use": "Search by server entity ID or name, inspect the resolved identity, then follow source and zone links.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -191,7 +191,7 @@
       "route": "/sql",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-server-sql",
       "purpose": "Inspect indexed server SQL data and related records.",
       "how_to_use": "Find a server table or record, inspect the indexed fields and linked evidence, and verify the source snapshot.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -684,7 +684,7 @@
       "route": "/dialog",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-server-dialog-events",
       "purpose": "Inspect dialog and text records.",
       "how_to_use": "Search dialogue identifiers or text, open source records, and inspect linked zone and event context.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -697,7 +697,7 @@
       "route": "/events",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-server-dialog-events",
       "purpose": "Inspect event and cutscene identifiers.",
       "how_to_use": "Select an event or cutscene ID, inspect source and zone associations, then follow implementation references.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
