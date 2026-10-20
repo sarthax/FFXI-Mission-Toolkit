@@ -97,6 +97,16 @@ def main():
         feature = feature_detail(items, feature_id)["feature"]
         assert feature.get("source_refs"), feature_id
         assert not feature.get("test_refs"), feature_id
+    expected_guidance = {
+        "feature-trace": "Branch search",
+        "live-client": "position sampling",
+        "wiki": "sync/health",
+        "zone-editor": "data source",
+        "lua-converter": "ID-table",
+        "sql-converter": "collision",
+    }
+    for feature_id, detail_term in expected_guidance.items():
+        assert detail_term in feature_detail(items, feature_id)["feature"]["how_to_use"]
     assert feature_detail(items, "missing-capability") is None
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
