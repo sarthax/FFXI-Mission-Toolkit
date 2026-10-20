@@ -893,8 +893,8 @@
       "validation": "unverified",
       "help": "/help#help-migration-packages",
       "purpose": "Prepare a package from reviewed source evidence.",
-      "how_to_use": "Choose the migration source root, source and target families, and package destination, then Generate package. Inspect materialized, missing and skipped artifacts; treat generation as a reviewable candidate, not proof that the target supports every behavior.",
-      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance.",
+      "how_to_use": "Choose a migration and source/target settings only after inspecting the reviewed dependency scope and its readiness gate. Submit Generate package, then inspect the materialized, missing and skipped artifacts; package creation is not target deployment.",
+      "caveat": "Package materialization requires a canonical graph, existing migration actions and a reviewed dependency scope. A generated candidate does not imply deployment, target writes or gameplay acceptance.",
       "source_refs": [
         "gui/templates/packages_create.html"
       ]
@@ -1269,7 +1269,7 @@
       "help": "/help#help-feature-testing",
       "purpose": "Construct a clear, source-aware set of checks before requesting operator execution.",
       "how_to_use": "Choose a versioned test definition and scenario, identify the approved account/context and review the generated test plan JSON. Check observation guides and assertions before saving a design; plan creation does not execute the scenario.",
-      "caveat": "The test plan is design-only and does not execute a scenario. The field guide documents expected evidence; a separate guarded launch requires authorization and approval.",
+      "caveat": "Test planning does not execute a scenario. A separate execution launch requires operator authorization and explicit approval; a queued job is not a completed or passing test. The field guide describes expected evidence, not guaranteed collection.",
       "source_refs": [
         "gui/templates/feature_testing.html"
       ],
