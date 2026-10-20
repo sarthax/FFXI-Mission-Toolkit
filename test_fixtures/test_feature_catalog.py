@@ -128,7 +128,7 @@ def main():
     assert "Coverage audit" in page
     assert "Catalog depth:" in page
     assert "Help depth:" in page
-    assert "Prioritize generic Help links by module" in page
+    assert ("Prioritize generic Help links by module" in page) == bool(audit["help_coverage"]["generic_by_module"])
     assert "unverified" in page
     assert "uncataloged active pages" in page
     assert "Feature Trace" in page
