@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import export_feature_trace_relevance as exporter
+import audit_feature_trace_campaign as campaign
 from workbench.core import graph
 
 
@@ -78,6 +79,14 @@ def test_actual_trace_facade_keeps_source_relationship_in_export(tmp_path):
     assert "initial_edge_ids" not in out
     assert "source_review_required" not in out
     assert out["evidence_boundary"].startswith("Read-only")
+    # Campaign scorer must accept the *real exporter format* without weakening
+    # identity or evidence checks when either tool evolves independently.
+    bound = campaign.validate_export_binding(
+        out, case_id="absolute-virtue", root_id="mob:synthetic",
+        mode="implementation", root_kind="entity",
+    )
+    assert bound["export_edge_count"] == len(out["edges"])
+    assert bound["export_truncated"] is False
 
 
 def _synthetic_service(*, kind="entity", identity=True, edges=None, representations=None):
