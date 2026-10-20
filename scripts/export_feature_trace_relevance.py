@@ -73,8 +73,10 @@ def collect(graph_con, catalog_con, *, case_id: str, root: str, depth: int = 1,
     if not isinstance(info, dict) or not info.get("known") or info.get("node_id") != root:
         raise ValueError("Exact root not found; resolve identity in Feature Trace before exporting")
     representations = info.get("representations") or []
-    if len(representations) != 1:
-        raise ValueError("Root identity spans zero or multiple source representations; review ambiguity first")
+    # Several source representations for the SAME explicit canonical node are normal:
+    # do not confuse them with an unresolved name/numeric identity collision.
+    if not representations or any(rep.get("node_id", root) != root for rep in representations):
+        raise ValueError("Exact root has missing or conflicting source representations")
 
     result = service.trace(graph_con, root, depth, direction, catalog_con,
                            max_nodes=MAX_NODES, mode=expected_mode)
