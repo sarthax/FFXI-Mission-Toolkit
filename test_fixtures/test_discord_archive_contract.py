@@ -36,7 +36,7 @@ def test_discord_missing_cache_does_not_make_schema_changes():
     assert 'sqlite_master' in page
     assert 'Discord archive not indexed yet' in page
     assert 'CREATE TABLE' not in page and 'DROP TABLE' not in page
-    assert 'safe_links' in handler("capture_detail") or 'discord_posts' in HOST.read_text(encoding="utf-8")
+    assert 'discord["safe_links"]' in HOST.read_text(encoding="utf-8")
     assert 'startswith(("https://", "http://"))' in page
     assert 'w.writerow(' in handler("capture_discord_export")
 
