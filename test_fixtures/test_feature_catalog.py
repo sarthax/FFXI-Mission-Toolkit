@@ -81,6 +81,13 @@ def main():
     for entry in items:
         if entry["help"].startswith("/help#"):
             assert f'id="{entry["help"].split("#", 1)[1]}"' in help_html
+    for feature_id in ("capture-search", "capture-review", "wiki", "wiki-source-navigation", "trace-runtime"):
+        feature = feature_detail(items, feature_id)["feature"]
+        assert feature.get("source_refs"), feature_id
+        assert feature["validation"] == "unverified"
+    assert "test_fixtures/test_feature_trace_wiki_section_dossier.py" in feature_detail(
+        items, "wiki-source-navigation")["feature"]["test_refs"]
+    assert not feature_detail(items, "capture-search")["feature"].get("test_refs")
     assert feature_detail(items, "missing-capability") is None
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
