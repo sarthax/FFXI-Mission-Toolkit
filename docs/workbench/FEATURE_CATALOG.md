@@ -86,3 +86,27 @@ Sixteen Binary Inspector, Retail Version and client-asset research entries now p
 ## Capture workflow Help links (October 19)
 
 Twelve Captures records now deep-link to operator Help for browsing/search/path projection, ingestion and metadata, review/zone evidence, and video OCR. These preserve provenance and distinguish session observations from verified server behavior. Link/anchor checks remain part of the Feature Catalog regression suite, and none of the entries is promoted to runtime-tested.
+
+## Migration Help deep links (October 19)
+
+Eight Migration entries now point to focused operator guidance on ID drift, Lua/SQL/binding conversion, and package generation/scope/review. The instructions distinguish read-only investigation and generated plans from authorized apply operations. Runtime validation status remains unchanged; existing Help fragment and route-inventory smoke tests cover the destinations.
+
+## Research & Evidence contextual Help — October 19
+
+Six remaining Research & Evidence entries now link to sections for scoped research sessions and evidence, gaps and contradictory claims, and Feature Checker/LLM-assisted research. Guidance keeps source identity, indexing gaps and independent runtime acceptance separate. Existing catalog and Help route regressions validate navigation.
+
+## Live Client contextual Help — October 19
+
+Five Live Client catalog functions now deep-link to bridge connection/observation, entity and movement telemetry, or live 3D viewing guidance. This clarifies client-observed data versus DSP spawn records, sampling gaps, and source freshness; no gameplay/runtime validation status changes.
+
+## Server Data contextual Help — October 19
+
+Four Server Data catalog entries now link to specific instructions for entity lookup, read-only SQL browsing, dialog source references, and event IDs. The guidance requires DSP profile/zone/source identity and distinguishes indexed or configured data from observed runtime behavior. Existing Help link tests cover anchor and route integrity; no runtime statuses or database permissions change.
+
+## Help quality and evidence crosswalk (October 19)
+
+The catalog now audits each module's entry count, generic Help destinations, missing purpose/how-to/caveat details, and attached source/test reference counts. A separate provenance gap inventory flags features lacking either source or test pointers. These are *static triage indicators*, not independent judgments of instruction accuracy, full functional coverage, or DSP/runtime acceptance. Review representative workflows and evidence manually before promoting validation status. The PR is independent of pending Captures, Migration, Research, Live Client and Server Data Help PRs.
+
+## Source provenance pilot: Captures, Live Client, Server Data
+
+The Capture Browser, Live Client bridge and Server Data entity/SQL browser entries now carry inspected repository GUI source pointers. Live Client bridge entries also cite an existing protocol regression. No tests are attached to the entity/SQL browser entries without verified matching tests. Presence of code and passing protocol regression do not establish operator or gameplay acceptance. This pilot is independent of the pending Help quality audit and documentation branches.
