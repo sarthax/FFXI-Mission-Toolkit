@@ -107,6 +107,15 @@ def main():
     }
     for feature_id, detail_term in expected_guidance.items():
         assert detail_term in feature_detail(items, feature_id)["feature"]["how_to_use"]
+    for capability, expected in {
+        "capture-search": "opcode",
+        "capture-review": "Save what I typed",
+        "research": "research session",
+        "id-drift": "crosswalk",
+        "package-review": "decision ledger",
+        "package-create": "missing and skipped artifacts",
+    }.items():
+        assert expected in feature_detail(items, capability)["feature"]["how_to_use"]
     assert feature_detail(items, "missing-capability") is None
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
