@@ -145,3 +145,7 @@ The catalog now references checked-in GUI and selected service implementations f
 ## Functional guidance review — prioritized operators (October 19)
 
 The Feature Trace, Live Client, Wiki, Zone Editor, Lua Converter and SQL Converter catalog entries now describe concrete starting controls and review steps instead of only a generic opening sequence. These are read-only documentation refinements, with regression assertions for key instructions. Feature Trace branch/provider controls, bridge setup previews and read-only checks, Wiki sync/snapshot validation, and converter option/collision checks were inspected in checked-in templates. Zone Editor instructions deliberately remain cautious because this pass did not establish the exact current template backing the registered route. Do not promote runtime validation status on the strength of GUI text or offline tests.
+
+## Operator-workflow review: Captures, Research and Migration (October 19)
+
+The Capture Browser/Search/Review, Research Sessions/Evidence, ID Drift and package create/review catalog descriptions now identify practical controls and evidence handoffs. Search results and parser suggestions retain original capture provenance; reviews must inspect dependency ledgers and missing/skipped artifacts before promotion. These are static operator guidance updates grounded in the checked-in templates where available, not runtime acceptance. Research evidence and ID Drift descriptions remain cautious about assuming a particular data source or result was verified.
