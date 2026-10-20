@@ -88,6 +88,15 @@ def main():
     assert "test_fixtures/test_feature_trace_wiki_section_dossier.py" in feature_detail(
         items, "wiki-source-navigation")["feature"]["test_refs"]
     assert not feature_detail(items, "capture-search")["feature"].get("test_refs")
+    for feature_id in ("research", "lua-converter", "sql-converter"):
+        feature = feature_detail(items, feature_id)["feature"]
+        assert feature.get("source_refs") and feature.get("test_refs"), feature_id
+        assert feature["validation"] == "unverified"
+    for feature_id in ("id-drift", "research-contradictions", "research-evidence",
+                       "package-review", "package-scope", "package-create", "bindings"):
+        feature = feature_detail(items, feature_id)["feature"]
+        assert feature.get("source_refs"), feature_id
+        assert not feature.get("test_refs"), feature_id
     assert feature_detail(items, "missing-capability") is None
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
