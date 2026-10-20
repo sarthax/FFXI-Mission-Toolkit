@@ -48,7 +48,19 @@ def audit_documentation(root: Path = ROOT) -> dict:
             if name != "build_plan"
         ]
         contract_source_present = all(marker in handler_source for marker in contract_markers)
-        reviewed.append({**case, "template_marker_present": present,
+        checks = case.get("documentation_checks", [])
+        if not isinstance(checks, list) or not checks:
+            raise ValueError("missing documentation checks")
+        discrepancies = []
+        for check in checks:
+            field, term = check.get("field"), check.get("term")
+            if field not in ("purpose", "how_to_use", "caveat") or not isinstance(term, str) or not term.strip():
+                raise ValueError("invalid documentation check")
+            if term.casefold() not in known[case["feature_id"]].get(field, "").casefold():
+                discrepancies.append({"field": field, "expected_term": term,
+                                      "kind": "documentation_review_needed"})
+        reviewed.append({**case, "documentation_discrepancies": discrepancies,
+                         "template_marker_present": present,
                          "handler_marker_present": handler_present,
                          "contract_source_present": contract_source_present,
                          "catalog_route": known[case["feature_id"]]["route"]})
@@ -88,6 +100,7 @@ def audit_documentation(root: Path = ROOT) -> dict:
         "stage": "source_review",
         "review_cases": reviewed,
         "review_case_count": len(reviewed),
+        "documentation_discrepancy_count": sum(len(row["documentation_discrepancies"]) for row in reviewed),
         "review_case_missing_markers": [case["id"] for case in reviewed if not case["template_marker_present"] or not case["handler_marker_present"] or not case["contract_source_present"]],
         "features_checked": len(features),
         "findings": findings,
