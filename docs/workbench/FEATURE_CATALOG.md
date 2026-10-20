@@ -78,3 +78,7 @@ Twenty-two existing capabilities in Feature Trace/Behavior Inspector, Wiki, Key 
 ## Help-link coverage diagnostic (October 19)
 
 The Catalog coverage panel now counts and classifies each record by its Help destination: a contextual `/help#section` link, a direct module-specific Help route, or a generic `/help` link. The audit also groups generic destinations by module with links to their exact catalog entries for targeted documentation work. Regression compares these counts to live `features.json`; it does not hardcode an expected number of contextual links. This is link-depth coverage only, not a quality or runtime-acceptance score.
+
+## Client Research contextual Help (October 19)
+
+Sixteen Binary Inspector, Retail Version and client-asset research entries now point to three grounded Help sections. The documentation covers PE evidence, version/probe comparisons, manifest and selective download planning, and DAT/model/dialog research, while explicitly distinguishing artifact/source inspection from the running client's behavior. Existing Help anchor and route inventory regression contracts apply. This does not change runtime validation labels.
