@@ -398,7 +398,7 @@
       "validation": "unverified",
       "help": "/help#help-live-bridge",
       "purpose": "Inspect the Ashita telemetry receiver, sender configuration, and event freshness.",
-      "how_to_use": "Open the bridge console, identify the connected client, confirm the current zone and inspect heartbeat/freshness.",
+      "how_to_use": "In Direct Live Bridge, confirm Ashita client ID, receiver status and credential configuration. Use Quick start only for the intended local environment; inspect sampling and heartbeat freshness, and share the safe health report rather than private configuration.",
       "caveat": "An absent or stale stream is not evidence that the client is offline; inspect bridge configuration first.",
       "source_refs": [
         "gui/templates/live_client_bridge.html"
@@ -418,7 +418,7 @@
       "validation": "unverified",
       "help": "/help#help-live-entities",
       "purpose": "Inspect positions for multiple observed client entities and reconcile them with server records.",
-      "how_to_use": "Connect the live bridge, open the entity-enabled map, compare live versus server markers, and inspect identity matches.",
+      "how_to_use": "Verify the selected client and zone before viewing entity telemetry; compare observed client positions against server markers and investigate missing, stale or ambiguous identities instead of assuming a one-to-one match.",
       "caveat": "Live broadcasts depend on the installed addon and visibility; not every server spawn is a client observation."
     },
     {
@@ -432,7 +432,7 @@
       "validation": "unverified",
       "help": "/help#help-live-entities",
       "purpose": "Use guarded movement assistance and immediate STOP/disarm controls.",
-      "how_to_use": "Confirm client identity and zone, arm only the intended control, inspect movement feedback, then disarm or STOP.",
+      "how_to_use": "Identify the connected client and current zone before arming a movement action. Verify command feedback and stop/disarm controls immediately after the intended maneuver; never treat a plotted marker as confirmation that a command executed.",
       "caveat": "Controls affect the live client and must remain scoped to an authorized development/testing session."
     },
     {
@@ -446,7 +446,7 @@
       "validation": "unverified",
       "help": "/help#help-live-3d",
       "purpose": "View the connected player's zone and observed activity within the external 3D map.",
-      "how_to_use": "Select the correct zone and instance, follow or center the player, then compare live markers to static server evidence.",
+      "how_to_use": "Select a matching zone for the 3D viewer, then inspect player and entity overlays while monitoring freshness and coordinate alignment. Separate live observations from server spawn references, especially when an instance or transform may differ.",
       "caveat": "Geometry, static spawns, and live observations are separate layers with different provenance."
     },
     {
@@ -497,7 +497,7 @@
       "validation": "unverified",
       "help": "/help#help-wiki-evidence",
       "purpose": "Browse researched wiki content that has been imported and annotated with source provenance.",
-      "how_to_use": "Search the Wiki module, open cached results, and inspect source and cache status before relying on the content.",
+      "how_to_use": "Search for the article by source, open the cached result and check its page identity and freshness. Use Sync & health or missing-page diagnostics when data is absent; a missing cache entry does not mean the underlying source page does not exist.",
       "caveat": "Missing cache results may reflect import coverage, not absence from the original wiki."
     },
     {
@@ -511,7 +511,7 @@
       "validation": "unverified",
       "help": "/help#help-wiki-evidence",
       "purpose": "Control batch scraping and importing of research pages and observe cache health.",
-      "how_to_use": "Open the Wiki import/sync controls, choose the source and bounded batch, then inspect job progress and errors.",
+      "how_to_use": "Choose the Wiki source and import mode in Batch imports, set a bounded batch size, start the job and check progress or diagnostics before expanding scope. Prefer preview and validation for snapshot imports; preserve the original source and revision.",
       "caveat": "Large batches need source-specific rate and error handling; imported pages require provenance."
     },
     {
@@ -525,7 +525,7 @@
       "validation": "unverified",
       "help": "/help#help-wiki-evidence",
       "purpose": "Review Japanese terminology and translation evidence for client-research comparisons.",
-      "how_to_use": "Open the translation research view and compare the original term, proposed translation, and supporting sources.",
+      "how_to_use": "Compare the original term and source passage with the proposed translation; follow the supporting page and section references. Mark uncertain terms for review rather than treating a machine-produced equivalent as authoritative.",
       "caveat": "Machine or inferred translations require independent corroboration."
     },
     {
@@ -683,7 +683,7 @@
       "validation": "unverified",
       "help": "/help#help-retail-versions",
       "purpose": "Browse file identities and exact historical revisions from retail manifest snapshots.",
-      "how_to_use": "Open the Retail Version Explorer's browse view, choose a file and listed revision, and inspect availability before selecting a download.",
+      "how_to_use": "In Retail Version Explorer, search the file name and review revisions in the manifest; confirm file identity and local availability before preparing a selective download. Do not execute retrieved retail binaries.",
       "caveat": "A listed historical revision does not guarantee that the remote payload still exists."
     },
     {
@@ -766,7 +766,7 @@
       "help": "/help#help-capture-browse",
       "parent_id": "capture-browser",
       "purpose": "Run structured queries against the indexed capture store.",
-      "how_to_use": "Open Capture Query, select available fields and predicates, and follow result links into source observations.",
+      "how_to_use": "Choose available capture fields and predicates, run the query and inspect matches with their capture IDs, timestamps and raw source observations. Confirm field decoding before using a result as proof of behavior.",
       "caveat": "Only captured and indexed fields can be queried reliably."
     },
     {
@@ -910,7 +910,7 @@
       "help": "/help#help-capture-import",
       "parent_id": "capture-browser",
       "purpose": "Understand which logger and packet export formats the importer recognizes.",
-      "how_to_use": "Open Capture Format Support before importing an unfamiliar source; compare the required input structure.",
+      "how_to_use": "Consult Capture Format Support to confirm the accepted package structure, required metadata and parser expectations before importing. Keep unrecognized formats separate until the parser can report reliable diagnostics.",
       "caveat": "Parsing support varies by source; unsupported records must not be silently treated as valid."
     },
     {
@@ -924,7 +924,7 @@
       "help": "/help#help-capture-browse",
       "parent_id": "capture-browser",
       "purpose": "Visualize player movement and other spatial paths recorded in captures.",
-      "how_to_use": "Open Capture Path Visualization, select a capture and zone, and inspect route points in sequence.",
+      "how_to_use": "Select a capture and zone, then inspect plotted points in time/order sequence. Check coordinate provenance and gaps before inferring a continuous route or comparing points to static zone entities.",
       "caveat": "Sparse updates and zoning can create apparent jumps; these are observations, not navigation instructions."
     },
     {
@@ -938,7 +938,7 @@
       "help": "/help#help-capture-import",
       "parent_id": "capture-browser",
       "purpose": "Ingest a recorded gameplay package into the Toolkit's research index.",
-      "how_to_use": "Open Capture Import, select a supported recording, review the preview and parse diagnostics, then import.",
+      "how_to_use": "Select the supported input capture, inspect the preview and parser diagnostics, then import only after confirming its origin. Review rejected or undecoded records afterward; a successful import does not imply full protocol decoding.",
       "caveat": "Import success does not guarantee every field was decoded or semantically interpreted."
     },
     {
@@ -1037,7 +1037,7 @@
       "help": "/help#help-capture-browse",
       "parent_id": "capture-browser",
       "purpose": "Compare recorded routes across multiple capture sessions.",
-      "how_to_use": "Open All Capture Paths, select a zone or relevant sessions, and compare their spatial evidence.",
+      "how_to_use": "Choose a zone and the relevant capture sessions, compare their spatial overlays and identify differences in timing, sampling or coordinate frame before inferring repeated player routes.",
       "caveat": "Session coordinates and zone identity need reconciliation before comparing routes."
     },
     {
@@ -1051,7 +1051,7 @@
       "help": "/help#help-capture-import",
       "parent_id": "capture-browser",
       "purpose": "Process multiple capture sources in one bounded import workflow.",
-      "how_to_use": "Select a source set, inspect the bulk-ingest plan, and review per-file failures or skipped records afterward.",
+      "how_to_use": "Review the source set and bulk-ingest plan before starting a batch. After processing, inspect per-file outcomes and skipped/failed entries; preserve original capture provenance and avoid retrying blindly.",
       "caveat": "Large imports can contain mixed formats; review error summaries rather than assuming complete coverage."
     },
     {
@@ -1065,7 +1065,7 @@
       "help": "/help#help-capture-import",
       "parent_id": "capture-browser",
       "purpose": "Associate supplementary metadata with already captured evidence.",
-      "how_to_use": "Import metadata using the matching capture identity and inspect the resulting link and provenance.",
+      "how_to_use": "Choose metadata for the exact capture identity, inspect the join keys and import preview, then verify the resulting associations. Do not attach unmatched metadata to a similarly named recording.",
       "caveat": "Metadata alone does not prove its corresponding packet/event occurred."
     },
     {
@@ -1096,7 +1096,7 @@
       "help": "/help#help-capture-review",
       "parent_id": "capture-browser",
       "purpose": "Review capture observations grouped by zone and spatial context.",
-      "how_to_use": "Open Capture Zone Review, choose a zone, then inspect its linked capture evidence and unresolved identities.",
+      "how_to_use": "Choose a zone in Capture Zone Review, inspect associated observations and unresolved entity IDs, then cross-reference server spawn data only when identities and coordinate bases match.",
       "caveat": "Zone mapping may be incomplete for unknown or stale session metadata."
     },
     {
@@ -1207,7 +1207,7 @@
       "validation": "unverified",
       "help": "/help#help-retail-versions",
       "purpose": "Review a single-file retrieval plan before any bytes are acquired.",
-      "how_to_use": "Open the Planner tab, choose a precise file and revision, inspect the plan, then explicitly confirm any download.",
+      "how_to_use": "Choose an exact manifest file and revision in the Planner, review destination and overwrite/hash safeguards, then confirm a selective download only when provenance is acceptable. Inspect the resulting local artifact independently.",
       "caveat": "Network operations require an authorized patch source; the plan itself is not a downloaded artifact."
     },
     {
@@ -1221,7 +1221,7 @@
       "validation": "unverified",
       "help": "/help#help-retail-versions",
       "purpose": "Inspect isolated retail files with recorded verification evidence.",
-      "how_to_use": "Open Local artifacts, verify hash, signature and provenance records, then open the file in Binary Inspector.",
+      "how_to_use": "Open Local artifacts and review file hash, signature and manifest provenance before sending an artifact to Binary Inspector. Availability in the local folder does not establish integrity without the recorded checks.",
       "caveat": "A matching SHA-256 against the local output is not independently authenticated provenance."
     },
     {
@@ -1235,7 +1235,7 @@
       "validation": "unverified",
       "help": "/help#help-retail-versions",
       "purpose": "Compare cataloged revisions of the same client file.",
-      "how_to_use": "Open Compare after at least two verified versions are available; select both versions and inspect the reported differences.",
+      "how_to_use": "Select two independently identified revisions in Compare and inspect reported structural and content differences. Keep interpretation tied to file identities and do not infer behavior changes solely from hash differences.",
       "caveat": "Structural differences require additional evidence before making behavioral claims."
     },
     {
@@ -1268,7 +1268,7 @@
       "validation": "unverified",
       "help": "/help#help-feature-testing",
       "purpose": "Construct a clear, source-aware set of checks before requesting operator execution.",
-      "how_to_use": "In Feature Testing, use the builder, observation guide and assertion templates; save or inspect the design-only specification.",
+      "how_to_use": "Choose a versioned test definition and scenario, identify the approved account/context and review the generated test plan JSON. Check observation guides and assertions before saving a design; plan creation does not execute the scenario.",
       "caveat": "The field guide documents expected evidence; it does not guarantee collection or support in a particular runner.",
       "source_refs": [
         "gui/templates/feature_testing.html"
@@ -1288,7 +1288,7 @@
       "validation": "unverified",
       "help": "/help#help-feature-testing",
       "purpose": "Inspect which assertions passed, failed or lack sufficient observation evidence.",
-      "how_to_use": "Open Feature Testing run history, select a run, and inspect case identity, evidence, observed values and failure diagnostics.",
+      "how_to_use": "Filter imported test runs by run ID, feature or verdict, open the exact run and inspect recorded observations, assertions and artifacts. Distinguish a failed assertion from a missing observation or unavailable test environment.",
       "caveat": "Imported observations are scoped to the run and cannot by themselves establish general gameplay correctness.",
       "source_refs": [
         "src/workbench/server_admin/feature_testing/router.py"
@@ -1308,7 +1308,7 @@
       "validation": "unverified",
       "help": "/help#help-feature-testing",
       "purpose": "Examine a failing assertion with its original run evidence and read-only source investigation.",
-      "how_to_use": "Open the supervisor investigation for an exact run ID after configuring authorized local credentials and results storage; review candidates and uncertainty.",
+      "how_to_use": "Select the exact test definition/run and verify authorized local credentials and supervisor endpoint before requesting investigation. Review candidate diagnoses against raw evidence and preserve uncertainty; recommendations are not automated gameplay acceptance.",
       "caveat": "The gateway is authenticated and read-only; source ranking is not causal proof and does not enable execution.",
       "source_refs": [
         "src/workbench/server_admin/feature_testing/investigation_dossier.py"
