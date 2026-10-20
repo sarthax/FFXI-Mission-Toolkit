@@ -11,6 +11,9 @@ from workbench.core.services.feature_catalog_audit import audit_catalog
 from workbench.core.services.feature_catalog_gui_audit import audit_gui_controls
 from workbench.core.services.feature_catalog_gui_inventory import inventory_gui, discover_controls
 from workbench.core.services.feature_catalog_documentation_audit import inspect_handler_source
+from workbench.core.services.feature_catalog_workflow_audit import (
+    inspect_route_binding, inspect_ui_binding,
+)
 
 
 def main():
@@ -201,6 +204,42 @@ def main():
     assert documentation["features_checked"] == len(items)
     assert documentation["finding_count"] == len(documentation["findings"])
     assert documentation["review_case_count"] == 17
+    workflows = documentation["operator_workflows"]
+    assert workflows["case_count"] == 11
+    assert workflows["missing"] == [], workflows["missing"]
+    assert all(item["verification"] == "static_source_only_runtime_unverified"
+               for item in workflows["cases"])
+    assert {item["feature_id"] for item in workflows["cases"]} >= {
+        "feature-trace", "trace-runtime", "wiki-bulk", "wiki-source-navigation",
+        "live-bridge", "live-entity-stream", "capture-search", "capture-review",
+    }
+    assert {"guarded_local_settings_write", "starts_background_job",
+            "read_only_telemetry", "creates_export_artifact"} <= set(workflows["boundary_counts"])
+    # The control must occur inside the form with the correct action/method.
+    forms = ('<form action="/wrong" method="get"><input name="module" value="events"></form>'
+             '<form action="/captures/search" method="get"><input name="module" value="packets"></form>')
+    event_case = {"kind": "form", "control_marker": 'name="module" value="events"',
+                  "route": "/captures/search", "method": "GET"}
+    assert not inspect_ui_binding(forms, event_case)
+    assert inspect_ui_binding(forms.replace('action="/wrong"', 'action="/captures/search"'), event_case)
+    # A route decorator on a different function is a false positive.
+    wrong = ('@app.get("/target")\\n'
+             'def unrelated():\\n    return 1\\n'
+             '@app.get("/other")\\n'
+             'def target():\\n    return 2\\n')
+    bad_case = {"handler_name": "target", "route": "/target", "method": "GET"}
+    assert not inspect_route_binding(wrong, bad_case)[0]
+    assert inspect_route_binding(wrong, {**bad_case, "handler_name": "unrelated"})[0]
+    nested = ('def make_router():\\n'
+              '    router = APIRouter(prefix="/bridge")\\n'
+              '    @router.get("/status")\\n'
+              '    def status():\\n'
+              '        return {}\\n')
+    nested_case = {"handler_parent": "make_router", "router_prefix": "/bridge",
+                   "handler_name": "status", "route": "/bridge/status", "method": "GET"}
+    assert inspect_route_binding(nested, nested_case)[0]
+    assert not inspect_route_binding(nested, {**nested_case, "router_prefix": "/wrong"})[0]
+    assert not inspect_route_binding("def broken(:", nested_case)[0]
     assert len(documentation["reward_lifecycle"]) == 5
     assert documentation["reward_lifecycle_missing_markers"] == []
     assert {x["state"] for x in documentation["reward_lifecycle"]} == {
@@ -267,6 +306,7 @@ def main():
                   q="", module="", coverage=audit)
     assert "Coverage audit" in page
     assert "Documentation accuracy triage" in page
+    assert "Operator workflow bindings" in page
     assert "Catalog depth:" in page
     assert "Help depth:" in page
     assert ("Prioritize generic Help links by module" in page) == bool(audit["help_coverage"]["generic_by_module"])
