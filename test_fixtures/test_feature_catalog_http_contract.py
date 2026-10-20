@@ -280,6 +280,8 @@ def _trace_page_client(*, graph_available, matches=()):
         pytest.fail("An absent or ambiguous graph root must not execute a trace")
 
     trace = SimpleNamespace(
+        clear_query_mode=lambda: None,
+        split_mode_query=lambda q: (None, q),
         entity_query_diagnostics=lambda *_args: {"status": "synthetic-ambiguous"},
         entity_implementation_path=lambda *_args: None,
         node_info=lambda *_args: {"known": False},
