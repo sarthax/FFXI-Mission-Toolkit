@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "Curated static UI-to-HTTP-handler workflows. Not browser or runtime acceptance; never infer unreviewed control bindings.",
+  "description": "Curated static UI-to-HTTP-handler workflows. Not browser or runtime acceptance; never infer unreviewed control bindings. Failure and recovery evidence is static branch inspection, not runtime testing.",
   "cases": [
     {
       "id": "trace-query",
@@ -22,7 +22,31 @@
         "call": "feature_trace.trace("
       },
       "boundary": "read_only_research",
-      "interpretation": "GET query, direction and depth drive graph lookup; no canonical-graph data is created by the form."
+      "interpretation": "GET query, direction and depth drive graph lookup; no canonical-graph data is created by the form.",
+      "failure_paths": [
+        {
+          "id": "trace-graph-unavailable",
+          "state": "blocked",
+          "label": "Graph unavailable",
+          "signal": "The handler reports missing canonical graph instead of tracing.",
+          "recovery": "Build/import workbench.db; do not infer that the feature or entity is absent.",
+          "handler_markers": [
+            "if con is None:",
+            "Canonical Workbench graph is not available. Build/import workbench.db"
+          ]
+        },
+        {
+          "id": "trace-ambiguous",
+          "state": "empty_or_ambiguous",
+          "label": "No unique search result",
+          "signal": "A name-based fallback traces only when there is exactly one search match.",
+          "recovery": "Narrow the query or select a canonical node ID.",
+          "handler_markers": [
+            "matches = feature_trace.search_nodes(",
+            "if len(matches) == 1:"
+          ]
+        }
+      ]
     },
     {
       "id": "trace-runtime-observations",
@@ -48,7 +72,20 @@
         "call": "feature_trace.runtime_observation_page("
       },
       "boundary": "read_only_research",
-      "interpretation": "Bounded on-demand capture observations; a graph edge alone does not prove execution."
+      "interpretation": "Bounded on-demand capture observations; a graph edge alone does not prove execution.",
+      "failure_paths": [
+        {
+          "id": "trace-runtime-no-graph",
+          "state": "blocked",
+          "label": "404: graph unavailable",
+          "signal": "Runtime detail returns 404 when graph storage is unavailable.",
+          "recovery": "Restore the graph and retry; do not interpret the 404 as no runtime evidence.",
+          "handler_markers": [
+            "\"error\":\"Canonical Workbench graph is not available.\"",
+            "status_code=404)"
+          ]
+        }
+      ]
     },
     {
       "id": "wiki-exact-page-link",
@@ -65,7 +102,31 @@
         "wiki_evidence.page_evidence("
       ],
       "boundary": "read_only_research",
-      "interpretation": "Source-qualified article link; a title without source/page ID must not be treated as canonical provenance."
+      "interpretation": "Source-qualified article link; a title without source/page ID must not be treated as canonical provenance.",
+      "failure_paths": [
+        {
+          "id": "wiki-page-missing",
+          "state": "blocked",
+          "label": "Source-qualified page ID missing",
+          "signal": "An unknown source/page ID clears the title and emits an error.",
+          "recovery": "Verify provider and page ID; do not substitute an identically titled page.",
+          "handler_markers": [
+            "if page_id:",
+            "The source-qualified Wiki page was not found."
+          ]
+        },
+        {
+          "id": "wiki-page-mismatch",
+          "state": "blocked",
+          "label": "Opened article ID mismatch",
+          "signal": "A cached page with the wrong page ID clears article/evidence content.",
+          "recovery": "Recheck the source-qualified evidence link and cached identity.",
+          "handler_markers": [
+            "str(page_view.get(\"page_id\")) != str(page_id)",
+            "The exact Wiki source page could not be opened."
+          ]
+        }
+      ]
     },
     {
       "id": "wiki-scrape-job",
@@ -82,7 +143,31 @@
         "return {\"job\": job}"
       ],
       "boundary": "starts_background_job",
-      "interpretation": "Submission starts a scrape/import job and may change the local Wiki cache. A job receipt is not a completed import."
+      "interpretation": "Submission starts a scrape/import job and may change the local Wiki cache. A job receipt is not a completed import.",
+      "failure_paths": [
+        {
+          "id": "wiki-scrape-invalid",
+          "state": "invalid_input",
+          "label": "400: rejected scrape job",
+          "signal": "ValueError from job creation becomes an HTTP 400 error response.",
+          "recovery": "Inspect the error and correct the source URL; no job has been confirmed.",
+          "handler_markers": [
+            "except ValueError as exc:",
+            "status_code=400)"
+          ]
+        },
+        {
+          "id": "wiki-scrape-pending",
+          "state": "pending",
+          "label": "Job accepted, result pending",
+          "signal": "The route returns a job receipt without waiting for import completion.",
+          "recovery": "Inspect job status and Wiki cache health before claiming a page imported.",
+          "handler_markers": [
+            "wiki_jobs.start_job(url, DB_PATH)",
+            "return {\"job\": job}"
+          ]
+        }
+      ]
     },
     {
       "id": "wiki-snapshot-export",
@@ -99,7 +184,31 @@
         "return FileResponse("
       ],
       "boundary": "creates_export_artifact",
-      "interpretation": "Reads cached pages and creates a temporary compressed download; export does not import or validate target behavior."
+      "interpretation": "Reads cached pages and creates a temporary compressed download; export does not import or validate target behavior.",
+      "failure_paths": [
+        {
+          "id": "wiki-export-invalid",
+          "state": "invalid_input",
+          "label": "400: unsupported source",
+          "signal": "The source argument is validated before snapshot export.",
+          "recovery": "Select a supported provider or All sources and retry.",
+          "handler_markers": [
+            "if source not in (*wiki_snapshot.SOURCES, \"all\"):",
+            "Invalid Wiki source"
+          ]
+        },
+        {
+          "id": "wiki-export-error",
+          "state": "blocked",
+          "label": "400: export operation failed",
+          "signal": "Export exceptions remove the temporary directory and return an error.",
+          "recovery": "Review the returned error and local cache/filesystem access; no completed export is established.",
+          "handler_markers": [
+            "except (ValueError, OSError, sqlite3.Error) as exc:",
+            "shutil.rmtree(directory, ignore_errors=True)"
+          ]
+        }
+      ]
     },
     {
       "id": "bridge-console",
@@ -118,7 +227,20 @@
         "bridge setup requires local browser"
       ],
       "boundary": "local_browser_read",
-      "interpretation": "Locally restricted bridge console; loading the page neither provisions credentials nor starts the receiver."
+      "interpretation": "Locally restricted bridge console; loading the page neither provisions credentials nor starts the receiver.",
+      "failure_paths": [
+        {
+          "id": "bridge-console-local",
+          "state": "guarded",
+          "label": "403: nonlocal client",
+          "signal": "The console rejects non-loopback client addresses.",
+          "recovery": "Open the Toolkit on the authorized local browser rather than weakening the guard.",
+          "handler_markers": [
+            "request.client.host not in",
+            "detail=\"bridge setup requires local browser\""
+          ]
+        }
+      ]
     },
     {
       "id": "bridge-headless-save",
@@ -141,7 +263,48 @@
         "headless_observe_enabled"
       ],
       "boundary": "guarded_local_settings_write",
-      "interpretation": "Same-origin, local-only settings mutation for observation-file configuration, not an action in the connected game."
+      "interpretation": "Same-origin, local-only settings mutation for observation-file configuration, not an action in the connected game.",
+      "failure_paths": [
+        {
+          "id": "bridge-save-guard",
+          "state": "guarded",
+          "label": "403: local-origin guard rejected",
+          "signal": "The handler enforces same-origin requirements before writing settings.",
+          "recovery": "Use an authorized local browser with the correct origin headers.",
+          "handler_markers": [
+            "require_same_origin(request)"
+          ],
+          "guard_helper": {
+            "name": "require_same_origin",
+            "markers": [
+              "detail=\"bridge control requires local browser\"",
+              "detail=\"same-origin request required\""
+            ]
+          }
+        },
+        {
+          "id": "bridge-save-fields",
+          "state": "invalid_input",
+          "label": "400: missing feed settings",
+          "signal": "Enabling observation without character or telemetry folder is rejected.",
+          "recovery": "Enter both values or leave observation disabled.",
+          "handler_markers": [
+            "if not char or not folder:",
+            "character and telemetry folder are required"
+          ]
+        },
+        {
+          "id": "bridge-save-file-error",
+          "state": "blocked",
+          "label": "400: cannot create feed",
+          "signal": "File-system errors during telemetry file creation block the save.",
+          "recovery": "Check the local folder path and permissions; failed save does not connect a client.",
+          "handler_markers": [
+            "except OSError as exc:",
+            "cannot create feed file:"
+          ]
+        }
+      ]
     },
     {
       "id": "bridge-entity-status",
@@ -164,7 +327,31 @@
         "\"entities\""
       ],
       "boundary": "read_only_telemetry",
-      "interpretation": "Observations can be stale or absent; a reported entity is a sampled client view, not a guaranteed DSP spawn match."
+      "interpretation": "Observations can be stale or absent; a reported entity is a sampled client view, not a guaranteed DSP spawn match.",
+      "failure_paths": [
+        {
+          "id": "bridge-status-id",
+          "state": "invalid_input",
+          "label": "422: invalid client ID",
+          "signal": "The route rejects an invalid client ID.",
+          "recovery": "Choose a known bridge client ID and correct its format.",
+          "handler_markers": [
+            "len(client_id) <= 64",
+            "detail=\"invalid client ID\""
+          ]
+        },
+        {
+          "id": "bridge-status-empty",
+          "state": "empty_or_ambiguous",
+          "label": "Snapshot missing",
+          "signal": "The JSON response contains a null snapshot when none is available.",
+          "recovery": "Check feed freshness, receiver state and selected client before interpreting absence.",
+          "handler_markers": [
+            "if snapshot is None:",
+            "result[\"snapshot\"] = None"
+          ]
+        }
+      ]
     },
     {
       "id": "capture-events-search",
@@ -181,7 +368,31 @@
         "capture_events e"
       ],
       "boundary": "read_only_research",
-      "interpretation": "Searches indexed capture events by entity, exact message ID and opcodes; empty results do not prove absent events."
+      "interpretation": "Searches indexed capture events by entity, exact message ID and opcodes; empty results do not prove absent events.",
+      "failure_paths": [
+        {
+          "id": "capture-events-unfiltered",
+          "state": "empty_or_ambiguous",
+          "label": "Event search not yet filtered",
+          "signal": "Event lookup requires at least one event filter.",
+          "recovery": "Supply entity, message ID or opcode filters; blank output is not a negative test.",
+          "handler_markers": [
+            "selected_module == \"events\" and (entity or message_id or ev_opcodes)",
+            "events = []"
+          ]
+        },
+        {
+          "id": "capture-events-no-results",
+          "state": "empty_or_ambiguous",
+          "label": "No indexed matching events",
+          "signal": "The handler queries indexed capture_events, not all gameplay.",
+          "recovery": "Broaden filters and confirm the capture was indexed.",
+          "handler_markers": [
+            "SELECT COUNT(*) FROM capture_events e",
+            "SELECT e.*, c.capture_label FROM capture_events e"
+          ]
+        }
+      ]
     },
     {
       "id": "capture-packets-search",
@@ -198,7 +409,31 @@
         "capture_raw_packets"
       ],
       "boundary": "read_only_research",
-      "interpretation": "Packet category/opcode filters use a separate indexed corpus; do not combine packet identity with event message ID."
+      "interpretation": "Packet category/opcode filters use a separate indexed corpus; do not combine packet identity with event message ID.",
+      "failure_paths": [
+        {
+          "id": "capture-packets-unfiltered",
+          "state": "empty_or_ambiguous",
+          "label": "Packet search not yet filtered",
+          "signal": "Packet lookup requires category or opcode filters.",
+          "recovery": "Select an opcode or category before interpreting a blank result.",
+          "handler_markers": [
+            "selected_module == \"packets\" and (pk_category or pk_opcode)",
+            "packets = []"
+          ]
+        },
+        {
+          "id": "capture-packets-category-none",
+          "state": "empty_or_ambiguous",
+          "label": "Category maps to zero opcodes",
+          "signal": "No classified opcodes produces an explicitly false SQL condition.",
+          "recovery": "Try an exact opcode or verified category; empty rows do not establish no packets.",
+          "handler_markers": [
+            "if wanted:",
+            "where = \"0\""
+          ]
+        }
+      ]
     },
     {
       "id": "capture-review-navigation",
@@ -215,7 +450,20 @@
         "\"capture_review.html\""
       ],
       "boundary": "read_only_research",
-      "interpretation": "Opening the exception queue is read-only; separate POST controls can resolve or dismiss quarantine findings."
+      "interpretation": "Opening the exception queue is read-only; separate POST controls can resolve or dismiss quarantine findings.",
+      "failure_paths": [
+        {
+          "id": "capture-review-empty",
+          "state": "empty_or_ambiguous",
+          "label": "Filtered review queue empty",
+          "signal": "Review records are filtered by status and kind after loading.",
+          "recovery": "Use All statuses and clear kind filters; do not assume exceptions resolved.",
+          "handler_markers": [
+            "rq.items(con, \"all\")",
+            "status == \"all\" or r[\"status\"] == status"
+          ]
+        }
+      ]
     }
   ]
 }
