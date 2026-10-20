@@ -756,6 +756,27 @@
       ]
     },
     {
+      "id": "capture-discord-archive",
+      "module": "Captures",
+      "name": "Discord Capture Archive",
+      "summary": "Inspect imported capture-community posts, export sources and manually reconcile linked captures.",
+      "route": "/captures/discord",
+      "implementation": "implemented",
+      "validation": "unverified",
+      "help": "/help#help-capture-browse",
+      "parent_id": "capture-browser",
+      "purpose": "Browse archived Discord capture pointers without conflating third-party post metadata with game capture evidence.",
+      "how_to_use": "Import only authorized Discord archive inventories locally before browsing. Filter posts by source channel/status, inspect HTTP(S) source links and optionally export a bounded review dataset. Use the link form only from the local Toolkit browser to connect a post to an existing capture ID; confirm the underlying file before marking it ingested.",
+      "caveat": "Community links are unverified references. Absence of inventory tables produces an empty view, not an indexed collection. Similar filenames or shared URLs are candidate links, never automatic proof of ingestion. Local writes require same-origin browser access.",
+      "source_refs": [
+        "gui/templates/capture_discord.html",
+        "src/workbench/app/_host_impl.py"
+      ],
+      "test_refs": [
+        "test_fixtures/test_discord_archive_contract.py"
+      ]
+    },
+    {
       "id": "capture-query",
       "module": "Captures",
       "name": "Capture Query",
