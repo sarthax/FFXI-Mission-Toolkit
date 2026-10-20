@@ -38,6 +38,22 @@
 </details>
 {% endif %}
 {% endif %}
+{% if coverage.documentation_audit is defined %}
+<details id="documentation-accuracy-audit">
+<summary><strong>Documentation accuracy triage</strong> &mdash; {{ coverage.documentation_audit.features_checked }} capabilities checked; {{ coverage.documentation_audit.finding_count }} entries with review findings; {{ coverage.documentation_audit.control_candidate_count }} static GUI control candidates</summary>
+<p class="muted">{{ coverage.documentation_audit.limitations }}</p>
+<p><strong>Stage 1:</strong> Check missing or repeated operator content and missing source/test mappings. <strong>Stage 2:</strong> Review static GUI control candidates against actual handlers, inputs and outputs. <strong>Stage 3:</strong> Confirm corrections and runtime acceptance separately, with evidence.</p>
+{% if coverage.documentation_audit.truncated_templates %}<p class="muted">Template scan reached its cap: {{ coverage.documentation_audit.truncated_templates|join(', ') }}.</p>{% endif %}
+<details><summary>Review findings ({{ coverage.documentation_audit.finding_count }})</summary>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Module</th><th>Review reasons</th></tr></thead><tbody>
+{% for item in coverage.documentation_audit.findings %}
+<tr><td><a href="/feature-catalog?feature={{ item.feature_id|urlencode }}">{{ item.feature_id }}</a></td><td>{{ item.module }}</td><td>{{ item.reasons|join(', ') }}</td></tr>
+{% else %}<tr><td colspan="3">No static findings.</td></tr>{% endfor %}
+</tbody></table></div>
+</details>
+<p class="muted">GUI control candidates are listed below in the existing automatic inventory. Their presence does not establish undocumented behavior.</p>
+</details>
+{% endif %}
 {% if coverage.status_totals is defined %}
 <p><strong>Catalog depth:</strong> {{ coverage.module_count }} modules, {{ coverage.subfeature_count }} documented subfunctions.
 <strong>Implementation:</strong> {% for state, count in coverage.status_totals.implementation.items() %}{{ count }} {{ state }}{% if not loop.last %}; {% endif %}{% endfor %}.
