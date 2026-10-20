@@ -749,8 +749,8 @@
       "help": "/help#help-capture-browse",
       "parent_id": "capture-browser",
       "purpose": "Find packets, chat, entities, and other observations across imported capture evidence.",
-      "how_to_use": "Choose the relevant event, protocol or module search panel; apply an opcode or text filter, run Search, then page through matches. Open the underlying capture context rather than interpreting a decoded field or match count in isolation.",
-      "caveat": "Search coverage depends on what was captured and indexed.",
+      "how_to_use": "Choose events or packets mode in Capture Search, apply entity, opcode, module or text filters, then page through matches in their original capture context. Compare decoded fields with raw source evidence.",
+      "caveat": "Results cover available indexed capture recordings only; empty matches are not evidence of absent gameplay behavior or a complete protocol corpus.",
       "source_refs": [
         "gui/templates/capture_search.html"
       ]
@@ -877,8 +877,8 @@
       "validation": "unverified",
       "help": "/help#help-migration-packages",
       "purpose": "Review selected package content and dependency scope.",
-      "how_to_use": "Inspect a proposed package's files and dependencies, remove out-of-scope changes, and verify coverage.",
-      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance.",
+      "how_to_use": "Choose a migration ID in Package Scope, filter by query or dependency decision and inspect the bounded dependency graph. The GET scope review is read-only; decision or review POST controls are separate operations requiring their own authorization and evidence.",
+      "caveat": "The GET dependency review is read-only and depends on the canonical Workbench graph. A missing graph or unresolved dependency does not establish migration readiness.",
       "source_refs": [
         "gui/templates/packages_scope.html"
       ]
