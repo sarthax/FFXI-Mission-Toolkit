@@ -12,7 +12,7 @@ from workbench.core.services.feature_catalog_gui_audit import audit_gui_controls
 from workbench.core.services.feature_catalog_gui_inventory import inventory_gui, discover_controls
 from workbench.core.services.feature_catalog_documentation_audit import inspect_handler_source
 from workbench.core.services.feature_catalog_workflow_audit import (
-    inspect_route_binding, inspect_ui_binding,
+    inspect_route_binding, inspect_ui_binding, inspect_guard_helper_source,
 )
 
 
@@ -207,6 +207,21 @@ def main():
     workflows = documentation["operator_workflows"]
     assert workflows["case_count"] == 11
     assert workflows["missing"] == [], workflows["missing"]
+    assert workflows["failure_count"] == 20, workflows["failure_count"]
+    assert workflows["failure_source_drift"] == [], workflows["failure_source_drift"]
+    assert sum(len(case["failure_paths"]) for case in workflows["cases"]) == 20
+    assert all(case["failure_sources_verified"] for case in workflows["cases"])
+    failure_ids = [failure["id"] for case in workflows["cases"]
+                   for failure in case["failure_paths"]]
+    assert len(failure_ids) == len(set(failure_ids))
+    assert all(failure["verification"] == "static_handler_branch_only_runtime_unverified"
+               for case in workflows["cases"] for failure in case["failure_paths"])
+    assert {"pending", "guarded", "invalid_input", "blocked", "empty_or_ambiguous"} <= {
+        failure["state"] for case in workflows["cases"] for failure in case["failure_paths"]
+    }
+    assert any(failure["guard_helper"]["name"] == "require_same_origin"
+               for case in workflows["cases"] for failure in case["failure_paths"]
+               if failure.get("guard_helper"))
     assert all(item["verification"] == "static_source_only_runtime_unverified"
                for item in workflows["cases"])
     assert {item["feature_id"] for item in workflows["cases"]} >= {
@@ -240,6 +255,15 @@ def main():
     assert inspect_route_binding(nested, nested_case)[0]
     assert not inspect_route_binding(nested, {**nested_case, "router_prefix": "/wrong"})[0]
     assert not inspect_route_binding("def broken(:", nested_case)[0]
+    assert inspect_guard_helper_source(nested, nested_case, "status").lstrip().startswith("def status")
+    assert not inspect_guard_helper_source(nested, nested_case, "unknown")
+    # Guard source from another factory or elsewhere in the module cannot satisfy the reviewed scope.
+    wrong_scope = ('def other():\n'
+                   '    def require_same_origin():\n'
+                   '        raise ValueError("fake")\n'
+                   + nested)
+    assert not inspect_guard_helper_source(wrong_scope, nested_case, "require_same_origin")
+    assert not inspect_guard_helper_source("def broken(:", nested_case, "status")
     assert len(documentation["reward_lifecycle"]) == 5
     assert documentation["reward_lifecycle_missing_markers"] == []
     assert {x["state"] for x in documentation["reward_lifecycle"]} == {
@@ -307,6 +331,8 @@ def main():
     assert "Coverage audit" in page
     assert "Documentation accuracy triage" in page
     assert "Operator workflow bindings" in page
+    assert "failure_count" in (ROOT / "gui/templates/feature_catalog.html").read_text(encoding="utf-8")
+    assert "Failure states and recovery" in page
     assert "Catalog depth:" in page
     assert "Help depth:" in page
     assert ("Prioritize generic Help links by module" in page) == bool(audit["help_coverage"]["generic_by_module"])
