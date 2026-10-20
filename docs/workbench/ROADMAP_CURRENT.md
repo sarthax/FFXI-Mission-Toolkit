@@ -194,6 +194,10 @@ These are deliberate safety boundaries, not generic missing editors.
 
 # 4. Feature Trace / Implementation Path
 
+**2026-10-20 guided question navigation:** Existing Feature Trace modes are now directly selectable on the search form rather than discoverable only through a typed `@mode` prefix. Explicit mode/depth/direction persist on trace-internal links; a return-to-legacy control keeps the unfiltered view accessible. The legacy default and original provider/identity evidence contracts are unchanged. CI tests the production handler and Jinja behavior, including prefix compatibility and invalid-mode fallback. This is *not* verified relevance, ranking acceptance, gameplay evidence or the requested first-screen 1–2-hop projection. Issue #1228 remains blocked on real indexed cases.
+
+
+
 **2026-10-20 Feature Trace presentation correctness:** Read-only provider-generated candidates in focused traces previously lacked the `from_node`, `to_node` and `depth` fields expected by the actual Relationships template. The display adapter now supplies the recorded endpoints/depth, separates provider provenance from persisted canonical evidence, and avoids rendering an empty edge table for runtime summary groups. CI covers actual Jinja HTML escaping, source endpoints and distinctions. This fixes evidence readability but **does not** select which graph edges should be shown first; the real-data relevance audit remains pending on #1228.
 
 **P0 audit integrity follow-up:** Before scoring a reviewed case, the campaign evaluator now cross-checks the exported JSON's exact case/root/mode identity and generated/native audit edge fingerprints. Unversioned, swapped or modified exports must fail closed. This is input integrity, not relevance ranking or runtime acceptance. No accepted three-case baseline is recorded yet.
