@@ -122,7 +122,7 @@
       "route": "/synth",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-admin-settings",
       "purpose": "Inspect recipes, ingredients, synthesis availability, and associated server evidence.",
       "how_to_use": "Open Synth & Crafting and select the recipe or ingredient area before reviewing source and availability.",
       "caveat": "Recipe presence does not independently establish that synthesis works in a live server."
@@ -258,7 +258,7 @@
       "route": "/settings",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-admin-settings",
       "purpose": "Configure Toolkit sources, profiles and local integrations.",
       "how_to_use": "Review data paths, profile selection, and integration configuration before enabling a workflow that depends on local resources.",
       "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
@@ -535,7 +535,7 @@
       "route": "/itembrowser",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-items-editor",
       "purpose": "Browse item records and inspect item data.",
       "how_to_use": "Search by item name or ID, open the matching item, and check its record and related data references.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -548,7 +548,7 @@
       "route": "/itemedit",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-items-editor",
       "purpose": "Inspect and edit supported item data using guarded workflows.",
       "how_to_use": "Select an item by verified ID, review its supported editable fields and change preview, and use the guarded save workflow.",
       "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
@@ -561,7 +561,7 @@
       "route": "/missions",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-progression",
       "purpose": "Browse mission and progression evidence.",
       "how_to_use": "Choose a nation or mission chain, inspect stage and script evidence, and follow relevant progression links.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -574,7 +574,7 @@
       "route": "/domains/assault",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-progression",
       "purpose": "Track Assault missions, issue cross-references, shared dependencies, port status, and live-test readiness.",
       "how_to_use": "Open Assault, select a mission or zone, review the issue/fix-log evidence, and work from its next action.",
       "caveat": "Historical Topaz fixes do not automatically establish DSP fixes or validation."
@@ -587,7 +587,7 @@
       "route": "/nyzul",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-progression",
       "purpose": "Inspect Nyzul Isle domain data and related progression.",
       "how_to_use": "Browse Nyzul floors, objectives, and tracked issues; inspect the associated script or server evidence before marking status.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -600,7 +600,7 @@
       "route": "/zones",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-zones-editor",
       "purpose": "Browse zone data and linked research evidence.",
       "how_to_use": "Search for a zone, inspect identity and source records, then open linked entities and spatial views.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -613,7 +613,7 @@
       "route": "/zoneplot2",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-zones-editor",
       "purpose": "Inspect zone entities and spatial evidence.",
       "how_to_use": "Open a zone map, inspect entities or spawn points, compare server and observed locations, and apply edits only through guarded controls.",
       "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
@@ -759,7 +759,7 @@
       "route": "/validation/runs",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-validation-records",
       "purpose": "Browse recorded validation results.",
       "how_to_use": "Select a validation run, review its results and evidence, then identify failed versus unexecuted checks.",
       "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
@@ -824,7 +824,7 @@
       "route": "/validation/live-target",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-validation-records",
       "purpose": "Review live target validation workflow and its guarded operations.",
       "how_to_use": "Choose an authorized target and validation plan, inspect safeguards, execute permitted checks, and retain results.",
       "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
@@ -905,7 +905,7 @@
       "route": "/itemhealth",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-items-editor",
       "purpose": "Inspect item catalog health and evidence coverage.",
       "how_to_use": "Inspect item catalog diagnostics and inconsistent records; trace flagged issues to their data source.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -944,7 +944,7 @@
       "route": "/domains",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-progression",
       "purpose": "Navigate domain-specific research and progression tools.",
       "how_to_use": "Choose a game-system domain, review its tracked implementation and validation state, and navigate to linked records.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -1053,7 +1053,7 @@
       "route": "/shift-master",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-progression",
       "purpose": "Inspect Shift Master domain workflow.",
       "how_to_use": "Open Shift Master domain research, inspect available workflow records and source evidence, and identify unvalidated behavior.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
