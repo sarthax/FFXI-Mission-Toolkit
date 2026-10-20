@@ -195,6 +195,14 @@ def main():
     assert set(audit["provenance_gaps"]) == {
         f["id"] for f in items if not f.get("source_refs") or not f.get("test_refs")
     }
+    documentation = audit["documentation_audit"]
+    assert documentation["stage"] == "static_triage"
+    assert documentation["features_checked"] == len(items)
+    assert documentation["finding_count"] == len(documentation["findings"])
+    assert documentation["control_candidate_count"] == len(documentation["control_candidates"])
+    assert documentation["finding_count"] > 0  # Unmapped provenance remains explicit.
+    assert all(f["feature_id"] in {row["id"] for row in items} for f in documentation["findings"])
+    assert all(c["classification"] == "needs_review" for c in documentation["control_candidates"])
     gui_audit = audit_gui_controls()
     inventory = inventory_gui()
     assert inventory["control_count"] > 0
@@ -216,6 +224,7 @@ def main():
                   features=items, modules=sorted({f["module"] for f in items}),
                   q="", module="", coverage=audit)
     assert "Coverage audit" in page
+    assert "Documentation accuracy triage" in page
     assert "Catalog depth:" in page
     assert "Help depth:" in page
     assert ("Prioritize generic Help links by module" in page) == bool(audit["help_coverage"]["generic_by_module"])
