@@ -271,7 +271,7 @@ Coverage includes Feature Trace missing graph (HTTP 404); Wiki scrape rejected (
 These tests compile the **unmodified actual decorated handler AST** from `src/workbench/app/_host_impl.py` and supply synthetic service boundaries, or mount the real Live Bridge router with a stubbed manager. They do **not** boot the complete host, run browser JavaScript, inspect personal capture files, open real server/client connections, import real Wiki pages, or prove game behavior. The workflow audit checks that test names exist and the CI command is wired, but this *source declaration is not proof that a particular CI run passed*; check the PR workflow result for that. All 21 curated cases now link to isolated HTTP tests; their broader workflow bindings still retain static source verification, not full-host or live acceptance.
 
 
-### Complete the initial 21-case HTTP recovery matrix (PR #1224)
+### Complete the initial 21-case HTTP recovery matrix (PR #1225)
 
 The final five formerly source-only conditions are now exercised through FastAPI TestClient against actual decorated route-handler ASTs and tightly scoped synthetic substitutes:
 
