@@ -82,3 +82,7 @@ The Catalog coverage panel now counts and classifies each record by its Help des
 ## Client Research contextual Help (October 19)
 
 Sixteen Binary Inspector, Retail Version and client-asset research entries now point to three grounded Help sections. The documentation covers PE evidence, version/probe comparisons, manifest and selective download planning, and DAT/model/dialog research, while explicitly distinguishing artifact/source inspection from the running client's behavior. Existing Help anchor and route inventory regression contracts apply. This does not change runtime validation labels.
+
+## Help quality and evidence crosswalk (October 19)
+
+The catalog now audits each module's entry count, generic Help destinations, missing purpose/how-to/caveat details, and attached source/test reference counts. A separate provenance gap inventory flags features lacking either source or test pointers. These are *static triage indicators*, not independent judgments of instruction accuracy, full functional coverage, or DSP/runtime acceptance. Review representative workflows and evidence manually before promoting validation status. The PR is independent of pending Captures, Migration, Research, Live Client and Server Data Help PRs.
