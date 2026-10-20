@@ -199,13 +199,13 @@ def main():
     assert documentation["stage"] == "source_review"
     assert documentation["features_checked"] == len(items)
     assert documentation["finding_count"] == len(documentation["findings"])
-    assert documentation["review_case_count"] == 14
+    assert documentation["review_case_count"] == 17
     assert documentation["review_case_missing_markers"] == []
     assert all(case["status"] == "handler_source_verified_runtime_unverified" for case in documentation["review_cases"])
     assert all(case["handler_marker_present"] for case in documentation["review_cases"])
     assert all(case["contract_source_present"] for case in documentation["review_cases"])
     assert documentation["documentation_discrepancy_count"] == 0, documentation["review_cases"]
-    assert {"guarded_execution_enqueue", "guarded_package_materialization", "guarded_scope_write", "read_only_preview"} <= {case["contract"]["boundary"] for case in documentation["review_cases"]}
+    assert {"guarded_execution_enqueue", "guarded_package_materialization", "guarded_scope_write", "read_only_preview", "guarded_reward_execution"} <= {case["contract"]["boundary"] for case in documentation["review_cases"]}
     assert all(not case["documentation_discrepancies"] for case in documentation["review_cases"])
     assert {case["contract"]["boundary"] for case in documentation["review_cases"]} == {"read_only_review", "read_only_history", "design_only", "conversion_preview", "conversion_with_index_reads", "guarded_execution_enqueue", "guarded_package_materialization", "guarded_scope_write", "read_only_preview"}
 
