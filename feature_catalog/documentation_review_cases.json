@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "description": "Curated source-backed UI observations; do not infer handler or runtime status.",
+  "cases": [
+    {
+      "id": "package-review-filter",
+      "feature_id": "package-review",
+      "template": "gui/templates/packages_review.html",
+      "marker": "action=\"/packages/review\"",
+      "route": "/packages/review",
+      "status": "template_verified_handler_unverified",
+      "review_note": "GET filter form present; package execution and backend review still require handler inspection."
+    },
+    {
+      "id": "testing-run-filter",
+      "feature_id": "testing-run-inspector",
+      "template": "gui/templates/feature_testing.html",
+      "marker": "action=\"/feature-testing\"",
+      "route": "/feature-testing",
+      "status": "template_verified_handler_unverified",
+      "review_note": "Run filtering form present; imported run semantics require handler review."
+    },
+    {
+      "id": "testing-builder-plan",
+      "feature_id": "testing-scenario-builder",
+      "template": "gui/templates/feature_testing.html",
+      "marker": "action=\"/feature-testing/builder/plan\"",
+      "route": "/feature-testing/builder/plan",
+      "status": "template_verified_handler_unverified",
+      "review_note": "Plan builder form is GET; generating a plan is not running the test."
+    },
+    {
+      "id": "lua-converter-form",
+      "feature_id": "lua-converter",
+      "template": "gui/templates/backport_lua_convert.html",
+      "marker": "<form method=\"post\"",
+      "route": "/backport/lua-convert",
+      "status": "template_verified_handler_unverified",
+      "review_note": "POST form exists; converter handler behavior and safe output remain to be reviewed."
+    },
+    {
+      "id": "sql-converter-form",
+      "feature_id": "sql-converter",
+      "template": "gui/templates/backport_sql_convert.html",
+      "marker": "<form method=\"post\"",
+      "route": "/backport/sql-convert",
+      "status": "template_verified_handler_unverified",
+      "review_note": "POST form exists; handler and target schema validation need separate review."
+    }
+  ]
+}
