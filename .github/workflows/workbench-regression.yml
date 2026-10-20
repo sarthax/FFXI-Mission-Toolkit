@@ -161,6 +161,7 @@ jobs:
           python test_fixtures/test_help_route_inventory.py
           python test_fixtures/test_feature_catalog.py
           python -m pytest -q test_fixtures/test_feature_catalog_http_contract.py
+          python -m pytest -q test_fixtures/test_feature_catalog_render_asgi.py
           python test_fixtures/test_calculator_sidebar_routes.py
           python test_fixtures/test_dynamic_sidebar_routes.py
           python test_fixtures/test_voidwalker_coverage.py
