@@ -185,7 +185,7 @@ def main(argv: list[str] | None = None, *, root: Path = ROOT) -> int:
         report["result"] = "FAIL"
         report["reason"] = "Host import or probe error"
         report["error_type"] = type(exc).__name__
-        report["error_excerpt"] = str(exc)[:160]
+        # Do not include arbitrary exception messages: local paths or secrets may occur there.
     print(json.dumps(report, sort_keys=True))
     return 0 if report["result"] == "PASS" else 1
 
