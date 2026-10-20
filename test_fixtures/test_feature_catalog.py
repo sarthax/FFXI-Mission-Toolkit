@@ -338,6 +338,9 @@ def main():
     assert "Coverage audit" in page
     assert "Documentation accuracy triage" in page
     assert "Operator workflow bindings" in page
+    assert 'id="catalog-verification-ladder"' in page
+    assert "Actual host startup and GETs" in page
+    assert "FULL_HOST_ACCEPTANCE.md" in page
     assert "failure_count" in (ROOT / "gui/templates/feature_catalog.html").read_text(encoding="utf-8")
     assert "Failure states and recovery" in page
     assert "Catalog depth:" in page
