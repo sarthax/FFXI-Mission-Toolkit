@@ -82,3 +82,7 @@ The Catalog coverage panel now counts and classifies each record by its Help des
 ## Client Research contextual Help (October 19)
 
 Sixteen Binary Inspector, Retail Version and client-asset research entries now point to three grounded Help sections. The documentation covers PE evidence, version/probe comparisons, manifest and selective download planning, and DAT/model/dialog research, while explicitly distinguishing artifact/source inspection from the running client's behavior. Existing Help anchor and route inventory regression contracts apply. This does not change runtime validation labels.
+
+## Server Data contextual Help — October 19
+
+Four Server Data catalog entries now link to specific instructions for entity lookup, read-only SQL browsing, dialog source references, and event IDs. The guidance requires DSP profile/zone/source identity and distinguishes indexed or configured data from observed runtime behavior. Existing Help link tests cover anchor and route integrity; no runtime statuses or database permissions change.
