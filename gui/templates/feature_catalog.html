@@ -6,6 +6,18 @@
 {% block page_actions %}<a class="chip" href="/help">Help</a> <a class="chip" href="/roadmap">Roadmap</a>{% endblock %}
 {% block page_body %}
 <p class="muted">Use this catalog to understand what a capability does, how to operate it, its documented subfunctions, and which implementation or tests can be inspected. Help provides additional workflow guidance; Roadmap tracks unfinished work. Neither route availability nor passing CI establishes live-client acceptance.</p>
+<details id="catalog-verification-ladder">
+  <summary><strong>Verification ladder</strong> — what CI checks and what still needs local acceptance</summary>
+  <p class="muted">A referenced test file is not a pass result. Confirm the PR's actual workflow run. Completing a lower level never automatically marks a feature runtime-tested.</p>
+  <ol>
+    <li><strong>Source/route evidence:</strong> curated Catalog controls and named handlers inspected statically. Refer to the coverage audit below.</li>
+    <li><strong>Isolated HTTP conditions:</strong> 21 curated recovery conditions linked to synthetic FastAPI tests. This is not the entire host.</li>
+    <li><strong>Rendered ASGI pages:</strong> five synthetic route-to-Jinja tests check the real templates for Help, Catalog, Feature Trace and Capture Review.</li>
+    <li><strong>Actual host startup and GETs — local acceptance required:</strong> optional <code>xi_tinkerer</code> is absent from standard Linux CI; the full-host smoke is not run there. Use a disposable checkout only, with the required opt-in.</li>
+    <li><strong>Browser, client and gameplay acceptance — not established:</strong> owner-operated local verification is separate from CI.</li>
+  </ol>
+  <p>Local full-host preflight: <code>python test_fixtures/full_host_operator_smoke.py</code>. See <code>docs/workbench/FULL_HOST_ACCEPTANCE.md</code> for guarded execution, evidence output and safety requirements.</p>
+</details>
 <details>
 <summary><strong>Coverage audit</strong> &mdash; {{ coverage.feature_count }} catalog entries; {{ coverage.help_not_cataloged|length }} Help-linked routes not cataloged; {{ coverage.invalid_catalog_routes|length }} unresolved catalog routes; {{ coverage.uncataloged_active_pages|length }} uncataloged active pages</summary>
 <p class="muted">{{ coverage.note }}</p>
