@@ -171,3 +171,7 @@ The panel displays static findings and a pointer to the existing automatic GUI i
 ## Source-backed GUI review cases — stage 2
 
 The catalog now tracks five curated template-only findings in `feature_catalog/documentation_review_cases.json`: the package review filter, Feature Testing run filter and builder plan, and Lua/SQL converter forms. Their markers are asserted against checked-in templates and shown in the audit UI. All are explicitly `template_verified_handler_unverified`. This is evidence of a rendered-form source definition, **not** proof that a handler works, accepts specific inputs, or ran in a live server environment. Source-to-handler checks, negative/error paths and operator acceptance remain further review stages.
+
+## Handler source crosswalk — stage 3
+
+Five previously template-only controls now have checked-in handler references: package review GET (`packages_review`), Feature Testing GET dashboard (`dashboard`), GET test builder plan (`test_builder_plan`), Lua converter POST (`lua_convert_submit`) and SQL converter POST (`sql_convert_submit`). The audit asserts literal template and handler symbols and exposes their source paths. The converter handlers return transformed text and warnings; the SQL converter may inspect indexed data for collisions or duplication. These source observations do **not** verify a live client, local database, permissions, target server writes or end-to-end error handling. Further review should bind complete parameter/error contracts and independent operator acceptance evidence.
