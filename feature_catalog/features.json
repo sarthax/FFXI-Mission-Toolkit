@@ -126,7 +126,7 @@
       "route": "/binaryinspector",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-client-binary",
       "purpose": "Inspect retail client executable and DLL metadata without executing the binaries.",
       "how_to_use": "Open Binary Inspector, select an isolated binary file, index its PE evidence, then compare build-specific indexes as needed.",
       "caveat": "A binary signature or cross-reference is evidence, not proof of a runtime behavior."
@@ -204,7 +204,7 @@
       "route": "/clientoverview",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-client-research-other",
       "purpose": "Navigate client asset, DAT and binary inspection tools.",
       "how_to_use": "Start from the Client Overview and choose DAT, binary, model, or retail-version research for the file type at hand.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -605,7 +605,7 @@
       "route": "/modelviewer",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-client-research-other",
       "purpose": "Inspect available client model assets.",
       "how_to_use": "Choose an available client model asset, inspect its viewer output, and retain the source asset identity.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -618,7 +618,7 @@
       "route": "/datinspector",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-client-research-other",
       "purpose": "Inspect client DAT file evidence.",
       "how_to_use": "Select a client DAT file, inspect parsed structure and raw evidence, and compare results only across correctly identified client builds.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -631,7 +631,7 @@
       "route": "/retailversions",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-retail-versions",
       "purpose": "Discover and selectively acquire versioned retail files for offline client research.",
       "how_to_use": "Open Retail Version Explorer, browse known files and revisions, then download into a dedicated research location before indexing.",
       "caveat": "Manifest history is not proof that every historical payload remains downloadable."
@@ -645,7 +645,7 @@
       "route": "/retailversions/browse",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-retail-versions",
       "purpose": "Browse file identities and exact historical revisions from retail manifest snapshots.",
       "how_to_use": "Open the Retail Version Explorer's browse view, choose a file and listed revision, and inspect availability before selecting a download.",
       "caveat": "A listed historical revision does not guarantee that the remote payload still exists."
@@ -658,7 +658,7 @@
       "route": "/dialogdrift",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-client-research-other",
       "purpose": "Compare client dialog and text evidence.",
       "how_to_use": "Select dialogue records from two source snapshots, compare text or IDs, and inspect evidence for each difference.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -1046,7 +1046,7 @@
       "route": "/binaryinspector",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-client-binary",
       "purpose": "Inspect static PE sections, import/export tables, strings and byte patterns.",
       "how_to_use": "Open Binary Inspector, choose an isolated EXE/DLL path, optionally enter string or byte filters, and inspect evidence locations.",
       "caveat": "A match shows bytes present, not that the feature executes at runtime."
@@ -1060,7 +1060,7 @@
       "route": "/binaryinspector",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-client-binary",
       "purpose": "Run predefined evidence searches against a selected client binary.",
       "how_to_use": "Open Binary Inspector, choose a saved probe set, inspect its hit rows, then explicitly save observations to the graph only when intended.",
       "caveat": "A missed probe remains UNKNOWN and does not establish feature absence."
@@ -1074,7 +1074,7 @@
       "route": "/binaryinspector",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-client-binary",
       "purpose": "Compare two isolated retail binary versions without executing them.",
       "how_to_use": "Inspect the first client binary, set the diff-against path, and examine structural differences and supporting evidence.",
       "caveat": "Packed sections or changed compiler layouts can limit function-level conclusions."
@@ -1088,7 +1088,7 @@
       "route": "/binaryinspector",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-client-binary",
       "purpose": "Inspect versioned, read-only packet layout research and its confidence labels.",
       "how_to_use": "Open Binary Inspector's Protocol Compatibility section, compare build fingerprints, field offsets and source references.",
       "caveat": "INFERRED packet layouts must not be treated as runtime-verified compatibility."
@@ -1102,7 +1102,7 @@
       "route": "/binaryinspector",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-client-binary",
       "purpose": "Read a running client's version-string observations in a development session.",
       "how_to_use": "From Binary Inspector select Scan running client, then examine reported process and address evidence.",
       "caveat": "Requires a running client and compatible access; an empty scan means UNKNOWN."
@@ -1116,7 +1116,7 @@
       "route": "/retailversions",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-retail-versions",
       "purpose": "Find exact retail file names and revision stamps from the manifest.",
       "how_to_use": "Open Retail Version Explorer's Manifest tab, search for a file, and inspect available revision history.",
       "caveat": "A listed historical version may not be downloadable."
@@ -1130,7 +1130,7 @@
       "route": "/retailversions",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-retail-versions",
       "purpose": "Review a single-file retrieval plan before any bytes are acquired.",
       "how_to_use": "Open the Planner tab, choose a precise file and revision, inspect the plan, then explicitly confirm any download.",
       "caveat": "Network operations require an authorized patch source; the plan itself is not a downloaded artifact."
@@ -1144,7 +1144,7 @@
       "route": "/retailversions",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-retail-versions",
       "purpose": "Inspect isolated retail files with recorded verification evidence.",
       "how_to_use": "Open Local artifacts, verify hash, signature and provenance records, then open the file in Binary Inspector.",
       "caveat": "A matching SHA-256 against the local output is not independently authenticated provenance."
@@ -1158,7 +1158,7 @@
       "route": "/retailversions",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-retail-versions",
       "purpose": "Compare cataloged revisions of the same client file.",
       "how_to_use": "Open Compare after at least two verified versions are available; select both versions and inspect the reported differences.",
       "caveat": "Structural differences require additional evidence before making behavioral claims."
