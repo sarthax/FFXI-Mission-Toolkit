@@ -164,7 +164,13 @@
       "help": "/help#help-research-sessions",
       "purpose": "Record unresolved questions and supporting evidence.",
       "how_to_use": "Open a research session, add a question and supporting evidence, and revisit unresolved conclusions with their sources.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/research_sessions.html"
+      ],
+      "test_refs": [
+        "test_fixtures/test_gui_research_sessions.py"
+      ]
     },
     {
       "id": "id-drift",
@@ -177,7 +183,10 @@
       "help": "/help#help-migration-drift",
       "purpose": "Compare server identifiers and migration mappings.",
       "how_to_use": "Select an identifier family, compare source and target mappings, and inspect mismatches before proposing any migration.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/iddrift.html"
+      ]
     },
     {
       "id": "entity-lookup",
@@ -784,7 +793,10 @@
       "help": "/help#help-migration-packages",
       "purpose": "Review migration package readiness and evidence.",
       "how_to_use": "Open a migration package, inspect source mapping and readiness findings, and resolve blockers before promotion.",
-      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance.",
+      "source_refs": [
+        "gui/templates/packages_review.html"
+      ]
     },
     {
       "id": "lua-converter",
@@ -797,7 +809,14 @@
       "help": "/help#help-migration-convert",
       "purpose": "Convert supported Lua references for backport workflows.",
       "how_to_use": "Select Lua source for supported conversion, inspect generated output and unresolved transformations, then review before applying.",
-      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance.",
+      "source_refs": [
+        "gui/templates/backport_lua_convert.html",
+        "src/workbench/packages/migration/_lua_convert_impl.py"
+      ],
+      "test_refs": [
+        "tests/legacy/test_backport_lua_convert.py"
+      ]
     },
     {
       "id": "sql-converter",
@@ -810,7 +829,14 @@
       "help": "/help#help-migration-convert",
       "purpose": "Convert supported SQL content for backport workflows.",
       "how_to_use": "Select SQL input and target conventions, inspect conversion output and warnings, and validate against the intended schema.",
-      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance.",
+      "source_refs": [
+        "gui/templates/backport_sql_convert.html",
+        "src/workbench/packages/migration/_sql_convert_impl.py"
+      ],
+      "test_refs": [
+        "tests/legacy/test_backport_sql_convert.py"
+      ]
     },
     {
       "id": "bindings",
@@ -823,7 +849,10 @@
       "help": "/help#help-migration-convert",
       "purpose": "Inspect source binding and identifier conversion evidence.",
       "how_to_use": "Inspect identifier or binding mappings, review proposed conversions and ambiguous matches before using converted content.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/backport_bindings.html"
+      ]
     },
     {
       "id": "live-validation",
@@ -849,7 +878,10 @@
       "help": "/help#help-migration-packages",
       "purpose": "Review selected package content and dependency scope.",
       "how_to_use": "Inspect a proposed package's files and dependencies, remove out-of-scope changes, and verify coverage.",
-      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance.",
+      "source_refs": [
+        "gui/templates/packages_scope.html"
+      ]
     },
     {
       "id": "package-create",
@@ -862,7 +894,10 @@
       "help": "/help#help-migration-packages",
       "purpose": "Prepare a package from reviewed source evidence.",
       "how_to_use": "Choose reviewed source evidence and a target scope, generate a package candidate, then inspect its content before use.",
-      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance.",
+      "source_refs": [
+        "gui/templates/packages_create.html"
+      ]
     },
     {
       "id": "capture-formats",
@@ -930,7 +965,10 @@
       "help": "/help#help-research-gaps",
       "purpose": "Review conflicting research evidence.",
       "how_to_use": "Open a conflicting research claim, compare the underlying sources, and leave the disagreement unresolved until evidence warrants a decision.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/research_contradictions.html"
+      ]
     },
     {
       "id": "research-evidence",
@@ -943,7 +981,11 @@
       "help": "/help#help-research-sessions",
       "purpose": "Browse recorded research evidence.",
       "how_to_use": "Browse evidence artifacts, inspect provenance and relationships, and follow source links for verification.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/research_evidence.html",
+        "src/workbench/research/evidence_browser.py"
+      ]
     },
     {
       "id": "domain-overview",
