@@ -82,6 +82,15 @@ def split_mode_query(query: str) -> tuple[str | None, str]:
     return mode, match.group(2).strip()
 
 
+def clear_query_mode() -> None:
+    """Reset legacy @mode request context before a new independent page trace.
+
+    Keeps a previous prefixed trace from altering an unrelated unfiltered query
+    if a worker/context is reused. Non-prefixed legacy callers remain unchanged.
+    """
+    _QUERY_MODE.set(None)
+
+
 def _query_text(query: str) -> str:
     mode, clean = split_mode_query(query)
     if mode:
@@ -316,4 +325,5 @@ def trace(con, root: str, depth: int, direction: str,
 __all__ = sorted({name for name in dir(_impl) if not name.startswith("_")} | {
     "resolve_query", "split_mode_query", "search_nodes", "node_info",
     "entity_query_diagnostics", "entity_implementation_path", "trace",
+    "clear_query_mode", "mode_options",
 })
