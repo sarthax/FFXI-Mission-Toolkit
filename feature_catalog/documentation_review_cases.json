@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "Curated source-backed UI observations; do not infer handler or runtime status.",
+  "description": "Curated template-to-handler source contracts; no runtime validation implied.",
   "cases": [
     {
       "id": "package-review-filter",
@@ -8,8 +8,12 @@
       "template": "gui/templates/packages_review.html",
       "marker": "action=\"/packages/review\"",
       "route": "/packages/review",
-      "status": "template_verified_handler_unverified",
-      "review_note": "GET filter form present; package execution and backend review still require handler inspection."
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "GET package and target_root; resolves package and target paths, produces review/manifest/validation or records an error.",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_marker": "@app.get(\"/packages/review\"",
+      "handler_name": "packages_review",
+      "observed_contract": "GET package and target_root; resolves package and target paths, produces review/manifest/validation or records an error."
     },
     {
       "id": "testing-run-filter",
@@ -17,8 +21,12 @@
       "template": "gui/templates/feature_testing.html",
       "marker": "action=\"/feature-testing\"",
       "route": "/feature-testing",
-      "status": "template_verified_handler_unverified",
-      "review_note": "Run filtering form present; imported run semantics require handler review."
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "GET dashboard filters tab, feature, verdict, query and page through dashboard_view, using recorded history.",
+      "handler_file": "src/workbench/server_admin/feature_testing/router.py",
+      "handler_marker": "@router.get(\"\", response_class=HTMLResponse)",
+      "handler_name": "dashboard",
+      "observed_contract": "GET dashboard filters tab, feature, verdict, query and page through dashboard_view, using recorded history."
     },
     {
       "id": "testing-builder-plan",
@@ -26,8 +34,12 @@
       "template": "gui/templates/feature_testing.html",
       "marker": "action=\"/feature-testing/builder/plan\"",
       "route": "/feature-testing/builder/plan",
-      "status": "template_verified_handler_unverified",
-      "review_note": "Plan builder form is GET; generating a plan is not running the test."
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "GET account, charid and supervisor_port are passed to build_plan; plan generation is distinct from launching execution.",
+      "handler_file": "src/workbench/server_admin/feature_testing/router.py",
+      "handler_marker": "@router.get(\"/builder/plan\")",
+      "handler_name": "test_builder_plan",
+      "observed_contract": "GET account, charid and supervisor_port are passed to build_plan; plan generation is distinct from launching execution."
     },
     {
       "id": "lua-converter-form",
@@ -35,8 +47,12 @@
       "template": "gui/templates/backport_lua_convert.html",
       "marker": "<form method=\"post\"",
       "route": "/backport/lua-convert",
-      "status": "template_verified_handler_unverified",
-      "review_note": "POST form exists; converter handler behavior and safe output remain to be reviewed."
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "POST source, zone_table, id_shape, target and id_file_hint to converter, then renders converted text and flagged findings.",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_marker": "@app.post(\"/backport/lua-convert\"",
+      "handler_name": "lua_convert_submit",
+      "observed_contract": "POST source, zone_table, id_shape, target and id_file_hint to converter, then renders converted text and flagged findings."
     },
     {
       "id": "sql-converter-form",
@@ -44,8 +60,12 @@
       "template": "gui/templates/backport_sql_convert.html",
       "marker": "<form method=\"post\"",
       "route": "/backport/sql-convert",
-      "status": "template_verified_handler_unverified",
-      "review_note": "POST form exists; handler and target schema validation need separate review."
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "POST source and table to converter, optionally checks ID collisions and content duplication against configured index, then renders results and warnings.",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_marker": "@app.post(\"/backport/sql-convert\"",
+      "handler_name": "sql_convert_submit",
+      "observed_contract": "POST source and table to converter, optionally checks ID collisions and content duplication against configured index, then renders results and warnings."
     }
   ]
 }
