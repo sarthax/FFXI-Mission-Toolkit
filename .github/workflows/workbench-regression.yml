@@ -272,6 +272,7 @@ jobs:
           python test_fixtures/test_client_entity_graph.py
           python -m pytest -q test_fixtures/test_feature_trace_relevance_audit.py test_fixtures/test_feature_trace_campaign.py
           python -m pytest -q test_fixtures/test_feature_trace_relevance_export.py
+          python -m pytest -q test_fixtures/test_feature_trace_generated_render.py
           python test_fixtures/test_feature_trace_path_diagnostics.py
           python test_fixtures/test_feature_trace_source_drilldown_ui.py
           python test_fixtures/test_feature_trace_binding_engine.py
