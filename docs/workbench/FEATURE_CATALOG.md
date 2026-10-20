@@ -297,3 +297,12 @@ Read-only acceptance probes cover:
 **Boundary:** the test app mounts unchanged route functions extracted from the real host's source; it is NOT the full \`workbench.app.host\` import. The CI runner cannot import the complete host because it lacks the optional native \`xi_tinkerer\` wheel. \`test_mounted_sidebar_routes.py\` reports that genuine full-host route execution as **NOT RUN**, rather than pretending registration/rendering was verified. Do not treat a passing rendered-ASGI suite as full-host startup, native DAT decoding, authorized browser/Windows acceptance, Ashita bridge validation, or DSP gameplay acceptance.
 
 **Next owner/local acceptance:** in an environment with the real native wheel and approved local sandbox paths, run \`python test_fixtures/test_mounted_sidebar_routes.py\` and a manual browser smoke for \`/feature-catalog\`, \`/help\`, \`/features/trace\`, and \`/captures/review\`. Record actual runtime results separately from these synthetic CI checks.
+
+
+## Actual host verification handoff — guarded and local-only
+
+The Feature Catalog now displays a verification ladder separating static checks, synthetic HTTP contracts, rendered ASGI pages, and the still-unverified actual full-host/owner acceptance stages. To make the latter repeatable, `test_fixtures/full_host_operator_smoke.py` has a **no-import preflight** that emits JSON `NOT_RUN` in GitHub CI, plus explicit `--execute --ack-disposable-checkout` local mode.
+
+The guarded local mode refuses existing Toolkit databases/private bridge state and requires a Git checkout marker plus the actual `xi_tinkerer` wheel. When an operator deliberately runs it in a disposable worktree, it imports the packaged host **without starting its lifespan**, verifies method/path mounting for all 11 curated workflows, and sends eight read-only GET probes. A report distinguishes PASS, FAIL, and NOT_RUN, with route/status evidence and no arbitrary exception text. The runner never dispatches POST requests or opens an HTTP server socket.
+
+See [Full-host local acceptance procedure](FULL_HOST_ACCEPTANCE.md) for the full Windows handoff. Green GitHub CI means **preflight and safety logic passed**, not that actual-host runtime or real client behavior was validated. A local operator must provide the resulting JSON evidence separately; do not advance feature validation status automatically.
