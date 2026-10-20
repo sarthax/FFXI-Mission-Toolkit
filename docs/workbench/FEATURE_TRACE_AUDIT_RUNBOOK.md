@@ -66,3 +66,33 @@ Interpret `precision_verified_only` only together with `review_coverage`; unknow
 For each scenario report: resolved root; initial/reviewed/relevant/irrelevant/unknown counts; absent critical edges; invalid locators; three worst distractions; whether the graph answers the question. Do not claim real-data acceptance until the operator has reviewed the actual result.
 
 The first production fix should be an opt-in, read-only relevance projection; retain the full raw trace and distinguish source-backed implementation evidence from wiki/reference or inferred connections.
+
+## 6. Three-case baseline campaign (P0 issue #1228)
+
+A campaign-level gate keeps the original real-data relevance audit from being mistaken for a collection of unrelated synthetic unit tests. The runbook above remains the source of the individual edge annotations. The batch wrapper **does not run traces or examine private evidence for you**.
+
+Generate the scaffold locally, outside the Git checkout if it will contain private paths:
+
+```powershell
+python scripts/audit_feature_trace_campaign.py --template > .\feature-trace-baseline.json
+```
+
+Initially, all three case entries are `NOT_RUN`. For each locally reviewed case, change `status` to `REVIEWED`, set `root_resolution` to `unique`, and add `resolved_root_id`, `reviewed_by`, full 40-character `toolkit_sha` and `server_sha`, an explicit `source_families` list, and `trace_json` / `annotations_json` file paths. The trace and annotations must be real observed/independently reviewed inputs; use `BLOCKED` with a reason when root resolution or source indexing is not sufficient. Do not mark a same-name Cait Sith NPC as the mission root.
+
+Score all cases together, using exactly these case IDs and modes:
+
+| Case ID | Mode | Root kind |
+| --- | --- | --- |
+| `absolute-virtue` | `implementation` | `entity` |
+| `wotg-cait-sith` | `mission` | `mission` |
+| `ordinary-npc` | `implementation` | `entity` |
+
+```powershell
+python scripts/audit_feature_trace_campaign.py .\feature-trace-baseline.json > .\feature-trace-redacted-scorecard.json
+```
+
+**Outputs:** `NOT_READY` when any case is `NOT_RUN`, `BLOCKED`, or incompletely annotated. Once all three have a uniquely resolved root, source/ToolKit revisions, at least one first-visible edge, independently reviewed initial edges and a defined required-path denominator, the campaign reports `MEASURED_PENDING_OPERATOR_ACCEPTANCE`. **That is still not a PASS or a usability verdict.** The operator must independently check real implementation identities, source locators, meaningful paths, branching, and navigation screenshots before accepting the baseline and authorizing the first relevance-projection PR.
+
+The redacted scorecard intentionally omits raw paths, reviewer names, full edge lists and free-text annotations. Store the original trace JSON, local manifests, screenshots and client/server file paths **outside Git**, and only post the aggregate findings plus revisions to [issue #1228](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1228). The scorer and campaign evaluator do not query the local server, run gameplay, or write database records.
+
+**Coordinator handoff:** Local Claude/operator owns the real indexed source and browser observation. Remote ChatGPT work owns offline audit tooling and the future opt-in relevance projection after the three-case measured baseline. Coordinate ownership before enabling unattended worker `ready` claims.
