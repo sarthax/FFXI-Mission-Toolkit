@@ -110,3 +110,7 @@ The catalog now audits each module's entry count, generic Help destinations, mis
 ## Source provenance pilot: Captures, Live Client, Server Data
 
 The Capture Browser, Live Client bridge and Server Data entity/SQL browser entries now carry inspected repository GUI source pointers. Live Client bridge entries also cite an existing protocol regression. No tests are attached to the entity/SQL browser entries without verified matching tests. Presence of code and passing protocol regression do not establish operator or gameplay acceptance. This pilot is independent of the pending Help quality audit and documentation branches.
+
+## Contextual Help completion — October 19
+
+The final 14 generic Help destinations now point to focused operator guidance for configuration and synthesis, items, progression, zones and validation history. The catalog regression explicitly rejects generic `/help` destinations and checks contextual anchors. These links improve navigation and workflow descriptions; they are not a substitute for independent instruction review, implementation provenance or live DSP/client testing.
