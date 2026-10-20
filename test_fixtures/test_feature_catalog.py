@@ -201,7 +201,8 @@ def main():
     assert documentation["finding_count"] == len(documentation["findings"])
     assert documentation["review_case_count"] == 5
     assert documentation["review_case_missing_markers"] == []
-    assert all(case["status"] == "template_verified_handler_unverified" for case in documentation["review_cases"])
+    assert all(case["status"] == "handler_source_verified_runtime_unverified" for case in documentation["review_cases"])
+    assert all(case["handler_marker_present"] for case in documentation["review_cases"])
 
     assert documentation["control_candidate_count"] == len(documentation["control_candidates"])
     assert documentation["finding_count"] > 0  # Unmapped provenance remains explicit.
