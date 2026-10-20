@@ -26,7 +26,7 @@
 </details>
 {% endif %}
 <p class="muted">A contextual link reaches a specific section; it does not establish that instructions are complete or runtime-tested.</p>
-{% endif %>
+{% endif %}
 {% if coverage.status_totals is defined %}
 <p><strong>Catalog depth:</strong> {{ coverage.module_count }} modules, {{ coverage.subfeature_count }} documented subfunctions.
 <strong>Implementation:</strong> {% for state, count in coverage.status_totals.implementation.items() %}{{ count }} {{ state }}{% if not loop.last %}; {% endif %}{% endfor %}.
