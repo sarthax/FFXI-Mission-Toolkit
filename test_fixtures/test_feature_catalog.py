@@ -204,6 +204,8 @@ def main():
     assert all(case["status"] == "handler_source_verified_runtime_unverified" for case in documentation["review_cases"])
     assert all(case["handler_marker_present"] for case in documentation["review_cases"])
     assert all(case["contract_source_present"] for case in documentation["review_cases"])
+    assert documentation["documentation_discrepancy_count"] == 0, documentation["review_cases"]
+    assert all(not case["documentation_discrepancies"] for case in documentation["review_cases"])
     assert {case["contract"]["boundary"] for case in documentation["review_cases"]} == {"read_only_review", "read_only_history", "design_only", "conversion_preview", "conversion_with_index_reads"}
 
     assert documentation["control_candidate_count"] == len(documentation["control_candidates"])
