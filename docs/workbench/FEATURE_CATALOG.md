@@ -153,3 +153,7 @@ The Capture Browser/Search/Review, Research Sessions/Evidence, ID Drift and pack
 ## Large-batch subfunction workflow review (October 19)
 
 Twenty-two child-capability operator workflows were expanded across Live Client (4), Wiki (3), Captures (8), Retail Versions (4), and Feature Testing (3). Each now directs operators to specific input and review steps and distinguishes evidence from inference or actual execution. The changes are documentation-only and do not claim that controls were exercised against a live Windows client, DSP server, or locally held retail/capture files. Checked-in GUI controls were sampled for representative parent tools; individual behavior and input availability remain subject to local acceptance. The regression checks stable review concepts and keeps runtime validation separate.
+
+## Subfunction consistency pass: Auction House, Key Items, Trace and Validation
+
+Seventeen remaining priority child workflows were revised to identify operator selection, evidence checks and explicit review boundaries: eight Auction House, four Key Item, three Feature Trace and two Validation functions. Existing status labels and references are unchanged. The guidance is source-oriented and does not assert that live server changes, scheduled rewards, key-item transitions or validation checks were run. Exact behavior still requires an authorized local operator and captured evidence.
