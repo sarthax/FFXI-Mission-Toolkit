@@ -223,18 +223,18 @@ def main():
     assert not inspect_ui_binding(forms, event_case)
     assert inspect_ui_binding(forms.replace('action="/wrong"', 'action="/captures/search"'), event_case)
     # A route decorator on a different function is a false positive.
-    wrong = ('@app.get("/target")\\n'
-             'def unrelated():\\n    return 1\\n'
-             '@app.get("/other")\\n'
-             'def target():\\n    return 2\\n')
+    wrong = ('@app.get("/target")\n'
+             'def unrelated():\n    return 1\n'
+             '@app.get("/other")\n'
+             'def target():\n    return 2\n')
     bad_case = {"handler_name": "target", "route": "/target", "method": "GET"}
     assert not inspect_route_binding(wrong, bad_case)[0]
     assert inspect_route_binding(wrong, {**bad_case, "handler_name": "unrelated"})[0]
-    nested = ('def make_router():\\n'
-              '    router = APIRouter(prefix="/bridge")\\n'
-              '    @router.get("/status")\\n'
-              '    def status():\\n'
-              '        return {}\\n')
+    nested = ('def make_router():\n'
+              '    router = APIRouter(prefix="/bridge")\n'
+              '    @router.get("/status")\n'
+              '    def status():\n'
+              '        return {}\n')
     nested_case = {"handler_parent": "make_router", "router_prefix": "/bridge",
                    "handler_name": "status", "route": "/bridge/status", "method": "GET"}
     assert inspect_route_binding(nested, nested_case)[0]
