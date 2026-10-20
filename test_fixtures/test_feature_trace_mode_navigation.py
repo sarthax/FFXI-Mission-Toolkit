@@ -75,9 +75,10 @@ def _client():
 def test_mode_selector_matches_real_facade_modes():
     template = (ROOT / "gui/templates/feature_trace.html").read_text(encoding="utf-8")
     form = template.split('id="featureTraceTop"', 1)[1].split("</form>", 1)[0]
-    choices = set(re.findall(r'<option value="([a-z]+)"', form))
+    question = form.split('id="trace-question-mode"', 1)[1].split("</select>", 1)[0]
+    choices = set(re.findall(r'<option value="([a-z]+)"', question))
     assert choices == {row["id"] for row in live_facade.mode_options()}
-    assert "All recorded (legacy)" in form
+    assert "All recorded (legacy)" in question
     assert 'name="mode"' in form
     assert 'id="trace-question-mode"' in form
 
