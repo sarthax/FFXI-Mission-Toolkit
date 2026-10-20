@@ -75,6 +75,12 @@
 <p>Open <a href="/retailversions">Retail Version Explorer</a> to browse known manifests and versioned files, plan a selective download, inspect the downloaded artifact catalog, and compare version metadata. Review a plan before fetching files; existing-file overwrite and file-integrity restrictions still apply. An artifact's PE metadata or version match does not prove the running client uses it.</p>
 <h2 id="help-client-research-other">Client assets and dialog research</h2>
 <p>Use the Client Overview, Model Viewer, DAT Inspector and Dialog Drift tools to inspect indexed client assets and compare representation changes. Verify the selected client version and provenance of imported files before linking findings to server behavior. Static views, animation/model previews and dialog diffs are research evidence, not runtime acceptance.</p>
+<h2 id="help-migration-drift">Migration identity and ID drift</h2>
+<p>Open <a href="/iddrift">ID Drift</a> to compare source and target identifier mappings before preparing any backport. Inspect collisions and unknown mappings as review findings; do not assume identical numeric IDs refer to the same entity across server forks.</p>
+<h2 id="help-migration-convert">Lua, SQL and binding conversion</h2>
+<p>Use <a href="/backport/lua-convert">Lua Converter</a>, <a href="/backport/sql-convert">SQL Converter</a> or <a href="/backport/bindings">Binding Converter</a> to inspect source-to-target adaptations. Review unsupported constructs, symbol resolutions and emitted diffs before accepting a conversion. Source conversion is not an approved deployment or successful runtime validation.</p>
+<h2 id="help-migration-packages">Migration packages, scope and review</h2>
+<p>Open <a href="/packages">Packages</a> to inspect migration artifacts and their provenance. Use package creation and scope review to define candidate files and relationships, then Package Review to inspect collisions, approvals and proposed changes. Keep package generation, review and any separately authorized apply stage distinct; a reviewed plan does not write to a server.</p>
 <h2 id="help-workspaces">Workspaces</h2>
 <p class="muted">The top navigation is organized by job rather than by individual database table.</p>
 <div class="table-wrap"><table>
