@@ -44,6 +44,7 @@ def inspect_handler_source(source: str, handler_name: str, route_marker: str,
 
 from workbench.core.services.feature_catalog import ROOT, load_catalog
 from workbench.core.services.feature_catalog_gui_inventory import inventory_gui
+from workbench.core.services.feature_catalog_workflow_audit import audit_workflow_bindings
 
 
 def audit_documentation(root: Path = ROOT) -> dict:
@@ -156,6 +157,7 @@ def audit_documentation(root: Path = ROOT) -> dict:
             })
     return {
         "stage": "source_review",
+        "operator_workflows": audit_workflow_bindings(root),
         "reward_lifecycle": lifecycle_stages,
         "reward_lifecycle_missing_markers": [x["state"] for x in lifecycle_stages if not x["source_markers_present"]],
         "review_cases": reviewed,

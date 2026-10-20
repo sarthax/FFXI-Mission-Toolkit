@@ -190,4 +190,8 @@
 </ul>
 
 <p class="muted" style="margin-top:24px;">For the detailed Behavior/Feature Trace evidence model, see <code>docs/workbench/BEHAVIOR_FEATURE_TRACE_GUIDE.md</code>. For implementation status and planned work, see the <a class="zonelink" href="/roadmap">Roadmap</a>.</p>
+<h2 id="help-operator-workflow-crosswalk">Tracing GUI actions to backend behavior</h2>
+<p>The Feature Catalog's <strong>Documentation accuracy triage → Operator workflow bindings</strong> lists selected source-reviewed actions. Select the capability, check the literal GUI control, HTTP method and route, named handler and any delegated helper, and read its safety boundary before acting.</p>
+<p><strong>Feature Trace:</strong> searching issues a read-only graph query; runtime observation loading separately requests a bounded capture-evidence page. Missing observations do not confirm a path never executes. <strong>Wiki:</strong> source-qualified article links are read-only, scraping queues an import job, and snapshot export builds a compressed download rather than changing DSP state. <strong>Live Client:</strong> opening the bridge console and polling entity status are different from saving local headless-observation settings; the latter is a guarded same-origin write, not in-game movement. <strong>Captures:</strong> events and packets use distinct indexed search modes, while opening the review queue does not resolve exceptions.</p>
+<p class="muted">These static checks do not exercise browser JavaScript, verify access permissions or test completed jobs or client/server behavior. Confirm actual inputs, errors and evidence with authorized local acceptance before updating validation status.</p>
 {% endblock %}

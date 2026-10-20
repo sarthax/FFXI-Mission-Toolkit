@@ -1,0 +1,221 @@
+{
+  "schema_version": 1,
+  "description": "Curated static UI-to-HTTP-handler workflows. Not browser or runtime acceptance; never infer unreviewed control bindings.",
+  "cases": [
+    {
+      "id": "trace-query",
+      "feature_id": "feature-trace",
+      "template": "gui/templates/feature_trace.html",
+      "kind": "form",
+      "control_marker": "id=\"featureTraceTop\"",
+      "method": "GET",
+      "route": "/features/trace",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_name": "feature_trace_page",
+      "handler_markers": [
+        "feature_trace.entity_query_diagnostics(",
+        "feature_trace.trace("
+      ],
+      "helper": {
+        "file": "src/workbench/devtools/features/_trace_impl.py",
+        "name": "trace",
+        "call": "feature_trace.trace("
+      },
+      "boundary": "read_only_research",
+      "interpretation": "GET query, direction and depth drive graph lookup; no canonical-graph data is created by the form."
+    },
+    {
+      "id": "trace-runtime-observations",
+      "feature_id": "trace-runtime",
+      "template": "gui/templates/feature_trace.html",
+      "kind": "js_fetch",
+      "control_marker": "fetch('/features/trace/runtime.json?'+p)",
+      "support_markers": [
+        "document.querySelectorAll('.runtime-load')",
+        "new URLSearchParams({root:"
+      ],
+      "method": "GET",
+      "route": "/features/trace/runtime.json",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_name": "feature_trace_runtime_detail",
+      "handler_markers": [
+        "feature_trace.runtime_observation_page(",
+        "return JSONResponse(page)"
+      ],
+      "helper": {
+        "file": "src/workbench/devtools/features/_trace_impl.py",
+        "name": "runtime_observation_page",
+        "call": "feature_trace.runtime_observation_page("
+      },
+      "boundary": "read_only_research",
+      "interpretation": "Bounded on-demand capture observations; a graph edge alone does not prove execution."
+    },
+    {
+      "id": "wiki-exact-page-link",
+      "feature_id": "wiki-source-navigation",
+      "template": "gui/templates/wiki.html",
+      "kind": "link",
+      "control_marker": "href=\"/wiki?title={{ r.title|urlencode }}&source={{ r.source_id|urlencode }}&tab=browse\"",
+      "method": "GET",
+      "route": "/wiki",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_name": "wiki_browse",
+      "handler_markers": [
+        "wiki_document.search_pages(",
+        "wiki_evidence.page_evidence("
+      ],
+      "boundary": "read_only_research",
+      "interpretation": "Source-qualified article link; a title without source/page ID must not be treated as canonical provenance."
+    },
+    {
+      "id": "wiki-scrape-job",
+      "feature_id": "wiki-bulk",
+      "template": "gui/templates/wiki.html",
+      "kind": "form",
+      "control_marker": "id=\"scrape-form\"",
+      "method": "POST",
+      "route": "/wiki/scrape",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_name": "wiki_scrape_url",
+      "handler_markers": [
+        "wiki_jobs.start_job(",
+        "return {\"job\": job}"
+      ],
+      "boundary": "starts_background_job",
+      "interpretation": "Submission starts a scrape/import job and may change the local Wiki cache. A job receipt is not a completed import."
+    },
+    {
+      "id": "wiki-snapshot-export",
+      "feature_id": "wiki",
+      "template": "gui/templates/wiki.html",
+      "kind": "form",
+      "control_marker": "id=\"wiki-snapshot-export\"",
+      "method": "GET",
+      "route": "/wiki/snapshot/export",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_name": "wiki_snapshot_download",
+      "handler_markers": [
+        "wiki_snapshot.export_snapshot(",
+        "return FileResponse("
+      ],
+      "boundary": "creates_export_artifact",
+      "interpretation": "Reads cached pages and creates a temporary compressed download; export does not import or validate target behavior."
+    },
+    {
+      "id": "bridge-console",
+      "feature_id": "live-bridge",
+      "template": "gui/templates/live_client_bridge.html",
+      "kind": "link",
+      "control_marker": "href=\"/live-client/bridge/console\"",
+      "method": "GET",
+      "route": "/live-client/bridge/console",
+      "handler_file": "src/workbench/runtime/live_client/bridge_management_api.py",
+      "handler_parent": "create_bridge_management_router",
+      "router_prefix": "/live-client/bridge",
+      "handler_name": "console",
+      "handler_markers": [
+        "\"live_client_bridge.html\"",
+        "bridge setup requires local browser"
+      ],
+      "boundary": "local_browser_read",
+      "interpretation": "Locally restricted bridge console; loading the page neither provisions credentials nor starts the receiver."
+    },
+    {
+      "id": "bridge-headless-save",
+      "feature_id": "live-bridge",
+      "template": "gui/templates/live_client_bridge.html",
+      "kind": "js_fetch",
+      "control_marker": "fetch('/live-client/bridge/headless',{method:'POST'",
+      "support_markers": [
+        "$('hl-save').addEventListener('click'",
+        "body:JSON.stringify("
+      ],
+      "method": "POST",
+      "route": "/live-client/bridge/headless",
+      "handler_file": "src/workbench/runtime/live_client/bridge_management_api.py",
+      "handler_parent": "create_bridge_management_router",
+      "router_prefix": "/live-client/bridge",
+      "handler_name": "headless_save",
+      "handler_markers": [
+        "require_same_origin(request)",
+        "headless_observe_enabled"
+      ],
+      "boundary": "guarded_local_settings_write",
+      "interpretation": "Same-origin, local-only settings mutation for observation-file configuration, not an action in the connected game."
+    },
+    {
+      "id": "bridge-entity-status",
+      "feature_id": "live-entity-stream",
+      "template": "gui/templates/live_client_bridge.html",
+      "kind": "js_fetch",
+      "control_marker": "fetch(root+'status/'+encodeURIComponent(value))",
+      "support_markers": [
+        "const root='/live-client/bridge/'",
+        "async function poll()"
+      ],
+      "method": "GET",
+      "route": "/live-client/bridge/status/{client_id}",
+      "handler_file": "src/workbench/runtime/live_client/bridge_management_api.py",
+      "handler_parent": "create_bridge_management_router",
+      "router_prefix": "/live-client/bridge",
+      "handler_name": "status",
+      "handler_markers": [
+        "manager.status(client_id)",
+        "\"entities\""
+      ],
+      "boundary": "read_only_telemetry",
+      "interpretation": "Observations can be stale or absent; a reported entity is a sampled client view, not a guaranteed DSP spawn match."
+    },
+    {
+      "id": "capture-events-search",
+      "feature_id": "capture-search",
+      "template": "gui/templates/capture_search.html",
+      "kind": "form",
+      "control_marker": "name=\"module\" value=\"events\"",
+      "method": "GET",
+      "route": "/captures/search",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_name": "captures_search",
+      "handler_markers": [
+        "selected_module == \"events\"",
+        "capture_events e"
+      ],
+      "boundary": "read_only_research",
+      "interpretation": "Searches indexed capture events by entity, exact message ID and opcodes; empty results do not prove absent events."
+    },
+    {
+      "id": "capture-packets-search",
+      "feature_id": "capture-search",
+      "template": "gui/templates/capture_search.html",
+      "kind": "form",
+      "control_marker": "name=\"module\" value=\"packets\"",
+      "method": "GET",
+      "route": "/captures/search",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_name": "captures_search",
+      "handler_markers": [
+        "selected_module == \"packets\"",
+        "capture_raw_packets"
+      ],
+      "boundary": "read_only_research",
+      "interpretation": "Packet category/opcode filters use a separate indexed corpus; do not combine packet identity with event message ID."
+    },
+    {
+      "id": "capture-review-navigation",
+      "feature_id": "capture-review",
+      "template": "gui/templates/captures.html",
+      "kind": "link",
+      "control_marker": "href=\"/captures/review\"",
+      "method": "GET",
+      "route": "/captures/review",
+      "handler_file": "src/workbench/app/_host_impl.py",
+      "handler_name": "capture_review_queue",
+      "handler_markers": [
+        "rq.items(con, \"all\")",
+        "\"capture_review.html\""
+      ],
+      "boundary": "read_only_research",
+      "interpretation": "Opening the exception queue is read-only; separate POST controls can resolve or dismiss quarantine findings."
+    }
+  ]
+}
