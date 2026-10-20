@@ -165,7 +165,7 @@
       "route": "/iddrift",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-migration-drift",
       "purpose": "Compare server identifiers and migration mappings.",
       "how_to_use": "Select an identifier family, compare source and target mappings, and inspect mismatches before proposing any migration.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -217,7 +217,7 @@
       "route": "/packages",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-migration-packages",
       "purpose": "Inspect migration packages and source evidence.",
       "how_to_use": "Select an existing migration package and review its sources, scope, and validation evidence before any application.",
       "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
@@ -751,7 +751,7 @@
       "route": "/packages/review",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-migration-packages",
       "purpose": "Review migration package readiness and evidence.",
       "how_to_use": "Open a migration package, inspect source mapping and readiness findings, and resolve blockers before promotion.",
       "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
@@ -764,7 +764,7 @@
       "route": "/backport/lua-convert",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-migration-convert",
       "purpose": "Convert supported Lua references for backport workflows.",
       "how_to_use": "Select Lua source for supported conversion, inspect generated output and unresolved transformations, then review before applying.",
       "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
@@ -777,7 +777,7 @@
       "route": "/backport/sql-convert",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-migration-convert",
       "purpose": "Convert supported SQL content for backport workflows.",
       "how_to_use": "Select SQL input and target conventions, inspect conversion output and warnings, and validate against the intended schema.",
       "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
@@ -790,7 +790,7 @@
       "route": "/backport/bindings",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-migration-convert",
       "purpose": "Inspect source binding and identifier conversion evidence.",
       "how_to_use": "Inspect identifier or binding mappings, review proposed conversions and ambiguous matches before using converted content.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -816,7 +816,7 @@
       "route": "/packages/scope",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-migration-packages",
       "purpose": "Review selected package content and dependency scope.",
       "how_to_use": "Inspect a proposed package's files and dependencies, remove out-of-scope changes, and verify coverage.",
       "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
@@ -829,7 +829,7 @@
       "route": "/packages/create",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-migration-packages",
       "purpose": "Prepare a package from reviewed source evidence.",
       "how_to_use": "Choose reviewed source evidence and a target scope, generate a package candidate, then inspect its content before use.",
       "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
