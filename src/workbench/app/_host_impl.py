@@ -779,6 +779,133 @@ def capture_review_queue(request: Request, status: str = "pending", kind: str = 
         "kinds": rq.KINDS, "kind_counts": kind_counts, "msg": msg})
 
 
+DISCORD_STATUSES = ("indexed", "probable", "downloaded", "ingested", "skipped", "link_logged")
+
+
+def _discord_rows(con, channel="", status="", q="", limit=None, offset=0, filelink=False, mid=""):
+    where, args = ["1=1"], []
+    if mid: where.append("p.message_id=?"); args.append(mid)
+    if filelink: where.append("(p.urls LIKE '%dropbox%' OR p.urls LIKE '%1drv%' OR p.urls LIKE '%drive.google%' OR p.urls LIKE '%mega.nz%' OR p.urls LIKE '%onedrive%')")
+    if channel: where.append("p.channel_id=?"); args.append(channel)
+    if status: where.append("p.ingest_status=?"); args.append(status)
+    if q:
+        where.append("(p.title LIKE ? OR p.text LIKE ? OR p.author LIKE ?)"); args += ["%" + q + "%"] * 3
+    sql = ("SELECT p.message_id,p.channel_id,c.name AS channel,c.category,p.posted_at,p.author,p.title,p.text,p.urls,"
+           "p.capture_id,p.ingest_status FROM discord_posts p LEFT JOIN discord_channels c ON c.channel_id=p.channel_id "
+           "WHERE " + " AND ".join(where) + " ORDER BY p.posted_at DESC")
+    if limit is not None: sql += " LIMIT %d OFFSET %d" % (limit, offset)
+    con.row_factory = sqlite3.Row
+    return [dict(r) for r in con.execute(sql, args)]
+
+
+@app.get("/captures/discord", response_class=HTMLResponse)
+def capture_discord_archive(request: Request, channel: str = "", status: str = "", q: str = "", page: int = 1, filelink: int = 0, msg: str = "", mid: str = ""):
+    """Permanent view of the Discord capture-channel scrape (discord_channels / discord_posts) with ingest status."""
+    per = 100
+    con = get_con()
+    try:
+        con.row_factory = sqlite3.Row
+        available = {row[0] for row in con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('discord_channels', 'discord_posts')")}
+        if available != {'discord_channels', 'discord_posts'}:
+            return templates.TemplateResponse(request, "capture_discord.html", {
+                "rows": [], "chans": [], "totals": {}, "channel": channel, "status": status,
+                "q": q, "page": 1, "pages": 0, "total": 0, "filelink": filelink,
+                "msg": "Discord archive not indexed yet. Run the local Discord inventory importer first.",
+                "mid": mid, "caps": [], "statuses": DISCORD_STATUSES})
+        chans = [dict(r) for r in con.execute(
+            "SELECT c.channel_id,c.name,c.category,c.post_count,c.oldest_post,c.newest_post,"
+            "SUM(p.ingest_status='indexed') AS outstanding,SUM(p.ingest_status!='indexed') AS done "
+            "FROM discord_channels c LEFT JOIN discord_posts p ON p.channel_id=c.channel_id "
+            "GROUP BY c.channel_id ORDER BY c.category,c.name")]
+        totals = {r[0]: r[1] for r in con.execute("SELECT ingest_status,COUNT(*) FROM discord_posts GROUP BY 1")}
+        total = len(_discord_rows(con, channel, status, q, filelink=bool(filelink), mid=mid))
+        rows = _discord_rows(con, channel, status, q, per, (max(page, 1) - 1) * per, bool(filelink), mid)
+        caps = [{"id": r[0], "label": (r[1] or "")[:90]} for r in con.execute("SELECT capture_id, capture_label FROM captures ORDER BY capture_id")]
+    finally:
+        con.close()
+    for r in rows:
+        try: raw_links = json.loads(r["urls"] or "[]")
+        except (ValueError, TypeError): raw_links = []
+        r["links"] = [u for u in raw_links if isinstance(u, str)
+                      and u.startswith(("https://", "http://")) and len(u) <= 2048] if isinstance(raw_links, list) else []
+        lines = [l.strip() for l in (r["text"] or "").split("\n") if l.strip()]
+        for i, l in enumerate(lines):          # drop the author/timestamp header Discord prepends
+            if re.match(r"^\w+day, \w+ \d+, \d{4}", l):
+                lines = lines[i + 1:]; break
+        r["body"] = "\n".join(l for l in lines if not re.match(r"^https?://\S+( \(edited\))?$", l))
+    return templates.TemplateResponse(request, "capture_discord.html", {
+        "rows": rows, "chans": chans, "totals": totals, "channel": channel, "status": status, "q": q,
+        "page": max(page, 1), "pages": (total + per - 1) // per, "total": total,
+        "filelink": filelink, "msg": msg, "mid": mid, "caps": caps, "statuses": DISCORD_STATUSES})
+
+
+def _require_discord_local_origin(request: Request) -> None:
+    """Reject remote or cross-site attempts to modify local archive tracking."""
+    if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
+        raise HTTPException(status_code=403, detail="Discord archive writes require a local browser")
+    base = str(request.base_url).rstrip("/")
+    origin = request.headers.get("origin", "")
+    referer = request.headers.get("referer", "")
+    if origin != base and not (not origin and referer.startswith(base + "/")):
+        raise HTTPException(status_code=403, detail="same-origin request required")
+
+
+@app.post("/captures/discord/link")
+def capture_discord_link(request: Request, message_id: str = Form(...), capture_id: str = Form(""),
+                         status: str = Form(""), back: str = Form("/captures/discord")):
+    """Explicitly link/unlink capture records; never run heuristic auto-linking on POST."""
+    _require_discord_local_origin(request)
+    if status and status not in DISCORD_STATUSES:
+        raise HTTPException(status_code=422, detail="invalid status")
+    safe_back = back if back == "/captures/discord" or back.startswith("/captures/discord?") else "/captures/discord"
+    cid_txt = (capture_id or "").strip().split(" ")[0].lstrip("#")
+    if cid_txt.lower() != "none" and cid_txt and not cid_txt.isdecimal():
+        raise HTTPException(status_code=422, detail="capture ID must be numeric or none")
+    con = get_con()
+    try:
+        row = con.execute("SELECT capture_id, ingest_status FROM discord_posts WHERE message_id=?", (message_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="post not found")
+        cid, st = row
+        if cid_txt.lower() == "none":
+            cid, st = None, status or "indexed"
+        elif cid_txt:
+            if not con.execute("SELECT 1 FROM captures WHERE capture_id=?", (int(cid_txt),)).fetchone():
+                raise HTTPException(status_code=422, detail="capture does not exist")
+            cid = int(cid_txt)
+            st = status or ("ingested" if st in ("indexed", "probable", "downloaded") else st)
+        elif status:
+            st = status
+        if st == "ingested" and cid is None:
+            raise HTTPException(status_code=422, detail="ingested requires a linked capture")
+        con.execute("UPDATE discord_posts SET capture_id=?, ingest_status=? WHERE message_id=?", (cid, st, message_id))
+        con.commit()
+    finally:
+        con.close()
+    return RedirectResponse(url=safe_back, status_code=303)
+
+
+@app.get("/captures/discord/export.{fmt}")
+def capture_discord_export(fmt: str, channel: str = "", status: str = "", q: str = ""):
+    """Download the (filtered) Discord scrape as CSV or JSON for offline ingest."""
+    if fmt not in ("csv", "json"): raise HTTPException(404)
+    con = get_con()
+    try: rows = _discord_rows(con, channel, status, q)
+    finally: con.close()
+    if fmt == "json":
+        return Response(json.dumps(rows, indent=1), media_type="application/json",
+                        headers={"Content-Disposition": "attachment; filename=discord_scrape.json"})
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=list(rows[0].keys()) if rows else ["message_id"])
+    w.writeheader()
+    for row in rows:
+        # Protect spreadsheet users from formulas in third-party Discord text.
+        w.writerow({key: ("'" + value if isinstance(value, str) and value.lstrip().startswith(("=", "+", "-", "@")) else value)
+                    for key, value in row.items()})
+    return Response(buf.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=discord_scrape.csv"})
+
+
 @app.get("/captures/zone-review")
 def capture_zone_review_legacy():
     return RedirectResponse(url="/captures/review?kind=zone", status_code=301)
@@ -8895,6 +9022,20 @@ def captures_detail(
         return HTMLResponse("Capture not found", status_code=404)
 
     detail = dict(row)
+    try:
+        detail["discord_posts"] = [dict(record) for record in con.execute(
+            "SELECT p.message_id,p.posted_at,p.author,p.title,p.text,p.urls,p.ingest_status,c.name AS channel "
+            "FROM discord_posts p LEFT JOIN discord_channels c USING(channel_id) "
+            "WHERE p.capture_id=? ORDER BY p.posted_at", (capture_id,))]
+    except sqlite3.OperationalError:
+        detail["discord_posts"] = []
+    for discord in detail["discord_posts"]:
+        try:
+            links = json.loads(discord.get("urls") or "[]")
+        except (ValueError, TypeError):
+            links = []
+        discord["safe_links"] = [u for u in links if isinstance(u, str)
+                                 and u.startswith(("https://", "http://")) and len(u) <= 2048] if isinstance(links, list) else []
     detail["zones"] = json.loads(detail["zones"]) if detail.get("zones") else []
     detail["addons"] = json.loads(detail["addons"]) if detail.get("addons") else []
     detail["npc_entries"] = con.execute(

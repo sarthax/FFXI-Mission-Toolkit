@@ -1,8 +1,16 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 16,
+  "route_count": 19,
   "routes": [
+    {
+      "method": "GET",
+      "path": "/captures/{capture_id}/review-flags",
+      "home": "Captures",
+      "section": "Review Queue",
+      "role": "data",
+      "disposition": "KEEP"
+    },
     {
       "method": "GET",
       "path": "/captures/bulk-ingest",
@@ -29,7 +37,7 @@
     },
     {
       "method": "POST",
-      "path": "/captures/bulk-ingest/scan",
+      "path": "/captures/bulk-ingest/job/{job_id}/cancel",
       "home": "Captures",
       "section": "Import",
       "role": "action",
@@ -45,10 +53,34 @@
     },
     {
       "method": "POST",
-      "path": "/captures/bulk-ingest/job/{job_id}/cancel",
+      "path": "/captures/bulk-ingest/scan",
       "home": "Captures",
       "section": "Import",
       "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/discord",
+      "home": "Captures",
+      "section": "Discord Archive",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/discord/export.{fmt}",
+      "home": "Captures",
+      "section": "Discord Archive",
+      "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/discord/link",
+      "home": "Captures",
+      "section": "Discord Archive",
+      "role": "mutation",
       "disposition": "KEEP"
     },
     {
@@ -84,6 +116,14 @@
       "disposition": "KEEP"
     },
     {
+      "method": "POST",
+      "path": "/captures/review/{review_id}",
+      "home": "Captures",
+      "section": "Review Queue",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
       "method": "GET",
       "path": "/captures/zone-review",
       "home": "Captures",
@@ -92,19 +132,11 @@
       "disposition": "KEEP"
     },
     {
-      "method": "GET",
-      "path": "/captures/{capture_id}/review-flags",
-      "home": "Captures",
-      "section": "Review Queue",
-      "role": "data",
-      "disposition": "KEEP"
-    },
-    {
       "method": "POST",
-      "path": "/captures/review/{review_id}",
-      "home": "Captures",
-      "section": "Review Queue",
-      "role": "mutation",
+      "path": "/live-client/inspect-recording",
+      "home": "Settings",
+      "section": "Live Client",
+      "role": "action",
       "disposition": "KEEP"
     },
     {
@@ -120,14 +152,6 @@
       "path": "/shift-master/rebuild",
       "home": "Captures",
       "section": "Diagnostics",
-      "role": "action",
-      "disposition": "KEEP"
-    },
-    {
-      "method": "POST",
-      "path": "/live-client/inspect-recording",
-      "home": "Settings",
-      "section": "Live Client",
       "role": "action",
       "disposition": "KEEP"
     }

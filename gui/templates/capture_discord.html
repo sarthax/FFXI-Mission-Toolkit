@@ -1,0 +1,87 @@
+{% extends "workbench_page.html" %}
+{% block title %}Discord Archive{% endblock %}
+{% block page_archetype %}browser{% endblock %}
+{% block page_class %}capture-discord-page{% endblock %}
+{% block page_back %}<a class="chip" href="/captures">&larr; Captures</a>{% endblock %}
+{% block page_heading %}Discord capture archive{% endblock %}
+{% block page_actions %}<a class="chip" href="/captures/discord/export.csv?channel={{ channel|urlencode }}&status={{ status|urlencode }}&q={{ q|urlencode }}">Download CSV</a><a class="chip" href="/captures/discord/export.json?channel={{ channel|urlencode }}&status={{ status|urlencode }}&q={{ q|urlencode }}">Download JSON</a>{% endblock %}
+{% block page_help %}Scrape of the FFXI Captures Discord. Status tracks what is indexed only, probable match, downloaded, ingested or skipped. Link a post to a capture to mark it ingested.{% endblock %}
+{% block page_body %}
+{% if msg %}<div class="warn">{{ msg }}</div>{% endif %}
+<datalist id="caps">{% for c in caps %}<option value="{{ c.id }} {{ c.label }}">{% endfor %}</datalist>
+
+<p>
+  <span><b>{{ totals.get('indexed',0) }}</b> not downloaded</span> ·
+  <span><b>{{ totals.get('probable',0) }}</b> probable</span> ·
+  <span><b>{{ totals.get('downloaded',0) }}</b> downloaded</span> ·
+  <span><b>{{ totals.get('ingested',0) }}</b> ingested</span> ·
+  <span><b>{{ totals.get('skipped',0) }}</b> skipped</span> ·
+  <span><b>{{ totals.get('link_logged',0) }}</b> link logged</span>
+</p>
+
+<div class="wb-tabs" style="display:flex;gap:6px;margin:8px 0">
+  <button type="button" class="chip" id="tab-posts" onclick="dTab('posts')">Posts ({{ total }})</button>
+  <button type="button" class="chip" id="tab-channels" onclick="dTab('channels')">Channels ({{ chans|length }})</button>
+</div>
+<div id="pane-posts">
+<form method="get" action="/captures/discord" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+  <select name="channel"><option value="">All channels</option>
+    {% for c in chans %}<option value="{{ c.channel_id }}" {% if c.channel_id==channel %}selected{% endif %}>{{ c.category }} / {{ c.name }}</option>{% endfor %}
+  </select>
+  <select name="status"><option value="">Any status</option>
+    {% for s in statuses %}<option value="{{ s }}" {% if s==status %}selected{% endif %}>{{ s }}</option>{% endfor %}
+  </select>
+  <label><input type="checkbox" name="filelink" value="1" {% if filelink %}checked{% endif %}> has file link</label>
+  <input name="q" value="{{ q }}" placeholder="search title/text/author">
+  <button class="chip">Filter</button>
+</form>
+
+<p class="muted">{{ total }} posts · page {{ page }} of {{ pages or 1 }}</p>
+
+<table class="wb-table">
+  <thead><tr><th>Posted</th><th>Channel</th><th>Author</th><th>Post</th><th>Status / link</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr>
+    <td class="mono">{{ (r.posted_at or '')[:10] }}</td>
+    <td>{{ r.channel }}</td>
+    <td>{{ r.author }}</td>
+    <td>
+      <b>{{ r.title or '(untitled)' }}</b>
+      {% if r.body %}<div class="muted" style="white-space:pre-wrap;max-width:60ch">{{ r.body[:600] }}</div>{% endif %}
+      {% for u in r.links %}<div><a href="{{ u }}" target="_blank" rel="noopener noreferrer">{{ u[:70] }}</a></div>{% endfor %}
+    </td>
+    <td>
+      <form method="post" action="/captures/discord/link" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+        <input type="hidden" name="message_id" value="{{ r.message_id }}">
+        <input type="hidden" name="back" value="{{ request.url.path }}?{{ request.url.query }}">
+        <select name="status">{% for s in statuses %}<option {% if s==r.ingest_status %}selected{% endif %}>{{ s }}</option>{% endfor %}</select>
+        <input name="capture_id" list="caps" size="14" placeholder="{% if r.capture_id %}#{{ r.capture_id }} (none = unlink){% else %}link capture…{% endif %}">
+        <button class="chip">Save</button>
+        {% if r.capture_id %}<a href="/captures/{{ r.capture_id }}">open #{{ r.capture_id }}</a>{% endif %}
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<p>
+  {% if page > 1 %}<a class="chip" href="/captures/discord?channel={{ channel|urlencode }}&status={{ status|urlencode }}&q={{ q|urlencode }}&filelink={{ filelink }}&page={{ page-1 }}">&larr; Prev</a>{% endif %}
+  {% if page < pages %}<a class="chip" href="/captures/discord?channel={{ channel|urlencode }}&status={{ status|urlencode }}&q={{ q|urlencode }}&filelink={{ filelink }}&page={{ page+1 }}">Next &rarr;</a>{% endif %}
+</p>
+
+</div>
+<div id="pane-channels" style="display:none">
+<table class="wb-table">
+  <thead><tr><th>Category</th><th>Channel</th><th>Posts</th><th>Oldest</th><th>Newest</th><th>Not downloaded</th><th>Tracked</th></tr></thead>
+  <tbody>
+  {% for c in chans %}<tr><td>{{ c.category }}</td><td><a href="/captures/discord?channel={{ c.channel_id }}">{{ c.name }}</a></td><td>{{ c.post_count }}</td><td class="mono">{{ (c.oldest_post or '')[:10] }}</td><td class="mono">{{ (c.newest_post or '')[:10] }}</td><td>{{ c.outstanding or 0 }}</td><td>{{ c.done or 0 }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+<script>
+function dTab(n){for(const k of ["posts","channels"]){document.getElementById("pane-"+k).style.display=k===n?"":"none";document.getElementById("tab-"+k).style.fontWeight=k===n?"700":"400";}try{history.replaceState(null,"","#"+n)}catch(e){}}
+dTab(location.hash==="#channels"?"channels":"posts");
+</script>
+{% endblock %}

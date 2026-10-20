@@ -4,7 +4,7 @@
 {% block page_class %}captures-page{% endblock %}
 {% block page_heading %}Captures{% endblock %}
 {% block page_status %}<span class="wb-readonly-badge">Indexed capture library</span>{% endblock %}
-{% block page_actions %}<a class="chip" href="/captures/new">+ New capture</a><a class="chip" href="/captures/search">Cross-capture search</a><a class="chip" href="/captures/help">Formats / gaps</a><a class="chip" href="/captures/bulk-ingest">Bulk ingest</a><a class="chip" href="/captures/metadata-import">Source info sheet</a>{% endblock %}
+{% block page_actions %}<a class="chip" href="/captures/new">+ New capture</a><a class="chip" href="/captures/search">Cross-capture search</a><a class="chip" href="/captures/help">Formats / gaps</a><a class="chip" href="/captures/bulk-ingest">Bulk ingest</a><a class="chip" href="/captures/metadata-import">Source info sheet</a><a class="chip" href="/captures/discord">Discord archive</a>{% endblock %}
 {% block page_help %}Indexed capture bundles are explicitly typed and tagged so unrelated content is not silently conflated. Blocking review exceptions keep affected captures out of derived data while preserving raw evidence browsing.{% endblock %}
 {% block page_body %}
 {% set zr = review_pending() if review_pending is defined else 0 %}
