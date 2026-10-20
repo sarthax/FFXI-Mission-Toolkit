@@ -494,6 +494,85 @@
         "preview_list_item(",
         "SELECTs only"
       ]
+    },
+    {
+      "id": "ah-purchase-preview",
+      "feature_id": "ah-restock",
+      "template": "gui/templates/auction_house.html",
+      "marker": "Administrative action preview",
+      "route": "/auction-house/admin/purchase/preview.json",
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "Preview UI panel and backend handler observed separately; frontend binding not proven.",
+      "handler_file": "src/workbench/server_admin/auction_house/gui.py",
+      "handler_marker": "@router.post(\"/admin/purchase/preview.json\"",
+      "handler_name": "preview_admin_purchase",
+      "observed_contract": "auction_id, optional buyer_id and mode; previews purchase/cleanup using listing and buyer snapshots.",
+      "contract_source_markers": [
+        "preview_purchase(",
+        "SELECTs only"
+      ],
+      "contract": {
+        "method": "POST",
+        "inputs": [
+          "auction_id",
+          "buyer_id",
+          "mode"
+        ],
+        "outputs": [
+          "preview_purchase"
+        ],
+        "boundary": "read_only_preview",
+        "error_evidence": "Invalid payload returns 400; missing environment or other errors can return 503. No mutation is implied."
+      },
+      "documentation_checks": [
+        {
+          "field": "caveat",
+          "term": "preview"
+        },
+        {
+          "field": "caveat",
+          "term": "not"
+        }
+      ]
+    },
+    {
+      "id": "ah-preview-validation",
+      "feature_id": "ah-restock",
+      "template": "gui/templates/auction_house.html",
+      "marker": "Administrative action preview",
+      "route": "/auction-house/admin/validate/preview.json",
+      "status": "handler_source_verified_runtime_unverified",
+      "review_note": "Preview UI panel and backend handler observed separately; frontend binding not proven.",
+      "handler_file": "src/workbench/server_admin/auction_house/gui.py",
+      "handler_marker": "@router.post(\"/admin/validate/preview.json\"",
+      "handler_name": "validate_admin_preview",
+      "observed_contract": "Requires action and configured server; evaluates lineage-specific safety gates without applying the action.",
+      "contract_source_markers": [
+        "run_preview_validation(",
+        "read-only database work"
+      ],
+      "contract": {
+        "method": "POST",
+        "inputs": [
+          "preview",
+          "action"
+        ],
+        "outputs": [
+          "run_preview_validation"
+        ],
+        "boundary": "read_only_preview",
+        "error_evidence": "Invalid payload returns 400; missing environment or other errors can return 503. No mutation is implied."
+      },
+      "documentation_checks": [
+        {
+          "field": "caveat",
+          "term": "preview"
+        },
+        {
+          "field": "caveat",
+          "term": "not"
+        }
+      ]
     }
   ]
 }
