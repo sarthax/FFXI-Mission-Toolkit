@@ -157,3 +157,13 @@ Twenty-two child-capability operator workflows were expanded across Live Client 
 ## Subfunction consistency pass: Auction House, Key Items, Trace and Validation
 
 Seventeen remaining priority child workflows were revised to identify operator selection, evidence checks and explicit review boundaries: eight Auction House, four Key Item, three Feature Trace and two Validation functions. Existing status labels and references are unchanged. The guidance is source-oriented and does not assert that live server changes, scheduled rewards, key-item transitions or validation checks were run. Exact behavior still requires an authorized local operator and captured evidence.
+
+## Documentation accuracy audit — staged implementation
+
+The catalog's **Documentation accuracy triage** panel now consumes `audit_documentation()` from `src/workbench/core/services/feature_catalog_documentation_audit.py`. It is reproducible from checked-in catalog records and the conservative GUI control inventory, without invoking routes or changing server data.
+
+1. **Static triage (implemented):** report entries with absent source/test mappings, missing purpose/workflow/caveat fields or those fields duplicating the summary. Keep each finding tied to a stable catalog ID. GUI controls are explicitly labelled `needs_review`, *not* automatically classified as missing documentation.
+2. **Handler and workflow verification (next stage):** select a bounded list of GUI candidates, inspect real handler bindings, inputs, outputs, error paths and guardrails; mark findings as confirmed mismatch, documentation omission, supported or unresolved with source references. Avoid inferred route-to-handler matches.
+3. **Corrections and independent acceptance (next stage):** update grounded catalog prose and tests, attach source/test references, and record local operator validation separately. Never upgrade a runtime status merely because static CI passes.
+
+The panel displays static findings and a pointer to the existing automatic GUI inventory. Template scans have a cap and miss dynamic Jinja-generated controls. Missing test mappings do not establish that tests are absent; they indicate that applicable regression evidence has not been attached.
