@@ -10,6 +10,24 @@ From the repository root with the Toolkit virtual environment activated:
 python -m pytest test_fixtures/test_feature_trace_relevance_audit.py -q
 ```
 
+## 1A. Exact-root read-only JSON export (new baseline collection aid)
+
+The feature page currently renders a trace in HTML. Its specialized `/features/trace/path.json` and `/features/trace/runtime.json` diagnostics are **not** a generic full-trace JSON export. To avoid guessing a nonexistent response URL, the new CLI can reproduce a **bounded focused-mode backend trace** using existing indexed SQLite files. It does not measure which edges were actually visible in the browser on initial load; review that separately as described below.
+
+First use the Feature Trace page to select the correct **exact canonical root ID**—for Cait Sith use the *mission*, not the same-name NPC. Do not substitute a numeric coincidence, display name, or ambiguous search match. From a terminal in the Toolkit checkout, choose a **new output path outside the Git checkout**:
+
+```powershell
+python scripts/export_feature_trace_relevance.py --case absolute-virtue --root 'EXACT-ROOT-FROM-TOOLKIT' --depth 1 --output "$env:TEMP\\trace-av.json"
+python scripts/export_feature_trace_relevance.py --case wotg-cait-sith --root 'EXACT-MISSION-ROOT' --depth 1 --output "$env:TEMP\\trace-cait-sith.json"
+python scripts/export_feature_trace_relevance.py --case ordinary-npc --root 'EXACT-NPC-ROOT' --depth 1 --output "$env:TEMP\\trace-npc.json"
+```
+
+Arguments `--graph-db` and `--catalog-db` can name alternate **existing** indexed databases; the defaults are the Toolkit's `workbench.db` and `ffxi_zone_database.db`. Both are opened in SQLite **read-only/query-only** mode. The exporter imports only the Feature Trace facade, not the monolithic GUI, DSP process or Ashita. It refuses missing files, an unknown or conflicting root, the wrong mission/entity root kind, duplicate audit identities, an output inside the repository, and overwriting any existing output. One- or two-hop depths only; the default is one hop with a 500-node bound.
+
+**Privacy and evidence:** each JSON contains original local trace edges and provenance, potentially including private source/capture locators. Keep it outside Git; never post raw exports or file paths to issues. The console summary deliberately omits exact entity IDs and evidence. The exporter provides `edge_audit_ids` for annotation convenience, but **does not** identify relevant paths or infer `initial_edge_ids`. To measure first-screen precision, record the actual initial browser state and independently map that view to the exported edge IDs. If the GUI's trace mode/direction/root does not match the exporter or an edge is absent, record a blocker instead of claiming equivalence.
+
+Use the normal annotation and score steps below with the exported JSON, and complete the three-case campaign manifest with exact Toolkit/server revisions. Even a fully scored campaign remains **MEASURED_PENDING_OPERATOR_ACCEPTANCE**, not live gameplay or GUI usability PASS.
+
 ## 2. Collect three real traces
 
 Start the Toolkit and use the existing Feature Trace page. For each case, select the mode and root below and record the exact resolved entity/mission ID and server source revision.
