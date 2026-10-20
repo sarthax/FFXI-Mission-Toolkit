@@ -83,7 +83,8 @@
           "handler_markers": [
             "\"error\":\"Canonical Workbench graph is not available.\"",
             "status_code=404)"
-          ]
+          ],
+          "http_contract_test": "test_trace_runtime_graph_unavailable_returns_404"
         }
       ]
     },
@@ -154,7 +155,8 @@
           "handler_markers": [
             "except ValueError as exc:",
             "status_code=400)"
-          ]
+          ],
+          "http_contract_test": "test_wiki_scrape_rejection_and_receipt_without_running_job"
         },
         {
           "id": "wiki-scrape-pending",
@@ -165,7 +167,8 @@
           "handler_markers": [
             "wiki_jobs.start_job(url, DB_PATH)",
             "return {\"job\": job}"
-          ]
+          ],
+          "http_contract_test": "test_wiki_scrape_rejection_and_receipt_without_running_job"
         }
       ]
     },
@@ -195,7 +198,8 @@
           "handler_markers": [
             "if source not in (*wiki_snapshot.SOURCES, \"all\"):",
             "Invalid Wiki source"
-          ]
+          ],
+          "http_contract_test": "test_wiki_snapshot_invalid_source_and_failed_export"
         },
         {
           "id": "wiki-export-error",
@@ -206,7 +210,8 @@
           "handler_markers": [
             "except (ValueError, OSError, sqlite3.Error) as exc:",
             "shutil.rmtree(directory, ignore_errors=True)"
-          ]
+          ],
+          "http_contract_test": "test_wiki_snapshot_invalid_source_and_failed_export"
         }
       ]
     },
@@ -238,7 +243,8 @@
           "handler_markers": [
             "request.client.host not in",
             "detail=\"bridge setup requires local browser\""
-          ]
+          ],
+          "http_contract_test": "test_bridge_remote_console_and_same_origin_rejection"
         }
       ]
     },
@@ -280,7 +286,8 @@
               "detail=\"bridge control requires local browser\"",
               "detail=\"same-origin request required\""
             ]
-          }
+          },
+          "http_contract_test": "test_bridge_remote_console_and_same_origin_rejection"
         },
         {
           "id": "bridge-save-fields",
@@ -291,7 +298,8 @@
           "handler_markers": [
             "if not char or not folder:",
             "character and telemetry folder are required"
-          ]
+          ],
+          "http_contract_test": "test_bridge_headless_missing_fields_and_unwritable_feed"
         },
         {
           "id": "bridge-save-file-error",
@@ -302,7 +310,8 @@
           "handler_markers": [
             "except OSError as exc:",
             "cannot create feed file:"
-          ]
+          ],
+          "http_contract_test": "test_bridge_headless_missing_fields_and_unwritable_feed"
         }
       ]
     },
@@ -338,7 +347,8 @@
           "handler_markers": [
             "len(client_id) <= 64",
             "detail=\"invalid client ID\""
-          ]
+          ],
+          "http_contract_test": "test_bridge_status_invalid_client_and_null_snapshot"
         },
         {
           "id": "bridge-status-empty",
@@ -349,7 +359,8 @@
           "handler_markers": [
             "if snapshot is None:",
             "result[\"snapshot\"] = None"
-          ]
+          ],
+          "http_contract_test": "test_bridge_status_invalid_client_and_null_snapshot"
         }
       ]
     },
@@ -379,7 +390,20 @@
           "handler_markers": [
             "selected_module == \"events\" and (entity or message_id or ev_opcodes)",
             "events = []"
-          ]
+          ],
+          "http_contract_test": "test_capture_unfiltered_modes_do_not_imply_missing_evidence"
+        },
+        {
+          "id": "capture-events-invalid-id",
+          "state": "invalid_input",
+          "label": "422: nonnumeric event message ID",
+          "signal": "Invalid message_id values are rejected before opening a SQLite connection.",
+          "recovery": "Enter a decimal integer message ID from captured evidence, or clear the message ID filter.",
+          "handler_markers": [
+            "message_id_filter = int(message_id)",
+            "status_code=422, detail=\"message_id must be an integer\""
+          ],
+          "http_contract_test": "test_capture_bad_event_message_id_returns_422_before_database"
         },
         {
           "id": "capture-events-no-results",
@@ -390,7 +414,8 @@
           "handler_markers": [
             "SELECT COUNT(*) FROM capture_events e",
             "SELECT e.*, c.capture_label FROM capture_events e"
-          ]
+          ],
+          "http_contract_test": "test_capture_indexed_event_filter_empty_and_positive_synthetic_case"
         }
       ]
     },
@@ -420,7 +445,8 @@
           "handler_markers": [
             "selected_module == \"packets\" and (pk_category or pk_opcode)",
             "packets = []"
-          ]
+          ],
+          "http_contract_test": "test_capture_unfiltered_modes_do_not_imply_missing_evidence"
         },
         {
           "id": "capture-packets-category-none",
@@ -431,7 +457,8 @@
           "handler_markers": [
             "if wanted:",
             "where = \"0\""
-          ]
+          ],
+          "http_contract_test": "test_capture_unknown_packet_category_returns_zero_not_all_rows"
         }
       ]
     },
