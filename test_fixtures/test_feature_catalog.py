@@ -212,8 +212,11 @@ def main():
     assert all(case["route_bound"] for case in documentation["review_cases"])
     # The dashboard delegates result fields to dashboard_view. Do not describe
     # module-level matches as directly observed in its HTTP handler.
-    assert set(documentation["review_case_delegated_markers"]) == {"testing-run-filter"}
-    assert len(documentation["review_case_delegated_markers"]["testing-run-filter"]) == 3
+    delegated = documentation["review_case_delegated_markers"]
+    assert {"testing-run-filter"} <= set(delegated)
+    assert {'"total_runs"', '"page"', '"max_page"'} <= set(delegated["testing-run-filter"])
+    assert all(any(case["id"] == case_id for case in documentation["review_cases"])
+               for case_id in delegated)
     # A route decorator on the wrong function is a documentation source drift.
     fake = ('@app.get("/target")\n'
             'def unrelated():\n    return {"rows": []}\n'
