@@ -194,6 +194,8 @@ These are deliberate safety boundaries, not generic missing editors.
 
 # 4. Feature Trace / Implementation Path
 
+**2026-10-20 P0 relevance milestone:** [issue #1228](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1228) separates the existing provider/identity foundation from unproven first-screen usefulness. CI can score reviewed annotations and validate the three-case campaign schema, but **no real-data campaign scorecard has been accepted**. Local Claude/operator must measure Absolute Virtue Implementation, WotG Cait Sith Mission, and one exact ordinary NPC; record the resolved identity, source revisions, verified required paths, first-view precision, source-locator coverage, and click-through burden. Only after this baseline may a remote-safe, opt-in relevance-first 1–2-hop projection be implemented and retested. Saved investigations follow that UI acceptance. See `FEATURE_TRACE_RELEVANCE_AUDIT_2026-10-11.md` and `FEATURE_TRACE_AUDIT_RUNBOOK.md`.
+
 Feature Trace is now a mature cross-source implementation/evidence navigator at a deliberate real-data testing boundary. Provider-native relationships are read-only navigation evidence and remain distinct from canonical graph truth. The combined workflow and evidence boundary are documented in `docs/workbench/BEHAVIOR_FEATURE_TRACE_GUIDE.md`; the closure matrix and current stopping point are documented in `docs/workbench/FEATURE_TRACE_CLOSEOUT_2026-10-04.md`.
 
 - [x] Cross-source providers for SQL, LSB, Topaz, DSP, Client, Capture, Research, Validation, Package, and reference-wiki records.
