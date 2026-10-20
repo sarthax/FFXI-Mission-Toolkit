@@ -167,3 +167,7 @@ The catalog's **Documentation accuracy triage** panel now consumes `audit_docume
 3. **Corrections and independent acceptance (next stage):** update grounded catalog prose and tests, attach source/test references, and record local operator validation separately. Never upgrade a runtime status merely because static CI passes.
 
 The panel displays static findings and a pointer to the existing automatic GUI inventory. Template scans have a cap and miss dynamic Jinja-generated controls. Missing test mappings do not establish that tests are absent; they indicate that applicable regression evidence has not been attached.
+
+## Source-backed GUI review cases — stage 2
+
+The catalog now tracks five curated template-only findings in `feature_catalog/documentation_review_cases.json`: the package review filter, Feature Testing run filter and builder plan, and Lua/SQL converter forms. Their markers are asserted against checked-in templates and shown in the audit UI. All are explicitly `template_verified_handler_unverified`. This is evidence of a rendered-form source definition, **not** proof that a handler works, accepts specific inputs, or ran in a live server environment. Source-to-handler checks, negative/error paths and operator acceptance remain further review stages.

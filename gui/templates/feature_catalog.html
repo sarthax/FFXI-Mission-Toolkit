@@ -51,6 +51,16 @@
 {% else %}<tr><td colspan="3">No static findings.</td></tr>{% endfor %}
 </tbody></table></div>
 </details>
+<details><summary>Curated template reviews ({{ coverage.documentation_audit.review_case_count }})</summary>
+<p class="muted">These rows confirm literal template markup only. No handler, permission or runtime behavior is certified.</p>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Template</th><th>Marker</th><th>Status</th></tr></thead><tbody>
+{% for case in coverage.documentation_audit.review_cases %}
+<tr><td><a href="/feature-catalog?feature={{ case.feature_id|urlencode }}">{{ case.feature_id }}</a></td>
+<td><code>{{ case.template }}</code></td><td><code>{{ case.marker }}</code></td>
+<td>{{ 'Template found' if case.template_marker_present else 'Review marker missing' }} — handler unverified</td></tr>
+{% endfor %}
+</tbody></table></div>
+</details>
 <p class="muted">GUI control candidates are listed below in the existing automatic inventory. Their presence does not establish undocumented behavior.</p>
 </details>
 {% endif %}

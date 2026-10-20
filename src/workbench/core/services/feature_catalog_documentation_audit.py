@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 from workbench.core.services.feature_catalog import ROOT, load_catalog
 from workbench.core.services.feature_catalog_gui_inventory import inventory_gui
 
@@ -9,6 +10,26 @@ from workbench.core.services.feature_catalog_gui_inventory import inventory_gui
 def audit_documentation(root: Path = ROOT) -> dict:
     features = load_catalog(root / "feature_catalog/features.json")
     gui = inventory_gui(root)
+    curated = json.loads((root / "feature_catalog/documentation_review_cases.json").read_text(encoding="utf-8"))
+    if curated.get("schema_version") != 1 or not isinstance(curated.get("cases"), list):
+        raise ValueError("invalid documentation review cases")
+    reviewed = []
+    known = {item["id"]: item for item in features}
+    seen = set()
+    for case in curated["cases"]:
+        if case["id"] in seen or case["feature_id"] not in known:
+            raise ValueError("duplicate review case or unknown capability")
+        seen.add(case["id"])
+        relative = Path(case["template"])
+        if relative.is_absolute() or ".." in relative.parts:
+            raise ValueError("unsafe review template path")
+        template = root / relative
+        present = template.is_file() and case["marker"] in template.read_text(encoding="utf-8")
+        if case["status"] != "template_verified_handler_unverified":
+            raise ValueError("unsupported review status")
+        reviewed.append({**case, "template_marker_present": present,
+                         "catalog_route": known[case["feature_id"]]["route"]})
+
     findings: list[dict] = []
     for feature in features:
         reasons = []
@@ -41,7 +62,10 @@ def audit_documentation(root: Path = ROOT) -> dict:
                 "target": control["target"], "classification": "needs_review",
             })
     return {
-        "stage": "static_triage",
+        "stage": "source_review",
+        "review_cases": reviewed,
+        "review_case_count": len(reviewed),
+        "review_case_missing_markers": [case["id"] for case in reviewed if not case["template_marker_present"]],
         "features_checked": len(features),
         "findings": findings,
         "finding_count": len(findings),
@@ -49,7 +73,7 @@ def audit_documentation(root: Path = ROOT) -> dict:
         "control_candidate_count": len(candidates),
         "truncated_templates": sorted(p["template"] for p in gui["pages"] if p["truncated"]),
         "limitations": (
-            "Static source and catalog checks only. Controls are review candidates, not "
+            "Static source/catalog checks and curated template observations only. Controls are review candidates, not "
             "confirmed missing functions. Jinja branches, handler behavior and live runtime "
             "acceptance require separate review."
         ),

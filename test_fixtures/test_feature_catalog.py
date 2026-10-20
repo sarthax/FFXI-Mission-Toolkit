@@ -196,9 +196,13 @@ def main():
         f["id"] for f in items if not f.get("source_refs") or not f.get("test_refs")
     }
     documentation = audit["documentation_audit"]
-    assert documentation["stage"] == "static_triage"
+    assert documentation["stage"] == "source_review"
     assert documentation["features_checked"] == len(items)
     assert documentation["finding_count"] == len(documentation["findings"])
+    assert documentation["review_case_count"] == 5
+    assert documentation["review_case_missing_markers"] == []
+    assert all(case["status"] == "template_verified_handler_unverified" for case in documentation["review_cases"])
+
     assert documentation["control_candidate_count"] == len(documentation["control_candidates"])
     assert documentation["finding_count"] > 0  # Unmapped provenance remains explicit.
     assert all(f["feature_id"] in {row["id"] for row in items} for f in documentation["findings"])
