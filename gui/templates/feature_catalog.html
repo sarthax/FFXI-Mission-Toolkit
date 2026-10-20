@@ -26,6 +26,17 @@
 </details>
 {% endif %}
 <p class="muted">A contextual link reaches a specific section; it does not establish that instructions are complete or runtime-tested.</p>
+{% if coverage.quality_by_module is defined %}
+<details><summary>Help quality and evidence crosswalk by module</summary>
+<p class="muted">Counts are static triage signals. A source or test pointer is not an acceptance verdict, and the presence of instructions does not establish their correctness.</p>
+<table><thead><tr><th>Module</th><th>Entries</th><th>Generic Help</th><th>Instruction gaps</th><th>Source refs</th><th>Test refs</th></tr></thead><tbody>
+{% for module, metrics in coverage.quality_by_module|dictsort %}
+<tr><td>{{ module }}</td><td>{{ metrics.entries }}</td><td>{{ metrics.generic_help }}</td><td>{{ metrics.instruction_gaps }}</td><td>{{ metrics.source_refs }}</td><td>{{ metrics.test_refs }}</td></tr>
+{% endfor %}
+</tbody></table>
+<p><strong>Entries lacking source or test pointers:</strong> {{ coverage.provenance_gaps|length }}. See individual feature details for established references.</p>
+</details>
+{% endif %}
 {% endif %}
 {% if coverage.status_totals is defined %}
 <p><strong>Catalog depth:</strong> {{ coverage.module_count }} modules, {{ coverage.subfeature_count }} documented subfunctions.
