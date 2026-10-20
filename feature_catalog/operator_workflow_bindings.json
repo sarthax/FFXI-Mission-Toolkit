@@ -33,7 +33,8 @@
           "handler_markers": [
             "if con is None:",
             "Canonical Workbench graph is not available. Build/import workbench.db"
-          ]
+          ],
+          "http_contract_test": "test_trace_page_missing_graph_exposes_error_without_searching"
         },
         {
           "id": "trace-ambiguous",
@@ -44,7 +45,8 @@
           "handler_markers": [
             "matches = feature_trace.search_nodes(",
             "if len(matches) == 1:"
-          ]
+          ],
+          "http_contract_test": "test_trace_page_ambiguous_nodes_avoids_arbitrary_root"
         }
       ]
     },
@@ -114,7 +116,8 @@
           "handler_markers": [
             "if page_id:",
             "The source-qualified Wiki page was not found."
-          ]
+          ],
+          "http_contract_test": "test_wiki_source_qualified_page_not_found_never_falls_back_by_title"
         },
         {
           "id": "wiki-page-mismatch",
@@ -125,7 +128,8 @@
           "handler_markers": [
             "str(page_view.get(\"page_id\")) != str(page_id)",
             "The exact Wiki source page could not be opened."
-          ]
+          ],
+          "http_contract_test": "test_wiki_same_title_wrong_page_id_is_rejected"
         }
       ]
     },
@@ -488,7 +492,8 @@
           "handler_markers": [
             "rq.items(con, \"all\")",
             "status == \"all\" or r[\"status\"] == status"
-          ]
+          ],
+          "http_contract_test": "test_capture_review_filters_empty_without_resolving_findings"
         }
       ]
     }
