@@ -75,6 +75,12 @@ def main():
         entry = feature_detail(items, feature_id)["feature"]
         assert entry.get("source_refs")
         assert not entry.get("test_refs"), "Do not imply specific regression coverage"
+    # Generic Help is no longer a fallback for curated capabilities.
+    assert all(entry["help"] != "/help" for entry in items)
+    help_html = (ROOT / "gui/templates/help.html").read_text(encoding="utf-8")
+    for entry in items:
+        if entry["help"].startswith("/help#"):
+            assert f'id="{entry["help"].split("#", 1)[1]}"' in help_html
     assert feature_detail(items, "missing-capability") is None
     assert "auction-house" in {f["id"] for f in search_catalog(items, "guarded")}
     assert all(f["module"] == "Research & Evidence" for f in search_catalog(items, module="Research & Evidence"))
