@@ -97,12 +97,34 @@ def inspect_route_binding(handler_source: str, case: dict) -> tuple[bool, str]:
     return matched, ast.get_source_segment(handler_source, fn) or ""
 
 
+
+def inspect_guard_helper_source(handler_source: str, case: dict, name: str) -> str:
+    """Resolve a reviewed helper in the handler's immediate Python lexical scope."""
+    try:
+        module = ast.parse(handler_source)
+    except SyntaxError:
+        return ""
+    nodes = module.body
+    if case.get("handler_parent"):
+        parents = [n for n in nodes if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+                   and n.name == case["handler_parent"]]
+        if len(parents) != 1:
+            return ""
+        nodes = parents[0].body
+    matches = [n for n in nodes if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+               and n.name == name]
+    if len(matches) != 1:
+        return ""
+    return ast.get_source_segment(handler_source, matches[0]) or ""
+
+
 def audit_workflow_bindings(root: Path = ROOT) -> dict:
     curated = json.loads(_source(root, "feature_catalog/operator_workflow_bindings.json"))
     if curated.get("schema_version") != 1 or not isinstance(curated.get("cases"), list):
         raise ValueError("Invalid operator workflow contract set")
     features = {row["id"] for row in load_catalog(root / "feature_catalog/features.json")}
     seen: set[str] = set()
+    seen_failure_ids: set[str] = set()
     source_cache: dict[str, str] = {}
     cases = []
     for item in curated["cases"]:
@@ -135,20 +157,54 @@ def audit_workflow_bindings(root: Path = ROOT) -> dict:
             helper_found = (helper["call"] in function_text and
                             re.search(r"^def " + re.escape(helper["name"]) + r"\(",
                                       helper_text, re.M) is not None)
+        failures = []
+        for failure in item.get("failure_paths", []):
+            if (failure.get("id") in seen_failure_ids or
+                    failure.get("state") not in {
+                        "blocked", "guarded", "invalid_input", "pending", "empty_or_ambiguous"
+                    } or not failure.get("label") or not failure.get("signal") or
+                    not failure.get("recovery") or not failure.get("handler_markers")):
+                raise ValueError("Invalid or duplicate operator failure path")
+            seen_failure_ids.add(failure["id"])
+            missing = [marker for marker in failure["handler_markers"]
+                       if marker not in function_text]
+            guard = failure.get("guard_helper")
+            missing_guard = []
+            if guard:
+                if not guard.get("name") or not guard.get("markers"):
+                    raise ValueError("Incomplete failure guard source evidence")
+                guard_text = inspect_guard_helper_source(handler, item, guard["name"])
+                missing_guard = [marker for marker in guard["markers"] if marker not in guard_text]
+            failures.append({
+                **failure, "missing_handler_markers": missing,
+                "missing_guard_markers": missing_guard,
+                "source_verified": bool(route_found and not missing and not missing_guard),
+                "verification": "static_handler_branch_only_runtime_unverified",
+            })
+        if not failures:
+            raise ValueError("Operator workflow requires reviewed failure or degraded states")
+        failure_sources_verified = all(f["source_verified"] for f in failures)
         cases.append({
-            **item, "ui_found": ui_found, "route_found": route_found,
+            **item, "failure_paths": failures, "failure_sources_verified": failure_sources_verified,
+            "ui_found": ui_found, "route_found": route_found,
             "missing_handler_markers": missing_handler_markers, "helper_found": helper_found,
-            "source_verified": (ui_found and route_found and not missing_handler_markers and helper_found),
+            "source_verified": (ui_found and route_found and not missing_handler_markers
+                                and helper_found and failure_sources_verified),
             "verification": "static_source_only_runtime_unverified",
         })
     return {
         "case_count": len(cases), "cases": cases,
+        "failure_count": sum(len(c["failure_paths"]) for c in cases),
+        "failure_source_drift": [
+            f["id"] for c in cases for f in c["failure_paths"] if not f["source_verified"]
+        ],
         "missing": [c["id"] for c in cases if not c["source_verified"]],
         "boundary_counts": {
             boundary: sum(c["boundary"] == boundary for c in cases)
             for boundary in sorted({c["boundary"] for c in cases})
         },
         "limitations": "Literal form/link/fetch evidence and bound Python handlers only. "
-                       "Dynamic JavaScript/Jinja execution, external jobs, error paths, "
-                       "permissions and live client/server acceptance remain unverified.",
+                       "Failure and degraded-state signals are handler-local static branch evidence, "
+                       "not exercised HTTP error paths. JavaScript/Jinja, external jobs, "
+                       "permissions, DB state and client/server acceptance remain unverified.",
     }
