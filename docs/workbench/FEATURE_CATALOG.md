@@ -36,6 +36,31 @@ A route or source reference does not establish runtime acceptance. The inventory
 
 `/feature-catalog` renders searchable/filterable records. Help and Roadmap link to it. The catalog is listed in the Home / Project shell navigation and linked from Help and Roadmap.
 
+## Per-capability operator actions and recovery (October 20, 2026)
+
+The `/feature-catalog?feature=<id>` detail page now surfaces source-reviewed actions
+for the selected capability and its **directly documented** subfunctions, using
+the existing `feature_catalog/operator_workflow_bindings.json` and
+`feature_catalog/documentation_review_cases.json` evidence. These entries
+show the control/HTTP route/handler chain, safety boundary, failure or pending
+signals, operator recovery, and where an isolated synthetic HTTP test is
+declared. Backend-only contract reviews are separately expandable because
+a handler decorator and a template marker do **not** establish frontend wiring.
+
+**Interpretation:** the card saying source markers are present is a static
+inspection finding. A linked HTTP contract identifies a synthetic test and
+does not itself state that the test passed in CI. It is not evidence of live
+browser operation, background job completion, server mutations, game-client
+telemetry, or end-to-end acceptance. Keep independent catalog
+`implementation` and `validation` labels unchanged. When no reviewed action
+exists, the detail page explicitly reports that coverage gap rather than
+claiming the capability is unavailable.
+
+Direct-child inclusion is intentionally limited to one level of catalog
+hierarchy, so a module view can show reviewed subfunctions without mixing in
+unrelated module workflows. The global Coverage audit remains the complete
+cross-module inspection surface; individual pages are operator guidance.
+
 ## Adding a feature
 
 1. Add a unique slug to `feature_catalog/features.json` with a grounded route and Help destination.
