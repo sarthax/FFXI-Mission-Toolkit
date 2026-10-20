@@ -154,13 +154,13 @@ def main():
                          q="", module="", coverage=audit, detail=details, gui_audit=gui_audit, gui_inventory=inventory)
     assert "GUI control coverage audit" in detail_page
     assert "Automatic GUI control candidates" in detail_page
-    assert "Functions in this module" in detail_page
-    assert "How to use" in detail_page
-    assert "Source and regression references" not in detail_page  # Auction House not mapped yet
+    assert "Documented subfunctions" in detail_page
+    assert "Operator workflow" in detail_page
+    assert "No implementation file or automated regression reference" in detail_page  # Explicit missing evidence
     trace_page = render("feature_catalog.html", "/feature-catalog", features=items,
                         modules=sorted({f["module"] for f in items}), q="", module="",
                         coverage=audit, detail=feature_detail(items, "trace-evidence"))
-    assert "Source and regression references" in trace_page
+    assert "Implementation and test evidence" in trace_page
     assert "test_feature_trace_wiki_dossier.py" in trace_page
     assert "/feature-catalog?feature=" in detail_page
     filtered = search_catalog(items, "binary")
