@@ -141,3 +141,7 @@ Verified GUI implementation pointers were added for Capture Search, Capture Revi
 ## Research and Migration provenance crosswalk (October 19)
 
 The catalog now references checked-in GUI and selected service implementations for Research sessions, contradictions, evidence browsing, ID Drift, package review/scope/create, Lua and SQL conversion, and bindings. Named regression pointers are limited to the existing research-session GUI test and Lua/SQL converter tests; other entries deliberately retain missing-test status. Static references demonstrate traceability, not passing local client/server workflows or runtime acceptance.
+
+## Functional guidance review — prioritized operators (October 19)
+
+The Feature Trace, Live Client, Wiki, Zone Editor, Lua Converter and SQL Converter catalog entries now describe concrete starting controls and review steps instead of only a generic opening sequence. These are read-only documentation refinements, with regression assertions for key instructions. Feature Trace branch/provider controls, bridge setup previews and read-only checks, Wiki sync/snapshot validation, and converter option/collision checks were inspected in checked-in templates. Zone Editor instructions deliberately remain cautious because this pass did not establish the exact current template backing the registered route. Do not promote runtime validation status on the strength of GUI text or offline tests.
