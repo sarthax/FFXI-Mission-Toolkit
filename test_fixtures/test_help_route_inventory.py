@@ -30,6 +30,12 @@ def main():
     assert 'client.get("/live-client/bridge/console")' in bridge_test
     assert 'assert html.status_code == 200' in bridge_test
     gets.add("/live-client/bridge/console")
+    testing_router = (ROOT / "src/workbench/server_admin/feature_testing/router.py").read_text(encoding="utf-8")
+    host = (ROOT / "src/workbench/app/_host_impl.py").read_text(encoding="utf-8")
+    assert 'APIRouter(prefix="/feature-testing"' in testing_router
+    assert '@router.get("", response_class=HTMLResponse)' in testing_router
+    assert 'app.include_router(feature_testing_router)' in host
+    gets.add("/feature-testing")
     seen = set()
     for page in PAGES:
         html = (ROOT / "gui/templates" / page).read_text(encoding="utf-8")

@@ -70,3 +70,7 @@ Five additional guided subfunctions are proposed: Key Item lineage comparison, L
 ## Source/test provenance crosswalk (October 19)
 
 A focused subset of Feature Trace, Feature Testing and Key Items records now carries `source_refs` and `test_refs` pointing to checked-in files. The loader verifies that paths exist and rejects invalid references; the detail view displays these under **Source and regression references**. These are implementation and offline-test pointers only: they do **not** upgrade a record to `tested` or prove live DSP, client, or GUI acceptance. More modules will be mapped in later slices.
+
+## Contextual Help deep links — October 19
+
+Twenty-two existing capabilities in Feature Trace/Behavior Inspector, Wiki, Key Items, Feature Testing and Validation now point to anchored in-app guidance rather than generic `/help`. Each anchor covers a bounded operator workflow and explicitly states the distinction between source references, design-only plans and observed validation. The catalog regression confirms that every referenced Help anchor is present. This is a navigation and documentation improvement, not a runtime validation claim.
