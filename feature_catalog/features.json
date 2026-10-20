@@ -42,7 +42,7 @@
       "route": "/features/check",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-research-checker",
       "purpose": "Check evidence coverage and required capabilities.",
       "how_to_use": "Choose a feature or capability, inspect its required evidence and coverage gaps, and record remaining validation needs.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -152,7 +152,7 @@
       "route": "/research",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-research-sessions",
       "purpose": "Record unresolved questions and supporting evidence.",
       "how_to_use": "Open a research session, add a question and supporting evidence, and revisit unresolved conclusions with their sources.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -671,7 +671,7 @@
       "route": "/researchgaps",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-research-gaps",
       "purpose": "Review missing or unresolved client research evidence.",
       "how_to_use": "Filter unresolved research questions by domain, follow evidence links, and record what still needs verification.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -897,7 +897,7 @@
       "route": "/research/contradictions",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-research-gaps",
       "purpose": "Review conflicting research evidence.",
       "how_to_use": "Open a conflicting research claim, compare the underlying sources, and leave the disagreement unresolved until evidence warrants a decision.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -910,7 +910,7 @@
       "route": "/research/evidence",
       "implementation": "implemented",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-research-sessions",
       "purpose": "Browse recorded research evidence.",
       "how_to_use": "Browse evidence artifacts, inspect provenance and relationships, and follow source links for verification.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
@@ -949,7 +949,7 @@
       "route": "/llm",
       "implementation": "partial",
       "validation": "unverified",
-      "help": "/help",
+      "help": "/help#help-research-checker",
       "purpose": "Explore local LLM-assisted research with source evidence safeguards.",
       "how_to_use": "Provide a focused research question, review model-assisted findings with linked sources, and independently verify claims.",
       "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
