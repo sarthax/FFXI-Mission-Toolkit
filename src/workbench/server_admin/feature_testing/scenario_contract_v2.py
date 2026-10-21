@@ -316,7 +316,13 @@ def serialize_spec(spec: dict) -> str:
 
     validate_spec(spec)
     payload = json.dumps(spec, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
-    if len(payload.encode("utf-8")) > 32768:
+    # spec_drafts.save_draft currently persists JSON with the Python default
+    # ensure_ascii=True. Unicode escapes can nearly double encoded size, so
+    # using only the compact UTF-8 length here would falsely promise a draft
+    # can be saved under the existing 32 KiB operator-authenticated limit.
+    storage_payload = json.dumps(spec, sort_keys=True, ensure_ascii=True,
+                                 separators=(",", ":"), allow_nan=False)
+    if max(len(payload.encode("utf-8")), len(storage_payload.encode("utf-8"))) > 32768:
         raise ValueError("scenario draft exceeds existing 32KiB limit")
     return payload
 
@@ -341,5 +347,7 @@ def deserialize_spec(payload: str) -> dict:
                          parse_constant=lambda x: (_ for _ in ()).throw(ValueError("invalid JSON constant")))
     except (json.JSONDecodeError, UnicodeError) as exc:
         raise ValueError("invalid serialized scenario JSON") from exc
-    validate_spec(doc)
+    # Match the existing draft-store wire format limit after parsing as well:
+    # a compact Unicode JSON document may expand when save_draft escapes it.
+    serialize_spec(doc)
     return doc
