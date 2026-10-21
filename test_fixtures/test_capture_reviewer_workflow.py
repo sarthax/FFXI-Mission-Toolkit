@@ -181,6 +181,22 @@ def test_incomplete_ambiguous_and_untrusted_file_fail_closed():
             pass
         else:
             raise AssertionError("invalid review allowed")
+    # A forged "reviewed" or source-backed oracle on the draft itself must
+    # also fail closed, even before a browser decision envelope exists.
+    for change in (
+        lambda x: x["canonical_specification_seed"]["authoring"].update(state="reviewed"),
+        lambda x: x["canonical_specification_seed"]["authoring"].update(execution_policy="write"),
+        lambda x: x["canonical_specification_seed"]["steps"][0].update(expected="PASS is normative"),
+        lambda x: x["canonical_specification_seed"]["steps"][0].update(assertion_ids=["invented"]),
+    ):
+        forged = copy.deepcopy(draft)
+        change(forged)
+        try:
+            manual_editor_handoff(forged)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("forged canonical maturity/oracle accepted")
     baseline = manual_editor_handoff(draft)
     payload = {
         "contract": "offline_capture_review_decisions_v1_NONCANONICAL",
