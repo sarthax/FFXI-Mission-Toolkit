@@ -28,6 +28,12 @@ def inventory_snapshot_v2(charid: int, location: int, cursor: int = 0, limit: in
                 "items": [], "row_count": 0, "total_rows": None, "has_more": None, "next_cursor": None}
     conn, db = opened
     try:
+        db.execute("SELECT charid FROM chars WHERE charid = %s", (charid,))
+        exists = db.fetchone() is not None
+        if not exists:
+            conn.rollback()
+            return {**basic, "configured": True, "status": "UNKNOWN_CHARACTER", "complete": False,
+                    "items": [], "row_count": 0, "total_rows": None, "has_more": None, "next_cursor": None}
         db.execute("SELECT COUNT(*) AS n FROM char_inventory WHERE charid = %s AND location = %s", (charid, location))
         count_row = db.fetchone()
         total = int(count_row["n"] if isinstance(count_row, dict) else count_row[0])
