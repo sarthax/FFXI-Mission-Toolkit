@@ -240,3 +240,24 @@ console.log('Unified intake: no implicit assertion, explicit step AND identity d
   ]),/provenance exceeds/);
   console.log('Oversized source provenance fails closed instead of truncating accepted identities: PASS');
 }
+
+{
+  const initial=M.fresh(),modified=M.clone(initial);
+  modified.name='Unsaved operator edit';
+  assert.equal(M.replacementConfirmationReason(initial,null,0,null),null);
+  assert.match(M.replacementConfirmationReason(modified,null,0,null),/unsaved draft edits/);
+  assert.match(M.replacementConfirmationReason(initial,initial,2,null),/loaded revision/);
+  assert.match(M.replacementConfirmationReason(initial,null,0,'coverage:garden/GARD-01'),/source-derived/);
+  const saved={feature_id:initial.feature_id,case_id:initial.case_id,revision:3};
+  assert.deepEqual(M.saveResponseDisposition(initial,initial,saved,false),{
+    apply_revision:true,unsaved_edits:false
+  });
+  assert.deepEqual(M.saveResponseDisposition(initial,modified,saved,false),{
+    apply_revision:true,unsaved_edits:true
+  });
+  assert.match(M.saveResponseDisposition(initial,{...initial,case_id:'SYNTH-OTHER'},saved,false).reason,/identity changed/);
+  assert.match(M.saveResponseDisposition(initial,initial,{...saved,case_id:'SYNTH-WRONG'},false).reason,/saved document identity/);
+  assert.match(M.saveResponseDisposition(initial,initial,saved,true).reason,/document changed/);
+  assert.equal(M.saveResponseDisposition(initial,null,saved,false).apply_revision,false);
+  console.log('Discard guards and delayed save-response identity/revision semantics: PASS');
+}
