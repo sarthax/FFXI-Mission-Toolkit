@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from array import array
 import hashlib
+import struct
 
 from workbench.client.pol1_unpack import Pol1Error, _section, unpack_pol1
 
@@ -78,6 +79,69 @@ def encode_pol1(code: bytes) -> bytes:
     return bytes(output)
 
 
+
+def _stream_consumed_bytes(image: bytes, expected_size: int) -> int:
+    """Measure original LZSS input consumption without reading beyond the PE section.
+
+    This length is the conservative replacement budget. The rest of POL1 can
+    include the unpacker/entry-point stub and must never be treated as slack.
+    """
+    section = _section(image, b"POL1")
+    start = section["raw_start"]
+    size = section["raw_size"]
+    if start > len(image) or size > len(image) - start:
+        raise Pol1Error("POL1 section exceeds source file")
+    data = memoryview(image)[start:start + size]
+    pos = 0
+    expanded = 0
+    while pos < size and expanded < expected_size:
+        flags = data[pos]
+        pos += 1
+        for _ in range(8):
+            if expanded == expected_size:
+                break
+            literal = bool(flags & 0x80)
+            flags = (flags << 1) & 255
+            if literal:
+                if pos >= size:
+                    break
+                pos += 1
+                expanded += 1
+            else:
+                if pos + 2 > size:
+                    break
+                word = (int(data[pos]) << 8) | int(data[pos + 1])
+                pos += 2
+                distance = word & MAX_DISTANCE
+                if distance == 0:
+                    break
+                if distance > expanded:
+                    raise Pol1Error("invalid POL1 back-reference while measuring consumption")
+                expanded += min((word >> 12) + MIN_MATCH, expected_size - expanded)
+    if expanded != expected_size:
+        raise Pol1Error("could not find a complete POL1 compressed stream")
+    return pos
+
+
+def _entrypoint_section_offset(image: bytes, section: dict) -> int | None:
+    """Map PE32 AddressOfEntryPoint into raw POL1 offset when it is inside it."""
+    if len(image) < 0x40:
+        return None
+    pe = struct.unpack_from("<I", image, 0x3C)[0]
+    if pe + 24 > len(image):
+        return None
+    optional_size = struct.unpack_from("<H", image, pe + 20)[0]
+    optional = pe + 24
+    if optional_size < 20 or optional + optional_size > len(image):
+        return None
+    # AddressOfEntryPoint is at OptionalHeader + 16 for both PE32 and PE32+.
+    entry_rva = struct.unpack_from("<I", image, optional + 16)[0]
+    relative = entry_rva - section["rva"]
+    if 0 <= relative < section["raw_size"]:
+        return relative
+    return None
+
+
 def assess_pol1_repack_fit(image: bytes, candidate_code: bytes | None = None) -> dict:
     """Report whether greedy encoding fits existing POL1 raw bytes; never write.
 
@@ -91,29 +155,48 @@ def assess_pol1_repack_fit(image: bytes, candidate_code: bytes | None = None) ->
     if not isinstance(code, bytes) or len(code) != original["size"]:
         raise Pol1Error("candidate decoded code must match original decoded length")
     candidate = encode_pol1(code)
-    # Re-run the existing decoder against a temporary in-memory candidate
-    # using unchanged PE sections. The original byte string is untouched.
     start, available = section["raw_start"], section["raw_size"]
-    fits = len(candidate) <= available
+    original_used = _stream_consumed_bytes(image, original["size"])
+    entrypoint_offset = _entrypoint_section_offset(image, section)
+    boundary_valid = entrypoint_offset is None or original_used <= entrypoint_offset
+    # Never use the tail of the raw section for growth: it may contain startup
+    # instructions, loader metadata, or resources unrelated to compressed data.
+    budget = min(original_used, entrypoint_offset) if entrypoint_offset is not None else original_used
+    fits = boundary_valid and len(candidate) <= budget
     result = {
-        "status": "FITS_RAW_SECTION" if fits else "EXCEEDS_RAW_SECTION",
+        "status": ("UNSAFE_ORIGINAL_STREAM_BOUNDARY" if not boundary_valid else
+                   "FITS_ORIGINAL_STREAM_BUDGET" if fits else "EXCEEDS_ORIGINAL_STREAM_BUDGET"),
         "source_sha256": hashlib.sha256(image).hexdigest(),
         "decoded_sha256": original["sha256"],
         "candidate_decoded_sha256": hashlib.sha256(code).hexdigest(),
         "decoded_size": original["size"],
-        "pol1_raw_section_capacity": available,
+        "pol1_raw_section_size": available,
+        "original_stream_consumed_bytes": original_used,
+        "protected_suffix_bytes": available - original_used,
+        "entrypoint_section_offset": entrypoint_offset,
+        "entrypoint_in_pol1": entrypoint_offset is not None,
+        "entrypoint_boundary_safe": boundary_valid,
+        "safe_stream_budget_bytes": budget,
         "candidate_encoded_size": len(candidate),
-        "headroom_bytes": available - len(candidate),
+        "headroom_bytes": budget - len(candidate),
         "candidate_sha256": hashlib.sha256(candidate).hexdigest(),
-        "caution": "Capacity-only read-only estimate; no DLL written, no loader/signature or Windows execution verification.",
+        "caution": ("In-memory capacity estimate only; full POL1 section is NOT writable "
+                    "slack. No retail DLL is modified or launched."),
     }
     if fits:
-        patched = bytearray(image)
-        patched[start:start + available] = candidate + bytes(available - len(candidate))
-        check = unpack_pol1(bytes(patched))
+        # Only the decoded stream's existing prefix is substituted in memory;
+        # do not clear or replace the protected suffix (which can contain the
+        # original POL1 bootstrap entry point).
+        candidate_image = bytearray(image)
+        candidate_image[start:start + len(candidate)] = candidate
+        check = unpack_pol1(bytes(candidate_image))
         if check["bytes"] != code:
             raise Pol1Error("in-memory candidate failed decoded-byte verification")
+        if candidate_image[start + original_used:start + available] != image[start + original_used:start + available]:
+            raise Pol1Error("protected POL1 suffix was altered")
         result["in_memory_decoded_roundtrip"] = "PASS"
+        result["protected_suffix_unchanged"] = True
     else:
         result["in_memory_decoded_roundtrip"] = "NOT_ATTEMPTED"
+        result["protected_suffix_unchanged"] = None
     return result
