@@ -369,6 +369,7 @@ def test_standalone_synthetic_readonly_editor_display_fixtures():
             assert row["canonical_source_association"]["source_refs"] == []
             assert row["readiness_state"] in {"UNKNOWN", "BLOCKED"}
             assert row["oracle_approval_state"] == "UNAPPROVED"
+            assert row["reviewer_step_decision_original"]["decision"] in {"PENDING", "ACCEPT"}
             assert row["normative_expected"] is None and row["verdict"] == "UNKNOWN"
             assert row["execution_enabled"] is False
             assert [p["evidence_ref"] for p in row["indexed_evidence_provenance"]] == (
@@ -387,6 +388,12 @@ def test_standalone_synthetic_readonly_editor_display_fixtures():
                 assert missing["capability_registered"] is False
     assert sample["samples"][0]["read_only_projection"]["source_compatibility_state"] == "UNKNOWN"
     assert sample["samples"][1]["read_only_projection"]["source_compatibility_state"] == "BLOCKED"
+    assert sample["samples"][0]["read_only_projection"]["steps"][0][
+        "reviewer_step_decision_original"]["decision"] == "PENDING"
+    assert sample["samples"][1]["read_only_projection"]["steps"][0][
+        "reviewer_step_decision_original"]["decision"] == "ACCEPT"
+    assert sample["samples"][1]["read_only_projection"]["steps"][0][
+        "oracle_approval_state"] == "UNAPPROVED"
 
 
 def test_operator_reviewed_step_remains_observation_only_and_readonly():
