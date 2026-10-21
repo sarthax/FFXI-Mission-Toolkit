@@ -4,7 +4,7 @@
 **Owner:** local Toolkit operator, after eligible GitHub review and owner-authorized integration  
 **Status:** DOCUMENTATION ONLY — **not performed or approved by remote Agent B**.
 
-**Accepted foundations:** #1309's canonical optional `contract_v2.source_associations` and read-only `source_attribution_report(spec)`, and #1308's noncanonical Evidence Readiness projection, are merged into main. **Current editor draft #1307 now consumes the canonical report** and displays explicit CASE/STEP claims without inferring from oracle/capture text. No local browser checks have been performed. B16–B19 can be evaluated only after #1307 passes independent review/CI and is owner-integrated. **B20 remains BLOCKED**: the optional sidecar viewer is a separate follow-up requiring review of original capture/source identity and both projection digests. The existing reviewed-decision importer still refuses sidecar input.
+**Accepted foundations:** #1309's canonical optional `contract_v2.source_associations` and read-only `source_attribution_report(spec)`, and #1308's noncanonical Evidence Readiness projection, are merged into main. **Current editor draft #1307 now consumes the canonical report** and displays explicit CASE/STEP claims without inferring from oracle/capture text. No local browser checks have been performed. B16–B19 can be evaluated only after #1307 passes independent review/CI and is owner-integrated. **B20 remains BLOCKED**: the optional sidecar viewer is tracked separately in [Issue #1313](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1313), requiring review of original capture/source identity and both projection digests. The existing reviewed-decision importer still refuses sidecar input.
 
 ## Preconditions and boundaries
 
@@ -36,7 +36,7 @@
 
 ## Canonical association and evidence-producer acceptance checks (operator-only, NOT RUN)
 
-Canonical #1309 and noncanonical #1308 **are merged**. #1307 now renders the accepted canonical case/step report read-only; B16–B19 are **IMPLEMENTED IN CODE, NOT BROWSER-TESTED**, and require separate Agent A review, exact-head CI, and owner-authorized integration before operator acceptance. B20 remains **BLOCKED** because no reviewed, opt-in, source-identity-checked read-only sidecar viewer is implemented. Do not simulate completion using staged aliases, an untrusted sidecar, or oracle context.
+Canonical #1309 and noncanonical #1308 **are merged**. #1307 now renders the accepted canonical case/step report read-only; B16–B19 are **IMPLEMENTED IN CODE, NOT BROWSER-TESTED**, and require separate Agent A review, exact-head CI, and owner-authorized integration before operator acceptance. B20 remains **BLOCKED** under [#1313](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1313) because no reviewed, opt-in, source-identity-checked read-only sidecar viewer is implemented. Do not simulate completion using staged aliases, an untrusted sidecar, or oracle context.
 
 | ID | Exact owner-authorized browser check after integration | Acceptance |
 |---|---|---|
@@ -46,7 +46,7 @@ Canonical #1309 and noncanonical #1308 **are merged**. #1307 now renders the acc
 | B19 | Present invalid association (unknown source/step ID, duplicate scope/target, empty refs, case with non-null target, inconsistent source hash) | Canonical server **rejects** preview/save with actionable diagnostics, no revision or permission change, no fallback JS step matcher. |
 | B20 | Select a reviewed, separately validated #1308 readiness sidecar for **opt-in read-only inspection** (not the existing reviewed-decision import) | Display capture ID, original evidence ref/table/row, parser name/version, claimed locator vs manifest digest, index/source warnings, ambiguous identity, missing client/server readbacks and UNKNOWN/BLOCKED; keep `decoder_version=null`, indexed hashes **NOT REHASHED**, `canonical_step_id=null`, normative expected null, permissions false and execution disabled. Verify original capture/source refs and both separately scoped projection SHA-256s. Declared metadata is not authenticated. Without an accepted read-only inspection surface, mark **BLOCKED**, never POST the sidecar to the editor's reviewed-decision intake. |
 
-**Current remote development scope:** #1307 uses merged `source_attribution_report` for explicit case/step claim presentation, preserving UNASSIGNED registry entries and separate oracle/identity candidate citations. It does **not** accept Agent D's noncanonical sidecar as canonical draft input, and its optional indexed-provenance viewer remains deferred. Synthetic acceptance is not local browser acceptance; request the operator checks only after independent review and owner-authorized editor integration.
+**Current remote development scope:** #1307 uses merged `source_attribution_report` for explicit case/step claim presentation, preserving UNASSIGNED registry entries and separate oracle/identity candidate citations. It does **not** accept Agent D's noncanonical sidecar as canonical draft input, and its optional indexed-provenance viewer remains deferred to [#1313](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1313). Synthetic acceptance is not local browser acceptance; request the operator checks only after independent review and owner-authorized editor integration.
 
 ## Evidence to capture in the browser acceptance report
 
