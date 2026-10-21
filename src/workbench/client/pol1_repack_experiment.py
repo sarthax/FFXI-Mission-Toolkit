@@ -135,45 +135,77 @@ def _verify_raw_section_isolation(image: bytes, section: dict) -> None:
 
 
 
-def _stream_consumed_bytes(image: bytes, expected_size: int) -> int:
-    """Strictly count consumed original LZSS stream bytes without PE-tail spill.
+def _stream_termination_metadata(packed: bytes | memoryview, expected_size: int) -> dict:
+    """Count token consumption and describe the *decoder-observed* final group.
 
-    Unlike the legacy read-only decoder, which tolerates a zero-distance token
-    as a group terminator, this safety-critical measurement fails closed:
-    ambiguous or malformed streams cannot establish a replaceable prefix.
+    Reports scalar layout only, never packed/decoded code bytes. This is our
+    bounded synthetic decoder's interpretation, NOT proof of retail-loader
+    termination semantics or acceptance of modified streams.
     """
+    if not 0 < expected_size <= MAX_EXPERIMENTAL_SIZE:
+        raise Pol1Error("decoded stream outside experimental bound")
+    at = 0
+    expanded = 0
+    groups = 0
+    tokens = 0
+    final = None
+    while expanded < expected_size:
+        if at >= len(packed):
+            raise Pol1Error("truncated POL1 control group")
+        control = int(packed[at])
+        at += 1
+        groups += 1
+        for slot in range(8):
+            if expanded >= expected_size:
+                break
+            literal = bool(control & (0x80 >> slot))
+            raw_output = 1
+            copied = 1
+            if literal:
+                if at >= len(packed):
+                    raise Pol1Error("truncated POL1 literal")
+                at += 1
+            else:
+                if at + 2 > len(packed):
+                    raise Pol1Error("truncated POL1 back-reference")
+                word = (int(packed[at]) << 8) | int(packed[at + 1])
+                at += 2
+                distance = word & MAX_DISTANCE
+                if distance == 0 or distance > expanded:
+                    raise Pol1Error("invalid POL1 back-reference while measuring consumption")
+                raw_output = (word >> 12) + MIN_MATCH
+                copied = min(raw_output, expected_size - expanded)
+            expanded += copied
+            tokens += 1
+            if expanded == expected_size:
+                unused = 7 - slot
+                ignored_mask = (1 << unused) - 1
+                final = {
+                    "control_group_count": groups,
+                    "token_count": tokens,
+                    "last_group_token_count": slot + 1,
+                    "last_group_unused_flag_bits": unused,
+                    "last_group_unused_flags_nonzero": bool(control & ignored_mask),
+                    "last_token_kind": "literal" if literal else "backreference",
+                    "last_token_nominal_output_bytes": raw_output,
+                    "last_token_actual_output_bytes": copied,
+                    "last_token_truncated_at_decoded_limit": copied != raw_output,
+                }
+                break
+    if final is None:
+        raise Pol1Error("could not find complete POL1 stream end")
+    return {"consumed_bytes": at, **final}
+
+
+def _stream_consumed_bytes(image: bytes, expected_size: int) -> int:
+    """Strict decoder-consumed POL1 prefix length; never count loader suffix."""
     section = _section(image, b"POL1")
     start, size = section["raw_start"], section["raw_size"]
     if start > len(image) or size > len(image) - start:
         raise Pol1Error("POL1 section exceeds source file")
-    if not 0 < expected_size <= MAX_EXPERIMENTAL_SIZE:
-        raise Pol1Error("decoded stream outside experimental bound")
-    data = memoryview(image)[start:start + size]
-    pos = 0
-    expanded = 0
-    while expanded < expected_size:
-        if pos >= size:
-            raise Pol1Error("truncated POL1 control group")
-        flags = data[pos]
-        pos += 1
-        for shift in range(7, -1, -1):
-            if expanded == expected_size:
-                break
-            if (flags >> shift) & 1:
-                if pos >= size:
-                    raise Pol1Error("truncated POL1 literal")
-                pos += 1
-                expanded += 1
-            else:
-                if pos + 2 > size:
-                    raise Pol1Error("truncated POL1 back-reference")
-                word = (int(data[pos]) << 8) | int(data[pos + 1])
-                pos += 2
-                distance = word & MAX_DISTANCE
-                if distance == 0 or distance > expanded:
-                    raise Pol1Error("invalid POL1 back-reference while measuring consumption")
-                expanded += min((word >> 12) + MIN_MATCH, expected_size - expanded)
-    return pos
+    return _stream_termination_metadata(
+        memoryview(image)[start:start + size], expected_size
+    )["consumed_bytes"]
 
 
 def _entrypoint_section_offset(image: bytes, section: dict) -> int | None:
@@ -216,7 +248,13 @@ def assess_pol1_repack_fit(
         raise Pol1Error("candidate decoded code must match original decoded length")
     candidate = encode_pol1(code, search_depth=search_depth, lazy_match=lazy_match)
     start, available = section["raw_start"], section["raw_size"]
-    original_used = _stream_consumed_bytes(image, original["size"])
+    original_end = _stream_termination_metadata(
+        memoryview(image)[start:start + available], original["size"]
+    )
+    original_used = original_end["consumed_bytes"]
+    candidate_end = _stream_termination_metadata(candidate, original["size"])
+    if candidate_end["consumed_bytes"] != len(candidate):
+        raise Pol1Error("encoded candidate does not consume its whole token stream")
     original_stream = memoryview(image)[start:start + original_used]
     original_stream_sha256 = hashlib.sha256(original_stream).hexdigest()
     candidate_matches_original = (
@@ -242,8 +280,13 @@ def assess_pol1_repack_fit(
         "decoded_size": original["size"],
         "pol1_raw_section_size": available,
         "original_stream_consumed_bytes": original_used,
+        "original_decoder_termination": original_end,
+        "candidate_decoder_termination": candidate_end,
         "protected_suffix_bytes": available - original_used,
         "entrypoint_section_offset": entrypoint_offset,
+        "bytes_between_stream_end_and_entrypoint": (
+            entrypoint_offset - original_used if entrypoint_offset is not None else None
+        ),
         "pol1_raw_section_isolated": True,
         "entrypoint_in_pol1": entrypoint_offset is not None,
         "entrypoint_boundary_safe": boundary_valid,
