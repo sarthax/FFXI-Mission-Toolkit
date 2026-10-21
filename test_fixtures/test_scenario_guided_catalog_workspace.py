@@ -59,8 +59,8 @@ def synthetic_candidate(kind="npc", duplicate=False):
 
 
 def request(host="127.0.0.1", headers=None):
-    all_headers = [(b"x-requested-with", b"toolkit-ui")]
-    all_headers.extend((k.encode(), v.encode()) for k, v in (headers or {}).items())
+    values = {"x-requested-with": "toolkit-ui", **(headers or {})}
+    all_headers = [(k.encode(), v.encode()) for k, v in values.items()]
     scope = {"type": "http", "method": "GET", "path": "/scenario-developer/catalog/search",
              "scheme": "http", "server": ("127.0.0.1", 8000),
              "client": (host, 1234), "headers": all_headers}
