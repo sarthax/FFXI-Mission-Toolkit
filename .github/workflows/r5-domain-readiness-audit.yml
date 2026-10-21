@@ -1,0 +1,26 @@
+name: R5 domain readiness audit
+
+on:
+  pull_request:
+    paths:
+      - "docs/workbench/SCENARIO_DOMAIN_READINESS_AUDIT_2026-10-21.md"
+      - "docs/workbench/SCENARIO_DOMAIN_READINESS_MATRIX_2026-10-21.json"
+      - "test_fixtures/test_domain_readiness_audit_snapshot.py"
+      - ".github/workflows/r5-domain-readiness-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  readiness-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install offline test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Verify 73-case matrix is non-executable and internally consistent
+        run: python -m pytest -q test_fixtures/test_domain_readiness_audit_snapshot.py
