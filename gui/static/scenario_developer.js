@@ -4,7 +4,28 @@
   const M = window.ScenarioGuidedModel;
   const $ = id => document.getElementById(id);
   let spec = M.fresh(), mode = 'guided', options = {features: [], observations: [], operations: []};
-  let drafts = [];
+  let drafts = [], baseline = null, sourceDetail = null;
+  function updateRevision() {
+    const currentRevision = Number($('sd-revision').value) || 0;
+    $('sd-revision-state').textContent = M.revisionIndicator(baseline,spec,currentRevision);
+  }
+  function renderCatalogSteps() {
+    const select = $('sd-catalog-step'), selected = select.value;
+    select.replaceChildren();
+    for (const step of spec.steps) {
+      const opt = el('option','',step.id+' — '+step.title);
+      opt.value=step.id; opt.selected=step.id===selected; select.append(opt);
+    }
+  }
+  function setSourceDetail(feature, caseId) {
+    const link=$('sd-source-detail');
+    if(feature&&caseId&&/^[a-zA-Z0-9_-]+$/.test(feature)&&/^[a-zA-Z0-9_-]+$/.test(caseId)) {
+      sourceDetail={feature,caseId};
+      link.href='/feature-testing/scenario/'+encodeURIComponent(feature)+'/'+encodeURIComponent(caseId);
+      link.textContent='Open source Scenario Detail ('+caseId+')';link.hidden=false;
+    } else {sourceDetail=null;link.hidden=true;}
+  }
+
   const lineItems = value => value.split('\n').map(s => s.trim()).filter(Boolean);
   const show = text => { $('sd-result').textContent = text; };
   const el = (tag, cls, text) => {
@@ -98,7 +119,6 @@
         ['Stable step ID','id',input(step.id,120)],
         ['Step title','title',input(step.title,500)],
         ['Expected outcome (UNKNOWN until source-backed)','expected',textarea(step.expected)],
-        ['Evidence limitations','confidence_note',textarea(step.confidence_note)],
       ];
       for (const [caption,key,control] of fields) {
         control.addEventListener('input',()=>{step[key]=control.value;diagnostics();});
@@ -113,15 +133,21 @@
       }
       intent.addEventListener('change',()=>{step.intent=intent.value;diagnostics();});
       grid.append(field('Read-only step intent',intent));
+      const technical=el('details');
+      staticText(technical,'summary','Technical provenance, assertion and observation bindings');
+      const confidence=textarea(step.confidence_note);
+      confidence.addEventListener('input',()=>{step.confidence_note=confidence.value;diagnostics();});
+      technical.append(field('Evidence limitations and unverified catalog candidates',confidence));
       const assertionIds=pickList(spec.assertions.map(a=>a.id),step.assertion_ids);
       assertionIds.addEventListener('change',()=>{step.assertion_ids=selections(assertionIds);diagnostics();});
-      grid.append(field('Linked assertion IDs',assertionIds));
+      technical.append(field('Linked assertion IDs',assertionIds));
       const refs=pickList(spec.observations,step.evidence_refs);
       refs.addEventListener('change',()=>{step.evidence_refs=selections(refs);diagnostics();});
-      grid.append(field('Required canonical observations',refs));
-      li.append(grid);
+      technical.append(field('Required canonical observations',refs));
+      li.append(grid,technical);
       host.append(li);
     });
+    renderCatalogSteps();
   }
 
   function render() {
@@ -148,7 +174,7 @@
       const opt=el('option','',name+(options.observations.includes(name)?'':' — unsupported'));
       opt.value=name;opt.selected=spec.observations.includes(name);obs.append(opt);
     }
-    renderAssertions();renderSteps();diagnostics();
+    renderAssertions();renderSteps();diagnostics();updateRevision();
   }
 
   function readGuidedFields() {
@@ -172,6 +198,7 @@
     return spec;
   }
   function diagnostics() {
+    updateRevision();
     const problems=M.referenceIssues(spec);
     if(problems.length)show('Local reference warnings (validate on server):\n'+problems.join('\n'));
   }
@@ -189,7 +216,7 @@
   function staticText(parent,tag,value){
     const x=el(tag,'',value);parent.append(x);return x;
   }
-  function renderPreview(view) {
+  function renderPreview(view, reader) {
     const root=$('sd-preview');root.replaceChildren();root.hidden=false;
     staticText(root,'h2',view.title+' — Scenario detail preview');
     staticText(root,'p',view.purpose);
@@ -216,6 +243,16 @@
       staticText(details,'p','Source identity: UNRESOLVED; '+(step.confidence_note||'not supplied'));
       card.append(details);root.append(card);
     }
+    if(reader && reader.available) {
+      staticText(root,'p','Scenario Detail presentation: '+reader.mapped_assertion_count+' of '+reader.assertion_count+' assertion contracts mapped; independent verification '+reader.independent_verification);
+      for(const step of reader.steps) {
+        const detail=el('details');
+        staticText(detail,'summary','Scenario Detail step '+step.number+': '+step.id+' — '+step.status);
+        for(const a of step.assertions)staticText(detail,'p',a.id+' — '+a.status+'; '+a.reason+' (no independent observation)');
+        for(const ref of step.provenance)staticText(detail,'p',ref.field+': UNKNOWN — no authenticated source evidence');
+        root.append(detail);
+      }
+    }
     if(view.unmapped_assertions.length)staticText(root,'p','Unmapped assertions: '+view.unmapped_assertions.join(', '));
     if(view.unresolved_expected_steps.length)staticText(root,'p','UNKNOWN source oracles: '+view.unresolved_expected_steps.join(', '));
     for(const gap of view.blocking_gaps)staticText(root,'p','BLOCKED / needs review: '+gap);
@@ -233,7 +270,7 @@
   }
   async function validatePreview() {
     const result=await call('/scenario-developer/validate','POST',{specification:current()});
-    renderPreview(result.preview);
+    renderPreview(result.preview,result.reader_view);
     show('Canonical validation accepted — DESIGN_ONLY, unreviewed, not executable.\n'+
       result.warnings.join('\n'));
     return result;
@@ -243,7 +280,7 @@
   $('sd-advanced').addEventListener('click',()=>switchMode('advanced'));
   $('sd-apply-json').addEventListener('click',()=>switchMode('guided'));
   $('sd-new').addEventListener('click',()=>{
-    spec=M.fresh();mode='guided';$('sd-revision').value=0;
+    spec=M.fresh();mode='guided';baseline=null;setSourceDetail(null,null);$('sd-revision').value=0;
     $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
     render();show('Created a synthetic, design-only canonical draft.');
   });
@@ -252,11 +289,18 @@
       const [feature,caseId]=$('sd-seed-select').value.split('/');
       if(!feature||!caseId)throw Error('Choose a published case to fork');
       const x=await call('/scenario-developer/seed/'+encodeURIComponent(feature)+'/'+encodeURIComponent(caseId));
-      spec=M.forkPublished(x.specification);mode='guided';
+      spec=M.forkPublished(x.specification);mode='guided';baseline=null;setSourceDetail(feature,caseId);
       $('sd-revision').value=0;$('sd-advanced-panel').hidden=true;
       $('sd-guided-panel').hidden=false;render();
       show('Copied as DESIGN_ONLY with a new synthetic case ID. Original published case unchanged.');
     }catch(e){show('Fork refused: '+e.message);}
+  });
+  $('sd-clone').addEventListener('click',()=>{
+    try {
+      spec=M.cloneDraft(current());mode='guided';baseline=null;$('sd-revision').value=0;
+      $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
+      render();show('Cloned into a new draft case ID. Rename it if a COPY already exists; source identities still require review.');
+    } catch(e){show('Clone refused: '+e.message);}
   });
   $('sd-add-assertion').addEventListener('click',()=>{
     readGuidedFields();
@@ -281,6 +325,7 @@
       const saved=await call('/feature-testing/builder/drafts','POST',
         {specification:validated.canonical_specification,expected_revision:rev},true);
       $('sd-revision').value=saved.revision;
+      baseline=M.clone(validated.canonical_specification);updateRevision();
       show('Saved DESIGN_ONLY '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
         '. NOT reviewed or executable.');
     }catch(e){show('Draft NOT saved: '+e.message);}
@@ -301,16 +346,92 @@
     if(!d){show('Select an existing draft');return;}
     try{
       spec=M.parseAdvanced(JSON.stringify(d.specification));mode='guided';
-      $('sd-revision').value=d.revision;
+      $('sd-revision').value=d.revision;baseline=M.clone(spec);
+      setSourceDetail(null,null);
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
-      render();show('Opened '+d.case_id+' revision '+d.revision+' (design only).');
+      render();show('Opened '+d.case_id+' revision '+d.revision+' (design only). Edit and save with this expected revision; an external update will cause a revision conflict.');
     }catch(e){show('Invalid saved draft: '+e.message);}
   });
+  function paintCandidates(result) {
+    const host=$('sd-catalog-results');host.replaceChildren();
+    const choices=Array.isArray(result.choices)?result.choices:[];
+    $('sd-catalog-feedback').textContent=choices.length
+      ? choices.length+' DSP source candidate(s), NOT verified. Bounded result; inspect duplicate IDs and source.'
+      : 'No matching entries in this bounded query. The configured source may still contain other values.';
+    for(const choice of choices) {
+      const card=el('article','sd-selection'), identity=choice.kind==='gm'?choice.name:choice.id+' — '+choice.name;
+      card.append(el('strong','',identity),el('small','','Source: '+choice.source_path),
+        el('small','','Identity: '+choice.identity_status+
+          (choice.duplicate_id_in_results?' · AMBIGUOUS: duplicate ID':'')),
+        el('small','','Confidence: unreconciled DSP source only · source commit UNKNOWN'),
+        el('small','','Capability: non-executable; operator review required'));
+      if(choice.kind==='gm')card.append(el('small','','Metadata classification: '+choice.catalog_classification+
+        ' · declared permission '+choice.permission_declared+' (not authorization)'));
+      const select=el('button','','Attach unverified candidate to chosen step');
+      select.type='button';
+      select.addEventListener('click',()=>{
+        try{
+          readGuidedFields();
+          spec=M.attachCandidate(spec,$('sd-catalog-step').value,choice);
+          render();
+          $('sd-catalog-feedback').textContent='Added '+identity+' as UNVERIFIED source context on the chosen step. Review matching and oracle still required.';
+        }catch(e){$('sd-catalog-feedback').textContent='Could not attach: '+e.message;}
+      });
+      card.append(select);host.append(card);
+    }
+  }
+  $('sd-search-catalog').addEventListener('click',async()=>{
+    const kind=$('sd-catalog-kind').value, q=$('sd-catalog-query').value.trim();
+    const host=$('sd-catalog-results');host.replaceChildren();
+    if(!q || q.length>64){$('sd-catalog-feedback').textContent='Enter a name or ID (1–64 characters).';return;}
+    $('sd-catalog-feedback').textContent='Searching local DSP metadata (read-only)…';
+    try{
+      const response=await call('/scenario-developer/catalog/search?kind='+encodeURIComponent(kind)+
+        '&query='+encodeURIComponent(q)+'&limit=12');
+      if(response.binding_verified!==false||response.execution_enabled!==false)
+        throw Error('Catalog contract is not explicitly unverified and non-executable');
+      paintCandidates(response);
+    }catch(e){$('sd-catalog-feedback').textContent='Catalog unavailable: '+e.message+
+      ' Check configured DSP source. Do not substitute a guessed ID.';}
+  });
+  for(const id of ['sd-case','sd-title','sd-purpose','sd-rationale','sd-given','sd-when','sd-then',
+                    'sd-preconditions','sd-cleanup','sd-gaps']) {
+    $(id).addEventListener('input',()=>{if(mode==='guided'){readGuidedFields();updateRevision();}});
+  }
+  $('sd-advanced-json').addEventListener('input',()=>{
+    if(mode==='advanced')$('sd-revision-state').textContent=
+      'Advanced JSON has unsaved edits — validate before saving (design only)';
+  });
+  // Read-only handoff from the coverage matrix: GET a bounded reference, start an
+  // UNSAVED design-only draft. Never saves, forks a published ID or grants capability.
+  async function loadContextRef() {
+    const raw=new URLSearchParams(location.search).get('context_ref');
+    if(raw===null)return;
+    const note=$('sd-context-note');
+    try{
+      const path=M.contextRefPath(raw);
+      if(!path)throw Error('only same-origin coverage context references are accepted');
+      const ctx=await call(path);
+      spec=M.fromContext(ctx,options.features.map(f=>f.id));
+      mode='guided';baseline=null;setSourceDetail(null,null);$('sd-revision').value=0;
+      $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;render();
+      note.hidden=false;
+      note.textContent='Started from declared source case '+ctx.behavior_ref+' ('+ctx.feature_id+
+        ') — context only. Nothing was copied from it except its label; the case ID is a placeholder, '+
+        'the draft is unsaved, and you must author expected outcomes yourself.';
+      show('Started an unsaved design-only draft from a coverage reference.');
+    }catch(e){
+      note.hidden=false;
+      note.textContent='Context reference ignored: '+e.message+'. A new synthetic draft is shown instead.';
+    }
+  }
+
   (async()=> {
     try{
       options=await call('/scenario-developer/options');
       $('sd-catalog').textContent='Catalog identity: '+options.catalog_status+' — '+options.catalog_note;
       render();
     }catch(e){render();show('Canonical catalog options unavailable: '+e.message+'; saving requires server validation.');}
+    await loadContextRef();
   })();
 })();
