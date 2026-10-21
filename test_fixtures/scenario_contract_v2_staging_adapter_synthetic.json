@@ -1,0 +1,569 @@
+{
+  "_fixture": "SYNTHETIC NONCANONICAL source-reference and lane snapshots from Agent E staged first cases; no raw gameplay observations, IDs attested, gameplay or execution eligibility.",
+  "examples": [
+    {
+      "domain": "gardening",
+      "staged_source": {
+        "repository": "sarthax/FFXI-Mission-Toolkit",
+        "ref": "spec/gardening",
+        "path": "data/testing/domain_drafts/gardening.json"
+      },
+      "source_revision": {
+        "toolkit_base": "3cd36fc770fc1a7cd874874d5bf8fbdfa0de496f",
+        "dsp_branch": "feature/mog-house-gardening",
+        "dsp_commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+        "deployed": "UNKNOWN"
+      },
+      "staging": {
+        "cases": [
+          {
+            "feature_id": "gardening",
+            "case_id": "GARD-01",
+            "runner": "unassigned",
+            "execution_status": "design_only",
+            "execution_lane": "needs-mutation",
+            "lane": "needs-mutation",
+            "verdict": "NOT_RUN",
+            "oracle_sources": [
+              {
+                "repository": "sarthax/darkstar-to-valhalla",
+                "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                "path": "scripts/commands/garden.lua",
+                "line_start": 24,
+                "line_end": 43,
+                "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/scripts/commands/garden.lua#L24-L43"
+              },
+              {
+                "repository": "sarthax/darkstar-to-valhalla",
+                "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                "path": "src/map/utils/gardenutils.cpp",
+                "line_start": 589,
+                "line_end": 608,
+                "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+              },
+              {
+                "repository": "sarthax/darkstar-to-valhalla",
+                "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                "path": "src/map/items/item_flowerpot.cpp",
+                "line_start": 112,
+                "line_end": 132,
+                "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L112-L132"
+              },
+              {
+                "repository": "sarthax/darkstar-to-valhalla",
+                "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                "path": "src/map/items/item_flowerpot.h",
+                "line_start": 41,
+                "line_end": 80,
+                "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+              },
+              {
+                "repository": "sarthax/darkstar-to-valhalla",
+                "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                "path": "src/map/utils/gardenutils.cpp",
+                "line_start": 679,
+                "line_end": 709,
+                "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+              },
+              {
+                "repository": "sarthax/darkstar-to-valhalla",
+                "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                "path": "sql/char_inventory.sql",
+                "line_start": 19,
+                "line_end": 29,
+                "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+              }
+            ],
+            "readback": {
+              "available": [
+                "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+              ],
+              "required": [
+                "fixed-query SELECT-only char_inventory.extra for both safe containers",
+                "pot fields decoded per (charid, location, slot)",
+                "complete/untruncated inventory row count and save boundary"
+              ],
+              "table": "char_inventory",
+              "columns": [
+                "charid",
+                "location",
+                "slot",
+                "itemId",
+                "quantity",
+                "extra"
+              ],
+              "status": "needs-readback"
+            },
+            "steps": [
+              {
+                "id": "GARD-01-S01",
+                "oracle_refs": [
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                    "path": "sql/char_inventory.sql",
+                    "line_start": 19,
+                    "line_end": 29,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                    "path": "src/map/utils/gardenutils.cpp",
+                    "line_start": 589,
+                    "line_end": 608,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                    "path": "src/map/utils/gardenutils.cpp",
+                    "line_start": 612,
+                    "line_end": 629,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+                  }
+                ],
+                "manual_execution_allowed": false
+              },
+              {
+                "id": "GARD-01-S02",
+                "oracle_refs": [
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                    "path": "src/map/items/item_flowerpot.cpp",
+                    "line_start": 112,
+                    "line_end": 132,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L112-L132"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                    "path": "src/map/items/item_flowerpot.h",
+                    "line_start": 41,
+                    "line_end": 80,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                    "path": "src/map/utils/gardenutils.cpp",
+                    "line_start": 679,
+                    "line_end": 709,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+                  }
+                ],
+                "manual_execution_allowed": false
+              },
+              {
+                "id": "GARD-01-S03",
+                "oracle_refs": [
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                    "path": "src/map/items/item_flowerpot.cpp",
+                    "line_start": 112,
+                    "line_end": 132,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L112-L132"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                    "path": "src/map/items/item_flowerpot.h",
+                    "line_start": 41,
+                    "line_end": 80,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                    "path": "src/map/utils/gardenutils.cpp",
+                    "line_start": 679,
+                    "line_end": 709,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                    "path": "src/map/items/item_flowerpot.cpp",
+                    "line_start": 25,
+                    "line_end": 36,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                    "path": "sql/char_inventory.sql",
+                    "line_start": 19,
+                    "line_end": 29,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+                  }
+                ],
+                "manual_execution_allowed": false
+              },
+              {
+                "id": "GARD-01-S04",
+                "oracle_refs": [
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                    "path": "sql/char_inventory.sql",
+                    "line_start": 19,
+                    "line_end": 29,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+                    "path": "src/map/utils/gardenutils.cpp",
+                    "line_start": 612,
+                    "line_end": 629,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+                  }
+                ],
+                "manual_execution_allowed": false
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "domain": "run_geo_unlock",
+      "staged_source": {
+        "repository": "sarthax/FFXI-Mission-Toolkit",
+        "ref": "spec/run_geo_unlock",
+        "path": "data/testing/domain_drafts/run_geo_unlock.json"
+      },
+      "source_revision": {
+        "dsp_commit": "86d4467d446569c741d76d296e640c3b844ad844",
+        "dsp_branch": "main",
+        "deployed": "UNKNOWN"
+      },
+      "staging": {
+        "cases": [
+          {
+            "feature_id": "run_geo_unlock",
+            "case_id": "RG-01",
+            "runner": "unassigned",
+            "execution_status": "design_only",
+            "execution_authorized": false,
+            "execution_enabled": false,
+            "lane": "observe-now",
+            "verdict": "NOT_RUN",
+            "source_refs": [
+              {
+                "repository": "sarthax/darkstar-to-valhalla",
+                "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+                "line_start": 28,
+                "line_end": 69,
+                "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+              },
+              {
+                "repository": "sarthax/darkstar-to-valhalla",
+                "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                "path": "scripts/globals/dances_with_luopans.lua",
+                "line_start": 19,
+                "line_end": 65,
+                "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+              }
+            ],
+            "oracle": {
+              "expectation": "Report only observed values; quest status/actual GEO unlock remains UNKNOWN without job/quest readback",
+              "source_refs": [
+                {
+                  "repository": "sarthax/darkstar-to-valhalla",
+                  "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                  "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+                  "line_start": 28,
+                  "line_end": 69,
+                  "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+                },
+                {
+                  "repository": "sarthax/darkstar-to-valhalla",
+                  "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                  "path": "scripts/globals/dances_with_luopans.lua",
+                  "line_start": 19,
+                  "line_end": 65,
+                  "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+                }
+              ],
+              "confidence": "SOURCE_CONDITION_ONLY",
+              "independent_observation_required": true
+            },
+            "readback": {
+              "required": [
+                "char_vars DwL_Prog,DwL_Declined",
+                "chars.keyitems LUOPAN,FISTFUL_OF_HOMELAND_SOIL"
+              ],
+              "existing_endpoints": [
+                "test-character-vars",
+                "test-character-keyitems"
+              ],
+              "missing": []
+            },
+            "steps": [
+              {
+                "id": "RG-01-S01",
+                "source_refs": [
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+                    "line_start": 28,
+                    "line_end": 69,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/globals/dances_with_luopans.lua",
+                    "line_start": 19,
+                    "line_end": 65,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+                  }
+                ],
+                "execution_authorized": false
+              },
+              {
+                "id": "RG-01-S02",
+                "source_refs": [
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+                    "line_start": 28,
+                    "line_end": 69,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/globals/dances_with_luopans.lua",
+                    "line_start": 19,
+                    "line_end": 65,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+                  }
+                ],
+                "execution_authorized": false
+              },
+              {
+                "id": "RG-01-S03",
+                "source_refs": [
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+                    "line_start": 28,
+                    "line_end": 69,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/globals/dances_with_luopans.lua",
+                    "line_start": 19,
+                    "line_end": 65,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+                  }
+                ],
+                "execution_authorized": false
+              },
+              {
+                "id": "RG-01-S04",
+                "source_refs": [
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+                    "line_start": 28,
+                    "line_end": 69,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/globals/dances_with_luopans.lua",
+                    "line_start": 19,
+                    "line_end": 65,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+                  }
+                ],
+                "execution_authorized": false
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "domain": "salvage",
+      "staged_source": {
+        "repository": "sarthax/FFXI-Mission-Toolkit",
+        "ref": "spec/salvage",
+        "path": "data/testing/domain_drafts/salvage.json"
+      },
+      "source_revision": {
+        "dsp_commit": "86d4467d446569c741d76d296e640c3b844ad844",
+        "dsp_branch": "main",
+        "deployed": "UNKNOWN"
+      },
+      "staging": {
+        "cases": [
+          {
+            "feature_id": "salvage",
+            "case_id": "SAL-01",
+            "runner": "unassigned",
+            "execution_status": "design_only",
+            "execution_authorized": false,
+            "lane": "needs-readback",
+            "verdict": "NOT_RUN",
+            "source_refs": [
+              {
+                "repository": "sarthax/darkstar-to-valhalla",
+                "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+                "line_start": 7,
+                "line_end": 36,
+                "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+              },
+              {
+                "repository": "sarthax/darkstar-to-valhalla",
+                "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+                "line_start": 22,
+                "line_end": 66,
+                "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L22-L66"
+              }
+            ],
+            "oracle": {
+              "expectation": "Source describes 5 Pathos on entry; actual pre-existing effect masks/stage must be read, not fabricated",
+              "source_refs": [
+                {
+                  "repository": "sarthax/darkstar-to-valhalla",
+                  "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                  "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+                  "line_start": 7,
+                  "line_end": 36,
+                  "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+                },
+                {
+                  "repository": "sarthax/darkstar-to-valhalla",
+                  "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                  "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+                  "line_start": 22,
+                  "line_end": 66,
+                  "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L22-L66"
+                }
+              ],
+              "confidence": "SOURCE_DEFINED_BUT_UNVERIFIED_RUNTIME",
+              "independent_observation_required": true
+            },
+            "readback": {
+              "required": [
+                "character status effects: power,timeRemaining",
+                "instance ID,stage,progress,expiry"
+              ],
+              "existing_endpoints": [],
+              "missing": [
+                "character status effects: power,timeRemaining",
+                "instance ID,stage,progress,expiry"
+              ]
+            },
+            "steps": [
+              {
+                "id": "SAL-01-S01",
+                "source_refs": [
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+                    "line_start": 7,
+                    "line_end": 36,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+                    "line_start": 22,
+                    "line_end": 66,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L22-L66"
+                  }
+                ],
+                "execution_authorized": false
+              },
+              {
+                "id": "SAL-01-S02",
+                "source_refs": [
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+                    "line_start": 7,
+                    "line_end": 36,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+                    "line_start": 22,
+                    "line_end": 66,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L22-L66"
+                  }
+                ],
+                "execution_authorized": false
+              },
+              {
+                "id": "SAL-01-S03",
+                "source_refs": [
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+                    "line_start": 7,
+                    "line_end": 36,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+                    "line_start": 22,
+                    "line_end": 66,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L22-L66"
+                  }
+                ],
+                "execution_authorized": false
+              },
+              {
+                "id": "SAL-01-S04",
+                "source_refs": [
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+                    "line_start": 7,
+                    "line_end": 36,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+                  },
+                  {
+                    "repository": "sarthax/darkstar-to-valhalla",
+                    "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+                    "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+                    "line_start": 22,
+                    "line_end": 66,
+                    "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L22-L66"
+                  }
+                ],
+                "execution_authorized": false
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
