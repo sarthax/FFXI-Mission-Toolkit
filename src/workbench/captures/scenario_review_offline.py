@@ -19,7 +19,8 @@ import sqlite3
 
 from .scenario_handoff import reconstruct_review_draft
 from .scenario_review_workflow import manual_editor_handoff
-from .scenario_readiness_summary import summarize_capture_readiness, _observations
+from .scenario_readiness_summary import (summarize_capture_readiness, _observations,
+                                         _typed_authoring_projection)
 from .scenario_identity_readiness import _observation_digest
 
 
@@ -48,6 +49,15 @@ def render_review_html(draft: dict, *, readiness: dict | None = None) -> str:
                {x["step_id"] for x in draft["steps"]}):
         raise ValueError("readiness summary does not match the indexed capture draft")
     readiness_by_step = {s["step_id"]: s for s in readiness["readiness_steps"]}
+    # The optional companion for Agent B is display-only and derived from
+    # these exact reviewer steps; reject invented approval/permissions.
+    expected_authoring = _typed_authoring_projection(
+        draft["capture_id"], readiness["capture_projection_sha256"],
+        readiness["readiness_steps"], readiness["source_integrity"],
+    )
+    if (readiness.get("scenario_developer_handoff", {}).get("read_only_projection")
+            != expected_authoring):
+        raise ValueError("authoring-readiness projection changed or claims new authority")
     if (not isinstance(readiness.get("source_integrity"), dict)
             or readiness["source_integrity"].get("independent_capture_bytes_authenticated") is not False
             or readiness["source_integrity"].get("state") not in {"UNKNOWN", "BLOCKED"}
