@@ -45,7 +45,7 @@ Imported/recalculated PASS is not independently verified proof.
 <summary>Coverage Matrix — source-declared behavior reference</summary>
 <p id="sd-context-feedback" role="status">No Coverage Matrix reference supplied. Open a declared test intent from the Matrix to pass its exact context URL.</p>
 <div id="sd-context-detail"></div>
-<button type="button" id="sd-context-use" disabled>Create incomplete design-only draft from reviewed context</button>
+<button type="button" id="sd-context-use" disabled>Begin authoring from this reviewed context (one explicit action)</button>
 <a href="/feature-testing/coverage" id="sd-return-coverage">Return to Coverage Matrix</a>
 </details>
 <details id="sd-evidence-handoff">
@@ -57,9 +57,9 @@ Imported/recalculated PASS is not independently verified proof.
 <p id="sd-evidence-feedback" role="status">No review file inspected.</p>
 <div id="sd-evidence-suggestions"></div>
 <button type="button" id="sd-evidence-use" disabled>Use explicitly confirmed observations in incomplete design-only draft</button>
-<p class="sd-muted">Return to Evidence Reviewer: reopen the original offline HTML artifact. Its file path is not included in this export; this editor will not invent a file URL.</p>
+<p id="sd-evidence-return" class="sd-muted"><strong>Return to the Evidence Reviewer:</strong> use your browser's Back control if you navigated here from the reviewer, or reopen the original local Evidence Reviewer HTML file. The exported JSON contains no safe return URL; no local path is guessed.</p>
 </details>
-<p class="sd-muted">Imported references survive as unverified source notes in the existing canonical draft only after you explicitly accept suggestions and save. Required observations, assertions, source-backed expectations, preconditions and cleanup must still be authored manually.</p>
+<p class="sd-muted">Each selected evidence step and each of its candidate identities needs an explicit inclusion/exclusion choice. Imported references survive as unverified source notes in the existing canonical draft only after you explicitly accept suggestions and save. Required observations, assertions, source-backed expectations, preconditions and cleanup must still be authored manually.</p>
 </section>
 <section class="wb-panel">
 <div class="sd-bar">
@@ -139,6 +139,7 @@ Imported/recalculated PASS is not independently verified proof.
 <div class="sd-block">
 <h2>Validate, preview and save</h2>
 <div class="sd-bar">
+<button type="button" id="sd-preview-incomplete">Preview provisional draft (no validation or execution)</button>
 <button type="button" id="sd-validate">Validate and preview (no execution)</button>
 <label class="sd-field">Operator token (only for saving to existing local draft store)<input type="password" id="sd-token" autocomplete="off"></label>
 <label class="sd-field">Expected draft revision<input type="number" id="sd-revision" value="0" min="0" step="1" readonly></label>
