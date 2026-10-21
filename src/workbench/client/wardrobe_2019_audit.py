@@ -10,6 +10,7 @@ import struct
 
 from workbench.client.pol1_unpack import Pol1Error, _section, unpack_pol1
 from workbench.client.wardrobe_2019_sidecar_model import describe_hypothetical_sidecar
+from workbench.client.wardrobe_2019_ui_objects import inspect_2019_ui_object_lifecycle
 from workbench.client.wardrobe_2019_command_ui import (
     inspect_2019_command_ui_dispatch,
     inspect_2019_mode_object_getters,
@@ -521,6 +522,9 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         raise Pol1Error("invalid .rdata raw bounds")
     original = unpack_pol1(image)
     commands = inspect_command_table(image[at:at + size], section["rva"])
+    ui_object_lifecycle = inspect_2019_ui_object_lifecycle(
+        original["bytes"], original["base_rva"]
+    )
     command_ui = inspect_2019_command_ui_dispatch(
         image[at:at + size], section["rva"],
         original["bytes"], original["base_rva"]
@@ -550,6 +554,7 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         and command_ui["status"] == "EXACT_STATIC_ANCHORS_MATCH"
         and mode_objects["status"] == "EXACT_MODE_OBJECT_CHAIN_VERIFIED"
         and bank2["status"] == "ORIGINAL_BANK2_MODE_9_VERIFIED"
+        and ui_object_lifecycle["all_selected_paths_match"]
     )
     return {
         "status": "LEGACY_2019_STATIC_GATES_VERIFIED" if proven else "INCOMPLETE_STATIC_EVIDENCE",
@@ -559,6 +564,7 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         "command_to_ui_dispatch": command_ui,
         "wardrobe_mode_object_getters": mode_objects,
         "adjacent_bank2_mode9": bank2,
+        "ui_object_lifecycle": ui_object_lifecycle,
         "wardrobe_command_to_mode_chain_verified": (
             command_ui["status"] == "EXACT_STATIC_ANCHORS_MATCH"
             and mode_objects["status"] == "EXACT_MODE_OBJECT_CHAIN_VERIFIED"
