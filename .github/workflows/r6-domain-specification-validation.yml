@@ -8,6 +8,9 @@ on:
       - "test_fixtures/r6_domain_validation_manifest.synthetic.json"
       - ".github/workflows/r6-domain-specification-validation.yml"
       - "data/testing/test_specifications.json"
+      - "data/testing/domain_drafts/**"
+      - "docs/workbench/SCENARIO_COVERAGE_*.md"
+      - "test_fixtures/test_*_domain_specification_draft.py"
   workflow_dispatch:
 
 permissions:
