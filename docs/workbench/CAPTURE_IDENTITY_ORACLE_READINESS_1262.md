@@ -340,3 +340,68 @@ unresolved and no verified source refs. A future accepted owner-defined
 adapter should explicitly reconcile the two input shapes with independently
 authenticated source scopes and reviewer mapping. No canonical schema or
 Agent B editor files changed in this PR.
+
+
+## Agent D ↔ Agent B typed read-only handoff v1 (noncanonical)
+
+**Producer:** `summarize_capture_readiness(...)` on Agent D's capture draft,
+with `scenario_developer_handoff.read_only_projection` as an **embedded
+advisory**. No new URL, editor import, API, canonical spec, registered readback,
+filesystem loader or runner route. This projection is included in the existing
+readiness sidecar next to the **unchanged** `original_evidence_handoff`,
+human `review_decisions`, and *two distinct* fingerprint representations.
+Agent B #1283's currently accepted review-decision JSON remains the only
+supported offline intake. Do not send this projection to its validation POST.
+
+Projection contract: `capture_readiness_authoring_projection_v1_NONCANONICAL`.
+Its fields are intentionally typed and bounded by the already-validated
+synthetic capture draft, and preserve source distinctions:
+
+| Field | Type / meaning |
+| --- | --- |
+| `capture_id`, `indexed_capture_projection_sha256` | Original capture scope and checksum of **indexed observation projection**, not physical-file authentication or review export hash |
+| `physical_source_authenticated` | Always `false`; original physical capture/DSP source bytes not rehashed here |
+| `source_compatibility_state` | `UNKNOWN` or `BLOCKED`, never PASS |
+| `source_provenance_issues[]` | Unchanged source-ref/manifest/parser/revision problems, with `code`, `severity`, `ref_id`/`step_id` where available |
+| `steps[].step_id`, `observed_summary_original`, `original_evidence_refs[]` | Original step and source citations, no editor-generated IDs |
+| `steps[].identity_confidence[]` | Original `binding_id`, `capture_identity_kind`, `observed_value`, `classification`, `source_candidates_original[]`, `original_evidence_refs[]`, `review_decision_original` plus *separate* `proposed_v2_binding_state`, `identity_candidate`, `namespace_candidate`, `zone_id_candidate`, `source_record_correlation`, `source_identity_verified` |
+| `steps[].missing_readbacks[]` | Expected observation type, source ref, reason, safe suggested capability, UNKNOWN/BLOCKED, conditionality and explicitly denied grants |
+| `steps[].provenance_issues[]`, `readiness_state` | Source/revision availability or incompatibility, not a gameplay verdict |
+| `steps[].expected_candidate`, `independent_source_claim`, `oracle_readiness`, `oracle_approval_state` | Candidate interpretation, independent source citation *claim*, review requirement, always `UNAPPROVED` |
+| `contract_v2_adoption`, `automatic_import`, `save_allowed`, `approved_for_execution`, `execution_enabled`, `normative_expected`, `verdict` | Always `BLOCKED_PENDING_ACCEPTED_CONTRACT_AND_REVIEW`, `false`, `false`, `false`, `false`, `null`, `UNKNOWN` respectively |
+
+### Identity-class mapping (Agent C #1285 proposal)
+
+| Agent D source class | Read-only projected binding state | Preserved uncertainty |
+| --- | --- | --- |
+| `EXACT` | `candidate` only with a bounded recorded integer | Uniquely correlated **source record** and supplied reconciliation claim only; `source_identity_verified=false` |
+| `INFERRED` | `candidate` only with a bounded recorded integer, else `unresolved` | Name coincidence or bounded catalog hit is **not** an authenticated ID |
+| `AMBIGUOUS` | `ambiguous`, selected `identity_candidate=null` | Original alternatives retained; no arbitrary NPC selection |
+| `UNRESOLVED` / `UNSUPPORTED` | `unresolved`, selected `identity_candidate=null` | Unsupported namespaces may have no canonical v2 parameter at all |
+
+No `independently_source_verified` state, DSP source-file SHA, namespace,
+zone numeric ID, assertion ID, oracle/permission approval or external
+readback result is invented. Proposed `contract_v2` metadata is **not
+importable while #1285 is draft**. `scenario_contract_v2_adapters.py` in
+Agent C's separate branch expects `identity/namespace/zone_id` values;
+this producer instead preserves `observed_value` and `scope`. Human-reviewed
+namespace crosswalk and a *contract-owner-defined* adapter are required
+before passing either structure into the canonical validator.
+
+**Recommended Agent B Phase 2 behavior (not implemented here):** permit
+only an operator-selected, provenance-matched read-only diagnostic panel
+beside the existing inspected review bundle. Cross-check capture ID, exact
+source-ref set and *both* separately defined digest projections; retain the
+reviewed decisions separately; show identity classifications, readback
+requirements and source/oracle uncertainty. Do not register actions or
+auto-author assertions. Refuse a changed or stale review selection, altered
+source provenance, a self-proclaimed verified identity, a non-UNKNOWN
+normative expected or an execution/permission claim. Original physical
+capture authentication remains separate from all self-consistent projections.
+
+The existing offline renderer now checks the embedded typed projection
+against its source diagnostic before displaying/exporting and rejects
+upgraded confidence, forged decision/identity/provenance state or an
+unexpected authoring contract. This consistency gate is *not* proof against
+a malicious self-consistent archive; external source-byte authentication
+remains a local acceptance requirement.
