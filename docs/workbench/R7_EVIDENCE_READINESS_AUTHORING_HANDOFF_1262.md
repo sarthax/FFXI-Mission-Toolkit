@@ -185,3 +185,13 @@ validated source refs. Neither a capture step, a parsed NPC ID, a source
 manifest hash, nor a candidate DSP oracle is an automatic canonical
 association or verified gameplay PASS. The local acceptance steps above
 remain mandatory for stronger authentication.
+
+
+**Capture-scope integrity:** an indexed row claimed by a projected
+`evidence_ref` must retain the exact enclosing `capture_id`. Even if the
+reference string exists in `evidence_map`, a row declaring a different
+capture ID is rejected with `ValueError` (never silently joined or
+presented as a valid same-capture observation). Two captures may only be
+compared using the existing separately reviewable multi-capture comparison
+diagnostic; this display adapter never merges their row identities or
+creates a new canonical step/source attribution.
