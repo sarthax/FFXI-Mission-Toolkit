@@ -62,6 +62,21 @@ def _spec_comparison(record: dict | None, digest: str | None) -> str:
     return "MATCH" if reported == digest else "VERSION_MISMATCH"
 
 
+def _run_revision_status(latest: dict | None, digest: str | None) -> str:
+    """Every stage of one imported run must refer to the same spec/source revision."""
+    if latest is None:
+        return "UNKNOWN"
+    stages = latest["all_stage_records"]
+    statuses = [_spec_comparison(row, digest) for row in stages]
+    versions = {(row.get("dsp_commit"), row.get("headless_commit"), row.get("toolkit_commit"))
+                for row in stages}
+    if "VERSION_MISMATCH" in statuses or len(versions) != 1:
+        return "VERSION_MISMATCH"
+    if "REVISION_UNPINNED" in statuses:
+        return "REVISION_UNPINNED"
+    return "MATCH" if statuses and set(statuses) == {"MATCH"} else "UNKNOWN"
+
+
 def _safe_recalculation(record: dict | None, spec: dict | None, match: str) -> dict:
     if not record:
         return {"verdict": "UNKNOWN", "reason": "No imported observation"}
@@ -105,7 +120,7 @@ def _case_row(feature: dict, case: dict, spec: dict | None, history: list[dict],
     fid, cid = feature["id"], case["id"]
     digest = spec_digest(spec) if spec else None
     latest = _latest_record(history)
-    revision = _spec_comparison(latest["record"] if latest else None, digest)
+    revision = _run_revision_status(latest, digest)
     evidence = _safe_recalculation(latest["record"] if latest else None, spec, revision)
     attest = _trusted_case(trusted, (fid, cid), digest)
     gaps = list(dict.fromkeys([*feature.get("gaps", []), *case.get("blocking_gaps", [])]))
