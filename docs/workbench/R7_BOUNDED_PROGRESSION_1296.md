@@ -1,0 +1,9 @@
+# R7 #1296 — Bounded persisted progression readback (draft)
+
+Authenticated `GET /api/supervisor/test-character-progression?charid=...&names=Flag,Other&include_keyitems=true` uses the existing supervisor bearer token, test-character allowlist, loopback MySQL configuration and read-only transaction. Only 1–50 unique syntactically restricted variable names can be requested; query placeholders prevent SQL input.
+
+The supported subset is named `char_vars` values with explicit PRESENT (including zero) versus ABSENT, plus persisted `chars.keyitems` owned/seen bitmaps with exact byte-length completeness check. Results carry UTC timestamp, persisted DB source kind, unsupported job/quest/currency classification, UNKNOWN deployed revision and client agreement, disabled execution. `complete=false` for the full progression contract even if supported fields are complete.
+
+Job identities/unlocks, exact quest status/log/quest ID and currency storage are NOT implemented: the field-level DSP schema, client-versus-persistence semantics and permissions require independent source audit before any additional fixed SQL is introduced. Key-item ownership does not prove a job was unlocked or quest completed. Do not invent currency columns or equate missing variable with zero.
+
+Future operator-only acceptance (not executed): verify approved disposable character and denied cross-character access; compare named var zero/absence; truncated KI bitmap; reboot/save boundary; source-specific character job/quest/currency schema and exact table grants; independent client captures; DSP deployed commit attestation #59; no exposure of passwords, arbitrary SQL or unrestricted runtime state; check Agent C/D provenance, UNKNOWN and BLOCKED classification. No agent runtime, GM commands, DB writes or gameplay operation.
