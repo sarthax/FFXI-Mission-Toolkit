@@ -13,6 +13,7 @@ from workbench.client.wardrobe_2019_sidecar_model import describe_hypothetical_s
 from workbench.client.wardrobe_2019_command_ui import (
     inspect_2019_command_ui_dispatch,
     inspect_2019_mode_object_getters,
+    inspect_2019_bank2_mode9,
 )
 
 EXPECTED_SHA256 = "514653a260c51eaec25d88510e51a86fb2a4abd9867f53d5f45a9ccf840f060f"
@@ -528,6 +529,11 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         image[rdata_at:rdata_at + rdata_size], rdata_section["rva"],
         original["bytes"], original["base_rva"]
     )
+    bank2 = inspect_2019_bank2_mode9(
+        image[at:at + size], section["rva"],
+        image[rdata_at:rdata_at + rdata_size], rdata_section["rva"],
+        original["bytes"], original["base_rva"]
+    )
     decoded_hash_ok = original["sha256"] == EXPECTED_DECODED_SHA256
     sites = inspect_decoded_sites(original["bytes"], original["base_rva"])
     strings = inspect_fixed_transfer_data_strings(
@@ -543,6 +549,7 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         and transfers["all_2019_expected_sites_match"]
         and command_ui["status"] == "EXACT_STATIC_ANCHORS_MATCH"
         and mode_objects["status"] == "EXACT_MODE_OBJECT_CHAIN_VERIFIED"
+        and bank2["status"] == "ORIGINAL_BANK2_MODE_9_VERIFIED"
     )
     return {
         "status": "LEGACY_2019_STATIC_GATES_VERIFIED" if proven else "INCOMPLETE_STATIC_EVIDENCE",
@@ -551,6 +558,7 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         "commands": commands, "decoded_sites": sites,
         "command_to_ui_dispatch": command_ui,
         "wardrobe_mode_object_getters": mode_objects,
+        "adjacent_bank2_mode9": bank2,
         "wardrobe_command_to_mode_chain_verified": (
             command_ui["status"] == "EXACT_STATIC_ANCHORS_MATCH"
             and mode_objects["status"] == "EXACT_MODE_OBJECT_CHAIN_VERIFIED"
