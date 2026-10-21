@@ -37,6 +37,38 @@ def fixture_pe(raw: bytes, expected: int, capacity: int | None = None) -> bytes:
     return bytes(image)
 
 
+def independent_pol1_decode(tokens: bytes, expected: int) -> tuple[bytes, int]:
+    """Second synthetic token reader, independently structured from unpack_pol1."""
+    out = bytearray()
+    at = 0
+    while len(out) < expected:
+        if at >= len(tokens):
+            raise ValueError("truncated control group")
+        flags = tokens[at]
+        at += 1
+        for shift in range(7, -1, -1):
+            if len(out) == expected:
+                break
+            if (flags >> shift) & 1:
+                if at >= len(tokens):
+                    raise ValueError("truncated literal")
+                out.append(tokens[at])
+                at += 1
+            else:
+                if at + 2 > len(tokens):
+                    raise ValueError("truncated backreference")
+                word = int.from_bytes(tokens[at:at + 2], "big")
+                at += 2
+                distance = word & 4095
+                if distance == 0 or distance > len(out):
+                    raise ValueError("invalid distance")
+                size = min(expected - len(out), (word >> 12) + 3)
+                for _ in range(size):
+                    out.append(out[-distance])
+    return bytes(out), at
+
+
+
 class SyntheticPol1RepackTests(unittest.TestCase):
     def test_reference_vector_and_no_write(self):
         sample = b"abcabc"
@@ -154,6 +186,23 @@ class SyntheticPol1RepackTests(unittest.TestCase):
         self.assertEqual(result["status"], "UNSAFE_ORIGINAL_STREAM_BOUNDARY")
         self.assertFalse(result["entrypoint_boundary_safe"])
         self.assertEqual(result["in_memory_decoded_roundtrip"], "NOT_ATTEMPTED")
+
+
+
+    def test_independent_oracle_randomized_streams(self):
+        rng = random.Random(1303)
+        for length in range(1, 192):
+            if length % 3 == 0:
+                original = bytes(rng.randrange(256) for _ in range(length))
+            elif length % 3 == 1:
+                original = bytes((i // 3) % 17 for i in range(length))
+            else:
+                original = (b"abccba" * ((length + 5) // 6))[:length]
+            encoded = encode_pol1(original)
+            decoded, consumed = independent_pol1_decode(encoded, length)
+            self.assertEqual(decoded, original)
+            self.assertEqual(consumed, len(encoded))
+
 
 
 if __name__ == "__main__":
