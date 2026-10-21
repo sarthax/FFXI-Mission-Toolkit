@@ -629,22 +629,42 @@
     notice.textContent='No independent source lookup was made. Accepting a step only copies text and a projection fingerprint into an incomplete canonical design-only draft. You must manually author every oracle and assertion.';
     root.append(notice);
   }
+  // Inspections are read-only, but a slow JSON read/POST must never publish
+  // a stale file after the operator selects a different evidence export.
+  let evidenceInspectionGeneration=0, evidenceInspectPending=false;
+  $('sd-evidence-file').addEventListener('change',()=>{
+    evidenceInspectionGeneration++;
+    evidenceSuggestions=null;$('sd-evidence-use').disabled=true;
+    $('sd-evidence-suggestions').replaceChildren();
+    $('sd-evidence-feedback').textContent='New evidence file selected. Inspect this exact file before accepting any suggestions.';
+  });
   $('sd-evidence-inspect').addEventListener('click',async()=>{
-    const info=$('sd-evidence-feedback');
+    if(evidenceInspectPending)return;
+    const info=$('sd-evidence-feedback'), generation=++evidenceInspectionGeneration;
+    const file=$('sd-evidence-file').files[0];
+    evidenceInspectPending=true;$('sd-evidence-inspect').disabled=true;
     evidenceSuggestions=null;$('sd-evidence-use').disabled=true;
     $('sd-evidence-suggestions').replaceChildren();
     try {
-      const file=$('sd-evidence-file').files[0];
       if(!file||file.size<1||file.size>4_500_000)throw Error('Choose a nonempty offline review JSON export under 4.5 MB');
       const raw=JSON.parse(await file.text());
+      if(generation!==evidenceInspectionGeneration || $('sd-evidence-file').files[0]!==file)
+        throw Error('Selected evidence file changed during inspection; inspect the new file');
       const result=await call('/scenario-developer/handoff/evidence/inspect','POST',{review:raw});
+      if(generation!==evidenceInspectionGeneration || $('sd-evidence-file').files[0]!==file)
+        throw Error('Selected evidence file changed during inspection; inspect the new file');
       if(result.contract!=='editor_evidence_suggestions_v1'||result.execution_enabled!==false||
         result.original_capture_authenticated!==false)throw Error('Unsupported review confirmation contract');
       evidenceSuggestions=result;
       renderEvidenceSuggestions(result);
       $('sd-evidence-use').disabled=false;
       info.textContent='Inspected untrusted review; '+result.steps.length+' candidate steps. Confirm each wanted proposal below. No draft created or saved.';
-    }catch(e){info.textContent='Evidence file rejected or unavailable: '+e.message+'. Preserve the original and re-export from the trusted offline reviewer.';}
+    }catch(e){
+      if(generation===evidenceInspectionGeneration)
+        info.textContent='Evidence file rejected or unavailable: '+e.message+'. Preserve the original and re-export from the trusted offline reviewer.';
+    }finally{
+      evidenceInspectPending=false;$('sd-evidence-inspect').disabled=false;
+    }
   });
   $('sd-evidence-use').addEventListener('click',()=>{
     try {
