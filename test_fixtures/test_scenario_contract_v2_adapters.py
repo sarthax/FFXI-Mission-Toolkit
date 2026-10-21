@@ -181,3 +181,115 @@ def test_capture_derived_expected_proposal_is_rejected_not_reclassified_as_oracl
     assert projection["normative_expected"] is None
     assert projection["approved"] is False
     assert projection["confidence"] == "unknown"
+
+
+@pytest.mark.parametrize("domain,case_id,lane,readback_field", [
+    ("gardening", "GARD-01", "needs-mutation", "readback"),
+    ("voidwalker", "VWK-01", "needs-mutation", "required_readback"),
+    ("assault_nyzul", "ASLT-01", "needs-mutation", "required_readback"),
+    ("missions_quests", "MQ-01", "needs-mutation", "required_readback"),
+    ("moghancement", "MOG-01", "needs-mutation", "readback"),
+    ("voidwatch", "VOID-01", "observe-now", "readback"),
+    ("salvage", "SAL-01", "needs-readback", "readback"),
+    ("run_geo_unlock", "RG-01", "observe-now", "readback"),
+    ("chocobo_raising", "CHO-01", "needs-deploy", "readback"),
+])
+def test_all_nine_staging_shapes_have_noncanonical_source_and_lane_mapping(
+    domain, case_id, lane, readback_field
+):
+    """One exact-copy structural specimen per heterogeneous Agent E layout."""
+    snapshot = examples()[domain]
+    doc = deepcopy(snapshot["staging"])
+    view = project_domain_case(doc, case_id)
+    assert doc == snapshot["staging"]
+    assert view["execution_lane"] == lane
+    assert view["readback_field_original"] == readback_field
+    assert view["readback_proposals_original"] == doc["cases"][0][readback_field]
+    assert view["source_revision_declared"] == snapshot["source_revision"]["dsp_commit"]
+    assert view["source_revision_authenticity"] == "NOT_ESTABLISHED"
+    assert len(view["step_requirements"]) == 4
+    assert all(x["execution_gate"] == "blocked" for x in view["step_requirements"])
+    assert len(view["sources"]) >= 1
+    assert all(x["revision"] == snapshot["source_revision"]["dsp_commit"] for x in view["sources"])
+    assert all(x["sha256"] is None for x in view["sources"])
+    assert view["oracles"] == [] and view["parameters"] == []
+    assert view["canonical_import_allowed"] is False
+    assert view["execution_enabled"] is False
+    assert view["independent_verification"] == "NOT_ESTABLISHED"
+    assert specification(domain, case_id) is None
+
+
+def test_mog09_existing_runnable_reference_is_not_imported_or_migrated():
+    from workbench.server_admin.feature_testing.test_specifications import validate_spec
+    original = specification("moghancement", "MOG-09")
+    assert original["schema_version"] == 1
+    assert original["runner"] == "xiheadless_observation_v1"
+    assert original["execution_status"] == "verified_runner"
+    assert "contract_v2" not in original
+    assert validate_spec(deepcopy(original)) == original
+    staged = project_domain_case(examples()["moghancement"]["staging"], "MOG-01")
+    assert staged["case_id"] != original["case_id"]
+    assert staged["canonical_import_allowed"] is False
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda d: d.pop("source_revision"),
+    lambda d: d["source_revision"].update(dsp_commit="f" * 40),
+    lambda d: d["source_revision"].update(deployed="VERIFIED"),
+    lambda d: d.update(execution_enabled=True),
+    lambda d: d.update(schema_version=2),
+    lambda d: d["cases"][0].update(mutation={"enabled": True}),
+    lambda d: d["cases"][0].update(verdict="PASS"),
+    lambda d: d["cases"][0].pop("readback"),
+    lambda d: d["cases"][0]["steps"][0]["source_refs"][0].update(
+        url="https://github.com/sarthax/darkstar-to-valhalla/blob/wrong"),
+    lambda d: d["cases"][0]["steps"][0]["source_refs"][0].update(
+        sha256="a" * 64),
+    lambda d: d["cases"][0]["steps"][0].update(required_permissions=["sql_execute"]),
+    lambda d: d["cases"][0].update(contract_v2={
+        "contract_version": 2, "step_requirements": [{
+            "step_id": "RG-01-S01",
+            "capability": "sql_execute", "operation_class": "mutating",
+            "required_permissions": ["operator_approval"],
+            "required_readbacks": [], "approval_required": True,
+            "execution_gate": "blocked",
+        }],
+    }),
+    lambda d: d["cases"][0].update(contract_v2={
+        "contract_version": 2, "step_requirements": [{
+            "step_id": "RG-01-S01",
+            "capability": "unassigned", "operation_class": "unknown",
+            "required_permissions": [], "required_readbacks": [],
+            "approval_required": True, "execution_gate": "ready",
+        }],
+    }),
+    lambda d: d["cases"][0].update(contract_v2={
+        "contract_version": 2,
+        "oracles": [{"assertion_id": "invented",
+                     "oracle_type": "source_literal", "confidence": "source_cited"}],
+    }),
+])
+def test_staged_domain_handoff_rejects_missing_fields_mismatch_and_permission_claims(mutate):
+    doc = deepcopy(examples()["run_geo_unlock"]["staging"])
+    mutate(doc)
+    with pytest.raises(ValueError):
+        project_domain_case(doc, "RG-01")
+
+
+def test_ambiguous_evidence_identity_and_proposed_oracle_are_not_approved_through_json():
+    diagnostic = {"classification": "AMBIGUOUS", "identity": 7000,
+                  "namespace": "synthetic_source_npc", "zone_id": 111,
+                  "source_identity_verified": True,
+                  "alternatives": [7000, 7001]}
+    projected = project_identity_diagnostic(diagnostic, kind="npc")
+    assert projected["binding_state"] == "ambiguous"
+    assert projected["identity_candidate"] is None
+    assert projected["source_identity_verified"] is False
+    assert projected["source_diagnostic_original"]["alternatives"] == [7000, 7001]
+    assert json.loads(json.dumps(projected))["binding_state"] == "ambiguous"
+    proposed = {"origin": "independent_dsp_source", "from_capture": False,
+                "expected_candidate": "SYNTHETIC_SOURCE_VALUE",
+                "approved": True}
+    output = project_expected_candidate(proposed)
+    assert json.loads(json.dumps(output))["approved"] is False
+    assert output["normative_expected"] is None and output["oracle_type"] == "unknown"
