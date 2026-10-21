@@ -226,6 +226,10 @@ def _indexed_provenance(evidence_map: dict, refs: list[str], issues: list[dict])
     No raw payload is copied into this authoring-facing projection.
     """
     output = []
+    # A repeated ref within one observation step is not a second captured event.
+    # Do not silently deduplicate or render it as independently corroborating.
+    if len(refs) != len(set(refs)):
+        raise ValueError("duplicate source capture references within authoring step")
     for ref in refs:
         if ref not in evidence_map:
             raise ValueError("unknown original capture evidence reference")
@@ -250,7 +254,9 @@ def _indexed_provenance(evidence_map: dict, refs: list[str], issues: list[dict])
                 "parser_version_claim": manifest.get("parser_version"),
                 "ingest_status_claim": manifest.get("ingest_status"),
                 "parser_support": (
-                    "INDEXED_RECOGNIZED_NOT_INDEPENDENTLY_VALIDATED"
+                    "MISSING_PARSER_IDENTITY_OR_VERSION"
+                    if not manifest.get("parser_name") or not manifest.get("parser_version")
+                    else "INDEXED_RECOGNIZED_NOT_INDEPENDENTLY_VALIDATED"
                     if manifest.get("ingest_status") == "RECOGNIZED"
                     else "UNRECOGNIZED_OR_UNSUPPORTED"
                 ),
@@ -267,6 +273,12 @@ def _indexed_provenance(evidence_map: dict, refs: list[str], issues: list[dict])
             "native_timestamp": deepcopy(original["native_timestamp"]),
             "time_basis": original["time_basis"],
             "source_locator_status": source["status"],
+            "capture_file_locator_state": (
+                "INDEXED_FILENAME_CLAIM_NOT_AUTHENTICATED"
+                if any(isinstance(x.get("source_filename"), str) and x["source_filename"]
+                       for x in locators)
+                else "NO_INDEXED_CAPTURE_FILE_LOCATOR"
+            ),
             "source_file_claims": locators,
             "provenance_issues": deepcopy([
                 p for p in issues if p.get("ref_id") == ref
@@ -318,6 +330,13 @@ def _typed_authoring_projection(
         oracle = row["oracle_readiness"]
         steps.append({
             "step_id": row["step_id"],
+            # This is a CAPTURE observation step, not a canonical v1 scenario
+            # step or Agent C's optional explicit case/step source association.
+            "canonical_step_id": None,
+            "canonical_source_association": {
+                "state": "UNASSIGNED_REQUIRES_INDEPENDENT_CANONICAL_CROSSWALK",
+                "scope": None, "source_refs": [],
+            },
             "observed_summary_original": row["observed_summary"],
             "original_evidence_refs": deepcopy(row["evidence_refs"]),
             "indexed_evidence_provenance": _indexed_provenance(
