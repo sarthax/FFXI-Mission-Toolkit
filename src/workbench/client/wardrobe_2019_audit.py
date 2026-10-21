@@ -180,10 +180,10 @@ EXPECTED_WRITE_LIKE_TRANSFER_RVAS = (
 # Exact .data string RVAs; the EVB text is nearby but a direct relationship
 # to any individual transfer remains unverified.
 FIXED_TRANSFER_DATA_STRINGS = {
-    "read_open_mode": (0x3442D0, b"rb\\x00"),
-    "write_open_mode": (0x34471C, b"wb\\x00"),
-    "adjacent_evb_filename": (0x34470C, b"ZSU.evb\\x00"),
-    "adjacent_evb_glob": (0x344714, b"*.evb\\x00"),
+    "read_open_mode": (0x3442D0, b"rb\x00"),
+    "write_open_mode": (0x34471C, b"wb\x00"),
+    "adjacent_evb_filename": (0x34470C, b"ZSU.evb\x00"),
+    "adjacent_evb_glob": (0x344714, b"*.evb\x00"),
 }
 
 
@@ -217,7 +217,7 @@ def inspect_2019_fixed_transfer_calls(decoded: bytes, decoded_rva: int = 0x1000)
         raise Pol1Error("decoded data must be bytes and RVA an integer")
     if len(decoded) > 8 * 1024 * 1024:
         raise Pol1Error("decoded transfer scan exceeds 8 MiB bound")
-    needle = b"\\x68" + struct.pack("<I", FIXED_TRANSFER_BYTES)
+    needle = b"\x68" + struct.pack("<I", FIXED_TRANSFER_BYTES)
     at = 0
     sites = []
     while True:
