@@ -81,60 +81,60 @@ def encode_pol1(code: bytes) -> bytes:
 
 
 def _stream_consumed_bytes(image: bytes, expected_size: int) -> int:
-    """Measure original LZSS input consumption without reading beyond the PE section.
+    """Strictly count consumed original LZSS stream bytes without PE-tail spill.
 
-    This length is the conservative replacement budget. The rest of POL1 can
-    include the unpacker/entry-point stub and must never be treated as slack.
+    Unlike the legacy read-only decoder, which tolerates a zero-distance token
+    as a group terminator, this safety-critical measurement fails closed:
+    ambiguous or malformed streams cannot establish a replaceable prefix.
     """
     section = _section(image, b"POL1")
-    start = section["raw_start"]
-    size = section["raw_size"]
+    start, size = section["raw_start"], section["raw_size"]
     if start > len(image) or size > len(image) - start:
         raise Pol1Error("POL1 section exceeds source file")
+    if not 0 < expected_size <= MAX_EXPERIMENTAL_SIZE:
+        raise Pol1Error("decoded stream outside experimental bound")
     data = memoryview(image)[start:start + size]
     pos = 0
     expanded = 0
-    while pos < size and expanded < expected_size:
+    while expanded < expected_size:
+        if pos >= size:
+            raise Pol1Error("truncated POL1 control group")
         flags = data[pos]
         pos += 1
-        for _ in range(8):
+        for shift in range(7, -1, -1):
             if expanded == expected_size:
                 break
-            literal = bool(flags & 0x80)
-            flags = (flags << 1) & 255
-            if literal:
+            if (flags >> shift) & 1:
                 if pos >= size:
-                    break
+                    raise Pol1Error("truncated POL1 literal")
                 pos += 1
                 expanded += 1
             else:
                 if pos + 2 > size:
-                    break
+                    raise Pol1Error("truncated POL1 back-reference")
                 word = (int(data[pos]) << 8) | int(data[pos + 1])
                 pos += 2
                 distance = word & MAX_DISTANCE
-                if distance == 0:
-                    break
-                if distance > expanded:
+                if distance == 0 or distance > expanded:
                     raise Pol1Error("invalid POL1 back-reference while measuring consumption")
                 expanded += min((word >> 12) + MIN_MATCH, expected_size - expanded)
-    if expanded != expected_size:
-        raise Pol1Error("could not find a complete POL1 compressed stream")
     return pos
 
 
 def _entrypoint_section_offset(image: bytes, section: dict) -> int | None:
-    """Map PE32 AddressOfEntryPoint into raw POL1 offset when it is inside it."""
-    if len(image) < 0x40:
-        return None
+    """Map a structurally checked PE entry point into POL1's raw bytes."""
+    if len(image) < 0x40 or image[:2] != b"MZ":
+        raise Pol1Error("missing DOS signature")
     pe = struct.unpack_from("<I", image, 0x3C)[0]
-    if pe + 24 > len(image):
-        return None
+    if pe < 0x40 or pe + 24 > len(image) or image[pe:pe + 4] != b"PE\\0\\0":
+        raise Pol1Error("invalid PE signature/header")
     optional_size = struct.unpack_from("<H", image, pe + 20)[0]
     optional = pe + 24
     if optional_size < 20 or optional + optional_size > len(image):
-        return None
-    # AddressOfEntryPoint is at OptionalHeader + 16 for both PE32 and PE32+.
+        raise Pol1Error("missing or truncated PE optional header")
+    magic = struct.unpack_from("<H", image, optional)[0]
+    if magic not in (0x10B, 0x20B):
+        raise Pol1Error("unsupported PE optional-header magic")
     entry_rva = struct.unpack_from("<I", image, optional + 16)[0]
     relative = entry_rva - section["rva"]
     if 0 <= relative < section["raw_size"]:
