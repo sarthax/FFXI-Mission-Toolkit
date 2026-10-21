@@ -165,3 +165,12 @@ def test_host_serves_editor_and_canonical_validation(monkeypatch):
     response = client.post("/feature-testing/builder/drafts",
                            json={"specification": synthetic_draft(), "expected_revision": 0})
     assert response.status_code == 403
+
+
+def test_validation_workspace_exposes_design_only_editor_without_viewer_overlap():
+    from workbench.gui_shell import WORKSPACES
+    validation = next(w for w in WORKSPACES if w["name"] == "Validation")
+    entries = [x for x in validation["sections"] if x["href"] == "/scenario-developer"]
+    assert len(entries) == 1
+    assert "design only" in entries[0]["label"].lower()
+    assert not any("/feature-testing" in x["href"] for x in entries)
