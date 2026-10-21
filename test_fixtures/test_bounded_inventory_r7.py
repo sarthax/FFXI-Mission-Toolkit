@@ -78,3 +78,50 @@ def test_disallowed_character_rejected_before_query(monkeypatch):
     monkeypatch.setattr(mod, "_approved_connection", reject)
     with pytest.raises(ValueError, match="not approved"):
         mod.inventory_snapshot_v2(99, 1)
+
+
+def test_oversized_extra_fails_closed(monkeypatch):
+    rows = [{"location": 1, "slot": 1, "itemId": 111, "quantity": 1,
+             "extra": bytes(mod._MAX_EXTRA_BYTES + 1)}]
+    monkeypatch.setattr(mod, "_approved_connection", lambda charid: (Conn(), Cursor(rows)))
+    result = mod.inventory_snapshot_v2(7, 1)
+    assert result["status"] == "INCOMPLETE_OVERSIZED_EXTRA"
+    assert result["complete"] is False and result["items"] == []
+
+def test_aggregate_extra_budget_fails_closed(monkeypatch):
+    rows = [{"location": 1, "slot": i, "itemId": 100+i, "quantity": 1,
+             "extra": bytes(mod._MAX_EXTRA_BYTES)} for i in range(20)]
+    monkeypatch.setattr(mod, "_approved_connection", lambda charid: (Conn(), Cursor(rows)))
+    result = mod.inventory_snapshot_v2(7, 1)
+    assert result["status"] == "INCOMPLETE_RESPONSE_BUDGET"
+    assert result["complete"] is False and result["items"] == []
+
+def test_count_page_disagreement_is_not_complete(monkeypatch):
+    class ContradictingCursor(Cursor):
+        def execute(self, sql, args):
+            super().execute(sql, args)
+            if "COUNT(*)" in sql:
+                self.result = {"n": 1}
+    rows = [{"location": 1, "slot": 0, "itemId": 2, "quantity": 1, "extra": None},
+            {"location": 1, "slot": 1, "itemId": 3, "quantity": 1, "extra": None}]
+    monkeypatch.setattr(mod, "_approved_connection", lambda charid: (Conn(), ContradictingCursor(rows)))
+    result = mod.inventory_snapshot_v2(7, 1)
+    assert result["status"] == "INCOMPLETE_INCONSISTENT_PAGE"
+    assert result["complete"] is False
+
+def test_select_privilege_failure_rolls_back_and_closes(monkeypatch):
+    calls = []
+    class Denied(Cursor):
+        def execute(self, sql, args):
+            raise PermissionError("SELECT denied")
+        def close(self):
+            calls.append("cursor_close")
+    class Connection(Conn):
+        def rollback(self):
+            calls.append("rollback")
+        def close(self):
+            calls.append("connection_close")
+    monkeypatch.setattr(mod, "_approved_connection", lambda charid: (Connection(), Denied([])))
+    with pytest.raises(PermissionError):
+        mod.inventory_snapshot_v2(7, 1)
+    assert calls == ["rollback", "cursor_close", "connection_close"]
