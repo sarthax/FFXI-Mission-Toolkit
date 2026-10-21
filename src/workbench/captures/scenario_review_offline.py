@@ -57,6 +57,7 @@ def render_review_html(draft: dict, *, readiness: dict | None = None) -> str:
     expected_authoring = _typed_authoring_projection(
         draft["capture_id"], readiness["capture_projection_sha256"],
         readiness["readiness_steps"], readiness["source_integrity"],
+        draft["evidence_map"],
     )
     if (readiness.get("scenario_developer_handoff", {}).get("read_only_projection")
             != expected_authoring):
@@ -84,6 +85,9 @@ def render_review_html(draft: dict, *, readiness: dict | None = None) -> str:
                    or x.get("independently_verified_client_dsp_identity") is not False
                    or x.get("evidence_refs") != next(
                        z["evidence_refs"] for z in draft["steps"] if z["step_id"] == x["step_id"])
+                   or x.get("reviewer_step_decision_original") != next(
+                       z.get("review", {"decision": "PENDING"})
+                       for z in draft["steps"] if z["step_id"] == x["step_id"])
                    or x.get("oracle_readiness", {}).get("normative_expected") is not None
                    or any(b.get("source_identity_verified") is not False
                           for b in x.get("identity_matches", []))
