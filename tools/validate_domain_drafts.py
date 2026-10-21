@@ -266,7 +266,8 @@ def validate_reconciled_matrix(matrix, manifest, snapshot, observed_heads):
         permissions = record.get("permissions")
         check(isinstance(permissions, list) and bool(permissions)
               and isinstance(record.get("blocking_gaps"), list)
-              and bool(record.get("readback_missing")),
+              and (bool(record.get("readback_missing")) or
+                   (lane == "observe-now" and bool(record.get("readback_available")))),
               f"{cid}: missing readback/permission or gap declaration")
         if lane == "needs-deploy":
             check(name == "chocobo_raising",
