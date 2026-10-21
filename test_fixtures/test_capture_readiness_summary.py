@@ -11,6 +11,7 @@ from test_capture_identity_oracle_readiness import (
 from workbench.captures.scenario_handoff import reconstruct_review_draft
 from workbench.captures.scenario_identity_readiness import _observation_digest
 from workbench.captures.scenario_readiness_summary import summarize_capture_readiness
+from workbench.captures.scenario_review_offline import render_review_html
 
 
 def _row(out, step_id):
@@ -184,7 +185,34 @@ def test_repeated_capture_contradictions_are_not_gameplay_failures():
     con.close()
 
 
+def test_existing_offline_reviewer_renders_readiness_without_approval():
+    con, draft = fixture()
+    report = summarize_capture_readiness(draft)
+    html = render_review_html(draft, readiness=report)
+    assert "Identity and oracle readiness" in html
+    assert "NOT independently verified" not in html or "independent client/DSP verification" in html
+    assert "Missing" not in html or "missing_observations" in html
+    assert "INDEPENDENT_SOURCE_CANDIDATE_UNAPPROVED" not in html
+    assert "contract_v2_alignment_status" in html
+    assert "NOT approved oracles" in html
+    assert "execution_enabled&quot;" in html or "execution_enabled" in html
+    assert "Continue in Scenario Developer" in html
+    assert "original" not in html or "Original indexed evidence" in html
+    # Existing one-argument offline renderer remains compatible.
+    assert "Identity and oracle readiness" in render_review_html(draft)
+    forged = deepcopy(report)
+    forged["capture_projection_sha256"] = "f" * 64
+    try:
+        render_review_html(draft, readiness=forged)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("wrong-capture readiness displayed")
+    con.close()
+
+
 def main():
+    test_existing_offline_reviewer_renders_readiness_without_approval()
     test_source_record_exact_is_not_independently_verified()
     test_detailed_missing_observations_for_all_lanes()
     test_advisory_v2_field_mapping_uses_only_proposed_names()
