@@ -198,6 +198,12 @@ def test_existing_offline_reviewer_renders_readiness_without_approval():
     assert "execution_enabled&quot;" in html or "execution_enabled" in html
     assert "Continue in Scenario Developer" in html
     assert "original" not in html or "Original indexed evidence" in html
+    sourced = summarize_capture_readiness(
+        draft, independent_oracles=[independent_oracle(draft["steps"][0])])
+    source_html = render_review_html(draft, readiness=sourced)
+    assert "SYNTHETIC_SOURCE_DERIVED_STATE" in source_html
+    assert "INDEPENDENT_SOURCE_CANDIDATE_UNAPPROVED" in source_html
+    assert "NOT approved oracles" in source_html
     # Existing one-argument offline renderer remains compatible.
     assert "Identity and oracle readiness" in render_review_html(draft)
     forged = deepcopy(report)
