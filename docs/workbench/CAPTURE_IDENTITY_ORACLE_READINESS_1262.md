@@ -152,3 +152,88 @@ conflicts rather than deduplicating across incompatible source manifests.
 
 No raw packets, live clients, server writes, GM operations, schema/editor UI,
 review interface, execution controls or Feature Trace/coverage code changed.
+
+## Reviewer-facing readiness projection (second slice — PR #1287)
+
+`src/workbench/captures/scenario_readiness_summary.py::
+summarize_capture_readiness(draft, catalog_snapshots=...,
+reconciliations=..., independent_oracles=..., comparison_drafts=...,
+expected_capture_projection_sha256=..., expected_dsp_commit=...)`
+combines the existing source-only assessment with a **display-only**
+`capture_author_readiness_summary_v0_NONCANONICAL` object.
+
+No identity, step, reviewer decision, source-row evidence, game state, oracle,
+canonical v1 spec or runner setting is mutated. Its step cards distinguish:
+
+- `identity_matches[].classification=EXACT` means only consistency of a
+  uniquely pinned *source record* and reconciliation metadata. It **never**
+  sets `independently_verified_client_dsp_identity=true`, and supplies the
+  explicit `source_record_exact_not_verified[]` disclosure.
+- `identity_matches[].classification=AMBIGUOUS|INFERRED|UNRESOLVED|UNSUPPORTED`
+  exposes all source alternatives and the missing/unsafe scope. Bare EventView
+  MesNum and untyped raw packets remain unsupported.
+- `oracle_readiness.expected_candidate` may be a separately supplied source
+  interpretation with pinned Lua/SQL path, line, digest, commit and preconditions,
+  but its classification is `INDEPENDENT_SOURCE_CANDIDATE_UNAPPROVED`.
+  `normative_expected=null` and `verdict=UNKNOWN` never change.
+- `missing_observations[]` names **independent client and server** evidence
+  and how to obtain it. NPC/event lanes include client dialog and server
+  event state plus **conditional** quest-variable and instance-state
+  checks; item and key-item lanes require separate client/authoritative
+  inventory or held-key-item readbacks; packet metadata cannot stand in
+  for server receipt.
+- `source_integrity` distinguishes missing external capture-projection
+  fingerprint (UNKNOWN), changed projection (BLOCKED), unavailable parser
+  revision, source-manifest SHA mismatch (BLOCKED), and incompatible pinned
+  DSP commit (BLOCKED). A source checksum is **not** a signature or proof of
+  physical source bytes. Source/decoder revision compatibility is not inferred
+  from a matching human-readable name.
+- `repeated_capture_diagnostics[]` labels different captured values as
+  `POTENTIAL_CONTRADICTION_NEEDS_COMPARABILITY_REVIEW` or
+  `REVISION_INCOMPATIBLE`; the preconditions/instance and authoritative
+  state remain unknown, so the verdict stays UNKNOWN, never PASS/FAIL.
+
+The existing `scenario_review_offline.render_review_html(draft,
+readiness=...)` now optionally displays these diagnostics inside its
+**existing** step detail panels, retaining the old one-argument call.
+It validates capture identity, indexed projection digest, step identities
+and all execution/expected-UNKNOWN invariants before display. The
+HTML export still downloads the original reviewer decision-only bundle,
+not a rewritten spec or an approved oracle. No new reviewer UI/route, server
+request or live client integration was created. Locally supplied candidate
+catalogs remain separate arguments and are never fetched by a browser.
+
+### Proposed Agent C contract_v2 alignment — advisory only
+
+Source: draft [PR #1285](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1285),
+`docs/workbench/SCENARIO_CONTRACT_V2_PROPOSAL.md` and
+`scenario_contract_v2.py` on Agent C's own branch.
+
+The `contract_v2_alignment.metadata_shape_preview` uses only **Agent C's
+existing proposed** key names: `contract_version`, `sources`,
+`parameters`, `oracles`, `step_requirements`, and `fingerprints`.
+It does **not** add a `contract_v2` field to the canonical scenario or
+change the v1 validator. Source refs, normative oracles and engine/spec pins
+remain empty/null because neither a complete, verified source repository
+nor an assertion-bearing canonical v1 specification is supplied. Parameter
+`binding_state` is no higher than `candidate`, including when this
+adapter reports an EXACT **source-record** match. Ambiguity produces
+`binding_state=ambiguous` and `identity=null`. Names and undefined
+namespace numbers are not converted to invented numeric IDs. Every
+step requirement is `unassigned/unknown`, with explicit readback hints
+and `execution_gate=blocked`. Unsupported event/dialog names and
+oversized parameters are reported as omissions, not coerced to another type.
+
+This is a **non-importable field-mapping preview** and cannot be fed to
+`validate_spec`, the spec draft store, Agent B's Scenario Developer or
+XIHeadless. Agent C must accept/reconcile the proposal and approve
+source/identity/oracle mapping first. Once approved, the mapping must be
+rebased onto **real v1 assertion IDs**, source refs, signed/rehashable
+pinning and operator-reviewed readback capabilities.
+
+Synthetic tests: `test_fixtures/test_capture_readiness_summary.py`, alongside
+`test_capture_identity_oracle_readiness.py`. They cover exact-but-not-verified,
+ambiguous identities, missing client/server/KI/inventory/quest/instance
+readbacks, revision drift, contradictory captures, malformed/altered source
+hashes, expected-source candidates remaining UNKNOWN, HTML display, and
+strictly blocked advisory v2 fields. **No local DAT/server or live testing.**
