@@ -156,6 +156,102 @@ def inspect_2019_store_layout(decoded_sites_verified: bool) -> dict:
     }
 
 
+# Proven observed immediate/callee combinations in the exact Dec 2019 build.
+# Only a bounded byte-pattern corroboration, NOT a CFG or call-site proof.
+FIXED_TRANSFER_BYTES = 0x3B080
+READ_LIKE_RVA = 0x307CFF
+WRITE_LIKE_RVA = 0x307E16
+EXPECTED_READ_LIKE_TRANSFER_RVAS = (
+    0x3FA1, 0x40EC, 0x418C, 0x431B, 0x43B9, 0x445F,
+)
+EXPECTED_WRITE_LIKE_TRANSFER_RVAS = (
+    0x45B0, 0x464D, 0x46ED, 0x478D, 0x4818,
+)
+# Exact .data string RVAs; the EVB text is nearby but a direct relationship
+# to any individual transfer remains unverified.
+FIXED_TRANSFER_DATA_STRINGS = {
+    "read_open_mode": (0x3442D0, b"rb\\x00"),
+    "write_open_mode": (0x34471C, b"wb\\x00"),
+    "adjacent_evb_filename": (0x34470C, b"ZSU.evb\\x00"),
+    "adjacent_evb_glob": (0x344714, b"*.evb\\x00"),
+}
+
+
+def inspect_fixed_transfer_data_strings(data: bytes, data_rva: int) -> dict:
+    """Anchor literal file modes without returning game data."""
+    if not isinstance(data, bytes) or type(data_rva) is not int:
+        raise Pol1Error("transfer string observation needs .data bytes and RVA")
+    out = {}
+    for name, (rva, value) in FIXED_TRANSFER_DATA_STRINGS.items():
+        offset = rva - data_rva
+        out[name] = {
+            "rva": f"0x{rva:X}",
+            "exact_match": (
+                offset >= 0 and offset + len(value) <= len(data)
+                and data[offset:offset + len(value)] == value
+            ),
+        }
+    return {"anchors": out, "all_expected_strings_match": all(
+        value["exact_match"] for value in out.values()
+    ), "evb_file_purpose_confirmed": False}
+
+
+def inspect_2019_fixed_transfer_calls(decoded: bytes, decoded_rva: int = 0x1000) -> dict:
+    """Find fixed-size immediate/call pairs in bounded *untrusted* x86 bytes.
+
+    This identifies code-shaped occurrences, not reachable, aligned or executed
+    x86 instructions. Require independent disassembly and exact build identity
+    before promoting any observation.
+    """
+    if not isinstance(decoded, bytes) or type(decoded_rva) is not int:
+        raise Pol1Error("decoded data must be bytes and RVA an integer")
+    if len(decoded) > 8 * 1024 * 1024:
+        raise Pol1Error("decoded transfer scan exceeds 8 MiB bound")
+    needle = b"\\x68" + struct.pack("<I", FIXED_TRANSFER_BYTES)
+    at = 0
+    sites = []
+    while True:
+        off = decoded.find(needle, at)
+        if off < 0:
+            break
+        at = off + 1
+        candidate = {"rva": f"0x{decoded_rva + off:X}",
+                     "target": "UNCONFIRMED", "call_rva": None}
+        # Search only the next short instruction region; this is a candidate,
+        # not a disassembler. No file bytes are returned.
+        for call_off in range(off + len(needle), min(off + 18, len(decoded) - 4)):
+            if decoded[call_off] != 0xE8:
+                continue
+            delta = struct.unpack_from("<i", decoded, call_off + 1)[0]
+            target = decoded_rva + call_off + 5 + delta
+            if target in (READ_LIKE_RVA, WRITE_LIKE_RVA):
+                candidate["target"] = (
+                    "READ_LIKE" if target == READ_LIKE_RVA else "WRITE_LIKE"
+                )
+                candidate["call_rva"] = f"0x{decoded_rva + call_off:X}"
+                break
+        sites.append(candidate)
+    observed = {
+        "READ_LIKE": {int(s["rva"], 16) for s in sites
+                      if s["target"] == "READ_LIKE"},
+        "WRITE_LIKE": {int(s["rva"], 16) for s in sites
+                       if s["target"] == "WRITE_LIKE"},
+    }
+    return {
+        "sites": sites,
+        "total_fixed_size_immediate_occurrences": len(sites),
+        "read_like_count": len(observed["READ_LIKE"]),
+        "write_like_count": len(observed["WRITE_LIKE"]),
+        "all_2019_expected_sites_match": (
+            observed["READ_LIKE"] == set(EXPECTED_READ_LIKE_TRANSFER_RVAS)
+            and observed["WRITE_LIKE"] == set(EXPECTED_WRITE_LIKE_TRANSFER_RVAS)
+            and len(sites) == 11
+        ),
+        "transfer_is_inventory_save_format": None,
+        "caution": "Byte-level code-shape candidates only; no CFG, file purpose or execution proof.",
+    }
+
+
 def inspect_2019_store_lifecycle(decoded_sites_verified: bool) -> dict:
     """Conservative fixed-layout and observed pointer-transition metadata.
 
@@ -327,6 +423,12 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         "source_sha256": source_hash, "decoded_sha256": original["sha256"],
         "decoded_sha256_verified": decoded_hash_ok,
         "commands": commands, "decoded_sites": sites,
+        "fixed_transfer_data_strings": inspect_fixed_transfer_data_strings(
+            image[at:at + size], section["rva"]
+        ),
+        "fixed_transfer_call_candidates": inspect_2019_fixed_transfer_calls(
+            original["bytes"], original["base_rva"]
+        ),
         "store_layout": inspect_2019_store_layout(
             decoded_hash_ok and sites["all_static_anchors_match"]
         ),
