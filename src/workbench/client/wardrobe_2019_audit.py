@@ -11,6 +11,7 @@ from pathlib import Path
 import struct
 
 from workbench.client.pol1_unpack import Pol1Error, _section, unpack_pol1
+from workbench.client.wardrobe_2019_allocator import describe_2019_allocator
 
 
 LEGACY_SHA256 = "514653a260c51eaec25d88510e51a86fb2a4abd9867f53d5f45a9ccf840f060f"
@@ -172,6 +173,7 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         "packet_handler_registration": _verify_packet_registration(code),
         "observed_commands": _extract_commands(image),
         "hypothetical_container_extension": legacy_layout_risk(),
+        "storage_allocator_and_context": describe_2019_allocator(image, code),
         "warnings": [
             "Original 2019 command IDs 118-120 are assigned to unrelated commands; do not copy later build IDs.",
             "Two 2019 inventory mode dispatch candidates compare (mode - 2) to 10 (11 branches for modes 2..12); do not add modes 13-16 without expanding every consumer.",
@@ -179,6 +181,8 @@ def audit_2019_wardrobe(image: bytes) -> dict:
             "Static window patterns do not establish complete handler control flow or caller bounds.",
             "Packet 0x20 item-attribute handler at 0xE9940 is not the 0x1F item-list handler; registration disambiguates these.",
             "Do not send container IDs 13-16 or modern-format packet 0x1C to this client.",
+            "2019 first context is initialized in a static virtual .data backing arena; active-context global is reassigned on multiple paths.",
+            "A sidecar-buffer proposal must cover every live context and all record accesses; no such patch is proposed.",
             "No code or packet patch is produced by this report.",
         ],
     }
