@@ -112,3 +112,17 @@ def test_absent_match_returns_only_an_explicit_unverified_empty_query(fake_dsp: 
     assert result["choices"] == []
     assert result["completeness"] == "bounded_catalog_query_not_full_inventory"
     assert result["binding_verified"] is False
+
+
+def test_gm_source_path_cannot_be_forged(monkeypatch, fake_dsp: Path):
+    monkeypatch.setattr(adapter, "catalog_commands", lambda root: [{
+        "name": "additem",
+        "description": "synthetic",
+        "category": "Items & Currency",
+        "permission": 2,
+        "classification": "diagnostic_candidate",
+        "source_path": "../../untrusted.lua",
+        "command": "!additem",
+    }])
+    with pytest.raises(adapter.CatalogUnavailable, match="source path"):
+        adapter.search_catalog(fake_dsp, "gm", "additem")
