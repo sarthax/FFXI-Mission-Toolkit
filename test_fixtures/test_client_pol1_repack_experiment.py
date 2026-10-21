@@ -299,5 +299,24 @@ class SyntheticPol1RepackTests(unittest.TestCase):
 
 
 
+
+    def test_rejects_overlapping_raw_sections_or_header_aliases(self):
+        image = fixture_pe(encode_pol1(b"abcabc"), 6)
+        table = 0x80 + 24 + 0xE0
+        broken = bytearray(image)
+        # Give the virtual .text section a nonzero raw extent coincident with
+        # POL1, which makes the intended on-disk ownership ambiguous.
+        struct.pack_into("<II", broken, table + 16, 4, 0x200)
+        with self.assertRaisesRegex(Pol1Error, "overlaps another PE section"):
+            assess_pol1_repack_fit(bytes(broken))
+
+        broken = bytearray(image)
+        # POL1's source bytes must not reside inside the section table itself.
+        struct.pack_into("<I", broken, table + 40 + 20, table + 50)
+        with self.assertRaisesRegex(Pol1Error, "overlaps PE headers"):
+            assess_pol1_repack_fit(bytes(broken))
+
+
+
 if __name__ == "__main__":
     unittest.main()
