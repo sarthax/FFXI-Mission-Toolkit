@@ -19,6 +19,8 @@ import sqlite3
 
 from .scenario_handoff import reconstruct_review_draft
 from .scenario_review_workflow import manual_editor_handoff
+from .scenario_readiness_summary import summarize_capture_readiness
+from .scenario_identity_readiness import _observation_digest
 
 
 def _json(data: object) -> str:
@@ -28,9 +30,24 @@ def _json(data: object) -> str:
             .replace("&", "\\u0026"))
 
 
-def render_review_html(draft: dict) -> str:
-    """Generate one interactive, no-network, no-autosave reviewer document."""
+def render_review_html(draft: dict, *, readiness: dict | None = None) -> str:
+    """Display read-only readiness in the existing offline reviewer; no approval."""
     bundle = manual_editor_handoff(draft)
+    if readiness is None:
+        readiness = summarize_capture_readiness(draft)
+    if (not isinstance(readiness, dict)
+            or readiness.get("contract") != "capture_author_readiness_summary_v0_NONCANONICAL"
+            or readiness.get("capture_id") != draft["capture_id"]
+            or readiness.get("capture_projection_sha256") != _observation_digest(draft)
+            or readiness.get("execution_enabled") is not False
+            or readiness.get("normative_expected") is not None
+            or readiness.get("verdict") != "UNKNOWN"
+            or not isinstance(readiness.get("readiness_steps"), list)
+            or len(readiness["readiness_steps"]) != len(draft["steps"])
+            or {x.get("step_id") for x in readiness["readiness_steps"]} !=
+               {x["step_id"] for x in draft["steps"]}):
+        raise ValueError("readiness summary does not match the indexed capture draft")
+    readiness_by_step = {s["step_id"]: s for s in readiness["readiness_steps"]}
     if len(json.dumps(bundle, ensure_ascii=True).encode("utf-8")) > 4_000_000:
         raise ValueError("review export too large; reduce indexed row caps")
     ui = []
@@ -48,6 +65,22 @@ def render_review_html(draft: dict) -> str:
                       + " · <strong>Record:</strong> " + escape(event["record_class"]) + "</p>")
             if event["gaps"]:
                 ui.append("<p class='warn'>Unresolved: " + escape(", ".join(event["gaps"])) + "</p>")
+            diagnostic = readiness_by_step[sid]
+            ui.append(
+                "<details><summary>Identity and oracle readiness — "
+                + escape(diagnostic["expected_outcome_classification"])
+                + " · verdict UNKNOWN</summary>"
+                + "<p>Exact source-record match is NOT independent client/DSP verification. "
+                  "Candidate source expectations are NOT approved oracles.</p>"
+                + "<pre>" + escape(json.dumps({
+                    "identity_matches": diagnostic["identity_matches"],
+                    "missing_observations": diagnostic["missing_observations"],
+                    "missing_provenance_and_review": diagnostic["missing_provenance_and_review"],
+                    "oracle_readiness": diagnostic["oracle_readiness"],
+                    "compatibility_issues": diagnostic["compatibility_issues"],
+                }, sort_keys=True, indent=2, ensure_ascii=True))
+                + "</pre></details>"
+            )
             ui.append("<div class='review'><label>Step review <select class='step-decision' data-id='"
                       + escape(sid, quote=True) + "'><option value='PENDING'>Pending</option>"
                       + "<option value='ACCEPT'>Accept proposed summary</option>"
@@ -124,6 +157,10 @@ BDD_PLACEHOLDER
 No global chronology or source namespace identity is implied.</p>
 ASSOCIATIONS_PLACEHOLDER</section>
 <section><h2>Reconstructed timeline — separate source lanes</h2>EVENTS_PLACEHOLDER</section>
+<section><h2>Readiness summary</h2>
+<p>Read-only diagnostics, with no source authenticity or oracle approval implied.
+Offline source-file hashes require independent validation. No gameplay run was performed.</p>
+READINESS_PLACEHOLDER</section>
 <section><h2>Continue in Scenario Developer</h2>
 <p><strong>Manual handoff only.</strong> Export a design-only review bundle below,
 then open Scenario Developer yourself. Independently bind canonical IDs and
@@ -199,6 +236,12 @@ document.getElementById('export').addEventListener('click', () => {
     return (markup.replace("BDD_PLACEHOLDER", "\n".join(bdd_html))
             .replace("ASSOCIATIONS_PLACEHOLDER", related_html)
             .replace("EVENTS_PLACEHOLDER", "\n".join(ui))
+            .replace("READINESS_PLACEHOLDER", "<pre>" + escape(json.dumps({
+                "source_integrity": readiness["source_integrity"],
+                "repeated_capture_diagnostics": readiness["repeated_capture_diagnostics"],
+                "contract_v2_alignment_status": readiness["contract_v2_alignment"]["status"],
+                "handoff": readiness["scenario_developer_handoff"],
+            }, indent=2, sort_keys=True, ensure_ascii=True)) + "</pre>")
             .replace("DATA_PLACEHOLDER", _json(bundle)))
 
 
