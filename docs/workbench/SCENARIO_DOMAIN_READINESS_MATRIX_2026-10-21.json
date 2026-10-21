@@ -6,7 +6,115 @@
     "canonical_v1_only_runnable": [
       "MOG-09"
     ],
-    "proposal_pr": 1285
+    "proposal_pr": 1285,
+    "domain_pr_head_snapshot": [
+      {
+        "domain": "gardening",
+        "pr": 1277,
+        "head_sha": "410513cb4e809f9a4162b4d407160ad9f5efb09a",
+        "source_revision": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+        "execution_enabled": false,
+        "case_count": 9
+      },
+      {
+        "domain": "voidwalker",
+        "pr": 1279,
+        "head_sha": "cbb82e4cb54e61d4ef2e9443304064d8917ab73c",
+        "source_revision": "5fac778004364e2991df779845d7403e64a8dc23",
+        "execution_enabled": false,
+        "case_count": 7
+      },
+      {
+        "domain": "assault_nyzul",
+        "pr": 1280,
+        "head_sha": "653272e238a03470cb61d4d65e9a179c7d2a85ec",
+        "source_revision": "2b71b4425d20ce47941c140b57fac886f28bea73",
+        "execution_enabled": false,
+        "case_count": 6
+      },
+      {
+        "domain": "missions_quests",
+        "pr": 1281,
+        "head_sha": "321f2a1730e5c3f3b7e12e84d1e1cf798b925dab",
+        "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+        "execution_enabled": false,
+        "case_count": 5
+      },
+      {
+        "domain": "moghancement",
+        "pr": 1282,
+        "head_sha": "95c6099b8e96c55fe88527370021b8f2c9c69740",
+        "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+        "execution_enabled": false,
+        "case_count": 14
+      },
+      {
+        "domain": "voidwatch",
+        "pr": 1286,
+        "head_sha": "c761e5da53d51ed8287468c03ce97baf233cb40c",
+        "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+        "execution_enabled": false,
+        "case_count": 8
+      },
+      {
+        "domain": "salvage",
+        "pr": 1289,
+        "head_sha": "174cecb3ca75e0438e251f085008fdb3c5ccb34f",
+        "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+        "execution_enabled": false,
+        "case_count": 7
+      },
+      {
+        "domain": "run_geo_unlock",
+        "pr": 1290,
+        "head_sha": "4cf596408eaea996fc2defc00b99c1ee7aef3008",
+        "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+        "execution_enabled": false,
+        "case_count": 8
+      },
+      {
+        "domain": "chocobo_raising",
+        "pr": 1291,
+        "head_sha": "0616c49e74bfa69d7b9237af64f3f20590372a87",
+        "source_revision": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+        "execution_enabled": false,
+        "case_count": 9
+      }
+    ],
+    "principal_readiness_pr": 1292,
+    "companion_capability_pr": 1293,
+    "shared_validation_pr": 1294,
+    "matrix_status": "proposed_primary_source_of_truth_subject_to_A_C_independent_review",
+    "head_snapshot_semantics": "SHA is staging PR state only, not source authentication or deployed fingerprint; any head change requires re-audit",
+    "known_source_drift": [
+      {
+        "domain": "gardening",
+        "source": "gardenutils.cpp",
+        "pinned_sha": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+        "note": "save pot / dual-safe loops shift by 1 on current main; numeric slot selector remains unsafe"
+      },
+      {
+        "domain": "assault_nyzul",
+        "source": "nyzuldebug.lua",
+        "pinned_sha": "2b71b4425d20ce47941c140b57fac886f28bea73",
+        "note": "pin accepts instance 51, current main 51/52; not natural objective proof"
+      }
+    ],
+    "existing_backlog_reuse": [
+      "sarthax/FFXI-Mission-Toolkit#1295",
+      "#1296",
+      "#1297",
+      "#1298",
+      "#1299",
+      "#1300",
+      "#1198",
+      "#1202",
+      "#1259",
+      "sarthax/darkstar-to-valhalla#56",
+      "#59",
+      "sarthax/xiheadless-dsp#105",
+      "#107"
+    ]
   },
   "execution_enabled": false,
   "import_allowed": false,
@@ -36,7 +144,10 @@
       "title": "Complete persisted inventory readback",
       "scope": "Bounded charid+container snapshot covering both Mog Safes, bag, slots, itemId, quantity, item `extra` raw digest + decoded installed/pot metadata, total_rows/truncated/save_boundary. Query only authorized character; no free SQL.",
       "related_cases": "GARD-01..09, MOG-01..14; additionally CHO-04 after deployed",
-      "safety": "Do not extend /test-character-inventory LIMIT 100 silently; synthetic >100-row fixture fails closed"
+      "safety": "Do not extend /test-character-inventory LIMIT 100 silently; synthetic >100-row fixture fails closed",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1295"
+      ]
     },
     {
       "id": "GAP-02",
@@ -45,7 +156,10 @@
       "title": "Mog Safe pot / installed-layout oracle",
       "scope": "Independent installed-furnishing flag/slot/ordering, pot extra decode by (charid,location,slot), GM active KI/eight aura comparison, no assumption of empty layout.",
       "related_cases": "GARD-01..09, MOG-09 plus furnishing cases",
-      "safety": "No GM set/recalc as proof; preserve MOG-09 historical result as narrower observation"
+      "safety": "No GM set/recalc as proof; preserve MOG-09 historical result as narrower observation",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1295"
+      ]
     },
     {
       "id": "GAP-03",
@@ -54,7 +168,11 @@
       "title": "Bounded active mob/claim and Pyxis state",
       "scope": "Read-only zone+instance+entity scoped status, owner/claim, SpawnMob identity and POPPED_BY/WITH/AT; separate Pyxis ITEM1..8 TOKEN ELIG/TAKEN variables and rift association. Use fixed allowlisted query/diagnostic, not generic memory introspection.",
       "related_cases": "VWK-01..07; VOID-05..08",
-      "safety": "Character char_vars are NOT mob localvars. Unauthorized entities/players must remain excluded"
+      "safety": "Character char_vars are NOT mob localvars. Unauthorized entities/players must remain excluded",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1298",
+        "sarthax/FFXI-Mission-Toolkit#1299"
+      ]
     },
     {
       "id": "GAP-04",
@@ -63,7 +181,10 @@
       "title": "Named quest/job, currency and char_vars readback",
       "scope": "Extend read-only allowlisted per-character quest/mission status, job-unlock flag, fame/gil/cruor, bounded source-defined variables; include source timestamp, transaction/save boundary and missing-vs-zero distinction.",
       "related_cases": "RG-01..08; VOID-01..04; MQ-01..05",
-      "safety": "Reuse existing exact-name `/test-character-vars`, keyitem endpoints; no free-form SQL"
+      "safety": "Reuse existing exact-name `/test-character-vars`, keyitem endpoints; no free-form SQL",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1296"
+      ]
     },
     {
       "id": "GAP-05",
@@ -72,7 +193,11 @@
       "title": "Event/identity and rest-heal oracle bindings",
       "scope": "Catalog-backed verified NPC/mob client identity and zone mapping, event start/update/finish packet trace/option binding, /heal/voidwalker hint and claim evidence; distinguish action sent/accepted/completed/observed.",
       "related_cases": "VWK-01..07; VOID-03..08; RG-02..08",
-      "safety": "No invented CSIDs or raw packet injection through Toolkit; separate capture observation from expected outcome"
+      "safety": "No invented CSIDs or raw packet injection through Toolkit; separate capture observation from expected outcome",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1298",
+        "sarthax/xiheadless-dsp#105"
+      ]
     },
     {
       "id": "GAP-06",
@@ -81,7 +206,11 @@
       "title": "Read-only instance runtime snapshot",
       "scope": "Authorized instance ID, stage, progress, timer/expiry, objective and instance-localvars, door unSealed/animation, temp inventory, owner-scoped reward/point deltas.",
       "related_cases": "ASLT-01..04, NYZ-01..02, SAL-01..07",
-      "safety": "GM `warpassault` and `nyzuldebug complete/floor` are bypass/fixtures, not natural gameplay oracles"
+      "safety": "GM `warpassault` and `nyzuldebug complete/floor` are bypass/fixtures, not natural gameplay oracles",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1297",
+        "sarthax/FFXI-Mission-Toolkit#1300"
+      ]
     },
     {
       "id": "GAP-07",
@@ -90,7 +219,12 @@
       "title": "Read-only campaign orchestration and evidence receipts",
       "scope": "Preflight per named capability and source fingerprint; approved bot/character, before-after snapshots, save/relog boundary, event/identity provenance and cleanup receipt. `accepted` never equals gameplay PASS.",
       "related_cases": "Across mutation cases; MOG-09 comparability",
-      "safety": "Do not register staged cases as runner-supported; no new packet or GM auto-dispatch"
+      "safety": "Do not register staged cases as runner-supported; no new packet or GM auto-dispatch",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1198",
+        "sarthax/FFXI-Mission-Toolkit#1202",
+        "sarthax/xiheadless-dsp#107"
+      ]
     },
     {
       "id": "GAP-08",
@@ -99,7 +233,10 @@
       "title": "Chocobo Phase 0 deployment/migration and later gameplay",
       "scope": "Determine live DSP origin/HEAD; review staged diff, backup and migration dry-run, compile/tests; only after approval add approved per-char chocobo record/blob/egg exdata readbacks. Trainer, care plan and mount require separate implementation.",
       "related_cases": "CHO-01..09",
-      "safety": "Keep primary `needs-deploy`, no down.sql against persistent DB; mount/property bit layouts unverified"
+      "safety": "Keep primary `needs-deploy`, no down.sql against persistent DB; mount/property bit layouts unverified",
+      "existing_issue_refs": [
+        "sarthax/darkstar-to-valhalla#59"
+      ]
     },
     {
       "id": "GAP-09",
@@ -108,7 +245,8 @@
       "title": "Guard numeric-slot collision for `!garden` debug",
       "scope": "`DebugCommand` iterates Mog Safe and Safe 2 and matches slotID without container; prove command cannot mutate both pots when slot overlaps before any admin test.",
       "related_cases": "GARD-09; all garden debug-assisted tests",
-      "safety": "No GM debug actions by this audit; separate reviewed server safety change"
+      "safety": "No GM debug actions by this audit; separate reviewed server safety change",
+      "existing_issue_refs": []
     },
     {
       "id": "GAP-10",
@@ -117,7 +255,11 @@
       "title": "Contract v2 domain staging adapter and fingerprint fail-closed checks",
       "scope": "Review explicit v1 metadata mapping, SHA-256 per-source digest, typed identity/zone binding, permission classification, unknown oracles, and 32KiB v1 draft persistence bound; keep no-op against production catalog.",
       "related_cases": "All 73",
-      "safety": "No bulk JSON import; preserve outer schema_version=1, no fabricated source hashes or v1 runner promotion"
+      "safety": "No bulk JSON import; preserve outer schema_version=1, no fabricated source hashes or v1 runner promotion",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1259",
+        "sarthax/FFXI-Mission-Toolkit#1285"
+      ]
     },
     {
       "id": "GAP-11",
@@ -126,7 +268,10 @@
       "title": "Pinned source drift rebind",
       "scope": "Gardening `gardenutils.cpp` differs at current main and line ranges shifted by 1; `nyzuldebug.lua` now accepts 51 or 52 instead of only 51, with leader table instance-specific. Re-source affected oracle cases explicitly.",
       "related_cases": "GARD-01..09; NYZ-01..02",
-      "safety": "Never silently re-point old citations or assert deployed binary revision"
+      "safety": "Never silently re-point old citations or assert deployed binary revision",
+      "existing_issue_refs": [
+        "sarthax/darkstar-to-valhalla#59"
+      ]
     }
   ],
   "cases": [
