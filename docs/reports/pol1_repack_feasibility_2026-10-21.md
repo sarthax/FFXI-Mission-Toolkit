@@ -81,3 +81,26 @@ Repacking does not grow the old client's **13 inventory containers** into **18**
 ## Could not verify here
 
 No original retail DLL bytes, Windows retail loader, client startup, Authenticode results, live packet capture or server data. Actual retail compressed-fit, load acceptance and Wardrobe 5–8 runtime functionality remain **UNKNOWN**.
+
+## 6. Offline hardening and compression sensitivity (2026-10-21 follow-up)
+
+Subsequent source review added two **fail-closed** defenses to the in-memory feasibility check:
+
+- The prefix-consumption counter now rejects zero-distance back-references immediately, truncated tokens and invalid backward distances. The older decoder tolerated a zero-distance token as a token-group terminator; the feasibility assessor intentionally rejects such ambiguous streams instead of assigning a writeable prefix. A **retail rejection may indicate a valid format variant**, rather than proving the DLL is corrupted: inspect the original loader before loosening this gate.
+- The mapped PE entry point is now read only after validating DOS/PE signatures and the optional-header magic (PE32 or PE32+). Synthetic tests exercise malformed source images.
+
+The encoder now supports three **bounded greedy match-search depths**: 16 (faster), 64 (default) and 128 (potentially smaller but more work). None guarantees a better compression ratio than another: greedy choice is not monotonic. These are research comparisons only. The full SHA-256 must match before any attempt to decompress or compare.
+
+**Local read-only sensitivity examples:**
+
+~~~powershell
+$old = 'C:\FFXI-Research\2021\FFXiMain.dll'
+$sha = '1ded20ac5df1b168220992365b63cfe7596af17326acf0e02f90a5a8388446ba'
+py -3.11 -m workbench.client.cli.pol1_repack_report $old --expected-sha256 $sha --search-depth 16
+py -3.11 -m workbench.client.cli.pol1_repack_report $old --expected-sha256 $sha --search-depth 64
+py -3.11 -m workbench.client.cli.pol1_repack_report $old --expected-sha256 $sha --search-depth 128
+~~~
+
+Record original_stream_consumed_bytes, entrypoint_section_offset, safe_stream_budget_bytes, candidate_encoded_size, headroom_bytes, encoder_search_depth, status and in_memory_decoded_roundtrip. Compare the candidate against **the original stream prefix**, never the whole POL1 section. No output DLL is written.
+
+**Evidence status:** The earlier nine-method suite passed on the referenced commit. A later suite adds zero-distance and PE rejection plus configurable-search-depth regression tests. Its final-head CI must complete before describing those newer changes as passing. The client originals remain unexamined here and loader/launcher acceptance remains UNKNOWN.
