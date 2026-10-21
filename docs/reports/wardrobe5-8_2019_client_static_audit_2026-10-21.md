@@ -22,12 +22,13 @@ The dedicated `workbench.client.wardrobe_2019_audit` helper checks this **exact 
 | Indexed record layout | `81` slots/container × `44` bytes/slot = `0xDEC` bytes/container | Verified arithmetic in bounded handler window; interpretation inferred |
 | Byte capacity accessor | `0xE8C60`, reads `store+0x152ED+container` | Verified static instruction operand |
 | Word capacity accessor | `0xE8C80`, reads `store+0x152FA+2*container` | Verified static instruction operand |
-| Capacity packet copy candidate | `0xE97C0`, copies from packet `+0x04` to `store+0x152ED`, then from packet `+0x14` to `store+0x152FA` | Verified bounded instruction fragments; packet-ID association inferred |
-| Item-record write candidate | `0xE9940`, reads packet bytes `+0x0E` / `+0x0F` as container/slot selectors, indexes `store+0x9860` | Verified bounded instructions; no local container guard visible in this window; **upstream safety unknown** |
+| Capacity packet handler (0x1C) | `0xE97C0`, copies from packet `+0x04` to `store+0x152ED`, then from packet `+0x14` to `store+0x152FA` | Verified handler registration and bounded copy instructions |
+| Packet 0x1E/0x1F record handlers | `0xE9800` / `0xE9860`; respective container and slot selectors feed `store+0x9860` | Verified registration and bounded indexing motifs; upstream safety UNKNOWN |
+| Packet 0x20 item attribute handler | `0xE9940`, reads packet bytes `+0x0E` / `+0x0F` as container/slot selectors, indexes `store+0x9860` | Verified registration and bounded instructions; no local container guard visible in this window; **upstream safety unknown** |
 | UI inventory mode dispatch candidate | `0x1D4CA0`: compares `(mode - 2)` with `0x0A`, dispatch table `0x101D4DF8` | Verified instruction operands, inferred 11-case mode range **2–12** |
 | UI inventory cache dispatch candidate | `0x1D4E80`: likewise compares `(mode - 2)` with `0x0A`, dispatch table `0x101D4F64` | Verified instruction operands, inferred 11-case mode range **2–12** |
 
-The `0x1C` capacity handler and `0x1F` item-list associations are supported by structural agreement with the 2021 audited handlers, but have **not** yet been independently tied to the exact 2019 packet-registration table. Keep them **INFERRED** until that registration is traced.
+**Packet registration now independently verified:** original 2019 decoded function at RVA `0xE85D0` registers a handler VA and packet ID with adjacent `push imm32; push imm8` pairs. These establish `0x1C → 0xE97C0`, `0x1E → 0xE9800`, `0x1F → 0xE9860`, `0x20 → 0xE9940`, `0x1D → 0xE99D0`, and `0x26 → 0xE9A10`. The earlier tentative use of `0x1F` to describe function `0xE9940` was incorrect; it is registered as **0x20**. Handler registration is verified static code evidence, but actual runtime invocation and upstream bounds remain unverified.
 
 ### Hard memory-layout collision if container 13 is simply enabled
 
@@ -74,7 +75,7 @@ The command rejects any file whose entire SHA-256 differs from the exact 2019 or
 Before proposing the first functional Wardrobe patch:
 
 1. **Inventory allocation safety:** Map the 2019 record-store allocation, initialization, consumers of `store+0x9860`, capacities, and other fields through the full lifetime. Choose a design that preserves all existing data and supports 18 containers; do not enlarge in place across unrelated fields.
-2. **Network safety:** Bind the exact 2019 `0x1C/0x1E/0x1F/0x20` handlers through their actual registration table. Add fail-closed validation for container IDs and slots before writing. Verify modern versus legacy `0x1C` packet lengths and all affected server paths separately.
+2. **Network safety:** Use the now verified 2019 `0x1C/0x1E/0x1F/0x20` handler registration to map full callers and packet wire bounds. Add fail-closed validation for container IDs and slots before writing. Verify modern versus legacy `0x1C` packet lengths and all affected server paths separately.
 3. **UI safety:** Map both 11-case inventory mode dispatch tables, associated container-object globals, constructors/destructors, handlers, and command-table/translation resources. A capacity-only edit will not create valid new menu branches.
 4. **Server compatibility:** The DSP/Valhalla source documented in `CLIENT_WARDROBE_CAPACITY_AUDIT.md` currently only supports containers 0–12 across enum, storage objects, SQL persistence and packet `0x1C`. Do not send 13–16 until the server and specific client can negotiate a verified compatible protocol.
 5. **Validation:** Prove bounds via synthetic tests before isolated client trials. Keep backup/restore, exact file hashes, original loader/layout, and rollback procedures. Never exercise new IDs on the unmodified 2019 client.
