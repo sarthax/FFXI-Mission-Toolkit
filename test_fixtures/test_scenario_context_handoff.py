@@ -290,6 +290,8 @@ def test_unified_editor_has_one_coverage_start_and_manual_evidence_binding_revie
     begin=js[js.index("  let coverageBeginPending=false;"):js.index("  function renderEvidenceSuggestions")]
     assert "const latest=await call(ref,'GET')" in begin
     assert "M.coverageContextChanged(original,checked)" in begin
+    assert "setSourceDetail(null,null);" in begin  # declared intent != published scenario
+    assert "setSourceDetail(checked.feature_id,checked.behavior_ref)" not in begin
     assert "installIncompleteDraft(" in begin
     assert "coverageBeginPending" in begin
     assert "finally" in begin
