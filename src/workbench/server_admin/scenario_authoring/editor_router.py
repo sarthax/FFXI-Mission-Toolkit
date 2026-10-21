@@ -13,7 +13,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from .context_handoff import inspect_evidence_review
+from .context_handoff import coverage_context, inspect_evidence_review
 from workbench.runtime.paths import GUI_ROOT
 from workbench.runtime.legacy_settings import get_dsp_root
 from workbench.server_admin.scenario_authoring.catalog_adapter import (
@@ -178,6 +178,21 @@ def search_editor_catalog(request: Request, kind: str, query: str, limit: int = 
         raise HTTPException(503, str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(422, str(exc) + " Resolve: " + _validation_help(str(exc))) from exc
+
+
+class CoverageReferenceRequest(BaseModel):
+    context_ref: str
+    source: dict
+
+
+@router.post("/handoff/coverage/inspect", include_in_schema=False)
+def inspect_coverage_handoff(request: Request, body: CoverageReferenceRequest):
+    """Check the bounded existing coverage endpoint response; no draft writes."""
+    _local_origin(request)
+    try:
+        return coverage_context(body.source, body.context_ref)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 
 class EvidenceReviewRequest(BaseModel):
