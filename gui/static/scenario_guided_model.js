@@ -211,9 +211,12 @@
       if(!original || original.decision==='REJECT' || original.decision==='PENDING' ||
           entry.confirmed!==true || typeof entry.title!=='string' || !entry.title.trim())
         throw Error('Each chosen evidence proposal requires explicit confirmation and review');
+      const indexedHashes=[...new Set((original.source_fingerprints||[])
+        .map(x=>x.sha256).filter(x=>/^[a-f0-9]{64}$/.test(x)))].slice(0,3);
       const note=('UNVERIFIED indexed capture '+review.capture_id+' SHA-256 '+review.projection_sha256+
         '; source step '+original.step_id+'; observed refs '+original.evidence_refs.join(', ')+
-        '; candidate identities NOT verified; no normative oracle').slice(0,1000);
+        '; indexed source SHA-256 '+(indexedHashes.join(', ')||'UNKNOWN')+
+        ' (NOT independently rehashed); candidate identities NOT verified; no normative oracle').slice(0,1000);
       next.steps.push({
         id:original.step_id,title:entry.title.trim().slice(0,500),
         intent:'observation',expected:'UNKNOWN — independently sourced expected outcome required',
