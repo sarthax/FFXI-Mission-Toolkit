@@ -113,7 +113,9 @@
       "sarthax/darkstar-to-valhalla#56",
       "#59",
       "sarthax/xiheadless-dsp#105",
-      "#107"
+      "#107",
+      "sarthax/darkstar-to-valhalla#60",
+      "sarthax/darkstar-to-valhalla#55"
     ]
   },
   "execution_enabled": false,
@@ -235,7 +237,8 @@
       "related_cases": "CHO-01..09",
       "safety": "Keep primary `needs-deploy`, no down.sql against persistent DB; mount/property bit layouts unverified",
       "existing_issue_refs": [
-        "sarthax/darkstar-to-valhalla#59"
+        "sarthax/darkstar-to-valhalla#59",
+        "sarthax/darkstar-to-valhalla#55"
       ]
     },
     {
@@ -246,7 +249,9 @@
       "scope": "`DebugCommand` iterates Mog Safe and Safe 2 and matches slotID without container; prove command cannot mutate both pots when slot overlaps before any admin test.",
       "related_cases": "GARD-09; all garden debug-assisted tests",
       "safety": "No GM debug actions by this audit; separate reviewed server safety change",
-      "existing_issue_refs": []
+      "existing_issue_refs": [
+        "sarthax/darkstar-to-valhalla#60"
+      ]
     },
     {
       "id": "GAP-10",
