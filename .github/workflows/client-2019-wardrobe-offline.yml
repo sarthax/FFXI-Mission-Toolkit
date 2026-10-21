@@ -7,6 +7,7 @@ on:
     paths:
       - src/workbench/client/wardrobe_2019_audit.py
       - src/workbench/client/wardrobe_2019_sidecar_model.py
+      - src/workbench/client/wardrobe_2019_packet_contract.py
       - src/workbench/client/cli/wardrobe_2019_report.py
       - test_fixtures/test_client_wardrobe_2019_*.py
       - .github/workflows/client-2019-wardrobe-offline.yml
@@ -14,6 +15,7 @@ on:
     paths:
       - src/workbench/client/wardrobe_2019_audit.py
       - src/workbench/client/wardrobe_2019_sidecar_model.py
+      - src/workbench/client/wardrobe_2019_packet_contract.py
       - src/workbench/client/cli/wardrobe_2019_report.py
       - test_fixtures/test_client_wardrobe_2019_*.py
       - .github/workflows/client-2019-wardrobe-offline.yml
