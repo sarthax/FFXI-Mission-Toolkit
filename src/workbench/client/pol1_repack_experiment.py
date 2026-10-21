@@ -82,6 +82,38 @@ def encode_pol1(code: bytes, *, search_depth: int = MAX_CANDIDATES) -> bytes:
 
 
 
+
+def _verify_raw_section_isolation(image: bytes, section: dict) -> None:
+    """Reject overlapping POL1 raw ranges and PE header/section table overlap.
+
+    This is a conservative file-layout preflight, *not* a proof that Windows or
+    FFXI can load any modified image.
+    """
+    pe = struct.unpack_from("<I", image, 0x3C)[0]
+    count = struct.unpack_from("<H", image, pe + 6)[0]
+    optional = struct.unpack_from("<H", image, pe + 20)[0]
+    table = pe + 24 + optional
+    if not 1 <= count <= 96 or table + count * 40 > len(image):
+        raise Pol1Error("invalid PE section table bounds")
+    start, size = section["raw_start"], section["raw_size"]
+    if start < table + count * 40 or size <= 0 or start > len(image) or size > len(image) - start:
+        raise Pol1Error("POL1 raw section overlaps PE headers or exceeds file")
+    end = start + size
+    for i in range(count):
+        off = table + i * 40
+        name = image[off:off + 8].rstrip(b"\x00")
+        if name == b"POL1":
+            continue
+        raw_size, raw_start = struct.unpack_from("<II", image, off + 16)
+        if raw_size == 0:
+            continue
+        if raw_start > len(image) or raw_size > len(image) - raw_start:
+            raise Pol1Error("other PE section exceeds file")
+        if max(start, raw_start) < min(end, raw_start + raw_size):
+            raise Pol1Error("POL1 raw section overlaps another PE section")
+
+
+
 def _stream_consumed_bytes(image: bytes, expected_size: int) -> int:
     """Strictly count consumed original LZSS stream bytes without PE-tail spill.
 
@@ -154,6 +186,8 @@ def assess_pol1_repack_fit(
     if not isinstance(image, bytes):
         raise Pol1Error("image must be bytes")
     section = _section(image, b"POL1")
+    _entrypoint_section_offset(image, section)  # Validate DOS/PE metadata before decoding.
+    _verify_raw_section_isolation(image, section)
     original = unpack_pol1(image)
     code = original["bytes"] if candidate_code is None else candidate_code
     if not isinstance(code, bytes) or len(code) != original["size"]:
@@ -178,6 +212,7 @@ def assess_pol1_repack_fit(
         "original_stream_consumed_bytes": original_used,
         "protected_suffix_bytes": available - original_used,
         "entrypoint_section_offset": entrypoint_offset,
+        "pol1_raw_section_isolated": True,
         "entrypoint_in_pol1": entrypoint_offset is not None,
         "entrypoint_boundary_safe": boundary_valid,
         "safe_stream_budget_bytes": budget,
