@@ -37,6 +37,10 @@ CODE_WINDOWS = (
      (CAPACITY8, CAPACITY16), (bytes((0x8D, 0x50, 0x04)), bytes((0x8D, 0x70, 0x14)))),
     ("item_record_handler_candidate", 0xE9940, 85,
      (RECORD_BASE,), (bytes((0x8A, 0x43, 0x0E)), bytes((0x8A, 0x4B, 0x0F)))),
+    ("inventory_mode_dispatch_candidate", 0x1D4CA0, 28, (0x101D4DF8,),
+     (bytes((0x83, 0xC0, 0xFE)), bytes((0x83, 0xF8, 0x0A)))),
+    ("inventory_cache_dispatch_candidate", 0x1D4E80, 24, (0x101D4F64,),
+     (bytes((0x83, 0xC0, 0xFE)), bytes((0x83, 0xF8, 0x0A)))),
 )
 
 
@@ -136,6 +140,7 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         "hypothetical_container_extension": legacy_layout_risk(),
         "warnings": [
             "Original 2019 command IDs 118-120 are assigned to unrelated commands; do not copy later build IDs.",
+            "Two 2019 inventory mode dispatch candidates compare (mode - 2) to 10 (11 branches for modes 2..12); do not add modes 13-16 without expanding every consumer.",
             "Observed record/capacity offsets overlap a hypothetical container-13 record range.",
             "Static window patterns do not establish complete handler control flow or caller bounds.",
             "Do not send container IDs 13-16 or modern-format packet 0x1C to this client.",
