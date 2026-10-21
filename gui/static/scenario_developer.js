@@ -343,7 +343,10 @@
   $('sd-observations').addEventListener('change',()=>{readGuidedFields();renderSteps();diagnostics();});
   $('sd-validate').addEventListener('click',async()=>{try{await validatePreview();}
     catch(e){$('sd-preview').hidden=true;show('Canonical validation rejected: '+e.message+'\n'+M.referenceIssues(spec).join('\n'));}});
+  let savePending=false;
   $('sd-save').addEventListener('click',async()=>{
+    if(savePending)return;
+    savePending=true;$('sd-save').disabled=true;
     try {
       if(!$('sd-token').value)throw Error('Enter a local operator token; a preview never grants save permission');
       const validated=await validatePreview();
@@ -356,6 +359,7 @@
       show('Saved DESIGN_ONLY '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
         '. NOT reviewed or executable.');
     }catch(e){show('Draft NOT saved: '+e.message);}
+    finally {savePending=false;$('sd-save').disabled=false;}
   });
   $('sd-load-drafts').addEventListener('click',async()=>{
     try {
@@ -431,10 +435,12 @@
   });
   let coverageContext = null, evidenceSuggestions = null, activeHandoff = null;
   function installIncompleteDraft(draft, feedback, key) {
-    // Repeated clicks cannot wipe a draft or create a duplicate source-derived ID.
-    if (activeHandoff === key) throw Error('This source is already open for authoring; continue editing it or explicitly start a new scenario.');
-    if (activeHandoff && baseline===null && ($('sd-case').value.trim() || spec.steps.length))
-      throw Error('An unsaved draft is already being edited. Save or explicitly start a new scenario before changing source.');
+    // Inspect the actual Guided or Advanced editor before touching it. A
+    // loaded revision, any edit to the initial synthetic example, or another
+    // source handoff requires an explicit New action first.
+    current();
+    const issue=M.handoffReplacementIssue(spec,baseline,Number($('sd-revision').value),activeHandoff);
+    if (issue) throw Error(issue);
     activeHandoff=key;
     spec=draft;mode='guided';baseline=null;$('sd-revision').value=0;
     $('sd-guided-panel').hidden=false;$('sd-advanced-panel').hidden=true;
