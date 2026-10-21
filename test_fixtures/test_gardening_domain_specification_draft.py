@@ -20,7 +20,7 @@ def test_gardening_domain_specification_is_untouched_by_runners():
     for case in data["cases"]:
         assert case["runner"] == "unassigned"
         assert case["execution_status"] == "design_only"
-        assert case["execution_lane"] == "needs-mutation"
+        assert case["lane"] == case["execution_lane"] == "needs-mutation"
         assert case["verdict"] == "NOT_RUN"
         assert case["mutation"]["enabled"] is False
         assert case["behavior"]["given"] and case["behavior"]["when"] and case["behavior"]["then"]
