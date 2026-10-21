@@ -70,6 +70,7 @@ def main() -> int:
                 "candidate_sha256": entry["candidate_sha256"],
                 "candidate_matches_original_stream": entry["candidate_matches_original_stream"],
                 "candidate_common_prefix_bytes": entry["candidate_common_prefix_bytes"],
+                "candidate_decoder_termination": entry["candidate_decoder_termination"],
             } for entry in evaluations]
             base = evaluations[0]
             report = {
@@ -79,6 +80,8 @@ def main() -> int:
                 "pol1_raw_section_size": base["pol1_raw_section_size"],
                 "pol1_raw_section_isolated": base["pol1_raw_section_isolated"],
                 "original_stream_consumed_bytes": base["original_stream_consumed_bytes"],
+                "original_decoder_termination": base["original_decoder_termination"],
+                "bytes_between_stream_end_and_entrypoint": base["bytes_between_stream_end_and_entrypoint"],
                 "original_stream_sha256": base["original_stream_sha256"],
                 "protected_suffix_bytes": base["protected_suffix_bytes"],
                 "entrypoint_section_offset": base["entrypoint_section_offset"],
