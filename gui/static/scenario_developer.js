@@ -464,6 +464,12 @@
       staticText(article,'h3',item.step_id+' · '+item.decision+' (proposal, not normative)');
       staticText(article,'p','Originally observed: '+item.observed_summary);
       staticText(article,'p','Original indexed refs: '+item.evidence_refs.join(', '));
+      const sourceDetail=el('details');
+      staticText(sourceDetail,'summary','Indexed source file hashes and parser versions (not rehashed)');
+      for(const pointer of item.source_fingerprints||[])staticText(sourceDetail,'p',
+        pointer.ref_id+' · SHA-256 '+pointer.sha256+' · parser version '+pointer.parser_version+
+        ' · '+pointer.verification);
+      article.append(sourceDetail);
       const details=el('details');staticText(details,'summary','Candidate identities (UNVERIFIED)');
       for(const b of item.bindings)staticText(details,'p',
         b.kind+' '+b.identity+' · '+b.classification+' · '+b.confidence+
