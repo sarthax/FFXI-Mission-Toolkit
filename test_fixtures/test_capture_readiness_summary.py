@@ -272,6 +272,14 @@ def test_existing_offline_reviewer_renders_readiness_without_approval():
         lambda x: x["readiness_steps"][0]["oracle_readiness"].update(normative_expected="UNAUTHORIZED"),
         lambda x: x["readiness_steps"][0]["identity_matches"][0].update(source_identity_verified=True),
         lambda x: x["readiness_steps"][0].update(evidence_refs=["FORGED_SOURCE"]),
+        lambda x: x["readiness_steps"][0]["missing_observations"][0].update(
+            status="INDEPENDENTLY_VERIFIED"),
+        lambda x: x["readiness_steps"][0]["missing_observations"][0].update(
+            permission_granted=True),
+        lambda x: x["readiness_steps"][0]["missing_observations"][0].update(
+            evidence_refs=["FORGED_CAPTURE_REF"]),
+        lambda x: x["readiness_steps"][0].update(readiness_state="READY"),
+        lambda x: x["source_integrity"].update(independent_capture_bytes_authenticated=True),
         lambda x: x["scenario_developer_handoff"].update(automatic_import=True),
         lambda x: x["contract_v2_alignment"].update(execution_enabled=True),
     ):
