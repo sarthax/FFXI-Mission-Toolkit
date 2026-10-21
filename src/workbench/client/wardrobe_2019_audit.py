@@ -86,6 +86,16 @@ ANCHORS = {
     "manager_index_compared_to_slot_count": (0xF6EEF, "3b8188b00300"),
     "manager_index_rejects_unknown": (0xF6EF7, "33c0c3"),
     "manager_slot_indexed_load": (0xF6EFA, "8b0481"),
+    "fixed_read_local0_source": (0x40E5, "8d8c2404b40300"),
+    "fixed_read_local1_source": (0x4185, "8d942484030000"),
+    "fixed_read_local2_source": (0x4314, "8d842484030000"),
+    "fixed_read_local3_source": (0x43B2, "8d8c2404b40300"),
+    "fixed_read_local4_source": (0x4458, "8d942484640700"),
+    "fixed_write_argument0_source": (0x45A6, "8b842410010000"),
+    "fixed_write_argument1_source": (0x4643, "8b84240c010000"),
+    "fixed_write_argument2_source": (0x46E3, "8b84240c010000"),
+    "fixed_write_argument3_source": (0x4783, "8b84240c010000"),
+    "fixed_write_active_store_source": (0x4810, "a108da4c10"),
 }
 
 
@@ -280,6 +290,16 @@ def inspect_2019_store_lifecycle(decoded_sites_verified: bool) -> dict:
             "0x45B0", "0x464D", "0x46ED", "0x478D", "0x4818",
         ],
         "persistent_file_format_and_schema_confirmed": False,
+        "fixed_transfer_source_observations": {
+            "direct_active_store": ["0x3FA1", "0x4818"],
+            "stack_local_buffer": [
+                "0x40EC", "0x418C", "0x431B", "0x43B9", "0x445F",
+            ],
+            "stack_loaded_pointer_unknown_origin": [
+                "0x45B0", "0x464D", "0x46ED", "0x478D",
+            ],
+        },
+        "all_transfer_pointers_alias_active_store": None,
         "linear_disassembly_candidate_reference_count": 1045,
         "manager_slot_count_field_offset": MANAGER_SLOT_COUNT_FIELD_OFFSET,
         "manager_default_slot_count": 1,
