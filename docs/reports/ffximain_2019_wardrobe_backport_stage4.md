@@ -60,6 +60,29 @@ Therefore, **NO-GO for increasing the loop bound, packet capacities, or containe
 
 The new `inspect_2019_store_layout` function returns metadata-only layout evidence, budget arithmetic, and a **fail-closed overlap gate**. The evidence status becomes verified only if the exact source and decoded hashes and all selected static x86 anchors match. Synthetic tests assert the collision and decline to claim verification if the anchors fail.
 
+## Per-instance clear, manager teardown and post-array inventory cursor
+
+The original 2019 DLL was re-opened under SHA-256 gate on **2026-10-21**; independent `objdump` inspection and direct byte verification confirmed the following selected instruction sites. The work never altered or launched the source DLL.
+
+| Observed path | Decoded .text RVA | Static instruction meaning |
+|---|---|---|
+| Manager slot initialized | `0xF6C01` | Writes an initial manager slot count **1** at global buffer base `+0x3B088`. |
+| Manager slot selection | `0xF710A` | Retrieves the store pointer at `[manager + selected_index*4]` after comparing index to slot count at `+0x3B088`. |
+| Per-instance clear | `0xF710D`, `0xF711E` | With the selected store as destination, `rep stosd` clears **0xEC20 DWORDs = 0x3B080 (241,792) bytes**. This is distinct from the **0x3EDF4-byte** initial global zero-clear. |
+| Secondary initializer pointer selection | `0xF73E1`, `0xF740E` | Additional writes of a supplied store pointer to active-store global `0x104CDA08` during other state transitions. |
+| Teardown enumerate active slots | `0xF6FF0` / `0xF7009` | Loops over the manager's counted slots, selects each store and calls cleanup routine `0xF7030`. |
+| Conditional per-store cleanup | `0xF7030`, `0xF7050` | Checks pointer and activity byte at `[store+0xC]` before cleanup cascade; **not evidence of heap deallocation**. |
+| Active-store pointer cleared | `0xF70D6`, `0xF6FE2` | Writes zero to active pointer during store teardown or global manager reset. |
+| Post-inventory slot cursor | `0xE885E`, `0xE8881`, `0xE8890`, `0xE88A6`, `0xE88CC` | Uses fields at store `+0x14D5C` (counter) and `+0x14D60` (pointer into item records). Advances by **44 bytes**, checks counter against **0x51 = 81 slots**, and clears cursor pointer when exhausted. |
+
+**Strongest new constraint:** the state directly following the 13-container item array is a live inventory enumeration cursor, including a pointer into the legacy item array. Appending extra records would overwrite that cursor; relocating records independently would also require updating cursor creation/iteration and any other item-pointer holders. Moving just the global pointer is insufficient because the manager uses **indexed store instances**, and the per-instance reset actively initializes hundreds of thousands of bytes. The 241,792-byte clear is an observed per-store operation; it is *not* evidence of the allocator's minimum committed size for all possible instances.
+
+An additional search for the active-store global's four-byte address found **1,046 raw byte-pattern occurrences** in the decoded code, many of which are clearly repeated load patterns; these are **candidate references, not 1,046 confirmed instructions or unique callers**. This underscores why a complete pointer-use and lifetime inventory is still necessary. A targeted cross-reference tool should independently decode these candidate sites rather than changing arbitrary byte matches.
+
+The exact-build read-only audit now reports the manager slot count and selection sites, per-store clear size, shutdown reset/cleanup sites and inventory cursor offsets. It explicitly reports that the pointer-writer inventory, allocation size for every instance and object lifetime are **incomplete**, even when all static anchors match.
+
+**Go/no-go:** Do not proceed with in-place expansion or relocating the item array yet. The next independent task should inventory all store-relative accessors and cursor consumers, inspect how additional manager slots are allocated and freed, and stage an in-memory hypothetical expansion model without changing any client or server packet.
+
 ## Synthetic bounds oracle added
 
 The Stage 4 module also provides a **pure offline address validator** for the original 13-container layout. For a container `c` and slot `s`, it returns `0x9860 + (c * 81 + s) * 44` **only** when `0 <= c <= 12` and `0 <= s <= 80`; every other value returns no address. Booleans and non-integer numeric values fail closed. This models the storage stride seen in the 2019 decoded code without dereferencing process memory.
