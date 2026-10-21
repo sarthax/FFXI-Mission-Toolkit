@@ -26,6 +26,7 @@ SLOTS_PER_CONTAINER = 81
 RECORD_BYTES = 44
 RECORD_BASE_OFFSET = 0x9860
 EXTENSION_START = RECORD_BASE_OFFSET + LEGACY_CONTAINERS * SLOTS_PER_CONTAINER * RECORD_BYTES
+WARDROBE_ONLY_EXTENSION_BYTES = 4 * SLOTS_PER_CONTAINER * RECORD_BYTES
 EXTENSION_BYTES = (FUTURE_CONTAINERS - LEGACY_CONTAINERS) * SLOTS_PER_CONTAINER * RECORD_BYTES
 
 # Anchored at exact decoded code RVAs; these are short generic x86 motifs.
@@ -85,6 +86,8 @@ def describe_2019_allocator(image: bytes, decoded: bytes) -> dict:
         "existing_record_containers": LEGACY_CONTAINERS,
         "future_record_containers_requested": FUTURE_CONTAINERS,
         "hypothetical_new_records_start": f"0x{EXTENSION_START:X}",
+        "hypothetical_four_wardrobe_record_bytes": WARDROBE_ONLY_EXTENSION_BYTES,
+        "hypothetical_four_wardrobe_end_exclusive": f"0x{EXTENSION_START + WARDROBE_ONLY_EXTENSION_BYTES:X}",
         "hypothetical_five_container_record_bytes": EXTENSION_BYTES,
         "hypothetical_new_records_end_exclusive": f"0x{EXTENSION_START + EXTENSION_BYTES:X}",
         "extension_overlaps_existing_context_fields": True,
