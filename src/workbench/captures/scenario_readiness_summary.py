@@ -210,6 +210,77 @@ def _v2_hints(draft: dict, checked: dict, readbacks_by_step: dict) -> dict:
     }
 
 
+
+def _typed_authoring_projection(
+    capture_id: object, digest: str, rows: list[dict], integrity: dict,
+) -> dict:
+    """Stable authoring *advice*; never a spec, assertion or verified v2 field.
+
+    This adapter deliberately consumes the original producer classes rather
+    than guessing Agent C's namespace/zone IDs. It is safe for a separately
+    reviewed display in Agent B's editor but is NOT an editor import payload.
+    """
+    steps = []
+    for row in rows:
+        identities = []
+        for binding in row["identity_matches"]:
+            classification = binding["classification"]
+            if classification not in {"EXACT", "AMBIGUOUS", "INFERRED",
+                                      "UNRESOLVED", "UNSUPPORTED"}:
+                raise ValueError("unknown identity confidence classification")
+            value = binding["observed_value"]
+            candidate = value if type(value) is int and 0 <= value <= 2**32 - 1 else None
+            state = ("ambiguous" if classification == "AMBIGUOUS"
+                     else "candidate" if classification in {"EXACT", "INFERRED"} and candidate is not None
+                     else "unresolved")
+            if state != "candidate":
+                candidate = None
+            identities.append({
+                "binding_id": binding["binding_id"],
+                "capture_identity_kind": binding["kind"],
+                "observed_value": deepcopy(value),
+                "classification": classification,
+                "proposed_v2_binding_state": state,
+                "identity_candidate": candidate,
+                "namespace_candidate": None, "zone_id_candidate": None,
+                "source_record_correlation": classification == "EXACT",
+                "source_identity_verified": False,
+                "source_candidates_original": deepcopy(binding["source_candidates"]),
+                "original_evidence_refs": deepcopy(binding["evidence_refs"]),
+                "review_decision_original": deepcopy(binding["review_decision"]),
+            })
+        oracle = row["oracle_readiness"]
+        steps.append({
+            "step_id": row["step_id"],
+            "observed_summary_original": row["observed_summary"],
+            "original_evidence_refs": deepcopy(row["evidence_refs"]),
+            "identity_confidence": identities,
+            "missing_readbacks": deepcopy(row["missing_observations"]),
+            "readiness_state": row["readiness_state"],
+            "provenance_issues": deepcopy(row["compatibility_issues"]),
+            "expected_candidate": deepcopy(oracle["expected_candidate"]),
+            "independent_source_claim": deepcopy(oracle["independent_source"]),
+            "oracle_readiness": oracle["readiness"],
+            "oracle_approval_state": "UNAPPROVED",
+            "normative_expected": None, "verdict": "UNKNOWN",
+            "execution_enabled": False,
+        })
+    return {
+        "contract": "capture_readiness_authoring_projection_v1_NONCANONICAL",
+        "capture_id": capture_id,
+        "indexed_capture_projection_sha256": digest,
+        "physical_source_authenticated": False,
+        "source_compatibility_state": integrity["state"],
+        "source_provenance_issues": deepcopy(integrity["issues"]),
+        "steps": steps,
+        "contract_v2_adoption": "BLOCKED_PENDING_ACCEPTED_CONTRACT_AND_REVIEW",
+        "automatic_import": False, "save_allowed": False,
+        "approved_for_execution": False, "execution_enabled": False,
+        "normative_expected": None, "verdict": "UNKNOWN",
+    }
+
+
+
 def summarize_capture_readiness(
     draft: dict, *, catalog_snapshots: dict | None = None,
     reconciliations: list[dict] | None = None,
@@ -301,6 +372,10 @@ def summarize_capture_readiness(
         "scenario_developer_handoff": {
             "route": "/scenario-developer", "mode": "MANUAL_DESIGN_ONLY",
             "payload_kind": "NONCANONICAL_DIAGNOSTIC_ADVISORY",
+            "read_only_projection": _typed_authoring_projection(
+                draft["capture_id"], assessment["capture_projection_sha256"],
+                rows, integrity,
+            ),
             "automatic_import": False, "save_allowed": False,
             "execution_enabled": False,
         },
