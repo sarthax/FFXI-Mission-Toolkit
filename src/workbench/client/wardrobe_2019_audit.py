@@ -33,6 +33,18 @@ ANCHORS = {
     "packet_0x1e_item_record_base": (0xE9823, "8dbc8260980000"),
     "packet_0x1f_item_record_base": (0xE9883, "8d948160980000"),
     "packet_0x20_item_record_base": (0xE996D, "8d948160980000"),
+    "legacy_per_container_stride": (0xE883E, "81c1ec0d0000"),
+    "global_fixed_buffer_address_and_clear_count": (
+        0xF6BA7, "bf60db9610b97dfb0000"
+    ),
+    "global_buffer_clear_dwords": (0xF6BBE, "f3ab"),
+    "active_store_pointer_init": (0xF6C33, "a308da4c10"),
+    "field_immediately_after_inventory_zero": (
+        0xE885E, "c7805c4d010000000000"
+    ),
+    "field_immediately_after_inventory_pointer": (
+        0xE8881, "8990604d0100"
+    ),
 }
 
 
@@ -45,6 +57,52 @@ PACKET_LOCATION_FIELDS = {
     0x1F: (0x0A, 0x0B),
     0x20: (0x0E, 0x0F),
 }
+
+ORIGINAL_STORE_GLOBAL_ADDRESS = 0x1096DB60
+GLOBAL_INITIALIZED_DWORDS = 0xFB7D
+# 2019 active store pointer resolves to global buffer base + 4 in observed init.
+ACTIVE_STORE_BASE_OFFSET = 4
+ORIGINAL_ITEM_ARRAY_END = ITEM_STORE_OFFSET + LEGACY_CONTAINER_COUNT * SLOTS_PER_CONTAINER * ITEM_RECORD_BYTES
+EXPANDED_CONTAINER_COUNT = 18
+PROJECTED_18_CONTAINER_END = ITEM_STORE_OFFSET + EXPANDED_CONTAINER_COUNT * SLOTS_PER_CONTAINER * ITEM_RECORD_BYTES
+
+
+def inspect_2019_store_layout(decoded_sites_verified: bool) -> dict:
+    """Record fixed-buffer layout arithmetic, not an implementation or new capacity.
+
+    References after the item array are anchored in the original decoded code.
+    No arbitrary replacement pointer, relocated field or patch site is proposed.
+    """
+    total_buffer_bytes = GLOBAL_INITIALIZED_DWORDS * 4
+    extra_needed = (EXPANDED_CONTAINER_COUNT - LEGACY_CONTAINER_COUNT) * (
+        SLOTS_PER_CONTAINER * ITEM_RECORD_BYTES
+    )
+    return {
+        "evidence_status": (
+            "VERIFIED_STATIC_ANCHORS" if decoded_sites_verified else
+            "UNVERIFIED_STATIC_ANCHORS"
+        ),
+        "fixed_global_base_va": f"0x{ORIGINAL_STORE_GLOBAL_ADDRESS:X}",
+        "global_zero_init_bytes": total_buffer_bytes,
+        "active_store_offset_from_global_base": ACTIVE_STORE_BASE_OFFSET,
+        "legacy_container_count": LEGACY_CONTAINER_COUNT,
+        "legacy_item_array_start_offset": ITEM_STORE_OFFSET,
+        "legacy_item_array_exclusive_end_offset": ORIGINAL_ITEM_ARRAY_END,
+        "observed_following_scalar_field_offset": 0x14D5C,
+        "observed_following_pointer_field_offset": 0x14D60,
+        "projected_18_container_array_exclusive_end_offset": PROJECTED_18_CONTAINER_END,
+        "extra_bytes_for_five_containers": extra_needed,
+        "proposed_in_place_growth_overlaps_observed_fields": (
+            ORIGINAL_ITEM_ARRAY_END == 0x14D5C
+            and PROJECTED_18_CONTAINER_END > 0x14D60
+        ) if decoded_sites_verified else None,
+        "safety_decision": "NO_GO_IN_PLACE_ARRAY_GROWTH",
+        "caution": (
+            "Static offsets from exact-build x86 instruction anchors. The global "
+            "buffer has additional fields and many consumers. A separate allocation, "
+            "relocation, lifetime, accessor and packet audit is required."
+        ),
+    }
 
 
 def bounded_2019_record_offset(container_id: int, slot_id: int) -> int | None:
@@ -151,6 +209,9 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         "source_sha256": source_hash, "decoded_sha256": original["sha256"],
         "decoded_sha256_verified": decoded_hash_ok,
         "commands": commands, "decoded_sites": sites,
+        "store_layout": inspect_2019_store_layout(
+            decoded_hash_ok and sites["all_static_anchors_match"]
+        ),
         "observed_legacy_container_sentinel": 13 if proven else None,
         "unsafe_to_assume_supported_container_ids": [13, 14, 15, 16],
         "evidence_scope": "Exact 2019 build, static x86/code/data observations only.",
