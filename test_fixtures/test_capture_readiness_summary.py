@@ -57,6 +57,26 @@ def test_source_record_exact_is_not_independently_verified():
     assert output["source_integrity"]["independent_capture_bytes_authenticated"] is False
     assert output["scenario_developer_handoff"]["automatic_import"] is False
     assert output["scenario_developer_handoff"]["save_allowed"] is False
+    typed = output["scenario_developer_handoff"]["read_only_projection"]
+    assert typed["contract"] == "capture_readiness_authoring_projection_v1_NONCANONICAL"
+    assert typed["automatic_import"] is False and typed["execution_enabled"] is False
+    assert typed["contract_v2_adoption"] == "BLOCKED_PENDING_ACCEPTED_CONTRACT_AND_REVIEW"
+    assert typed["physical_source_authenticated"] is False
+    row = typed["steps"][0]
+    assert row["observed_summary_original"] == draft["steps"][0]["observed_summary"]
+    assert row["original_evidence_refs"] == draft["steps"][0]["evidence_refs"]
+    ids = {x["capture_identity_kind"]: x for x in row["identity_confidence"]}
+    assert ids["npc"]["classification"] == "EXACT"
+    assert ids["npc"]["source_record_correlation"] is True
+    assert ids["npc"]["source_identity_verified"] is False
+    assert ids["npc"]["proposed_v2_binding_state"] == "candidate"
+    assert ids["npc"]["namespace_candidate"] is None
+    assert ids["npc"]["zone_id_candidate"] is None
+    assert ids["npc_name"]["proposed_v2_binding_state"] == "ambiguous"
+    assert ids["npc_name"]["identity_candidate"] is None
+    assert row["expected_candidate"] == "SYNTHETIC_SOURCE_DERIVED_STATE"
+    assert row["oracle_approval_state"] == "UNAPPROVED"
+    assert row["normative_expected"] is None and row["verdict"] == "UNKNOWN"
     assert output["approved_for_execution"] is False
     assert draft == original
     con.close()
@@ -259,6 +279,8 @@ def test_existing_offline_reviewer_renders_readiness_without_approval():
     readiness_blob = re.search(r"<script id='readiness' type='application/json'>(.*?)</script>", html, re.S)
     assert readiness_blob
     assert json.loads(readiness_blob.group(1)) == report
+    assert report["scenario_developer_handoff"]["read_only_projection"]["steps"][0][
+        "missing_readbacks"] == report["readiness_steps"][0]["missing_observations"]
     sourced = summarize_capture_readiness(
         draft, independent_oracles=[independent_oracle(draft["steps"][0])])
     source_html = render_review_html(draft, readiness=sourced)
@@ -268,6 +290,14 @@ def test_existing_offline_reviewer_renders_readiness_without_approval():
     # Existing one-argument offline renderer remains compatible.
     assert "Identity and oracle readiness" in render_review_html(draft)
     for change in (
+        lambda x: x["scenario_developer_handoff"]["read_only_projection"].update(
+            approved_for_execution=True),
+        lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0].update(
+            oracle_approval_state="APPROVED"),
+        lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0]["identity_confidence"][0].update(
+            source_identity_verified=True),
+        lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0].update(
+            original_evidence_refs=["FABRICATED_REF"]),
         lambda x: x["readiness_steps"][0].update(execution_enabled=True),
         lambda x: x["readiness_steps"][0]["oracle_readiness"].update(normative_expected="UNAUTHORIZED"),
         lambda x: x["readiness_steps"][0]["identity_matches"][0].update(source_identity_verified=True),
