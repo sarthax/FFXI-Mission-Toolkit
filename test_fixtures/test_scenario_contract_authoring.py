@@ -59,6 +59,7 @@ def test_legacy_v1_editor_stays_unmodified():
     result = validate_editor_spec(spec)
     assert "contract_v2" not in result["canonical_specification"]
     assert result["contract_v2_compatibility"] is None
+    assert result["contract_v2_source_attribution"] is None
     assert result["execution_enabled"] is False
     assert all(row["verdict"] == "UNKNOWN" for row in result["preview"]["steps"])
 
@@ -306,3 +307,101 @@ def test_source_association_does_not_accept_noncanonical_capture_step_alias():
     doc["contract_v2"]["source_associations"][0]["target_id"] = "OBS-CAPTURE-S001"
     with pytest.raises(ValueError):
         validate_editor_spec(doc)
+
+
+def test_merged_source_attribution_in_editor_response_is_exactly_canonical():
+    from workbench.server_admin.feature_testing.scenario_contract_v2 import source_attribution_report
+
+    doc = _pending_source_association_spec("case")
+    doc["contract_v2"]["source_associations"].append({
+        "scope": "step", "target_id": doc["steps"][0]["id"], "source_refs": ["SourceOne"],
+    })
+    before = deepcopy(doc)
+    response = validate_editor_spec(doc)
+    report = response["contract_v2_source_attribution"]
+    assert response["canonical_specification"] == before
+    assert report == source_attribution_report(doc)
+    assert report["case"] == {
+        "state": "EXPLICIT_CITATION_CLAIM", "source_refs": ["SourceTwo"]}
+    assert report["steps"][doc["steps"][0]["id"]] == {
+        "state": "EXPLICIT_CITATION_CLAIM", "source_refs": ["SourceOne"]}
+    assert report["independent_verification"] == "NOT_ESTABLISHED"
+    assert report["oracle_approval"] == "NOT_ESTABLISHED"
+    assert report["execution_enabled"] is False
+    assert response["execution_enabled"] is False
+    assert response["preview"]["steps"][0]["verdict"] == "UNKNOWN"
+    assert doc == before
+
+
+def test_merged_case_only_step_only_oracle_and_unassigned_remain_separate():
+    from workbench.server_admin.feature_testing.scenario_contract_v2 import source_attribution_report
+
+    doc = _pending_source_association_spec("case")
+    case = validate_editor_spec(doc)["contract_v2_source_attribution"]
+    step_id = doc["steps"][0]["id"]
+    assert case["case"]["source_refs"] == ["SourceTwo"]
+    assert case["steps"][step_id] == {"state": "UNKNOWN", "source_refs": []}
+    assert doc["contract_v2"]["oracles"][0]["source_refs"] == ["SourceOne"]
+    assert doc["contract_v2"]["parameters"][0]["source_refs"] == ["SourceOne"]
+
+    doc["contract_v2"]["source_associations"] = [{
+        "scope": "step", "target_id": step_id, "source_refs": ["SourceTwo"]
+    }]
+    step = validate_editor_spec(doc)["contract_v2_source_attribution"]
+    assert step["case"] == {"state": "UNKNOWN", "source_refs": []}
+    assert step["steps"][step_id]["source_refs"] == ["SourceTwo"]
+    doc["contract_v2"]["source_associations"] = []
+    unassigned = source_attribution_report(doc)
+    assert unassigned["case"]["state"] == "UNKNOWN"
+    assert unassigned["steps"][step_id]["state"] == "UNKNOWN"
+    assert doc["contract_v2"]["sources"]  # source records stay declared, not linked
+
+
+def test_merged_canonical_direct_editor_fixtures_and_negative_diagnostics():
+    from workbench.server_admin.feature_testing.test_specifications import validate_spec
+    from workbench.server_admin.feature_testing.scenario_contract_v2 import (
+        serialize_spec, deserialize_spec, source_attribution_report
+    )
+
+    root = Path(__file__).parent
+    valid = json.loads((root / "r7_contract_v2_source_associations_valid_synthetic.json")
+                       .read_text(encoding="utf-8"))
+    assert validate_spec(valid) == valid
+    assert deserialize_spec(serialize_spec(valid)) == valid
+    report = source_attribution_report(valid)
+    assert report["case"]["state"] == "EXPLICIT_CITATION_CLAIM"
+    assert report["steps"][valid["steps"][0]["id"]]["state"] == "EXPLICIT_CITATION_CLAIM"
+    assert report["oracle_approval"] == "NOT_ESTABLISHED"
+    assert report["independent_verification"] == "NOT_ESTABLISHED"
+    assert report["execution_enabled"] is False
+
+    for fixture in ("invalid_step", "invalid_source"):
+        invalid = json.loads(
+            (root / ("r7_contract_v2_source_associations_" + fixture + "_synthetic.json"))
+            .read_text(encoding="utf-8"))
+        with pytest.raises(ValueError):
+            validate_spec(invalid)
+        with pytest.raises(ValueError):
+            source_attribution_report(invalid)
+
+
+def test_merged_canonical_association_survives_revisioned_save_and_stale_hash(monkeypatch, tmp_path):
+    from workbench.server_admin.feature_testing.scenario_contract_v2 import source_attribution_report
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_DRAFTS_DB",
+                       str(tmp_path / "r7-explicit-assoc.sqlite"))
+    doc = _pending_source_association_spec("step")
+    doc["rationale"] = "日本語の引用 — synthetic source provenance"
+    doc["contract_v2"]["fingerprints"]["base_spec_sha256"] = base_spec_sha256(doc)
+    initial = validate_editor_spec(doc)
+    assert initial["contract_v2_compatibility"]["state"] == "UNKNOWN"
+    assert initial["contract_v2_source_attribution"]["steps"][doc["steps"][0]["id"]]["state"] == "EXPLICIT_CITATION_CLAIM"
+    assert save_draft(initial["canonical_specification"], 0)["revision"] == 1
+    reopened = get_drafts()[0]["specification"]
+    assert reopened == doc
+    assert source_attribution_report(reopened)["case"]["state"] == "UNKNOWN"
+    assert source_attribution_report(reopened)["steps"][doc["steps"][0]["id"]]["source_refs"] == ["SourceTwo"]
+    with pytest.raises(ValueError, match="revision conflict"):
+        save_draft(reopened, 0)
+    reopened["rationale"] = "Change core fields; do not silently repin."
+    assert validate_editor_spec(reopened)["contract_v2_compatibility"]["state"] == "BLOCKED"
+    assert reopened["contract_v2"]["source_associations"] == doc["contract_v2"]["source_associations"]
