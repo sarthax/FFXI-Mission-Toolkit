@@ -86,3 +86,58 @@ assert.match(M.revisionIndicator(cloned,M.clone(cloned),1),/no changes/);
 const editedClone=M.clone(cloned);editedClone.purpose='Changed in editor';
 assert.match(M.revisionIndicator(cloned,editedClone,1),/unsaved changes/);
 console.log('Synthetic catalog attachment, clone and revision indicators: PASS');
+
+
+const coverageContext={
+ contract:'coverage_behavior_reference_v1',feature_id:'gardening',
+ behavior_ref:'GARD-SYNTH-01',label:'Synthetic declared test intent',
+ source_pointer:'features[id=gardening].cases[id=GARD-SYNTH-01]',
+ expected_oracle:'UNKNOWN',context_only:true,review_required:true,
+ execution_enabled:false
+};
+const coverageDraft=M.draftFromCoverage(coverageContext);
+assert.equal(coverageDraft.feature_id,'gardening');
+assert.equal(coverageDraft.case_id,'');
+assert.deepEqual(coverageDraft.assertions,[]);
+assert.deepEqual(coverageDraft.observations,[]);
+assert.deepEqual(coverageDraft.steps,[]);
+assert.equal(coverageDraft.runner,'unassigned');
+assert.equal(coverageDraft.execution_status,'design_only');
+assert.match(coverageDraft.rationale,/UNVERIFIED/);
+assert.deepEqual(M.parseAdvanced(JSON.stringify(coverageDraft)),coverageDraft);
+assert.throws(()=>M.draftFromCoverage({...coverageContext,expected_oracle:'PASS'}),/Unsupported/);
+
+const captureReview={
+ contract:'editor_evidence_suggestions_v1', capture_id:1,
+ projection_sha256:'a'.repeat(64), required_confirmation:true,
+ original_capture_authenticated:false,execution_enabled:false,
+ steps:[{step_id:'OBS-S001',observed_summary:'Synthetic indexed actor',
+          suggested_title:'Observed synthetic actor',decision:'ACCEPT',
+          evidence_refs:['capture-row:111'],bindings:[]},
+        {step_id:'OBS-S002',observed_summary:'Synthetic second step',
+          suggested_title:'Observed key item',decision:'PENDING',
+          evidence_refs:['capture-row:222'],bindings:[]}]
+};
+assert.throws(()=>M.draftFromEvidence(captureReview,[]),/Confirm/);
+assert.throws(()=>M.draftFromEvidence(captureReview,[{id:'OBS-S001',title:'A',confirmed:false}]),/confirmation/);
+assert.throws(()=>M.draftFromEvidence(captureReview,[{id:'OBS-S002',title:'B',confirmed:true}]),/confirmation/);
+const reverse=M.draftFromEvidence(captureReview,[{id:'OBS-S001',title:'Reviewed synthetic observation',confirmed:true}]);
+assert.equal(reverse.steps.length,1);
+assert.equal(reverse.steps[0].id,'OBS-S001');
+assert.deepEqual(reverse.steps[0].assertion_ids,[]);
+assert.deepEqual(reverse.steps[0].evidence_refs,[]);
+assert.match(reverse.steps[0].expected,/UNKNOWN/);
+assert.match(reverse.steps[0].confidence_note,/capture-row:111/);
+assert.match(reverse.rationale,/a{64}/);
+assert.equal(reverse.execution_status,'design_only');
+assert.deepEqual(M.parseAdvanced(JSON.stringify(reverse)),reverse);
+reverse.behavior.given=['Synthetic manual precondition'];
+reverse.observations=['client_bag'];
+reverse.assertions=[{id:'manual_assertion',operation:'nonempty',observed:'client_bag',expected:null}];
+reverse.steps[0].assertion_ids=['manual_assertion'];
+reverse.steps[0].evidence_refs=['client_bag'];
+reverse.preconditions=['Synthetic setup only'];reverse.cleanup=['No mutation'];
+reverse.feature_id='inventory_observation';reverse.case_id='SYNTH-REVIEW-01';
+assert.deepEqual(M.parseAdvanced(JSON.stringify(reverse)),reverse);
+assert.equal(reverse.runner,'unassigned');
+console.log('Coverage and evidence handoffs remain provisional through Guided/Advanced: PASS');
