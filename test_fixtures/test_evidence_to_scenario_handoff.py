@@ -38,6 +38,29 @@ def synthetic_interaction_with_key_item():
          json.dumps({"zone_db": "SYNTHETIC_ZONE", "seq": 1}, sort_keys=True),
          "b" * 64, "line", 8, 8, None, None, "{}"),
     )
+    # Ordinary items are a different capture family from Key Item logger events.
+    con.execute("""CREATE TABLE capture_structured_records (
+        capture_id INTEGER, source_file TEXT, family TEXT, record_key TEXT,
+        record_type TEXT, ts TEXT, zone TEXT, entity_id INTEGER,
+        entity_name TEXT, item_id INTEGER, item_name TEXT
+    )""")
+    con.execute(
+        "INSERT INTO capture_structured_records VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        (1, "SYNTHETIC_ITEMS.csv", "synthetic_item_report", "row:1", "observed-item",
+         None, "SYNTHETIC_ZONE", 7000, "SYNTHETIC_ACTOR", 5000, "SYNTHETIC_ORDINARY_ITEM"),
+    )
+    item_hash = hashlib.sha256(b"synthetic item source bytes only\\n").hexdigest()
+    con.execute(
+        "INSERT INTO capture_source_manifest VALUES (?,?,?,?,?,?)",
+        (1, "SYNTHETIC_ITEMS.csv", item_hash, "synthetic structured", "0", "RECOGNIZED"),
+    )
+    con.execute(
+        "INSERT INTO capture_row_locators VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        (1, "SYNTHETIC_ITEMS.csv", "capture_structured_records",
+         json.dumps({"source_file": "SYNTHETIC_ITEMS.csv",
+                     "family": "synthetic_item_report", "record_key": "row:1"}, sort_keys=True),
+         item_hash, "csv-row", 2, 2, None, None, "{}"),
+    )
     con.commit()
     return con
 
@@ -53,7 +76,7 @@ def test_synthetic_npc_interaction_draft_and_provenance():
     assert draft["normative_expected"] is None
     assert draft["observation_verdict"] == "UNKNOWN"
     assert draft["canonical_validation_status"].startswith("BLOCKED_")
-    assert len(draft["steps"]) == 4, draft["steps"]
+    assert len(draft["steps"]) == 5, draft["steps"]
     step = draft["steps"][0]
     assert step["lane"] == "capture_events"
     assert "Captured interaction candidate" in step["observed_summary"]
@@ -87,6 +110,13 @@ def test_synthetic_npc_interaction_draft_and_provenance():
     assert "meaning unresolved" in eventview["observed_summary"]
     ki = next(s for s in draft["steps"] if s["lane"] == "capture_ki_events")
     assert next(b["observed_value"] for b in ki["bindings"] if b["kind"] == "key_item") == 9000
+    item = next(s for s in draft["steps"] if s["lane"] == "capture_structured_records")
+    assert "ordinary" not in item["observed_summary"].lower() or "ownership" in item["observed_summary"]
+    assert next(b["observed_value"] for b in item["bindings"] if b["kind"] == "item") == 5000
+    assert "SYNTHETIC_ORDINARY_ITEM" in item["observed_summary"]
+    item_source = draft["evidence_map"][item["evidence_refs"][0]]["source"]
+    assert item_source["status"] == "LOCATED_SOURCE_SPAN"
+    assert item_source["references"][0]["source_sha256"] == hashlib.sha256(b"synthetic item source bytes only\\n").hexdigest()
     packet = next(s for s in draft["steps"] if s["lane"] == "capture_raw_packets")
     assert packet["record_class"] == "INDEXED_RAW"
     assert next(b["classification"] for b in packet["bindings"] if b["kind"] == "packet") == "UNSUPPORTED"
