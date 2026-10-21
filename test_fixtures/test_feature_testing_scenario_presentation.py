@@ -63,6 +63,7 @@ def test_six_ordered_bdd_steps_and_dual_verdict_do_not_authenticate_import():
     assert len(view["steps"]) == 6
     assert [step["number"] for step in view["steps"]] == list(range(1, 7))
     assert view["mapped_assertion_count"] == view["assertion_count"] == 6
+    assert view["unmapped_assertions"] == []
     assert all(step["status"] == "PASS" for step in view["steps"])
     assert view["recorded_verdict"] == "PASS"
     assert view["recalculated_verdict"] == "PASS"
