@@ -1,0 +1,59 @@
+{
+  "znm": {
+    "label": "Zeni NM (ZNM)",
+    "archetype": "system.znm",
+    "summary": "PLACEHOLDER (F-11, LSB backport candidate, not started). Sanraku and Ryo NPCs exist in DSP (259 and 47 lines); the LSB global is missing: soul plates, Zeni values, daily Sanraku's Interest/Fauna rotation and the mob hooks. LSB: scripts/globals/znm.lua, znm_data.lua. Cheapest of the F-11 systems, no engine change expected.",
+    "wiki": {
+      "categories": [
+        "Zeni Notorious Monsters"
+      ],
+      "templates": [],
+      "headings": []
+    },
+    "children": [],
+    "entities": [
+      {
+        "kind": "Sanraku / Ryo NPCs",
+        "fields": [
+          "name",
+          "zone",
+          "DSP id",
+          "position"
+        ],
+        "server_globs": [
+          "scripts/zones/Aht_Urhgan_Whitegate/npcs/Sanraku.lua",
+          "scripts/zones/Aht_Urhgan_Whitegate/npcs/Ryo.lua"
+        ],
+        "edit": "/zoneplot"
+      },
+      {
+        "kind": "ZNM mobs",
+        "fields": [
+          "name",
+          "zone",
+          "tier",
+          "zeni",
+          "pop item"
+        ],
+        "server_globs": [
+          "scripts/globals/znm_data.lua",
+          "scripts/zones/*/mobs/*.lua"
+        ],
+        "edit": "/zoneplot"
+      },
+      {
+        "kind": "Soul plate system",
+        "fields": [
+          "plate item",
+          "zeni value",
+          "interest/fauna rotation"
+        ],
+        "server_globs": [
+          "scripts/globals/znm.lua"
+        ],
+        "edit": null
+      }
+    ],
+    "compare": "Compare znm_data.lua against current Sanraku.lua and verify item and mob ids against the client."
+  }
+}

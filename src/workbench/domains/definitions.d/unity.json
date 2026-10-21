@@ -1,0 +1,47 @@
+{
+  "unity": {
+    "label": "Unity Concord",
+    "archetype": "system.unity",
+    "summary": "PLACEHOLDER (F-11, LSB backport candidate, not started). LSB-only. Unity Concord NPCs, unity warps, accolades, Unity quest menu and leader rankings; joining requires 10 completed Records of Eminence, so it is blocked on the ROE domain. LSB: scripts/globals/unity.lua, sql/unity_system.sql, packets 0x110/0x116-0x118/0x063 (DSP's 0x110 is an unrelated handler). Needs a client-version check and verified event ids before any build.",
+    "wiki": {
+      "categories": [
+        "Unity Concord",
+        "Unity Concord NPC"
+      ],
+      "templates": [],
+      "headings": []
+    },
+    "children": [],
+    "entities": [
+      {
+        "kind": "Unity Concord NPCs",
+        "fields": [
+          "zone",
+          "DSP id",
+          "position",
+          "csids (join / all-for-one)"
+        ],
+        "server_globs": [
+          "scripts/zones/*/npcs/Unity_Concord*.lua",
+          "sql/npc_list.sql"
+        ],
+        "edit": "/zoneplot"
+      },
+      {
+        "kind": "Unity data / warps",
+        "fields": [
+          "unity id",
+          "leader",
+          "warp position",
+          "accolade shop"
+        ],
+        "server_globs": [
+          "scripts/globals/unity.lua",
+          "sql/unity_system.sql"
+        ],
+        "edit": null
+      }
+    ],
+    "compare": "Depends on ROE. Verify every csid against a fresh same-session DAT pull before marking anything ok."
+  }
+}

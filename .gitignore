@@ -83,3 +83,4 @@ scripts/lua_syntax_check.py
 data/auction_house_*.db
 data/live_client_test/
 data/voidwatch/edit_log.jsonl
+data/test_execution/

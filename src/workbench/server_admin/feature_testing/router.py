@@ -14,6 +14,13 @@ from workbench.runtime.paths import GUI_ROOT
 from .results import recent_results
 
 router = APIRouter(prefix="/feature-testing", tags=["Feature Testing"])
+
+# Apply saved Setup-tab settings (only when enabled; real env vars always win).
+try:
+    from . import test_execution_settings as _setup_boot
+    _setup_boot.apply_to_environ()
+except Exception:  # setup must never stop the Toolkit starting
+    pass
 templates = Jinja2Templates(directory=str(GUI_ROOT / "templates"))
 _REPO = Path(__file__).resolve().parents[4]
 
@@ -272,10 +279,67 @@ def _operator_auth(request: Request, operator_token: str | None) -> None:
     origin = request.headers.get("origin", "")
     if origin and origin != str(request.base_url).rstrip("/"):
         raise HTTPException(403, "Cross-origin execution denied")
+    from . import test_execution_settings as setup
+    if (not operator_token and setup.ui_mode_active()
+            and request.headers.get("sec-fetch-site") == "same-origin"
+            and request.headers.get("x-requested-with") == "toolkit-ui"):
+        # Setup-tab opt-in: the page itself is the operator. Blocks cross-site browsers and
+        # OpenAPI/model tools (hidden routes); it does not defend against local processes.
+        operator_token = os.environ.get("MISSION_TOOLKIT_TEST_OPERATOR_TOKEN")
     try:
         authorize_operator(operator_token)
     except PermissionError as exc:
         raise HTTPException(403, str(exc)) from exc
+
+
+def _setup_guard(request: Request) -> None:
+    host = request.client.host if request.client else ""
+    if host not in ("127.0.0.1", "::1"):
+        raise HTTPException(403, "Local operator access only")
+    if (request.headers.get("sec-fetch-site") != "same-origin"
+            or request.headers.get("x-requested-with") != "toolkit-ui"):
+        raise HTTPException(403, "Setup changes must come from the Toolkit page")
+
+
+class SetupRequest(BaseModel):
+    headless_root: str | None = None
+    charids: str | None = None
+    db_user: str | None = None
+    db_password: str | None = None
+    db_name: str | None = None
+    db_port: int | None = None
+
+
+@router.get("/setup/status", include_in_schema=False)
+def setup_status(request: Request):
+    _setup_guard(request)
+    from . import test_execution_settings as setup
+    return setup.status()
+
+
+@router.post("/setup/save", include_in_schema=False)
+def setup_save(request: Request, payload: SetupRequest):
+    _setup_guard(request)
+    from . import test_execution_settings as setup
+    db = {k: v for k, v in (("user", payload.db_user), ("password", payload.db_password),
+                            ("name", payload.db_name), ("port", payload.db_port)) if v is not None}
+    try:
+        setup.update(headless_root=payload.headless_root, charids=payload.charids, db=db or None)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return setup.status()
+
+
+class EnableRequest(BaseModel):
+    enabled: bool
+
+
+@router.post("/setup/enable", include_in_schema=False)
+def setup_enable(request: Request, payload: EnableRequest):
+    _setup_guard(request)
+    from . import test_execution_settings as setup
+    setup.set_enabled(payload.enabled)
+    return setup.status()
 
 
 @router.post("/builder/launch", include_in_schema=False)
@@ -317,6 +381,11 @@ def execution_jobs(request: Request, x_test_operator_token: str | None = Header(
         raise HTTPException(503, str(exc)) from exc
 
 
+def _ui_mode() -> bool:
+    from . import test_execution_settings as setup
+    return setup.ui_mode_active()
+
+
 def dashboard_view(*, tab: str = "runs", feature: str = "", verdict: str = "",
                    query: str = "", page: int = 1) -> dict:
     """Build a bounded view without altering the append-only evidence store."""
@@ -346,7 +415,8 @@ def dashboard_view(*, tab: str = "runs", feature: str = "", verdict: str = "",
             "feature_filter": feature, "verdict_filter": verdict, "query_filter": query,
             "features": _summaries(), "evidence_count": len(records),
             "builder_preflight": _builder_preflight(),
-            "results_configured": bool(_results_db()), "execution_enabled": False}
+            "results_configured": bool(_results_db()), "execution_enabled": False,
+            "ui_mode": _ui_mode()}
 
 
 @router.get("", response_class=HTMLResponse)
