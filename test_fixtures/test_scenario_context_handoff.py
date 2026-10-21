@@ -306,3 +306,26 @@ def test_unified_editor_has_one_coverage_start_and_manual_evidence_binding_revie
     assert "return to Evidence Reviewer" in page or "Return to the Evidence Reviewer" in page
     assert "OBSERVED / provisional" in js and "EXPECTED / normative" in js
     assert not any(token in js for token in ("send_gm_command","/builder/launch","packet_inject"))
+
+
+def test_review_payload_actual_size_limit_not_only_content_length():
+    """A local caller cannot evade the bounded review import with a false header."""
+    forged=reviewed_fixture()
+    forged["padding"]="x"*5_100_000
+    with pytest.raises(HTTPException) as oversized:
+        inspect_evidence_handoff(request(),EvidenceReviewRequest(review=forged))
+    assert oversized.value.status_code==413
+
+
+def test_editor_evidence_bounds_match_accepted_offline_reviewer():
+    from pathlib import Path
+    from workbench.server_admin.scenario_authoring import context_handoff
+    root=Path(__file__).resolve().parents[1]
+    js=(root/"gui/static/scenario_developer.js").read_text(encoding="utf-8")
+    page=(root/"gui/templates/scenario_developer.html").read_text(encoding="utf-8")
+    producer=(root/"src/workbench/captures/scenario_review_offline.py").read_text(encoding="utf-8")
+    assert context_handoff._MAX_STEPS==100
+    assert context_handoff._MAX_REFS==4000
+    assert "4_000_000" in producer
+    assert "file.size>4_500_000" in js
+    assert "maximum 4.5 MB" in page
