@@ -408,6 +408,10 @@ def test_agent_a_discard_review_guard_all_editor_replacement_paths():
     assert "const generation=editorGeneration" in js
     assert "const input=M.clone(current())" in js
     assert "M.saveResponseDisposition(toSave,latest,saved" in js
+    preview=js[js.index("  async function validatePreview()"):js.index("  let editorGeneration=",js.index("  async function validatePreview()"))]
+    assert "const generation=editorGeneration, input=M.clone(current())" in preview
+    assert "generation!==editorGeneration" in preview
+    assert "Preview is stale" in preview
     assert "if(!disposition.apply_revision)" in js
     assert "if(savePending)throw Error" in js[js.index("function installIncompleteDraft"):
                                                js.index("async function resolveCoverageContext")]
