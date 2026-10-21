@@ -67,6 +67,9 @@ def main() -> int:
                 "status": entry["status"],
                 "in_memory_decoded_roundtrip": entry["in_memory_decoded_roundtrip"],
                 "protected_suffix_unchanged": entry["protected_suffix_unchanged"],
+                "candidate_sha256": entry["candidate_sha256"],
+                "candidate_matches_original_stream": entry["candidate_matches_original_stream"],
+                "candidate_common_prefix_bytes": entry["candidate_common_prefix_bytes"],
             } for entry in evaluations]
             base = evaluations[0]
             report = {
@@ -76,6 +79,7 @@ def main() -> int:
                 "pol1_raw_section_size": base["pol1_raw_section_size"],
                 "pol1_raw_section_isolated": base["pol1_raw_section_isolated"],
                 "original_stream_consumed_bytes": base["original_stream_consumed_bytes"],
+                "original_stream_sha256": base["original_stream_sha256"],
                 "protected_suffix_bytes": base["protected_suffix_bytes"],
                 "entrypoint_section_offset": base["entrypoint_section_offset"],
                 "entrypoint_in_pol1": base["entrypoint_in_pol1"],
