@@ -1,0 +1,48 @@
+{
+  "waypoint": {
+    "label": "Waypoints",
+    "archetype": "system.waypoint",
+    "summary": "PLACEHOLDER (F-11, LSB backport candidate, not started). LSB-only. Adoulin and Lower Jeuno waypoint teleport network (10 zones, about 100 nodes, unlockable map markers). LSB: scripts/globals/waypoint.lua. Needs packet 0x114 map markers (stubbed in DSP) and verified event ids per zone.",
+    "wiki": {
+      "categories": [
+        "Waypoints"
+      ],
+      "templates": [],
+      "headings": []
+    },
+    "children": [],
+    "entities": [
+      {
+        "kind": "Waypoint NPCs",
+        "fields": [
+          "zone",
+          "node index",
+          "DSP id",
+          "position",
+          "event id",
+          "unlock position"
+        ],
+        "server_globs": [
+          "scripts/zones/*/npcs/Waypoint*.lua",
+          "sql/npc_list.sql"
+        ],
+        "edit": "/zoneplot"
+      },
+      {
+        "kind": "Waypoint table",
+        "fields": [
+          "index",
+          "offset",
+          "group",
+          "event",
+          "teleport pos"
+        ],
+        "server_globs": [
+          "scripts/globals/waypoint.lua"
+        ],
+        "edit": null
+      }
+    ],
+    "compare": "Compare node list against BG Wiki Waypoint and captures; verify event ids and map-marker bits first."
+  }
+}

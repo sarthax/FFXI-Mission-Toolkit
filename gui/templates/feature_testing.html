@@ -250,7 +250,8 @@ document.getElementById('ft-evaluation-form').addEventListener('submit',async fu
 <h3>Operator-approved local execution</h3>
 <p>Only MOG-09 is available. Launch requires a separate operator token, a disposable allowlisted character and explicit approval. The token stays in this browser page's memory and is not stored.</p>
 <form id="ft-launch-form" class="ft-filters">
-<label>Operator token<input id="ft-operator-token" type="password" autocomplete="off" required></label>
+{% if ui_mode %}<p>Test execution is turned on in <a href="/feature-testing?tab=guide">Setup</a>; no token needed. You will be asked to confirm.</p>{% endif %}
+<label {% if ui_mode %}hidden{% endif %}>Operator token<input id="ft-operator-token" type="password" autocomplete="off" {% if not ui_mode %}required{% endif %}></label>
 <label>Test account<input id="ft-run-account" pattern="[A-Za-z0-9_-]{1,32}" required autocomplete="off"></label>
 <label>Character ID<input id="ft-run-character" type="number" min="1" required></label>
 <label>Supervisor port<input id="ft-run-port" type="number" min="1" max="65535" value="8420" required></label>
@@ -265,7 +266,7 @@ document.getElementById('ft-evaluation-form').addEventListener('submit',async fu
 const form=document.getElementById('ft-launch-form'), note=document.getElementById('ft-job-feedback'), listing=document.getElementById('ft-job-history');
 const token=()=>document.getElementById('ft-operator-token').value;
 async function request(path, options) {
- const response=await fetch(path,{...options,headers:{'X-Test-Operator-Token':token(),...(options&&options.headers||{})},credentials:'same-origin'});
+ const response=await fetch(path,{...options,headers:{'X-Test-Operator-Token':token(),'X-Requested-With':'toolkit-ui',...(options&&options.headers||{})},credentials:'same-origin'});
  const body=await response.json();
  if(!response.ok) throw new Error(body.detail||'Request failed');
  return body;
@@ -297,6 +298,7 @@ async function refresh() {
 form.addEventListener('submit',async event=>{
  event.preventDefault();
  if(!form.reportValidity())return;
+ {% if ui_mode %}if(!confirm('Start the read-only MOG-09 run on account '+document.getElementById('ft-run-account').value+' (character '+document.getElementById('ft-run-character').value+')? A headless bot will log in briefly.'))return;{% endif %}
  note.textContent='Submitting operator-approved test…';
  try {
   const body={account:document.getElementById('ft-run-account').value,
@@ -325,6 +327,56 @@ document.getElementById('ft-refresh-jobs').addEventListener('click',refresh);
 </tbody></table></div></details>
 {% endfor %}</section>
 {% else %}
+<section class="wb-panel" id="ft-setup"><h2>Test execution setup</h2>
+<p>Everything needed to run a live test, checked in one place. Fix the red items top to bottom; nothing is stored outside this computer.</p>
+<ul id="ft-setup-steps" aria-live="polite"><li>Checking…</li></ul>
+<div class="ft-filters">
+<button type="button" id="ft-setup-enable">Turn on test execution</button>
+<button type="button" id="ft-setup-disable">Turn off</button>
+</div>
+<h3>1. XiHeadless checkout</h3>
+<label>Detected checkouts <select id="ft-setup-root"></select></label>
+<h3>2. Disposable test character ID(s)</h3>
+<label>Character IDs (comma separated) <input id="ft-setup-chars" autocomplete="off" placeholder="e.g. 21833"></label>
+<h3>3. Read-only database login <small>(optional but needed for a PASS/FAIL verdict)</small></h3>
+<div class="ft-filters">
+<label>User <input id="ft-setup-dbuser" autocomplete="off"></label>
+<label>Password <input id="ft-setup-dbpass" type="password" autocomplete="new-password" placeholder="leave blank to keep saved"></label>
+<label>Database <input id="ft-setup-dbname" autocomplete="off" placeholder="dspdb"></label>
+<label>Port <input id="ft-setup-dbport" type="number" value="3306"></label>
+</div>
+<button type="button" id="ft-setup-save">Save</button>
+<pre id="ft-setup-note" aria-live="polite"></pre>
+<details><summary>Create the read-only database user (copy into your MariaDB console)</summary>
+<pre>CREATE USER 'toolkit_ro'@'127.0.0.1' IDENTIFIED BY 'choose-a-password';
+GRANT SELECT ON dspdb.char_inventory TO 'toolkit_ro'@'127.0.0.1';</pre>
+<p>Replace <code>dspdb</code> with your database name. This login can only read inventory rows.</p></details>
+<p><small>Settings file: <code id="ft-setup-file"></code>. Saved passwords are never shown again. Environment variables, if set, override these values. Full walkthrough: <code>docs/workbench/TEST_EXECUTION_SETUP.md</code>.</small></p>
+<script>
+(function(){
+const $=id=>document.getElementById(id), note=$('ft-setup-note');
+const H={'X-Requested-With':'toolkit-ui','Content-Type':'application/json'};
+async function call(path,body){const r=await fetch('/feature-testing/setup/'+path,{method:body?'POST':'GET',headers:H,credentials:'same-origin',body:body?JSON.stringify(body):undefined});const j=await r.json();if(!r.ok)throw Error(j.detail||'Request failed');return j;}
+function show(st){
+ const ul=$('ft-setup-steps');ul.replaceChildren();
+ for(const s of st.steps){const li=document.createElement('li');li.textContent=(s.ok?'✅ ':'❌ ')+s.title+(s.ok?'':' — '+s.fix);ul.appendChild(li);}
+ const sel=$('ft-setup-root');sel.replaceChildren();
+ const none=document.createElement('option');none.value='';none.textContent=st.headless_roots.length?'(choose)':'(none found)';sel.appendChild(none);
+ for(const r of st.headless_roots){const o=document.createElement('option');o.value=r.path;o.textContent=r.name+' @ '+r.commit+(r.has_dll?'':' — not built')+(r.clean?'':' — uncommitted changes');if(r.path===st.selected_root)o.selected=true;sel.appendChild(o);}
+ $('ft-setup-chars').value=st.charids.join(', ');$('ft-setup-dbuser').value=st.db.user;$('ft-setup-dbname').value=st.db.name;$('ft-setup-dbport').value=st.db.port;
+ $('ft-setup-dbpass').placeholder=st.db.password_saved?'saved — leave blank to keep':'password';
+ $('ft-setup-file').textContent=st.settings_file;
+ note.textContent=st.ready_to_run?'Ready: go to Build & run.':'Not ready yet — fix the items marked ❌.';
+}
+const run=p=>p.then(show).catch(e=>{note.textContent='Not saved: '+e.message;});
+$('ft-setup-save').addEventListener('click',()=>run(call('save',{headless_root:$('ft-setup-root').value,charids:$('ft-setup-chars').value,
+ db_user:$('ft-setup-dbuser').value,db_password:$('ft-setup-dbpass').value,db_name:$('ft-setup-dbname').value,db_port:Number($('ft-setup-dbport').value)||3306})));
+$('ft-setup-enable').addEventListener('click',()=>run(call('enable',{enabled:true})));
+$('ft-setup-disable').addEventListener('click',()=>run(call('enable',{enabled:false})));
+run(call('status'));
+})();
+</script>
+</section>
 <section class="wb-panel"><h2>Testing workspace and supervisor</h2>
 <p>The dashboard reviews plans and imported evidence. Deterministic test execution occurs in a separately controlled XiHeadless runner; there is no live execution button here.</p>
 <h3>Evidence setup</h3><p>Set <code>MISSION_TOOLKIT_TEST_RESULTS_DB</code> to a local SQLite evidence database, then import validated reports using the supported local importer. No database is created from this page.</p>

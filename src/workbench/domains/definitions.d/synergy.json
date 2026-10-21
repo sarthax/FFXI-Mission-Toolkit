@@ -1,0 +1,57 @@
+{
+  "synergy": {
+    "label": "Synergy",
+    "archetype": "system.synergy",
+    "summary": "PLACEHOLDER (F-11, LSB backport candidate, not started). LSB-only. Synergy furnace crafting: furnace NPC logic, elemental fewell, pressure and impurity, recipes. LSB: scripts/globals/synergy.lua, sql/synergy_recipes.sql. DSP has Synergy Engineer/Enthusiast NPC scripts in 3 cities but no furnace logic or recipes. LSB message ids carry a 32k offset TODO and must be re-verified against the client.",
+    "wiki": {
+      "categories": [
+        "Synergy"
+      ],
+      "templates": [],
+      "headings": []
+    },
+    "children": [],
+    "entities": [
+      {
+        "kind": "Synergy Engineer / Enthusiast NPCs",
+        "fields": [
+          "name",
+          "zone",
+          "DSP id",
+          "events"
+        ],
+        "server_globs": [
+          "scripts/zones/*/npcs/Synergy_*.lua"
+        ],
+        "edit": "/zoneplot"
+      },
+      {
+        "kind": "Furnace NPCs",
+        "fields": [
+          "zone",
+          "DSP id",
+          "position"
+        ],
+        "server_globs": [
+          "scripts/zones/*/npcs/Synergy_Furnace*.lua",
+          "sql/npc_list.sql"
+        ],
+        "edit": "/zoneplot"
+      },
+      {
+        "kind": "Synergy recipes",
+        "fields": [
+          "recipe id",
+          "ingredients",
+          "result"
+        ],
+        "server_globs": [
+          "scripts/globals/synergy.lua",
+          "sql/synergy_recipes.sql"
+        ],
+        "edit": null
+      }
+    ],
+    "compare": "Verify message ids per zone with dat-extractor; compare recipes to BG Wiki."
+  }
+}
