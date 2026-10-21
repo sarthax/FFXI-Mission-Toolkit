@@ -167,6 +167,19 @@ A new `workbench.client.wardrobe_2019_packet_contract` module provides **offline
 Seven new synthetic tests cover exact capacity offsets, deliberately nonzero skipped bytes, unverified frames of lengths `0x2E`, `0x48` and other sizes, wrong binary fingerprint, wrong packet IDs, malformed input, 13/16/255 container IDs, bad slot indexes and fail-closed modern-format gates. The CI path list now includes the new module and tests on both Windows and Linux.
 
 **Important boundary:** `source_sha256` in this offline API is a *declared exact-build precondition*, not an authenticated login/session signal. Nothing here authorizes the server to infer client versions or transmit modern ITEM_MAX packets. Designing a real per-session compatibility signal and verifying its trust are prerequisites for live changes.
+## Stage 4 container-aware UI helper gates (read-only 2019 x86)
+
+Direct control-flow-aligned disassembly of the original exact-SHA December 2019 POL1-decoded `.text` found multiple capacity getter callers clustered in a client helper region near RVA `0x1E7F00..0x1E9200`. Three selected helpers have **explicit signed container-ID comparisons against `0x0D` (13)** immediately before they compute a record address and/or call the legacy capacity getter `0xE8C60`:
+
+| Selected 2019 RVA | Instruction | Associated capacity getter call |
+|---|---|---|
+| `0x1E7FAC` | `cmp ebp,0x0D` followed by `jge` to failure/exit path | `0x1E7FDE` → `0xE8C60` |
+| `0x1E830B` | `cmp ebp,0x0D` followed by `jge` to failure/exit path | `0x1E8343` → `0xE8C60` |
+| `0x1E847E` | `cmp ecx,0x0D` followed by `jge` to failure/exit path | `0x1E8498` → `0xE8C60` |
+
+An additional container-capacity use at `0x1E91C5` also calls `0xE8C60` during a capacity-iteration loop. Disassembly associates these functions with direct record-array computations and the `store + 0x9860` layout, so these are **container-aware UI/client helper paths**, not a claim that the *entire* 2019 Wardrobe menu builder or all window state transitions have been recovered. The bounded static observations nevertheless show that **simply adding a detached sidecar and sending capacities will not make IDs 13–16 pass these original helper guards**. A full UI integration needs safe, separately reviewed routing and mode/command/menu behavior rather than unconditional replacement of every `13` constant.
+
+Seven additional short instruction anchors are included in the exact-client SHA-gated audit; `inspect_2019_container_ui_bounds` reports the three selected guards and four calls plus explicit `UNKNOWN` fields for the rest of the UI/control-flow graph. Two synthetic tests ensure the bound observations fail closed if verification cannot be established. No GUI interaction or modified executable was used for this audit.
 ## Go/no-go and next implementation slice
 
 **GO:** Further read-only mapping, server/version compatibility planning, synthetic bounds tests, and standalone feature staging on a separate branch.
