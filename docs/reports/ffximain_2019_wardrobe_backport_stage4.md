@@ -180,6 +180,50 @@ Direct control-flow-aligned disassembly of the original exact-SHA December 2019 
 An additional container-capacity use at `0x1E91C5` also calls `0xE8C60` during a capacity-iteration loop. Disassembly associates these functions with direct record-array computations and the `store + 0x9860` layout, so these are **container-aware UI/client helper paths**, not a claim that the *entire* 2019 Wardrobe menu builder or all window state transitions have been recovered. The bounded static observations nevertheless show that **simply adding a detached sidecar and sending capacities will not make IDs 13–16 pass these original helper guards**. A full UI integration needs safe, separately reviewed routing and mode/command/menu behavior rather than unconditional replacement of every `13` constant.
 
 Seven additional short instruction anchors are included in the exact-client SHA-gated audit; `inspect_2019_container_ui_bounds` reports the three selected guards and four calls plus explicit `UNKNOWN` fields for the rest of the UI/control-flow graph. Two synthetic tests ensure the bound observations fail closed if verification cannot be established. No GUI interaction or modified executable was used for this audit.
+## Stage 4 original 2019 Wardrobe slash-command → UI mode dispatch
+
+**Source and method:** Independently decoded the SHA-256-verified archived December 2019 `FFXiMain.dll`, confirming the decoded `.text` fingerprint, and disassembled the exact function windows with x86 32-bit `objdump`. The source DLL, executable and game/server were not modified or executed. This is static, version-specific evidence, not a complete menu control-flow graph.
+
+### Four command records and handlers
+
+Each slash-command record is **24 bytes** (`name[16]`, command ID u16 at `+0x14`, flags u16 at `+0x16`). A separate 12-byte dispatch record is `{u32 commandID, u32 handlerVA, u32 flags}`. The original has:
+
+| Name | ID | Name record `.data` RVA | Dispatch record `.data` RVA | Handler `.text` RVA | Mode-object global VA |
+|---|---:|---|---|---|---|
+| `/wardrobe` | 111 | `0x34B1B0` | `0x34C068` | `0x7CE80` | `0x1061E5D0` |
+| `/wardrobe2` | 112 | `0x34B1C8` | `0x34C074` | `0x7CEA0` | `0x1061E5D4` |
+| `/wardrobe3` | 113 | `0x34B1E0` | `0x34C080` | `0x7CEC0` | `0x1061E5D8` |
+| `/wardrobe4` | 114 | `0x34B1F8` | `0x34C08C` | `0x7CEE0` | `0x1061E5DC` |
+
+The four name records have flag word `0x51`; their dispatch-table flag DWORD is zero. Each handler loads its corresponding global mode-object pointer, pushes the zero option and that pointer, then directly calls **`0x1D1680`**. The preceding `0x7CE60` handler is `/case` (ID 110), *not* Wardrobe 1. **Neither new `/wardrobe5..8` command records nor handler table entries are present at these four original sites.** This doesn't establish that no other code implements related behavior.
+
+### Shared helper, mode getter and eleven-case selector
+
+The common helper `0x1D1680` performs several gating calls. Its success path at `0x1D16F0` loads the input mode-object pointer and global UI controller pointer `0x1061E588`, then calls **`0x1D4E70`**. The latter stores the object at `UIController+0x58`, calls the object's vtable getter **slot `+0x54`**, subtracts 2 from the returned mode, and performs an **unsigned comparison against 10**. Only resulting indexes 0–10 reach the 11-entry jump table at `0x1D4F64`. All other values branch to default target `0x1D4EFA`.
+
+| Mode input | Jump-table entry RVA | UI pointer source global VA |
+|---:|---|---|
+| 2 | `0x1D4EB6` | `0x10621FC4` |
+| 3 | `0x1D4EFA` | `0x10621FC0` (same target as default) |
+| 4 | `0x1D4EC0` | `0x10621FCC` |
+| 5 | `0x1D4EAB` | `0x10621FD0` |
+| 6 | `0x1D4EA3` | `0x10621FD4` |
+| 7 | `0x1D4E99` | `0x10621FD8` |
+| 8 | `0x1D4EC8` | `0x10621FDC` |
+| 9 | `0x1D4EF0` | `0x10621FEC` |
+| 10 | `0x1D4ED3` | `0x10621FE0` |
+| 11 | `0x1D4EDD` | `0x10621FE4` |
+| 12 | `0x1D4EE5` | `0x10621FE8` |
+
+The decoded original switch instructions at `0x1D4E8A` are `add eax,-2; cmp eax,10; ja default; jmp [eax*4+0x101D4F64]`. The branch is **unsigned**, so modes below 2 also take the default. Proposed modern modes **13–16 do not have dedicated switch cases** in this original routine and would follow its default if fed as mode integers. This does **not** prove the four existing `/wardrobe` command pointers evaluate to particular mode integers: that requires inspecting each mode object's construction and the vtable getter return value. Do not conflate command IDs 111–114 with UI mode IDs 2–12.
+
+### New reproducible audit and negative tests
+
+The read-only `workbench.client.wardrobe_2019_command_ui.inspect_2019_command_ui_dispatch` verifies all four `.data` name and handler records, matching per-handler object-global loads and `CALL rel32` targets, the common-helper forwarder, the UI vtable getter opcode, the exact selector and 11-entry jump table, and all eleven case pointer-global instructions. It returns **only scalar IDs/RVAs/booleans**, never original executable bytes. Its report is gated by the exact source DLL SHA-256 and decoded `.text` SHA-256 in the parent `audit_2019_wardrobe`; altered or unknown inputs are not promoted to supported build facts.
+
+Six new synthetic negative/positive tests reject changed command IDs/names, misdirected handler pointers, altered helper call displacements, tampered mode getters/selectors and changed jump targets or globals. The dedicated cross-platform CI workflow has been extended to include the new source and test files.
+
+**Remaining UI work:** Independently recover construction of `0x1061E5D0..DC` mode-object pointers, the old UI container-object pointer setup and teardown, all menu entry gates/labels and outgoing item/equipment operations. Only then assess whether separate-sidecar storage and safe versioned packets could be connected to a new UI mode. No installable Wardrobe DLL follows from this slice.
 ## Go/no-go and next implementation slice
 
 **GO:** Further read-only mapping, server/version compatibility planning, synthetic bounds tests, and standalone feature staging on a separate branch.
