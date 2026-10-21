@@ -1,0 +1,4221 @@
+{
+  "artifact_type": "R5_moghancement_domain_design_not_canonical_catalog",
+  "schema_version": 1,
+  "execution_enabled": false,
+  "source_revision": {
+    "dsp_commit": "86d4467d446569c741d76d296e640c3b844ad844",
+    "dsp_branch": "main",
+    "deployed": "UNKNOWN",
+    "toolkit_base": "784f389ae9491f434498f2ceabc47c5e8ab826ad"
+  },
+  "integration_status": "BLOCKED_SCHEMA_OWNER_REVIEW",
+  "canonical_target": "data/testing/test_specifications.json",
+  "canonical_compatibility": "MOG-09 existing verified_runner remains canonical, this design-only extension not loader importable until typed layout, mod and source oracle fields reviewed",
+  "existing_runner": "MOG-09 (verified_runner) limited observation; no newly executed case",
+  "capability_gaps": [
+    "Fully source-verified installed layout",
+    "XIHeadless furniture install/uninstall menu close",
+    "Independent held KI and modifier readback",
+    "Runtime SQL hash/deployed DSP SHA"
+  ],
+  "cases": [
+    {
+      "schema_version": 1,
+      "feature_id": "moghancement",
+      "case_id": "MOG-01",
+      "name": "Single installed furnishing produces configured KI",
+      "kind": "positive",
+      "purpose": "Validate single installed furnishing produces configured ki using source-backed fixture and independent observation.",
+      "rationale": "Verified client install/exit not bound; installed layout readback absent",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "legacy_canonical_runner": "none",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN_IN_THIS_DOMAIN_EXPANSION",
+      "behavior": {
+        "given": [
+          "Exact disposable character, DSP revision, item_furnishing SQL and both safe layout source mapped",
+          "No live installation/uninstallation granted by this document",
+          "Independent authoritative held KIs, active KI, modifier base state and save boundary or UNKNOWN"
+        ],
+        "when": [
+          "Install one approved aura-bearing furnishing via client furnishing menu, close menu"
+        ],
+        "then": [
+          "DSP determines winning KI from installed item's item_furnishing SQL metadata, if it yields the unique dominant element; runtime UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Read-only or explicitly separately owner-approved fixture",
+        "No assumption stored furnishings are installed",
+        "Source oracle item_furnishing.sql must match running server DB"
+      ],
+      "steps": [
+        {
+          "id": "MOG-01-S01",
+          "title": "Read-only precondition manifest",
+          "action": "Record approved test character, both Safe installed flags, item_furnishing SQL revision and held/active KI",
+          "expected": "Complete order-preserving installed furniture baseline or UNKNOWN",
+          "assertion_ids": [
+            "MOG-01-baseline"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-01-S02",
+          "title": "Owner-authorized proposed action",
+          "action": "Install one approved aura-bearing furnishing via client furnishing menu, close menu",
+          "expected": "DSP determines winning KI from installed item's item_furnishing SQL metadata, if it yields the unique dominant element; runtime UNKNOWN",
+          "assertion_ids": [
+            "MOG-01-action"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 579,
+              "line_end": 595,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L579-L595"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-01-S03",
+          "title": "Evaluate independent source oracle",
+          "action": "Run pure SQL furniture metadata oracle against independently observed installed layout; compare actual KI and modifiers",
+          "expected": "Independent source-consistent expected and observed matching or UNKNOWN",
+          "assertion_ids": [
+            "MOG-01-oracle"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 579,
+              "line_end": 595,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L579-L595"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-01-S04",
+          "title": "Review cleanup and persistency",
+          "action": "Restore fixture with owner approval, verify both safe layouts/held KI/mods or quarantine",
+          "expected": "Verified cleanup and bounded evidence or BLOCKED",
+          "assertion_ids": [
+            "MOG-01-cleanup"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MOG-01-baseline",
+          "expected": "Complete two-Safe ordered installed manifest and KI/modifiers or UNKNOWN",
+          "oracle_status": "UNKNOWN_until_independent_layout"
+        },
+        {
+          "id": "MOG-01-action",
+          "expected": "DSP determines winning KI from installed item's item_furnishing SQL metadata, if it yields the unique dominant element; runtime UNKNOWN",
+          "oracle_status": "SOURCE_CONDITIONAL_NOT_VERIFIED_RUNTIME"
+        },
+        {
+          "id": "MOG-01-oracle",
+          "expected": "Pure source oracle and independent client/server observations in agreement; UNKNOWN otherwise",
+          "oracle_status": "UNKNOWN_until_independent_readback"
+        },
+        {
+          "id": "MOG-01-cleanup",
+          "expected": "Approved restoration or read-only disconnect and exact evidence; no silent assumptions",
+          "oracle_status": "UNKNOWN_until_review"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "sql/item_furnishing.sql",
+          "line_start": 25,
+          "line_end": 55,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 579,
+          "line_end": 595,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L579-L595"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+        }
+      ],
+      "toolkit_oracle": {
+        "path": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+        "toolkit_base": "784f389ae9491f434498f2ceabc47c5e8ab826ad",
+        "methods": [
+          "parse_furnishings",
+          "predict_moghancement",
+          "check_transition"
+        ],
+        "limitation": "Predicts server UpdateMoghancement; not client furnishing behavior; requires independently correct ordered installed layout"
+      },
+      "readback": {
+        "available": [
+          "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+          "Approved-character persisted KI bitsets"
+        ],
+        "missing": [
+          "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+          "Client furnishing install/uninstall and menu-exit packet/event provenance",
+          "Independent current modifier/readback and complete unfettered inventory",
+          "Live DSP code and item_furnishing SQL revision/configuration"
+        ]
+      },
+      "xiheadless": {
+        "candidates": [
+          "inventory",
+          "snapshot",
+          "wait_for_event",
+          "logout"
+        ],
+        "missing": [
+          "Approved real client install/uninstall and menu-close actions",
+          "Installed layout manifest",
+          "Independent modifier and held KI readback"
+        ],
+        "acceptance": "UNKNOWN; existing MOG-09 observation runner is narrower"
+      },
+      "mutation": {
+        "enabled": false,
+        "classification": "owner_approved_furniture_client_mutation_needed",
+        "safety": "No GM set/clear/recalc/force KI dispatch authorized here; separate isolated operator review",
+        "cleanup": "Restore by owner procedure; compare both safe manifests, current KI and effects; quarantine if incomplete"
+      },
+      "gaps": [
+        "Verified client install/exit not bound; installed layout readback absent",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "prior_evidence": "none"
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "moghancement",
+      "case_id": "MOG-02",
+      "name": "Same-element strongest installed furnishing determines KI",
+      "kind": "positive",
+      "purpose": "Validate same-element strongest installed furnishing determines ki using source-backed fixture and independent observation.",
+      "rationale": "Complete per-slot installed state and source-verified items missing",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "legacy_canonical_runner": "none",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN_IN_THIS_DOMAIN_EXPANSION",
+      "behavior": {
+        "given": [
+          "Exact disposable character, DSP revision, item_furnishing SQL and both safe layout source mapped",
+          "No live installation/uninstallation granted by this document",
+          "Independent authoritative held KIs, active KI, modifier base state and save boundary or UNKNOWN"
+        ],
+        "when": [
+          "Install two same-element furnished items with different aura; close menu"
+        ],
+        "then": [
+          "DSP selects the eligible item with maximum aura in dominant element; equal strengths obey first scan order; actual KI UNKNOWN until fixture"
+        ]
+      },
+      "preconditions": [
+        "Read-only or explicitly separately owner-approved fixture",
+        "No assumption stored furnishings are installed",
+        "Source oracle item_furnishing.sql must match running server DB"
+      ],
+      "steps": [
+        {
+          "id": "MOG-02-S01",
+          "title": "Read-only precondition manifest",
+          "action": "Record approved test character, both Safe installed flags, item_furnishing SQL revision and held/active KI",
+          "expected": "Complete order-preserving installed furniture baseline or UNKNOWN",
+          "assertion_ids": [
+            "MOG-02-baseline"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-02-S02",
+          "title": "Owner-authorized proposed action",
+          "action": "Install two same-element furnished items with different aura; close menu",
+          "expected": "DSP selects the eligible item with maximum aura in dominant element; equal strengths obey first scan order; actual KI UNKNOWN until fixture",
+          "assertion_ids": [
+            "MOG-02-action"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-02-S03",
+          "title": "Evaluate independent source oracle",
+          "action": "Run pure SQL furniture metadata oracle against independently observed installed layout; compare actual KI and modifiers",
+          "expected": "Independent source-consistent expected and observed matching or UNKNOWN",
+          "assertion_ids": [
+            "MOG-02-oracle"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-02-S04",
+          "title": "Review cleanup and persistency",
+          "action": "Restore fixture with owner approval, verify both safe layouts/held KI/mods or quarantine",
+          "expected": "Verified cleanup and bounded evidence or BLOCKED",
+          "assertion_ids": [
+            "MOG-02-cleanup"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MOG-02-baseline",
+          "expected": "Complete two-Safe ordered installed manifest and KI/modifiers or UNKNOWN",
+          "oracle_status": "UNKNOWN_until_independent_layout"
+        },
+        {
+          "id": "MOG-02-action",
+          "expected": "DSP selects the eligible item with maximum aura in dominant element; equal strengths obey first scan order; actual KI UNKNOWN until fixture",
+          "oracle_status": "SOURCE_CONDITIONAL_NOT_VERIFIED_RUNTIME"
+        },
+        {
+          "id": "MOG-02-oracle",
+          "expected": "Pure source oracle and independent client/server observations in agreement; UNKNOWN otherwise",
+          "oracle_status": "UNKNOWN_until_independent_readback"
+        },
+        {
+          "id": "MOG-02-cleanup",
+          "expected": "Approved restoration or read-only disconnect and exact evidence; no silent assumptions",
+          "oracle_status": "UNKNOWN_until_review"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+        }
+      ],
+      "toolkit_oracle": {
+        "path": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+        "toolkit_base": "784f389ae9491f434498f2ceabc47c5e8ab826ad",
+        "methods": [
+          "parse_furnishings",
+          "predict_moghancement",
+          "check_transition"
+        ],
+        "limitation": "Predicts server UpdateMoghancement; not client furnishing behavior; requires independently correct ordered installed layout"
+      },
+      "readback": {
+        "available": [
+          "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+          "Approved-character persisted KI bitsets"
+        ],
+        "missing": [
+          "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+          "Client furnishing install/uninstall and menu-exit packet/event provenance",
+          "Independent current modifier/readback and complete unfettered inventory",
+          "Live DSP code and item_furnishing SQL revision/configuration"
+        ]
+      },
+      "xiheadless": {
+        "candidates": [
+          "inventory",
+          "snapshot",
+          "wait_for_event",
+          "logout"
+        ],
+        "missing": [
+          "Approved real client install/uninstall and menu-close actions",
+          "Installed layout manifest",
+          "Independent modifier and held KI readback"
+        ],
+        "acceptance": "UNKNOWN; existing MOG-09 observation runner is narrower"
+      },
+      "mutation": {
+        "enabled": false,
+        "classification": "owner_approved_furniture_client_mutation_needed",
+        "safety": "No GM set/clear/recalc/force KI dispatch authorized here; separate isolated operator review",
+        "cleanup": "Restore by owner procedure; compare both safe manifests, current KI and effects; quarantine if incomplete"
+      },
+      "gaps": [
+        "Complete per-slot installed state and source-verified items missing",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "prior_evidence": "none"
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "moghancement",
+      "case_id": "MOG-03",
+      "name": "Aggregate dominant element calculation",
+      "kind": "positive",
+      "purpose": "Validate aggregate dominant element calculation using source-backed fixture and independent observation.",
+      "rationale": "Full two-Safe manifest and element SQL consistency unverified",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "legacy_canonical_runner": "none",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN_IN_THIS_DOMAIN_EXPANSION",
+      "behavior": {
+        "given": [
+          "Exact disposable character, DSP revision, item_furnishing SQL and both safe layout source mapped",
+          "No live installation/uninstallation granted by this document",
+          "Independent authoritative held KIs, active KI, modifier base state and save boundary or UNKNOWN"
+        ],
+        "when": [
+          "Install two different-element furniture combinations with known item aura"
+        ],
+        "then": [
+          "Unique greatest summed element wins; equal maxima produce 0 KI; exact selected KI conditional on eligible strongest item"
+        ]
+      },
+      "preconditions": [
+        "Read-only or explicitly separately owner-approved fixture",
+        "No assumption stored furnishings are installed",
+        "Source oracle item_furnishing.sql must match running server DB"
+      ],
+      "steps": [
+        {
+          "id": "MOG-03-S01",
+          "title": "Read-only precondition manifest",
+          "action": "Record approved test character, both Safe installed flags, item_furnishing SQL revision and held/active KI",
+          "expected": "Complete order-preserving installed furniture baseline or UNKNOWN",
+          "assertion_ids": [
+            "MOG-03-baseline"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-03-S02",
+          "title": "Owner-authorized proposed action",
+          "action": "Install two different-element furniture combinations with known item aura",
+          "expected": "Unique greatest summed element wins; equal maxima produce 0 KI; exact selected KI conditional on eligible strongest item",
+          "assertion_ids": [
+            "MOG-03-action"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 579,
+              "line_end": 595,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L579-L595"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-03-S03",
+          "title": "Evaluate independent source oracle",
+          "action": "Run pure SQL furniture metadata oracle against independently observed installed layout; compare actual KI and modifiers",
+          "expected": "Independent source-consistent expected and observed matching or UNKNOWN",
+          "assertion_ids": [
+            "MOG-03-oracle"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 579,
+              "line_end": 595,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L579-L595"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-03-S04",
+          "title": "Review cleanup and persistency",
+          "action": "Restore fixture with owner approval, verify both safe layouts/held KI/mods or quarantine",
+          "expected": "Verified cleanup and bounded evidence or BLOCKED",
+          "assertion_ids": [
+            "MOG-03-cleanup"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MOG-03-baseline",
+          "expected": "Complete two-Safe ordered installed manifest and KI/modifiers or UNKNOWN",
+          "oracle_status": "UNKNOWN_until_independent_layout"
+        },
+        {
+          "id": "MOG-03-action",
+          "expected": "Unique greatest summed element wins; equal maxima produce 0 KI; exact selected KI conditional on eligible strongest item",
+          "oracle_status": "SOURCE_CONDITIONAL_NOT_VERIFIED_RUNTIME"
+        },
+        {
+          "id": "MOG-03-oracle",
+          "expected": "Pure source oracle and independent client/server observations in agreement; UNKNOWN otherwise",
+          "oracle_status": "UNKNOWN_until_independent_readback"
+        },
+        {
+          "id": "MOG-03-cleanup",
+          "expected": "Approved restoration or read-only disconnect and exact evidence; no silent assumptions",
+          "oracle_status": "UNKNOWN_until_review"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 579,
+          "line_end": 595,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L579-L595"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+        }
+      ],
+      "toolkit_oracle": {
+        "path": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+        "toolkit_base": "784f389ae9491f434498f2ceabc47c5e8ab826ad",
+        "methods": [
+          "parse_furnishings",
+          "predict_moghancement",
+          "check_transition"
+        ],
+        "limitation": "Predicts server UpdateMoghancement; not client furnishing behavior; requires independently correct ordered installed layout"
+      },
+      "readback": {
+        "available": [
+          "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+          "Approved-character persisted KI bitsets"
+        ],
+        "missing": [
+          "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+          "Client furnishing install/uninstall and menu-exit packet/event provenance",
+          "Independent current modifier/readback and complete unfettered inventory",
+          "Live DSP code and item_furnishing SQL revision/configuration"
+        ]
+      },
+      "xiheadless": {
+        "candidates": [
+          "inventory",
+          "snapshot",
+          "wait_for_event",
+          "logout"
+        ],
+        "missing": [
+          "Approved real client install/uninstall and menu-close actions",
+          "Installed layout manifest",
+          "Independent modifier and held KI readback"
+        ],
+        "acceptance": "UNKNOWN; existing MOG-09 observation runner is narrower"
+      },
+      "mutation": {
+        "enabled": false,
+        "classification": "owner_approved_furniture_client_mutation_needed",
+        "safety": "No GM set/clear/recalc/force KI dispatch authorized here; separate isolated operator review",
+        "cleanup": "Restore by owner procedure; compare both safe manifests, current KI and effects; quarantine if incomplete"
+      },
+      "gaps": [
+        "Full two-Safe manifest and element SQL consistency unverified",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "prior_evidence": "none"
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "moghancement",
+      "case_id": "MOG-04",
+      "name": "Installed furniture across both safes",
+      "kind": "positive",
+      "purpose": "Validate installed furniture across both safes using source-backed fixture and independent observation.",
+      "rationale": "Exact installation flags for both safe locations, client container UI and save boundary unverified",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "legacy_canonical_runner": "none",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN_IN_THIS_DOMAIN_EXPANSION",
+      "behavior": {
+        "given": [
+          "Exact disposable character, DSP revision, item_furnishing SQL and both safe layout source mapped",
+          "No live installation/uninstallation granted by this document",
+          "Independent authoritative held KIs, active KI, modifier base state and save boundary or UNKNOWN"
+        ],
+        "when": [
+          "Place at least one approved installed furnishing in Mog Safe and Safe 2; close furnishing menu"
+        ],
+        "then": [
+          "DSP scans both safe containers in ascending slot order; dominant aura includes both; client-install across containers UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Read-only or explicitly separately owner-approved fixture",
+        "No assumption stored furnishings are installed",
+        "Source oracle item_furnishing.sql must match running server DB"
+      ],
+      "steps": [
+        {
+          "id": "MOG-04-S01",
+          "title": "Read-only precondition manifest",
+          "action": "Record approved test character, both Safe installed flags, item_furnishing SQL revision and held/active KI",
+          "expected": "Complete order-preserving installed furniture baseline or UNKNOWN",
+          "assertion_ids": [
+            "MOG-04-baseline"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-04-S02",
+          "title": "Owner-authorized proposed action",
+          "action": "Place at least one approved installed furnishing in Mog Safe and Safe 2; close furnishing menu",
+          "expected": "DSP scans both safe containers in ascending slot order; dominant aura includes both; client-install across containers UNKNOWN",
+          "assertion_ids": [
+            "MOG-04-action"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-04-S03",
+          "title": "Evaluate independent source oracle",
+          "action": "Run pure SQL furniture metadata oracle against independently observed installed layout; compare actual KI and modifiers",
+          "expected": "Independent source-consistent expected and observed matching or UNKNOWN",
+          "assertion_ids": [
+            "MOG-04-oracle"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-04-S04",
+          "title": "Review cleanup and persistency",
+          "action": "Restore fixture with owner approval, verify both safe layouts/held KI/mods or quarantine",
+          "expected": "Verified cleanup and bounded evidence or BLOCKED",
+          "assertion_ids": [
+            "MOG-04-cleanup"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MOG-04-baseline",
+          "expected": "Complete two-Safe ordered installed manifest and KI/modifiers or UNKNOWN",
+          "oracle_status": "UNKNOWN_until_independent_layout"
+        },
+        {
+          "id": "MOG-04-action",
+          "expected": "DSP scans both safe containers in ascending slot order; dominant aura includes both; client-install across containers UNKNOWN",
+          "oracle_status": "SOURCE_CONDITIONAL_NOT_VERIFIED_RUNTIME"
+        },
+        {
+          "id": "MOG-04-oracle",
+          "expected": "Pure source oracle and independent client/server observations in agreement; UNKNOWN otherwise",
+          "oracle_status": "UNKNOWN_until_independent_readback"
+        },
+        {
+          "id": "MOG-04-cleanup",
+          "expected": "Approved restoration or read-only disconnect and exact evidence; no silent assumptions",
+          "oracle_status": "UNKNOWN_until_review"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+        }
+      ],
+      "toolkit_oracle": {
+        "path": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+        "toolkit_base": "784f389ae9491f434498f2ceabc47c5e8ab826ad",
+        "methods": [
+          "parse_furnishings",
+          "predict_moghancement",
+          "check_transition"
+        ],
+        "limitation": "Predicts server UpdateMoghancement; not client furnishing behavior; requires independently correct ordered installed layout"
+      },
+      "readback": {
+        "available": [
+          "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+          "Approved-character persisted KI bitsets"
+        ],
+        "missing": [
+          "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+          "Client furnishing install/uninstall and menu-exit packet/event provenance",
+          "Independent current modifier/readback and complete unfettered inventory",
+          "Live DSP code and item_furnishing SQL revision/configuration"
+        ]
+      },
+      "xiheadless": {
+        "candidates": [
+          "inventory",
+          "snapshot",
+          "wait_for_event",
+          "logout"
+        ],
+        "missing": [
+          "Approved real client install/uninstall and menu-close actions",
+          "Installed layout manifest",
+          "Independent modifier and held KI readback"
+        ],
+        "acceptance": "UNKNOWN; existing MOG-09 observation runner is narrower"
+      },
+      "mutation": {
+        "enabled": false,
+        "classification": "owner_approved_furniture_client_mutation_needed",
+        "safety": "No GM set/clear/recalc/force KI dispatch authorized here; separate isolated operator review",
+        "cleanup": "Restore by owner procedure; compare both safe manifests, current KI and effects; quarantine if incomplete"
+      },
+      "gaps": [
+        "Exact installation flags for both safe locations, client container UI and save boundary unverified",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "prior_evidence": "none"
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "moghancement",
+      "case_id": "MOG-05",
+      "name": "Replacing prior KI removes stale KI and modifiers",
+      "kind": "positive",
+      "purpose": "Validate replacing prior ki removes stale ki and modifiers using source-backed fixture and independent observation.",
+      "rationale": "Independent full held KI + modifier readback missing",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "legacy_canonical_runner": "none",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN_IN_THIS_DOMAIN_EXPANSION",
+      "behavior": {
+        "given": [
+          "Exact disposable character, DSP revision, item_furnishing SQL and both safe layout source mapped",
+          "No live installation/uninstallation granted by this document",
+          "Independent authoritative held KIs, active KI, modifier base state and save boundary or UNKNOWN"
+        ],
+        "when": [
+          "Replace installed-winning furnishing with reviewed different KI fixture and finish menu"
+        ],
+        "then": [
+          "On KI change: remove old, grant new and remove/add respective modifiers; exact values depend on KI and nation"
+        ]
+      },
+      "preconditions": [
+        "Read-only or explicitly separately owner-approved fixture",
+        "No assumption stored furnishings are installed",
+        "Source oracle item_furnishing.sql must match running server DB"
+      ],
+      "steps": [
+        {
+          "id": "MOG-05-S01",
+          "title": "Read-only precondition manifest",
+          "action": "Record approved test character, both Safe installed flags, item_furnishing SQL revision and held/active KI",
+          "expected": "Complete order-preserving installed furniture baseline or UNKNOWN",
+          "assertion_ids": [
+            "MOG-05-baseline"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-05-S02",
+          "title": "Owner-authorized proposed action",
+          "action": "Replace installed-winning furnishing with reviewed different KI fixture and finish menu",
+          "expected": "On KI change: remove old, grant new and remove/add respective modifiers; exact values depend on KI and nation",
+          "assertion_ids": [
+            "MOG-05-action"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 661,
+              "line_end": 679,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L661-L679"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-05-S03",
+          "title": "Evaluate independent source oracle",
+          "action": "Run pure SQL furniture metadata oracle against independently observed installed layout; compare actual KI and modifiers",
+          "expected": "Independent source-consistent expected and observed matching or UNKNOWN",
+          "assertion_ids": [
+            "MOG-05-oracle"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 661,
+              "line_end": 679,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L661-L679"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-05-S04",
+          "title": "Review cleanup and persistency",
+          "action": "Restore fixture with owner approval, verify both safe layouts/held KI/mods or quarantine",
+          "expected": "Verified cleanup and bounded evidence or BLOCKED",
+          "assertion_ids": [
+            "MOG-05-cleanup"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MOG-05-baseline",
+          "expected": "Complete two-Safe ordered installed manifest and KI/modifiers or UNKNOWN",
+          "oracle_status": "UNKNOWN_until_independent_layout"
+        },
+        {
+          "id": "MOG-05-action",
+          "expected": "On KI change: remove old, grant new and remove/add respective modifiers; exact values depend on KI and nation",
+          "oracle_status": "SOURCE_CONDITIONAL_NOT_VERIFIED_RUNTIME"
+        },
+        {
+          "id": "MOG-05-oracle",
+          "expected": "Pure source oracle and independent client/server observations in agreement; UNKNOWN otherwise",
+          "oracle_status": "UNKNOWN_until_independent_readback"
+        },
+        {
+          "id": "MOG-05-cleanup",
+          "expected": "Approved restoration or read-only disconnect and exact evidence; no silent assumptions",
+          "oracle_status": "UNKNOWN_until_review"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 632,
+          "line_end": 659,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 661,
+          "line_end": 679,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L661-L679"
+        }
+      ],
+      "toolkit_oracle": {
+        "path": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+        "toolkit_base": "784f389ae9491f434498f2ceabc47c5e8ab826ad",
+        "methods": [
+          "parse_furnishings",
+          "predict_moghancement",
+          "check_transition"
+        ],
+        "limitation": "Predicts server UpdateMoghancement; not client furnishing behavior; requires independently correct ordered installed layout"
+      },
+      "readback": {
+        "available": [
+          "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+          "Approved-character persisted KI bitsets"
+        ],
+        "missing": [
+          "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+          "Client furnishing install/uninstall and menu-exit packet/event provenance",
+          "Independent current modifier/readback and complete unfettered inventory",
+          "Live DSP code and item_furnishing SQL revision/configuration"
+        ]
+      },
+      "xiheadless": {
+        "candidates": [
+          "inventory",
+          "snapshot",
+          "wait_for_event",
+          "logout"
+        ],
+        "missing": [
+          "Approved real client install/uninstall and menu-close actions",
+          "Installed layout manifest",
+          "Independent modifier and held KI readback"
+        ],
+        "acceptance": "UNKNOWN; existing MOG-09 observation runner is narrower"
+      },
+      "mutation": {
+        "enabled": false,
+        "classification": "owner_approved_furniture_client_mutation_needed",
+        "safety": "No GM set/clear/recalc/force KI dispatch authorized here; separate isolated operator review",
+        "cleanup": "Restore by owner procedure; compare both safe manifests, current KI and effects; quarantine if incomplete"
+      },
+      "gaps": [
+        "Independent full held KI + modifier readback missing",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "prior_evidence": "none"
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "moghancement",
+      "case_id": "MOG-06",
+      "name": "Uninstall and relog persistence",
+      "kind": "persistence",
+      "purpose": "Validate uninstall and relog persistence using source-backed fixture and independent observation.",
+      "rationale": "Reliable client uninstall, server save-boundary and reconnect evidence missing",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "legacy_canonical_runner": "none",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN_IN_THIS_DOMAIN_EXPANSION",
+      "behavior": {
+        "given": [
+          "Exact disposable character, DSP revision, item_furnishing SQL and both safe layout source mapped",
+          "No live installation/uninstallation granted by this document",
+          "Independent authoritative held KIs, active KI, modifier base state and save boundary or UNKNOWN"
+        ],
+        "when": [
+          "Uninstall source-verified winner, close menu and relog on isolated character"
+        ],
+        "then": [
+          "UpdateMoghancement recomputes from installed furniture; relog persisted KI/modifier state UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Read-only or explicitly separately owner-approved fixture",
+        "No assumption stored furnishings are installed",
+        "Source oracle item_furnishing.sql must match running server DB"
+      ],
+      "steps": [
+        {
+          "id": "MOG-06-S01",
+          "title": "Read-only precondition manifest",
+          "action": "Record approved test character, both Safe installed flags, item_furnishing SQL revision and held/active KI",
+          "expected": "Complete order-preserving installed furniture baseline or UNKNOWN",
+          "assertion_ids": [
+            "MOG-06-baseline"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-06-S02",
+          "title": "Owner-authorized proposed action",
+          "action": "Uninstall source-verified winner, close menu and relog on isolated character",
+          "expected": "UpdateMoghancement recomputes from installed furniture; relog persisted KI/modifier state UNKNOWN",
+          "assertion_ids": [
+            "MOG-06-action"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 545,
+              "line_end": 555,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L545-L555"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-06-S03",
+          "title": "Evaluate independent source oracle",
+          "action": "Run pure SQL furniture metadata oracle against independently observed installed layout; compare actual KI and modifiers",
+          "expected": "Independent source-consistent expected and observed matching or UNKNOWN",
+          "assertion_ids": [
+            "MOG-06-oracle"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 545,
+              "line_end": 555,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L545-L555"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-06-S04",
+          "title": "Review cleanup and persistency",
+          "action": "Restore fixture with owner approval, verify both safe layouts/held KI/mods or quarantine",
+          "expected": "Verified cleanup and bounded evidence or BLOCKED",
+          "assertion_ids": [
+            "MOG-06-cleanup"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MOG-06-baseline",
+          "expected": "Complete two-Safe ordered installed manifest and KI/modifiers or UNKNOWN",
+          "oracle_status": "UNKNOWN_until_independent_layout"
+        },
+        {
+          "id": "MOG-06-action",
+          "expected": "UpdateMoghancement recomputes from installed furniture; relog persisted KI/modifier state UNKNOWN",
+          "oracle_status": "SOURCE_CONDITIONAL_NOT_VERIFIED_RUNTIME"
+        },
+        {
+          "id": "MOG-06-oracle",
+          "expected": "Pure source oracle and independent client/server observations in agreement; UNKNOWN otherwise",
+          "oracle_status": "UNKNOWN_until_independent_readback"
+        },
+        {
+          "id": "MOG-06-cleanup",
+          "expected": "Approved restoration or read-only disconnect and exact evidence; no silent assumptions",
+          "oracle_status": "UNKNOWN_until_review"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 545,
+          "line_end": 555,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L545-L555"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 632,
+          "line_end": 659,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+        }
+      ],
+      "toolkit_oracle": {
+        "path": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+        "toolkit_base": "784f389ae9491f434498f2ceabc47c5e8ab826ad",
+        "methods": [
+          "parse_furnishings",
+          "predict_moghancement",
+          "check_transition"
+        ],
+        "limitation": "Predicts server UpdateMoghancement; not client furnishing behavior; requires independently correct ordered installed layout"
+      },
+      "readback": {
+        "available": [
+          "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+          "Approved-character persisted KI bitsets"
+        ],
+        "missing": [
+          "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+          "Client furnishing install/uninstall and menu-exit packet/event provenance",
+          "Independent current modifier/readback and complete unfettered inventory",
+          "Live DSP code and item_furnishing SQL revision/configuration"
+        ]
+      },
+      "xiheadless": {
+        "candidates": [
+          "inventory",
+          "snapshot",
+          "wait_for_event",
+          "logout"
+        ],
+        "missing": [
+          "Approved real client install/uninstall and menu-close actions",
+          "Installed layout manifest",
+          "Independent modifier and held KI readback"
+        ],
+        "acceptance": "UNKNOWN; existing MOG-09 observation runner is narrower"
+      },
+      "mutation": {
+        "enabled": false,
+        "classification": "owner_approved_furniture_client_mutation_needed",
+        "safety": "No GM set/clear/recalc/force KI dispatch authorized here; separate isolated operator review",
+        "cleanup": "Restore by owner procedure; compare both safe manifests, current KI and effects; quarantine if incomplete"
+      },
+      "gaps": [
+        "Reliable client uninstall, server save-boundary and reconnect evidence missing",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "prior_evidence": "none"
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "moghancement",
+      "case_id": "MOG-07",
+      "name": "GM info aura breakdown matches independent source oracle",
+      "kind": "positive",
+      "purpose": "Validate gm info aura breakdown matches independent source oracle using source-backed fixture and independent observation.",
+      "rationale": "No independent installed furniture manifest; GM diagnostic is same-server-derived evidence",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "legacy_canonical_runner": "none",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN_IN_THIS_DOMAIN_EXPANSION",
+      "behavior": {
+        "given": [
+          "Exact disposable character, DSP revision, item_furnishing SQL and both safe layout source mapped",
+          "No live installation/uninstallation granted by this document",
+          "Independent authoritative held KIs, active KI, modifier base state and save boundary or UNKNOWN"
+        ],
+        "when": [
+          "Observe existing layout with source-backed fixed item furnishing rows; issue only separately approved read-only info diagnostic"
+        ],
+        "then": [
+          "MoghancementDebug info prints active KI, eight aura totals, held furniture KI and nonzero mods; layout-to-aura agreement UNKNOWN without independent layout"
+        ]
+      },
+      "preconditions": [
+        "Read-only or explicitly separately owner-approved fixture",
+        "No assumption stored furnishings are installed",
+        "Source oracle item_furnishing.sql must match running server DB"
+      ],
+      "steps": [
+        {
+          "id": "MOG-07-S01",
+          "title": "Read-only precondition manifest",
+          "action": "Record approved test character, both Safe installed flags, item_furnishing SQL revision and held/active KI",
+          "expected": "Complete order-preserving installed furniture baseline or UNKNOWN",
+          "assertion_ids": [
+            "MOG-07-baseline"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-07-S02",
+          "title": "Owner-authorized proposed action",
+          "action": "Observe existing layout with source-backed fixed item furnishing rows; issue only separately approved read-only info diagnostic",
+          "expected": "MoghancementDebug info prints active KI, eight aura totals, held furniture KI and nonzero mods; layout-to-aura agreement UNKNOWN without independent layout",
+          "assertion_ids": [
+            "MOG-07-action"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-07-S03",
+          "title": "Evaluate independent source oracle",
+          "action": "Run pure SQL furniture metadata oracle against independently observed installed layout; compare actual KI and modifiers",
+          "expected": "Independent source-consistent expected and observed matching or UNKNOWN",
+          "assertion_ids": [
+            "MOG-07-oracle"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-07-S04",
+          "title": "Review cleanup and persistency",
+          "action": "Restore fixture with owner approval, verify both safe layouts/held KI/mods or quarantine",
+          "expected": "Verified cleanup and bounded evidence or BLOCKED",
+          "assertion_ids": [
+            "MOG-07-cleanup"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MOG-07-baseline",
+          "expected": "Complete two-Safe ordered installed manifest and KI/modifiers or UNKNOWN",
+          "oracle_status": "UNKNOWN_until_independent_layout"
+        },
+        {
+          "id": "MOG-07-action",
+          "expected": "MoghancementDebug info prints active KI, eight aura totals, held furniture KI and nonzero mods; layout-to-aura agreement UNKNOWN without independent layout",
+          "oracle_status": "SOURCE_CONDITIONAL_NOT_VERIFIED_RUNTIME"
+        },
+        {
+          "id": "MOG-07-oracle",
+          "expected": "Pure source oracle and independent client/server observations in agreement; UNKNOWN otherwise",
+          "oracle_status": "UNKNOWN_until_independent_readback"
+        },
+        {
+          "id": "MOG-07-cleanup",
+          "expected": "Approved restoration or read-only disconnect and exact evidence; no silent assumptions",
+          "oracle_status": "UNKNOWN_until_review"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 681,
+          "line_end": 769,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "sql/item_furnishing.sql",
+          "line_start": 25,
+          "line_end": 55,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+        }
+      ],
+      "toolkit_oracle": {
+        "path": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+        "toolkit_base": "784f389ae9491f434498f2ceabc47c5e8ab826ad",
+        "methods": [
+          "parse_furnishings",
+          "predict_moghancement",
+          "check_transition"
+        ],
+        "limitation": "Predicts server UpdateMoghancement; not client furnishing behavior; requires independently correct ordered installed layout"
+      },
+      "readback": {
+        "available": [
+          "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+          "Approved-character persisted KI bitsets"
+        ],
+        "missing": [
+          "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+          "Client furnishing install/uninstall and menu-exit packet/event provenance",
+          "Independent current modifier/readback and complete unfettered inventory",
+          "Live DSP code and item_furnishing SQL revision/configuration"
+        ]
+      },
+      "xiheadless": {
+        "candidates": [
+          "inventory",
+          "snapshot",
+          "wait_for_event",
+          "logout"
+        ],
+        "missing": [
+          "Approved real client install/uninstall and menu-close actions",
+          "Installed layout manifest",
+          "Independent modifier and held KI readback"
+        ],
+        "acceptance": "UNKNOWN; existing MOG-09 observation runner is narrower"
+      },
+      "mutation": {
+        "enabled": false,
+        "classification": "owner_approved_furniture_client_mutation_needed",
+        "safety": "No GM set/clear/recalc/force KI dispatch authorized here; separate isolated operator review",
+        "cleanup": "Restore by owner procedure; compare both safe manifests, current KI and effects; quarantine if incomplete"
+      },
+      "gaps": [
+        "No independent installed furniture manifest; GM diagnostic is same-server-derived evidence",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "prior_evidence": "none"
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "moghancement",
+      "case_id": "MOG-08",
+      "name": "Elemental tie clears KI",
+      "kind": "negative",
+      "purpose": "Validate elemental tie clears ki using source-backed fixture and independent observation.",
+      "rationale": "Need two-Safe installed manifest, typed compare and held KI readback",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "legacy_canonical_runner": "none",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN_IN_THIS_DOMAIN_EXPANSION",
+      "behavior": {
+        "given": [
+          "Exact disposable character, DSP revision, item_furnishing SQL and both safe layout source mapped",
+          "No live installation/uninstallation granted by this document",
+          "Independent authoritative held KIs, active KI, modifier base state and save boundary or UNKNOWN"
+        ],
+        "when": [
+          "Install fixtures with two distinct equal maximal elemental aura totals"
+        ],
+        "then": [
+          "When two dominant elements tie, new KI=0 and ChangeMoghancement removes prior active KI, assuming recompute occurs"
+        ]
+      },
+      "preconditions": [
+        "Read-only or explicitly separately owner-approved fixture",
+        "No assumption stored furnishings are installed",
+        "Source oracle item_furnishing.sql must match running server DB"
+      ],
+      "steps": [
+        {
+          "id": "MOG-08-S01",
+          "title": "Read-only precondition manifest",
+          "action": "Record approved test character, both Safe installed flags, item_furnishing SQL revision and held/active KI",
+          "expected": "Complete order-preserving installed furniture baseline or UNKNOWN",
+          "assertion_ids": [
+            "MOG-08-baseline"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-08-S02",
+          "title": "Owner-authorized proposed action",
+          "action": "Install fixtures with two distinct equal maximal elemental aura totals",
+          "expected": "When two dominant elements tie, new KI=0 and ChangeMoghancement removes prior active KI, assuming recompute occurs",
+          "assertion_ids": [
+            "MOG-08-action"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 579,
+              "line_end": 595,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L579-L595"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-08-S03",
+          "title": "Evaluate independent source oracle",
+          "action": "Run pure SQL furniture metadata oracle against independently observed installed layout; compare actual KI and modifiers",
+          "expected": "Independent source-consistent expected and observed matching or UNKNOWN",
+          "assertion_ids": [
+            "MOG-08-oracle"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 579,
+              "line_end": 595,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L579-L595"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-08-S04",
+          "title": "Review cleanup and persistency",
+          "action": "Restore fixture with owner approval, verify both safe layouts/held KI/mods or quarantine",
+          "expected": "Verified cleanup and bounded evidence or BLOCKED",
+          "assertion_ids": [
+            "MOG-08-cleanup"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MOG-08-baseline",
+          "expected": "Complete two-Safe ordered installed manifest and KI/modifiers or UNKNOWN",
+          "oracle_status": "UNKNOWN_until_independent_layout"
+        },
+        {
+          "id": "MOG-08-action",
+          "expected": "When two dominant elements tie, new KI=0 and ChangeMoghancement removes prior active KI, assuming recompute occurs",
+          "oracle_status": "SOURCE_CONDITIONAL_NOT_VERIFIED_RUNTIME"
+        },
+        {
+          "id": "MOG-08-oracle",
+          "expected": "Pure source oracle and independent client/server observations in agreement; UNKNOWN otherwise",
+          "oracle_status": "UNKNOWN_until_independent_readback"
+        },
+        {
+          "id": "MOG-08-cleanup",
+          "expected": "Approved restoration or read-only disconnect and exact evidence; no silent assumptions",
+          "oracle_status": "UNKNOWN_until_review"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 579,
+          "line_end": 595,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L579-L595"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 632,
+          "line_end": 659,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+        }
+      ],
+      "toolkit_oracle": {
+        "path": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+        "toolkit_base": "784f389ae9491f434498f2ceabc47c5e8ab826ad",
+        "methods": [
+          "parse_furnishings",
+          "predict_moghancement",
+          "check_transition"
+        ],
+        "limitation": "Predicts server UpdateMoghancement; not client furnishing behavior; requires independently correct ordered installed layout"
+      },
+      "readback": {
+        "available": [
+          "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+          "Approved-character persisted KI bitsets"
+        ],
+        "missing": [
+          "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+          "Client furnishing install/uninstall and menu-exit packet/event provenance",
+          "Independent current modifier/readback and complete unfettered inventory",
+          "Live DSP code and item_furnishing SQL revision/configuration"
+        ]
+      },
+      "xiheadless": {
+        "candidates": [
+          "inventory",
+          "snapshot",
+          "wait_for_event",
+          "logout"
+        ],
+        "missing": [
+          "Approved real client install/uninstall and menu-close actions",
+          "Installed layout manifest",
+          "Independent modifier and held KI readback"
+        ],
+        "acceptance": "UNKNOWN; existing MOG-09 observation runner is narrower"
+      },
+      "mutation": {
+        "enabled": false,
+        "classification": "owner_approved_furniture_client_mutation_needed",
+        "safety": "No GM set/clear/recalc/force KI dispatch authorized here; separate isolated operator review",
+        "cleanup": "Restore by owner procedure; compare both safe manifests, current KI and effects; quarantine if incomplete"
+      },
+      "gaps": [
+        "Need two-Safe installed manifest, typed compare and held KI readback",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "prior_evidence": "none"
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "moghancement",
+      "case_id": "MOG-09",
+      "name": "Stored but uninstalled furnishing grants none",
+      "kind": "negative",
+      "purpose": "Validate stored but uninstalled furnishing grants none using source-backed fixture and independent observation.",
+      "rationale": "Canonical observed PASS is imported/limited; installed layout not independently observed",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "legacy_canonical_runner": "xiheadless_observation_v1 — existing verified runner with limited assertion scope",
+      "lane": "observe-now",
+      "verdict": "NOT_RUN_IN_THIS_DOMAIN_EXPANSION",
+      "behavior": {
+        "given": [
+          "Exact disposable character, DSP revision, item_furnishing SQL and both safe layout source mapped",
+          "No live installation/uninstallation granted by this document",
+          "Independent authoritative held KIs, active KI, modifier base state and save boundary or UNKNOWN"
+        ],
+        "when": [
+          "Read-only observation of existing stored aura-bearing furniture and active diagnostic without changing installation"
+        ],
+        "then": [
+          "Existing canonical MOG-09 asserts observed active KI=0, all aura 0 and inventory concordance; installed layout assumption remains unverified"
+        ]
+      },
+      "preconditions": [
+        "Read-only or explicitly separately owner-approved fixture",
+        "No assumption stored furnishings are installed",
+        "Source oracle item_furnishing.sql must match running server DB"
+      ],
+      "steps": [
+        {
+          "id": "MOG-09-S01",
+          "title": "Read-only precondition manifest",
+          "action": "Record approved test character, both Safe installed flags, item_furnishing SQL revision and held/active KI",
+          "expected": "Complete order-preserving installed furniture baseline or UNKNOWN",
+          "assertion_ids": [
+            "MOG-09-baseline"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-09-S02",
+          "title": "Observe existing MOG-09 runner scope",
+          "action": "Read-only observation of existing stored aura-bearing furniture and active diagnostic without changing installation",
+          "expected": "Existing canonical MOG-09 asserts observed active KI=0, all aura 0 and inventory concordance; installed layout assumption remains unverified",
+          "assertion_ids": [
+            "MOG-09-action"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-09-S03",
+          "title": "Evaluate independent source oracle",
+          "action": "Run pure SQL furniture metadata oracle against independently observed installed layout; compare actual KI and modifiers",
+          "expected": "Independent source-consistent expected and observed matching or UNKNOWN",
+          "assertion_ids": [
+            "MOG-09-oracle"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-09-S04",
+          "title": "Review cleanup and persistency",
+          "action": "Read-only disconnect and provenance archive",
+          "expected": "Verified cleanup and bounded evidence or BLOCKED",
+          "assertion_ids": [
+            "MOG-09-cleanup"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MOG-09-baseline",
+          "expected": "Complete two-Safe ordered installed manifest and KI/modifiers or UNKNOWN",
+          "oracle_status": "UNKNOWN_until_independent_layout"
+        },
+        {
+          "id": "MOG-09-action",
+          "expected": "Existing canonical MOG-09 asserts observed active KI=0, all aura 0 and inventory concordance; installed layout assumption remains unverified",
+          "oracle_status": "EXISTING_LIMITED_CANONICAL_RUNNER_NOT_NEW_EXECUTION"
+        },
+        {
+          "id": "MOG-09-oracle",
+          "expected": "Pure source oracle and independent client/server observations in agreement; UNKNOWN otherwise",
+          "oracle_status": "UNKNOWN_until_independent_readback"
+        },
+        {
+          "id": "MOG-09-cleanup",
+          "expected": "Approved restoration or read-only disconnect and exact evidence; no silent assumptions",
+          "oracle_status": "UNKNOWN_until_review"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 681,
+          "line_end": 769,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+        }
+      ],
+      "toolkit_oracle": {
+        "path": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+        "toolkit_base": "784f389ae9491f434498f2ceabc47c5e8ab826ad",
+        "methods": [
+          "parse_furnishings",
+          "predict_moghancement",
+          "check_transition"
+        ],
+        "limitation": "Predicts server UpdateMoghancement; not client furnishing behavior; requires independently correct ordered installed layout"
+      },
+      "readback": {
+        "available": [
+          "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+          "Approved-character persisted KI bitsets"
+        ],
+        "missing": [
+          "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+          "Client furnishing install/uninstall and menu-exit packet/event provenance",
+          "Independent current modifier/readback and complete unfettered inventory",
+          "Live DSP code and item_furnishing SQL revision/configuration"
+        ]
+      },
+      "xiheadless": {
+        "candidates": [
+          "inventory",
+          "snapshot",
+          "wait_for_event",
+          "logout"
+        ],
+        "missing": [
+          "Approved real client install/uninstall and menu-close actions",
+          "Installed layout manifest",
+          "Independent modifier and held KI readback"
+        ],
+        "acceptance": "UNKNOWN; existing MOG-09 observation runner is narrower"
+      },
+      "mutation": {
+        "enabled": false,
+        "classification": "read_only_existing_runner_scope",
+        "safety": "No GM set/clear/recalc/force KI dispatch authorized here; separate isolated operator review",
+        "cleanup": "Restore by owner procedure; compare both safe manifests, current KI and effects; quarantine if incomplete"
+      },
+      "gaps": [
+        "Canonical observed PASS is imported/limited; installed layout not independently observed",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "prior_evidence": "Existing MOG-09 canonical six assertions; imported read-only runner evidence NOT proof of independent installed layout"
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "moghancement",
+      "case_id": "MOG-10",
+      "name": "Empty layout clears KI",
+      "kind": "negative",
+      "purpose": "Validate empty layout clears ki using source-backed fixture and independent observation.",
+      "rationale": "Need full both-Safe installed flag readback and cleanup",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "legacy_canonical_runner": "none",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN_IN_THIS_DOMAIN_EXPANSION",
+      "behavior": {
+        "given": [
+          "Exact disposable character, DSP revision, item_furnishing SQL and both safe layout source mapped",
+          "No live installation/uninstallation granted by this document",
+          "Independent authoritative held KIs, active KI, modifier base state and save boundary or UNKNOWN"
+        ],
+        "when": [
+          "On disposable character uninstall all furnishing then finish menu"
+        ],
+        "then": [
+          "No installed aura => new KI=0; old KI removal uses ChangeMoghancement, if previously active"
+        ]
+      },
+      "preconditions": [
+        "Read-only or explicitly separately owner-approved fixture",
+        "No assumption stored furnishings are installed",
+        "Source oracle item_furnishing.sql must match running server DB"
+      ],
+      "steps": [
+        {
+          "id": "MOG-10-S01",
+          "title": "Read-only precondition manifest",
+          "action": "Record approved test character, both Safe installed flags, item_furnishing SQL revision and held/active KI",
+          "expected": "Complete order-preserving installed furniture baseline or UNKNOWN",
+          "assertion_ids": [
+            "MOG-10-baseline"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-10-S02",
+          "title": "Owner-authorized proposed action",
+          "action": "On disposable character uninstall all furnishing then finish menu",
+          "expected": "No installed aura => new KI=0; old KI removal uses ChangeMoghancement, if previously active",
+          "assertion_ids": [
+            "MOG-10-action"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 579,
+              "line_end": 595,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L579-L595"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-10-S03",
+          "title": "Evaluate independent source oracle",
+          "action": "Run pure SQL furniture metadata oracle against independently observed installed layout; compare actual KI and modifiers",
+          "expected": "Independent source-consistent expected and observed matching or UNKNOWN",
+          "assertion_ids": [
+            "MOG-10-oracle"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 579,
+              "line_end": 595,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L579-L595"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-10-S04",
+          "title": "Review cleanup and persistency",
+          "action": "Restore fixture with owner approval, verify both safe layouts/held KI/mods or quarantine",
+          "expected": "Verified cleanup and bounded evidence or BLOCKED",
+          "assertion_ids": [
+            "MOG-10-cleanup"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MOG-10-baseline",
+          "expected": "Complete two-Safe ordered installed manifest and KI/modifiers or UNKNOWN",
+          "oracle_status": "UNKNOWN_until_independent_layout"
+        },
+        {
+          "id": "MOG-10-action",
+          "expected": "No installed aura => new KI=0; old KI removal uses ChangeMoghancement, if previously active",
+          "oracle_status": "SOURCE_CONDITIONAL_NOT_VERIFIED_RUNTIME"
+        },
+        {
+          "id": "MOG-10-oracle",
+          "expected": "Pure source oracle and independent client/server observations in agreement; UNKNOWN otherwise",
+          "oracle_status": "UNKNOWN_until_independent_readback"
+        },
+        {
+          "id": "MOG-10-cleanup",
+          "expected": "Approved restoration or read-only disconnect and exact evidence; no silent assumptions",
+          "oracle_status": "UNKNOWN_until_review"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 579,
+          "line_end": 595,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L579-L595"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 632,
+          "line_end": 659,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+        }
+      ],
+      "toolkit_oracle": {
+        "path": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+        "toolkit_base": "784f389ae9491f434498f2ceabc47c5e8ab826ad",
+        "methods": [
+          "parse_furnishings",
+          "predict_moghancement",
+          "check_transition"
+        ],
+        "limitation": "Predicts server UpdateMoghancement; not client furnishing behavior; requires independently correct ordered installed layout"
+      },
+      "readback": {
+        "available": [
+          "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+          "Approved-character persisted KI bitsets"
+        ],
+        "missing": [
+          "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+          "Client furnishing install/uninstall and menu-exit packet/event provenance",
+          "Independent current modifier/readback and complete unfettered inventory",
+          "Live DSP code and item_furnishing SQL revision/configuration"
+        ]
+      },
+      "xiheadless": {
+        "candidates": [
+          "inventory",
+          "snapshot",
+          "wait_for_event",
+          "logout"
+        ],
+        "missing": [
+          "Approved real client install/uninstall and menu-close actions",
+          "Installed layout manifest",
+          "Independent modifier and held KI readback"
+        ],
+        "acceptance": "UNKNOWN; existing MOG-09 observation runner is narrower"
+      },
+      "mutation": {
+        "enabled": false,
+        "classification": "owner_approved_furniture_client_mutation_needed",
+        "safety": "No GM set/clear/recalc/force KI dispatch authorized here; separate isolated operator review",
+        "cleanup": "Restore by owner procedure; compare both safe manifests, current KI and effects; quarantine if incomplete"
+      },
+      "gaps": [
+        "Need full both-Safe installed flag readback and cleanup",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "prior_evidence": "none"
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "moghancement",
+      "case_id": "MOG-11",
+      "name": "Repeated recompute does not stack effects",
+      "kind": "negative",
+      "purpose": "Validate repeated recompute does not stack effects using source-backed fixture and independent observation.",
+      "rationale": "Independent per-modifier readback, exact baseline of other modifiers and permission",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "legacy_canonical_runner": "none",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN_IN_THIS_DOMAIN_EXPANSION",
+      "behavior": {
+        "given": [
+          "Exact disposable character, DSP revision, item_furnishing SQL and both safe layout source mapped",
+          "No live installation/uninstallation granted by this document",
+          "Independent authoritative held KIs, active KI, modifier base state and save boundary or UNKNOWN"
+        ],
+        "when": [
+          "After one approved layout, request repeated recompute on isolated disposable character"
+        ],
+        "then": [
+          "ChangeMoghancement only changes if new KI differs; SetMoghancement explicitly subtracts old modifiers and adds new"
+        ]
+      },
+      "preconditions": [
+        "Read-only or explicitly separately owner-approved fixture",
+        "No assumption stored furnishings are installed",
+        "Source oracle item_furnishing.sql must match running server DB"
+      ],
+      "steps": [
+        {
+          "id": "MOG-11-S01",
+          "title": "Read-only precondition manifest",
+          "action": "Record approved test character, both Safe installed flags, item_furnishing SQL revision and held/active KI",
+          "expected": "Complete order-preserving installed furniture baseline or UNKNOWN",
+          "assertion_ids": [
+            "MOG-11-baseline"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-11-S02",
+          "title": "Owner-authorized proposed action",
+          "action": "After one approved layout, request repeated recompute on isolated disposable character",
+          "expected": "ChangeMoghancement only changes if new KI differs; SetMoghancement explicitly subtracts old modifiers and adds new",
+          "assertion_ids": [
+            "MOG-11-action"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 661,
+              "line_end": 679,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L661-L679"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-11-S03",
+          "title": "Evaluate independent source oracle",
+          "action": "Run pure SQL furniture metadata oracle against independently observed installed layout; compare actual KI and modifiers",
+          "expected": "Independent source-consistent expected and observed matching or UNKNOWN",
+          "assertion_ids": [
+            "MOG-11-oracle"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 661,
+              "line_end": 679,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L661-L679"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-11-S04",
+          "title": "Review cleanup and persistency",
+          "action": "Restore fixture with owner approval, verify both safe layouts/held KI/mods or quarantine",
+          "expected": "Verified cleanup and bounded evidence or BLOCKED",
+          "assertion_ids": [
+            "MOG-11-cleanup"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MOG-11-baseline",
+          "expected": "Complete two-Safe ordered installed manifest and KI/modifiers or UNKNOWN",
+          "oracle_status": "UNKNOWN_until_independent_layout"
+        },
+        {
+          "id": "MOG-11-action",
+          "expected": "ChangeMoghancement only changes if new KI differs; SetMoghancement explicitly subtracts old modifiers and adds new",
+          "oracle_status": "SOURCE_CONDITIONAL_NOT_VERIFIED_RUNTIME"
+        },
+        {
+          "id": "MOG-11-oracle",
+          "expected": "Pure source oracle and independent client/server observations in agreement; UNKNOWN otherwise",
+          "oracle_status": "UNKNOWN_until_independent_readback"
+        },
+        {
+          "id": "MOG-11-cleanup",
+          "expected": "Approved restoration or read-only disconnect and exact evidence; no silent assumptions",
+          "oracle_status": "UNKNOWN_until_review"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 632,
+          "line_end": 659,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 661,
+          "line_end": 679,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L661-L679"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 681,
+          "line_end": 769,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+        }
+      ],
+      "toolkit_oracle": {
+        "path": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+        "toolkit_base": "784f389ae9491f434498f2ceabc47c5e8ab826ad",
+        "methods": [
+          "parse_furnishings",
+          "predict_moghancement",
+          "check_transition"
+        ],
+        "limitation": "Predicts server UpdateMoghancement; not client furnishing behavior; requires independently correct ordered installed layout"
+      },
+      "readback": {
+        "available": [
+          "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+          "Approved-character persisted KI bitsets"
+        ],
+        "missing": [
+          "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+          "Client furnishing install/uninstall and menu-exit packet/event provenance",
+          "Independent current modifier/readback and complete unfettered inventory",
+          "Live DSP code and item_furnishing SQL revision/configuration"
+        ]
+      },
+      "xiheadless": {
+        "candidates": [
+          "inventory",
+          "snapshot",
+          "wait_for_event",
+          "logout"
+        ],
+        "missing": [
+          "Approved real client install/uninstall and menu-close actions",
+          "Installed layout manifest",
+          "Independent modifier and held KI readback"
+        ],
+        "acceptance": "UNKNOWN; existing MOG-09 observation runner is narrower"
+      },
+      "mutation": {
+        "enabled": false,
+        "classification": "owner_approved_furniture_client_mutation_needed",
+        "safety": "No GM set/clear/recalc/force KI dispatch authorized here; separate isolated operator review",
+        "cleanup": "Restore by owner procedure; compare both safe manifests, current KI and effects; quarantine if incomplete"
+      },
+      "gaps": [
+        "Independent per-modifier readback, exact baseline of other modifiers and permission",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "prior_evidence": "none"
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "moghancement",
+      "case_id": "MOG-12",
+      "name": "Invalid forced KI rejected",
+      "kind": "negative",
+      "purpose": "Validate invalid forced ki rejected using source-backed fixture and independent observation.",
+      "rationale": "Mutation is GM and forbidden in this assignment; accepted invalid value partition/fixture and readback missing",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "legacy_canonical_runner": "none",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN_IN_THIS_DOMAIN_EXPANSION",
+      "behavior": {
+        "given": [
+          "Exact disposable character, DSP revision, item_furnishing SQL and both safe layout source mapped",
+          "No live installation/uninstallation granted by this document",
+          "Independent authoritative held KIs, active KI, modifier base state and save boundary or UNKNOWN"
+        ],
+        "when": [
+          "Design only: invalid numeric KI passed to diagnostic set in isolated test; NO command authorized here"
+        ],
+        "then": [
+          "MoghancementDebug rejects nonzero IDs outside isFurnitureKeyItem without changing KI; signed and numeric conversion edge-cases UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Read-only or explicitly separately owner-approved fixture",
+        "No assumption stored furnishings are installed",
+        "Source oracle item_furnishing.sql must match running server DB"
+      ],
+      "steps": [
+        {
+          "id": "MOG-12-S01",
+          "title": "Read-only precondition manifest",
+          "action": "Record approved test character, both Safe installed flags, item_furnishing SQL revision and held/active KI",
+          "expected": "Complete order-preserving installed furniture baseline or UNKNOWN",
+          "assertion_ids": [
+            "MOG-12-baseline"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-12-S02",
+          "title": "Owner-authorized proposed action",
+          "action": "Design only: invalid numeric KI passed to diagnostic set in isolated test; NO command authorized here",
+          "expected": "MoghancementDebug rejects nonzero IDs outside isFurnitureKeyItem without changing KI; signed and numeric conversion edge-cases UNKNOWN",
+          "assertion_ids": [
+            "MOG-12-action"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 470,
+              "line_end": 477,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L470-L477"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-12-S03",
+          "title": "Evaluate independent source oracle",
+          "action": "Run pure SQL furniture metadata oracle against independently observed installed layout; compare actual KI and modifiers",
+          "expected": "Independent source-consistent expected and observed matching or UNKNOWN",
+          "assertion_ids": [
+            "MOG-12-oracle"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 470,
+              "line_end": 477,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L470-L477"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-12-S04",
+          "title": "Review cleanup and persistency",
+          "action": "Restore fixture with owner approval, verify both safe layouts/held KI/mods or quarantine",
+          "expected": "Verified cleanup and bounded evidence or BLOCKED",
+          "assertion_ids": [
+            "MOG-12-cleanup"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MOG-12-baseline",
+          "expected": "Complete two-Safe ordered installed manifest and KI/modifiers or UNKNOWN",
+          "oracle_status": "UNKNOWN_until_independent_layout"
+        },
+        {
+          "id": "MOG-12-action",
+          "expected": "MoghancementDebug rejects nonzero IDs outside isFurnitureKeyItem without changing KI; signed and numeric conversion edge-cases UNKNOWN",
+          "oracle_status": "SOURCE_CONDITIONAL_NOT_VERIFIED_RUNTIME"
+        },
+        {
+          "id": "MOG-12-oracle",
+          "expected": "Pure source oracle and independent client/server observations in agreement; UNKNOWN otherwise",
+          "oracle_status": "UNKNOWN_until_independent_readback"
+        },
+        {
+          "id": "MOG-12-cleanup",
+          "expected": "Approved restoration or read-only disconnect and exact evidence; no silent assumptions",
+          "oracle_status": "UNKNOWN_until_review"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 470,
+          "line_end": 477,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L470-L477"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 681,
+          "line_end": 769,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+        }
+      ],
+      "toolkit_oracle": {
+        "path": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+        "toolkit_base": "784f389ae9491f434498f2ceabc47c5e8ab826ad",
+        "methods": [
+          "parse_furnishings",
+          "predict_moghancement",
+          "check_transition"
+        ],
+        "limitation": "Predicts server UpdateMoghancement; not client furnishing behavior; requires independently correct ordered installed layout"
+      },
+      "readback": {
+        "available": [
+          "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+          "Approved-character persisted KI bitsets"
+        ],
+        "missing": [
+          "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+          "Client furnishing install/uninstall and menu-exit packet/event provenance",
+          "Independent current modifier/readback and complete unfettered inventory",
+          "Live DSP code and item_furnishing SQL revision/configuration"
+        ]
+      },
+      "xiheadless": {
+        "candidates": [
+          "inventory",
+          "snapshot",
+          "wait_for_event",
+          "logout"
+        ],
+        "missing": [
+          "Approved real client install/uninstall and menu-close actions",
+          "Installed layout manifest",
+          "Independent modifier and held KI readback"
+        ],
+        "acceptance": "UNKNOWN; existing MOG-09 observation runner is narrower"
+      },
+      "mutation": {
+        "enabled": false,
+        "classification": "owner_approved_furniture_client_mutation_needed",
+        "safety": "No GM set/clear/recalc/force KI dispatch authorized here; separate isolated operator review",
+        "cleanup": "Restore by owner procedure; compare both safe manifests, current KI and effects; quarantine if incomplete"
+      },
+      "gaps": [
+        "Mutation is GM and forbidden in this assignment; accepted invalid value partition/fixture and readback missing",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "prior_evidence": "none"
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "moghancement",
+      "case_id": "MOG-13",
+      "name": "Duplicate furnishings change aura but not KI count",
+      "kind": "negative",
+      "purpose": "Validate duplicate furnishings change aura but not ki count using source-backed fixture and independent observation.",
+      "rationale": "Need complete container/slot identity, installed flags, held KI list and modifiers",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "legacy_canonical_runner": "none",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN_IN_THIS_DOMAIN_EXPANSION",
+      "behavior": {
+        "given": [
+          "Exact disposable character, DSP revision, item_furnishing SQL and both safe layout source mapped",
+          "No live installation/uninstallation granted by this document",
+          "Independent authoritative held KIs, active KI, modifier base state and save boundary or UNKNOWN"
+        ],
+        "when": [
+          "Install two matching aura-bearing furniture items on an approved test profile"
+        ],
+        "then": [
+          "Aura sums each installed duplicate; ChangeMoghancement owns one active KI identifier; independent duplicate-KI/stack effects UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Read-only or explicitly separately owner-approved fixture",
+        "No assumption stored furnishings are installed",
+        "Source oracle item_furnishing.sql must match running server DB"
+      ],
+      "steps": [
+        {
+          "id": "MOG-13-S01",
+          "title": "Read-only precondition manifest",
+          "action": "Record approved test character, both Safe installed flags, item_furnishing SQL revision and held/active KI",
+          "expected": "Complete order-preserving installed furniture baseline or UNKNOWN",
+          "assertion_ids": [
+            "MOG-13-baseline"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-13-S02",
+          "title": "Owner-authorized proposed action",
+          "action": "Install two matching aura-bearing furniture items on an approved test profile",
+          "expected": "Aura sums each installed duplicate; ChangeMoghancement owns one active KI identifier; independent duplicate-KI/stack effects UNKNOWN",
+          "assertion_ids": [
+            "MOG-13-action"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-13-S03",
+          "title": "Evaluate independent source oracle",
+          "action": "Run pure SQL furniture metadata oracle against independently observed installed layout; compare actual KI and modifiers",
+          "expected": "Independent source-consistent expected and observed matching or UNKNOWN",
+          "assertion_ids": [
+            "MOG-13-oracle"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-13-S04",
+          "title": "Review cleanup and persistency",
+          "action": "Restore fixture with owner approval, verify both safe layouts/held KI/mods or quarantine",
+          "expected": "Verified cleanup and bounded evidence or BLOCKED",
+          "assertion_ids": [
+            "MOG-13-cleanup"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MOG-13-baseline",
+          "expected": "Complete two-Safe ordered installed manifest and KI/modifiers or UNKNOWN",
+          "oracle_status": "UNKNOWN_until_independent_layout"
+        },
+        {
+          "id": "MOG-13-action",
+          "expected": "Aura sums each installed duplicate; ChangeMoghancement owns one active KI identifier; independent duplicate-KI/stack effects UNKNOWN",
+          "oracle_status": "SOURCE_CONDITIONAL_NOT_VERIFIED_RUNTIME"
+        },
+        {
+          "id": "MOG-13-oracle",
+          "expected": "Pure source oracle and independent client/server observations in agreement; UNKNOWN otherwise",
+          "oracle_status": "UNKNOWN_until_independent_readback"
+        },
+        {
+          "id": "MOG-13-cleanup",
+          "expected": "Approved restoration or read-only disconnect and exact evidence; no silent assumptions",
+          "oracle_status": "UNKNOWN_until_review"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 632,
+          "line_end": 659,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+        }
+      ],
+      "toolkit_oracle": {
+        "path": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+        "toolkit_base": "784f389ae9491f434498f2ceabc47c5e8ab826ad",
+        "methods": [
+          "parse_furnishings",
+          "predict_moghancement",
+          "check_transition"
+        ],
+        "limitation": "Predicts server UpdateMoghancement; not client furnishing behavior; requires independently correct ordered installed layout"
+      },
+      "readback": {
+        "available": [
+          "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+          "Approved-character persisted KI bitsets"
+        ],
+        "missing": [
+          "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+          "Client furnishing install/uninstall and menu-exit packet/event provenance",
+          "Independent current modifier/readback and complete unfettered inventory",
+          "Live DSP code and item_furnishing SQL revision/configuration"
+        ]
+      },
+      "xiheadless": {
+        "candidates": [
+          "inventory",
+          "snapshot",
+          "wait_for_event",
+          "logout"
+        ],
+        "missing": [
+          "Approved real client install/uninstall and menu-close actions",
+          "Installed layout manifest",
+          "Independent modifier and held KI readback"
+        ],
+        "acceptance": "UNKNOWN; existing MOG-09 observation runner is narrower"
+      },
+      "mutation": {
+        "enabled": false,
+        "classification": "owner_approved_furniture_client_mutation_needed",
+        "safety": "No GM set/clear/recalc/force KI dispatch authorized here; separate isolated operator review",
+        "cleanup": "Restore by owner procedure; compare both safe manifests, current KI and effects; quarantine if incomplete"
+      },
+      "gaps": [
+        "Need complete container/slot identity, installed flags, held KI list and modifiers",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "prior_evidence": "none"
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "moghancement",
+      "case_id": "MOG-14",
+      "name": "Equal strongest furnishings follow DSP scan order",
+      "kind": "negative",
+      "purpose": "Validate equal strongest furnishings follow dsp scan order using source-backed fixture and independent observation.",
+      "rationale": "Full per-container ordered placement and C++ deployed source revision unverified",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "legacy_canonical_runner": "none",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN_IN_THIS_DOMAIN_EXPANSION",
+      "behavior": {
+        "given": [
+          "Exact disposable character, DSP revision, item_furnishing SQL and both safe layout source mapped",
+          "No live installation/uninstallation granted by this document",
+          "Independent authoritative held KIs, active KI, modifier base state and save boundary or UNKNOWN"
+        ],
+        "when": [
+          "Install equal-aura same-element distinct eligible KI furnishings in both safe locations"
+        ],
+        "then": [
+          "DSP uses strict greater-than aura comparison while scanning Mog Safe before Safe 2; first eligible tied strongest item wins"
+        ]
+      },
+      "preconditions": [
+        "Read-only or explicitly separately owner-approved fixture",
+        "No assumption stored furnishings are installed",
+        "Source oracle item_furnishing.sql must match running server DB"
+      ],
+      "steps": [
+        {
+          "id": "MOG-14-S01",
+          "title": "Read-only precondition manifest",
+          "action": "Record approved test character, both Safe installed flags, item_furnishing SQL revision and held/active KI",
+          "expected": "Complete order-preserving installed furniture baseline or UNKNOWN",
+          "assertion_ids": [
+            "MOG-14-baseline"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "sql/item_furnishing.sql",
+              "line_start": 25,
+              "line_end": 55,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/sql/item_furnishing.sql#L25-L55"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-14-S02",
+          "title": "Owner-authorized proposed action",
+          "action": "Install equal-aura same-element distinct eligible KI furnishings in both safe locations",
+          "expected": "DSP uses strict greater-than aura comparison while scanning Mog Safe before Safe 2; first eligible tied strongest item wins",
+          "assertion_ids": [
+            "MOG-14-action"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-14-S03",
+          "title": "Evaluate independent source oracle",
+          "action": "Run pure SQL furniture metadata oracle against independently observed installed layout; compare actual KI and modifiers",
+          "expected": "Independent source-consistent expected and observed matching or UNKNOWN",
+          "assertion_ids": [
+            "MOG-14-oracle"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 558,
+              "line_end": 577,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 597,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MOG-14-S04",
+          "title": "Review cleanup and persistency",
+          "action": "Restore fixture with owner approval, verify both safe layouts/held KI/mods or quarantine",
+          "expected": "Verified cleanup and bounded evidence or BLOCKED",
+          "assertion_ids": [
+            "MOG-14-cleanup"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 632,
+              "line_end": 659,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L632-L659"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "src/map/entities/charentity.cpp",
+              "line_start": 681,
+              "line_end": 769,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L681-L769"
+            }
+          ],
+          "client_observations": [
+            "bag/safes",
+            "installed layout (MISSING)",
+            "held key items",
+            "furnishing menu event"
+          ],
+          "authoritative_observations": [
+            "char_inventory full row and extra installed flags",
+            "all 8 elemental aura values",
+            "active furniture KI + all held furniture KIs",
+            "modifier baseline and post-state"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MOG-14-baseline",
+          "expected": "Complete two-Safe ordered installed manifest and KI/modifiers or UNKNOWN",
+          "oracle_status": "UNKNOWN_until_independent_layout"
+        },
+        {
+          "id": "MOG-14-action",
+          "expected": "DSP uses strict greater-than aura comparison while scanning Mog Safe before Safe 2; first eligible tied strongest item wins",
+          "oracle_status": "SOURCE_CONDITIONAL_NOT_VERIFIED_RUNTIME"
+        },
+        {
+          "id": "MOG-14-oracle",
+          "expected": "Pure source oracle and independent client/server observations in agreement; UNKNOWN otherwise",
+          "oracle_status": "UNKNOWN_until_independent_readback"
+        },
+        {
+          "id": "MOG-14-cleanup",
+          "expected": "Approved restoration or read-only disconnect and exact evidence; no silent assumptions",
+          "oracle_status": "UNKNOWN_until_review"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L558-L577"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/src/map/entities/charentity.cpp#L597-L629"
+        }
+      ],
+      "toolkit_oracle": {
+        "path": "src/workbench/server_admin/gm_commands/moghancement_oracle.py",
+        "toolkit_base": "784f389ae9491f434498f2ceabc47c5e8ab826ad",
+        "methods": [
+          "parse_furnishings",
+          "predict_moghancement",
+          "check_transition"
+        ],
+        "limitation": "Predicts server UpdateMoghancement; not client furnishing behavior; requires independently correct ordered installed layout"
+      },
+      "readback": {
+        "available": [
+          "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+          "Approved-character persisted KI bitsets"
+        ],
+        "missing": [
+          "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+          "Client furnishing install/uninstall and menu-exit packet/event provenance",
+          "Independent current modifier/readback and complete unfettered inventory",
+          "Live DSP code and item_furnishing SQL revision/configuration"
+        ]
+      },
+      "xiheadless": {
+        "candidates": [
+          "inventory",
+          "snapshot",
+          "wait_for_event",
+          "logout"
+        ],
+        "missing": [
+          "Approved real client install/uninstall and menu-close actions",
+          "Installed layout manifest",
+          "Independent modifier and held KI readback"
+        ],
+        "acceptance": "UNKNOWN; existing MOG-09 observation runner is narrower"
+      },
+      "mutation": {
+        "enabled": false,
+        "classification": "owner_approved_furniture_client_mutation_needed",
+        "safety": "No GM set/clear/recalc/force KI dispatch authorized here; separate isolated operator review",
+        "cleanup": "Restore by owner procedure; compare both safe manifests, current KI and effects; quarantine if incomplete"
+      },
+      "gaps": [
+        "Full per-container ordered placement and C++ deployed source revision unverified",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "prior_evidence": "none"
+    }
+  ]
+}
