@@ -240,3 +240,58 @@ def test_staged_adapter_v2_boundary_remains_fail_closed(fault, error):
             v2["step_requirements"] = [req]
     with pytest.raises(validator.ValidationError, match=error):
         validate(doc)
+
+
+def test_integrated_main_uses_historical_head_blob_not_deleted_branch(tmp_path):
+    file = tmp_path / "synthetic.json"
+    exact = json.dumps(DOC).encode("utf-8")
+    file.write_bytes(exact)
+    matrix, manifest, heads = _synthetic_reconciled()
+    pinned = heads["synthetic"]
+    calls = []
+    def reader(sha, path):
+        calls.append((sha, path))
+        return exact
+    observed = validator.verify_integrated_history(
+        matrix, manifest, tmp_path, reader, lambda sha: sha == pinned)
+    assert observed == heads
+    assert calls == [(pinned, "data/testing/domain_drafts/synthetic.json")]
+    # Retain all case/oracle/UNKNOWN and prohibition checks even in integrated mode.
+    assert validator.validate_reconciled_matrix(matrix, manifest, tmp_path, observed)[
+        "source_authenticity"] == "NOT_ATTESTED"
+
+
+@pytest.mark.parametrize("fault,match", [
+    ("unmerged", "PINNED_PR_HEAD_NOT_IN_INTEGRATED_HISTORY"),
+    ("modified", "INTEGRATED_DRAFT_DIFFERS_FROM_PINNED_PR_HEAD"),
+    ("absent", "integrated draft missing"),
+    ("missing_blob", "PINNED_PR_BLOB_UNAVAILABLE"),
+    ("bad_pin", "invalid historical PR head"),
+    ("different_source_revision", "integrated matrix head metadata mismatch"),
+])
+def test_integrated_mode_fails_closed_without_fallback(tmp_path, fault, match):
+    exact = json.dumps(DOC).encode("utf-8")
+    (tmp_path / "synthetic.json").write_bytes(
+        exact + b"\n" if fault == "modified" else exact)
+    matrix, manifest, heads = _synthetic_reconciled()
+    if fault == "absent":
+        (tmp_path / "synthetic.json").unlink()
+    if fault == "bad_pin":
+        matrix["source"]["domain_pr_head_snapshot"][0]["head_sha"] = "HEAD"
+    if fault == "different_source_revision":
+        matrix["source"]["domain_pr_head_snapshot"][0]["source_revision"] = "f" * 40
+    def reader(sha, path):
+        if fault == "missing_blob":
+            raise OSError("historical Git blob unavailable")
+        return exact
+    with pytest.raises(validator.ValidationError, match=match):
+        validator.verify_integrated_history(matrix, manifest, tmp_path, reader,
+            (lambda sha: False) if fault == "unmerged" else (lambda sha: True))
+
+
+def test_staged_pr_head_reconciliation_remains_strict(tmp_path):
+    (tmp_path / "synthetic.json").write_text(json.dumps(DOC))
+    matrix, manifest, heads = _synthetic_reconciled()
+    with pytest.raises(validator.ValidationError, match="STALE_SOURCE_PR_HEAD_REAUDIT_REQUIRED"):
+        validator.validate_reconciled_matrix(matrix, manifest, tmp_path,
+                                             {"synthetic": "e" * 40})
