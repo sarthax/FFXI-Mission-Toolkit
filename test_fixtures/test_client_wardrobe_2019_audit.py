@@ -21,6 +21,8 @@ from workbench.client.wardrobe_2019_audit import (
     PACKET_LOCATION_FIELDS, ITEM_STORE_OFFSET, ITEM_RECORD_BYTES, SLOTS_PER_CONTAINER,
     inspect_2019_store_layout, ORIGINAL_ITEM_ARRAY_END, PROJECTED_18_CONTAINER_END,
     inspect_2019_store_lifecycle, PER_STORE_CLEAR_DWORDS,
+    inspect_fixed_transfer_data_strings, inspect_2019_fixed_transfer_calls,
+    FIXED_TRANSFER_DATA_STRINGS, READ_LIKE_RVA, WRITE_LIKE_RVA,
     MANAGER_SLOT_COUNT_FIELD_OFFSET, INVENTORY_CURSOR_COUNT_OFFSET,
     INVENTORY_CURSOR_POINTER_OFFSET, INVENTORY_CURSOR_MAX_SLOTS,
 )
@@ -252,6 +254,60 @@ class Wardrobe2019AuditTests(unittest.TestCase):
                          report["per_store_zero_clear_bytes"])
         self.assertFalse(report["fixed_size_transfer_semantics_confirmed"])
         self.assertFalse(report["complete_pointer_writer_inventory"])
+
+
+    def test_2019_transfer_mode_literals_are_exact_rva_gated(self):
+        data_rva = 0x344000
+        synthetic = bytearray(0x800)
+        for rva, value in FIXED_TRANSFER_DATA_STRINGS.values():
+            at = rva - data_rva
+            synthetic[at:at+len(value)] = value
+        exact = inspect_fixed_transfer_data_strings(bytes(synthetic), data_rva)
+        self.assertTrue(exact["all_expected_strings_match"])
+        self.assertFalse(exact["evb_file_purpose_confirmed"])
+        for name, (rva, value) in FIXED_TRANSFER_DATA_STRINGS.items():
+            off = rva - data_rva
+            edited = bytearray(synthetic)
+            edited[off] ^= 1
+            observed = inspect_fixed_transfer_data_strings(bytes(edited), data_rva)
+            self.assertFalse(observed["all_expected_strings_match"], name)
+            self.assertFalse(observed["anchors"][name]["exact_match"])
+        with self.assertRaises(Pol1Error):
+            inspect_fixed_transfer_data_strings(b"", True)
+
+    def test_transfer_call_scanner_classifies_synthetic_relative_calls(self):
+        decoded_rva = 0x1000
+        source = bytearray(256)
+        sites = ((0x20, READ_LIKE_RVA), (0x60, WRITE_LIKE_RVA))
+        for off, target in sites:
+            source[off:off+5] = bytes.fromhex("6880b00300")
+            call_at = off + 5
+            struct.pack_into("<Bi", source, call_at, 0xE8,
+                             target - (decoded_rva + call_at + 5))
+        observed = inspect_2019_fixed_transfer_calls(bytes(source), decoded_rva)
+        self.assertEqual(observed["total_fixed_size_immediate_occurrences"], 2)
+        self.assertEqual(observed["read_like_count"], 1)
+        self.assertEqual(observed["write_like_count"], 1)
+        self.assertFalse(observed["all_2019_expected_sites_match"])
+        self.assertIsNone(observed["transfer_is_inventory_save_format"])
+        self.assertTrue(all(
+            set(site) == {"rva", "target", "call_rva"}
+            for site in observed["sites"]
+        ))
+        source[0xA0:0xA5] = bytes.fromhex("6880b00300")
+        unmatched = inspect_2019_fixed_transfer_calls(bytes(source), decoded_rva)
+        self.assertEqual(unmatched["total_fixed_size_immediate_occurrences"], 3)
+        self.assertEqual(unmatched["sites"][-1]["target"], "UNCONFIRMED")
+        self.assertFalse(unmatched["all_2019_expected_sites_match"])
+
+    def test_transfer_call_scan_input_rejects_bad_types_and_overflow(self):
+        for value in (bytearray(16), None):
+            with self.assertRaises(Pol1Error):
+                inspect_2019_fixed_transfer_calls(value)
+        with self.assertRaises(Pol1Error):
+            inspect_2019_fixed_transfer_calls(bytes(8 * 1024 * 1024 + 1))
+        with self.assertRaises(Pol1Error):
+            inspect_2019_fixed_transfer_calls(b"abc", decoded_rva=True)
 
 
 if __name__ == "__main__":
