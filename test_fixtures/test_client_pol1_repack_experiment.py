@@ -230,5 +230,37 @@ class SyntheticPol1RepackTests(unittest.TestCase):
 
 
 
+
+    def test_bounded_search_depths_and_cli_report(self):
+        from workbench.client.cli.pol1_repack_report import main
+
+        original = bytes(range(32)) * 80
+        for depth in (16, 64, 128):
+            encoded = encode_pol1(original, search_depth=depth)
+            independently_decoded, consumed = independent_pol1_decode(encoded, len(original))
+            self.assertEqual(independently_decoded, original)
+            self.assertEqual(consumed, len(encoded))
+            image = fixture_pe(encoded, len(original))
+            result = assess_pol1_repack_fit(image, search_depth=depth)
+            self.assertEqual(result["encoder_search_depth"], depth)
+        with self.assertRaises(Pol1Error):
+            encode_pol1(b"abc", search_depth=1000000)
+        with self.assertRaises(Pol1Error):
+            encode_pol1(b"abc", search_depth=True)
+        with tempfile.TemporaryDirectory() as folder:
+            file_path = Path(folder) / "synthetic.dll"
+            file_path.write_bytes(fixture_pe(encode_pol1(b"abcabc"), 6))
+            digest = hashlib.sha256(file_path.read_bytes()).hexdigest()
+            with patch("sys.argv", [
+                "pol1-repack-report", str(file_path),
+                "--expected-sha256", digest, "--search-depth", "16"
+            ]):
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    self.assertEqual(main(), 0)
+                self.assertIn('"encoder_search_depth": 16', output.getvalue())
+
+
+
 if __name__ == "__main__":
     unittest.main()
