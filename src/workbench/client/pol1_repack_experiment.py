@@ -217,6 +217,16 @@ def assess_pol1_repack_fit(
     candidate = encode_pol1(code, search_depth=search_depth, lazy_match=lazy_match)
     start, available = section["raw_start"], section["raw_size"]
     original_used = _stream_consumed_bytes(image, original["size"])
+    original_stream = memoryview(image)[start:start + original_used]
+    original_stream_sha256 = hashlib.sha256(original_stream).hexdigest()
+    candidate_matches_original = (
+        len(candidate) == original_used and candidate == original_stream.tobytes()
+    )
+    common_prefix_bytes = 0
+    for old_byte, new_byte in zip(original_stream, candidate):
+        if old_byte != new_byte:
+            break
+        common_prefix_bytes += 1
     entrypoint_offset = _entrypoint_section_offset(image, section)
     boundary_valid = entrypoint_offset is None or original_used <= entrypoint_offset
     # Never use the tail of the raw section for growth: it may contain startup
@@ -243,6 +253,9 @@ def assess_pol1_repack_fit(
         "encoder_lazy_match": lazy_match,
         "headroom_bytes": budget - len(candidate),
         "candidate_sha256": hashlib.sha256(candidate).hexdigest(),
+        "original_stream_sha256": original_stream_sha256,
+        "candidate_matches_original_stream": candidate_matches_original,
+        "candidate_common_prefix_bytes": common_prefix_bytes,
         "caution": ("In-memory capacity estimate only; full POL1 section is NOT writable "
                     "slack. No retail DLL is modified or launched."),
     }
@@ -252,6 +265,8 @@ def assess_pol1_repack_fit(
         # original POL1 bootstrap entry point).
         candidate_image = bytearray(image)
         candidate_image[start:start + len(candidate)] = candidate
+        if _stream_consumed_bytes(bytes(candidate_image), original["size"]) != len(candidate):
+            raise Pol1Error("in-memory candidate stream token count does not match encoded length")
         check = unpack_pol1(bytes(candidate_image))
         if check["bytes"] != code:
             raise Pol1Error("in-memory candidate failed decoded-byte verification")
