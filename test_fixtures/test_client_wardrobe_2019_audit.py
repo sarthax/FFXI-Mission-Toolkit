@@ -20,6 +20,7 @@ from workbench.client.wardrobe_2019_audit import (
     bounded_2019_record_offset, inspect_2019_item_packet_location,
     PACKET_LOCATION_FIELDS, ITEM_STORE_OFFSET, ITEM_RECORD_BYTES, SLOTS_PER_CONTAINER,
     inspect_2019_store_layout, ORIGINAL_ITEM_ARRAY_END, PROJECTED_18_CONTAINER_END,
+    inspect_2019_container_ui_bounds,
     inspect_2019_store_lifecycle, PER_STORE_CLEAR_DWORDS,
     inspect_fixed_transfer_data_strings, inspect_2019_fixed_transfer_calls,
     FIXED_TRANSFER_DATA_STRINGS, READ_LIKE_RVA, WRITE_LIKE_RVA,
@@ -340,6 +341,29 @@ class Wardrobe2019AuditTests(unittest.TestCase):
             inspect_2019_fixed_transfer_calls(bytes(8 * 1024 * 1024 + 1))
         with self.assertRaises(Pol1Error):
             inspect_2019_fixed_transfer_calls(b"abc", decoded_rva=True)
+
+
+    def test_three_ui_container_bounds_reject_id_13_in_inspected_paths(self):
+        bounds = inspect_2019_container_ui_bounds(True)
+        self.assertEqual(bounds["evidence_status"], "VERIFIED_STATIC_ANCHORS")
+        self.assertEqual(bounds["selected_ui_container_guard_rvas"],
+                         ["0x1E7FAC", "0x1E830B", "0x1E847E"])
+        self.assertEqual(bounds["selected_ui_legacy_capacity_calls"],
+                         ["0x1E7FDE", "0x1E8343", "0x1E8498", "0x1E91C5"])
+        self.assertEqual(bounds["observed_selected_ui_container_exclusive_bound"], 13)
+        self.assertFalse(bounds["new_containers_13_16_work_with_selected_unmodified_paths"])
+        self.assertFalse(bounds["ui_dispatch_mode_mapping_verified_for_2019"])
+        self.assertFalse(bounds["all_menu_callers_or_inlined_bounds_recovered"])
+        self.assertFalse(bounds["ui_wardrobe_5_8_path_implemented"])
+        self.assertEqual(bounds["safety_decision"],
+                         "NO_GO_ASSUME_SIDECAR_ENABLES_LEGACY_UI")
+
+    def test_unverified_ui_anchors_do_not_claim_specific_supported_ids(self):
+        unknown = inspect_2019_container_ui_bounds(False)
+        self.assertEqual(unknown["evidence_status"], "UNVERIFIED_STATIC_ANCHORS")
+        self.assertIsNone(unknown["observed_selected_ui_container_exclusive_bound"])
+        self.assertIsNone(unknown["new_containers_13_16_work_with_selected_unmodified_paths"])
+        self.assertFalse(unknown["ui_wardrobe_5_8_path_implemented"])
 
 
 if __name__ == "__main__":
