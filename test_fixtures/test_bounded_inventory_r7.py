@@ -122,6 +122,6 @@ def test_select_privilege_failure_rolls_back_and_closes(monkeypatch):
         def close(self):
             calls.append("connection_close")
     monkeypatch.setattr(mod, "_approved_connection", lambda charid: (Connection(), Denied([])))
-    with pytest.raises(PermissionError):
+    with pytest.raises(RuntimeError, match="inventory observation unavailable"):
         mod.inventory_snapshot_v2(7, 1)
     assert calls == ["rollback", "cursor_close", "connection_close"]
