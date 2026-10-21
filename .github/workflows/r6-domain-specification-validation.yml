@@ -46,12 +46,12 @@ jobs:
             head_sha=$(git rev-parse "refs/remotes/origin/r6-$pr")
             printf "%s %s\n" "$domain" "$head_sha" >> "$RUNNER_TEMP/domain-heads.tsv"
           done < "$RUNNER_TEMP/domains.txt"
-      # This is the exact same-repo #1292 branch ref, not the eventually-consistent PR merge ref.
-      - name: Fetch the single proposed #1292 case matrix as inert JSON
+      # The authoritative #1292 matrix is now merged into main; read it from the fetched main commit.
+      - name: Fetch the authoritative merged #1292 case matrix from main as inert JSON
         shell: bash
         run: |
           set -euo pipefail
-          git fetch --no-tags --depth=1 origin "+refs/heads/audit/domain-readiness-73-20261021:refs/remotes/origin/r6-authoritative-matrix"
+          git fetch --no-tags --depth=1 origin "+refs/heads/main:refs/remotes/origin/r6-authoritative-matrix"
           git show "refs/remotes/origin/r6-authoritative-matrix:docs/workbench/SCENARIO_DOMAIN_READINESS_MATRIX_2026-10-21.json" > "$RUNNER_TEMP/domain-readiness-matrix.json"
           python -c 'import json,sys; entries=[line.split() for line in open(sys.argv[1],encoding="utf-8")]; assert len(entries)==9; json.dump(dict(entries),open(sys.argv[2],"w",encoding="utf-8"))' "$RUNNER_TEMP/domain-heads.tsv" "$RUNNER_TEMP/domain-heads.json"
       - name: Verify 73 staged cases, blocked execution, and canonical exclusion
