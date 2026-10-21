@@ -161,8 +161,12 @@ def test_32k_ascii_escaped_persistence_limit_still_applies(monkeypatch, tmp_path
     stored_size = len(json.dumps(spec, sort_keys=True, separators=(",", ":"),
                                  ensure_ascii=True).encode("utf-8"))
     assert utf8_size < 32768 < stored_size
+    # Preview validation is intentionally read-only and may display a
+    # provisional oversized plan. The *real draft store* enforces the limit.
+    spec["contract_v2"]["fingerprints"]["base_spec_sha256"] = base_spec_sha256(spec)
+    validated = validate_editor_spec(spec)
     with pytest.raises(ValueError, match="32|KiB|size|large"):
-        validate_editor_spec(spec)
+        save_draft(validated["canonical_specification"], 0)
 
 
 def test_existing_editor_viewer_is_still_not_a_runner_or_parallel_schema():
