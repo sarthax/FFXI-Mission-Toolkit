@@ -185,3 +185,124 @@ def test_existing_editor_viewer_is_still_not_a_runner_or_parallel_schema():
     assert "NOT INDEPENDENTLY" in view
     for unsafe in ("/builder/launch", "send_gm_command", "packet_inject"):
         assert unsafe not in js and unsafe not in view
+
+
+def _pending_source_association_spec(scope="case"):
+    """Synthetic proposed #1309 extension; not accepted on pre-merge main."""
+    doc = with_v2()
+    doc["contract_v2"]["sources"].append({
+        "ref": "SourceTwo", "repository": "sarthax/darkstar-to-valhalla",
+        "path": "scripts/zones/Synthetic_Zone/npcs/Secondary.lua",
+        "line_start": 20, "line_end": 24, "revision": "b" * 40,
+        "classification": "dsp_source", "sha256": "c" * 64,
+    })
+    step = doc["steps"][0]["id"]
+    doc["contract_v2"]["source_associations"] = [{
+        "scope": scope, "target_id": None if scope == "case" else step,
+        "source_refs": ["SourceTwo"],
+    }]
+    return doc
+
+
+def test_proposed_explicit_source_association_is_gated_on_canonical_merge():
+    """Exercise the *actual* canonical validator; never implement a parallel map.
+
+    Before #1309 merges, unsupported v2 fields fail canonical validation. After
+    merge, test the accepted pure report and ensure explicit source association
+    does not upgrade trust/permissions/expected values.
+    """
+    from workbench.server_admin.feature_testing import scenario_contract_v2 as canonical
+
+    has_contract = callable(getattr(canonical, "source_attribution_report", None))
+    case = _pending_source_association_spec("case")
+    step = _pending_source_association_spec("step")
+    if not has_contract:
+        with pytest.raises(ValueError, match="v2 contract|fields"):
+            validate_editor_spec(case)
+        with pytest.raises(ValueError, match="v2 contract|fields"):
+            validate_editor_spec(step)
+        assert case["contract_v2"]["sources"][1]["ref"] == "SourceTwo"
+        assert case["contract_v2"]["source_associations"][0]["target_id"] is None
+        return
+
+    for doc in (case, step):
+        accepted = validate_editor_spec(doc)
+        assert accepted["canonical_specification"] == doc
+        report = canonical.source_attribution_report(doc)
+        assert report["execution_enabled"] is False
+        assert report["oracle_approval"] == "NOT_ESTABLISHED"
+        assert report["independent_verification"] == "NOT_ESTABLISHED"
+        assert accepted["preview"]["steps"][0]["verdict"] == "UNKNOWN"
+    c = canonical.source_attribution_report(case)
+    t = canonical.source_attribution_report(step)
+    sid = step["steps"][0]["id"]
+    assert c["case"] == {"state": "EXPLICIT_CITATION_CLAIM", "source_refs": ["SourceTwo"]}
+    assert c["steps"][sid]["state"] == "UNKNOWN"
+    assert t["case"]["state"] == "UNKNOWN"
+    assert t["steps"][sid] == {"state": "EXPLICIT_CITATION_CLAIM", "source_refs": ["SourceTwo"]}
+
+
+def test_proposed_source_association_rejects_malformed_scopes_and_false_authority():
+    from workbench.server_admin.feature_testing import scenario_contract_v2 as canonical
+
+    accepted = callable(getattr(canonical, "source_attribution_report", None))
+    cases = []
+    for kind in ("unknown_ref", "unknown_step", "duplicate", "extra_authority",
+                 "empty_refs", "invalid_case_target"):
+        doc = _pending_source_association_spec("step")
+        rows = doc["contract_v2"]["source_associations"]
+        if kind == "unknown_ref":
+            rows[0]["source_refs"] = ["invented_source"]
+        elif kind == "unknown_step":
+            rows[0]["target_id"] = "invented_step"
+        elif kind == "duplicate":
+            rows.append(deepcopy(rows[0]))
+        elif kind == "extra_authority":
+            rows[0]["execution_enabled"] = True
+        elif kind == "empty_refs":
+            rows[0]["source_refs"] = []
+        elif kind == "invalid_case_target":
+            rows[0]["scope"] = "case"
+        cases.append(doc)
+    for doc in cases:
+        with pytest.raises(ValueError):
+            validate_editor_spec(doc)
+        if accepted:
+            with pytest.raises(ValueError):
+                canonical.source_attribution_report(doc)
+
+
+def test_proposed_association_round_trip_preserves_metadata_only_when_accepted(
+    monkeypatch, tmp_path,
+):
+    from workbench.server_admin.feature_testing import scenario_contract_v2 as canonical
+
+    doc = _pending_source_association_spec("step")
+    raw = json.dumps(doc, ensure_ascii=False)
+    assert json.loads(raw) == doc
+    assert doc["contract_v2"]["source_associations"][0]["target_id"] == doc["steps"][0]["id"]
+    if not callable(getattr(canonical, "source_attribution_report", None)):
+        with pytest.raises(ValueError):
+            validate_editor_spec(doc)
+        return
+
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_DRAFTS_DB",
+                       str(tmp_path / "explicit-sources.sqlite"))
+    first = save_draft(validate_editor_spec(doc)["canonical_specification"], 0)
+    assert first["revision"] == 1
+    loaded = get_drafts()[0]["specification"]
+    assert loaded["contract_v2"] == doc["contract_v2"]
+    assert canonical.source_attribution_report(loaded)["steps"][doc["steps"][0]["id"]]["state"] == "EXPLICIT_CITATION_CLAIM"
+    with pytest.raises(ValueError, match="revision conflict"):
+        save_draft(loaded, 0)
+    loaded["steps"][0]["expected"] = "UNKNOWN — changed for independent review"
+    assert canonical.compatibility_report(loaded)["state"] == "BLOCKED"
+    assert loaded["contract_v2"]["source_associations"] == doc["contract_v2"]["source_associations"]
+
+
+def test_source_association_does_not_accept_noncanonical_capture_step_alias():
+    """Agent D's captured step and indexed digest are not canonical links."""
+    doc = _pending_source_association_spec("step")
+    doc["contract_v2"]["source_associations"][0]["target_id"] = "OBS-CAPTURE-S001"
+    with pytest.raises(ValueError):
+        validate_editor_spec(doc)
