@@ -395,7 +395,7 @@ def test_agent_a_discard_review_guard_all_editor_replacement_paths():
     assert "function confirmDocumentReplacement" in js
     assert "M.replacementConfirmationReason(" in js
     assert "window.confirm(" in js
-    assert "if(savePending) throw Error" in js
+    assert "if (savePending) throw Error" in js
     for label, end in (("sd-new","sd-fork"),("sd-fork","sd-clone"),
                        ("sd-clone","sd-add-assertion"),("sd-open-draft","function paintCandidates")):
         start=js.index("  $('"+label+"').addEventListener")
