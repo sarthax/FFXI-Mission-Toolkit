@@ -129,6 +129,13 @@ def _gm_candidates(server_root: str | Path, query: str, limit: int) -> list[dict
             raise CatalogUnavailable("GM catalog returned invalid description")
         if search not in name.casefold() and search not in description.casefold():
             continue
+        source_path = row.get("source_path")
+        if (
+            not isinstance(source_path, str)
+            or not re.fullmatch(r"scripts/commands/[a-zA-Z][a-zA-Z0-9_]{0,63}\\.lua", source_path)
+            or Path(source_path).stem.casefold() != name
+        ):
+            raise CatalogUnavailable("GM catalog returned unsafe or ungrounded source path")
         declared_permission = row.get("permission")
         if declared_permission is not None and (
             type(declared_permission) is not int or declared_permission < 0
@@ -140,7 +147,7 @@ def _gm_candidates(server_root: str | Path, query: str, limit: int) -> list[dict
             "name": name,
             "description": _safe_name(description) if description else "",
             "category": _safe_name(row.get("category")),
-            "source_path": "scripts/commands/" + name + ".lua",
+            "source_path": source_path,
             "permission_declared": declared_permission,
             "catalog_classification": row.get("classification", "unreviewed")
                 if row.get("classification") in {"unreviewed", "diagnostic_candidate"}
