@@ -6,14 +6,16 @@ on:
       - research/2019-wardrobe-backport-gates-20261021
     paths:
       - src/workbench/client/wardrobe_2019_audit.py
+      - src/workbench/client/wardrobe_2019_sidecar_model.py
       - src/workbench/client/cli/wardrobe_2019_report.py
-      - test_fixtures/test_client_wardrobe_2019_audit.py
+      - test_fixtures/test_client_wardrobe_2019_*.py
       - .github/workflows/client-2019-wardrobe-offline.yml
   pull_request:
     paths:
       - src/workbench/client/wardrobe_2019_audit.py
+      - src/workbench/client/wardrobe_2019_sidecar_model.py
       - src/workbench/client/cli/wardrobe_2019_report.py
-      - test_fixtures/test_client_wardrobe_2019_audit.py
+      - test_fixtures/test_client_wardrobe_2019_*.py
       - .github/workflows/client-2019-wardrobe-offline.yml
   workflow_dispatch:
 
@@ -32,4 +34,4 @@ jobs:
       - name: Synthetic-only fingerprint, command and packet gate tests
         shell: bash
         run: |
-          PYTHONPATH=src python -m unittest discover -s test_fixtures -p test_client_wardrobe_2019_audit.py -v
+          PYTHONPATH=src python -m unittest discover -s test_fixtures -p test_client_wardrobe_2019_*.py -v
