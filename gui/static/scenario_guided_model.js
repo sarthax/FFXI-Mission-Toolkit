@@ -267,12 +267,15 @@
       }
       const indexedHashes=[...new Set((original.source_fingerprints||[])
         .map(x=>x.sha256).filter(x=>/^[a-f0-9]{64}$/.test(x)))].slice(0,3);
-      const note=('UNVERIFIED indexed capture '+review.capture_id+' SHA-256 '+review.projection_sha256+
+      const note='UNVERIFIED indexed capture '+review.capture_id+' SHA-256 '+review.projection_sha256+
         '; source step '+original.step_id+'; observed refs '+original.evidence_refs.join(', ')+
         '; indexed source SHA-256 '+(indexedHashes.join(', ')||'UNKNOWN')+
-        ' (NOT independently rehashed); selected source identities: '+
+        ' (NOT independently rehashed; first '+indexedHashes.length+' unique indexed hashes shown)'+
+        '; selected source identities: '+
         (included.join(' | ')||'NONE (excluded/rejected)')+
-        '; all candidates UNVERIFIED; no normative oracle').slice(0,1000);
+        '; all candidates UNVERIFIED; no normative oracle';
+      if (note.length>1000)
+        throw Error('Selected evidence provenance exceeds the canonical 1000-character step note; reduce selected bindings or retain original review outside the draft. No source refs were silently truncated.');
       next.steps.push({
         id:original.step_id,title:entry.title.trim().slice(0,500),
         intent:'observation',expected:'UNKNOWN — independently sourced expected outcome required',
