@@ -8,6 +8,12 @@ Focused-mode generated provider relationships now carry their actual `from_node`
 
 This is a **rendering/interpretation fix**, not a relevance-ranker change, new identity closure, successful source-locator validation or real DSP acceptance. The baseline under [P0 #1228](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1228) remains NOT RUN until a local reviewer returns actual three-case observations.
 
+## Bounded investigation trail (October 20)
+
+Feature Trace now displays an **Investigation trail** above the Evidence Dossier when a root resolves. It records up to eight previous root selections **in the URL only**, so the operator can follow indexed canonical/provider links and click an earlier breadcrumb to backtrack. The selected question, depth and traversal direction are preserved, and **Clear trail for this root** starts over without changing the resolved root. An existing URL can be shared/reopened with its trail intact.
+
+**Evidence boundary:** These are *browser selections*, not a verified graph path, identity equivalence, runtime evidence, or proof of causal behavior. Source-locator and mission-transition correctness still require independent inspection. The URL trail is intentionally bounded and validated as untrusted input; malformed entries reset the navigation trail rather than erroring or manufacturing relationships. It does not write to SQLite, store drafts locally, or provide named/saved investigations. **Persistent saved investigations and stale-evidence rehydration remain future work**, separate from the relevance-ranked default gated by [P0 issue #1228](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1228).
+
 ## Question-first navigation (October 20)
 
 The Feature Trace search form now has a **Question** selector. It exposes existing focused trace modes without requiring a typed `@mode` prefix: Implementation, Mission, Triggers, Effects, Dependencies, Runtime, Identity, Diagnosis and All Evidence. The default **All recorded (legacy)** deliberately preserves the historical unfiltered trace, while explicit questions use the previously implemented focused-mode evidence/filter contract. Choosing a mode does **not** itself validate relevance, runtime behavior or absence of missing paths.

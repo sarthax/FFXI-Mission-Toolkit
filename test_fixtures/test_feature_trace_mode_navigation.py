@@ -113,7 +113,7 @@ def test_explicit_question_is_forwarded_to_production_traversal(mode):
     assert f'<option value="{mode}" selected' in response.text
     # Navigation into either endpoint keeps the question and existing depth.
     assert f"mode={mode}&amp;depth=2&amp;direction=in" in response.text
-    assert 'href="/features/trace?q=synthetic-root&amp;depth=2&amp;direction=in"' in response.text
+    assert 'href="/features/trace?q=synthetic-root&amp;depth=2&amp;direction=in&amp;trail=' in response.text
     assert closed == ["graph", "catalog"]
 
 
