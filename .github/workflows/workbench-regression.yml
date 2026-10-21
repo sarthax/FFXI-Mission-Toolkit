@@ -286,6 +286,8 @@ jobs:
           python test_fixtures/test_capture_timeline_interactions.py
           python test_fixtures/test_capture_reverse_scenario_draft.py
           python test_fixtures/test_evidence_to_scenario_handoff.py
+          python test_fixtures/test_capture_identity_oracle_readiness.py
+          python test_fixtures/test_capture_readiness_summary.py
           python test_fixtures/test_capture_reviewer_workflow.py
           python test_fixtures/test_event_csid_wiring_ui.py
           python test_fixtures/test_lua_event_typing.py
