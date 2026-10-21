@@ -76,6 +76,11 @@ def validate_editor_spec(payload: dict) -> dict:
         raise ValueError("operator review cannot be waived in this editor")
     if authoring.get("execution_policy") != "read_only":
         raise ValueError("only read-only design drafts are supported")
+    if authoring.get("state") != "draft":
+        raise ValueError("editor drafts cannot claim reviewed or executable maturity")
+    safe_intents = {"observation", "read_only_comparison", "read_only_gm_diagnostic"}
+    if any(step.get("intent") not in safe_intents for step in spec.get("steps", [])):
+        raise ValueError("unsupported or mutating step intent")
     if not spec.get("steps") or not spec.get("behavior"):
         raise ValueError("Given/When/Then and at least one canonical step are required")
     definition_ids = {a["id"] for a in spec["assertions"]}
