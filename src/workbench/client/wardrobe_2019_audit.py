@@ -96,6 +96,10 @@ ANCHORS = {
     "fixed_write_argument2_source": (0x46E3, "8b84240c010000"),
     "fixed_write_argument3_source": (0x4783, "8b84240c010000"),
     "fixed_write_active_store_source": (0x4810, "a108da4c10"),
+    "direct_store_read_evb_literal": (0x3EE4, "680c473410"),
+    "direct_store_read_mode_literal": (0x3F8A, "68d0423410"),
+    "direct_store_write_evb_literal": (0x47E3, "680c473410"),
+    "direct_store_write_mode_literal": (0x47FC, "681c473410"),
 }
 
 
@@ -300,6 +304,17 @@ def inspect_2019_store_lifecycle(decoded_sites_verified: bool) -> dict:
             ],
         },
         "all_transfer_pointers_alias_active_store": None,
+        "direct_active_store_evb_path_evidence": {
+            "observed_shared_filename": "ZSU.evb",
+            "read_side_filename_push_rva": "0x3EE4",
+            "read_side_mode_push_rva": "0x3F8A",
+            "read_side_transfer_push_rva": "0x3FA1",
+            "write_side_filename_push_rva": "0x47E3",
+            "write_side_mode_push_rva": "0x47FC",
+            "write_side_transfer_push_rva": "0x4818",
+            "full_runtime_file_name_proved": False,
+            "is_character_inventory_persistence": None,
+        },
         "linear_disassembly_candidate_reference_count": 1045,
         "manager_slot_count_field_offset": MANAGER_SLOT_COUNT_FIELD_OFFSET,
         "manager_default_slot_count": 1,
