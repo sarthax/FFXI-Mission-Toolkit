@@ -133,6 +133,25 @@ The Stage 4 module also provides a **pure offline address validator** for the or
 
 `inspect_2019_item_packet_location` uses only the observed **static packet payload field offsets** (0x1E: container +0x08 / slot +0x09; 0x1F: +0x0A / +0x0B; 0x20: +0x0E / +0x0F). It refuses unsupported packet IDs, truncated buffers and container IDs 13–16/255 and slot 81/255. **This is a synthetic test oracle, not a live parser, not a packet filter and not a client modification.** No malformed packets were sent to the client or server. If handlers use additional packet framing or translations, those must be independently verified before applying this model.
 
+## New design branch point: isolated sidecar for Wardrobes 5–8 (synthetic only)
+
+The confirmed legacy memory collision means **an in-place 13→18 record-array expansion is rejected**. A safer conceptual alternative is to retain all 13 original container regions (IDs 0–12) at their untouched offsets and represent only new Wardrobes 5–8 (IDs 13–16) in a logically separate sidecar region. The original array stays at active-store offsets `0x9860..0x14D5B`, and the cursor at `+0x14D5C` / `+0x14D60` stays intact. The sidecar requires **4 × 81 × 44 = 14,256 bytes per store** *in this hypothetical model*. Container 17 (`/recycle` in 2026 research) is explicitly out of scope, and the real 2019 client still supports only the original 13 containers.
+
+A new pure-Python **research-only** model, `workbench.client.wardrobe_2019_sidecar_model`, introduces synthetic manager-slot registration/activation/reset/retirement, monotonically increasing generation tokens, and a metadata-only address resolver. Only currently active, non-stale tokens can obtain offsets. The legacy path preserves exact original bounds; sidecar routing requires an explicit opt-in simulation flag and rejects IDs 17/18/255, slot 81+, invalid types, old generations, unregistered managers and stale references. The model never holds item records or bytes and never reads/writes client process memory, files, packets, or the DLL. Its default maximum manager-slot count is **an illustrative model bound**, not the observed client's allocator or manager-table capacity.
+
+| Boundary | Synthetic design invariant | Real-client status |
+|---|---|---|
+| Legacy records | ID 0–12 route through store `+0x9860`, with slot 0–80 | Static offsets confirmed on exact 2019 DLL |
+| New Wardrobes | ID 13–16 produce sidecar-relative offsets 0–14,255 only when simulated | **NOT IMPLEMENTED** |
+| `/recycle` ID 17 | Rejected | Out of scope |
+| Store switch/reset/teardown | A stale or inactive manager-generation token cannot resolve | Actual 2019 manager ownership and hookability **UNKNOWN** |
+| Old inventory cursor | Original fields at `+0x14D5C`/`+0x14D60` preserved by design | Original code consumes cursor; confirmed |
+| Packet 0x1C and item packets | No packets generated, received or parsed by this model | Protocol-safe routing **UNKNOWN** |
+| Equipment/UI/save/restore | Not modelled | All **UNKNOWN** |
+
+**Independent caller-search limitation:** A read-only scan of original decoded `.text` for direct x86 `CALL rel32` and near/short jump destinations equal to the four EVB write wrappers `0x4520`, `0x45F0`, `0x4690` and `0x4730` found **no direct references**. Searching literal VA pointers for those function entries in initialized `.data`, `.data1`, `.rdata` and the decoded `.text` also found no matches. This does **not** prove the helpers are unused: they may be reached through table-indexed, computed or other indirect dispatch, or addresses may require translation. Therefore their actual caller-provided contents remain **UNKNOWN**; do not treat the four EVB buffers as persistent inventory objects.
+
+**Design acceptance still missing:** independent caller/CFG and store-owner lifetime mapping; a safe per-instance sidecar allocator/deallocator and every accessor hook; server-compatible 2019 versus 18-container packet 0x1C/0x1E–0x20 contracts; coherent cursor, equip, UI and item-moving semantics; field-safe serialization; regression testing and explicit user-authorized isolated-copy client trial. A synthetic sidecar design is a **research GO only**, not an installable patch or permission to send IDs 13–16 to the 2019 client.
 ## Go/no-go and next implementation slice
 
 **GO:** Further read-only mapping, server/version compatibility planning, synthetic bounds tests, and standalone feature staging on a separate branch.
