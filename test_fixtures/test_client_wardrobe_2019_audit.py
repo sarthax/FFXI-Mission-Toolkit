@@ -20,6 +20,9 @@ from workbench.client.wardrobe_2019_audit import (
     bounded_2019_record_offset, inspect_2019_item_packet_location,
     PACKET_LOCATION_FIELDS, ITEM_STORE_OFFSET, ITEM_RECORD_BYTES, SLOTS_PER_CONTAINER,
     inspect_2019_store_layout, ORIGINAL_ITEM_ARRAY_END, PROJECTED_18_CONTAINER_END,
+    inspect_2019_store_lifecycle, PER_STORE_CLEAR_DWORDS,
+    MANAGER_SLOT_COUNT_FIELD_OFFSET, INVENTORY_CURSOR_COUNT_OFFSET,
+    INVENTORY_CURSOR_POINTER_OFFSET, INVENTORY_CURSOR_MAX_SLOTS,
 )
 
 
@@ -178,6 +181,42 @@ class Wardrobe2019AuditTests(unittest.TestCase):
         self.assertIsNone(unknown["proposed_in_place_growth_overlaps_observed_fields"])
         self.assertEqual(unknown["safety_decision"], "NO_GO_IN_PLACE_ARRAY_GROWTH")
 
+
+    def test_manager_lifecycle_selected_static_boundaries(self):
+        observed = inspect_2019_store_lifecycle(True)
+        self.assertEqual(observed["evidence_status"], "VERIFIED_STATIC_ANCHORS")
+        self.assertEqual(PER_STORE_CLEAR_DWORDS, 0xEC20)
+        self.assertEqual(observed["per_store_zero_clear_bytes"], 0x3B080)
+        self.assertEqual(observed["manager_slot_count_field_offset"], 0x3B088)
+        self.assertEqual(MANAGER_SLOT_COUNT_FIELD_OFFSET, 0x3B088)
+        self.assertEqual(observed["manager_default_slot_count"], 1)
+        self.assertEqual(observed["manager_slot_selection_rvas"],
+                         ["0xF710A", "0xF7009"])
+        self.assertEqual(observed["manager_cleanup_call_rva"], "0xF700D")
+        self.assertEqual(observed["active_store_pointer_clear_rvas"],
+                         ["0xF70D6", "0xF6FE2"])
+        self.assertIn("0xF73E1", observed["active_store_pointer_set_rvas"])
+        self.assertIn("0xF740E", observed["active_store_pointer_set_rvas"])
+        self.assertFalse(observed["complete_pointer_writer_inventory"])
+        self.assertFalse(observed["store_object_allocation_size_proved_for_all_instances"])
+        self.assertFalse(observed["store_object_lifetime_proved"])
+        self.assertEqual(observed["safety_decision"], "NO_GO_MOVE_OR_EXTEND_EXISTING_ARRAY")
+
+    def test_inventory_cursor_fields_preserved_after_legacy_array(self):
+        observed = inspect_2019_store_lifecycle(True)
+        cursor = observed["post_inventory_cursor"]
+        self.assertEqual(cursor["count_offset"], INVENTORY_CURSOR_COUNT_OFFSET)
+        self.assertEqual(cursor["pointer_offset"], INVENTORY_CURSOR_POINTER_OFFSET)
+        self.assertEqual(cursor["count_offset"], ORIGINAL_ITEM_ARRAY_END)
+        self.assertEqual(cursor["pointer_offset"], ORIGINAL_ITEM_ARRAY_END + 4)
+        self.assertEqual(cursor["maximum_slots"], INVENTORY_CURSOR_MAX_SLOTS)
+        self.assertEqual(cursor["maximum_slots"], SLOTS_PER_CONTAINER)
+        self.assertEqual(cursor["cursor_pointer_clear_rva"], "0xE88CC")
+        self.assertTrue(observed["cursor_uses_existing_inventory_records"])
+        unknown = inspect_2019_store_lifecycle(False)
+        self.assertIsNone(unknown["cursor_uses_existing_inventory_records"])
+        self.assertEqual(unknown["evidence_status"], "UNVERIFIED_STATIC_ANCHORS")
+        self.assertEqual(unknown["safety_decision"], "NO_GO_MOVE_OR_EXTEND_EXISTING_ARRAY")
 
 
 if __name__ == "__main__":
