@@ -296,7 +296,10 @@ def test_revision_compatibility_is_structural_only_and_fail_closed():
             "toolkit_commit": "c"*40}
     fp.update(pins)
     assert compatibility_report(spec)["state"] == "UNKNOWN"  # runtime not supplied
-    ok = compatibility_report(spec, pins)
+    assert compatibility_report(spec, pins)["state"] == "UNKNOWN"  # cited source not independently rehashed
+    pinned_source(spec)  # explicitly synthetic SHA/revision, not actual DSP bytes
+    source_pins = {"synthetic-source-1": {"revision": "a"*40, "sha256": "b"*64}}
+    ok = compatibility_report(spec, pins, observed_sources=source_pins)
     assert ok["state"] == "MATCHED_PINNED_ONLY"
     assert not ok["execution_enabled"]
     assert ok["independent_verification"] == "NOT_ESTABLISHED"
