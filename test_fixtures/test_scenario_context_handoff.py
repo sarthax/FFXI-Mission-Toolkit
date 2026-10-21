@@ -385,3 +385,30 @@ def test_unicode_draft_save_roundtrip_revision_and_ascii_storage_limit(monkeypat
     with pytest.raises(ValueError,match="32KiB"):
         save_draft(oversized,0)
     assert get_drafts()[0]["revision"]==2
+
+
+def test_agent_a_discard_review_guard_all_editor_replacement_paths():
+    """No New/Fork/Clone/Open or source handoff may silently lose edits."""
+    from pathlib import Path
+    js=(Path(__file__).resolve().parents[1]/"gui/static/scenario_developer.js").read_text(encoding="utf-8")
+    model=(Path(__file__).resolve().parents[1]/"gui/static/scenario_guided_model.js").read_text(encoding="utf-8")
+    assert "function confirmDocumentReplacement" in js
+    assert "M.replacementConfirmationReason(" in js
+    assert "window.confirm(" in js
+    assert "if(savePending) throw Error" in js
+    for label, end in (("sd-new","sd-fork"),("sd-fork","sd-clone"),
+                       ("sd-clone","sd-add-assertion"),("sd-open-draft","function paintCandidates")):
+        start=js.index("  $('"+label+"').addEventListener")
+        stop=js.index("  $('"+end+"').addEventListener",start) if end.startswith("sd-") else js.index(end,start)
+        segment=js[start:stop]
+        assert "confirmDocumentReplacement(" in segment, label
+        assert "editorGeneration++" in segment, label
+    assert "if(startedGeneration!==editorGeneration)" in js
+    assert "forkPending=true" in js and "finally{forkPending=false" in js
+    assert "const generation=editorGeneration" in js
+    assert "const input=M.clone(current())" in js
+    assert "M.saveResponseDisposition(toSave,latest,saved" in js
+    assert "if(!disposition.apply_revision)" in js
+    assert "if(savePending)throw Error" in js[js.index("function installIncompleteDraft"):
+                                               js.index("async function resolveCoverageContext")]
+    assert "replacementConfirmationReason" in model and "saveResponseDisposition" in model
