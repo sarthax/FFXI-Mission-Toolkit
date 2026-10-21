@@ -42,7 +42,7 @@ jobs:
             git fetch --no-tags --depth=1 origin "+refs/pull/$pr/head:refs/remotes/origin/r6-$pr"
             git show "refs/remotes/origin/r6-$pr:data/testing/domain_drafts/$domain.json" > "$RUNNER_TEMP/domain-specs/$domain.json"
             head_sha=$(git rev-parse "refs/remotes/origin/r6-$pr")
-            printf "%s %s\\n" "$domain" "$head_sha" >> "$RUNNER_TEMP/domain-heads.tsv"
+            printf "%s %s\n" "$domain" "$head_sha" >> "$RUNNER_TEMP/domain-heads.tsv"
           done < "$RUNNER_TEMP/domains.txt"
       - name: Fetch the single proposed #1292 case matrix as inert JSON
         shell: bash
