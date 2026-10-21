@@ -44,6 +44,8 @@ def test_isolated_openapi_contains_only_read_only_supervisor_tools():
         "/api/supervisor/log-errors",
         "/api/supervisor/service-health",
         "/api/supervisor/test-character-inventory",
+        "/api/supervisor/test-character-keyitems",
+        "/api/supervisor/test-character-vars",
     }
     assert all(set(methods) == {"get"} for methods in spec["paths"].values())
     assert "/wiki" not in str(spec["paths"])
