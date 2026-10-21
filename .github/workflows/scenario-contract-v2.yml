@@ -9,6 +9,7 @@ on:
       - "test_fixtures/test_scenario_contract_v2.py"
       - "test_fixtures/test_scenario_contract_v2_compatibility.py"
       - "test_fixtures/test_scenario_contract_v2_adapters.py"
+      - "test_fixtures/test_scenario_contract_v2_source_associations.py"
       - "test_fixtures/scenario_contract_v2_staging_adapter_synthetic.json"
       - "test_fixtures/scenario_contract_v2_gardening_migration_synthetic.json"
       - "test_fixtures/scenario_contract_v2_synthetic.json"
@@ -33,4 +34,4 @@ jobs:
         env:
           PYTHONPATH: "src:."
         run: |
-          python -m pytest -q test_fixtures/test_scenario_contract_v2.py test_fixtures/test_scenario_contract_v2_compatibility.py test_fixtures/test_scenario_contract_v2_adapters.py test_fixtures/test_feature_testing_specifications.py test_fixtures/test_feature_testing_spec_drafts.py test_fixtures/test_feature_testing_scenario_presentation.py test_fixtures/test_scenario_guided_editor.py test_fixtures/test_feature_testing_normalized_evidence.py test_fixtures/test_feature_testing_importer.py
+          python -m pytest -q test_fixtures/test_scenario_contract_v2.py test_fixtures/test_scenario_contract_v2_compatibility.py test_fixtures/test_scenario_contract_v2_adapters.py test_fixtures/test_scenario_contract_v2_source_associations.py test_fixtures/test_feature_testing_specifications.py test_fixtures/test_feature_testing_spec_drafts.py test_fixtures/test_feature_testing_scenario_presentation.py test_fixtures/test_scenario_guided_editor.py test_fixtures/test_feature_testing_normalized_evidence.py test_fixtures/test_feature_testing_importer.py

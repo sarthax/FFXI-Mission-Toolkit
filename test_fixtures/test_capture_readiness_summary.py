@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 import re
+from pathlib import Path
 
 from test_capture_identity_oracle_readiness import (
     fixture, binding, source, record, proof_for, independent_oracle,
@@ -13,7 +14,7 @@ from test_capture_identity_oracle_readiness import (
 from workbench.captures.scenario_handoff import reconstruct_review_draft
 from workbench.captures.scenario_identity_readiness import _observation_digest
 from workbench.captures.scenario_readiness_summary import summarize_capture_readiness
-from workbench.captures.scenario_review_workflow import manual_editor_handoff
+from workbench.captures.scenario_review_workflow import manual_editor_handoff, apply_step_decisions
 from workbench.captures.scenario_review_offline import render_review_html
 
 
@@ -63,8 +64,41 @@ def test_source_record_exact_is_not_independently_verified():
     assert typed["contract_v2_adoption"] == "BLOCKED_PENDING_ACCEPTED_CONTRACT_AND_REVIEW"
     assert typed["physical_source_authenticated"] is False
     row = typed["steps"][0]
+    assert row["canonical_step_id"] is None
+    assert row["canonical_source_association"] == {
+        "state": "UNASSIGNED_REQUIRES_INDEPENDENT_CANONICAL_CROSSWALK",
+        "scope": None, "source_refs": [],
+    }
     assert row["observed_summary_original"] == draft["steps"][0]["observed_summary"]
+    assert row["reviewer_step_decision_original"] == draft["steps"][0].get(
+        "review", {"decision": "PENDING"})
+    assert first["reviewer_step_decision_original"] == row["reviewer_step_decision_original"]
     assert row["original_evidence_refs"] == draft["steps"][0]["evidence_refs"]
+    assert [x["evidence_ref"] for x in row["indexed_evidence_provenance"]] == row["original_evidence_refs"]
+    for provenance in row["indexed_evidence_provenance"]:
+        source_row = draft["evidence_map"][provenance["evidence_ref"]]
+        assert provenance["capture_id"] == source_row["capture_id"]
+        assert provenance["source_table"] == source_row["table"]
+        assert provenance["original_row_key"] == source_row["row_key"]
+        assert provenance["source_locator_status"] == source_row["source"]["status"]
+        assert provenance["independent_source_authentication"] is False
+        assert provenance["capture_file_locator_state"] == (
+            "INDEXED_FILENAME_CLAIM_NOT_AUTHENTICATED"
+            if any(x.get("filename") for x in source_row["source"]["references"])
+            else "NO_INDEXED_CAPTURE_FILE_LOCATOR"
+        )
+        assert len(provenance["source_file_claims"]) == len(source_row["source"]["references"])
+        for claim, locator in zip(provenance["source_file_claims"],
+                                  source_row["source"]["references"], strict=True):
+            assert claim["source_filename"] == locator["filename"]
+            assert claim["locator_sha256_claim"] == locator["source_sha256"]
+            assert claim["parser_name_claim"] == (
+                locator["source_manifest"] or {}).get("parser_name")
+            assert claim["parser_version_claim"] == (
+                locator["source_manifest"] or {}).get("parser_version")
+            assert claim["decoder_version"] is None
+            assert claim["decoder_version_status"] == "NOT_INDEPENDENTLY_ATTESTED"
+            assert claim["indexed_digests_rehashed"] is False
     ids = {x["capture_identity_kind"]: x for x in row["identity_confidence"]}
     assert ids["npc"]["classification"] == "EXACT"
     assert ids["npc"]["source_record_correlation"] is True
@@ -94,9 +128,11 @@ def test_detailed_missing_observations_for_all_lanes():
             assert names["client_dialog"]["status"] == "NOT_INDEPENDENTLY_OBSERVED"
             assert names["quest_variables"]["importance"] == "CONDITIONAL"
             assert names["instance_state"]["importance"] == "CONDITIONAL"
+            assert names["job_state"]["importance"] == "CONDITIONAL"
+            assert names["mob_state"]["importance"] == "CONDITIONAL"
         elif step["lane"] == "capture_eventview":
             assert {"server_event_state", "client_dialog", "quest_variables",
-                    "instance_state"}.issubset(names)
+                    "instance_state", "job_state"}.issubset(names)
         elif step["lane"] == "capture_ki_events":
             assert {"client_key_items", "server_key_items"}.issubset(names)
             assert names["quest_variables"]["importance"] == "CONDITIONAL"
@@ -232,6 +268,158 @@ def test_missing_parser_and_manifest_digests_are_unknown_not_false_conflicts():
     con.close()
 
 
+def test_unrecognized_parser_or_capture_ingest_remains_unknown():
+    con, draft = fixture()
+    incomplete = deepcopy(draft)
+    ref = incomplete["steps"][0]["evidence_refs"][0]
+    locator = next(x for x in incomplete["evidence_map"][ref]["source"]["references"]
+                   if x.get("source_manifest"))
+    locator["source_manifest"]["parser_version"] = "SYNTHETIC_FUTURE_UNSUPPORTED"
+    locator["source_manifest"]["ingest_status"] = "UNRECOGNIZED"
+    result = summarize_capture_readiness(incomplete)
+    assert result["source_integrity"]["state"] == "UNKNOWN"
+    issues = [x for x in result["source_integrity"]["issues"]
+              if x.get("ref_id") == ref]
+    assert any(x["code"] == "PARSER_OR_CAPTURE_INGEST_UNRECOGNIZED"
+               and x["severity"] == "UNKNOWN" for x in issues)
+    projected = result["scenario_developer_handoff"]["read_only_projection"]
+    matching = [x for x in projected["steps"][0]["indexed_evidence_provenance"]
+                if x["evidence_ref"] == ref][0]
+    parser = next(x for x in matching["source_file_claims"]
+                  if x["parser_version_claim"] == "SYNTHETIC_FUTURE_UNSUPPORTED")
+    assert parser["parser_version_claim"] == "SYNTHETIC_FUTURE_UNSUPPORTED"
+    assert parser["parser_support"] == "UNRECOGNIZED_OR_UNSUPPORTED"
+    assert parser["decoder_version"] is None
+    assert projected["steps"][0]["readiness_state"] == "UNKNOWN"
+    assert projected["steps"][0]["verdict"] == "UNKNOWN"
+    assert projected["execution_enabled"] is False
+    assert render_review_html(incomplete, readiness=result)
+    con.close()
+
+
+def test_missing_capture_file_locator_is_unknown_and_not_physical_absence():
+    con, draft = fixture()
+    # The indexed capture has event rows with no source-file locator; this
+    # cannot prove the physical file is missing, merely not indexed here.
+    result = summarize_capture_readiness(draft)
+    typed = result["scenario_developer_handoff"]["read_only_projection"]
+    orphan = next(x for s in typed["steps"]
+                  for x in s["indexed_evidence_provenance"]
+                  if not x["source_file_claims"])
+    assert orphan["capture_file_locator_state"] == "NO_INDEXED_CAPTURE_FILE_LOCATOR"
+    assert orphan["source_locator_status"] in {"UNRESOLVED", "AMBIGUOUS"}
+    assert orphan["independent_source_authentication"] is False
+    assert all(s["verdict"] == "UNKNOWN" for s in typed["steps"])
+    con.close()
+
+
+def test_duplicate_capture_refs_fail_closed_without_inferred_step_links():
+    con, draft = fixture()
+    original = deepcopy(draft)
+    ref = draft["steps"][0]["evidence_refs"][0]
+    duplicate = deepcopy(draft)
+    duplicate["steps"][0]["evidence_refs"].append(ref)
+    try:
+        summarize_capture_readiness(duplicate)
+    except ValueError as exc:
+        assert "duplicate" in str(exc).lower()
+    else:
+        raise AssertionError("duplicate original evidence ref was silently accepted")
+    assert draft == original
+    wrong_capture = deepcopy(draft)
+    wrong_capture["evidence_map"][ref]["capture_id"] = draft["capture_id"] + 99
+    try:
+        summarize_capture_readiness(wrong_capture)
+    except ValueError as exc:
+        assert "cross-capture" in str(exc)
+    else:
+        raise AssertionError("evidence row from another capture accepted")
+    report = summarize_capture_readiness(draft)
+    typed = report["scenario_developer_handoff"]["read_only_projection"]
+    assert all(s["canonical_step_id"] is None for s in typed["steps"])
+    assert all(s["canonical_source_association"]["source_refs"] == []
+               and s["canonical_source_association"]["scope"] is None
+               for s in typed["steps"])
+    assert report["contract_v2_alignment"]["metadata_shape_preview"]["sources"] == []
+    assert report["contract_v2_alignment"]["metadata_shape_preview"]["oracles"] == []
+    # Agent C #1309 optional associations are never inferred or emitted.
+    assert "source_associations" not in report["contract_v2_alignment"]["metadata_shape_preview"]
+    con.close()
+
+
+def test_standalone_synthetic_readonly_editor_display_fixtures():
+    sample = json.loads(Path(__file__).with_name(
+        "r7_capture_readiness_authoring_projection_synthetic.json").read_text(
+            encoding="utf-8"))
+    assert sample["fixture_contract"] == "r7_readiness_authoring_display_examples_v1_SYNTHETIC_ONLY"
+    assert len(sample["samples"]) == 2
+    for item in sample["samples"]:
+        typed = item["read_only_projection"]
+        assert typed["contract"] == "capture_readiness_authoring_projection_v1_NONCANONICAL"
+        assert typed["source_compatibility_state"] in {"UNKNOWN", "BLOCKED"}
+        assert typed["physical_source_authenticated"] is False
+        assert typed["automatic_import"] is False
+        assert typed["save_allowed"] is False
+        assert typed["approved_for_execution"] is False
+        assert typed["execution_enabled"] is False
+        assert typed["normative_expected"] is None and typed["verdict"] == "UNKNOWN"
+        for row in typed["steps"]:
+            assert row["canonical_step_id"] is None
+            assert row["canonical_source_association"]["scope"] is None
+            assert row["canonical_source_association"]["source_refs"] == []
+            assert row["readiness_state"] in {"UNKNOWN", "BLOCKED"}
+            assert row["oracle_approval_state"] == "UNAPPROVED"
+            assert row["reviewer_step_decision_original"]["decision"] in {"PENDING", "ACCEPT"}
+            assert row["normative_expected"] is None and row["verdict"] == "UNKNOWN"
+            assert row["execution_enabled"] is False
+            assert [p["evidence_ref"] for p in row["indexed_evidence_provenance"]] == (
+                row["original_evidence_refs"])
+            for source in row["indexed_evidence_provenance"]:
+                assert source["independent_source_authentication"] is False
+                if source["capture_file_locator_state"] == "NO_INDEXED_CAPTURE_FILE_LOCATOR":
+                    assert source["source_file_claims"] == []
+                for declaration in source["source_file_claims"]:
+                    assert declaration["decoder_version"] is None
+                    assert declaration["indexed_digests_rehashed"] is False
+            for missing in row["missing_readbacks"]:
+                assert missing["status"] == "NOT_INDEPENDENTLY_OBSERVED"
+                assert missing["readiness_state"] == row["readiness_state"]
+                assert missing["permission_granted"] is False
+                assert missing["capability_registered"] is False
+    assert sample["samples"][0]["read_only_projection"]["source_compatibility_state"] == "UNKNOWN"
+    assert sample["samples"][1]["read_only_projection"]["source_compatibility_state"] == "BLOCKED"
+    assert sample["samples"][0]["read_only_projection"]["steps"][0][
+        "reviewer_step_decision_original"]["decision"] == "PENDING"
+    assert sample["samples"][1]["read_only_projection"]["steps"][0][
+        "reviewer_step_decision_original"]["decision"] == "ACCEPT"
+    assert sample["samples"][1]["read_only_projection"]["steps"][0][
+        "oracle_approval_state"] == "UNAPPROVED"
+
+
+def test_operator_reviewed_step_remains_observation_only_and_readonly():
+    con, draft = fixture()
+    prior = deepcopy(draft)
+    step_id = draft["steps"][0]["step_id"]
+    reviewed = apply_step_decisions(draft, [{
+        "step_id": step_id, "decision": "ACCEPT",
+        "note": "SYNTHETIC observation title reviewed, gameplay result NOT verified",
+    }])
+    result = summarize_capture_readiness(reviewed)
+    original = reviewed["steps"][0]["review"]
+    row = result["readiness_steps"][0]
+    display = result["scenario_developer_handoff"]["read_only_projection"]["steps"][0]
+    assert original == row["reviewer_step_decision_original"]
+    assert original == display["reviewer_step_decision_original"]
+    assert display["oracle_approval_state"] == "UNAPPROVED"
+    assert display["normative_expected"] is None
+    assert display["verdict"] == "UNKNOWN"
+    assert display["execution_enabled"] is False
+    assert result["approved_for_execution"] is False
+    assert render_review_html(reviewed, readiness=result)
+    assert draft == prior
+    con.close()
+
+
 def test_repeated_capture_contradictions_are_not_gameplay_failures():
     con = synthetic_interaction_with_key_item()
     original = reconstruct_review_draft(con, 1)
@@ -294,10 +482,30 @@ def test_existing_offline_reviewer_renders_readiness_without_approval():
             approved_for_execution=True),
         lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0].update(
             oracle_approval_state="APPROVED"),
+        lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0].update(
+            reviewer_step_decision_original={"decision": "ACCEPT", "edited_title": None, "note": "FORGED"}),
+        lambda x: x["readiness_steps"][0].update(
+            reviewer_step_decision_original={"decision": "ACCEPT", "edited_title": None, "note": "FORGED"}),
+        lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0].update(
+            canonical_step_id="SYNTHETIC_FORGED_CANONICAL_STEP"),
+        lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0][
+            "canonical_source_association"].update(
+                scope="step", source_refs=["SYNTHETIC_FORGED_SOURCE"]),
+        lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0][
+            "indexed_evidence_provenance"][0].update(
+                capture_file_locator_state="PHYSICALLY_VERIFIED_PRESENT"),
         lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0]["identity_confidence"][0].update(
             source_identity_verified=True),
         lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0].update(
             original_evidence_refs=["FABRICATED_REF"]),
+        lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0][
+            "indexed_evidence_provenance"][0].update(evidence_ref="FABRICATED"),
+        lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0][
+            "indexed_evidence_provenance"][0]["source_file_claims"][0].update(
+                indexed_digests_rehashed=True),
+        lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0][
+            "indexed_evidence_provenance"][0]["source_file_claims"][0].update(
+                decoder_version="FORGED_VERIFIED"),
         lambda x: x["readiness_steps"][0].update(execution_enabled=True),
         lambda x: x["readiness_steps"][0]["oracle_readiness"].update(normative_expected="UNAUTHORIZED"),
         lambda x: x["readiness_steps"][0]["identity_matches"][0].update(source_identity_verified=True),
@@ -339,6 +547,11 @@ def main():
     test_advisory_v2_field_mapping_uses_only_proposed_names()
     test_missing_parser_and_manifest_digests_are_unknown_not_false_conflicts()
     test_revision_mismatch_and_tampered_projection_fail_closed()
+    test_missing_capture_file_locator_is_unknown_and_not_physical_absence()
+    test_duplicate_capture_refs_fail_closed_without_inferred_step_links()
+    test_standalone_synthetic_readonly_editor_display_fixtures()
+    test_operator_reviewed_step_remains_observation_only_and_readonly()
+    test_unrecognized_parser_or_capture_ingest_remains_unknown()
     test_repeated_capture_contradictions_are_not_gameplay_failures()
     print("Synthetic evidence readiness, provenance and contract_v2 hints: PASS")
 
