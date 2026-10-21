@@ -90,7 +90,7 @@ def _validate_sources(items: object) -> dict[str, dict]:
             and hi - lo <= 1000
         ):
             raise ValueError("invalid v2 line span")
-        if src["classification"] not in _SOURCE_TYPES:
+        if not isinstance(src["classification"], str) or src["classification"] not in _SOURCE_TYPES:
             raise ValueError("invalid v2 source classification")
         _sha(src["revision"], 40, "source revision")
         _sha(src["sha256"], 64, "source SHA-256")
@@ -113,7 +113,8 @@ def _validate_parameters(items: object, sources: dict[str, dict]) -> None:
         if name in names:
             raise ValueError("duplicate v2 parameter")
         names.add(name)
-        if param["kind"] not in _PARAM_KINDS or param["binding_state"] not in _BINDING_STATES:
+        if (not isinstance(param["kind"], str) or param["kind"] not in _PARAM_KINDS or
+            not isinstance(param["binding_state"], str) or param["binding_state"] not in _BINDING_STATES):
             raise ValueError("unsupported v2 identity kind or binding state")
         identity = param["identity"]
         if identity is not None and not (
@@ -151,7 +152,8 @@ def _validate_oracles(items: object, sources: dict[str, dict], assertions: set[s
             raise ValueError("invalid, duplicate, or unknown v2 oracle assertion")
         names.add(key)
         kind, confidence = oracle["oracle_type"], oracle["confidence"]
-        if kind not in _ORACLE_TYPES or confidence not in _CONFIDENCE:
+        if (not isinstance(kind, str) or kind not in _ORACLE_TYPES or
+            not isinstance(confidence, str) or confidence not in _CONFIDENCE):
             raise ValueError("unsupported v2 oracle kind/confidence")
         refs = _unique_refs(oracle["source_refs"], set(sources), "oracle")
         if kind == "unknown":
@@ -176,7 +178,8 @@ def _validate_requirements(items: object, steps: set[str]) -> None:
         if not isinstance(key, str) or key not in steps or key in used:
             raise ValueError("unknown or duplicate v2 step reference")
         used.add(key)
-        if req["capability"] not in _CAPABILITIES or req["operation_class"] not in _OPERATION_CLASSES:
+        if (not isinstance(req["capability"], str) or req["capability"] not in _CAPABILITIES or
+            not isinstance(req["operation_class"], str) or req["operation_class"] not in _OPERATION_CLASSES):
             raise ValueError("unsupported or prohibited v2 capability")
         if req["execution_gate"] != "blocked" or type(req["approval_required"]) is not bool:
             raise ValueError("v2 metadata cannot authorize execution")
