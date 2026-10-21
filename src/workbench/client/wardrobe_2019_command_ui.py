@@ -1,0 +1,176 @@
+"""Exact December 2019 Wardrobe command -> UI-mode static evidence.
+
+These are READ-ONLY opcode/table observations. The mode object values are not
+recoverable from the four command handlers alone; no claim of a runnable new
+Wardrobe, runtime execution, code patch, or complete UI state machine follows.
+"""
+from __future__ import annotations
+
+import struct
+
+from workbench.client.pol1_unpack import Pol1Error
+
+IMAGE_BASE = 0x10000000
+COMMAND_NAME_RVA = 0x34B1B0
+COMMAND_HANDLER_TABLE_RVA = 0x34C068
+COMMAND_NAME_RECORD_BYTES = 24
+HANDLER_RECORD_BYTES = 12
+COMMAND_HELPER_RVA = 0x1D1680
+UI_SELECTOR_RVA = 0x1D4E70
+UI_JUMP_TABLE_RVA = 0x1D4F64
+MODE_FIRST = 2
+MODE_LAST = 12
+MODE_DEFAULT_TARGET_RVA = 0x1D4EFA
+MODE_CASE_TARGETS = (
+    0x1D4EB6, 0x1D4EFA, 0x1D4EC0, 0x1D4EAB,
+    0x1D4EA3, 0x1D4E99, 0x1D4EC8, 0x1D4EF0,
+    0x1D4ED3, 0x1D4EDD, 0x1D4EE5,
+)
+MODE_CASE_UI_POINTER_GLOBALS = (
+    0x10621FC4, 0x10621FC0, 0x10621FCC, 0x10621FD0,
+    0x10621FD4, 0x10621FD8, 0x10621FDC, 0x10621FEC,
+    0x10621FE0, 0x10621FE4, 0x10621FE8,
+)
+# command ID, name, handler code RVA, runtime mode-object global pointer VA
+WARDROBE_COMMANDS = (
+    (111, "/wardrobe", 0x7CE80, 0x1061E5D0),
+    (112, "/wardrobe2", 0x7CEA0, 0x1061E5D4),
+    (113, "/wardrobe3", 0x7CEC0, 0x1061E5D8),
+    (114, "/wardrobe4", 0x7CEE0, 0x1061E5DC),
+)
+# Exact x86 sequence after the getter: add eax,-2; cmp eax,10; ja default;
+# jmp absolute jump-table[eax]. For 13..16, the ja is taken.
+MODE_SELECTOR_BYTES = bytes.fromhex("83c0fe83f80a7768ff2485644f1d10")
+MODE_GETTER_BYTES = bytes.fromhex("8b11ff5254")
+MODE_FORWARD_BYTES = bytes.fromhex("8b4424048b0d88e5611050e870370000")
+
+
+def _section_slice(data: bytes, base_rva: int, at_rva: int,
+                   length: int) -> bytes | None:
+    """Return an exact bounded immutable section slice or None."""
+    offset = at_rva - base_rva
+    if offset < 0 or length < 0 or offset + length > len(data):
+        return None
+    return data[offset:offset + length]
+
+
+def inspect_2019_command_ui_dispatch(data: bytes, data_rva: int,
+                                     decoded_text: bytes, text_rva: int = 0x1000
+                                     ) -> dict:
+    """Correlate command names, handler table and selected UI mode switch.
+
+    Caller must gate this with the *exact original 2019 source SHA-256* and
+    decoded .text hash before treating any RVA as build-specific evidence.
+    """
+    if (not isinstance(data, bytes) or not isinstance(decoded_text, bytes)
+            or type(data_rva) is not int or type(text_rva) is not int):
+        raise Pol1Error("UI evidence expects immutable sections and integer RVAs")
+    if len(data) > 16 * 1024 * 1024 or len(decoded_text) > 8 * 1024 * 1024:
+        raise Pol1Error("UI evidence exceeds bounded section scan sizes")
+    commands = []
+    for index, (command_id, name, handler_rva, object_global) in enumerate(
+            WARDROBE_COMMANDS):
+        name_rva = COMMAND_NAME_RVA + index * COMMAND_NAME_RECORD_BYTES
+        record_rva = COMMAND_HANDLER_TABLE_RVA + index * HANDLER_RECORD_BYTES
+        name_bytes = _section_slice(data, data_rva, name_rva, 24)
+        handler_bytes = _section_slice(data, data_rva, record_rva, 12)
+        code = _section_slice(decoded_text, text_rva, handler_rva, 13)
+        expected_name = name.encode("ascii").ljust(16, b"\0")
+        name_ok = (name_bytes is not None
+                   and name_bytes[:16] == expected_name
+                   and struct.unpack_from("<HH", name_bytes, 20) ==
+                   (command_id, 0x51))
+        handler_ok = (handler_bytes is not None
+                      and struct.unpack("<III", handler_bytes) ==
+                      (command_id, IMAGE_BASE + handler_rva, 0))
+        code_ok = bool(code is not None and len(code) == 13
+                       and code[:1] == b"\xA1"
+                       and struct.unpack_from("<I", code, 1)[0] == object_global
+                       and code[5:9] == bytes.fromhex("6a0050e8")
+                       and handler_rva + 13 + struct.unpack_from(
+                           "<i", code, 9)[0] == COMMAND_HELPER_RVA)
+        commands.append({
+            "command": name, "command_id": command_id,
+            "name_record_rva": f"0x{name_rva:X}",
+            "handler_table_record_rva": f"0x{record_rva:X}",
+            "handler_rva": f"0x{handler_rva:X}",
+            "mode_object_global_va": f"0x{object_global:X}",
+            "name_and_id_match": bool(name_ok),
+            "handler_table_matches": bool(handler_ok),
+            "loads_object_and_calls_shared_helper": bool(code_ok),
+        })
+
+    forward = _section_slice(decoded_text, text_rva, 0x1D16F0,
+                             len(MODE_FORWARD_BYTES))
+    getter = _section_slice(decoded_text, text_rva, 0x1D4E85,
+                            len(MODE_GETTER_BYTES))
+    selector = _section_slice(decoded_text, text_rva, 0x1D4E8A,
+                              len(MODE_SELECTOR_BYTES))
+    table = _section_slice(decoded_text, text_rva, UI_JUMP_TABLE_RVA,
+                            len(MODE_CASE_TARGETS) * 4)
+    observed_targets = (
+        struct.unpack("<" + "I" * len(MODE_CASE_TARGETS), table)
+        if table is not None else ()
+    )
+    targets_ok = (observed_targets == tuple(
+        IMAGE_BASE + rva for rva in MODE_CASE_TARGETS
+    ))
+    modes = []
+    for index, (target_rva, expected_global) in enumerate(zip(
+            MODE_CASE_TARGETS, MODE_CASE_UI_POINTER_GLOBALS)):
+        insn = _section_slice(decoded_text, text_rva, target_rva, 6)
+        if insn is None:
+            actual_global = None
+        elif insn[:1] == b"\xA1":
+            actual_global = struct.unpack_from("<I", insn, 1)[0]
+        elif insn[:2] in (b"\x8b\x0d", b"\x8b\x15"):
+            actual_global = struct.unpack_from("<I", insn, 2)[0]
+        else:
+            actual_global = None
+        modes.append({
+            "mode": MODE_FIRST + index,
+            "branch_target_rva": f"0x{target_rva:X}",
+            "ui_source_global_va": f"0x{expected_global:X}",
+            "case_global_matches": actual_global == expected_global,
+            "uses_same_branch_as_default": target_rva == MODE_DEFAULT_TARGET_RVA,
+        })
+
+    selector_ok = (getter == MODE_GETTER_BYTES
+                   and selector == MODE_SELECTOR_BYTES
+                   and forward == MODE_FORWARD_BYTES
+                   and targets_ok
+                   and all(x["case_global_matches"] for x in modes))
+    complete = bool(all(
+        x["name_and_id_match"] and x["handler_table_matches"]
+        and x["loads_object_and_calls_shared_helper"]
+        for x in commands
+    ) and selector_ok)
+    return {
+        "status": "EXACT_STATIC_ANCHORS_MATCH" if complete
+                  else "INCOMPLETE_STATIC_EVIDENCE",
+        "commands": commands,
+        "shared_command_helper_rva": "0x1D1680",
+        "forwarder_to_ui_selector_rva": "0x1D16F0",
+        "ui_selector_rva": "0x1D4E70",
+        "mode_getter_vtable_offset": "0x54",
+        "selector_uses_mode_minus_two": bool(selector == MODE_SELECTOR_BYTES),
+        "switch_first_mode": MODE_FIRST,
+        "switch_last_mode": MODE_LAST,
+        "switch_entry_count": len(MODE_CASE_TARGETS),
+        "ui_mode_cases": modes,
+        "jump_table_matches": bool(targets_ok),
+        "helper_forward_getter_and_selector_match": bool(selector_ok),
+        "proposed_modes_13_16_use_default_in_original": (
+            True if selector_ok else None
+        ),
+        "default_branch_rva": "0x1D4EFA",
+        "command_to_runtime_mode_id_mapping_proved": False,
+        "new_wardrobe_commands_or_mode_cases_present": False if complete else None,
+        "complete_menu_builder_and_ui_state_recovered": False,
+        "safety_decision": "NO_GO_ASSUME_2019_MODE_13_16_SUPPORTED",
+        "caution": (
+            "Exact original-build tables/instruction windows, not a complete "
+            "runtime call graph. Mode-object getter values, construction "
+            "lifetimes and full menu behavior are unverified."
+        ),
+    }
