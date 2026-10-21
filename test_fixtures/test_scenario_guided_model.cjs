@@ -86,3 +86,29 @@ assert.match(M.revisionIndicator(cloned,M.clone(cloned),1),/no changes/);
 const editedClone=M.clone(cloned);editedClone.purpose='Changed in editor';
 assert.match(M.revisionIndicator(cloned,editedClone,1),/unsaved changes/);
 console.log('Synthetic catalog attachment, clone and revision indicators: PASS');
+
+// context_ref handoff: read-only reference, no data taken beyond the label
+{
+  assert.equal(M.contextRefPath('/feature-testing/coverage/context/gardening/GARD-01'), '/feature-testing/coverage/context/gardening/GARD-01');
+  for (const bad of ['https://evil.example/x', '//evil/x', '/feature-testing/coverage/context/../x/y',
+    '/feature-testing/coverage/context/a/b/c', '/other', '', null, undefined])
+    assert.equal(M.contextRefPath(bad), null);
+  const ctx = {contract: 'coverage_behavior_reference_v1', feature_id: 'gardening', behavior_ref: 'GARD-01',
+    label: 'place pot', source_pointer: 'features[id=gardening].cases[id=GARD-01]', source_revision: 'UNPINNED',
+    context_only: true, design_only: true, review_required: true, auto_populate_allowed: false,
+    auto_save_allowed: false, execution_enabled: false, assertions: [{id: 'evil'}], observations: ['gm_aura']};
+  const d = M.fromContext(ctx, ['gardening']);
+  assert.equal(d.feature_id, 'gardening');
+  assert.equal(d.case_id, 'SYNTH-GARD-01-DRAFT');
+  assert.equal(d.runner, 'unassigned');
+  assert.equal(d.execution_status, 'design_only');
+  assert.equal(d.authoring.state, 'draft');
+  assert.equal(d.authoring.review_required, true);
+  assert.ok(d.steps[0].id.startsWith('SYNTH-GARD-01-DRAFT'));
+  assert.deepEqual(d.assertions.map(a => a.id), ['bag_observed']);
+  assert.ok(!d.observations.includes('gm_aura'));
+  assert.throws(() => M.fromContext({...ctx, auto_save_allowed: true}, ['gardening']), /refused/);
+  assert.throws(() => M.fromContext({...ctx, contract: 'x'}, ['gardening']), /refused/);
+  assert.throws(() => M.fromContext(ctx, ['voidwalker']), /refused/);
+  console.log('Context reference handoff is read-only and design-only: PASS');
+}

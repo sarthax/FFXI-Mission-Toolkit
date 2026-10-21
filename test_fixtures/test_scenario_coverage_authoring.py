@@ -220,7 +220,7 @@ def test_rendered_drilldown_keeps_missing_proofs_and_editor_warning_visible():
     rendered = env.get_template("feature_testing_coverage.html").render(matrix=matrix)
     assert 'data-behavior-ref="SYNTH-UNSPEC"' in rendered
     assert "Create scenario for this behavior" in rendered
-    assert "cannot auto-prefill" in rendered
+    assert "unsaved, design-only draft" in rendered
     assert "Recovery — declared 0" in rendered
     assert "NO DECLARED SCENARIO" in rendered
     assert "NO_SPECIFICATION" in rendered

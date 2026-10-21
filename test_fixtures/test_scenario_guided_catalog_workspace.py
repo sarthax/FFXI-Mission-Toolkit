@@ -171,3 +171,14 @@ def test_pickers_and_revision_ui_are_in_new_editor_only():
     for dangerous in ("/builder/launch", "packet_inject", "/itemedit/batch/apply",
                       "send_gm_command"):
         assert dangerous not in js
+
+
+def test_editor_consumes_context_ref_read_only():
+    root = Path(__file__).resolve().parents[1]
+    js = (root / "gui/static/scenario_developer.js").read_text(encoding="utf-8")
+    html = (root / "gui/templates/scenario_developer.html").read_text(encoding="utf-8")
+    assert "context_ref" in js and "contextRefPath" in js and "fromContext" in js
+    assert 'id="sd-context-note"' in html
+    # the handoff must never save or execute on its own
+    body = js[js.index("async function loadContextRef"):js.index("(async()=> {")]
+    assert "'POST'" not in body and "/builder/drafts" not in body
