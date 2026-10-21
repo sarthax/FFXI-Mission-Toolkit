@@ -70,12 +70,14 @@ All proposed endpoints require approved disposable-character identity and a trus
 
 Keep outer `schema_version=1`, preserve MOG-09's historical verified runner and all 73 noncanonical design-only records. Normalize `lane`/`execution_lane` only when equal; Gardening #1277 now mirrors both. Map staged source-ref aliases (step `oracle_refs`, `oracle_sources`, `source_refs`) to v2 sources with path+line+full commit; keep digest NULL until source bytes are independently hashed and deployed revision separately attested. Typed identity needs explicit namespace+zone, ambiguous/unresolved remain blocked. UNKNOWN oracle uses no normative source refs and cannot be mapped to `equals UNKNOWN`; v2 assertion IDs must bind existing canonical v1 assertions, not merely staged per-step IDs. v2 `step_requirements` bind stable step IDs, candidate readbacks/permissions, and **always `execution_gate=blocked`**. Preserve original observed evidence and UNKNOWN/FAIL distinction. Respect 32KiB draft cap; reviewer approval required before any spec projection.
 
-## Safe shortlist and handoff
+## Safe shortlist and handoff (same priority order as canonical #1292)
 
-1. Historical **MOG-09** limited read-only observation scope only (not a new full-furniture acceptance).
-2. **RG-01** GEO `DwL_Prog`,`DwL_Declined` plus LUOPAN/soil KIs; no job-unlock assertion.
-3. **RG-06** RUN `RUN_COTR` and petal KI; no quest completion assertion.
-4. **VOID-01** `VWO_STOCK`,`VWO_STOCK_TS` and held KIs; no timer-accrual assertion.
-5. **VOID-02** `VWO_TIERS`,`VWO_TIERS2` and KIs; no confirmed NM kill claim.
+**Conditionally observable now means a bounded *read-only baseline*, not a runnable gameplay test or verified oracle.** Rank for new observation coverage is by incremental risk/benefit, not historical runner existence:
 
-All five are only candidates after grant/deployed-SHA/preflight; SAL-01 and GARD-07 remain blocked on new readbacks. All Chocobo Raising cases retain needs-deploy until Phase 0 migrations/binaries and gameplay prerequisites are verified. Agent A reviews integration; Agent C reviews optional metadata; no task is assigned to the XIHeadless local agent and no live operations are authorized.
+1. **RG-01** — approved-character GEO `DwL_Prog`, `DwL_Declined` plus soil/LUOPAN KIs. Quest-state and job unlock remain UNKNOWN.
+2. **RG-06** — RUN `RUN_COTR` and petal KI only. No quest completion claim.
+3. **VOID-01** — `VWO_STOCK`, `VWO_STOCK_TS`, held KIs; not proof of real-time officer accrual.
+4. **VOID-02** — `VWO_TIERS`, `VWO_TIERS2`, abyssites; not a mob kill attribution.
+5. **MOG-09** — **already canonical, narrowly supported historical observation** of active KI, aura and imported bag/Safe rows, but no independent empty installed-layout witness. Its prior evidence is not a fresh authenticated run.
+
+No new test is dispatchable by this list. These five require operator-configured SELECT-only/bearer access, approved character, explicit persisted snapshot freshness and full source/identity review for any assertive interpretation. **SAL-01** and **VOID-08** are read-only *in intent* but cannot be observed completely through current endpoints. **Gardening has zero full observe-now cases**; a four-column LIMIT-100 inventory read is only a partial preflight. All nine **CHO-01..09** remain needs-deploy until DSP Phase 0 source/binary/migration/readback attestation. Agent A owns integration review; Agent C owns optional `contract_v2` semantics. No active XIHeadless local-agent assignment or live operations.
