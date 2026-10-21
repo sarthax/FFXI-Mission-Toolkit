@@ -17,6 +17,8 @@ from workbench.client.pol1_unpack import Pol1Error
 from workbench.client.wardrobe_2019_audit import (
     ANCHORS, EXPECTED_COMMAND_IDS, FIRST_WARDROBE_COMMAND_RVA,
     RECORD_BYTES, audit_2019_wardrobe, inspect_command_table, inspect_decoded_sites,
+    bounded_2019_record_offset, inspect_2019_item_packet_location,
+    PACKET_LOCATION_FIELDS, ITEM_STORE_OFFSET, ITEM_RECORD_BYTES, SLOTS_PER_CONTAINER,
 )
 
 
@@ -94,6 +96,52 @@ class Wardrobe2019AuditTests(unittest.TestCase):
             self.assertEqual(report["status"], "UNKNOWN_BUILD_FINGERPRINT")
             self.assertEqual(path.read_bytes(), original)
             self.assertEqual([x.name for x in Path(folder).iterdir()], ["synthetic.dll"])
+
+
+    def test_legacy_2019_address_guard_boundary_values(self):
+        self.assertEqual(bounded_2019_record_offset(0, 0), ITEM_STORE_OFFSET)
+        self.assertEqual(bounded_2019_record_offset(12, 80),
+                         ITEM_STORE_OFFSET + (12 * 81 + 80) * ITEM_RECORD_BYTES)
+        self.assertEqual(bounded_2019_record_offset(12, 0),
+                         ITEM_STORE_OFFSET + 12 * SLOTS_PER_CONTAINER * ITEM_RECORD_BYTES)
+        for cid in (-1, 13, 14, 15, 16, 255, True, 1.0):
+            with self.subTest(container=cid):
+                self.assertIsNone(bounded_2019_record_offset(cid, 0))
+        for slot in (-1, 81, 255, True, 2.0):
+            with self.subTest(slot=slot):
+                self.assertIsNone(bounded_2019_record_offset(12, slot))
+
+    def test_legacy_packet_location_guard_all_observed_packet_types(self):
+        for packet_id, (cid_at, slot_at) in PACKET_LOCATION_FIELDS.items():
+            with self.subTest(packet=packet_id):
+                for cid, slot, accepted in (
+                    (0, 0, True), (12, 80, True), (13, 0, False),
+                    (14, 5, False), (15, 5, False), (16, 5, False),
+                    (255, 0, False), (12, 81, False), (12, 255, False),
+                ):
+                    payload = bytearray(max(cid_at, slot_at) + 1)
+                    payload[cid_at], payload[slot_at] = cid, slot
+                    report = inspect_2019_item_packet_location(packet_id, bytes(payload))
+                    self.assertEqual(report["status"] == "LEGACY_BOUNDS_OK", accepted)
+                    self.assertEqual(report["safe_record_offset"] is not None, accepted)
+                self.assertEqual(
+                    inspect_2019_item_packet_location(packet_id, bytes(slot_at))["status"],
+                    "TRUNCATED_PACKET"
+                )
+
+    def test_legacy_packet_location_guard_denies_unknown_and_invalid_input(self):
+        self.assertEqual(
+            inspect_2019_item_packet_location(0x29, bytes(64))["status"],
+            "UNKNOWN_PACKET_NO_ADDRESS"
+        )
+        self.assertEqual(
+            inspect_2019_item_packet_location(True, bytes(64))["status"],
+            "UNKNOWN_PACKET_NO_ADDRESS"
+        )
+        self.assertEqual(
+            inspect_2019_item_packet_location(0x1E, bytearray(64))["status"],
+            "INVALID_PACKET_BUFFER"
+        )
 
 
 if __name__ == "__main__":
