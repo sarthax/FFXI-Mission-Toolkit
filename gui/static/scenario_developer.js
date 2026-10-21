@@ -303,29 +303,53 @@
     return result;
   }
 
+  let editorGeneration=0, forkPending=false;
+  function confirmDocumentReplacement(action) {
+    if (savePending) throw Error('A save is in progress. Finish that request before replacing this draft.');
+    current(); // Read unsaved Guided fields or validate Advanced JSON first.
+    const reason=M.replacementConfirmationReason(spec,baseline,Number($('sd-revision').value),activeHandoff);
+    return !reason || window.confirm(action+' will replace '+reason+'. Discard that context and continue?');
+  }
   $('sd-guided').addEventListener('click',()=>switchMode('guided'));
   $('sd-advanced').addEventListener('click',()=>switchMode('advanced'));
   $('sd-apply-json').addEventListener('click',()=>switchMode('guided'));
   $('sd-new').addEventListener('click',()=>{
-    activeHandoff=null;spec=M.fresh();mode='guided';baseline=null;setSourceDetail(null,null);$('sd-revision').value=0;
-    $('sd-context-use').disabled=!coverageContext;
-    $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
-    render();show('Created a synthetic, design-only canonical draft.');
+    try {
+      if(!confirmDocumentReplacement('New scenario'))return;
+      editorGeneration++;
+      activeHandoff=null;spec=M.fresh();mode='guided';baseline=null;setSourceDetail(null,null);$('sd-revision').value=0;
+      $('sd-context-use').disabled=!coverageContext;
+      $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
+      render();show('Created a synthetic, design-only canonical draft.');
+    }catch(e){show('New scenario refused: '+e.message);}
   });
   $('sd-fork').addEventListener('click',async()=>{
+    if(forkPending)return;
+    forkPending=true;$('sd-fork').disabled=true;
+    const startedGeneration=editorGeneration;
     try{
+      if(savePending)throw Error('Save in progress; cannot switch drafts');
       const [feature,caseId]=$('sd-seed-select').value.split('/');
       if(!feature||!caseId)throw Error('Choose a published case to fork');
       const x=await call('/scenario-developer/seed/'+encodeURIComponent(feature)+'/'+encodeURIComponent(caseId));
-      activeHandoff=null;spec=M.forkPublished(x.specification);mode='guided';baseline=null;setSourceDetail(feature,caseId);
+      if(startedGeneration!==editorGeneration)
+        throw Error('Editor changed while loading the published case; retry');
+      const draft=M.forkPublished(x.specification);
+      if(!confirmDocumentReplacement('Fork published case'))return;
+      editorGeneration++;
+      activeHandoff=null;spec=draft;mode='guided';baseline=null;setSourceDetail(feature,caseId);
       $('sd-revision').value=0;$('sd-advanced-panel').hidden=true;
       $('sd-guided-panel').hidden=false;render();
       show('Copied as DESIGN_ONLY with a new synthetic case ID. Original published case unchanged.');
     }catch(e){show('Fork refused: '+e.message);}
+    finally{forkPending=false;$('sd-fork').disabled=false;}
   });
   $('sd-clone').addEventListener('click',()=>{
     try {
-      activeHandoff=null;spec=M.cloneDraft(current());mode='guided';baseline=null;$('sd-revision').value=0;
+      const draft=M.cloneDraft(current());
+      if(!confirmDocumentReplacement('Clone current draft'))return;
+      editorGeneration++;
+      activeHandoff=null;spec=draft;mode='guided';baseline=null;$('sd-revision').value=0;
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
       render();show('Cloned into a new draft case ID. Rename it if a COPY already exists; source identities still require review.');
     } catch(e){show('Clone refused: '+e.message);}
@@ -377,12 +401,15 @@
     const d=drafts[Number($('sd-drafts').value)];
     if(!d){show('Select an existing draft');return;}
     try{
-      activeHandoff=null;spec=M.parseAdvanced(JSON.stringify(d.specification));mode='guided';
+      const loaded=M.parseAdvanced(JSON.stringify(d.specification));
+      if(!confirmDocumentReplacement('Open saved draft'))return;
+      editorGeneration++;
+      activeHandoff=null;spec=loaded;mode='guided';
       $('sd-revision').value=d.revision;baseline=M.clone(spec);
       setSourceDetail(null,null);
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
       render();show('Opened '+d.case_id+' revision '+d.revision+' (design only). Edit and save with this expected revision; an external update will cause a revision conflict.');
-    }catch(e){show('Invalid saved draft: '+e.message);}
+    }catch(e){show('Open draft refused: '+e.message);}
   });
   function paintCandidates(result) {
     const host=$('sd-catalog-results');host.replaceChildren();
@@ -436,12 +463,14 @@
   });
   let coverageContext = null, evidenceSuggestions = null, activeHandoff = null;
   function installIncompleteDraft(draft, feedback, key) {
+    if(savePending)throw Error('A draft save is in progress; handoff cannot replace the editor');
     // Inspect the actual Guided or Advanced editor before touching it. A
     // loaded revision, any edit to the initial synthetic example, or another
     // source handoff requires an explicit New action first.
     current();
     const issue=M.handoffReplacementIssue(spec,baseline,Number($('sd-revision').value),activeHandoff);
     if (issue) throw Error(issue);
+    editorGeneration++;
     activeHandoff=key;
     spec=draft;mode='guided';baseline=null;$('sd-revision').value=0;
     $('sd-guided-panel').hidden=false;$('sd-advanced-panel').hidden=true;
