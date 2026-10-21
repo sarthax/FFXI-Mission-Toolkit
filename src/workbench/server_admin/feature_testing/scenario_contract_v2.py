@@ -279,6 +279,9 @@ def compatibility_report(
     # bytes and checked the repository/revision. This pure helper never opens
     # paths, downloads sources or upgrades oracle/binding confidence.
     sources = {item["ref"]: item for item in metadata["sources"]}
+    for ref, src in sources.items():
+        if not src["revision"] or not src["sha256"]:
+            reasons.append("source " + ref + " revision/content digest unpinned")
     if observed_sources is None:
         if sources:
             reasons.append("independently rehashed source fingerprints unavailable")
@@ -287,8 +290,6 @@ def compatibility_report(
             raise ValueError("observed source fingerprints contain unrecognized refs")
         for ref, src in sources.items():
             expected_revision, expected_hash = src["revision"], src["sha256"]
-            if not expected_revision or not expected_hash:
-                reasons.append("source " + ref + " revision/content digest unpinned")
             if ref not in observed_sources:
                 reasons.append("source " + ref + " rehashed bytes not supplied")
                 continue
