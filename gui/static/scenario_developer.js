@@ -402,11 +402,128 @@
     if(mode==='advanced')$('sd-revision-state').textContent=
       'Advanced JSON has unsaved edits — validate before saving (design only)';
   });
+  let coverageContext = null, evidenceSuggestions = null;
+  function installIncompleteDraft(draft, feedback) {
+    spec=draft;mode='guided';baseline=null;$('sd-revision').value=0;
+    $('sd-guided-panel').hidden=false;$('sd-advanced-panel').hidden=true;
+    $('sd-guided').setAttribute('aria-pressed','true');
+    $('sd-advanced').setAttribute('aria-pressed','false');
+    $('sd-preview').hidden=true;
+    render();show(feedback+' This draft is intentionally INCOMPLETE and cannot be validated or saved until you supply real observations, assertions, preconditions, cleanup and a new case ID. Nothing was executed.');
+  }
+  async function resolveCoverageContext() {
+    const ref=new URLSearchParams(window.location.search).get('context_ref');
+    if(!ref)return;
+    const info=$('sd-context-feedback');
+    try {
+      if (!/^\/feature-testing\/coverage\/context\/[A-Za-z0-9][A-Za-z0-9_-]{0,119}\/[A-Za-z0-9][A-Za-z0-9_-]{0,119}$/.test(ref))
+        throw Error('Reference rejected: only an exact local Coverage Matrix behavior URL is allowed');
+      // The existing endpoint is the owner of the source-declared reference.
+      const response=await call(ref,'GET');
+      const checked=await call('/scenario-developer/handoff/coverage/inspect','POST',
+        {context_ref:ref,source:response});
+      if(checked.context_only!==true||checked.execution_enabled!==false)
+        throw Error('Coverage reference did not remain context-only');
+      coverageContext=checked;
+      const root=$('sd-context-detail');root.replaceChildren();
+      const b=el('section','sd-card');
+      staticText(b,'strong','Declared source test intent, not a verified Behavior Trace identity');
+      staticText(b,'p','Feature: '+checked.feature_id+' · declared behavior/case: '+checked.behavior_ref);
+      staticText(b,'p','Title from readiness catalog: '+checked.label+' · category '+checked.category);
+      staticText(b,'p','Provenance: '+checked.source+' / '+checked.source_pointer+
+        ' · revision '+checked.source_revision+' · expected oracle UNKNOWN');
+      root.append(b);
+      info.textContent='Source reference resolved and checked. Review it before creating a draft; no assertions or requirements transferred.';
+      $('sd-context-use').disabled=false;
+    }catch(e) {
+      coverageContext=null;$('sd-context-use').disabled=true;
+      info.textContent='Coverage context unavailable, stale or incompatible: '+e.message+
+        '. Return to the Coverage Matrix and request a fresh declared intent; nothing was created.';
+    }
+  }
+  $('sd-context-use').addEventListener('click',()=>{
+    try {
+      if (!coverageContext)throw Error('Resolve and inspect the Coverage Matrix context first');
+      installIncompleteDraft(M.draftFromCoverage(coverageContext),
+        'Created design-only authoring context from declared source case '+coverageContext.behavior_ref+'.');
+      setSourceDetail(coverageContext.feature_id,coverageContext.behavior_ref);
+    }catch(e){show('Coverage context not applied: '+e.message);}
+  });
+  function renderEvidenceSuggestions(result) {
+    const root=$('sd-evidence-suggestions');root.replaceChildren();
+    const summary=el('section','sd-card');
+    staticText(summary,'strong','OBSERVED ONLY · capture '+result.capture_id+
+      ' · checksum matches embedded indexed projection: '+result.projection_matches_embedded_evidence);
+    staticText(summary,'p','Projection SHA-256: '+result.projection_sha256);
+    staticText(summary,'p','Physical source authenticated: NO; fingerprints '+result.source_fingerprints_status);
+    staticText(summary,'p','Unresolved bindings: '+result.unresolved_bindings+
+      '; reviewer decisions complete in downloaded file: '+result.review_complete_in_file);
+    root.append(summary);
+    for(const item of result.steps) {
+      const article=el('article','sd-card');
+      staticText(article,'h3',item.step_id+' · '+item.decision+' (proposal, not normative)');
+      staticText(article,'p','Originally observed: '+item.observed_summary);
+      staticText(article,'p','Original indexed refs: '+item.evidence_refs.join(', '));
+      const details=el('details');staticText(details,'summary','Candidate identities (UNVERIFIED)');
+      for(const b of item.bindings)staticText(details,'p',
+        b.kind+' '+b.identity+' · '+b.classification+' · '+b.confidence+
+        ' · reviewer '+b.review_decision);
+      article.append(details);
+      const editable=el('textarea');editable.rows=2;editable.maxLength=500;
+      editable.value=item.suggested_title;
+      article.append(field('Edit proposed observation/action description before accepting',editable));
+      const confirm=el('input');confirm.type='checkbox';
+      confirm.className='sd-evidence-confirm';confirm.dataset.stepId=item.step_id;
+      confirm.disabled=item.decision==='PENDING'||item.decision==='REJECT';
+      const label=el('label','sd-field');
+      label.append(confirm,document.createTextNode('I have reviewed this suggested step against the indexed evidence and choose to copy it as provisional text'));
+      article.append(label);
+      if(confirm.disabled)staticText(article,'p','Cannot select a rejected/pending source-review step.');
+      root.append(article);
+    }
+    const notice=el('p','sd-warning');
+    notice.textContent='No independent source lookup was made. Accepting a step only copies text and a projection fingerprint into an incomplete canonical design-only draft. You must manually author every oracle and assertion.';
+    root.append(notice);
+  }
+  $('sd-evidence-inspect').addEventListener('click',async()=>{
+    const info=$('sd-evidence-feedback');
+    evidenceSuggestions=null;$('sd-evidence-use').disabled=true;
+    $('sd-evidence-suggestions').replaceChildren();
+    try {
+      const file=$('sd-evidence-file').files[0];
+      if(!file||file.size<1||file.size>450000)throw Error('Choose a nonempty review JSON export under 450 KB');
+      const raw=JSON.parse(await file.text());
+      const result=await call('/scenario-developer/handoff/evidence/inspect','POST',{review:raw});
+      if(result.contract!=='editor_evidence_suggestions_v1'||result.execution_enabled!==false||
+        result.original_capture_authenticated!==false)throw Error('Unsupported review confirmation contract');
+      evidenceSuggestions=result;
+      renderEvidenceSuggestions(result);
+      $('sd-evidence-use').disabled=false;
+      info.textContent='Inspected untrusted review; '+result.steps.length+' candidate steps. Confirm each wanted proposal below. No draft created or saved.';
+    }catch(e){info.textContent='Evidence file rejected or unavailable: '+e.message+'. Preserve the original and re-export from the trusted offline reviewer.';}
+  });
+  $('sd-evidence-use').addEventListener('click',()=>{
+    try {
+      if(!evidenceSuggestions)throw Error('Inspect a compatible review file first');
+      const selected=[];
+      for(const node of $('sd-evidence-suggestions').querySelectorAll('article.sd-card')){
+        const check=node.querySelector('input.sd-evidence-confirm');
+        if(check&&check.checked) {
+          const title=node.querySelector('textarea').value;
+          selected.push({id:check.dataset.stepId,title,confirmed:true});
+        }
+      }
+      installIncompleteDraft(M.draftFromEvidence(evidenceSuggestions,selected),
+        'Copied '+selected.length+' explicitly confirmed OBSERVED-only proposals from capture '+evidenceSuggestions.capture_id+'.');
+      setSourceDetail(null,null);
+    }catch(e){show('Evidence suggestions not applied: '+e.message);}
+  });
   (async()=> {
     try{
       options=await call('/scenario-developer/options');
       $('sd-catalog').textContent='Catalog identity: '+options.catalog_status+' — '+options.catalog_note;
       render();
+      await resolveCoverageContext();
     }catch(e){render();show('Canonical catalog options unavailable: '+e.message+'; saving requires server validation.');}
   })();
 })();
