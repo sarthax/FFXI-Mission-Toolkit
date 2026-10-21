@@ -1,6 +1,6 @@
 # POL1 repacking feasibility — experimental code path (2026-10-21)
 
-**Status:** The local operator verified both exact-build archives and measured **NO FIT at depths 16/64/128** (largest shortfalls: 697 B in 2021 and 675 B in 2026 at depth 128). These local measurements were forwarded by the owner and are not independently replayed in this GitHub session. New deeper/lazy compression research is experimental; **retail loader compatibility remains UNKNOWN.** This is an experimental, read-only research workstream, not a production client patcher.
+**Status:** The local operator verified both exact-build archives and found **GO for compressed-stream size feasibility** using bounded lazy depth 256 (+18,979 B 2021; +19,168 B 2026) on the `e6f0189` code head; every fitting candidate passed in-memory decoded round-trip and protected suffix preservation. The owner forwarded these local results, which have not been independently replayed in the GitHub-only session. **Retail loader, launcher integrity, and Wardrobe 5–8 support remain UNKNOWN and unapproved.** This is an experimental, read-only research workstream, not a production client patcher.
 
 **Related:** [FFXI Client Patch Feasibility Audit (draft PR #1301)](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1301), [Wardrobe 5–8 research plan](wardrobe5-8_container_expansion_research_plan.md), and local handoffs HANDOFF_wardrobe5-8_decode.md / XREF_SUMMARY.md.
 
@@ -166,3 +166,23 @@ py -3.11 -m workbench.client.cli.pol1_repack_report $new --expected-sha256 04288
 Run this on the newer PR head only after checking its CI. These deeper searches can be materially slower; record wall time and memory use when possible, and distinguish `FITS_ORIGINAL_STREAM_BUDGET` from actually validated loader acceptance. A first fit is **GO for subsequent independent loader research only**, not authorization to patch or install a retail DLL.
 
 **Next gate:** if no configuration fits, investigate bounded two-step parsing, match-cost-aware parsing or byte-size optimization as a separate testable encoder algorithm. Do not take space from the loader suffix, enlarge sections, or bypass integrity controls merely to recover the missing ~700 bytes.
+
+## 9. Owner-forwarded improved-compressor acceptance and independent stream identity check
+
+**Local operator finding (2026-10-21):** Tested head `e6f0189763b37c63a9757dcbc6788c3dfe64acb1` on the same exact-SHA `30210706_0` and `30261006_0` DLLs. Seventeen focused synthetic methods passed locally. Runs took approximately 32 seconds each; the original DLL hashes were unchanged. In-memory round-trip and protected-suffix preservation passed for every fitting candidate. Original source files were never written or executed. These results were provided by the user from the local agent and posted to PR #1303; the original retail bytes were not uploaded to GitHub.
+
+| Encoder | 2021 candidate / headroom | 2026 candidate / headroom |
+|---|---:|---:|
+| Greedy 256 | 1,967,353 / −123 | 1,989,242 / −117 |
+| Greedy 512 | 1,967,236 / −6 | 1,989,131 / −6 |
+| Greedy 1024 | 1,967,230 / **0** | 1,989,125 / **0** |
+| Lazy 128 | 1,948,764 / **+18,466** | 1,970,465 / **+18,660** |
+| Lazy 256 | **1,948,251 / +18,979** | **1,969,957 / +19,168** |
+
+**Decision:** GO for compressed-stream **byte-capacity** feasibility on both original builds. The earlier NO-GO for baseline greedy depths 16/64/128 remains historically accurate. A candidate that fits is **not** authorization for a DLL write-back, load/launcher test, or Wardrobe 5–8 activation. The entry-point/startup loader's stream-consumption rules, termination/padding assumptions, PE security directory and launcher policy remain unverified.
+
+**Forced-update note:** the agent's Git client reported a forced remote-tracking update. GitHub's exact two-SHA compare of `e9be7fb16d91e2dde6ce6f838e97476d0cb6a30a` to `e6f0189763b37c63a9757dcbc6788c3dfe64acb1` shows a fast-forward (`ahead_by=5`, `behind_by=0`, matching merge base). A different ref transition may explain the local warning; these two specific commits do not demonstrate a force push. Preserve shared-branch no-force rules.
+
+**Further read-only inspection added after local run:** the assessor now records `original_stream_sha256`, `candidate_sha256`, `candidate_matches_original_stream`, and `candidate_common_prefix_bytes`. It also independently measures candidate stream consumption before accepting an in-memory round-trip. The aggregate CLI reports hash/equality evidence for each configuration, without revealing packed or decoded proprietary bytes. The intent is to check whether greedy depth 1024 equals the original stream *byte for byte*, not merely in length.
+
+On the next local audit, rerun `--compare-improved` using the same exact-SHA copies and preserve the two new equality fields for greedy depth 1024 and lazy depth 256. Byte equality would strengthen format/tokenization evidence but is **not sufficient** to prove the original loader accepts a modified stream. The writer path remains intentionally absent.
