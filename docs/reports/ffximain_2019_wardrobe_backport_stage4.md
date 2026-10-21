@@ -40,6 +40,24 @@ The `darkstar-to-valhalla` server audit documented on Toolkit main likewise iden
 
 `workbench.client.wardrobe_2019_audit.audit_2019_wardrobe(image)` compares the exact source hash, decoded-code hash, four command records, and nine short decoded opcode anchors. It emits **only scalar/boolean JSON metadata**, never executable bytes, patched output or raw packet buffers. If the SHA-256 does not match the exact 2019 input, it returns `UNKNOWN_BUILD_FINGERPRINT` and makes no version-specific claims. The checks corroborate **known static anchors**, not all paths or runtime execution. Its test suite uses synthetic bytes only and runs on Windows and Linux.
 
+## Fixed global item-store layout: newly verified structural blocker
+
+**New exact-build static verification:** The unmodified December 2019 DLL was decoded again from its SHA-256-verified original. Fifteen instruction-byte anchors, including six new initialization/adjacent-field anchors, matched the documented RVAs. `objdump` disassembly supports the following layout. This is **static x86 evidence**, not a recovered C++ structure definition or execution trace.
+
+| Evidence | Decoded .text RVA | Observed behavior |
+|---|---|---|
+| Global zero-initialized buffer setup | `0xF6BA7`, `0xF6BBE` | Loads fixed VA `0x1096DB60`, sets `ECX=0xFB7D`, executes `rep stosd` for **0x3EDF4 (257,524) bytes**. A global variable `0x104CDA04` receives the base pointer. The buffer lies within virtual `.data`, but outside the on-disk initialized `.data` bytes. |
+| Active store pointer | `0xF6C26–0xF6C33` | Stores **buffer base+4** to the global active-store pointer `0x104CDA08`. Other routines dereference that active pointer. |
+| Legacy item record base | `0xE87DF` (accessor), `0xE9823` etc. | Active store `+0x9860`; item record address `(container*81+slot)*44`. |
+| Per-container stride and count | `0xE883E`, `0xE8844` | Increments pointer by `0xDEC` (3,564 bytes) and compares index against **13**. |
+| First fields directly after inventory | `0xE885E`, `0xE8881` | Writes zero to DWORD at active store `+0x14D5C`; stores a derived pointer at `+0x14D60`. Other code consumes these fields. **They are not free padding.** |
+
+**Calculation:** The legacy array begins at active store `+0x9860` and occupies `13 * 81 * 44 = 46,332` bytes (`0xB4FC`), ending *exclusively* at **`+0x14D5C`**. This exactly coincides with the next state field. Five more 81×44-byte containers would require **17,820 additional bytes (`0x459C`)**, moving the end of an in-place 18-container array to `+0x192F8` and overlapping the known `+0x14D5C` and `+0x14D60` fields.
+
+Therefore, **NO-GO for increasing the loop bound, packet capacities, or container count in place**. Even if the total global buffer could hold the extra 17,820 bytes, those bytes are currently assigned to unrelated state; the aggregate buffer's available capacity is not interchangeable with contiguous free item-record space. Potential solutions such as a separate allocation, an indirection layer, or full field relocation require auditing pointer identity, constructors/destructors, all callers, and performance before any design choice.
+
+The new `inspect_2019_store_layout` function returns metadata-only layout evidence, budget arithmetic, and a **fail-closed overlap gate**. The evidence status becomes verified only if the exact source and decoded hashes and all selected static x86 anchors match. Synthetic tests assert the collision and decline to claim verification if the anchors fail.
+
 ## Synthetic bounds oracle added
 
 The Stage 4 module also provides a **pure offline address validator** for the original 13-container layout. For a container `c` and slot `s`, it returns `0x9860 + (c * 81 + s) * 44` **only** when `0 <= c <= 12` and `0 <= s <= 80`; every other value returns no address. Booleans and non-integer numeric values fail closed. This models the storage stride seen in the 2019 decoded code without dereferencing process memory.
