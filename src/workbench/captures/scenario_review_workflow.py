@@ -41,7 +41,16 @@ def _check(draft: dict) -> None:
             or seed.get("feature_id") is not None or seed.get("case_id") is not None
             or seed.get("assertions") != [] or seed.get("observations") != []
             or not isinstance(seed.get("authoring"), dict)
-            or seed["authoring"].get("review_required") is not True):
+            or seed["authoring"].get("review_required") is not True
+            or seed["authoring"].get("state") != "reverse_capture_review_required"
+            or seed["authoring"].get("execution_policy") != "disabled"
+            or seed["authoring"].get("evidence_provenance") != "unverified_indexed_capture"
+            or not isinstance(seed.get("steps"), list)
+            or any(not isinstance(s, dict)
+                   or not str(s.get("expected", "")).startswith("UNKNOWN")
+                   or s.get("assertion_ids") != []
+                   or s.get("evidence_refs") != []
+                   for s in seed["steps"])):
         raise ValueError("canonical seed must remain incomplete and design-only")
     for step in draft["steps"]:
         if (not isinstance(step, dict) or step.get("normative_expected") is not None
@@ -134,6 +143,7 @@ def timeline(draft: dict) -> dict:
                 "time_basis": row.get("time_basis"),
                 "native_timestamp": row.get("native_timestamp"),
                 "record_class": row.get("record_class"),
+                "recorded_metadata": deepcopy(row.get("recorded_metadata", {})),
             })
         lanes[lane_key]["events"].append({
             "step_id": step["step_id"], "lane_ordinal": len(lanes[lane_key]["events"]) + 1,
@@ -246,3 +256,36 @@ def manual_editor_handoff(draft: dict) -> dict:
             "no_execution": True,
         },
     }
+
+
+def replay_offline_review(draft: dict, payload: dict) -> dict:
+    """Validate a downloaded offline decision file against original indexed input.
+
+    An exported bundle is untrusted. Only explicit reviewer decisions are
+    replayed; no observed source, identity, or canonical schema fields are
+    accepted from the browser as replacements.
+    """
+    original = manual_editor_handoff(draft)
+    if (not isinstance(payload, dict)
+            or set(payload) != {
+                "contract", "capture_id", "capture_projection_sha256",
+                "observed_handoff", "step_decisions", "binding_decisions",
+                "review_status", "normative_expected", "verdict",
+                "execution_enabled", "approved_for_execution",
+            }
+            or payload["contract"] != "offline_capture_review_decisions_v1_NONCANONICAL"
+            or payload["capture_id"] != original["capture_id"]
+            or payload["capture_projection_sha256"] != original["capture_projection_sha256"]
+            or payload["observed_handoff"] != original
+            or payload["review_status"] != "MANUAL_AUTHORING_REQUIRED"
+            or payload["normative_expected"] is not None
+            or payload["verdict"] != "UNKNOWN"
+            or payload["execution_enabled"] is not False
+            or payload["approved_for_execution"] is not False):
+        raise ValueError("invalid or modified offline review bundle")
+    candidate = apply_binding_decisions(draft, payload["binding_decisions"])
+    candidate = apply_step_decisions(candidate, payload["step_decisions"])
+    reviewed = manual_editor_handoff(candidate)
+    if reviewed["capture_projection_sha256"] != original["capture_projection_sha256"]:
+        raise ValueError("indexed source projection changed during review")
+    return reviewed

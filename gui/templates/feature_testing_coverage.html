@@ -29,6 +29,13 @@
 .cov-warning{border-left:3px solid var(--amber);padding:.5rem .7rem;background:var(--amber-soft)}
 .cov-number{font-variant-numeric:tabular-nums}
 .cov-wide{max-width:90rem}
+.cov-behavior{border:1px solid var(--border);padding:.65rem;margin:.8rem 0;border-radius:.4rem}
+.cov-behavior>summary{cursor:pointer;font-weight:700}
+.cov-revision-alert{border-left:5px solid var(--red);background:var(--red-soft);padding:.55rem .8rem;margin:.4rem 0;font-weight:700}
+.cov-stage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.5rem;margin:.6rem 0}
+.cov-stage-grid>div{border:1px solid var(--border);padding:.4rem;border-radius:.3rem}
+.cov-hand-off{padding:.4rem .6rem;border:1px solid var(--border);border-radius:.3rem;display:inline-block}
+.cov-gap{font-size:.84rem;color:var(--amber);font-weight:700}
 </style>
 <section class="cov-intro">
 <p><strong>Specified ≠ executable ≠ imported ≠ independently verified.</strong> Imported PASS is not independent proof, and an assertion replay uses the same imported values. Missing oracle, incomplete readback, unsupported runner, and unpinned or mismatched revisions remain BLOCKED or UNKNOWN.</p>
@@ -73,6 +80,57 @@
 <a href="{{ feature.behavior_url }}">Explore Behavior Trace</a>
 {% for doc in feature.documentation %}<a href="{{ doc.url }}" title="{{ doc.provenance }}">{{ doc.label }} documentation (unverified link)</a>{% endfor %}
 </div>
+<details class="cov-behavior" open>
+<summary>Declared behaviors and authoring gaps — {{ feature.behavior_drilldown|length }} source case intent(s), NOT verified Behavior Trace nodes</summary>
+<p class="cov-muted">Each candidate below is grounded in a declared test-readiness case. A case title is not an authoritative requirement or a verified graph relationship. The link opens the editor with an unsaved, design-only draft that carries only the case label and a read-only source pointer; you still author the case ID, outcomes and oracles.</p>
+<div class="cov-categories" aria-label="Category inventory, not coverage percentages">
+{% for cat in feature.category_gaps %}
+<span class="{{ 'cov-gap' if cat.missing_category else '' }}">{{ cat.category|title }} — declared {{ cat.declared }}, specified {{ cat.specified }}, imported {{ cat.observed }}, independently verified {{ cat.verified }}{% if cat.missing_category %} · NO DECLARED SCENARIO (not an invented requirement){% endif %}</span>
+{% endfor %}
+</div>
+{% for behavior in feature.behavior_drilldown %}
+<section class="cov-section" data-behavior-ref="{{ behavior.behavior_ref }}" data-coverage="{{ behavior.coverage_status }}">
+<h3>{{ behavior.behavior_ref }} — {{ behavior.intent }}</h3>
+<p class="cov-muted">{{ behavior.source_kind }} · {{ behavior.source }} · category: {{ behavior.category }}</p>
+{% if behavior.version_alert %}
+<p class="cov-revision-alert" role="alert">Revision warning: {{ behavior.version_alert }} — recorded PASS cannot establish current scenario/engine agreement. Inspect the exact run evidence and pinned revisions.</p>
+{% endif %}
+<div class="cov-stage-grid" aria-label="Distinct planning, execution and evidence states">
+<div><strong>Planned</strong><div>{{ 'DECLARED' if behavior.planned else 'UNDECLARED' }}</div></div>
+<div><strong>Specified</strong><div>{{ 'CANONICAL_SPEC_EXISTS' if behavior.specified else 'NO_SPECIFICATION' }}</div></div>
+<div><strong>Executable</strong><div>{{ behavior.executable }}</div></div>
+<div><strong>Observed</strong><div>{{ behavior.observed }} · {{ behavior.observed_verdict }}</div></div>
+<div><strong>Verified</strong><div>{{ 'INDEPENDENTLY_VERIFIED' if behavior.verified else 'NOT_ESTABLISHED' }}</div></div>
+</div>
+<div class="cov-links">
+<a href="{{ behavior.scenario_url }}">Scenario Detail</a>
+<a href="{{ behavior.run_history_url }}">Execution history (imported)</a>
+{% if behavior.run_url %}<a href="{{ behavior.run_url }}">Latest evidence / run</a>{% endif %}
+<a href="{{ behavior.context_url }}">Read-only draft context</a>
+{% if not behavior.verified %}
+<a class="cov-hand-off" href="{{ behavior.editor_url }}">Create scenario for this behavior ↗</a>
+{% endif %}
+</div>
+<div class="cov-info">
+<span>Expected oracle: {{ behavior.oracle_status }}</span>
+<span>Readback: {{ behavior.readback_status }}</span>
+<span>Recalculated verdict: {{ behavior.recalculated_verdict }}</span>
+<span>Readiness: {{ behavior.capability_status }}</span>
+</div>
+{% if behavior.unsupported_observations %}
+<p class="cov-warning">Unsupported canonical observation names: {{ behavior.unsupported_observations|join(', ') }}. Do not assume executable capability.</p>
+{% endif %}
+{% if behavior.candidate_capabilities %}
+<details><summary>Candidate capabilities (not verified as supported)</summary><p>{{ behavior.candidate_capabilities|join(', ') }}</p></details>
+{% else %}<p class="cov-muted">No registered candidate capabilities for this feature; execution support remains UNKNOWN.</p>{% endif %}
+{% if behavior.evidence_requirements %}
+<details><summary>Evidence requirements (declarations; not proof observed)</summary><ul>{% for item in behavior.evidence_requirements %}<li>{{ item }}</li>{% endfor %}</ul></details>{% endif %}
+{% if behavior.gaps %}
+<details><summary>Oracle, observation, capability and readiness gaps ({{ behavior.gaps|length }})</summary><ul>{% for gap in behavior.gaps %}<li>{{ gap }}</li>{% endfor %}</ul></details>
+{% endif %}
+</section>
+{% endfor %}
+</details>
 {% if feature.feature_gaps %}
 <details><summary>Feature-level blocking gaps ({{ feature.feature_gaps|length }})</summary><ul>{% for gap in feature.feature_gaps %}<li>{{ gap }}</li>{% endfor %}</ul></details>
 {% endif %}
