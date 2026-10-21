@@ -170,7 +170,16 @@ def inspect_2019_store_lifecycle(decoded_sites_verified: bool) -> dict:
             "0x445F", "0x45B0", "0x464D", "0x46ED", "0x478D", "0x4818"
         ],
         "fixed_size_transfer_semantics_confirmed": False,
-        "candidate_file_io_callee_rva": "0x307CFF",
+        "read_like_stream_callee_rva": "0x307CFF",
+        "write_like_stream_callee_rva": "0x307E16",
+        "read_like_fixed_transfer_immediate_rvas": [
+            "0x3FA1", "0x40EC", "0x418C", "0x431B",
+            "0x43B9", "0x445F",
+        ],
+        "write_like_fixed_transfer_immediate_rvas": [
+            "0x45B0", "0x464D", "0x46ED", "0x478D", "0x4818",
+        ],
+        "persistent_file_format_and_schema_confirmed": False,
         "linear_disassembly_candidate_reference_count": 1045,
         "manager_slot_count_field_offset": MANAGER_SLOT_COUNT_FIELD_OFFSET,
         "manager_default_slot_count": 1,
