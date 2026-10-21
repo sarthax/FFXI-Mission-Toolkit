@@ -7,7 +7,8 @@ class Cursor:
         self.rows = rows
     def execute(self, sql, args):
         assert sql.startswith("SELECT ")
-        self.result = ({"n": len(self.rows)} if "COUNT" in sql else
+        self.result = ({"charid": args[0]} if "FROM chars" in sql else
+                       {"n": len([r for r in self.rows if r["location"] == args[1]])} if "COUNT" in sql else
                        [r for r in self.rows if r["location"] == args[1]][args[3]:args[3]+args[2]])
     def fetchone(self):
         return self.result
