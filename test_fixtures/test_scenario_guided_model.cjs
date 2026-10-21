@@ -123,7 +123,7 @@ const captureReview={
 assert.throws(()=>M.draftFromEvidence(captureReview,[]),/Confirm/);
 assert.throws(()=>M.draftFromEvidence(captureReview,[{id:'OBS-S001',title:'A',confirmed:false}]),/confirmation/);
 assert.throws(()=>M.draftFromEvidence(captureReview,[{id:'OBS-S002',title:'B',confirmed:true}]),/confirmation/);
-const reverse=M.draftFromEvidence(captureReview,[{id:'OBS-S001',title:'Reviewed synthetic observation',confirmed:true}]);
+const reverse=M.draftFromEvidence(captureReview,[{id:'OBS-S001',title:'Reviewed synthetic observation',confirmed:true,bindings:[]}]);
 assert.equal(reverse.steps.length,1);
 assert.equal(reverse.steps[0].id,'OBS-S001');
 assert.deepEqual(reverse.steps[0].assertion_ids,[]);
