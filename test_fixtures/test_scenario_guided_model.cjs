@@ -93,6 +93,8 @@ const coverageContext={
  behavior_ref:'GARD-SYNTH-01',label:'Synthetic declared test intent',
  source_pointer:'features[id=gardening].cases[id=GARD-SYNTH-01]',
  expected_oracle:'UNKNOWN',context_only:true,review_required:true,
+ design_only:true,auto_populate_allowed:false,auto_save_allowed:false,
+ proposed_case_id:null,assertions:[],observations:[],capability_bindings:[],
  execution_enabled:false
 };
 const coverageDraft=M.draftFromCoverage(coverageContext);
@@ -151,19 +153,50 @@ console.log('Coverage and evidence handoffs remain provisional through Guided/Ad
   const ctx = {contract: 'coverage_behavior_reference_v1', feature_id: 'gardening', behavior_ref: 'GARD-01',
     label: 'place pot', source_pointer: 'features[id=gardening].cases[id=GARD-01]', source_revision: 'UNPINNED',
     context_only: true, design_only: true, review_required: true, auto_populate_allowed: false,
-    auto_save_allowed: false, execution_enabled: false, assertions: [{id: 'evil'}], observations: ['gm_aura']};
+    auto_save_allowed: false, execution_enabled: false, proposed_case_id:null,
+    expected_oracle:'UNKNOWN', assertions: [], observations: [], capability_bindings:[]};
   const d = M.fromContext(ctx, ['gardening']);
   assert.equal(d.feature_id, 'gardening');
-  assert.equal(d.case_id, 'SYNTH-GARD-01-DRAFT');
+  assert.equal(d.case_id, ''); // user must choose unique ID; no synthetic ID generation
   assert.equal(d.runner, 'unassigned');
   assert.equal(d.execution_status, 'design_only');
   assert.equal(d.authoring.state, 'draft');
   assert.equal(d.authoring.review_required, true);
-  assert.ok(d.steps[0].id.startsWith('SYNTH-GARD-01-DRAFT'));
-  assert.deepEqual(d.assertions.map(a => a.id), ['bag_observed']);
-  assert.ok(!d.observations.includes('gm_aura'));
+  assert.deepEqual(d.steps,[]);
+  assert.deepEqual(d.assertions,[]);
+  assert.deepEqual(d.observations,[]);
+  assert.match(d.behavior.then[0],/UNKNOWN/);
+  assert.deepEqual(M.parseAdvanced(JSON.stringify(d)),d);
   assert.throws(() => M.fromContext({...ctx, auto_save_allowed: true}, ['gardening']), /refused/);
   assert.throws(() => M.fromContext({...ctx, contract: 'x'}, ['gardening']), /refused/);
   assert.throws(() => M.fromContext(ctx, ['voidwalker']), /refused/);
   console.log('Context reference handoff is read-only and design-only: PASS');
 }
+
+
+const reviewWithBindings={...captureReview,steps:[
+  {...captureReview.steps[0],bindings:[
+    {binding_id:'candidate:synthetic1',kind:'npc',identity:'original actor',
+     suggested_identity:'proposed actor',review_decision:'EDIT',classification:'AMBIGUOUS'},
+    {binding_id:'candidate:synthetic2',kind:'item',identity:'recorded item',
+     review_decision:'PENDING',classification:'DECODED'}]}
+]};
+const selectStep=(bindings)=>[{id:'OBS-S001',title:'Observe original evidence',confirmed:true,bindings}];
+assert.throws(()=>M.draftFromEvidence(reviewWithBindings,selectStep([])),/every candidate binding/);
+assert.throws(()=>M.draftFromEvidence(reviewWithBindings,selectStep([
+  {id:'candidate:synthetic1',choice:'INCLUDE_UNVERIFIED',confirmed:true},
+  {id:'candidate:synthetic2',choice:'INCLUDE_UNVERIFIED',confirmed:true}])),/pending/);
+assert.throws(()=>M.draftFromEvidence(reviewWithBindings,selectStep([
+  {id:'candidate:synthetic1',choice:'',confirmed:false},
+  {id:'candidate:synthetic2',choice:'EXCLUDE',confirmed:true}])),/unreviewed/);
+const reviewedWithBindings=M.draftFromEvidence(reviewWithBindings,selectStep([
+  {id:'candidate:synthetic1',choice:'INCLUDE_UNVERIFIED',confirmed:true},
+  {id:'candidate:synthetic2',choice:'EXCLUDE',confirmed:true}]));
+assert.match(reviewedWithBindings.steps[0].confidence_note,/source=original actor/);
+assert.match(reviewedWithBindings.steps[0].confidence_note,/reviewer-proposal=proposed actor/);
+assert.doesNotMatch(reviewedWithBindings.steps[0].confidence_note,/recorded item/);
+assert.match(reviewedWithBindings.steps[0].expected,/UNKNOWN/);
+assert.deepEqual(reviewedWithBindings.assertions,[]);
+assert.deepEqual(M.parseAdvanced(JSON.stringify(reviewedWithBindings)),reviewedWithBindings);
+assert.throws(()=>M.draftFromCoverage({...coverageContext,assertions:[{id:'smuggled'}]}),/Unsupported/);
+console.log('Unified intake: no implicit assertion, explicit step AND identity decisions: PASS');
