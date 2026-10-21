@@ -54,6 +54,93 @@ def _section_slice(data: bytes, base_rva: int, at_rva: int,
     return data[offset:offset + length]
 
 
+# Separate original .rdata constructor/vtable chain proves which UI mode
+# the four command pointers return. This mapping is NOT inferred from IDs 111-114.
+# name, ctor RVA, vtable VA, object global VA, getter RVA, returned mode
+WARDROBE_MODE_OBJECTS = (
+    ("/wardrobe", 0x1D4332, 0x1032DB00, 0x1061E5D0, 0x1D47C0, 8),
+    ("/wardrobe2", 0x1D435B, 0x1032DAA0, 0x1061E5D4, 0x1D47E0, 10),
+    ("/wardrobe3", 0x1D4384, 0x1032DA40, 0x1061E5D8, 0x1D4800, 11),
+    ("/wardrobe4", 0x1D43AD, 0x1032D9E0, 0x1061E5DC, 0x1D4820, 12),
+)
+
+
+def inspect_2019_mode_object_getters(rdata: bytes, rdata_rva: int,
+                                     decoded_text: bytes, text_rva: int = 0x1000
+                                     ) -> dict:
+    """Read-only constructor -> vtable[+0x54] -> constant mode verification.
+
+    Does not establish object lifetime, mode activation, user-visible menus
+    or the semantics of any other virtual method.
+    """
+    if (not isinstance(rdata, bytes) or not isinstance(decoded_text, bytes)
+            or type(rdata_rva) is not int or type(text_rva) is not int):
+        raise Pol1Error("mode-object scan requires immutable sections and integer RVAs")
+    if len(rdata) > 8 * 1024 * 1024 or len(decoded_text) > 8 * 1024 * 1024:
+        raise Pol1Error("mode-object section exceeds safety bounds")
+    results = []
+    for name, ctor, vtable, object_global, getter, mode in WARDROBE_MODE_OBJECTS:
+        expected_ctor = (
+            bytes.fromhex("c700") + struct.pack("<I", vtable)
+            + bytes([0xA3]) + struct.pack("<I", object_global)
+        )
+        ctor_code = _section_slice(decoded_text, text_rva, ctor,
+                                   len(expected_ctor))
+        vtable_getter_bytes = _section_slice(
+            rdata, rdata_rva, (vtable - IMAGE_BASE) + 0x54, 4)
+        vtable_getter = (
+            struct.unpack("<I", vtable_getter_bytes)[0]
+            if vtable_getter_bytes is not None else None
+        )
+        expected_getter = bytes([0xB8]) + struct.pack("<I", mode) + bytes([0xC3])
+        getter_code = _section_slice(decoded_text, text_rva, getter,
+                                     len(expected_getter))
+        results.append({
+            "command": name,
+            "constructor_rva": f"0x{ctor:X}",
+            "object_global_va": f"0x{object_global:X}",
+            "vtable_va": f"0x{vtable:X}",
+            "vtable_getter_slot": "0x54",
+            "getter_rva": f"0x{getter:X}",
+            "reported_mode": mode,
+            "constructor_sets_expected_vtable_and_global": (
+                ctor_code == expected_ctor
+            ),
+            "vtable_slot_points_to_getter": (
+                vtable_getter == IMAGE_BASE + getter
+            ),
+            "getter_returns_constant_mode": (
+                getter_code == expected_getter
+            ),
+            "within_original_2_to_12_mode_switch": (
+                MODE_FIRST <= mode <= MODE_LAST
+            ),
+        })
+    verified = all(
+        x["constructor_sets_expected_vtable_and_global"]
+        and x["vtable_slot_points_to_getter"]
+        and x["getter_returns_constant_mode"]
+        and x["within_original_2_to_12_mode_switch"]
+        for x in results
+    )
+    return {
+        "status": "EXACT_MODE_OBJECT_CHAIN_VERIFIED" if verified
+                  else "INCOMPLETE_STATIC_EVIDENCE",
+        "mode_objects": results,
+        "command_to_mode_mapping_proved_by_static_getters": verified,
+        "mode_9_is_not_one_of_four_wardrobe_commands": True if verified else None,
+        "object_creation_or_ui_runtime_execution_verified": False,
+        "object_lifetime_and_other_virtual_methods_audited": False,
+        "client_mode_13_to_16_implemented": False,
+        "safety_decision": "NO_GO_ASSUME_MORE_MODES_ARE_SUPPORTED",
+        "caution": (
+            "Exact constructor/vtable/getter byte chain only. The reported "
+            "mode values are constant for these original object classes, "
+            "not evidence that a new mode or Wardrobe functionality works."
+        ),
+    }
+
+
 def inspect_2019_command_ui_dispatch(data: bytes, data_rva: int,
                                      decoded_text: bytes, text_rva: int = 0x1000
                                      ) -> dict:
