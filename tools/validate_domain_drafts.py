@@ -112,7 +112,8 @@ def validate_domain(name, doc, meta):
             if asserted:
                 check(set(ids) <= asserted, f"{sid}: unbound assertion ID")
             check(s.get("execution_authorized") is not True and
-                  s.get("manual_execution_allowed") is not True,
+                  s.get("manual_execution_allowed") is not True and
+                  s.get("required_permissions") in (None, []),
                   f"{sid}: unsafe step permission")
             check(any(s.get(field) for field in
                       ("oracle_refs", "oracle_sources", "source_refs")),
@@ -130,10 +131,13 @@ def validate_domain(name, doc, meta):
             start, end = ref.get("line_start"), ref.get("line_end")
             check(type(start) is int and type(end) is int and 0 < start <= end,
                   f"{cid}: unpinned file:line")
-            check(str(ref.get("url", "")).startswith(
-                  "https://github.com/sarthax/darkstar-to-valhalla/blob/"
-                  + revision + "/" + path + "#L" + str(start)),
-                  f"{cid}: unpinned URL")
+            canonical_url = ("https://github.com/sarthax/darkstar-to-valhalla/blob/"
+                             + revision + "/" + path + "#L" + str(start)
+                             + "-L" + str(end))
+            check(ref.get("url") == canonical_url,
+                  f"{cid}: source URL does not match exact pinned path and line range")
+            check(ref.get("sha256") is None,
+                  f"{cid}: staged source digest cannot assert independent SHA-256 attestation")
         if isinstance(c.get("oracle"), dict):
             check(bool(c["oracle"].get("expectation")) and
                   bool(c["oracle"].get("source_refs")),
@@ -150,15 +154,21 @@ def validate_domain(name, doc, meta):
         if v2 is not None:
             check(isinstance(v2, dict) and v2.get("contract_version") == 2,
                   f"{cid}: invalid optional v2 version")
-            for req in v2.get("step_requirements", []):
-                check(req.get("execution_gate") == "blocked" and
-                      req.get("step_id") in {s["id"] for s in steps},
-                      f"{cid}: invalid v2 execution gate/step")
-            for oracle in v2.get("oracles", []):
-                check(oracle.get("oracle_type") != "unknown" or
-                      (oracle.get("confidence") == "unknown" and
-                       not oracle.get("source_refs")),
-                      f"{cid}: unknown v2 oracle has source claim")
+            # Agent C's project_domain_case projection explicitly forbids
+            # staged typed identity or normative-oracle authority. This is
+            # NONCANONICAL metadata: never infer a v1 assertion or permission.
+            check(not v2.get("parameters") and not v2.get("oracles"),
+                  f"{cid}: staged v2 identity/oracle authority requires canonical review")
+            requirements = v2.get("step_requirements", [])
+            check(isinstance(requirements, list),
+                  f"{cid}: v2 step requirements must be a bounded list")
+            for req in requirements:
+                check(isinstance(req, dict) and
+                      req.get("execution_gate") == "blocked" and
+                      req.get("step_id") in {s["id"] for s in steps} and
+                      req.get("required_permissions") in (None, []) and
+                      req.get("approval_required") is not False,
+                      f"{cid}: invalid v2 gate, permission, or step")
         rows.append((cid, readiness))
     check(len(set(c for c, _ in rows)) == len(rows), f"{name}: duplicate IDs")
     return rows
