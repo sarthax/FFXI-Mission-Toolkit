@@ -29,5 +29,5 @@ def test_repeat_reward_claim_not_falsely_assumed_safe():
     c = _draft()["cases"][-1]
     assert c["case_id"] == "MQ-05"
     assert "possible" in c["behavior"]["then"][0]
-    assert "QUEST_COMPLETED" in c["behavior"]["then"][0]
+    assert "including completed" in c["behavior"]["then"][0]
     assert c["verdict"] == "NOT_RUN"
