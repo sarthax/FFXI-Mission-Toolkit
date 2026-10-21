@@ -57,6 +57,14 @@ Command table records are 24 bytes in original `.data`, with the name in the fir
 
 The 2026 command table assigns IDs **118–121** to Wardrobes 5–8 (see `wardrobe5-8_container_expansion_research_plan.md`); the 2019 meanings of IDs 118–120 are already occupied. **Do not copy the modern command identifiers** into the legacy dispatcher without a separate allocation and complete dispatch review.
 
+## Storage backing and active-context lifecycle (2026-10-21 read-only addendum)
+
+Exact-hash local inspection of the owner's original 2019 decoded instructions verified **all 15** byte-level lifecycle anchors in `wardrobe_2019_allocator.py`: static backing VA `0x1096DB60` inside virtual `.data`, first context at `0x1096DB64`, root/active pointers at `0x104CDA04`/`0x104CDA08`, initial `0xFB7D`-dword clear (257,524 bytes), and fixed per-context `0xEC20`-dword reset (241,792 bytes). The active-context pointer has assignments from multiple instruction sites. The 13-record loop is anchored at RVA `0xE8780` using base `store+0x9860` and count 13. **This does not prove all contexts use one static allocation**; other context instances and their lifetime/heap behavior need tracing.
+
+Four additional Wardrobes alone would require `4 × 81 × 44 = 14,256` record bytes, while the corresponding first new record at `store+0x14D5C` conflicts with existing context state. Attempting to make an 18-container array (17th for recycle in the later client) requires 17,820 additional record bytes. Neither quantity is executable compression slack.
+
+**Architecture alternatives:** See `docs/reports/wardrobe_2019_banking_vs_extension_decision_2026-10-21.md` for server-backed **login-time bank selection** (prefer investigating first), in-session bank toggling, native sidecar allocation, an external DLL/Ashita helper, and existing-bag vaulting. The 2019 visible wardrobe IDs are **8, 10, 11, 12**—not 8 through 11, because **9 is Mog Safe 2**. Bank B would be server-canonical 13–16, represented to the legacy client only as 8/10/11/12 after validated translation. This does not remove server equipment/persistence work.
+
 ## Reproduction
 
 Run locally against an **untouched** archival copy, not a modified or installed DLL:
