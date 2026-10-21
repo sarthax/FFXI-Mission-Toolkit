@@ -372,18 +372,49 @@
   $('sd-save').addEventListener('click',async()=>{
     if(savePending)return;
     savePending=true;$('sd-save').disabled=true;
+    const generation=editorGeneration;
     try {
       if(!$('sd-token').value)throw Error('Enter a local operator token; a preview never grants save permission');
-      const validated=await validatePreview();
-      const rev=Number($('sd-revision').value);
+      // Keep an immutable copy of exactly what the operator asked to save.
+      // The validation round-trip is async, and Guided/Advanced may be edited
+      // while either response is in flight.
+      const input=M.clone(current()),rev=Number($('sd-revision').value);
       if(!Number.isInteger(rev)||rev<0)throw Error('Invalid expected revision');
+      const validated=await call('/scenario-developer/validate','POST',{specification:input});
+      if(generation!==editorGeneration || Number($('sd-revision').value)!==rev ||
+          JSON.stringify(current())!==JSON.stringify(input))
+        throw Error('Draft changed while validating. Review the edits and save again.');
+      renderPreview(validated.preview,validated.reader_view);
+      const toSave=M.clone(validated.canonical_specification);
+      if(toSave.feature_id!==input.feature_id||toSave.case_id!==input.case_id)
+        throw Error('Canonical validation returned an unexpected draft identity');
       const saved=await call('/feature-testing/builder/drafts','POST',
-        {specification:validated.canonical_specification,expected_revision:rev},true);
+        {specification:toSave,expected_revision:rev},true);
+      if(saved.feature_id!==toSave.feature_id || saved.case_id!==toSave.case_id)
+        throw Error('Save returned an unexpected draft identity; reopen before editing');
+      if(generation!==editorGeneration)
+        throw Error('Original draft saved, but editor context changed; reopen the saved draft before continuing');
+      // Do not attach an older draft's revision to a different case the user
+      // entered while the network request was in flight.
+      let latest;
+      try {latest=current();}
+      catch(e) {
+        show('Saved '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
+          ', but current Advanced JSON is invalid; reopen the saved draft before another save.');
+        return;
+      }
+      if(latest.feature_id!==toSave.feature_id || latest.case_id!==toSave.case_id) {
+        show('Saved '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
+          ', but editor identity changed during the request; reopen the saved draft before another save.');
+        return;
+      }
       $('sd-revision').value=saved.revision;
-      baseline=M.clone(validated.canonical_specification);updateRevision();
+      baseline=M.clone(toSave);updateRevision();
       show('Saved DESIGN_ONLY '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
-        '. NOT reviewed or executable.');
-    }catch(e){show('Draft NOT saved: '+e.message);}
+        (JSON.stringify(latest)!==JSON.stringify(input)?
+          '. Newer editor changes remain UNSAVED; review before the next revision.':
+          '. NOT reviewed or executable.'));
+    }catch(e){show('Draft NOT saved / revision may require refresh: '+e.message);}
     finally {savePending=false;$('sd-save').disabled=false;}
   });
   $('sd-load-drafts').addEventListener('click',async()=>{
