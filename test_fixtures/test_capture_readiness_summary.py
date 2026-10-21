@@ -323,6 +323,14 @@ def test_duplicate_capture_refs_fail_closed_without_inferred_step_links():
     else:
         raise AssertionError("duplicate original evidence ref was silently accepted")
     assert draft == original
+    wrong_capture = deepcopy(draft)
+    wrong_capture["evidence_map"][ref]["capture_id"] = draft["capture_id"] + 99
+    try:
+        summarize_capture_readiness(wrong_capture)
+    except ValueError as exc:
+        assert "cross-capture" in str(exc)
+    else:
+        raise AssertionError("evidence row from another capture accepted")
     report = summarize_capture_readiness(draft)
     typed = report["scenario_developer_handoff"]["read_only_projection"]
     assert all(s["canonical_step_id"] is None for s in typed["steps"])
