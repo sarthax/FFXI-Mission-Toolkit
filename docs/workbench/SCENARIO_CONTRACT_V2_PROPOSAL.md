@@ -2,6 +2,8 @@
 
 **Status:** proposed, implementation guarded and read-only; no runner or editor adoption authorized. Parent [#1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197), schema owner [#1259](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1259), domain drafts #1249–#1254, editor #1261 (Agent B), evidence #1262 (Agent D).
 
+**Adoption compatibility supplement:** [SCENARIO_CONTRACT_V2_COMPATIBILITY_INTEGRATION.md](SCENARIO_CONTRACT_V2_COMPATIBILITY_INTEGRATION.md) covers the current-main independent audit, Agent E domain-by-domain mapping, Agent D identity/oracle diagnostics, editor UI treatment, exact source-fingerprint compatibility states, noncanonical gardening fixture and migration gates. `compatibility_report` now accepts an optional separately supplied `observed_sources={ref:{revision,sha256}}` map; this does **not** fetch/rehash files or authenticate the caller, and a structural match never authorizes execution.
+
 ## Audited baseline and compatibility contract
 
 - `src/workbench/server_admin/feature_testing/test_specifications.py::validate_spec` requires outer `schema_version=1`, a fixed v1 assertion evaluator, and optional `purpose/rationale/behavior/steps/authoring`. The canonical catalog has exactly MOG-09 and INV-OBS-01. MOG-09 is the sole hard-coded verified runner. **Do not alter this allowance or change outer schema_version in the foundation.**
