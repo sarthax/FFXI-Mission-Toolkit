@@ -577,7 +577,7 @@
     $('sd-evidence-suggestions').replaceChildren();
     try {
       const file=$('sd-evidence-file').files[0];
-      if(!file||file.size<1||file.size>450000)throw Error('Choose a nonempty review JSON export under 450 KB');
+      if(!file||file.size<1||file.size>4_500_000)throw Error('Choose a nonempty offline review JSON export under 4.5 MB');
       const raw=JSON.parse(await file.text());
       const result=await call('/scenario-developer/handoff/evidence/inspect','POST',{review:raw});
       if(result.contract!=='editor_evidence_suggestions_v1'||result.execution_enabled!==false||
