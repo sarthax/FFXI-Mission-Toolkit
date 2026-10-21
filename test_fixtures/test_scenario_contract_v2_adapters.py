@@ -328,7 +328,10 @@ def test_consistent_duplicate_citations_reuse_ref_without_source_promotion():
     case["source_refs"].append(copied)
     projected = project_domain_case(doc, "RG-01")
     assert len(projected["sources"]) == 2
-    assert projected["case_source_ref_ids"][0] == projected["case_source_ref_ids"][-1]
+    # case_source_ref_ids lists case refs first, then nested oracle refs.
+    # The added duplicate is last among *case* citations, not last overall.
+    duplicate_index = len(case["source_refs"]) - 1
+    assert projected["case_source_ref_ids"][0] == projected["case_source_ref_ids"][duplicate_index]
     assert projected["source_refs_original"].count(copied) >= 2
     assert all(src["sha256"] is None for src in projected["sources"])
     assert projected["canonical_import_allowed"] is False
