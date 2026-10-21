@@ -237,3 +237,54 @@ ambiguous identities, missing client/server/KI/inventory/quest/instance
 readbacks, revision drift, contradictory captures, malformed/altered source
 hashes, expected-source candidates remaining UNKNOWN, HTML display, and
 strictly blocked advisory v2 fields. **No local DAT/server or live testing.**
+
+
+## Final Agent A review gates, structured readbacks and safe sidecar
+
+Agent A's [independent PR review](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1287#issuecomment-6311826844)
+requires this branch to reconcile against current main **without force-push**,
+run a dedicated synthetic/offline GitHub Actions gate in addition to Workbench
+and source-layout tests, and remain draft until independent review. The focused
+workflow is `.github/workflows/capture-evidence-readiness-offline.yml`:
+it runs the reverse capture, evidence handoff, reviewer, identity and
+readiness pytest fixtures together with an editable `src/` install.
+
+`readiness_steps[].missing_observations[]` is now a concrete diagnostic:
+`expected_observation_type`, `reason_for_gap`, original immutable
+`evidence_refs`, `suggested_read_only_capability`, `importance`,
+`status=NOT_INDEPENDENTLY_OBSERVED`, `how_to_obtain`,
+`capability_registered=false`, `permission_granted=false` and
+`review_required=true`. It names **conditional** equipment, furnishings,
+quest-variable, temporary-item, NPC and instance readbacks without implying
+they apply to every captured event. Suggestion strings are NOT registered
+MCP actions, endpoints, RBAC grants or executable operations.
+
+The existing offline Evidence Reviewer has a separate **Export readiness
+sidecar** button. This emits an untrusted, `NONCANONICAL` JSON bundle with
+the full unchanged `original_evidence_handoff` (including source-row
+hashes, locators, parser metadata and review decisions), read-only
+`readiness_diagnostics`, capture projection checksum and a manual
+Scenario Developer pointer. The existing **Export design-only review JSON**
+is untouched and retains its original replay validation/format. There is
+no automatic import, save, assertion creation or execution. The readiness
+display rejects mismatched capture IDs/projections, changed source refs,
+source-verified identity flags, promoted normative expectations, execution
+permissions and forged auto-import states. Reviewer source citations in a
+downloaded file are *claims*, not independently authenticated physical bytes.
+
+Agent C's [draft #1285](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1285)
+still owns all `contract_v2` schema and validation changes. The
+advisory vocabulary maps EXACT source-record => **candidate, not
+independently_source_verified**; AMBIGUOUS => ambiguous with identity null;
+INFERRED => candidate only for a typed recorded identity, otherwise
+unresolved; UNRESOLVED/UNSUPPORTED => unresolved or omitted. Source-rule
+oracles cannot be projected without a separately authored canonical
+assertion ID and independently verified normative DSP rule; UNKNOWN
+oracles, empty source refs and blocked step capability remain default.
+Capture source hashes must never masquerade as DSP file-content SHA-256.
+
+The manual Scenario Developer handoff requires Agent B's review of source
+reconciliation and readback completeness. This sidecar is explicitly
+**not a Scenario Developer POST payload** or a v2 spec. Do not import into
+#1202 or issue PASS from captured behavior. Real client/DSP correlation and
+authenticity checks remain local acceptance tasks.
