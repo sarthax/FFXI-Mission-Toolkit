@@ -1,7 +1,7 @@
 /* Guided Scenario Developer: canonical draft JSON only. Never dispatches gameplay actions. */
 (function () {
   'use strict';
-  const M = window.ScenarioGuidedModel;
+  const M = window.ScenarioGuidedModel, V = window.ScenarioContractV2View;
   const $ = id => document.getElementById(id);
   let spec = M.fresh(), mode = 'guided', options = {features: [], observations: [], operations: []};
   let drafts = [], baseline = null, sourceDetail = null;
@@ -199,6 +199,7 @@
   }
   function diagnostics() {
     updateRevision();
+    renderContractV2(null);
     const problems=M.referenceIssues(spec);
     if(problems.length)show('Local reference warnings (validate on server):\n'+problems.join('\n'));
   }
@@ -216,7 +217,69 @@
   function staticText(parent,tag,value){
     const x=el(tag,'',value);parent.append(x);return x;
   }
-  function renderPreview(view, reader) {
+  // The existing editor owns all draft mutations; this panel is display-only.
+  // Show only explicit canonical source relationships. No client-side verification.
+  function renderContractV2(compatibility) {
+    const host=$('sd-contract-v2');
+    if(!host || !V)return;
+    const open=new Set([...host.querySelectorAll('details[open]')].map(d=>d.dataset.key));
+    host.replaceChildren();
+    let projection;
+    try{projection=V.project(spec,compatibility);}
+    catch(e){staticText(host,'p','Optional metadata cannot be projected; canonical validation required: '+e.message);return;}
+    if(!projection.present){staticText(host,'p',projection.message);return;}
+    if(!projection.valid){staticText(host,'p',projection.message);return;}
+    const detail=(key,title)=>{
+      const d=el('details');d.dataset.key=key;d.open=open.has(key);
+      staticText(d,'summary',title);host.append(d);return d;
+    };
+    staticText(host,'p',projection.message);
+    staticText(host,'p','Compatibility: '+projection.compatibility.state+
+      ' · NON-EXECUTABLE · independent verification NOT ESTABLISHED');
+    for(const reason of projection.compatibility.reasons)staticText(host,'p','Compatibility reason: '+reason);
+    const pins=detail('fingerprints','Engine and base-spec fingerprint claims');
+    for(const [key,v] of Object.entries(projection.fingerprint_claims))
+      staticText(pins,'p',key+': '+(v===null?'UNKNOWN':String(v))+' (declared only)');
+    const cases=detail('sources','Case-level source provenance ('+projection.sources.length+')');
+    if(!projection.sources.length)staticText(cases,'p','UNKNOWN — no pinned source records');
+    for(const src of projection.sources) {
+      const d=el('div','sd-preview-step');
+      staticText(d,'strong',src.ref+' — '+src.classification);
+      staticText(d,'p',src.repository+'/'+src.path+':'+src.line_range);
+      staticText(d,'p','Revision: '+src.revision+' · SHA-256: '+src.digest);
+      staticText(d,'p',src.digest_state+' · '+src.attribution);cases.append(d);
+    }
+    const bindings=detail('bindings','Typed identity candidates ('+projection.bindings.length+')');
+    if(!projection.bindings.length)staticText(bindings,'p','No canonical v2 parameters declared');
+    for(const b of projection.bindings) {
+      const d=el('div','sd-preview-step');
+      staticText(d,'strong',b.name+' — '+b.kind+' / '+b.state);
+      staticText(d,'p','Identity: '+b.identity+' · namespace: '+b.namespace+' · zone: '+b.zone_id);
+      staticText(d,'p',b.claim+' · '+b.attribution);
+      staticText(d,'p','Source refs: '+(b.sources.map(x=>x.ref).join(', ')||'NONE'));
+      bindings.append(d);
+    }
+    const oracles=detail('oracles','Normative oracle metadata ('+projection.oracles.length+')');
+    if(!projection.oracles.length)staticText(oracles,'p','UNKNOWN — no accepted oracle metadata');
+    for(const o of projection.oracles) {
+      staticText(oracles,'p',o.assertion_id+': '+o.type+' / '+o.confidence+' — '+o.state+
+        '; source refs: '+(o.sources.map(x=>x.ref).join(', ')||'NONE'));
+    }
+    for(const step of projection.steps) {
+      const d=detail('step:'+step.id,'Step '+step.id+' — '+step.attribution);
+      staticText(d,'p','Oracle-linked citations (not authenticated): '+
+        (step.sources.map(x=>x.repository+'/'+x.path+':'+x.line_range).join(' | ')||'NONE'));
+      staticText(d,'p','Candidate capability: '+step.capability+'; operation class: '+step.operation_class);
+      staticText(d,'p','Required permissions (NOT GRANTED): '+
+        (step.permissions.join(', ')||'NONE DECLARED')+
+        '; operator approval required: '+String(step.approval_required));
+      staticText(d,'p','Missing client/server readbacks: '+(step.readbacks.join(', ')||'NONE DECLARED'));
+      staticText(d,'p',step.readback_state+'; execution: '+step.execution_gate);
+    }
+  }
+
+  function renderPreview(view, reader, compatibility) {
+    renderContractV2(compatibility);
     const root=$('sd-preview');root.replaceChildren();root.hidden=false;
     staticText(root,'h2',view.title+' — Scenario detail preview');
     staticText(root,'p',view.purpose);
@@ -300,7 +363,7 @@
     const result=await call('/scenario-developer/validate','POST',{specification:input});
     if(generation!==editorGeneration || JSON.stringify(current())!==JSON.stringify(input))
       throw Error('Preview is stale: editor changed while validating. Validate the current draft again.');
-    renderPreview(result.preview,result.reader_view);
+    renderPreview(result.preview,result.reader_view,result.contract_v2_compatibility);
     show('Canonical validation accepted — DESIGN_ONLY, unreviewed, not executable.\n'+
       result.warnings.join('\n'));
     return result;
@@ -388,6 +451,8 @@
           JSON.stringify(current())!==JSON.stringify(input))
         throw Error('Draft changed while validating. Review the edits and save again.');
       renderPreview(validated.preview,validated.reader_view);
+      if(validated.contract_v2_compatibility?.state==='BLOCKED')
+        throw Error('Contract v2 source/base-spec fingerprint conflict: '+validated.contract_v2_compatibility.reasons.join('; ')+'. Reconcile metadata in Advanced JSON; never silently repin.');
       const toSave=M.clone(validated.canonical_specification);
       if(toSave.feature_id!==input.feature_id||toSave.case_id!==input.case_id)
         throw Error('Canonical validation returned an unexpected draft identity');
