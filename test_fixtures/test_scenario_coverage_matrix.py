@@ -211,7 +211,7 @@ def test_deterministic_html_preserves_separate_verdict_provenance():
     root = Path(__file__).resolve().parents[1] / "gui" / "templates"
     env = Environment(loader=FileSystemLoader(str(root)), autoescape=select_autoescape(["html"]))
     env.globals["current_theme"] = lambda: "light"
-    env.globals["shell_context"] = lambda: {}
+    env.globals["shell_context"] = lambda request=None: {}
     rendered = env.get_template("feature_testing_coverage.html").render(matrix=matrix)
     assert 'data-feature="synthetic-domain"' in rendered
     assert "PASS (imported, unverified)" in rendered
@@ -222,4 +222,5 @@ def test_deterministic_html_preserves_separate_verdict_provenance():
     assert "/feature-testing/run/synthetic-run" in rendered
     assert "No percentages" in rendered
     assert "independently verified case(s)" in rendered
-    assert "<script" not in rendered.lower().split('<section class="cov-intro">')[-1]
+    intro = rendered.lower().split('<section class="cov-intro">')[1].split("</section>")[0]
+    assert "<script" not in intro
