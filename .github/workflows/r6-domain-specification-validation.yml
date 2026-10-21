@@ -34,17 +34,28 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/domain-specs"
+          : > "$RUNNER_TEMP/domain-heads.tsv"
           python -c 'import json; p=json.load(open("test_fixtures/r6_domain_validation_manifest.synthetic.json")); print("\n".join(x["name"]+" "+str(x["pr"]) for x in p["domains"]))' > "$RUNNER_TEMP/domains.txt"
           while read -r domain pr; do
             [[ "$domain" =~ ^[a-z_]+$ ]]
             [[ "$pr" =~ ^[0-9]+$ ]]
             git fetch --no-tags --depth=1 origin "+refs/pull/$pr/head:refs/remotes/origin/r6-$pr"
             git show "refs/remotes/origin/r6-$pr:data/testing/domain_drafts/$domain.json" > "$RUNNER_TEMP/domain-specs/$domain.json"
-            git rev-parse "refs/remotes/origin/r6-$pr"
+            head_sha=$(git rev-parse "refs/remotes/origin/r6-$pr")
+            printf "%s %s\\n" "$domain" "$head_sha" >> "$RUNNER_TEMP/domain-heads.tsv"
           done < "$RUNNER_TEMP/domains.txt"
+      - name: Fetch the single proposed #1292 case matrix as inert JSON
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "+refs/pull/1292/head:refs/remotes/origin/r6-authoritative-matrix"
+          git show "refs/remotes/origin/r6-authoritative-matrix:docs/workbench/SCENARIO_DOMAIN_READINESS_MATRIX_2026-10-21.json" > "$RUNNER_TEMP/domain-readiness-matrix.json"
+          python -c 'import json,sys; entries=[line.split() for line in open(sys.argv[1],encoding="utf-8")]; assert len(entries)==9; json.dump(dict(entries),open(sys.argv[2],"w",encoding="utf-8"))' "$RUNNER_TEMP/domain-heads.tsv" "$RUNNER_TEMP/domain-heads.json"
       - name: Verify 73 staged cases, blocked execution, and canonical exclusion
         run: |
           python tools/validate_domain_drafts.py \
             --snapshot-root "$RUNNER_TEMP/domain-specs" \
             --manifest test_fixtures/r6_domain_validation_manifest.synthetic.json \
-            --catalog data/testing/test_specifications.json
+            --catalog data/testing/test_specifications.json \
+            --matrix "$RUNNER_TEMP/domain-readiness-matrix.json" \
+            --observed-heads "$RUNNER_TEMP/domain-heads.json"
