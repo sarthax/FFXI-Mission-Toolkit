@@ -169,3 +169,13 @@ def test_matrix_reconciliation_negative(tmp_path, fault, expected_message):
         matrix["source"]["domain_pr_head_snapshot"][0]["source_revision"] = "d" * 40
     with pytest.raises(validator.ValidationError, match=expected_message):
         validator.validate_reconciled_matrix(matrix, manifest, tmp_path, heads)
+
+
+def test_duplicate_staged_assertion_ids_do_not_become_v2_oracles():
+    doc = deepcopy(DOC)
+    doc["cases"][0]["assertions"] = [
+        {"id": "SYN-01-a1", "expected": "UNKNOWN"},
+        {"id": "SYN-01-a1", "expected": "UNKNOWN"},
+    ]
+    with pytest.raises(validator.ValidationError, match="duplicate staged assertion ID"):
+        validate(doc)
