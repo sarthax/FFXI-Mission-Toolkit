@@ -186,3 +186,28 @@ Run this on the newer PR head only after checking its CI. These deeper searches 
 **Further read-only inspection added after local run:** the assessor now records `original_stream_sha256`, `candidate_sha256`, `candidate_matches_original_stream`, and `candidate_common_prefix_bytes`. It also independently measures candidate stream consumption before accepting an in-memory round-trip. The aggregate CLI reports hash/equality evidence for each configuration, without revealing packed or decoded proprietary bytes. The intent is to check whether greedy depth 1024 equals the original stream *byte for byte*, not merely in length.
 
 On the next local audit, rerun `--compare-improved` using the same exact-SHA copies and preserve the two new equality fields for greedy depth 1024 and lazy depth 256. Byte equality would strengthen format/tokenization evidence but is **not sufficient** to prove the original loader accepts a modified stream. The writer path remains intentionally absent.
+
+## 10. Byte-identical originals and decoder-observed termination (2026-10-21)
+
+The owner forwarded a third read-only local validation at branch head `372c7b48f85f450a56a5dc677ed6624d1d0ef265`. The local agent verified original full-file SHA-256 fingerprints for both `30210706_0` and `30261006_0`, reported **18 synthetic methods passing**, and established **byte-for-byte equality of the entire original compressed stream with greedy depth 1024** on both builds. For 2021 the compared stream spans 1,967,230 bytes (packed SHA-256 shortened `9bdbb3f9…1106`), and for 2026 1,989,125 bytes (`3156a211…2a43`). Common-prefix lengths equal the respective stream lengths. The locally generated lazy depth-256 variants are **not byte-identical** to those originals; matching prefix lengths were 627 / 628 bytes, candidate sizes 1,948,251 / 1,969,957 bytes, and headroom +18,979 / +19,168 bytes.
+
+All fitting streams reportedly passed the Toolkit's in-memory decoder round-trip, with the original 386-byte (2021) and 507-byte (2026) raw POL1 suffixes unchanged. This result strengthens confidence that the *particular original streams* follow the documented token grammar and greedy parser choice at depth 1024. It is **not evidence that a different retail stream is accepted by the actual loader**. The local agent's complete hash values exist in its out-of-repository scratchpad comment file; only abbreviated packed hashes were passed into this GitHub session and must not be reconstructed or guessed.
+
+GitHub confirms the `e6f0189` to `372c7b4` transition is a four-commit fast-forward, and all three corresponding workflows passed. No force-push is supported by that specific commit relationship.
+
+### New read-only decoder-observed terminal-group check
+
+The experimental reporter now records **scalar metadata only** for the final decoded token in the original and candidate streams:
+
+- Number of consumed compressed bytes, control groups and tokens.
+- Number of tokens consumed from the final eight-flag group, remaining unused flag bits, and whether any unused flags were nonzero.
+- Final token kind (literal/backreference), its nominal output byte count, actual bounded decoder output byte count, and whether the bounded decoder clipped the final match at the expected decoded `.text` limit.
+- For a POL1-mapped entry point, the byte distance between the decoded stream's consumed end and the entry-point section offset.
+
+These figures are from our **read-only software decoder**, which stops at the declared `.text` virtual size and ignores unused control bits in its final group. They do **not** describe actual retail-loader execution semantics. In particular, a shorter candidate may cause the loader to encounter old residual bytes unless the loader independently stops after producing the expected decoded byte count; *we have not verified that it does*. The tool does not clear residual bytes, relocate the loader, install a client, or write any DLL.
+
+### Next local measurement
+
+After the new focused CI is green, rerun both exact-hash verified archives using the same `--compare-improved` command. Record `original_decoder_termination` and each `candidate_decoder_termination` (especially greedy depth 1024 and lazy depth 256), plus `bytes_between_stream_end_and_entrypoint`. Preserve only JSON metadata; no raw bytes, assembler dumps, proprietary binary contents or modified DLLs in Git.
+
+**Next evidence review before any write-path authorization:** independently inspect the authentic POL1 entry-point bootstrap in the exact builds (read-only disassembly) to determine its actual input-consumption stop condition, whether it uses expected decoded length or an explicit marker, and what instructions/data occupy the protected suffix. Document how PE security directory, Authenticode status and launcher verification might treat a modified copy **without bypassing checks**. If the loader's true behavior is not established, remain STOP for any on-disk writer and for old-client Wardrobe 5–8 IDs.
