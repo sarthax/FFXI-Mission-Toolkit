@@ -146,9 +146,22 @@ def test_unicode_and_revisioned_draft_round_trip_preserve_full_v2(monkeypatch, t
 def test_32k_ascii_escaped_persistence_limit_still_applies(monkeypatch, tmp_path):
     monkeypatch.setenv("MISSION_TOOLKIT_TEST_DRAFTS_DB", str(tmp_path / "oversized.sqlite"))
     spec = with_v2()
-    # Avoid assuming UTF-8 payload size equals SQLite's ensure_ascii=True representation.
-    spec["rationale"] = "界" * 950
-    with pytest.raises(ValueError):
+    # Each canonical step is individually bounded, so accumulate genuine
+    # in-bounds Unicode fields until the SQLite ensure_ascii=True representation
+    # exceeds 32 KiB even though the compact UTF-8 representation fits.
+    template = deepcopy(spec["steps"][0])
+    spec["steps"][0]["title"] = "界" * 350
+    for number in range(1, 16):
+        step = deepcopy(template)
+        step["id"] = "SYNTH-UNICODE-" + str(number)
+        step["title"] = "界" * 350
+        spec["steps"].append(step)
+    utf8_size = len(json.dumps(spec, sort_keys=True, separators=(",", ":"),
+                               ensure_ascii=False).encode("utf-8"))
+    stored_size = len(json.dumps(spec, sort_keys=True, separators=(",", ":"),
+                                 ensure_ascii=True).encode("utf-8"))
+    assert utf8_size < 32768 < stored_size
+    with pytest.raises(ValueError, match="32|KiB|size|large"):
         validate_editor_spec(spec)
 
 
