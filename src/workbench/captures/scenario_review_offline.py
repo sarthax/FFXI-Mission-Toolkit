@@ -190,7 +190,8 @@ document.getElementById('export').addEventListener('click', () => {
     const a = document.createElement('a');
     a.href=url;a.download='capture-'+String(ORIGINAL.capture_id)+'-design-only-review.json';
     document.body.appendChild(a);a.click();a.remove();
-    // Delay revocation so browsers can finish initiating the local download.\n    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    // Delay revocation so browsers can finish initiating the local download.
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
     status.textContent='Exported design-only review. No scenario saved or executed.';
   } catch (err) {status.textContent=err.message;}
 });
