@@ -80,3 +80,8 @@ def test_ui_auth_requires_same_origin_headers(env):
     for h in ({}, {"sec-fetch-site": "cross-site", "x-requested-with": "toolkit-ui"}, {"sec-fetch-site": "same-origin"}):
         with pytest.raises(HTTPException):
             _operator_auth(Req(h), None)
+
+
+def test_default_data_dir_is_outside_repo(monkeypatch):
+    monkeypatch.delenv("MISSION_TOOLKIT_TEST_DATA_DIR", raising=False)
+    assert not s.data_dir().resolve().is_relative_to(s._REPO.resolve())

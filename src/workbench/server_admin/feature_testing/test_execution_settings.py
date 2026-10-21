@@ -25,7 +25,18 @@ _RESULT_DEFAULTS = {          # created under the data folder automatically; nob
 
 def data_dir() -> Path:
     configured = os.environ.get("MISSION_TOOLKIT_TEST_DATA_DIR", "")
-    return Path(configured) if configured else _REPO / "data" / "test_execution"
+    if configured:
+        return Path(configured)
+    # Must live OUTSIDE the repo: the runner refuses artifact folders inside a source checkout.
+    return Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "MissionToolkit" / "test_execution"
+
+
+def _migrate_legacy() -> None:
+    old = _REPO / "data" / "test_execution" / "settings.json"
+    new = settings_path()
+    if old.is_file() and not new.exists():
+        new.parent.mkdir(parents=True, exist_ok=True)
+        new.write_bytes(old.read_bytes())
 
 
 def settings_path() -> Path:
@@ -39,6 +50,8 @@ def _empty() -> dict:
 
 
 def load() -> dict:
+    if "MISSION_TOOLKIT_TEST_DATA_DIR" not in os.environ:
+        _migrate_legacy()
     merged = _empty()
     try:
         raw = json.loads(settings_path().read_text(encoding="utf-8"))
