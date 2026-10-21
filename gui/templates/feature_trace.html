@@ -55,6 +55,8 @@
 #trace-saved-list li{padding:3px 0;overflow-wrap:anywhere}
 #trace-saved-list button{margin-left:7px}
 #trace-save-status{min-height:1.1em}
+#trace-draft-recovery{margin:9px 0}
+#trace-draft-recovery .trace-links{align-items:center}
 
 </style>
 <form id="featureTraceTop" class="search wb-filter-row" method="get" action="/features/trace">
@@ -87,6 +89,16 @@
   <button type="submit">Trace</button>
 </form>
 <p id="trace-mode-help" class="muted">Choose a question to inspect a focused subset of existing evidence, or retain All recorded (legacy) for the original unfiltered trace. Changing the question does not prove behavior or remove stored relationships.</p>
+<section class="trace-trail" id="trace-draft-recovery" aria-label="Recover local Feature Trace draft" hidden>
+  <strong>Previous browser-local draft</strong> <span class="chip">Not verified evidence</span>
+  <p class="muted" id="trace-draft-info"></p>
+  <div class="trace-links">
+    <a class="zonelink" id="trace-draft-link" hidden>Reopen recorded view</a>
+    <button type="button" id="trace-draft-disable">Delete draft and turn off recovery</button>
+  </div>
+  <p class="muted">Reopening uses the current index and does not verify an old root, source version, link or path. Nothing is synchronized with other browsers or machines.</p>
+</section>
+<script src="/static/feature_trace_local_saves.js" defer></script>
 {% if error %}
 <div class="warn">{{ error }}</div>
 {% endif %}
@@ -529,13 +541,14 @@
     <button type="button" id="trace-save-button">Save this view locally</button>
   </div>
   <p class="muted" role="status" aria-live="polite" id="trace-save-status"></p>
+  <label><input type="checkbox" id="trace-draft-opt-in"> Automatically retain the last resolved view as a temporary local recovery draft</label>
+  <p class="muted" role="status" aria-live="polite" id="trace-draft-status">Off until explicitly enabled. Saves a single navigation URL in this browser when leaving a resolved page; automatic capture is best-effort. Uncheck to delete it. No graph, source contents, packet or account data are copied.</p>
   <details id="trace-saved-detail">
     <summary>Resume / delete saved views <span class="muted">(maximum 20; explicit saves only)</span></summary>
     <ul id="trace-saved-list"><li>Saved views load only if browser storage is available.</li></ul>
   </details>
   <p class="muted">Saved selections are not verified graph paths. Resuming always re-runs the current trace: node identities, source revisions, evidence, and locators might have changed since the view was saved. Confirm them again. Clearing site storage deletes browser-local saved views.</p>
 </section>
-<script src="/static/feature_trace_local_saves.js" defer></script>
 {% if selected_mode %}
 <div id="trace-focused-mode" class="impl-diagnostic">
   <strong>Question-focused view: {{ (result.trace_mode.label if result.trace_mode else selected_mode) }}</strong>
