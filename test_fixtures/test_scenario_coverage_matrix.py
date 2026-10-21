@@ -224,3 +224,28 @@ def test_deterministic_html_preserves_separate_verdict_provenance():
     assert "independently verified case(s)" in rendered
     intro = rendered.lower().split('<section class="cov-intro">')[1].split("</section>")[0]
     assert "<script" not in intro
+
+
+def test_same_run_conflicting_revision_across_stages_is_blocked():
+    case = fixture_case("SYNTH-CROSS-STAGE")
+    spec = fixture_spec(case["id"])
+    rows = [fixture_record(spec), fixture_record(spec)]
+    rows[1]["stage"] = "mechanics"
+    rows[1]["headless_commit"] = "different-synthetic-build"
+    trust = {("synthetic-domain", case["id"]): source_oracle(spec, complete=True)}
+    row = feature(view([case], [spec], rows, trusted=trust))["cases"][0]
+    assert row["version_comparison"] == "VERSION_MISMATCH"
+    assert row["recorded"]["verdict"] == "PASS"
+    assert row["recalculated"]["verdict"] == "UNKNOWN"
+    assert row["state"] == "blocked"
+
+
+def test_same_run_one_stage_missing_spec_digest_is_unpinned():
+    case = fixture_case("SYNTH-MIXED-STAGE")
+    spec = fixture_spec(case["id"])
+    rows = [fixture_record(spec), fixture_record(spec)]
+    rows[1]["stage"] = "mechanics"
+    del rows[1]["evidence"]["spec_digest"]
+    row = feature(view([case], [spec], rows))["cases"][0]
+    assert row["version_comparison"] == "REVISION_UNPINNED"
+    assert row["recalculated"]["verdict"] == "UNKNOWN"
