@@ -12,6 +12,8 @@ from fastapi.templating import Jinja2Templates
 
 from workbench.runtime.paths import GUI_ROOT
 from .results import recent_results
+from .scenario_presentation import scenario_presentation
+from .test_specifications import specification
 
 router = APIRouter(prefix="/feature-testing", tags=["Feature Testing"])
 
@@ -54,6 +56,7 @@ def scenario_detail(feature_id: str, case_id: str) -> dict:
             "scenario": case, "feature_gaps": feature.get("gaps", []),
             "gm_candidates": feature.get("existing_gm_candidates", []),
             "expected_reference": reference, "execution_enabled": False,
+            "presentation": scenario_presentation(specification(feature_id, case_id)),
             "observed_results": recent_results(_results_db(), feature_id=feature_id, case_id=case_id) if _results_db() else []}
 
 
@@ -110,15 +113,20 @@ def run_page(request: Request, run_id: str):
         raise HTTPException(404, "Run not found")
     from .normalized_evidence import evaluate_imported_mog09
     reevaluations = {}
+    scenario_views = {}
     for index, row in enumerate(rows):
         if (row["feature_id"], row["case_id"]) == ("moghancement", "MOG-09"):
             try:
                 reevaluations[index] = evaluate_imported_mog09(row)
             except ValueError as exc:
-                reevaluations[index] = {"error": str(exc)}
+                reevaluations[index] = {"error": str(exc), "recorded_verdict": row["verdict"]}
+        scenario_views[index] = scenario_presentation(
+            specification(row["feature_id"], row["case_id"]),
+            reevaluations.get(index, {"recorded_verdict": row["verdict"]}),
+        )
     return templates.TemplateResponse(request=request, name="feature_testing_run.html",
                                       context={"title": "Test Run", "run_id": run_id, "records": rows,
-                                               "reevaluations": reevaluations})
+                                               "reevaluations": reevaluations, "scenario_views": scenario_views})
 
 
 def _summaries() -> list[dict]:

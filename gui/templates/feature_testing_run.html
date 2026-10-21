@@ -26,7 +26,9 @@
 </div>
 <div class="ft-metadata"><span><strong>Stage:</strong> {{ result.stage }}</span><span><strong>Observed UTC:</strong> {{ result.observed_at }}</span></div>
 {% set reevaluation = reevaluations.get(loop.index0) %}
+{% with scenario_view=scenario_views.get(loop.index0) %}{% include "feature_testing_steps.html" %}{% endwith %}
 {% if reevaluation %}
+<details class="ft-tech"{% if reevaluation.error or (reevaluation.evaluation and reevaluation.recorded_verdict != reevaluation.evaluation.verdict) %} open{% endif %}><summary><strong>Technical assertion report</strong> — specification reevaluation{% if reevaluation.error %} (blocked){% elif reevaluation.recorded_verdict != reevaluation.evaluation.verdict %} (verdict mismatch){% endif %}</summary>
 <section class="ft-result" aria-label="Specification reevaluation">
 <h4>Reevaluate with Specification</h4>
 {% if reevaluation.error %}
@@ -49,8 +51,10 @@
 <details><summary>Normalized field provenance</summary><pre class="ft-evidence-json">{{ reevaluation.normalization.field_sources|tojson(indent=2) }}</pre></details>
 {% endif %}
 </section>
+</details>
 {% endif %}
-<h4>Assertions</h4>
+<details class="ft-tech"><summary><strong>Original imported assertions</strong></summary>
+<h4>Assertions (original imported report)</h4>
 {% set assertions = result.evidence.get('assertions', []) %}
 {% if assertions is sequence and assertions is not string and assertions %}
 <div class="ft-assertions"><table><thead><tr><th>Result</th><th>Assertion</th><th>Expected</th><th>Observed</th></tr></thead><tbody>
@@ -61,6 +65,7 @@
 <td class="ft-inspect"><code>{{ assertion.observed|default('Not supplied')|tojson }}</code></td></tr>
 {% endfor %}</tbody></table></div>
 {% else %}<p>No structured assertions supplied in this imported record.</p>{% endif %}
+</details>
 <h4>Source revisions</h4>
 <div class="ft-metadata"><span><strong>DSP:</strong> <code title="{{ result.dsp_commit }}">{{ result.dsp_commit[:12] }}</code></span>
 <span><strong>XiHeadless:</strong> <code title="{{ result.headless_commit }}">{{ result.headless_commit[:12] }}</code></span>
