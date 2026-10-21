@@ -87,6 +87,18 @@ def project_domain_case(staging: dict, case_id: str) -> dict:
     if "execution_lane" in case and "lane" in case and case["execution_lane"] != case["lane"]:
         raise ValueError("conflicting staging execution lanes")
 
+    # Agent E's validator accepts optional v2 staging hints, not canonical v1
+    # assertions. Check any claimed permission/step gate independently, but
+    # never turn the staged object into an executable canonical specification.
+    hint = case.get("contract_v2")
+    if hint is not None:
+        from .scenario_contract_v2 import _validate_requirements
+        if not isinstance(hint, dict) or hint.get("contract_version") != 2:
+            raise ValueError("invalid staged contract_v2 hints")
+        if hint.get("parameters") or hint.get("oracles"):
+            raise ValueError("staged identity/oracle authority requires separate canonical review")
+        _validate_requirements(hint.get("step_requirements", []), set(ids))
+
     original = []
     original += _declared_refs(case)
     oracle = case.get("oracle")
@@ -101,6 +113,8 @@ def project_domain_case(staging: dict, case_id: str) -> dict:
         mandatory = ("repository", "path", "commit", "line_start", "line_end")
         if any(k not in citation for k in mandatory):
             raise ValueError("incomplete staged source reference")
+        if citation.get("sha256") is not None:
+            raise ValueError("source content digest in staging is not independently attested")
         unique = tuple(citation[k] for k in mandatory)
         try:
             if unique in source_map:
@@ -141,6 +155,8 @@ def project_domain_case(staging: dict, case_id: str) -> dict:
     for step in steps:
         if step.get("execution_authorized") is True or step.get("manual_execution_allowed") is True:
             raise ValueError("staged step claims execution authorization")
+        if step.get("required_permissions") not in (None, []):
+            raise ValueError("staged step permissions require explicit canonical review")
         sr = _declared_refs(step)
         original += sr
         by_step.append({
