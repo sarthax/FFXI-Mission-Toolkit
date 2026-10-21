@@ -9,7 +9,10 @@
 <section class="wb-panel">
 <h2>{{ detail.scenario.title }}</h2>
 <p><strong>Classification:</strong> {{ detail.scenario.kind }} · <strong>Plan status:</strong> {{ detail.scenario.status }}</p>
-{% if detail.observed_results %}{% set latest = detail.observed_results[0] %}<p><strong>Latest imported run:</strong> <a href="/feature-testing/run/{{ latest.run_id|urlencode }}">{{ latest.run_id }}</a> — recorded verdict {{ latest.verdict }} (open it to see recalculated step outcomes; the steps below stay UNKNOWN until a run is selected).</p>{% endif %}
+{% if detail.observed_results %}{% set latest = detail.observed_results[0] %}<p><strong>Latest imported run:</strong> <a href="/feature-testing/scenario/{{ detail.feature_id|urlencode }}/{{ detail.scenario.id|urlencode }}?run={{ latest.run_id|urlencode }}">View latest run: {{ latest.run_id }}</a> — recorded verdict {{ latest.verdict }}. Steps stay UNKNOWN until a run is selected.</p>
+<nav aria-label="Imported runs for this scenario"><strong>Runs:</strong>
+{% if detail.presentation.selected_run_id %}<a href="/feature-testing/scenario/{{ detail.feature_id|urlencode }}/{{ detail.scenario.id|urlencode }}">No run (design view)</a>{% else %}<strong>No run (design view)</strong>{% endif %}
+{% for rid in detail.run_ids %} · {% if rid == detail.presentation.selected_run_id %}<strong>{{ rid }}</strong>{% else %}<a href="/feature-testing/scenario/{{ detail.feature_id|urlencode }}/{{ detail.scenario.id|urlencode }}?run={{ rid|urlencode }}">{{ rid }}</a>{% endif %}{% endfor %}</nav>{% endif %}
 {% with scenario_view=detail.presentation %}{% include "feature_testing_steps.html" %}{% endwith %}
 <h3>Execution readiness</h3>
 <p><strong>Registered runner:</strong> {{ preflight.runner or 'None (planning only)' }}</p>

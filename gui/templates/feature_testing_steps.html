@@ -30,6 +30,11 @@
 .ft-story .ft-cell{min-width:0;padding:.65rem;border:1px solid var(--border,#aaa);border-radius:6px}
 .ft-story .ft-cell pre{overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;max-height:14rem}
 .ft-story .ft-signal{font-weight:700}
+.ft-story .ft-kind{font-size:.85em;border:1px solid currentColor;border-radius:4px;padding:0 .35rem}
+.ft-story .ft-kind-failed{font-weight:700}
+.ft-story .ft-lifecycle{display:flex;gap:.5rem;flex-wrap:wrap;margin:.6rem 0;padding:0;list-style:none}
+.ft-story .ft-lifecycle li{border:1px solid var(--border,#aaa);border-radius:6px;padding:.3rem .6rem;flex:1 1 11rem;min-width:0;overflow-wrap:anywhere}
+.ft-story .ft-lifecycle b{display:block}
 .ft-story .ft-warning{border-left:3px solid currentColor;padding-left:.8rem}
 .ft-story .ft-meta{overflow-wrap:anywhere}
 .ft-story .ft-provenance pre{max-height:18rem;overflow:auto;overflow-wrap:anywhere;white-space:pre-wrap}
@@ -47,6 +52,7 @@
 <span class="ft-badge">Independent verification: {{ scenario_view.independent_verification }}</span>
 <span class="ft-badge">Open limitations: {{ scenario_view.blocking_gaps|length }}</span>
 </div>
+{% if scenario_view.lifecycle %}<ol class="ft-lifecycle" aria-label="Specification lifecycle">{% for stage in scenario_view.lifecycle %}<li><b>{{ stage.stage }}</b>{{ stage.state }}</li>{% endfor %}</ol>{% endif %}
 <p>{{ scenario_view.purpose }}</p>
 {% if scenario_view.rationale %}<p><strong>Why this matters:</strong> {{ scenario_view.rationale }}</p>{% endif %}
 <p class="ft-warning"><strong>Verification status: {{ scenario_view.independent_verification }}</strong> — a recorded or recalculated PASS from imported observations is not an independently authenticated gameplay result.</p>
@@ -88,6 +94,9 @@
 <li><details class="ft-step"{% if step.status != 'PASS' %} open{% endif %}>
 <summary class="ft-step-line"><strong>{{ step.number }}. {{ step.title }}</strong><span class="ft-signal">{{ step.status if step.status != 'PASS' else 'PASS (recalculated only)' }}</span>
 {% if step.confidence_note %}<span class="ft-chip" title="{{ step.confidence_note }}">⚠ limitation</span>{% endif %}
+{% if step.has_failed_assertion %}<span class="ft-kind ft-kind-failed" title="A supported observation was present and the assertion evaluated FAIL.">Assertion FAILED</span>{% endif %}
+{% if step.has_missing_observation %}<span class="ft-kind" title="No normalized observation was imported, so this is unknown, not failed.">Observation missing (not failed)</span>{% endif %}
+{% for kind in step.source_kinds %}<span class="ft-kind" title="Derived from the observation field name; runner-reported, not independently verified.">{{ kind }}</span>{% endfor %}
 <span class="ft-brief">{% for assertion in step.assertions %}{% if assertion.observed_available %}{{ assertion.id }} = {% set js = assertion.observed|tojson %}{{ js if js|length <= 40 else '(large value)' }}{% else %}{{ assertion.id }}: UNKNOWN{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}</span></summary>
 <p class="ft-meta"><code>{{ step.id }}</code> · {{ step.intent }}</p>
 {% if step.confidence_note %}<p class="ft-warning"><strong>Evidence limitation:</strong> {{ step.confidence_note }}</p>{% endif %}
@@ -97,7 +106,7 @@
 <div class="ft-cell"><strong>Observed outcome</strong>
 {% if step.assertions %}
 {% for assertion in step.assertions %}
-<p><code>{{ assertion.id }}</code>: <strong>{{ assertion.status }}</strong> — {{ assertion.reason }}</p>
+<p><code>{{ assertion.id }}</code>: <strong>{{ assertion.status }}</strong>{% if assertion.outcome_kind == 'FAILED_ASSERTION' %} <span class="ft-kind ft-kind-failed">FAILED: observed value did not satisfy the assertion</span>{% elif assertion.outcome_kind == 'NOT_OBSERVED' %} <span class="ft-kind">NOT OBSERVED: unknown, not a failure</span>{% elif assertion.outcome_kind == 'BLOCKED_UNSUPPORTED' %} <span class="ft-kind">BLOCKED: unsupported or incomplete</span>{% endif %}{% if assertion.source_kind %} <span class="ft-kind">{{ assertion.source_kind }} · imported, unverified</span>{% endif %} — {{ assertion.reason }}</p>
 {% if assertion.observed_available %}<p>{{ cv(assertion.observed) }}</p>
 {% else %}<p>UNKNOWN — no normalized observation supplied.</p>{% endif %}
 {% endfor %}

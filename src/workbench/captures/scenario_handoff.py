@@ -18,6 +18,16 @@ _DECISIONS = {"ACCEPT", "EDIT", "REJECT"}
 _UNKNOWN = "UNKNOWN — normative expected behavior requires independent source-backed review"
 _ORDER = ("capture_events", "capture_eventview", "capture_ki_events", "capture_structured_records", "capture_raw_packets")
 
+# Indexed metadata only: never re-emit raw packet hex or opaque JSON payload.
+_RECORDED_METADATA = {
+    "capture_events": ("direction", "opcode", "opcode_name", "event_hex", "option", "message_id"),
+    "capture_eventview": ("direction", "opcode", "packet_class", "gp_command", "mes_num", "message_number"),
+    "capture_ki_events": ("event_type", "keyitem_id"),
+    "capture_structured_records": ("family", "record_type", "item_id", "item_name"),
+    "capture_raw_packets": ("direction", "opcode", "zone_id", "is_injected", "is_blocked",
+                            "source_format", "source_native_id"),
+}
+
 
 def _digest(value: object) -> str:
     return sha256(json.dumps(value, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")).hexdigest()[:20]
@@ -41,6 +51,11 @@ def _row_ref(capture_id: int, table: str, event: dict) -> dict:
         "native_timestamp": event["native_timestamp"],
         "time_basis": event["time_basis"],
         "confidence": event["confidence"],
+        "recorded_metadata": {
+            key: deepcopy(event["observed_fields"][key])
+            for key in _RECORDED_METADATA[table]
+            if key in event["observed_fields"]
+        },
     }
 
 
