@@ -190,7 +190,11 @@ class Wardrobe2019AuditTests(unittest.TestCase):
         self.assertEqual(observed["fixed_size_transfer_value_bytes"], 0x3B080)
         self.assertEqual(len(observed["fixed_size_transfer_immediate_rvas"]), 11)
         self.assertFalse(observed["fixed_size_transfer_semantics_confirmed"])
-        self.assertEqual(observed["candidate_file_io_callee_rva"], "0x307CFF")
+        self.assertEqual(observed["read_like_stream_callee_rva"], "0x307CFF")
+        self.assertEqual(observed["write_like_stream_callee_rva"], "0x307E16")
+        self.assertEqual(len(observed["read_like_fixed_transfer_immediate_rvas"]), 6)
+        self.assertEqual(len(observed["write_like_fixed_transfer_immediate_rvas"]), 5)
+        self.assertFalse(observed["persistent_file_format_and_schema_confirmed"])
         self.assertEqual(observed["linear_disassembly_candidate_reference_count"], 1045)
         self.assertEqual(observed["observed_direct_global_writer_instruction_count"], 15)
         self.assertFalse(observed["global_writer_sites_independently_cfg_confirmed"])
@@ -231,6 +235,12 @@ class Wardrobe2019AuditTests(unittest.TestCase):
         report = inspect_2019_store_lifecycle(True)
         sizes = report["fixed_size_transfer_immediate_rvas"]
         self.assertEqual(len(sizes), len(set(sizes)))
+        self.assertEqual(
+            sorted(sizes),
+            sorted(report["read_like_fixed_transfer_immediate_rvas"] +
+                   report["write_like_fixed_transfer_immediate_rvas"])
+        )
+        self.assertFalse(report["persistent_file_format_and_schema_confirmed"])
         self.assertEqual(sizes[0], "0x3FA1")
         self.assertEqual(sizes[-1], "0x4818")
         self.assertEqual(report["fixed_size_transfer_value_bytes"],
