@@ -1,8 +1,12 @@
 # R7 Canonical Contract v2 — explicit source attribution decision
 
-**Status:** DRAFT / proposed interface; awaiting Agent B + Agent D confirmation,
-independent source-schema review, and owner-authorized merge. This file does
-not authorize editing the Scenario Developer or Evidence Reviewer directly.
+**Status:** DRAFT / producer interface field names CONFIRMED by Agent B
+([#1309 discussion](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1309#issuecomment-6325643246))
+and Agent D
+([#1309 discussion](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1309#issuecomment-6325703966)).
+Agent A's prior final-head COMMENTED technical review accepted the isolated schema
+producer offline; this is **not GitHub APPROVED**, owner authorization, or a
+merge. No Scenario Developer or Evidence Reviewer changes are authorized here.
 
 **Baseline:** Integrated Toolkit main `972ff6fa` (merged R6 canonical #1285,
 editor Phase 1 #1283, reviewer diagnostics #1287 and nine staged domain JSON
@@ -61,7 +65,7 @@ based or fuzzy matching is performed. All original `sources[]` and
 `source_associations[]` survive `serialize_spec`/`deserialize_spec`
 without normalization, truncation or auto-correction.
 
-### Consumer contract freeze (proposed; B/D acceptance pending)
+### Consumer contract freeze (B/D field names agreed; schema still draft)
 
 **Canonical source identity** is `contract_v2.sources[].ref` (one unique ID
 *within this specification*), not a global source ID or source-content digest.
@@ -237,6 +241,9 @@ optional schema provides no permission for bulk domain import or v1 runner
 changes, and GitHub CI cannot attest deployed DSP/client versions, real
 source-byte authenticity, or independently observed gameplay PASS.
 
-**Merge gates:** Agent B/D field-name agreement; independent current-head
-review; focused Contract v2/Workbench/Src Layout CI; owner authorization.
+**Merge gates:** Agent B/D *field-name agreement is recorded*, not permission to
+consume the still-unmerged extension. Obtain an eligible independent current-head
+APPROVED review where repository policy requires one, and explicit owner merge
+authorization, after all required CI passes. Agent B's editor-owned consumer
+continues to wait for accepted, merged schema; Agent D's producer remains separate.
 No local client, DSP server, GM, SQL write, packet, or gameplay operations.
