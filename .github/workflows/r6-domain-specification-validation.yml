@@ -29,7 +29,9 @@ jobs:
         run: python -m pip install --disable-pip-version-check pytest
       - name: Pure synthetic positive and negative tests
         run: python -m pytest -q test_fixtures/test_domain_draft_validator.py
-      - name: Fetch same-repo PR draft JSON only, never PR executable code
+      # All nine PRs were independently confirmed same-repository with head refs spec/<domain>.
+      # GitHub refs/pull/*/head can lag a safe branch merge: use actual named branch HEADs.
+      - name: Fetch same-repo PR staging branches as JSON data only
         shell: bash
         run: |
           set -euo pipefail
@@ -39,16 +41,17 @@ jobs:
           while read -r domain pr; do
             [[ "$domain" =~ ^[a-z_]+$ ]]
             [[ "$pr" =~ ^[0-9]+$ ]]
-            git fetch --no-tags --depth=1 origin "+refs/pull/$pr/head:refs/remotes/origin/r6-$pr"
+            git fetch --no-tags --depth=1 origin "+refs/heads/spec/$domain:refs/remotes/origin/r6-$pr"
             git show "refs/remotes/origin/r6-$pr:data/testing/domain_drafts/$domain.json" > "$RUNNER_TEMP/domain-specs/$domain.json"
             head_sha=$(git rev-parse "refs/remotes/origin/r6-$pr")
             printf "%s %s\n" "$domain" "$head_sha" >> "$RUNNER_TEMP/domain-heads.tsv"
           done < "$RUNNER_TEMP/domains.txt"
+      # This is the exact same-repo #1292 branch ref, not the eventually-consistent PR merge ref.
       - name: Fetch the single proposed #1292 case matrix as inert JSON
         shell: bash
         run: |
           set -euo pipefail
-          git fetch --no-tags --depth=1 origin "+refs/pull/1292/head:refs/remotes/origin/r6-authoritative-matrix"
+          git fetch --no-tags --depth=1 origin "+refs/heads/audit/domain-readiness-73-20261021:refs/remotes/origin/r6-authoritative-matrix"
           git show "refs/remotes/origin/r6-authoritative-matrix:docs/workbench/SCENARIO_DOMAIN_READINESS_MATRIX_2026-10-21.json" > "$RUNNER_TEMP/domain-readiness-matrix.json"
           python -c 'import json,sys; entries=[line.split() for line in open(sys.argv[1],encoding="utf-8")]; assert len(entries)==9; json.dump(dict(entries),open(sys.argv[2],"w",encoding="utf-8"))' "$RUNNER_TEMP/domain-heads.tsv" "$RUNNER_TEMP/domain-heads.json"
       - name: Verify 73 staged cases, blocked execution, and canonical exclusion
