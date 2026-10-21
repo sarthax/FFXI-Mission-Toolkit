@@ -218,7 +218,8 @@ def _v2_hints(draft: dict, checked: dict, readbacks_by_step: dict) -> dict:
 
 
 
-def _indexed_provenance(evidence_map: dict, refs: list[str], issues: list[dict]) -> list[dict]:
+def _indexed_provenance(evidence_map: dict, refs: list[str], issues: list[dict],
+                        capture_id: object) -> list[dict]:
     """Only indexed locator/manifest *claims*, no file rehash or decoder proof.
 
     Keep physical capture file identity separate from its parsed row. An
@@ -234,6 +235,8 @@ def _indexed_provenance(evidence_map: dict, refs: list[str], issues: list[dict])
         if ref not in evidence_map:
             raise ValueError("unknown original capture evidence reference")
         original = evidence_map[ref]
+        if original["capture_id"] != capture_id:
+            raise ValueError("cross-capture evidence reference requires separate reviewed capture")
         source = original["source"]
         locators = []
         for candidate in source["references"]:
@@ -340,7 +343,7 @@ def _typed_authoring_projection(
             "observed_summary_original": row["observed_summary"],
             "original_evidence_refs": deepcopy(row["evidence_refs"]),
             "indexed_evidence_provenance": _indexed_provenance(
-                evidence_map, row["evidence_refs"], integrity["issues"]),
+                evidence_map, row["evidence_refs"], integrity["issues"], capture_id),
             "identity_confidence": identities,
             "missing_readbacks": deepcopy(row["missing_observations"]),
             "readiness_state": row["readiness_state"],
