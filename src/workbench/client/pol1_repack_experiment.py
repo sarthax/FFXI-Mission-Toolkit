@@ -135,6 +135,38 @@ def _verify_raw_section_isolation(image: bytes, section: dict) -> None:
 
 
 
+def _post_output_zero_distance_probe(
+    packed: bytes | memoryview, consumed: int, control: int, slot: int
+) -> dict:
+    """Inspect just the next token after declared decoded output is complete.
+
+    The 2019 POL1 bootstrap uses distance==0 as a stop marker, rather than
+    stopping at a known decoded length. This is a *token-shape* probe only;
+    it does not emulate arbitrary loader execution or approve binary edits.
+    """
+    if slot < 7:
+        next_literal = bool(control & (0x80 >> (slot + 1)))
+        token_at = consumed
+    else:
+        if consumed >= len(packed):
+            return {"status": "NEXT_CONTROL_GROUP_MISSING",
+                    "zero_distance_stop": False, "marker_offset": None}
+        next_literal = bool(int(packed[consumed]) & 0x80)
+        token_at = consumed + 1
+    if next_literal:
+        return {"status": "NEXT_TOKEN_IS_LITERAL",
+                "zero_distance_stop": False, "marker_offset": None}
+    if token_at + 2 > len(packed):
+        return {"status": "NEXT_MATCH_WORD_INCOMPLETE",
+                "zero_distance_stop": False, "marker_offset": None}
+    word = (int(packed[token_at]) << 8) | int(packed[token_at + 1])
+    if (word & MAX_DISTANCE) == 0:
+        return {"status": "ZERO_DISTANCE_STOP",
+                "zero_distance_stop": True, "marker_offset": token_at}
+    return {"status": "NEXT_MATCH_HAS_NONZERO_DISTANCE",
+            "zero_distance_stop": False, "marker_offset": None}
+
+
 def _stream_termination_metadata(packed: bytes | memoryview, expected_size: int) -> dict:
     """Count token consumption and describe the *decoder-observed* final group.
 
@@ -190,6 +222,9 @@ def _stream_termination_metadata(packed: bytes | memoryview, expected_size: int)
                     "last_token_nominal_output_bytes": raw_output,
                     "last_token_actual_output_bytes": copied,
                     "last_token_truncated_at_decoded_limit": copied != raw_output,
+                    "post_output_next_token": _post_output_zero_distance_probe(
+                        packed, at, control, slot
+                    ),
                 }
                 break
     if final is None:
@@ -315,9 +350,18 @@ def assess_pol1_repack_fit(
             raise Pol1Error("in-memory candidate failed decoded-byte verification")
         if candidate_image[start + original_used:start + available] != image[start + original_used:start + available]:
             raise Pol1Error("protected POL1 suffix was altered")
+        # A size-bounded round-trip stops at expected .text length; a retail
+        # bootstrap may require an *explicit* zero-distance token. Inspect the
+        # virtual substitution's immediate following token without saving it.
+        virtual_packed = memoryview(candidate_image)[start:start + available]
+        virtual_end = _stream_termination_metadata(virtual_packed, original["size"])
+        result["virtual_substitution_post_output_next_token"] = virtual_end[
+            "post_output_next_token"
+        ]
         result["in_memory_decoded_roundtrip"] = "PASS"
         result["protected_suffix_unchanged"] = True
     else:
+        result["virtual_substitution_post_output_next_token"] = None
         result["in_memory_decoded_roundtrip"] = "NOT_ATTEMPTED"
         result["protected_suffix_unchanged"] = None
     return result
