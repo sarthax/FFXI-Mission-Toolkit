@@ -45,6 +45,10 @@ ANCHORS = {
     "field_immediately_after_inventory_pointer": (
         0xE8881, "8990604d0100"
     ),
+    "active_store_selects_manager_slot": (0xF710A, "8b3490b920ec0000"),
+    "active_store_slot_assignment": (0xF7116, "893508da4c10"),
+    "active_store_dispatch_assignment": (0xF7295, "893508da4c10"),
+    "active_store_manager_reset": (0xF9B3C, "a308da4c10"),
 }
 
 
@@ -85,6 +89,11 @@ def inspect_2019_store_layout(decoded_sites_verified: bool) -> dict:
         "fixed_global_base_va": f"0x{ORIGINAL_STORE_GLOBAL_ADDRESS:X}",
         "global_zero_init_bytes": total_buffer_bytes,
         "active_store_offset_from_global_base": ACTIVE_STORE_BASE_OFFSET,
+        "active_store_pointer_global_va": "0x104CDA08",
+        "observed_runtime_store_reassignment_rvas": [
+            "0xF7116", "0xF7295", "0xF9B3C"
+        ],
+        "store_lifetime_mapped_completely": False,
         "legacy_container_count": LEGACY_CONTAINER_COUNT,
         "legacy_item_array_start_offset": ITEM_STORE_OFFSET,
         "legacy_item_array_exclusive_end_offset": ORIGINAL_ITEM_ARRAY_END,
