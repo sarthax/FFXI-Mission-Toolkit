@@ -1,0 +1,147 @@
+{# Shared read-only narrative for scenario planning and imported run results. #}
+{# Compact rendering: short values inline, large ones behind a bounded, scrollable disclosure. #}
+{% macro cv(v) -%}
+{%- set js = v|tojson -%}
+{%- if js|length <= 60 -%}<code>{{ js }}</code>
+{%- elif v is sequence and v is not string and v|length and v[0] is sequence and v[0] is not string -%}
+<details class="ft-big"><summary>{{ v|length }} rows</summary><div class="ft-scroll"><table class="ft-rows"><tbody>{% for row in v %}<tr>{% for cell in row %}<td>{{ cell|tojson }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div></details>
+{%- else -%}
+<details class="ft-big"><summary>{% if v is mapping %}{{ v|length }} fields{% elif v is sequence and v is not string %}{{ v|length }} items{% else %}large value{% endif %}</summary><button type="button" class="ft-copy">Copy</button><pre class="ft-scroll">{{ v|tojson(indent=2) }}</pre></details>
+{%- endif -%}
+{%- endmacro %}
+{% if scenario_view and scenario_view.available %}
+<style>
+.ft-story .ft-nav{position:sticky;top:0;z-index:2;display:flex;gap:1rem;flex-wrap:wrap;align-items:center;padding:.4rem .6rem;background:var(--bg,Canvas);border-bottom:1px solid var(--border,#aaa)}
+.ft-story .ft-summary{display:flex;gap:.5rem;flex-wrap:wrap;margin:.6rem 0}
+.ft-story .ft-badge{border:1px solid var(--border,#aaa);border-radius:999px;padding:.15rem .7rem;font-size:.9em}
+.ft-story .ft-chip{font-size:.85em;border:1px solid currentColor;border-radius:4px;padding:0 .35rem;cursor:help}
+.ft-story summary.ft-step-line{display:flex;gap:.7rem;align-items:baseline;flex-wrap:wrap;cursor:pointer}
+.ft-story .ft-brief{flex:1 1 14rem;min-width:0;overflow-wrap:anywhere;opacity:.85}
+.ft-story .ft-scroll{max-height:12rem;overflow:auto;overflow-wrap:anywhere;white-space:pre-wrap;margin:.3rem 0}
+.ft-story table.ft-rows td{padding:0 .8rem 0 0;white-space:nowrap}
+.ft-story .ft-big>summary{cursor:pointer;display:inline}
+.ft-story .ft-tools{display:flex;gap:.5rem;margin:.5rem 0}
+.ft-story{margin:1rem 0}
+.ft-story .ft-steps{list-style:none;margin:0;padding:0}
+.ft-story .ft-step{border:1px solid var(--border,#aaa);border-radius:8px;padding:1rem;margin:.8rem 0}
+.ft-story .ft-step-header{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:.6rem}
+.ft-story .ft-step-header h4{margin:.15rem 0}
+.ft-story .ft-pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.75rem;margin:.65rem 0}
+.ft-story .ft-cell{min-width:0;padding:.65rem;border:1px solid var(--border,#aaa);border-radius:6px}
+.ft-story .ft-cell pre{overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;max-height:14rem}
+.ft-story .ft-signal{font-weight:700}
+.ft-story .ft-warning{border-left:3px solid currentColor;padding-left:.8rem}
+.ft-story .ft-meta{overflow-wrap:anywhere}
+.ft-story .ft-provenance pre{max-height:18rem;overflow:auto;overflow-wrap:anywhere;white-space:pre-wrap}
+.ft-story table{width:100%}
+.ft-story th,.ft-story td{text-align:left;vertical-align:top;overflow-wrap:anywhere}
+</style>
+<section class="ft-story" aria-label="Readable scenario and evidence">
+<nav class="ft-nav" aria-label="Sections"><a href="#ft-summary">Summary</a><a href="#ft-behavior">Behavior</a><a href="#ft-steps">Steps</a><a href="#ft-evidence">Evidence &amp; provenance</a></nav>
+<h2 id="ft-summary">Scenario purpose and evidence</h2>
+<div class="ft-summary">
+{%- set ns = namespace(passed=0) -%}{%- for st in scenario_view.steps %}{% if st.status == 'PASS' %}{% set ns.passed = ns.passed + 1 %}{% endif %}{% endfor %}
+<span class="ft-badge">Recorded: {{ scenario_view.recorded_verdict or 'UNKNOWN' }}</span>
+<span class="ft-badge">Recalculated: {{ scenario_view.recalculated_verdict or 'UNKNOWN' }}</span>
+<span class="ft-badge">Steps PASS (recalculated only): {{ ns.passed }}/{{ scenario_view.steps|length }}</span>
+<span class="ft-badge">Independent verification: {{ scenario_view.independent_verification }}</span>
+<span class="ft-badge">Open limitations: {{ scenario_view.blocking_gaps|length }}</span>
+</div>
+<p>{{ scenario_view.purpose }}</p>
+{% if scenario_view.rationale %}<p><strong>Why this matters:</strong> {{ scenario_view.rationale }}</p>{% endif %}
+<p class="ft-warning"><strong>Verification status: {{ scenario_view.independent_verification }}</strong> — a recorded or recalculated PASS from imported observations is not an independently authenticated gameplay result.</p>
+<p><strong>Specification maturity:</strong> {{ scenario_view.authoring_state }}
+· <strong>Review required:</strong> {{ 'Yes' if scenario_view.review_required else 'Not specified as required' }}
+· <strong>Assertion mapping:</strong> {{ scenario_view.mapped_assertion_count }} of {{ scenario_view.assertion_count }} specification assertions</p>
+{% if scenario_view.unmapped_assertions %}<p class="ft-warning"><strong>Uncovered assertions — UNKNOWN:</strong> {{ scenario_view.unmapped_assertions|join(', ') }}</p>{% endif %}
+{% if scenario_view.recorded_verdict or scenario_view.recalculated_verdict or scenario_view.reevaluation_error %}
+<p><strong>Recorded verdict:</strong> {{ scenario_view.recorded_verdict or 'UNKNOWN' }}
+· <strong>Recalculated verdict:</strong> {{ scenario_view.recalculated_verdict or 'UNKNOWN' }}
+{% if scenario_view.recorded_verdict and scenario_view.recalculated_verdict and scenario_view.recorded_verdict != scenario_view.recalculated_verdict %} · <strong>Verdict mismatch — investigate</strong>{% endif %}
+</p>
+{% if scenario_view.reevaluation_error %}<p class="ft-warning"><strong>Reevaluation unavailable:</strong> {{ scenario_view.reevaluation_error }}</p>{% endif %}
+<p>Recalculation evaluates imported values only; it does not repeat the observations.</p>
+{% else %}
+<p><strong>Recorded verdict:</strong> UNKNOWN · <strong>Recalculated verdict:</strong> UNKNOWN (no imported run selected)</p>
+{% endif %}
+
+<h3 id="ft-behavior">Given / When / Then</h3>
+{% if scenario_view.legacy %}
+<p class="ft-warning">Legacy assertion-only specification: authored Given/When/Then and stable scenario-step metadata have not been supplied. The rows below are assertions, not an inferred sequence of gameplay actions.</p>
+<p><strong>Existing preconditions (not an authored Given):</strong></p>
+<ul>{% for item in scenario_view.preconditions %}<li>{{ item }}</li>{% endfor %}</ul>
+<p><strong>When:</strong> UNKNOWN — not specified. <strong>Then:</strong> UNKNOWN — not specified.</p>
+{% else %}
+{% for phase in ['given', 'when', 'then'] %}
+<h4>{{ phase|capitalize }}</h4>
+{% set notes = scenario_view.behavior.get(phase, []) %}
+{% if notes %}<ul>{% for note in notes %}<li>{{ note }}</li>{% endfor %}</ul>
+{% else %}<p>UNKNOWN — no {{ phase }} statement supplied.</p>{% endif %}
+{% endfor %}
+{% endif %}
+
+<h3 id="ft-steps">Ordered steps and expected vs observed</h3>
+<div class="ft-tools"><button type="button" class="ft-expand-all">Expand all</button><button type="button" class="ft-collapse-all">Collapse all</button></div>
+<p>Step statuses are <strong>recalculated from imported observations</strong> when an imported record is selected. Otherwise they are UNKNOWN. These are assertion outcomes, not independent verification.</p>
+<ol class="ft-steps">
+{% for step in scenario_view.steps %}
+<li><details class="ft-step"{% if step.status != 'PASS' %} open{% endif %}>
+<summary class="ft-step-line"><strong>{{ step.number }}. {{ step.title }}</strong><span class="ft-signal">{{ step.status if step.status != 'PASS' else 'PASS (recalculated only)' }}</span>
+{% if step.confidence_note %}<span class="ft-chip" title="{{ step.confidence_note }}">⚠ limitation</span>{% endif %}
+<span class="ft-brief">{% for assertion in step.assertions %}{% if assertion.observed_available %}{{ assertion.id }} = {% set js = assertion.observed|tojson %}{{ js if js|length <= 40 else '(large value)' }}{% else %}{{ assertion.id }}: UNKNOWN{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}</span></summary>
+<p class="ft-meta"><code>{{ step.id }}</code> · {{ step.intent }}</p>
+{% if step.confidence_note %}<p class="ft-warning"><strong>Evidence limitation:</strong> {{ step.confidence_note }}</p>{% endif %}
+<div class="ft-pair">
+<div class="ft-cell"><strong>Expected outcome</strong>
+<p>{{ step.expected if step.expected is not none else 'See the individual assertion contract below; no narrative expectation authored.' }}</p></div>
+<div class="ft-cell"><strong>Observed outcome</strong>
+{% if step.assertions %}
+{% for assertion in step.assertions %}
+<p><code>{{ assertion.id }}</code>: <strong>{{ assertion.status }}</strong> — {{ assertion.reason }}</p>
+{% if assertion.observed_available %}<p>{{ cv(assertion.observed) }}</p>
+{% else %}<p>UNKNOWN — no normalized observation supplied.</p>{% endif %}
+{% endfor %}
+{% else %}<p>UNKNOWN — no assertion mapping supplied.</p>{% endif %}
+</div>
+</div>
+<details class="ft-provenance"><summary>Assertion contracts and provenance for step {{ step.number }}</summary>
+<table><thead><tr><th>Assertion ID</th><th>Comparison</th><th>Expected contract / evaluated value</th><th>Observed field</th><th>Outcome</th></tr></thead>
+<tbody>{% for assertion in step.assertions %}<tr>
+<td><code>{{ assertion.id }}</code></td><td>{{ assertion.operation or 'UNKNOWN' }}</td>
+<td>{{ cv(assertion.expected) }}</td>
+<td><code>{{ assertion.observed_field or 'UNKNOWN' }}</code></td>
+<td>{{ assertion.status }}: {{ assertion.reason }}</td>
+</tr>{% endfor %}</tbody></table>
+<h5>Normalized evidence sources</h5>
+{% for field in step.provenance %}
+<p><strong>{{ field.field }}</strong>:
+{% if field.available %}<code>{{ field.source or 'No original field path supplied' }}</code> {{ cv(field.value) }}
+{% else %}UNKNOWN — no normalized observation or source available.{% endif %}</p>
+{% else %}<p>No evidence references supplied.</p>{% endfor %}
+<p>Paths above identify fields within the imported report, not authenticated independent client/server captures. Inspect the full original evidence in the run detail view for source revisions and raw values.</p>
+</details>
+</details>
+</li>
+{% else %}<li>UNKNOWN — no canonical assertions or authored steps supplied.</li>{% endfor %}
+</ol>
+<details class="ft-evidence-group" id="ft-evidence" open><summary><strong>Evidence &amp; provenance</strong> — limitations, uncertainties, cleanup</summary>
+{% if scenario_view.blocking_gaps %}
+<h3>Unverified or blocking claims</h3>
+<ul>{% for gap in scenario_view.blocking_gaps %}<li>{{ gap }}</li>{% endfor %}</ul>
+{% endif %}
+{% if scenario_view.missing_fields %}
+<p class="ft-warning"><strong>Missing normalized observations:</strong> {{ scenario_view.missing_fields|join(', ') }}</p>
+{% endif %}
+{% if scenario_view.warnings %}
+<h3>Evidence uncertainties</h3><ul>{% for warning in scenario_view.warnings %}<li>{{ warning }}</li>{% endfor %}</ul>
+{% endif %}
+<details><summary>Cleanup conditions from specification</summary>
+<ul>{% for note in scenario_view.cleanup %}<li>{{ note }}</li>{% else %}<li>Not specified.</li>{% endfor %}</ul></details>
+</details>
+<script>
+(function(){if(window.__ftStory)return;window.__ftStory=1;document.addEventListener("click",function(e){var t=e.target;if(!t.matches)return;if(t.matches(".ft-expand-all,.ft-collapse-all")){var open=t.classList.contains("ft-expand-all");t.closest(".ft-story").querySelectorAll("details.ft-step").forEach(function(d){d.open=open;});}if(t.matches(".ft-copy")){var pre=t.parentNode.querySelector("pre");if(pre&&navigator.clipboard){navigator.clipboard.writeText(pre.textContent);t.textContent="Copied";}}});})();
+</script>
+</section>
+{% else %}
+<section class="ft-story"><h2>Scenario evidence</h2><p>UNKNOWN — canonical specification unavailable. Existing imported evidence is displayed separately without inferred assertions or verdicts.</p></section>
+{% endif %}
