@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from workbench.server_admin.feature_testing.router import _run_summary
@@ -19,8 +20,8 @@ def test_run_summary_groups_by_run_and_verdict():
 def test_run_details_escape_through_jinja_and_use_existing_results():
     root = Path(__file__).resolve().parents[1]
     html = (root / "gui/templates/feature_testing_run.html").read_text(encoding="utf-8")
-    assert "result.evidence | tojson" in html
+    assert re.search(r"result\.evidence\s*\|\s*tojson", html)
     assert "result.dsp_commit" in html
     main = (root / "gui/templates/feature_testing.html").read_text(encoding="utf-8")
     assert "/feature-testing/run/" in main
-    assert "No test runs imported yet" in main
+    assert "No results imported yet" in main
