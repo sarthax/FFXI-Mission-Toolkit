@@ -119,7 +119,6 @@
         ['Stable step ID','id',input(step.id,120)],
         ['Step title','title',input(step.title,500)],
         ['Expected outcome (UNKNOWN until source-backed)','expected',textarea(step.expected)],
-        ['Evidence limitations','confidence_note',textarea(step.confidence_note)],
       ];
       for (const [caption,key,control] of fields) {
         control.addEventListener('input',()=>{step[key]=control.value;diagnostics();});
@@ -134,13 +133,18 @@
       }
       intent.addEventListener('change',()=>{step.intent=intent.value;diagnostics();});
       grid.append(field('Read-only step intent',intent));
+      const technical=el('details');
+      staticText(technical,'summary','Technical provenance, assertion and observation bindings');
+      const confidence=textarea(step.confidence_note);
+      confidence.addEventListener('input',()=>{step.confidence_note=confidence.value;diagnostics();});
+      technical.append(field('Evidence limitations and unverified catalog candidates',confidence));
       const assertionIds=pickList(spec.assertions.map(a=>a.id),step.assertion_ids);
       assertionIds.addEventListener('change',()=>{step.assertion_ids=selections(assertionIds);diagnostics();});
-      grid.append(field('Linked assertion IDs',assertionIds));
+      technical.append(field('Linked assertion IDs',assertionIds));
       const refs=pickList(spec.observations,step.evidence_refs);
       refs.addEventListener('change',()=>{step.evidence_refs=selections(refs);diagnostics();});
-      grid.append(field('Required canonical observations',refs));
-      li.append(grid);
+      technical.append(field('Required canonical observations',refs));
+      li.append(grid,technical);
       host.append(li);
     });
     renderCatalogSteps();
