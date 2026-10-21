@@ -19,7 +19,7 @@ import sqlite3
 
 from .scenario_handoff import reconstruct_review_draft
 from .scenario_review_workflow import manual_editor_handoff
-from .scenario_readiness_summary import summarize_capture_readiness
+from .scenario_readiness_summary import summarize_capture_readiness, _observations
 from .scenario_identity_readiness import _observation_digest
 
 
@@ -48,6 +48,19 @@ def render_review_html(draft: dict, *, readiness: dict | None = None) -> str:
                {x["step_id"] for x in draft["steps"]}):
         raise ValueError("readiness summary does not match the indexed capture draft")
     readiness_by_step = {s["step_id"]: s for s in readiness["readiness_steps"]}
+    if (not isinstance(readiness.get("source_integrity"), dict)
+            or readiness["source_integrity"].get("independent_capture_bytes_authenticated") is not False
+            or readiness["source_integrity"].get("state") not in {"UNKNOWN", "BLOCKED"}
+            or any(
+                not isinstance(summary.get("missing_observations"), list)
+                or summary.get("readiness_state") not in {"UNKNOWN", "BLOCKED"}
+                or summary["missing_observations"] != [
+                    {**gap, "readiness_state": summary["readiness_state"]}
+                    for gap in _observations(original)
+                ]
+                for original, summary in zip(draft["steps"], readiness["readiness_steps"], strict=True)
+            )):
+        raise ValueError("readiness gaps cannot claim independent readbacks or granted permissions")
     if (readiness.get("approved_for_execution") is not False
             or readiness.get("scenario_developer_handoff", {}).get("automatic_import") is not False
             or readiness.get("scenario_developer_handoff", {}).get("save_allowed") is not False
