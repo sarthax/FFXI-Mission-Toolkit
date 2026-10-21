@@ -341,6 +341,7 @@ def _typed_authoring_projection(
                 "scope": None, "source_refs": [],
             },
             "observed_summary_original": row["observed_summary"],
+            "reviewer_step_decision_original": deepcopy(row["reviewer_step_decision_original"]),
             "original_evidence_refs": deepcopy(row["evidence_refs"]),
             "indexed_evidence_provenance": _indexed_provenance(
                 evidence_map, row["evidence_refs"], integrity["issues"], capture_id),
@@ -418,6 +419,7 @@ def summarize_capture_readiness(
         rows.append({
             "step_id": step["step_id"],
             "observed_summary": step["observed_summary"],
+            "reviewer_step_decision_original": deepcopy(result["reviewer_step_decision"]),
             "evidence_refs": deepcopy(step["evidence_refs"]),
             "identity_matches": deepcopy(result["identity_candidates"]),
             "source_record_exact_not_verified": [
