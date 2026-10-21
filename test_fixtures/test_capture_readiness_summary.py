@@ -67,15 +67,15 @@ def test_source_record_exact_is_not_independently_verified():
     assert row["original_evidence_refs"] == draft["steps"][0]["evidence_refs"]
     assert [x["evidence_ref"] for x in row["indexed_evidence_provenance"]] == row["original_evidence_refs"]
     for provenance in row["indexed_evidence_provenance"]:
-        original = draft["evidence_map"][provenance["evidence_ref"]]
-        assert provenance["capture_id"] == original["capture_id"]
-        assert provenance["source_table"] == original["table"]
-        assert provenance["original_row_key"] == original["row_key"]
-        assert provenance["source_locator_status"] == original["source"]["status"]
+        source_row = draft["evidence_map"][provenance["evidence_ref"]]
+        assert provenance["capture_id"] == source_row["capture_id"]
+        assert provenance["source_table"] == source_row["table"]
+        assert provenance["original_row_key"] == source_row["row_key"]
+        assert provenance["source_locator_status"] == source_row["source"]["status"]
         assert provenance["independent_source_authentication"] is False
-        assert len(provenance["source_file_claims"]) == len(original["source"]["references"])
+        assert len(provenance["source_file_claims"]) == len(source_row["source"]["references"])
         for claim, locator in zip(provenance["source_file_claims"],
-                                  original["source"]["references"], strict=True):
+                                  source_row["source"]["references"], strict=True):
             assert claim["source_filename"] == locator["filename"]
             assert claim["locator_sha256_claim"] == locator["source_sha256"]
             assert claim["parser_name_claim"] == (
@@ -271,7 +271,8 @@ def test_unrecognized_parser_or_capture_ingest_remains_unknown():
     projected = result["scenario_developer_handoff"]["read_only_projection"]
     matching = [x for x in projected["steps"][0]["indexed_evidence_provenance"]
                 if x["evidence_ref"] == ref][0]
-    parser = matching["source_file_claims"][0]
+    parser = next(x for x in matching["source_file_claims"]
+                  if x["parser_version_claim"] == "SYNTHETIC_FUTURE_UNSUPPORTED")
     assert parser["parser_version_claim"] == "SYNTHETIC_FUTURE_UNSUPPORTED"
     assert parser["parser_support"] == "UNRECOGNIZED_OR_UNSUPPORTED"
     assert parser["decoder_version"] is None
