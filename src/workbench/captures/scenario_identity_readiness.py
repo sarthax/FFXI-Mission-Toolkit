@@ -17,7 +17,8 @@ from workbench.captures.scenario_review_workflow import _check
 
 _SHA = re.compile(r"^[a-f0-9]{40}$", re.I)
 _HASH = re.compile(r"^[a-f0-9]{64}$", re.I)
-_SUPPORTED = {"npc": "npc", "item": "item", "key_item": "keyitem",
+_SUPPORTED = {"npc": "npc", "npc_name": "npc", "item": "item",
+              "item_name": "item", "key_item": "keyitem",
               "zone": "zone", "event": "event", "dialog": "dialog"}
 _CATALOG_KIND = {"npc", "item", "keyitem", "zone"}
 _READBACKS = {
@@ -119,7 +120,11 @@ def _choices_for_binding(binding: dict, snapshot: dict) -> tuple[list[dict], lis
                 continue
         elif zone is not None and scope_zone is not None and not _match(scope_zone, zone):
             continue
-        if any(_match(identifier, v) for v in alternatives):
+        if binding["kind"] in {"npc_name", "item_name"}:
+            if any(isinstance(v, str) and isinstance(row.get("name"), str)
+                   and v.casefold() == row["name"].casefold() for v in alternatives):
+                weak.append(row)
+        elif any(_match(identifier, v) for v in alternatives):
             exact.append(row)
         elif any(isinstance(v, str) and isinstance(row.get("name"), str)
                  and v.casefold() == row["name"].casefold() for v in alternatives):
@@ -221,10 +226,20 @@ def _repeated(draft: dict, peers: list[dict], accepted: dict) -> list[dict]:
     """Variations across captures, never silently a gameplay regression."""
     changes = []
     originals = draft["steps"]
+    seen_peer_ids = set()
+    def revisions(s: dict, source: dict) -> set[tuple]:
+        versions = set()
+        for ref in s["evidence_refs"]:
+            for locator in source["evidence_map"][ref]["source"].get("references", []):
+                manifest = locator.get("source_manifest") or {}
+                versions.add((locator.get("source_sha256"), manifest.get("parser_name"),
+                              manifest.get("parser_version")))
+        return versions
     for peer in peers:
         _check(peer)
-        if peer["capture_id"] == draft["capture_id"]:
+        if peer["capture_id"] == draft["capture_id"] or peer["capture_id"] in seen_peer_ids:
             raise ValueError("duplicate capture ID in repeated observations")
+        seen_peer_ids.add(peer["capture_id"])
         for left in originals:
             for right in peer["steps"]:
                 if left["lane"] != right["lane"] or not _match(left["zone_db"], right["zone_db"]):
@@ -250,7 +265,11 @@ def _repeated(draft: dict, peers: list[dict], accepted: dict) -> list[dict]:
                         "field": kind, "recorded_values": [deepcopy(a[0]), deepcopy(b[0])],
                         "evidence_refs": [list(left["evidence_refs"]), list(right["evidence_refs"])],
                         "scope": {"zone_db": left["zone_db"], "npc_recorded_id": npc(left)},
-                        "comparability": "PRECONDITIONS_AND_REVISION_NOT_ESTABLISHED",
+                        "comparability": (
+                            "SOURCE_OR_PARSER_REVISION_DIFFERENT"
+                            if revisions(left, draft) != revisions(right, peer)
+                            else "SOURCE_REVISIONS_INDEXED_PRECONDITIONS_NOT_ESTABLISHED"
+                        ),
                     })
                     if len(changes) >= 100:
                         return changes
@@ -286,7 +305,8 @@ def assess_evidence_readiness(draft: dict, *, catalog_snapshots: dict | None = N
     oracle_by_id = {x["step_id"]: x for x in oracle_rows if isinstance(x, dict) and "step_id" in x}
     bindings = {b["binding_id"] for s in draft["steps"] for b in s["bindings"]}
     steps = {s["step_id"] for s in draft["steps"]}
-    if (len(bindings) != sum(len(s["bindings"]) for s in draft["steps"])
+    if (len(proof_by_id) != len(proofs) or len(oracle_by_id) != len(oracle_rows)
+            or len(bindings) != sum(len(s["bindings"]) for s in draft["steps"])
             or set(catalogs) - bindings or set(proof_by_id) - bindings
             or set(oracle_by_id) - steps):
         raise ValueError("unknown or duplicated evidence reference in correlation input")
