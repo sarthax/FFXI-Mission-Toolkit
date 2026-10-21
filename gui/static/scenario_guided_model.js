@@ -156,6 +156,74 @@
     return 'Loaded revision ' + revision + (dirty ? ' · unsaved changes' : ' · no changes');
   }
 
+  function emptyHandoffDraft() {
+    return {
+      schema_version: 1, feature_id:'', case_id:'', name:'',
+      runner:'unassigned', execution_status:'design_only',
+      purpose:'UNKNOWN — author a source-backed purpose',
+      rationale:'UNKNOWN — source context requires independent review',
+      preconditions:[], observations:[], assertions:[], cleanup:[],
+      behavior:{given:[],when:[],then:['UNKNOWN — no independent normative oracle']},
+      steps:[],
+      authoring:{state:'draft',execution_policy:'read_only',
+        evidence_provenance:'unverified_manual_authoring',
+        blocking_gaps:['No reviewed oracle, complete observations or independent readback supplied'],
+        review_required:true}
+    };
+  }
+  function draftFromCoverage(context) {
+    if (!context || context.contract !== 'coverage_behavior_reference_v1' ||
+        context.context_only !== true || context.execution_enabled !== false ||
+        context.review_required !== true || context.expected_oracle !== 'UNKNOWN' ||
+        !/^[A-Za-z0-9][A-Za-z0-9_-]{0,119}$/.test(context.feature_id) ||
+        !/^[A-Za-z0-9][A-Za-z0-9_-]{0,119}$/.test(context.behavior_ref))
+      throw Error('Unsupported or untrusted coverage context');
+    const next=emptyHandoffDraft();
+    next.feature_id=context.feature_id;
+    next.name=('DRAFT — '+context.label).slice(0,120);
+    next.rationale=('UNVERIFIED declared test intent: '+context.feature_id+'/'+context.behavior_ref+
+      '; '+context.source_pointer+'; source revision UNPINNED; NOT a validated requirement').slice(0,1000);
+    next.authoring.blocking_gaps.push('Coverage reference '+context.behavior_ref+
+      ' is a declared case intent only; source and normative oracle UNKNOWN');
+    return next;
+  }
+  function draftFromEvidence(review, selected) {
+    if (!review || review.contract!=='editor_evidence_suggestions_v1' ||
+        review.required_confirmation!==true || review.original_capture_authenticated!==false ||
+        review.execution_enabled!==false ||
+        !/^[a-f0-9]{64}$/.test(review.projection_sha256) ||
+        !Array.isArray(selected) || !Array.isArray(review.steps))
+      throw Error('Unreviewed or unsupported evidence suggestion');
+    const next=emptyHandoffDraft();
+    next.name='DRAFT — captured observations (unverified)';
+    next.rationale=('Unverified indexed capture '+review.capture_id+
+      '; projection SHA-256 '+review.projection_sha256+
+      '; original capture bytes NOT independently authenticated.').slice(0,1000);
+    next.authoring.evidence_provenance='unverified_indexed_capture';
+    next.authoring.blocking_gaps.push('Captured behavior is OBSERVED ONLY; source fingerprints are indexed, not independently authenticated');
+    const ids=new Set();
+    for(const entry of selected){
+      if (!entry || typeof entry.id!=='string' || ids.has(entry.id) ||
+          !/^[A-Za-z0-9][A-Za-z0-9_-]{0,119}$/.test(entry.id))
+        throw Error('Duplicate or invalid selected evidence step');
+      ids.add(entry.id);
+      const original=review.steps.find(x=>x.step_id===entry.id);
+      if(!original || original.decision==='REJECT' || original.decision==='PENDING' ||
+          entry.confirmed!==true || typeof entry.title!=='string' || !entry.title.trim())
+        throw Error('Each chosen evidence proposal requires explicit confirmation and review');
+      const note=('UNVERIFIED indexed capture '+review.capture_id+' SHA-256 '+review.projection_sha256+
+        '; source step '+original.step_id+'; observed refs '+original.evidence_refs.join(', ')+
+        '; candidate identities NOT verified; no normative oracle').slice(0,1000);
+      next.steps.push({
+        id:original.step_id,title:entry.title.trim().slice(0,500),
+        intent:'observation',expected:'UNKNOWN — independently sourced expected outcome required',
+        assertion_ids:[], evidence_refs:[],confidence_note:note
+      });
+    }
+    if(!next.steps.length)throw Error('Confirm at least one supported, reviewed observation');
+    return next;
+  }
+
   function parseAdvanced(text) {
     const parsed = JSON.parse(text);
     if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object')
@@ -166,5 +234,5 @@
     return parsed;
   }
 
-  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, referenceIssues, parseAdvanced};
+  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, emptyHandoffDraft, draftFromCoverage, draftFromEvidence, referenceIssues, parseAdvanced};
 });
