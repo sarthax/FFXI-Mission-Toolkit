@@ -287,6 +287,12 @@ def test_unified_editor_has_one_coverage_start_and_manual_evidence_binding_revie
     assert "async function resolveCoverageContext" in js
     assert "async function loadContextRef" not in js
     assert js.count("await resolveCoverageContext();")==1
+    begin=js[js.index("  let coverageBeginPending=false;"):js.index("  function renderEvidenceSuggestions")]
+    assert "const latest=await call(ref,'GET')" in begin
+    assert "M.coverageContextChanged(original,checked)" in begin
+    assert "installIncompleteDraft(" in begin
+    assert "coverageBeginPending" in begin
+    assert "finally" in begin
     assert "sd-context-use" in js
     assert "sd-preview-incomplete" in js
     assert "M.handoffReplacementIssue(" in js
