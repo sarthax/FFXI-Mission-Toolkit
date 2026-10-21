@@ -316,7 +316,7 @@ function fakeNode(tag,text='') {
 function fakeRender(draft,report) {
   const host=fakeNode('section');
   const context={
-    spec:draft,V,
+    spec:draft,V,report,
     $:key=>key==='sd-contract-v2'?host:null,
     el:tag=>fakeNode(tag),
     staticText:(parent,tag,value)=>{
