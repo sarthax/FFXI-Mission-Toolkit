@@ -308,6 +308,7 @@
   $('sd-apply-json').addEventListener('click',()=>switchMode('guided'));
   $('sd-new').addEventListener('click',()=>{
     activeHandoff=null;spec=M.fresh();mode='guided';baseline=null;setSourceDetail(null,null);$('sd-revision').value=0;
+    $('sd-context-use').disabled=!coverageContext;
     $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
     render();show('Created a synthetic, design-only canonical draft.');
   });
