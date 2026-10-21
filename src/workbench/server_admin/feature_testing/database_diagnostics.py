@@ -15,25 +15,42 @@ def inventory_snapshot(charid: int) -> dict:
     database = os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_NAME")
     if not all((user, password, database)):
         return {"configured": False, "charid": charid, "items": []}
-    try:
-        import pymysql
-    except ImportError as exc:
-        raise RuntimeError("optional PyMySQL dependency not installed") from exc
     port = int(os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_PORT", "3306"))
     if not 1 <= port <= 65535:
         raise ValueError("invalid database port")
-    with pymysql.connect(host="127.0.0.1", port=port, user=user, password=password,
-                         database=database, connect_timeout=2, read_timeout=2,
-                         write_timeout=2, autocommit=False,
-                         cursorclass=pymysql.cursors.DictCursor) as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("SET TRANSACTION READ ONLY")
-            cursor.execute("START TRANSACTION")
-            cursor.execute(
-                "SELECT location, slot, itemId, quantity FROM char_inventory WHERE charid = %s ORDER BY location, slot LIMIT 100",
-                (charid,),
-            )
-            items = cursor.fetchall()
+    conn, cursor = _open(user, password, database, port)
+    try:
+        cursor.execute("SET TRANSACTION READ ONLY")
+        cursor.execute("START TRANSACTION")
+        cursor.execute(
+            "SELECT location, slot, itemId, quantity FROM char_inventory WHERE charid = %s ORDER BY location, slot LIMIT 100",
+            (charid,),
+        )
+        items = cursor.fetchall()
         conn.rollback()
+    finally:
+        cursor.close()
+        conn.close()
     return {"configured": True, "charid": charid, "items": items,
             "limit": 100, "snapshot_kind": "persisted_db_not_live_memory"}
+
+
+def _open(user, password, database, port):
+    """Connect with PyMySQL when present, else the MySQL Connector the Toolkit already ships."""
+    try:
+        import pymysql
+    except ImportError:
+        pymysql = None
+    if pymysql is not None:
+        conn = pymysql.connect(host="127.0.0.1", port=port, user=user, password=password,
+                               database=database, connect_timeout=2, read_timeout=2,
+                               write_timeout=2, autocommit=False,
+                               cursorclass=pymysql.cursors.DictCursor)
+        return conn, conn.cursor()
+    try:
+        import mysql.connector
+    except ImportError as exc:
+        raise RuntimeError("no MySQL driver installed (PyMySQL or mysql-connector-python)") from exc
+    conn = mysql.connector.connect(host="127.0.0.1", port=port, user=user, password=password,
+                                   database=database, connection_timeout=2, autocommit=False)
+    return conn, conn.cursor(dictionary=True)

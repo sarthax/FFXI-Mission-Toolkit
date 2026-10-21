@@ -104,6 +104,70 @@ def test_inventory_requires_db_config_and_never_guesses_credentials(monkeypatch)
     assert inventory_snapshot(101) == {"configured": False, "charid": 101, "items": []}
 
 
+def _fake_driver_env(monkeypatch):
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS", "101")
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DB_USER", "ro")
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DB_PASSWORD", "pw")
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DB_NAME", "dspdb")
+
+
+class _FakeCursor:
+    def __init__(self, log):
+        self.log = log
+
+    def execute(self, sql, params=None):
+        self.log.append(sql.split()[0] + " " + sql.split()[1])
+
+    def fetchall(self):
+        return [{"location": 0, "slot": 1, "itemId": 536, "quantity": 1}]
+
+    def close(self):
+        self.log.append("cursor.close")
+
+
+class _FakeConn:
+    def __init__(self, log):
+        self.log = log
+
+    def cursor(self, **kwargs):
+        return _FakeCursor(self.log)
+
+    def rollback(self):
+        self.log.append("rollback")
+
+    def close(self):
+        self.log.append("conn.close")
+
+
+def test_inventory_falls_back_to_mysql_connector_when_pymysql_missing(monkeypatch):
+    import sys, types
+    from workbench.server_admin.feature_testing.database_diagnostics import inventory_snapshot
+    _fake_driver_env(monkeypatch)
+    log = []
+    connector = types.ModuleType("mysql.connector")
+    connector.connect = lambda **kw: log.append("connect " + kw["host"]) or _FakeConn(log)
+    package = types.ModuleType("mysql")
+    package.connector = connector
+    monkeypatch.setitem(sys.modules, "pymysql", None)  # forces ImportError
+    monkeypatch.setitem(sys.modules, "mysql", package)
+    monkeypatch.setitem(sys.modules, "mysql.connector", connector)
+    result = inventory_snapshot(101)
+    assert result["configured"] is True and result["items"][0]["itemId"] == 536
+    assert log[:4] == ["connect 127.0.0.1", "SET TRANSACTION", "START TRANSACTION", "SELECT location,"]
+    assert log[-3:] == ["rollback", "cursor.close", "conn.close"]
+
+
+def test_inventory_reports_missing_driver_as_runtime_error(monkeypatch):
+    import sys
+    from workbench.server_admin.feature_testing.database_diagnostics import inventory_snapshot
+    _fake_driver_env(monkeypatch)
+    monkeypatch.setitem(sys.modules, "pymysql", None)
+    monkeypatch.setitem(sys.modules, "mysql", None)
+    monkeypatch.setitem(sys.modules, "mysql.connector", None)
+    with pytest.raises(RuntimeError, match="no MySQL driver"):
+        inventory_snapshot(101)
+
+
 def test_inventory_requires_gateway_auth_before_character_lookup(monkeypatch):
     monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS", "101")
     monkeypatch.delenv("MISSION_TOOLKIT_SUPERVISOR_TOKEN", raising=False)
