@@ -1,9 +1,10 @@
 # Issue #1262 — capture evidence to manual Scenario Developer draft handoff
 
-Status: **synthetic-only, stacked integration prototype**, no live-client use. Depends on
-[#1265](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1265) (indexed
-OBSERVED preview). Scenario schema [#1263](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1263)
-remains a proposed contract, not an authorized executable schema.
+Status: **synthetic-only, isolated draft PR #1271**, no live-client use.
+Indexed normalization [#1265](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1265)
+and optional BDD schema [#1263](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1263)
+are merged. The accepted schema validates complete specifications; it does **not**
+authorize converting capture observations into expectations, assertions, or executable tests.
 Parent [#1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197);
 planning [#1258](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1258).
 
@@ -67,7 +68,7 @@ never changes source references or approval gates. `review_complete` only
 means the candidate labels were considered. It **never** grants permission to
 save an executable scenario or establishes an expected gameplay oracle.
 
-## #1263 canonical schema projection (blocking contract)
+## Accepted #1263 canonical schema projection (blocking contract)
 
 `canonical_specification_seed` mirrors proposed optional fields
 `purpose`, `rationale`, `behavior.given/when/then`, `steps[].id/title/intent/
@@ -112,7 +113,7 @@ candidate binding is accepted.
 4. **Temporal/causal constraints:** ambiguous zone, contradictory labels,
    independent stream clocks and missing/incomplete source tables remain
    blockers. The existing grouping is a review heuristic.
-5. **Schema/editor/importer:** #1263 must first establish a reviewed contract;
+5. **Schema/editor/importer:** #1263 is merged but the seed is still incomplete;
    #1202 must provide a provenance-preserving evidence import handshake;
    #1261 owns UI and save workflow. This prototype does not edit those files.
 6. **Bounded output:** max 100 proposed steps; overflow is counted and
@@ -122,3 +123,80 @@ candidate binding is accepted.
 No real client captures, DAT data, server writes, GM commands, bot controls,
 live DB access, or gameplay validation were used. CI is synthetic software
 validation only, not independent gameplay acceptance.
+
+## Offline reviewer workflow extension (PR #1271, current slice)
+
+**Entry point (read-only, local indexed database):**
+
+```powershell
+python -m workbench.captures.scenario_review_offline --database "C:\\local\\capture-index.sqlite" --capture-id 1 --output "C:\\local\\capture-review.html"
+```
+
+This creates one **offline HTML file**, not a Workbench route. Keep the file
+private: it contains indexed actor/item/packet metadata and physical source
+filename/hash pointers. The source index is opened with SQLite
+`mode=ro` and `PRAGMA query_only=ON`; only the expressly requested HTML
+artifact is written. No raw capture is copied.
+
+The review page provides source-local timeline sections (not a fabricated
+cross-source chronology), explicit confidence/uncertainty, source reference
+detail (filename, indexed hash, exact row key, original line/byte span,
+parser name/version, packet metadata and clock basis), and candidate
+inter-source groups. A fixed allowlist of existing indexed parser fields
+(`recorded_metadata`) displays event opcode/direction/option/message,
+EventView packet class and MesNum, item/KI identifiers, and raw packet
+opcode/injection/block markers. Raw packet bytes and opaque structured
+payload JSON are never copied into the review export. A grouping requires the same exact recorded zone label.
+Where an explicit NPC/entity field also matches, the relationship still says
+**INFERRED**, `UNVERIFIED_CROSS_SOURCE` and `UNPROVEN` causality. Where
+only the zone label agrees, it says `MATCHING_ZONE_LABEL_ONLY`. Neither
+is a proof of the same entity, causation, transaction completion, or order.
+
+Reviewers make explicit **ACCEPT / EDIT / REJECT** decisions independently
+for each proposed step summary and each proposed ID/identity binding. The
+original observed summary, source identifier, hash and row provenance are
+never mutated; the edited value/title is stored alongside the source.
+All decisions require a note, and missing decisions remain PENDING. The
+"Export design-only review JSON" control exports an explicit offline
+`offline_capture_review_decisions_v1_NONCANONICAL` envelope and the
+original immutable projected evidence bundle. Export is a browser download,
+not a database write, approval, editor save or execution.
+
+The local replayer
+`scenario_review_workflow.replay_offline_review(original_draft, json_payload)`
+verifies the base projection checksum *and equality of the original
+observation bundle* before applying any submitted decisions through
+`apply_binding_decisions` and `apply_step_decisions`. The checksum detects
+changes to the **indexed projection**; it does not attest original physical
+source bytes or independent client/gameplay observations. A tampered
+verdict, source reference, runner, expected oracle or extra field fails
+closed. Fully reviewed candidates remain **manual authoring required**,
+`UNKNOWN`, `normative_expected=null`, and `execution_enabled=false`.
+
+**Provisional Given/When/Then:** `behavior_preview` proposes only a
+description of what was recorded/reviewed. `THEN` remains normative
+`UNKNOWN`. The accepted canonical shape is mirrored in
+`canonical_specification_seed`, but required feature/case IDs, independent
+observations and assertions must still be authored and verified. No attempt
+is made to force an invalid source into a valid schema using fabricated
+IDs or oracles.
+
+**Continue in Scenario Developer contract:**
+`manual_editor_handoff(...).continue_in_scenario_developer` advertises
+`destination="Scenario Developer (#1261)"`, `route="/scenario-developer"`,
+`status="MANUAL_HANDOFF_ONLY"`, `automatic_import=false`,
+`payload_kind="UNTRUSTED_OBSERVED_GUIDANCE"` and `no_execution=true`.
+A user must open Agent B's separate editor manually, create a new design-only
+case and provide independently sourced expectations, case identity, bounded
+observation/assertion bindings, preconditions and cleanup. This JSON is
+**not an existing POST payload** for Agent B's validator, draft saver,
+evidence importer or headless runner. There is deliberately no cross-surface
+session transfer, injected query parameter or auto-save.
+
+**Acceptance tests:** `python test_fixtures/test_capture_reviewer_workflow.py`
+runs synthetic, read-only reconstruction, timeline grouping, contradictory
+source identities, orphan/ambiguous evidence, manual review roundtrip,
+original evidence immutability, unsafe bundle tampering, HTML escaping and
+offline CLI DB byte preservation. Registered in Workbench Regression.
+Actual browser click-through and real capture semantics remain **local
+operator acceptance**, not CI claims.
