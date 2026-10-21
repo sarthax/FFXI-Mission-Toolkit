@@ -190,7 +190,8 @@ document.getElementById('export').addEventListener('click', () => {
     const a = document.createElement('a');
     a.href=url;a.download='capture-'+String(ORIGINAL.capture_id)+'-design-only-review.json';
     document.body.appendChild(a);a.click();a.remove();
-    URL.revokeObjectURL(url);
+    // Delay revocation so browsers can finish initiating the local download.
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
     status.textContent='Exported design-only review. No scenario saved or executed.';
   } catch (err) {status.textContent=err.message;}
 });
@@ -213,9 +214,12 @@ def main(argv: list[str] | None = None) -> None:
         raise ValueError("output must not overwrite the capture index")
     # read-only SQLite URI prevents even accidentally creating capture tables.
     uri = database.as_uri() + "?mode=ro"
-    with sqlite3.connect(uri, uri=True) as con:
+    con = sqlite3.connect(uri, uri=True)
+    try:
         con.execute("PRAGMA query_only=ON")
         draft = reconstruct_review_draft(con, opts.capture_id)
+    finally:
+        con.close()
     content = render_review_html(draft)
     if not output.parent.is_dir():
         raise ValueError("output parent must exist")
