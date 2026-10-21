@@ -116,16 +116,15 @@ def project_domain_case(staging: dict, case_id: str) -> dict:
         if citation.get("sha256") is not None:
             raise ValueError("source content digest in staging is not independently attested")
         unique = tuple(citation[k] for k in mandatory)
+        # Verify EVERY occurrence before deduplicating. The same canonical
+        # source tuple can appear at case, oracle and step scope, but a later
+        # copy could carry a forged URL or an unsupported metadata claim.
+        # Returning a cached ref before validation silently accepted it.
         try:
-            if unique in source_map:
-                return source_map[unique]
+            hash(unique)
         except TypeError as exc:
             raise ValueError("unhashable staged source reference") from exc
-        encoded = json.dumps(unique, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
-        ref = "src_" + sha256(encoded.encode("utf-8")).hexdigest()[:24]
-        if any(s["ref"] == ref for s in canonical):
-            raise ValueError("staging source-ref collision")
-        if citation["commit"].lower() != pinned_revision.lower():
+        if not isinstance(citation["commit"], str) or citation["commit"].lower() != pinned_revision.lower():
             raise ValueError("staged citation commit conflicts with declared DSP revision")
         repo = citation["repository"]
         if repo != "sarthax/darkstar-to-valhalla":
@@ -136,6 +135,8 @@ def project_domain_case(staging: dict, case_id: str) -> dict:
                          str(citation["line_end"]))
         if citation.get("url") != canonical_url:
             raise ValueError("staged source URL conflicts with its pinned file span")
+        encoded = json.dumps(unique, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+        ref = "src_" + sha256(encoded.encode("utf-8")).hexdigest()[:24]
         projected = {
             "ref": ref, "repository": citation["repository"],
             "path": citation["path"], "line_start": citation["line_start"],
@@ -145,6 +146,13 @@ def project_domain_case(staging: dict, case_id: str) -> dict:
             "sha256": None,
         }
         _validate_sources([projected])
+        # Full citation checks must also run for repeated references. Only
+        # after those checks may an exact repository/path/revision/span reuse
+        # its deterministic source id; original citation copies are retained.
+        if unique in source_map:
+            return source_map[unique]
+        if any(s["ref"] == ref for s in canonical):
+            raise ValueError("staging source-ref collision")
         if len(canonical) >= 20:
             raise ValueError("more than 20 distinct v2 sources; human split required")
         canonical.append(projected)
