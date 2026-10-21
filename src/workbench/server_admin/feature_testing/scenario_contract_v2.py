@@ -159,8 +159,10 @@ def _validate_oracles(items: object, sources: dict[str, dict], assertions: set[s
         if kind == "unknown":
             if refs or confidence != "unknown":
                 raise ValueError("unknown v2 oracle cannot claim source certainty")
-        if kind in {"source_rule", "source_literal"} and not refs:
-            raise ValueError("source-backed v2 oracle requires cited source")
+        if kind in {"source_rule", "source_literal"} and not any(
+            sources[r]["classification"] in {"dsp_source", "toolkit_code"} for r in refs
+        ):
+            raise ValueError("source-backed v2 oracle requires normative code source, not only captured observations")
         if confidence == "source_cited" and not (
             kind in {"source_rule", "source_literal"} and
             _pinned_source(refs, sources, {"dsp_source", "toolkit_code"})
