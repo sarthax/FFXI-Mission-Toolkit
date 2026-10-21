@@ -166,5 +166,43 @@
     return parsed;
   }
 
-  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, referenceIssues, parseAdvanced};
+  const CONTEXT_PATH = /^\/feature-testing\/coverage\/context\/([A-Za-z0-9_-]{1,120})\/([A-Za-z0-9_-]{1,120})$/;
+
+  // Accept only the same-origin, read-only coverage reference path; anything else is ignored.
+  function contextRefPath(raw) {
+    return typeof raw === 'string' && CONTEXT_PATH.test(raw) ? raw : null;
+  }
+
+  // Context is a non-normative reference: it names a declared source case and
+  // nothing else. No assertion, observation, oracle or ID is taken from it.
+  function fromContext(ctx, featureIds) {
+    const bad = why => { throw Error('Context reference refused: ' + why); };
+    if (!ctx || typeof ctx !== 'object') bad('not an object');
+    if (ctx.contract !== 'coverage_behavior_reference_v1') bad('unknown contract');
+    if (ctx.context_only !== true || ctx.design_only !== true || ctx.review_required !== true ||
+        ctx.auto_populate_allowed !== false || ctx.auto_save_allowed !== false ||
+        ctx.execution_enabled !== false) bad('reference does not declare a read-only design-only contract');
+    if (typeof ctx.feature_id !== 'string' || !(featureIds || []).includes(ctx.feature_id))
+      bad('feature is not a known editor domain');
+    if (!/^[A-Za-z0-9_-]{1,100}$/.test(String(ctx.behavior_ref))) bad('invalid behavior reference');
+    const label = typeof ctx.label === 'string' ? ctx.label.slice(0, 120) : '';
+    const next = fresh();
+    const caseId = 'SYNTH-' + ctx.behavior_ref + '-DRAFT';
+    next.feature_id = ctx.feature_id;
+    next.case_id = caseId;
+    next.name = label || caseId;
+    next.steps[0].id = caseId + '-S01';
+    next.purpose = 'UNKNOWN — enter a source-backed purpose';
+    next.rationale = 'Started from declared source case ' + ctx.behavior_ref +
+      ' (' + ctx.source_pointer + '; source revision ' + ctx.source_revision +
+      '). A declared test intent, not an accepted requirement.';
+    next.authoring.evidence_provenance = 'context_reference_not_observed';
+    next.authoring.blocking_gaps = [
+      'Declared source case ' + ctx.behavior_ref + ' is context only; operator must author and review all behavior, observations, assertions and oracles',
+      'Case ID is a placeholder; choose a new unique ID before saving'
+    ];
+    return next;
+  }
+
+  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, referenceIssues, parseAdvanced, contextRefPath, fromContext};
 });

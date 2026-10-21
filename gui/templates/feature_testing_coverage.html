@@ -82,7 +82,7 @@
 </div>
 <details class="cov-behavior" open>
 <summary>Declared behaviors and authoring gaps — {{ feature.behavior_drilldown|length }} source case intent(s), NOT verified Behavior Trace nodes</summary>
-<p class="cov-muted">Each candidate below is grounded in a declared test-readiness case. A case title is not an authoritative requirement or a verified graph relationship. The editor currently cannot auto-prefill <code>context_ref</code>; the link opens a design-only editor and preserves a read-only source reference for Agent B's integration.</p>
+<p class="cov-muted">Each candidate below is grounded in a declared test-readiness case. A case title is not an authoritative requirement or a verified graph relationship. The link opens the editor with an unsaved, design-only draft that carries only the case label and a read-only source pointer; you still author the case ID, outcomes and oracles.</p>
 <div class="cov-categories" aria-label="Category inventory, not coverage percentages">
 {% for cat in feature.category_gaps %}
 <span class="{{ 'cov-gap' if cat.missing_category else '' }}">{{ cat.category|title }} — declared {{ cat.declared }}, specified {{ cat.specified }}, imported {{ cat.observed }}, independently verified {{ cat.verified }}{% if cat.missing_category %} · NO DECLARED SCENARIO (not an invented requirement){% endif %}</span>
