@@ -240,7 +240,7 @@
     const pins=detail('fingerprints','Engine and base-spec fingerprint claims');
     for(const [key,v] of Object.entries(projection.fingerprint_claims))
       staticText(pins,'p',key+': '+(v===null?'UNKNOWN':String(v))+' (declared only)');
-    const cases=detail('sources','Case-level source provenance ('+projection.sources.length+')');
+    const cases=detail('sources','Declared source registry — case/step attribution unassigned ('+projection.sources.length+')');
     if(!projection.sources.length)staticText(cases,'p','UNKNOWN — no pinned source records');
     for(const src of projection.sources) {
       const d=el('div','sd-preview-step');
@@ -259,7 +259,7 @@
       staticText(d,'p','Source refs: '+(b.sources.map(x=>x.ref).join(', ')||'NONE'));
       bindings.append(d);
     }
-    const oracles=detail('oracles','Normative oracle metadata ('+projection.oracles.length+')');
+    const oracles=detail('oracles','Oracle claims / expected-value candidates ('+projection.oracles.length+')');
     if(!projection.oracles.length)staticText(oracles,'p','UNKNOWN — no accepted oracle metadata');
     for(const o of projection.oracles) {
       staticText(oracles,'p',o.assertion_id+': '+o.type+' / '+o.confidence+' — '+o.state+
@@ -267,8 +267,10 @@
     }
     for(const step of projection.steps) {
       const d=detail('step:'+step.id,'Step '+step.id+' — '+step.attribution);
-      staticText(d,'p','Oracle-linked citations (not authenticated): '+
-        (step.sources.map(x=>x.repository+'/'+x.path+':'+x.line_range).join(' | ')||'NONE'));
+      staticText(d,'p','Direct step-source citations: '+
+        (step.sources.map(x=>x.repository+'/'+x.path+':'+x.line_range).join(' | ')||'UNKNOWN / UNASSIGNED'));
+      staticText(d,'p','Oracle-linked expected-value candidate sources (NOT step attribution or approval): '+
+        (step.oracle_citations.map(x=>x.repository+'/'+x.path+':'+x.line_range).join(' | ')||'NONE'));
       staticText(d,'p','Candidate capability: '+step.capability+'; operation class: '+step.operation_class);
       staticText(d,'p','Required permissions (NOT GRANTED): '+
         (step.permissions.join(', ')||'NONE DECLARED')+
