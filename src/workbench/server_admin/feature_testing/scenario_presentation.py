@@ -121,6 +121,10 @@ def scenario_presentation(spec: dict | None, reevaluation: dict | None = None) -
             a["id"] for step in steps for a in step["assertions"]
             if a["id"] in definitions
         }),
+        "unmapped_assertions": sorted(set(definitions) - {
+            a["id"] for step in steps for a in step["assertions"]
+            if a["id"] in definitions
+        }),
         "blocking_gaps": authoring.get("blocking_gaps", []),
         "authoring_state": authoring.get("state", "unspecified"),
         "review_required": authoring.get("review_required", True),
