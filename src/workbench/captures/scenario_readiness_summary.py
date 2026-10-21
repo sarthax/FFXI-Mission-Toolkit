@@ -82,7 +82,10 @@ def _integrity(draft: dict, expected_projection: str | None,
             if not isinstance(claimed, str) or not _SHA256.fullmatch(claimed):
                 problems.append({"code": "SOURCE_DIGEST_UNPINNED", "severity": "UNKNOWN",
                                  "ref_id": ref, "reason": "No well-formed indexed source digest"})
-            elif not isinstance(manifest, dict) or manifest.get("sha256") != claimed:
+            elif not isinstance(manifest, dict):
+                problems.append({"code": "SOURCE_MANIFEST_UNAVAILABLE", "severity": "UNKNOWN",
+                                 "ref_id": ref, "reason": "No source manifest to compare with indexed locator digest"})
+            elif manifest.get("sha256") != claimed:
                 problems.append({"code": "SOURCE_MANIFEST_DIGEST_MISMATCH", "severity": "BLOCKED",
                                  "ref_id": ref, "reason": "Indexed locator and recorded source manifest disagree"})
     for entry in steps:
