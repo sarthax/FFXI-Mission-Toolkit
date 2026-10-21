@@ -24,7 +24,7 @@
       revision:value(s.revision),line_range:s.line_start==null?'UNKNOWN':String(s.line_start)+'–'+String(s.line_end),
       classification:value(s.classification),digest:value(s.sha256),
       digest_state:s.sha256&&s.revision?'DECLARED / NOT INDEPENDENTLY REHASHED':'UNKNOWN / UNHASHED',
-      attribution:'CASE-LEVEL SOURCE (not implicitly a step source)'
+      attribution:'DECLARED SOURCE REGISTRY — ATTRIBUTION UNASSIGNED (not an explicit case or step citation)'
     }));
     const byRef=new Map(sources.map(s=>[s.ref,s]));
     const sourceRefs=refs=>array(refs).map(r=>byRef.get(r)).filter(Boolean);
@@ -53,9 +53,8 @@
       const scopedSources=[...new Map(linked.flatMap(o=>o.sources).map(x=>[x.ref,x])).values()];
       const req=requirementByStep.get(s.id);
       return {
-        id:value(s.id),oracles:linked,sources:scopedSources,
-        attribution:scopedSources.length?'ORACLE-LINKED ASSERTION CITATIONS (not independently verified)':
-          'STEP-LEVEL SOURCE ATTRIBUTION UNAVAILABLE; do not infer from case or binding sources',
+        id:value(s.id),oracles:linked,oracle_citations:scopedSources,sources:[],
+        attribution:'STEP-LEVEL SOURCE ATTRIBUTION UNAVAILABLE; oracle-linked expected-value citations are separate from direct step sources',
         capability:req?value(req.capability):'UNASSIGNED',
         operation_class:req?value(req.operation_class):'UNKNOWN',
         permissions:req?array(req.required_permissions):[],
