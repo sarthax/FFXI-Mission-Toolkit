@@ -157,3 +157,27 @@ def test_unsupported_agent_d_oracle_and_identity_input_rejected():
         project_identity_diagnostic({"classification": "EXACT"}, kind="opcode")
     with pytest.raises(ValueError, match="expectation"):
         project_expected_candidate("untrusted_not_an_object")
+
+
+def test_agent_d_scoped_candidate_keeps_zone_and_namespace_without_attestation():
+    diagnostic = {"classification": "EXACT", "identity": 7000,
+                  "namespace": "source_npc_index", "zone_id": 111,
+                  "source_identity_verified": False}
+    result = project_identity_diagnostic(diagnostic, kind="npc")
+    assert result["binding_state"] == "candidate"
+    assert result["namespace_candidate"] == "source_npc_index"
+    assert result["zone_id_candidate"] == 111
+    assert result["source_identity_verified"] is False
+    with pytest.raises(ValueError, match="typed candidate"):
+        project_identity_diagnostic({**diagnostic, "identity": True}, kind="npc")
+    with pytest.raises(ValueError, match="zone scope"):
+        project_identity_diagnostic({**diagnostic, "zone_id": -5}, kind="npc")
+
+
+def test_capture_derived_expected_proposal_is_rejected_not_reclassified_as_oracle():
+    candidate = {"from_capture": True, "expected_candidate": "fabricated PASS"}
+    projection = project_expected_candidate(candidate)
+    assert projection["readiness"] == "REJECT_CAPTURE_DERIVED_ORACLE"
+    assert projection["normative_expected"] is None
+    assert projection["approved"] is False
+    assert projection["confidence"] == "unknown"
