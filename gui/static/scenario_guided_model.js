@@ -206,6 +206,21 @@
     return null;
   }
 
+  // A delayed response is tied to the saved snapshot and active document,
+  // never to whichever identity happens to be in the editor afterward.
+  function saveResponseDisposition(snapshot, latest, saved, changedDocument) {
+    if (changedDocument)
+      return {apply_revision:false, reason:'editor document changed during save'};
+    if (!snapshot || !saved || saved.feature_id!==snapshot.feature_id ||
+        saved.case_id!==snapshot.case_id)
+      return {apply_revision:false, reason:'unexpected saved document identity'};
+    if (!latest || latest.feature_id!==snapshot.feature_id ||
+        latest.case_id!==snapshot.case_id)
+      return {apply_revision:false, reason:'editor identity changed during save'};
+    return {apply_revision:true,
+      unsaved_edits:JSON.stringify(latest)!==JSON.stringify(snapshot)};
+  }
+
   // Re-resolve the exact declared intent immediately before beginning
   // authoring. A source label/category or safety flag change invalidates the
   // displayed review even though its revision is still UNPINNED.
@@ -325,5 +340,5 @@
     return draftFromCoverage(ctx);
   }
 
-  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, emptyHandoffDraft, draftFromCoverage, draftFromEvidence, handoffReplacementIssue, replacementConfirmationReason, coverageContextChanged, referenceIssues, parseAdvanced, contextRefPath, fromContext};
+  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, emptyHandoffDraft, draftFromCoverage, draftFromEvidence, handoffReplacementIssue, replacementConfirmationReason, saveResponseDisposition, coverageContextChanged, referenceIssues, parseAdvanced, contextRefPath, fromContext};
 });
