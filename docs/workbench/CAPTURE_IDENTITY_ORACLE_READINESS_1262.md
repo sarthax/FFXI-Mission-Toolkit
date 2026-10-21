@@ -295,3 +295,48 @@ reconciliation and readback completeness. This sidecar is explicitly
 **not a Scenario Developer POST payload** or a v2 spec. Do not import into
 #1202 or issue PASS from captured behavior. Real client/DSP correlation and
 authenticity checks remain local acceptance tasks.
+
+
+## Final review reliability: per-gap status and tamper boundaries
+
+Agent A's submitted [COMMENTED code review](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1287)
+was on historical head `b9f89479`. Current PR is reconciled to
+`main@e9ae790d` (zero behind), with dedicated focused offline CI in addition
+to Workbench and Src Layout. A COMMENTED review is **not** an approval;
+Agent A must review the current head before any owner-authorized merge.
+
+Every `readiness_steps[].missing_observations[]` now also has
+`readiness_state`: `UNKNOWN` for absent independent readbacks, unpinned
+parser identity or unavailable digest; `BLOCKED` when a pinned indexed
+projection, source manifest/locator digest, or DSP oracle/catalog revision
+actually conflicts. This is **evidence compatibility state only**, separate
+from gameplay `verdict=UNKNOWN` even when `readiness_state=BLOCKED`. A
+projection-wide mismatch blocks every dependent step; a source-row conflict
+blocks the steps citing that row. Missing manifest SHA-256 is explicitly
+`SOURCE_MANIFEST_DIGEST_UNPINNED` (UNKNOWN), **not** a fabricated
+`SOURCE_MANIFEST_DIGEST_MISMATCH` (BLOCKED). Missing parser *name or
+version* produces `PARSER_REVISION_UNPINNED` (UNKNOWN).
+
+The existing offline Evidence Reviewer rejects caller-supplied readiness
+objects that mark an unobserved readback as verified, grant permissions,
+change its source references, claim physical capture authentication or
+claim a READY/approved state. Gap records must exactly match safe producer
+diagnostics for their original step with `capability_registered=false`,
+`permission_granted=false`, and their original evidence refs. Physical
+source authenticity and execution permissions **cannot** be supplied by
+the offline reviewer. These checks protect *internal advisory consistency*;
+a malicious self-consistent sidecar still needs independent local source
+verification.
+
+Agent C's unmerged `scenario_contract_v2_adapters.py` exposes
+`project_identity_diagnostic(diagnostic,kind=...)`, which expects
+`identity/namespace/zone_id` alongside `classification`, whereas Agent
+D's source-candidate diagnostic retains original `observed_value` and
+`scope`. Do **not** pass Agent D's record directly to this unmerged adapter
+or synthesize namespace/zone numeric IDs to fill the mismatch. The
+non-importable `contract_v2_alignment.metadata_shape_preview` is already
+typed with the same canonical field vocabulary but leaves namespace/zone
+unresolved and no verified source refs. A future accepted owner-defined
+adapter should explicitly reconcile the two input shapes with independently
+authenticated source scopes and reviewer mapping. No canonical schema or
+Agent B editor files changed in this PR.
