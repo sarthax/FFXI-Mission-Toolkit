@@ -59,6 +59,8 @@ For a coordinated real-data baseline, see [P0 issue #1228](https://github.com/sa
 
 A benchmark passing relationship counts does not prove ranking or relevance. Score real-package identity accuracy, top-result usefulness, source locator accuracy and click-through burden separately. Never call an unrun scenario “validated.”
 
+Shared cross-browser/Workbench investigation persistence remains proposal-only. See [the v0 shared-investigation RFC](FEATURE_TRACE_SHARED_INVESTIGATIONS_RFC.md) for blocked principal/ACL, source-version and storage decisions; no shared-write route or database migration is implemented.
+
 References: `docs/workbench/BEHAVIOR_FEATURE_TRACE_GUIDE.md`, `docs/workbench/FEATURE_TRACE_CLOSEOUT_2026-10-04.md`.
 
 ## Wiki source-document drill-down
