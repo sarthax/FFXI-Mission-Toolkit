@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Synthetic-only tests for bounded experimental POL1 recompression."""
+import hashlib
+import io
 import random
 import struct
+import tempfile
 import sys
 import unittest
+from contextlib import redirect_stdout, redirect_stderr
+from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
@@ -90,6 +95,27 @@ class SyntheticPol1RepackTests(unittest.TestCase):
         self.assertEqual(report["status"], "FITS_RAW_SECTION")
         self.assertEqual(report["in_memory_decoded_roundtrip"], "PASS")
         self.assertNotEqual(report["decoded_sha256"], report["candidate_decoded_sha256"])
+
+
+    def test_cli_exact_hash_gate(self):
+        from workbench.client.cli.pol1_repack_report import main
+
+        image = fixture_pe(encode_pol1(b"abcabc"), 6, 11)
+        with tempfile.TemporaryDirectory() as folder:
+            file_path = Path(folder) / "synthetic.dll"
+            file_path.write_bytes(image)
+            digest = hashlib.sha256(image).hexdigest()
+            with patch("sys.argv", ["pol1-repack-report", str(file_path), "--expected-sha256", digest]):
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    self.assertEqual(main(), 0)
+                self.assertIn("FITS_RAW_SECTION", output.getvalue())
+            with patch("sys.argv", ["pol1-repack-report", str(file_path), "--expected-sha256", "0" * 64]):
+                with redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit):
+                        main()
+            self.assertEqual(file_path.read_bytes(), image)
+
 
 
 if __name__ == "__main__":
