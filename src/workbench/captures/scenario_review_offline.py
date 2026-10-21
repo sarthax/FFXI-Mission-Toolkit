@@ -57,6 +57,7 @@ def render_review_html(draft: dict, *, readiness: dict | None = None) -> str:
     expected_authoring = _typed_authoring_projection(
         draft["capture_id"], readiness["capture_projection_sha256"],
         readiness["readiness_steps"], readiness["source_integrity"],
+        draft["evidence_map"],
     )
     if (readiness.get("scenario_developer_handoff", {}).get("read_only_projection")
             != expected_authoring):
