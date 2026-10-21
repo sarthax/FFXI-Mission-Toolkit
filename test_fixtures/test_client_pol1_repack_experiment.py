@@ -618,14 +618,33 @@ class SyntheticPol1RepackTests(unittest.TestCase):
             search_depth=128, lazy_match=True
         )
         self.assertEqual(report["in_memory_decoded_roundtrip"], "PASS")
-        self.assertTrue(
+        self.assertFalse(
             report["synthetic_terminated_candidate"]["fits_original_prefix_budget"]
+        )
+        self.assertEqual(
+            report["synthetic_terminated_candidate"]["headroom_with_stop_bytes"], -1
         )
         self.assertTrue(
             report["synthetic_terminated_candidate"][
                 "detected_immediately_after_decoded_end"
             ]
         )
+
+
+    def test_marker_inclusive_fit_with_inefficient_synthetic_source_stream(self):
+        # A valid but deliberately all-literal original encoding has enough
+        # prefix budget for the better encoder plus a two-byte stop token.
+        source = b"A" * 12
+        raw_literals = bytes((0xFF,)) + b"A" * 8 + bytes((0xF0,)) + b"A" * 4
+        original = fixture_pe(raw_literals, len(source), len(raw_literals) + 5)
+        result = assess_pol1_repack_fit(original, search_depth=256)
+        stop = result["synthetic_terminated_candidate"]
+        self.assertEqual(result["in_memory_decoded_roundtrip"], "PASS")
+        self.assertGreater(stop["headroom_with_stop_bytes"], 0)
+        self.assertTrue(stop["fits_original_prefix_budget"])
+        self.assertTrue(stop["detected_immediately_after_decoded_end"])
+        self.assertEqual(original[:2], b"MZ")
+
 
 
 if __name__ == "__main__":
