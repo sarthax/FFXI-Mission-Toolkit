@@ -13,7 +13,7 @@ from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-from workbench.client.pol1_repack_experiment import encode_pol1, assess_pol1_repack_fit
+from workbench.client.pol1_repack_experiment import encode_pol1, assess_pol1_repack_fit, _stream_termination_metadata
 from workbench.client.pol1_unpack import unpack_pol1, Pol1Error
 
 
@@ -433,6 +433,69 @@ class SyntheticPol1RepackTests(unittest.TestCase):
         self.assertNotEqual(improved["original_stream_sha256"], improved["candidate_sha256"])
         self.assertLess(improved["candidate_common_prefix_bytes"], len(baseline))
         self.assertTrue(improved["protected_suffix_unchanged"])
+
+
+    def test_decoder_end_metadata_counts_partial_group_without_loader_assumption(self):
+        packed = encode_pol1(b"abcabc")
+        end = _stream_termination_metadata(packed, 6)
+        self.assertEqual(end["consumed_bytes"], len(packed))
+        self.assertEqual(end["control_group_count"], 1)
+        self.assertEqual(end["token_count"], 4)
+        self.assertEqual(end["last_group_token_count"], 4)
+        self.assertEqual(end["last_group_unused_flag_bits"], 4)
+        self.assertFalse(end["last_group_unused_flags_nonzero"])
+        self.assertEqual(end["last_token_kind"], "backreference")
+        self.assertFalse(end["last_token_truncated_at_decoded_limit"])
+        self.assertEqual(end["last_token_nominal_output_bytes"], 3)
+        self.assertEqual(end["last_token_actual_output_bytes"], 3)
+
+        literal_end = _stream_termination_metadata(bytes((0xFF, ord("A"))), 1)
+        self.assertEqual(literal_end["consumed_bytes"], 2)
+        self.assertEqual(literal_end["last_group_unused_flag_bits"], 7)
+        self.assertTrue(literal_end["last_group_unused_flags_nonzero"])
+        self.assertEqual(literal_end["last_token_kind"], "literal")
+        with self.assertRaisesRegex(Pol1Error, "truncated"):
+            _stream_termination_metadata(bytes((0x80,)), 1)
+
+    def test_decoder_end_metadata_flags_nominal_overrun_without_editing_source(self):
+        # One literal followed by a nominal 18-byte match, intentionally
+        # clipped to three decoded bytes by our bounded decoder.
+        original_stream = bytes((0x80, ord("A"), 0xF0, 0x01))
+        end = _stream_termination_metadata(original_stream, 4)
+        self.assertEqual(end["last_token_kind"], "backreference")
+        self.assertEqual(end["last_token_nominal_output_bytes"], 18)
+        self.assertEqual(end["last_token_actual_output_bytes"], 3)
+        self.assertTrue(end["last_token_truncated_at_decoded_limit"])
+        image = fixture_pe(original_stream, 4, capacity=len(original_stream) + 9)
+        report = assess_pol1_repack_fit(image, search_depth=256)
+        self.assertTrue(report["original_decoder_termination"]["last_token_truncated_at_decoded_limit"])
+        self.assertFalse(report["candidate_decoder_termination"]["last_token_truncated_at_decoded_limit"])
+        self.assertEqual(report["in_memory_decoded_roundtrip"], "PASS")
+
+    def test_cli_comparison_contains_both_decoder_termination_views(self):
+        from workbench.client.cli.pol1_repack_report import main
+
+        image = fixture_pe(encode_pol1(b"abcabc"), 6, capacity=40)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "synthetic.dll"
+            path.write_bytes(image)
+            digest = hashlib.sha256(image).hexdigest()
+            with patch("sys.argv", [
+                "pol1-repack-report", str(path),
+                "--expected-sha256", digest, "--compare-improved"
+            ]):
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    self.assertEqual(main(), 0)
+            result = json.loads(output.getvalue())
+            self.assertEqual(result["original_decoder_termination"]["consumed_bytes"], 6)
+            self.assertIsNone(result["bytes_between_stream_end_and_entrypoint"])
+            for entry in result["results"]:
+                meta = entry["candidate_decoder_termination"]
+                self.assertEqual(meta["consumed_bytes"], entry["candidate_encoded_size"])
+                self.assertIn(meta["last_token_kind"], ("literal", "backreference"))
+            self.assertEqual(path.read_bytes(), image)
+
 
 
 if __name__ == "__main__":
