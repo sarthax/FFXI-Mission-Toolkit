@@ -1,0 +1,1430 @@
+{
+  "artifact_type": "R5_salvage_domain_staging_not_canonical",
+  "schema_version": 1,
+  "execution_enabled": false,
+  "integration_status": "BLOCKED_SCHEMA_OWNER_REVIEW",
+  "canonical_target": "data/testing/test_specifications.json",
+  "source_revision": {
+    "dsp_commit": "86d4467d446569c741d76d296e640c3b844ad844",
+    "dsp_branch": "main",
+    "deployed": "UNKNOWN"
+  },
+  "cases": [
+    {
+      "feature_id": "salvage",
+      "case_id": "SAL-01",
+      "name": "Read-only Pathos/status baseline",
+      "kind": "observation",
+      "purpose": "Read-only Pathos/status baseline",
+      "rationale": "Distinguish zone/instance Lua intent from client-reported and authoritative persistent gameplay",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "execution_authorized": false,
+      "lane": "needs-readback",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Operator-approved isolated fixture with known server source revision or UNKNOWN",
+          "Full authorized before-state, unchanged for observation"
+        ],
+        "when": [
+          "Read effective Pathos masks and stage/progress if the character is already in a sanctioned test instance, without changing state"
+        ],
+        "then": [
+          "Source describes 5 Pathos on entry; actual pre-existing effect masks/stage must be read, not fabricated"
+        ]
+      },
+      "steps": [
+        {
+          "id": "SAL-01-S01",
+          "title": "Baseline and source fingerprint",
+          "action": "Record before-state, client version, DSP deployed commit",
+          "expected": "Full baseline or UNKNOWN",
+          "assertion_ids": [
+            "SAL-01-pre"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+              "line_start": 7,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+              "line_start": 22,
+              "line_end": 66,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L22-L66"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-01-S02",
+          "title": "Owner-gated transition or observation",
+          "action": "Read effective Pathos masks and stage/progress if the character is already in a sanctioned test instance, without changing state",
+          "expected": "Source describes 5 Pathos on entry; actual pre-existing effect masks/stage must be read, not fabricated",
+          "assertion_ids": [
+            "SAL-01-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+              "line_start": 7,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+              "line_start": 22,
+              "line_end": 66,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L22-L66"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-01-S03",
+          "title": "Independent source oracle and readback",
+          "action": "Compare actual authoritative and client evidence without inferring PASS",
+          "expected": "UNKNOWN unless exact implementation branch and independently observed state agree",
+          "assertion_ids": [
+            "SAL-01-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+              "line_start": 7,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+              "line_start": 22,
+              "line_end": 66,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L22-L66"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-01-S04",
+          "title": "Cleanup, verify absence of stale instance and preserve evidence",
+          "action": "Perform only approved teardown; confirm instance removal and Pathos restored",
+          "expected": "Owner-confirmed cleanup or BLOCKED quarantine",
+          "assertion_ids": [
+            "SAL-01-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+              "line_start": 7,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+              "line_start": 22,
+              "line_end": 66,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L22-L66"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Source describes 5 Pathos on entry; actual pre-existing effect masks/stage must be read, not fabricated",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+            "line_start": 7,
+            "line_end": 36,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+            "line_start": 22,
+            "line_end": 66,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L22-L66"
+          }
+        ],
+        "confidence": "SOURCE_DEFINED_BUT_UNVERIFIED_RUNTIME",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "character status effects: power,timeRemaining",
+          "instance ID,stage,progress,expiry"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "character status effects: power,timeRemaining",
+          "instance ID,stage,progress,expiry"
+        ]
+      },
+      "mutation": "none",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "zone_to",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "blocking_gaps": [
+        "Fixed-query active status effects and instance readback absent",
+        "Live instance access requires owner approval even for observation"
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+          "line_start": 7,
+          "line_end": 36,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+          "line_start": 22,
+          "line_end": 66,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L22-L66"
+        }
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "salvage",
+      "case_id": "SAL-02",
+      "name": "Arrapago entry applies timed Pathos",
+      "kind": "positive",
+      "purpose": "Arrapago entry applies timed Pathos",
+      "rationale": "Distinguish zone/instance Lua intent from client-reported and authoritative persistent gameplay",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "execution_authorized": false,
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Operator-approved isolated fixture with known server source revision or UNKNOWN",
+          "Full authorized before-state, unchanged for observation"
+        ],
+        "when": [
+          "Owner-approved normal entry into Arrapago, then inspect five effects and unequipped state"
+        ],
+        "then": [
+          "Five effects added with duration 6000 seconds and stage 1/progress 0 in Lua; client effect timing and persistence require verification"
+        ]
+      },
+      "steps": [
+        {
+          "id": "SAL-02-S01",
+          "title": "Baseline and source fingerprint",
+          "action": "Record before-state, client version, DSP deployed commit",
+          "expected": "Full baseline or UNKNOWN",
+          "assertion_ids": [
+            "SAL-02-pre"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+              "line_start": 7,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-02-S02",
+          "title": "Owner-gated transition or observation",
+          "action": "Owner-approved normal entry into Arrapago, then inspect five effects and unequipped state",
+          "expected": "Five effects added with duration 6000 seconds and stage 1/progress 0 in Lua; client effect timing and persistence require verification",
+          "assertion_ids": [
+            "SAL-02-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+              "line_start": 7,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-02-S03",
+          "title": "Independent source oracle and readback",
+          "action": "Compare actual authoritative and client evidence without inferring PASS",
+          "expected": "UNKNOWN unless exact implementation branch and independently observed state agree",
+          "assertion_ids": [
+            "SAL-02-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+              "line_start": 7,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-02-S04",
+          "title": "Cleanup, verify absence of stale instance and preserve evidence",
+          "action": "Perform only approved teardown; confirm instance removal and Pathos restored",
+          "expected": "Owner-confirmed cleanup or BLOCKED quarantine",
+          "assertion_ids": [
+            "SAL-02-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+              "line_start": 7,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Five effects added with duration 6000 seconds and stage 1/progress 0 in Lua; client effect timing and persistence require verification",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+            "line_start": 7,
+            "line_end": 36,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+          }
+        ],
+        "confidence": "SOURCE_DEFINED_BUT_UNVERIFIED_RUNTIME",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "authoritative instance ID,stage,progress",
+          "effect IDs/power/duration from status-effect readback",
+          "equipment before/after"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "authoritative instance ID,stage,progress",
+          "effect IDs/power/duration from status-effect readback",
+          "equipment before/after"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "zone_to",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "blocking_gaps": [
+        "Actual instance admission predicates not pinned; no GM warp as eligibility proof"
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+          "line_start": 7,
+          "line_end": 36,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L7-L36"
+        }
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "salvage",
+      "case_id": "SAL-03",
+      "name": "Cell use outside Remnants is rejected",
+      "kind": "negative",
+      "purpose": "Cell use outside Remnants is rejected",
+      "rationale": "Distinguish zone/instance Lua intent from client-reported and authoritative persistent gameplay",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "execution_authorized": false,
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Operator-approved isolated fixture with known server source revision or UNKNOWN",
+          "Full authorized before-state, unchanged for observation"
+        ],
+        "when": [
+          "After isolated baseline, attempt specific source-bound cell outside the four Remnants zones"
+        ],
+        "then": [
+          "onCellItemCheck returns 55 outside zones 73–76; client refusal and unchanged item/status need readback"
+        ]
+      },
+      "steps": [
+        {
+          "id": "SAL-03-S01",
+          "title": "Baseline and source fingerprint",
+          "action": "Record before-state, client version, DSP deployed commit",
+          "expected": "Full baseline or UNKNOWN",
+          "assertion_ids": [
+            "SAL-03-pre"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/salvage.lua",
+              "line_start": 43,
+              "line_end": 101,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L43-L101"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-03-S02",
+          "title": "Owner-gated transition or observation",
+          "action": "After isolated baseline, attempt specific source-bound cell outside the four Remnants zones",
+          "expected": "onCellItemCheck returns 55 outside zones 73–76; client refusal and unchanged item/status need readback",
+          "assertion_ids": [
+            "SAL-03-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/salvage.lua",
+              "line_start": 43,
+              "line_end": 101,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L43-L101"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-03-S03",
+          "title": "Independent source oracle and readback",
+          "action": "Compare actual authoritative and client evidence without inferring PASS",
+          "expected": "UNKNOWN unless exact implementation branch and independently observed state agree",
+          "assertion_ids": [
+            "SAL-03-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/salvage.lua",
+              "line_start": 43,
+              "line_end": 101,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L43-L101"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-03-S04",
+          "title": "Cleanup, verify absence of stale instance and preserve evidence",
+          "action": "Perform only approved teardown; confirm instance removal and Pathos restored",
+          "expected": "Owner-confirmed cleanup or BLOCKED quarantine",
+          "assertion_ids": [
+            "SAL-03-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/salvage.lua",
+              "line_start": 43,
+              "line_end": 101,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L43-L101"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "onCellItemCheck returns 55 outside zones 73–76; client refusal and unchanged item/status need readback",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/salvage.lua",
+            "line_start": 43,
+            "line_end": 101,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L43-L101"
+          }
+        ],
+        "confidence": "SOURCE_DEFINED_BUT_UNVERIFIED_RUNTIME",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "zone ID,inventory item count before/after",
+          "cell-use rejection and status mask"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "zone ID,inventory item count before/after",
+          "cell-use rejection and status mask"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "zone_to",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "blocking_gaps": [
+        "Exact chosen cell item script must be independently cited before dispatch"
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/salvage.lua",
+          "line_start": 43,
+          "line_end": 101,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L43-L101"
+        }
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "salvage",
+      "case_id": "SAL-04",
+      "name": "Cell removes only its debuff mask bits",
+      "kind": "positive",
+      "purpose": "Cell removes only its debuff mask bits",
+      "rationale": "Distinguish zone/instance Lua intent from client-reported and authoritative persistent gameplay",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "execution_authorized": false,
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Operator-approved isolated fixture with known server source revision or UNKNOWN",
+          "Full authorized before-state, unchanged for observation"
+        ],
+        "when": [
+          "Within authorized instance, apply one named cell whose effect/value/offset are source verified"
+        ],
+        "then": [
+          "newpower = bit.band(oldpower,bit.bnot(value)); instance cellsUsed increments; pet mirroring only for 3 defined effects"
+        ]
+      },
+      "steps": [
+        {
+          "id": "SAL-04-S01",
+          "title": "Baseline and source fingerprint",
+          "action": "Record before-state, client version, DSP deployed commit",
+          "expected": "Full baseline or UNKNOWN",
+          "assertion_ids": [
+            "SAL-04-pre"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/salvage.lua",
+              "line_start": 43,
+              "line_end": 101,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L43-L101"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-04-S02",
+          "title": "Owner-gated transition or observation",
+          "action": "Within authorized instance, apply one named cell whose effect/value/offset are source verified",
+          "expected": "newpower = bit.band(oldpower,bit.bnot(value)); instance cellsUsed increments; pet mirroring only for 3 defined effects",
+          "assertion_ids": [
+            "SAL-04-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/salvage.lua",
+              "line_start": 43,
+              "line_end": 101,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L43-L101"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-04-S03",
+          "title": "Independent source oracle and readback",
+          "action": "Compare actual authoritative and client evidence without inferring PASS",
+          "expected": "UNKNOWN unless exact implementation branch and independently observed state agree",
+          "assertion_ids": [
+            "SAL-04-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/salvage.lua",
+              "line_start": 43,
+              "line_end": 101,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L43-L101"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-04-S04",
+          "title": "Cleanup, verify absence of stale instance and preserve evidence",
+          "action": "Perform only approved teardown; confirm instance removal and Pathos restored",
+          "expected": "Owner-confirmed cleanup or BLOCKED quarantine",
+          "assertion_ids": [
+            "SAL-04-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/salvage.lua",
+              "line_start": 43,
+              "line_end": 101,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L43-L101"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "newpower = bit.band(oldpower,bit.bnot(value)); instance cellsUsed increments; pet mirroring only for 3 defined effects",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/salvage.lua",
+            "line_start": 43,
+            "line_end": 101,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L43-L101"
+          }
+        ],
+        "confidence": "SOURCE_DEFINED_BUT_UNVERIFIED_RUNTIME",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "status effect power before/after,pet effects",
+          "instance localvar cellsUsed",
+          "inventory consumption with full containers"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "status effect power before/after,pet effects",
+          "instance localvar cellsUsed",
+          "inventory consumption with full containers"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "zone_to",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "blocking_gaps": [
+        "No fixed-query status-bit/instance-var readback; select specific cell item from source before execution"
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/salvage.lua",
+          "line_start": 43,
+          "line_end": 101,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L43-L101"
+        }
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "salvage",
+      "case_id": "SAL-05",
+      "name": "Sealed Bhaflau door rejects progression",
+      "kind": "negative",
+      "purpose": "Sealed Bhaflau door rejects progression",
+      "rationale": "Distinguish zone/instance Lua intent from client-reported and authoritative persistent gameplay",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "execution_authorized": false,
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Operator-approved isolated fixture with known server source revision or UNKNOWN",
+          "Full authorized before-state, unchanged for observation"
+        ],
+        "when": [
+          "Attempt an approved sealed door before unSealed is set, with full state snapshot"
+        ],
+        "then": [
+          "onDoorOpen returns false unless animation is closed and unSealed==1; actual per-door trigger must be bound first"
+        ]
+      },
+      "steps": [
+        {
+          "id": "SAL-05-S01",
+          "title": "Baseline and source fingerprint",
+          "action": "Record before-state, client version, DSP deployed commit",
+          "expected": "Full baseline or UNKNOWN",
+          "assertion_ids": [
+            "SAL-05-pre"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/door_util.lua",
+              "line_start": 25,
+              "line_end": 56,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/door_util.lua#L25-L56"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+              "line_start": 90,
+              "line_end": 106,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L90-L106"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-05-S02",
+          "title": "Owner-gated transition or observation",
+          "action": "Attempt an approved sealed door before unSealed is set, with full state snapshot",
+          "expected": "onDoorOpen returns false unless animation is closed and unSealed==1; actual per-door trigger must be bound first",
+          "assertion_ids": [
+            "SAL-05-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/door_util.lua",
+              "line_start": 25,
+              "line_end": 56,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/door_util.lua#L25-L56"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+              "line_start": 90,
+              "line_end": 106,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L90-L106"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-05-S03",
+          "title": "Independent source oracle and readback",
+          "action": "Compare actual authoritative and client evidence without inferring PASS",
+          "expected": "UNKNOWN unless exact implementation branch and independently observed state agree",
+          "assertion_ids": [
+            "SAL-05-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/door_util.lua",
+              "line_start": 25,
+              "line_end": 56,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/door_util.lua#L25-L56"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+              "line_start": 90,
+              "line_end": 106,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L90-L106"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-05-S04",
+          "title": "Cleanup, verify absence of stale instance and preserve evidence",
+          "action": "Perform only approved teardown; confirm instance removal and Pathos restored",
+          "expected": "Owner-confirmed cleanup or BLOCKED quarantine",
+          "assertion_ids": [
+            "SAL-05-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/door_util.lua",
+              "line_start": 25,
+              "line_end": 56,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/door_util.lua#L25-L56"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+              "line_start": 90,
+              "line_end": 106,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L90-L106"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "onDoorOpen returns false unless animation is closed and unSealed==1; actual per-door trigger must be bound first",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Bhaflau_Remnants/door_util.lua",
+            "line_start": 25,
+            "line_end": 56,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/door_util.lua#L25-L56"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+            "line_start": 90,
+            "line_end": 106,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L90-L106"
+          }
+        ],
+        "confidence": "SOURCE_DEFINED_BUT_UNVERIFIED_RUNTIME",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "door localvar unSealed,animation,target flags",
+          "instance stage/progress before/after",
+          "captured door event/csid"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "door localvar unSealed,animation,target flags",
+          "instance stage/progress before/after",
+          "captured door event/csid"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "zone_to",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "blocking_gaps": [
+        "Exact door/NPC and option not bound; stageComplete/exitPoint only meaningful when source matches"
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bhaflau_Remnants/door_util.lua",
+          "line_start": 25,
+          "line_end": 56,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/door_util.lua#L25-L56"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+          "line_start": 90,
+          "line_end": 106,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L90-L106"
+        }
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "salvage",
+      "case_id": "SAL-06",
+      "name": "Bhaflau fixed crate temporary-item selection",
+      "kind": "positive",
+      "purpose": "Bhaflau fixed crate temporary-item selection",
+      "rationale": "Distinguish zone/instance Lua intent from client-reported and authoritative persistent gameplay",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "execution_authorized": false,
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Operator-approved isolated fixture with known server source revision or UNKNOWN",
+          "Full authorized before-state, unchanged for observation"
+        ],
+        "when": [
+          "Open verified fixed Floor-1 Armoury Crate, select a present cell once, then reselect/verify remaining count"
+        ],
+        "then": [
+          "tempBoxPickCellItems initializes randomized but source-bounded item IDs; tempBoxFinish decrements when addTempItem accepted and player lacks the temp item"
+        ]
+      },
+      "steps": [
+        {
+          "id": "SAL-06-S01",
+          "title": "Baseline and source fingerprint",
+          "action": "Record before-state, client version, DSP deployed commit",
+          "expected": "Full baseline or UNKNOWN",
+          "assertion_ids": [
+            "SAL-06-pre"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/npcs/Armoury_Crate.lua",
+              "line_start": 17,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/npcs/Armoury_Crate.lua#L17-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/salvage.lua",
+              "line_start": 285,
+              "line_end": 363,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L285-L363"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-06-S02",
+          "title": "Owner-gated transition or observation",
+          "action": "Open verified fixed Floor-1 Armoury Crate, select a present cell once, then reselect/verify remaining count",
+          "expected": "tempBoxPickCellItems initializes randomized but source-bounded item IDs; tempBoxFinish decrements when addTempItem accepted and player lacks the temp item",
+          "assertion_ids": [
+            "SAL-06-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/npcs/Armoury_Crate.lua",
+              "line_start": 17,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/npcs/Armoury_Crate.lua#L17-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/salvage.lua",
+              "line_start": 285,
+              "line_end": 363,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L285-L363"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-06-S03",
+          "title": "Independent source oracle and readback",
+          "action": "Compare actual authoritative and client evidence without inferring PASS",
+          "expected": "UNKNOWN unless exact implementation branch and independently observed state agree",
+          "assertion_ids": [
+            "SAL-06-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/npcs/Armoury_Crate.lua",
+              "line_start": 17,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/npcs/Armoury_Crate.lua#L17-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/salvage.lua",
+              "line_start": 285,
+              "line_end": 363,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L285-L363"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-06-S04",
+          "title": "Cleanup, verify absence of stale instance and preserve evidence",
+          "action": "Perform only approved teardown; confirm instance removal and Pathos restored",
+          "expected": "Owner-confirmed cleanup or BLOCKED quarantine",
+          "assertion_ids": [
+            "SAL-06-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/npcs/Armoury_Crate.lua",
+              "line_start": 17,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/npcs/Armoury_Crate.lua#L17-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/salvage.lua",
+              "line_start": 285,
+              "line_end": 363,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L285-L363"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "tempBoxPickCellItems initializes randomized but source-bounded item IDs; tempBoxFinish decrements when addTempItem accepted and player lacks the temp item",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Bhaflau_Remnants/npcs/Armoury_Crate.lua",
+            "line_start": 17,
+            "line_end": 29,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/npcs/Armoury_Crate.lua#L17-L29"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/salvage.lua",
+            "line_start": 285,
+            "line_end": 363,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L285-L363"
+          }
+        ],
+        "confidence": "SOURCE_DEFINED_BUT_UNVERIFIED_RUNTIME",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "crate itemID_1..7,itemAmount_1..7,prePicked,itemsPicked",
+          "character LOC_TEMPITEMS before/after",
+          "event option/slot correlation"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "crate itemID_1..7,itemAmount_1..7,prePicked,itemsPicked",
+          "character LOC_TEMPITEMS before/after",
+          "event option/slot correlation"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "zone_to",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "blocking_gaps": [
+        "Random pool means no fixed outcome ID/quantity pre-roll; NPC ID must come from IDs.lua",
+        "Temp inventory readback is not normal char_inventory endpoint"
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bhaflau_Remnants/npcs/Armoury_Crate.lua",
+          "line_start": 17,
+          "line_end": 29,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/npcs/Armoury_Crate.lua#L17-L29"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/salvage.lua",
+          "line_start": 285,
+          "line_end": 363,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/salvage.lua#L285-L363"
+        }
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "salvage",
+      "case_id": "SAL-07",
+      "name": "Instance time-expiry/failure and Pathos teardown",
+      "kind": "positive",
+      "purpose": "Instance time-expiry/failure and Pathos teardown",
+      "rationale": "Distinguish zone/instance Lua intent from client-reported and authoritative persistent gameplay",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "execution_authorized": false,
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Operator-approved isolated fixture with known server source revision or UNKNOWN",
+          "Full authorized before-state, unchanged for observation"
+        ],
+        "when": [
+          "Allow owner-approved isolated run to expire and follow real failure exit"
+        ],
+        "then": [
+          "onInstanceFailure sends client event, normal exit strips five effects; expiry callback, event completion and proper cleanup need independent observation"
+        ]
+      },
+      "steps": [
+        {
+          "id": "SAL-07-S01",
+          "title": "Baseline and source fingerprint",
+          "action": "Record before-state, client version, DSP deployed commit",
+          "expected": "Full baseline or UNKNOWN",
+          "assertion_ids": [
+            "SAL-07-pre"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+              "line_start": 39,
+              "line_end": 64,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L39-L64"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+              "line_start": 143,
+              "line_end": 180,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L143-L180"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-07-S02",
+          "title": "Owner-gated transition or observation",
+          "action": "Allow owner-approved isolated run to expire and follow real failure exit",
+          "expected": "onInstanceFailure sends client event, normal exit strips five effects; expiry callback, event completion and proper cleanup need independent observation",
+          "assertion_ids": [
+            "SAL-07-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+              "line_start": 39,
+              "line_end": 64,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L39-L64"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+              "line_start": 143,
+              "line_end": 180,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L143-L180"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-07-S03",
+          "title": "Independent source oracle and readback",
+          "action": "Compare actual authoritative and client evidence without inferring PASS",
+          "expected": "UNKNOWN unless exact implementation branch and independently observed state agree",
+          "assertion_ids": [
+            "SAL-07-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+              "line_start": 39,
+              "line_end": 64,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L39-L64"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+              "line_start": 143,
+              "line_end": 180,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L143-L180"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "SAL-07-S04",
+          "title": "Cleanup, verify absence of stale instance and preserve evidence",
+          "action": "Perform only approved teardown; confirm instance removal and Pathos restored",
+          "expected": "Owner-confirmed cleanup or BLOCKED quarantine",
+          "assertion_ids": [
+            "SAL-07-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+              "line_start": 39,
+              "line_end": 64,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L39-L64"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+              "line_start": 143,
+              "line_end": 180,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L143-L180"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "onInstanceFailure sends client event, normal exit strips five effects; expiry callback, event completion and proper cleanup need independent observation",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+            "line_start": 39,
+            "line_end": 64,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L39-L64"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+            "line_start": 143,
+            "line_end": 180,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L143-L180"
+          }
+        ],
+        "confidence": "SOURCE_DEFINED_BUT_UNVERIFIED_RUNTIME",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "instance remaining time and failure callback",
+          "status effects after exit and real zone/instance",
+          "no reward change, quest/points full baseline"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "instance remaining time and failure callback",
+          "status effects after exit and real zone/instance",
+          "no reward change, quest/points full baseline"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "zone_to",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "blocking_gaps": [
+        "Client event response to timeout not independently established by source alone",
+        "Need no stale instance and no Pathos post-exit, or quarantine"
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+          "line_start": 39,
+          "line_end": 64,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua#L39-L64"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+          "line_start": 143,
+          "line_end": 180,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua#L143-L180"
+        }
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    }
+  ]
+}
