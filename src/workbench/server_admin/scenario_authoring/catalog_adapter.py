@@ -132,7 +132,7 @@ def _gm_candidates(server_root: str | Path, query: str, limit: int) -> list[dict
         source_path = row.get("source_path")
         if (
             not isinstance(source_path, str)
-            or not re.fullmatch(r"scripts/commands/[a-zA-Z][a-zA-Z0-9_]{0,63}\\.lua", source_path)
+            or not re.fullmatch(r"scripts/commands/[a-zA-Z][a-zA-Z0-9_]{0,63}\.lua", source_path)
             or Path(source_path).stem.casefold() != name
         ):
             raise CatalogUnavailable("GM catalog returned unsafe or ungrounded source path")
