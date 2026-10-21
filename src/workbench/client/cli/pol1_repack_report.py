@@ -22,6 +22,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("binary", type=Path, help="Local, isolated research copy of FFXiMain.dll")
     parser.add_argument("--expected-sha256", required=True, help="Required full original SHA-256")
+    parser.add_argument("--search-depth", type=int, choices=(16, 64, 128), default=64,
+                        help="Bounded encoder match candidates per position (default 64)")
     args = parser.parse_args()
     expected = args.expected_sha256.lower()
     if not re.fullmatch(r"[0-9a-f]{64}", expected):
@@ -36,7 +38,7 @@ def main() -> int:
     if actual != expected:
         parser.error(f"exact-build fingerprint mismatch: observed {actual}")
     try:
-        report = assess_pol1_repack_fit(image)
+        report = assess_pol1_repack_fit(image, search_depth=args.search_depth)
     except (ValueError, Pol1Error) as exc:
         parser.error(f"unable to assess POL1 repack feasibility: {exc}")
     print(json.dumps(report, indent=2))
