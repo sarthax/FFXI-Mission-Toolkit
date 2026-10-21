@@ -1,6 +1,6 @@
 # POL1 repacking feasibility — experimental code path (2026-10-21)
 
-**Status:** Nine focused synthetic tests (including 191 independently decoded randomized streams) and the original POL1 unpack fixture passed in GitHub Actions on commit `e2b398a917ce135826562e521fe6fe6e9e6517cc` (POL1 Repack Synthetic workflow run `39629832243`). **Retail repack loadability and packed-size fit UNKNOWN.** This is an experimental, read-only research workstream, not a production client patcher.
+**Status:** 12 focused synthetic tests (including 191 independently decoded randomized streams) and the original POL1 unpack fixture passed on **both Windows and Linux** in GitHub Actions workflow run `39631931548` at code commit `6837500c110e94968d3243c002d5888fe4a4c833`. **Retail repack loadability and packed-size fit UNKNOWN.** This is an experimental, read-only research workstream, not a production client patcher.
 
 **Related:** [FFXI Client Patch Feasibility Audit (draft PR #1301)](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1301), [Wardrobe 5–8 research plan](wardrobe5-8_container_expansion_research_plan.md), and local handoffs HANDOFF_wardrobe5-8_decode.md / XREF_SUMMARY.md.
 
@@ -64,11 +64,11 @@ This performs a read-only estimation, not a client edit. Before running, ensure 
 
 ## 4. Verification and required evidence
 
-**Verified:** GitHub Actions run `39629832243` passed the nine focused synthetic test methods and the existing original POL1 unpack fixture. Those methods include 191 deterministic randomized streams decoded by an independently implemented test oracle, input-hash rejection, loader-like suffix preservation, false raw-section-fit rejection and boundary-overlap refusal. Separately, a local exploratory 3.3 MB *synthetic* pattern round-tripped; neither check establishes retail-loader acceptance.
+**Verified:** GitHub Actions run `39631931548` passed the 12 focused synthetic test methods and the existing original POL1 unpack fixture on both `ubuntu-latest` and `windows-latest`. Those methods include 191 deterministic randomized streams decoded by an independently implemented test oracle, input-hash rejection, loader-like suffix preservation, false raw-section-fit rejection and boundary-overlap refusal. Separately, a local exploratory 3.3 MB *synthetic* pattern round-tripped; neither check establishes retail-loader acceptance.
 
 **Next gates:**
 
-1. Completed on the cited code head: the new focused tests and original POL1 unpack fixture passed in the dedicated offline CI. Re-run if encoder/boundary code changes.
+1. Completed on the cited code head: the new focused tests and original POL1 unpack fixture passed on both Windows and Linux in the dedicated offline CI. Re-run if encoder/boundary code changes.
 2. Run the read-only capacity report against archived *unchanged* 2021/2026 DLLs on Windows. Record candidate packed sizes and whether they fit the **original compressed-stream prefix** (not the whole POL1 raw section). If even unmodified decoded content fails to fit that consumed prefix, this greedy encoder is inadequate for in-place retail repacking.
 3. Independently verify packed-stream decoding against a separate decoder or loader-equivalent fixture, including padding/termination.
 4. Establish the original loader's consumption semantics, security directory/signature and launcher integrity behavior, without bypassing integrity controls.
@@ -103,4 +103,4 @@ py -3.11 -m workbench.client.cli.pol1_repack_report $old --expected-sha256 $sha 
 
 Record original_stream_consumed_bytes, entrypoint_section_offset, safe_stream_budget_bytes, candidate_encoded_size, headroom_bytes, encoder_search_depth, status and in_memory_decoded_roundtrip. Compare the candidate against **the original stream prefix**, never the whole POL1 section. No output DLL is written.
 
-**Evidence status:** The earlier nine-method suite passed on the referenced commit. A later suite adds zero-distance and PE rejection plus configurable-search-depth regression tests. Its final-head CI must complete before describing those newer changes as passing. The client originals remain unexamined here and loader/launcher acceptance remains UNKNOWN.
+**Evidence status:** The earlier nine-method suite passed on the referenced commit. A later suite added zero-distance and PE rejection plus configurable-search-depth regression tests; all 12 focused synthetic tests passed on Windows and Linux in run `39631931548`. Broader Workbench regression on that commit was still pending when last checked; full repository CI acceptance should be confirmed separately. The client originals remain unexamined here and loader/launcher acceptance remains UNKNOWN.
