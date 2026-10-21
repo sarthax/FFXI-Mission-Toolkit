@@ -142,3 +142,40 @@ The `src_<SHA256-prefix>` identifiers are **purely tooling references** computed
 **Actual SQLite limit:** `test_scenario_contract_v2_compatibility.py::test_actual_sqlite_storage_bytes_match_v2_contract_and_unicode_limit` uses the real existing `save_draft` against temporary SQLite; it compares persisted `content` BLOB bytes to Python's exact `json.dumps(..., sort_keys=True, separators=(",", ":"))` wire format, proves safe Unicode data persists unmodified and rejects a synthetic otherwise-valid UTF-8-small/ASCII-escaped-too-large draft without creating a second row. This is offline synthetic storage validation, **not** an authenticated HTTP/browser test.
 
 **Independent approval status:** none of the new source-to-v2 projection contracts constitutes a submitted GitHub review. Final PR merge remains separately gated by Agent A's independent review and owner authorization. Current-main non-force reconciliation and fresh GitHub CI must be repeated on the eventual final head.
+
+
+## 9. Field freeze, nine-domain compatibility and shared offline CI contract
+
+**Proposed field freeze for Agent B's Phase 2 UI (pending independent approval on #1285):** The optional namespace is `contract_v2: {contract_version, sources, parameters, oracles, step_requirements, fingerprints}`, with outer `schema_version:1`. Key names and required object-member sets match `scenario_contract_v2.py`; do not introduce a second editor/evidence schema. **`independently_source_verified` is a syntactic spec-origin source-pin *claim* only**, never separately authenticated game identity or permission. For a truly reviewed identity, an independent source-byte rehash, DSP/client namespace/zone crosswalk, and authorized human/source attestation outside the spec are still required. `source_cited` is a claim of pinned normative source-file location; it is not an approved expected value.
+
+**Compatibility by exact staged aliases:** `project_domain_case` is a deterministic, pure, **NONCANONICAL** validator/projection for the common R5 first-case specimens. The working reference examples are in `test_fixtures/scenario_contract_v2_staging_adapter_synthetic.json`; all are **NOT_RUN, design_only, runner=unassigned**, and preserve every staged citation in `source_refs_original`.
+
+| Staged domain and case | Primary readiness lane | Citation keys present | Named readback key | Migration blocker |
+|---|---|---|---|---|
+| Gardening GARD-01 | needs-mutation | case `oracle_sources`, step `oracle_refs` | `readback` | Pot `char_inventory.extra`, both-safe complete inventory; numeric slot collision |
+| Voidwalker VWK-01 | needs-mutation | case `oracle_sources`, step `source_refs` | `required_readback` | Spawn/pop localvars, claim, safe /heal interaction and source deployment |
+| Assault/Nyzul ASLT-01 | needs-mutation | case `oracle_sources`, step `source_refs` | `required_readback` | Instance leader/objective status, debug bypass and pinned Nyzul source drift |
+| Missions/Quests MQ-01 | needs-mutation | case `oracle_sources`, step `oracle_sources` | `required_readback` | Source branch/event-result, reward/quest/KI and independent authoritative state |
+| Moghancement MOG-01 | needs-mutation | case `oracle_sources`, step `oracle_refs` | `readback` | Installed-furniture two-safe state, active KI/aura modifier; separate from MOG-09 |
+| Voidwatch VOID-01 | observe-now *conditional* | case + step `source_refs`, nested `oracle.source_refs` | `readback` | Cruor/mob/Pyxis/claim readbacks, source branch review; no automatic action |
+| Salvage SAL-01 | needs-readback | case + step `source_refs`, nested `oracle.source_refs` | `readback` | Live instance/pathos mask, stage/status/temp-item readbacks |
+| RUN/GEO RG-01 | observe-now *conditional* | case + step `source_refs`, nested `oracle.source_refs` | `readback` | Quest/job/KI/char_vars scope, incomplete unlock oracle and deployed revision |
+| Chocobo CHO-01 | needs-deploy | case + step `source_refs`, nested `oracle.source_refs` | `readback` | Migration/deployment and rollback proof; incomplete training/mount |
+
+**Explicit alias rules:** `execution_lane` and `lane` must agree when both occur; `oracle_refs`, `oracle_sources`, `source_refs`, and `oracle.source_refs` are copied individually in original order and deduplicated **only** by the exact (repository, path, commit, line_start, line_end) source-coordinate tuple in the review projection. `readback` or `required_readback` remains the original unregistered/read-only proposal and is never automatically converted into a runnable v1 `observations[]` entry. The staged `commit` must equal the *declared envelope* DSP commit and match its complete pinned URL. All resulting `sources[].sha256` remain null; source file bytes are never fetched, and a Git blob SHA-1 is not a substitute for SHA-256. Malformed/missing location or commit, a contradictory URL, stale deployed claim, execution-allowed mutation, unexpected source digest, permission claim, or missing named readback **raises ValueError**.
+
+**Reusable offline CI sequence for Agent E PR #1294** (do not import staged records as canonical specifications):
+
+1. Use Agent E's separate `tools/validate_domain_drafts.py` against pinned JSON snapshots and manifest to validate **all 73 staged IDs and fixed lane counts**, canonical catalog exclusion, BDD and source structure. That validator is a separate non-executing workflow; no code from the staged PRs may be executed.
+2. For additional v2 **review metadata compatibility**, call `project_domain_case(staging_document, case_id)` on a bounded staged document with explicit `schema_version=1`, `execution_enabled=false` and `source_revision.dsp_commit`/`deployed=UNKNOWN`. A raised `ValueError` fails the review compatibility check; this is *not* a canonical `validate_spec` call. For large cases above 20 unique citation locations, retain the unmodified staging record and flag `HUMAN_SPLIT_REQUIRED`, never truncate refs to fit the canonical draft schema.
+3. Assert returned `canonical_import_allowed=false`, `execution_enabled=false`, `independent_verification=NOT_ESTABLISHED`, `oracles=[]`, `parameters=[]`, and all `step_requirements[].execution_gate=blocked`. Copy the original cited refs/readback/lane to the reviewer and preserve every UNKNOWN. **MOG-09** remains the sole existing verified v1 runner, unchanged; the staged MOG-01 example does not overwrite it.
+4. Run focused contract v2 pytest plus existing v1 catalog/draft/viewer/Guided/importer regression on the exact PR head, then Workbench Regression and Src Layout Regression on the same commit. A green CI result certifies *software structure and denial conditions only*.
+
+| Validation tier | Can be checked by GitHub CI? | What it establishes |
+|---|---|---|
+| **Structural** | Yes | Field types/shape, stable IDs/aliases, 73-case manifest, blocked action flags, canonical exclusion, 32KiB persisted draft shape |
+| **Source-citation consistency** | Yes | Repository/path/line span/40-hex commit/URL agree with *declared* pin; optionally lines exist in fetched static source; not correctness of expected behavior |
+| **Revision/fingerprint comparison** | Yes, for supplied test vectors | No digest supplied => `UNKNOWN`; mismatched supplied spec/engine/source SHA => `BLOCKED`; equality => `MATCHED_PINNED_ONLY` (syntactic only), always execution denied |
+| **Independent source/authenticity** | **No, not through this metadata-only GitHub CI** | Requires independent original-source-byte SHA-256 computation, operator-known DSP deployment, local client/DAT identity crosswalk, server readback freshness/completeness, trusted capture originals and source-branch/oracle human review |
+
+No CI result can promote `observe-now` to dispatch permission or stage `NOT_RUN` to gameplay PASS. No domain staging file, Scenario Developer UI, Agent D capture code, server or live runner was changed by this compatibility layer.
