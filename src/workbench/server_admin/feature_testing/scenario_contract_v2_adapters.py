@@ -47,6 +47,15 @@ def project_domain_case(staging: dict, case_id: str) -> dict:
     """
     if not isinstance(staging, dict) or not isinstance(staging.get("cases"), list):
         raise ValueError("invalid staged domain envelope")
+    if staging.get("schema_version") != 1 or staging.get("execution_enabled") is not False:
+        raise ValueError("staging envelope must be v1 and execution-disabled")
+    source_revision = staging.get("source_revision")
+    if not isinstance(source_revision, dict) or not isinstance(source_revision.get("dsp_commit"), str):
+        raise ValueError("staging source revision required for citation consistency")
+    from .scenario_contract_v2 import _SHA40
+    pinned_revision = source_revision["dsp_commit"]
+    if not _SHA40.fullmatch(pinned_revision) or not str(source_revision.get("deployed", "")).startswith("UNKNOWN"):
+        raise ValueError("staging source revision or deployment not safely pinned")
     if not isinstance(case_id, str) or not case_id:
         raise ValueError("invalid staged case ID")
     matching = [c for c in staging["cases"]
@@ -58,6 +67,14 @@ def project_domain_case(staging: dict, case_id: str) -> dict:
         raise ValueError("non-design-only staged case cannot be projected")
     if case.get("execution_authorized") is True or case.get("execution_enabled") is True:
         raise ValueError("staged case claims execution permission")
+    if not str(case.get("verdict", "")).startswith("NOT_RUN"):
+        raise ValueError("staged case cannot claim executed gameplay")
+    mutation = case.get("mutation")
+    if isinstance(mutation, dict):
+        if mutation.get("enabled") is not False:
+            raise ValueError("staged mutation must be explicitly disabled")
+    elif mutation not in ("none", "client", "gm"):
+        raise ValueError("unrecognized staged mutation classification")
     steps = case.get("steps")
     if not isinstance(steps, list) or not 1 <= len(steps) <= 100:
         raise ValueError("staged steps missing/out of bounds")
@@ -94,6 +111,17 @@ def project_domain_case(staging: dict, case_id: str) -> dict:
         ref = "src_" + sha256(encoded.encode("utf-8")).hexdigest()[:24]
         if any(s["ref"] == ref for s in canonical):
             raise ValueError("staging source-ref collision")
+        if citation["commit"].lower() != pinned_revision.lower():
+            raise ValueError("staged citation commit conflicts with declared DSP revision")
+        repo = citation["repository"]
+        if repo != "sarthax/darkstar-to-valhalla":
+            raise ValueError("staged source repository requires separate owner review")
+        canonical_url = ("https://github.com/" + repo + "/blob/" +
+                         citation["commit"] + "/" + citation["path"] +
+                         "#L" + str(citation["line_start"]) + "-L" +
+                         str(citation["line_end"]))
+        if citation.get("url") != canonical_url:
+            raise ValueError("staged source URL conflicts with its pinned file span")
         projected = {
             "ref": ref, "repository": citation["repository"],
             "path": citation["path"], "line_start": citation["line_start"],
@@ -122,9 +150,12 @@ def project_domain_case(staging: dict, case_id: str) -> dict:
             "required_permissions": [], "required_readbacks": [],
             "approval_required": True, "execution_gate": "blocked",
         })
-    readback = case.get("readback")
-    if readback is not None and not isinstance(readback, dict):
-        raise ValueError("invalid staged readback specification")
+    readback_field = ("readback" if "readback" in case
+                      else "required_readback" if "required_readback" in case
+                      else None)
+    readback = case.get(readback_field) if readback_field else None
+    if not isinstance(readback, dict) or not readback:
+        raise ValueError("missing staged readback proposal")
     return {
         "projection_contract": _CONTRACT, "canonical_import_allowed": False,
         "execution_enabled": False, "independent_verification": "NOT_ESTABLISHED",
@@ -134,6 +165,9 @@ def project_domain_case(staging: dict, case_id: str) -> dict:
         "case_source_ref_ids": case_refs, "sources": canonical,
         "step_requirements": by_step,
         "readback_proposals_original": deepcopy(readback),
+        "readback_field_original": readback_field,
+        "source_revision_declared": pinned_revision,
+        "source_revision_authenticity": "NOT_ESTABLISHED",
         "oracle_projection": "UNKNOWN_REQUIRES_CANONICAL_ASSERTION_AND_INDEPENDENT_REVIEW",
         "oracles": [], "parameters": [],
         "blocking_gaps": [
