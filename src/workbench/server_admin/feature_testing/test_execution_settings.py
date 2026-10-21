@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import secrets
 import subprocess
 from pathlib import Path
@@ -32,7 +33,7 @@ def settings_path() -> Path:
 
 
 def _empty() -> dict:
-    return {"enabled": False, "headless_root": "", "charids": [],
+    return {"enabled": False, "headless_root": "", "charids": [], "account": "",
             "db": {"user": "", "password": "", "name": "", "port": 3306},
             "tokens": {"operator": "", "supervisor": ""}}
 
@@ -44,7 +45,7 @@ def load() -> dict:
     except (OSError, ValueError):
         return merged
     if isinstance(raw, dict):
-        for key in ("enabled", "headless_root", "charids"):
+        for key in ("enabled", "headless_root", "charids", "account"):
             if key in raw:
                 merged[key] = raw[key]
         for key in ("db", "tokens"):
@@ -152,7 +153,7 @@ def parse_charids(text) -> list[int]:
     return ids
 
 
-def update(*, headless_root: str | None = None, charids=None, db: dict | None = None) -> dict:
+def update(*, headless_root: str | None = None, charids=None, db: dict | None = None, account: str | None = None) -> dict:
     """Validate and persist user-editable fields. The headless root must be a detected checkout."""
     settings = load()
     if headless_root is not None:
@@ -162,6 +163,10 @@ def update(*, headless_root: str | None = None, charids=None, db: dict | None = 
         settings["headless_root"] = headless_root
     if charids is not None:
         settings["charids"] = parse_charids(charids)
+    if account is not None:
+        if account and not re.fullmatch(r"[A-Za-z0-9_-]{1,32}", account):
+            raise ValueError("account names use letters, digits, - and _ (max 32)")
+        settings["account"] = account
     if db is not None:
         for key in ("user", "name"):
             if key in db:
@@ -227,7 +232,7 @@ def status() -> dict:
                 else "No MySQL driver is installed in the Toolkit environment."},
     ]
     return {"enabled": settings["enabled"], "steps": steps, "headless_roots": roots,
-            "selected_root": chosen, "charids": settings["charids"],
+            "selected_root": chosen, "charids": settings["charids"], "account": settings["account"],
             "db": {"user": settings["db"]["user"], "name": settings["db"]["name"],
                    "port": settings["db"]["port"], "password_saved": bool(settings["db"]["password"])},
             "ready_to_run": all(step["ok"] for step in steps) and bool(pre["ready_for_operator_review"]),

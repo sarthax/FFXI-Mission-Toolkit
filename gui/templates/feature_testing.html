@@ -71,8 +71,8 @@
 <form id="ft-launch-form" class="ft-filters">
 {% if ui_mode %}<p>Test execution is turned on in <a href="/feature-testing?tab=guide">Setup</a>; no token needed. You will be asked to confirm.</p>{% endif %}
 <label {% if ui_mode %}hidden{% endif %}>Operator token<input id="ft-operator-token" type="password" autocomplete="off" {% if not ui_mode %}required{% endif %}></label>
-<label>Test account<input id="ft-run-account" pattern="[A-Za-z0-9_-]{1,32}" required autocomplete="off"></label>
-<label>Character ID<input id="ft-run-character" type="number" min="1" required></label>
+<label>Test account<input id="ft-run-account" value="{{ run_defaults.account }}" pattern="[A-Za-z0-9_-]{1,32}" required autocomplete="off"></label>
+<label>Character ID<input id="ft-run-character" value="{{ run_defaults.charid }}" type="number" min="1" required></label>
 <label>Supervisor port<input id="ft-run-port" type="number" min="1" max="65535" value="8420" required></label>
 <label class="ft-check"><input id="ft-run-approval" type="checkbox" required> I authorize the read-only MOG-09 run on this disposable character</label>
 <button type="submit" class="ft-primary">Launch MOG-09</button>
@@ -134,7 +134,7 @@ form.addEventListener('submit',async event=>{
 });
 document.getElementById('ft-refresh-jobs').addEventListener('click',refresh);
 const mem=['ft-run-account','ft-run-character','ft-run-port'];
-try{for(const id of mem){const v=localStorage.getItem(id);if(v)document.getElementById(id).value=v;}}catch(e){}
+try{for(const id of mem){const el=document.getElementById(id);const v=localStorage.getItem(id);if(v&&!el.value)el.value=v;}}catch(e){}
 form.addEventListener('submit',()=>{try{for(const id of mem)localStorage.setItem(id,document.getElementById(id).value);}catch(e){}});
 refresh();
 })();
@@ -364,6 +364,7 @@ document.getElementById('ft-evaluation-form').addEventListener('submit',async fu
 <h3>1. XiHeadless checkout</h3>
 <label>Detected checkouts <select id="ft-setup-root"></select></label>
 <h3>2. Disposable test character ID(s)</h3>
+<label>Test account name <input id="ft-setup-account" autocomplete="off" placeholder="e.g. xitest05"></label>
 <label>Character IDs (comma separated) <input id="ft-setup-chars" autocomplete="off" placeholder="e.g. 21833"></label>
 <h3>3. Read-only database login <small>(optional but needed for a PASS/FAIL verdict)</small></h3>
 <div class="ft-filters">
@@ -390,13 +391,13 @@ function show(st){
  const sel=$('ft-setup-root');sel.replaceChildren();
  const none=document.createElement('option');none.value='';none.textContent=st.headless_roots.length?'(choose)':'(none found)';sel.appendChild(none);
  for(const r of st.headless_roots){const o=document.createElement('option');o.value=r.path;o.textContent=r.name+' @ '+r.commit+(r.has_dll?'':' — not built')+(r.clean?'':' — uncommitted changes');if(r.path===st.selected_root)o.selected=true;sel.appendChild(o);}
- $('ft-setup-chars').value=st.charids.join(', ');$('ft-setup-dbuser').value=st.db.user;$('ft-setup-dbname').value=st.db.name;$('ft-setup-dbport').value=st.db.port;
+ $('ft-setup-chars').value=st.charids.join(', ');$('ft-setup-account').value=st.account;$('ft-setup-dbuser').value=st.db.user;$('ft-setup-dbname').value=st.db.name;$('ft-setup-dbport').value=st.db.port;
  $('ft-setup-dbpass').placeholder=st.db.password_saved?'saved — leave blank to keep':'password';
  $('ft-setup-file').textContent=st.settings_file;
  note.textContent=st.ready_to_run?'Ready: go to Build & run.':'Not ready yet — fix the items marked ❌.';
 }
 const run=p=>p.then(show).catch(e=>{note.textContent='Not saved: '+e.message;});
-$('ft-setup-save').addEventListener('click',()=>run(call('save',{headless_root:$('ft-setup-root').value,charids:$('ft-setup-chars').value,
+$('ft-setup-save').addEventListener('click',()=>run(call('save',{headless_root:$('ft-setup-root').value,charids:$('ft-setup-chars').value,account:$('ft-setup-account').value.trim(),
  db_user:$('ft-setup-dbuser').value,db_password:$('ft-setup-dbpass').value,db_name:$('ft-setup-dbname').value,db_port:Number($('ft-setup-dbport').value)||3306})));
 $('ft-setup-enable').addEventListener('click',()=>run(call('enable',{enabled:true})));
 $('ft-setup-disable').addEventListener('click',()=>run(call('enable',{enabled:false})));
