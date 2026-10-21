@@ -10,13 +10,13 @@ from copy import deepcopy
 from hashlib import sha256
 import json
 
-from .scenario_draft import reconstruct_observed_draft
+from .scenario_draft import reconstruct_observed_draft, _source_locator
 
 _CONTRACT = "reverse_capture_preview_v0_NONCANONICAL"
-_TYPES = {"capture_events", "capture_eventview", "capture_ki_events", "capture_raw_packets"}
+_TYPES = {"capture_events", "capture_eventview", "capture_ki_events", "capture_raw_packets", "capture_structured_records"}
 _DECISIONS = {"ACCEPT", "EDIT", "REJECT"}
 _UNKNOWN = "UNKNOWN — normative expected behavior requires independent source-backed review"
-_ORDER = ("capture_events", "capture_eventview", "capture_ki_events", "capture_raw_packets")
+_ORDER = ("capture_events", "capture_eventview", "capture_ki_events", "capture_structured_records", "capture_raw_packets")
 
 
 def _digest(value: object) -> str:
@@ -93,6 +93,11 @@ def _summary(table: str, rows: list[dict], *, grouped: bool = False) -> str:
                 + "; recorded command " + _text(first.get("gp_command"))
                 + "; MesNum " + _text(first.get("mes_num"))
                 + " (message/event meaning unresolved).")
+    if table == "capture_structured_records":
+        return ("Structured source family " + _text(first.get("family"))
+                + " recorded item field " + _text(first.get("item_id"))
+                + " with source label " + _text(first.get("item_name"))
+                + "; item ownership, acquisition or gameplay effects not proven.")
     if table == "capture_ki_events":
         return ("Key-item logger recorded event label " + _text(first.get("event_type"))
                 + " with key-item field " + _text(first.get("keyitem_id"))
@@ -106,7 +111,10 @@ def _make_step(step_id: str, table: str, events: list[dict], *,
                grouped: bool = False) -> dict:
     rows = [e["observed_fields"] for e in events]
     evidence = [e["reference"]["ref_id"] for e in events]
-    zone = rows[0].get("zone_db") if table in {"capture_events", "capture_eventview"} else rows[0].get("zone_name")
+    zone = (rows[0].get("zone_db") if table in {"capture_events", "capture_eventview"}
+            else rows[0].get("zone") if table == "capture_structured_records"
+            else rows[0].get("zone_name") if table == "capture_ki_events"
+            else rows[0].get("zone_id"))
     bindings = []
     gaps = []
     uncertain = False
@@ -118,6 +126,8 @@ def _make_step(step_id: str, table: str, events: list[dict], *,
         "capture_eventview": [("zone", "zone_db"), ("npc", "entity_id"),
                               ("message_or_event", "mes_num")],
         "capture_ki_events": [("zone", "zone_name"), ("key_item", "keyitem_id")],
+        "capture_structured_records": [("zone", "zone"), ("item", "item_id"),
+                                       ("item_name", "item_name"), ("npc", "entity_id")],
         "capture_raw_packets": [("zone", "zone_id"), ("packet", "opcode")],
     }[table]
     for kind, field in fields:
@@ -160,7 +170,9 @@ def _make_step(step_id: str, table: str, events: list[dict], *,
         "step_id": step_id,
         "lane": table,
         "zone_db": zone,
-        "order_basis": "ZONE_SEQUENCE" if table in {"capture_events", "capture_eventview"} else "CAPTURE_TABLE_SEQUENCE",
+        "order_basis": ("ZONE_SEQUENCE" if table in {"capture_events", "capture_eventview"}
+                        else "SOURCE_SCOPED_STRUCTURED_KEY" if table == "capture_structured_records"
+                        else "CAPTURE_TABLE_SEQUENCE"),
         "observed_summary": _summary(table, rows, grouped=grouped),
         "evidence_refs": evidence,
         "bindings": bindings,
@@ -317,12 +329,59 @@ def build_scenario_handoff(preview: dict, *, max_steps: int = 100) -> dict:
     }
 
 
+
+def _structured_item_streams(con, capture_id: int, limit: int) -> tuple[list[dict], str | None]:
+    """Project indexed ordinary-item references; no raw payloads or new parsing.
+
+    Source format keys and original locators are retained. Native record keys
+    are stable *within their source file/family*, never globally chronologic.
+    """
+    if not con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='capture_structured_records'"
+    ).fetchone():
+        return [], "STRUCTURED_ITEM_INDEX_UNAVAILABLE"
+    cursor = con.execute(
+        """SELECT source_file,family,record_key,record_type,ts,zone,
+                  entity_id,entity_name,item_id,item_name
+           FROM capture_structured_records
+           WHERE capture_id=? AND item_id IS NOT NULL
+           ORDER BY source_file,family,record_key LIMIT ?""",
+        (capture_id, limit + 1),
+    )
+    columns = [d[0] for d in cursor.description]
+    rows = cursor.fetchall()
+    truncated = len(rows) > limit
+    streams = {}
+    for values in rows[:limit]:
+        record = dict(zip(columns, values))
+        key = {k: record[k] for k in ("source_file", "family", "record_key")}
+        source = _source_locator(con, capture_id, "capture_structured_records", key)
+        partition = (record["source_file"], record["family"], record["zone"])
+        if partition not in streams:
+            streams[partition] = {
+                "table": "capture_structured_records", "zone_db": record["zone"],
+                "order_basis": "SOURCE_SCOPED_STRUCTURED_KEY",
+                "clock_status": "NOT_ALIGNED_WITH_OTHER_STREAMS", "events": [],
+            }
+        streams[partition]["events"].append({
+            "row_key": key, "observation_kind": "capture_structured_records",
+            "observed_fields": record, "native_timestamp": record["ts"],
+            "time_basis": "SOURCE_NATIVE_UNVERIFIED" if record["ts"] is not None else "NO_TIMESTAMP",
+            "source": source, "confidence": "INDEXED_OBSERVATION_ONLY",
+            "identity_status": "UNRESOLVED",
+        })
+    return list(streams.values()), "STRUCTURED_ITEM_RECORDS_TRUNCATED" if truncated else None
+
 def reconstruct_review_draft(con, capture_id: int, *, max_rows_per_table: int = 200, max_steps: int = 100) -> dict:
     """Read only: build an observed preview then a non-executable review handoff."""
-    return build_scenario_handoff(
-        reconstruct_observed_draft(con, capture_id, max_rows_per_table=max_rows_per_table),
-        max_steps=max_steps,
-    )
+    preview = reconstruct_observed_draft(con, capture_id, max_rows_per_table=max_rows_per_table)
+    # Separate optional source family: ordinary items live in structured capture
+    # records, not in the #1265 baseline observation tables. Never read payload_json.
+    streams, gap = _structured_item_streams(con, capture_id, max_rows_per_table)
+    preview["streams"].extend(streams)
+    if gap:
+        preview["review_gaps"].append(gap)
+    return build_scenario_handoff(preview, max_steps=max_steps)
 
 
 def apply_binding_decisions(draft: dict, decisions: list[dict]) -> dict:
