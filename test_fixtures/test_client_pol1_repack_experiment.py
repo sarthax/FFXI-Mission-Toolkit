@@ -282,6 +282,11 @@ class SyntheticPol1RepackTests(unittest.TestCase):
                     self.assertEqual(main(), 0)
             report = json.loads(output.getvalue())
             self.assertEqual(report["source_sha256"], digest)
+            self.assertIn("original_stream_sha256", report)
+            for comparison in report["results"]:
+                self.assertIn("candidate_matches_original_stream", comparison)
+                self.assertIn("candidate_common_prefix_bytes", comparison)
+                self.assertIn("candidate_sha256", comparison)
             self.assertTrue(report["pol1_raw_section_isolated"])
             self.assertIn("entrypoint_boundary_safe", report)
             self.assertIn("entrypoint_in_pol1", report)
@@ -403,6 +408,31 @@ class SyntheticPol1RepackTests(unittest.TestCase):
         self.assertEqual(decoded, source)
         self.assertEqual(used, len(lazy))
 
+
+
+    def test_original_packed_stream_identity_and_lazy_divergence(self):
+        original = (
+            b"abcu" + b"Q" * 40 + b"bcdefghijklmnopqrstuvwxyz"
+            + b"R" * 40 + b"abcdefghijklmnopqrstuvwxyz"
+        )
+        baseline = encode_pol1(original, search_depth=128)
+        image = fixture_pe(baseline, len(original), len(baseline) + 23)
+        baseline_report = assess_pol1_repack_fit(image, search_depth=128)
+        self.assertEqual(baseline_report["in_memory_decoded_roundtrip"], "PASS")
+        self.assertTrue(baseline_report["candidate_matches_original_stream"])
+        self.assertEqual(
+            baseline_report["original_stream_sha256"],
+            baseline_report["candidate_sha256"]
+        )
+        self.assertEqual(baseline_report["candidate_common_prefix_bytes"], len(baseline))
+
+        improved = assess_pol1_repack_fit(image, search_depth=128, lazy_match=True)
+        self.assertEqual(improved["in_memory_decoded_roundtrip"], "PASS")
+        self.assertLess(improved["candidate_encoded_size"], len(baseline))
+        self.assertFalse(improved["candidate_matches_original_stream"])
+        self.assertNotEqual(improved["original_stream_sha256"], improved["candidate_sha256"])
+        self.assertLess(improved["candidate_common_prefix_bytes"], len(baseline))
+        self.assertTrue(improved["protected_suffix_unchanged"])
 
 
 if __name__ == "__main__":
