@@ -302,3 +302,44 @@ def test_unicode_draft_size_must_match_current_ascii_escaped_sqlite_storage():
         serialize_spec(spec)
     with pytest.raises(ValueError, match="32KiB"):
         deserialize_spec(utf8_json)
+
+
+def test_actual_sqlite_storage_bytes_match_v2_contract_and_unicode_limit(monkeypatch, tmp_path):
+    """Check exact SQLite content bytes, not only an estimated serializer."""
+    import sqlite3
+    from workbench.server_admin.feature_testing.spec_drafts import save_draft
+
+    db = tmp_path / "canonical_v2_actual_bytes.sqlite"
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_DRAFTS_DB", str(db))
+    small = deepcopy(staged_fixture()["specification"])
+    small["purpose"] = "SYNTHETIC 雪 provenance with UNKNOWN oracle"
+    expected_wire = json.dumps(small, sort_keys=True, separators=(",", ":"))
+    assert len(expected_wire.encode("utf-8")) < 32768
+    assert save_draft(small, 0)["revision"] == 1
+    with sqlite3.connect(str(db)) as conn:
+        row = conn.execute(
+            "SELECT CAST(content AS BLOB), revision FROM test_spec_drafts WHERE case_id=?",
+            (small["case_id"],)
+        ).fetchone()
+    assert row[1] == 1
+    assert row[0] == expected_wire.encode("utf-8")
+    assert deserialize_spec(serialize_spec(small)) == small
+
+    large = deepcopy(staged_fixture()["specification"])
+    base = deepcopy(large["steps"][0])
+    large["steps"] = [
+        {**deepcopy(base), "id": f"SYNTH-SQLITE-UNICODE-{i}",
+         "title": "SYNTHETIC Unicode storage check",
+         "expected": "UNKNOWN " + "雪" * 450}
+        for i in range(16)
+    ]
+    large["contract_v2"]["step_requirements"][0]["step_id"] = "SYNTH-SQLITE-UNICODE-0"
+    assert validate_spec(large) is large
+    assert len(json.dumps(large, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")) < 32768
+    assert len(json.dumps(large, sort_keys=True, separators=(",", ":")).encode("utf-8")) > 32768
+    with pytest.raises(ValueError, match="32KiB"):
+        save_draft(large, 0)
+    with pytest.raises(ValueError, match="32KiB"):
+        serialize_spec(large)
+    with sqlite3.connect(str(db)) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM test_spec_drafts").fetchone()[0] == 1
