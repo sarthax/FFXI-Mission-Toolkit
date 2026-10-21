@@ -142,7 +142,11 @@ The review page provides source-local timeline sections (not a fabricated
 cross-source chronology), explicit confidence/uncertainty, source reference
 detail (filename, indexed hash, exact row key, original line/byte span,
 parser name/version, packet metadata and clock basis), and candidate
-inter-source groups. A grouping requires the same exact recorded zone label.
+inter-source groups. A fixed allowlist of existing indexed parser fields
+(`recorded_metadata`) displays event opcode/direction/option/message,
+EventView packet class and MesNum, item/KI identifiers, and raw packet
+opcode/injection/block markers. Raw packet bytes and opaque structured
+payload JSON are never copied into the review export. A grouping requires the same exact recorded zone label.
 Where an explicit NPC/entity field also matches, the relationship still says
 **INFERRED**, `UNVERIFIED_CROSS_SOURCE` and `UNPROVEN` causality. Where
 only the zone label agrees, it says `MATCHING_ZONE_LABEL_ONLY`. Neither
