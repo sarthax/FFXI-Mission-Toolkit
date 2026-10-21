@@ -126,7 +126,7 @@ def _entrypoint_section_offset(image: bytes, section: dict) -> int | None:
     if len(image) < 0x40 or image[:2] != b"MZ":
         raise Pol1Error("missing DOS signature")
     pe = struct.unpack_from("<I", image, 0x3C)[0]
-    if pe < 0x40 or pe + 24 > len(image) or image[pe:pe + 4] != b"PE\\0\\0":
+    if pe < 0x40 or pe + 24 > len(image) or image[pe:pe + 4] != bytes((80, 69, 0, 0)):
         raise Pol1Error("invalid PE signature/header")
     optional_size = struct.unpack_from("<H", image, pe + 20)[0]
     optional = pe + 24
