@@ -203,6 +203,10 @@ class Wardrobe2019AuditTests(unittest.TestCase):
         self.assertEqual(observed["manager_slot_count_field_offset"], 0x3B088)
         self.assertEqual(MANAGER_SLOT_COUNT_FIELD_OFFSET, 0x3B088)
         self.assertEqual(observed["manager_default_slot_count"], 1)
+        self.assertEqual(observed["separate_manager_index_validation_rva"], "0xF6EE0")
+        self.assertTrue(observed["manager_index_truncated_to_16_bits"])
+        self.assertTrue(observed["manager_index_guarded_by_slot_count"])
+        self.assertFalse(observed["manager_guard_proves_inventory_container_safety"])
         self.assertEqual(observed["manager_slot_selection_rvas"],
                          ["0xF710A", "0xF7009"])
         self.assertEqual(observed["manager_cleanup_call_rva"], "0xF700D")
@@ -230,6 +234,7 @@ class Wardrobe2019AuditTests(unittest.TestCase):
         self.assertIsNone(unknown["cursor_uses_existing_inventory_records"])
         self.assertEqual(unknown["evidence_status"], "UNVERIFIED_STATIC_ANCHORS")
         self.assertEqual(unknown["safety_decision"], "NO_GO_MOVE_OR_EXTEND_EXISTING_ARRAY")
+        self.assertIsNone(unknown["manager_index_guarded_by_slot_count"])
 
     def test_static_io_size_candidates_have_exact_count_and_no_false_semantics(self):
         report = inspect_2019_store_lifecycle(True)
