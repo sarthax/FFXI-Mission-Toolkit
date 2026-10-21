@@ -182,14 +182,114 @@ def validate_snapshot(snapshot, manifest, catalog):
             "source_attestation": "NOT_PERFORMED", "deployment": "UNKNOWN"}
 
 
+
+def validate_reconciled_matrix(matrix, manifest, snapshot, observed_heads):
+    """Compare the ONE proposed R5 matrix to exact staged PR JSON and fetched PR heads.
+
+    Inputs are DATA ONLY. This does not import scenarios, execute actions, authenticate
+    DSP file contents, or establish an installed server revision.
+    """
+    check(matrix.get("artifact_type") == "R5_domain_readiness_audit_not_canonical"
+          and matrix.get("execution_enabled") is False
+          and matrix.get("import_allowed") is False,
+          "matrix: not the guarded, non-importable R5 readiness artifact")
+    check(matrix.get("source", {}).get("principal_readiness_pr") == 1292,
+          "matrix: PR #1292 is the proposed primary inventory (reconcile stale copy)")
+    check(matrix.get("counts", {}).get("cases") == manifest["expected_total"]
+          and matrix.get("counts", {}).get("lanes") == manifest["expected_lanes"],
+          "matrix: 73-case lane summary differs from shared validation manifest")
+    domains = manifest["domains"]
+    refs = matrix.get("source", {}).get("domain_pr_head_snapshot")
+    check(isinstance(refs, list) and len(refs) == len(domains),
+          "matrix: missing nine exact staging PR head attestations (re-audit #1292)")
+    pinned = {x.get("domain"): x for x in refs}
+    check(len(pinned) == len(refs), "matrix: duplicate source domain head")
+    check(isinstance(observed_heads, dict), "matrix: missing live Git PR HEAD snapshot")
+    checks = {}
+    for meta in domains:
+        name = meta["name"]
+        pin = pinned.get(name) or {}
+        observed = observed_heads.get(name)
+        check(pin.get("pr") == meta["pr"] and
+              pin.get("source_revision") == meta["sha"] and
+              pin.get("case_count") == meta["cases"],
+              f"{name}: matrix source PR metadata stale; re-audit #1292")
+        check(isinstance(pin.get("head_sha"), str)
+              and SHA.fullmatch(pin["head_sha"]),
+              f"{name}: malformed pinned staging PR head")
+        check(observed == pin["head_sha"],
+              f"{name}: STALE_SOURCE_PR_HEAD_REAUDIT_REQUIRED: "
+              f"matrix pins {pin['head_sha']}, fetched {observed!r}")
+        data = load(Path(snapshot) / (name + ".json"))
+        checks.update({c["case_id"]: (name, meta["pr"], lane_of(c), c)
+                       for c in data["cases"]})
+    entries = matrix.get("cases")
+    check(isinstance(entries, list) and len(entries) == len(checks)
+          and len({c.get("scenario_id") for c in entries}) == len(entries),
+          "matrix: duplicate, added or missing case IDs against nine staged JSON files")
+    for record in entries:
+        cid = record["scenario_id"]
+        check(cid in checks, f"{cid}: absent in source staging PR; re-audit #1292")
+        name, pr, lane, case = checks[cid]
+        check(record.get("domain") == name and record.get("domain_pr") == pr
+              and record.get("declared_lane") == lane
+              and record.get("audited_lane") == lane,
+              f"{cid}: MATRIX_LANE_OR_DOMAIN_DRIFT: expected {name} PR#{pr} {lane}")
+        check(record.get("source_revision") ==
+              (load_revision := pinned[name]["source_revision"]),
+              f"{cid}: matrix DSP source revision differs from staged pinned SHA")
+        expected = (case.get("oracle") or {}).get("expectation")
+        if not expected:
+            expected = "; ".join((case.get("behavior") or {}).get("then", []))
+        if not expected:
+            expected = "; ".join(a.get("expected", "")
+                                 for a in case.get("assertions", []))
+        expected = (expected or "UNKNOWN")[:900]
+        check(record.get("expected_behavior") == expected,
+              f"{cid}: EXPECTED_TEXT_CHANGED_REAUDIT_REQUIRED (do not auto-promote oracle)")
+        live_refs = get_refs(case)
+        record_refs = record.get("source_refs")
+        check(isinstance(record_refs, list) and bool(record_refs),
+              f"{cid}: matrix source refs missing")
+        for r in record_refs:
+            check(r.get("repository") == "sarthax/darkstar-to-valhalla"
+                  and r.get("commit") == load_revision
+                  and any(all(src.get(k) == r.get(k)
+                              for k in ("repository", "commit", "path",
+                                        "line_start", "line_end"))
+                          for src in live_refs),
+                  f"{cid}: MATRIX_PINNED_SOURCE_REF_DRIFT: cite staged line and SHA")
+        check(record.get("runner_state") == "unassigned"
+              and record.get("verdict") == "NOT_RUN_IN_THIS_AUDIT"
+              and record.get("v2_import") == "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+              f"{cid}: imported or promoted readiness audit record")
+        permissions = record.get("permissions")
+        check(isinstance(permissions, list) and bool(permissions)
+              and isinstance(record.get("blocking_gaps"), list)
+              and bool(record.get("readback_missing")),
+              f"{cid}: missing readback/permission or gap declaration")
+        if lane == "needs-deploy":
+            check(name == "chocobo_raising",
+                  f"{cid}: deployed claim inconsistent with needs-deploy")
+    return {"matrix": "CONSISTENT_WITH_PINNED_PR_HEADS",
+            "cases": len(checks), "execution_enabled": False,
+            "source_authenticity": "NOT_ATTESTED",
+            "deployed_revision": "UNKNOWN"}
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--snapshot-root", required=True, type=Path)
     p.add_argument("--manifest", required=True, type=Path)
     p.add_argument("--catalog", required=True, type=Path)
+    p.add_argument("--matrix", required=True, type=Path)
+    p.add_argument("--observed-heads", required=True, type=Path)
     args = p.parse_args()
-    print(json.dumps(validate_snapshot(args.snapshot_root, load(args.manifest),
-                                       load(args.catalog)), indent=2, sort_keys=True))
+    manifest = load(args.manifest)
+    base = validate_snapshot(args.snapshot_root, manifest, load(args.catalog))
+    concord = validate_reconciled_matrix(load(args.matrix), manifest,
+                                          args.snapshot_root, load(args.observed_heads))
+    print(json.dumps({**base, **concord}, indent=2, sort_keys=True))
 
 
 if __name__ == "__main__":
