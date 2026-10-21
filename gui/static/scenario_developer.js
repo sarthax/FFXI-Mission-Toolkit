@@ -296,7 +296,10 @@
     return value;
   }
   async function validatePreview() {
-    const result=await call('/scenario-developer/validate','POST',{specification:current()});
+    const generation=editorGeneration, input=M.clone(current());
+    const result=await call('/scenario-developer/validate','POST',{specification:input});
+    if(generation!==editorGeneration || JSON.stringify(current())!==JSON.stringify(input))
+      throw Error('Preview is stale: editor changed while validating. Validate the current draft again.');
     renderPreview(result.preview,result.reader_view);
     show('Canonical validation accepted — DESIGN_ONLY, unreviewed, not executable.\n'+
       result.warnings.join('\n'));
