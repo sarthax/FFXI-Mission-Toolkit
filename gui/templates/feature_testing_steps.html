@@ -24,6 +24,7 @@
 <p><strong>Specification maturity:</strong> {{ scenario_view.authoring_state }}
 · <strong>Review required:</strong> {{ 'Yes' if scenario_view.review_required else 'Not specified as required' }}
 · <strong>Assertion mapping:</strong> {{ scenario_view.mapped_assertion_count }} of {{ scenario_view.assertion_count }} specification assertions</p>
+{% if scenario_view.unmapped_assertions %}<p class="ft-warning"><strong>Uncovered assertions — UNKNOWN:</strong> {{ scenario_view.unmapped_assertions|join(', ') }}</p>{% endif %}
 {% if scenario_view.recorded_verdict or scenario_view.recalculated_verdict or scenario_view.reevaluation_error %}
 <p><strong>Recorded verdict:</strong> {{ scenario_view.recorded_verdict or 'UNKNOWN' }}
 · <strong>Recalculated verdict:</strong> {{ scenario_view.recalculated_verdict or 'UNKNOWN' }}
