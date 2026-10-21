@@ -200,3 +200,19 @@ assert.deepEqual(reviewedWithBindings.assertions,[]);
 assert.deepEqual(M.parseAdvanced(JSON.stringify(reviewedWithBindings)),reviewedWithBindings);
 assert.throws(()=>M.draftFromCoverage({...coverageContext,assertions:[{id:'smuggled'}]}),/Unsupported/);
 console.log('Unified intake: no implicit assertion, explicit step AND identity decisions: PASS');
+
+
+{
+  const clean=M.fresh();
+  assert.equal(M.handoffReplacementIssue(clean,null,0,null),null);
+  const unsaved=M.clone(clean);
+  unsaved.name='Operator-edited draft, must not be dropped';
+  assert.match(M.handoffReplacementIssue(unsaved,null,0,null),/unsaved editor changes/);
+  assert.match(M.handoffReplacementIssue(clean,clean,2,null),/saved draft is open/);
+  assert.match(M.handoffReplacementIssue(clean,null,1,null),/saved draft is open/);
+  assert.match(M.handoffReplacementIssue(clean,null,0,'coverage:gardening/GARD-01'),/already open/);
+  assert.match(M.handoffReplacementIssue(reverse,null,0,'evidence:1/checksum'),/already open/);
+  assert.match(M.handoffReplacementIssue(M.parseAdvanced(JSON.stringify(unsaved)),null,0,null),/unsaved editor changes/);
+  assert.equal(M.handoffReplacementIssue(M.fresh(),null,0,null),null);
+  console.log('No silent handoff replacement of unsaved/loaded drafts: PASS');
+}
