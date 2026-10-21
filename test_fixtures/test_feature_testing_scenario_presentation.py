@@ -148,3 +148,19 @@ def test_scenario_and_run_views_wire_read_only_presentation(monkeypatch):
     assert view["recorded_verdict"] == "PASS"
     assert view["recalculated_verdict"] == "PASS"
     assert view["independent_verification"] == "NOT_ESTABLISHED"
+
+
+def test_unmapped_claims_and_unrecognized_status_never_turn_into_pass():
+    spec = synthetic_bdd()
+    spec["steps"].pop()
+    view = scenario_presentation(spec, {
+        "recorded_verdict": "PASS",
+        "evaluation": {"assertions": [
+            {"id": "expected_character", "status": "SKIPPED", "reason": "Synthetic unsupported status"},
+        ]},
+    })
+    assert view["unmapped_assertions"] == ["safe_matches_persisted"]
+    assert view["mapped_assertion_count"] == 5
+    assert view["steps"][0]["status"] == "UNKNOWN"
+    assert view["steps"][1]["status"] == "UNKNOWN"
+    assert view["independent_verification"] == "NOT_ESTABLISHED"
