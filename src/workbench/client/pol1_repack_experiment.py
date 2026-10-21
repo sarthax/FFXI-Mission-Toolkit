@@ -23,7 +23,7 @@ def _key(code: bytes, i: int) -> int:
     return ((code[i] * 251 + code[i + 1]) * 251 + code[i + 2]) & 0xFFFF
 
 
-def encode_pol1(code: bytes) -> bytes:
+def encode_pol1(code: bytes, *, search_depth: int = MAX_CANDIDATES) -> bytes:
     """Encode using MSB-first literal flags and 12-bit backward distances.
 
     This is a bounded greedy format experiment, not an exact inverse that
@@ -31,6 +31,8 @@ def encode_pol1(code: bytes) -> bytes:
     """
     if not isinstance(code, bytes) or not 0 < len(code) <= MAX_EXPERIMENTAL_SIZE:
         raise Pol1Error("decoded input must be nonempty bytes within 8 MiB experiment bound")
+    if type(search_depth) is not int or search_depth not in (16, 64, 128):
+        raise Pol1Error("search_depth must be 16, 64 or 128")
     # Fixed-size hash heads and 32-bit chains bound memory to O(input bytes),
     # unlike a dictionary of millions of unique three-byte substrings.
     heads = array("i", [-1]) * 65536
@@ -50,7 +52,7 @@ def encode_pol1(code: bytes) -> bytes:
                 search = heads[_key(code, pos)]
                 tries = 0
                 limit = min(MAX_MATCH, len(code) - pos)
-                while search >= 0 and pos - search <= MAX_DISTANCE and tries < MAX_CANDIDATES:
+                while search >= 0 and pos - search <= MAX_DISTANCE and tries < search_depth:
                     if code[search:search+MIN_MATCH] == code[pos:pos+MIN_MATCH]:
                         length = MIN_MATCH
                         while length < limit and code[search + length] == code[pos + length]:
@@ -142,7 +144,9 @@ def _entrypoint_section_offset(image: bytes, section: dict) -> int | None:
     return None
 
 
-def assess_pol1_repack_fit(image: bytes, candidate_code: bytes | None = None) -> dict:
+def assess_pol1_repack_fit(
+    image: bytes, candidate_code: bytes | None = None, *, search_depth: int = MAX_CANDIDATES
+) -> dict:
     """Report whether greedy encoding fits existing POL1 raw bytes; never write.
 
     'fits' means byte capacity only; neither a patch nor retail boot acceptance.
@@ -154,7 +158,7 @@ def assess_pol1_repack_fit(image: bytes, candidate_code: bytes | None = None) ->
     code = original["bytes"] if candidate_code is None else candidate_code
     if not isinstance(code, bytes) or len(code) != original["size"]:
         raise Pol1Error("candidate decoded code must match original decoded length")
-    candidate = encode_pol1(code)
+    candidate = encode_pol1(code, search_depth=search_depth)
     start, available = section["raw_start"], section["raw_size"]
     original_used = _stream_consumed_bytes(image, original["size"])
     entrypoint_offset = _entrypoint_section_offset(image, section)
@@ -178,6 +182,7 @@ def assess_pol1_repack_fit(image: bytes, candidate_code: bytes | None = None) ->
         "entrypoint_boundary_safe": boundary_valid,
         "safe_stream_budget_bytes": budget,
         "candidate_encoded_size": len(candidate),
+        "encoder_search_depth": search_depth,
         "headroom_bytes": budget - len(candidate),
         "candidate_sha256": hashlib.sha256(candidate).hexdigest(),
         "caution": ("In-memory capacity estimate only; full POL1 section is NOT writable "
