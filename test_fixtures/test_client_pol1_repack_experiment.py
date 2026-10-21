@@ -321,5 +321,74 @@ class SyntheticPol1RepackTests(unittest.TestCase):
 
 
 
+
+    def test_deep_and_lazy_encoder_preserve_original_code(self):
+        rng = random.Random(1303)
+        samples = [
+            b"abcabc",
+            bytes((i // 7) % 32 for i in range(9000)),
+            (b"ABCxyz" * 2000) + (b"ABCxyzdef" * 200),
+            bytes(rng.randrange(256) for _ in range(4096)),
+        ]
+        for source in samples:
+            for depth, lazy in ((256, False), (512, False), (1024, False),
+                                (128, True), (256, True), (512, True)):
+                with self.subTest(size=len(source), depth=depth, lazy=lazy):
+                    encoded = encode_pol1(source, search_depth=depth, lazy_match=lazy)
+                    recovered, consumed = independent_pol1_decode(encoded, len(source))
+                    self.assertEqual(recovered, source)
+                    self.assertEqual(consumed, len(encoded))
+        with self.assertRaises(Pol1Error):
+            encode_pol1(b"abc", search_depth=2048)
+        with self.assertRaises(Pol1Error):
+            encode_pol1(b"abc", lazy_match=1)
+
+    def test_cli_improved_comparison_records_modes_without_writes(self):
+        from workbench.client.cli.pol1_repack_report import main
+
+        code = b"abcabc"
+        image = fixture_pe(encode_pol1(code), len(code), capacity=32)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "synthetic.dll"
+            path.write_bytes(image)
+            digest = hashlib.sha256(image).hexdigest()
+            with patch("sys.argv", [
+                "pol1-repack-report", str(path),
+                "--expected-sha256", digest, "--compare-improved"
+            ]):
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    self.assertEqual(main(), 0)
+            report = json.loads(output.getvalue())
+            self.assertEqual(report["comparison_mode"], "improved")
+            self.assertEqual(
+                [(x["depth"], x["lazy_match"]) for x in report["results"]],
+                [(256, False), (512, False), (1024, False), (128, True), (256, True)]
+            )
+            self.assertTrue(report["pol1_raw_section_isolated"])
+            self.assertEqual(len(report["results"]), 5)
+            self.assertIsNotNone(report["best_fit_depth"])
+            for item in report["results"]:
+                self.assertEqual(item["status"], "FITS_ORIGINAL_STREAM_BUDGET")
+                self.assertEqual(item["in_memory_decoded_roundtrip"], "PASS")
+                self.assertTrue(item["protected_suffix_unchanged"])
+            with patch("sys.argv", [
+                "pol1-repack-report", str(path),
+                "--expected-sha256", "0" * 64, "--compare-improved"
+            ]):
+                with redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit):
+                        main()
+            with patch("sys.argv", [
+                "pol1-repack-report", str(path), "--expected-sha256", digest,
+                "--compare-improved", "--lazy-match"
+            ]):
+                with redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit):
+                        main()
+            self.assertEqual(path.read_bytes(), image)
+
+
+
 if __name__ == "__main__":
     unittest.main()
