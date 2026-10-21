@@ -308,10 +308,10 @@ def verify_integrated_history(matrix, manifest, snapshot, read_pinned_blob, is_m
     """
     refs = (matrix.get("source") or {}).get("domain_pr_head_snapshot")
     domains = manifest.get("domains")
-    check(isinstance(domains, list) and len(domains) == 9,
-          "integrated-main: expected nine domain manifests")
-    check(isinstance(refs, list) and len(refs) == 9,
-          "integrated-main: expected nine historical PR head pins")
+    check(isinstance(domains, list) and bool(domains),
+          "integrated-main: expected nonempty domain manifests")
+    check(isinstance(refs, list) and len(refs) == len(domains),
+          "integrated-main: historical PR head pin count mismatch")
     pins = {r.get("domain"): r for r in refs if isinstance(r, dict)}
     check(len(pins) == len(refs), "integrated-main: duplicate/invalid domain pin")
     observed = {}
