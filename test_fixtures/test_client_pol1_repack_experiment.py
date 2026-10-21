@@ -13,7 +13,10 @@ from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-from workbench.client.pol1_repack_experiment import encode_pol1, assess_pol1_repack_fit, _stream_termination_metadata
+from workbench.client.pol1_repack_experiment import (
+    encode_pol1, assess_pol1_repack_fit, _stream_termination_metadata,
+    _in_memory_zero_distance_terminated_stream
+)
 from workbench.client.pol1_unpack import unpack_pol1, Pol1Error
 
 
@@ -565,6 +568,63 @@ class SyntheticPol1RepackTests(unittest.TestCase):
             result["virtual_substitution_post_output_next_token"]["status"],
             ("ZERO_DISTANCE_STOP", "NEXT_MATCH_HAS_NONZERO_DISTANCE",
              "NEXT_TOKEN_IS_LITERAL", "NEXT_MATCH_WORD_INCOMPLETE")
+        )
+
+
+    def test_in_memory_marker_append_partial_and_complete_groups(self):
+        for decoded, expected_marker_bytes in (
+            (b"abcabc", 2),
+            (b"ABCDEFGH", 3),
+        ):
+            with self.subTest(decoded=decoded):
+                encoded = encode_pol1(decoded)
+                marked, details = _in_memory_zero_distance_terminated_stream(
+                    encoded, len(decoded)
+                )
+                self.assertEqual(details["marker_bytes"], expected_marker_bytes)
+                self.assertEqual(len(marked), len(encoded) + expected_marker_bytes)
+                self.assertTrue(details["detected_immediately_after_decoded_end"])
+                self.assertEqual(
+                    _stream_termination_metadata(marked, len(decoded))[
+                        "post_output_next_token"
+                    ]["status"],
+                    "ZERO_DISTANCE_STOP"
+                )
+                recovered, consumed = independent_pol1_decode(marked, len(decoded))
+                self.assertEqual(recovered, decoded)
+                self.assertEqual(consumed, len(encoded))
+                self.assertEqual(
+                    marked[:len(encoded)], encoded
+                )
+
+    def test_synthetic_terminated_candidate_budget_is_separate_from_raw_fit(self):
+        source = b"abcabc"
+        encoded = encode_pol1(source)
+        report = assess_pol1_repack_fit(fixture_pe(encoded, len(source)))
+        self.assertEqual(report["in_memory_decoded_roundtrip"], "PASS")
+        self.assertEqual(report["headroom_bytes"], 0)
+        stop = report["synthetic_terminated_candidate"]
+        self.assertEqual(stop["marker_bytes"], 2)
+        self.assertEqual(stop["headroom_with_stop_bytes"], -2)
+        self.assertFalse(stop["fits_original_prefix_budget"])
+
+        longer = (
+            b"abcu" + b"Q" * 40 + b"bcdefghijklmnopqrstuvwxyz"
+            + b"R" * 40 + b"abcdefghijklmnopqrstuvwxyz"
+        )
+        original = encode_pol1(longer, search_depth=128)
+        report = assess_pol1_repack_fit(
+            fixture_pe(original, len(longer), len(original) + 9),
+            search_depth=128, lazy_match=True
+        )
+        self.assertEqual(report["in_memory_decoded_roundtrip"], "PASS")
+        self.assertTrue(
+            report["synthetic_terminated_candidate"]["fits_original_prefix_budget"]
+        )
+        self.assertTrue(
+            report["synthetic_terminated_candidate"][
+                "detected_immediately_after_decoded_end"
+            ]
         )
 
 
