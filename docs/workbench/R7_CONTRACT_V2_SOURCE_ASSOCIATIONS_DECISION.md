@@ -179,6 +179,38 @@ conflicts should appear as `BLOCKED`; unavailable independent source and
 runtime evidence as `UNKNOWN`. `MATCHED_PINNED_ONLY` still means pins
 compare as supplied, not authenticated or runnable.
 
+## Editor-ready synthetic JSON examples (no data import)
+
+These are **standalone canonical v1 specification JSON documents**, not
+wrapper envelopes. An editor test may parse each file directly as the
+specification payload; none is added to `test_specifications.json`,
+registered for execution, or a valid gameplay acceptance run.
+
+| File | Canonical expectation | Attribution display |
+|---|---|---|
+| [Valid explicit case + step](../../test_fixtures/r7_contract_v2_source_associations_valid_synthetic.json) | `validate_spec` ACCEPT; `serialize_spec/deserialize_spec` preserve all fields | case + `SYNTH-V2-S01` = `EXPLICIT_CITATION_CLAIM`; all permission and approval flags denied |
+| [Invalid foreign/missing step](../../test_fixtures/r7_contract_v2_source_associations_invalid_step_synthetic.json) | `validate_spec` rejects `DIFFERENT-CASE-STEP` not present in `steps[]` | No projection/save: invalid scoped relationship |
+| [Invalid unknown source](../../test_fixtures/r7_contract_v2_source_associations_invalid_source_synthetic.json) | `validate_spec` rejects unknown `missing-source-ref` | No projection/save: invalid source ID |
+| [Earlier optional-v2 document](../../test_fixtures/scenario_contract_v2_synthetic.json) | Use its `specification` child; valid old six-key `contract_v2` with no associations | source registry exists, but case+step direct association **UNKNOWN** |
+| [Legacy MOG-09 / INV-OBS-01](../../data/testing/test_specifications.json) | Existing canonical specifications without `contract_v2` | No new metadata inserted on load/save |
+
+All three new documents deliberately have `schema_version=1`,
+`runner="unassigned"`, `execution_status="design_only"`, null source
+digest, null engine pins, a candidate/ambiguous typed identity and a
+blocked step requirement. They are not source-byte-authenticated.
+Negative fixture documents are *expected to be rejected* before the editor
+persists them. The focused pytest suite asserts expected positive/negative
+validation, raw JSON roundtrip for the valid fixture, `UNKNOWN`
+compatibility and the 32-KiB ASCII-escaped storage bound.
+
+**Consumer behavior:** `sources[]` is an UNASSIGNED registry unless the
+optional explicit scoped link is present. Do not populate
+`source_associations` from case notes, v1 `evidence_refs`, captured
+`steps[].step_id`, or oracle-linked assertion coincidence. Agent D's
+separate `canonical_step_id=null` and `canonical_source_association`
+fields are noncanonical projection states and **must not** be copied into
+this canonical schema.
+
 ## Acceptance and ownership
 
 Focused offline synthetic tests cover legacy MOG-09/INV-OBS-01 without v2;
