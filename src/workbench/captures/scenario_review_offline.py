@@ -49,6 +49,9 @@ def render_review_html(draft: dict, *, readiness: dict | None = None) -> str:
                {x["step_id"] for x in draft["steps"]}):
         raise ValueError("readiness summary does not match the indexed capture draft")
     readiness_by_step = {s["step_id"]: s for s in readiness["readiness_steps"]}
+    if (not isinstance(readiness.get("source_integrity"), dict)
+            or not isinstance(readiness.get("scenario_developer_handoff"), dict)):
+        raise ValueError("invalid source integrity or authoring-readiness envelope")
     # The optional companion for Agent B is display-only and derived from
     # these exact reviewer steps; reject invented approval/permissions.
     expected_authoring = _typed_authoring_projection(
