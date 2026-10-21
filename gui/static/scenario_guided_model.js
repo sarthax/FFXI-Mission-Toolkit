@@ -192,6 +192,21 @@
       ' is a declared case intent only; source and normative oracle UNKNOWN');
     return next;
   }
+  // Re-resolve the exact declared intent immediately before beginning
+  // authoring. A source label/category or safety flag change invalidates the
+  // displayed review even though its revision is still UNPINNED.
+  function coverageContextChanged(before, after) {
+    if (!before || !after) return true;
+    const fields=['contract','feature_id','behavior_ref','label','category','source',
+      'source_pointer','source_revision','reference_kind','expected_oracle',
+      'context_only','design_only','review_required','auto_populate_allowed',
+      'auto_save_allowed','execution_enabled','return_url'];
+    return fields.some(field=>before[field] !== after[field]) ||
+      JSON.stringify(before.assertions)!==JSON.stringify(after.assertions) ||
+      JSON.stringify(before.observations)!==JSON.stringify(after.observations) ||
+      JSON.stringify(before.capability_bindings)!==JSON.stringify(after.capability_bindings);
+  }
+
   // Explicit handoff entry must not silently replace an edited, loaded or
   // already source-derived draft. Return a human-readable blocker, not a
   // permission to save; all authoring still uses canonical validation.
@@ -293,5 +308,5 @@
     return draftFromCoverage(ctx);
   }
 
-  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, emptyHandoffDraft, draftFromCoverage, draftFromEvidence, handoffReplacementIssue, referenceIssues, parseAdvanced, contextRefPath, fromContext};
+  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, emptyHandoffDraft, draftFromCoverage, draftFromEvidence, handoffReplacementIssue, coverageContextChanged, referenceIssues, parseAdvanced, contextRefPath, fromContext};
 });
