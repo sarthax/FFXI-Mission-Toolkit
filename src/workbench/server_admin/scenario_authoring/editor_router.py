@@ -176,7 +176,7 @@ def search_editor_catalog(request: Request, kind: str, query: str, limit: int = 
     except CatalogUnavailable as exc:
         raise HTTPException(503, str(exc)) from exc
     except ValueError as exc:
-        raise HTTPException(422, str(exc)) from exc
+        raise HTTPException(422, str(exc) + " Resolve: " + _validation_help(str(exc))) from exc
 
 
 @router.get("/seed/{feature_id}/{case_id}", include_in_schema=False)
@@ -186,6 +186,28 @@ def seed(request: Request, feature_id: str, case_id: str):
     if spec is None:
         raise HTTPException(404, "No canonical specification found")
     return {"specification": spec, "copy_only": True, "execution_enabled": False}
+
+
+def _validation_help(reason: str) -> str:
+    """Expose next actionable edit without weakening canonical validation."""
+    low = reason.casefold()
+    if "duplicate step" in low:
+        return "Use a different stable step ID; reorder existing steps without changing their IDs."
+    if "unknown step assertion" in low:
+        return "Choose an assertion ID already defined in this scenario, or add its definition."
+    if "unknown step evidence" in low or "unsupported observation" in low:
+        return "Select supported observations and bind each step to an existing observation name."
+    if "duplicate" in low and "assertion" in low:
+        return "Give each assertion a unique ID and rebind the affected steps."
+    if "invalid bdd" in low or "bdd phase" in low:
+        return "Enter at least one Given, When and Then statement (one per line)."
+    if "unrecognized" in low or "unexpected" in low or "invalid step fields" in low:
+        return "Remove unsupported JSON fields; use only the canonical schema, not a separate action format."
+    if "published" in low:
+        return "Clone the published scenario with a new case ID; published definitions cannot be overwritten."
+    if "runner" in low or "design_only" in low or "review" in low or "mutating" in low:
+        return "Keep this draft unassigned, design-only, read-only and review-required."
+    return "Review required fields, lengths and source gaps; inspect the canonical specification."
 
 
 @router.post("/validate", include_in_schema=False)
