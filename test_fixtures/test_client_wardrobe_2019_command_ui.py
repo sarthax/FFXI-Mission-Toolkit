@@ -14,7 +14,8 @@ from workbench.client.wardrobe_2019_command_ui import (
     HANDLER_RECORD_BYTES, IMAGE_BASE, MODE_FIRST, MODE_LAST,
     MODE_CASE_TARGETS, MODE_CASE_UI_POINTER_GLOBALS,
     MODE_FORWARD_BYTES, MODE_GETTER_BYTES, MODE_SELECTOR_BYTES,
-    UI_JUMP_TABLE_RVA, WARDROBE_COMMANDS,
+    UI_JUMP_TABLE_RVA, WARDROBE_COMMANDS, WARDROBE_MODE_OBJECTS,
+    inspect_2019_mode_object_getters,
     inspect_2019_command_ui_dispatch,
 )
 
@@ -60,6 +61,26 @@ def synthetic_ui_tables():
                          UI_JUMP_TABLE_RVA - CODE_RVA + idx * 4,
                          IMAGE_BASE + case)
     return bytes(data), bytes(code)
+
+
+def synthetic_mode_objects(code: bytes):
+    """Construct synthetic .rdata vtables and constant-return getter instructions."""
+    rdata_rva = 0x31E000
+    rdata = bytearray(0x26000)
+    updated_code = bytearray(code)
+    for name, ctor, vtable, object_global, getter, mode in WARDROBE_MODE_OBJECTS:
+        ctor_code = (
+            bytes.fromhex("c700") + struct.pack("<I", vtable)
+            + bytes([0xA3]) + struct.pack("<I", object_global)
+        )
+        updated_code[ctor - CODE_RVA:ctor - CODE_RVA + len(ctor_code)] = ctor_code
+        struct.pack_into("<I", rdata, vtable - IMAGE_BASE - rdata_rva + 0x54,
+                         IMAGE_BASE + getter)
+        getter_bytes = bytes([0xB8]) + struct.pack("<I", mode) + bytes([0xC3])
+        updated_code[getter - CODE_RVA:getter - CODE_RVA + 6] = getter_bytes
+    return bytes(rdata), bytes(updated_code)
+
+
 
 
 class Wardrobe2019CommandUITests(unittest.TestCase):
@@ -145,6 +166,62 @@ class Wardrobe2019CommandUITests(unittest.TestCase):
         with self.assertRaises(Pol1Error):
             inspect_2019_command_ui_dispatch(data, DATA_RVA,
                                               bytes(8 * 1024 * 1024 + 1))
+
+
+    def test_constructor_vtable_and_getters_prove_four_mode_constants(self):
+        _, decoded = synthetic_ui_tables()
+        rdata, decoded = synthetic_mode_objects(decoded)
+        report = inspect_2019_mode_object_getters(rdata, 0x31E000, decoded)
+        self.assertEqual(report["status"], "EXACT_MODE_OBJECT_CHAIN_VERIFIED")
+        self.assertTrue(report["command_to_mode_mapping_proved_by_static_getters"])
+        self.assertEqual([x["command"] for x in report["mode_objects"]],
+                         ["/wardrobe", "/wardrobe2", "/wardrobe3", "/wardrobe4"])
+        self.assertEqual([x["reported_mode"] for x in report["mode_objects"]],
+                         [8, 10, 11, 12])
+        self.assertTrue(report["mode_9_is_not_one_of_four_wardrobe_commands"])
+        self.assertTrue(all(
+            x["constructor_sets_expected_vtable_and_global"]
+            and x["vtable_slot_points_to_getter"]
+            and x["getter_returns_constant_mode"]
+            for x in report["mode_objects"]
+        ))
+        self.assertFalse(report["object_creation_or_ui_runtime_execution_verified"])
+        self.assertFalse(report["client_mode_13_to_16_implemented"])
+
+    def test_corrupted_constructor_vtable_or_mode_getter_fail_closed(self):
+        _, decoded = synthetic_ui_tables()
+        rdata, decoded = synthetic_mode_objects(decoded)
+        first = WARDROBE_MODE_OBJECTS[0]
+        for label, broken_rdata, broken_code in (
+            ("constructor", rdata, decoded[:first[1] - CODE_RVA] +
+             bytes([decoded[first[1] - CODE_RVA] ^ 1]) +
+             decoded[first[1] - CODE_RVA + 1:]),
+            ("vtable", rdata[:first[2] - IMAGE_BASE - 0x31E000 + 0x54] +
+             bytes([rdata[first[2] - IMAGE_BASE - 0x31E000 + 0x54] ^ 1]) +
+             rdata[first[2] - IMAGE_BASE - 0x31E000 + 0x55:], decoded),
+            ("getter", rdata, decoded[:first[4] - CODE_RVA + 1] +
+             bytes([decoded[first[4] - CODE_RVA + 1] ^ 1]) +
+             decoded[first[4] - CODE_RVA + 2:]),
+        ):
+            with self.subTest(kind=label):
+                report = inspect_2019_mode_object_getters(
+                    broken_rdata, 0x31E000, broken_code
+                )
+                self.assertEqual(report["status"], "INCOMPLETE_STATIC_EVIDENCE")
+                self.assertFalse(
+                    report["command_to_mode_mapping_proved_by_static_getters"])
+                self.assertIsNone(
+                    report["mode_9_is_not_one_of_four_wardrobe_commands"])
+
+    def test_incomplete_rdata_and_wrong_types_reject_mode_mapping(self):
+        _, decoded = synthetic_ui_tables()
+        report = inspect_2019_mode_object_getters(bytes(32), 0x31E000, decoded)
+        self.assertEqual(report["status"], "INCOMPLETE_STATIC_EVIDENCE")
+        self.assertIsNone(report["mode_9_is_not_one_of_four_wardrobe_commands"])
+        with self.assertRaises(Pol1Error):
+            inspect_2019_mode_object_getters(bytearray(64), 0x31E000, decoded)
+        with self.assertRaises(Pol1Error):
+            inspect_2019_mode_object_getters(bytes(64), True, decoded)
 
 
 if __name__ == "__main__":
