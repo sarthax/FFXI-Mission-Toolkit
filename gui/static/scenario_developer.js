@@ -219,13 +219,13 @@
   }
   // The existing editor owns all draft mutations; this panel is display-only.
   // Show only explicit canonical source relationships. No client-side verification.
-  function renderContractV2(compatibility) {
+  function renderContractV2(compatibility, draft=spec) {
     const host=$('sd-contract-v2');
     if(!host || !V)return;
     const open=new Set([...host.querySelectorAll('details[open]')].map(d=>d.dataset.key));
     host.replaceChildren();
     let projection;
-    try{projection=V.project(spec,compatibility);}
+    try{projection=V.project(draft,compatibility);}
     catch(e){staticText(host,'p','Optional metadata cannot be projected; canonical validation required: '+e.message);return;}
     if(!projection.present){staticText(host,'p',projection.message);return;}
     if(!projection.valid){staticText(host,'p',projection.message);return;}
@@ -322,6 +322,7 @@
   }
 
   function renderIncompletePreview() {
+    renderContractV2(null);
     // A planning preview is not canonical acceptance; it never runs the
     // assertions, reads a capture or promotes a proposed expectation.
     const root=$('sd-preview');root.replaceChildren();root.hidden=false;
@@ -378,6 +379,12 @@
   }
   $('sd-guided').addEventListener('click',()=>switchMode('guided'));
   $('sd-advanced').addEventListener('click',()=>switchMode('advanced'));
+  $('sd-advanced-json').addEventListener('input',()=>{
+    // Unapplied Advanced edits are *displayed as provisional*, not silently
+    // copied to spec, validated, saved, or promoted into verified metadata.
+    try{renderContractV2(null,M.parseAdvanced($('sd-advanced-json').value));}
+    catch(e){$('sd-contract-v2').textContent='Advanced JSON pending canonical validation: '+e.message;}
+  });
   $('sd-apply-json').addEventListener('click',()=>switchMode('guided'));
   $('sd-new').addEventListener('click',()=>{
     try {
