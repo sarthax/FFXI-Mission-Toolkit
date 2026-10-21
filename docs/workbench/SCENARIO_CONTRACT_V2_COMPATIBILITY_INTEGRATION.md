@@ -100,3 +100,20 @@ Additional safety: unknown source refs, extra source fields, non-hex hashes, boo
 **Integration order:** (1) B/D/E accept/adjust exact names and source semantics; (2) independently verify original DSP source bytes/hash and deployed revision; (3) review staged expected oracle, every identity and scope, readback and capability; (4) build a distinct canonical design-only v1 wrapper with **real allowlisted fields/expressions** and v2 metadata; (5) confirm editor JSON round-trip, step rebinding and reviewer rendering; (6) only after separate authorization design a future trusted evidence-fingerprint importer and runner gating. No bulk migration or runner widening in #1285.
 
 **Could not verify remotely:** local DSP/client files, source SHA-256 of cited garden SQL, actual deployed DSP engine or XiHeadless build, source-branch conditions, independently complete server readbacks, real character/item/NPC identity crosswalk, or whether the editor visual widgets display metadata correctly. Synthetic GitHub Actions prove only deterministic software behavior.
+
+
+## 7. Agent E's 73-case audit: source-drift and capacity reconciliation
+
+Agent E's [draft #1292](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1292) now audits **73** design-only case records across the nine domain PRs (5 *conditional* observe-now, 2 needs-readback, 57 needs-mutation, 9 needs-deploy), all **NOT_RUN**. Agent E fetched **42 distinct pinned DSP commit/path targets** and checked **1,144 source ranges** for in-bounds coordinates. This is useful *syntactic source-location review only*: no original-file SHA-256 attestations, observed runtime deployments, conditional branch oracles, independent readbacks or accepted runner/permission binding result from that check. A Git **blob SHA is not the v2 SHA-256 content field**.
+
+Two source revisions are demonstrably distinct despite valid historical citations:
+
+- Gardening `src/map/utils/gardenutils.cpp` at pinned `330ea8f...` has `SavePot` at line 589 and a dual-safe loop at line 616. The separately reviewed DSP-main revision shifts those to 588 and 615 and has a different blob. **Do not rewrite pinned lines on import or assume a current deployed binary**; perform a new exact-revision/source-byte audit first. The double-safe numeric-slot collision remains a safety stop.
+- Nyzul `scripts/commands/nyzuldebug.lua` pinned `2b71b442...` accepts only instance 51; audited DSP `main@86d4467...` accepts 51 **and 52** with an instance-specific leader table. Even if both source text digests are present, a current branch/engine mismatch must block any equivalence claim; diagnostic forced completion is not natural gameplay evidence.
+- Chocobo Phase 0 `feature/chocobo-raising-core@55e1baa...` diverges from main; migrations/deployment are unverified and mount/trainer/whistle functionality remains unimplemented. All CHO cases retain primary needs-deploy status.
+
+**Important distinction:** `compatibility_report` can compare a claimed source revision and SHA-256 against **separately supplied** `observed_sources`, but it does not itself obtain or authenticate source bytes or decide gameplay-branch correctness. `MATCHED_PINNED_ONLY` is not permission to run, a proof of client/DSP identity, or a measured test result.
+
+**Capacity gate:** one v1 draft is limited to 32 KiB. A 73-case staging document must **never** be serialized as one canonical draft. The added synthetic regression exercises individually valid v1 steps whose aggregate serialized payload exceeds 32 KiB; serialization rejects it without a truncated/partially accepted specification.
+
+**Coordination:** retain the same `contract_v2` field names until Agents B/D/E and #1259 approve changes. Agent B can preserve optional metadata in its existing canonical Guided/Advanced validation route; that is not a UI rendering of verified provenance. New authored scenarios remain design-only, with UNKNOWN oracles, unregistered observations/operations blocked, and immutable source-reference retention.
