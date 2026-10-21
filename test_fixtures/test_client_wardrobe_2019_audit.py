@@ -19,6 +19,7 @@ from workbench.client.wardrobe_2019_audit import (
     RECORD_BYTES, audit_2019_wardrobe, inspect_command_table, inspect_decoded_sites,
     bounded_2019_record_offset, inspect_2019_item_packet_location,
     PACKET_LOCATION_FIELDS, ITEM_STORE_OFFSET, ITEM_RECORD_BYTES, SLOTS_PER_CONTAINER,
+    inspect_2019_store_layout, ORIGINAL_ITEM_ARRAY_END, PROJECTED_18_CONTAINER_END,
 )
 
 
@@ -142,6 +143,30 @@ class Wardrobe2019AuditTests(unittest.TestCase):
             inspect_2019_item_packet_location(0x1E, bytearray(64))["status"],
             "INVALID_PACKET_BUFFER"
         )
+
+    def test_in_place_expansion_overlaps_existing_client_fields(self):
+        mapped = inspect_2019_store_layout(True)
+        self.assertEqual(mapped["evidence_status"], "VERIFIED_STATIC_ANCHORS")
+        self.assertEqual(mapped["fixed_global_base_va"], "0x1096DB60")
+        self.assertEqual(mapped["global_zero_init_bytes"], 0x3EDF4)
+        self.assertEqual(mapped["active_store_offset_from_global_base"], 4)
+        self.assertEqual(mapped["legacy_item_array_exclusive_end_offset"], 0x14D5C)
+        self.assertEqual(mapped["observed_following_scalar_field_offset"], 0x14D5C)
+        self.assertEqual(mapped["observed_following_pointer_field_offset"], 0x14D60)
+        self.assertEqual(mapped["projected_18_container_array_exclusive_end_offset"], 0x192F8)
+        self.assertEqual(mapped["extra_bytes_for_five_containers"], 5 * 81 * 44)
+        self.assertEqual(mapped["extra_bytes_for_five_containers"], 17820)
+        self.assertTrue(mapped["proposed_in_place_growth_overlaps_observed_fields"])
+        self.assertEqual(mapped["safety_decision"], "NO_GO_IN_PLACE_ARRAY_GROWTH")
+        self.assertEqual(ORIGINAL_ITEM_ARRAY_END, 0x14D5C)
+        self.assertEqual(PROJECTED_18_CONTAINER_END, 0x192F8)
+
+    def test_missing_static_anchor_never_claims_verified_overlap(self):
+        unknown = inspect_2019_store_layout(False)
+        self.assertEqual(unknown["evidence_status"], "UNVERIFIED_STATIC_ANCHORS")
+        self.assertIsNone(unknown["proposed_in_place_growth_overlaps_observed_fields"])
+        self.assertEqual(unknown["safety_decision"], "NO_GO_IN_PLACE_ARRAY_GROWTH")
+
 
 
 if __name__ == "__main__":
