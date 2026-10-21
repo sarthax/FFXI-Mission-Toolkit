@@ -45,8 +45,10 @@ class SyntheticPol1RepackTests(unittest.TestCase):
         image = fixture_pe(packed, len(sample), len(packed) + 5)
         snapshot = bytes(image)
         report = assess_pol1_repack_fit(image)
-        self.assertEqual(report["status"], "FITS_RAW_SECTION")
-        self.assertEqual(report["headroom_bytes"], 5)
+        self.assertEqual(report["status"], "FITS_ORIGINAL_STREAM_BUDGET")
+        self.assertEqual(report["headroom_bytes"], 0)
+        self.assertEqual(report["protected_suffix_bytes"], 5)
+        self.assertTrue(report["protected_suffix_unchanged"])
         self.assertEqual(report["in_memory_decoded_roundtrip"], "PASS")
         self.assertEqual(image, snapshot)
 
@@ -68,11 +70,11 @@ class SyntheticPol1RepackTests(unittest.TestCase):
 
     def test_out_of_capacity_and_rejections(self):
         original = fixture_pe(encode_pol1(b"a" * 8192), 8192)
-        self.assertEqual(assess_pol1_repack_fit(original)["status"], "FITS_RAW_SECTION")
+        self.assertEqual(assess_pol1_repack_fit(original)["status"], "FITS_ORIGINAL_STREAM_BUDGET")
         rng = random.Random(2026)
         high_entropy = bytes(rng.randrange(256) for _ in range(8192))
         report = assess_pol1_repack_fit(original, high_entropy)
-        self.assertEqual(report["status"], "EXCEEDS_RAW_SECTION")
+        self.assertEqual(report["status"], "EXCEEDS_ORIGINAL_STREAM_BUDGET")
         self.assertEqual(report["in_memory_decoded_roundtrip"], "NOT_ATTEMPTED")
         with self.assertRaises(Pol1Error):
             assess_pol1_repack_fit(original, b"too short")
@@ -92,7 +94,7 @@ class SyntheticPol1RepackTests(unittest.TestCase):
         candidate = b"b" * 8192
         image = fixture_pe(encode_pol1(original), len(original))
         report = assess_pol1_repack_fit(image, candidate)
-        self.assertEqual(report["status"], "FITS_RAW_SECTION")
+        self.assertEqual(report["status"], "FITS_ORIGINAL_STREAM_BUDGET")
         self.assertEqual(report["in_memory_decoded_roundtrip"], "PASS")
         self.assertNotEqual(report["decoded_sha256"], report["candidate_decoded_sha256"])
 
@@ -109,13 +111,49 @@ class SyntheticPol1RepackTests(unittest.TestCase):
                 output = io.StringIO()
                 with redirect_stdout(output):
                     self.assertEqual(main(), 0)
-                self.assertIn("FITS_RAW_SECTION", output.getvalue())
+                self.assertIn("FITS_ORIGINAL_STREAM_BUDGET", output.getvalue())
             with patch("sys.argv", ["pol1-repack-report", str(file_path), "--expected-sha256", "0" * 64]):
                 with redirect_stderr(io.StringIO()):
                     with self.assertRaises(SystemExit):
                         main()
             self.assertEqual(file_path.read_bytes(), image)
 
+
+
+    def test_preserves_loader_suffix_and_refuses_false_raw_fit(self):
+        packed = encode_pol1(b"abcabc")
+        image = bytearray(fixture_pe(packed, 6, len(packed) + 64))
+        stub_at = len(packed) + 24
+        image[0x200 + stub_at:0x200 + stub_at + 10] = b"LOADERSTUB"
+        # PE entry point is at the end of the preserved compressed-stream
+        # region, in the same synthetic POL1 section as our raw bytes.
+        struct.pack_into("<I", image, 0x80 + 24 + 16, 0x9000 + stub_at)
+        image = bytes(image)
+        report = assess_pol1_repack_fit(image)
+        self.assertEqual(report["status"], "FITS_ORIGINAL_STREAM_BUDGET")
+        self.assertEqual(report["original_stream_consumed_bytes"], len(packed))
+        self.assertEqual(report["safe_stream_budget_bytes"], len(packed))
+        self.assertEqual(report["entrypoint_section_offset"], stub_at)
+        self.assertTrue(report["protected_suffix_unchanged"])
+        self.assertEqual(report["protected_suffix_bytes"], 64)
+
+        # This candidate WOULD fit the raw section, but no longer fits the
+        # actual original compressed-stream prefix. The old implementation
+        # incorrectly treated loader bytes as available space.
+        changed = assess_pol1_repack_fit(image, b"abcdef")
+        self.assertLess(changed["candidate_encoded_size"], 64)
+        self.assertEqual(changed["status"], "EXCEEDS_ORIGINAL_STREAM_BUDGET")
+        self.assertEqual(changed["in_memory_decoded_roundtrip"], "NOT_ATTEMPTED")
+        self.assertEqual(image[0x200 + stub_at:0x200 + stub_at + 10], b"LOADERSTUB")
+
+    def test_rejects_stream_that_overlaps_entrypoint(self):
+        packed = encode_pol1(b"abcabc")
+        image = bytearray(fixture_pe(packed, 6, len(packed) + 16))
+        struct.pack_into("<I", image, 0x80 + 24 + 16, 0x9000 + 2)
+        result = assess_pol1_repack_fit(bytes(image))
+        self.assertEqual(result["status"], "UNSAFE_ORIGINAL_STREAM_BOUNDARY")
+        self.assertFalse(result["entrypoint_boundary_safe"])
+        self.assertEqual(result["in_memory_decoded_roundtrip"], "NOT_ATTEMPTED")
 
 
 if __name__ == "__main__":
