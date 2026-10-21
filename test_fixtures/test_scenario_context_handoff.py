@@ -317,6 +317,21 @@ def test_review_payload_actual_size_limit_not_only_content_length():
     assert oversized.value.status_code==413
 
 
+def test_unicode_review_length_matches_actual_utf8_not_ascii_escaped_size():
+    """Large supplementary-plane text must fail for schema, not fictitious size."""
+    forged=reviewed_fixture()
+    forged["unsupported_unicode_field"]="🏮"*650_000
+    compact=json.dumps({"review":forged},ensure_ascii=False,
+                       separators=(",",":")).encode("utf-8")
+    ascii_escaped=json.dumps({"review":forged},ensure_ascii=True).encode("utf-8")
+    assert len(compact)<5_000_000<len(ascii_escaped)
+    with pytest.raises(HTTPException) as result:
+        inspect_evidence_handoff(request(),EvidenceReviewRequest(review=forged))
+    # Extra unauthorized fields are refused by the review schema, not wrongly
+    # diagnosed as oversized because a client included Japanese/emoji text.
+    assert result.value.status_code==422
+
+
 def test_editor_evidence_bounds_match_accepted_offline_reviewer():
     from pathlib import Path
     from workbench.server_admin.scenario_authoring import context_handoff
