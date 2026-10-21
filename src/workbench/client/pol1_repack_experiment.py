@@ -23,18 +23,48 @@ def _key(code: bytes, i: int) -> int:
     return ((code[i] * 251 + code[i + 1]) * 251 + code[i + 2]) & 0xFFFF
 
 
-def encode_pol1(code: bytes, *, search_depth: int = MAX_CANDIDATES) -> bytes:
-    """Encode using MSB-first literal flags and 12-bit backward distances.
+SEARCH_DEPTHS = (16, 64, 128, 256, 512, 1024)
 
-    This is a bounded greedy format experiment, not an exact inverse that
-    promises matching bytes, compression ratio, or behavior of a retail packer.
+
+def _best_match(code: bytes, pos: int, heads: array, previous: array, search_depth: int) -> tuple[int, int]:
+    """Bounded longest-match lookup against already-indexed decoded history."""
+    if pos + MIN_MATCH > len(code):
+        return 0, 0
+    search = heads[_key(code, pos)]
+    tries = 0
+    best_length = 0
+    best_distance = 0
+    limit = min(MAX_MATCH, len(code) - pos)
+    while search >= 0 and pos - search <= MAX_DISTANCE and tries < search_depth:
+        if code[search:search + MIN_MATCH] == code[pos:pos + MIN_MATCH]:
+            length = MIN_MATCH
+            while length < limit and code[search + length] == code[pos + length]:
+                length += 1
+            if length > best_length:
+                best_length = length
+                best_distance = pos - search
+                if length == MAX_MATCH:
+                    break
+        search = previous[search]
+        tries += 1
+    return best_length, best_distance
+
+
+def encode_pol1(
+    code: bytes, *, search_depth: int = MAX_CANDIDATES, lazy_match: bool = False
+) -> bytes:
+    """Encode the synthetic MSB-first POL1 token format without writing a DLL.
+
+    Optional one-byte lazy matching compares a reference at pos with a
+    potential longer reference at pos+1, which can sometimes compress better
+    but is not guaranteed. Both lookups are bounded by search_depth.
     """
     if not isinstance(code, bytes) or not 0 < len(code) <= MAX_EXPERIMENTAL_SIZE:
         raise Pol1Error("decoded input must be nonempty bytes within 8 MiB experiment bound")
-    if type(search_depth) is not int or search_depth not in (16, 64, 128):
-        raise Pol1Error("search_depth must be 16, 64 or 128")
-    # Fixed-size hash heads and 32-bit chains bound memory to O(input bytes),
-    # unlike a dictionary of millions of unique three-byte substrings.
+    if type(search_depth) is not int or search_depth not in SEARCH_DEPTHS:
+        raise Pol1Error("search_depth must be one of 16, 64, 128, 256, 512, 1024")
+    if type(lazy_match) is not bool:
+        raise Pol1Error("lazy_match must be a bool")
     heads = array("i", [-1]) * 65536
     previous = array("i", [-1]) * len(code)
     output = bytearray()
@@ -46,27 +76,20 @@ def encode_pol1(code: bytes, *, search_depth: int = MAX_CANDIDATES) -> bytes:
         for bit in range(7, -1, -1):
             if pos >= len(code):
                 break
-            match_length = 0
-            match_distance = 0
-            if pos + MIN_MATCH <= len(code):
-                search = heads[_key(code, pos)]
-                tries = 0
-                limit = min(MAX_MATCH, len(code) - pos)
-                while search >= 0 and pos - search <= MAX_DISTANCE and tries < search_depth:
-                    if code[search:search+MIN_MATCH] == code[pos:pos+MIN_MATCH]:
-                        length = MIN_MATCH
-                        while length < limit and code[search + length] == code[pos + length]:
-                            length += 1
-                        if length > match_length:
-                            match_length = length
-                            match_distance = pos - search
-                            if length == MAX_MATCH:
-                                break
-                    search = previous[search]
-                    tries += 1
+            match_length, match_distance = _best_match(
+                code, pos, heads, previous, search_depth
+            )
+            if lazy_match and MIN_MATCH <= match_length < MAX_MATCH:
+                next_length, _ = _best_match(
+                    code, pos + 1, heads, previous, search_depth
+                )
+                # A byte as literal now can permit a longer match next; this
+                # is a local heuristic, not a claim of optimal compressed size.
+                if next_length > match_length + 1:
+                    match_length = 0
             consumed = match_length if match_length >= MIN_MATCH else 1
             if match_length >= MIN_MATCH:
-                word = ((match_length - 3) << 12) | match_distance
+                word = ((match_length - MIN_MATCH) << 12) | match_distance
                 output.extend(word.to_bytes(2, "big"))
             else:
                 flags |= 1 << bit
@@ -79,8 +102,6 @@ def encode_pol1(code: bytes, *, search_depth: int = MAX_CANDIDATES) -> bytes:
             pos += consumed
         output[flag_at] = flags
     return bytes(output)
-
-
 
 
 def _verify_raw_section_isolation(image: bytes, section: dict) -> None:
@@ -177,7 +198,8 @@ def _entrypoint_section_offset(image: bytes, section: dict) -> int | None:
 
 
 def assess_pol1_repack_fit(
-    image: bytes, candidate_code: bytes | None = None, *, search_depth: int = MAX_CANDIDATES
+    image: bytes, candidate_code: bytes | None = None, *,
+    search_depth: int = MAX_CANDIDATES, lazy_match: bool = False
 ) -> dict:
     """Report whether greedy encoding fits existing POL1 raw bytes; never write.
 
@@ -192,7 +214,7 @@ def assess_pol1_repack_fit(
     code = original["bytes"] if candidate_code is None else candidate_code
     if not isinstance(code, bytes) or len(code) != original["size"]:
         raise Pol1Error("candidate decoded code must match original decoded length")
-    candidate = encode_pol1(code, search_depth=search_depth)
+    candidate = encode_pol1(code, search_depth=search_depth, lazy_match=lazy_match)
     start, available = section["raw_start"], section["raw_size"]
     original_used = _stream_consumed_bytes(image, original["size"])
     entrypoint_offset = _entrypoint_section_offset(image, section)
@@ -218,6 +240,7 @@ def assess_pol1_repack_fit(
         "safe_stream_budget_bytes": budget,
         "candidate_encoded_size": len(candidate),
         "encoder_search_depth": search_depth,
+        "encoder_lazy_match": lazy_match,
         "headroom_bytes": budget - len(candidate),
         "candidate_sha256": hashlib.sha256(candidate).hexdigest(),
         "caution": ("In-memory capacity estimate only; full POL1 section is NOT writable "
