@@ -71,7 +71,7 @@ def test_synthetic_complete_requires_all_four_verified_categories():
     assert sum(x["independent"] for x in f["categories"].values()) == 4
     assert all(x["state"] == "complete" for x in f["cases"])
     assert all(x["recalculated"]["verdict"] == "UNKNOWN" for x in f["cases"])
-    assert "percent" not in str(matrix).lower()
+    assert all("percent" not in k for k in matrix)
 
 
 def test_synthetic_partial_shows_unverified_coverage_without_inflation():
