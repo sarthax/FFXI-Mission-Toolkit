@@ -99,6 +99,7 @@ def test_detailed_missing_observations_for_all_lanes():
             assert obs["permission_granted"] is False
             assert obs["review_required"] is True
             assert obs["status"] == "NOT_INDEPENDENTLY_OBSERVED"
+            assert obs["readiness_state"] == item["readiness_state"] == "UNKNOWN"
     assert all(s["expected_outcome_classification"] == "UNKNOWN"
                for s in out["readiness_steps"])
     assert all(s["normative_expected"] is None for s in out["readiness_steps"])
@@ -152,6 +153,9 @@ def test_revision_mismatch_and_tampered_projection_fail_closed():
     out = summarize_capture_readiness(draft,
         independent_oracles=[oracle], expected_dsp_commit="f" * 40)
     assert out["source_integrity"]["state"] == "BLOCKED"
+    assert out["readiness_steps"][0]["readiness_state"] == "BLOCKED"
+    assert all(x["readiness_state"] == "BLOCKED"
+               for x in out["readiness_steps"][0]["missing_observations"])
     assert "DSP_REVISION_INCOMPATIBLE" in {
         item["code"] for item in out["source_integrity"]["issues"]}
     modified = deepcopy(draft)
@@ -161,6 +165,9 @@ def test_revision_mismatch_and_tampered_projection_fail_closed():
     assert detected["source_integrity"]["state"] == "BLOCKED"
     assert "CAPTURE_PROJECTION_CHANGED" in {
         item["code"] for item in detected["source_integrity"]["issues"]}
+    assert all(s["readiness_state"] == "BLOCKED" for s in detected["readiness_steps"])
+    assert all(gap["readiness_state"] == "BLOCKED"
+               for s in detected["readiness_steps"] for gap in s["missing_observations"])
     # A forged locator/manifest source hash mismatch is not merely a missing readback.
     altered = deepcopy(draft)
     ref = altered["steps"][0]["evidence_refs"][0]
@@ -178,6 +185,30 @@ def test_revision_mismatch_and_tampered_projection_fail_closed():
             pass
         else:
             raise AssertionError("malformed digest pin was accepted")
+    con.close()
+
+
+def test_missing_parser_and_manifest_digests_are_unknown_not_false_conflicts():
+    con, draft = fixture()
+    ref = draft["steps"][0]["evidence_refs"][0]
+    baseline = next(x for x in draft["evidence_map"][ref]["source"]["references"]
+                    if x.get("source_manifest"))
+    assert baseline["source_manifest"]["sha256"] == baseline["source_sha256"]
+    for field in ("parser_name", "parser_version", "sha256"):
+        incomplete = deepcopy(draft)
+        source = next(x for x in incomplete["evidence_map"][ref]["source"]["references"]
+                      if x.get("source_manifest"))
+        source["source_manifest"].pop(field)
+        result = summarize_capture_readiness(incomplete)
+        codes = {x["code"] for x in result["source_integrity"]["issues"]}
+        if field in ("parser_name", "parser_version"):
+            assert "PARSER_REVISION_UNPINNED" in codes
+        else:
+            assert "SOURCE_MANIFEST_DIGEST_UNPINNED" in codes
+        assert result["source_integrity"]["state"] == "UNKNOWN"
+        assert result["readiness_steps"][0]["readiness_state"] == "UNKNOWN"
+        assert not any(x["code"] == "SOURCE_MANIFEST_DIGEST_MISMATCH"
+                       for x in result["source_integrity"]["issues"])
     con.close()
 
 
@@ -268,6 +299,7 @@ def main():
     test_source_record_exact_is_not_independently_verified()
     test_detailed_missing_observations_for_all_lanes()
     test_advisory_v2_field_mapping_uses_only_proposed_names()
+    test_missing_parser_and_manifest_digests_are_unknown_not_false_conflicts()
     test_revision_mismatch_and_tampered_projection_fail_closed()
     test_repeated_capture_contradictions_are_not_gameplay_failures()
     print("Synthetic evidence readiness, provenance and contract_v2 hints: PASS")
