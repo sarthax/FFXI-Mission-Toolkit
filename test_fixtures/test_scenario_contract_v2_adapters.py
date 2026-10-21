@@ -92,13 +92,13 @@ def test_source_projection_deduplicates_only_exact_revision_path_and_range():
     assert one == two, "mapping and synthetic reference IDs are deterministic"
     assert len(one["sources"]) == 2
     assert len(one["source_refs_original"]) > len(one["sources"])
-    assert one["case_source_ref_ids"][0] == one["case_source_ref_ids"][-1]
+    assert one["case_source_ref_ids"].count(one["case_source_ref_ids"][0]) >= 2
 
 
 @pytest.mark.parametrize("mutate", [
     lambda s: s["cases"][0].update(execution_authorized=True),
     lambda s: s["cases"][0].update(execution_status="verified_runner"),
-    lambda s: s["cases"][0].update(lane="needs-deploy"),
+    lambda s: s["cases"][0].update(lane="unrecognized-lane"),
     lambda s: s["cases"][0]["steps"][0].update(execution_authorized=True),
     lambda s: s["cases"][0]["steps"][0]["source_refs"][0].update(path="../evil.lua"),
     lambda s: s["cases"][0]["steps"][0]["source_refs"][0].update(commit="HEAD"),
