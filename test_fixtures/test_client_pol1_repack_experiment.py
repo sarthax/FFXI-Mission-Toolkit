@@ -22,10 +22,12 @@ def fixture_pe(raw: bytes, expected: int, capacity: int | None = None) -> bytes:
     assert len(raw) <= capacity
     pe = 0x80
     image = bytearray(0x200 + capacity)
+    image[0:2] = b"MZ"
     struct.pack_into("<I", image, 0x3C, pe)
     image[pe:pe + 4] = b"PE\0\0"
     struct.pack_into("<H", image, pe + 6, 2)
     struct.pack_into("<H", image, pe + 20, 0xE0)
+    struct.pack_into("<H", image, pe + 24, 0x10B)
     table = pe + 24 + 0xE0
     for offset, name, vsize, rva, rawsize, rawoff in (
         (table, b".text", expected, 0x1000, 0, 0),
@@ -202,6 +204,29 @@ class SyntheticPol1RepackTests(unittest.TestCase):
             decoded, consumed = independent_pol1_decode(encoded, length)
             self.assertEqual(decoded, original)
             self.assertEqual(consumed, len(encoded))
+
+
+
+
+    def test_rejects_zero_distance_ambiguity_before_declaring_prefix_fit(self):
+        # The original decoder accepts this malformed stream by skipping a
+        # zero-distance group, but a writable-prefix proof must reject it.
+        malformed = bytes((0, 0, 0, 0xE0)) + b"abc"
+        image = fixture_pe(malformed, 3)
+        self.assertEqual(unpack_pol1(image)["bytes"], b"abc")
+        with self.assertRaisesRegex(Pol1Error, "invalid POL1 back-reference"):
+            assess_pol1_repack_fit(image)
+
+    def test_rejects_malformed_pe_metadata_before_fit(self):
+        original = fixture_pe(encode_pol1(b"abcabc"), 6)
+        invalid = bytearray(original)
+        invalid[0:2] = b"XX"
+        with self.assertRaisesRegex(Pol1Error, "DOS signature"):
+            assess_pol1_repack_fit(bytes(invalid))
+        invalid = bytearray(original)
+        struct.pack_into("<H", invalid, 0x80 + 24, 0xFFFF)
+        with self.assertRaisesRegex(Pol1Error, "optional-header magic"):
+            assess_pol1_repack_fit(bytes(invalid))
 
 
 
