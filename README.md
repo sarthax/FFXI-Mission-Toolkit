@@ -1,5 +1,7 @@
 # FFXI Mission Toolkit / Workbench
 
+> **R7 release-engineering status (2026-10-21):** R6 foundations and nine non-executable domain drafts are integrated at `main@972ff6fa`. The [R7 release baseline, CI instructions, ownership, and acceptance-gap checklist](docs/workbench/R7_RELEASE_BASELINE_2026-10-21.md) supersedes old references to open R6 staging PRs. The 73 staged cases have **not** passed gameplay acceptance; sources and deployment are not independently attested. [Draft post-merge CI PR #1305](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1305) adds a branch-independent integrated validation mode, pending independent review and owner merge authorization.
+
 A local, browser-based research, reverse-engineering, validation, capture-analysis, administration, economy, crafting, and development workbench for Final Fantasy XI private-server work.
 
 The project began as a mission/data lookup utility. It has grown into a broader evidence-driven toolkit that connects server source, SQL, Lua, client DAT/resources, packet captures, video/OCR evidence, wiki/reference claims, client-build snapshots, migration packages, runtime observations, economy/crafting state, and guarded server administration into one searchable local workspace.

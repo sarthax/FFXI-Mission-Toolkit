@@ -1,4 +1,4 @@
-name: R6 Staged Domain Validation (Offline)
+name: R6/R7 Domain Readiness Validation (Offline)
 
 on:
   pull_request:
@@ -9,56 +9,85 @@ on:
       - ".github/workflows/r6-domain-specification-validation.yml"
       - "data/testing/test_specifications.json"
       - "data/testing/domain_drafts/**"
-      - "docs/workbench/SCENARIO_COVERAGE_*.md"
+      - "docs/workbench/SCENARIO_DOMAIN_READINESS_MATRIX_2026-10-21.json"
       - "test_fixtures/test_*_domain_specification_draft.py"
+  push:
+    branches: [main]
+    paths:
+      - "tools/validate_domain_drafts.py"
+      - "test_fixtures/test_domain_draft_validator.py"
+      - "test_fixtures/r6_domain_validation_manifest.synthetic.json"
+      - ".github/workflows/r6-domain-specification-validation.yml"
+      - "data/testing/test_specifications.json"
+      - "data/testing/domain_drafts/**"
+      - "docs/workbench/SCENARIO_DOMAIN_READINESS_MATRIX_2026-10-21.json"
   workflow_dispatch:
+    inputs:
+      validation_mode:
+        description: "Explicit data source; staged-pr requires reviewed PR head refs"
+        type: choice
+        required: true
+        default: integrated-main
+        options:
+          - integrated-main
+          - staged-pr
 
 permissions:
   contents: read
 
 jobs:
-  staging-contract:
+  domain-readiness:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
+    env:
+      VALIDATION_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.validation_mode || 'integrated-main' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Integrated mode checks exact historical PR commits in merged Git history.
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Install offline test dependency
         run: python -m pip install --disable-pip-version-check pytest
-      - name: Pure synthetic positive and negative tests
+      - name: Pure synthetic positive and negative tests (both modes)
         run: python -m pytest -q test_fixtures/test_domain_draft_validator.py
-      # All nine PRs were independently confirmed same-repository with head refs spec/<domain>.
-      # GitHub refs/pull/*/head can lag a safe branch merge: use actual named branch HEADs.
-      - name: Fetch same-repo PR staging branches as JSON data only
+      - name: Integrated main — nine checked-in drafts and source-history pins
+        if: env.VALIDATION_MODE == 'integrated-main'
+        run: |
+          python tools/validate_domain_drafts.py \
+            --mode integrated-main \
+            --snapshot-root data/testing/domain_drafts \
+            --manifest test_fixtures/r6_domain_validation_manifest.synthetic.json \
+            --catalog data/testing/test_specifications.json \
+            --matrix docs/workbench/SCENARIO_DOMAIN_READINESS_MATRIX_2026-10-21.json \
+            --repo-root .
+      - name: Explicit staged PR — fetch only PR head JSON
+        if: env.VALIDATION_MODE == 'staged-pr'
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/domain-specs"
           : > "$RUNNER_TEMP/domain-heads.tsv"
-          python -c 'import json; p=json.load(open("test_fixtures/r6_domain_validation_manifest.synthetic.json")); print("\n".join(x["name"]+" "+str(x["pr"]) for x in p["domains"]))' > "$RUNNER_TEMP/domains.txt"
+          python -c 'import json; m=json.load(open("test_fixtures/r6_domain_validation_manifest.synthetic.json")); print("\n".join(x["name"]+" "+str(x["pr"]) for x in m["domains"]))' > "$RUNNER_TEMP/domains.txt"
           while read -r domain pr; do
             [[ "$domain" =~ ^[a-z_]+$ ]]
             [[ "$pr" =~ ^[0-9]+$ ]]
-            git fetch --no-tags --depth=1 origin "+refs/heads/spec/$domain:refs/remotes/origin/r6-$pr"
-            git show "refs/remotes/origin/r6-$pr:data/testing/domain_drafts/$domain.json" > "$RUNNER_TEMP/domain-specs/$domain.json"
-            head_sha=$(git rev-parse "refs/remotes/origin/r6-$pr")
-            printf "%s %s\n" "$domain" "$head_sha" >> "$RUNNER_TEMP/domain-heads.tsv"
+            # Intentional fail-closed: NO refs/heads/spec or main fallback.
+            git fetch --no-tags --depth=1 origin "+refs/pull/$pr/head:refs/remotes/origin/r7-staged-$pr"
+            git show "refs/remotes/origin/r7-staged-$pr:data/testing/domain_drafts/$domain.json" > "$RUNNER_TEMP/domain-specs/$domain.json"
+            head_sha=$(git rev-parse "refs/remotes/origin/r7-staged-$pr")
+            printf '%s %s\n' "$domain" "$head_sha" >> "$RUNNER_TEMP/domain-heads.tsv"
           done < "$RUNNER_TEMP/domains.txt"
-      # The authoritative #1292 matrix is now merged into main; read it from the fetched main commit.
-      - name: Fetch the authoritative merged #1292 case matrix from main as inert JSON
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch --no-tags --depth=1 origin "+refs/heads/main:refs/remotes/origin/r6-authoritative-matrix"
-          git show "refs/remotes/origin/r6-authoritative-matrix:docs/workbench/SCENARIO_DOMAIN_READINESS_MATRIX_2026-10-21.json" > "$RUNNER_TEMP/domain-readiness-matrix.json"
-          python -c 'import json,sys; entries=[line.split() for line in open(sys.argv[1],encoding="utf-8")]; assert len(entries)==9; json.dump(dict(entries),open(sys.argv[2],"w",encoding="utf-8"))' "$RUNNER_TEMP/domain-heads.tsv" "$RUNNER_TEMP/domain-heads.json"
-      - name: Verify 73 staged cases, blocked execution, and canonical exclusion
+          python -c 'import json,sys; rows=[line.split() for line in open(sys.argv[1],encoding="utf-8")]; assert len(rows)==9 and len({r[0] for r in rows})==9; json.dump(dict(rows),open(sys.argv[2],"w",encoding="utf-8"))' "$RUNNER_TEMP/domain-heads.tsv" "$RUNNER_TEMP/domain-heads.json"
+      - name: Explicit staged PR — refuse drift against checked-in matrix
+        if: env.VALIDATION_MODE == 'staged-pr'
         run: |
           python tools/validate_domain_drafts.py \
+            --mode staged-pr \
             --snapshot-root "$RUNNER_TEMP/domain-specs" \
             --manifest test_fixtures/r6_domain_validation_manifest.synthetic.json \
             --catalog data/testing/test_specifications.json \
-            --matrix "$RUNNER_TEMP/domain-readiness-matrix.json" \
+            --matrix docs/workbench/SCENARIO_DOMAIN_READINESS_MATRIX_2026-10-21.json \
             --observed-heads "$RUNNER_TEMP/domain-heads.json"
