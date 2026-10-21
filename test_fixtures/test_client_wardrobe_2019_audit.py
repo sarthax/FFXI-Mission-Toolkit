@@ -208,6 +208,16 @@ class Wardrobe2019AuditTests(unittest.TestCase):
             sorted(observed["fixed_size_transfer_immediate_rvas"]),
         )
         self.assertIsNone(observed["all_transfer_pointers_alias_active_store"])
+        evb = observed["direct_active_store_evb_path_evidence"]
+        self.assertEqual(evb["observed_shared_filename"], "ZSU.evb")
+        self.assertEqual(evb["read_side_filename_push_rva"], "0x3EE4")
+        self.assertEqual(evb["read_side_mode_push_rva"], "0x3F8A")
+        self.assertEqual(evb["read_side_transfer_push_rva"], "0x3FA1")
+        self.assertEqual(evb["write_side_filename_push_rva"], "0x47E3")
+        self.assertEqual(evb["write_side_mode_push_rva"], "0x47FC")
+        self.assertEqual(evb["write_side_transfer_push_rva"], "0x4818")
+        self.assertFalse(evb["full_runtime_file_name_proved"])
+        self.assertIsNone(evb["is_character_inventory_persistence"])
         self.assertEqual(observed["linear_disassembly_candidate_reference_count"], 1045)
         self.assertEqual(observed["observed_direct_global_writer_instruction_count"], 15)
         self.assertFalse(observed["global_writer_sites_independently_cfg_confirmed"])
