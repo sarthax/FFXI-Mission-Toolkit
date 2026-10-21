@@ -281,3 +281,24 @@ def test_v2_metadata_cannot_bypass_existing_32k_draft_serialization_limit():
     with pytest.raises(ValueError, match="32KiB"):
         serialize_spec(spec)
     assert spec["runner"] == "unassigned"
+
+
+def test_unicode_draft_size_must_match_current_ascii_escaped_sqlite_storage():
+    spec = deepcopy(staged_fixture()["specification"])
+    base = deepcopy(spec["steps"][0])
+    spec["steps"] = [
+        {**deepcopy(base), "id": f"SYNTH-UNICODE-{n}",
+         "title": "Synthetic Unicode source-neutral step",
+         "expected": "UNKNOWN " + "雪" * 450}
+        for n in range(16)
+    ]
+    spec["contract_v2"]["step_requirements"][0]["step_id"] = "SYNTH-UNICODE-0"
+    assert validate_spec(spec) is spec
+    utf8_json = json.dumps(spec, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    existing_store_json = json.dumps(spec, sort_keys=True, ensure_ascii=True, separators=(",", ":"))
+    assert len(utf8_json.encode("utf-8")) < 32768
+    assert len(existing_store_json.encode("utf-8")) > 32768
+    with pytest.raises(ValueError, match="32KiB"):
+        serialize_spec(spec)
+    with pytest.raises(ValueError, match="32KiB"):
+        deserialize_spec(utf8_json)
