@@ -17,32 +17,39 @@ _SHA40 = re.compile(r"^[0-9a-fA-F]{40}$")
 _ALLOWED_PARAM_KINDS = {"npc": "npc", "item": "item", "key_item": "key_item",
                         "zone": "zone", "npc_name": "npc", "item_name": "item"}
 _OBSERVATIONS = {
+    # name, suggested read-only capability, human diagnostic, necessity
     "capture_events": (
-        ("client_dialog", "Confirm captured dialog/event in independent client view", "REQUIRED_CANDIDATE"),
-        ("server_event_state", "Read authoritative event branch and persisted server outcome", "REQUIRED_CANDIDATE"),
-        ("quest_variables", "Check quest/mission variable before and after the branch if relevant", "CONDITIONAL"),
-        ("instance_state", "Inspect instance ownership, phase, and timer if relevant", "CONDITIONAL"),
+        ("client_dialog", "client_dialog_readback", "Confirm the recorded dialog/event independently from the client", "REQUIRED_CANDIDATE"),
+        ("server_event_state", "server_event_state_readback", "Read the NPC event handler branch and persisted state independently", "REQUIRED_CANDIDATE"),
+        ("npc_state", "server_npc_state_readback", "Check authoritative NPC existence, phase, despawn and interaction state", "CONDITIONAL"),
+        ("quest_variables", "server_quest_variable_readback", "Read quest or mission variables before and after a relevant handler branch", "CONDITIONAL"),
+        ("instance_state", "server_instance_state_readback", "Inspect instance identity, owner, phase and timer when relevant", "CONDITIONAL"),
+        ("temporary_items", "client_temporary_item_readback", "Inspect temporary-item state when an event depends on a battlefield or instance item", "CONDITIONAL"),
     ),
     "capture_eventview": (
-        ("client_dialog", "Reconcile EventView MesNum and recorded CSID with local client index", "REQUIRED_CANDIDATE"),
-        ("server_event_state", "Observe server-side event/CSID handler result independently", "REQUIRED_CANDIDATE"),
-        ("quest_variables", "Check related quest variables if the script branch depends on them", "CONDITIONAL"),
-        ("instance_state", "Observe instance phase if the event is instanced", "CONDITIONAL"),
+        ("client_dialog", "client_dialog_readback", "Reconcile EventView MesNum against the local typed client event/dialog index", "REQUIRED_CANDIDATE"),
+        ("server_event_state", "server_event_state_readback", "Observe the authoritative event/CSID handler result", "REQUIRED_CANDIDATE"),
+        ("quest_variables", "server_quest_variable_readback", "Read quest/mission variables when referenced by the scripted branch", "CONDITIONAL"),
+        ("instance_state", "server_instance_state_readback", "Read instance phase when the captured event was instanced", "CONDITIONAL"),
+        ("temporary_items", "client_temporary_item_readback", "Read temporary-item state if the scripted event uses it", "CONDITIONAL"),
     ),
     "capture_ki_events": (
-        ("client_key_items", "Read actual held key-item list in the client", "REQUIRED_CANDIDATE"),
-        ("server_key_items", "Read persisted server key-item bitset or equivalent", "REQUIRED_CANDIDATE"),
+        ("client_key_items", "client_key_item_readback", "Read the actual held key-item list in the client", "REQUIRED_CANDIDATE"),
+        ("server_key_items", "server_key_item_readback", "Read the persisted server key-item state independently", "REQUIRED_CANDIDATE"),
+        ("quest_variables", "server_quest_variable_readback", "Read associated quest variables if key-item grants depend on a branch", "CONDITIONAL"),
     ),
     "capture_structured_records": (
-        ("client_inventory", "Read actual item bag and quantity in the client", "REQUIRED_CANDIDATE"),
-        ("server_inventory", "Read persisted server inventory in an independent transaction", "REQUIRED_CANDIDATE"),
+        ("client_inventory", "client_inventory_readback", "Read actual bag and quantity in the client", "REQUIRED_CANDIDATE"),
+        ("server_inventory", "server_inventory_readback", "Read authoritative persisted server bag and quantity", "REQUIRED_CANDIDATE"),
+        ("client_equipment", "client_equipment_readback", "Inspect equipped slot and equipment storage when the item is gear", "CONDITIONAL"),
+        ("server_furnishings", "server_furnishing_readback", "Inspect furnishings/installed layout when the item is furniture", "CONDITIONAL"),
+        ("temporary_items", "client_temporary_item_readback", "Inspect temporary-item inventory when the recorded item is instance-scoped", "CONDITIONAL"),
     ),
     "capture_raw_packets": (
-        ("packet_decoder", "Attest decoder version and precise decoded field coverage", "REQUIRED_CANDIDATE"),
-        ("server_receipt", "Obtain independent authoritative server receipt/state", "REQUIRED_CANDIDATE"),
+        ("packet_decoder", "decoder_revision_readback", "Attest decoder version and exact decoded field coverage", "REQUIRED_CANDIDATE"),
+        ("server_receipt", "server_receipt_readback", "Obtain independent authoritative server receipt and resulting state", "REQUIRED_CANDIDATE"),
     ),
 }
-
 
 def _integrity(draft: dict, expected_projection: str | None,
                expected_dsp_commit: str | None, steps: list[dict]) -> dict:
@@ -108,11 +115,29 @@ def _integrity(draft: dict, expected_projection: str | None,
 
 
 def _observations(step: dict) -> list[dict]:
+    """Describe *missing* independent evidence, not observed facts or active grants.
+
+    The source evidence ref is an investigation pointer, not proof that a
+    capability exists or a readback already occurred.
+    """
+    refs = deepcopy(step["evidence_refs"])
     return [
-        {"observation": name, "importance": importance,
-         "status": "NOT_INDEPENDENTLY_OBSERVED", "how_to_obtain": hint,
-         "review_required": True}
-        for name, hint, importance in _OBSERVATIONS.get(step["lane"], ())
+        {
+            "observation": name, "expected_observation_type": name,
+            "importance": importance, "status": "NOT_INDEPENDENTLY_OBSERVED",
+            "reason_for_gap": (
+                "Indexed capture observations do not establish the independent "
+                + name.replace("_", " ") + " result; this is a conditional check"
+                if importance == "CONDITIONAL" else
+                "Indexed capture observations do not establish an independent "
+                + name.replace("_", " ") + " result"
+            ),
+            "evidence_refs": deepcopy(refs),
+            "suggested_read_only_capability": capability,
+            "how_to_obtain": hint, "review_required": True,
+            "capability_registered": False, "permission_granted": False,
+        }
+        for name, capability, hint, importance in _OBSERVATIONS.get(step["lane"], ())
     ]
 
 
