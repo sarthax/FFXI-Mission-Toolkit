@@ -6,7 +6,7 @@
 
 ## 1. Which packing path?
 
-The least-disruptive candidate is **same-size decoded-code edit → POL1 recompress → compare against existing POL1 section raw capacity → replace only POL1 payload in an independent copy**. Only in-memory encoding, fitting, and a re-decode check are implemented; no replacement-on-disk function exists.
+The least-disruptive candidate is **same-size decoded-code edit → POL1 recompress → compare against original consumed POL1 stream capacity → replace only POL1 payload in an independent copy**. Only in-memory encoding, fitting, and a re-decode check are implemented; no replacement-on-disk function exists.
 
 The experimental encoder operates on decoded bytes using the format understood by the existing decoder:
 
@@ -29,7 +29,23 @@ External technical background (not verification for our clients): [FFXI POL1 unp
 
 These numbers were previously recorded in the Toolkit's retail fetch and binary comparison report; these DLLs were **not** accessed in this experiment.
 
-A candidate compressed stream exceeding the current POL1 raw section is an in-place **STOP**. A stream that fits is **not** proof of successful loading.
+A candidate compressed stream exceeding the original consumed stream is an in-place **STOP**, even when the overall POL1 raw section has apparently free bytes. A stream that fits this stricter boundary is **not** proof of successful loading.
+
+
+## 2a. Critical correction: POL1 contains loader/bootstrap bytes
+
+A decoded-code RVA **is not** a physical on-disk address. The earlier proof of concept mistakenly treated the entire raw POL1 section as available compressed stream space and zeroed the remainder in a *temporary in-memory image*. It never wrote a DLL, but its old "FITS_RAW_SECTION" status could have been misleading.
+
+The PE entry point on the archived 2019 build maps **inside POL1**, near the end of the raw section (see docs/workbench/CLIENT_BINARY_RESEARCH.md). These bytes may belong to the bootstrap/unpacker code. Treating the entire section as overwriteable would risk destroying the loader.
+
+**Correction implemented in this PR:**
+- Independently measure the number of bytes actually consumed by the original LZSS stream before the expected .text output is complete.
+- Restrict any candidate's budget to that original consumed stream prefix, not the full POL1 raw section size. When PE AddressOfEntryPoint maps into POL1, the candidate is also bounded by that location.
+- If the original compressed stream overlaps the mapped entry-point offset, return UNSAFE_ORIGINAL_STREAM_BOUNDARY.
+- Preserve all source bytes after the original compressed-stream boundary, including loader/suffix bytes, *even during in-memory verification*. Reject streams that only fit by consuming more of the section than the original stream.
+- Report original_stream_consumed_bytes, protected_suffix_bytes, safe_stream_budget_bytes, entrypoint_section_offset, and protected_suffix_unchanged.
+
+This **conservative budget** still does not establish that there are no additional loader bytes or pointers inside the original stream region, nor that the original loader accepts replacement compression. It simply removes one concrete false-positive/suffix-corruption hazard. Independently validating the retail loader and packed-stream termination remains required.
 
 ## 3. Implemented
 
@@ -48,7 +64,7 @@ This performs a read-only estimation, not a client edit. Before running, ensure 
 
 ## 4. Verification and required evidence
 
-**Observed locally:** six synthetic test methods PASS using a locally reproduced copy of the existing Toolkit POL1 decoder. The known token vector encodes to hex e0 61 62 63 00 03 and decodes to abcabc; a 3.38 MB synthetic stream also round-tripped. These results are not CI or independent Windows loader acceptance.
+**Observed locally:** six synthetic test methods previously PASS; new boundary guards require CI using a locally reproduced copy of the existing Toolkit POL1 decoder. The known token vector encodes to hex e0 61 62 63 00 03 and decodes to abcabc; a 3.38 MB synthetic stream also round-tripped. These results are not CI or independent Windows loader acceptance.
 
 **Next gates:**
 
