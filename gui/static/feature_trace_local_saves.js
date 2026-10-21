@@ -13,6 +13,7 @@
   "use strict";
 
   const KEY = "ffxi.feature-trace.local-saves.v1";
+  const DRAFT_KEY = "ffxi.feature-trace.local-draft.v1";
   const LIMIT = 20, MAX_HREF = 3500, MAX_ROOT = 240, MAX_TRAIL = 8;
   const MODES = new Set(["", "implementation", "mission", "triggers", "effects",
     "dependencies", "runtime", "identity", "diagnose", "all"]);
@@ -125,6 +126,44 @@
     return items;
   }
 
+  // Drafts are a separate opt-in slot, never a hidden 21st named save.
+  // A draft contains just one already validated read-only navigation URL.
+  function readDraft(storage, origin) {
+    try {
+      if (!storage) throw new Error("Browser storage unavailable");
+      const raw = storage.getItem(DRAFT_KEY);
+      if (raw == null) return {enabled: false, href: "", savedAt: null, error: ""};
+      if (raw.length > 4800) throw new Error("Draft exceeds size limit");
+      const row = JSON.parse(raw);
+      if (!row || typeof row !== "object" || Array.isArray(row) ||
+          Object.keys(row).sort().join(",") !== "href,savedAt,version" ||
+          row.version !== 1 || !Number.isSafeInteger(row.savedAt) || row.savedAt <= 0)
+        throw new Error("Unknown draft schema");
+      return {enabled: true, href: canonicalHref(row.href, origin),
+        savedAt: row.savedAt, error: ""};
+    } catch (_) {
+      return {enabled: false, href: "", savedAt: null,
+        error: "Local draft cannot be read. Existing browser data was left unchanged."};
+    }
+  }
+
+  function saveDraft(storage, origin, href, timestamp) {
+    const state = readDraft(storage, origin);
+    if (state.error) throw new Error(state.error);
+    if (!Number.isSafeInteger(timestamp) || timestamp <= 0)
+      throw new Error("Invalid draft time");
+    const canonical = canonicalHref(href, origin);
+    storage.setItem(DRAFT_KEY, JSON.stringify({version: 1, href: canonical,
+      savedAt: timestamp}));
+    return canonical;
+  }
+
+  function disableDraft(storage, origin) {
+    const state = readDraft(storage, origin);
+    if (state.error) throw new Error(state.error);
+    storage.removeItem(DRAFT_KEY);
+  }
+
   function currentHref(section, origin) {
     const params = new URLSearchParams({
       q: section.dataset.root, depth: section.dataset.depth,
@@ -138,15 +177,45 @@
 
   function mount(document, window) {
     const section = document.getElementById("trace-saved-views");
-    if (!section) return;
+    const draftPanel = document.getElementById("trace-draft-recovery");
+    if (!section && !draftPanel) return;
     const name = document.getElementById("trace-save-name");
     const note = document.getElementById("trace-save-note");
     const status = document.getElementById("trace-save-status");
     const list = document.getElementById("trace-saved-list");
     const saveButton = document.getElementById("trace-save-button");
     const origin = window.location.origin;
+    const draftCheck = document.getElementById("trace-draft-opt-in");
+    const draftStatus = document.getElementById("trace-draft-status");
+    const draftLink = document.getElementById("trace-draft-link");
+    const draftInfo = document.getElementById("trace-draft-info");
+    const draftDisable = document.getElementById("trace-draft-disable");
     let storage;
     try { storage = window.localStorage; } catch (_) { storage = null; }
+
+    function renderDraft(message = "") {
+      const state = readDraft(storage, origin);
+      if (draftCheck) {
+        draftCheck.checked = state.enabled;
+        draftCheck.disabled = Boolean(state.error);
+      }
+      if (draftPanel) {
+        draftPanel.hidden = !(state.enabled || state.error);
+        if (draftLink) {
+          draftLink.hidden = !state.enabled;
+          if (state.enabled) draftLink.href = state.href;
+          else draftLink.removeAttribute("href");
+        }
+        if (draftInfo) draftInfo.textContent = state.enabled
+          ? "Last recorded navigation: " + new Date(state.savedAt).toLocaleString() +
+            ". Re-runs against the current index; source and identity may be stale."
+          : state.error;
+        if (draftDisable) draftDisable.disabled = Boolean(state.error);
+      }
+      if (draftStatus) draftStatus.textContent = message || state.error ||
+        (state.enabled ? "Opted in: records this resolved view when leaving its page." :
+          "Off: no automatic draft is stored.");
+    }
 
     function render() {
       const state = read(storage, origin);
@@ -180,6 +249,7 @@
       }
     }
 
+    if (section) {
     name.value = (section.dataset.root || "").slice(0, 80);
     saveButton.addEventListener("click", () => {
       try {
@@ -195,7 +265,38 @@
       } catch (error) { status.textContent = "Could not save: " + error.message; }
     });
     render();
+    }
+
+    if (draftCheck && section) draftCheck.addEventListener("change", () => {
+      try {
+        if (draftCheck.checked) {
+          saveDraft(storage, origin, currentHref(section, origin), Date.now());
+          renderDraft("Automatic draft recovery enabled for this browser profile.");
+        } else {
+          disableDraft(storage, origin);
+          renderDraft("Draft deleted and automatic recovery disabled.");
+        }
+      } catch (error) {
+        renderDraft("Draft setting was not changed: " + error.message);
+      }
+    });
+    if (draftDisable) draftDisable.addEventListener("click", () => {
+      try {
+        disableDraft(storage, origin);
+        renderDraft("Draft deleted and automatic recovery disabled.");
+      } catch (error) { renderDraft("Could not delete draft: " + error.message); }
+    });
+    // Save on page exit only after explicit opt-in, and only with an exact root.
+    // No source/evidence data, user-entered query, or live client state is read.
+    if (section && typeof window.addEventListener === "function")
+      window.addEventListener("pagehide", () => {
+        if (!readDraft(storage, origin).enabled) return;
+        try { saveDraft(storage, origin, currentHref(section, origin), Date.now()); }
+        catch (_) { /* Browser may deny writes on exit; never claim guaranteed recovery. */ }
+      });
+    renderDraft();
   }
 
-  return {KEY, LIMIT, canonicalHref, read, save, remove, currentHref, mount};
+  return {KEY, DRAFT_KEY, LIMIT, canonicalHref, read, save, remove,
+    readDraft, saveDraft, disableDraft, currentHref, mount};
 });
