@@ -1,0 +1,1775 @@
+{
+  "artifact_type": "R5_run_geo_unlock_domain_staging_not_canonical",
+  "schema_version": 1,
+  "execution_enabled": false,
+  "integration_status": "BLOCKED_SCHEMA_OWNER_REVIEW",
+  "canonical_target": "data/testing/test_specifications.json",
+  "source_revision": {
+    "dsp_commit": "86d4467d446569c741d76d296e640c3b844ad844",
+    "dsp_branch": "main",
+    "deployed": "UNKNOWN"
+  },
+  "cases": [
+    {
+      "feature_id": "run_geo_unlock",
+      "case_id": "RG-01",
+      "name": "GEO quest-variable and key-item baseline",
+      "purpose": "GEO quest-variable and key-item baseline",
+      "rationale": "Contract should preserve quest-state, unlocked-job and reward effects separately from events",
+      "kind": "observation",
+      "schema_version": 1,
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "runner": "unassigned",
+      "lane": "observe-now",
+      "behavior": {
+        "given": [
+          "Operator-controlled character and complete baseline; quest status UNKNOWN unless independently read",
+          "DSP main source pin only, deployment UNKNOWN"
+        ],
+        "when": [
+          "Read DwL_Prog, DwL_Declined, LUOPAN and FISTFUL_OF_HOMELAND_SOIL in current authorized character"
+        ],
+        "then": [
+          "Report only observed values; quest status/actual GEO unlock remains UNKNOWN without job/quest readback"
+        ]
+      },
+      "preconditions": [
+        "Only an authorized local operator may progress quests",
+        "No GM direct quest mutation can stand as gameplay proof"
+      ],
+      "steps": [
+        {
+          "id": "RG-01-S01",
+          "title": "Source and before-state",
+          "action": "Snapshot original quest vars,KIs,items,job unlock and source fingerprints",
+          "expected": "Complete snapshot or UNKNOWN",
+          "assertion_ids": [
+            "RG-01-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 28,
+              "line_end": 69,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/dances_with_luopans.lua",
+              "line_start": 19,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-01-S02",
+          "title": "Bounded observation or permitted normal action",
+          "action": "Read DwL_Prog, DwL_Declined, LUOPAN and FISTFUL_OF_HOMELAND_SOIL in current authorized character",
+          "expected": "Report only observed values; quest status/actual GEO unlock remains UNKNOWN without job/quest readback",
+          "assertion_ids": [
+            "RG-01-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 28,
+              "line_end": 69,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/dances_with_luopans.lua",
+              "line_start": 19,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-01-S03",
+          "title": "Oracle versus post-state",
+          "action": "Re-read full quest/item/status and independently compare cited source",
+          "expected": "UNKNOWN unless required independent readbacks agree",
+          "assertion_ids": [
+            "RG-01-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 28,
+              "line_end": 69,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/dances_with_luopans.lua",
+              "line_start": 19,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-01-S04",
+          "title": "Cleanup and no duplicate reward verification",
+          "action": "Preserve evidence; restore only owner-authorized fixture; verify no duplicate rewards",
+          "expected": "Cleanup/quarantine confirmed, otherwise BLOCKED",
+          "assertion_ids": [
+            "RG-01-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 28,
+              "line_end": 69,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/dances_with_luopans.lua",
+              "line_start": 19,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Report only observed values; quest status/actual GEO unlock remains UNKNOWN without job/quest readback",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+            "line_start": 28,
+            "line_end": 69,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/dances_with_luopans.lua",
+            "line_start": 19,
+            "line_end": 65,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+          }
+        ],
+        "confidence": "SOURCE_CONDITION_ONLY",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "char_vars DwL_Prog,DwL_Declined",
+          "chars.keyitems LUOPAN,FISTFUL_OF_HOMELAND_SOIL"
+        ],
+        "existing_endpoints": [
+          "test-character-vars",
+          "test-character-keyitems"
+        ],
+        "missing": []
+      },
+      "mutation": "none",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+          "line_start": 28,
+          "line_end": 69,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/dances_with_luopans.lua",
+          "line_start": 19,
+          "line_end": 65,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+        }
+      ],
+      "blocking_gaps": [
+        "Quest status / unlocked job not provided by bounded current endpoints",
+        "Observe-now is limited to vars and KIs, no job assertion"
+      ],
+      "deployed_revision": "UNKNOWN",
+      "estimated_effort": "small"
+    },
+    {
+      "feature_id": "run_geo_unlock",
+      "case_id": "RG-02",
+      "name": "GEO unlock offered only at requisite level",
+      "purpose": "GEO unlock offered only at requisite level",
+      "rationale": "Contract should preserve quest-state, unlocked-job and reward effects separately from events",
+      "kind": "negative",
+      "schema_version": 1,
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "runner": "unassigned",
+      "lane": "needs-mutation",
+      "behavior": {
+        "given": [
+          "Operator-controlled character and complete baseline; quest status UNKNOWN unless independently read",
+          "DSP main source pin only, deployment UNKNOWN"
+        ],
+        "when": [
+          "Owner-approved interaction with Sylvie on character below ADVANCED_JOB_LEVEL with quest available"
+        ],
+        "then": [
+          "Source chooses event 33 below threshold vs event 31 above; threshold value is not fabricated and decoded client event must be verified"
+        ]
+      },
+      "preconditions": [
+        "Only an authorized local operator may progress quests",
+        "No GM direct quest mutation can stand as gameplay proof"
+      ],
+      "steps": [
+        {
+          "id": "RG-02-S01",
+          "title": "Source and before-state",
+          "action": "Snapshot original quest vars,KIs,items,job unlock and source fingerprints",
+          "expected": "Complete snapshot or UNKNOWN",
+          "assertion_ids": [
+            "RG-02-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 28,
+              "line_end": 69,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-02-S02",
+          "title": "Bounded observation or permitted normal action",
+          "action": "Owner-approved interaction with Sylvie on character below ADVANCED_JOB_LEVEL with quest available",
+          "expected": "Source chooses event 33 below threshold vs event 31 above; threshold value is not fabricated and decoded client event must be verified",
+          "assertion_ids": [
+            "RG-02-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 28,
+              "line_end": 69,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-02-S03",
+          "title": "Oracle versus post-state",
+          "action": "Re-read full quest/item/status and independently compare cited source",
+          "expected": "UNKNOWN unless required independent readbacks agree",
+          "assertion_ids": [
+            "RG-02-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 28,
+              "line_end": 69,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-02-S04",
+          "title": "Cleanup and no duplicate reward verification",
+          "action": "Preserve evidence; restore only owner-authorized fixture; verify no duplicate rewards",
+          "expected": "Cleanup/quarantine confirmed, otherwise BLOCKED",
+          "assertion_ids": [
+            "RG-02-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 28,
+              "line_end": 69,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Source chooses event 33 below threshold vs event 31 above; threshold value is not fabricated and decoded client event must be verified",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+            "line_start": 28,
+            "line_end": 69,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+          }
+        ],
+        "confidence": "SOURCE_CONDITION_ONLY",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "main level,source ADVANCED_JOB_LEVEL",
+          "quest log status and captured event ID",
+          "GEO unlocked-job bit"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "main level,source ADVANCED_JOB_LEVEL",
+          "quest log status and captured event ID",
+          "GEO unlocked-job bit"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+          "line_start": 28,
+          "line_end": 69,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L69"
+        }
+      ],
+      "blocking_gaps": [
+        "Client event 33 vs 31 needs local decoder confirmation and bound character levels"
+      ],
+      "deployed_revision": "UNKNOWN",
+      "estimated_effort": "high"
+    },
+    {
+      "feature_id": "run_geo_unlock",
+      "case_id": "RG-03",
+      "name": "GEO petrified-log trade yields Luopan KI",
+      "purpose": "GEO petrified-log trade yields Luopan KI",
+      "rationale": "Contract should preserve quest-state, unlocked-job and reward effects separately from events",
+      "kind": "positive",
+      "schema_version": 1,
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "runner": "unassigned",
+      "lane": "needs-mutation",
+      "behavior": {
+        "given": [
+          "Operator-controlled character and complete baseline; quest status UNKNOWN unless independently read",
+          "DSP main source pin only, deployment UNKNOWN"
+        ],
+        "when": [
+          "With accepted quest, soil KI and no LUOPAN, trade one validated PETRIFIED_LOG to Sylvie"
+        ],
+        "then": [
+          "Source triggers 34 then tradeComplete, removes soil and grants LUOPAN; cannot assert without trade inventory and KI delta"
+        ]
+      },
+      "preconditions": [
+        "Only an authorized local operator may progress quests",
+        "No GM direct quest mutation can stand as gameplay proof"
+      ],
+      "steps": [
+        {
+          "id": "RG-03-S01",
+          "title": "Source and before-state",
+          "action": "Snapshot original quest vars,KIs,items,job unlock and source fingerprints",
+          "expected": "Complete snapshot or UNKNOWN",
+          "assertion_ids": [
+            "RG-03-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 28,
+              "line_end": 34,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L34"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 95,
+              "line_end": 115,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L95-L115"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-03-S02",
+          "title": "Bounded observation or permitted normal action",
+          "action": "With accepted quest, soil KI and no LUOPAN, trade one validated PETRIFIED_LOG to Sylvie",
+          "expected": "Source triggers 34 then tradeComplete, removes soil and grants LUOPAN; cannot assert without trade inventory and KI delta",
+          "assertion_ids": [
+            "RG-03-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 28,
+              "line_end": 34,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L34"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 95,
+              "line_end": 115,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L95-L115"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-03-S03",
+          "title": "Oracle versus post-state",
+          "action": "Re-read full quest/item/status and independently compare cited source",
+          "expected": "UNKNOWN unless required independent readbacks agree",
+          "assertion_ids": [
+            "RG-03-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 28,
+              "line_end": 34,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L34"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 95,
+              "line_end": 115,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L95-L115"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-03-S04",
+          "title": "Cleanup and no duplicate reward verification",
+          "action": "Preserve evidence; restore only owner-authorized fixture; verify no duplicate rewards",
+          "expected": "Cleanup/quarantine confirmed, otherwise BLOCKED",
+          "assertion_ids": [
+            "RG-03-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 28,
+              "line_end": 34,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L34"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 95,
+              "line_end": 115,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L95-L115"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Source triggers 34 then tradeComplete, removes soil and grants LUOPAN; cannot assert without trade inventory and KI delta",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+            "line_start": 28,
+            "line_end": 34,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L34"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+            "line_start": 95,
+            "line_end": 115,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L95-L115"
+          }
+        ],
+        "confidence": "SOURCE_CONDITION_ONLY",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "items PETRIFIED_LOG before/after across containers",
+          "chars.keyitems soil,LUOPAN before/after",
+          "quest state,event 34 response"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "items PETRIFIED_LOG before/after across containers",
+          "chars.keyitems soil,LUOPAN before/after",
+          "quest state,event 34 response"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+          "line_start": 28,
+          "line_end": 34,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L28-L34"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+          "line_start": 95,
+          "line_end": 115,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L95-L115"
+        }
+      ],
+      "blocking_gaps": [
+        "Confirm exact required trade quantity and client event completion in captured evidence",
+        "Cannot GM-award LUOPAN as normal-trade success oracle"
+      ],
+      "deployed_revision": "UNKNOWN",
+      "estimated_effort": "high"
+    },
+    {
+      "feature_id": "run_geo_unlock",
+      "case_id": "RG-04",
+      "name": "GEO locus healing advances wait-dependent state",
+      "purpose": "GEO locus healing advances wait-dependent state",
+      "rationale": "Contract should preserve quest-state, unlocked-job and reward effects separately from events",
+      "kind": "positive",
+      "schema_version": 1,
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "runner": "unassigned",
+      "lane": "needs-mutation",
+      "behavior": {
+        "given": [
+          "Operator-controlled character and complete baseline; quest status UNKNOWN unless independently read",
+          "DSP main source pin only, deployment UNKNOWN"
+        ],
+        "when": [
+          "After real LUOPAN prerequisite, enter Ceizak/Yahse locus and gain actual resting/healing ticks"
+        ],
+        "then": [
+          "Source sets DwL_Prog=1 only after random 9–480 sec timer while remaining in locus; no guaranteed fixed elapsed time"
+        ]
+      },
+      "preconditions": [
+        "Only an authorized local operator may progress quests",
+        "No GM direct quest mutation can stand as gameplay proof"
+      ],
+      "steps": [
+        {
+          "id": "RG-04-S01",
+          "title": "Source and before-state",
+          "action": "Snapshot original quest vars,KIs,items,job unlock and source fingerprints",
+          "expected": "Complete snapshot or UNKNOWN",
+          "assertion_ids": [
+            "RG-04-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/dances_with_luopans.lua",
+              "line_start": 19,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-04-S02",
+          "title": "Bounded observation or permitted normal action",
+          "action": "After real LUOPAN prerequisite, enter Ceizak/Yahse locus and gain actual resting/healing ticks",
+          "expected": "Source sets DwL_Prog=1 only after random 9–480 sec timer while remaining in locus; no guaranteed fixed elapsed time",
+          "assertion_ids": [
+            "RG-04-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/dances_with_luopans.lua",
+              "line_start": 19,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-04-S03",
+          "title": "Oracle versus post-state",
+          "action": "Re-read full quest/item/status and independently compare cited source",
+          "expected": "UNKNOWN unless required independent readbacks agree",
+          "assertion_ids": [
+            "RG-04-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/dances_with_luopans.lua",
+              "line_start": 19,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-04-S04",
+          "title": "Cleanup and no duplicate reward verification",
+          "action": "Preserve evidence; restore only owner-authorized fixture; verify no duplicate rewards",
+          "expected": "Cleanup/quarantine confirmed, otherwise BLOCKED",
+          "assertion_ids": [
+            "RG-04-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/dances_with_luopans.lua",
+              "line_start": 19,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Source sets DwL_Prog=1 only after random 9–480 sec timer while remaining in locus; no guaranteed fixed elapsed time",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/dances_with_luopans.lua",
+            "line_start": 19,
+            "line_end": 65,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+          }
+        ],
+        "confidence": "SOURCE_CONDITION_ONLY",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "DwL_Prog char_var and DwL_Locus,DwL_RestUntil local vars",
+          "resting tick/event evidence with monotonic timestamps"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "DwL_Prog char_var and DwL_Locus,DwL_RestUntil local vars",
+          "resting tick/event evidence with monotonic timestamps"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/dances_with_luopans.lua",
+          "line_start": 19,
+          "line_end": 65,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/dances_with_luopans.lua#L19-L65"
+        }
+      ],
+      "blocking_gaps": [
+        "Random delay and localvars require query or event timeline; no forced GM var as oracle",
+        "Region trigger identity and zone mapping require local source confirmation"
+      ],
+      "deployed_revision": "UNKNOWN",
+      "estimated_effort": "high"
+    },
+    {
+      "feature_id": "run_geo_unlock",
+      "case_id": "RG-05",
+      "name": "GEO quest completion grants unlock and two items",
+      "purpose": "GEO quest completion grants unlock and two items",
+      "rationale": "Contract should preserve quest-state, unlocked-job and reward effects separately from events",
+      "kind": "positive",
+      "schema_version": 1,
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "runner": "unassigned",
+      "lane": "needs-mutation",
+      "behavior": {
+        "given": [
+          "Operator-controlled character and complete baseline; quest status UNKNOWN unless independently read",
+          "DSP main source pin only, deployment UNKNOWN"
+        ],
+        "when": [
+          "With valid quest state DwL_Prog=1 interact Sylvie; verify both reward items and GEO unlock"
+        ],
+        "then": [
+          "On successful npcUtil.giveItem for PLATE_OF_INDI_POISON + MATRE_BELL, source unlocks GEO, grants JOB_GESTURE_GEOMANCER and completes quest"
+        ]
+      },
+      "preconditions": [
+        "Only an authorized local operator may progress quests",
+        "No GM direct quest mutation can stand as gameplay proof"
+      ],
+      "steps": [
+        {
+          "id": "RG-05-S01",
+          "title": "Source and before-state",
+          "action": "Snapshot original quest vars,KIs,items,job unlock and source fingerprints",
+          "expected": "Complete snapshot or UNKNOWN",
+          "assertion_ids": [
+            "RG-05-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 95,
+              "line_end": 115,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L95-L115"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-05-S02",
+          "title": "Bounded observation or permitted normal action",
+          "action": "With valid quest state DwL_Prog=1 interact Sylvie; verify both reward items and GEO unlock",
+          "expected": "On successful npcUtil.giveItem for PLATE_OF_INDI_POISON + MATRE_BELL, source unlocks GEO, grants JOB_GESTURE_GEOMANCER and completes quest",
+          "assertion_ids": [
+            "RG-05-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 95,
+              "line_end": 115,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L95-L115"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-05-S03",
+          "title": "Oracle versus post-state",
+          "action": "Re-read full quest/item/status and independently compare cited source",
+          "expected": "UNKNOWN unless required independent readbacks agree",
+          "assertion_ids": [
+            "RG-05-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 95,
+              "line_end": 115,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L95-L115"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-05-S04",
+          "title": "Cleanup and no duplicate reward verification",
+          "action": "Preserve evidence; restore only owner-authorized fixture; verify no duplicate rewards",
+          "expected": "Cleanup/quarantine confirmed, otherwise BLOCKED",
+          "assertion_ids": [
+            "RG-05-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+              "line_start": 95,
+              "line_end": 115,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L95-L115"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "On successful npcUtil.giveItem for PLATE_OF_INDI_POISON + MATRE_BELL, source unlocks GEO, grants JOB_GESTURE_GEOMANCER and completes quest",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+            "line_start": 95,
+            "line_end": 115,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L95-L115"
+          }
+        ],
+        "confidence": "SOURCE_CONDITION_ONLY",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "char_inventory all containers for 6074/21460",
+          "GEO unlock state,quest log,gesture KI, DwL_Prog",
+          "event 36 completion"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "char_inventory all containers for 6074/21460",
+          "GEO unlock state,quest log,gesture KI, DwL_Prog",
+          "event 36 completion"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+          "line_start": 95,
+          "line_end": 115,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Western_Adoulin/npcs/Sylvie.lua#L95-L115"
+        }
+      ],
+      "blocking_gaps": [
+        "Without independent job unlock/quest status and complete inventory no PASS",
+        "Prove no duplication on repeated interaction through source and readback"
+      ],
+      "deployed_revision": "UNKNOWN",
+      "estimated_effort": "high"
+    },
+    {
+      "feature_id": "run_geo_unlock",
+      "case_id": "RG-06",
+      "name": "RUN quest state and petal baseline",
+      "purpose": "RUN quest state and petal baseline",
+      "rationale": "Contract should preserve quest-state, unlocked-job and reward effects separately from events",
+      "kind": "observation",
+      "schema_version": 1,
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "runner": "unassigned",
+      "lane": "observe-now",
+      "behavior": {
+        "given": [
+          "Operator-controlled character and complete baseline; quest status UNKNOWN unless independently read",
+          "DSP main source pin only, deployment UNKNOWN"
+        ],
+        "when": [
+          "Read RUN_COTR and YAHSE_WILDFLOWER_PETAL from existing authorized fixed-query endpoints"
+        ],
+        "then": [
+          "Actual quest progress and RUN unlocked flag UNKNOWN from vars and KI alone"
+        ]
+      },
+      "preconditions": [
+        "Only an authorized local operator may progress quests",
+        "No GM direct quest mutation can stand as gameplay proof"
+      ],
+      "steps": [
+        {
+          "id": "RG-06-S01",
+          "title": "Source and before-state",
+          "action": "Snapshot original quest vars,KIs,items,job unlock and source fingerprints",
+          "expected": "Complete snapshot or UNKNOWN",
+          "assertion_ids": [
+            "RG-06-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 37,
+              "line_end": 58,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L37-L58"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua",
+              "line_start": 17,
+              "line_end": 22,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua#L17-L22"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-06-S02",
+          "title": "Bounded observation or permitted normal action",
+          "action": "Read RUN_COTR and YAHSE_WILDFLOWER_PETAL from existing authorized fixed-query endpoints",
+          "expected": "Actual quest progress and RUN unlocked flag UNKNOWN from vars and KI alone",
+          "assertion_ids": [
+            "RG-06-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 37,
+              "line_end": 58,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L37-L58"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua",
+              "line_start": 17,
+              "line_end": 22,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua#L17-L22"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-06-S03",
+          "title": "Oracle versus post-state",
+          "action": "Re-read full quest/item/status and independently compare cited source",
+          "expected": "UNKNOWN unless required independent readbacks agree",
+          "assertion_ids": [
+            "RG-06-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 37,
+              "line_end": 58,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L37-L58"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua",
+              "line_start": 17,
+              "line_end": 22,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua#L17-L22"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-06-S04",
+          "title": "Cleanup and no duplicate reward verification",
+          "action": "Preserve evidence; restore only owner-authorized fixture; verify no duplicate rewards",
+          "expected": "Cleanup/quarantine confirmed, otherwise BLOCKED",
+          "assertion_ids": [
+            "RG-06-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 37,
+              "line_end": 58,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L37-L58"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua",
+              "line_start": 17,
+              "line_end": 22,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua#L17-L22"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Actual quest progress and RUN unlocked flag UNKNOWN from vars and KI alone",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+            "line_start": 37,
+            "line_end": 58,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L37-L58"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua",
+            "line_start": 17,
+            "line_end": 22,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua#L17-L22"
+          }
+        ],
+        "confidence": "SOURCE_CONDITION_ONLY",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "char_vars RUN_COTR",
+          "chars.keyitems YAHSE_WILDFLOWER_PETAL"
+        ],
+        "existing_endpoints": [
+          "test-character-vars",
+          "test-character-keyitems"
+        ],
+        "missing": []
+      },
+      "mutation": "none",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+          "line_start": 37,
+          "line_end": 58,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L37-L58"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua",
+          "line_start": 17,
+          "line_end": 22,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua#L17-L22"
+        }
+      ],
+      "blocking_gaps": [
+        "Quest status and job unlock are outside this bounded observation",
+        "No client interaction or event dispatch"
+      ],
+      "deployed_revision": "UNKNOWN",
+      "estimated_effort": "small"
+    },
+    {
+      "feature_id": "run_geo_unlock",
+      "case_id": "RG-07",
+      "name": "RUN quest petal and Octavien event sequence",
+      "purpose": "RUN quest petal and Octavien event sequence",
+      "rationale": "Contract should preserve quest-state, unlocked-job and reward effects separately from events",
+      "kind": "positive",
+      "schema_version": 1,
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "runner": "unassigned",
+      "lane": "needs-mutation",
+      "behavior": {
+        "given": [
+          "Operator-controlled character and complete baseline; quest status UNKNOWN unless independently read",
+          "DSP main source pin only, deployment UNKNOWN"
+        ],
+        "when": [
+          "Use normal quest acceptance and Wildflower interaction, then return to Octavien"
+        ],
+        "then": [
+          "Petal only granted while quest accepted and not already held; Octavien selects event 26 on accepted+petal; actual option/packet UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Only an authorized local operator may progress quests",
+        "No GM direct quest mutation can stand as gameplay proof"
+      ],
+      "steps": [
+        {
+          "id": "RG-07-S01",
+          "title": "Source and before-state",
+          "action": "Snapshot original quest vars,KIs,items,job unlock and source fingerprints",
+          "expected": "Complete snapshot or UNKNOWN",
+          "assertion_ids": [
+            "RG-07-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua",
+              "line_start": 17,
+              "line_end": 22,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua#L17-L22"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 37,
+              "line_end": 58,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L37-L58"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 82,
+              "line_end": 105,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L82-L105"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-07-S02",
+          "title": "Bounded observation or permitted normal action",
+          "action": "Use normal quest acceptance and Wildflower interaction, then return to Octavien",
+          "expected": "Petal only granted while quest accepted and not already held; Octavien selects event 26 on accepted+petal; actual option/packet UNKNOWN",
+          "assertion_ids": [
+            "RG-07-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua",
+              "line_start": 17,
+              "line_end": 22,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua#L17-L22"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 37,
+              "line_end": 58,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L37-L58"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 82,
+              "line_end": 105,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L82-L105"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-07-S03",
+          "title": "Oracle versus post-state",
+          "action": "Re-read full quest/item/status and independently compare cited source",
+          "expected": "UNKNOWN unless required independent readbacks agree",
+          "assertion_ids": [
+            "RG-07-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua",
+              "line_start": 17,
+              "line_end": 22,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua#L17-L22"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 37,
+              "line_end": 58,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L37-L58"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 82,
+              "line_end": 105,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L82-L105"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-07-S04",
+          "title": "Cleanup and no duplicate reward verification",
+          "action": "Preserve evidence; restore only owner-authorized fixture; verify no duplicate rewards",
+          "expected": "Cleanup/quarantine confirmed, otherwise BLOCKED",
+          "assertion_ids": [
+            "RG-07-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua",
+              "line_start": 17,
+              "line_end": 22,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua#L17-L22"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 37,
+              "line_end": 58,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L37-L58"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 82,
+              "line_end": 105,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L82-L105"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Petal only granted while quest accepted and not already held; Octavien selects event 26 on accepted+petal; actual option/packet UNKNOWN",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua",
+            "line_start": 17,
+            "line_end": 22,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua#L17-L22"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+            "line_start": 37,
+            "line_end": 58,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L37-L58"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+            "line_start": 82,
+            "line_end": 105,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L82-L105"
+          }
+        ],
+        "confidence": "SOURCE_CONDITION_ONLY",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "quest state, RUN_COTR char_var,petal KI",
+          "Octavien client event IDs/options",
+          "source/target NPC bindings"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "quest state, RUN_COTR char_var,petal KI",
+          "Octavien client event IDs/options",
+          "source/target NPC bindings"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua",
+          "line_start": 17,
+          "line_end": 22,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua#L17-L22"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+          "line_start": 37,
+          "line_end": 58,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L37-L58"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+          "line_start": 82,
+          "line_end": 105,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L82-L105"
+        }
+      ],
+      "blocking_gaps": [
+        "Client trigger IDs must be validated against source; no raw capture here",
+        "NPC position script warns SQL vs LSB mismatch"
+      ],
+      "deployed_revision": "UNKNOWN",
+      "estimated_effort": "high"
+    },
+    {
+      "feature_id": "run_geo_unlock",
+      "case_id": "RG-08",
+      "name": "RUN completion rewards and pending-state recovery",
+      "purpose": "RUN completion rewards and pending-state recovery",
+      "rationale": "Contract should preserve quest-state, unlocked-job and reward effects separately from events",
+      "kind": "positive",
+      "schema_version": 1,
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "runner": "unassigned",
+      "lane": "needs-mutation",
+      "behavior": {
+        "given": [
+          "Operator-controlled character and complete baseline; quest status UNKNOWN unless independently read",
+          "DSP main source pin only, deployment UNKNOWN"
+        ],
+        "when": [
+          "With accepted quest and reviewed event path 26, choose source-authorized option, attempt reward with inventory full and then free slot"
+        ],
+        "then": [
+          "RUN_COTR=3 on option 1; successful giveItem(20781) unlocks RUN, grants gesture KI, removes petal, completes quest; failure should not claim completion"
+        ]
+      },
+      "preconditions": [
+        "Only an authorized local operator may progress quests",
+        "No GM direct quest mutation can stand as gameplay proof"
+      ],
+      "steps": [
+        {
+          "id": "RG-08-S01",
+          "title": "Source and before-state",
+          "action": "Snapshot original quest vars,KIs,items,job unlock and source fingerprints",
+          "expected": "Complete snapshot or UNKNOWN",
+          "assertion_ids": [
+            "RG-08-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 64,
+              "line_end": 75,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L64-L75"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 82,
+              "line_end": 105,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L82-L105"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-08-S02",
+          "title": "Bounded observation or permitted normal action",
+          "action": "With accepted quest and reviewed event path 26, choose source-authorized option, attempt reward with inventory full and then free slot",
+          "expected": "RUN_COTR=3 on option 1; successful giveItem(20781) unlocks RUN, grants gesture KI, removes petal, completes quest; failure should not claim completion",
+          "assertion_ids": [
+            "RG-08-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 64,
+              "line_end": 75,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L64-L75"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 82,
+              "line_end": 105,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L82-L105"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-08-S03",
+          "title": "Oracle versus post-state",
+          "action": "Re-read full quest/item/status and independently compare cited source",
+          "expected": "UNKNOWN unless required independent readbacks agree",
+          "assertion_ids": [
+            "RG-08-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 64,
+              "line_end": 75,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L64-L75"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 82,
+              "line_end": 105,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L82-L105"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "RG-08-S04",
+          "title": "Cleanup and no duplicate reward verification",
+          "action": "Preserve evidence; restore only owner-authorized fixture; verify no duplicate rewards",
+          "expected": "Cleanup/quarantine confirmed, otherwise BLOCKED",
+          "assertion_ids": [
+            "RG-08-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 64,
+              "line_end": 75,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L64-L75"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+              "line_start": 82,
+              "line_end": 105,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L82-L105"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "RUN_COTR=3 on option 1; successful giveItem(20781) unlocks RUN, grants gesture KI, removes petal, completes quest; failure should not claim completion",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+            "line_start": 64,
+            "line_end": 75,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L64-L75"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+            "line_start": 82,
+            "line_end": 105,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L82-L105"
+          }
+        ],
+        "confidence": "SOURCE_CONDITION_ONLY",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "RUN_COTR before/after,quest status,job unlock,gesture KI",
+          "SOWILO_CLAYMORE all-container quantity,free slots,petal KI",
+          "HP/MP at event update where option==1"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "RUN_COTR before/after,quest status,job unlock,gesture KI",
+          "SOWILO_CLAYMORE all-container quantity,free slots,petal KI",
+          "HP/MP at event update where option==1"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+          "line_start": 64,
+          "line_end": 75,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L64-L75"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+          "line_start": 82,
+          "line_end": 105,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Eastern_Adoulin/npcs/Octavien.lua#L82-L105"
+        }
+      ],
+      "blocking_gaps": [
+        "Potential HP/MP halving at csid26 option1 must be isolated and authorized",
+        "Independent item grant failure semantics of npcUtil.giveItem need source review"
+      ],
+      "deployed_revision": "UNKNOWN",
+      "estimated_effort": "high"
+    }
+  ]
+}
