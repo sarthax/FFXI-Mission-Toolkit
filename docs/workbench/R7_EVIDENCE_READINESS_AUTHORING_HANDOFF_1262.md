@@ -195,3 +195,32 @@ presented as a valid same-capture observation). Two captures may only be
 compared using the existing separately reviewable multi-capture comparison
 diagnostic; this display adapter never merges their row identities or
 creates a new canonical step/source attribution.
+
+
+## Step-review decision preservation (R7 consumer closeout)
+
+Agent B's display-only producer now also receives
+`steps[].reviewer_step_decision_original`, copied from the **original
+capture-draft step review** through `readiness_steps[]`, in addition to the
+pre-existing per-binding `identity_confidence[].review_decision_original`.
+An observed step can be `PENDING`, `ACCEPT`, `EDIT` or `REJECT`
+independently of all other evidence authority. The existing offline reviewer
+checks the advisory step-review decision against the corresponding original
+indexed draft before rendering/exporting; changed decisions in either the
+projection or source readiness rows are refused.
+
+This is **display metadata only**. A human's `ACCEPT` of an observed step
+means the recorded observation text was reviewed. It never approves an
+independent DSP oracle, normative expectation, local readback, identity
+namespace, source association, runtime permission, or gameplay verdict.
+`oracle_approval_state` remains `UNAPPROVED`,
+`normative_expected=null`, `verdict=UNKNOWN` and
+`execution_enabled=false` even for reviewed steps.
+
+The two synthetic-only display examples demonstrate a `PENDING` step
+(UNKNOWN missing indexed filename) and an `ACCEPT` **observation** step
+(BLOCKED conflicting source digest), both with unapproved oracle and no
+canonical source/step link. The existing separate offline review-decision
+export, its original source evidence, human decisions and differently
+scoped fingerprint fields remain unchanged; consumers must not import this
+readiness sidecar as that reviewed-decision contract.
