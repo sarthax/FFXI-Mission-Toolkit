@@ -390,5 +390,20 @@ class SyntheticPol1RepackTests(unittest.TestCase):
 
 
 
+
+    def test_lazy_parsing_can_reduce_size_on_synthetic_pattern(self):
+        source = (
+            b"abcu" + b"Q" * 40 + b"bcdefghijklmnopqrstuvwxyz"
+            + b"R" * 40 + b"abcdefghijklmnopqrstuvwxyz"
+        )
+        baseline = encode_pol1(source, search_depth=128)
+        lazy = encode_pol1(source, search_depth=128, lazy_match=True)
+        self.assertLess(len(lazy), len(baseline))
+        decoded, used = independent_pol1_decode(lazy, len(source))
+        self.assertEqual(decoded, source)
+        self.assertEqual(used, len(lazy))
+
+
+
 if __name__ == "__main__":
     unittest.main()
