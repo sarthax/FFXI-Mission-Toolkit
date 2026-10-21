@@ -1,6 +1,8 @@
 # R6 Domain Observation Capability Backlog
 
-Companion to [audit PR #1293](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1293), [offline domain CI #1294](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1294), epic [#1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197), and contract proposal [#1285](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1285). All contracts are **proposals, not exposed endpoints**. No new live execution permissions, no domain runnable-catalog import.
+**Companion-only backlog, not an authoritative case inventory.** The single proposed 73-case readiness authority is the [matrix in PR #1292](https://github.com/sarthax/FFXI-Mission-Toolkit/blob/audit/domain-readiness-73-20261021/docs/workbench/SCENARIO_DOMAIN_READINESS_MATRIX_2026-10-21.json), subject to Agent A and Agent C review; #1293 retains these unique capability contracts, while #1294 performs shared offline draft validation. Do not duplicate, rederive or publish a second 73-case index here. All scenarios remain noncanonical, NOT_RUN, and unavailable to dispatch. The matrix's nine source PR head SHAs are the re-audit triggers, not deployed DSP authenticity.
+
+Companion to [audit PR #1292](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1292), [offline domain CI #1294](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1294), epic [#1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197), and contract proposal [#1285](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1285). All contracts are **proposals, not exposed endpoints**. No new live execution permissions, no domain runnable-catalog import.
 
 ## Ranked capability/issue matrix
 
