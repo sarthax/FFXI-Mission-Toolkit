@@ -166,3 +166,13 @@ No source review here verifies a real client planting, feed, harvest rejection, 
 - **Result preview and persisted debug mutation:** [`src/map/utils/gardenutils.cpp:736-756`](https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L736-L756) at DSP `330ea8f854cff47aae570aa95d6474f3225f5d49`
 - **Persistent inventory schema:** [`sql/char_inventory.sql:19-29`](https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29) at DSP `330ea8f854cff47aae570aa95d6474f3225f5d49`
 - **Gardening result table/rows:** [`sql/gardening_results.sql:1-16`](https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/gardening_results.sql#L1-L16) at DSP `330ea8f854cff47aae570aa95d6474f3225f5d49`
+
+## Source-pin versus current DSP main — 2026-10-21 readiness erratum
+
+The cited `feature/mog-house-gardening@330ea8f854cff47aae570aa95d6474f3225f5d49` remains a valid **historical oracle pin**, not an assertion about deployed DSP. Verified against current DSP `main@86d4467d446569c741d76d296e640c3b844ad844`:
+
+- `src/map/utils/gardenutils.cpp` has a **different blob**. Pinned `SavePot` is at line 589 and the dual-Safe `DebugCommand` loop at line 616; current main has `SavePot` at line 588 and the loop at line 615. Do **not** copy line ranges from one revision to the other.
+- Both inspected revisions traverse `LOC_MOGSAFE` and `LOC_MOGSAFE2` and match `slotID` without checking container identity, so a numeric-slot filter is **not** a safely unique pot selector. Before any `!garden` diagnostic, implement and verify an explicit unique-container-slot guard on an isolated server fixture; this draft does not authorize debug mutations.
+- The Toolkit inventory supervisor currently selects only `location,slot,itemId,quantity LIMIT 100`, excluding `extra`. No complete GARD scenario qualifies as `observe-now`; source location checks alone cannot lift `needs-mutation` or the prerequisite `needs-readback` gate.
+
+Detailed cross-domain reconciliation: [R5 73-case readiness audit PR #1292](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1292). **No oracle revisions, expected outcomes or execution permissions were changed by this erratum.**
