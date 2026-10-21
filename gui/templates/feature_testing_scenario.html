@@ -9,6 +9,7 @@
 <section class="wb-panel">
 <h2>{{ detail.scenario.title }}</h2>
 <p><strong>Classification:</strong> {{ detail.scenario.kind }} · <strong>Plan status:</strong> {{ detail.scenario.status }}</p>
+{% with scenario_view=detail.presentation %}{% include "feature_testing_steps.html" %}{% endwith %}
 <h3>Execution readiness</h3>
 <p><strong>Registered runner:</strong> {{ preflight.runner or 'None (planning only)' }}</p>
 <p><strong>Preflight:</strong> {{ 'Ready for operator review' if preflight.ready_for_operator_review else 'Blocked' }} · Execution from this page is not enabled.</p>
@@ -29,10 +30,10 @@
 {% if detail.observed_results %}
 <table><thead><tr><th>Observed</th><th>Stage</th><th>Verdict</th><th>Run</th><th>DSP</th><th>Headless</th><th>Toolkit</th></tr></thead><tbody>
 {% for row in detail.observed_results %}
-<tr><td>{{ row.observed_at }}</td><td>{{ row.stage }}</td><td>{{ row.verdict }}</td><td>{{ row.run_id }}</td>
+<tr><td>{{ row.observed_at }}</td><td>{{ row.stage }}</td><td>{{ row.verdict }}</td><td><a href="/feature-testing/run/{{ row.run_id|urlencode }}">{{ row.run_id }}</a></td>
 <td><code>{{ row.dsp_commit[:12] }}</code></td><td><code>{{ row.headless_commit[:12] }}</code></td><td><code>{{ row.toolkit_commit[:12] }}</code></td></tr>
 {% endfor %}</tbody></table>
-<p>Structured evidence is accessible in the read-only results API. No run can be started here.</p>
+<p>Open a run above to inspect imported observations, recalculated assertion outcomes, raw artifacts and source revisions. No run can be started here.</p>
 {% else %}<p>No imported execution evidence has been recorded for this scenario.</p>{% endif %}
 </section>
 {% endblock %}
