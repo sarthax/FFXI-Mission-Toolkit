@@ -498,5 +498,75 @@ class SyntheticPol1RepackTests(unittest.TestCase):
 
 
 
+    def test_post_output_explicit_zero_distance_marker_in_same_control_group(self):
+        source = b"abcabc"
+        encoded = encode_pol1(source)
+        self.assertEqual(encoded, b"\\xe0abc\\x00\\x03")
+        without_stop = _stream_termination_metadata(encoded, len(source))
+        self.assertEqual(
+            without_stop["post_output_next_token"]["status"],
+            "NEXT_MATCH_WORD_INCOMPLETE"
+        )
+        with_stop = _stream_termination_metadata(encoded + b"\\x00\\x00", len(source))
+        self.assertEqual(with_stop["consumed_bytes"], len(encoded))
+        self.assertEqual(with_stop["post_output_next_token"], {
+            "status": "ZERO_DISTANCE_STOP",
+            "zero_distance_stop": True,
+            "marker_offset": len(encoded),
+        })
+        with_nonzero = _stream_termination_metadata(
+            encoded + b"\\x00\\x01", len(source)
+        )
+        self.assertEqual(
+            with_nonzero["post_output_next_token"]["status"],
+            "NEXT_MATCH_HAS_NONZERO_DISTANCE"
+        )
+        literal = _stream_termination_metadata(bytes((0xFF, ord("A"))), 1)
+        self.assertEqual(
+            literal["post_output_next_token"]["status"], "NEXT_TOKEN_IS_LITERAL"
+        )
+
+    def test_virtual_substitution_reports_next_token_without_writing(self):
+        source = b"abcabc"
+        encoded = encode_pol1(source)
+        original_image = fixture_pe(encoded + b"\\x00\\x00", len(source), len(encoded) + 7)
+        copy = bytes(original_image)
+        observed = assess_pol1_repack_fit(original_image, search_depth=256)
+        self.assertEqual(observed["in_memory_decoded_roundtrip"], "PASS")
+        self.assertTrue(observed["protected_suffix_unchanged"])
+        self.assertEqual(
+            observed["original_decoder_termination"]["post_output_next_token"]["status"],
+            "ZERO_DISTANCE_STOP"
+        )
+        self.assertEqual(
+            observed["virtual_substitution_post_output_next_token"]["status"],
+            "ZERO_DISTANCE_STOP"
+        )
+        self.assertEqual(original_image, copy)
+
+        shorter_source = (
+            b"abcu" + b"Q" * 40 + b"bcdefghijklmnopqrstuvwxyz"
+            + b"R" * 40 + b"abcdefghijklmnopqrstuvwxyz"
+        )
+        original_packed = encode_pol1(shorter_source, search_depth=128)
+        original_image = fixture_pe(
+            original_packed + b"\\x00\\x00", len(shorter_source), len(original_packed) + 10
+        )
+        result = assess_pol1_repack_fit(
+            original_image, search_depth=128, lazy_match=True
+        )
+        self.assertLess(result["candidate_encoded_size"], len(original_packed))
+        self.assertEqual(result["in_memory_decoded_roundtrip"], "PASS")
+        self.assertEqual(
+            result["original_decoder_termination"]["post_output_next_token"]["status"],
+            "ZERO_DISTANCE_STOP"
+        )
+        self.assertIn(
+            result["virtual_substitution_post_output_next_token"]["status"],
+            ("ZERO_DISTANCE_STOP", "NEXT_MATCH_HAS_NONZERO_DISTANCE",
+             "NEXT_TOKEN_IS_LITERAL", "NEXT_MATCH_WORD_INCOMPLETE")
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
