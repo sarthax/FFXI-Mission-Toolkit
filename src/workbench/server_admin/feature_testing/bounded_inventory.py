@@ -7,6 +7,8 @@ from .database_diagnostics import _approved_connection
 # DSP inventory location identifiers; never accept arbitrary containers.
 _LOCATIONS = {0: "inventory", 1: "mog_safe", 10: "mog_safe_2"}
 _MAX_PAGE = 100
+_MAX_EXTRA_BYTES = 4096
+_MAX_RESPONSE_EXTRA_BYTES = 65536
 
 def inventory_snapshot_v2(charid: int, location: int, cursor: int = 0, limit: int = 100) -> dict:
     if location not in _LOCATIONS:
@@ -56,12 +58,29 @@ def inventory_snapshot_v2(charid: int, location: int, cursor: int = 0, limit: in
             if isinstance(row, dict) else row
         )
         raw = bytes(extra) if extra is not None else None
+        if raw is not None and len(raw) > _MAX_EXTRA_BYTES:
+            return {**basic, "configured": True, "status": "INCOMPLETE_OVERSIZED_EXTRA",
+                    "complete": False, "items": [], "row_count": 0, "total_rows": total,
+                    "has_more": None, "next_cursor": None, "truncated": True,
+                    "limit": limit, "page_offset": cursor, "max_extra_bytes": _MAX_EXTRA_BYTES}
+        if sum(len(item["extra_base64"] or "") for item in items) + (4 * ((len(raw) + 2) // 3) if raw is not None else 0) > _MAX_RESPONSE_EXTRA_BYTES:
+            return {**basic, "configured": True, "status": "INCOMPLETE_RESPONSE_BUDGET",
+                    "complete": False, "items": [], "row_count": 0, "total_rows": total,
+                    "has_more": None, "next_cursor": None, "truncated": True,
+                    "limit": limit, "page_offset": cursor, "max_response_extra_bytes": _MAX_RESPONSE_EXTRA_BYTES}
         items.append({
             "location": int(location_value), "slot": int(slot), "itemId": int(item_id),
             "quantity": int(quantity), "extra_base64": base64.b64encode(raw).decode("ascii") if raw is not None else None,
             "extra_present": raw is not None,
             "furnishing_installed": "UNKNOWN", "augment_decode": "UNSUPPORTED",
         })
+    inconsistent = (cursor > total or (cursor < total and not selected) or
+                    cursor + len(selected) > total or
+                    (len(rows) > limit and cursor + limit >= total))
+    if inconsistent:
+        return {**basic, "configured": True, "status": "INCOMPLETE_INCONSISTENT_PAGE",
+                "complete": False, "items": [], "row_count": 0, "total_rows": total,
+                "has_more": None, "next_cursor": None, "truncated": True}
     has_more = cursor + len(selected) < total or len(rows) > limit
     complete = cursor == 0 and not has_more and len(selected) == total
     return {**basic, "configured": True, "status": "COMPLETE" if complete else "INCOMPLETE",
