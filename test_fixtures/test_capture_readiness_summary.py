@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import json
+import re
 
 from test_capture_identity_oracle_readiness import (
     fixture, binding, source, record, proof_for, independent_oracle,
@@ -11,6 +13,7 @@ from test_capture_identity_oracle_readiness import (
 from workbench.captures.scenario_handoff import reconstruct_review_draft
 from workbench.captures.scenario_identity_readiness import _observation_digest
 from workbench.captures.scenario_readiness_summary import summarize_capture_readiness
+from workbench.captures.scenario_review_workflow import manual_editor_handoff
 from workbench.captures.scenario_review_offline import render_review_html
 
 
@@ -75,13 +78,27 @@ def test_detailed_missing_observations_for_all_lanes():
             assert {"server_event_state", "client_dialog", "quest_variables",
                     "instance_state"}.issubset(names)
         elif step["lane"] == "capture_ki_events":
-            assert {"client_key_items", "server_key_items"} == set(names)
+            assert {"client_key_items", "server_key_items"}.issubset(names)
+            assert names["quest_variables"]["importance"] == "CONDITIONAL"
         elif step["lane"] == "capture_structured_records":
-            assert {"client_inventory", "server_inventory"} == set(names)
+            assert {"client_inventory", "server_inventory"}.issubset(names)
+            assert names["client_equipment"]["importance"] == "CONDITIONAL"
+            assert names["server_furnishings"]["importance"] == "CONDITIONAL"
+            assert names["temporary_items"]["importance"] == "CONDITIONAL"
         elif step["lane"] == "capture_raw_packets":
             assert {"packet_decoder", "server_receipt"} == set(names)
         else:
             raise AssertionError("uncovered synthetic event family")
+    for step, item in zip(draft["steps"], out["readiness_steps"], strict=True):
+        for obs in item["missing_observations"]:
+            assert obs["expected_observation_type"] == obs["observation"]
+            assert obs["reason_for_gap"] and obs["how_to_obtain"]
+            assert obs["evidence_refs"] == step["evidence_refs"]
+            assert obs["suggested_read_only_capability"].endswith("_readback")
+            assert obs["capability_registered"] is False
+            assert obs["permission_granted"] is False
+            assert obs["review_required"] is True
+            assert obs["status"] == "NOT_INDEPENDENTLY_OBSERVED"
     assert all(s["expected_outcome_classification"] == "UNKNOWN"
                for s in out["readiness_steps"])
     assert all(s["normative_expected"] is None for s in out["readiness_steps"])
@@ -198,6 +215,16 @@ def test_existing_offline_reviewer_renders_readiness_without_approval():
     assert "execution_enabled&quot;" in html or "execution_enabled" in html
     assert "Continue in Scenario Developer" in html
     assert "original" not in html or "Original indexed evidence" in html
+    # Separate noncanonical sidecar retains untouched indexed source provenance.
+    assert "Export separate readiness sidecar" in html
+    assert "original_evidence_handoff:ORIGINAL" in html
+    assert "automatic_import:false,approved_for_execution:false,execution_enabled:false" in html
+    original_blob = re.search(r"<script id='bundle' type='application/json'>(.*?)</script>", html, re.S)
+    assert original_blob
+    assert json.loads(original_blob.group(1)) == manual_editor_handoff(draft)
+    readiness_blob = re.search(r"<script id='readiness' type='application/json'>(.*?)</script>", html, re.S)
+    assert readiness_blob
+    assert json.loads(readiness_blob.group(1)) == report
     sourced = summarize_capture_readiness(
         draft, independent_oracles=[independent_oracle(draft["steps"][0])])
     source_html = render_review_html(draft, readiness=sourced)
@@ -206,6 +233,22 @@ def test_existing_offline_reviewer_renders_readiness_without_approval():
     assert "NOT approved oracles" in source_html
     # Existing one-argument offline renderer remains compatible.
     assert "Identity and oracle readiness" in render_review_html(draft)
+    for change in (
+        lambda x: x["readiness_steps"][0].update(execution_enabled=True),
+        lambda x: x["readiness_steps"][0]["oracle_readiness"].update(normative_expected="UNAUTHORIZED"),
+        lambda x: x["readiness_steps"][0]["identity_matches"][0].update(source_identity_verified=True),
+        lambda x: x["readiness_steps"][0].update(evidence_refs=["FORGED_SOURCE"]),
+        lambda x: x["scenario_developer_handoff"].update(automatic_import=True),
+        lambda x: x["contract_v2_alignment"].update(execution_enabled=True),
+    ):
+        altered = deepcopy(report)
+        change(altered)
+        try:
+            render_review_html(draft, readiness=altered)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("unsafe readiness displayed or exported")
     forged = deepcopy(report)
     forged["capture_projection_sha256"] = "f" * 64
     try:
