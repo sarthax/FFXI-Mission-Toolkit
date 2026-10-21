@@ -9,6 +9,7 @@
 <section class="wb-panel">
 <h2>{{ detail.scenario.title }}</h2>
 <p><strong>Classification:</strong> {{ detail.scenario.kind }} · <strong>Plan status:</strong> {{ detail.scenario.status }}</p>
+{% if detail.observed_results %}{% set latest = detail.observed_results[0] %}<p><strong>Latest imported run:</strong> <a href="/feature-testing/run/{{ latest.run_id|urlencode }}">{{ latest.run_id }}</a> — recorded verdict {{ latest.verdict }} (open it to see recalculated step outcomes; the steps below stay UNKNOWN until a run is selected).</p>{% endif %}
 {% with scenario_view=detail.presentation %}{% include "feature_testing_steps.html" %}{% endwith %}
 <h3>Execution readiness</h3>
 <p><strong>Registered runner:</strong> {{ preflight.runner or 'None (planning only)' }}</p>
