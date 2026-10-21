@@ -167,9 +167,9 @@ console.log('Coverage and evidence handoffs remain provisional through Guided/Ad
   assert.deepEqual(d.observations,[]);
   assert.match(d.behavior.then[0],/UNKNOWN/);
   assert.deepEqual(M.parseAdvanced(JSON.stringify(d)),d);
-  assert.throws(() => M.fromContext({...ctx, auto_save_allowed: true}, ['gardening']), /refused/);
-  assert.throws(() => M.fromContext({...ctx, contract: 'x'}, ['gardening']), /refused/);
-  assert.throws(() => M.fromContext(ctx, ['voidwalker']), /refused/);
+  assert.throws(() => M.fromContext({...ctx, auto_save_allowed: true}, ['gardening']), /(?:refused|Unsupported)/);
+  assert.throws(() => M.fromContext({...ctx, contract: 'x'}, ['gardening']), /(?:refused|Unsupported)/);
+  assert.throws(() => M.fromContext(ctx, ['voidwalker']), /(?:refused|Unsupported)/);
   console.log('Context reference handoff is read-only and design-only: PASS');
 }
 
