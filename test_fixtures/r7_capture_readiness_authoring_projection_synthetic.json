@@ -110,7 +110,10 @@
             "oracle_approval_state": "UNAPPROVED",
             "normative_expected": null,
             "verdict": "UNKNOWN",
-            "execution_enabled": false
+            "execution_enabled": false,
+            "reviewer_step_decision_original": {
+              "decision": "PENDING"
+            }
           }
         ]
       }
@@ -232,7 +235,12 @@
             "oracle_approval_state": "UNAPPROVED",
             "normative_expected": null,
             "verdict": "UNKNOWN",
-            "execution_enabled": false
+            "execution_enabled": false,
+            "reviewer_step_decision_original": {
+              "decision": "ACCEPT",
+              "edited_title": null,
+              "note": "SYNTHETIC capture interpretation reviewed; oracle not independently approved"
+            }
           }
         ]
       }
