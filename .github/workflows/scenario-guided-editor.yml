@@ -39,8 +39,10 @@ jobs:
         run: |
           python -m pytest -q test_fixtures/test_scenario_guided_editor.py test_fixtures/test_scenario_guided_catalog_workspace.py test_fixtures/test_scenario_context_handoff.py test_fixtures/test_scenario_authoring_catalog.py test_fixtures/test_feature_testing_spec_drafts.py test_fixtures/test_feature_testing_specifications.py test_fixtures/test_scenario_contract_authoring.py
       - name: Run browser-independent Guided/Advanced model tests
-        run: node test_fixtures/test_scenario_guided_model.cjs
+        run: |
+          node test_fixtures/test_scenario_guided_model.cjs
           node test_fixtures/test_scenario_contract_v2_view.cjs
       - name: Check browser module syntax
-        run: node --check gui/static/scenario_developer.js
+        run: |
+          node --check gui/static/scenario_developer.js
           node --check gui/static/scenario_contract_v2_view.js
