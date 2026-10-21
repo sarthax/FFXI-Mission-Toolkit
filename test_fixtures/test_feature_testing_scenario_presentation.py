@@ -40,7 +40,10 @@ def synthetic_bdd():
         "confidence_note": "Synthetic fixture; not independently authenticated",
     } for i, a in enumerate(spec["assertions"])]
     spec["authoring"] = {
-        "state": "synthetic_fixture", "review_required": True,
+        "state": "synthetic_fixture",
+        "execution_policy": "read_only",
+        "evidence_provenance": "synthetic_not_live",
+        "review_required": True,
         "blocking_gaps": ["Installed layout readback UNKNOWN"],
     }
     return spec
