@@ -238,7 +238,12 @@ def validate_contract_v2(spec: dict) -> None:
         _sha(fingerprints[name], 40, name)
 
 
-def compatibility_report(spec: dict, observed_versions: dict | None = None) -> dict:
+def compatibility_report(
+    spec: dict,
+    observed_versions: dict | None = None,
+    *,
+    observed_sources: dict | None = None,
+) -> dict:
     """Fail-closed read-only revision comparison, not authority or dispatch."""
     from .test_specifications import validate_spec
 
@@ -269,6 +274,36 @@ def compatibility_report(spec: dict, observed_versions: dict | None = None) -> d
                 reasons.append(key + " unavailable")
             elif claimed.lower() != observed.lower():
                 mismatch.append(key + " mismatch")
+    # The source metadata contains only a claimed digest. Independent local
+    # verification MUST be supplied by a caller that has rehashed exact source
+    # bytes and checked the repository/revision. This pure helper never opens
+    # paths, downloads sources or upgrades oracle/binding confidence.
+    sources = {item["ref"]: item for item in metadata["sources"]}
+    if observed_sources is None:
+        if sources:
+            reasons.append("independently rehashed source fingerprints unavailable")
+    else:
+        if not isinstance(observed_sources, dict) or set(observed_sources) - set(sources):
+            raise ValueError("observed source fingerprints contain unrecognized refs")
+        for ref, src in sources.items():
+            expected_revision, expected_hash = src["revision"], src["sha256"]
+            if not expected_revision or not expected_hash:
+                reasons.append("source " + ref + " revision/content digest unpinned")
+            if ref not in observed_sources:
+                reasons.append("source " + ref + " rehashed bytes not supplied")
+                continue
+            evidence = observed_sources[ref]
+            if not isinstance(evidence, dict) or set(evidence) != {"revision", "sha256"}:
+                raise ValueError("observed source requires exact revision and sha256")
+            current_rev, current_sha = evidence["revision"], evidence["sha256"]
+            _sha(current_rev, 40, "observed source revision")
+            _sha(current_sha, 64, "observed source SHA-256")
+            if current_rev is None or current_sha is None:
+                reasons.append("source " + ref + " independent revision/hash unavailable")
+            if expected_revision and current_rev and expected_revision.lower() != current_rev.lower():
+                mismatch.append("source " + ref + " revision mismatch")
+            if expected_hash and current_sha and expected_hash.lower() != current_sha.lower():
+                mismatch.append("source " + ref + " content SHA-256 mismatch")
     state = "BLOCKED" if mismatch else "UNKNOWN" if reasons else "MATCHED_PINNED_ONLY"
     return {"state": state, "reasons": mismatch + reasons,
             "execution_enabled": False, "independent_verification": "NOT_ESTABLISHED"}
