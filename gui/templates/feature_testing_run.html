@@ -50,7 +50,8 @@
 {% endif %}
 </section>
 {% endif %}
-<h4>Assertions</h4>
+{% with scenario_view=scenario_views.get(loop.index0) %}{% include "feature_testing_steps.html" %}{% endwith %}
+<h4>Assertions (original imported report)</h4>
 {% set assertions = result.evidence.get('assertions', []) %}
 {% if assertions is sequence and assertions is not string and assertions %}
 <div class="ft-assertions"><table><thead><tr><th>Result</th><th>Assertion</th><th>Expected</th><th>Observed</th></tr></thead><tbody>
