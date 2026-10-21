@@ -36,6 +36,51 @@ ANCHORS = {
 }
 
 
+LEGACY_CONTAINER_COUNT = 13
+SLOTS_PER_CONTAINER = 81
+ITEM_RECORD_BYTES = 44
+ITEM_STORE_OFFSET = 0x9860
+PACKET_LOCATION_FIELDS = {
+    0x1E: (0x08, 0x09),
+    0x1F: (0x0A, 0x0B),
+    0x20: (0x0E, 0x0F),
+}
+
+
+def bounded_2019_record_offset(container_id: int, slot_id: int) -> int | None:
+    """Model known 2019 record math with explicit bounds, never dereference.
+
+    This is an offline reference oracle, NOT a byte-level client patch.
+    """
+    if type(container_id) is not int or type(slot_id) is not int:
+        return None
+    if not (0 <= container_id < LEGACY_CONTAINER_COUNT):
+        return None
+    if not (0 <= slot_id < SLOTS_PER_CONTAINER):
+        return None
+    return ITEM_STORE_OFFSET + (container_id * SLOTS_PER_CONTAINER + slot_id) * ITEM_RECORD_BYTES
+
+
+def inspect_2019_item_packet_location(packet_id: int, payload: bytes) -> dict:
+    """Offline packet-location guard oracle; returns no retail packet bytes."""
+    if type(packet_id) is not int or packet_id not in PACKET_LOCATION_FIELDS:
+        return {"status": "UNKNOWN_PACKET_NO_ADDRESS", "safe_record_offset": None}
+    if not isinstance(payload, bytes):
+        return {"status": "INVALID_PACKET_BUFFER", "safe_record_offset": None}
+    location_byte, slot_byte = PACKET_LOCATION_FIELDS[packet_id]
+    if len(payload) <= max(location_byte, slot_byte):
+        return {"status": "TRUNCATED_PACKET", "safe_record_offset": None}
+    container_id, slot_id = payload[location_byte], payload[slot_byte]
+    offset = bounded_2019_record_offset(container_id, slot_id)
+    return {
+        "status": "LEGACY_BOUNDS_OK" if offset is not None else "REJECT_LEGACY_BOUNDS",
+        "packet_id": packet_id,
+        "container_id": container_id, "slot_id": slot_id,
+        "safe_record_offset": offset,
+        "caution": "Synthetic bounds oracle only; not a parsed wire packet or live packet filter.",
+    }
+
+
 def inspect_command_table(data: bytes, data_rva: int) -> dict:
     """Report exact table entries and their IDs; do not infer runtime support."""
     offset = FIRST_WARDROBE_COMMAND_RVA - data_rva
