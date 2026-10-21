@@ -135,6 +135,7 @@ def detect_headless_roots() -> list[dict]:
                           "commit": _git(root, "rev-parse", "--short=10", "HEAD"),
                           "has_dll": (root / "bin" / "mcp" / "XiHeadless.dll").is_file(),
                           "clean": not dirty})
+    found.sort(key=lambda c: (not (c["has_dll"] and c["clean"]), c["name"]))  # usable checkouts first
     return found
 
 

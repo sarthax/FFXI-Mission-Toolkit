@@ -389,8 +389,8 @@ function show(st){
  const ul=$('ft-setup-steps');ul.replaceChildren();
  for(const s of st.steps){const li=document.createElement('li');li.textContent=(s.ok?'✅ ':'❌ ')+s.title+(s.ok?'':' — '+s.fix);ul.appendChild(li);}
  const sel=$('ft-setup-root');sel.replaceChildren();
- const none=document.createElement('option');none.value='';none.textContent=st.headless_roots.length?'(choose)':'(none found)';sel.appendChild(none);
- for(const r of st.headless_roots){const o=document.createElement('option');o.value=r.path;o.textContent=r.name+' @ '+r.commit+(r.has_dll?'':' — not built')+(r.clean?'':' — uncommitted changes');if(r.path===st.selected_root)o.selected=true;sel.appendChild(o);}
+ const none=document.createElement('option');none.value='';none.textContent=st.headless_roots.length?'(choose a ✓ ready checkout, then press Save)':'(none found)';sel.appendChild(none);
+ for(const r of st.headless_roots){const o=document.createElement('option');o.value=r.path;o.textContent=(r.has_dll&&r.clean?'✓ ready: ':'not usable: ')+r.name+' @ '+r.commit+(r.has_dll?'':' (not built)')+(r.clean?'':' (uncommitted changes)');if(r.path===st.selected_root)o.selected=true;sel.appendChild(o);}
  $('ft-setup-chars').value=st.charids.join(', ');$('ft-setup-account').value=st.account;$('ft-setup-dbuser').value=st.db.user;$('ft-setup-dbname').value=st.db.name;$('ft-setup-dbport').value=st.db.port;
  $('ft-setup-dbpass').placeholder=st.db.password_saved?'saved — leave blank to keep':'password';
  $('ft-setup-file').textContent=st.settings_file;
