@@ -227,6 +227,8 @@ def _indexed_provenance(evidence_map: dict, refs: list[str], issues: list[dict])
     """
     output = []
     for ref in refs:
+        if ref not in evidence_map:
+            raise ValueError("unknown original capture evidence reference")
         original = evidence_map[ref]
         source = original["source"]
         locators = []
