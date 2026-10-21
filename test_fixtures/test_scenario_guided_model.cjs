@@ -229,3 +229,14 @@ console.log('Unified intake: no implicit assertion, explicit step AND identity d
   assert.equal(M.coverageContextChanged(first,null),true);
   console.log('Coverage context revalidation rejects changed/expired source: PASS');
 }
+
+{
+  // Every explicitly included source identity must survive; never claim
+  // provenance survived round-trip if it was silently cut at 1000 chars.
+  const bloated={...captureReview,steps:[{...captureReview.steps[0],
+    evidence_refs:['capture-row:'+('A'.repeat(975))],bindings:[]}]};
+  assert.throws(()=>M.draftFromEvidence(bloated,[
+    {id:'OBS-S001',title:'Synthetic source',confirmed:true,bindings:[]}
+  ]),/provenance exceeds/);
+  console.log('Oversized source provenance fails closed instead of truncating accepted identities: PASS');
+}
