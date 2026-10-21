@@ -235,3 +235,65 @@ def test_explicit_manual_completion_preview_save_reopen_edit(monkeypatch, tmp_pa
     saved2=save_draft(validate_editor_spec(loaded)["canonical_specification"],1)
     assert saved2["revision"]==2
     assert get_drafts()[0]["specification"]["steps"][0]["title"]==loaded["steps"][0]["title"]
+
+
+def test_reviewer_proposed_identity_is_not_original_evidence_or_trusted_binding():
+    payload=reviewed_fixture()
+    first=payload["binding_decisions"][0]
+    source_id=first["binding_id"]
+    first.update(decision="EDIT",edited_value="SYNTHETIC_REVIEW_PROPOSAL")
+    result=inspect_evidence_review(payload)
+    items=[b for step in result["steps"] for b in step["bindings"]
+           if b["binding_id"]==source_id]
+    assert len(items)==1
+    candidate=items[0]
+    assert candidate["review_decision"]=="EDIT"
+    assert candidate["suggested_identity"]=="SYNTHETIC_REVIEW_PROPOSAL"
+    assert candidate["identity"]!=candidate["suggested_identity"]
+    assert candidate["confidence"]=="UNVERIFIED_CAPTURE_IDENTITY"
+    assert result["original_capture_authenticated"] is False
+
+
+def test_coverage_output_preserves_blockers_and_exact_ref():
+    context=coverage_context(coverage_fixture(),REF)
+    assert context["proposed_case_id"] is None
+    assert context["assertions"]==context["observations"]==context["capability_bindings"]==[]
+    assert context["design_only"] and not context["auto_populate_allowed"]
+    assert context["review_required"] and not context["auto_save_allowed"]
+
+
+def test_revisioned_authoring_cannot_create_duplicate_draft(monkeypatch,tmp_path):
+    from test_scenario_guided_catalog_workspace import synthetic_spec
+    from workbench.server_admin.feature_testing.spec_drafts import save_draft
+    from workbench.server_admin.scenario_authoring.editor_router import validate_editor_spec
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_DRAFTS_DB",str(tmp_path/"deduplicate.sqlite"))
+    manually_authored=synthetic_spec()
+    manually_authored["case_id"]="SYNTH-NO-DUPLICATES"
+    approved_for_storage=validate_editor_spec(manually_authored)["canonical_specification"]
+    first=save_draft(approved_for_storage,0)
+    assert first["revision"]==1 and first["execution_enabled"] is False
+    with pytest.raises(ValueError,match="revision conflict"):
+        save_draft(approved_for_storage,0)
+    with pytest.raises(ValueError,match="revision conflict"):
+        save_draft(approved_for_storage,0)
+
+
+def test_unified_editor_has_one_coverage_start_and_manual_evidence_binding_review():
+    from pathlib import Path
+    root=Path(__file__).resolve().parents[1]
+    js=(root/"gui/static/scenario_developer.js").read_text(encoding="utf8")
+    model=(root/"gui/static/scenario_guided_model.js").read_text(encoding="utf8")
+    page=(root/"gui/templates/scenario_developer.html").read_text(encoding="utf8")
+    assert "async function resolveCoverageContext" in js
+    assert "async function loadContextRef" not in js
+    assert js.count("await resolveCoverageContext();")==1
+    assert "sd-context-use" in js
+    assert "sd-preview-incomplete" in js
+    assert "activeHandoff === key" in js
+    assert "sd-binding-decision" in js
+    assert "INCLUDE_UNVERIFIED" in js and "EXCLUDE" in js
+    assert "reviewer-proposal=" in model
+    assert "sd-evidence-return" in page
+    assert "return to Evidence Reviewer" in page or "Return to the Evidence Reviewer" in page
+    assert "OBSERVED / provisional" in js and "EXPECTED / normative" in js
+    assert not any(token in js for token in ("send_gm_command","/builder/launch","packet_inject"))
