@@ -9,6 +9,9 @@ on:
       - 'src/workbench/client/cli/pol1_repack_report.py'
       - 'test_fixtures/test_client_pol1_repack_experiment.py'
       - 'test_fixtures/test_client_pol1_unpack.py'
+      - 'src/workbench/client/wardrobe_2019_audit.py'
+      - 'src/workbench/client/cli/wardrobe_2019_report.py'
+      - 'test_fixtures/test_client_wardrobe_2019_audit.py'
   push:
     branches: [main]
     paths:
@@ -18,6 +21,9 @@ on:
       - 'src/workbench/client/cli/pol1_repack_report.py'
       - 'test_fixtures/test_client_pol1_repack_experiment.py'
       - 'test_fixtures/test_client_pol1_unpack.py'
+      - 'src/workbench/client/wardrobe_2019_audit.py'
+      - 'src/workbench/client/cli/wardrobe_2019_report.py'
+      - 'test_fixtures/test_client_wardrobe_2019_audit.py'
 
 permissions:
   contents: read
@@ -43,3 +49,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s test_fixtures -p test_client_pol1_repack_experiment.py -v
+
+      - name: Synthetic 2019 inventory boundary and command-table audit
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s test_fixtures -p test_client_wardrobe_2019_audit.py -v
