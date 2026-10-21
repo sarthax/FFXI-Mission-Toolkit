@@ -200,11 +200,12 @@ class Wardrobe2019AuditTests(unittest.TestCase):
         pointers = observed["fixed_transfer_source_observations"]
         self.assertEqual(pointers["direct_active_store"], ["0x3FA1", "0x4818"])
         self.assertEqual(len(pointers["stack_local_buffer"]), 5)
-        self.assertEqual(len(pointers["stack_loaded_pointer_unknown_origin"]), 4)
+        self.assertEqual(len(pointers["caller_supplied_first_argument_pointer"]), 4)
+        self.assertFalse(pointers["caller_supplied_pointer_contents_and_aliases_known"])
         self.assertEqual(
             sorted(pointers["direct_active_store"] +
                    pointers["stack_local_buffer"] +
-                   pointers["stack_loaded_pointer_unknown_origin"]),
+                   pointers["caller_supplied_first_argument_pointer"]),
             sorted(observed["fixed_size_transfer_immediate_rvas"]),
         )
         self.assertIsNone(observed["all_transfer_pointers_alias_active_store"])
@@ -218,6 +219,16 @@ class Wardrobe2019AuditTests(unittest.TestCase):
         self.assertEqual(evb["write_side_transfer_push_rva"], "0x4818")
         self.assertFalse(evb["full_runtime_file_name_proved"])
         self.assertIsNone(evb["is_character_inventory_persistence"])
+        self.assertEqual(
+            evb["caller_supplied_evb_files"],
+            [
+                {"site_rva": "0x45B0", "filename": "RCN%04d[%d].evb"},
+                {"site_rva": "0x464D", "filename": "REC.evb"},
+                {"site_rva": "0x46ED", "filename": "RECN.evb"},
+                {"site_rva": "0x478D", "filename": "RECS.evb"},
+            ],
+        )
+        self.assertFalse(evb["caller_supplied_buffer_content_known"])
         self.assertEqual(observed["linear_disassembly_candidate_reference_count"], 1045)
         self.assertEqual(observed["observed_direct_global_writer_instruction_count"], 15)
         self.assertFalse(observed["global_writer_sites_independently_cfg_confirmed"])
