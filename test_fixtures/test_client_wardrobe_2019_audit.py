@@ -197,6 +197,17 @@ class Wardrobe2019AuditTests(unittest.TestCase):
         self.assertEqual(len(observed["read_like_fixed_transfer_immediate_rvas"]), 6)
         self.assertEqual(len(observed["write_like_fixed_transfer_immediate_rvas"]), 5)
         self.assertFalse(observed["persistent_file_format_and_schema_confirmed"])
+        pointers = observed["fixed_transfer_source_observations"]
+        self.assertEqual(pointers["direct_active_store"], ["0x3FA1", "0x4818"])
+        self.assertEqual(len(pointers["stack_local_buffer"]), 5)
+        self.assertEqual(len(pointers["stack_loaded_pointer_unknown_origin"]), 4)
+        self.assertEqual(
+            sorted(pointers["direct_active_store"] +
+                   pointers["stack_local_buffer"] +
+                   pointers["stack_loaded_pointer_unknown_origin"]),
+            sorted(observed["fixed_size_transfer_immediate_rvas"]),
+        )
+        self.assertIsNone(observed["all_transfer_pointers_alias_active_store"])
         self.assertEqual(observed["linear_disassembly_candidate_reference_count"], 1045)
         self.assertEqual(observed["observed_direct_global_writer_instruction_count"], 15)
         self.assertFalse(observed["global_writer_sites_independently_cfg_confirmed"])
