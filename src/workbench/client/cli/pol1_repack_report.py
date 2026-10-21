@@ -63,6 +63,7 @@ def main() -> int:
                 "depth": entry["encoder_search_depth"],
                 "lazy_match": entry["encoder_lazy_match"],
                 "candidate_encoded_size": entry["candidate_encoded_size"],
+                "synthetic_terminated_candidate": entry["synthetic_terminated_candidate"],
                 "headroom_bytes": entry["headroom_bytes"],
                 "status": entry["status"],
                 "in_memory_decoded_roundtrip": entry["in_memory_decoded_roundtrip"],
