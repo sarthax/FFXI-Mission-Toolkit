@@ -1,0 +1,137 @@
+{
+  "_fixture_note": "SYNTHETIC NON-CANONICAL migration projection of Agent E gardening GARD-01. Source citation originates in staged spec/gardening; source bytes and digest NOT independently verified. Never add to canonical catalog.",
+  "staged_origin": {
+    "repository": "sarthax/FFXI-Mission-Toolkit",
+    "branch": "spec/gardening",
+    "path": "data/testing/domain_drafts/gardening.json",
+    "feature_id": "gardening",
+    "case_id": "GARD-01",
+    "original_assertion_ids": [
+      "GARD-01-baseline_complete"
+    ],
+    "import_status": "BLOCKED_UNSUPPORTED_CANONICAL_OBSERVATIONS_AND_UNREVIEWED_ORACLE"
+  },
+  "specification": {
+    "schema_version": 1,
+    "feature_id": "gardening",
+    "case_id": "SYNTH-GARD-01-V2-MIGRATION",
+    "name": "SYNTHETIC GARD-01 metadata-mapping scaffold ONLY",
+    "runner": "unassigned",
+    "execution_status": "design_only",
+    "purpose": "Demonstrate a non-executable v2 citation and readback gap. Not a gameplay assertion.",
+    "preconditions": [
+      "SYNTHETIC mapping fixture only; DSP revision deployment and local server data UNKNOWN"
+    ],
+    "observations": [
+      "session"
+    ],
+    "assertions": [
+      {
+        "id": "synthetic_unbound_oracle",
+        "operation": "equals",
+        "observed": "session",
+        "expected": null
+      }
+    ],
+    "cleanup": [
+      "No runner, client action, GM command or DB mutation authorized"
+    ],
+    "behavior": {
+      "given": [
+        "Staged GARD-01 source citation was recorded, local source digest missing"
+      ],
+      "when": [
+        "Human reviewer inspects required char_inventory.extra readback"
+      ],
+      "then": [
+        "UNKNOWN: no authoritative garden pot extra or installed layout comparison supplied"
+      ]
+    },
+    "steps": [
+      {
+        "id": "SYNTH-GARD-01-S01",
+        "title": "Review unverified pot extra source and readback requirement",
+        "intent": "manual_checkpoint",
+        "expected": "UNKNOWN: source conditions and complete runtime snapshot absent",
+        "assertion_ids": [
+          "synthetic_unbound_oracle"
+        ],
+        "evidence_refs": [
+          "session"
+        ],
+        "confidence_note": "SYNTHETIC placeholder only. The null expected expression cannot yield PASS under v1 equals evaluator; no domain assertion migrated."
+      }
+    ],
+    "authoring": {
+      "state": "draft",
+      "execution_policy": "read_only",
+      "evidence_provenance": "synthetic_staged_domain_citation_not_observation",
+      "blocking_gaps": [
+        "GARD-01 original novel pot observations and guarded actions cannot be imported into v1",
+        "DSP source file bytes and content digest not verified",
+        "Fixed-query pot extra readback and complete two-safe identity not available",
+        "Source revision deployed status UNKNOWN",
+        "Original domain oracle and step assertions require independent review"
+      ],
+      "review_required": true
+    },
+    "contract_v2": {
+      "contract_version": 2,
+      "sources": [
+        {
+          "ref": "garden-pot-extra",
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "sql/char_inventory.sql",
+          "line_start": 19,
+          "line_end": 29,
+          "revision": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "classification": "dsp_source",
+          "sha256": null
+        }
+      ],
+      "parameters": [
+        {
+          "name": "pot_container_slot",
+          "kind": "catalog",
+          "identity": null,
+          "namespace": null,
+          "zone_id": null,
+          "binding_state": "unresolved",
+          "source_refs": [
+            "garden-pot-extra"
+          ]
+        }
+      ],
+      "oracles": [
+        {
+          "assertion_id": "synthetic_unbound_oracle",
+          "oracle_type": "unknown",
+          "source_refs": [],
+          "confidence": "unknown"
+        }
+      ],
+      "step_requirements": [
+        {
+          "step_id": "SYNTH-GARD-01-S01",
+          "capability": "server_readback_candidate",
+          "operation_class": "read_only",
+          "required_permissions": [
+            "server_read_grant"
+          ],
+          "required_readbacks": [
+            "char_inventory.extra",
+            "complete_container_slot_snapshot"
+          ],
+          "approval_required": true,
+          "execution_gate": "blocked"
+        }
+      ],
+      "fingerprints": {
+        "base_spec_sha256": null,
+        "dsp_commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+        "headless_commit": null,
+        "toolkit_commit": null
+      }
+    }
+  }
+}
