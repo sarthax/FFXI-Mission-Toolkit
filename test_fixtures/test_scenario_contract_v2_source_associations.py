@@ -315,3 +315,50 @@ def test_empty_optional_collection_means_unknown_not_verified_or_executable():
     assert projected["steps"][STEP]["state"] == "UNKNOWN"
     assert projected["oracle_approval"] == "NOT_ESTABLISHED"
     assert projected["execution_enabled"] is False
+
+
+@pytest.mark.parametrize("name,reason", [
+    ("invalid_step", "source association references unknown step"),
+    ("invalid_source", "unknown, duplicate, or invalid v2 association source reference"),
+])
+def test_editor_ready_invalid_canonical_json_fixture_is_rejected(name, reason):
+    """Direct editor JSON samples intentionally fail canonical validation."""
+    doc = json.loads((ROOT / (
+        "r7_contract_v2_source_associations_" + name + "_synthetic.json"
+    )).read_text(encoding="utf-8"))
+    assert doc["schema_version"] == 1
+    assert doc["runner"] == "unassigned"
+    assert doc["execution_status"] == "design_only"
+    with pytest.raises(ValueError, match=reason):
+        validate_spec(doc)
+    with pytest.raises(ValueError):
+        serialize_spec(doc)
+
+
+def test_editor_ready_valid_canonical_json_fixture_round_trips_exactly():
+    doc = json.loads((ROOT /
+        "r7_contract_v2_source_associations_valid_synthetic.json"
+    ).read_text(encoding="utf-8"))
+    assert doc["schema_version"] == 1
+    assert doc["runner"] == "unassigned"
+    assert doc["execution_status"] == "design_only"
+    assert validate_spec(doc) is doc
+    serialized = serialize_spec(doc)
+    assert deserialize_spec(serialized) == doc
+    presentation = source_attribution_report(doc)
+    assert presentation["case"] == {
+        "state": "EXPLICIT_CITATION_CLAIM",
+        "source_refs": ["synthetic-source-1"],
+    }
+    assert presentation["steps"][STEP] == {
+        "state": "EXPLICIT_CITATION_CLAIM",
+        "source_refs": ["synthetic-source-1"],
+    }
+    assert presentation["execution_enabled"] is False
+    assert presentation["oracle_approval"] == "NOT_ESTABLISHED"
+    assert presentation["independent_verification"] == "NOT_ESTABLISHED"
+    assert compatibility_report(doc)["state"] == "UNKNOWN"
+    assert len(json.dumps(doc, sort_keys=True, ensure_ascii=True,
+                          separators=(",", ":")).encode("utf-8")) <= 32768
+    # Synthetics are not entries in the canonical, runnable test catalog.
+    assert specification(doc["feature_id"], doc["case_id"]) is None
