@@ -10,6 +10,8 @@ on:
       - 'test_fixtures/test_client_pol1_repack_experiment.py'
       - 'test_fixtures/test_client_pol1_unpack.py'
       - 'src/workbench/client/wardrobe_2019_audit.py'
+      - 'src/workbench/client/wardrobe_2019_allocator.py'
+      - 'test_fixtures/test_client_wardrobe_2019_allocator.py'
       - 'src/workbench/client/cli/wardrobe_2019_report.py'
       - 'test_fixtures/test_client_wardrobe_2019_audit.py'
   push:
@@ -22,6 +24,8 @@ on:
       - 'test_fixtures/test_client_pol1_repack_experiment.py'
       - 'test_fixtures/test_client_pol1_unpack.py'
       - 'src/workbench/client/wardrobe_2019_audit.py'
+      - 'src/workbench/client/wardrobe_2019_allocator.py'
+      - 'test_fixtures/test_client_wardrobe_2019_allocator.py'
       - 'src/workbench/client/cli/wardrobe_2019_report.py'
       - 'test_fixtures/test_client_wardrobe_2019_audit.py'
 
@@ -54,3 +58,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s test_fixtures -p test_client_wardrobe_2019_audit.py -v
+
+      - name: Synthetic 2019 storage allocator and context-switch audit
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s test_fixtures -p test_client_wardrobe_2019_allocator.py -v
