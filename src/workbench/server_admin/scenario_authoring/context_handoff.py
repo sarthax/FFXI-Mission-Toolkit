@@ -201,18 +201,34 @@ def inspect_evidence_review(payload: dict) -> dict:
                           "bindings": proj_bindings})
         steps.append({"step_id": sid, "observed_summary": title,
                       "evidence_refs": refs[:], "bindings": views})
+    indexed_fingerprints = {}
     for key, value in evidence.items():
         if not isinstance(value, dict) or value.get("ref_id") != key or value.get("capture_id") != payload["capture_id"]:
             raise ValueError("Inconsistent original indexed evidence reference")
         source = value.get("source")
         if not isinstance(source, dict):
             raise ValueError("Original evidence source missing")
-        for ref in source.get("references", []):
+        indexed_fingerprints[key] = []
+        locations = source.get("references", [])
+        if not isinstance(locations, list) or len(locations) > 40:
+            raise ValueError("Invalid or unbounded source locators")
+        for ref in locations:
             if not isinstance(ref, dict):
                 raise ValueError("Invalid source locator")
             digest = ref.get("source_sha256")
             if digest is not None and (not isinstance(digest, str) or not _CHECKSUM.fullmatch(digest)):
                 raise ValueError("Malformed source fingerprint")
+            manifest = ref.get("source_manifest")
+            parser = manifest.get("parser_version") if isinstance(manifest, dict) else None
+            indexed_fingerprints[key].append({
+                "ref_id": key, "sha256": digest or "UNKNOWN",
+                "parser_version": str(parser)[:60] if parser is not None else "UNKNOWN",
+                "verification": "INDEXED_SOURCE_METADATA_NOT_REHASHED",
+            })
+    for step in steps:
+        step["source_fingerprints"] = [
+            item for key in step["evidence_refs"] for item in indexed_fingerprints[key]
+        ][:80]
     checksum = sha256(json.dumps({
         "capture_id": payload["capture_id"], "evidence_map": evidence, "steps": projected,
     }, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")).hexdigest()
