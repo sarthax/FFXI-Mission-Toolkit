@@ -95,6 +95,23 @@ An independent search of the decoded executable for immediate DWORD `0x3B080` fo
 
 These findings independently block any idea of extending the store array without reviewing both its consumers and the potential serialized/snapshotted representation. The read-only audit now includes candidate size sites and pointer assignments, while retaining explicit `False` for transfer semantics, complete writer enumeration and complete allocation/lifetime mapping. Synthetic tests check the bounded metadata and unknown classifications.
 
+## Exact file-mode and EVB-adjacent string correlation (2026-10-21)
+
+A fresh read-only inspection of the original verified PE's initialized `.data` section established four exact ASCII anchors:
+
+| .data RVA | Observed literal | Evidence boundary |
+|---|---|---|
+| `0x3442D0` | `rb` | Explicit mode string passed to file-opening helper `0x307B5E` immediately before the fixed-size read-like calls |
+| `0x34471C` | `wb` | Explicit mode string passed to the same file-opening helper immediately before the write-like calls |
+| `0x34470C` | `ZSU.evb` | Nearby file-name literal |
+| `0x344714` | `*.evb` | Nearby file-glob literal |
+
+The exact decoded-code disassembly shows `push 0x3B080` followed by a four-argument call to `0x307CFF` (six read-like sites) or `0x307E16` (five write-like sites). The `rb` and `wb` mode strings at these call paths strengthen the file-transfer interpretation. However, the adjacent `.evb` strings are **not proven to be the specific files used by each of the eleven transfers**. The `.evb` extension and naming are not by themselves proof of inventory persistence; they may represent event files, snapshots, transient resources or something else.
+
+**New reproducible tool:** `inspect_fixed_transfer_data_strings` confirms these four `.data` values by exact RVA, without emitting proprietary bytes; `inspect_2019_fixed_transfer_calls` independently scans bounded decoded code for the `push 0x3B080` instruction-shaped pattern followed within 18 bytes by a relative-call target. When run on the exact 2019 decoded original, the scanner found exactly **eleven** candidates, all associated with the expected six-read / five-write RVAs. The result is deliberately labeled *static byte candidates*: a pattern match cannot replace control-flow verification or prove a transfer was executed. Synthetic tests verify relative branch displacement, unexpected/unassociated immediate handling, wrong literals, and input-type/size rejections.
+
+**Interpretation change:** A fixed stream footprint is now evidenced, but we **cannot** assert this is the authoritative inventory save schema, that expanding item records requires enlarging these streams, or that copying the new client's packet fields will solve it. Before any changes to `0x3B080`, trace the source/destination pointers at each call site and verify the actual file or session-resource path. No client or server file was modified or executed in this research.
+
 ## Synthetic bounds oracle added
 
 The Stage 4 module also provides a **pure offline address validator** for the original 13-container layout. For a container `c` and slot `s`, it returns `0x9860 + (c * 81 + s) * 44` **only** when `0 <= c <= 12` and `0 <= s <= 80`; every other value returns no address. Booleans and non-integer numeric values fail closed. This models the storage stride seen in the 2019 decoded code without dereferencing process memory.
