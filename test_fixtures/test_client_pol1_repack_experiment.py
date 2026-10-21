@@ -501,13 +501,13 @@ class SyntheticPol1RepackTests(unittest.TestCase):
     def test_post_output_explicit_zero_distance_marker_in_same_control_group(self):
         source = b"abcabc"
         encoded = encode_pol1(source)
-        self.assertEqual(encoded, b"\\xe0abc\\x00\\x03")
+        self.assertEqual(encoded, b"\xe0abc\\x00\\x03")
         without_stop = _stream_termination_metadata(encoded, len(source))
         self.assertEqual(
             without_stop["post_output_next_token"]["status"],
             "NEXT_MATCH_WORD_INCOMPLETE"
         )
-        with_stop = _stream_termination_metadata(encoded + b"\\x00\\x00", len(source))
+        with_stop = _stream_termination_metadata(encoded + b"\x00\\x00", len(source))
         self.assertEqual(with_stop["consumed_bytes"], len(encoded))
         self.assertEqual(with_stop["post_output_next_token"], {
             "status": "ZERO_DISTANCE_STOP",
@@ -515,7 +515,7 @@ class SyntheticPol1RepackTests(unittest.TestCase):
             "marker_offset": len(encoded),
         })
         with_nonzero = _stream_termination_metadata(
-            encoded + b"\\x00\\x01", len(source)
+            encoded + b"\x00\\x01", len(source)
         )
         self.assertEqual(
             with_nonzero["post_output_next_token"]["status"],
@@ -529,7 +529,7 @@ class SyntheticPol1RepackTests(unittest.TestCase):
     def test_virtual_substitution_reports_next_token_without_writing(self):
         source = b"abcabc"
         encoded = encode_pol1(source)
-        original_image = fixture_pe(encoded + b"\\x00\\x00", len(source), len(encoded) + 7)
+        original_image = fixture_pe(encoded + b"\x00\\x00", len(source), len(encoded) + 7)
         copy = bytes(original_image)
         observed = assess_pol1_repack_fit(original_image, search_depth=256)
         self.assertEqual(observed["in_memory_decoded_roundtrip"], "PASS")
@@ -550,7 +550,7 @@ class SyntheticPol1RepackTests(unittest.TestCase):
         )
         original_packed = encode_pol1(shorter_source, search_depth=128)
         original_image = fixture_pe(
-            original_packed + b"\\x00\\x00", len(shorter_source), len(original_packed) + 10
+            original_packed + b"\x00\\x00", len(shorter_source), len(original_packed) + 10
         )
         result = assess_pol1_repack_fit(
             original_image, search_depth=128, lazy_match=True
