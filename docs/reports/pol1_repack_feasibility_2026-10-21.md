@@ -64,12 +64,12 @@ This performs a read-only estimation, not a client edit. Before running, ensure 
 
 ## 4. Verification and required evidence
 
-**Observed locally:** six synthetic test methods previously PASS; new boundary guards require CI using a locally reproduced copy of the existing Toolkit POL1 decoder. The known token vector encodes to hex e0 61 62 63 00 03 and decodes to abcabc; a 3.38 MB synthetic stream also round-tripped. These results are not CI or independent Windows loader acceptance.
+**Verified:** GitHub Actions run `39629832243` passed the nine focused synthetic test methods and the existing original POL1 unpack fixture. Those methods include 191 deterministic randomized streams decoded by an independently implemented test oracle, input-hash rejection, loader-like suffix preservation, false raw-section-fit rejection and boundary-overlap refusal. Separately, a local exploratory 3.3 MB *synthetic* pattern round-tripped; neither check establishes retail-loader acceptance.
 
 **Next gates:**
 
-1. Run the new focused tests, the original POL1 unpack tests, and applicable CI on the exact branch head.
-2. Run the read-only capacity report against archived *unchanged* 2021/2026 DLLs on Windows. Record candidate packed sizes and whether they fit the original section. If even unmodified decoded content fails to fit, this greedy encoder is inadequate for in-place retail repacking.
+1. Completed on the cited code head: the new focused tests and original POL1 unpack fixture passed in the dedicated offline CI. Re-run if encoder/boundary code changes.
+2. Run the read-only capacity report against archived *unchanged* 2021/2026 DLLs on Windows. Record candidate packed sizes and whether they fit the **original compressed-stream prefix** (not the whole POL1 raw section). If even unmodified decoded content fails to fit that consumed prefix, this greedy encoder is inadequate for in-place retail repacking.
 3. Independently verify packed-stream decoding against a separate decoder or loader-equivalent fixture, including padding/termination.
 4. Establish the original loader's consumption semantics, security directory/signature and launcher integrity behavior, without bypassing integrity controls.
 5. If later authorized, any isolated copy patch must require exact hash and expected-byte checks, immutable source, independent destination, post-write PE verification and rollback. This write path is **not implemented**.
