@@ -437,18 +437,25 @@ def audit_2019_wardrobe(image: bytes) -> dict:
     commands = inspect_command_table(image[at:at + size], section["rva"])
     decoded_hash_ok = original["sha256"] == EXPECTED_DECODED_SHA256
     sites = inspect_decoded_sites(original["bytes"], original["base_rva"])
-    proven = commands["legacy_commands_verified"] and decoded_hash_ok and sites["all_static_anchors_match"]
+    strings = inspect_fixed_transfer_data_strings(
+        image[at:at + size], section["rva"]
+    )
+    transfers = inspect_2019_fixed_transfer_calls(
+        original["bytes"], original["base_rva"]
+    )
+    proven = (
+        commands["legacy_commands_verified"] and decoded_hash_ok
+        and sites["all_static_anchors_match"]
+        and strings["all_expected_strings_match"]
+        and transfers["all_2019_expected_sites_match"]
+    )
     return {
         "status": "LEGACY_2019_STATIC_GATES_VERIFIED" if proven else "INCOMPLETE_STATIC_EVIDENCE",
         "source_sha256": source_hash, "decoded_sha256": original["sha256"],
         "decoded_sha256_verified": decoded_hash_ok,
         "commands": commands, "decoded_sites": sites,
-        "fixed_transfer_data_strings": inspect_fixed_transfer_data_strings(
-            image[at:at + size], section["rva"]
-        ),
-        "fixed_transfer_call_candidates": inspect_2019_fixed_transfer_calls(
-            original["bytes"], original["base_rva"]
-        ),
+        "fixed_transfer_data_strings": strings,
+        "fixed_transfer_call_candidates": transfers,
         "store_layout": inspect_2019_store_layout(
             decoded_hash_ok and sites["all_static_anchors_match"]
         ),
