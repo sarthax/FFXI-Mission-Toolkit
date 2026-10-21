@@ -61,6 +61,80 @@ based or fuzzy matching is performed. All original `sources[]` and
 `source_associations[]` survive `serialize_spec`/`deserialize_spec`
 without normalization, truncation or auto-correction.
 
+### Consumer contract freeze (proposed; B/D acceptance pending)
+
+**Canonical source identity** is `contract_v2.sources[].ref` (one unique ID
+*within this specification*), not a global source ID or source-content digest.
+It resolves to exactly one canonical source entry with
+`repository/path/line_start/line_end/revision/classification/sha256`.
+`revision` is a claimed 40-hex commit or null; `sha256` is a claimed
+64-hex content digest or null. Metadata equality and source IDs **do not**
+authenticate original bytes or deployed engine versions.
+
+**Four distinct display scopes** must remain separate:
+
+1. `case`: optional `source_associations[{scope:"case",target_id:null}]`;
+   source claims apply only to the case document, **not** to any step.
+2. `step`: optional `source_associations[{scope:"step",target_id:step.id}]`;
+   the ID is exact and case-local. `source_refs` must identify canonical
+   `sources[].ref`; repeated refs, unknown step IDs, and multiple
+   associations for the same step are invalid. No positional linking.
+3. `identity`: the existing `parameters[].{name,kind,identity,namespace,
+   zone_id,binding_state,source_refs}`, which does **not** infer the step on
+   which this parameter is used. `ambiguous` and `unresolved` must keep
+   `identity=null`; `independently_source_verified` is only the
+   declared pinned-source confidence claim already defined by canonical v2.
+4. `oracle`: existing `oracles[].{assertion_id,oracle_type,source_refs,
+   confidence}`. `assertion_id` must match a real canonical v1 assertion,
+   and a `source_rule/source_literal` is still an *expected-value candidate*,
+   not approved normative evidence. `steps[].assertion_ids` can explicitly
+   identify an assertion-linked oracle, **not** a general direct step citation.
+
+**Optionality:** `contract_v2` is optional for legacy v1. When it is
+present, all six pre-existing required v2 fields remain mandatory.
+`source_associations` is optional; omission and `[]` both yield
+`UNKNOWN` scope relationships. An association row, when present, requires
+all three keys; null or empty `source_refs` in a row is rejected. Do not
+auto-insert empty associations on legacy save or clone.
+
+**Cross-case protection:** `scope:"case",target_id:null` refers to the
+**current canonical v1 document**; step IDs and source ref names have *no
+global meaning*. Copying association metadata to a different case while
+renaming its steps must fail on dangling step links. Copying to a different
+case with identical step IDs **cannot be authenticated by ID equality**:
+if a previously pinned `fingerprints.base_spec_sha256` no longer matches
+the v1 core, `compatibility_report` returns `BLOCKED`; if the pin is
+absent, the result stays `UNKNOWN` and independent verification remains
+`NOT_ESTABLISHED`. The read-only association helper describes what the
+document *claims*, not whether a copy has been approved. Agent B must
+display compatibility status separately and prevent unsafe silent repinning.
+
+**Revision mismatches:** same repository/path with different
+`revision` or `sha256` **within a single association target** is
+invalid. Conflicts across separately scoped, original source declarations
+are not magically reconciled; they need a human source/revision review and
+the normal fingerprint compatibility gate. A supplied mismatch is
+`BLOCKED`, missing independently supplied evidence is `UNKNOWN`, and
+`MATCHED_PINNED_ONLY` proves **only structural agreement**, not a
+reviewed source-to-step fact, independently verified identity, oracle approval,
+or execution authorization.
+
+**Persistence:** `validate_spec` must accept legacy v1 and old optional
+v2 documents byte-for-byte at the field level. Explicit associations are
+JSON-serialized and parsed with stable IDs, no inferred relationships or
+normalization. Duplicate JSON keys are rejected, and both compact UTF-8 and
+ASCII-escaped SQLite 32 KiB size constraints continue to apply. Metadata
+alterations never silently change `base_spec_sha256` (hash of v1 core only).
+
+**Agent D's producer boundary:** `capture_readiness_authoring_projection_v1_NONCANONICAL`,
+its original `indexed_evidence_provenance` and both projection SHA-256
+claims must remain *separate* from canonical source associations. A capture
+reference alone is neither a canonical source ref nor a reason to populate
+`step`, `identity`, or `oracle` associations. A future reviewed crosswalk
+must validate canonical source file/revision, exact step/assertion identities,
+namespace/zone and independent provenance before authoring either v2 link.
+No automatic import, oracle approval, capability grant or dispatch.
+
 **Read-only projection helper:** `source_attribution_report(spec)` first
 invokes the canonical validator and emits explicit case and per-step source
 references. It emits `state="UNKNOWN"` when no exact link exists, otherwise
