@@ -192,6 +192,20 @@
       ' is a declared case intent only; source and normative oracle UNKNOWN');
     return next;
   }
+  // All destructive document switches share this same policy. A loaded
+  // revision remains an explicit context even if unchanged; a source handoff
+  // and any edits to the default synthetic draft must never disappear without
+  // an operator discard decision. Pure, browser-independent for tests.
+  function replacementConfirmationReason(current, baseline, revision, activeSource) {
+    if (baseline !== null || revision !== 0)
+      return 'a loaded revision and any unsaved edits';
+    if (activeSource)
+      return 'the current source-derived authoring context and any edits';
+    if (JSON.stringify(current) !== JSON.stringify(fresh()))
+      return 'unsaved draft edits';
+    return null;
+  }
+
   // Re-resolve the exact declared intent immediately before beginning
   // authoring. A source label/category or safety flag change invalidates the
   // displayed review even though its revision is still UNPINNED.
@@ -311,5 +325,5 @@
     return draftFromCoverage(ctx);
   }
 
-  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, emptyHandoffDraft, draftFromCoverage, draftFromEvidence, handoffReplacementIssue, coverageContextChanged, referenceIssues, parseAdvanced, contextRefPath, fromContext};
+  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, emptyHandoffDraft, draftFromCoverage, draftFromEvidence, handoffReplacementIssue, replacementConfirmationReason, coverageContextChanged, referenceIssues, parseAdvanced, contextRefPath, fromContext};
 });
