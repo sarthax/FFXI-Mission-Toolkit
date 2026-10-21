@@ -17,9 +17,10 @@ _ALLOWED_RUNNERS = {"xiheadless_observation_v1", "unassigned"}
 def validate_spec(spec: dict) -> dict:
     if not isinstance(spec, dict) or spec.get("schema_version") != 1:
         raise ValueError("unsupported test specification version")
-    if set(spec) != {"schema_version", "feature_id", "case_id", "name", "runner",
-                     "execution_status", "preconditions", "observations",
-                     "assertions", "cleanup"}:
+    required = {"schema_version", "feature_id", "case_id", "name", "runner",
+                "execution_status", "preconditions", "observations", "assertions", "cleanup"}
+    optional = {"purpose", "rationale", "behavior", "steps", "authoring"}
+    if not required.issubset(spec) or set(spec) - required - optional:
         raise ValueError("unexpected test specification fields")
     for field in ("feature_id", "case_id", "name"):
         if not isinstance(spec[field], str) or not 1 <= len(spec[field]) <= 120:
@@ -47,6 +48,59 @@ def validate_spec(spec: dict) -> dict:
             raise ValueError("unsupported assertion operation or observation")
         if not isinstance(assertion["expected"], (str, int, list, type(None))) or isinstance(assertion["expected"], list) and len(assertion["expected"]) > 16:
             raise ValueError("invalid expected expression")
+    # Narrative/step metadata is optional for legacy v1 definitions and is never
+    # interpreted as an instruction to execute any action.
+    for field in ("purpose", "rationale"):
+        if field in spec and (not isinstance(spec[field], str) or not 1 <= len(spec[field]) <= 1000):
+            raise ValueError("invalid " + field)
+    if "behavior" in spec:
+        behavior = spec["behavior"]
+        if not isinstance(behavior, dict) or set(behavior) != {"given", "when", "then"}:
+            raise ValueError("invalid BDD behavior")
+        for phase in ("given", "when", "then"):
+            notes = behavior[phase]
+            if not isinstance(notes, list) or not 1 <= len(notes) <= 20 or any(
+                not isinstance(s, str) or not 1 <= len(s) <= 500 for s in notes
+            ):
+                raise ValueError("invalid BDD phase: " + phase)
+    if "steps" in spec:
+        steps = spec["steps"]
+        if not isinstance(steps, list) or not 1 <= len(steps) <= 100:
+            raise ValueError("invalid steps")
+        step_ids = set()
+        for step in steps:
+            required_step = {"id", "title", "intent", "expected", "assertion_ids", "evidence_refs"}
+            optional_step = {"confidence_note"}
+            if not isinstance(step, dict) or not required_step.issubset(step) or set(step) - required_step - optional_step:
+                raise ValueError("invalid step fields")
+            for field in ("id", "title", "intent", "expected"):
+                if not isinstance(step[field], str) or not 1 <= len(step[field]) <= 500:
+                    raise ValueError("invalid step " + field)
+            if step["id"] in step_ids:
+                raise ValueError("duplicate step identifier")
+            step_ids.add(step["id"])
+            if not isinstance(step["assertion_ids"], list) or not step["assertion_ids"] or any(
+                not isinstance(x, str) or x not in names for x in step["assertion_ids"]
+            ):
+                raise ValueError("unknown step assertion reference")
+            if not isinstance(step["evidence_refs"], list) or not step["evidence_refs"] or any(
+                not isinstance(x, str) or x not in spec["observations"] for x in step["evidence_refs"]
+            ):
+                raise ValueError("unknown step evidence reference")
+            if "confidence_note" in step and (
+                not isinstance(step["confidence_note"], str) or len(step["confidence_note"]) > 1000
+            ):
+                raise ValueError("invalid confidence note")
+    if "authoring" in spec:
+        a = spec["authoring"]
+        if not isinstance(a, dict) or set(a) != {"state", "execution_policy", "evidence_provenance", "blocking_gaps", "review_required"}:
+            raise ValueError("invalid authoring metadata")
+        if any(not isinstance(a[x], str) or not 1 <= len(a[x]) <= 160 for x in ("state", "execution_policy", "evidence_provenance")):
+            raise ValueError("invalid authoring metadata values")
+        if not isinstance(a["review_required"], bool) or not isinstance(a["blocking_gaps"], list) or len(a["blocking_gaps"]) > 30 or any(
+            not isinstance(g, str) or not 1 <= len(g) <= 500 for g in a["blocking_gaps"]
+        ):
+            raise ValueError("invalid authoring gaps")
     return spec
 
 
