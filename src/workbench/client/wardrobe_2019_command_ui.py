@@ -141,6 +141,85 @@ def inspect_2019_mode_object_getters(rdata: bytes, rdata_rva: int,
     }
 
 
+# The adjacent slash command /bank2 (115) occupies original UI mode 9.
+# It uses a different command helper from Wardrobes 1-4.
+BANK2_COMMAND_RVA = 0x34B210
+BANK2_HANDLER_RECORD_RVA = 0x34C098
+BANK2_HANDLER_RVA = 0x7CF00
+BANK2_POINTER_READ_RVA = 0x7CF24
+BANK2_HELPER_CALL_RVA = 0x7CF36
+BANK2_HELPER_RVA = 0x1D1570
+BANK2_OBJECT_GLOBAL_VA = 0x1061E5E0
+BANK2_CTOR_RVA = 0x1D43D6
+BANK2_VTABLE_VA = 0x1032D980
+BANK2_GETTER_RVA = 0x1D4840
+
+
+def inspect_2019_bank2_mode9(data: bytes, data_rva: int,
+                              rdata: bytes, rdata_rva: int,
+                              decoded_text: bytes, text_rva: int = 0x1000) -> dict:
+    """Confirm mode 9 is already used by original /bank2, without execution."""
+    if (not isinstance(data, bytes) or not isinstance(rdata, bytes)
+            or not isinstance(decoded_text, bytes)
+            or any(type(v) is not int for v in (data_rva, rdata_rva, text_rva))):
+        raise Pol1Error("bank2 evidence needs immutable sections and integer RVAs")
+    if (len(data) > 16 * 1024 * 1024 or len(rdata) > 8 * 1024 * 1024
+            or len(decoded_text) > 8 * 1024 * 1024):
+        raise Pol1Error("bank2 evidence exceeds section safety bounds")
+    name = _section_slice(data, data_rva, BANK2_COMMAND_RVA, 24)
+    record = _section_slice(data, data_rva, BANK2_HANDLER_RECORD_RVA, 12)
+    expected_name = b"/bank2".ljust(16, bytes(1))
+    name_ok = (name is not None and name[:16] == expected_name
+               and struct.unpack_from("<HH", name, 20) == (115, 0x51))
+    table_ok = (record is not None and struct.unpack("<III", record)
+                == (115, IMAGE_BASE + BANK2_HANDLER_RVA, 0))
+    ptr_load = _section_slice(decoded_text, text_rva,
+                              BANK2_POINTER_READ_RVA, 6)
+    ptr_ok = ptr_load == bytes.fromhex("8b0d") + struct.pack(
+        "<I", BANK2_OBJECT_GLOBAL_VA)
+    helper_call = _section_slice(decoded_text, text_rva,
+                                 BANK2_HELPER_CALL_RVA, 5)
+    helper_ok = (
+        helper_call is not None and helper_call[0] == 0xE8
+        and BANK2_HELPER_CALL_RVA + 5 + struct.unpack_from(
+            "<i", helper_call, 1)[0] == BANK2_HELPER_RVA
+    )
+    expected_ctor = (
+        bytes.fromhex("c700") + struct.pack("<I", BANK2_VTABLE_VA)
+        + bytes([0xA3]) + struct.pack("<I", BANK2_OBJECT_GLOBAL_VA)
+    )
+    ctor_ok = (_section_slice(decoded_text, text_rva, BANK2_CTOR_RVA,
+                              len(expected_ctor)) == expected_ctor)
+    getter_ptr = _section_slice(rdata, rdata_rva,
+                                BANK2_VTABLE_VA - IMAGE_BASE + 0x54, 4)
+    vtable_ok = (getter_ptr is not None and struct.unpack(
+        "<I", getter_ptr)[0] == IMAGE_BASE + BANK2_GETTER_RVA)
+    getter_ok = (_section_slice(decoded_text, text_rva, BANK2_GETTER_RVA, 6)
+                 == bytes([0xB8]) + struct.pack("<I", 9) + bytes([0xC3]))
+    checks = {
+        "command_name_and_id_match": bool(name_ok),
+        "dispatch_record_matches": bool(table_ok),
+        "handler_loads_mode_object": bool(ptr_ok),
+        "handler_calls_separate_helper": bool(helper_ok),
+        "constructor_sets_mode_object": bool(ctor_ok),
+        "vtable_getter_pointer_matches": bool(vtable_ok),
+        "getter_returns_mode_9": bool(getter_ok),
+    }
+    proven = all(checks.values())
+    return {
+        "status": "ORIGINAL_BANK2_MODE_9_VERIFIED" if proven
+                  else "INCOMPLETE_STATIC_EVIDENCE",
+        "command": "/bank2", "command_id": 115,
+        "handler_rva": "0x7CF00", "helper_rva": "0x1D1570",
+        "mode_object_global_va": "0x1061E5E0",
+        "getter_rva": "0x1D4840", "returned_mode": 9,
+        "static_checks": checks,
+        "mode9_reserved_for_original_bank2_path": True if proven else None,
+        "runtime_execution_or_complete_ui_semantics_proved": False,
+        "safety_decision": "NO_GO_REPURPOSE_ORIGINAL_MODE_9",
+    }
+
+
 def inspect_2019_command_ui_dispatch(data: bytes, data_rva: int,
                                      decoded_text: bytes, text_rva: int = 0x1000
                                      ) -> dict:
