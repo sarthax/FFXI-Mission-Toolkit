@@ -73,7 +73,117 @@
       "cleanup": [
         "Read-only GM diagnostic; client session must disconnect",
         "Do not claim installed-layout agreement or held-key-item equivalence"
-      ]
+      ],
+      "purpose": "Verify that furnishings stored in Mog Safe do not grant an active Moghancement when no furniture is installed.",
+      "rationale": "Owning an aura-bearing furnishing should not activate an effect unless its installation state meets the DSP oracle; this protects against storage/placement state confusion.",
+      "behavior": {
+        "given": [
+          "An authorized disposable test character is connected in-zone",
+          "Mog Safe contains at least one furnishing with a nonzero aura",
+          "Installed furniture layout is assumed empty; independent layout readback is unavailable"
+        ],
+        "when": [
+          "The runner observes the character, Safe contents, active Moghancement diagnostic, and persisted inventory"
+        ],
+        "then": [
+          "Active Moghancement key item equals the source-backed empty-layout expectation",
+          "All eight elemental aura values are zero",
+          "Observed bag and Mog Safe rows match persisted rows after the save boundary"
+        ]
+      },
+      "steps": [
+        {
+          "id": "MOG-09-S01",
+          "title": "Confirm the intended character is connected",
+          "intent": "observation",
+          "expected": "Connected in-zone character ID equals approved_charid",
+          "assertion_ids": [
+            "expected_character"
+          ],
+          "evidence_refs": [
+            "session"
+          ],
+          "confidence_note": "Approved character ID is runner-reported provenance, not independent operator approval."
+        },
+        {
+          "id": "MOG-09-S02",
+          "title": "Confirm aura-bearing furnishings are stored",
+          "intent": "observation",
+          "expected": "Stored furnishings collection contains at least one aura-bearing item",
+          "assertion_ids": [
+            "safe_contains_furnishing"
+          ],
+          "evidence_refs": [
+            "stored_furnishings"
+          ],
+          "confidence_note": "This checks storage, not installed furniture."
+        },
+        {
+          "id": "MOG-09-S03",
+          "title": "Observe active Moghancement with the layout assumed empty",
+          "intent": "read_only_gm_diagnostic",
+          "expected": "Observed active Moghancement key item equals the empty-layout oracle",
+          "assertion_ids": [
+            "empty_layout_ki"
+          ],
+          "evidence_refs": [
+            "gm_active_ki"
+          ],
+          "confidence_note": "Installed layout is NOT independently observed; do not infer it from this PASS."
+        },
+        {
+          "id": "MOG-09-S04",
+          "title": "Verify all elemental aura values are zero",
+          "intent": "observation",
+          "expected": "Eight observed aura values are zero",
+          "assertion_ids": [
+            "zero_aura"
+          ],
+          "evidence_refs": [
+            "gm_aura"
+          ],
+          "confidence_note": "GM diagnostic observation imported from an earlier runner report."
+        },
+        {
+          "id": "MOG-09-S05",
+          "title": "Compare client bag with persisted inventory",
+          "intent": "read_only_comparison",
+          "expected": "Full client bag rows match authoritative persisted bag rows",
+          "assertion_ids": [
+            "bag_matches_persisted"
+          ],
+          "evidence_refs": [
+            "client_bag",
+            "db_bag"
+          ],
+          "confidence_note": "Both sides were imported from one runner report; independent authentication and completeness must be assessed."
+        },
+        {
+          "id": "MOG-09-S06",
+          "title": "Compare client Mog Safe with persisted inventory",
+          "intent": "read_only_comparison",
+          "expected": "Full client Mog Safe rows match authoritative persisted Safe rows",
+          "assertion_ids": [
+            "safe_matches_persisted"
+          ],
+          "evidence_refs": [
+            "client_safe",
+            "db_safe"
+          ],
+          "confidence_note": "Both sides were imported from one runner report; independent authentication and completeness must be assessed."
+        }
+      ],
+      "authoring": {
+        "state": "seeded_legacy_example",
+        "execution_policy": "read_only",
+        "evidence_provenance": "imported_observations_not_fresh_execution",
+        "blocking_gaps": [
+          "Installed furniture layout not independently read back",
+          "Client held key items not independently compared with persisted keyitems",
+          "Inventory server snapshot completeness not independently proven"
+        ],
+        "review_required": true
+      }
     },
     {
       "schema_version": 1,
