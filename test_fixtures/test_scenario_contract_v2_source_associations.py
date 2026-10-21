@@ -235,3 +235,83 @@ def test_unicode_associations_remain_within_existing_storage_size_limits():
                           ensure_ascii=True).encode("utf-8")) <= 32768
     # The draft-size rejection is already regression tested by the original
     # SQLite save_draft test; this extension must use the same serialization.
+
+
+def test_copied_step_attribution_cannot_leak_to_another_case_with_different_step_id():
+    """Copied v2 association cannot silently follow a renamed v1 step."""
+    parent = spec()
+    parent["contract_v2"]["source_associations"] = associations()
+    copied = deepcopy(parent)
+    copied["case_id"] = "SYNTH-V2-OTHER-CASE"
+    copied["steps"][0]["id"] = "OTHER-CASE-S01"
+    # The copied association is still bound to SYNTH-V2-S01, not to
+    # whichever step happens to occupy the same positional index.
+    copied["contract_v2"]["step_requirements"][0]["step_id"] = "OTHER-CASE-S01"
+    with pytest.raises(ValueError, match="source association references unknown step"):
+        validate_spec(copied)
+    copied["contract_v2"]["source_associations"] = associations()[:1]
+    assert validate_spec(copied) == copied
+    assert source_attribution_report(copied)["steps"]["OTHER-CASE-S01"]["state"] == "UNKNOWN"
+
+
+def test_copy_with_same_step_id_and_old_case_fingerprint_is_blocked_not_trusted():
+    """Exact ID reuse is not independent cross-case provenance attestation."""
+    parent = spec()
+    parent["contract_v2"]["source_associations"] = associations()
+    parent["contract_v2"]["fingerprints"]["base_spec_sha256"] = base_spec_sha256(parent)
+    assert validate_spec(parent) == parent
+    copied = deepcopy(parent)
+    copied["case_id"] = "SYNTH-V2-COPIED-WITH-SAME-STEP-ID"
+    assert validate_spec(copied) == copied  # metadata is still descriptive
+    report = compatibility_report(copied)
+    assert report["state"] == "BLOCKED"
+    assert any("base specification SHA-256 mismatch" in reason
+               for reason in report["reasons"])
+    scoped = source_attribution_report(copied)
+    assert scoped["steps"][STEP]["state"] == "EXPLICIT_CITATION_CLAIM"
+    assert scoped["independent_verification"] == "NOT_ESTABLISHED"
+    assert scoped["execution_enabled"] is False
+
+
+def test_copy_with_unpinned_fingerprint_has_unknown_not_cross_case_proof():
+    original = spec()
+    original["contract_v2"]["source_associations"] = associations()
+    cloned = deepcopy(original)
+    cloned["case_id"] = "SYNTH-V2-UNPINNED-OTHER-CASE"
+    assert validate_spec(cloned) == cloned
+    assert compatibility_report(cloned)["state"] == "UNKNOWN"
+    assert source_attribution_report(cloned)["independent_verification"] == "NOT_ESTABLISHED"
+
+
+def test_duplicate_json_association_keys_cannot_override_previous_provenance():
+    original = spec()
+    original["contract_v2"]["source_associations"] = associations()
+    payload = serialize_spec(original)
+    assert '"source_associations":[' in payload
+    duplicate = payload.replace('"scope":"step"', '"scope":"case","scope":"step"', 1)
+    with pytest.raises(ValueError, match="duplicate JSON key"):
+        deserialize_spec(duplicate)
+
+
+def test_integrated_staged_duplicate_citation_url_tampering_fails_before_dedup():
+    """Historical #39617090965 bypass stays closed against integrated JSON."""
+    document = json.loads(
+        (ROOT.parent / "data" / "testing" / "domain_drafts" /
+         "run_geo_unlock.json").read_text(encoding="utf-8")
+    )
+    case = next(item for item in document["cases"] if item["case_id"] == "RG-01")
+    assert case["source_refs"][0] == case["steps"][0]["source_refs"][0]
+    case["steps"][0]["source_refs"][0]["url"] = "https://example.invalid/forged"
+    with pytest.raises(ValueError, match="URL conflicts"):
+        project_domain_case(document, "RG-01")
+
+
+def test_empty_optional_collection_means_unknown_not_verified_or_executable():
+    original = spec()
+    original["contract_v2"]["source_associations"] = []
+    assert deserialize_spec(serialize_spec(original)) == original
+    projected = source_attribution_report(original)
+    assert projected["case"]["state"] == "UNKNOWN"
+    assert projected["steps"][STEP]["state"] == "UNKNOWN"
+    assert projected["oracle_approval"] == "NOT_ESTABLISHED"
+    assert projected["execution_enabled"] is False
