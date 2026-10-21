@@ -19,8 +19,8 @@ _OBSERVED = "scenario_developer_manual_handoff_v1_DESIGN_ONLY"
 _KINDS = {"npc", "npc_name", "zone", "item", "item_name", "key_item",
           "event", "dialog", "message_or_event", "packet"}
 _ALLOWED = {"ACCEPT", "EDIT", "REJECT"}
-_MAX_STEPS = 50
-_MAX_REFS = 600
+_MAX_STEPS = 100
+_MAX_REFS = 4000
 
 
 def coverage_path(value: str) -> tuple[str, str]:
