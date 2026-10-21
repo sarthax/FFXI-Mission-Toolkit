@@ -57,7 +57,10 @@ class Wardrobe2019AuditTests(unittest.TestCase):
         observed = inspect_decoded_sites(bytes(decoded))
         self.assertTrue(observed["all_static_anchors_match"])
         self.assertEqual(len(observed["anchors"]), len(ANCHORS))
-        self.assertNotIn("bytes", repr(observed))
+        self.assertTrue(all(
+            set(item) == {"rva", "matches_expected_bytes"}
+            for item in observed["anchors"].values()
+        ))
         site = 0xE97CD - 0x1000
         decoded[site] ^= 0x01
         self.assertFalse(inspect_decoded_sites(bytes(decoded))["all_static_anchors_match"])
