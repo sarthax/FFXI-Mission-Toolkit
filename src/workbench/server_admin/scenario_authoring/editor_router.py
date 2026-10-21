@@ -21,7 +21,9 @@ from workbench.server_admin.scenario_authoring.catalog_adapter import (
     CatalogUnavailable, search_catalog,
 )
 from workbench.server_admin.feature_testing.scenario_presentation import scenario_presentation
-from workbench.server_admin.feature_testing.scenario_contract_v2 import compatibility_report
+from workbench.server_admin.feature_testing.scenario_contract_v2 import (
+    compatibility_report, source_attribution_report,
+)
 from workbench.server_admin.feature_testing.router import load_test_catalog
 from workbench.server_admin.feature_testing.spec_drafts import _validate_draft
 from workbench.server_admin.feature_testing.test_specifications import (
@@ -128,8 +130,12 @@ def validate_editor_spec(payload: dict) -> dict:
     # This read-only canonical report never fabricates runtime/source observations.
     # Legacy v1 has no v2 namespace or new UI requirements.
     v2_report = compatibility_report(spec) if "contract_v2" in spec else None
+    # Agent C's merged canonical report is the sole authority for descriptive
+    # CASE/STEP scope. Never infer from oracle, parameter or capture step IDs.
+    attribution = source_attribution_report(spec) if "contract_v2" in spec else None
     return {"valid": True, "canonical_specification": spec, "preview": preview,
             "contract_v2_compatibility": v2_report,
+            "contract_v2_source_attribution": attribution,
             "reader_view": preview["reader_view"],
             "execution_enabled": False, "operator_review_required": True,
             "warnings": (["Assertions without step coverage: " + ", ".join(uncovered)] if uncovered else [])
