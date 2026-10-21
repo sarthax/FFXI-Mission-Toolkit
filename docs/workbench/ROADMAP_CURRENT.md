@@ -181,6 +181,8 @@ The Character Editor is now a mature guarded administration surface across DSP /
 
 These are deliberate safety boundaries, not generic missing editors.
 
+**2026-10-20 bounded Feature Trace investigation trail:** A first read-only navigation slice now carries up to eight prior selected roots in the URL and renders clickable backtrack breadcrumbs with the current Question/depth/direction. It is selection history only, not evidence-path verification, automatic browser draft recovery, backend persistence, cross-tool pins, or saved investigations. The existing saved/resumable roadmap items below remain open; this is a navigation precursor that must be tested on real data separately from the #1228 relevance audit.
+
 ## Saved / resumable trace investigations — planned 2026-10-11
 
 - [ ] Add a shared saved-investigation/session model for **Feature Trace, Behavior Trace, and Character Mission/Quest Progression**.
