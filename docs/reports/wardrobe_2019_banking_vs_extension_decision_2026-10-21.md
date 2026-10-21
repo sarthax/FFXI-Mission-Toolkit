@@ -23,9 +23,39 @@ Verified on the Valhalla server's existing `src/map/item_container.h`: visible W
 
 The client must **never** receive container IDs 13–16 in any original 2019 packet handler. Backing IDs 13–16 remain server-internal until modern client support is separately added. In bank-B mode, packet 0x1C retains the original 13-entry legacy layout and the outgoing item list uses visible IDs 8/10/11/12 after validated translation.
 
+## Zone-transition evidence changes the proposed activation model (2026-10-21)
+
+Owner correctly observed that FFXI routinely rebuilds its visible inventory during zoning. Inspection of **Valhalla DSP `main`** confirms the server transmits the inventory again on each zone-entry handshake, but the server-side character object is **not guaranteed to reload from SQL on every zone**.
+
+| Point in handshake | Verified server behavior | Bank-switch implication |
+|---|---|---|
+| `packet_system.cpp` `SmallPacket0x00A` | Zone-entry/session preparation; can operate on an existing `CCharEntity` | Must identify the incoming effective bank, whether or not character was reconstructed |
+| `SmallPacket0x00C` | Sends `CInventorySizePacket` (`0x1C`) for the character | Bank capacities must be correct **before** this packet |
+| `SmallPacket0x00F` | Calls `charutils::SendInventory(PChar)` | Bank-visible item contents must be correct **before** this packet |
+| `charutils::SendInventory` | Resends visible inventory, Mog bags and 4 Wardrobes, then `CInventoryFinishPacket`; also resends equipment associations | Hidden bank must not leak; equipped-item references need consistent aliasing |
+| `SmallPacket0x011` | Resends equipped slot/container references | Must not refer to a stale/hidden bank after a switch |
+| `map.cpp` `recv_parse` with `PChar == nullptr` | Allocates `new CCharEntity`; calls `charutils::LoadChar` | New map session reloads authoritative inventory from SQL |
+| `charutils::LoadChar` | Calls `LoadInventory` (SELECT from `char_inventory`) then `LoadEquip` | Persisted bank selection must be applied to the correct authoritative items when reconstructing |
+| Existing map-session zoning | `0x00A` can reuse an existing `PChar`/storage objects; `CZone::CharZoneIn` does not itself reload `char_inventory` | Simply writing a database `selected_bank` and zoning is **insufficient** for this case |
+| `map_close_session` | Deletes character on session shutdown/zone close; zoning does not clear `accounts_sessions` like logout | Cross-process reload and same-process reuse have different lifecycles |
+
+Source paths: `src/map/packet_system.cpp`, `src/map/utils/charutils.cpp`, `src/map/map.cpp`, `src/map/zone.cpp` on [Valhalla main](https://github.com/sarthax/darkstar-to-valhalla/tree/main). This is server source evidence, **not** a captured 2019 client trace. In particular, no independent proof yet establishes exactly when the old client clears stale visible inventory slots while zoning.
+
+### Revised recommendation: persistent selection, safe **zone-entry activation** (candidate)
+
+- Maintain a persistent **requested/selected** bank (`selected_bank`, A or B) per character and a session's **effective/loaded** bank (`effective_bank`).
+- A server-side authorized menu, in-game NPC or Toolkit control may request B **while online**, but must not immediately overwrite the old visible inventory. Indicate **"Bank B selected — takes effect after the next zone"**. The request survives later zoning and relogging.
+- On an allowed zone-entry boundary, **before** `0x00C` and `0x00F`, gate any transition on transaction quiescence, exact character identity, saved item persistence, equipment and gear-set references, and client refresh acceptance. If the existing `PChar` is reused, rebuild/translate its four visible wardrobe containers and references safely from server-authoritative data. If `PChar` was reconstructed from SQL, apply the persisted selected bank as part of its initial inventory load. Both paths must use one canonical bank decision.
+- Change `effective_bank` **only after** a safe, coherent transition is verified. If any gate fails, keep the previous effective bank; retain the requested bank as pending with an explicit error (never silently show the wrong bank). No automatic reset to A on zoning.
+- Keep all client-facing container IDs in `0..12`, with wardrobes **8,10,11,12**. Never expose canonical B IDs 13–16 or modern-format packet 0x1C to the 2019 client.
+- Verify with a **packet capture and controlled client test** that the old client really replaces/clears stale occupied slots and equipment/cache state during a zone-entry inventory download. The server's resend code **alone does not prove** full client cache reset.
+- Same-zone teleports that do not trigger the full `0x00A/0x00C/0x00F` sequence, or zones that preserve the prior server object, **must not be assumed** to activate the change.
+
+**Fallback:** Until all the above zone-entry gates are implemented and tested, keep the original logout/login selection as the safer baseline. A zone-activated selection is potentially a substantially better user experience, but no runtime bank switch exists today.
+
 ## Candidate approaches and relative risk
 
-### 1. Server-authoritative **login-time bank selection** (first prototype recommendation)
+### 1. Server-authoritative **login-time bank selection** (conservative initial baseline)
 
 - Implement separate authoritative server storage and persistence for canonical containers 13–16.
 - Record `active_wardrobe_bank=A|B` per character (or as a tightly controlled session setting).
@@ -36,7 +66,7 @@ The client must **never** receive container IDs 13–16 in any original 2019 pac
 
 **Why first:** no injected DLL, no client-mode table expansion, no requirement for the legacy client to parse a modern `0x1C` packet, and every test can begin with a reversible server-feature flag. It still requires invasive server plumbing and database changes—**not a trivial packet alias**.
 
-### 2. **In-session native bank toggle** (later)
+### 2. **Immediate in-session bank toggle** without zoning (later)
 
 Maintain the same server banks but allow a safe toggle while connected. Requires a synchronized begin/ack/commit/end protocol, a full visible-inventory refresh and client cache invalidation, equipment/gear-set reference reconciliation, and rejection of in-flight moves/sorts/equips. The current packet map shows 0x1C, 0x1E, 0x1F, 0x20 handlers, but no proven atomic bank-refresh behavior. **Do not prototype by merely swapping 81-slot blocks in client memory.** Clearing and overwriting a visible bank without server coordination may duplicate/loss items or leave dangling slot references.
 
@@ -78,6 +108,6 @@ As of inspection of `sarthax/darkstar-to-valhalla` `main`:
 
 ## Decision / follow-ups
 
-**Recommend design feasibility of #1 before coding an external DLL or native live-toggle.** It offers a valuable compatibility mode for the old client even if full eight-wardrobe simultaneous support eventually uses #3. Confirm separate server persistence, packet aliasing, equipment semantics, and lifecycle safety before issuing a live test. A full all-eight-native client would require a separate, substantially larger engineering effort.
+**Recommend a persistent server-authoritative bank selection mechanism, implementing #1 first and then investigating safe zone-entry activation described above before any immediate live-toggle.** It offers a valuable compatibility mode for the old client even if full eight-wardrobe simultaneous support eventually uses #3. Confirm separate server persistence, packet aliasing, equipment semantics, and lifecycle safety before issuing a live test. A full all-eight-native client would require a separate, substantially larger engineering effort.
 
 **No implementation or executable modification is authorized by this decision record.** No proprietary binaries, decoded executable dumps, passwords or packet captures are committed.
