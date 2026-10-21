@@ -8,6 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from workbench.client.wardrobe_2019_audit import EXPECTED_SHA256
+from workbench.client.wardrobe_2019_sidecar_model import HypotheticalStoreRouter
 from workbench.client.wardrobe_2019_packet_contract import (
     LEGACY_ITEM_MAX_WIRE_LENGTH,
     LEGACY_ITEM_MAX_MIN_READ_SPAN,
@@ -137,6 +138,52 @@ class Wardrobe2019PacketContractTests(unittest.TestCase):
         self.assertFalse(report["modern_packet_writer_or_parser_implemented"])
         self.assertEqual(report["safety_decision"],
                          "NO_GO_MODERN_FORMAT_ON_UNMODIFIED_2019")
+
+
+    def test_synthetic_sidecar_opt_in_never_overrides_2019_packet_rejection(self):
+        # The sidecar is an offline hypothetical address model, *not* a
+        # permission to decode or dispatch unsupported network containers.
+        sidecar = HypotheticalStoreRouter()
+        token = sidecar.register(0)
+        sidecar.activate(0)
+        for packet_id, container_at, slot_at in (
+            (0x1E, 0x08, 0x09), (0x1F, 0x0A, 0x0B), (0x20, 0x0E, 0x0F)
+        ):
+            for cid in (13, 14, 15, 16):
+                with self.subTest(packet=packet_id, container=cid):
+                    # Research simulation can *describe* a sidecar offset,
+                    # but the real legacy packet profile always denies it.
+                    self.assertIsNotNone(
+                        sidecar.resolve(token, cid, 80, simulate_extension=True)
+                    )
+                    packet = bytearray(max(container_at, slot_at) + 1)
+                    packet[container_at] = cid
+                    packet[slot_at] = 80
+                    result = inspect_2019_legacy_item_frame(
+                        bytes(packet), source_sha256=EXPECTED_SHA256,
+                        declared_packet_id=packet_id
+                    )
+                    self.assertFalse(result["candidate_route_allowed"])
+                    self.assertFalse(result["extension_routing_allowed"])
+                    self.assertIsNone(result["record_offset"])
+
+    def test_manager_generation_change_does_not_change_packet_profile(self):
+        sidecar = HypotheticalStoreRouter()
+        old = sidecar.register(0)
+        sidecar.activate(0)
+        new = sidecar.reset(0)
+        self.assertIsNone(sidecar.resolve(old, 13, 0, simulate_extension=True))
+        sidecar.activate(0)
+        self.assertIsNotNone(sidecar.resolve(new, 13, 0, simulate_extension=True))
+        packet = bytearray(0x0A)
+        packet[0x08] = 13
+        packet[0x09] = 0
+        result = inspect_2019_legacy_item_frame(
+            bytes(packet), source_sha256=EXPECTED_SHA256,
+            declared_packet_id=0x1E
+        )
+        self.assertFalse(result["candidate_route_allowed"])
+        self.assertFalse(result["extension_routing_allowed"])
 
 
 if __name__ == "__main__":
