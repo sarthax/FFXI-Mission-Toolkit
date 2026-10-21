@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
 
@@ -23,11 +24,14 @@ def current_matrix() -> dict:
     readiness = json.loads(source.read_text(encoding="utf-8"))
     configured_db = os.environ.get("MISSION_TOOLKIT_TEST_RESULTS_DB", "")
     # Never call init_db or open a new writable database for this page.
-    records = recent_results(configured_db, limit=500) if configured_db else []
+    missing_db = bool(configured_db and not Path(configured_db).is_file())
+    records = recent_results(configured_db, limit=500) if configured_db and not missing_db else []
     result = build_matrix(readiness, specifications(), records, load_catalog(),
                           history_complete=len(records) < 500)
     result["results_configured"] = bool(configured_db)
     result["history_note"] = (
+        "Configured results DB is unavailable; missing history is UNKNOWN, not evidence of no runs."
+        if missing_db else
         "Only the 500 most recent imported records were loaded; do not infer missing runs."
         if len(records) >= 500 else
         "No evidence DB configured; an empty results view is not proof no runs exist."
