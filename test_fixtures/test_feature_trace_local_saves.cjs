@@ -10,6 +10,7 @@ class MemoryStorage {
   constructor() { this.data = new Map(); this.writes = 0; }
   getItem(key) { return this.data.has(key) ? this.data.get(key) : null; }
   setItem(key, value) { this.writes++; this.data.set(key, value); }
+  removeItem(key) { this.writes++; this.data.delete(key); }
 }
 function target(root = "synthetic:root", mode = "mission") {
   const q = new URLSearchParams({q: root, mode, depth: "2", direction: "out",
@@ -149,4 +150,132 @@ test("UI mounting requires the actual trace result and is inert elsewhere", () =
   let accessed = false;
   saved.mount({getElementById(){return null;}}, {get localStorage() { accessed=true; }});
   assert.equal(accessed, false);
+});
+
+test("drafts start disabled, require opt-in and never alter named saves", () => {
+  const storage = new MemoryStorage();
+  add(storage);
+  const before = storage.getItem(saved.KEY);
+  assert.deepEqual(saved.readDraft(storage, origin), {
+    enabled:false, href:"", savedAt:null, error:"",
+  });
+  assert.equal(storage.getItem(saved.DRAFT_KEY), null);
+  assert.equal(saved.saveDraft(storage, origin, target(), 1234567891),
+    saved.canonicalHref(target(), origin));
+  const draft = saved.readDraft(storage, origin);
+  assert.equal(draft.enabled, true);
+  assert.equal(draft.savedAt, 1234567891);
+  assert.deepEqual(JSON.parse(new URL(draft.href, origin).searchParams.get("trail")),
+    ["synthetic:prior", "synthetic:branch"]);
+  assert.equal(storage.getItem(saved.KEY), before);
+  saved.disableDraft(storage, origin);
+  assert.equal(saved.readDraft(storage, origin).enabled, false);
+  assert.equal(storage.getItem(saved.KEY), before);
+});
+
+test("draft validator rejects corrupt schemas and unsafe URLs without overwriting", () => {
+  const storage = new MemoryStorage();
+  for (const raw of [
+    "not-json",
+    JSON.stringify({version: 9, href:target(), savedAt:1234567890}),
+    JSON.stringify({version: 1, href:target(), savedAt:1234567890, edges:[]}),
+    JSON.stringify({version: 1, href:"https://evil.example/?q=x", savedAt:1234567890}),
+    JSON.stringify({version: 1, href:"/features/trace?q=root&redirect=evil",
+      savedAt:1234567890}),
+    JSON.stringify({version: 1, href:target(), savedAt:"not-a-time"}),
+    "x".repeat(5000),
+  ]) {
+    storage.setItem(saved.DRAFT_KEY, raw);
+    assert.match(saved.readDraft(storage, origin).error, /cannot be read/);
+    assert.throws(() => saved.saveDraft(storage, origin, target(), 1234567899), /cannot be read/);
+    assert.throws(() => saved.disableDraft(storage, origin), /cannot be read/);
+    assert.equal(storage.getItem(saved.DRAFT_KEY), raw);
+  }
+});
+
+test("draft quota and storage failures never imply recovery is enabled", () => {
+  const storage = {
+    getItem(){return null;}, setItem(){throw Error("quota exceeded");},
+    removeItem(){throw Error("storage denied");},
+  };
+  assert.throws(() => saved.saveDraft(storage, origin, target(), 1234567890),
+    /quota exceeded/);
+  assert.equal(saved.readDraft(storage, origin).enabled, false);
+  assert.throws(() => saved.disableDraft(storage, origin), /storage denied/);
+  const denied = {getItem(){throw Error("storage denied");}};
+  assert.match(saved.readDraft(denied, origin).error, /cannot be read/);
+  assert.throws(() => saved.saveDraft(denied, origin, target(), 1234567890),
+    /cannot be read/);
+});
+
+test("only a navigation URL and timestamp are persisted in the local draft", () => {
+  const storage = new MemoryStorage();
+  saved.saveDraft(storage, origin, target(), 1234567890);
+  const raw = storage.getItem(saved.DRAFT_KEY);
+  assert.deepEqual(Object.keys(JSON.parse(raw)), ["version","href","savedAt"]);
+  for(const field of ["edges","evidence_id","source_snapshot_id","capture_id",
+                      "password","graph","source_contents","account"]) {
+    assert.equal(raw.includes(field), false, field);
+  }
+  assert.throws(() => saved.saveDraft(storage, origin, "//evil.example/?q=a", 1234567891));
+  assert.equal(storage.getItem(saved.DRAFT_KEY), raw);
+});
+
+function fakeDraftDom(storage, withRoot) {
+  const events = new Map(), listeners = new Map();
+  const element = (id) => ({
+    id, dataset:{}, hidden:false, disabled:false, textContent:"",
+    addEventListener(type,fn){events.set(id+":"+type,fn);},
+    removeAttribute(name){delete this[name];},
+    setAttribute(name,value){this[name]=value;},
+    replaceChildren(){},appendChild(){},append(){},
+  });
+  const ids = ["trace-draft-recovery","trace-draft-link","trace-draft-info",
+    "trace-draft-disable","trace-draft-status"];
+  if (withRoot) ids.push("trace-saved-views","trace-draft-opt-in",
+    "trace-save-name","trace-save-note","trace-save-status",
+    "trace-saved-list","trace-save-button");
+  const els = Object.fromEntries(ids.map(id=>[id,element(id)]));
+  if(withRoot) els["trace-saved-views"].dataset = {
+    root:"synthetic:resolved",mode:"mission",depth:"2",direction:"both",trail:"[]",
+  };
+  const doc = {getElementById(id){return els[id] || null;},
+    createElement(tag){return element(tag);}, createTextNode(text){return {textContent:text}}};
+  const win = {localStorage:storage,location:{origin},
+    addEventListener(type,fn){listeners.set(type,fn);}};
+  return {els,events,listeners,doc,win};
+}
+
+test("opt-in UI records the latest exact resolved view on page exit", () => {
+  const storage = new MemoryStorage(), ui = fakeDraftDom(storage, true);
+  saved.mount(ui.doc, ui.win);
+  assert.equal(storage.writes, 0);
+  assert.equal(ui.els["trace-draft-opt-in"].checked, false);
+  assert.equal(ui.els["trace-draft-recovery"].hidden, true);
+  ui.els["trace-draft-opt-in"].checked = true;
+  ui.events.get("trace-draft-opt-in:change")();
+  assert.equal(saved.readDraft(storage, origin).enabled, true);
+  ui.els["trace-saved-views"].dataset.mode = "implementation";
+  ui.listeners.get("pagehide")();
+  assert.equal(new URL(saved.readDraft(storage,origin).href,origin)
+    .searchParams.get("mode"),"implementation");
+  ui.els["trace-draft-opt-in"].checked = false;
+  ui.events.get("trace-draft-opt-in:change")();
+  assert.equal(saved.readDraft(storage, origin).enabled, false);
+  const writes = storage.writes;
+  ui.listeners.get("pagehide")();
+  assert.equal(storage.writes, writes);
+});
+
+test("recovery link is available on a new empty search page and can be cleared", () => {
+  const storage = new MemoryStorage();
+  saved.saveDraft(storage, origin, target(), 1234567890);
+  const ui = fakeDraftDom(storage, false);
+  saved.mount(ui.doc, ui.win);
+  assert.equal(ui.els["trace-draft-recovery"].hidden, false);
+  assert.equal(ui.els["trace-draft-link"].href, saved.canonicalHref(target(),origin));
+  assert.equal(ui.listeners.size, 0);
+  ui.events.get("trace-draft-disable:click")();
+  assert.equal(saved.readDraft(storage, origin).enabled, false);
+  assert.equal(ui.els["trace-draft-recovery"].hidden, true);
 });
