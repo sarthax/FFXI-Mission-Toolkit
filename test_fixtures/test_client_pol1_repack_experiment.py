@@ -2,6 +2,7 @@
 """Synthetic-only tests for bounded experimental POL1 recompression."""
 import hashlib
 import io
+import json
 import random
 import struct
 import tempfile
@@ -259,6 +260,42 @@ class SyntheticPol1RepackTests(unittest.TestCase):
                 with redirect_stdout(output):
                     self.assertEqual(main(), 0)
                 self.assertIn('"encoder_search_depth": 16', output.getvalue())
+
+
+
+
+    def test_cli_comparison_mode_reuses_exact_hash_and_never_writes(self):
+        from workbench.client.cli.pol1_repack_report import main
+
+        code = b"MOCKRESEARCH" * 45
+        image = fixture_pe(encode_pol1(code), len(code), len(encode_pol1(code)) + 8)
+        with tempfile.TemporaryDirectory() as folder:
+            file_path = Path(folder) / "synthetic.dll"
+            file_path.write_bytes(image)
+            digest = hashlib.sha256(image).hexdigest()
+            with patch("sys.argv", [
+                "pol1-repack-report", str(file_path),
+                "--expected-sha256", digest, "--compare-depths"
+            ]):
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    self.assertEqual(main(), 0)
+            report = json.loads(output.getvalue())
+            self.assertEqual(report["source_sha256"], digest)
+            self.assertEqual([row["depth"] for row in report["results"]], [16, 64, 128])
+            self.assertEqual(len(report["results"]), 3)
+            self.assertEqual(report["best_fit_depth"]["status"], "FITS_ORIGINAL_STREAM_BUDGET")
+            for row in report["results"]:
+                self.assertEqual(row["in_memory_decoded_roundtrip"], "PASS")
+                self.assertTrue(row["protected_suffix_unchanged"])
+            with patch("sys.argv", [
+                "pol1-repack-report", str(file_path),
+                "--expected-sha256", "0" * 64, "--compare-depths"
+            ]):
+                with redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit):
+                        main()
+            self.assertEqual(file_path.read_bytes(), image)
 
 
 
