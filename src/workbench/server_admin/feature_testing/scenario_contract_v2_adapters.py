@@ -158,6 +158,22 @@ def project_identity_diagnostic(diagnostic: dict, *, kind: str) -> dict:
     # An allegedly independently verified capture row does NOT elevate it:
     # source bytes / client + DSP namespace have not been crosschecked here.
     selection = diagnostic.get("identity")
+    if selection is not None and not (
+        type(selection) is int and 0 <= selection <= 2**32 - 1 or
+        isinstance(selection, str) and 0 < len(selection) <= 120 and
+        all(c.isalnum() or c in "_:-." for c in selection)
+    ):
+        raise ValueError("invalid typed candidate identity")
+    namespace = diagnostic.get("namespace")
+    if namespace is not None and (
+        not isinstance(namespace, str) or not namespace or len(namespace) > 64 or
+        not namespace[0].isalpha() or
+        any(not (c.isalnum() or c in "_-") for c in namespace)
+    ):
+        raise ValueError("invalid typed candidate namespace")
+    zone_id = diagnostic.get("zone_id")
+    if zone_id is not None and not (type(zone_id) is int and 0 <= zone_id <= 2**32 - 1):
+        raise ValueError("invalid typed candidate zone scope")
     if state in {"AMBIGUOUS", "UNRESOLVED", "UNSUPPORTED"}:
         binding_state, selection = ("ambiguous" if state == "AMBIGUOUS" else "unresolved"), None
     else:
@@ -166,6 +182,7 @@ def project_identity_diagnostic(diagnostic: dict, *, kind: str) -> dict:
         "classification_original": state,
         "binding_state": binding_state,
         "kind": kind, "identity_candidate": selection,
+        "namespace_candidate": namespace, "zone_id_candidate": zone_id,
         "source_identity_verified": False,
         "execution_enabled": False,
         "operator_source_review_required": True,
@@ -180,7 +197,8 @@ def project_expected_candidate(candidate: dict | None) -> dict:
     return {
         "oracle_type": "unknown", "confidence": "unknown", "source_refs": [],
         "normative_expected": None, "approved": False,
-        "readiness": "REVIEW_REQUIRED_SOURCE_CANDIDATE" if candidate else "UNKNOWN",
+        "readiness": ("REJECT_CAPTURE_DERIVED_ORACLE" if candidate and candidate.get("from_capture") is True
+                      else "REVIEW_REQUIRED_SOURCE_CANDIDATE" if candidate else "UNKNOWN"),
         "candidate_original": deepcopy(candidate),
         "execution_enabled": False,
     }
