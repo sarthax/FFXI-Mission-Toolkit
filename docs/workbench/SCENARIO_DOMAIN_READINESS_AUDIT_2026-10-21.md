@@ -2,6 +2,15 @@
 
 **Audit date:** 2026-10-21 · **Toolkit main:** `e9ae790d0d8259a508ec767c71f06fdf49a893e5` · Parent [#1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197). **Execution:** NOT RUN. **Source:** nine independent open, draft domain PRs. **Not a catalog import.**
 
+
+## R6 reconciliation and single-inventory decision
+
+**Proposed primary machine-readable readiness authority:** [`SCENARIO_DOMAIN_READINESS_MATRIX_2026-10-21.json`](./SCENARIO_DOMAIN_READINESS_MATRIX_2026-10-21.json) in draft [#1292](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1292), subject to Agent A / Agent C independent review. It now pins all **nine currently inspected staging PR head commit SHAs** under `source.domain_pr_head_snapshot` (including Gardening #1277 `410513cb` and Assault/Nyzul #1280 `653272e2`) and records explicit DSP-source vs installed-deployment distinction. The snapshot is invalidated for integration when any cited PR head moves; the common offline validator [#1294](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1294) should compare live staged JSON to that snapshot and fail with a re-audit instruction. Never mistake GitHub source head matching for authentic source bytes or a running DSP binary.
+
+**Companion—not competing inventory:** [#1293](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1293) preserves the unique [R6 observation capability backlog](https://github.com/sarthax/FFXI-Mission-Toolkit/blob/audit/r5-domain-readiness-1197-20261021/docs/workbench/R6_DOMAIN_OBSERVATION_CAPABILITY_BACKLOG_1197.md), concrete input/output/permissions/UNKNOWN contracts and issue trace; it does **not** define another authoritative 73-case source. Existing scoped observation issues [#1295](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1295)–[#1300](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1300), DSP [#56](https://github.com/sarthax/darkstar-to-valhalla/issues/56)/[#59](https://github.com/sarthax/darkstar-to-valhalla/issues/59), Toolkit #1198/#1202, and XIHeadless #105/#107 are the implementation/research trace. Original provisional GAP-01..11 IDs in this report are **grouping labels**, mapped to existing issues in the JSON. Do not open those as duplicate issues.
+
+**Current lane audit:** five observe-now are *conditional persisted var/KI or historic narrow MOG-09 observations*; 2 need readback (SAL-01, VOID-08); 57 need mutation; 9 Chocobo cases need deployment. No gameplay assertions newly passed. The nine staging PRs remain open, draft, noncatalog and non-executable.
+
 ## Executive result
 
 Inventory: **73 staged cases** in nine drafts; 5 declared/retained `observe-now`, 2 `needs-readback`, 57 `needs-mutation`, 9 `needs-deploy`. This is *not* executable coverage; all 73 remain gated and NOT_RUN in this audit. No runner status has changed.
