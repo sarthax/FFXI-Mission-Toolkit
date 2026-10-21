@@ -104,3 +104,35 @@ py -3.11 -m workbench.client.cli.pol1_repack_report $old --expected-sha256 $sha 
 Record original_stream_consumed_bytes, entrypoint_section_offset, safe_stream_budget_bytes, candidate_encoded_size, headroom_bytes, encoder_search_depth, status and in_memory_decoded_roundtrip. Compare the candidate against **the original stream prefix**, never the whole POL1 section. No output DLL is written.
 
 **Evidence status:** The earlier nine-method suite passed on the referenced commit. A later suite added zero-distance and PE rejection plus configurable-search-depth regression tests; all 12 focused synthetic tests passed on Windows and Linux in run `39631931548`. Broader Workbench regression on that commit was still pending when last checked; full repository CI acceptance should be confirmed separately. The client originals remain unexamined here and loader/launcher acceptance remains UNKNOWN.
+
+## 7. Consolidated read-only comparison and PE section-boundary validation
+
+PR #1303 now offers a single hash-verified `--compare-depths` CLI invocation to measure all three bounded encoders on the same isolated input DLL. The JSON output reports original-stream consumption and protected suffix once, then emits depth 16, 64 and 128 candidate compressed sizes and headroom. `best_fit_depth` means the smallest qualifying compressed stream, **not** a recommendation to patch a retail DLL.
+
+The preflight explicitly rejects POL1 raw on-disk data overlapping the PE section table, any other section's raw content, or data outside the input file. It validates entry-point metadata before decoding. This is a structural risk filter, not loader compatibility testing.
+
+**Run separately against exact-hash archives, never installed clients:**
+
+~~~powershell
+$old = 'C:\FFXI-Research\2021\FFXiMain.dll'
+$new = 'C:\FFXI-Research\2026\FFXiMain.dll'
+$oldSha = '1ded20ac5df1b168220992365b63cfe7596af17326acf0e02f90a5a8388446ba'
+$newSha = '042884888eea4fadac183e520f2ae9f8c4fa267860e685048e1880efd358e872'
+py -3.11 -m workbench.client.cli.pol1_repack_report $old --expected-sha256 $oldSha --compare-depths
+py -3.11 -m workbench.client.cli.pol1_repack_report $new --expected-sha256 $newSha --compare-depths
+~~~
+
+The CLI prints metadata/hash fields to stdout only, never executable bytes. Do not modify files, execute a patched client, or apply hooks on the strength of a compression-only result.
+
+| Result | Meaning | Decision |
+|---|---|---|
+| `FITS_ORIGINAL_STREAM_BUDGET` | Candidate fits the originally consumed compressed prefix; in-memory suffix and decoded check pass | Research candidate only. Loader acceptance UNKNOWN |
+| `EXCEEDS_ORIGINAL_STREAM_BUDGET` | Candidate exceeds the original consumed compressed prefix | NO-GO for fixed-prefix replacement at this depth |
+| `UNSAFE_ORIGINAL_STREAM_BOUNDARY` | Compressed stream meets/overlaps mapped entry point | STOP: overlap with potential loader |
+| Hash, PE or stream parse error | Exact build, layout or token assumptions fail | STOP and investigate; no write-back |
+
+The output also exposes `pol1_raw_section_isolated`, `entrypoint_in_pol1`, and `entrypoint_boundary_safe`. An entry point outside POL1 may be legitimate for other PEs; it does not prove FFXI bootstrap boundaries.
+
+**CI provenance:** Dedicated Windows and Linux POL1 tests passed with 12 methods at commit `6837500c110e94968d3243c002d5888fe4a4c833`. The subsequent all-depth comparison and raw-section isolation tests need independent final-head CI. Earlier broad Workbench runs may be canceled on superseded commits; do not mistake them for completed approvals.
+
+The original 2021/2026 DLL bytes remain unavailable to this GitHub session. Actual compressed-stream consumption, retail repacked fit, and loader acceptance remain UNKNOWN.
