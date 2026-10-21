@@ -289,7 +289,10 @@ def test_unified_editor_has_one_coverage_start_and_manual_evidence_binding_revie
     assert js.count("await resolveCoverageContext();")==1
     assert "sd-context-use" in js
     assert "sd-preview-incomplete" in js
-    assert "activeHandoff === key" in js
+    assert "M.handoffReplacementIssue(" in js
+    assert "current();" in js[js.index("function installIncompleteDraft"):js.index("async function resolveCoverageContext")]
+    assert "savePending=true" in js
+    assert "finally {savePending=false" in js
     assert "sd-binding-decision" in js
     assert "INCLUDE_UNVERIFIED" in js and "EXCLUDE" in js
     assert "reviewer-proposal=" in model
