@@ -124,3 +124,76 @@ const sidecar={
 assert.throws(()=>M.draftFromEvidence(sidecar,[]),/Unreviewed or unsupported evidence suggestion/);
 assert.deepEqual(M.parseAdvanced(JSON.stringify(v)).contract_v2,v.contract_v2);
 console.log('R7 no inferred source scope or sidecar import/approval: PASS');
+
+
+// #1309 proposed optional canonical association is not merged in this test
+// baseline. Preserve the raw metadata in editor operations, but NEVER derive
+// case/step proof from an unknown extension before the canonical helper exists.
+const proposed=M.clone(v);
+proposed.contract_v2.source_associations=[
+  {scope:'case',target_id:null,source_refs:['SrcOther']},
+  {scope:'step',target_id:sid,source_refs:['SrcOne']}
+];
+const proposalBefore=JSON.stringify(proposed);
+const proposalView=V.project(proposed);
+assert.deepEqual(proposalView.steps[0].sources,[]);
+assert.equal(proposalView.steps[0].oracle_citations[0].ref,'SrcOne');
+assert.match(proposalView.sources[0].attribution,/ATTRIBUTION UNASSIGNED/);
+assert.equal(proposalView.execution_enabled,false);
+assert.equal(JSON.stringify(proposed),proposalBefore);
+for(const transformed of [
+  M.parseAdvanced(JSON.stringify(proposed)),
+  M.cloneDraft(proposed),
+  M.forkPublished({...proposed,runner:'xiheadless_observation_v1',
+    execution_status:'verified_runner'}),
+  M.moveStep(M.addStep(proposed),1,-1)
+]) {
+  assert.deepEqual(transformed.contract_v2.source_associations,
+    proposed.contract_v2.source_associations);
+  assert.equal(V.project(transformed).execution_enabled,false);
+}
+const spoof=M.clone(proposed);
+spoof.contract_v2.source_associations[1].target_id='OBS-CAPTURE-S001';
+assert.deepEqual(V.project(spoof).steps[0].sources,[]);
+assert.equal(V.project(spoof).execution_enabled,false);
+
+// #1308 proposed indexed source provenance is a noncanonical read-only
+// producer sidecar and remains excluded from reviewed-decision import.
+const richerSidecar={
+  contract:'capture_reviewer_readiness_sidecar_v0_NONCANONICAL',
+  indexed_observation_projection_sha256:'d'.repeat(64),
+  original_handoff_projection_sha256:'e'.repeat(64),
+  scenario_developer_handoff:{read_only_projection:{
+    contract:'capture_readiness_authoring_projection_v1_NONCANONICAL',
+    capture_id:42,physical_source_authenticated:false,
+    automatic_import:false,save_allowed:false,execution_enabled:false,
+    steps:[{
+      step_id:'OBS-S001',canonical_step_id:null,
+      canonical_source_association:{
+        state:'UNASSIGNED_REQUIRES_INDEPENDENT_CANONICAL_CROSSWALK',
+        scope:null,source_refs:[]},
+      identity_confidence:[{classification:'AMBIGUOUS',
+        proposed_v2_binding_state:'ambiguous',identity_candidate:null,
+        source_identity_verified:false}],
+      missing_readbacks:[{observation:'server_inventory_readback',
+        readiness_state:'UNKNOWN'}],
+      readiness_state:'UNKNOWN',oracle_approval_state:'UNAPPROVED',
+      normative_expected:null,execution_enabled:false,
+      indexed_evidence_provenance:[{
+        evidence_ref:'capture-row:1',capture_id:42,source_table:'capture_events',
+        original_row_key:'row-1',native_timestamp:'2026-10-21T12:00:00Z',
+        source_file_claims:[{parser_name_claim:'capture-parser',
+          parser_version_claim:'synthetic',decoder_version:null,
+          locator_sha256_claim:'f'.repeat(64),manifest_sha256_claim:'f'.repeat(64),
+          indexed_digests_rehashed:false}],
+        independent_source_authentication:false
+      }]
+    }]
+  }}
+};
+assert.throws(()=>M.draftFromEvidence(richerSidecar,[]),
+  /Unreviewed or unsupported evidence suggestion/);
+assert.equal(richerSidecar.scenario_developer_handoff.read_only_projection
+  .steps[0].canonical_step_id,null);
+assert.equal(V.project(v).execution_enabled,false);
+console.log('R7 pending C/D interface compatibility stays noncanonical and unapproved: PASS');
