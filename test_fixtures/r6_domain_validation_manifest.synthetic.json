@@ -1,0 +1,78 @@
+{
+  "kind": "synthetic_r6_staging_manifest",
+  "execution_enabled": false,
+  "expected_total": 73,
+  "expected_lanes": {
+    "observe-now": 5,
+    "needs-readback": 2,
+    "needs-mutation": 57,
+    "needs-deploy": 9
+  },
+  "expected_observe_now": [
+    "MOG-09",
+    "RG-01",
+    "RG-06",
+    "VOID-01",
+    "VOID-02"
+  ],
+  "canonical_ids": [
+    "MOG-09",
+    "INV-OBS-01"
+  ],
+  "domains": [
+    {
+      "name": "gardening",
+      "pr": 1277,
+      "cases": 9,
+      "sha": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+    },
+    {
+      "name": "voidwalker",
+      "pr": 1279,
+      "cases": 7,
+      "sha": "5fac778004364e2991df779845d7403e64a8dc23"
+    },
+    {
+      "name": "assault_nyzul",
+      "pr": 1280,
+      "cases": 6,
+      "sha": "2b71b4425d20ce47941c140b57fac886f28bea73"
+    },
+    {
+      "name": "missions_quests",
+      "pr": 1281,
+      "cases": 5,
+      "sha": "86d4467d446569c741d76d296e640c3b844ad844"
+    },
+    {
+      "name": "moghancement",
+      "pr": 1282,
+      "cases": 14,
+      "sha": "86d4467d446569c741d76d296e640c3b844ad844"
+    },
+    {
+      "name": "voidwatch",
+      "pr": 1286,
+      "cases": 8,
+      "sha": "86d4467d446569c741d76d296e640c3b844ad844"
+    },
+    {
+      "name": "salvage",
+      "pr": 1289,
+      "cases": 7,
+      "sha": "86d4467d446569c741d76d296e640c3b844ad844"
+    },
+    {
+      "name": "run_geo_unlock",
+      "pr": 1290,
+      "cases": 8,
+      "sha": "86d4467d446569c741d76d296e640c3b844ad844"
+    },
+    {
+      "name": "chocobo_raising",
+      "pr": 1291,
+      "cases": 9,
+      "sha": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+    }
+  ]
+}
