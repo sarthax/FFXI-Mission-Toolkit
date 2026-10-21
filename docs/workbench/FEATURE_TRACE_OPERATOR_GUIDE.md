@@ -8,6 +8,14 @@ Focused-mode generated provider relationships now carry their actual `from_node`
 
 This is a **rendering/interpretation fix**, not a relevance-ranker change, new identity closure, successful source-locator validation or real DSP acceptance. The baseline under [P0 #1228](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1228) remains NOT RUN until a local reviewer returns actual three-case observations.
 
+## Browser-local named investigation views — first save/resume phase (October 20)
+
+When Feature Trace resolves an exact root, the **Named investigation views** section lets the operator enter a name and optional note, then **Save this view locally**. Each explicit save retains the resolved root, selected Question mode, hop depth, traversal direction, and bounded preceding-node trail as a validated, same-origin Feature Trace URL. Open **Resume / delete saved views** to reopen the current indexed trace or delete a saved view. Saving another name for the same root permits a local fork without overwriting the original.
+
+The save list is stored **only in the current browser profile's localStorage**, up to 20 records. It is not available on other machines or browsers, and clearing site data deletes it. No raw Lua/SQL, packets, edges, evidence bodies, character/account data or graph snapshots are saved by this feature. No server-side database or live client is written. Saves are **explicit**—there is no automatic draft recovery yet. Storage restrictions, a corrupt browser record or quota exhaustion cause an error instead of a misleading success message.
+
+**Acceptance boundary:** Resuming re-executes Feature Trace from a saved navigation URL; the bookmarked root or relationships might have changed or vanished. This phase does not pin an authoritative source revision or verify evidence staleness; an on-page warning instructs the operator to recheck the actual indexed source, identity and locator. It is not backend-persisted research, automatic recovery, multi-browser sync, or the cross-tool Feature/Behavior/Character saved investigation model. That future work is tracked at [#1235](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1235); first-screen relevance and real-data acceptance remain [#1228](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1228).
+
 ## Bounded investigation trail (October 20)
 
 Feature Trace now displays an **Investigation trail** above the Evidence Dossier when a root resolves. It records up to eight previous root selections **in the URL only**, so the operator can follow indexed canonical/provider links and click an earlier breadcrumb to backtrack. The selected question, depth and traversal direction are preserved, and **Clear trail for this root** starts over without changing the resolved root. An existing URL can be shared/reopened with its trail intact.

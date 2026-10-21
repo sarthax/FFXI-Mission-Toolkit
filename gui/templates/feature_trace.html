@@ -49,6 +49,13 @@
 .trace-trail{border:1px solid var(--border);border-radius:7px;padding:9px 11px;margin:9px 0;background:var(--surface)}
 .trace-trail .trace-links{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:5px 0}
 .trace-trail .trace-links .mono{font-size:12px;overflow-wrap:anywhere}
+.trace-save-fields{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:8px 0}
+.trace-save-fields label{display:grid;gap:3px;min-width:170px;flex:1}
+#trace-saved-list{padding-left:24px;margin:7px 0}
+#trace-saved-list li{padding:3px 0;overflow-wrap:anywhere}
+#trace-saved-list button{margin-left:7px}
+#trace-save-status{min-height:1.1em}
+
 </style>
 <form id="featureTraceTop" class="search wb-filter-row" method="get" action="/features/trace">
   <input type="text" name="q" value="{{ q }}" placeholder="Canonical node ID or partial name">
@@ -509,6 +516,26 @@
   <p class="muted">A trail records browser selections, not a validated evidence path or identity mapping. It is carried in the URL, not saved as a named investigation.</p>
   <a class="zonelink" href="/features/trace?q={{ result.root|urlencode }}{% if selected_mode %}&amp;mode={{ selected_mode|urlencode }}{% endif %}&amp;depth={{ depth }}&amp;direction={{ direction }}">Clear trail for this root</a>
 </nav>
+<section class="trace-trail" id="trace-saved-views"
+         aria-label="Named Feature Trace views saved on this browser"
+         data-root="{{ result.root }}" data-mode="{{ selected_mode }}"
+         data-depth="{{ depth }}" data-direction="{{ direction }}"
+         data-trail="{{ trail_from_url }}">
+  <strong>Named investigation views</strong> <span class="chip">Local to this browser</span>
+  <p class="muted">Save this root, question, depth, direction and breadcrumb selections. Only a navigation URL, name and note are kept in this browser profile; no source evidence is copied or sent to the server. The view is not available on other machines or browsers.</p>
+  <div class="trace-save-fields">
+    <label>Name <input type="text" id="trace-save-name" maxlength="80" autocomplete="off" placeholder="Investigation name"></label>
+    <label>Note (optional) <input type="text" id="trace-save-note" maxlength="240" autocomplete="off" placeholder="What to check next"></label>
+    <button type="button" id="trace-save-button">Save this view locally</button>
+  </div>
+  <p class="muted" role="status" aria-live="polite" id="trace-save-status"></p>
+  <details id="trace-saved-detail">
+    <summary>Resume / delete saved views <span class="muted">(maximum 20; explicit saves only)</span></summary>
+    <ul id="trace-saved-list"><li>Saved views load only if browser storage is available.</li></ul>
+  </details>
+  <p class="muted">Saved selections are not verified graph paths. Resuming always re-runs the current trace: node identities, source revisions, evidence, and locators might have changed since the view was saved. Confirm them again. Clearing site storage deletes browser-local saved views.</p>
+</section>
+<script src="/static/feature_trace_local_saves.js" defer></script>
 {% if selected_mode %}
 <div id="trace-focused-mode" class="impl-diagnostic">
   <strong>Question-focused view: {{ (result.trace_mode.label if result.trace_mode else selected_mode) }}</strong>

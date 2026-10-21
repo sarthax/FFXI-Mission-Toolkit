@@ -8,6 +8,7 @@ on:
       - "feature_catalog/**"
       - "test_fixtures/**"
       - "gui/templates/**"
+      - "gui/static/feature_trace_local_saves.js"
       - "docs/workbench/**"
       - "docs/guides/**"
       - "README.md"
@@ -35,6 +36,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: Install core regression test dependencies
         run: python -m pip install --disable-pip-version-check -r requirements.txt pytest httpx
       - name: Run Workbench core regression fixtures
@@ -275,6 +279,7 @@ jobs:
           python -m pytest -q test_fixtures/test_feature_trace_generated_render.py
           python -m pytest -q test_fixtures/test_feature_trace_mode_navigation.py
           python -m pytest -q test_fixtures/test_feature_trace_investigation.py
+          node --test test_fixtures/test_feature_trace_local_saves.cjs
           python test_fixtures/test_feature_trace_path_diagnostics.py
           python test_fixtures/test_feature_trace_source_drilldown_ui.py
           python test_fixtures/test_feature_trace_binding_engine.py

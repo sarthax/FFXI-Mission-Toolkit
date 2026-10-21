@@ -183,6 +183,12 @@ These are deliberate safety boundaries, not generic missing editors.
 
 **2026-10-20 bounded Feature Trace investigation trail:** A first read-only navigation slice now carries up to eight prior selected roots in the URL and renders clickable backtrack breadcrumbs with the current Question/depth/direction. It is selection history only, not evidence-path verification, automatic browser draft recovery, backend persistence, cross-tool pins, or saved investigations. The existing saved/resumable roadmap items below remain open; this is a navigation precursor that must be tested on real data separately from the #1228 relevance audit.
 
+**2026-10-20 first named-save milestone:** Feature Trace now has an explicit browser-local Save/Resume/Delete surface layered on its bounded URL investigation trail, with up to 20 named views (optional notes), validated same-origin URLs, read-only current-graph re-tracing, corrupted/quota-storage failure handling and no evidence-body persistence. **No automatic drafts or backend persistence** yet; named saves are local to one browser profile and rehydration is not source-version-verified. This is the first milestone toward the broader unchecked cross-tool roadmap below, tracked at [#1235](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1235). Independent real source/ranking acceptance remains [#1228](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1228).
+
+- [x] Feature Trace: explicit browser-local named navigation bookmarks (not server persistence), 20-record bound, Resume/Delete.
+- [ ] Add opt-in automatic local draft recovery with a privacy and source-change contract, followed by backend-persisted named investigations.
+- [ ] Implement revision-aware stale identity/edge checks, saved pins and forks; then propagate a shared saved-investigation model across Behavior Trace and Character progression.
+
 ## Saved / resumable trace investigations — planned 2026-10-11
 
 - [ ] Add a shared saved-investigation/session model for **Feature Trace, Behavior Trace, and Character Mission/Quest Progression**.

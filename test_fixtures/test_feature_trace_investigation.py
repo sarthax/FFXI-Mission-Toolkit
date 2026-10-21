@@ -119,3 +119,35 @@ def test_untrusted_url_breadcrumbs_are_html_escaped_and_do_not_change_root():
     assert untrusted not in response.text
     assert "&lt;img src=x" in response.text
     assert traced[0]["root"] == "synthetic-root"
+
+
+def test_named_browser_local_save_controls_render_only_for_exact_trace_result():
+    client, traced, _searched, _cleared, _closed = _client()
+    response = client.get("/features/trace", params={
+        "q": "synthetic-root", "mode": "implementation", "depth": 2,
+        "direction": "out", "trail": '["synthetic:prior"]',
+    })
+    assert response.status_code == 200
+    html_doc = response.text
+    assert 'id="trace-saved-views"' in html_doc
+    assert 'data-root="synthetic-root"' in html_doc
+    assert 'data-mode="implementation"' in html_doc
+    assert 'data-depth="2"' in html_doc
+    assert 'data-direction="out"' in html_doc
+    assert 'data-trail=&#34;[&#34;' not in html_doc  # attribute quoting remains intact
+    assert 'id="trace-save-button"' in html_doc
+    assert 'id="trace-save-name"' in html_doc
+    assert 'id="trace-save-note"' in html_doc
+    assert 'id="trace-saved-list"' in html_doc
+    assert 'src="/static/feature_trace_local_saves.js"' in html_doc
+    assert "no source evidence is copied or sent to the server" in html_doc
+    assert "not verified graph paths" in html_doc
+    assert traced[0]["kwargs"] == {"mode": "implementation"}
+
+
+def test_missing_index_never_offers_to_save_unresolved_identity():
+    from test_feature_catalog_http_contract import _trace_page_client
+    client, _closed = _trace_page_client(graph_available=False)
+    response = client.get("/features/trace", params={"q": "synthetic-unresolved"})
+    assert response.status_code == 200
+    assert "trace-saved-views" not in str(response.text)
