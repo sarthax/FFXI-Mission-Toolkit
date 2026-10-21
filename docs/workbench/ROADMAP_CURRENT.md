@@ -1,20 +1,5 @@
 # Current Workbench Roadmap
 
-## 2026-10-21 — R7 active: R6 integrated baseline and next-phase boundaries
-
-**Verified `main@972ff6fa4337cb5d29a3c8c3eb68c73245f24bb9`.** Canonical optional Contract v2 (#1285), Unified Scenario Developer (#1283), Evidence Readiness (#1287), readiness matrix (#1292), central offline validator (#1294), separate capability backlog (#1293), and all nine domain draft PRs (#1277, #1279–#1282, #1286, #1289–#1291) are **merged into main**. The historical "Scenario expansion (opened 2026-10-21)" entry below describes planning *before* these merges; it is **not current PR status**. Full authoritative [R7 release baseline and acceptance gaps](R7_RELEASE_BASELINE_2026-10-21.md).
-
-- **73 design-only domain cases on main:** 5 conditional observe-now, 2 needs-readback, 57 needs-mutation, 9 needs-deploy; all `NOT_RUN`, unassigned runner. Matrix `SCENARIO_DOMAIN_READINESS_MATRIX_2026-10-21.json` is the sole offline case authority, while `R6_DOMAIN_OBSERVATION_CAPABILITY_BACKLOG_1197.md` is a *companion proposal*, not second case inventory. No staged scenario was promoted to `test_specifications.json` or granted gameplay execution.
-- **R7 priority 0: reproducible post-merge CI** — draft [#1305](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1305) adds explicit `integrated-main` branch-independent 73-case validation (historical pinned blob match) and an explicit `staged-pr` PR-head source mode. Existing `spec/*` staging branches were deleted and must **not** be fetched by post-merge CI. Workflow dispatch and scoped push-to-main CI will apply after review/owner merge authorization.
-- **R7 priority 1: editor and attribution (Agent B)** — [#1302](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1302) provenance/UNKNOWN/BLOCKED per-step authoring from existing Contract v2; no editor-owned schema fork.
-- **R7 priority 1: canonical interoperability (Agent C)** — [#1259](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1259) reviewed source→step and source-backed identity/oracle association; preserve schema v1 and no auto-approvals; coordinate fields with B and D.
-- **R7 priority 1: evidence integration (Agent D)** — [#1262](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1262), [#1198](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1198) and [#1202](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1202): provenance-preserving, noncanonical readiness projection and export; no packet-decoder rebuild.
-- **R7 priority 1: read-only observation capabilities (Agent E)** — #1295–#1300: fixed-query inventory/furnishing and quest/job/currency, instance state, entity/claim, Pyxis and temp/status data. No free-form SQL, live execution permissions or XIHeadless local-agent assignment.
-- **Release acceptance still open:** deployed DSP build/config/data attestation, original capture-byte/parser integrity, independent client/server readbacks and oracles, safe mutation/cleanup/operator permissions, supervised headless gameplay and browser-local authenticated acceptance. An offline GitHub PASS does **not** prove any of these. Keep #1197 and broad acceptance stories open.
-
-**R7 change boundaries:** C owns canonical schema/adapters; B owns editor and Guided/Advanced UX; D owns capture reviewer/readiness projections; E owns bounded readbacks and requirements; A owns CI/roadmap/coordinated merge gates. No concurrent cross-owned module edits without explicit handoff. All meaningful changes use branches/draft PRs and independent review; owner authorization is required for merge.
-
-
 Status: ACTIVE REWORK  
 Last fully reconciled against merged PR and branch history: **2026-10-06** (full-repository sweep); targeted module audit **2026-10-10**; recent merged-commit/tree documentation reconciliation **2026-10-17** (not a new full runtime audit)  
 Authoritative repository: `sarthax/FFXI-Mission-Toolkit`  
