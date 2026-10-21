@@ -72,6 +72,8 @@ def test_reordering_and_editing_preserves_all_step_ids_and_other_fields():
     (lambda s: s.update(execution_status="verified_runner"), "design_only"),
     (lambda s: s["authoring"].update(review_required=False), "review cannot be waived"),
     (lambda s: s["authoring"].update(execution_policy="mutating"), "read-only"),
+    (lambda s: s["authoring"].update(state="reviewed"), "cannot claim reviewed"),
+    (lambda s: s["steps"][0].update(intent="send_gm"), "mutating step intent"),
     (lambda s: s.update(unsafe_dispatch=True), "unexpected"),
 ])
 def test_canonical_contract_and_safety_fail_closed(mutate, expected):
