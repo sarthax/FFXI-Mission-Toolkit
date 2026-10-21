@@ -42,6 +42,9 @@ def test_source_local_timeline_and_related_candidate_rows():
     sha = hashlib.sha256(b"synthetic source bytes only\n").hexdigest()
     one = next(x for x in ev["sources"] if x["row_key"]["seq"] == 1)
     assert one["source_status"] == "AMBIGUOUS"
+    assert one["recorded_metadata"]["message_id"] == 15
+    assert one["recorded_metadata"]["direction"] == "Incoming"
+    assert "raw_hex" not in one["recorded_metadata"]
     assert any(x["source_sha256"] == sha and x["start_line"] == 4
                and x["source_manifest"]["parser_version"] == "0"
                for x in one["references"])
@@ -59,6 +62,12 @@ def test_source_local_timeline_and_related_candidate_rows():
         lane["events"][0]["summary"] for lane in result["lanes"]
         if lane["table"] == "capture_raw_packets"
     )
+    packet = next(lane["events"][0] for lane in result["lanes"]
+                  if lane["table"] == "capture_raw_packets")
+    pkt_meta = packet["sources"][0]["recorded_metadata"]
+    assert pkt_meta["opcode"] == "SYNTHETIC_OPCODE"
+    assert pkt_meta["is_injected"] == 1
+    assert "raw_hex" not in pkt_meta
     con.close()
 
 
