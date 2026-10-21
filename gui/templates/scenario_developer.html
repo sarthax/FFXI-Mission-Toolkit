@@ -37,6 +37,29 @@
 Displayed authoring labels cannot promote a draft to reviewed or executable. No GM command, packet, SQL write, or headless action can be dispatched here.
 Imported/recalculated PASS is not independently verified proof.
 </div>
+<section class="wb-panel" id="sd-handoff" aria-label="Source context authoring intake">
+<h2>Continue from Coverage Matrix or Evidence Reviewer</h2>
+<p class="sd-warning">Source context is PROVISIONAL. A read-only review is not a requirement, approved identity, executable command, expected oracle or independent proof. No draft is automatically created or saved.</p>
+<details id="sd-coverage-handoff" open>
+<summary>Coverage Matrix — source-declared behavior reference</summary>
+<p id="sd-context-feedback" role="status">No Coverage Matrix reference supplied. Open a declared test intent from the Matrix to pass its exact context URL.</p>
+<div id="sd-context-detail"></div>
+<button type="button" id="sd-context-use" disabled>Create incomplete design-only draft from reviewed context</button>
+<a href="/feature-testing/coverage" id="sd-return-coverage">Return to Coverage Matrix</a>
+</details>
+<details id="sd-evidence-handoff">
+<summary>Evidence Reviewer — import offline review-decision JSON</summary>
+<p>Choose the JSON exported by the offline Evidence Reviewer. The editor checks its own indexed projection checksum and review decisions. It cannot authenticate the source file bytes without a separately trusted capture index.</p>
+<label class="sd-field">Offline review-decision JSON file (maximum 512 KB)
+<input id="sd-evidence-file" type="file" accept=".json,application/json"></label>
+<button type="button" id="sd-evidence-inspect">Inspect untrusted review file (no save)</button>
+<p id="sd-evidence-feedback" role="status">No review file inspected.</p>
+<div id="sd-evidence-suggestions"></div>
+<button type="button" id="sd-evidence-use" disabled>Use explicitly confirmed observations in incomplete design-only draft</button>
+<p class="sd-muted">Return to Evidence Reviewer: reopen the original offline HTML artifact. Its file path is not included in this export; this editor will not invent a file URL.</p>
+</details>
+<p class="sd-muted">Imported references survive as unverified source notes in the existing canonical draft only after you explicitly accept suggestions and save. Required observations, assertions, source-backed expectations, preconditions and cleanup must still be authored manually.</p>
+</section>
 <section class="wb-panel">
 <div class="sd-bar">
 <button type="button" id="sd-new">New synthetic scenario</button>
