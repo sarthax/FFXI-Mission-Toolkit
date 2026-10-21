@@ -304,6 +304,7 @@ def _setup_guard(request: Request) -> None:
 class SetupRequest(BaseModel):
     headless_root: str | None = None
     charids: str | None = None
+    account: str | None = None
     db_user: str | None = None
     db_password: str | None = None
     db_name: str | None = None
@@ -324,7 +325,7 @@ def setup_save(request: Request, payload: SetupRequest):
     db = {k: v for k, v in (("user", payload.db_user), ("password", payload.db_password),
                             ("name", payload.db_name), ("port", payload.db_port)) if v is not None}
     try:
-        setup.update(headless_root=payload.headless_root, charids=payload.charids, db=db or None)
+        setup.update(headless_root=payload.headless_root, charids=payload.charids, db=db or None, account=payload.account)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     return setup.status()
@@ -381,6 +382,12 @@ def execution_jobs(request: Request, x_test_operator_token: str | None = Header(
         raise HTTPException(503, str(exc)) from exc
 
 
+def _run_defaults() -> dict:
+    from . import test_execution_settings as setup
+    saved = setup.load()
+    return {"account": saved["account"], "charid": (saved["charids"] or [""])[0]}
+
+
 def _ui_mode() -> bool:
     from . import test_execution_settings as setup
     return setup.ui_mode_active()
@@ -416,7 +423,7 @@ def dashboard_view(*, tab: str = "runs", feature: str = "", verdict: str = "",
             "features": _summaries(), "evidence_count": len(records),
             "builder_preflight": _builder_preflight(),
             "results_configured": bool(_results_db()), "execution_enabled": False,
-            "ui_mode": _ui_mode()}
+            "ui_mode": _ui_mode(), "run_defaults": _run_defaults()}
 
 
 @router.get("", response_class=HTMLResponse)
