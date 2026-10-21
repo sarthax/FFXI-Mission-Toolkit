@@ -377,7 +377,9 @@ document.getElementById('ft-evaluation-form').addEventListener('submit',async fu
 <pre id="ft-setup-note" aria-live="polite"></pre>
 <details><summary>Create the read-only database user (copy into your MariaDB console)</summary>
 <pre>CREATE USER 'toolkit_ro'@'127.0.0.1' IDENTIFIED BY 'choose-a-password';
-GRANT SELECT ON dspdb.char_inventory TO 'toolkit_ro'@'127.0.0.1';</pre>
+GRANT SELECT ON dspdb.char_inventory TO 'toolkit_ro'@'127.0.0.1';
+GRANT SELECT ON dspdb.char_vars TO 'toolkit_ro'@'127.0.0.1';
+GRANT SELECT (charid, keyitems) ON dspdb.chars TO 'toolkit_ro'@'127.0.0.1';</pre>
 <p>Replace <code>dspdb</code> with your database name. This login can only read inventory rows.</p></details>
 <p><small>Settings file: <code id="ft-setup-file"></code>. Saved passwords are never shown again. Environment variables, if set, override these values. Full walkthrough: <code>docs/workbench/TEST_EXECUTION_SETUP.md</code>.</small></p>
 <script>

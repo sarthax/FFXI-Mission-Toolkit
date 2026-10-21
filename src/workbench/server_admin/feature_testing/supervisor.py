@@ -14,7 +14,7 @@ from workbench.server_admin.feature_testing.router import _results_db, _run_summ
 from workbench.server_admin.feature_testing.results import recent_results, results_for_run
 from .log_diagnostics import read_log
 from .service_health import service_health
-from .database_diagnostics import inventory_snapshot
+from .database_diagnostics import char_vars_snapshot, inventory_snapshot, key_items_snapshot
 from .source_diagnostics import search_source
 from .failure_diagnostics import failure_summary
 from .investigation_dossier import investigation_dossier
@@ -126,6 +126,29 @@ def test_character_inventory(charid: int, authorization: str | None = Header(def
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
+
+
+@router.get("/test-character-keyitems", operation_id="supervisor_test_character_keyitems")
+def test_character_keyitems(charid: int, authorization: str | None = Header(default=None)):
+    _authorize(authorization)
+    try:
+        return key_items_snapshot(charid)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.get("/test-character-vars", operation_id="supervisor_test_character_vars")
+def test_character_vars(charid: int, names: str, authorization: str | None = Header(default=None)):
+    """Named char_vars for an approved test character; `names` is a comma-separated list."""
+    _authorize(authorization)
+    try:
+        return char_vars_snapshot(charid, [n.strip() for n in names.split(",") if n.strip()])
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.get("/search-source", operation_id="supervisor_search_source")
