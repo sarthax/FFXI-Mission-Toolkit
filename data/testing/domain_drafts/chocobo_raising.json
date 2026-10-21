@@ -1,0 +1,2544 @@
+{
+  "artifact_type": "R5_chocobo_raising_domain_staging_not_canonical",
+  "schema_version": 1,
+  "execution_enabled": false,
+  "integration_status": "BLOCKED_SCHEMA_OWNER_REVIEW",
+  "canonical_target": "data/testing/test_specifications.json",
+  "source_revision": {
+    "dsp_commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+    "dsp_branch": "feature/chocobo-raising-core",
+    "deployed": "UNKNOWN",
+    "migration_applied": "UNKNOWN_NOT_APPLIED_AS_OF_BRANCH_DOC"
+  },
+  "cases": [
+    {
+      "feature_id": "chocobo_raising",
+      "case_id": "CHO-01",
+      "name": "Schema migration preflight, no writes",
+      "kind": "observation",
+      "purpose": "Schema migration preflight, no writes",
+      "rationale": "Phase 0 migration and API declarations are prerequisites; gameplay/trainer acceptance is a separate implementation milestone",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "lane": "needs-deploy",
+      "additional_gates": [
+        "needs-readback"
+      ],
+      "behavior": {
+        "given": [
+          "Source branch feature/chocobo-raising-core is pinned; deployed revision and applied migration UNKNOWN",
+          "No live DB access, item mutation or GM execution authorized",
+          "Use isolated approved character or ephemeral test DB only"
+        ],
+        "when": [
+          "Offline compare branch up.sql/down.sql and non-mutating target schema fingerprint before any deployment"
+        ],
+        "then": [
+          "Only source DDL proves proposed columns/tables, not migration application; deployed schema compatibility UNKNOWN"
+        ]
+      },
+      "steps": [
+        {
+          "id": "CHO-01-S01",
+          "title": "Source preflight and baseline",
+          "action": "Record source SHA, schema revision, synthetic fixture and full before-state",
+          "expected": "Required baseline independently read, otherwise UNKNOWN",
+          "assertion_ids": [
+            "CHO-01-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/down.sql",
+              "line_start": 1,
+              "line_end": 3,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/down.sql#L1-L3"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-01-S02",
+          "title": "Permission-gated future observation or action",
+          "action": "Offline compare branch up.sql/down.sql and non-mutating target schema fingerprint before any deployment",
+          "expected": "Only source DDL proves proposed columns/tables, not migration application; deployed schema compatibility UNKNOWN",
+          "assertion_ids": [
+            "CHO-01-action"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/down.sql",
+              "line_start": 1,
+              "line_end": 3,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/down.sql#L1-L3"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-01-S03",
+          "title": "Independent persistence and client oracle",
+          "action": "Compare exact independently read authoritative persistence and client effects; do not infer a PASS from accepted RPC",
+          "expected": "UNKNOWN until deployed, tested and full source-backed readback agrees",
+          "assertion_ids": [
+            "CHO-01-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/down.sql",
+              "line_start": 1,
+              "line_end": 3,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/down.sql#L1-L3"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-01-S04",
+          "title": "Cleanup/data-preservation check",
+          "action": "Preserve immutable evidence and check cleanup; NEVER automatically run destructive down.sql",
+          "expected": "Explicit operator verification or quarantined BLOCKED",
+          "assertion_ids": [
+            "CHO-01-teardown"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/down.sql",
+              "line_start": 1,
+              "line_end": 3,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/down.sql#L1-L3"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Only source DDL proves proposed columns/tables, not migration application; deployed schema compatibility UNKNOWN",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "sql/slices/chocobo-raising-core/up.sql",
+            "line_start": 1,
+            "line_end": 36,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "docs/slices/chocobo-raising-core/README.md",
+            "line_start": 3,
+            "line_end": 16,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "sql/slices/chocobo-raising-core/down.sql",
+            "line_start": 1,
+            "line_end": 3,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/down.sql#L1-L3"
+          }
+        ],
+        "confidence": "PROPOSAL_ONLY_NOT_RUNTIME_ORACLE",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "database schema information_schema table/columns for char_chocobos and char_pet",
+          "actual source SHA and migration ledger"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "database schema information_schema table/columns for char_chocobos and char_pet",
+          "actual source SHA and migration ledger"
+        ]
+      },
+      "mutation": "none",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "sql/slices/chocobo-raising-core/up.sql",
+          "line_start": 1,
+          "line_end": 36,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "docs/slices/chocobo-raising-core/README.md",
+          "line_start": 3,
+          "line_end": 16,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "sql/slices/chocobo-raising-core/down.sql",
+          "line_start": 1,
+          "line_end": 3,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/down.sql#L1-L3"
+        }
+      ],
+      "blocking_gaps": [
+        "Phase 0 branch not confirmed merged/deployed; README states migration not applied live",
+        "MyISAM backups and idempotent dry-run require local operator"
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "chocobo_raising",
+      "case_id": "CHO-02",
+      "name": "New character has no raised-chocobo row",
+      "kind": "observation",
+      "purpose": "New character has no raised-chocobo row",
+      "rationale": "Phase 0 migration and API declarations are prerequisites; gameplay/trainer acceptance is a separate implementation milestone",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "lane": "needs-deploy",
+      "additional_gates": [
+        "needs-readback"
+      ],
+      "behavior": {
+        "given": [
+          "Source branch feature/chocobo-raising-core is pinned; deployed revision and applied migration UNKNOWN",
+          "No live DB access, item mutation or GM execution authorized",
+          "Use isolated approved character or ephemeral test DB only"
+        ],
+        "when": [
+          "Using fresh isolated character only after deployment, read bounded `char_chocobos` by charid"
+        ],
+        "then": [
+          "Absence must be observed; getChocoboRaisingInfo nil is a proposed behavior from TEST_PLAN not runtime-proven"
+        ]
+      },
+      "steps": [
+        {
+          "id": "CHO-02-S01",
+          "title": "Source preflight and baseline",
+          "action": "Record source SHA, schema revision, synthetic fixture and full before-state",
+          "expected": "Required baseline independently read, otherwise UNKNOWN",
+          "assertion_ids": [
+            "CHO-02-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_baseentity.h",
+              "line_start": 133,
+              "line_end": 139,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-02-S02",
+          "title": "Permission-gated future observation or action",
+          "action": "Using fresh isolated character only after deployment, read bounded `char_chocobos` by charid",
+          "expected": "Absence must be observed; getChocoboRaisingInfo nil is a proposed behavior from TEST_PLAN not runtime-proven",
+          "assertion_ids": [
+            "CHO-02-action"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_baseentity.h",
+              "line_start": 133,
+              "line_end": 139,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-02-S03",
+          "title": "Independent persistence and client oracle",
+          "action": "Compare exact independently read authoritative persistence and client effects; do not infer a PASS from accepted RPC",
+          "expected": "UNKNOWN until deployed, tested and full source-backed readback agrees",
+          "assertion_ids": [
+            "CHO-02-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_baseentity.h",
+              "line_start": 133,
+              "line_end": 139,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-02-S04",
+          "title": "Cleanup/data-preservation check",
+          "action": "Preserve immutable evidence and check cleanup; NEVER automatically run destructive down.sql",
+          "expected": "Explicit operator verification or quarantined BLOCKED",
+          "assertion_ids": [
+            "CHO-02-teardown"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_baseentity.h",
+              "line_start": 133,
+              "line_end": 139,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Absence must be observed; getChocoboRaisingInfo nil is a proposed behavior from TEST_PLAN not runtime-proven",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "sql/slices/chocobo-raising-core/up.sql",
+            "line_start": 1,
+            "line_end": 36,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "src/map/lua/lua_baseentity.h",
+            "line_start": 133,
+            "line_end": 139,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+            "line_start": 3,
+            "line_end": 17,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+          }
+        ],
+        "confidence": "PROPOSAL_ONLY_NOT_RUNTIME_ORACLE",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "char_chocobos WHERE charid keyed by authorized test fixture",
+          "Lua getChocoboRaisingInfo return vs authoritative row"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "char_chocobos WHERE charid keyed by authorized test fixture",
+          "Lua getChocoboRaisingInfo return vs authoritative row"
+        ]
+      },
+      "mutation": "none",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "sql/slices/chocobo-raising-core/up.sql",
+          "line_start": 1,
+          "line_end": 36,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "src/map/lua/lua_baseentity.h",
+          "line_start": 133,
+          "line_end": 139,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+          "line_start": 3,
+          "line_end": 17,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+        }
+      ],
+      "blocking_gaps": [
+        "Read-only char_chocobos fixed-query endpoint not available",
+        "No row required is a test plan, not source-guaranteed for all characters"
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "chocobo_raising",
+      "case_id": "CHO-03",
+      "name": "Raise record write and relog roundtrip",
+      "kind": "persistence",
+      "purpose": "Raise record write and relog roundtrip",
+      "rationale": "Phase 0 migration and API declarations are prerequisites; gameplay/trainer acceptance is a separate implementation milestone",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "lane": "needs-deploy",
+      "additional_gates": [
+        "needs-mutation",
+        "needs-readback"
+      ],
+      "behavior": {
+        "given": [
+          "Source branch feature/chocobo-raising-core is pinned; deployed revision and applied migration UNKNOWN",
+          "No live DB access, item mutation or GM execution authorized",
+          "Use isolated approved character or ephemeral test DB only"
+        ],
+        "when": [
+          "After feature gate, write one synthetic owner-approved valid chocobo state via isolated fixture and reload"
+        ],
+        "then": [
+          "The row fields and upsert binding are declared, but exact persistence/reload behavior UNKNOWN until read-back tests"
+        ]
+      },
+      "steps": [
+        {
+          "id": "CHO-03-S01",
+          "title": "Source preflight and baseline",
+          "action": "Record source SHA, schema revision, synthetic fixture and full before-state",
+          "expected": "Required baseline independently read, otherwise UNKNOWN",
+          "assertion_ids": [
+            "CHO-03-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_baseentity.h",
+              "line_start": 133,
+              "line_end": 139,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/entities/charentity.h",
+              "line_start": 161,
+              "line_end": 178,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/entities/charentity.h#L161-L178"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-03-S02",
+          "title": "Permission-gated future observation or action",
+          "action": "After feature gate, write one synthetic owner-approved valid chocobo state via isolated fixture and reload",
+          "expected": "The row fields and upsert binding are declared, but exact persistence/reload behavior UNKNOWN until read-back tests",
+          "assertion_ids": [
+            "CHO-03-action"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_baseentity.h",
+              "line_start": 133,
+              "line_end": 139,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/entities/charentity.h",
+              "line_start": 161,
+              "line_end": 178,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/entities/charentity.h#L161-L178"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-03-S03",
+          "title": "Independent persistence and client oracle",
+          "action": "Compare exact independently read authoritative persistence and client effects; do not infer a PASS from accepted RPC",
+          "expected": "UNKNOWN until deployed, tested and full source-backed readback agrees",
+          "assertion_ids": [
+            "CHO-03-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_baseentity.h",
+              "line_start": 133,
+              "line_end": 139,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/entities/charentity.h",
+              "line_start": 161,
+              "line_end": 178,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/entities/charentity.h#L161-L178"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-03-S04",
+          "title": "Cleanup/data-preservation check",
+          "action": "Preserve immutable evidence and check cleanup; NEVER automatically run destructive down.sql",
+          "expected": "Explicit operator verification or quarantined BLOCKED",
+          "assertion_ids": [
+            "CHO-03-teardown"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_baseentity.h",
+              "line_start": 133,
+              "line_end": 139,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/entities/charentity.h",
+              "line_start": 161,
+              "line_end": 178,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/entities/charentity.h#L161-L178"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "The row fields and upsert binding are declared, but exact persistence/reload behavior UNKNOWN until read-back tests",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "sql/slices/chocobo-raising-core/up.sql",
+            "line_start": 1,
+            "line_end": 36,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "src/map/lua/lua_baseentity.h",
+            "line_start": 133,
+            "line_end": 139,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "src/map/entities/charentity.h",
+            "line_start": 161,
+            "line_end": 178,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/entities/charentity.h#L161-L178"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+            "line_start": 3,
+            "line_end": 17,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+          }
+        ],
+        "confidence": "PROPOSAL_ONLY_NOT_RUNTIME_ORACLE",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "char_chocobos full row before/after relog, including stage/age/stats/charid",
+          "Lua getter output, server C++ and SQL save/load trace"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "char_chocobos full row before/after relog, including stage/age/stats/charid",
+          "Lua getter output, server C++ and SQL save/load trace"
+        ]
+      },
+      "mutation": "gm",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "sql/slices/chocobo-raising-core/up.sql",
+          "line_start": 1,
+          "line_end": 36,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "src/map/lua/lua_baseentity.h",
+          "line_start": 133,
+          "line_end": 139,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "src/map/entities/charentity.h",
+          "line_start": 161,
+          "line_end": 178,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/entities/charentity.h#L161-L178"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+          "line_start": 3,
+          "line_end": 17,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+        }
+      ],
+      "blocking_gaps": [
+        "Actual migration not applied; data fixtures require owner validation",
+        "Do not infer lifecycle correctness from a successful Lua setter acknowledgement"
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "chocobo_raising",
+      "case_id": "CHO-04",
+      "name": "Chocobo egg extra data survives reload and move",
+      "kind": "persistence",
+      "purpose": "Chocobo egg extra data survives reload and move",
+      "rationale": "Phase 0 migration and API declarations are prerequisites; gameplay/trainer acceptance is a separate implementation milestone",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "lane": "needs-deploy",
+      "additional_gates": [
+        "needs-mutation",
+        "needs-readback"
+      ],
+      "behavior": {
+        "given": [
+          "Source branch feature/chocobo-raising-core is pinned; deployed revision and applied migration UNKNOWN",
+          "No live DB access, item mutation or GM execution authorized",
+          "Use isolated approved character or ephemeral test DB only"
+        ],
+        "when": [
+          "On disposable item after explicit permission, roundtrip m_extra and inventory save/relog/move"
+        ],
+        "then": [
+          "API declares 24 extra-data bytes and setter/save method; expected byte-for-byte equality is a TEST_PLAN proposal, not observed"
+        ]
+      },
+      "steps": [
+        {
+          "id": "CHO-04-S01",
+          "title": "Source preflight and baseline",
+          "action": "Record source SHA, schema revision, synthetic fixture and full before-state",
+          "expected": "Required baseline independently read, otherwise UNKNOWN",
+          "assertion_ids": [
+            "CHO-04-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_item.h",
+              "line_start": 75,
+              "line_end": 76,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_item.h#L75-L76"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-04-S02",
+          "title": "Permission-gated future observation or action",
+          "action": "On disposable item after explicit permission, roundtrip m_extra and inventory save/relog/move",
+          "expected": "API declares 24 extra-data bytes and setter/save method; expected byte-for-byte equality is a TEST_PLAN proposal, not observed",
+          "assertion_ids": [
+            "CHO-04-action"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_item.h",
+              "line_start": 75,
+              "line_end": 76,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_item.h#L75-L76"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-04-S03",
+          "title": "Independent persistence and client oracle",
+          "action": "Compare exact independently read authoritative persistence and client effects; do not infer a PASS from accepted RPC",
+          "expected": "UNKNOWN until deployed, tested and full source-backed readback agrees",
+          "assertion_ids": [
+            "CHO-04-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_item.h",
+              "line_start": 75,
+              "line_end": 76,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_item.h#L75-L76"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-04-S04",
+          "title": "Cleanup/data-preservation check",
+          "action": "Preserve immutable evidence and check cleanup; NEVER automatically run destructive down.sql",
+          "expected": "Explicit operator verification or quarantined BLOCKED",
+          "assertion_ids": [
+            "CHO-04-teardown"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_item.h",
+              "line_start": 75,
+              "line_end": 76,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_item.h#L75-L76"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "API declares 24 extra-data bytes and setter/save method; expected byte-for-byte equality is a TEST_PLAN proposal, not observed",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "src/map/lua/lua_item.h",
+            "line_start": 75,
+            "line_end": 76,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_item.h#L75-L76"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "docs/slices/chocobo-raising-core/README.md",
+            "line_start": 3,
+            "line_end": 16,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+            "line_start": 3,
+            "line_end": 17,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+          }
+        ],
+        "confidence": "PROPOSAL_ONLY_NOT_RUNTIME_ORACLE",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "full 24-byte extra-data before/after save, relog and moved container",
+          "char_inventory.extra or equivalent full blob and inventory item identity"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "full 24-byte extra-data before/after save, relog and moved container",
+          "char_inventory.extra or equivalent full blob and inventory item identity"
+        ]
+      },
+      "mutation": "gm",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "src/map/lua/lua_item.h",
+          "line_start": 75,
+          "line_end": 76,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_item.h#L75-L76"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "docs/slices/chocobo-raising-core/README.md",
+          "line_start": 3,
+          "line_end": 16,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+          "line_start": 3,
+          "line_end": 17,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+        }
+      ],
+      "blocking_gaps": [
+        "Present supervisor inventory readback omits extra bytes",
+        "Item move/trade integrity needs separate permission and source inspection"
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "chocobo_raising",
+      "case_id": "CHO-05",
+      "name": "User data and registered field chocobo persist",
+      "kind": "persistence",
+      "purpose": "User data and registered field chocobo persist",
+      "rationale": "Phase 0 migration and API declarations are prerequisites; gameplay/trainer acceptance is a separate implementation milestone",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "lane": "needs-deploy",
+      "additional_gates": [
+        "needs-mutation",
+        "needs-readback"
+      ],
+      "behavior": {
+        "given": [
+          "Source branch feature/chocobo-raising-core is pinned; deployed revision and applied migration UNKNOWN",
+          "No live DB access, item mutation or GM execution authorized",
+          "Use isolated approved character or ephemeral test DB only"
+        ],
+        "when": [
+          "After migration and approved test, set 32-byte per-character user-data and registration, relog and compare"
+        ],
+        "then": [
+          "32-byte declared struct and database blob demonstrate proposed layout only; bitfield meaning and runtime roundtrip UNKNOWN"
+        ]
+      },
+      "steps": [
+        {
+          "id": "CHO-05-S01",
+          "title": "Source preflight and baseline",
+          "action": "Record source SHA, schema revision, synthetic fixture and full before-state",
+          "expected": "Required baseline independently read, otherwise UNKNOWN",
+          "assertion_ids": [
+            "CHO-05-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/entities/charentity.h",
+              "line_start": 161,
+              "line_end": 178,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/entities/charentity.h#L161-L178"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/char_pet.sql",
+              "line_start": 14,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/char_pet.sql#L14-L19"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_baseentity.h",
+              "line_start": 133,
+              "line_end": 139,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/utils/mountutils.h",
+              "line_start": 28,
+              "line_end": 57,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/utils/mountutils.h#L28-L57"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-05-S02",
+          "title": "Permission-gated future observation or action",
+          "action": "After migration and approved test, set 32-byte per-character user-data and registration, relog and compare",
+          "expected": "32-byte declared struct and database blob demonstrate proposed layout only; bitfield meaning and runtime roundtrip UNKNOWN",
+          "assertion_ids": [
+            "CHO-05-action"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/entities/charentity.h",
+              "line_start": 161,
+              "line_end": 178,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/entities/charentity.h#L161-L178"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/char_pet.sql",
+              "line_start": 14,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/char_pet.sql#L14-L19"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_baseentity.h",
+              "line_start": 133,
+              "line_end": 139,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/utils/mountutils.h",
+              "line_start": 28,
+              "line_end": 57,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/utils/mountutils.h#L28-L57"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-05-S03",
+          "title": "Independent persistence and client oracle",
+          "action": "Compare exact independently read authoritative persistence and client effects; do not infer a PASS from accepted RPC",
+          "expected": "UNKNOWN until deployed, tested and full source-backed readback agrees",
+          "assertion_ids": [
+            "CHO-05-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/entities/charentity.h",
+              "line_start": 161,
+              "line_end": 178,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/entities/charentity.h#L161-L178"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/char_pet.sql",
+              "line_start": 14,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/char_pet.sql#L14-L19"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_baseentity.h",
+              "line_start": 133,
+              "line_end": 139,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/utils/mountutils.h",
+              "line_start": 28,
+              "line_end": 57,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/utils/mountutils.h#L28-L57"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-05-S04",
+          "title": "Cleanup/data-preservation check",
+          "action": "Preserve immutable evidence and check cleanup; NEVER automatically run destructive down.sql",
+          "expected": "Explicit operator verification or quarantined BLOCKED",
+          "assertion_ids": [
+            "CHO-05-teardown"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/entities/charentity.h",
+              "line_start": 161,
+              "line_end": 178,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/entities/charentity.h#L161-L178"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/char_pet.sql",
+              "line_start": 14,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/char_pet.sql#L14-L19"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/lua/lua_baseentity.h",
+              "line_start": 133,
+              "line_end": 139,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/utils/mountutils.h",
+              "line_start": 28,
+              "line_end": 57,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/utils/mountutils.h#L28-L57"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "32-byte declared struct and database blob demonstrate proposed layout only; bitfield meaning and runtime roundtrip UNKNOWN",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "src/map/entities/charentity.h",
+            "line_start": 161,
+            "line_end": 178,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/entities/charentity.h#L161-L178"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "sql/char_pet.sql",
+            "line_start": 14,
+            "line_end": 19,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/char_pet.sql#L14-L19"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "src/map/lua/lua_baseentity.h",
+            "line_start": 133,
+            "line_end": 139,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "src/map/utils/mountutils.h",
+            "line_start": 28,
+            "line_end": 57,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/utils/mountutils.h#L28-L57"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+            "line_start": 3,
+            "line_end": 17,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+          }
+        ],
+        "confidence": "PROPOSAL_ONLY_NOT_RUNTIME_ORACLE",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "char_pet.chocobo_user_data exact blob and authorized charid",
+          "getChocoboUserData and getFieldChocobo result before/after relog"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "char_pet.chocobo_user_data exact blob and authorized charid",
+          "getChocoboUserData and getFieldChocobo result before/after relog"
+        ]
+      },
+      "mutation": "gm",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "src/map/entities/charentity.h",
+          "line_start": 161,
+          "line_end": 178,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/entities/charentity.h#L161-L178"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "sql/char_pet.sql",
+          "line_start": 14,
+          "line_end": 19,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/char_pet.sql#L14-L19"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "src/map/lua/lua_baseentity.h",
+          "line_start": 133,
+          "line_end": 139,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/lua/lua_baseentity.h#L133-L139"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "src/map/utils/mountutils.h",
+          "line_start": 28,
+          "line_end": 57,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/utils/mountutils.h#L28-L57"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+          "line_start": 3,
+          "line_end": 17,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+        }
+      ],
+      "blocking_gaps": [
+        "Mount appearance bit layout unverified for this client build",
+        "No blob-safe readback in existing bounded interface"
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "chocobo_raising",
+      "case_id": "CHO-06",
+      "name": "Character deletion cleans only owned Chocobo row",
+      "kind": "negative",
+      "purpose": "Character deletion cleans only owned Chocobo row",
+      "rationale": "Phase 0 migration and API declarations are prerequisites; gameplay/trainer acceptance is a separate implementation milestone",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "lane": "needs-deploy",
+      "additional_gates": [
+        "needs-mutation",
+        "needs-readback"
+      ],
+      "behavior": {
+        "given": [
+          "Source branch feature/chocobo-raising-core is pinned; deployed revision and applied migration UNKNOWN",
+          "No live DB access, item mutation or GM execution authorized",
+          "Use isolated approved character or ephemeral test DB only"
+        ],
+        "when": [
+          "Only with dedicated disposable character approved for deletion, test isolation of char_chocobos cleanup"
+        ],
+        "then": [
+          "README claims deletion path but delete postcondition must be verified against row set and unrelated character preservation"
+        ]
+      },
+      "steps": [
+        {
+          "id": "CHO-06-S01",
+          "title": "Source preflight and baseline",
+          "action": "Record source SHA, schema revision, synthetic fixture and full before-state",
+          "expected": "Required baseline independently read, otherwise UNKNOWN",
+          "assertion_ids": [
+            "CHO-06-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-06-S02",
+          "title": "Permission-gated future observation or action",
+          "action": "Only with dedicated disposable character approved for deletion, test isolation of char_chocobos cleanup",
+          "expected": "README claims deletion path but delete postcondition must be verified against row set and unrelated character preservation",
+          "assertion_ids": [
+            "CHO-06-action"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-06-S03",
+          "title": "Independent persistence and client oracle",
+          "action": "Compare exact independently read authoritative persistence and client effects; do not infer a PASS from accepted RPC",
+          "expected": "UNKNOWN until deployed, tested and full source-backed readback agrees",
+          "assertion_ids": [
+            "CHO-06-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-06-S04",
+          "title": "Cleanup/data-preservation check",
+          "action": "Preserve immutable evidence and check cleanup; NEVER automatically run destructive down.sql",
+          "expected": "Explicit operator verification or quarantined BLOCKED",
+          "assertion_ids": [
+            "CHO-06-teardown"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "README claims deletion path but delete postcondition must be verified against row set and unrelated character preservation",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "docs/slices/chocobo-raising-core/README.md",
+            "line_start": 3,
+            "line_end": 16,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "sql/slices/chocobo-raising-core/up.sql",
+            "line_start": 1,
+            "line_end": 36,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+            "line_start": 3,
+            "line_end": 17,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+          }
+        ],
+        "confidence": "PROPOSAL_ONLY_NOT_RUNTIME_ORACLE",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "char_chocobos rows for deleted/control charid before and after",
+          "char_pet state and character-deletion audit"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "char_chocobos rows for deleted/control charid before and after",
+          "char_pet state and character-deletion audit"
+        ]
+      },
+      "mutation": "gm",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "docs/slices/chocobo-raising-core/README.md",
+          "line_start": 3,
+          "line_end": 16,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "sql/slices/chocobo-raising-core/up.sql",
+          "line_start": 1,
+          "line_end": 36,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+          "line_start": 3,
+          "line_end": 17,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+        }
+      ],
+      "blocking_gaps": [
+        "Destructive deletion must never be auto-dispatched; prohibit on shared accounts",
+        "No deployed cleanup implementation evidence; requires authorized local dry-run and approval"
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "chocobo_raising",
+      "case_id": "CHO-07",
+      "name": "Stable trainer, egg handover and daily care plans",
+      "kind": "positive",
+      "purpose": "Stable trainer, egg handover and daily care plans",
+      "rationale": "Phase 0 migration and API declarations are prerequisites; gameplay/trainer acceptance is a separate implementation milestone",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "lane": "needs-deploy",
+      "additional_gates": [
+        "needs-mutation",
+        "needs-readback"
+      ],
+      "behavior": {
+        "given": [
+          "Source branch feature/chocobo-raising-core is pinned; deployed revision and applied migration UNKNOWN",
+          "No live DB access, item mutation or GM execution authorized",
+          "Use isolated approved character or ephemeral test DB only"
+        ],
+        "when": [
+          "Exercise natural trainer NPC event/trade only after a separately reviewed implementation and client capture"
+        ],
+        "then": [
+          "UNKNOWN — Phase 0 explicitly excludes trainer scripts and daily model; cannot define normative event IDs, day advancement or care-plan outcomes"
+        ]
+      },
+      "steps": [
+        {
+          "id": "CHO-07-S01",
+          "title": "Source preflight and baseline",
+          "action": "Record source SHA, schema revision, synthetic fixture and full before-state",
+          "expected": "Required baseline independently read, otherwise UNKNOWN",
+          "assertion_ids": [
+            "CHO-07-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-07-S02",
+          "title": "Permission-gated future observation or action",
+          "action": "Exercise natural trainer NPC event/trade only after a separately reviewed implementation and client capture",
+          "expected": "UNKNOWN — Phase 0 explicitly excludes trainer scripts and daily model; cannot define normative event IDs, day advancement or care-plan outcomes",
+          "assertion_ids": [
+            "CHO-07-action"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-07-S03",
+          "title": "Independent persistence and client oracle",
+          "action": "Compare exact independently read authoritative persistence and client effects; do not infer a PASS from accepted RPC",
+          "expected": "UNKNOWN until deployed, tested and full source-backed readback agrees",
+          "assertion_ids": [
+            "CHO-07-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-07-S04",
+          "title": "Cleanup/data-preservation check",
+          "action": "Preserve immutable evidence and check cleanup; NEVER automatically run destructive down.sql",
+          "expected": "Explicit operator verification or quarantined BLOCKED",
+          "assertion_ids": [
+            "CHO-07-teardown"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+              "line_start": 3,
+              "line_end": 17,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "UNKNOWN — Phase 0 explicitly excludes trainer scripts and daily model; cannot define normative event IDs, day advancement or care-plan outcomes",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "docs/slices/chocobo-raising-core/README.md",
+            "line_start": 3,
+            "line_end": 16,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+            "line_start": 3,
+            "line_end": 17,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+          }
+        ],
+        "confidence": "PROPOSAL_ONLY_NOT_RUNTIME_ORACLE",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "chocobo daily state schema plus stable NPC/dialog event and pet/egg exdata",
+          "owner-verified time/day model, accepted events and independent reward progression"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "chocobo daily state schema plus stable NPC/dialog event and pet/egg exdata",
+          "owner-verified time/day model, accepted events and independent reward progression"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "docs/slices/chocobo-raising-core/README.md",
+          "line_start": 3,
+          "line_end": 16,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+          "line_start": 3,
+          "line_end": 17,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/TEST_PLAN.md#L3-L17"
+        }
+      ],
+      "blocking_gaps": [
+        "Trainer/daily event VM not present in audited Phase 0",
+        "Actual target DSP and client DAT event mappings require local source/capture verification"
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "chocobo_raising",
+      "case_id": "CHO-08",
+      "name": "Whistle registration, mounting and appearance",
+      "kind": "positive",
+      "purpose": "Whistle registration, mounting and appearance",
+      "rationale": "Phase 0 migration and API declarations are prerequisites; gameplay/trainer acceptance is a separate implementation milestone",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "lane": "needs-deploy",
+      "additional_gates": [
+        "needs-mutation",
+        "needs-readback"
+      ],
+      "behavior": {
+        "given": [
+          "Source branch feature/chocobo-raising-core is pinned; deployed revision and applied migration UNKNOWN",
+          "No live DB access, item mutation or GM execution authorized",
+          "Use isolated approved character or ephemeral test DB only"
+        ],
+        "when": [
+          "Only after separately authorized gameplay implementation, capture normal whistle mount and unmount sequence"
+        ],
+        "then": [
+          "UNKNOWN — Phase 0 excludes mount packet/model and whistle; declared packed property bit layout is explicitly unverified"
+        ]
+      },
+      "steps": [
+        {
+          "id": "CHO-08-S01",
+          "title": "Source preflight and baseline",
+          "action": "Record source SHA, schema revision, synthetic fixture and full before-state",
+          "expected": "Required baseline independently read, otherwise UNKNOWN",
+          "assertion_ids": [
+            "CHO-08-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/utils/mountutils.h",
+              "line_start": 28,
+              "line_end": 57,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/utils/mountutils.h#L28-L57"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-08-S02",
+          "title": "Permission-gated future observation or action",
+          "action": "Only after separately authorized gameplay implementation, capture normal whistle mount and unmount sequence",
+          "expected": "UNKNOWN — Phase 0 excludes mount packet/model and whistle; declared packed property bit layout is explicitly unverified",
+          "assertion_ids": [
+            "CHO-08-action"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/utils/mountutils.h",
+              "line_start": 28,
+              "line_end": 57,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/utils/mountutils.h#L28-L57"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-08-S03",
+          "title": "Independent persistence and client oracle",
+          "action": "Compare exact independently read authoritative persistence and client effects; do not infer a PASS from accepted RPC",
+          "expected": "UNKNOWN until deployed, tested and full source-backed readback agrees",
+          "assertion_ids": [
+            "CHO-08-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/utils/mountutils.h",
+              "line_start": 28,
+              "line_end": 57,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/utils/mountutils.h#L28-L57"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-08-S04",
+          "title": "Cleanup/data-preservation check",
+          "action": "Preserve immutable evidence and check cleanup; NEVER automatically run destructive down.sql",
+          "expected": "Explicit operator verification or quarantined BLOCKED",
+          "assertion_ids": [
+            "CHO-08-teardown"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "src/map/utils/mountutils.h",
+              "line_start": 28,
+              "line_end": 57,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/utils/mountutils.h#L28-L57"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "UNKNOWN — Phase 0 excludes mount packet/model and whistle; declared packed property bit layout is explicitly unverified",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "docs/slices/chocobo-raising-core/README.md",
+            "line_start": 3,
+            "line_end": 16,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "src/map/utils/mountutils.h",
+            "line_start": 28,
+            "line_end": 57,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/utils/mountutils.h#L28-L57"
+          }
+        ],
+        "confidence": "PROPOSAL_ONLY_NOT_RUNTIME_ORACLE",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "mount state/appearance packets, registered field chocobo and time limit",
+          "whistle item/quest status and effect/zone authoritative before/after"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "mount state/appearance packets, registered field chocobo and time limit",
+          "whistle item/quest status and effect/zone authoritative before/after"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "docs/slices/chocobo-raising-core/README.md",
+          "line_start": 3,
+          "line_end": 16,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "src/map/utils/mountutils.h",
+          "line_start": 28,
+          "line_end": 57,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/src/map/utils/mountutils.h#L28-L57"
+        }
+      ],
+      "blocking_gaps": [
+        "Mount and whistle gameplay not in Phase 0; avoid inventing model/packet IDs",
+        "Permission, packet client-version and owner-controlled cleanup unverified"
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "chocobo_raising",
+      "case_id": "CHO-09",
+      "name": "Rollback is not a safe cleanup shortcut",
+      "kind": "negative",
+      "purpose": "Rollback is not a safe cleanup shortcut",
+      "rationale": "Phase 0 migration and API declarations are prerequisites; gameplay/trainer acceptance is a separate implementation milestone",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_enabled": false,
+      "execution_authorized": false,
+      "execution_status": "design_only",
+      "verdict": "NOT_RUN",
+      "lane": "needs-deploy",
+      "additional_gates": [
+        "needs-readback"
+      ],
+      "behavior": {
+        "given": [
+          "Source branch feature/chocobo-raising-core is pinned; deployed revision and applied migration UNKNOWN",
+          "No live DB access, item mutation or GM execution authorized",
+          "Use isolated approved character or ephemeral test DB only"
+        ],
+        "when": [
+          "Offline inspect rollback DDL and ensure any migration test requires backups and isolated DB"
+        ],
+        "then": [
+          "down.sql deletes table and column; never execute against live state as automatic teardown"
+        ]
+      },
+      "steps": [
+        {
+          "id": "CHO-09-S01",
+          "title": "Source preflight and baseline",
+          "action": "Record source SHA, schema revision, synthetic fixture and full before-state",
+          "expected": "Required baseline independently read, otherwise UNKNOWN",
+          "assertion_ids": [
+            "CHO-09-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/down.sql",
+              "line_start": 1,
+              "line_end": 3,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/down.sql#L1-L3"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-09-S02",
+          "title": "Permission-gated future observation or action",
+          "action": "Offline inspect rollback DDL and ensure any migration test requires backups and isolated DB",
+          "expected": "down.sql deletes table and column; never execute against live state as automatic teardown",
+          "assertion_ids": [
+            "CHO-09-action"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/down.sql",
+              "line_start": 1,
+              "line_end": 3,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/down.sql#L1-L3"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-09-S03",
+          "title": "Independent persistence and client oracle",
+          "action": "Compare exact independently read authoritative persistence and client effects; do not infer a PASS from accepted RPC",
+          "expected": "UNKNOWN until deployed, tested and full source-backed readback agrees",
+          "assertion_ids": [
+            "CHO-09-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/down.sql",
+              "line_start": 1,
+              "line_end": 3,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/down.sql#L1-L3"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "CHO-09-S04",
+          "title": "Cleanup/data-preservation check",
+          "action": "Preserve immutable evidence and check cleanup; NEVER automatically run destructive down.sql",
+          "expected": "Explicit operator verification or quarantined BLOCKED",
+          "assertion_ids": [
+            "CHO-09-teardown"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/down.sql",
+              "line_start": 1,
+              "line_end": 3,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/down.sql#L1-L3"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "sql/slices/chocobo-raising-core/up.sql",
+              "line_start": 1,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+              "path": "docs/slices/chocobo-raising-core/README.md",
+              "line_start": 3,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "down.sql deletes table and column; never execute against live state as automatic teardown",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "sql/slices/chocobo-raising-core/down.sql",
+            "line_start": 1,
+            "line_end": 3,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/down.sql#L1-L3"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "sql/slices/chocobo-raising-core/up.sql",
+            "line_start": 1,
+            "line_end": 36,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+            "path": "docs/slices/chocobo-raising-core/README.md",
+            "line_start": 3,
+            "line_end": 16,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+          }
+        ],
+        "confidence": "PROPOSAL_ONLY_NOT_RUNTIME_ORACLE",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "pre/post isolated schema fingerprint and backup manifest",
+          "migration ledger and rollback owner signoff"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "pre/post isolated schema fingerprint and backup manifest",
+          "migration ledger and rollback owner signoff"
+        ]
+      },
+      "mutation": "none",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "trade_to_npc",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "sql/slices/chocobo-raising-core/down.sql",
+          "line_start": 1,
+          "line_end": 3,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/down.sql#L1-L3"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "sql/slices/chocobo-raising-core/up.sql",
+          "line_start": 1,
+          "line_end": 36,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/sql/slices/chocobo-raising-core/up.sql#L1-L36"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+          "path": "docs/slices/chocobo-raising-core/README.md",
+          "line_start": 3,
+          "line_end": 16,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/55e1baa382bcf1905c329c36d3a67fa244dbd6cd/docs/slices/chocobo-raising-core/README.md#L3-L16"
+        }
+      ],
+      "blocking_gaps": [
+        "Destructive rollback explicitly flagged in source; no live DB writes approved",
+        "Potential data loss risk; do not treat down.sql as safe fixture cleanup"
+      ],
+      "estimated_effort": "high",
+      "deployed_revision": "UNKNOWN"
+    }
+  ]
+}
