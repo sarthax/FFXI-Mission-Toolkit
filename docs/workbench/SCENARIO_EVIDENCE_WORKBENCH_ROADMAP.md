@@ -1,6 +1,6 @@
 # Scenario & Evidence Workbench — bidirectional testing roadmap
 
-Status: PROPOSED / planning. Parent: [Toolkit #1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197). Existing related work: #1198 (oracle provenance), #1200 (catalog/preflight), #1201 (run controls), #1202 (import), #1207 (coverage), #1208 (guided authoring), #1249–#1254 (domain expansion), #1255 (spec-driven runner); XiHeadless #42/#47/#49/#105/#107/#122/#123/#126.
+Status: **R7 IMPLEMENTATION ACTIVE (R6 FOUNDATION MERGED; GAMEPLAY ACCEPTANCE OPEN).** Verified integrated baseline `main@972ff6fa`; 73 staged domain cases remain `design_only/NOT_RUN` and have not been promoted to executable catalog. Ownership: B editor #1302, C canonical contract #1259, D capture/evidence #1262/#1198, E bounded readback #1295–#1300, A CI/roadmap #1305. This paragraph supersedes older unmerged-R6 stage references in the historical plan below. See [R7 release baseline](R7_RELEASE_BASELINE_2026-10-21.md). Parent: [Toolkit #1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197). Existing related work: #1198 (oracle provenance), #1200 (catalog/preflight), #1201 (run controls), #1202 (import), #1207 (coverage), #1208 (guided authoring), #1249–#1254 (domain expansion), #1255 (spec-driven runner); XiHeadless #42/#47/#49/#105/#107/#122/#123/#126.
 
 ## Vision
 
