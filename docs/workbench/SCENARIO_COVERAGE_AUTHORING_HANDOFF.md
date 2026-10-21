@@ -1,6 +1,6 @@
 # Coverage-driven scenario authoring — behavior reference handoff
 
-Issue [#1207](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1207), parent [#1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197). **Stacked follow-up to [PR #1272](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1272); do not merge independently of its base.** Coordinate destination with Agent B's [PR #1273](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1273). No real client DAT, server or runtime evidence used.
+Issue [#1207](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1207), parent [#1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197). **Follow-up to now-merged [PR #1272](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1272), submitted separately against current `main`. Coordinate the destination contract with Agent B's now-merged [PR #1273](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1273). No real client DAT, server or runtime evidence used.
 
 ## Existing data truth and scope
 
@@ -35,7 +35,7 @@ A same-origin GET of `/feature-testing/coverage/context/{feature_id}/{case_id}` 
 - `proposed_case_id: null`, `expected_oracle: "UNKNOWN"`, and **empty** `assertions`, `observations`, `capability_bindings`.
 - `context_only: true`, `design_only: true`, `review_required: true`, `auto_populate_allowed: false`, `auto_save_allowed: false`, `execution_enabled: false`.
 
-**Not yet consumed by Agent B's editor:** PR #1273 currently provides `GET /scenario-developer`, canonical validation, synthetic new draft and read-only fork workflows. It does **not** parse `context_ref` or hydrate a draft from it. Clicking this link *opens* the editor with a bounded reference in the query string; it does not promise an automatic draft. The page explicitly discloses this limitation. Agent B should implement the read-only, same-origin handoff *after review*, verify the exact referenced readiness entry and let the operator choose a **new unique case ID** and edit expected outcomes themselves. No auto-save, fork of an existing published ID, or runner capability escalation.
+**Not yet consumed by Agent B's editor:** merged PR #1273 provides `GET /scenario-developer`, canonical validation, synthetic new draft and read-only fork workflows. It does **not** parse `context_ref` or hydrate a draft from it. Clicking this link *opens* the editor with a bounded reference in the query string; it does not promise an automatic draft. The page explicitly discloses this limitation. Agent B should implement the read-only, same-origin handoff *after review*, verify the exact referenced readiness entry and let the operator choose a **new unique case ID** and edit expected outcomes themselves. No auto-save, fork of an existing published ID, or runner capability escalation.
 
 ### Coordination requests (Agent B)
 
