@@ -218,6 +218,9 @@ def test_existing_offline_reviewer_renders_readiness_without_approval():
     # Separate noncanonical sidecar retains untouched indexed source provenance.
     assert "Export separate readiness sidecar" in html
     assert "original_evidence_handoff:ORIGINAL" in html
+    assert "review_decisions:gather()" in html
+    assert "indexed_observation_projection_sha256:READINESS.capture_projection_sha256" in html
+    assert "original_handoff_projection_sha256:ORIGINAL.capture_projection_sha256" in html
     assert "automatic_import:false,approved_for_execution:false,execution_enabled:false" in html
     original_blob = re.search(r"<script id='bundle' type='application/json'>(.*?)</script>", html, re.S)
     assert original_blob
