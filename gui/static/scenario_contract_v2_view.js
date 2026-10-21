@@ -31,12 +31,21 @@
     // The only authoritative case/step *citation* scope is Agent C's
     // accepted Python source_attribution_report. Never derive it from
     // v2.source_associations in JavaScript, or from oracle/capture IDs.
-    const acceptedReport=attributionReport &&
+    const reportSteps=object(attributionReport && attributionReport.steps);
+    const stepIds=array(spec.steps).map(step=>step.id);
+    // Structural safety around the accepted *server projection*, not a
+    // competing validator for raw source_associations. Cross-document or
+    // extra capture-step keys cannot be displayed as canonical citations.
+    const acceptedReport=!!attributionReport &&
       attributionReport.execution_enabled===false &&
       attributionReport.independent_verification==='NOT_ESTABLISHED' &&
       attributionReport.oracle_approval==='NOT_ESTABLISHED' &&
-      object(attributionReport.steps)===attributionReport.steps;
+      object(attributionReport.steps)===attributionReport.steps &&
+      Object.keys(reportSteps).length===stepIds.length &&
+      stepIds.every(id=>Object.prototype.hasOwnProperty.call(reportSteps,id));
     const diagnostics=[];
+    if(attributionReport && !acceptedReport)
+      diagnostics.push('BLOCKED: stale or invalid canonical source-attribution report; validate the current draft again');
     const claim=(entry,scope)=>{
       if(!acceptedReport)return {state:'UNKNOWN',sources:[]};
       const item=object(entry);
