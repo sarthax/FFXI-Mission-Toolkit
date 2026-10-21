@@ -38,6 +38,11 @@ def synthetic_interaction_with_key_item():
          json.dumps({"zone_db": "SYNTHETIC_ZONE", "seq": 1}, sort_keys=True),
          "b" * 64, "line", 8, 8, None, None, "{}"),
     )
+    # An explicitly synthetic opcode permits testing the raw *metadata* binding.
+    # The base fixture intentionally leaves it absent, in which case no opcode
+    # identity candidate must be invented.
+    con.execute("UPDATE capture_raw_packets SET opcode=? WHERE capture_id=1 AND seq=1",
+                ("SYNTHETIC_OPCODE",))
     # Ordinary items are a different capture family from Key Item logger events.
     con.execute("""CREATE TABLE capture_structured_records (
         capture_id INTEGER, source_file TEXT, family TEXT, record_key TEXT,
