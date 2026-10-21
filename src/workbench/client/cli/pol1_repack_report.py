@@ -71,6 +71,9 @@ def main() -> int:
                 "candidate_matches_original_stream": entry["candidate_matches_original_stream"],
                 "candidate_common_prefix_bytes": entry["candidate_common_prefix_bytes"],
                 "candidate_decoder_termination": entry["candidate_decoder_termination"],
+                "virtual_substitution_post_output_next_token": entry[
+                    "virtual_substitution_post_output_next_token"
+                ],
             } for entry in evaluations]
             base = evaluations[0]
             report = {
