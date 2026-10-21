@@ -105,6 +105,55 @@
     return issues;
   }
 
+  // This is human-readable provenance inside the existing canonical
+  // confidence_note field, NOT a verified reference or independent format.
+  function attachCandidate(source, stepId, choice) {
+    const next = clone(source), step = next.steps.find(x => x.id === stepId);
+    if (!step) throw Error('Choose a step before attaching a catalog candidate');
+    if (!choice || !['item','keyitem','npc','mob','zone','gm'].includes(choice.kind) ||
+        typeof choice.name !== 'string' || typeof choice.source_path !== 'string' ||
+        !choice.source_path || !choice.name ||
+        (choice.kind !== 'gm' && !Number.isSafeInteger(choice.id)))
+      throw Error('Invalid catalog candidate; choose a returned source entry');
+    if (choice.binding_verified !== false || choice.execution_enabled !== false)
+      throw Error('Catalog candidate must be explicitly unverified and non-executable');
+    const identity = choice.kind === 'gm' ? choice.name : String(choice.id) + ' (' + choice.name + ')';
+    const duplicate = choice.duplicate_id_in_results ? '; DUPLICATE ID — ambiguous' : '';
+    const note = '[UNVERIFIED catalog candidate] ' + choice.kind + ': ' + identity +
+      '; DSP source: ' + choice.source_path + '; source commit UNKNOWN' + duplicate +
+      '; review required before binding or execution';
+    if (note.length > 800) throw Error('Catalog candidate description too long');
+    const base = (step.confidence_note || '').split('\n').filter(x => !x.startsWith('[UNVERIFIED catalog candidate]'));
+    const combined = [...base, note].filter(Boolean).join('\n');
+    if (combined.length > 1000) throw Error('Step provenance note exceeds canonical limit');
+    step.confidence_note = combined;
+    const gap = 'Selected catalog candidate is unreconciled; verify DSP/client identity, source revision and oracle';
+    next.authoring.blocking_gaps = [...new Set([...(next.authoring.blocking_gaps || []),gap])];
+    if (next.authoring.blocking_gaps.length > 30) throw Error('Too many blocking gaps for canonical draft');
+    return next;
+  }
+
+  function cloneDraft(source) {
+    const next = clone(source);
+    const suffix = '-COPY';
+    next.case_id = source.case_id.slice(0,120-suffix.length) + suffix;
+    next.runner = 'unassigned';
+    next.execution_status = 'design_only';
+    next.authoring = {...next.authoring, state: 'draft', execution_policy: 'read_only',
+      review_required: true, evidence_provenance: 'design_only_not_observed'};
+    next.authoring.blocking_gaps = [...new Set([
+      ...(next.authoring.blocking_gaps || []),
+      'Cloned scenario needs independent source, oracle and identity review'
+    ])];
+    return next;
+  }
+
+  function revisionIndicator(baseline, current, revision) {
+    if (baseline === null) return 'New draft — unsaved; revision 0';
+    const dirty = JSON.stringify(baseline) !== JSON.stringify(current);
+    return 'Loaded revision ' + revision + (dirty ? ' · unsaved changes' : ' · no changes');
+  }
+
   function parseAdvanced(text) {
     const parsed = JSON.parse(text);
     if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object')
@@ -115,5 +164,5 @@
     return parsed;
   }
 
-  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, referenceIssues, parseAdvanced};
+  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, referenceIssues, parseAdvanced};
 });
