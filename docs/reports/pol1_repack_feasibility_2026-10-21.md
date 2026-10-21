@@ -211,3 +211,39 @@ These figures are from our **read-only software decoder**, which stops at the de
 After the new focused CI is green, rerun both exact-hash verified archives using the same `--compare-improved` command. Record `original_decoder_termination` and each `candidate_decoder_termination` (especially greedy depth 1024 and lazy depth 256), plus `bytes_between_stream_end_and_entrypoint`. Preserve only JSON metadata; no raw bytes, assembler dumps, proprietary binary contents or modified DLLs in Git.
 
 **Next evidence review before any write-path authorization:** independently inspect the authentic POL1 entry-point bootstrap in the exact builds (read-only disassembly) to determine its actual input-consumption stop condition, whether it uses expected decoded length or an explicit marker, and what instructions/data occupy the protected suffix. Document how PE security directory, Authenticode status and launcher verification might treat a modified copy **without bypassing checks**. If the loader's true behavior is not established, remain STOP for any on-disk writer and for old-client Wardrobe 5–8 IDs.
+
+## 11. Exact owner-supplied 2019 DLL: compression fit and genuine stop marker
+
+**Scope and provenance (2026-10-21):** The owner uploaded their original archived December 2019 `FFXiMain.dll` as an isolated research input, **SHA-256 `514653a260c51eaec25d88510e51a86fb2a4abd9867f53d5f45a9ccf840f060f`, 2,870,352 bytes**. Its `.text` decoded to **3,264,206 bytes** with SHA-256 `af2126c057d86559bfad2e164f7f7fd0a26bbc89ab29ea9cbde5cea807c7d2b8`, matching the earlier archived Binary Inspector result. The source DLL SHA-256 was rechecked after analysis and remained identical. No binary was modified, written back or executed.
+
+Unlike the two later client builds, these compression measurements were produced using a **local read-only reproduction of the PR encoder algorithm** in an isolated Python script, **not by invoking the exact current PR CLI**. The source was compared to the PR implementation, but the measurements should still be independently repeated by a local agent running the latest Toolkit branch with the same fingerprint.
+
+| 2019 measurement | Observed value |
+|---|---:|
+| Raw POL1 section | 1,964,032 B |
+| POL1 section virtual size | 1,963,768 B |
+| Decoded `.text` | 3,264,206 B |
+| Original compressed prefix consumed | **1,963,522 B** |
+| Original packed prefix SHA-256 | `a2379e36ccc72a20f06d180c20a5a934a6d82145c55889a72580c4ad32e1548c` |
+| Raw-section suffix after decoded prefix | 510 B |
+| Entrypoint offset within POL1 | 1,963,536 B |
+| Bytes between decoded-prefix endpoint and entry point | 14 B |
+| Greedy depth 1024 | 1,963,524 B (**−2 B** headroom, NO-FIT) |
+| Lazy depth 128 | 1,945,052 B (**+18,470 B** headroom, FIT) |
+| Lazy depth 256 | **1,944,536 B (+18,986 B headroom, FIT)** |
+
+Both lazy candidates were fully decoded independently in memory back to the identical original `.text` and their token streams were completely consumed by the size-bounded decoder. The protected 510-byte raw-section suffix remained outside the virtual substitution. The lazy-256 compressed prefix SHA-256 was `086fb75670737afb3004d7545439e9627418d333efc2ba77cf410baa3e1cd919`; its common prefix with the original compressed stream was **628 bytes**. The greedy-1024 output differed from the original starting at compressed offset **303,988**, so the byte-identical results on 2021/2026 cannot be generalized to 2019.
+
+### Important new evidence: 2019 decompressor uses an explicit stop marker
+
+Read-only x86 disassembly using `objdump` on the **original** 2019 PE entry point (image VA `0x10B93610`, POL1 RVA `0xB93610`) revealed a small unpacking routine entered at VA **`0x10B936AB`**, with the critical block around VA **`0x10B936D6`** testing the low twelve bits of the back-reference word and branching to its return on a **zero distance**. The loop does **not** visibly terminate on reaching the declared decoded `.text` length; its control flow reaches the zero-distance terminator instead. This is static source-code interpretation only, not an execution trace.
+
+An independent read-only compressed-token scan confirmed that the 2019 original's zero-distance marker **begins immediately at compressed-prefix offset 1,963,522**, following exactly **3,264,206** decoded bytes. The marker is the second token in the final control group, just after the bounded decoder stops on the first token. The original final match is three output bytes with no truncated match. The marker lies within the 14-byte region before the PE entry point (its two-byte zero-distance word is present); the remainder of the bootstrap/suffix remains protected.
+
+**Critical implication:** A smaller stream is **not** load-ready just because a size-limited synthetic decoder round-trips. The lazy-128 and lazy-256 encoders currently emit **no terminal zero-distance token** themselves. With the original raw bytes left untouched after the shorter streams, the next original two-byte words at offsets 1,945,052 and 1,944,536 are **not** zero-distance terminators. Simply replacing the prefix while preserving trailing bytes therefore fails the observed 2019 stop-marker contract. It could make a real loader overrun its intended decompressed output, so **no writer or runtime test is approved**.
+
+### Follow-up tool and acceptance gate
+
+The research assessor now includes a read-only `post_output_next_token` probe for a zero-distance marker after the declared decoded end, and `virtual_substitution_post_output_next_token` for its virtual, in-memory replacement with the original remaining bytes. This is **token-shape evidence only**, not retail loader emulation. Synthetic regression fixtures cover a properly marked stream and an unmarked shorter replacement.
+
+Next: confirm this probe on the exact 2019 uploaded original via the current Toolkit CLI, plus static review for the 2021/2026 loader variants. If a later separately authorized experiment designs an end-marker-preserving format, require independent verification of decompressed bounds, marker placement, PE layout, game-launcher integrity and client-specific container safety before considering any on-disk changes. No original DLL, patched DLL, packed executable bytes or decoded executable contents may be committed to the repository.
