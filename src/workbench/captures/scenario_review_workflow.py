@@ -246,3 +246,36 @@ def manual_editor_handoff(draft: dict) -> dict:
             "no_execution": True,
         },
     }
+
+
+def replay_offline_review(draft: dict, payload: dict) -> dict:
+    """Validate a downloaded offline decision file against original indexed input.
+
+    An exported bundle is untrusted. Only explicit reviewer decisions are
+    replayed; no observed source, identity, or canonical schema fields are
+    accepted from the browser as replacements.
+    """
+    original = manual_editor_handoff(draft)
+    if (not isinstance(payload, dict)
+            or set(payload) != {
+                "contract", "capture_id", "capture_projection_sha256",
+                "observed_handoff", "step_decisions", "binding_decisions",
+                "review_status", "normative_expected", "verdict",
+                "execution_enabled", "approved_for_execution",
+            }
+            or payload["contract"] != "offline_capture_review_decisions_v1_NONCANONICAL"
+            or payload["capture_id"] != original["capture_id"]
+            or payload["capture_projection_sha256"] != original["capture_projection_sha256"]
+            or payload["observed_handoff"] != original
+            or payload["review_status"] != "MANUAL_AUTHORING_REQUIRED"
+            or payload["normative_expected"] is not None
+            or payload["verdict"] != "UNKNOWN"
+            or payload["execution_enabled"] is not False
+            or payload["approved_for_execution"] is not False):
+        raise ValueError("invalid or modified offline review bundle")
+    candidate = apply_binding_decisions(draft, payload["binding_decisions"])
+    candidate = apply_step_decisions(candidate, payload["step_decisions"])
+    reviewed = manual_editor_handoff(candidate)
+    if reviewed["capture_projection_sha256"] != original["capture_projection_sha256"]:
+        raise ValueError("indexed source projection changed during review")
+    return reviewed
