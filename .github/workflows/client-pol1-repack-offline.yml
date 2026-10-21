@@ -12,6 +12,8 @@ on:
       - 'src/workbench/client/wardrobe_2019_audit.py'
       - 'src/workbench/client/wardrobe_2019_allocator.py'
       - 'test_fixtures/test_client_wardrobe_2019_allocator.py'
+      - 'src/workbench/client/wardrobe_bank_contract.py'
+      - 'test_fixtures/test_client_wardrobe_bank_contract.py'
       - 'src/workbench/client/cli/wardrobe_2019_report.py'
       - 'test_fixtures/test_client_wardrobe_2019_audit.py'
   push:
@@ -26,6 +28,8 @@ on:
       - 'src/workbench/client/wardrobe_2019_audit.py'
       - 'src/workbench/client/wardrobe_2019_allocator.py'
       - 'test_fixtures/test_client_wardrobe_2019_allocator.py'
+      - 'src/workbench/client/wardrobe_bank_contract.py'
+      - 'test_fixtures/test_client_wardrobe_bank_contract.py'
       - 'src/workbench/client/cli/wardrobe_2019_report.py'
       - 'test_fixtures/test_client_wardrobe_2019_audit.py'
 
@@ -63,3 +67,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s test_fixtures -p test_client_wardrobe_2019_allocator.py -v
+
+      - name: Synthetic login-time wardrobe bank translation and safety gates
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s test_fixtures -p test_client_wardrobe_bank_contract.py -v
