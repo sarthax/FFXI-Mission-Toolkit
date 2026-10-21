@@ -98,3 +98,74 @@ def test_narrow_observe_now_index():
         "needs-mutation": 57, "needs-deploy": 9}
     assert set(m["expected_observe_now"]) == {
         "MOG-09", "VOID-01", "VOID-02", "RG-01", "RG-06"}
+
+
+# Single case/unit-scale simulation of a pinned PR snapshot (no Git, DSP or network).
+def _synthetic_reconciled():
+    pr_head = "b" * 40
+    entry = {
+        "scenario_id": "SYN-01", "domain": "synthetic", "domain_pr": 999,
+        "declared_lane": "needs-readback", "audited_lane": "needs-readback",
+        "source_revision": SHA, "expected_behavior": "UNKNOWN",
+        "source_refs": [{k: SRC[k] for k in
+                         ("repository", "commit", "path", "line_start", "line_end")}],
+        "runner_state": "unassigned", "verdict": "NOT_RUN_IN_THIS_AUDIT",
+        "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+        "permissions": ["server_read_grant"],
+        "blocking_gaps": ["synthetic readback absent"],
+        "readback_missing": ["synthetic_state"]
+    }
+    matrix = {"artifact_type": "R5_domain_readiness_audit_not_canonical",
+              "execution_enabled": False, "import_allowed": False,
+              "counts": {"cases": 1, "lanes": {"needs-readback": 1}},
+              "source": {"principal_readiness_pr": 1292,
+                         "domain_pr_head_snapshot": [{
+                             "domain": "synthetic", "pr": 999, "head_sha": pr_head,
+                             "source_revision": SHA, "case_count": 1}]},
+              "cases": [entry]}
+    manifest = {"expected_total": 1, "expected_lanes": {"needs-readback": 1},
+                "domains": [{"name": "synthetic", "pr": 999,
+                             "sha": SHA, "cases": 1}]}
+    return matrix, manifest, {"synthetic": pr_head}
+
+
+def test_matrix_reconciliation_synthetic_positive(tmp_path):
+    (tmp_path / "synthetic.json").write_text(json.dumps(DOC))
+    m, manifest, heads = _synthetic_reconciled()
+    result = validator.validate_reconciled_matrix(m, manifest, tmp_path, heads)
+    assert result["cases"] == 1
+    assert result["source_authenticity"] == "NOT_ATTESTED"
+
+
+@pytest.mark.parametrize("fault,expected_message", [
+    ("head", "STALE_SOURCE_PR_HEAD_REAUDIT_REQUIRED"),
+    ("lane", "MATRIX_LANE_OR_DOMAIN_DRIFT"),
+    ("source", "MATRIX_PINNED_SOURCE_REF_DRIFT"),
+    ("oracle", "EXPECTED_TEXT_CHANGED_REAUDIT_REQUIRED"),
+    ("import", "imported or promoted"),
+    ("permit", "missing readback/permission"),
+    ("duplicate", "duplicate, added or missing case IDs"),
+    ("pinned", "source PR metadata stale"),
+])
+def test_matrix_reconciliation_negative(tmp_path, fault, expected_message):
+    (tmp_path / "synthetic.json").write_text(json.dumps(DOC))
+    matrix, manifest, heads = _synthetic_reconciled()
+    entry = matrix["cases"][0]
+    if fault == "head":
+        heads["synthetic"] = "c" * 40
+    elif fault == "lane":
+        entry["audited_lane"] = "observe-now"
+    elif fault == "source":
+        entry["source_refs"][0]["line_start"] = 3
+    elif fault == "oracle":
+        entry["expected_behavior"] = "PASS proven by code"
+    elif fault == "import":
+        entry["v2_import"] = "READY"
+    elif fault == "permit":
+        entry["readback_missing"] = []
+    elif fault == "duplicate":
+        matrix["cases"].append(deepcopy(entry))
+    else:
+        matrix["source"]["domain_pr_head_snapshot"][0]["source_revision"] = "d" * 40
+    with pytest.raises(validator.ValidationError, match=expected_message):
+        validator.validate_reconciled_matrix(matrix, manifest, tmp_path, heads)
