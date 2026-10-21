@@ -175,6 +175,11 @@
     if (!context || context.contract !== 'coverage_behavior_reference_v1' ||
         context.context_only !== true || context.execution_enabled !== false ||
         context.review_required !== true || context.expected_oracle !== 'UNKNOWN' ||
+        context.design_only !== true || context.auto_populate_allowed !== false ||
+        context.auto_save_allowed !== false || context.proposed_case_id !== null ||
+        !Array.isArray(context.assertions) || context.assertions.length !== 0 ||
+        !Array.isArray(context.observations) || context.observations.length !== 0 ||
+        !Array.isArray(context.capability_bindings) || context.capability_bindings.length !== 0 ||
         !/^[A-Za-z0-9][A-Za-z0-9_-]{0,119}$/.test(context.feature_id) ||
         !/^[A-Za-z0-9][A-Za-z0-9_-]{0,119}$/.test(context.behavior_ref))
       throw Error('Unsupported or untrusted coverage context');
@@ -211,12 +216,33 @@
       if(!original || original.decision==='REJECT' || original.decision==='PENDING' ||
           entry.confirmed!==true || typeof entry.title!=='string' || !entry.title.trim())
         throw Error('Each chosen evidence proposal requires explicit confirmation and review');
+      if (!Array.isArray(entry.bindings) ||
+          entry.bindings.length !== (original.bindings||[]).length)
+        throw Error('Explicit review of every candidate binding is required');
+      const seenBindings=new Set(), included=[];
+      for (const selectedBinding of entry.bindings) {
+        const candidate=(original.bindings||[]).find(b=>b.binding_id===selectedBinding.id);
+        if (!candidate || seenBindings.has(selectedBinding.id) ||
+            selectedBinding.confirmed !== true ||
+            !['INCLUDE_UNVERIFIED','EXCLUDE'].includes(selectedBinding.choice))
+          throw Error('Unknown, duplicate or unreviewed evidence binding');
+        seenBindings.add(selectedBinding.id);
+        if (selectedBinding.choice === 'INCLUDE_UNVERIFIED') {
+          if (!['ACCEPT','EDIT'].includes(candidate.review_decision) ||
+              candidate.classification === 'UNSUPPORTED')
+            throw Error('Unsupported, rejected or pending source identity cannot be included');
+          included.push(candidate.kind+' '+candidate.identity+
+            ' ['+candidate.classification+' / UNVERIFIED; source '+candidate.binding_id+']');
+        }
+      }
       const indexedHashes=[...new Set((original.source_fingerprints||[])
         .map(x=>x.sha256).filter(x=>/^[a-f0-9]{64}$/.test(x)))].slice(0,3);
       const note=('UNVERIFIED indexed capture '+review.capture_id+' SHA-256 '+review.projection_sha256+
         '; source step '+original.step_id+'; observed refs '+original.evidence_refs.join(', ')+
         '; indexed source SHA-256 '+(indexedHashes.join(', ')||'UNKNOWN')+
-        ' (NOT independently rehashed); candidate identities NOT verified; no normative oracle').slice(0,1000);
+        ' (NOT independently rehashed); selected source identities: '+
+        (included.join(' | ')||'NONE (excluded/rejected)')+
+        '; all candidates UNVERIFIED; no normative oracle').slice(0,1000);
       next.steps.push({
         id:original.step_id,title:entry.title.trim().slice(0,500),
         intent:'observation',expected:'UNKNOWN — independently sourced expected outcome required',
@@ -237,42 +263,19 @@
     return parsed;
   }
 
-  const CONTEXT_PATH = /^\/feature-testing\/coverage\/context\/([A-Za-z0-9_-]{1,120})\/([A-Za-z0-9_-]{1,120})$/;
+  const CONTEXT_PATH = /^\\/feature-testing\\/coverage\\/context\\/([A-Za-z0-9][A-Za-z0-9_-]{0,119})\\/([A-Za-z0-9][A-Za-z0-9_-]{0,119})$/;
 
   // Accept only the same-origin, read-only coverage reference path; anything else is ignored.
   function contextRefPath(raw) {
     return typeof raw === 'string' && CONTEXT_PATH.test(raw) ? raw : null;
   }
 
-  // Context is a non-normative reference: it names a declared source case and
-  // nothing else. No assertion, observation, oracle or ID is taken from it.
+  // Compatibility with merged #1288; called only after the user's explicit action.
+  // Never copy the synthetic assertion, observation or fabricated case identity.
   function fromContext(ctx, featureIds) {
-    const bad = why => { throw Error('Context reference refused: ' + why); };
-    if (!ctx || typeof ctx !== 'object') bad('not an object');
-    if (ctx.contract !== 'coverage_behavior_reference_v1') bad('unknown contract');
-    if (ctx.context_only !== true || ctx.design_only !== true || ctx.review_required !== true ||
-        ctx.auto_populate_allowed !== false || ctx.auto_save_allowed !== false ||
-        ctx.execution_enabled !== false) bad('reference does not declare a read-only design-only contract');
-    if (typeof ctx.feature_id !== 'string' || !(featureIds || []).includes(ctx.feature_id))
-      bad('feature is not a known editor domain');
-    if (!/^[A-Za-z0-9_-]{1,100}$/.test(String(ctx.behavior_ref))) bad('invalid behavior reference');
-    const label = typeof ctx.label === 'string' ? ctx.label.slice(0, 120) : '';
-    const next = fresh();
-    const caseId = 'SYNTH-' + ctx.behavior_ref + '-DRAFT';
-    next.feature_id = ctx.feature_id;
-    next.case_id = caseId;
-    next.name = label || caseId;
-    next.steps[0].id = caseId + '-S01';
-    next.purpose = 'UNKNOWN — enter a source-backed purpose';
-    next.rationale = 'Started from declared source case ' + ctx.behavior_ref +
-      ' (' + ctx.source_pointer + '; source revision ' + ctx.source_revision +
-      '). A declared test intent, not an accepted requirement.';
-    next.authoring.evidence_provenance = 'context_reference_not_observed';
-    next.authoring.blocking_gaps = [
-      'Declared source case ' + ctx.behavior_ref + ' is context only; operator must author and review all behavior, observations, assertions and oracles',
-      'Case ID is a placeholder; choose a new unique ID before saving'
-    ];
-    return next;
+    if (!ctx || !Array.isArray(featureIds) || !featureIds.includes(ctx.feature_id))
+      throw Error('Context reference refused: unknown editor feature');
+    return draftFromCoverage(ctx);
   }
 
   return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, emptyHandoffDraft, draftFromCoverage, draftFromEvidence, referenceIssues, parseAdvanced, contextRefPath, fromContext};
