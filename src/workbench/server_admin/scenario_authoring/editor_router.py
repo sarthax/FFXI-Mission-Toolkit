@@ -6,6 +6,7 @@ draft store; it does not define an alternate spec or execute any capabilities.
 from __future__ import annotations
 
 from copy import deepcopy
+import json
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
@@ -213,8 +214,11 @@ def inspect_evidence_handoff(request: Request, body: EvidenceReviewRequest):
         size = int(request.headers.get("content-length", "0") or "0")
     except ValueError:
         raise HTTPException(400, "Invalid payload size") from None
-    if size > 512_000:
-        raise HTTPException(413, "Evidence review too large for manual editor import")
+    # Offline Reviewer allows up to 4 MB of indexed projection, plus the
+    # browser's bounded step/binding decision envelope. Validate the parsed
+    # body as well, since Content-Length is not a security boundary.
+    if size > 5_000_000 or len(json.dumps(body.review, ensure_ascii=True).encode("utf-8")) > 5_000_000:
+        raise HTTPException(413, "Evidence review too large; narrow the offline capture export")
     try:
         return inspect_evidence_review(body.review)
     except (ValueError, KeyError, TypeError, OverflowError) as exc:
