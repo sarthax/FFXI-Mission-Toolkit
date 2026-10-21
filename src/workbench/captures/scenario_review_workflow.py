@@ -134,6 +134,7 @@ def timeline(draft: dict) -> dict:
                 "time_basis": row.get("time_basis"),
                 "native_timestamp": row.get("native_timestamp"),
                 "record_class": row.get("record_class"),
+                "recorded_metadata": deepcopy(row.get("recorded_metadata", {})),
             })
         lanes[lane_key]["events"].append({
             "step_id": step["step_id"], "lane_ordinal": len(lanes[lane_key]["events"]) + 1,
