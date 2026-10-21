@@ -276,6 +276,16 @@ const unknownStep=V.project(proposed,null,{
 });
 assert.equal(unknownStep.steps[0].sources.length,0);
 assert.equal(unknownStep.case_association.state,'UNKNOWN');
+assert.match(unknownStep.association_diagnostics.join(' '),/BLOCKED: stale or invalid/);
+const crossDocument=V.project(proposed,null,{
+  ...acceptedAssociation,steps:{
+    'OTHER-CASE-S01':{state:'EXPLICIT_CITATION_CLAIM',source_refs:['SrcOne']}
+  }
+});
+assert.equal(crossDocument.case_association.state,'UNKNOWN');
+assert.equal(crossDocument.steps[0].association_state,'UNKNOWN');
+assert.equal(crossDocument.execution_enabled,false);
+assert.match(crossDocument.association_diagnostics.join(' '),/BLOCKED/);
 
 const oldV2WithoutAssociations=M.clone(v);
 assert.equal(V.project(oldV2WithoutAssociations,null,{
