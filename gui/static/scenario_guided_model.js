@@ -192,6 +192,19 @@
       ' is a declared case intent only; source and normative oracle UNKNOWN');
     return next;
   }
+  // Explicit handoff entry must not silently replace an edited, loaded or
+  // already source-derived draft. Return a human-readable blocker, not a
+  // permission to save; all authoring still uses canonical validation.
+  function handoffReplacementIssue(current, baseline, revision, activeSource) {
+    if (activeSource)
+      return 'A source handoff is already open; continue editing it or explicitly start a new scenario.';
+    if (baseline !== null || revision !== 0)
+      return 'A saved draft is open; explicitly start a new scenario before importing source context.';
+    if (JSON.stringify(current) !== JSON.stringify(fresh()))
+      return 'There are unsaved editor changes; explicitly start a new scenario before importing source context.';
+    return null;
+  }
+
   function draftFromEvidence(review, selected) {
     if (!review || review.contract!=='editor_evidence_suggestions_v1' ||
         review.required_confirmation!==true || review.original_capture_authenticated!==false ||
@@ -280,5 +293,5 @@
     return draftFromCoverage(ctx);
   }
 
-  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, emptyHandoffDraft, draftFromCoverage, draftFromEvidence, referenceIssues, parseAdvanced, contextRefPath, fromContext};
+  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, emptyHandoffDraft, draftFromCoverage, draftFromEvidence, handoffReplacementIssue, referenceIssues, parseAdvanced, contextRefPath, fromContext};
 });
