@@ -450,7 +450,7 @@
       if(generation!==editorGeneration || Number($('sd-revision').value)!==rev ||
           JSON.stringify(current())!==JSON.stringify(input))
         throw Error('Draft changed while validating. Review the edits and save again.');
-      renderPreview(validated.preview,validated.reader_view);
+      renderPreview(validated.preview,validated.reader_view,validated.contract_v2_compatibility);
       if(validated.contract_v2_compatibility?.state==='BLOCKED')
         throw Error('Contract v2 source/base-spec fingerprint conflict: '+validated.contract_v2_compatibility.reasons.join('; ')+'. Reconcile metadata in Advanced JSON; never silently repin.');
       const toSave=M.clone(validated.canonical_specification);
