@@ -390,28 +390,21 @@
         throw Error('Canonical validation returned an unexpected draft identity');
       const saved=await call('/feature-testing/builder/drafts','POST',
         {specification:toSave,expected_revision:rev},true);
-      if(saved.feature_id!==toSave.feature_id || saved.case_id!==toSave.case_id)
-        throw Error('Save returned an unexpected draft identity; reopen before editing');
-      if(generation!==editorGeneration)
-        throw Error('Original draft saved, but editor context changed; reopen the saved draft before continuing');
-      // Do not attach an older draft's revision to a different case the user
-      // entered while the network request was in flight.
-      let latest;
-      try {latest=current();}
-      catch(e) {
+      // Do not attach a previously saved revision to a different document
+      // just because the async response arrived after an editor change.
+      let latest=null;
+      try {latest=current();} catch(e) { /* Invalid Advanced draft remains untouched. */ }
+      const disposition=M.saveResponseDisposition(toSave,latest,saved,
+        generation!==editorGeneration);
+      if(!disposition.apply_revision) {
         show('Saved '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
-          ', but current Advanced JSON is invalid; reopen the saved draft before another save.');
-        return;
-      }
-      if(latest.feature_id!==toSave.feature_id || latest.case_id!==toSave.case_id) {
-        show('Saved '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
-          ', but editor identity changed during the request; reopen the saved draft before another save.');
+          ', but '+disposition.reason+'; reopen saved draft before the next save.');
         return;
       }
       $('sd-revision').value=saved.revision;
       baseline=M.clone(toSave);updateRevision();
       show('Saved DESIGN_ONLY '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
-        (JSON.stringify(latest)!==JSON.stringify(input)?
+        (disposition.unsaved_edits?
           '. Newer editor changes remain UNSAVED; review before the next revision.':
           '. NOT reviewed or executable.'));
     }catch(e){show('Draft NOT saved / revision may require refresh: '+e.message);}
