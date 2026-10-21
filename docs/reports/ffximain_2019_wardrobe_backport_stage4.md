@@ -228,9 +228,25 @@ Further original-build read-only disassembly closes the earlier unknown command�
 | `/wardrobe3` | `0x1D4384` | `0x1061E5D8` | `0x1032DA40` | `0x1D4800` | **11** |
 | `/wardrobe4` | `0x1D43AD` | `0x1061E5DC` | `0x1032D9E0` | `0x1D4820` | **12** |
 
-**Correction of earlier uncertainty:** The object→mode mapping is now directly supported by constructor/vtable/getter code, rather than inferred from command IDs. Mode **9 is not one of these four original `/wardrobe` commands**; its separate identity/functionality is not determined by this table alone. All four existing mode values fall inside the original 2–12 selector. Modes 13–16 still have **no dedicated selector branch** in the 2019 client.
+**Correction of earlier uncertainty:** The object→mode mapping is now directly supported by constructor/vtable/getter code, rather than inferred from command IDs. Mode **9 is not one of these four original `/wardrobe` commands**; its separate `/bank2` linkage is confirmed in the follow-up below. All four existing mode values fall inside the original 2–12 selector. Modes 13–16 still have **no dedicated selector branch** in the 2019 client.
 
 New `inspect_2019_mode_object_getters` reads the initialized `.rdata` vtable slots and decoded x86 constructor/getter bytes, producing scalar evidence and a fail-closed status. The parent `audit_2019_wardrobe` requires both the command-handler/selector and mode-object chains to match the exact archived 2019 client. Three additional synthetic test cases cover correct mode mapping and deliberately corrupted constructor, vtable and getter evidence. No evidence of **runtime execution, safe additional allocations, complete vtable behavior, or UI menu wiring** is implied by these static checks.
+### Why mode 9 is occupied by `/bank2`
+
+Another independent source-table, handler, constructor and vtable check identifies the 2019 `/bank2` command (ID **115**) as the original adjacent UI mode **9**:
+
+| Evidence | Exact original location / value |
+|---|---|
+| `/bank2` name/ID record | `.data` RVA `0x34B210`; ID 115, flags `0x51` |
+| Separate command dispatch record | `.data` RVA `0x34C098` → handler `.text` RVA `0x7CF00` |
+| Handler's mode-object global read | `.text` RVA `0x7CF24`, global VA `0x1061E5E0` |
+| Handler's alternate common helper | Direct call at RVA `0x7CF36` → `0x1D1570` |
+| Mode-object constructor | RVA `0x1D43D6` installs vtable VA `0x1032D980` and saves the object pointer in global `0x1061E5E0` |
+| Vtable getter at `+0x54` | RVA `0x1D4840`, body returns constant **9** |
+
+`/bank2` differs from Wardrobes 1–4 by using the conditional **`0x1D1570`** helper rather than directly calling `0x1D1680`. Both helpers have a conditional route into the same UI selection routine `0x1D4E70`. This static chain shows why reusing mode 9 would conflict with existing functionality; it does *not* establish every runtime condition or menu behavior of `/bank2`.
+
+New `inspect_2019_bank2_mode9` validates the exact `.data` command and handler records, mode-global read, helper call, constructor, `.rdata` vtable slot and constant mode getter. The main SHA-gated audit now requires these observations too. Two additional synthetic tests check normal mapping and fail closed when the command name, dispatch record or getter is tampered with.
 ### New reproducible audit and negative tests
 
 The read-only `workbench.client.wardrobe_2019_command_ui.inspect_2019_command_ui_dispatch` verifies all four `.data` name and handler records, matching per-handler object-global loads and `CALL rel32` targets, the common-helper forwarder, the UI vtable getter opcode, the exact selector and 11-entry jump table, and all eleven case pointer-global instructions. It returns **only scalar IDs/RVAs/booleans**, never original executable bytes. Its report is gated by the exact source DLL SHA-256 and decoded `.text` SHA-256 in the parent `audit_2019_wardrobe`; altered or unknown inputs are not promoted to supported build facts.
