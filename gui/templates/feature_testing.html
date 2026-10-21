@@ -17,6 +17,20 @@
 .ft-toolbar{display:flex;gap:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .ft-pages{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin-top:1rem}
 .ft-note{opacity:.8;font-size:.92rem}
+.ft-card{margin-bottom:1.25rem}
+.ft-status{padding:.75rem 1rem;border-radius:.5rem;border:1px solid var(--wb-border,#777);margin:.5rem 0 1rem}
+.ft-status.ft-ok{border-left:6px solid #2e9d4f}.ft-status.ft-bad{border-left:6px solid #d33}
+.ft-checks{list-style:none;padding-left:0;margin:.5rem 0 0}.ft-checks li{padding:.15rem 0}
+.ft-checks .ft-ok{color:#2e9d4f}.ft-checks .ft-bad{color:#d33}
+.ft-primary{font-weight:700;padding:.6rem 1.2rem}
+.ft-feedback{padding:.5rem .75rem;border-radius:.4rem;border:1px solid var(--wb-border,#777)}
+.ft-filters label.ft-check{flex-direction:row;align-items:center;gap:.5rem;min-width:0;max-width:26rem}
+.ft-check input{min-height:auto;width:auto}
+.ft-job{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.35rem 0}
+.ft-pill{display:inline-block;padding:.1rem .6rem;border-radius:1rem;font-size:.8rem;font-weight:700;border:1px solid currentColor}
+.ft-pass{color:#2e9d4f}.ft-fail{color:#d33}.ft-blocked,.ft-interrupted{color:#c77d00}.ft-running,.ft-queued{color:#2f6fd6}
+.ft-adv>summary{cursor:pointer;list-style:revert}.ft-adv>summary h2{display:inline}
+.ft-adv details{margin:.75rem 0;padding:.5rem .75rem;border:1px solid var(--wb-border,#777);border-radius:.5rem}
 </style>
 <nav class="ft-nav" aria-label="Feature testing sections">
 <a href="/feature-testing?tab=runs" {% if tab == "runs" %}aria-current="page"{% endif %}>Run history</a>
@@ -45,18 +59,97 @@
 {% else %}<p>{% if not results_configured %}No evidence database configured. Set <code>MISSION_TOOLKIT_TEST_RESULTS_DB</code> and import a validated report.{% elif evidence_count == 0 %}No results imported yet.{% else %}No imported runs match these filters.{% endif %}</p>{% endif %}
 </section>
 {% elif tab == "builder" %}
-<section class="wb-panel">
-<h2>Build a deterministic test</h2>
-<p>Start from a verified runner contract, not an arbitrary script. The first executable case is <strong>MOG-09</strong>: read-only Mog House observations and client/persisted inventory checks.</p>
-<p><strong>Availability:</strong> {{ 'Prerequisites detected' if builder_preflight.ready_for_operator_review else 'Missing prerequisites' }}. Planning does not launch a client, approve a character, or execute the scenario.</p>
-<ul>{% for check in builder_preflight.checks %}<li><strong>{{ 'Ready' if check.ok else 'Blocked' }}:</strong> {{ check.detail }}</li>{% endfor %}</ul>
+<section class="wb-panel ft-card">
+<h2>Run a test</h2>
+<div class="ft-status {{ 'ft-ok' if builder_preflight.ready_for_operator_review else 'ft-bad' }}">
+{% if builder_preflight.ready_for_operator_review %}<strong>Ready to run.</strong> All prerequisites were found.
+{% else %}<strong>Not ready yet.</strong> Fix the items below on the <a href="/feature-testing?tab=guide">Setup page</a>, then come back.{% endif %}
+<details {% if not builder_preflight.ready_for_operator_review %}open{% endif %}><summary>Prerequisite checklist</summary>
+<ul class="ft-checks">{% for check in builder_preflight.checks %}<li class="{{ 'ft-ok' if check.ok else 'ft-bad' }}">{{ '✓' if check.ok else '✗' }} {{ check.detail }}</li>{% endfor %}</ul></details>
+</div>
+<p class="ft-note">Only MOG-09 is available today. It is read-only: a headless bot logs in briefly, observes, and compares with saved data.</p>
+<form id="ft-launch-form" class="ft-filters">
+{% if ui_mode %}<p>Test execution is turned on in <a href="/feature-testing?tab=guide">Setup</a>; no token needed. You will be asked to confirm.</p>{% endif %}
+<label {% if ui_mode %}hidden{% endif %}>Operator token<input id="ft-operator-token" type="password" autocomplete="off" {% if not ui_mode %}required{% endif %}></label>
+<label>Test account<input id="ft-run-account" pattern="[A-Za-z0-9_-]{1,32}" required autocomplete="off"></label>
+<label>Character ID<input id="ft-run-character" type="number" min="1" required></label>
+<label>Supervisor port<input id="ft-run-port" type="number" min="1" max="65535" value="8420" required></label>
+<label class="ft-check"><input id="ft-run-approval" type="checkbox" required> I authorize the read-only MOG-09 run on this disposable character</label>
+<button type="submit" class="ft-primary">Launch MOG-09</button>
+<button type="button" id="ft-refresh-jobs">Refresh</button>
+</form>
+<p id="ft-job-feedback" class="ft-feedback" aria-live="polite" role="status">Nothing launched yet.</p>
+<h3>Recent runs</h3>
+<div id="ft-job-history" class="ft-jobs"><p class="ft-note">Loading…</p></div>
+<script>
+(function () {
+const form=document.getElementById('ft-launch-form'), note=document.getElementById('ft-job-feedback'), listing=document.getElementById('ft-job-history');
+let timer=null;const token=()=>document.getElementById('ft-operator-token').value;
+async function request(path, options) {
+ const response=await fetch(path,{...options,headers:{'X-Test-Operator-Token':token(),'X-Requested-With':'toolkit-ui',...(options&&options.headers||{})},credentials:'same-origin'});
+ const body=await response.json();
+ if(!response.ok) throw new Error(body.detail||'Request failed');
+ return body;
+}
+async function refresh() {
+ try {
+  const result=await request('/feature-testing/builder/jobs');
+  listing.replaceChildren();
+  if(!result.jobs.length){listing.textContent='No runs yet.';}
+  clearTimeout(timer);if(result.jobs.some(j=>j.status==='QUEUED'||j.status==='RUNNING'))timer=setTimeout(refresh,5000);
+  for(const job of result.jobs) {
+   const item=document.createElement('p');item.className='ft-job';
+   const pill=document.createElement('span');pill.className='ft-pill ft-'+(job.verdict||job.status).toLowerCase();pill.textContent=job.verdict||job.status;item.appendChild(pill);
+   item.appendChild(document.createTextNode(' '+job.case_id+' · '+job.created_at.replace('T',' ').slice(0,19)+(job.status==='RUNNING'&&job.phase?' · '+job.phase.replace(/_/g,' '):'')));
+   if(job.status==='QUEUED'||job.status==='RUNNING'){
+    const button=document.createElement('button');button.type='button';button.textContent='Reconcile interrupted job';
+    button.addEventListener('click',async()=>{
+      if(!confirm('Only continue after inspecting local XiHeadless and Toolkit processes, and confirming no runner is active. This does not cancel or stop a process. Mark this job INTERRUPTED?'))return;
+      try {await request('/feature-testing/builder/jobs/'+encodeURIComponent(job.id)+'/reconcile',
+        {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({acknowledged:true})});
+        note.textContent='Reconciled '+job.id+' as interrupted';await refresh();
+      } catch(err){note.textContent='Reconciliation refused: '+err.message;}
+    });
+    item.appendChild(document.createTextNode(' '));item.appendChild(button);
+   }
+   if(job.run_id){const a=document.createElement('a');a.href='/feature-testing/run/'+encodeURIComponent(job.run_id);a.textContent=' View evidence';item.appendChild(a);}
+   listing.appendChild(item);
+  }
+ } catch(err){listing.textContent=err.message.indexOf('unauthorized')>=0?'Enter the operator token (or turn on test execution in Setup) to see runs.':'Could not load runs: '+err.message;}
+}
+form.addEventListener('submit',async event=>{
+ event.preventDefault();
+ if(!form.reportValidity())return;
+ {% if ui_mode %}if(!confirm('Start the read-only MOG-09 run on account '+document.getElementById('ft-run-account').value+' (character '+document.getElementById('ft-run-character').value+')? A headless bot will log in briefly.'))return;{% endif %}
+ note.textContent='Submitting operator-approved test…';
+ try {
+  const body={account:document.getElementById('ft-run-account').value,
+    charid:Number(document.getElementById('ft-run-character').value),
+    supervisor_port:Number(document.getElementById('ft-run-port').value),
+    approval:document.getElementById('ft-run-approval').checked};
+  const result=await request('/feature-testing/builder/launch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  note.textContent='Queued job '+result.job_id+'. Refresh status to see results.';
+  await refresh();
+ } catch(err){note.textContent='Launch not accepted: '+err.message;}
+});
+document.getElementById('ft-refresh-jobs').addEventListener('click',refresh);
+const mem=['ft-run-account','ft-run-character','ft-run-port'];
+try{for(const id of mem){const v=localStorage.getItem(id);if(v)document.getElementById(id).value=v;}}catch(e){}
+form.addEventListener('submit',()=>{try{for(const id of mem)localStorage.setItem(id,document.getElementById(id).value);}catch(e){}});
+refresh();
+})();
+</script>
+
+</section>
+<details class="wb-panel ft-card ft-adv"><summary><h2>Design &amp; preview tests <small>(advanced)</small></h2></summary>
+<p class="ft-note">Only needed to author new test definitions. Nothing here runs a game client.</p>
 <h3>Versioned test definitions</h3>
 <p>Source-controlled specification contracts describe preconditions, observations, assertions, cleanup and runner compatibility. These are descriptive plans—not executable scripts.</p>
 <ul>
 <li><a href="/feature-testing/builder/specifications/moghancement/MOG-09">MOG-09 specification · verified runner binding</a></li>
 <li><a href="/feature-testing/builder/specifications/inventory_observation/INV-OBS-01">INV-OBS-01 specification · design only, no runner</a></li>
 </ul>
-<h3>Test definition</h3>
+<h3>Check a plan</h3>
 <form class="ft-filters" id="ft-test-builder" action="/feature-testing/builder/plan" method="get">
 <label>Scenario<select disabled><option>MOG-09 — Stored furnishing, no active effect</option></select></label>
 <label>Approved test account<input type="text" name="account" pattern="[A-Za-z0-9_-]{1,32}" maxlength="32" required placeholder="xitest07" autocomplete="off"></label>
@@ -65,7 +158,7 @@
 <button type="submit">Review test plan (JSON)</button>
 </form>
 <p>The review endpoint verifies character allowlisting, a registered runner, and local preflight requirements. It returns a plan with expected observation steps; it does not issue execution authorization. Use the <a href="/feature-testing/scenario/moghancement/MOG-09">scenario detail</a> to inspect assertions, then launch the reviewed plan through the local operator CLI documented in <code>docs/workbench/LOCAL_TEST_SUPERVISOR_SETUP.md</code>.</p>
-<details open><summary><strong>Guided test designer</strong></summary>
+<details><summary><strong>Guided test designer</strong></summary>
 <p>Build a design-only specification using form controls. The advanced JSON editor below remains available for reviewing and saving.</p>
 <form id="ft-guided-designer" class="ft-filters">
 <label>Feature ID<input id="ft-design-feature" pattern="[A-Za-z0-9_-]+" value="inventory_observation" required></label>
@@ -247,73 +340,7 @@ document.getElementById('ft-evaluation-form').addEventListener('submit',async fu
  }catch(err){output.textContent='Invalid preview input: '+err.message;}
 });
 </script>
-<h3>Operator-approved local execution</h3>
-<p>Only MOG-09 is available. Launch requires a separate operator token, a disposable allowlisted character and explicit approval. The token stays in this browser page's memory and is not stored.</p>
-<form id="ft-launch-form" class="ft-filters">
-{% if ui_mode %}<p>Test execution is turned on in <a href="/feature-testing?tab=guide">Setup</a>; no token needed. You will be asked to confirm.</p>{% endif %}
-<label {% if ui_mode %}hidden{% endif %}>Operator token<input id="ft-operator-token" type="password" autocomplete="off" {% if not ui_mode %}required{% endif %}></label>
-<label>Test account<input id="ft-run-account" pattern="[A-Za-z0-9_-]{1,32}" required autocomplete="off"></label>
-<label>Character ID<input id="ft-run-character" type="number" min="1" required></label>
-<label>Supervisor port<input id="ft-run-port" type="number" min="1" max="65535" value="8420" required></label>
-<label><input id="ft-run-approval" type="checkbox" required> I authorize the read-only MOG-09 run on this disposable character</label>
-<button type="submit">Launch approved MOG-09</button>
-<button type="button" id="ft-refresh-jobs">Refresh job status</button>
-</form>
-<pre id="ft-job-feedback" aria-live="polite">No operator action submitted.</pre>
-<div id="ft-job-history"></div>
-<script>
-(function () {
-const form=document.getElementById('ft-launch-form'), note=document.getElementById('ft-job-feedback'), listing=document.getElementById('ft-job-history');
-const token=()=>document.getElementById('ft-operator-token').value;
-async function request(path, options) {
- const response=await fetch(path,{...options,headers:{'X-Test-Operator-Token':token(),'X-Requested-With':'toolkit-ui',...(options&&options.headers||{})},credentials:'same-origin'});
- const body=await response.json();
- if(!response.ok) throw new Error(body.detail||'Request failed');
- return body;
-}
-async function refresh() {
- try {
-  const result=await request('/feature-testing/builder/jobs');
-  listing.replaceChildren();
-  const title=document.createElement('h4');title.textContent='Recent operator jobs';listing.appendChild(title);
-  for(const job of result.jobs) {
-   const item=document.createElement('p');
-   item.textContent=job.case_id+' · '+job.status+' · '+job.created_at+(job.verdict?' · '+job.verdict:'')+(job.phase?' · phase: '+job.phase:'');
-   if(job.status==='QUEUED'||job.status==='RUNNING'){
-    const button=document.createElement('button');button.type='button';button.textContent='Reconcile interrupted job';
-    button.addEventListener('click',async()=>{
-      if(!confirm('Only continue after inspecting local XiHeadless and Toolkit processes, and confirming no runner is active. This does not cancel or stop a process. Mark this job INTERRUPTED?'))return;
-      try {await request('/feature-testing/builder/jobs/'+encodeURIComponent(job.id)+'/reconcile',
-        {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({acknowledged:true})});
-        note.textContent='Reconciled '+job.id+' as interrupted';await refresh();
-      } catch(err){note.textContent='Reconciliation refused: '+err.message;}
-    });
-    item.appendChild(document.createTextNode(' '));item.appendChild(button);
-   }
-   if(job.run_id){const a=document.createElement('a');a.href='/feature-testing/run/'+encodeURIComponent(job.run_id);a.textContent=' View evidence';item.appendChild(a);}
-   listing.appendChild(item);
-  }
- } catch(err){note.textContent='Job status: '+err.message;}
-}
-form.addEventListener('submit',async event=>{
- event.preventDefault();
- if(!form.reportValidity())return;
- {% if ui_mode %}if(!confirm('Start the read-only MOG-09 run on account '+document.getElementById('ft-run-account').value+' (character '+document.getElementById('ft-run-character').value+')? A headless bot will log in briefly.'))return;{% endif %}
- note.textContent='Submitting operator-approved test…';
- try {
-  const body={account:document.getElementById('ft-run-account').value,
-    charid:Number(document.getElementById('ft-run-character').value),
-    supervisor_port:Number(document.getElementById('ft-run-port').value),
-    approval:document.getElementById('ft-run-approval').checked};
-  const result=await request('/feature-testing/builder/launch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  note.textContent='Queued job '+result.job_id+'. Refresh status to see results.';
-  await refresh();
- } catch(err){note.textContent='Launch not accepted: '+err.message;}
-});
-document.getElementById('ft-refresh-jobs').addEventListener('click',refresh);
-})();
-</script>
-<p>Operator actions are only available from loopback with a separately configured <code>MISSION_TOOLKIT_TEST_OPERATOR_TOKEN</code>. Ornith does not receive the launch operation in its restricted OpenAPI tools.</p>
+</details>
 </section>
 {% elif tab == "catalog" %}
 <section class="wb-panel"><h2>Test catalog</h2><p>Scenario plans describe acceptance criteria, sources, and current blockers. Opening a scenario does not execute it.</p>
