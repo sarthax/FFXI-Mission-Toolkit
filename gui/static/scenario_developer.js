@@ -402,11 +402,36 @@
     if(mode==='advanced')$('sd-revision-state').textContent=
       'Advanced JSON has unsaved edits — validate before saving (design only)';
   });
+  // Read-only handoff from the coverage matrix: GET a bounded reference, start an
+  // UNSAVED design-only draft. Never saves, forks a published ID or grants capability.
+  async function loadContextRef() {
+    const raw=new URLSearchParams(location.search).get('context_ref');
+    if(raw===null)return;
+    const note=$('sd-context-note');
+    try{
+      const path=M.contextRefPath(raw);
+      if(!path)throw Error('only same-origin coverage context references are accepted');
+      const ctx=await call(path);
+      spec=M.fromContext(ctx,options.features.map(f=>f.id));
+      mode='guided';baseline=null;setSourceDetail(null,null);$('sd-revision').value=0;
+      $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;render();
+      note.hidden=false;
+      note.textContent='Started from declared source case '+ctx.behavior_ref+' ('+ctx.feature_id+
+        ') — context only. Nothing was copied from it except its label; the case ID is a placeholder, '+
+        'the draft is unsaved, and you must author expected outcomes yourself.';
+      show('Started an unsaved design-only draft from a coverage reference.');
+    }catch(e){
+      note.hidden=false;
+      note.textContent='Context reference ignored: '+e.message+'. A new synthetic draft is shown instead.';
+    }
+  }
+
   (async()=> {
     try{
       options=await call('/scenario-developer/options');
       $('sd-catalog').textContent='Catalog identity: '+options.catalog_status+' — '+options.catalog_note;
       render();
     }catch(e){render();show('Canonical catalog options unavailable: '+e.message+'; saving requires server validation.');}
+    await loadContextRef();
   })();
 })();

@@ -82,9 +82,8 @@ def _context_url(feature_id: str, behavior_ref: str) -> str:
 
 
 def _editor_url(feature_id: str, behavior_ref: str) -> str:
-    # Agent B's editor presently does NOT consume context_ref. It can later
-    # perform an authenticated, same-origin GET of this read-only reference.
-    # Existing UI still opens safely as a new design-only editor.
+    # The editor GETs this read-only reference (same-origin, strict path
+    # pattern) and starts an unsaved design-only draft; see the handoff doc.
     return "/scenario-developer?context_ref=" + quote(_context_url(feature_id, behavior_ref), safe="")
 
 
