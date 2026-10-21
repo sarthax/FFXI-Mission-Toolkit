@@ -156,6 +156,165 @@
     return 'Loaded revision ' + revision + (dirty ? ' · unsaved changes' : ' · no changes');
   }
 
+  function emptyHandoffDraft() {
+    return {
+      schema_version: 1, feature_id:'', case_id:'', name:'',
+      runner:'unassigned', execution_status:'design_only',
+      purpose:'UNKNOWN — author a source-backed purpose',
+      rationale:'UNKNOWN — source context requires independent review',
+      preconditions:[], observations:[], assertions:[], cleanup:[],
+      behavior:{given:[],when:[],then:['UNKNOWN — no independent normative oracle']},
+      steps:[],
+      authoring:{state:'draft',execution_policy:'read_only',
+        evidence_provenance:'unverified_manual_authoring',
+        blocking_gaps:['No reviewed oracle, complete observations or independent readback supplied'],
+        review_required:true}
+    };
+  }
+  function draftFromCoverage(context) {
+    if (!context || context.contract !== 'coverage_behavior_reference_v1' ||
+        context.context_only !== true || context.execution_enabled !== false ||
+        context.review_required !== true || context.expected_oracle !== 'UNKNOWN' ||
+        context.design_only !== true || context.auto_populate_allowed !== false ||
+        context.auto_save_allowed !== false || context.proposed_case_id !== null ||
+        !Array.isArray(context.assertions) || context.assertions.length !== 0 ||
+        !Array.isArray(context.observations) || context.observations.length !== 0 ||
+        !Array.isArray(context.capability_bindings) || context.capability_bindings.length !== 0 ||
+        !/^[A-Za-z0-9][A-Za-z0-9_-]{0,119}$/.test(context.feature_id) ||
+        !/^[A-Za-z0-9][A-Za-z0-9_-]{0,119}$/.test(context.behavior_ref))
+      throw Error('Unsupported or untrusted coverage context');
+    const next=emptyHandoffDraft();
+    next.feature_id=context.feature_id;
+    next.name=('DRAFT — '+context.label).slice(0,120);
+    next.rationale=('UNVERIFIED declared test intent: '+context.feature_id+'/'+context.behavior_ref+
+      '; '+context.source_pointer+'; source revision UNPINNED; NOT a validated requirement').slice(0,1000);
+    next.authoring.blocking_gaps.push('Coverage reference '+context.behavior_ref+
+      ' is a declared case intent only; source and normative oracle UNKNOWN');
+    return next;
+  }
+  // All destructive document switches share this same policy. A loaded
+  // revision remains an explicit context even if unchanged; a source handoff
+  // and any edits to the default synthetic draft must never disappear without
+  // an operator discard decision. Pure, browser-independent for tests.
+  function replacementConfirmationReason(current, baseline, revision, activeSource) {
+    if (baseline !== null || revision !== 0)
+      return 'a loaded revision and any unsaved edits';
+    if (activeSource)
+      return 'the current source-derived authoring context and any edits';
+    if (JSON.stringify(current) !== JSON.stringify(fresh()))
+      return 'unsaved draft edits';
+    return null;
+  }
+
+  // A delayed response is tied to the saved snapshot and active document,
+  // never to whichever identity happens to be in the editor afterward.
+  function saveResponseDisposition(snapshot, latest, saved, changedDocument) {
+    if (changedDocument)
+      return {apply_revision:false, reason:'editor document changed during save'};
+    if (!snapshot || !saved || saved.feature_id!==snapshot.feature_id ||
+        saved.case_id!==snapshot.case_id)
+      return {apply_revision:false, reason:'unexpected saved document identity'};
+    if (!latest || latest.feature_id!==snapshot.feature_id ||
+        latest.case_id!==snapshot.case_id)
+      return {apply_revision:false, reason:'editor identity changed during save'};
+    return {apply_revision:true,
+      unsaved_edits:JSON.stringify(latest)!==JSON.stringify(snapshot)};
+  }
+
+  // Re-resolve the exact declared intent immediately before beginning
+  // authoring. A source label/category or safety flag change invalidates the
+  // displayed review even though its revision is still UNPINNED.
+  function coverageContextChanged(before, after) {
+    if (!before || !after) return true;
+    const fields=['contract','feature_id','behavior_ref','label','category','source',
+      'source_pointer','source_revision','reference_kind','expected_oracle',
+      'context_only','design_only','review_required','auto_populate_allowed',
+      'auto_save_allowed','execution_enabled','return_url'];
+    return fields.some(field=>before[field] !== after[field]) ||
+      JSON.stringify(before.assertions)!==JSON.stringify(after.assertions) ||
+      JSON.stringify(before.observations)!==JSON.stringify(after.observations) ||
+      JSON.stringify(before.capability_bindings)!==JSON.stringify(after.capability_bindings);
+  }
+
+  // Explicit handoff entry must not silently replace an edited, loaded or
+  // already source-derived draft. Return a human-readable blocker, not a
+  // permission to save; all authoring still uses canonical validation.
+  function handoffReplacementIssue(current, baseline, revision, activeSource) {
+    if (activeSource)
+      return 'A source handoff is already open; continue editing it or explicitly start a new scenario.';
+    if (baseline !== null || revision !== 0)
+      return 'A saved draft is open; explicitly start a new scenario before importing source context.';
+    if (JSON.stringify(current) !== JSON.stringify(fresh()))
+      return 'There are unsaved editor changes; explicitly start a new scenario before importing source context.';
+    return null;
+  }
+
+  function draftFromEvidence(review, selected) {
+    if (!review || review.contract!=='editor_evidence_suggestions_v1' ||
+        review.required_confirmation!==true || review.original_capture_authenticated!==false ||
+        review.execution_enabled!==false ||
+        !/^[a-f0-9]{64}$/.test(review.projection_sha256) ||
+        !Array.isArray(selected) || !Array.isArray(review.steps))
+      throw Error('Unreviewed or unsupported evidence suggestion');
+    const next=emptyHandoffDraft();
+    next.name='DRAFT — captured observations (unverified)';
+    next.rationale=('Unverified indexed capture '+review.capture_id+
+      '; projection SHA-256 '+review.projection_sha256+
+      '; original capture bytes NOT independently authenticated.').slice(0,1000);
+    next.authoring.evidence_provenance='unverified_indexed_capture';
+    next.authoring.blocking_gaps.push('Captured behavior is OBSERVED ONLY; source fingerprints are indexed, not independently authenticated');
+    const ids=new Set();
+    for(const entry of selected){
+      if (!entry || typeof entry.id!=='string' || ids.has(entry.id) ||
+          !/^[A-Za-z0-9][A-Za-z0-9_-]{0,119}$/.test(entry.id))
+        throw Error('Duplicate or invalid selected evidence step');
+      ids.add(entry.id);
+      const original=review.steps.find(x=>x.step_id===entry.id);
+      if(!original || original.decision==='REJECT' || original.decision==='PENDING' ||
+          entry.confirmed!==true || typeof entry.title!=='string' || !entry.title.trim())
+        throw Error('Each chosen evidence proposal requires explicit confirmation and review');
+      if (!Array.isArray(entry.bindings) ||
+          entry.bindings.length !== (original.bindings||[]).length)
+        throw Error('Explicit review of every candidate binding is required');
+      const seenBindings=new Set(), included=[];
+      for (const selectedBinding of entry.bindings) {
+        const candidate=(original.bindings||[]).find(b=>b.binding_id===selectedBinding.id);
+        if (!candidate || seenBindings.has(selectedBinding.id) ||
+            selectedBinding.confirmed !== true ||
+            !['INCLUDE_UNVERIFIED','EXCLUDE'].includes(selectedBinding.choice))
+          throw Error('Unknown, duplicate or unreviewed evidence binding');
+        seenBindings.add(selectedBinding.id);
+        if (selectedBinding.choice === 'INCLUDE_UNVERIFIED') {
+          if (!['ACCEPT','EDIT'].includes(candidate.review_decision) ||
+              candidate.classification === 'UNSUPPORTED')
+            throw Error('Unsupported, rejected or pending source identity cannot be included');
+          included.push(candidate.kind+' source='+candidate.identity+
+            (candidate.suggested_identity && candidate.suggested_identity!==candidate.identity ?
+              ' reviewer-proposal='+candidate.suggested_identity : '')+
+            ' ['+candidate.classification+' / UNVERIFIED; source '+candidate.binding_id+']');
+        }
+      }
+      const indexedHashes=[...new Set((original.source_fingerprints||[])
+        .map(x=>x.sha256).filter(x=>/^[a-f0-9]{64}$/.test(x)))].slice(0,3);
+      const note='UNVERIFIED indexed capture '+review.capture_id+' SHA-256 '+review.projection_sha256+
+        '; source step '+original.step_id+'; observed refs '+original.evidence_refs.join(', ')+
+        '; indexed source SHA-256 '+(indexedHashes.join(', ')||'UNKNOWN')+
+        ' (NOT independently rehashed; first '+indexedHashes.length+' unique indexed hashes shown)'+
+        '; selected source identities: '+
+        (included.join(' | ')||'NONE (excluded/rejected)')+
+        '; all candidates UNVERIFIED; no normative oracle';
+      if (note.length>1000)
+        throw Error('Selected evidence provenance exceeds the canonical 1000-character step note; reduce selected bindings or retain original review outside the draft. No source refs were silently truncated.');
+      next.steps.push({
+        id:original.step_id,title:entry.title.trim().slice(0,500),
+        intent:'observation',expected:'UNKNOWN — independently sourced expected outcome required',
+        assertion_ids:[], evidence_refs:[],confidence_note:note
+      });
+    }
+    if(!next.steps.length)throw Error('Confirm at least one supported, reviewed observation');
+    return next;
+  }
+
   function parseAdvanced(text) {
     const parsed = JSON.parse(text);
     if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object')
@@ -166,43 +325,20 @@
     return parsed;
   }
 
-  const CONTEXT_PATH = /^\/feature-testing\/coverage\/context\/([A-Za-z0-9_-]{1,120})\/([A-Za-z0-9_-]{1,120})$/;
+  const CONTEXT_PATH = /^\/feature-testing\/coverage\/context\/([A-Za-z0-9][A-Za-z0-9_-]{0,119})\/([A-Za-z0-9][A-Za-z0-9_-]{0,119})$/;
 
   // Accept only the same-origin, read-only coverage reference path; anything else is ignored.
   function contextRefPath(raw) {
     return typeof raw === 'string' && CONTEXT_PATH.test(raw) ? raw : null;
   }
 
-  // Context is a non-normative reference: it names a declared source case and
-  // nothing else. No assertion, observation, oracle or ID is taken from it.
+  // Compatibility with merged #1288; called only after the user's explicit action.
+  // Never copy the synthetic assertion, observation or fabricated case identity.
   function fromContext(ctx, featureIds) {
-    const bad = why => { throw Error('Context reference refused: ' + why); };
-    if (!ctx || typeof ctx !== 'object') bad('not an object');
-    if (ctx.contract !== 'coverage_behavior_reference_v1') bad('unknown contract');
-    if (ctx.context_only !== true || ctx.design_only !== true || ctx.review_required !== true ||
-        ctx.auto_populate_allowed !== false || ctx.auto_save_allowed !== false ||
-        ctx.execution_enabled !== false) bad('reference does not declare a read-only design-only contract');
-    if (typeof ctx.feature_id !== 'string' || !(featureIds || []).includes(ctx.feature_id))
-      bad('feature is not a known editor domain');
-    if (!/^[A-Za-z0-9_-]{1,100}$/.test(String(ctx.behavior_ref))) bad('invalid behavior reference');
-    const label = typeof ctx.label === 'string' ? ctx.label.slice(0, 120) : '';
-    const next = fresh();
-    const caseId = 'SYNTH-' + ctx.behavior_ref + '-DRAFT';
-    next.feature_id = ctx.feature_id;
-    next.case_id = caseId;
-    next.name = label || caseId;
-    next.steps[0].id = caseId + '-S01';
-    next.purpose = 'UNKNOWN — enter a source-backed purpose';
-    next.rationale = 'Started from declared source case ' + ctx.behavior_ref +
-      ' (' + ctx.source_pointer + '; source revision ' + ctx.source_revision +
-      '). A declared test intent, not an accepted requirement.';
-    next.authoring.evidence_provenance = 'context_reference_not_observed';
-    next.authoring.blocking_gaps = [
-      'Declared source case ' + ctx.behavior_ref + ' is context only; operator must author and review all behavior, observations, assertions and oracles',
-      'Case ID is a placeholder; choose a new unique ID before saving'
-    ];
-    return next;
+    if (!ctx || !Array.isArray(featureIds) || !featureIds.includes(ctx.feature_id))
+      throw Error('Context reference refused: unknown editor feature');
+    return draftFromCoverage(ctx);
   }
 
-  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, referenceIssues, parseAdvanced, contextRefPath, fromContext};
+  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, emptyHandoffDraft, draftFromCoverage, draftFromEvidence, handoffReplacementIssue, replacementConfirmationReason, saveResponseDisposition, coverageContextChanged, referenceIssues, parseAdvanced, contextRefPath, fromContext};
 });

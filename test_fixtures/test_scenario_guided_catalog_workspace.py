@@ -180,5 +180,11 @@ def test_editor_consumes_context_ref_read_only():
     assert "context_ref" in js and "contextRefPath" in js and "fromContext" in js
     assert 'id="sd-context-note"' in html
     # the handoff must never save or execute on its own
-    body = js[js.index("async function loadContextRef"):js.index("(async()=> {")]
-    assert "'POST'" not in body and "/builder/drafts" not in body
+    # The merged #1288 automatic draft initializer is now replaced with
+    # passive resolution and a single explicit click on Begin authoring.
+    body = js[js.index("async function resolveCoverageContext"):js.index("  $('sd-context-use').addEventListener")]
+    assert "await call(ref,'GET')" in body
+    assert "installIncompleteDraft(" not in body
+    assert "/builder/drafts" not in body
+    assert "async function loadContextRef" not in js
+    assert "sd-context-use" in js and "M.fromContext(" in js

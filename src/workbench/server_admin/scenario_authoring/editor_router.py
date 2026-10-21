@@ -6,6 +6,7 @@ draft store; it does not define an alternate spec or execute any capabilities.
 from __future__ import annotations
 
 from copy import deepcopy
+import json
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
@@ -13,6 +14,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
+from .context_handoff import coverage_context, inspect_evidence_review
 from workbench.runtime.paths import GUI_ROOT
 from workbench.runtime.legacy_settings import get_dsp_root
 from workbench.server_admin.scenario_authoring.catalog_adapter import (
@@ -177,6 +179,55 @@ def search_editor_catalog(request: Request, kind: str, query: str, limit: int = 
         raise HTTPException(503, str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(422, str(exc) + " Resolve: " + _validation_help(str(exc))) from exc
+
+
+class CoverageReferenceRequest(BaseModel):
+    context_ref: str
+    source: dict
+
+
+@router.post("/handoff/coverage/inspect", include_in_schema=False)
+def inspect_coverage_handoff(request: Request, body: CoverageReferenceRequest):
+    """Check the bounded existing coverage endpoint response; no draft writes."""
+    _local_origin(request)
+    try:
+        return coverage_context(body.source, body.context_ref)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+class EvidenceReviewRequest(BaseModel):
+    review: dict
+
+
+@router.post("/handoff/evidence/inspect", include_in_schema=False)
+def inspect_evidence_handoff(request: Request, body: EvidenceReviewRequest):
+    """Validate *untrusted* exported review JSON; never store or approve it."""
+    if not request.client or request.client.host not in ("127.0.0.1", "::1"):
+        raise HTTPException(403, "Evidence authoring is local-only")
+    origin = request.headers.get("origin")
+    if origin and origin != str(request.base_url).rstrip("/"):
+        raise HTTPException(403, "Cross-origin evidence import refused")
+    if request.headers.get("content-type", "").split(";")[0].strip().lower() != "application/json":
+        raise HTTPException(415, "Evidence review requires JSON")
+    try:
+        size = int(request.headers.get("content-length", "0") or "0")
+    except ValueError:
+        raise HTTPException(400, "Invalid payload size") from None
+    # Offline Reviewer allows up to 4 MB of indexed projection, plus the
+    # browser's bounded step/binding decision envelope. Validate the parsed
+    # body as well, since Content-Length is not a security boundary.
+    # Browser JSON.stringify sends compact UTF-8 rather than Python's default
+    # ASCII-escaped, space-padded JSON. Count the complete request envelope;
+    # otherwise valid Unicode captures can be incorrectly rejected.
+    encoded = json.dumps({"review": body.review}, ensure_ascii=False,
+                         separators=(",", ":"), allow_nan=False).encode("utf-8")
+    if size > 5_000_000 or len(encoded) > 5_000_000:
+        raise HTTPException(413, "Evidence review too large; narrow the offline capture export")
+    try:
+        return inspect_evidence_review(body.review)
+    except (ValueError, KeyError, TypeError, OverflowError) as exc:
+        raise HTTPException(422, "Unsupported, missing, modified or incompatible evidence review: " + str(exc)) from exc
 
 
 @router.get("/seed/{feature_id}/{case_id}", include_in_schema=False)

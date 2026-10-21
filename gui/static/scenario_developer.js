@@ -258,6 +258,33 @@
     for(const gap of view.blocking_gaps)staticText(root,'p','BLOCKED / needs review: '+gap);
   }
 
+  function renderIncompletePreview() {
+    // A planning preview is not canonical acceptance; it never runs the
+    // assertions, reads a capture or promotes a proposed expectation.
+    const root=$('sd-preview');root.replaceChildren();root.hidden=false;
+    staticText(root,'h2','Incomplete authoring preview — DESIGN_ONLY / NOT VALIDATED');
+    staticText(root,'p','Source provenance (UNVERIFIED): '+(spec.rationale||'NONE'));
+    staticText(root,'p','New case ID: '+(spec.case_id||'NOT PROVIDED — choose a unique ID'));
+    staticText(root,'p','Normative expected results: UNKNOWN until independently sourced');
+    for(const step of spec.steps) {
+      const card=el('article','sd-preview-step');
+      staticText(card,'h3',step.title+' — UNKNOWN');
+      const pair=el('div','sd-pair'),observed=el('div'),expected=el('div');
+      staticText(observed,'strong','OBSERVED / provisional');
+      staticText(observed,'p',step.title);
+      staticText(expected,'strong','EXPECTED / normative');
+      staticText(expected,'p',step.expected);
+      pair.append(observed,expected);card.append(pair);
+      staticText(card,'p','Indexed source notes: '+(step.confidence_note||'UNKNOWN'));
+      root.append(card);
+    }
+    staticText(root,'p','Assertions and canonical observations must be authored separately. Preview does NOT save, verify or execute.');
+  }
+  $('sd-preview-incomplete').addEventListener('click',()=>{
+    try {current();renderIncompletePreview();show('Provisional design preview only — no canonical validation, saving or execution.');}
+    catch(e){show('Draft preview unavailable: '+e.message);}
+  });
+
   async function call(path,method,body,auth) {
     const headers={'X-Requested-With':'toolkit-ui'};
     if(body!==undefined)headers['Content-Type']='application/json';
@@ -269,35 +296,63 @@
     return value;
   }
   async function validatePreview() {
-    const result=await call('/scenario-developer/validate','POST',{specification:current()});
+    const generation=editorGeneration, input=M.clone(current());
+    const result=await call('/scenario-developer/validate','POST',{specification:input});
+    if(generation!==editorGeneration || JSON.stringify(current())!==JSON.stringify(input))
+      throw Error('Preview is stale: editor changed while validating. Validate the current draft again.');
     renderPreview(result.preview,result.reader_view);
     show('Canonical validation accepted — DESIGN_ONLY, unreviewed, not executable.\n'+
       result.warnings.join('\n'));
     return result;
   }
 
+  let editorGeneration=0, forkPending=false;
+  function confirmDocumentReplacement(action) {
+    if (savePending) throw Error('A save is in progress. Finish that request before replacing this draft.');
+    current(); // Read unsaved Guided fields or validate Advanced JSON first.
+    const reason=M.replacementConfirmationReason(spec,baseline,Number($('sd-revision').value),activeHandoff);
+    return !reason || window.confirm(action+' will replace '+reason+'. Discard that context and continue?');
+  }
   $('sd-guided').addEventListener('click',()=>switchMode('guided'));
   $('sd-advanced').addEventListener('click',()=>switchMode('advanced'));
   $('sd-apply-json').addEventListener('click',()=>switchMode('guided'));
   $('sd-new').addEventListener('click',()=>{
-    spec=M.fresh();mode='guided';baseline=null;setSourceDetail(null,null);$('sd-revision').value=0;
-    $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
-    render();show('Created a synthetic, design-only canonical draft.');
+    try {
+      if(!confirmDocumentReplacement('New scenario'))return;
+      editorGeneration++;
+      activeHandoff=null;spec=M.fresh();mode='guided';baseline=null;setSourceDetail(null,null);$('sd-revision').value=0;
+      $('sd-context-use').disabled=!coverageContext;
+      $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
+      render();show('Created a synthetic, design-only canonical draft.');
+    }catch(e){show('New scenario refused: '+e.message);}
   });
   $('sd-fork').addEventListener('click',async()=>{
+    if(forkPending)return;
+    forkPending=true;$('sd-fork').disabled=true;
+    const startedGeneration=editorGeneration;
     try{
+      if(savePending)throw Error('Save in progress; cannot switch drafts');
       const [feature,caseId]=$('sd-seed-select').value.split('/');
       if(!feature||!caseId)throw Error('Choose a published case to fork');
       const x=await call('/scenario-developer/seed/'+encodeURIComponent(feature)+'/'+encodeURIComponent(caseId));
-      spec=M.forkPublished(x.specification);mode='guided';baseline=null;setSourceDetail(feature,caseId);
+      if(startedGeneration!==editorGeneration)
+        throw Error('Editor changed while loading the published case; retry');
+      const draft=M.forkPublished(x.specification);
+      if(!confirmDocumentReplacement('Fork published case'))return;
+      editorGeneration++;
+      activeHandoff=null;spec=draft;mode='guided';baseline=null;setSourceDetail(feature,caseId);
       $('sd-revision').value=0;$('sd-advanced-panel').hidden=true;
       $('sd-guided-panel').hidden=false;render();
       show('Copied as DESIGN_ONLY with a new synthetic case ID. Original published case unchanged.');
     }catch(e){show('Fork refused: '+e.message);}
+    finally{forkPending=false;$('sd-fork').disabled=false;}
   });
   $('sd-clone').addEventListener('click',()=>{
     try {
-      spec=M.cloneDraft(current());mode='guided';baseline=null;$('sd-revision').value=0;
+      const draft=M.cloneDraft(current());
+      if(!confirmDocumentReplacement('Clone current draft'))return;
+      editorGeneration++;
+      activeHandoff=null;spec=draft;mode='guided';baseline=null;$('sd-revision').value=0;
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
       render();show('Cloned into a new draft case ID. Rename it if a COPY already exists; source identities still require review.');
     } catch(e){show('Clone refused: '+e.message);}
@@ -316,19 +371,47 @@
   $('sd-observations').addEventListener('change',()=>{readGuidedFields();renderSteps();diagnostics();});
   $('sd-validate').addEventListener('click',async()=>{try{await validatePreview();}
     catch(e){$('sd-preview').hidden=true;show('Canonical validation rejected: '+e.message+'\n'+M.referenceIssues(spec).join('\n'));}});
+  let savePending=false;
   $('sd-save').addEventListener('click',async()=>{
+    if(savePending)return;
+    savePending=true;$('sd-save').disabled=true;
+    const generation=editorGeneration;
     try {
       if(!$('sd-token').value)throw Error('Enter a local operator token; a preview never grants save permission');
-      const validated=await validatePreview();
-      const rev=Number($('sd-revision').value);
+      // Keep an immutable copy of exactly what the operator asked to save.
+      // The validation round-trip is async, and Guided/Advanced may be edited
+      // while either response is in flight.
+      const input=M.clone(current()),rev=Number($('sd-revision').value);
       if(!Number.isInteger(rev)||rev<0)throw Error('Invalid expected revision');
+      const validated=await call('/scenario-developer/validate','POST',{specification:input});
+      if(generation!==editorGeneration || Number($('sd-revision').value)!==rev ||
+          JSON.stringify(current())!==JSON.stringify(input))
+        throw Error('Draft changed while validating. Review the edits and save again.');
+      renderPreview(validated.preview,validated.reader_view);
+      const toSave=M.clone(validated.canonical_specification);
+      if(toSave.feature_id!==input.feature_id||toSave.case_id!==input.case_id)
+        throw Error('Canonical validation returned an unexpected draft identity');
       const saved=await call('/feature-testing/builder/drafts','POST',
-        {specification:validated.canonical_specification,expected_revision:rev},true);
+        {specification:toSave,expected_revision:rev},true);
+      // Do not attach a previously saved revision to a different document
+      // just because the async response arrived after an editor change.
+      let latest=null;
+      try {latest=current();} catch(e) { /* Invalid Advanced draft remains untouched. */ }
+      const disposition=M.saveResponseDisposition(toSave,latest,saved,
+        generation!==editorGeneration);
+      if(!disposition.apply_revision) {
+        show('Saved '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
+          ', but '+disposition.reason+'; reopen saved draft before the next save.');
+        return;
+      }
       $('sd-revision').value=saved.revision;
-      baseline=M.clone(validated.canonical_specification);updateRevision();
+      baseline=M.clone(toSave);updateRevision();
       show('Saved DESIGN_ONLY '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
-        '. NOT reviewed or executable.');
-    }catch(e){show('Draft NOT saved: '+e.message);}
+        (disposition.unsaved_edits?
+          '. Newer editor changes remain UNSAVED; review before the next revision.':
+          '. NOT reviewed or executable.'));
+    }catch(e){show('Draft NOT saved / revision may require refresh: '+e.message);}
+    finally {savePending=false;$('sd-save').disabled=false;}
   });
   $('sd-load-drafts').addEventListener('click',async()=>{
     try {
@@ -345,12 +428,15 @@
     const d=drafts[Number($('sd-drafts').value)];
     if(!d){show('Select an existing draft');return;}
     try{
-      spec=M.parseAdvanced(JSON.stringify(d.specification));mode='guided';
+      const loaded=M.parseAdvanced(JSON.stringify(d.specification));
+      if(!confirmDocumentReplacement('Open saved draft'))return;
+      editorGeneration++;
+      activeHandoff=null;spec=loaded;mode='guided';
       $('sd-revision').value=d.revision;baseline=M.clone(spec);
       setSourceDetail(null,null);
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
       render();show('Opened '+d.case_id+' revision '+d.revision+' (design only). Edit and save with this expected revision; an external update will cause a revision conflict.');
-    }catch(e){show('Invalid saved draft: '+e.message);}
+    }catch(e){show('Open draft refused: '+e.message);}
   });
   function paintCandidates(result) {
     const host=$('sd-catalog-results');host.replaceChildren();
@@ -402,36 +488,210 @@
     if(mode==='advanced')$('sd-revision-state').textContent=
       'Advanced JSON has unsaved edits — validate before saving (design only)';
   });
-  // Read-only handoff from the coverage matrix: GET a bounded reference, start an
-  // UNSAVED design-only draft. Never saves, forks a published ID or grants capability.
-  async function loadContextRef() {
-    const raw=new URLSearchParams(location.search).get('context_ref');
-    if(raw===null)return;
-    const note=$('sd-context-note');
-    try{
-      const path=M.contextRefPath(raw);
-      if(!path)throw Error('only same-origin coverage context references are accepted');
-      const ctx=await call(path);
-      spec=M.fromContext(ctx,options.features.map(f=>f.id));
-      mode='guided';baseline=null;setSourceDetail(null,null);$('sd-revision').value=0;
-      $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;render();
-      note.hidden=false;
-      note.textContent='Started from declared source case '+ctx.behavior_ref+' ('+ctx.feature_id+
-        ') — context only. Nothing was copied from it except its label; the case ID is a placeholder, '+
-        'the draft is unsaved, and you must author expected outcomes yourself.';
-      show('Started an unsaved design-only draft from a coverage reference.');
-    }catch(e){
-      note.hidden=false;
-      note.textContent='Context reference ignored: '+e.message+'. A new synthetic draft is shown instead.';
+  let coverageContext = null, evidenceSuggestions = null, activeHandoff = null;
+  function installIncompleteDraft(draft, feedback, key) {
+    if(savePending)throw Error('A draft save is in progress; handoff cannot replace the editor');
+    // Inspect the actual Guided or Advanced editor before touching it. A
+    // loaded revision, any edit to the initial synthetic example, or another
+    // source handoff requires an explicit New action first.
+    current();
+    const issue=M.handoffReplacementIssue(spec,baseline,Number($('sd-revision').value),activeHandoff);
+    if (issue) throw Error(issue);
+    editorGeneration++;
+    activeHandoff=key;
+    spec=draft;mode='guided';baseline=null;$('sd-revision').value=0;
+    $('sd-guided-panel').hidden=false;$('sd-advanced-panel').hidden=true;
+    $('sd-guided').setAttribute('aria-pressed','true');
+    $('sd-advanced').setAttribute('aria-pressed','false');
+    $('sd-preview').hidden=true;
+    render();renderIncompletePreview();
+    show(feedback+' This draft is intentionally INCOMPLETE and cannot be validated or saved until you supply real observations, assertions, preconditions, cleanup and a new case ID. Nothing was executed.');
+  }
+  async function resolveCoverageContext() {
+    const ref=new URLSearchParams(window.location.search).get('context_ref');
+    if(!ref)return;
+    const info=$('sd-context-feedback');
+    try {
+      if (!M.contextRefPath(ref))
+        throw Error('Reference rejected: only an exact local Coverage Matrix behavior URL is allowed');
+      // The existing endpoint is the owner of the source-declared reference.
+      const response=await call(ref,'GET');
+      const checked=await call('/scenario-developer/handoff/coverage/inspect','POST',
+        {context_ref:ref,source:response});
+      if(checked.context_only!==true||checked.execution_enabled!==false)
+        throw Error('Coverage reference did not remain context-only');
+      if (!options.features.some(f=>f.id===checked.feature_id)) throw Error('Source feature is not an accepted editor domain');
+      coverageContext=checked;
+      const root=$('sd-context-detail');root.replaceChildren();
+      const b=el('section','sd-card');
+      staticText(b,'strong','Declared source test intent, not a verified Behavior Trace identity');
+      staticText(b,'p','Feature: '+checked.feature_id+' · declared behavior/case: '+checked.behavior_ref);
+      staticText(b,'p','Title from readiness catalog: '+checked.label+' · category '+checked.category);
+      staticText(b,'p','Provenance: '+checked.source+' / '+checked.source_pointer+
+        ' · revision '+checked.source_revision+' · expected oracle UNKNOWN');
+      root.append(b);
+      info.textContent='Source reference resolved and checked. Review it before creating a draft; no assertions or requirements transferred.';
+      $('sd-context-use').disabled=false;
+      $('sd-context-note').hidden=false;
+      $('sd-context-note').textContent='Source context ready for review; no draft has been created. Select Begin authoring to continue.';
+    }catch(e) {
+      coverageContext=null;$('sd-context-use').disabled=true;
+      $('sd-context-note').hidden=false;
+      $('sd-context-note').textContent='Coverage context not applied: '+e.message;
+      info.textContent='Coverage context unavailable, stale or incompatible: '+e.message+
+        '. Return to the Coverage Matrix and request a fresh declared intent; nothing was created.';
     }
   }
-
+  let coverageBeginPending=false;
+  $('sd-context-use').addEventListener('click',async()=>{
+    if(coverageBeginPending)return;
+    coverageBeginPending=true;$('sd-context-use').disabled=true;
+    try {
+      if (!coverageContext)throw Error('Resolve and inspect the Coverage Matrix context first');
+      const ref=new URLSearchParams(window.location.search).get('context_ref');
+      if(!M.contextRefPath(ref))throw Error('Original bounded source reference missing');
+      const original=coverageContext;
+      // The source revision is unpinned; require a new owner-endpoint lookup
+      // instead of silently applying a previously inspected description.
+      const latest=await call(ref,'GET');
+      const checked=await call('/scenario-developer/handoff/coverage/inspect','POST',
+        {context_ref:ref,source:latest});
+      if(M.coverageContextChanged(original,checked))
+        throw Error('Declared coverage intent changed during review; reopen the Coverage Matrix and inspect it again');
+      installIncompleteDraft(M.fromContext(checked,options.features.map(f=>f.id)),
+        'Created design-only authoring context from declared source case '+checked.behavior_ref+'.',
+        'coverage:'+checked.feature_id+'/'+checked.behavior_ref);
+      // Coverage declares a test *intent*, not necessarily a published
+      // canonical scenario. Do not invent a Scenario Detail destination.
+      setSourceDetail(null,null);
+      $('sd-context-note').textContent='Manually opened draft from rechecked declared intent. No assertions or expected outcomes were imported. Return through the Coverage Matrix link above.';
+    }catch(e){show('Coverage context not applied: '+e.message);}
+    finally {
+      coverageBeginPending=false;
+      $('sd-context-use').disabled=Boolean(activeHandoff);
+    }
+  });
+  function renderEvidenceSuggestions(result) {
+    const root=$('sd-evidence-suggestions');root.replaceChildren();
+    const summary=el('section','sd-card');
+    staticText(summary,'strong','OBSERVED ONLY · capture '+result.capture_id+
+      ' · checksum matches embedded indexed projection: '+result.projection_matches_embedded_evidence);
+    staticText(summary,'p','Projection SHA-256: '+result.projection_sha256);
+    staticText(summary,'p','Physical source authenticated: NO; fingerprints '+result.source_fingerprints_status);
+    staticText(summary,'p','Unresolved bindings: '+result.unresolved_bindings+
+      '; reviewer decisions complete in downloaded file: '+result.review_complete_in_file);
+    root.append(summary);
+    for(const item of result.steps) {
+      const article=el('article','sd-card');
+      staticText(article,'h3',item.step_id+' · '+item.decision+' (proposal, not normative)');
+      staticText(article,'p','Originally observed: '+item.observed_summary);
+      staticText(article,'p','Original indexed refs: '+item.evidence_refs.join(', '));
+      const sourceDetail=el('details');
+      staticText(sourceDetail,'summary','Indexed source file hashes and parser versions (not rehashed)');
+      for(const pointer of item.source_fingerprints||[])staticText(sourceDetail,'p',
+        pointer.ref_id+' · SHA-256 '+pointer.sha256+' · parser version '+pointer.parser_version+
+        ' · '+pointer.verification);
+      article.append(sourceDetail);
+      const details=el('details');staticText(details,'summary','Candidate identities (UNVERIFIED)');
+      for(const b of item.bindings) {
+        const edited=b.suggested_identity && b.suggested_identity!==b.identity ?
+          ' · reviewer-proposed '+b.suggested_identity+' (NOT source identity)' : '';
+        const label=b.kind+' originally observed '+b.identity+edited+' · '+b.classification+
+          ' · '+b.confidence+' · reviewer '+b.review_decision;
+        const picker=el('select');picker.className='sd-binding-decision';
+        picker.dataset.bindingId=b.binding_id;
+        const empty=el('option','','Review candidate (required if step selected)');
+        empty.value='';picker.append(empty);
+        if (['ACCEPT','EDIT'].includes(b.review_decision) && b.classification!=='UNSUPPORTED') {
+          const include=el('option','','Include as UNVERIFIED source note (not an approved binding)');
+          include.value='INCLUDE_UNVERIFIED';picker.append(include);
+        }
+        const exclude=el('option','','Exclude this candidate from authored provenance');
+        exclude.value='EXCLUDE';picker.append(exclude);
+        details.append(field(label,picker));
+      }
+      article.append(details);
+      const editable=el('textarea');editable.rows=2;editable.maxLength=500;
+      editable.value=item.suggested_title;
+      article.append(field('Edit proposed observation/action description before accepting',editable));
+      staticText(article,'p','Originally OBSERVED: '+item.observed_summary);
+      staticText(article,'p','Normative EXPECTED: UNKNOWN — independently sourced oracle required');
+      const confirm=el('input');confirm.type='checkbox';
+      confirm.className='sd-evidence-confirm';confirm.dataset.stepId=item.step_id;
+      confirm.disabled=item.decision==='PENDING'||item.decision==='REJECT';
+      const label=el('label','sd-field');
+      label.append(confirm,document.createTextNode('I have reviewed this suggested step against the indexed evidence and choose to copy it as provisional text'));
+      article.append(label);
+      if(confirm.disabled)staticText(article,'p','Cannot select a rejected/pending source-review step.');
+      root.append(article);
+    }
+    const notice=el('p','sd-warning');
+    notice.textContent='No independent source lookup was made. Accepting a step only copies text and a projection fingerprint into an incomplete canonical design-only draft. You must manually author every oracle and assertion.';
+    root.append(notice);
+  }
+  // Inspections are read-only, but a slow JSON read/POST must never publish
+  // a stale file after the operator selects a different evidence export.
+  let evidenceInspectionGeneration=0, evidenceInspectPending=false;
+  $('sd-evidence-file').addEventListener('change',()=>{
+    evidenceInspectionGeneration++;
+    evidenceSuggestions=null;$('sd-evidence-use').disabled=true;
+    $('sd-evidence-suggestions').replaceChildren();
+    $('sd-evidence-feedback').textContent='New evidence file selected. Inspect this exact file before accepting any suggestions.';
+  });
+  $('sd-evidence-inspect').addEventListener('click',async()=>{
+    if(evidenceInspectPending)return;
+    const info=$('sd-evidence-feedback'), generation=++evidenceInspectionGeneration;
+    const file=$('sd-evidence-file').files[0];
+    evidenceInspectPending=true;$('sd-evidence-inspect').disabled=true;
+    evidenceSuggestions=null;$('sd-evidence-use').disabled=true;
+    $('sd-evidence-suggestions').replaceChildren();
+    try {
+      if(!file||file.size<1||file.size>4_500_000)throw Error('Choose a nonempty offline review JSON export under 4.5 MB');
+      const raw=JSON.parse(await file.text());
+      if(generation!==evidenceInspectionGeneration || $('sd-evidence-file').files[0]!==file)
+        throw Error('Selected evidence file changed during inspection; inspect the new file');
+      const result=await call('/scenario-developer/handoff/evidence/inspect','POST',{review:raw});
+      if(generation!==evidenceInspectionGeneration || $('sd-evidence-file').files[0]!==file)
+        throw Error('Selected evidence file changed during inspection; inspect the new file');
+      if(result.contract!=='editor_evidence_suggestions_v1'||result.execution_enabled!==false||
+        result.original_capture_authenticated!==false)throw Error('Unsupported review confirmation contract');
+      evidenceSuggestions=result;
+      renderEvidenceSuggestions(result);
+      $('sd-evidence-use').disabled=false;
+      info.textContent='Inspected untrusted review; '+result.steps.length+' candidate steps. Confirm each wanted proposal below. No draft created or saved.';
+    }catch(e){
+      if(generation===evidenceInspectionGeneration)
+        info.textContent='Evidence file rejected or unavailable: '+e.message+'. Preserve the original and re-export from the trusted offline reviewer.';
+    }finally{
+      evidenceInspectPending=false;$('sd-evidence-inspect').disabled=false;
+    }
+  });
+  $('sd-evidence-use').addEventListener('click',()=>{
+    try {
+      if(!evidenceSuggestions)throw Error('Inspect a compatible review file first');
+      const selected=[];
+      for(const node of $('sd-evidence-suggestions').querySelectorAll('article.sd-card')){
+        const check=node.querySelector('input.sd-evidence-confirm');
+        if(check&&check.checked) {
+          const title=node.querySelector('textarea').value;
+          const bindings=[...node.querySelectorAll('select.sd-binding-decision')].map(select=>({
+            id:select.dataset.bindingId,choice:select.value,confirmed:Boolean(select.value)
+          }));
+          selected.push({id:check.dataset.stepId,title,confirmed:true,bindings});
+        }
+      }
+      installIncompleteDraft(M.draftFromEvidence(evidenceSuggestions,selected),
+        'Copied '+selected.length+' explicitly confirmed OBSERVED-only proposals from capture '+evidenceSuggestions.capture_id+'.',
+        'evidence:'+evidenceSuggestions.capture_id+'/'+evidenceSuggestions.projection_sha256);
+      setSourceDetail(null,null);
+    }catch(e){show('Evidence suggestions not applied: '+e.message);}
+  });
   (async()=> {
     try{
       options=await call('/scenario-developer/options');
       $('sd-catalog').textContent='Catalog identity: '+options.catalog_status+' — '+options.catalog_note;
       render();
+      await resolveCoverageContext();
     }catch(e){render();show('Canonical catalog options unavailable: '+e.message+'; saving requires server validation.');}
-    await loadContextRef();
   })();
 })();
