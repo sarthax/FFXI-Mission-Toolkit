@@ -47,9 +47,14 @@ assert.equal(projected.bindings[3].approved,false);
 assert.match(projected.bindings[3].claim,/not independently reconciled/);
 assert.equal(projected.oracles[0].approved,false);
 assert.equal(projected.oracles[0].expected_candidate,true);
-assert.equal(projected.steps[0].sources.length,1);
-assert.equal(projected.steps[0].sources[0].ref,'SrcOne');
-assert.match(projected.steps[0].attribution,/ORACLE-LINKED/);
+// An oracle source supports an assertion's proposed expected value. It is
+// NOT an explicit source-to-step citation, even if that assertion is linked.
+assert.equal(projected.steps[0].sources.length,0);
+assert.equal(projected.steps[0].oracle_citations.length,1);
+assert.equal(projected.steps[0].oracle_citations[0].ref,'SrcOne');
+assert.match(projected.steps[0].attribution,/STEP-LEVEL SOURCE ATTRIBUTION UNAVAILABLE/);
+assert.match(projected.sources[0].attribution,/ATTRIBUTION UNASSIGNED/);
+assert.doesNotMatch(projected.sources[0].attribution,/CASE-LEVEL SOURCE/);
 assert.equal(projected.steps[0].execution_gate,'BLOCKED');
 assert.equal(projected.steps[0].permissions[0],'operator_approval');
 assert.equal(projected.steps[0].readbacks.length,2);
@@ -91,3 +96,31 @@ assert.equal(V.project(M.draftFromCoverage({contract:'coverage_behavior_referenc
   proposed_case_id:null,assertions:[],observations:[],capability_bindings:[],
   execution_enabled:false})).present,false);
 console.log('R7 canonical optional-v2 rendering identity provenance and preservation: PASS');
+
+const orphan=M.clone(v);
+orphan.contract_v2.oracles=[];
+orphan.contract_v2.parameters=[];
+const unassociated=V.project(orphan);
+assert.equal(unassociated.sources.length,2); // preserve every declared source
+assert.equal(unassociated.steps[0].sources.length,0);
+assert.equal(unassociated.steps[0].oracle_citations.length,0);
+assert.match(unassociated.sources[1].attribution,/UNASSIGNED/);
+
+// Agent D's additional indexed-evidence sidecar is *not* the reviewed
+// evidence-decision envelope and cannot be silently imported as one.
+const sidecar={
+  contract:'capture_reviewer_readiness_sidecar_v0_NONCANONICAL',
+  original_evidence_handoff:{capture_id:1},
+  indexed_observation_projection_sha256:'a'.repeat(64),
+  original_handoff_projection_sha256:'b'.repeat(64),
+  scenario_developer_handoff:{read_only_projection:{
+    contract:'capture_readiness_authoring_projection_v1_NONCANONICAL',
+    steps:[{indexed_evidence_provenance:[{parser_support:'UNRECOGNIZED_OR_UNSUPPORTED',
+      decoder_version:null,independent_source_authentication:false,
+      indexed_digests_rehashed:false}]}],
+    automatic_import:false,execution_enabled:false
+  }}
+};
+assert.throws(()=>M.draftFromEvidence(sidecar,[]),/Unreviewed or unsupported evidence suggestion/);
+assert.deepEqual(M.parseAdvanced(JSON.stringify(v)).contract_v2,v.contract_v2);
+console.log('R7 no inferred source scope or sidecar import/approval: PASS');
