@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 import re
+from pathlib import Path
 
 from test_capture_identity_oracle_readiness import (
     fixture, binding, source, record, proof_for, independent_oracle,
@@ -335,6 +336,48 @@ def test_duplicate_capture_refs_fail_closed_without_inferred_step_links():
     con.close()
 
 
+def test_standalone_synthetic_readonly_editor_display_fixtures():
+    sample = json.loads(Path(__file__).with_name(
+        "r7_capture_readiness_authoring_projection_synthetic.json").read_text(
+            encoding="utf-8"))
+    assert sample["fixture_contract"] == "r7_readiness_authoring_display_examples_v1_SYNTHETIC_ONLY"
+    assert len(sample["samples"]) == 2
+    for item in sample["samples"]:
+        typed = item["read_only_projection"]
+        assert typed["contract"] == "capture_readiness_authoring_projection_v1_NONCANONICAL"
+        assert typed["source_compatibility_state"] in {"UNKNOWN", "BLOCKED"}
+        assert typed["physical_source_authenticated"] is False
+        assert typed["automatic_import"] is False
+        assert typed["save_allowed"] is False
+        assert typed["approved_for_execution"] is False
+        assert typed["execution_enabled"] is False
+        assert typed["normative_expected"] is None and typed["verdict"] == "UNKNOWN"
+        for row in typed["steps"]:
+            assert row["canonical_step_id"] is None
+            assert row["canonical_source_association"]["scope"] is None
+            assert row["canonical_source_association"]["source_refs"] == []
+            assert row["readiness_state"] in {"UNKNOWN", "BLOCKED"}
+            assert row["oracle_approval_state"] == "UNAPPROVED"
+            assert row["normative_expected"] is None and row["verdict"] == "UNKNOWN"
+            assert row["execution_enabled"] is False
+            assert [p["evidence_ref"] for p in row["indexed_evidence_provenance"]] == (
+                row["original_evidence_refs"])
+            for source in row["indexed_evidence_provenance"]:
+                assert source["independent_source_authentication"] is False
+                if source["capture_file_locator_state"] == "NO_INDEXED_CAPTURE_FILE_LOCATOR":
+                    assert source["source_file_claims"] == []
+                for declaration in source["source_file_claims"]:
+                    assert declaration["decoder_version"] is None
+                    assert declaration["indexed_digests_rehashed"] is False
+            for missing in row["missing_readbacks"]:
+                assert missing["status"] == "NOT_INDEPENDENTLY_OBSERVED"
+                assert missing["readiness_state"] == row["readiness_state"]
+                assert missing["permission_granted"] is False
+                assert missing["capability_registered"] is False
+    assert sample["samples"][0]["read_only_projection"]["source_compatibility_state"] == "UNKNOWN"
+    assert sample["samples"][1]["read_only_projection"]["source_compatibility_state"] == "BLOCKED"
+
+
 def test_repeated_capture_contradictions_are_not_gameplay_failures():
     con = synthetic_interaction_with_key_item()
     original = reconstruct_review_draft(con, 1)
@@ -460,6 +503,7 @@ def main():
     test_revision_mismatch_and_tampered_projection_fail_closed()
     test_missing_capture_file_locator_is_unknown_and_not_physical_absence()
     test_duplicate_capture_refs_fail_closed_without_inferred_step_links()
+    test_standalone_synthetic_readonly_editor_display_fixtures()
     test_unrecognized_parser_or_capture_ingest_remains_unknown()
     test_repeated_capture_contradictions_are_not_gameplay_failures()
     print("Synthetic evidence readiness, provenance and contract_v2 hints: PASS")
