@@ -19,7 +19,7 @@ def validate_spec(spec: dict) -> dict:
         raise ValueError("unsupported test specification version")
     required = {"schema_version", "feature_id", "case_id", "name", "runner",
                 "execution_status", "preconditions", "observations", "assertions", "cleanup"}
-    optional = {"purpose", "rationale", "behavior", "steps", "authoring"}
+    optional = {"purpose", "rationale", "behavior", "steps", "authoring", "contract_v2"}
     if not required.issubset(spec) or set(spec) - required - optional:
         raise ValueError("unexpected test specification fields")
     for field in ("feature_id", "case_id", "name"):
@@ -101,6 +101,11 @@ def validate_spec(spec: dict) -> dict:
             not isinstance(g, str) or not 1 <= len(g) <= 500 for g in a["blocking_gaps"]
         ):
             raise ValueError("invalid authoring gaps")
+    # Optional metadata remains purely descriptive: no new runner, oracle,
+    # capability or permission is granted by this namespace.
+    if "contract_v2" in spec:
+        from .scenario_contract_v2 import validate_contract_v2
+        validate_contract_v2(spec)
     return spec
 
 
