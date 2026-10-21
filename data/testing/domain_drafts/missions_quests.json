@@ -1,0 +1,1855 @@
+{
+  "artifact_type": "R5_missions_quests_domain_design_not_canonical_catalog",
+  "schema_version": 1,
+  "execution_enabled": false,
+  "integration_status": "BLOCKED_SCHEMA_OWNER_REVIEW",
+  "canonical_target": "data/testing/test_specifications.json",
+  "canonical_compatibility": "conceptual BDD with source/UNKNOWN/step mapping, not v1 importable until quest/mission/Gil observations are accepted",
+  "source_revision": {
+    "dsp_branch": "main",
+    "dsp_commit": "86d4467d446569c741d76d296e640c3b844ad844",
+    "deployed": "UNKNOWN"
+  },
+  "cases": [
+    {
+      "schema_version": 1,
+      "feature_id": "missions_quests",
+      "case_id": "MQ-01",
+      "name": "Complete eligible NPC progression",
+      "kind": "positive",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "purpose": "Verify complete eligible npc progression on a specifically sourced NPC flow.",
+      "rationale": "Script guards and numeric reward source-pinned, but real client event, fame, Gil rate and server quest/inventory readbacks not yet verified",
+      "behavior": {
+        "given": [
+          "Owner-approved disposable character and exact NPC/zone source identity",
+          "Preconditions and branch precedence verified against pinned DSP files",
+          "Independent quest variables, inventory and KI source-backed baselines"
+        ],
+        "when": [
+          "Use Horatius Breaking Stones in Bastok Markets with source-reviewed fame+quest state, accept and trade one item 553"
+        ],
+        "then": [
+          "Horatius script accepts quest after CSID 0x0064 option 0; one item 553 while quest no longer AVAILABLE triggers 0x0065 and completion, reward 400*GIL_RATE; runtime acceptance UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Do not use GM quest/misson completion to prove gameplay",
+        "Operator confirms deployed DSP SHA and event catalog (or UNKNOWN)",
+        "Full affected state and restore strategy before interaction"
+      ],
+      "steps": [
+        {
+          "id": "MQ-01-S01",
+          "title": "Read-only setup baseline",
+          "action": "Select authorized character, record exact quest IDs via source, fame, variables, held KI and full inventory/Gil",
+          "expected": "Complete and pinned baseline; otherwise UNKNOWN",
+          "assertion_ids": [
+            "MQ-01-baseline"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/quests.lua",
+              "line_start": 12,
+              "line_end": 27,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/quests.lua#L12-L27"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MQ-01-S02",
+          "title": "Normal client interaction",
+          "action": "Use Horatius Breaking Stones in Bastok Markets with source-reviewed fame+quest state, accept and trade one item 553",
+          "expected": "Horatius script accepts quest after CSID 0x0064 option 0; one item 553 while quest no longer AVAILABLE triggers 0x0065 and completion, reward 400*GIL_RATE; runtime acceptance UNKNOWN",
+          "assertion_ids": [
+            "MQ-01-transition"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 18,
+              "line_end": 31,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L18-L31"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 33,
+              "line_end": 46,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L33-L46"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/quests.lua",
+              "line_start": 12,
+              "line_end": 27,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/quests.lua#L12-L27"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MQ-01-S03",
+          "title": "Independent authoritative comparison",
+          "action": "Capture NPC CSID and choice plus persisted quest/charvar/KI/inventory/Gil before/after",
+          "expected": "Source-matched independent post-state needed; otherwise UNKNOWN",
+          "assertion_ids": [
+            "MQ-01-oracle"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 18,
+              "line_end": 31,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L18-L31"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 33,
+              "line_end": 46,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L33-L46"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/quests.lua",
+              "line_start": 12,
+              "line_end": 27,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/quests.lua#L12-L27"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MQ-01-S04",
+          "title": "Cleanup and identity verification",
+          "action": "Only owner-approved restoration or quarantine; verify repeated client attempts and no unrelated changes",
+          "expected": "Clean complete state or BLOCKED",
+          "assertion_ids": [
+            "MQ-01-cleanup"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkmission.lua",
+              "line_start": 7,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkmission.lua#L7-L65"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MQ-01-baseline",
+          "expected": "Independent source-mapped quest/vars/inventory baseline or UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/quests.lua",
+              "line_start": 12,
+              "line_end": 27,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/quests.lua#L12-L27"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ]
+        },
+        {
+          "id": "MQ-01-transition",
+          "expected": "Horatius script accepts quest after CSID 0x0064 option 0; one item 553 while quest no longer AVAILABLE triggers 0x0065 and completion, reward 400*GIL_RATE; runtime acceptance UNKNOWN",
+          "oracle_status": "SOURCE_CONDITIONAL_RUNTIME_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 18,
+              "line_end": 31,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L18-L31"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 33,
+              "line_end": 46,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L33-L46"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/quests.lua",
+              "line_start": 12,
+              "line_end": 27,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/quests.lua#L12-L27"
+            }
+          ]
+        },
+        {
+          "id": "MQ-01-oracle",
+          "expected": "Source-based actual server delta verified; otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 18,
+              "line_end": 31,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L18-L31"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 33,
+              "line_end": 46,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L33-L46"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/quests.lua",
+              "line_start": 12,
+              "line_end": 27,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/quests.lua#L12-L27"
+            }
+          ]
+        },
+        {
+          "id": "MQ-01-cleanup",
+          "expected": "Approved rollback or isolated quarantined character with evidence",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 18,
+          "line_end": 31,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L18-L31"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 33,
+          "line_end": 46,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L33-L46"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 54,
+          "line_end": 74,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/quests.lua",
+          "line_start": 12,
+          "line_end": 27,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/quests.lua#L12-L27"
+        }
+      ],
+      "required_readback": {
+        "available": [
+          "Guarded /api/supervisor/test-character-keyitems",
+          "/api/supervisor/test-character-vars for approved exact names",
+          "/api/supervisor/test-character-inventory LIMIT 100 four cols"
+        ],
+        "missing": [
+          "Fixed read-only per-character quest and mission status endpoint",
+          "Read-only per-character Gil/quest fame and event option bindings",
+          "Complete untruncated inventory and save boundary, reward attribution"
+        ],
+        "format": "Server-owned status; NPC CSID alone never proves quest completion"
+      },
+      "xiheadless": {
+        "candidates": [
+          "talk_to_npc",
+          "event_select",
+          "wait_for_event",
+          "snapshot",
+          "inventory",
+          "logout"
+        ],
+        "acceptance": "UNKNOWN until exact active capabilities checked",
+        "missing": [
+          "Validated mapped NPC identity/client event options",
+          "Reliable relog and event evidence",
+          "Read-only authoritative quest and Gil readback"
+        ]
+      },
+      "mutation": {
+        "enabled": false,
+        "approval": "per-case owner and local operator required",
+        "cleanup": "Do not use GM command to claim gameplay verdict; restore isolated character by approved process"
+      },
+      "blocking_gaps": [
+        "Script guards and numeric reward source-pinned, but real client event, fame, Gil rate and server quest/inventory readbacks not yet verified",
+        "Deployed DSP main SHA/config and client source identity unverified",
+        "No fixed quest/mission/Gil authoritative readback"
+      ]
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "missions_quests",
+      "case_id": "MQ-02",
+      "name": "Missing prerequisite blocks progression",
+      "kind": "negative",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "purpose": "Verify missing prerequisite blocks progression on a specifically sourced NPC flow.",
+      "rationale": "Exact fame readback and WildcatBastok precedence required; normal client event handling UNKNOWN",
+      "behavior": {
+        "given": [
+          "Owner-approved disposable character and exact NPC/zone source identity",
+          "Preconditions and branch precedence verified against pinned DSP files",
+          "Independent quest variables, inventory and KI source-backed baselines"
+        ],
+        "when": [
+          "Talk to Horatius with Breaking Stones AVAILABLE but Bastok fame less than 2"
+        ],
+        "then": [
+          "Horatius onTrigger uses default CSID 0x006e rather than 0x0064 when fame below 2, assuming no Wildcat branch; no quest acceptance expected until event finished; runtime UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Do not use GM quest/misson completion to prove gameplay",
+        "Operator confirms deployed DSP SHA and event catalog (or UNKNOWN)",
+        "Full affected state and restore strategy before interaction"
+      ],
+      "steps": [
+        {
+          "id": "MQ-02-S01",
+          "title": "Read-only setup baseline",
+          "action": "Select authorized character, record exact quest IDs via source, fame, variables, held KI and full inventory/Gil",
+          "expected": "Complete and pinned baseline; otherwise UNKNOWN",
+          "assertion_ids": [
+            "MQ-02-baseline"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/quests.lua",
+              "line_start": 12,
+              "line_end": 27,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/quests.lua#L12-L27"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MQ-02-S02",
+          "title": "Normal client interaction",
+          "action": "Talk to Horatius with Breaking Stones AVAILABLE but Bastok fame less than 2",
+          "expected": "Horatius onTrigger uses default CSID 0x006e rather than 0x0064 when fame below 2, assuming no Wildcat branch; no quest acceptance expected until event finished; runtime UNKNOWN",
+          "assertion_ids": [
+            "MQ-02-transition"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 33,
+              "line_end": 46,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L33-L46"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MQ-02-S03",
+          "title": "Independent authoritative comparison",
+          "action": "Capture NPC CSID and choice plus persisted quest/charvar/KI/inventory/Gil before/after",
+          "expected": "Source-matched independent post-state needed; otherwise UNKNOWN",
+          "assertion_ids": [
+            "MQ-02-oracle"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 33,
+              "line_end": 46,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L33-L46"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MQ-02-S04",
+          "title": "Cleanup and identity verification",
+          "action": "Only owner-approved restoration or quarantine; verify repeated client attempts and no unrelated changes",
+          "expected": "Clean complete state or BLOCKED",
+          "assertion_ids": [
+            "MQ-02-cleanup"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkmission.lua",
+              "line_start": 7,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkmission.lua#L7-L65"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MQ-02-baseline",
+          "expected": "Independent source-mapped quest/vars/inventory baseline or UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/quests.lua",
+              "line_start": 12,
+              "line_end": 27,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/quests.lua#L12-L27"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ]
+        },
+        {
+          "id": "MQ-02-transition",
+          "expected": "Horatius onTrigger uses default CSID 0x006e rather than 0x0064 when fame below 2, assuming no Wildcat branch; no quest acceptance expected until event finished; runtime UNKNOWN",
+          "oracle_status": "SOURCE_CONDITIONAL_RUNTIME_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 33,
+              "line_end": 46,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L33-L46"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            }
+          ]
+        },
+        {
+          "id": "MQ-02-oracle",
+          "expected": "Source-based actual server delta verified; otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 33,
+              "line_end": 46,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L33-L46"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            }
+          ]
+        },
+        {
+          "id": "MQ-02-cleanup",
+          "expected": "Approved rollback or isolated quarantined character with evidence",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 33,
+          "line_end": 46,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L33-L46"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 54,
+          "line_end": 74,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+        }
+      ],
+      "required_readback": {
+        "available": [
+          "Guarded /api/supervisor/test-character-keyitems",
+          "/api/supervisor/test-character-vars for approved exact names",
+          "/api/supervisor/test-character-inventory LIMIT 100 four cols"
+        ],
+        "missing": [
+          "Fixed read-only per-character quest and mission status endpoint",
+          "Read-only per-character Gil/quest fame and event option bindings",
+          "Complete untruncated inventory and save boundary, reward attribution"
+        ],
+        "format": "Server-owned status; NPC CSID alone never proves quest completion"
+      },
+      "xiheadless": {
+        "candidates": [
+          "talk_to_npc",
+          "event_select",
+          "wait_for_event",
+          "snapshot",
+          "inventory",
+          "logout"
+        ],
+        "acceptance": "UNKNOWN until exact active capabilities checked",
+        "missing": [
+          "Validated mapped NPC identity/client event options",
+          "Reliable relog and event evidence",
+          "Read-only authoritative quest and Gil readback"
+        ]
+      },
+      "mutation": {
+        "enabled": false,
+        "approval": "per-case owner and local operator required",
+        "cleanup": "Do not use GM command to claim gameplay verdict; restore isolated character by approved process"
+      },
+      "blocking_gaps": [
+        "Exact fame readback and WildcatBastok precedence required; normal client event handling UNKNOWN",
+        "Deployed DSP main SHA/config and client source identity unverified",
+        "No fixed quest/mission/Gil authoritative readback"
+      ]
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "missions_quests",
+      "case_id": "MQ-03",
+      "name": "Wrong dialog choice leaves state unchanged",
+      "kind": "negative",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "purpose": "Verify wrong dialog choice leaves state unchanged on a specifically sourced NPC flow.",
+      "rationale": "Source proves handler branch only; other hooks/side effects and event selection capabilities UNKNOWN",
+      "behavior": {
+        "given": [
+          "Owner-approved disposable character and exact NPC/zone source identity",
+          "Preconditions and branch precedence verified against pinned DSP files",
+          "Independent quest variables, inventory and KI source-backed baselines"
+        ],
+        "when": [
+          "On Horatius CSID 0x0064, choose an option other than 0, then inspect quest status"
+        ],
+        "then": [
+          "Horatius onEventFinish adds quest only for CSID 0x0064 and option 0; other options have no addQuest branch in this handler; runtime delta UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Do not use GM quest/misson completion to prove gameplay",
+        "Operator confirms deployed DSP SHA and event catalog (or UNKNOWN)",
+        "Full affected state and restore strategy before interaction"
+      ],
+      "steps": [
+        {
+          "id": "MQ-03-S01",
+          "title": "Read-only setup baseline",
+          "action": "Select authorized character, record exact quest IDs via source, fame, variables, held KI and full inventory/Gil",
+          "expected": "Complete and pinned baseline; otherwise UNKNOWN",
+          "assertion_ids": [
+            "MQ-03-baseline"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/quests.lua",
+              "line_start": 12,
+              "line_end": 27,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/quests.lua#L12-L27"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MQ-03-S02",
+          "title": "Normal client interaction",
+          "action": "On Horatius CSID 0x0064, choose an option other than 0, then inspect quest status",
+          "expected": "Horatius onEventFinish adds quest only for CSID 0x0064 and option 0; other options have no addQuest branch in this handler; runtime delta UNKNOWN",
+          "assertion_ids": [
+            "MQ-03-transition"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 33,
+              "line_end": 46,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L33-L46"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MQ-03-S03",
+          "title": "Independent authoritative comparison",
+          "action": "Capture NPC CSID and choice plus persisted quest/charvar/KI/inventory/Gil before/after",
+          "expected": "Source-matched independent post-state needed; otherwise UNKNOWN",
+          "assertion_ids": [
+            "MQ-03-oracle"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 33,
+              "line_end": 46,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L33-L46"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MQ-03-S04",
+          "title": "Cleanup and identity verification",
+          "action": "Only owner-approved restoration or quarantine; verify repeated client attempts and no unrelated changes",
+          "expected": "Clean complete state or BLOCKED",
+          "assertion_ids": [
+            "MQ-03-cleanup"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkmission.lua",
+              "line_start": 7,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkmission.lua#L7-L65"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MQ-03-baseline",
+          "expected": "Independent source-mapped quest/vars/inventory baseline or UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/quests.lua",
+              "line_start": 12,
+              "line_end": 27,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/quests.lua#L12-L27"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ]
+        },
+        {
+          "id": "MQ-03-transition",
+          "expected": "Horatius onEventFinish adds quest only for CSID 0x0064 and option 0; other options have no addQuest branch in this handler; runtime delta UNKNOWN",
+          "oracle_status": "SOURCE_CONDITIONAL_RUNTIME_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 33,
+              "line_end": 46,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L33-L46"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            }
+          ]
+        },
+        {
+          "id": "MQ-03-oracle",
+          "expected": "Source-based actual server delta verified; otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 33,
+              "line_end": 46,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L33-L46"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            }
+          ]
+        },
+        {
+          "id": "MQ-03-cleanup",
+          "expected": "Approved rollback or isolated quarantined character with evidence",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 33,
+          "line_end": 46,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L33-L46"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 54,
+          "line_end": 74,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+        }
+      ],
+      "required_readback": {
+        "available": [
+          "Guarded /api/supervisor/test-character-keyitems",
+          "/api/supervisor/test-character-vars for approved exact names",
+          "/api/supervisor/test-character-inventory LIMIT 100 four cols"
+        ],
+        "missing": [
+          "Fixed read-only per-character quest and mission status endpoint",
+          "Read-only per-character Gil/quest fame and event option bindings",
+          "Complete untruncated inventory and save boundary, reward attribution"
+        ],
+        "format": "Server-owned status; NPC CSID alone never proves quest completion"
+      },
+      "xiheadless": {
+        "candidates": [
+          "talk_to_npc",
+          "event_select",
+          "wait_for_event",
+          "snapshot",
+          "inventory",
+          "logout"
+        ],
+        "acceptance": "UNKNOWN until exact active capabilities checked",
+        "missing": [
+          "Validated mapped NPC identity/client event options",
+          "Reliable relog and event evidence",
+          "Read-only authoritative quest and Gil readback"
+        ]
+      },
+      "mutation": {
+        "enabled": false,
+        "approval": "per-case owner and local operator required",
+        "cleanup": "Do not use GM command to claim gameplay verdict; restore isolated character by approved process"
+      },
+      "blocking_gaps": [
+        "Source proves handler branch only; other hooks/side effects and event selection capabilities UNKNOWN",
+        "Deployed DSP main SHA/config and client source identity unverified",
+        "No fixed quest/mission/Gil authoritative readback"
+      ]
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "missions_quests",
+      "case_id": "MQ-04",
+      "name": "Relog retains progression and key items",
+      "kind": "persistence",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "purpose": "Verify relog retains progression and key items on a specifically sourced NPC flow.",
+      "rationale": "Michea branch includes zone dependency and GOLDSMITHING_ORDER; missing named exact charvar, persistent KI and client event readback",
+      "behavior": {
+        "given": [
+          "Owner-approved disposable character and exact NPC/zone source identity",
+          "Preconditions and branch precedence verified against pinned DSP files",
+          "Independent quest variables, inventory and KI source-backed baselines"
+        ],
+        "when": [
+          "Use approved Michea Distant Loyalties event branch with source-reviewed stage/held KI, advance then logout/reconnect"
+        ],
+        "then": [
+          "Source advances DistantLoyaltiesProgress 2->3 on CSID 0x013d and 3->4 plus MYTHRIL_HEARTS KI on 0x013e; relog durability UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Do not use GM quest/misson completion to prove gameplay",
+        "Operator confirms deployed DSP SHA and event catalog (or UNKNOWN)",
+        "Full affected state and restore strategy before interaction"
+      ],
+      "steps": [
+        {
+          "id": "MQ-04-S01",
+          "title": "Read-only setup baseline",
+          "action": "Select authorized character, record exact quest IDs via source, fame, variables, held KI and full inventory/Gil",
+          "expected": "Complete and pinned baseline; otherwise UNKNOWN",
+          "assertion_ids": [
+            "MQ-04-baseline"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/quests.lua",
+              "line_start": 12,
+              "line_end": 27,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/quests.lua#L12-L27"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MQ-04-S02",
+          "title": "Normal client interaction",
+          "action": "Use approved Michea Distant Loyalties event branch with source-reviewed stage/held KI, advance then logout/reconnect",
+          "expected": "Source advances DistantLoyaltiesProgress 2->3 on CSID 0x013d and 3->4 plus MYTHRIL_HEARTS KI on 0x013e; relog durability UNKNOWN",
+          "assertion_ids": [
+            "MQ-04-transition"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Michea.lua",
+              "line_start": 12,
+              "line_end": 57,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Michea.lua#L12-L57"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Michea.lua",
+              "line_start": 104,
+              "line_end": 124,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Michea.lua#L104-L124"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MQ-04-S03",
+          "title": "Independent authoritative comparison",
+          "action": "Capture NPC CSID and choice plus persisted quest/charvar/KI/inventory/Gil before/after",
+          "expected": "Source-matched independent post-state needed; otherwise UNKNOWN",
+          "assertion_ids": [
+            "MQ-04-oracle"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Michea.lua",
+              "line_start": 12,
+              "line_end": 57,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Michea.lua#L12-L57"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Michea.lua",
+              "line_start": 104,
+              "line_end": 124,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Michea.lua#L104-L124"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MQ-04-S04",
+          "title": "Cleanup and identity verification",
+          "action": "Only owner-approved restoration or quarantine; verify repeated client attempts and no unrelated changes",
+          "expected": "Clean complete state or BLOCKED",
+          "assertion_ids": [
+            "MQ-04-cleanup"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkmission.lua",
+              "line_start": 7,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkmission.lua#L7-L65"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MQ-04-baseline",
+          "expected": "Independent source-mapped quest/vars/inventory baseline or UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/quests.lua",
+              "line_start": 12,
+              "line_end": 27,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/quests.lua#L12-L27"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ]
+        },
+        {
+          "id": "MQ-04-transition",
+          "expected": "Source advances DistantLoyaltiesProgress 2->3 on CSID 0x013d and 3->4 plus MYTHRIL_HEARTS KI on 0x013e; relog durability UNKNOWN",
+          "oracle_status": "SOURCE_CONDITIONAL_RUNTIME_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Michea.lua",
+              "line_start": 12,
+              "line_end": 57,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Michea.lua#L12-L57"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Michea.lua",
+              "line_start": 104,
+              "line_end": 124,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Michea.lua#L104-L124"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ]
+        },
+        {
+          "id": "MQ-04-oracle",
+          "expected": "Source-based actual server delta verified; otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Michea.lua",
+              "line_start": 12,
+              "line_end": 57,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Michea.lua#L12-L57"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Michea.lua",
+              "line_start": 104,
+              "line_end": 124,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Michea.lua#L104-L124"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ]
+        },
+        {
+          "id": "MQ-04-cleanup",
+          "expected": "Approved rollback or isolated quarantined character with evidence",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bastok_Markets/npcs/Michea.lua",
+          "line_start": 12,
+          "line_end": 57,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Michea.lua#L12-L57"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bastok_Markets/npcs/Michea.lua",
+          "line_start": 104,
+          "line_end": 124,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Michea.lua#L104-L124"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/commands/checkquest.lua",
+          "line_start": 8,
+          "line_end": 78,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+        }
+      ],
+      "required_readback": {
+        "available": [
+          "Guarded /api/supervisor/test-character-keyitems",
+          "/api/supervisor/test-character-vars for approved exact names",
+          "/api/supervisor/test-character-inventory LIMIT 100 four cols"
+        ],
+        "missing": [
+          "Fixed read-only per-character quest and mission status endpoint",
+          "Read-only per-character Gil/quest fame and event option bindings",
+          "Complete untruncated inventory and save boundary, reward attribution"
+        ],
+        "format": "Server-owned status; NPC CSID alone never proves quest completion"
+      },
+      "xiheadless": {
+        "candidates": [
+          "talk_to_npc",
+          "event_select",
+          "wait_for_event",
+          "snapshot",
+          "inventory",
+          "logout"
+        ],
+        "acceptance": "UNKNOWN until exact active capabilities checked",
+        "missing": [
+          "Validated mapped NPC identity/client event options",
+          "Reliable relog and event evidence",
+          "Read-only authoritative quest and Gil readback"
+        ]
+      },
+      "mutation": {
+        "enabled": false,
+        "approval": "per-case owner and local operator required",
+        "cleanup": "Do not use GM command to claim gameplay verdict; restore isolated character by approved process"
+      },
+      "blocking_gaps": [
+        "Michea branch includes zone dependency and GOLDSMITHING_ORDER; missing named exact charvar, persistent KI and client event readback",
+        "Deployed DSP main SHA/config and client source identity unverified",
+        "No fixed quest/mission/Gil authoritative readback"
+      ]
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "missions_quests",
+      "case_id": "MQ-05",
+      "name": "Repeat reward not duplicated",
+      "kind": "negative",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "purpose": "Verify repeat reward not duplicated on a specifically sourced NPC flow.",
+      "rationale": "Repeat reward guard absent in this source; diagnostic might expose a duplicate-Gil vulnerability; reward balances and complete inventory before/after required",
+      "behavior": {
+        "given": [
+          "Owner-approved disposable character and exact NPC/zone source identity",
+          "Preconditions and branch precedence verified against pinned DSP files",
+          "Independent quest variables, inventory and KI source-backed baselines"
+        ],
+        "when": [
+          "Complete Horatius Breaking Stones once; attempt same trade again after verified completed state"
+        ],
+        "then": [
+          "Horatius trade accepts item 553 whenever quest is not AVAILABLE, including completed; handler may grant GIL_RATE*400 on repeated CSID 0x0065. No no-duplicate invariant source-backed; treat as possible defect, NOT PASS"
+        ]
+      },
+      "preconditions": [
+        "Do not use GM quest/misson completion to prove gameplay",
+        "Operator confirms deployed DSP SHA and event catalog (or UNKNOWN)",
+        "Full affected state and restore strategy before interaction"
+      ],
+      "steps": [
+        {
+          "id": "MQ-05-S01",
+          "title": "Read-only setup baseline",
+          "action": "Select authorized character, record exact quest IDs via source, fame, variables, held KI and full inventory/Gil",
+          "expected": "Complete and pinned baseline; otherwise UNKNOWN",
+          "assertion_ids": [
+            "MQ-05-baseline"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/quests.lua",
+              "line_start": 12,
+              "line_end": 27,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/quests.lua#L12-L27"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MQ-05-S02",
+          "title": "Normal client interaction",
+          "action": "Complete Horatius Breaking Stones once; attempt same trade again after verified completed state",
+          "expected": "Horatius trade accepts item 553 whenever quest is not AVAILABLE, including completed; handler may grant GIL_RATE*400 on repeated CSID 0x0065. No no-duplicate invariant source-backed; treat as possible defect, NOT PASS",
+          "assertion_ids": [
+            "MQ-05-transition"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 18,
+              "line_end": 31,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L18-L31"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MQ-05-S03",
+          "title": "Independent authoritative comparison",
+          "action": "Capture NPC CSID and choice plus persisted quest/charvar/KI/inventory/Gil before/after",
+          "expected": "Source-matched independent post-state needed; otherwise UNKNOWN",
+          "assertion_ids": [
+            "MQ-05-oracle"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 18,
+              "line_end": 31,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L18-L31"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "MQ-05-S04",
+          "title": "Cleanup and identity verification",
+          "action": "Only owner-approved restoration or quarantine; verify repeated client attempts and no unrelated changes",
+          "expected": "Clean complete state or BLOCKED",
+          "assertion_ids": [
+            "MQ-05-cleanup"
+          ],
+          "oracle_sources": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkmission.lua",
+              "line_start": 7,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkmission.lua#L7-L65"
+            }
+          ],
+          "client_observations": [
+            "talk_to_npc",
+            "event_select",
+            "wait_for_event",
+            "inventory (candidate)"
+          ],
+          "server_observations": [
+            "quest status and exact named char_vars",
+            "full server inventory and Gil",
+            "keyitem bitsets",
+            "source revision and save boundary"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "MQ-05-baseline",
+          "expected": "Independent source-mapped quest/vars/inventory baseline or UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/quests.lua",
+              "line_start": 12,
+              "line_end": 27,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/quests.lua#L12-L27"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ]
+        },
+        {
+          "id": "MQ-05-transition",
+          "expected": "Horatius trade accepts item 553 whenever quest is not AVAILABLE, including completed; handler may grant GIL_RATE*400 on repeated CSID 0x0065. No no-duplicate invariant source-backed; treat as possible defect, NOT PASS",
+          "oracle_status": "SOURCE_CONDITIONAL_RUNTIME_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 18,
+              "line_end": 31,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L18-L31"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ]
+        },
+        {
+          "id": "MQ-05-oracle",
+          "expected": "Source-based actual server delta verified; otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 18,
+              "line_end": 31,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L18-L31"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+              "line_start": 54,
+              "line_end": 74,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ]
+        },
+        {
+          "id": "MQ-05-cleanup",
+          "expected": "Approved rollback or isolated quarantined character with evidence",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/commands/checkquest.lua",
+              "line_start": 8,
+              "line_end": 78,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 18,
+          "line_end": 31,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L18-L31"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 54,
+          "line_end": 74,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/zones/Bastok_Markets/npcs/Horatius.lua#L54-L74"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/commands/checkquest.lua",
+          "line_start": 8,
+          "line_end": 78,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/commands/checkquest.lua#L8-L78"
+        }
+      ],
+      "required_readback": {
+        "available": [
+          "Guarded /api/supervisor/test-character-keyitems",
+          "/api/supervisor/test-character-vars for approved exact names",
+          "/api/supervisor/test-character-inventory LIMIT 100 four cols"
+        ],
+        "missing": [
+          "Fixed read-only per-character quest and mission status endpoint",
+          "Read-only per-character Gil/quest fame and event option bindings",
+          "Complete untruncated inventory and save boundary, reward attribution"
+        ],
+        "format": "Server-owned status; NPC CSID alone never proves quest completion"
+      },
+      "xiheadless": {
+        "candidates": [
+          "talk_to_npc",
+          "event_select",
+          "wait_for_event",
+          "snapshot",
+          "inventory",
+          "logout"
+        ],
+        "acceptance": "UNKNOWN until exact active capabilities checked",
+        "missing": [
+          "Validated mapped NPC identity/client event options",
+          "Reliable relog and event evidence",
+          "Read-only authoritative quest and Gil readback"
+        ]
+      },
+      "mutation": {
+        "enabled": false,
+        "approval": "per-case owner and local operator required",
+        "cleanup": "Do not use GM command to claim gameplay verdict; restore isolated character by approved process"
+      },
+      "blocking_gaps": [
+        "Repeat reward guard absent in this source; diagnostic might expose a duplicate-Gil vulnerability; reward balances and complete inventory before/after required",
+        "Deployed DSP main SHA/config and client source identity unverified",
+        "No fixed quest/mission/Gil authoritative readback"
+      ]
+    }
+  ]
+}
