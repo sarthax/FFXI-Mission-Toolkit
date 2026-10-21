@@ -74,6 +74,18 @@ def reviewed_fixture():
     finally:con.close()
 
 
+def test_accepted_coverage_adapter_emits_exact_editor_contract():
+    from workbench.server_admin.scenario_coverage.authoring import draft_context
+    synthetic_readiness={"schema_version":1,"features":[
+        {"id":"gardening","cases":[{"id":"GARD-SYNTH-01",
+         "title":"Synthetic declared scenario intent","kind":"positive"}]}
+    ]}
+    source=draft_context(synthetic_readiness,"gardening","GARD-SYNTH-01")
+    assert coverage_context(source,REF)["behavior_ref"]=="GARD-SYNTH-01"
+    assert source["auto_save_allowed"] is False
+    assert source["assertions"] == []
+
+
 def test_coverage_reference_exact_and_provisional():
     a=coverage_context(coverage_fixture(),REF)
     assert coverage_path(REF)==("gardening","GARD-SYNTH-01")
@@ -121,6 +133,9 @@ def test_evidence_review_internal_projection_and_untrusted_status():
     assert inspected["projection_sha256"]==payload["capture_projection_sha256"]
     assert inspected["original_capture_authenticated"] is False
     assert inspected["projection_matches_embedded_evidence"] is True
+    assert any(pointer["sha256"]!="UNKNOWN"
+               and pointer["verification"]=="INDEXED_SOURCE_METADATA_NOT_REHASHED"
+               for step in inspected["steps"] for pointer in step["source_fingerprints"])
     assert inspected["execution_enabled"] is False
     assert inspected["normative_expected"]=="UNKNOWN"
     assert inspected["required_confirmation"] is True
