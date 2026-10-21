@@ -11,81 +11,144 @@
       {
         "domain": "gardening",
         "pr": 1277,
-        "head_sha": "410513cb4e809f9a4162b4d407160ad9f5efb09a",
+        "head_sha": "9f1167ecd5e0345812bd5f0f06e725da2d372d7f",
         "source_revision": "330ea8f854cff47aae570aa95d6474f3225f5d49",
         "execution_enabled": false,
-        "case_count": 9
+        "case_count": 9,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
       },
       {
         "domain": "voidwalker",
         "pr": 1279,
-        "head_sha": "cbb82e4cb54e61d4ef2e9443304064d8917ab73c",
+        "head_sha": "f6e4bdff28716eb92a8cbdd0220223015237843d",
         "source_revision": "5fac778004364e2991df779845d7403e64a8dc23",
         "execution_enabled": false,
-        "case_count": 7
+        "case_count": 7,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
       },
       {
         "domain": "assault_nyzul",
         "pr": 1280,
-        "head_sha": "653272e238a03470cb61d4d65e9a179c7d2a85ec",
+        "head_sha": "ab493a477bbead43fc0867ea0e846a9c518c6812",
         "source_revision": "2b71b4425d20ce47941c140b57fac886f28bea73",
         "execution_enabled": false,
-        "case_count": 6
+        "case_count": 6,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
       },
       {
         "domain": "missions_quests",
         "pr": 1281,
-        "head_sha": "321f2a1730e5c3f3b7e12e84d1e1cf798b925dab",
+        "head_sha": "8777e3e657184e3de1ddf6c7c78b8fea84c86385",
         "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
         "execution_enabled": false,
-        "case_count": 5
+        "case_count": 5,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
       },
       {
         "domain": "moghancement",
         "pr": 1282,
-        "head_sha": "95c6099b8e96c55fe88527370021b8f2c9c69740",
+        "head_sha": "90439727b6fe29cfdc0e34aac19897a31d8faf6a",
         "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
         "execution_enabled": false,
-        "case_count": 14
+        "case_count": 14,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
       },
       {
         "domain": "voidwatch",
         "pr": 1286,
-        "head_sha": "c761e5da53d51ed8287468c03ce97baf233cb40c",
+        "head_sha": "b2bc14454d596f286010618b70fc931d06f8e9d1",
         "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
         "execution_enabled": false,
-        "case_count": 8
+        "case_count": 8,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
       },
       {
         "domain": "salvage",
         "pr": 1289,
-        "head_sha": "174cecb3ca75e0438e251f085008fdb3c5ccb34f",
+        "head_sha": "61db5730bbf6c773e25f1e2fa16c03baaf7fc62c",
         "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
         "execution_enabled": false,
-        "case_count": 7
+        "case_count": 7,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
       },
       {
         "domain": "run_geo_unlock",
         "pr": 1290,
-        "head_sha": "4cf596408eaea996fc2defc00b99c1ee7aef3008",
+        "head_sha": "a96cce28df365e8c89fb4b1dfbc70c8f92064f64",
         "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
         "execution_enabled": false,
-        "case_count": 8
+        "case_count": 8,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
       },
       {
         "domain": "chocobo_raising",
         "pr": 1291,
-        "head_sha": "0616c49e74bfa69d7b9237af64f3f20590372a87",
+        "head_sha": "053c274a171a63f74a8b229ce5703e2ed4c2f6a0",
         "source_revision": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
         "execution_enabled": false,
-        "case_count": 9
+        "case_count": 9,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
       }
     ],
     "principal_readiness_pr": 1292,
     "companion_capability_pr": 1293,
     "shared_validation_pr": 1294,
     "matrix_status": "proposed_primary_source_of_truth_subject_to_A_C_independent_review",
-    "head_snapshot_semantics": "SHA is staging PR state only, not source authentication or deployed fingerprint; any head change requires re-audit",
+    "head_snapshot_semantics": "Re-evaluate all nine branch refs/heads on updates. Matrix head pins source staging content, not DSP commit hash, authentic source bytes or deployed runtime.",
     "known_source_drift": [
       {
         "domain": "gardening",
@@ -116,7 +179,8 @@
       "#107",
       "sarthax/darkstar-to-valhalla#60",
       "sarthax/darkstar-to-valhalla#55"
-    ]
+    ],
+    "reconciliation_note": "All nine staging branches reconciled sequentially to Toolkit main e9ae790d with two-parent merges on disjoint file sets and non-force branch-ref updates; latest PR head APIs may lag branch refs; use refs/heads as current SHA."
   },
   "execution_enabled": false,
   "import_allowed": false,
