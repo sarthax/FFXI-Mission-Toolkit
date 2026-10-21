@@ -53,6 +53,27 @@ Source paths: `src/map/packet_system.cpp`, `src/map/utils/charutils.cpp`, `src/m
 
 **Fallback:** Until all the above zone-entry gates are implemented and tested, keep the original logout/login selection as the safer baseline. A zone-activated selection is potentially a substantially better user experience, but no runtime bank switch exists today.
 
+## Existing player commands as a switching control (2026-10-21 evidence)
+
+**Verified on `sarthax/darkstar-to-valhalla` `main`:** In `src/map/packet_system.cpp` incoming chat packet `0x0B5` checks for an initial `!` and invokes `CmdHandler.call(PChar, ...)`. `src/map/commandhandler.cpp` dispatches `scripts/commands/<name>.lua` using `cmdprops.permission` and `cmdprops.parameters`, and authorizes when the permission is not greater than `PChar->m_GMlevel`. Therefore a **player-eligible command with permission 0** could request an inventory-bank change without replacing native menus or granting GM privileges. This is an input/authorization mechanism, not a working inventory refresh API.
+
+Proposed syntax (examples, **not implemented**):
+
+```text
+!wardrobebank status
+!wardrobebank A
+!wardrobebank B
+!wardrobebank apply
+```
+
+**Required server wiring:** The Lua command can safely call a new, narrowly scoped C++ binding or service for `requestBank` / `requestApply`. The existing command framework does **not** currently expose a generic `refreshWardrobeBank` routine; a command alone cannot atomically retarget storage.
+
+**Available packet constructors:** `CInventorySizePacket` sends legacy `0x1C` capacities, `CInventoryItemPacket` sends `0x20` slot/item detail (with a **null-item/zero-content constructor path**, not yet validated as a clear instruction), `CInventoryAssignPacket` sends `0x1F` flags, `CInventoryFinishPacket` sends `0x1D` completion, and `CEquipPacket` sends `0x050` slot/container references. `charutils::SendInventory` currently sends **only occupied item slots** and then finish/equip data. On a mid-zone B-bank reload, empty slots in B that had items in A would receive no explicit clearing packet. **Resending the normal full inventory without a proven clear stage is insufficient to establish a consistent client state.**
+
+**Unverified client gate:** The original 2019 client might interpret a fresh 0x1C/0x1D sequence as a reset, or it might retain stale 0x20 records and UI/equipment caches. We must not infer this from the server packet builders. Verify against a disposable character with one A-only slot, one B-only slot, different augments, and zero equipped/outstanding transactions. Capture both client-visible slots and server-side canonical records. Confirm old slot clears, new slot populates, selected bank survives zoning and reconnect, no duplication/loss, and controls remain blocked while the inventory UI is open or another transaction is pending. A subsequent test must separately cover equipped items and equipment sets.
+
+**Safe first milestone:** permission-0 **status and queued-selection** command plus persistence and acknowledgments, followed by a verified **zone-triggered** apply. Implement instant command-triggered apply only after the client clear/rebuild protocol has passed controlled tests. Do not send canonical 13–16 to 2019 clients or manipulate the client's inventory memory directly. Fail closed if the handshake/caches cannot be proven safe.
+
 ## Candidate approaches and relative risk
 
 ### 1. Server-authoritative **login-time bank selection** (conservative initial baseline)
