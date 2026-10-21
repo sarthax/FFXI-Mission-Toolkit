@@ -416,3 +416,25 @@ def test_agent_a_discard_review_guard_all_editor_replacement_paths():
     assert "if(savePending)throw Error" in js[js.index("function installIncompleteDraft"):
                                                js.index("async function resolveCoverageContext")]
     assert "replacementConfirmationReason" in model and "saveResponseDisposition" in model
+
+
+def test_evidence_file_selection_invalidates_older_async_inspection():
+    """Changing a file cannot leave older reviewer decisions eligible for import."""
+    from pathlib import Path
+    js=(Path(__file__).resolve().parents[1]/"gui/static/scenario_developer.js").read_text(encoding="utf-8")
+    inspect=js[js.index("  let evidenceInspectionGeneration=0"):
+               js.index("  $('sd-evidence-use').addEventListener")]
+    assert "evidenceInspectionGeneration++;" in inspect
+    assert "'sd-evidence-file').addEventListener('change'" in inspect
+    assert "evidenceSuggestions=null" in inspect
+    assert "evidenceInspectPending=true" in inspect
+    assert "if(evidenceInspectPending)return;" in inspect
+    assert inspect.count("generation!==evidenceInspectionGeneration")>=2
+    assert inspect.count("files[0]!==file")>=2
+    assert "if(generation===evidenceInspectionGeneration)" in inspect
+    assert "finally{" in inspect
+    assert "'sd-evidence-use').disabled=true" in inspect
+    assert "'sd-evidence-inspect').disabled=true" in inspect
+    assert "'sd-evidence-inspect').disabled=false" in inspect
+    assert "installIncompleteDraft(" not in inspect
+    assert "/feature-testing/builder/drafts" not in inspect
