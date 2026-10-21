@@ -136,7 +136,8 @@ def validate_domain(name, doc, meta):
                      (c.get("readback") or {}).get("available") or
                      [s.get("server_observations") or s.get("authoritative_observations")
                       or s.get("observations_required") for s in steps])
-        check(bool(readbacks), f"{cid}: missing readback")
+        check(bool(readbacks) and (not isinstance(readbacks, list) or any(bool(x) for x in readbacks)),
+              f"{cid}: missing readback")
         v2 = c.get("contract_v2")
         if v2 is not None:
             check(isinstance(v2, dict) and v2.get("contract_version") == 2,
