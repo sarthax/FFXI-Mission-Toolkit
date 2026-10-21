@@ -187,6 +187,15 @@ class Wardrobe2019AuditTests(unittest.TestCase):
         self.assertEqual(observed["evidence_status"], "VERIFIED_STATIC_ANCHORS")
         self.assertEqual(PER_STORE_CLEAR_DWORDS, 0xEC20)
         self.assertEqual(observed["per_store_zero_clear_bytes"], 0x3B080)
+        self.assertEqual(observed["fixed_size_transfer_value_bytes"], 0x3B080)
+        self.assertEqual(len(observed["fixed_size_transfer_immediate_rvas"]), 11)
+        self.assertFalse(observed["fixed_size_transfer_semantics_confirmed"])
+        self.assertEqual(observed["candidate_file_io_callee_rva"], "0x307CFF")
+        self.assertEqual(observed["linear_disassembly_candidate_reference_count"], 1045)
+        self.assertEqual(observed["observed_direct_global_writer_instruction_count"], 15)
+        self.assertFalse(observed["global_writer_sites_independently_cfg_confirmed"])
+        self.assertIn("0x3FA7", observed["active_store_pointer_set_rvas"])
+        self.assertIn("0xF8A55", observed["active_store_pointer_set_rvas"])
         self.assertEqual(observed["manager_slot_count_field_offset"], 0x3B088)
         self.assertEqual(MANAGER_SLOT_COUNT_FIELD_OFFSET, 0x3B088)
         self.assertEqual(observed["manager_default_slot_count"], 1)
@@ -217,6 +226,17 @@ class Wardrobe2019AuditTests(unittest.TestCase):
         self.assertIsNone(unknown["cursor_uses_existing_inventory_records"])
         self.assertEqual(unknown["evidence_status"], "UNVERIFIED_STATIC_ANCHORS")
         self.assertEqual(unknown["safety_decision"], "NO_GO_MOVE_OR_EXTEND_EXISTING_ARRAY")
+
+    def test_static_io_size_candidates_have_exact_count_and_no_false_semantics(self):
+        report = inspect_2019_store_lifecycle(True)
+        sizes = report["fixed_size_transfer_immediate_rvas"]
+        self.assertEqual(len(sizes), len(set(sizes)))
+        self.assertEqual(sizes[0], "0x3FA1")
+        self.assertEqual(sizes[-1], "0x4818")
+        self.assertEqual(report["fixed_size_transfer_value_bytes"],
+                         report["per_store_zero_clear_bytes"])
+        self.assertFalse(report["fixed_size_transfer_semantics_confirmed"])
+        self.assertFalse(report["complete_pointer_writer_inventory"])
 
 
 if __name__ == "__main__":
