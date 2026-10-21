@@ -49,6 +49,23 @@ ANCHORS = {
     "active_store_slot_assignment": (0xF7116, "893508da4c10"),
     "active_store_dispatch_assignment": (0xF7295, "893508da4c10"),
     "active_store_manager_reset": (0xF9B3C, "a308da4c10"),
+    "manager_slot_bound_read": (0xF6FFC, "8b8888b00300"),
+    "manager_slot_selection_for_teardown": (0xF7009, "8b04b0"),
+    "manager_store_cleanup_call": (0xF700D, "e81e000000"),
+    "manager_active_reset": (0xF6FE0, "33c0a308da4c10a304da4c10"),
+    "active_store_cleared_at_teardown": (0xF70D6, "c70508da4c1000000000"),
+    "per_store_zero_dword_count": (0xF710D, "b920ec0000"),
+    "per_store_zero_dwords_instruction": (0xF711E, "f3ab"),
+    "primary_manager_slot_count_initialization": (
+        0xF6C01, "c78288b0030001000000"
+    ),
+    "active_store_set_during_secondary_init": (0xF73E1, "893508da4c10"),
+    "active_store_set_during_reentry": (0xF740E, "893508da4c10"),
+    "inventory_cursor_reads_after_array": (0xE8896, "8b82604d0100"),
+    "inventory_cursor_slots_bound": (0xE88A6, "83f951"),
+    "inventory_cursor_pointer_reset": (
+        0xE88CC, "c782604d010000000000"
+    ),
 }
 
 
@@ -62,6 +79,11 @@ PACKET_LOCATION_FIELDS = {
     0x20: (0x0E, 0x0F),
 }
 
+PER_STORE_CLEAR_DWORDS = 0xEC20
+MANAGER_SLOT_COUNT_FIELD_OFFSET = 0x3B088
+INVENTORY_CURSOR_COUNT_OFFSET = 0x14D5C
+INVENTORY_CURSOR_POINTER_OFFSET = 0x14D60
+INVENTORY_CURSOR_MAX_SLOTS = 0x51
 ORIGINAL_STORE_GLOBAL_ADDRESS = 0x1096DB60
 GLOBAL_INITIALIZED_DWORDS = 0xFB7D
 # 2019 active store pointer resolves to global buffer base + 4 in observed init.
@@ -110,6 +132,49 @@ def inspect_2019_store_layout(decoded_sites_verified: bool) -> dict:
             "Static offsets from exact-build x86 instruction anchors. The global "
             "buffer has additional fields and many consumers. A separate allocation, "
             "relocation, lifetime, accessor and packet audit is required."
+        ),
+    }
+
+
+def inspect_2019_store_lifecycle(decoded_sites_verified: bool) -> dict:
+    """Conservative fixed-layout and observed pointer-transition metadata.
+
+    This is a selected anchor summary, not complete CFG recovery.
+    """
+    return {
+        "evidence_status": (
+            "VERIFIED_STATIC_ANCHORS" if decoded_sites_verified else
+            "UNVERIFIED_STATIC_ANCHORS"
+        ),
+        "per_store_zero_clear_bytes": PER_STORE_CLEAR_DWORDS * 4,
+        "per_store_zero_clear_rva": "0xF711E",
+        "manager_slot_count_field_offset": MANAGER_SLOT_COUNT_FIELD_OFFSET,
+        "manager_default_slot_count": 1,
+        "manager_slot_selection_rvas": ["0xF710A", "0xF7009"],
+        "manager_teardown_loop_rva": "0xF6FF0",
+        "manager_cleanup_call_rva": "0xF700D",
+        "active_store_pointer_clear_rvas": ["0xF70D6", "0xF6FE2"],
+        "active_store_pointer_set_rvas": [
+            "0xF6C33", "0xF7116", "0xF7295", "0xF73E1",
+            "0xF740E", "0xF9B3C",
+        ],
+        "post_inventory_cursor": {
+            "count_offset": INVENTORY_CURSOR_COUNT_OFFSET,
+            "pointer_offset": INVENTORY_CURSOR_POINTER_OFFSET,
+            "maximum_slots": INVENTORY_CURSOR_MAX_SLOTS,
+            "bounded_cursor_loop_rva": "0xE8890",
+            "cursor_pointer_clear_rva": "0xE88CC",
+        },
+        "complete_pointer_writer_inventory": False,
+        "store_object_allocation_size_proved_for_all_instances": False,
+        "store_object_lifetime_proved": False,
+        "cursor_uses_existing_inventory_records": True if decoded_sites_verified else None,
+        "safety_decision": "NO_GO_MOVE_OR_EXTEND_EXISTING_ARRAY",
+        "caution": (
+            "Selected static anchors establish manager-slot enumeration, store"
+            " clearing, and existing inventory cursor references. These are"
+            " incomplete life-cycle and ownership observations, not an approved"
+            " object relocation design."
         ),
     }
 
@@ -219,6 +284,9 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         "decoded_sha256_verified": decoded_hash_ok,
         "commands": commands, "decoded_sites": sites,
         "store_layout": inspect_2019_store_layout(
+            decoded_hash_ok and sites["all_static_anchors_match"]
+        ),
+        "store_lifecycle": inspect_2019_store_lifecycle(
             decoded_hash_ok and sites["all_static_anchors_match"]
         ),
         "observed_legacy_container_sentinel": 13 if proven else None,
