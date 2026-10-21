@@ -117,3 +117,71 @@ regressions must pass on **the same exact PR head** before review.
 installed parser/decoder binary and semantics, any server-state readback,
 deployed DSP revision, authenticated gameplay or browser/manual UI behavior.
 Offline CI confirms producer invariants on synthetic examples only.
+
+
+## R7 final producer interface reconciliation — Agents B / C (2026-10-21)
+
+This is the **producer contract on draft PR #1308**. The noncanonical
+`capture_readiness_authoring_projection_v1_NONCANONICAL` envelope is not
+the canonical `contract_v2` namespace and may not be passed to the
+Scenario Developer save/validation importer.
+
+- `steps[].step_id` is **the indexed capture observation step ID**, not a
+  canonical v1 scenario step. New
+  `steps[].canonical_step_id = null` and
+  `steps[].canonical_source_association = {
+  state:"UNASSIGNED_REQUIRES_INDEPENDENT_CANONICAL_CROSSWALK",
+  scope:null, source_refs:[]}` explicitly prohibit inferred step citations.
+- Agent C's **draft #1309** proposes an optional canonical
+  `contract_v2.source_associations[]` of precisely
+  `{scope:"case"|"step",target_id:null|canonical_step_id,source_refs:[...]}`.
+  A reviewed case citation does not automatically apply to each step.
+  Identity-candidate `parameters[].source_refs` and oracle
+  `oracles[].source_refs` are independently scoped. This capture projection
+  emits **none** of those canonical records and cannot assert their
+  authenticity, revision, digests, approved oracle or permission. Its
+  existing metadata preview still leaves `sources=[]`, `oracles=[]`
+  and **omits** `source_associations`.
+- The source-row `capture_file_locator_state` is
+  `INDEXED_FILENAME_CLAIM_NOT_AUTHENTICATED` when an indexed filename
+  exists and `NO_INDEXED_CAPTURE_FILE_LOCATOR` when none is recorded.
+  **Neither state asserts the physical file exists or does not exist**.
+  A missing indexed filename remains UNKNOWN; a source digest conflict is
+  BLOCKED only if two well-formed independently recorded *indexed claims*
+  actually conflict.
+- `parser_support=MISSING_PARSER_IDENTITY_OR_VERSION` on incomplete
+  declarations, `UNRECOGNIZED_OR_UNSUPPORTED` on other non-recognized
+  declarations, and
+  `INDEXED_RECOGNIZED_NOT_INDEPENDENTLY_VALIDATED` otherwise.
+  In every case `decoder_version=null`,
+  `decoder_version_status=NOT_INDEPENDENTLY_ATTESTED` and
+  `indexed_digests_rehashed=false`.
+- A source ref repeated **within one capture step** is rejected with
+  `ValueError`, not counted as independent corroboration or automatically
+  deduplicated. A single original ref may still be legitimately used by
+  multiple distinct capture steps, with no inferred canonical association.
+  The existing viewer validates its projected refs against the original
+  indexed evidence and rejects fabricated canonically assigned step IDs,
+  promoted digests, approvals and execution grants.
+
+For Agent B's separate editor Phase 2 (#1302 / draft #1307), the optional
+static **synthetic-only** display examples live at
+`test_fixtures/r7_capture_readiness_authoring_projection_synthetic.json`.
+They show one unlocated capture with UNKNOWN and ambiguous NPC identity,
+and one conflicting indexed digest with BLOCKED and an unapproved source
+expectation. They contain no real captures, usernames, DSP identifiers,
+packet bytes, registered capabilities or approved assertions. Consume as
+fixtures for an **opt-in, separately validated read-only evidence panel**,
+not as a replacement for the existing reviewer-decision envelope.
+Both original handoff SHA-256 and indexed projection SHA-256 have different
+projection scopes; their agreement cannot prove source-file authenticity.
+Agent B owns display, stale-file and selection-race handling; Agent C owns
+#1309's schema. No code in these owned surfaces is changed by #1308.
+
+**Do not confuse source association with evidence observation.** A canonical
+source-line citation can become an attributed source *claim* only with a
+human-reviewed crosswalk to the exact canonical step ID and independently
+validated source refs. Neither a capture step, a parsed NPC ID, a source
+manifest hash, nor a candidate DSP oracle is an automatic canonical
+association or verified gameplay PASS. The local acceptance steps above
+remain mandatory for stronger authentication.
