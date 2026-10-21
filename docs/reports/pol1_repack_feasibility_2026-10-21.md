@@ -1,6 +1,6 @@
 # POL1 repacking feasibility — experimental code path (2026-10-21)
 
-**Status:** Synthetic encoder round trips PASS locally (five focused tests). **Retail repack loadability and packed-size fit UNKNOWN.** This is an experimental, read-only research workstream, not a production client patcher.
+**Status:** Synthetic encoder round trips PASS locally (six focused tests). **Retail repack loadability and packed-size fit UNKNOWN.** This is an experimental, read-only research workstream, not a production client patcher.
 
 **Related:** [FFXI Client Patch Feasibility Audit (draft PR #1301)](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1301), [Wardrobe 5–8 research plan](wardrobe5-8_container_expansion_research_plan.md), and local handoffs HANDOFF_wardrobe5-8_decode.md / XREF_SUMMARY.md.
 
@@ -48,7 +48,7 @@ This performs a read-only estimation, not a client edit. Before running, ensure 
 
 ## 4. Verification and required evidence
 
-**Observed locally:** five synthetic test methods PASS using a locally reproduced copy of the existing Toolkit POL1 decoder. The known token vector encodes to hex e0 61 62 63 00 03 and decodes to abcabc; a 3.38 MB synthetic stream also round-tripped. These results are not CI or independent Windows loader acceptance.
+**Observed locally:** six synthetic test methods PASS using a locally reproduced copy of the existing Toolkit POL1 decoder. The known token vector encodes to hex e0 61 62 63 00 03 and decodes to abcabc; a 3.38 MB synthetic stream also round-tripped. These results are not CI or independent Windows loader acceptance.
 
 **Next gates:**
 
