@@ -262,8 +262,12 @@ document.getElementById('export-advisory').addEventListener('click', () => {
     const sidecar = {
       contract:'capture_reviewer_readiness_sidecar_v0_NONCANONICAL',
       capture_id:ORIGINAL.capture_id,
-      capture_projection_sha256:READINESS.capture_projection_sha256,
+      // These two tooling hashes cover different projections and are not
+      // interchangeable cryptographic attestations of physical capture bytes.
+      indexed_observation_projection_sha256:READINESS.capture_projection_sha256,
+      original_handoff_projection_sha256:ORIGINAL.capture_projection_sha256,
       original_evidence_handoff:ORIGINAL,
+      review_decisions:gather(),
       readiness_diagnostics:READINESS,
       scenario_developer_handoff:READINESS.scenario_developer_handoff,
       normative_expected:null,verdict:'UNKNOWN',
