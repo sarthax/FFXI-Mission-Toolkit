@@ -34,6 +34,13 @@ ANCHORS = {
     "packet_0x1e_item_record_base": (0xE9823, "8dbc8260980000"),
     "packet_0x1f_item_record_base": (0xE9883, "8d948160980000"),
     "packet_0x20_item_record_base": (0xE996D, "8d948160980000"),
+    "ui_container_bound_1": (0x1E7FAC, "83fd0d"),
+    "ui_container_cap_getter_1": (0x1E7FDE, "e87d0cf0ff"),
+    "ui_container_bound_2": (0x1E830B, "83fd0d"),
+    "ui_container_cap_getter_2": (0x1E8343, "e81809f0ff"),
+    "ui_container_bound_3": (0x1E847E, "83f90d"),
+    "ui_container_cap_getter_3": (0x1E8498, "e8c307f0ff"),
+    "ui_capacity_iteration_getter": (0x1E91C5, "e896faefff"),
     "legacy_per_container_stride": (0xE883E, "81c1ec0d0000"),
     "global_fixed_buffer_address_and_clear_count": (
         0xF6BA7, "bf60db9610b97dfb0000"
@@ -134,6 +141,37 @@ ACTIVE_STORE_BASE_OFFSET = 4
 ORIGINAL_ITEM_ARRAY_END = ITEM_STORE_OFFSET + LEGACY_CONTAINER_COUNT * SLOTS_PER_CONTAINER * ITEM_RECORD_BYTES
 EXPANDED_CONTAINER_COUNT = 18
 PROJECTED_18_CONTAINER_END = ITEM_STORE_OFFSET + EXPANDED_CONTAINER_COUNT * SLOTS_PER_CONTAINER * ITEM_RECORD_BYTES
+
+
+def inspect_2019_container_ui_bounds(decoded_sites_verified: bool) -> dict:
+    """Report verified static guard/capacity references, not complete UI mapping."""
+    return {
+        "evidence_status": (
+            "VERIFIED_STATIC_ANCHORS" if decoded_sites_verified
+            else "UNVERIFIED_STATIC_ANCHORS"
+        ),
+        "selected_ui_container_guard_rvas": [
+            "0x1E7FAC", "0x1E830B", "0x1E847E"
+        ],
+        "selected_ui_legacy_capacity_calls": [
+            "0x1E7FDE", "0x1E8343", "0x1E8498", "0x1E91C5"
+        ],
+        "observed_selected_ui_container_exclusive_bound": (
+            13 if decoded_sites_verified else None
+        ),
+        "new_containers_13_16_work_with_selected_unmodified_paths": (
+            False if decoded_sites_verified else None
+        ),
+        "all_menu_callers_or_inlined_bounds_recovered": False,
+        "ui_dispatch_mode_mapping_verified_for_2019": False,
+        "ui_wardrobe_5_8_path_implemented": False,
+        "safety_decision": "NO_GO_ASSUME_SIDECAR_ENABLES_LEGACY_UI",
+        "caution": (
+            "Static compare-and-call anchors in selected container-aware UI "
+            "helpers only. Do not infer every menu code path or exact runtime "
+            "display behavior without independent control-flow verification."
+        ),
+    }
 
 
 def inspect_2019_store_layout(decoded_sites_verified: bool) -> dict:
@@ -493,6 +531,9 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         "hypothetical_extension_design": describe_hypothetical_sidecar(),
         "fixed_transfer_data_strings": strings,
         "fixed_transfer_call_candidates": transfers,
+        "container_ui_bounds": inspect_2019_container_ui_bounds(
+            decoded_hash_ok and sites["all_static_anchors_match"]
+        ),
         "store_layout": inspect_2019_store_layout(
             decoded_hash_ok and sites["all_static_anchors_match"]
         ),
