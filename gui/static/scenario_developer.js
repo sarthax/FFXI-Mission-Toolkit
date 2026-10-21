@@ -282,7 +282,7 @@
     }
     for(const step of projection.steps) {
       const d=detail('step:'+step.id,'Step '+step.id+' — '+step.attribution);
-      staticText(d,'p','Canonical direct STEP citations — '+step.association_state+': '
+      staticText(d,'p','Canonical direct STEP citations — '+step.association_state+': '+
         (step.sources.map(x=>x.repository+'/'+x.path+':'+x.line_range).join(' | ')||'UNKNOWN / UNASSIGNED'));
       staticText(d,'p','Oracle-linked expected-value candidate sources (NOT step attribution or approval): '+
         (step.oracle_citations.map(x=>x.repository+'/'+x.path+':'+x.line_range).join(' | ')||'NONE'));
