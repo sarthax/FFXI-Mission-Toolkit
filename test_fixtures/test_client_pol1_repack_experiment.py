@@ -622,7 +622,10 @@ class SyntheticPol1RepackTests(unittest.TestCase):
             report["synthetic_terminated_candidate"]["fits_original_prefix_budget"]
         )
         self.assertEqual(
-            report["synthetic_terminated_candidate"]["headroom_with_stop_bytes"], -1
+            report["synthetic_terminated_candidate"]["marker_bytes"], 3
+        )
+        self.assertEqual(
+            report["synthetic_terminated_candidate"]["headroom_with_stop_bytes"], -2
         )
         self.assertTrue(
             report["synthetic_terminated_candidate"][
