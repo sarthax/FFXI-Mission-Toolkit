@@ -7,6 +7,9 @@ on:
       - "gui/templates/scenario_developer.html"
       - "gui/static/scenario_developer.js"
       - "gui/static/scenario_guided_model.js"
+      - "gui/static/scenario_contract_v2_view.js"
+      - "test_fixtures/test_scenario_contract_authoring.py"
+      - "test_fixtures/test_scenario_contract_v2_view.cjs"
       - "test_fixtures/test_scenario_guided_*"
       - "test_fixtures/test_scenario_context_handoff.py"
       - "src/workbench/server_admin/scenario_authoring/context_handoff.py"
@@ -34,8 +37,10 @@ jobs:
         env:
           PYTHONPATH: "src:."
         run: |
-          python -m pytest -q test_fixtures/test_scenario_guided_editor.py test_fixtures/test_scenario_guided_catalog_workspace.py test_fixtures/test_scenario_context_handoff.py test_fixtures/test_scenario_authoring_catalog.py test_fixtures/test_feature_testing_spec_drafts.py test_fixtures/test_feature_testing_specifications.py
+          python -m pytest -q test_fixtures/test_scenario_guided_editor.py test_fixtures/test_scenario_guided_catalog_workspace.py test_fixtures/test_scenario_context_handoff.py test_fixtures/test_scenario_authoring_catalog.py test_fixtures/test_feature_testing_spec_drafts.py test_fixtures/test_feature_testing_specifications.py test_fixtures/test_scenario_contract_authoring.py
       - name: Run browser-independent Guided/Advanced model tests
         run: node test_fixtures/test_scenario_guided_model.cjs
+          node test_fixtures/test_scenario_contract_v2_view.cjs
       - name: Check browser module syntax
         run: node --check gui/static/scenario_developer.js
+          node --check gui/static/scenario_contract_v2_view.js
