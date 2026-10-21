@@ -216,3 +216,16 @@ console.log('Unified intake: no implicit assertion, explicit step AND identity d
   assert.equal(M.handoffReplacementIssue(M.fresh(),null,0,null),null);
   console.log('No silent handoff replacement of unsaved/loaded drafts: PASS');
 }
+
+
+{
+  const first={...coverageContext,category:'positive',source:'data/testing/feature_test_readiness.json',
+    source_revision:'UNPINNED',label:'Original declared test intent',
+    return_url:'/feature-testing/coverage'};
+  assert.equal(M.coverageContextChanged(first,{...first}),false);
+  assert.equal(M.coverageContextChanged(first,{...first,label:'Updated declared test intent'}),true);
+  assert.equal(M.coverageContextChanged(first,{...first,source_revision:'PINNED'}),true);
+  assert.equal(M.coverageContextChanged(first,{...first,auto_save_allowed:true}),true);
+  assert.equal(M.coverageContextChanged(first,null),true);
+  console.log('Coverage context revalidation rejects changed/expired source: PASS');
+}
