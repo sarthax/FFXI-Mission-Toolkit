@@ -505,8 +505,10 @@
       installIncompleteDraft(M.fromContext(checked,options.features.map(f=>f.id)),
         'Created design-only authoring context from declared source case '+checked.behavior_ref+'.',
         'coverage:'+checked.feature_id+'/'+checked.behavior_ref);
-      setSourceDetail(checked.feature_id,checked.behavior_ref);
-      $('sd-context-note').textContent='Manually opened draft from rechecked declared intent. No assertions or expected outcomes were imported.';
+      // Coverage declares a test *intent*, not necessarily a published
+      // canonical scenario. Do not invent a Scenario Detail destination.
+      setSourceDetail(null,null);
+      $('sd-context-note').textContent='Manually opened draft from rechecked declared intent. No assertions or expected outcomes were imported. Return through the Coverage Matrix link above.';
     }catch(e){show('Coverage context not applied: '+e.message);}
     finally {
       coverageBeginPending=false;
