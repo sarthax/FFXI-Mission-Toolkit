@@ -10,6 +10,7 @@ import struct
 
 from workbench.client.pol1_unpack import Pol1Error, _section, unpack_pol1
 from workbench.client.wardrobe_2019_sidecar_model import describe_hypothetical_sidecar
+from workbench.client.wardrobe_2019_command_ui import inspect_2019_command_ui_dispatch
 
 EXPECTED_SHA256 = "514653a260c51eaec25d88510e51a86fb2a4abd9867f53d5f45a9ccf840f060f"
 EXPECTED_DECODED_SHA256 = "af2126c057d86559bfad2e164f7f7fd0a26bbc89ab29ea9cbde5cea807c7d2b8"
@@ -509,6 +510,10 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         raise Pol1Error("invalid .data raw bounds")
     original = unpack_pol1(image)
     commands = inspect_command_table(image[at:at + size], section["rva"])
+    command_ui = inspect_2019_command_ui_dispatch(
+        image[at:at + size], section["rva"],
+        original["bytes"], original["base_rva"]
+    )
     decoded_hash_ok = original["sha256"] == EXPECTED_DECODED_SHA256
     sites = inspect_decoded_sites(original["bytes"], original["base_rva"])
     strings = inspect_fixed_transfer_data_strings(
@@ -522,12 +527,14 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         and sites["all_static_anchors_match"]
         and strings["all_expected_strings_match"]
         and transfers["all_2019_expected_sites_match"]
+        and command_ui["status"] == "EXACT_STATIC_ANCHORS_MATCH"
     )
     return {
         "status": "LEGACY_2019_STATIC_GATES_VERIFIED" if proven else "INCOMPLETE_STATIC_EVIDENCE",
         "source_sha256": source_hash, "decoded_sha256": original["sha256"],
         "decoded_sha256_verified": decoded_hash_ok,
         "commands": commands, "decoded_sites": sites,
+        "command_to_ui_dispatch": command_ui,
         "hypothetical_extension_design": describe_hypothetical_sidecar(),
         "fixed_transfer_data_strings": strings,
         "fixed_transfer_call_candidates": transfers,
