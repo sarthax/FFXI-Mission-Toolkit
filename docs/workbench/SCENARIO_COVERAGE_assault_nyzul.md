@@ -149,3 +149,9 @@ All full gameplay tests are `needs-mutation`. Their initial read-only setup is `
 ## Canonical compatibility / open dependencies
 
 Companion `data/testing/domain_drafts/assault_nyzul.json` is staged design only. No shared JSON changed. The strict v1 canonical loader cannot yet represent instance local-var snapshots, step-specific runtime capabilities, source-cited UNKNOWN expectations or approvals. #1259 schema owner and local agent must map the draft through the accepted extension *before* manual import. No execution, GM command dispatch, or account usage authorized by this PR; source availability ≠ live server deployment or gameplay verification.
+
+## Source-pin versus current DSP main — 2026-10-21 readiness erratum
+
+The staged scenarios reference `feature/assault-gm-debug-tools@2b71b4425d20ce47941c140b57fac886f28bea73`. The pinned `scripts/commands/nyzuldebug.lua:62–67` permits only a live instance ID **51**, and its leader lookup at line 108 hardcodes the `mobs[51]` table. **Current** DSP `main@86d4467d446569c741d76d296e640c3b844ad844` permits **51 or 52** at line 64 and looks up `mobs[instance:getID()]` at line 108. These implementations must not be treated as interchangeable when an oracle is rebound; exact live server commit remains UNKNOWN.
+
+Both checked revisions use `complete` and `floor` as **force-progression diagnostics**, not independent proof of natural Rune objective completion, entry eligibility or reward attribution. Preserve NYZ-01/02 as `needs-mutation` with prior instance-state readback and explicit owner permission. See the [R5 readiness audit PR #1292](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1292) for GAP-06/GAP-11 and proposed tests. **No actual scenario steps or runner policies changed here.**
