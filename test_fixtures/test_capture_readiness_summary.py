@@ -14,7 +14,7 @@ from test_capture_identity_oracle_readiness import (
 from workbench.captures.scenario_handoff import reconstruct_review_draft
 from workbench.captures.scenario_identity_readiness import _observation_digest
 from workbench.captures.scenario_readiness_summary import summarize_capture_readiness
-from workbench.captures.scenario_review_workflow import manual_editor_handoff
+from workbench.captures.scenario_review_workflow import manual_editor_handoff, apply_step_decisions
 from workbench.captures.scenario_review_offline import render_review_html
 
 
@@ -70,6 +70,9 @@ def test_source_record_exact_is_not_independently_verified():
         "scope": None, "source_refs": [],
     }
     assert row["observed_summary_original"] == draft["steps"][0]["observed_summary"]
+    assert row["reviewer_step_decision_original"] == draft["steps"][0].get(
+        "review", {"decision": "PENDING"})
+    assert first["reviewer_step_decision_original"] == row["reviewer_step_decision_original"]
     assert row["original_evidence_refs"] == draft["steps"][0]["evidence_refs"]
     assert [x["evidence_ref"] for x in row["indexed_evidence_provenance"]] == row["original_evidence_refs"]
     for provenance in row["indexed_evidence_provenance"]:
@@ -386,6 +389,30 @@ def test_standalone_synthetic_readonly_editor_display_fixtures():
     assert sample["samples"][1]["read_only_projection"]["source_compatibility_state"] == "BLOCKED"
 
 
+def test_operator_reviewed_step_remains_observation_only_and_readonly():
+    con, draft = fixture()
+    prior = deepcopy(draft)
+    step_id = draft["steps"][0]["step_id"]
+    reviewed = apply_step_decisions(draft, [{
+        "step_id": step_id, "decision": "ACCEPT",
+        "note": "SYNTHETIC observation title reviewed, gameplay result NOT verified",
+    }])
+    result = summarize_capture_readiness(reviewed)
+    original = reviewed["steps"][0]["review"]
+    row = result["readiness_steps"][0]
+    display = result["scenario_developer_handoff"]["read_only_projection"]["steps"][0]
+    assert original == row["reviewer_step_decision_original"]
+    assert original == display["reviewer_step_decision_original"]
+    assert display["oracle_approval_state"] == "UNAPPROVED"
+    assert display["normative_expected"] is None
+    assert display["verdict"] == "UNKNOWN"
+    assert display["execution_enabled"] is False
+    assert result["approved_for_execution"] is False
+    assert render_review_html(reviewed, readiness=result)
+    assert draft == prior
+    con.close()
+
+
 def test_repeated_capture_contradictions_are_not_gameplay_failures():
     con = synthetic_interaction_with_key_item()
     original = reconstruct_review_draft(con, 1)
@@ -448,6 +475,10 @@ def test_existing_offline_reviewer_renders_readiness_without_approval():
             approved_for_execution=True),
         lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0].update(
             oracle_approval_state="APPROVED"),
+        lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0].update(
+            reviewer_step_decision_original={"decision": "ACCEPT", "edited_title": None, "note": "FORGED"}),
+        lambda x: x["readiness_steps"][0].update(
+            reviewer_step_decision_original={"decision": "ACCEPT", "edited_title": None, "note": "FORGED"}),
         lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0].update(
             canonical_step_id="SYNTHETIC_FORGED_CANONICAL_STEP"),
         lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0][
@@ -512,6 +543,7 @@ def main():
     test_missing_capture_file_locator_is_unknown_and_not_physical_absence()
     test_duplicate_capture_refs_fail_closed_without_inferred_step_links()
     test_standalone_synthetic_readonly_editor_display_fixtures()
+    test_operator_reviewed_step_remains_observation_only_and_readonly()
     test_unrecognized_parser_or_capture_ingest_remains_unknown()
     test_repeated_capture_contradictions_are_not_gameplay_failures()
     print("Synthetic evidence readiness, provenance and contract_v2 hints: PASS")
