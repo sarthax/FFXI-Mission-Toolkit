@@ -16,6 +16,10 @@ from workbench.client.wardrobe_2019_command_ui import (
     MODE_FORWARD_BYTES, MODE_GETTER_BYTES, MODE_SELECTOR_BYTES,
     UI_JUMP_TABLE_RVA, WARDROBE_COMMANDS, WARDROBE_MODE_OBJECTS,
     inspect_2019_mode_object_getters,
+    inspect_2019_bank2_mode9,
+    BANK2_COMMAND_RVA, BANK2_HANDLER_RECORD_RVA, BANK2_POINTER_READ_RVA,
+    BANK2_HELPER_CALL_RVA, BANK2_HELPER_RVA, BANK2_OBJECT_GLOBAL_VA,
+    BANK2_CTOR_RVA, BANK2_VTABLE_VA, BANK2_GETTER_RVA,
     inspect_2019_command_ui_dispatch,
 )
 
@@ -43,6 +47,23 @@ def synthetic_ui_tables():
                 + struct.pack("<i", COMMAND_HELPER_RVA - (handler + 13)))
         write_code(handler, insn)
 
+    bank2_name = BANK2_COMMAND_RVA - DATA_RVA
+    data[bank2_name:bank2_name + 16] = b"/bank2".ljust(16, bytes(1))
+    struct.pack_into("<HH", data, bank2_name + 20, 115, 0x51)
+    struct.pack_into(
+        "<III", data, BANK2_HANDLER_RECORD_RVA - DATA_RVA,
+        115, IMAGE_BASE + 0x7CF00, 0,
+    )
+    write_code(
+        BANK2_POINTER_READ_RVA,
+        bytes.fromhex("8b0d") + struct.pack("<I", BANK2_OBJECT_GLOBAL_VA),
+    )
+    write_code(
+        BANK2_HELPER_CALL_RVA,
+        bytes([0xE8]) + struct.pack(
+            "<i", BANK2_HELPER_RVA - (BANK2_HELPER_CALL_RVA + 5)
+        ),
+    )
     write_code(0x1D16F0, MODE_FORWARD_BYTES)
     write_code(0x1D4E85, MODE_GETTER_BYTES)
     write_code(0x1D4E8A, MODE_SELECTOR_BYTES)
@@ -78,6 +99,20 @@ def synthetic_mode_objects(code: bytes):
                          IMAGE_BASE + getter)
         getter_bytes = bytes([0xB8]) + struct.pack("<I", mode) + bytes([0xC3])
         updated_code[getter - CODE_RVA:getter - CODE_RVA + 6] = getter_bytes
+    bank2_ctor = (
+        bytes.fromhex("c700") + struct.pack("<I", BANK2_VTABLE_VA)
+        + bytes([0xA3]) + struct.pack("<I", BANK2_OBJECT_GLOBAL_VA)
+    )
+    updated_code[
+        BANK2_CTOR_RVA - CODE_RVA:BANK2_CTOR_RVA - CODE_RVA + 11
+    ] = bank2_ctor
+    struct.pack_into(
+        "<I", rdata, BANK2_VTABLE_VA - IMAGE_BASE - rdata_rva + 0x54,
+        IMAGE_BASE + BANK2_GETTER_RVA,
+    )
+    updated_code[
+        BANK2_GETTER_RVA - CODE_RVA:BANK2_GETTER_RVA - CODE_RVA + 6
+    ] = bytes([0xB8]) + struct.pack("<I", 9) + bytes([0xC3])
     return bytes(rdata), bytes(updated_code)
 
 
@@ -222,6 +257,40 @@ class Wardrobe2019CommandUITests(unittest.TestCase):
             inspect_2019_mode_object_getters(bytearray(64), 0x31E000, decoded)
         with self.assertRaises(Pol1Error):
             inspect_2019_mode_object_getters(bytes(64), True, decoded)
+
+
+    def test_adjacent_bank2_getter_is_mode_9_not_a_wardrobe(self):
+        data, code = synthetic_ui_tables()
+        rdata, code = synthetic_mode_objects(code)
+        report = inspect_2019_bank2_mode9(
+            data, DATA_RVA, rdata, 0x31E000, code,
+        )
+        self.assertEqual(report["status"], "ORIGINAL_BANK2_MODE_9_VERIFIED")
+        self.assertEqual(report["command"], "/bank2")
+        self.assertEqual(report["command_id"], 115)
+        self.assertEqual(report["returned_mode"], 9)
+        self.assertEqual(report["helper_rva"], "0x1D1570")
+        self.assertTrue(all(report["static_checks"].values()))
+        self.assertTrue(report["mode9_reserved_for_original_bank2_path"])
+        self.assertFalse(report["runtime_execution_or_complete_ui_semantics_proved"])
+
+    def test_bank2_command_constructor_and_mode_getter_tampering_fail_closed(self):
+        data, code = synthetic_ui_tables()
+        rdata, code = synthetic_mode_objects(code)
+        for kind, data2, rdata2, code2 in (
+            ("name", data[:BANK2_COMMAND_RVA-DATA_RVA] +
+             b"X" + data[BANK2_COMMAND_RVA-DATA_RVA+1:], rdata, code),
+            ("dispatch", data[:BANK2_HANDLER_RECORD_RVA-DATA_RVA] +
+             b"X" + data[BANK2_HANDLER_RECORD_RVA-DATA_RVA+1:], rdata, code),
+            ("getter", data, rdata, code[:BANK2_GETTER_RVA-CODE_RVA+1] +
+             bytes([0x0A]) + code[BANK2_GETTER_RVA-CODE_RVA+2:]),
+        ):
+            with self.subTest(kind=kind):
+                report = inspect_2019_bank2_mode9(
+                    data2, DATA_RVA, rdata2, 0x31E000, code2,
+                )
+                self.assertEqual(report["status"], "INCOMPLETE_STATIC_EVIDENCE")
+                self.assertIsNone(report["mode9_reserved_for_original_bank2_path"])
 
 
 if __name__ == "__main__":
