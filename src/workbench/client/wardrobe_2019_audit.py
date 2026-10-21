@@ -100,6 +100,14 @@ ANCHORS = {
     "direct_store_read_mode_literal": (0x3F8A, "68d0423410"),
     "direct_store_write_evb_literal": (0x47E3, "680c473410"),
     "direct_store_write_mode_literal": (0x47FC, "681c473410"),
+    "evb_caller_buffer0_filename": (0x4579, "6820473410"),
+    "evb_caller_buffer1_filename": (0x4616, "6830473410"),
+    "evb_caller_buffer2_filename": (0x46B6, "6838473410"),
+    "evb_caller_buffer3_filename": (0x4756, "6844473410"),
+    "evb_caller_buffer0_stack_frame": (0x4525, "81ec04010000"),
+    "evb_caller_buffer1_stack_frame": (0x45F5, "81ec04010000"),
+    "evb_caller_buffer2_stack_frame": (0x4695, "81ec04010000"),
+    "evb_caller_buffer3_stack_frame": (0x4735, "81ec04010000"),
 }
 
 
@@ -188,6 +196,10 @@ FIXED_TRANSFER_DATA_STRINGS = {
     "write_open_mode": (0x34471C, b"wb\x00"),
     "adjacent_evb_filename": (0x34470C, b"ZSU.evb\x00"),
     "adjacent_evb_glob": (0x344714, b"*.evb\x00"),
+    "caller0_evb_pattern": (0x344720, b"RCN%04d[%d].evb\x00"),
+    "caller1_evb_filename": (0x344730, b"REC.evb\x00"),
+    "caller2_evb_filename": (0x344738, b"RECN.evb\x00"),
+    "caller3_evb_filename": (0x344744, b"RECS.evb\x00"),
 }
 
 
@@ -299,9 +311,10 @@ def inspect_2019_store_lifecycle(decoded_sites_verified: bool) -> dict:
             "stack_local_buffer": [
                 "0x40EC", "0x418C", "0x431B", "0x43B9", "0x445F",
             ],
-            "stack_loaded_pointer_unknown_origin": [
+            "caller_supplied_first_argument_pointer": [
                 "0x45B0", "0x464D", "0x46ED", "0x478D",
             ],
+            "caller_supplied_pointer_contents_and_aliases_known": False,
         },
         "all_transfer_pointers_alias_active_store": None,
         "direct_active_store_evb_path_evidence": {
@@ -314,6 +327,13 @@ def inspect_2019_store_lifecycle(decoded_sites_verified: bool) -> dict:
             "write_side_transfer_push_rva": "0x4818",
             "full_runtime_file_name_proved": False,
             "is_character_inventory_persistence": None,
+            "caller_supplied_evb_files": [
+                {"site_rva": "0x45B0", "filename": "RCN%04d[%d].evb"},
+                {"site_rva": "0x464D", "filename": "REC.evb"},
+                {"site_rva": "0x46ED", "filename": "RECN.evb"},
+                {"site_rva": "0x478D", "filename": "RECS.evb"},
+            ],
+            "caller_supplied_buffer_content_known": False,
         },
         "linear_disassembly_candidate_reference_count": 1045,
         "manager_slot_count_field_offset": MANAGER_SLOT_COUNT_FIELD_OFFSET,
