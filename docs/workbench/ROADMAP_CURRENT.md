@@ -24,9 +24,12 @@ This is the authoritative current planning and capability inventory for the Miss
 
 **Local evidence milestone:** the XiHeadless agent reported two additional clean-build MOG-09 runs, 6/6 assertions each, DLL hash `ef3927a379f5b96f72329418fb12282da7c680a03dbf843fac213219b683a86b`, and imported run IDs `obs-20261019T081629Z` / `obs-20261019T082001Z`; these are agent-reported local observations, not independently replicated by CI. PR #1112 (OpenAPI repair and pipeline report) is merged. Dedicated inventory catalog test `INV-OBS-01` and its run inspector are merged; actual INV-OBS-01 execution and key-item persistence decoding remain unverified. XiHeadless observation-runner PR #3 requires final review.
 
+**First GUI-launched MOG-09 run (2026-10-21):** run `obs-20261021T040036Z` on `xitest05` / charid 21833 was started from the Feature Testing Builder tab (Setup tab enabled, outside-repo data dir) and finished **PASS, 6/6 assertions** with a real client-vs-`char_inventory` comparison (bag and Mog Safe) against `dspdb_fresh` through the read-only supervisor login. Report imported automatically; artifacts under `%LOCALAPPDATA%\MissionToolkit	est_executionrtifacts\`. Fixes that made it possible: xiheadless-dsp #186 (unconfigured supervisor DB is BLOCKED, not a false FAIL), Toolkit #1241-#1246 (mysql-connector fallback, Setup panel, Builder UX, account/char prefill, data dir outside repo). Known gaps unchanged: installed-furniture layout is not readable via MCP, and client key items are not compared with persisted key items (no supervisor key-item endpoint). Earlier imported run `obs-20261021T025326Z` is a stale false FAIL from the unconfigured-DB bug and should be disregarded.
+
 ## Scenario expansion (opened 2026-10-21, epic #1197)
 
 Only MOG-09 and INV-OBS-01 are runnable; 41 planned cases across gardening, voidwalker, assault/nyzul, missions/quests and moghancement are blocked, and voidwatch, salvage, run/geo and chocobo have no cases. Plan: (1) git agents draft oracle-backed specs per domain (#1249-#1254, brief `SCENARIO_EXPANSION_AGENT_BRIEF.md`); (2) supervisor key item/char_vars readback (#1256, PR #1248); (3) spec-driven observation runner (#1255, local); (4) mutating cases only with per-case owner approval.
+
 
 ## 2026-10-18 capability-inventory gap correction (targeted)
 
