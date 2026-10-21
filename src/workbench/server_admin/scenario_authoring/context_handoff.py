@@ -115,7 +115,15 @@ def inspect_evidence_review(payload: dict) -> dict:
     } or payload.get("contract") != _DECISIONS:
         raise ValueError("Unsupported or modified offline evidence review file")
     doc = payload.get("observed_handoff")
-    if not isinstance(doc, dict) or doc.get("contract") != _OBSERVED:
+    expected_doc_keys = {
+        "contract", "source_contract", "capture_id", "classification",
+        "review_status", "step_review_complete", "binding_review_complete",
+        "review_complete", "normative_expected", "verdict",
+        "execution_enabled", "approved_for_execution", "capture_projection_sha256",
+        "timeline", "proposed_behavior", "reviewed_steps", "evidence_map",
+        "canonical_specification_seed", "review_gaps", "continue_in_scenario_developer",
+    }
+    if not isinstance(doc, dict) or doc.get("contract") != _OBSERVED or set(doc) != expected_doc_keys:
         raise ValueError("Original observed-only handoff missing or incompatible")
     if not (type(payload.get("capture_id")) is int and payload["capture_id"] > 0
             and payload["capture_id"] == doc.get("capture_id")
@@ -149,6 +157,15 @@ def inspect_evidence_review(payload: dict) -> dict:
         seed["authoring"].get("evidence_provenance") != "unverified_indexed_capture",
     ]):
         raise ValueError("Review seed attempted to promote a draft or fabricate assertions")
+    seed_steps = seed.get("steps")
+    if not isinstance(seed_steps, list) or any(
+        not isinstance(step, dict) or
+        not isinstance(step.get("expected"), str) or
+        not step["expected"].startswith("UNKNOWN") or
+        step.get("assertion_ids") != [] or step.get("evidence_refs") != []
+        for step in seed_steps
+    ):
+        raise ValueError("Captured canonical seed must not contain normative assertions or evidence bindings")
     observations = doc.get("reviewed_steps")
     evidence = doc.get("evidence_map")
     if (not isinstance(observations, list) or not 1 <= len(observations) <= _MAX_STEPS
