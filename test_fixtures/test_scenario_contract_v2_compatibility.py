@@ -208,3 +208,76 @@ def test_stale_fingerprint_on_editor_clone_must_not_be_silent_match():
     spec, versions, sources = _fingerprint_ready()
     spec["case_id"] = "SYNTH-GARD-01-COPIED"
     assert compatibility_report(spec, versions, observed_sources=sources)["state"] == "BLOCKED"
+
+
+def test_guided_editor_preserves_optional_v2_without_approving_binding_or_oracle():
+    """Canonical validation may preserve metadata; it is not source trust."""
+    from workbench.server_admin.scenario_authoring.editor_router import validate_editor_spec
+
+    mog = deepcopy(specification("moghancement", "MOG-09"))
+    mog.update(case_id="SYNTH-MOG-V2-PREVIEW", runner="unassigned",
+               execution_status="design_only")
+    mog["authoring"] = {
+        "state": "draft",
+        "execution_policy": "read_only",
+        "evidence_provenance": "synthetic_untrusted",
+        "blocking_gaps": ["UNKNOWN source and independent readback"],
+        "review_required": True,
+    }
+    mog["contract_v2"] = {
+        "contract_version": 2,
+        "sources": [{
+            "ref": "synthetic-src", "repository": "synthetic/repository",
+            "path": "synthetic/source.lua", "line_start": 1, "line_end": 3,
+            "revision": None, "sha256": None, "classification": "dsp_source",
+        }],
+        "parameters": [{
+            "name": "synthetic_npc", "kind": "npc", "identity": None,
+            "namespace": None, "zone_id": None, "binding_state": "ambiguous",
+            "source_refs": ["synthetic-src"],
+        }],
+        "oracles": [{
+            "assertion_id": mog["assertions"][0]["id"], "oracle_type": "unknown",
+            "confidence": "unknown", "source_refs": [],
+        }],
+        "step_requirements": [{
+            "step_id": mog["steps"][0]["id"],
+            "capability": "read_only_observation", "operation_class": "read_only",
+            "required_permissions": [], "required_readbacks": ["session"],
+            "approval_required": True, "execution_gate": "blocked",
+        }],
+        "fingerprints": {
+            "base_spec_sha256": None, "dsp_commit": None,
+            "headless_commit": None, "toolkit_commit": None,
+        },
+    }
+    original = deepcopy(mog)
+    result = validate_editor_spec(mog)
+    assert result["canonical_specification"]["contract_v2"] == original["contract_v2"]
+    assert result["execution_enabled"] is False
+    assert result["preview"]["independent_verification"] == "NOT_ESTABLISHED"
+    assert result["preview"]["recorded_verdict"] is None
+    assert deserialize_spec(serialize_spec(result["canonical_specification"])) == original
+    # No source rehash or trusted runtime fingerprint is invented.
+    assert compatibility_report(original)["state"] == "UNKNOWN"
+    assert all(req["execution_gate"] == "blocked"
+               for req in result["canonical_specification"]["contract_v2"]["step_requirements"])
+
+
+def test_v2_metadata_cannot_bypass_existing_32k_draft_serialization_limit():
+    spec = deepcopy(staged_fixture()["specification"])
+    base = deepcopy(spec["steps"][0])
+    # 100 steps and 500-character source-neutral titles/expectations fit
+    # individual v1 schema caps but exceed the existing 32 KiB draft size.
+    spec["steps"] = [
+        {**deepcopy(base), "id": f"SYNTH-LARGE-{i}",
+         "title": "SYNTHETIC-" + "t" * 480,
+         "expected": "UNKNOWN " + "x" * 480}
+        for i in range(100)
+    ]
+    # No authored step requires execution; keep its one existing blocked gate.
+    spec["contract_v2"]["step_requirements"][0]["step_id"] = "SYNTH-LARGE-0"
+    assert validate_spec(spec) is spec
+    with pytest.raises(ValueError, match="32KiB"):
+        serialize_spec(spec)
+    assert spec["runner"] == "unassigned"
