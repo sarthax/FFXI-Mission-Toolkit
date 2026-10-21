@@ -9,6 +9,7 @@ import hashlib
 import struct
 
 from workbench.client.pol1_unpack import Pol1Error, _section, unpack_pol1
+from workbench.client.wardrobe_2019_sidecar_model import describe_hypothetical_sidecar
 
 EXPECTED_SHA256 = "514653a260c51eaec25d88510e51a86fb2a4abd9867f53d5f45a9ccf840f060f"
 EXPECTED_DECODED_SHA256 = "af2126c057d86559bfad2e164f7f7fd0a26bbc89ab29ea9cbde5cea807c7d2b8"
@@ -489,6 +490,7 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         "source_sha256": source_hash, "decoded_sha256": original["sha256"],
         "decoded_sha256_verified": decoded_hash_ok,
         "commands": commands, "decoded_sites": sites,
+        "hypothetical_extension_design": describe_hypothetical_sidecar(),
         "fixed_transfer_data_strings": strings,
         "fixed_transfer_call_candidates": transfers,
         "store_layout": inspect_2019_store_layout(
