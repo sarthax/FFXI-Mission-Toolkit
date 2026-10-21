@@ -21,20 +21,30 @@
 .sd-preview-step{border:1px solid var(--wb-border,#999);border-radius:.4rem;padding:.8rem;margin:.6rem 0}
 .sd-json{width:100%;min-height:23rem;font-family:monospace}
 .sd-result{white-space:pre-wrap;overflow-wrap:anywhere}
+.sd-selection{display:flex;gap:.4rem;flex-direction:column;overflow-wrap:anywhere}
+.sd-selection small{opacity:.85}
+.sd-picker-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.6rem;margin:.75rem 0}
+.sd-picker-results article{border:1px solid var(--wb-border,#999);border-radius:.5rem;padding:.6rem}
+.sd-picker-results button{margin-top:.3rem}
+.sd-revision{font-weight:700}
+
 @media(max-width:690px){.sd-pair{grid-template-columns:1fr}}
 </style>
-<p><a href="/feature-testing?tab=catalog">← Feature Testing catalog</a> · <a href="/feature-testing/scenario/moghancement/MOG-09">Read-only MOG-09 scenario</a></p>
+<p><a href="/feature-testing?tab=catalog">← Feature Testing catalog</a> · <a href="/feature-testing/scenario/moghancement/MOG-09">Read-only MOG-09 scenario</a> · <a id="sd-source-detail" href="/feature-testing/scenario/moghancement/MOG-09">Open source scenario detail</a></p>
+<p class="sd-muted">The canonical Scenario Detail page presents published cases and imported results. Unpublished drafts are previewed here without a PASS claim; no draft-detail route is invented.</p>
 <div class="sd-warning">
 <strong>Specification maturity: DESIGN_ONLY · Review required · Execution BLOCKED</strong>.
 Displayed authoring labels cannot promote a draft to reviewed or executable. No GM command, packet, SQL write, or headless action can be dispatched here.
 Imported/recalculated PASS is not independently verified proof.
 </div>
+<p id="sd-context-note" class="sd-warning" role="status" hidden></p>
 <section class="wb-panel">
 <div class="sd-bar">
 <button type="button" id="sd-new">New synthetic scenario</button>
 <label class="sd-field" for="sd-seed-select">Fork published case
 <select id="sd-seed-select"><option value="">Choose a canonical case</option><option value="moghancement/MOG-09">MOG-09</option><option value="inventory_observation/INV-OBS-01">INV-OBS-01</option></select></label>
 <button type="button" id="sd-fork">Fork as design-only</button>
+<button type="button" id="sd-clone">Clone current draft (new case ID)</button>
 </div>
 <nav class="sd-bar" aria-label="Editing mode">
 <button type="button" id="sd-guided" aria-pressed="true">Guided</button>
@@ -66,11 +76,29 @@ Imported/recalculated PASS is not independently verified proof.
 </div>
 </div>
 <div class="sd-block">
+<h2>Catalog lookup — read-only source candidates</h2>
+<p id="sd-catalog" class="sd-warning">Catalog candidates are NOT verified identities. A matching name/ID, including a GM diagnostic, does not authorize any action. Missing checkout or ambiguous IDs remain blockers.</p>
+<div class="sd-grid">
+<label class="sd-field">Catalog type<select id="sd-catalog-kind">
+<option value="npc">NPC</option><option value="item">Item</option><option value="keyitem">Key item</option>
+<option value="mob">Mob</option><option value="zone">Zone</option><option value="gm">GM command metadata (never dispatch)</option>
+</select></label>
+<label class="sd-field">Name or ID search<input id="sd-catalog-query" maxlength="64" placeholder="Name or source ID"></label>
+<label class="sd-field">Associate with step<select id="sd-catalog-step"></select></label>
+</div>
+<button type="button" id="sd-search-catalog">Search configured DSP source</button>
+<p id="sd-catalog-feedback" role="status" aria-live="polite"></p>
+<div id="sd-catalog-results" class="sd-picker-results" aria-label="Source candidates"></div>
+<p class="sd-muted">Selecting records only adds an unverified source note to the canonical step and an outstanding reconciliation gap. No source-derived client/zone binding is approved here. Reopen the draft to inspect the note under Technical provenance.</p>
+</div>
+<div class="sd-block">
 <h2>Observations and assertion contracts</h2>
 <p class="sd-warning">Observation names are from the canonical validator. Values and source identities are not presumed present. No external catalog binding is verified.</p>
 <label class="sd-field">Required observation types (Ctrl/⌘+click for multiple)<select id="sd-observations" multiple size="10"></select></label>
+<details><summary>Technical assertion definitions and supported operations</summary>
 <div id="sd-assertions" aria-label="Assertion definitions"></div>
 <button type="button" id="sd-add-assertion">Add assertion</button>
+</details>
 </div>
 <div class="sd-block">
 <h2>Ordered scenario steps</h2>
@@ -90,7 +118,8 @@ Imported/recalculated PASS is not independently verified proof.
 <div class="sd-bar">
 <button type="button" id="sd-validate">Validate and preview (no execution)</button>
 <label class="sd-field">Operator token (only for saving to existing local draft store)<input type="password" id="sd-token" autocomplete="off"></label>
-<label class="sd-field">Expected draft revision<input type="number" id="sd-revision" value="0" min="0" step="1"></label>
+<label class="sd-field">Expected draft revision<input type="number" id="sd-revision" value="0" min="0" step="1" readonly></label>
+<p id="sd-revision-state" class="sd-revision" role="status">New unsaved design draft · revision 0</p>
 <button type="button" id="sd-save">Save design-only draft</button>
 <button type="button" id="sd-load-drafts">List local drafts</button>
 <label class="sd-field">Saved drafts<select id="sd-drafts"><option value="">No draft selected</option></select></label>
@@ -99,10 +128,6 @@ Imported/recalculated PASS is not independently verified proof.
 <p class="sd-muted">Saving uses the existing operator-authorized, revision-checked <code>/feature-testing/builder/drafts</code> endpoint. It cannot overwrite published specifications or enable any runner.</p>
 <p id="sd-result" class="sd-result" role="status" aria-live="polite">No validation performed.</p>
 <section id="sd-preview" class="sd-block" aria-label="Read-only scenario preview" hidden></section>
-</div>
-<div class="sd-block">
-<h2>Catalog integration</h2>
-<p id="sd-catalog" class="sd-warning">External item, key item, NPC, dialog, GM and trace identities: UNRESOLVED. PR #1266 remains isolated; candidate IDs require source/client reconciliation and human review. Nothing here can send a command.</p>
 </div>
 </section>
 <script src="/static/scenario_guided_model.js"></script>
