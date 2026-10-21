@@ -179,3 +179,64 @@ def test_duplicate_staged_assertion_ids_do_not_become_v2_oracles():
     ]
     with pytest.raises(validator.ValidationError, match="duplicate staged assertion ID"):
         validate(doc)
+
+
+
+def test_optional_v2_staging_hints_can_remain_explicitly_blocked():
+    """The staging validator accepts *hints*, not new canonical authority."""
+    doc = deepcopy(DOC)
+    doc["cases"][0]["contract_v2"] = {
+        "contract_version": 2,
+        "parameters": [], "oracles": [],
+        "step_requirements": [{"step_id": "SYN-01-S01",
+                               "execution_gate": "blocked",
+                               "approval_required": True,
+                               "required_permissions": []}],
+    }
+    assert validate(doc) == [("SYN-01", "needs-readback")]
+
+
+@pytest.mark.parametrize("fault,error", [
+    ("citation_url_suffix", "source URL does not match"),
+    ("citation_range_suffix", "source URL does not match"),
+    ("unverified_digest", "cannot assert independent SHA-256"),
+    ("raw_step_permissions", "unsafe step permission"),
+    ("v2_identity", "identity/oracle authority requires canonical review"),
+    ("v2_oracle", "identity/oracle authority requires canonical review"),
+    ("v2_granted_permission", "invalid v2 gate, permission, or step"),
+    ("v2_no_approval", "invalid v2 gate, permission, or step"),
+    ("v2_bad_requirements_type", "step requirements must be a bounded list"),
+])
+def test_staged_adapter_v2_boundary_remains_fail_closed(fault, error):
+    doc = deepcopy(DOC)
+    case = doc["cases"][0]
+    if fault == "citation_url_suffix":
+        case["steps"][0]["source_refs"][0] = {
+            **SRC, "url": SRC["url"] + "?untrusted=1"}
+    elif fault == "citation_range_suffix":
+        case["steps"][0]["source_refs"][0] = {
+            **SRC, "url": SRC["url"].replace("#L1-L3", "#L1-L999")}
+    elif fault == "unverified_digest":
+        case["steps"][0]["source_refs"][0] = {**SRC, "sha256": "f" * 64}
+    elif fault == "raw_step_permissions":
+        case["steps"][0]["required_permissions"] = ["unreviewed_grant"]
+    else:
+        v2 = {"contract_version": 2, "parameters": [], "oracles": [],
+              "step_requirements": []}
+        case["contract_v2"] = v2
+        if fault == "v2_identity":
+            v2["parameters"] = [{"name": "unverified_mob_id", "binding_state": "candidate"}]
+        elif fault == "v2_oracle":
+            v2["oracles"] = [{"assertion_id": "SYN-01-a1", "oracle_type": "equals"}]
+        elif fault == "v2_bad_requirements_type":
+            v2["step_requirements"] = {"unbounded": "unknown"}
+        else:
+            req = {"step_id": "SYN-01-S01", "execution_gate": "blocked",
+                   "required_permissions": [], "approval_required": True}
+            if fault == "v2_granted_permission":
+                req["required_permissions"] = ["gm"]
+            else:
+                req["approval_required"] = False
+            v2["step_requirements"] = [req]
+    with pytest.raises(validator.ValidationError, match=error):
+        validate(doc)
