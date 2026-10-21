@@ -82,6 +82,10 @@ ANCHORS = {
     "store_pointer_secondary_dispatch": (0xF7694, "893508da4c10"),
     "store_pointer_secondary_shutdown": (0xF76ED, "893508da4c10"),
     "store_pointer_secondary_reopen": (0xF8A55, "893508da4c10"),
+    "manager_index_narrowed_to_16_bits": (0xF6EEA, "25ffff0000"),
+    "manager_index_compared_to_slot_count": (0xF6EEF, "3b8188b00300"),
+    "manager_index_rejects_unknown": (0xF6EF7, "33c0c3"),
+    "manager_slot_indexed_load": (0xF6EFA, "8b0481"),
 }
 
 
@@ -184,6 +188,10 @@ def inspect_2019_store_lifecycle(decoded_sites_verified: bool) -> dict:
         "manager_slot_count_field_offset": MANAGER_SLOT_COUNT_FIELD_OFFSET,
         "manager_default_slot_count": 1,
         "manager_slot_selection_rvas": ["0xF710A", "0xF7009"],
+        "separate_manager_index_validation_rva": "0xF6EE0",
+        "manager_index_truncated_to_16_bits": True if decoded_sites_verified else None,
+        "manager_index_guarded_by_slot_count": True if decoded_sites_verified else None,
+        "manager_guard_proves_inventory_container_safety": False,
         "manager_teardown_loop_rva": "0xF6FF0",
         "manager_cleanup_call_rva": "0xF700D",
         "active_store_pointer_clear_rvas": ["0xF70D6", "0xF6FE2"],
