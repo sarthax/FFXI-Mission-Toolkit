@@ -179,3 +179,14 @@ The `src_<SHA256-prefix>` identifiers are **purely tooling references** computed
 | **Independent source/authenticity** | **No, not through this metadata-only GitHub CI** | Requires independent original-source-byte SHA-256 computation, operator-known DSP deployment, local client/DAT identity crosswalk, server readback freshness/completeness, trusted capture originals and source-branch/oracle human review |
 
 No CI result can promote `observe-now` to dispatch permission or stage `NOT_RUN` to gameplay PASS. No domain staging file, Scenario Developer UI, Agent D capture code, server or live runner was changed by this compatibility layer.
+
+
+## 10. CI failure #39617090965 — repeated source citation validation (fixed on PR #1285)
+
+**Exact failure:** `test_staged_domain_handoff_rejects_missing_fields_mismatch_and_permission_claims[<lambda>8]` changed a step's source `url` while leaving its repository/path/commit/line span unchanged. That source tuple already appeared earlier in the parent case. The noncanonical adapter reused the normalized `src_<hash>` source ID and **returned from the cache before checking that particular occurrence's URL**. The negative test correctly demanded `ValueError`, and remained unchanged.
+
+**Corrected invariant:** Validate **every occurrence** of a staged citation against the envelope's DSP commit, complete pinned repository/path/line URL and canonical source structure *before* looking up or reusing a deduplicated source ID. Cache reuse applies only to the already-validated coordinate tuple. All original citations, including repeated case, oracle and step copies, remain preserved in `source_refs_original`. There is no trusted source-file SHA-256 inferred from the deterministic source-reference ID.
+
+**Focused regressions:** `test_every_duplicate_source_citation_validated_before_ref_reuse` rejects URL tampering at a previously seen step, an appended case duplicate, a nested-oracle occurrence and a first case ref. `test_consistent_duplicate_citations_reuse_ref_without_source_promotion` confirms legitimate repeats still deduplicate in normalized metadata while original citations survive. `test_optional_v2_staging_hints_cannot_gain_runtime_authority` covers `capability=unassigned`, `operation_class=unknown`, `execution_gate=ready/approved`, unsupported `sql_execute` permission and unapproved GM mutations; an accepted `blocked` hint has no execution authority.
+
+**Review boundary:** These are software rejection and normalization tests, not independent gameplay, capture or source-byte authenticity checks. The old CI failure remains part of the suite and is not xfailed, deleted or weakened. Successful validation cannot promote v1 runner states, approve proposed oracles, authenticate Agent D's scoped `EXACT`, supply DSP source SHA-256, or dispatch an action. Always verify the three GitHub workflows against the corrected PR's *actual* current head before integration.
