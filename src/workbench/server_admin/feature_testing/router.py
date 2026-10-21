@@ -36,7 +36,26 @@ def _results_db():
     return os.environ.get('MISSION_TOOLKIT_TEST_RESULTS_DB')
 
 
-def scenario_detail(feature_id: str, case_id: str) -> dict:
+def _selected_run_view(feature_id: str, case_id: str, run_id: str):
+    """Reevaluation context for one explicitly selected imported run; None if unusable."""
+    from .results import results_for_run
+    try:
+        rows = results_for_run(_results_db(), run_id) if _results_db() else []
+    except ValueError:
+        return None
+    row = next((r for r in rows if (r["feature_id"], r["case_id"]) == (feature_id, case_id)), None)
+    if row is None:
+        return None
+    if (feature_id, case_id) == ("moghancement", "MOG-09"):
+        from .normalized_evidence import evaluate_imported_mog09
+        try:
+            return evaluate_imported_mog09(row)
+        except ValueError as exc:
+            return {"error": str(exc), "recorded_verdict": row["verdict"]}
+    return {"recorded_verdict": row["verdict"]}
+
+
+def scenario_detail(feature_id: str, case_id: str, run_id: str = "") -> dict:
     catalog = load_test_catalog()
     feature = next((f for f in catalog["features"] if f["id"] == feature_id), None)
     if feature is None:
@@ -52,12 +71,20 @@ def scenario_detail(feature_id: str, case_id: str) -> dict:
         reference = {"type": "furnishing_and_effect_oracle", "source": "sql/item_furnishing.sql",
                      "effect_catalog": "data/testing/moghancement_effect_validation.json",
                      "detail": "Predict dominant aura, key item, modifier delta and independent gameplay effect."}
+    observed = recent_results(_results_db(), feature_id=feature_id, case_id=case_id) if _results_db() else []
+    run_ids = list(dict.fromkeys(r["run_id"] for r in observed))
+    selected = None
+    reevaluation = None
+    if run_id and run_id in run_ids:
+        reevaluation = _selected_run_view(feature_id, case_id, run_id)
+        selected = run_id if reevaluation is not None else None
     return {"feature_id": feature_id, "feature_name": feature["name"],
             "scenario": case, "feature_gaps": feature.get("gaps", []),
             "gm_candidates": feature.get("existing_gm_candidates", []),
             "expected_reference": reference, "execution_enabled": False,
-            "presentation": scenario_presentation(specification(feature_id, case_id)),
-            "observed_results": recent_results(_results_db(), feature_id=feature_id, case_id=case_id) if _results_db() else []}
+            "presentation": scenario_presentation(specification(feature_id, case_id), reevaluation, selected),
+            "run_ids": run_ids,
+            "observed_results": observed}
 
 
 @router.get("/preflight/{feature_id}/{case_id}")
@@ -72,9 +99,9 @@ def scenario_api(feature_id: str, case_id: str):
 
 
 @router.get("/scenario/{feature_id}/{case_id}", response_class=HTMLResponse)
-def scenario_page(request: Request, feature_id: str, case_id: str):
+def scenario_page(request: Request, feature_id: str, case_id: str, run: str = ""):
     return templates.TemplateResponse(request=request, name="feature_testing_scenario.html",
-                                      context={"title": "Test Scenario", "detail": scenario_detail(feature_id, case_id),
+                                      context={"title": "Test Scenario", "detail": scenario_detail(feature_id, case_id, run),
                                                "preflight": scenario_preflight(feature_id, case_id)})
 
 
@@ -123,6 +150,7 @@ def run_page(request: Request, run_id: str):
         scenario_views[index] = scenario_presentation(
             specification(row["feature_id"], row["case_id"]),
             reevaluations.get(index, {"recorded_verdict": row["verdict"]}),
+            run_id,
         )
     return templates.TemplateResponse(request=request, name="feature_testing_run.html",
                                       context={"title": "Test Run", "run_id": run_id, "records": rows,

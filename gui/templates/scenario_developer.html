@@ -1,0 +1,135 @@
+{% extends "workbench_page.html" %}
+{% block title %}Guided Scenario Developer{% endblock %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_heading %}Guided Scenario Developer{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">DESIGN ONLY · not executable</span>{% endblock %}
+{% block page_help %}Create and review non-executable canonical scenario drafts. Validation does not run a game client or verify an oracle.{% endblock %}
+{% block page_body %}
+<style>
+.sd-bar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin:.8rem 0}
+.sd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.8rem}
+.sd-field{display:flex;flex-direction:column;gap:.3rem;margin:.4rem 0;min-width:0}
+.sd-field input,.sd-field textarea,.sd-field select{padding:.45rem;width:100%;box-sizing:border-box}
+.sd-block{border:1px solid var(--wb-border,#999);border-radius:.5rem;padding:1rem;margin:1rem 0}
+.sd-card{border:1px solid var(--wb-border,#999);padding:.85rem;margin:.7rem 0;border-radius:.4rem}
+.sd-card>header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}
+.sd-muted{opacity:.85}
+.sd-warning{border-left:4px solid currentColor;padding:.4rem .8rem}
+.sd-controls{display:flex;gap:.4rem;flex-wrap:wrap;margin:.5rem 0}
+.sd-pair{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.sd-pair>div{border:1px solid var(--wb-border,#999);padding:.65rem;border-radius:.4rem;overflow-wrap:anywhere}
+.sd-preview-step{border:1px solid var(--wb-border,#999);border-radius:.4rem;padding:.8rem;margin:.6rem 0}
+.sd-json{width:100%;min-height:23rem;font-family:monospace}
+.sd-result{white-space:pre-wrap;overflow-wrap:anywhere}
+.sd-selection{display:flex;gap:.4rem;flex-direction:column;overflow-wrap:anywhere}
+.sd-selection small{opacity:.85}
+.sd-picker-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.6rem;margin:.75rem 0}
+.sd-picker-results article{border:1px solid var(--wb-border,#999);border-radius:.5rem;padding:.6rem}
+.sd-picker-results button{margin-top:.3rem}
+.sd-revision{font-weight:700}
+
+@media(max-width:690px){.sd-pair{grid-template-columns:1fr}}
+</style>
+<p><a href="/feature-testing?tab=catalog">← Feature Testing catalog</a> · <a href="/feature-testing/scenario/moghancement/MOG-09">Read-only MOG-09 scenario</a> · <a id="sd-source-detail" href="/feature-testing/scenario/moghancement/MOG-09">Open source scenario detail</a></p>
+<p class="sd-muted">The canonical Scenario Detail page presents published cases and imported results. Unpublished drafts are previewed here without a PASS claim; no draft-detail route is invented.</p>
+<div class="sd-warning">
+<strong>Specification maturity: DESIGN_ONLY · Review required · Execution BLOCKED</strong>.
+Displayed authoring labels cannot promote a draft to reviewed or executable. No GM command, packet, SQL write, or headless action can be dispatched here.
+Imported/recalculated PASS is not independently verified proof.
+</div>
+<p id="sd-context-note" class="sd-warning" role="status" hidden></p>
+<section class="wb-panel">
+<div class="sd-bar">
+<button type="button" id="sd-new">New synthetic scenario</button>
+<label class="sd-field" for="sd-seed-select">Fork published case
+<select id="sd-seed-select"><option value="">Choose a canonical case</option><option value="moghancement/MOG-09">MOG-09</option><option value="inventory_observation/INV-OBS-01">INV-OBS-01</option></select></label>
+<button type="button" id="sd-fork">Fork as design-only</button>
+<button type="button" id="sd-clone">Clone current draft (new case ID)</button>
+</div>
+<nav class="sd-bar" aria-label="Editing mode">
+<button type="button" id="sd-guided" aria-pressed="true">Guided</button>
+<button type="button" id="sd-advanced" aria-pressed="false">Advanced JSON</button>
+</nav>
+<section id="sd-guided-panel" aria-label="Guided editor">
+<div class="sd-block">
+<h2>Identity and purpose</h2>
+<div class="sd-grid">
+<label class="sd-field">Feature/domain<select id="sd-feature" required></select></label>
+<label class="sd-field">Stable case ID<input id="sd-case" maxlength="120" required></label>
+<label class="sd-field">Scenario title<input id="sd-title" maxlength="120" required></label>
+<label class="sd-field">Purpose<textarea id="sd-purpose" maxlength="1000" rows="3"></textarea></label>
+<label class="sd-field">Rationale<textarea id="sd-rationale" maxlength="1000" rows="3"></textarea></label>
+</div>
+</div>
+<div class="sd-block">
+<h2>Given / When / Then</h2>
+<p class="sd-muted">One statement per line; these are claims for human review, not commands.</p>
+<div class="sd-grid">
+<label class="sd-field">Given<textarea id="sd-given" rows="5"></textarea></label>
+<label class="sd-field">When<textarea id="sd-when" rows="5"></textarea></label>
+<label class="sd-field">Then<textarea id="sd-then" rows="5"></textarea></label>
+</div>
+<div class="sd-grid">
+<label class="sd-field">Preconditions<textarea id="sd-preconditions" rows="3"></textarea></label>
+<label class="sd-field">Cleanup expectations<textarea id="sd-cleanup" rows="3"></textarea></label>
+<label class="sd-field">Unresolved proof / blocking gaps<textarea id="sd-gaps" rows="3"></textarea></label>
+</div>
+</div>
+<div class="sd-block">
+<h2>Catalog lookup — read-only source candidates</h2>
+<p id="sd-catalog" class="sd-warning">Catalog candidates are NOT verified identities. A matching name/ID, including a GM diagnostic, does not authorize any action. Missing checkout or ambiguous IDs remain blockers.</p>
+<div class="sd-grid">
+<label class="sd-field">Catalog type<select id="sd-catalog-kind">
+<option value="npc">NPC</option><option value="item">Item</option><option value="keyitem">Key item</option>
+<option value="mob">Mob</option><option value="zone">Zone</option><option value="gm">GM command metadata (never dispatch)</option>
+</select></label>
+<label class="sd-field">Name or ID search<input id="sd-catalog-query" maxlength="64" placeholder="Name or source ID"></label>
+<label class="sd-field">Associate with step<select id="sd-catalog-step"></select></label>
+</div>
+<button type="button" id="sd-search-catalog">Search configured DSP source</button>
+<p id="sd-catalog-feedback" role="status" aria-live="polite"></p>
+<div id="sd-catalog-results" class="sd-picker-results" aria-label="Source candidates"></div>
+<p class="sd-muted">Selecting records only adds an unverified source note to the canonical step and an outstanding reconciliation gap. No source-derived client/zone binding is approved here. Reopen the draft to inspect the note under Technical provenance.</p>
+</div>
+<div class="sd-block">
+<h2>Observations and assertion contracts</h2>
+<p class="sd-warning">Observation names are from the canonical validator. Values and source identities are not presumed present. No external catalog binding is verified.</p>
+<label class="sd-field">Required observation types (Ctrl/⌘+click for multiple)<select id="sd-observations" multiple size="10"></select></label>
+<details><summary>Technical assertion definitions and supported operations</summary>
+<div id="sd-assertions" aria-label="Assertion definitions"></div>
+<button type="button" id="sd-add-assertion">Add assertion</button>
+</details>
+</div>
+<div class="sd-block">
+<h2>Ordered scenario steps</h2>
+<p class="sd-muted">Move steps without changing their IDs. Every step must bind known assertion IDs and known observation names. Expected outcomes that lack a source oracle must say UNKNOWN.</p>
+<ol id="sd-steps" aria-label="Scenario steps"></ol>
+<button type="button" id="sd-add-step">Add step</button>
+</div>
+</section>
+<section id="sd-advanced-panel" class="sd-block" hidden aria-label="Advanced JSON">
+<h2>Canonical JSON (same draft)</h2>
+<p>No alternate format. Changes are checked by the same server-side canonical validator when you return to Guided or select Validate.</p>
+<label class="sd-field">Specification JSON<textarea id="sd-advanced-json" class="sd-json" spellcheck="false" maxlength="32768"></textarea></label>
+<button type="button" id="sd-apply-json">Apply JSON to Guided</button>
+</section>
+<div class="sd-block">
+<h2>Validate, preview and save</h2>
+<div class="sd-bar">
+<button type="button" id="sd-validate">Validate and preview (no execution)</button>
+<label class="sd-field">Operator token (only for saving to existing local draft store)<input type="password" id="sd-token" autocomplete="off"></label>
+<label class="sd-field">Expected draft revision<input type="number" id="sd-revision" value="0" min="0" step="1" readonly></label>
+<p id="sd-revision-state" class="sd-revision" role="status">New unsaved design draft · revision 0</p>
+<button type="button" id="sd-save">Save design-only draft</button>
+<button type="button" id="sd-load-drafts">List local drafts</button>
+<label class="sd-field">Saved drafts<select id="sd-drafts"><option value="">No draft selected</option></select></label>
+<button type="button" id="sd-open-draft">Open selected draft</button>
+</div>
+<p class="sd-muted">Saving uses the existing operator-authorized, revision-checked <code>/feature-testing/builder/drafts</code> endpoint. It cannot overwrite published specifications or enable any runner.</p>
+<p id="sd-result" class="sd-result" role="status" aria-live="polite">No validation performed.</p>
+<section id="sd-preview" class="sd-block" aria-label="Read-only scenario preview" hidden></section>
+</div>
+</section>
+<script src="/static/scenario_guided_model.js"></script>
+<script src="/static/scenario_developer.js"></script>
+{% endblock %}

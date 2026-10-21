@@ -1,0 +1,183 @@
+{% extends "workbench_page.html" %}
+{% block title %}Feature-to-Scenario Coverage{% endblock %}
+{% block page_archetype %}workbench{% endblock %}
+{% block page_heading %}Feature-to-Scenario Coverage{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Read-only · imported evidence ≠ verified</span>{% endblock %}
+{% block page_help %}Features originate in the test-readiness catalog. Scenario specifications and local imported runs are projected separately. A relationship link opens a research page; it is not evidence of a verified dependency. No percentages or autonomous actions.{% endblock %}
+{% block page_actions %}<a href="/feature-testing">Feature Testing</a> · <a href="/feature-catalog">Feature Catalog</a>{% endblock %}
+{% block page_body %}
+<style>
+.cov-intro{margin:.6rem 0 1rem;max-width:90rem}
+.cov-controls{display:flex;align-items:end;gap:.8rem;flex-wrap:wrap;margin:.6rem 0 1rem}
+.cov-controls label{display:grid;gap:.25rem}
+.cov-controls select,.cov-controls button{min-height:2rem;padding:.3rem}
+.cov-section{border:1px solid var(--border);border-radius:.5rem;padding:.85rem;margin:.7rem 0;background:var(--surface)}
+.cov-section summary{cursor:pointer}
+.cov-info{display:flex;gap:1rem;flex-wrap:wrap;font-size:.9rem;margin:.45rem 0}
+.cov-state{font-weight:700;text-transform:uppercase}
+.cov-state.complete{color:var(--accent)}.cov-state.partial,.cov-state.blocked{color:var(--amber)}
+.cov-categories{display:flex;flex-wrap:wrap;gap:.4rem;margin:.5rem 0}
+.cov-categories span{border:1px solid var(--border);border-radius:.4rem;padding:.15rem .4rem;font-size:.85rem}
+.cov-table{max-width:100%;overflow-x:auto}
+.cov-table table{border-collapse:collapse;width:100%;min-width:1180px}
+.cov-table th,.cov-table td{text-align:left;padding:.5rem;border-bottom:1px solid var(--border);vertical-align:top}
+.cov-table th{font-size:.85rem}
+.cov-table td{font-size:.88rem}
+.cov-table ul{margin:.25rem 0;padding-left:1.15rem}
+.cov-links{display:flex;gap:.6rem;flex-wrap:wrap}
+.cov-muted{color:var(--muted)}
+.cov-warning{border-left:3px solid var(--amber);padding:.5rem .7rem;background:var(--amber-soft)}
+.cov-number{font-variant-numeric:tabular-nums}
+.cov-wide{max-width:90rem}
+.cov-behavior{border:1px solid var(--border);padding:.65rem;margin:.8rem 0;border-radius:.4rem}
+.cov-behavior>summary{cursor:pointer;font-weight:700}
+.cov-revision-alert{border-left:5px solid var(--red);background:var(--red-soft);padding:.55rem .8rem;margin:.4rem 0;font-weight:700}
+.cov-stage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.5rem;margin:.6rem 0}
+.cov-stage-grid>div{border:1px solid var(--border);padding:.4rem;border-radius:.3rem}
+.cov-hand-off{padding:.4rem .6rem;border:1px solid var(--border);border-radius:.3rem;display:inline-block}
+.cov-gap{font-size:.84rem;color:var(--amber);font-weight:700}
+</style>
+<section class="cov-intro">
+<p><strong>Specified ≠ executable ≠ imported ≠ independently verified.</strong> Imported PASS is not independent proof, and an assertion replay uses the same imported values. Missing oracle, incomplete readback, unsupported runner, and unpinned or mismatched revisions remain BLOCKED or UNKNOWN.</p>
+<p class="cov-warning">{{ matrix.history_note }} Counts below refer to declared scenarios; no coverage percentages are calculated.</p>
+<p class="cov-muted">The Feature Catalog and test-readiness catalog use different feature identifiers. Documentation, Feature Trace and Behavior Trace links are investigation shortcuts only. The current importer does not provide independently authenticated evidence.</p>
+</section>
+<form method="get" action="/feature-testing/coverage" class="cov-controls" aria-label="Coverage filters">
+<label for="cov-domain">Feature/domain
+<select id="cov-domain" name="domain">
+<option value="">All declared testing domains</option>
+{% for domain in matrix.domains %}
+<option value="{{ domain.id }}" {% if domain.id == matrix.selected_domain %}selected{% endif %}>{{ domain.name }}</option>
+{% endfor %}
+</select></label>
+<label for="cov-ready">Coverage state
+<select id="cov-ready" name="readiness">
+<option value="">All states</option>
+{% for state in matrix.states %}<option value="{{ state }}" {% if state == matrix.selected_readiness %}selected{% endif %}>{{ state|upper }}</option>{% endfor %}
+</select></label>
+<button type="submit">Apply</button>
+<a href="/feature-testing/coverage">Clear filters</a>
+<a href="/feature-testing/coverage/model.json">Read-only JSON</a>
+</form>
+{% if not matrix.features %}<p class="wb-empty">No declared testing domains match the selected filters. This does not establish that other Toolkit features are covered.</p>{% endif %}
+{% for feature in matrix.features %}
+<section class="cov-section cov-wide" data-feature="{{ feature.id }}" data-state="{{ feature.state }}">
+<h2>{{ feature.name }} <span class="cov-state {{ feature.state }}">— {{ feature.state }}</span></h2>
+<div class="cov-info">
+<span><strong>{{ feature.cases|length }}</strong> declared case(s)</span>
+<span><strong>{{ feature.cases|selectattr('specified')|list|length }}</strong> canonical specification(s)</span>
+<span><strong>{{ feature.cases|selectattr('recorded')|list|length }}</strong> case(s) with imported history</span>
+<span><strong>{{ feature.cases|selectattr('independent_confidence','equalto','VERIFIED_BY_SEPARATE_TRUSTED_SOURCE')|list|length }}</strong> independently verified case(s)</span>
+</div>
+<div class="cov-categories">
+{% for cat, count in feature.categories.items() %}
+<span>{{ cat|title }}: planned {{ count.planned }} · specified {{ count.specified }} · imported {{ count.recorded }} · independently verified {{ count.independent }}</span>
+{% endfor %}
+</div>
+<div class="cov-links">
+<a href="{{ feature.catalog_search_url }}">Feature Catalog search</a>
+<a href="{{ feature.trace_url }}">Explore Feature Trace</a>
+<a href="{{ feature.behavior_url }}">Explore Behavior Trace</a>
+{% for doc in feature.documentation %}<a href="{{ doc.url }}" title="{{ doc.provenance }}">{{ doc.label }} documentation (unverified link)</a>{% endfor %}
+</div>
+<details class="cov-behavior" open>
+<summary>Declared behaviors and authoring gaps — {{ feature.behavior_drilldown|length }} source case intent(s), NOT verified Behavior Trace nodes</summary>
+<p class="cov-muted">Each candidate below is grounded in a declared test-readiness case. A case title is not an authoritative requirement or a verified graph relationship. The link opens the editor with an unsaved, design-only draft that carries only the case label and a read-only source pointer; you still author the case ID, outcomes and oracles.</p>
+<div class="cov-categories" aria-label="Category inventory, not coverage percentages">
+{% for cat in feature.category_gaps %}
+<span class="{{ 'cov-gap' if cat.missing_category else '' }}">{{ cat.category|title }} — declared {{ cat.declared }}, specified {{ cat.specified }}, imported {{ cat.observed }}, independently verified {{ cat.verified }}{% if cat.missing_category %} · NO DECLARED SCENARIO (not an invented requirement){% endif %}</span>
+{% endfor %}
+</div>
+{% for behavior in feature.behavior_drilldown %}
+<section class="cov-section" data-behavior-ref="{{ behavior.behavior_ref }}" data-coverage="{{ behavior.coverage_status }}">
+<h3>{{ behavior.behavior_ref }} — {{ behavior.intent }}</h3>
+<p class="cov-muted">{{ behavior.source_kind }} · {{ behavior.source }} · category: {{ behavior.category }}</p>
+{% if behavior.version_alert %}
+<p class="cov-revision-alert" role="alert">Revision warning: {{ behavior.version_alert }} — recorded PASS cannot establish current scenario/engine agreement. Inspect the exact run evidence and pinned revisions.</p>
+{% endif %}
+<div class="cov-stage-grid" aria-label="Distinct planning, execution and evidence states">
+<div><strong>Planned</strong><div>{{ 'DECLARED' if behavior.planned else 'UNDECLARED' }}</div></div>
+<div><strong>Specified</strong><div>{{ 'CANONICAL_SPEC_EXISTS' if behavior.specified else 'NO_SPECIFICATION' }}</div></div>
+<div><strong>Executable</strong><div>{{ behavior.executable }}</div></div>
+<div><strong>Observed</strong><div>{{ behavior.observed }} · {{ behavior.observed_verdict }}</div></div>
+<div><strong>Verified</strong><div>{{ 'INDEPENDENTLY_VERIFIED' if behavior.verified else 'NOT_ESTABLISHED' }}</div></div>
+</div>
+<div class="cov-links">
+<a href="{{ behavior.scenario_url }}">Scenario Detail</a>
+<a href="{{ behavior.run_history_url }}">Execution history (imported)</a>
+{% if behavior.run_url %}<a href="{{ behavior.run_url }}">Latest evidence / run</a>{% endif %}
+<a href="{{ behavior.context_url }}">Read-only draft context</a>
+{% if not behavior.verified %}
+<a class="cov-hand-off" href="{{ behavior.editor_url }}">Create scenario for this behavior ↗</a>
+{% endif %}
+</div>
+<div class="cov-info">
+<span>Expected oracle: {{ behavior.oracle_status }}</span>
+<span>Readback: {{ behavior.readback_status }}</span>
+<span>Recalculated verdict: {{ behavior.recalculated_verdict }}</span>
+<span>Readiness: {{ behavior.capability_status }}</span>
+</div>
+{% if behavior.unsupported_observations %}
+<p class="cov-warning">Unsupported canonical observation names: {{ behavior.unsupported_observations|join(', ') }}. Do not assume executable capability.</p>
+{% endif %}
+{% if behavior.candidate_capabilities %}
+<details><summary>Candidate capabilities (not verified as supported)</summary><p>{{ behavior.candidate_capabilities|join(', ') }}</p></details>
+{% else %}<p class="cov-muted">No registered candidate capabilities for this feature; execution support remains UNKNOWN.</p>{% endif %}
+{% if behavior.evidence_requirements %}
+<details><summary>Evidence requirements (declarations; not proof observed)</summary><ul>{% for item in behavior.evidence_requirements %}<li>{{ item }}</li>{% endfor %}</ul></details>{% endif %}
+{% if behavior.gaps %}
+<details><summary>Oracle, observation, capability and readiness gaps ({{ behavior.gaps|length }})</summary><ul>{% for gap in behavior.gaps %}<li>{{ gap }}</li>{% endfor %}</ul></details>
+{% endif %}
+</section>
+{% endfor %}
+</details>
+{% if feature.feature_gaps %}
+<details><summary>Feature-level blocking gaps ({{ feature.feature_gaps|length }})</summary><ul>{% for gap in feature.feature_gaps %}<li>{{ gap }}</li>{% endfor %}</ul></details>
+{% endif %}
+<div class="cov-table"><table>
+<thead><tr>
+<th scope="col">Scenario / category</th>
+<th scope="col">Specification / readiness</th>
+<th scope="col">Latest recorded verdict</th>
+<th scope="col">Recalculated verdict</th>
+<th scope="col">Independent evidence / oracle</th>
+<th scope="col">Blocking gaps and provenance</th>
+</tr></thead><tbody>
+{% for case in feature.cases %}
+<tr data-case="{{ case.id }}" data-verdict="{{ case.recorded.verdict if case.recorded else 'UNKNOWN' }}">
+<td><a href="{{ case.scenario_url }}">{{ case.id }}</a> — {{ case.title }}<div class="cov-muted">{{ case.category|title }}</div></td>
+<td>{{ case.spec_maturity }}<div>{{ case.readiness|upper }} · {{ case.state|upper }}</div>
+{% if case.spec_digest %}<details><summary>Local spec SHA-256</summary><code>{{ case.spec_digest }}</code></details>{% else %}<span class="cov-muted">No canonical spec</span>{% endif %}
+</td>
+<td>{% if case.recorded %}
+<strong>{{ case.recorded.verdict }} (imported, unverified)</strong>
+<div><a href="{{ case.run_url }}">Run {{ case.recorded.run_id }}</a></div>
+<div class="cov-muted">{{ case.recorded.observed_at }}</div>
+<details><summary>Stages and pinned engine revisions</summary>
+<ul>{% for stage in case.recorded.stage_verdicts %}<li>{{ stage.stage }}: {{ stage.verdict }}</li>{% endfor %}</ul>
+<div>DSP {{ case.recorded.dsp_commit }} · Headless {{ case.recorded.headless_commit }} · Toolkit {{ case.recorded.toolkit_commit }}</div>
+</details>
+{% else %}<strong>UNKNOWN — no imported result</strong>{% endif %}
+</td>
+<td><strong>{{ case.recalculated.verdict }}</strong>
+<div class="cov-muted">{{ case.recalculated.reason }}</div>
+<div>Revision: {{ case.version_comparison }}</div>
+</td>
+<td><strong>{{ case.independent_confidence }}</strong>
+<div>Expected oracle: {{ case.oracle }}</div>
+<div>Independent readback: {{ case.readback }}</div>
+</td>
+<td>{% if case.gaps %}<details><summary>{{ case.gaps|length }} blocking / unresolved gap(s)</summary><ul>{% for gap in case.gaps %}<li>{{ gap }}</li>{% endfor %}</ul></details>{% else %}No declared blockers{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+</section>
+{% endfor %}
+{% if matrix.orphan_specifications or matrix.orphan_evidence %}
+<section class="cov-section cov-wide">
+<h2>Unlinked records — not silently counted</h2>
+{% if matrix.orphan_specifications %}<p>Canonical specs absent from readiness catalog:</p><ul>{% for ref in matrix.orphan_specifications %}<li>{{ ref.feature_id }} / {{ ref.case_id }}</li>{% endfor %}</ul>{% endif %}
+{% if matrix.orphan_evidence %}<p>Imported evidence absent from readiness catalog:</p><ul>{% for ref in matrix.orphan_evidence %}<li>{{ ref.feature_id }} / {{ ref.case_id }}</li>{% endfor %}</ul>{% endif %}
+</section>
+{% endif %}
+{% endblock %}

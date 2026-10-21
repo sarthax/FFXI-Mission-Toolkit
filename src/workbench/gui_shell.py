@@ -187,6 +187,7 @@ WORKSPACES = (
             {"label": "Dashboard", "href": "/validation"},
             {"label": "Runs & Results", "href": "/validation/runs"},
             {"label": "Feature Testing & Validation", "href": "/feature-testing", "active_patterns": (r"^/feature-testing(?:/.*)?$",)},
+            {"label": "Scenario Developer (design only)", "href": "/scenario-developer", "active_patterns": (r"^/scenario-developer(?:/.*)?$",)},
             {"label": "Live Target", "href": "/validation/live-target"},
         ),
     },
