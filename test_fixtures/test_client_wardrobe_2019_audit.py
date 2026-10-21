@@ -52,7 +52,12 @@ class Wardrobe2019AuditTests(unittest.TestCase):
         self.assertFalse(inspect_command_table(b"", rva)["legacy_commands_verified"])
 
     def test_static_opcode_anchor_comparison_never_exposes_code(self):
-        decoded = bytearray(0xF0000)
+        # Include every anchor, including the later fixed-buffer initializer.
+        max_end = max(
+            rva - 0x1000 + len(bytes.fromhex(pattern))
+            for rva, pattern in ANCHORS.values()
+        )
+        decoded = bytearray(max_end + 16)
         for addr, hexbytes in ANCHORS.values():
             off = addr - 0x1000
             raw = bytes.fromhex(hexbytes)
