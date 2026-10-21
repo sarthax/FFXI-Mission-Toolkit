@@ -171,7 +171,7 @@ def inspect_2019_store_lifecycle(decoded_sites_verified: bool) -> dict:
         ],
         "fixed_size_transfer_semantics_confirmed": False,
         "candidate_file_io_callee_rva": "0x307CFF",
-        "observed_instructions_containing_store_global_address": 1045,
+        "linear_disassembly_candidate_reference_count": 1045,
         "manager_slot_count_field_offset": MANAGER_SLOT_COUNT_FIELD_OFFSET,
         "manager_default_slot_count": 1,
         "manager_slot_selection_rvas": ["0xF710A", "0xF7009"],
