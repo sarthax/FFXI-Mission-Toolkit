@@ -1,6 +1,18 @@
 # Scenario & Evidence Workbench — bidirectional testing roadmap
 
-Status: PROPOSED / planning. Parent: [Toolkit #1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197). Existing related work: #1198 (oracle provenance), #1200 (catalog/preflight), #1201 (run controls), #1202 (import), #1207 (coverage), #1208 (guided authoring), #1249–#1254 (domain expansion), #1255 (spec-driven runner); XiHeadless #42/#47/#49/#105/#107/#122/#123/#126.
+Status: R7 ACTIVE / source-level integrated R6; runtime acceptance OPEN. Parent: [Toolkit #1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197). Existing related work: #1198 (oracle provenance), #1200 (catalog/preflight), #1201 (run controls), #1202 (import), #1207 (coverage), #1208 (guided authoring), #1249–#1254 (domain expansion), #1255 (spec-driven runner); XiHeadless #42/#47/#49/#105/#107/#122/#123/#126.
+
+## R7 delivery status and dependency gates — 2026-10-21
+
+**R6 integration is complete at `main@972ff6fa`; R7 development is active, not an authorization to execute.** The merged Code/Schema/Editor/Evidence foundations (#1285/#1283/#1287) and nine domain design PRs form 73 **non-runnable** cases, distinct from the two historical v1 catalog definitions. The sole machine-readable readiness matrix is #1292, distinct observation backlog #1293, shared offline validation #1294. Lanes: **5 observe-now (conditional), 2 needs-readback, 57 needs-mutation, 9 needs-deploy**. Never substitute these for a gameplay verdict.
+
+**Post-merge release gate:** [draft CI #1305](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1305) introduces main-integrated validation because former `spec/*` staging branches were deleted after their merges. Preserve fail-closed separate PR-head mode; require exact-head CI, independent reviewer and owner authorization before merging. [Operator CI and acceptance guide](R7_CI_AND_ACCEPTANCE_GUIDE.md) separates deterministic GitHub tests from local/original-evidence/deployment acceptance.
+
+**R7 ownership, no overlapping modules:** Agent **C** alone owns canonical `scenario_contract_v2*.py`, validator/source-to-step schema and compatibility rules (#1259/#1302). Agent **D** owns existing capture reviewer/readiness projection modules (#1262/#1198/#1202), read-only and sidecar noncanonical. Agent **B** consumes C and D through editor/Guided/Advanced models/UI for phase 2 (#1302), and must not change schema or evidence decoder internals. Agent **E** owns future allowlisted fixed-query observations and capability/permission contracts (#1295–#1300), *not* editor, schema, evidence parser, or local XIHeadless. Agent **A** handles CI/doc/release/epic; cross-boundary changes need planned PR reviews first.
+
+**Next acceptance milestones:** stable per-step source association and candidate-versus-approved oracle readbacks; evidenced integrity of original capture bytes and decoder version; server/client snapshot completeness and scoped authorizations; reviewer-approved normative expectations; supervised run idempotence, cleanup and replayability; independent installed DSP source/config/schema attestations; explicit owner-approved mutating cases, Chocobo deployment verification. Every absent prerequisite is **UNKNOWN/BLOCKED**, never PASS by implication. Keep #1197 and broad runtime issues open.
+
+---
 
 ## Vision
 
