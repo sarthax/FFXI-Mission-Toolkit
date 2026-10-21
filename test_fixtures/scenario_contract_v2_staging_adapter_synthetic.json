@@ -223,7 +223,13 @@
                 ],
                 "manual_execution_allowed": false
               }
-            ]
+            ],
+            "mutation": {
+              "type": "client_or_operator_gm_setup",
+              "authorization": "explicit owner approval per case",
+              "enabled": false,
+              "scope_guard": "Must verify unique pot across Mog Safe and Mog Safe 2 before any debug mutation"
+            }
           }
         ],
         "source_revision": {
@@ -400,7 +406,8 @@
                 ],
                 "execution_authorized": false
               }
-            ]
+            ],
+            "mutation": "none"
           }
         ],
         "source_revision": {
@@ -575,7 +582,8 @@
                 ],
                 "execution_authorized": false
               }
-            ]
+            ],
+            "mutation": "none"
           }
         ],
         "source_revision": {
