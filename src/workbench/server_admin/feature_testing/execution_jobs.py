@@ -84,6 +84,9 @@ def _run(job_id: str, account: str, charid: int, port: int, artifacts: Path) -> 
         outcome = execute_mog09(account=account, charid=charid, out_dir=artifacts,
                                 supervisor=f"http://127.0.0.1:{port}", approved=True,
                                 progress=lambda phase: _set_phase(job_id, phase))
+    except ValueError as exc:  # pre-launch validation text is operator-safe and says what to fix
+        _set_phase(job_id, "failed")
+        _set_status(job_id, "ERROR", error=str(exc)[:300])
     except Exception:
         _set_phase(job_id, "failed")
         # Diagnostics remain in local artifacts; do not disclose command output or credentials.
