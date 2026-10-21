@@ -65,6 +65,26 @@ def test_source_record_exact_is_not_independently_verified():
     row = typed["steps"][0]
     assert row["observed_summary_original"] == draft["steps"][0]["observed_summary"]
     assert row["original_evidence_refs"] == draft["steps"][0]["evidence_refs"]
+    assert [x["evidence_ref"] for x in row["indexed_evidence_provenance"]] == row["original_evidence_refs"]
+    for provenance in row["indexed_evidence_provenance"]:
+        original = draft["evidence_map"][provenance["evidence_ref"]]
+        assert provenance["capture_id"] == original["capture_id"]
+        assert provenance["source_table"] == original["table"]
+        assert provenance["original_row_key"] == original["row_key"]
+        assert provenance["source_locator_status"] == original["source"]["status"]
+        assert provenance["independent_source_authentication"] is False
+        assert len(provenance["source_file_claims"]) == len(original["source"]["references"])
+        for claim, locator in zip(provenance["source_file_claims"],
+                                  original["source"]["references"], strict=True):
+            assert claim["source_filename"] == locator["filename"]
+            assert claim["locator_sha256_claim"] == locator["source_sha256"]
+            assert claim["parser_name_claim"] == (
+                locator["source_manifest"] or {}).get("parser_name")
+            assert claim["parser_version_claim"] == (
+                locator["source_manifest"] or {}).get("parser_version")
+            assert claim["decoder_version"] is None
+            assert claim["decoder_version_status"] == "NOT_INDEPENDENTLY_ATTESTED"
+            assert claim["indexed_digests_rehashed"] is False
     ids = {x["capture_identity_kind"]: x for x in row["identity_confidence"]}
     assert ids["npc"]["classification"] == "EXACT"
     assert ids["npc"]["source_record_correlation"] is True
@@ -94,9 +114,11 @@ def test_detailed_missing_observations_for_all_lanes():
             assert names["client_dialog"]["status"] == "NOT_INDEPENDENTLY_OBSERVED"
             assert names["quest_variables"]["importance"] == "CONDITIONAL"
             assert names["instance_state"]["importance"] == "CONDITIONAL"
+            assert names["job_state"]["importance"] == "CONDITIONAL"
+            assert names["mob_state"]["importance"] == "CONDITIONAL"
         elif step["lane"] == "capture_eventview":
             assert {"server_event_state", "client_dialog", "quest_variables",
-                    "instance_state"}.issubset(names)
+                    "instance_state", "job_state"}.issubset(names)
         elif step["lane"] == "capture_ki_events":
             assert {"client_key_items", "server_key_items"}.issubset(names)
             assert names["quest_variables"]["importance"] == "CONDITIONAL"
@@ -232,6 +254,34 @@ def test_missing_parser_and_manifest_digests_are_unknown_not_false_conflicts():
     con.close()
 
 
+def test_unrecognized_parser_or_capture_ingest_remains_unknown():
+    con, draft = fixture()
+    incomplete = deepcopy(draft)
+    ref = incomplete["steps"][0]["evidence_refs"][0]
+    locator = next(x for x in incomplete["evidence_map"][ref]["source"]["references"]
+                   if x.get("source_manifest"))
+    locator["source_manifest"]["parser_version"] = "SYNTHETIC_FUTURE_UNSUPPORTED"
+    locator["source_manifest"]["ingest_status"] = "UNRECOGNIZED"
+    result = summarize_capture_readiness(incomplete)
+    assert result["source_integrity"]["state"] == "UNKNOWN"
+    issues = [x for x in result["source_integrity"]["issues"]
+              if x.get("ref_id") == ref]
+    assert any(x["code"] == "PARSER_OR_CAPTURE_INGEST_UNRECOGNIZED"
+               and x["severity"] == "UNKNOWN" for x in issues)
+    projected = result["scenario_developer_handoff"]["read_only_projection"]
+    matching = [x for x in projected["steps"][0]["indexed_evidence_provenance"]
+                if x["evidence_ref"] == ref][0]
+    parser = matching["source_file_claims"][0]
+    assert parser["parser_version_claim"] == "SYNTHETIC_FUTURE_UNSUPPORTED"
+    assert parser["parser_support"] == "UNRECOGNIZED_OR_UNSUPPORTED"
+    assert parser["decoder_version"] is None
+    assert projected["steps"][0]["readiness_state"] == "UNKNOWN"
+    assert projected["steps"][0]["verdict"] == "UNKNOWN"
+    assert projected["execution_enabled"] is False
+    assert render_review_html(incomplete, readiness=result)
+    con.close()
+
+
 def test_repeated_capture_contradictions_are_not_gameplay_failures():
     con = synthetic_interaction_with_key_item()
     original = reconstruct_review_draft(con, 1)
@@ -298,6 +348,14 @@ def test_existing_offline_reviewer_renders_readiness_without_approval():
             source_identity_verified=True),
         lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0].update(
             original_evidence_refs=["FABRICATED_REF"]),
+        lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0][
+            "indexed_evidence_provenance"][0].update(evidence_ref="FABRICATED"),
+        lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0][
+            "indexed_evidence_provenance"][0]["source_file_claims"][0].update(
+                indexed_digests_rehashed=True),
+        lambda x: x["scenario_developer_handoff"]["read_only_projection"]["steps"][0][
+            "indexed_evidence_provenance"][0]["source_file_claims"][0].update(
+                decoder_version="FORGED_VERIFIED"),
         lambda x: x["readiness_steps"][0].update(execution_enabled=True),
         lambda x: x["readiness_steps"][0]["oracle_readiness"].update(normative_expected="UNAUTHORIZED"),
         lambda x: x["readiness_steps"][0]["identity_matches"][0].update(source_identity_verified=True),
@@ -339,6 +397,7 @@ def main():
     test_advisory_v2_field_mapping_uses_only_proposed_names()
     test_missing_parser_and_manifest_digests_are_unknown_not_false_conflicts()
     test_revision_mismatch_and_tampered_projection_fail_closed()
+    test_unrecognized_parser_or_capture_ingest_remains_unknown()
     test_repeated_capture_contradictions_are_not_gameplay_failures()
     print("Synthetic evidence readiness, provenance and contract_v2 hints: PASS")
 
