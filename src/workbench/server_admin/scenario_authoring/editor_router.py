@@ -6,6 +6,7 @@ draft store; it does not define an alternate spec or execute any capabilities.
 from __future__ import annotations
 
 from copy import deepcopy
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
@@ -13,6 +14,11 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from workbench.runtime.paths import GUI_ROOT
+from workbench.runtime.legacy_settings import get_dsp_root
+from workbench.server_admin.scenario_authoring.catalog_adapter import (
+    CatalogUnavailable, search_catalog,
+)
+from workbench.server_admin.feature_testing.scenario_presentation import scenario_presentation
 from workbench.server_admin.feature_testing.router import load_test_catalog
 from workbench.server_admin.feature_testing.spec_drafts import _validate_draft
 from workbench.server_admin.feature_testing.test_specifications import (
@@ -55,7 +61,7 @@ def editor_options() -> dict:
         "observations": sorted(_ALLOWED_OBSERVATIONS),
         "operations": sorted(_ALLOWED_OPERATIONS),
         "catalog_status": "UNRESOLVED",
-        "catalog_note": "PR #1266 catalog candidates need source/client reconciliation and security review.",
+        "catalog_note": "DSP source candidates only; all identities and action permissions need human reconciliation.",
         "execution_enabled": False,
     }
 
@@ -114,8 +120,10 @@ def validate_editor_spec(payload: dict) -> dict:
         "operator_review_required": True,
         "maturity": "DESIGN_ONLY — not reviewed, not executable",
         "catalog_identity": "UNRESOLVED",
+        "reader_view": scenario_presentation(spec),
     }
     return {"valid": True, "canonical_specification": spec, "preview": preview,
+            "reader_view": preview["reader_view"],
             "execution_enabled": False, "operator_review_required": True,
             "warnings": (["Assertions without step coverage: " + ", ".join(uncovered)] if uncovered else [])
                         + (["UNKNOWN expected oracle in " + ", ".join(unknowns)] if unknowns else [])
@@ -135,6 +143,42 @@ def options(request: Request):
     return editor_options()
 
 
+def catalog_candidates(kind: str, query: str, limit: int = 12) -> dict:
+    """Bounded DSP-only discovery with no path supplied by a web caller.
+
+    The configured DSP checkout is an application setting, not a client input.
+    Missing sources are unavailable, never an empty 'verified' catalog.
+    """
+    if kind not in {"item", "keyitem", "npc", "mob", "zone", "gm"}:
+        raise ValueError("Choose item, keyitem, npc, mob, zone or gm")
+    if type(limit) is not int or not 1 <= limit <= 20:
+        raise ValueError("Catalog results must be limited to 1-20")
+    root = get_dsp_root()
+    if not root or not Path(root).is_dir():
+        raise CatalogUnavailable(
+            "No DSP source checkout configured. Configure dsp_server_path in Toolkit settings first."
+        )
+    return search_catalog(root, kind, query, limit=limit)
+
+
+@router.get("/catalog/search", include_in_schema=False)
+def search_editor_catalog(request: Request, kind: str, query: str, limit: int = 12):
+    """Local browser GET only; returns unverified candidate metadata, never commands."""
+    if not request.client or request.client.host not in ("127.0.0.1", "::1"):
+        raise HTTPException(403, "Catalog search is local-only")
+    if request.headers.get("x-requested-with") != "toolkit-ui":
+        raise HTTPException(403, "Catalog search requires the local editor")
+    origin = request.headers.get("origin")
+    if origin and origin != str(request.base_url).rstrip("/"):
+        raise HTTPException(403, "Cross-origin catalog search refused")
+    try:
+        return catalog_candidates(kind, query, limit)
+    except CatalogUnavailable as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc) + " Resolve: " + _validation_help(str(exc))) from exc
+
+
 @router.get("/seed/{feature_id}/{case_id}", include_in_schema=False)
 def seed(request: Request, feature_id: str, case_id: str):
     """Read a published spec for fork/copy only; it is never editable in place."""
@@ -142,6 +186,28 @@ def seed(request: Request, feature_id: str, case_id: str):
     if spec is None:
         raise HTTPException(404, "No canonical specification found")
     return {"specification": spec, "copy_only": True, "execution_enabled": False}
+
+
+def _validation_help(reason: str) -> str:
+    """Expose next actionable edit without weakening canonical validation."""
+    low = reason.casefold()
+    if "duplicate step" in low:
+        return "Use a different stable step ID; reorder existing steps without changing their IDs."
+    if "unknown step assertion" in low:
+        return "Choose an assertion ID already defined in this scenario, or add its definition."
+    if "unknown step evidence" in low or "unsupported observation" in low:
+        return "Select supported observations and bind each step to an existing observation name."
+    if "duplicate" in low and "assertion" in low:
+        return "Give each assertion a unique ID and rebind the affected steps."
+    if "invalid bdd" in low or "bdd phase" in low:
+        return "Enter at least one Given, When and Then statement (one per line)."
+    if "unrecognized" in low or "unexpected" in low or "invalid step fields" in low:
+        return "Remove unsupported JSON fields; use only the canonical schema, not a separate action format."
+    if "published" in low:
+        return "Clone the published scenario with a new case ID; published definitions cannot be overwritten."
+    if "runner" in low or "design_only" in low or "review" in low or "mutating" in low:
+        return "Keep this draft unassigned, design-only, read-only and review-required."
+    return "Review required fields, lengths and source gaps; inspect the canonical specification."
 
 
 @router.post("/validate", include_in_schema=False)

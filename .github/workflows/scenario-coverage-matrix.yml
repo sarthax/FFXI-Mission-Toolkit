@@ -6,6 +6,7 @@ on:
       - "src/workbench/server_admin/scenario_coverage/**"
       - "gui/templates/feature_testing_coverage.html"
       - "test_fixtures/test_scenario_coverage_matrix.py"
+      - "test_fixtures/test_scenario_coverage_authoring.py"
       - ".github/workflows/scenario-coverage-matrix.yml"
       - "src/workbench/app/_host_impl.py"
   workflow_dispatch:
@@ -27,4 +28,4 @@ jobs:
       - name: Deterministic coverage regression (synthetic only)
         env:
           PYTHONPATH: src
-        run: python -m pytest -q test_fixtures/test_scenario_coverage_matrix.py
+        run: python -m pytest -q test_fixtures/test_scenario_coverage_matrix.py test_fixtures/test_scenario_coverage_authoring.py
