@@ -151,3 +151,22 @@ def test_missing_index_never_offers_to_save_unresolved_identity():
     response = client.get("/features/trace", params={"q": "synthetic-unresolved"})
     assert response.status_code == 200
     assert "trace-saved-views" not in str(response.text)
+
+
+def test_opt_in_draft_recovery_renders_on_resolved_trace_only_but_can_resume_from_search():
+    client, _traced, _searched, _cleared, _closed = _client()
+    page = client.get("/features/trace", params={"q": "synthetic-root"})
+    assert page.status_code == 200
+    assert 'id="trace-draft-recovery"' in page.text
+    assert 'id="trace-draft-opt-in"' in page.text
+    assert 'id="trace-draft-status"' in page.text
+    assert 'id="trace-draft-disable"' in page.text
+    assert page.text.count('src="/static/feature_trace_local_saves.js"') == 1
+
+    landing = client.get("/features/trace")
+    assert landing.status_code == 200
+    assert 'id="trace-draft-recovery"' in landing.text
+    assert 'id="trace-draft-link"' in landing.text
+    assert 'id="trace-draft-opt-in"' not in landing.text
+    assert 'id="trace-saved-views"' not in landing.text
+    assert landing.text.count('src="/static/feature_trace_local_saves.js"') == 1
