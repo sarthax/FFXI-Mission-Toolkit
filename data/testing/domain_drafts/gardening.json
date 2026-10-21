@@ -1,0 +1,3971 @@
+{
+  "artifact_type": "R5_gardening_domain_staging_draft_not_canonical_catalog",
+  "schema_version": 1,
+  "canonical_target": "data/testing/test_specifications.json",
+  "canonical_compatibility": "Stable IDs/BDD/steps/assertions follow accepted conceptual contract; NOT importable into strict v1 loader until missing observation/action/oracle fields are reviewed and safely mapped",
+  "integration_status": "BLOCKED_SCHEMA_OWNER_REVIEW",
+  "execution_enabled": false,
+  "source_revision": {
+    "toolkit_base": "3cd36fc770fc1a7cd874874d5bf8fbdfa0de496f",
+    "dsp_branch": "feature/mog-house-gardening",
+    "dsp_commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+    "deployed": "UNKNOWN"
+  },
+  "capability_matrix": {
+    "existing": [
+      "/api/supervisor/test-character-inventory: location,slot,itemId,quantity LIMIT 100",
+      "XIHeadless snapshot/inventory generic candidates subject to current capabilities check"
+    ],
+    "missing": [
+      "Fixed-query garden pot extra readback and completeness",
+      "Structured pot/client interaction capture",
+      "Approved specialized XIHeadless placement, feeding, and harvest bindings",
+      "Runtime DSP deployment and optional garden configuration proof"
+    ],
+    "guard": "GARD-GM-01 must block unsafe numeric-slot collision; never execute direct !garden action from this draft"
+  },
+  "cases": [
+    {
+      "schema_version": 1,
+      "feature_id": "gardening",
+      "case_id": "GARD-01",
+      "name": "Place pot and plant valid seed",
+      "kind": "positive",
+      "purpose": "Verify normal planting rather than GM direct sowing",
+      "rationale": "Verify normal planting rather than GM direct sowing. Client placement/plant packet, seed decrement and pot state not source-pinned.",
+      "status": "planned",
+      "execution_status": "design_only",
+      "runner": "unassigned",
+      "lane": "needs-mutation",
+      "execution_lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Approved disposable character and isolated server profile",
+          "Both safe containers captured with exact container+slot identity",
+          "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+        ],
+        "when": [
+          "Client places source-mapped pot and plants seed"
+        ],
+        "then": [
+          "UNKNOWN — player planting acceptance and seed decrement"
+        ]
+      },
+      "preconditions": [
+        "Approved disposable character and isolated server profile",
+        "Both safe containers captured with exact container+slot identity",
+        "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+      ],
+      "steps": [
+        {
+          "id": "GARD-01-S01",
+          "title": "Capture read-only preconditions",
+          "intent": "read_only_observation",
+          "action": "Observe full pre-state for both safes",
+          "expected": "Complete authorized baseline; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-01-baseline_complete"
+          ],
+          "observations_required": [
+            "client_safe",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 589,
+              "line_end": 608,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-01-S02",
+          "title": "Perform action only after explicit approval",
+          "intent": "guarded_action",
+          "action": "Client places source-mapped pot and plants seed",
+          "expected": "UNKNOWN — player planting acceptance and seed decrement",
+          "assertion_ids": [
+            "GARD-01-action_oracle"
+          ],
+          "observations_required": [
+            "client_event_timeline",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 112,
+              "line_end": 132,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L112-L132"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.h",
+              "line_start": 41,
+              "line_end": 80,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 679,
+              "line_end": 709,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-01-S03",
+          "title": "Compare independent outcomes",
+          "intent": "read_only_observation",
+          "action": "Capture client and authoritative server post-state",
+          "expected": "PASS prohibited without independently complete source-backed oracle; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-01-post_state_verified"
+          ],
+          "observations_required": [
+            "client_safe",
+            "client_inventory",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 112,
+              "line_end": 132,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L112-L132"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.h",
+              "line_start": 41,
+              "line_end": 80,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 679,
+              "line_end": 709,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-01-S04",
+          "title": "Verify cleanup or quarantine",
+          "intent": "manual_checkpoint",
+          "action": "Operator reviews both safe containers and verifies an approved restoration",
+          "expected": "Cleanup verified independently or remain BLOCKED",
+          "assertion_ids": [
+            "GARD-01-cleanup_verified"
+          ],
+          "observations_required": [
+            "cleanup_report",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        }
+      ],
+      "observations": [
+        "client_event_timeline",
+        "client_safe",
+        "client_inventory",
+        "persisted_inventory",
+        "decoded_garden_pot_extra",
+        "cleanup_report"
+      ],
+      "assertions": [
+        {
+          "id": "GARD-01-baseline_complete",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Complete both-safe inventory and decoded pot extra; UNKNOWN when missing",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-01-action_oracle",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "UNKNOWN — player planting acceptance and seed decrement",
+          "oracle_status": "SOURCE_CONDITIONAL_OR_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 112,
+              "line_end": 132,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L112-L132"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.h",
+              "line_start": 41,
+              "line_end": 80,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 679,
+              "line_end": 709,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-01-post_state_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed full and independent post-state meeting a reviewed oracle; otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-01-cleanup_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed restored fixture or approved quarantine, with independent post-state",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/scripts/commands/garden.lua#L24-L43"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/items/item_flowerpot.cpp",
+          "line_start": 112,
+          "line_end": 132,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L112-L132"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/items/item_flowerpot.h",
+          "line_start": 41,
+          "line_end": 80,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 679,
+          "line_end": 709,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "sql/char_inventory.sql",
+          "line_start": 19,
+          "line_end": 29,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+        }
+      ],
+      "readback": {
+        "available": [
+          "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+        ],
+        "required": [
+          "fixed-query SELECT-only char_inventory.extra for both safe containers",
+          "pot fields decoded per (charid, location, slot)",
+          "complete/untruncated inventory row count and save boundary"
+        ],
+        "table": "char_inventory",
+        "columns": [
+          "charid",
+          "location",
+          "slot",
+          "itemId",
+          "quantity",
+          "extra"
+        ],
+        "status": "needs-readback"
+      },
+      "xiheadless": {
+        "candidate_actions": [
+          "snapshot",
+          "inventory",
+          "logout when relevant"
+        ],
+        "specialized_client_binding": "UNKNOWN",
+        "observations": [
+          "client inventory rows",
+          "client interaction timeline and outcome"
+        ],
+        "acceptance": "not accepted here"
+      },
+      "mutation": {
+        "type": "client_or_operator_gm_setup",
+        "authorization": "explicit owner approval per case",
+        "enabled": false,
+        "scope_guard": "Must verify unique pot across Mog Safe and Mog Safe 2 before any debug mutation"
+      },
+      "cleanup": [
+        "Owner-approved isolated fixture restoration",
+        "Independently verify both Safe containers and persisted pot extra",
+        "If completeness missing, quarantine character and mark BLOCKED"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "Client placement/plant packet, seed decrement and pot state not source-pinned"
+      ],
+      "source_revision": {
+        "repository": "sarthax/darkstar-to-valhalla",
+        "branch": "feature/mog-house-gardening",
+        "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+        "deployed": "UNKNOWN"
+      }
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "gardening",
+      "case_id": "GARD-02",
+      "name": "Feed permitted crystal at valid growth stage",
+      "kind": "positive",
+      "purpose": "Prove player feeding; GM crystal fields bypass validations",
+      "rationale": "Prove player feeding; GM crystal fields bypass validations. Normal client feeding handler and accepted server delta missing.",
+      "status": "planned",
+      "execution_status": "design_only",
+      "runner": "unassigned",
+      "lane": "needs-mutation",
+      "execution_lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Approved disposable character and isolated server profile",
+          "Both safe containers captured with exact container+slot identity",
+          "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+        ],
+        "when": [
+          "Client feeds permitted crystal after verified growth stage"
+        ],
+        "then": [
+          "UNKNOWN — eligible stage, crystal consumption and server transition"
+        ]
+      },
+      "preconditions": [
+        "Approved disposable character and isolated server profile",
+        "Both safe containers captured with exact container+slot identity",
+        "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+      ],
+      "steps": [
+        {
+          "id": "GARD-02-S01",
+          "title": "Capture read-only preconditions",
+          "intent": "read_only_observation",
+          "action": "Observe full pre-state for both safes",
+          "expected": "Complete authorized baseline; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-02-baseline_complete"
+          ],
+          "observations_required": [
+            "client_safe",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 589,
+              "line_end": 608,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-02-S02",
+          "title": "Perform action only after explicit approval",
+          "intent": "guarded_action",
+          "action": "Client feeds permitted crystal after verified growth stage",
+          "expected": "UNKNOWN — eligible stage, crystal consumption and server transition",
+          "assertion_ids": [
+            "GARD-02-action_oracle"
+          ],
+          "observations_required": [
+            "client_event_timeline",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.h",
+              "line_start": 41,
+              "line_end": 80,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 295,
+              "line_end": 337,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L295-L337"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 679,
+              "line_end": 709,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-02-S03",
+          "title": "Compare independent outcomes",
+          "intent": "read_only_observation",
+          "action": "Capture client and authoritative server post-state",
+          "expected": "PASS prohibited without independently complete source-backed oracle; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-02-post_state_verified"
+          ],
+          "observations_required": [
+            "client_safe",
+            "client_inventory",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.h",
+              "line_start": 41,
+              "line_end": 80,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 295,
+              "line_end": 337,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L295-L337"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 679,
+              "line_end": 709,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-02-S04",
+          "title": "Verify cleanup or quarantine",
+          "intent": "manual_checkpoint",
+          "action": "Operator reviews both safe containers and verifies an approved restoration",
+          "expected": "Cleanup verified independently or remain BLOCKED",
+          "assertion_ids": [
+            "GARD-02-cleanup_verified"
+          ],
+          "observations_required": [
+            "cleanup_report",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        }
+      ],
+      "observations": [
+        "client_event_timeline",
+        "client_safe",
+        "client_inventory",
+        "persisted_inventory",
+        "decoded_garden_pot_extra",
+        "cleanup_report"
+      ],
+      "assertions": [
+        {
+          "id": "GARD-02-baseline_complete",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Complete both-safe inventory and decoded pot extra; UNKNOWN when missing",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-02-action_oracle",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "UNKNOWN — eligible stage, crystal consumption and server transition",
+          "oracle_status": "SOURCE_CONDITIONAL_OR_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.h",
+              "line_start": 41,
+              "line_end": 80,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 295,
+              "line_end": 337,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L295-L337"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 679,
+              "line_end": 709,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-02-post_state_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed full and independent post-state meeting a reviewed oracle; otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-02-cleanup_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed restored fixture or approved quarantine, with independent post-state",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/scripts/commands/garden.lua#L24-L43"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/items/item_flowerpot.h",
+          "line_start": 41,
+          "line_end": 80,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 295,
+          "line_end": 337,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L295-L337"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 679,
+          "line_end": 709,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "sql/char_inventory.sql",
+          "line_start": 19,
+          "line_end": 29,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+        }
+      ],
+      "readback": {
+        "available": [
+          "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+        ],
+        "required": [
+          "fixed-query SELECT-only char_inventory.extra for both safe containers",
+          "pot fields decoded per (charid, location, slot)",
+          "complete/untruncated inventory row count and save boundary"
+        ],
+        "table": "char_inventory",
+        "columns": [
+          "charid",
+          "location",
+          "slot",
+          "itemId",
+          "quantity",
+          "extra"
+        ],
+        "status": "needs-readback"
+      },
+      "xiheadless": {
+        "candidate_actions": [
+          "snapshot",
+          "inventory",
+          "logout when relevant"
+        ],
+        "specialized_client_binding": "UNKNOWN",
+        "observations": [
+          "client inventory rows",
+          "client interaction timeline and outcome"
+        ],
+        "acceptance": "not accepted here"
+      },
+      "mutation": {
+        "type": "client_or_operator_gm_setup",
+        "authorization": "explicit owner approval per case",
+        "enabled": false,
+        "scope_guard": "Must verify unique pot across Mog Safe and Mog Safe 2 before any debug mutation"
+      },
+      "cleanup": [
+        "Owner-approved isolated fixture restoration",
+        "Independently verify both Safe containers and persisted pot extra",
+        "If completeness missing, quarantine character and mark BLOCKED"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "Normal client feeding handler and accepted server delta missing"
+      ],
+      "source_revision": {
+        "repository": "sarthax/darkstar-to-valhalla",
+        "branch": "feature/mog-house-gardening",
+        "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+        "deployed": "UNKNOWN"
+      }
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "gardening",
+      "case_id": "GARD-03",
+      "name": "Advance growth and harvest valid yield",
+      "kind": "positive",
+      "purpose": "Compare actual harvest against conditional reward oracle",
+      "rationale": "Compare actual harvest against conditional reward oracle. Runtime garden config, SQL ordering, client harvest and item deltas unverified.",
+      "status": "planned",
+      "execution_status": "design_only",
+      "runner": "unassigned",
+      "lane": "needs-mutation",
+      "execution_lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Approved disposable character and isolated server profile",
+          "Both safe containers captured with exact container+slot identity",
+          "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+        ],
+        "when": [
+          "Client harvest after reviewed isolated stage acceleration"
+        ],
+        "then": [
+          "SQL/C++ permitted outcome conditional on runtime configuration; exact item and quantity UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Approved disposable character and isolated server profile",
+        "Both safe containers captured with exact container+slot identity",
+        "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+      ],
+      "steps": [
+        {
+          "id": "GARD-03-S01",
+          "title": "Capture read-only preconditions",
+          "intent": "read_only_observation",
+          "action": "Observe full pre-state for both safes",
+          "expected": "Complete authorized baseline; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-03-baseline_complete"
+          ],
+          "observations_required": [
+            "client_safe",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 589,
+              "line_end": 608,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-03-S02",
+          "title": "Perform action only after explicit approval",
+          "intent": "guarded_action",
+          "action": "Client harvest after reviewed isolated stage acceleration",
+          "expected": "SQL/C++ permitted outcome conditional on runtime configuration; exact item and quantity UNKNOWN",
+          "assertion_ids": [
+            "GARD-03-action_oracle"
+          ],
+          "observations_required": [
+            "client_event_timeline",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 635,
+              "line_end": 660,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L635-L660"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 295,
+              "line_end": 337,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L295-L337"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 126,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L126-L288"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/gardening_results.sql",
+              "line_start": 1,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/gardening_results.sql#L1-L16"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-03-S03",
+          "title": "Compare independent outcomes",
+          "intent": "read_only_observation",
+          "action": "Capture client and authoritative server post-state",
+          "expected": "PASS prohibited without independently complete source-backed oracle; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-03-post_state_verified"
+          ],
+          "observations_required": [
+            "client_safe",
+            "client_inventory",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 635,
+              "line_end": 660,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L635-L660"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 295,
+              "line_end": 337,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L295-L337"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 126,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L126-L288"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/gardening_results.sql",
+              "line_start": 1,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/gardening_results.sql#L1-L16"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-03-S04",
+          "title": "Verify cleanup or quarantine",
+          "intent": "manual_checkpoint",
+          "action": "Operator reviews both safe containers and verifies an approved restoration",
+          "expected": "Cleanup verified independently or remain BLOCKED",
+          "assertion_ids": [
+            "GARD-03-cleanup_verified"
+          ],
+          "observations_required": [
+            "cleanup_report",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        }
+      ],
+      "observations": [
+        "client_event_timeline",
+        "client_safe",
+        "client_inventory",
+        "persisted_inventory",
+        "decoded_garden_pot_extra",
+        "cleanup_report"
+      ],
+      "assertions": [
+        {
+          "id": "GARD-03-baseline_complete",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Complete both-safe inventory and decoded pot extra; UNKNOWN when missing",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-03-action_oracle",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "SQL/C++ permitted outcome conditional on runtime configuration; exact item and quantity UNKNOWN",
+          "oracle_status": "SOURCE_CONDITIONAL_OR_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 635,
+              "line_end": 660,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L635-L660"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 295,
+              "line_end": 337,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L295-L337"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 126,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L126-L288"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/gardening_results.sql",
+              "line_start": 1,
+              "line_end": 16,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/gardening_results.sql#L1-L16"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-03-post_state_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed full and independent post-state meeting a reviewed oracle; otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-03-cleanup_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed restored fixture or approved quarantine, with independent post-state",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/scripts/commands/garden.lua#L24-L43"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 635,
+          "line_end": 660,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L635-L660"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 295,
+          "line_end": 337,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L295-L337"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 126,
+          "line_end": 288,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L126-L288"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "sql/gardening_results.sql",
+          "line_start": 1,
+          "line_end": 16,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/gardening_results.sql#L1-L16"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "sql/char_inventory.sql",
+          "line_start": 19,
+          "line_end": 29,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+        }
+      ],
+      "readback": {
+        "available": [
+          "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+        ],
+        "required": [
+          "fixed-query SELECT-only char_inventory.extra for both safe containers",
+          "pot fields decoded per (charid, location, slot)",
+          "complete/untruncated inventory row count and save boundary"
+        ],
+        "table": "char_inventory",
+        "columns": [
+          "charid",
+          "location",
+          "slot",
+          "itemId",
+          "quantity",
+          "extra"
+        ],
+        "status": "needs-readback"
+      },
+      "xiheadless": {
+        "candidate_actions": [
+          "snapshot",
+          "inventory",
+          "logout when relevant"
+        ],
+        "specialized_client_binding": "UNKNOWN",
+        "observations": [
+          "client inventory rows",
+          "client interaction timeline and outcome"
+        ],
+        "acceptance": "not accepted here"
+      },
+      "mutation": {
+        "type": "client_or_operator_gm_setup",
+        "authorization": "explicit owner approval per case",
+        "enabled": false,
+        "scope_guard": "Must verify unique pot across Mog Safe and Mog Safe 2 before any debug mutation"
+      },
+      "cleanup": [
+        "Owner-approved isolated fixture restoration",
+        "Independently verify both Safe containers and persisted pot extra",
+        "If completeness missing, quarantine character and mark BLOCKED"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "Runtime garden config, SQL ordering, client harvest and item deltas unverified"
+      ],
+      "source_revision": {
+        "repository": "sarthax/darkstar-to-valhalla",
+        "branch": "feature/mog-house-gardening",
+        "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+        "deployed": "UNKNOWN"
+      }
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "gardening",
+      "case_id": "GARD-04",
+      "name": "Reject crystal at invalid stage",
+      "kind": "negative",
+      "purpose": "Guard invalid-stage feeding against pot and inventory changes",
+      "rationale": "Guard invalid-stage feeding against pot and inventory changes. Invalid player feed condition not source-pinned.",
+      "status": "planned",
+      "execution_status": "design_only",
+      "runner": "unassigned",
+      "lane": "needs-mutation",
+      "execution_lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Approved disposable character and isolated server profile",
+          "Both safe containers captured with exact container+slot identity",
+          "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+        ],
+        "when": [
+          "Client attempts feeding at a source-reviewed disallowed stage"
+        ],
+        "then": [
+          "UNKNOWN — disallowed-stage predicate and no-mutation result"
+        ]
+      },
+      "preconditions": [
+        "Approved disposable character and isolated server profile",
+        "Both safe containers captured with exact container+slot identity",
+        "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+      ],
+      "steps": [
+        {
+          "id": "GARD-04-S01",
+          "title": "Capture read-only preconditions",
+          "intent": "read_only_observation",
+          "action": "Observe full pre-state for both safes",
+          "expected": "Complete authorized baseline; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-04-baseline_complete"
+          ],
+          "observations_required": [
+            "client_safe",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 589,
+              "line_end": 608,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-04-S02",
+          "title": "Perform action only after explicit approval",
+          "intent": "guarded_action",
+          "action": "Client attempts feeding at a source-reviewed disallowed stage",
+          "expected": "UNKNOWN — disallowed-stage predicate and no-mutation result",
+          "assertion_ids": [
+            "GARD-04-action_oracle"
+          ],
+          "observations_required": [
+            "client_event_timeline",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.h",
+              "line_start": 41,
+              "line_end": 80,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 295,
+              "line_end": 337,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L295-L337"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 679,
+              "line_end": 709,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-04-S03",
+          "title": "Compare independent outcomes",
+          "intent": "read_only_observation",
+          "action": "Capture client and authoritative server post-state",
+          "expected": "PASS prohibited without independently complete source-backed oracle; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-04-post_state_verified"
+          ],
+          "observations_required": [
+            "client_safe",
+            "client_inventory",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.h",
+              "line_start": 41,
+              "line_end": 80,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 295,
+              "line_end": 337,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L295-L337"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 679,
+              "line_end": 709,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-04-S04",
+          "title": "Verify cleanup or quarantine",
+          "intent": "manual_checkpoint",
+          "action": "Operator reviews both safe containers and verifies an approved restoration",
+          "expected": "Cleanup verified independently or remain BLOCKED",
+          "assertion_ids": [
+            "GARD-04-cleanup_verified"
+          ],
+          "observations_required": [
+            "cleanup_report",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        }
+      ],
+      "observations": [
+        "client_event_timeline",
+        "client_safe",
+        "client_inventory",
+        "persisted_inventory",
+        "decoded_garden_pot_extra",
+        "cleanup_report"
+      ],
+      "assertions": [
+        {
+          "id": "GARD-04-baseline_complete",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Complete both-safe inventory and decoded pot extra; UNKNOWN when missing",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-04-action_oracle",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "UNKNOWN — disallowed-stage predicate and no-mutation result",
+          "oracle_status": "SOURCE_CONDITIONAL_OR_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.h",
+              "line_start": 41,
+              "line_end": 80,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 295,
+              "line_end": 337,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L295-L337"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 679,
+              "line_end": 709,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-04-post_state_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed full and independent post-state meeting a reviewed oracle; otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-04-cleanup_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed restored fixture or approved quarantine, with independent post-state",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/scripts/commands/garden.lua#L24-L43"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/items/item_flowerpot.h",
+          "line_start": 41,
+          "line_end": 80,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 295,
+          "line_end": 337,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L295-L337"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 679,
+          "line_end": 709,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "sql/char_inventory.sql",
+          "line_start": 19,
+          "line_end": 29,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+        }
+      ],
+      "readback": {
+        "available": [
+          "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+        ],
+        "required": [
+          "fixed-query SELECT-only char_inventory.extra for both safe containers",
+          "pot fields decoded per (charid, location, slot)",
+          "complete/untruncated inventory row count and save boundary"
+        ],
+        "table": "char_inventory",
+        "columns": [
+          "charid",
+          "location",
+          "slot",
+          "itemId",
+          "quantity",
+          "extra"
+        ],
+        "status": "needs-readback"
+      },
+      "xiheadless": {
+        "candidate_actions": [
+          "snapshot",
+          "inventory",
+          "logout when relevant"
+        ],
+        "specialized_client_binding": "UNKNOWN",
+        "observations": [
+          "client inventory rows",
+          "client interaction timeline and outcome"
+        ],
+        "acceptance": "not accepted here"
+      },
+      "mutation": {
+        "type": "client_or_operator_gm_setup",
+        "authorization": "explicit owner approval per case",
+        "enabled": false,
+        "scope_guard": "Must verify unique pot across Mog Safe and Mog Safe 2 before any debug mutation"
+      },
+      "cleanup": [
+        "Owner-approved isolated fixture restoration",
+        "Independently verify both Safe containers and persisted pot extra",
+        "If completeness missing, quarantine character and mark BLOCKED"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "Invalid player feed condition not source-pinned"
+      ],
+      "source_revision": {
+        "repository": "sarthax/darkstar-to-valhalla",
+        "branch": "feature/mog-house-gardening",
+        "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+        "deployed": "UNKNOWN"
+      }
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "gardening",
+      "case_id": "GARD-05",
+      "name": "Reject planting without pot or seed",
+      "kind": "negative",
+      "purpose": "Test both missing-prerequisite fixtures separately",
+      "rationale": "Test both missing-prerequisite fixtures separately. No-pot/no-seed normal player handler and outcome unknown.",
+      "status": "planned",
+      "execution_status": "design_only",
+      "runner": "unassigned",
+      "lane": "needs-mutation",
+      "execution_lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Approved disposable character and isolated server profile",
+          "Both safe containers captured with exact container+slot identity",
+          "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+        ],
+        "when": [
+          "Client attempts planting with separately absent pot and absent seed"
+        ],
+        "then": [
+          "UNKNOWN — rejection and no-mutation proof"
+        ]
+      },
+      "preconditions": [
+        "Approved disposable character and isolated server profile",
+        "Both safe containers captured with exact container+slot identity",
+        "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+      ],
+      "steps": [
+        {
+          "id": "GARD-05-S01",
+          "title": "Capture read-only preconditions",
+          "intent": "read_only_observation",
+          "action": "Observe full pre-state for both safes",
+          "expected": "Complete authorized baseline; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-05-baseline_complete"
+          ],
+          "observations_required": [
+            "client_safe",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 589,
+              "line_end": 608,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-05-S02",
+          "title": "Perform action only after explicit approval",
+          "intent": "guarded_action",
+          "action": "Client attempts planting with separately absent pot and absent seed",
+          "expected": "UNKNOWN — rejection and no-mutation proof",
+          "assertion_ids": [
+            "GARD-05-action_oracle"
+          ],
+          "observations_required": [
+            "client_event_timeline",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.h",
+              "line_start": 41,
+              "line_end": 80,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 112,
+              "line_end": 132,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L112-L132"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 679,
+              "line_end": 709,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-05-S03",
+          "title": "Compare independent outcomes",
+          "intent": "read_only_observation",
+          "action": "Capture client and authoritative server post-state",
+          "expected": "PASS prohibited without independently complete source-backed oracle; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-05-post_state_verified"
+          ],
+          "observations_required": [
+            "client_safe",
+            "client_inventory",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.h",
+              "line_start": 41,
+              "line_end": 80,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 112,
+              "line_end": 132,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L112-L132"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 679,
+              "line_end": 709,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-05-S04",
+          "title": "Verify cleanup or quarantine",
+          "intent": "manual_checkpoint",
+          "action": "Operator reviews both safe containers and verifies an approved restoration",
+          "expected": "Cleanup verified independently or remain BLOCKED",
+          "assertion_ids": [
+            "GARD-05-cleanup_verified"
+          ],
+          "observations_required": [
+            "cleanup_report",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        }
+      ],
+      "observations": [
+        "client_event_timeline",
+        "client_safe",
+        "client_inventory",
+        "persisted_inventory",
+        "decoded_garden_pot_extra",
+        "cleanup_report"
+      ],
+      "assertions": [
+        {
+          "id": "GARD-05-baseline_complete",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Complete both-safe inventory and decoded pot extra; UNKNOWN when missing",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-05-action_oracle",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "UNKNOWN — rejection and no-mutation proof",
+          "oracle_status": "SOURCE_CONDITIONAL_OR_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.h",
+              "line_start": 41,
+              "line_end": 80,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 112,
+              "line_end": 132,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L112-L132"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 679,
+              "line_end": 709,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-05-post_state_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed full and independent post-state meeting a reviewed oracle; otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-05-cleanup_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed restored fixture or approved quarantine, with independent post-state",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/scripts/commands/garden.lua#L24-L43"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/items/item_flowerpot.h",
+          "line_start": 41,
+          "line_end": 80,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.h#L41-L80"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/items/item_flowerpot.cpp",
+          "line_start": 112,
+          "line_end": 132,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L112-L132"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 679,
+          "line_end": 709,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L679-L709"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "sql/char_inventory.sql",
+          "line_start": 19,
+          "line_end": 29,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+        }
+      ],
+      "readback": {
+        "available": [
+          "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+        ],
+        "required": [
+          "fixed-query SELECT-only char_inventory.extra for both safe containers",
+          "pot fields decoded per (charid, location, slot)",
+          "complete/untruncated inventory row count and save boundary"
+        ],
+        "table": "char_inventory",
+        "columns": [
+          "charid",
+          "location",
+          "slot",
+          "itemId",
+          "quantity",
+          "extra"
+        ],
+        "status": "needs-readback"
+      },
+      "xiheadless": {
+        "candidate_actions": [
+          "snapshot",
+          "inventory",
+          "logout when relevant"
+        ],
+        "specialized_client_binding": "UNKNOWN",
+        "observations": [
+          "client inventory rows",
+          "client interaction timeline and outcome"
+        ],
+        "acceptance": "not accepted here"
+      },
+      "mutation": {
+        "type": "client_or_operator_gm_setup",
+        "authorization": "explicit owner approval per case",
+        "enabled": false,
+        "scope_guard": "Must verify unique pot across Mog Safe and Mog Safe 2 before any debug mutation"
+      },
+      "cleanup": [
+        "Owner-approved isolated fixture restoration",
+        "Independently verify both Safe containers and persisted pot extra",
+        "If completeness missing, quarantine character and mark BLOCKED"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "No-pot/no-seed normal player handler and outcome unknown"
+      ],
+      "source_revision": {
+        "repository": "sarthax/darkstar-to-valhalla",
+        "branch": "feature/mog-house-gardening",
+        "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+        "deployed": "UNKNOWN"
+      }
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "gardening",
+      "case_id": "GARD-06",
+      "name": "Full inventory harvest does not lose or duplicate reward",
+      "kind": "negative",
+      "purpose": "Check no reward loss or duplication against complete inventory",
+      "rationale": "Check no reward loss or duplication against complete inventory. Supervisor 100-row cap and full-capacity rejection oracle missing.",
+      "status": "planned",
+      "execution_status": "design_only",
+      "runner": "unassigned",
+      "lane": "needs-mutation",
+      "execution_lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Approved disposable character and isolated server profile",
+          "Both safe containers captured with exact container+slot identity",
+          "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+        ],
+        "when": [
+          "Client harvest with independently proven full inventory"
+        ],
+        "then": [
+          "UNKNOWN — handling when capacity is full; required no-loss invariant not proved"
+        ]
+      },
+      "preconditions": [
+        "Approved disposable character and isolated server profile",
+        "Both safe containers captured with exact container+slot identity",
+        "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+      ],
+      "steps": [
+        {
+          "id": "GARD-06-S01",
+          "title": "Capture read-only preconditions",
+          "intent": "read_only_observation",
+          "action": "Observe full pre-state for both safes",
+          "expected": "Complete authorized baseline; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-06-baseline_complete"
+          ],
+          "observations_required": [
+            "client_safe",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 589,
+              "line_end": 608,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-06-S02",
+          "title": "Perform action only after explicit approval",
+          "intent": "guarded_action",
+          "action": "Client harvest with independently proven full inventory",
+          "expected": "UNKNOWN — handling when capacity is full; required no-loss invariant not proved",
+          "assertion_ids": [
+            "GARD-06-action_oracle"
+          ],
+          "observations_required": [
+            "client_event_timeline",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 126,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L126-L288"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-06-S03",
+          "title": "Compare independent outcomes",
+          "intent": "read_only_observation",
+          "action": "Capture client and authoritative server post-state",
+          "expected": "PASS prohibited without independently complete source-backed oracle; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-06-post_state_verified"
+          ],
+          "observations_required": [
+            "client_safe",
+            "client_inventory",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 126,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L126-L288"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-06-S04",
+          "title": "Verify cleanup or quarantine",
+          "intent": "manual_checkpoint",
+          "action": "Operator reviews both safe containers and verifies an approved restoration",
+          "expected": "Cleanup verified independently or remain BLOCKED",
+          "assertion_ids": [
+            "GARD-06-cleanup_verified"
+          ],
+          "observations_required": [
+            "cleanup_report",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        }
+      ],
+      "observations": [
+        "client_event_timeline",
+        "client_safe",
+        "client_inventory",
+        "persisted_inventory",
+        "decoded_garden_pot_extra",
+        "cleanup_report"
+      ],
+      "assertions": [
+        {
+          "id": "GARD-06-baseline_complete",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Complete both-safe inventory and decoded pot extra; UNKNOWN when missing",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-06-action_oracle",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "UNKNOWN — handling when capacity is full; required no-loss invariant not proved",
+          "oracle_status": "SOURCE_CONDITIONAL_OR_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 126,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L126-L288"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-06-post_state_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed full and independent post-state meeting a reviewed oracle; otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-06-cleanup_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed restored fixture or approved quarantine, with independent post-state",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/scripts/commands/garden.lua#L24-L43"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 126,
+          "line_end": 288,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L126-L288"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "sql/char_inventory.sql",
+          "line_start": 19,
+          "line_end": 29,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "sql/char_inventory.sql",
+          "line_start": 19,
+          "line_end": 29,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+        }
+      ],
+      "readback": {
+        "available": [
+          "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+        ],
+        "required": [
+          "fixed-query SELECT-only char_inventory.extra for both safe containers",
+          "pot fields decoded per (charid, location, slot)",
+          "complete/untruncated inventory row count and save boundary"
+        ],
+        "table": "char_inventory",
+        "columns": [
+          "charid",
+          "location",
+          "slot",
+          "itemId",
+          "quantity",
+          "extra"
+        ],
+        "status": "needs-readback"
+      },
+      "xiheadless": {
+        "candidate_actions": [
+          "snapshot",
+          "inventory",
+          "logout when relevant"
+        ],
+        "specialized_client_binding": "UNKNOWN",
+        "observations": [
+          "client inventory rows",
+          "client interaction timeline and outcome"
+        ],
+        "acceptance": "not accepted here"
+      },
+      "mutation": {
+        "type": "client_or_operator_gm_setup",
+        "authorization": "explicit owner approval per case",
+        "enabled": false,
+        "scope_guard": "Must verify unique pot across Mog Safe and Mog Safe 2 before any debug mutation"
+      },
+      "cleanup": [
+        "Owner-approved isolated fixture restoration",
+        "Independently verify both Safe containers and persisted pot extra",
+        "If completeness missing, quarantine character and mark BLOCKED"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "Supervisor 100-row cap and full-capacity rejection oracle missing"
+      ],
+      "source_revision": {
+        "repository": "sarthax/darkstar-to-valhalla",
+        "branch": "feature/mog-house-gardening",
+        "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+        "deployed": "UNKNOWN"
+      }
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "gardening",
+      "case_id": "GARD-07",
+      "name": "Growth and treatment survive relog",
+      "kind": "persistence",
+      "purpose": "Distinguish same-session writes from verified relog persistence",
+      "rationale": "Distinguish same-session writes from verified relog persistence. Independent relog/save-boundary and decoded pot-extra readback unavailable.",
+      "status": "planned",
+      "execution_status": "design_only",
+      "runner": "unassigned",
+      "lane": "needs-mutation",
+      "execution_lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Approved disposable character and isolated server profile",
+          "Both safe containers captured with exact container+slot identity",
+          "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+        ],
+        "when": [
+          "Client changes growth/treatment, logs out, returns"
+        ],
+        "then": [
+          "Source confirms pot extra SQL writes; relog durability UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Approved disposable character and isolated server profile",
+        "Both safe containers captured with exact container+slot identity",
+        "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+      ],
+      "steps": [
+        {
+          "id": "GARD-07-S01",
+          "title": "Capture read-only preconditions",
+          "intent": "read_only_observation",
+          "action": "Observe full pre-state for both safes",
+          "expected": "Complete authorized baseline; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-07-baseline_complete"
+          ],
+          "observations_required": [
+            "client_safe",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 589,
+              "line_end": 608,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-07-S02",
+          "title": "Perform action only after explicit approval",
+          "intent": "guarded_action",
+          "action": "Client changes growth/treatment, logs out, returns",
+          "expected": "Source confirms pot extra SQL writes; relog durability UNKNOWN",
+          "assertion_ids": [
+            "GARD-07-action_oracle"
+          ],
+          "observations_required": [
+            "client_event_timeline",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 90,
+              "line_end": 125,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L90-L125"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 750,
+              "line_end": 756,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L750-L756"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-07-S03",
+          "title": "Compare independent outcomes",
+          "intent": "read_only_observation",
+          "action": "Capture client and authoritative server post-state",
+          "expected": "PASS prohibited without independently complete source-backed oracle; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-07-post_state_verified"
+          ],
+          "observations_required": [
+            "client_safe",
+            "client_inventory",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 90,
+              "line_end": 125,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L90-L125"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 750,
+              "line_end": 756,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L750-L756"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-07-S04",
+          "title": "Verify cleanup or quarantine",
+          "intent": "manual_checkpoint",
+          "action": "Operator reviews both safe containers and verifies an approved restoration",
+          "expected": "Cleanup verified independently or remain BLOCKED",
+          "assertion_ids": [
+            "GARD-07-cleanup_verified"
+          ],
+          "observations_required": [
+            "cleanup_report",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        }
+      ],
+      "observations": [
+        "client_event_timeline",
+        "client_safe",
+        "client_inventory",
+        "persisted_inventory",
+        "decoded_garden_pot_extra",
+        "cleanup_report"
+      ],
+      "assertions": [
+        {
+          "id": "GARD-07-baseline_complete",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Complete both-safe inventory and decoded pot extra; UNKNOWN when missing",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-07-action_oracle",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Source confirms pot extra SQL writes; relog durability UNKNOWN",
+          "oracle_status": "SOURCE_CONDITIONAL_OR_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 90,
+              "line_end": 125,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L90-L125"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 750,
+              "line_end": 756,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L750-L756"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-07-post_state_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed full and independent post-state meeting a reviewed oracle; otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-07-cleanup_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed restored fixture or approved quarantine, with independent post-state",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/scripts/commands/garden.lua#L24-L43"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 90,
+          "line_end": 125,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L90-L125"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 750,
+          "line_end": 756,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L750-L756"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/items/item_flowerpot.cpp",
+          "line_start": 25,
+          "line_end": 36,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "sql/char_inventory.sql",
+          "line_start": 19,
+          "line_end": 29,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "sql/char_inventory.sql",
+          "line_start": 19,
+          "line_end": 29,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+        }
+      ],
+      "readback": {
+        "available": [
+          "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+        ],
+        "required": [
+          "fixed-query SELECT-only char_inventory.extra for both safe containers",
+          "pot fields decoded per (charid, location, slot)",
+          "complete/untruncated inventory row count and save boundary"
+        ],
+        "table": "char_inventory",
+        "columns": [
+          "charid",
+          "location",
+          "slot",
+          "itemId",
+          "quantity",
+          "extra"
+        ],
+        "status": "needs-readback"
+      },
+      "xiheadless": {
+        "candidate_actions": [
+          "snapshot",
+          "inventory",
+          "logout when relevant"
+        ],
+        "specialized_client_binding": "UNKNOWN",
+        "observations": [
+          "client inventory rows",
+          "client interaction timeline and outcome"
+        ],
+        "acceptance": "not accepted here"
+      },
+      "mutation": {
+        "type": "client_or_operator_gm_setup",
+        "authorization": "explicit owner approval per case",
+        "enabled": false,
+        "scope_guard": "Must verify unique pot across Mog Safe and Mog Safe 2 before any debug mutation"
+      },
+      "cleanup": [
+        "Owner-approved isolated fixture restoration",
+        "Independently verify both Safe containers and persisted pot extra",
+        "If completeness missing, quarantine character and mark BLOCKED"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "Independent relog/save-boundary and decoded pot-extra readback unavailable"
+      ],
+      "source_revision": {
+        "repository": "sarthax/darkstar-to-valhalla",
+        "branch": "feature/mog-house-gardening",
+        "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+        "deployed": "UNKNOWN"
+      }
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "gardening",
+      "case_id": "GARD-08",
+      "name": "Repeat harvest cannot duplicate rewards",
+      "kind": "negative",
+      "purpose": "Guard repeat harvest by full before/after delta",
+      "rationale": "Guard repeat harvest by full before/after delta. Repeat harvest handler and complete row count missing.",
+      "status": "planned",
+      "execution_status": "design_only",
+      "runner": "unassigned",
+      "lane": "needs-mutation",
+      "execution_lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Approved disposable character and isolated server profile",
+          "Both safe containers captured with exact container+slot identity",
+          "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+        ],
+        "when": [
+          "Client harvests once, attempts again against same pot"
+        ],
+        "then": [
+          "UNKNOWN — repeat-action behavior and no reward duplication"
+        ]
+      },
+      "preconditions": [
+        "Approved disposable character and isolated server profile",
+        "Both safe containers captured with exact container+slot identity",
+        "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+      ],
+      "steps": [
+        {
+          "id": "GARD-08-S01",
+          "title": "Capture read-only preconditions",
+          "intent": "read_only_observation",
+          "action": "Observe full pre-state for both safes",
+          "expected": "Complete authorized baseline; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-08-baseline_complete"
+          ],
+          "observations_required": [
+            "client_safe",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 589,
+              "line_end": 608,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-08-S02",
+          "title": "Perform action only after explicit approval",
+          "intent": "guarded_action",
+          "action": "Client harvests once, attempts again against same pot",
+          "expected": "UNKNOWN — repeat-action behavior and no reward duplication",
+          "assertion_ids": [
+            "GARD-08-action_oracle"
+          ],
+          "observations_required": [
+            "client_event_timeline",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 126,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L126-L288"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-08-S03",
+          "title": "Compare independent outcomes",
+          "intent": "read_only_observation",
+          "action": "Capture client and authoritative server post-state",
+          "expected": "PASS prohibited without independently complete source-backed oracle; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-08-post_state_verified"
+          ],
+          "observations_required": [
+            "client_safe",
+            "client_inventory",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 126,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L126-L288"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-08-S04",
+          "title": "Verify cleanup or quarantine",
+          "intent": "manual_checkpoint",
+          "action": "Operator reviews both safe containers and verifies an approved restoration",
+          "expected": "Cleanup verified independently or remain BLOCKED",
+          "assertion_ids": [
+            "GARD-08-cleanup_verified"
+          ],
+          "observations_required": [
+            "cleanup_report",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        }
+      ],
+      "observations": [
+        "client_event_timeline",
+        "client_safe",
+        "client_inventory",
+        "persisted_inventory",
+        "decoded_garden_pot_extra",
+        "cleanup_report"
+      ],
+      "assertions": [
+        {
+          "id": "GARD-08-baseline_complete",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Complete both-safe inventory and decoded pot extra; UNKNOWN when missing",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-08-action_oracle",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "UNKNOWN — repeat-action behavior and no reward duplication",
+          "oracle_status": "SOURCE_CONDITIONAL_OR_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 126,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L126-L288"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-08-post_state_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed full and independent post-state meeting a reviewed oracle; otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-08-cleanup_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed restored fixture or approved quarantine, with independent post-state",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/scripts/commands/garden.lua#L24-L43"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 126,
+          "line_end": 288,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L126-L288"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "sql/char_inventory.sql",
+          "line_start": 19,
+          "line_end": 29,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "sql/char_inventory.sql",
+          "line_start": 19,
+          "line_end": 29,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+        }
+      ],
+      "readback": {
+        "available": [
+          "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+        ],
+        "required": [
+          "fixed-query SELECT-only char_inventory.extra for both safe containers",
+          "pot fields decoded per (charid, location, slot)",
+          "complete/untruncated inventory row count and save boundary"
+        ],
+        "table": "char_inventory",
+        "columns": [
+          "charid",
+          "location",
+          "slot",
+          "itemId",
+          "quantity",
+          "extra"
+        ],
+        "status": "needs-readback"
+      },
+      "xiheadless": {
+        "candidate_actions": [
+          "snapshot",
+          "inventory",
+          "logout when relevant"
+        ],
+        "specialized_client_binding": "UNKNOWN",
+        "observations": [
+          "client inventory rows",
+          "client interaction timeline and outcome"
+        ],
+        "acceptance": "not accepted here"
+      },
+      "mutation": {
+        "type": "client_or_operator_gm_setup",
+        "authorization": "explicit owner approval per case",
+        "enabled": false,
+        "scope_guard": "Must verify unique pot across Mog Safe and Mog Safe 2 before any debug mutation"
+      },
+      "cleanup": [
+        "Owner-approved isolated fixture restoration",
+        "Independently verify both Safe containers and persisted pot extra",
+        "If completeness missing, quarantine character and mark BLOCKED"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "Repeat harvest handler and complete row count missing"
+      ],
+      "source_revision": {
+        "repository": "sarthax/darkstar-to-valhalla",
+        "branch": "feature/mog-house-gardening",
+        "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+        "deployed": "UNKNOWN"
+      }
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "gardening",
+      "case_id": "GARD-09",
+      "name": "Same numeric slot in Mog Safe and Safe 2 must not cause unintended dual-pot mutation",
+      "kind": "negative",
+      "purpose": "Expose verified unsafe slot aliasing, request container-scoped guard",
+      "rationale": "Expose verified unsafe slot aliasing, request container-scoped guard. GARD-GM-01 container-scoped command or verified unique-slot preflight is blocking.",
+      "status": "planned",
+      "execution_status": "design_only",
+      "runner": "unassigned",
+      "lane": "needs-mutation",
+      "execution_lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Approved disposable character and isolated server profile",
+          "Both safe containers captured with exact container+slot identity",
+          "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+        ],
+        "when": [
+          "Read-only preflight both safes; do NOT perform a mutating GM reproduction"
+        ],
+        "then": [
+          "Source shows numeric-slot matching across BOTH safes; single-pot GM safety absent"
+        ]
+      },
+      "preconditions": [
+        "Approved disposable character and isolated server profile",
+        "Both safe containers captured with exact container+slot identity",
+        "DSP deployed commit and garden configuration validated, or marked UNKNOWN"
+      ],
+      "steps": [
+        {
+          "id": "GARD-09-S01",
+          "title": "Capture read-only preconditions",
+          "intent": "read_only_observation",
+          "action": "Observe full pre-state for both safes",
+          "expected": "Complete authorized baseline; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-09-baseline_complete"
+          ],
+          "observations_required": [
+            "client_safe",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 589,
+              "line_end": 608,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-09-S02",
+          "title": "Perform action only after explicit approval",
+          "intent": "guarded_action",
+          "action": "Read-only preflight both safes; do NOT perform a mutating GM reproduction",
+          "expected": "Source shows numeric-slot matching across BOTH safes; single-pot GM safety absent",
+          "assertion_ids": [
+            "GARD-09-action_oracle"
+          ],
+          "observations_required": [
+            "client_event_timeline",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 635,
+              "line_end": 660,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L635-L660"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 750,
+              "line_end": 756,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L750-L756"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-09-S03",
+          "title": "Compare independent outcomes",
+          "intent": "read_only_observation",
+          "action": "Capture client and authoritative server post-state",
+          "expected": "PASS prohibited without independently complete source-backed oracle; otherwise UNKNOWN",
+          "assertion_ids": [
+            "GARD-09-post_state_verified"
+          ],
+          "observations_required": [
+            "client_safe",
+            "client_inventory",
+            "server_inventory",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 635,
+              "line_end": 660,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L635-L660"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 750,
+              "line_end": 756,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L750-L756"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            }
+          ],
+          "manual_execution_allowed": false
+        },
+        {
+          "id": "GARD-09-S04",
+          "title": "Verify cleanup or quarantine",
+          "intent": "manual_checkpoint",
+          "action": "Operator reviews both safe containers and verifies an approved restoration",
+          "expected": "Cleanup verified independently or remain BLOCKED",
+          "assertion_ids": [
+            "GARD-09-cleanup_verified"
+          ],
+          "observations_required": [
+            "cleanup_report",
+            "server_pot_extra"
+          ],
+          "oracle_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            }
+          ],
+          "manual_execution_allowed": false
+        }
+      ],
+      "observations": [
+        "client_event_timeline",
+        "client_safe",
+        "client_inventory",
+        "persisted_inventory",
+        "decoded_garden_pot_extra",
+        "cleanup_report"
+      ],
+      "assertions": [
+        {
+          "id": "GARD-09-baseline_complete",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Complete both-safe inventory and decoded pot extra; UNKNOWN when missing",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-09-action_oracle",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Source shows numeric-slot matching across BOTH safes; single-pot GM safety absent",
+          "oracle_status": "SOURCE_CONDITIONAL_OR_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 612,
+              "line_end": 629,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 635,
+              "line_end": 660,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L635-L660"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/utils/gardenutils.cpp",
+              "line_start": 750,
+              "line_end": 756,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L750-L756"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-09-post_state_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed full and independent post-state meeting a reviewed oracle; otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        },
+        {
+          "id": "GARD-09-cleanup_verified",
+          "expression": "reviewed_oracle_required_no_auto_eval",
+          "expected": "Confirmed restored fixture or approved quarantine, with independent post-state",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "sql/char_inventory.sql",
+              "line_start": 19,
+              "line_end": 29,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+              "path": "src/map/items/item_flowerpot.cpp",
+              "line_start": 25,
+              "line_end": 36,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/items/item_flowerpot.cpp#L25-L36"
+            }
+          ],
+          "authoritative_observation": "char_inventory.extra and complete location+slot inventory",
+          "client_observation": "session, inventory, interaction event"
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/scripts/commands/garden.lua#L24-L43"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L589-L608"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 612,
+          "line_end": 629,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L612-L629"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 635,
+          "line_end": 660,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L635-L660"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 750,
+          "line_end": 756,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/src/map/utils/gardenutils.cpp#L750-L756"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+          "path": "sql/char_inventory.sql",
+          "line_start": 19,
+          "line_end": 29,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/330ea8f854cff47aae570aa95d6474f3225f5d49/sql/char_inventory.sql#L19-L29"
+        }
+      ],
+      "readback": {
+        "available": [
+          "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+        ],
+        "required": [
+          "fixed-query SELECT-only char_inventory.extra for both safe containers",
+          "pot fields decoded per (charid, location, slot)",
+          "complete/untruncated inventory row count and save boundary"
+        ],
+        "table": "char_inventory",
+        "columns": [
+          "charid",
+          "location",
+          "slot",
+          "itemId",
+          "quantity",
+          "extra"
+        ],
+        "status": "needs-readback"
+      },
+      "xiheadless": {
+        "candidate_actions": [
+          "snapshot",
+          "inventory",
+          "logout when relevant"
+        ],
+        "specialized_client_binding": "UNKNOWN",
+        "observations": [
+          "client inventory rows",
+          "client interaction timeline and outcome"
+        ],
+        "acceptance": "not accepted here"
+      },
+      "mutation": {
+        "type": "gm_prohibited_collision_path",
+        "authorization": "explicit owner approval per case",
+        "enabled": false,
+        "scope_guard": "Must verify unique pot across Mog Safe and Mog Safe 2 before any debug mutation"
+      },
+      "cleanup": [
+        "Owner-approved isolated fixture restoration",
+        "Independently verify both Safe containers and persisted pot extra",
+        "If completeness missing, quarantine character and mark BLOCKED"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "GARD-GM-01 container-scoped command or verified unique-slot preflight is blocking"
+      ],
+      "source_revision": {
+        "repository": "sarthax/darkstar-to-valhalla",
+        "branch": "feature/mog-house-gardening",
+        "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+        "deployed": "UNKNOWN"
+      }
+    }
+  ]
+}
