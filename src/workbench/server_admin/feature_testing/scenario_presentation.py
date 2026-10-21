@@ -10,7 +10,57 @@ def _mapping(value):
     return value if isinstance(value, dict) else {}
 
 
-def scenario_presentation(spec: dict | None, reevaluation: dict | None = None) -> dict:
+_SOURCE_LABELS = (
+    ("client_", "Client-observed"),
+    ("db_", "Server database"),
+    ("gm_", "GM diagnostic"),
+)
+
+
+def source_kind(field) -> str:
+    """Label an observation by its own field-name prefix, nothing more.
+
+    This describes where the *runner says* the value came from. It is not
+    authentication: every label is imported, runner-authored provenance.
+    """
+    if not isinstance(field, str):
+        return "Source unspecified"
+    for prefix, label in _SOURCE_LABELS:
+        if field.startswith(prefix):
+            return label
+    if field == "session":
+        return "Runner session report"
+    return "Runner-reported (source unspecified)"
+
+
+def _outcome_kind(status: str, observed_available: bool) -> str:
+    """Separate a real failed assertion from a missing or unsupported observation."""
+    if not observed_available:
+        return "NOT_OBSERVED"
+    if status == "FAIL":
+        return "FAILED_ASSERTION"
+    if status == "PASS":
+        return "MATCHED_IMPORTED"
+    if status == "BLOCKED":
+        return "BLOCKED_UNSUPPORTED"
+    return "NOT_EVALUATED"
+
+
+def _lifecycle(authoring: dict, run_id: str | None, spec: dict) -> list[dict]:
+    state = authoring.get("state", "unspecified")
+    review = "review required" if authoring.get("review_required", True) else "reviewed"
+    return [
+        {"stage": "Definition", "state": "Published canonical specification, read-only in this view"},
+        {"stage": "Draft", "state": "Not shown here; edits happen in the Scenario Developer as separate design-only drafts"},
+        {"stage": "Validated version", "state": f"Authoring state {state}; {review}"},
+        {"stage": "Selected run", "state": (f"Run {run_id}: imported results shown below" if run_id
+                                           else "None selected: every outcome is UNKNOWN")},
+        {"stage": "Historical revisions", "state": "Runs pin DSP/headless/toolkit commits; a specification revision is not pinned by the importer"},
+    ]
+
+
+def scenario_presentation(spec: dict | None, reevaluation: dict | None = None,
+                          run_id: str | None = None) -> dict:
     """Build display-only steps from the canonical specification and imported evidence.
 
     BDD fields are optional pending #1259/#1263. Legacy specifications expose
@@ -80,6 +130,8 @@ def scenario_presentation(spec: dict | None, reevaluation: dict | None = None) -
                 "expected": outcome.get("expected") if outcome else definition.get("expected"),
                 "observed": outcome.get("observed") if outcome else None,
                 "observed_available": observed_field in observations,
+                "outcome_kind": _outcome_kind(status, observed_field in observations),
+                "source_kind": source_kind(observed_field),
             })
         states = {a["status"] for a in assertion_rows}
         verdict = ("FAIL" if "FAIL" in states else
@@ -92,11 +144,16 @@ def scenario_presentation(spec: dict | None, reevaluation: dict | None = None) -
             "available": field in observations,
             "source": field_sources.get(field),
             "value": observations.get(field),
+            "source_kind": source_kind(field),
         } for field in evidence_refs if isinstance(field, str)]
+        kinds = {a.get("outcome_kind") for a in assertion_rows if "outcome_kind" in a}
         steps.append({
             "number": position, "id": entry.get("id"), "title": entry.get("title"),
             "intent": entry.get("intent"), "expected": entry.get("expected"),
             "status": verdict, "assertions": assertion_rows, "provenance": provenance,
+            "source_kinds": sorted({p["source_kind"] for p in provenance}),
+            "has_failed_assertion": "FAILED_ASSERTION" in kinds,
+            "has_missing_observation": "NOT_OBSERVED" in kinds,
             "confidence_note": entry.get("confidence_note"),
         })
 
@@ -137,4 +194,6 @@ def scenario_presentation(spec: dict | None, reevaluation: dict | None = None) -
         "missing_fields": normalized.get("missing_fields", []),
         "independent_verification": "NOT_ESTABLISHED",
         "source": normalized.get("source"),
+        "selected_run_id": run_id,
+        "lifecycle": _lifecycle(authoring, run_id, spec),
     }

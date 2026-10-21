@@ -164,3 +164,33 @@ def test_unmapped_claims_and_unrecognized_status_never_turn_into_pass():
     assert view["steps"][0]["status"] == "UNKNOWN"
     assert view["steps"][1]["status"] == "UNKNOWN"
     assert view["independent_verification"] == "NOT_ESTABLISHED"
+
+
+def test_source_kind_labels_are_prefix_labels_not_authentication():
+    from workbench.server_admin.feature_testing.scenario_presentation import source_kind
+    assert source_kind("client_x") == "Client-observed"
+    assert source_kind("db_x") == "Server database"
+    assert source_kind("gm_x") == "GM diagnostic"
+    assert source_kind("session") == "Runner session report"
+    assert source_kind("whatever") == "Runner-reported (source unspecified)"
+
+
+def test_design_view_has_no_selected_run_and_unknown_outcomes():
+    view = scenario_presentation(specification("moghancement", "MOG-09"))
+    assert view["selected_run_id"] is None
+    assert not any(s["has_failed_assertion"] for s in view["steps"])
+    stages = list(view["lifecycle"])
+    assert len(stages) == 5
+    for step in view["steps"]:
+        for assertion in step["assertions"]:
+            assert assertion["outcome_kind"] != "FAILED_ASSERTION"
+
+
+def test_selected_run_id_is_carried_and_templates_link_runs():
+    view = scenario_presentation(specification("moghancement", "MOG-09"), {"recorded_verdict": "PASS"}, "run-1")
+    assert view["selected_run_id"] == "run-1"
+    root = Path(__file__).resolve().parents[1]
+    scen = (root / "gui/templates/feature_testing_scenario.html").read_text(encoding="utf-8")
+    assert "?run=" in scen and "No run (design view)" in scen
+    run = (root / "gui/templates/feature_testing_run.html").read_text(encoding="utf-8")
+    assert "?run=" in run
