@@ -217,6 +217,20 @@ The common helper `0x1D1680` performs several gating calls. Its success path at 
 
 The decoded original switch instructions at `0x1D4E8A` are `add eax,-2; cmp eax,10; ja default; jmp [eax*4+0x101D4F64]`. The branch is **unsigned**, so modes below 2 also take the default. Proposed modern modes **13–16 do not have dedicated switch cases** in this original routine and would follow its default if fed as mode integers. This does **not** prove the four existing `/wardrobe` command pointers evaluate to particular mode integers: that requires inspecting each mode object's construction and the vtable getter return value. Do not conflate command IDs 111–114 with UI mode IDs 2–12.
 
+### Original Wardrobe mode-object constructors and exact mode values
+
+Further original-build read-only disassembly closes the earlier unknown command→mode association. During UI object initialization around `0x1D4300`, each existing Wardrobe mode-global is assigned a newly allocated **0x14-byte** object whose first DWORD is an explicit vtable pointer. The vtable's **slot `+0x54`** points to a constant-return getter (`mov eax,<mode>; ret`). All four constructor bytes, `.rdata` slot values and getter instructions match the independently SHA-verified source:
+
+| Command | Constructor .text RVA | Object global VA | Vtable VA | Getter .text RVA | Mode returned |
+|---|---|---|---|---|---:|
+| `/wardrobe` | `0x1D4332` | `0x1061E5D0` | `0x1032DB00` | `0x1D47C0` | **8** |
+| `/wardrobe2` | `0x1D435B` | `0x1061E5D4` | `0x1032DAA0` | `0x1D47E0` | **10** |
+| `/wardrobe3` | `0x1D4384` | `0x1061E5D8` | `0x1032DA40` | `0x1D4800` | **11** |
+| `/wardrobe4` | `0x1D43AD` | `0x1061E5DC` | `0x1032D9E0` | `0x1D4820` | **12** |
+
+**Correction of earlier uncertainty:** The object→mode mapping is now directly supported by constructor/vtable/getter code, rather than inferred from command IDs. Mode **9 is not one of these four original `/wardrobe` commands**; its separate identity/functionality is not determined by this table alone. All four existing mode values fall inside the original 2–12 selector. Modes 13–16 still have **no dedicated selector branch** in the 2019 client.
+
+New `inspect_2019_mode_object_getters` reads the initialized `.rdata` vtable slots and decoded x86 constructor/getter bytes, producing scalar evidence and a fail-closed status. The parent `audit_2019_wardrobe` requires both the command-handler/selector and mode-object chains to match the exact archived 2019 client. Three additional synthetic test cases cover correct mode mapping and deliberately corrupted constructor, vtable and getter evidence. No evidence of **runtime execution, safe additional allocations, complete vtable behavior, or UI menu wiring** is implied by these static checks.
 ### New reproducible audit and negative tests
 
 The read-only `workbench.client.wardrobe_2019_command_ui.inspect_2019_command_ui_dispatch` verifies all four `.data` name and handler records, matching per-handler object-global loads and `CALL rel32` targets, the common-helper forwarder, the UI vtable getter opcode, the exact selector and 11-entry jump table, and all eleven case pointer-global instructions. It returns **only scalar IDs/RVAs/booleans**, never original executable bytes. Its report is gated by the exact source DLL SHA-256 and decoded `.text` SHA-256 in the parent `audit_2019_wardrobe`; altered or unknown inputs are not promoted to supported build facts.
