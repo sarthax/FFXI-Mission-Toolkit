@@ -232,6 +232,43 @@ def _stream_termination_metadata(packed: bytes | memoryview, expected_size: int)
     return {"consumed_bytes": at, **final}
 
 
+
+def _in_memory_zero_distance_terminated_stream(
+    encoded: bytes, expected_decoded_size: int
+) -> tuple[bytes, dict]:
+    """Append a synthetic stop token to a completed decoded prefix in memory.
+
+    The authentic 2019 bootstrap stops at a zero-distance reference. This
+    experiment checks only token grammar and available prefix capacity; it
+    does not produce a DLL or prove loader/launcher compatibility.
+    """
+    if not isinstance(encoded, bytes):
+        raise Pol1Error("encoded stream must be bytes")
+    end = _stream_termination_metadata(encoded, expected_decoded_size)
+    if end["consumed_bytes"] != len(encoded):
+        raise Pol1Error("candidate stream contains unconsumed token bytes")
+    if end["last_group_unused_flag_bits"]:
+        if end["last_group_unused_flags_nonzero"]:
+            raise Pol1Error("cannot append zero-distance stop after literal flags")
+        marker = bytes((0, 0))
+    else:
+        # A full final flag group needs an additional all-backreference
+        # control byte before the zero-distance match token.
+        marker = bytes((0, 0, 0))
+    terminated = encoded + marker
+    stop = _stream_termination_metadata(
+        terminated, expected_decoded_size
+    )["post_output_next_token"]
+    if stop["status"] != "ZERO_DISTANCE_STOP":
+        raise Pol1Error("synthetic explicit stop token failed grammar verification")
+    return terminated, {
+        "marker_offset": stop["marker_offset"],
+        "marker_bytes": len(marker),
+        "detected_immediately_after_decoded_end": True,
+        "scope": "read-only synthetic token grammar; retail loader unverified",
+    }
+
+
 def _stream_consumed_bytes(image: bytes, expected_size: int) -> int:
     """Strict decoder-consumed POL1 prefix length; never count loader suffix."""
     section = _section(image, b"POL1")
@@ -288,6 +325,9 @@ def assess_pol1_repack_fit(
     )
     original_used = original_end["consumed_bytes"]
     candidate_end = _stream_termination_metadata(candidate, original["size"])
+    terminated_candidate, stop_probe = _in_memory_zero_distance_terminated_stream(
+        candidate, original["size"]
+    )
     if candidate_end["consumed_bytes"] != len(candidate):
         raise Pol1Error("encoded candidate does not consume its whole token stream")
     original_stream = memoryview(image)[start:start + original_used]
@@ -327,6 +367,12 @@ def assess_pol1_repack_fit(
         "entrypoint_boundary_safe": boundary_valid,
         "safe_stream_budget_bytes": budget,
         "candidate_encoded_size": len(candidate),
+        "synthetic_terminated_candidate": {
+            "candidate_bytes_with_stop": len(terminated_candidate),
+            "headroom_with_stop_bytes": budget - len(terminated_candidate),
+            "fits_original_prefix_budget": boundary_valid and len(terminated_candidate) <= budget,
+            **stop_probe,
+        },
         "encoder_search_depth": search_depth,
         "encoder_lazy_match": lazy_match,
         "headroom_bytes": budget - len(candidate),
