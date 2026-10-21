@@ -189,7 +189,7 @@ def test_source_cited_oracle_requires_pinned_normative_source():
     pinned_source(spec)
     assert validate_spec(spec)
     spec["contract_v2"]["sources"][0]["classification"] = "capture_observation"
-    with pytest.raises(ValueError, match="pinned normative"):
+    with pytest.raises(ValueError, match="normative code source"):
         validate_spec(spec)
 
 
