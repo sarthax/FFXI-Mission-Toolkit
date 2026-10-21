@@ -133,6 +133,6 @@ The CLI prints metadata/hash fields to stdout only, never executable bytes. Do n
 
 The output also exposes `pol1_raw_section_isolated`, `entrypoint_in_pol1`, and `entrypoint_boundary_safe`. An entry point outside POL1 may be legitimate for other PEs; it does not prove FFXI bootstrap boundaries.
 
-**CI provenance:** Dedicated Windows and Linux POL1 tests passed with 12 methods at commit `6837500c110e94968d3243c002d5888fe4a4c833`. The subsequent all-depth comparison and raw-section isolation tests need independent final-head CI. Earlier broad Workbench runs may be canceled on superseded commits; do not mistake them for completed approvals.
+**CI provenance:** Dedicated Windows and Linux POL1 tests passed with 12 methods at commit `6837500c110e94968d3243c002d5888fe4a4c833`. The subsequent all-depth comparison and raw-section isolation changes brought the focused suite to **14 synthetic methods**; Windows and Linux jobs both passed in POL1 run `39644369389` at code commit `c52905a2f1bbaa7f5742455d3ec4f69944f9a230`. The broad Workbench regression for that commit was still in progress at the time of verification. Earlier broad Workbench runs may be canceled on superseded commits; do not mistake them for completed approvals.
 
 The original 2021/2026 DLL bytes remain unavailable to this GitHub session. Actual compressed-stream consumption, retail repacked fit, and loader acceptance remain UNKNOWN.
