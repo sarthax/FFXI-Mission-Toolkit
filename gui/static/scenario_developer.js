@@ -512,8 +512,10 @@
       article.append(sourceDetail);
       const details=el('details');staticText(details,'summary','Candidate identities (UNVERIFIED)');
       for(const b of item.bindings) {
-        const label=b.kind+' '+b.identity+' · '+b.classification+' · '+b.confidence+
-          ' · reviewer '+b.review_decision;
+        const edited=b.suggested_identity && b.suggested_identity!==b.identity ?
+          ' · reviewer-proposed '+b.suggested_identity+' (NOT source identity)' : '';
+        const label=b.kind+' originally observed '+b.identity+edited+' · '+b.classification+
+          ' · '+b.confidence+' · reviewer '+b.review_decision;
         const picker=el('select');picker.className='sd-binding-decision';
         picker.dataset.bindingId=b.binding_id;
         const empty=el('option','','Review candidate (required if step selected)');
