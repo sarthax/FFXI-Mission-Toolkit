@@ -44,9 +44,9 @@ def inventory_snapshot_v2(charid: int, location: int, cursor: int = 0, limit: in
                    (charid, location, limit + 1, cursor))
         rows = db.fetchall()
         conn.rollback()
-    except Exception:
+    except Exception as exc:
         conn.rollback()
-        raise
+        raise RuntimeError("inventory observation unavailable (database read failed)") from exc
     finally:
         db.close()
         conn.close()
