@@ -155,6 +155,12 @@ class Wardrobe2019AuditTests(unittest.TestCase):
         self.assertEqual(mapped["fixed_global_base_va"], "0x1096DB60")
         self.assertEqual(mapped["global_zero_init_bytes"], 0x3EDF4)
         self.assertEqual(mapped["active_store_offset_from_global_base"], 4)
+        self.assertEqual(mapped["active_store_pointer_global_va"], "0x104CDA08")
+        self.assertEqual(
+            mapped["observed_runtime_store_reassignment_rvas"],
+            ["0xF7116", "0xF7295", "0xF9B3C"]
+        )
+        self.assertFalse(mapped["store_lifetime_mapped_completely"])
         self.assertEqual(mapped["legacy_item_array_exclusive_end_offset"], 0x14D5C)
         self.assertEqual(mapped["observed_following_scalar_field_offset"], 0x14D5C)
         self.assertEqual(mapped["observed_following_pointer_field_offset"], 0x14D60)
