@@ -83,7 +83,9 @@ def _integrity(draft: dict, expected_projection: str | None,
                 raise ValueError("malformed source locator")
             claimed = locator.get("source_sha256")
             manifest = locator.get("source_manifest")
-            if not isinstance(manifest, dict) or not manifest.get("parser_version"):
+            if (not isinstance(manifest, dict)
+                    or not manifest.get("parser_name")
+                    or not manifest.get("parser_version")):
                 problems.append({"code": "PARSER_REVISION_UNPINNED", "severity": "UNKNOWN",
                                  "ref_id": ref, "reason": "Parser name/version or recognized manifest missing"})
             if not isinstance(claimed, str) or not _SHA256.fullmatch(claimed):
@@ -92,7 +94,10 @@ def _integrity(draft: dict, expected_projection: str | None,
             elif not isinstance(manifest, dict):
                 problems.append({"code": "SOURCE_MANIFEST_UNAVAILABLE", "severity": "UNKNOWN",
                                  "ref_id": ref, "reason": "No source manifest to compare with indexed locator digest"})
-            elif manifest.get("sha256") != claimed:
+            elif not isinstance(manifest.get("sha256"), str) or not _SHA256.fullmatch(manifest["sha256"]):
+                problems.append({"code": "SOURCE_MANIFEST_DIGEST_UNPINNED", "severity": "UNKNOWN",
+                                 "ref_id": ref, "reason": "Manifest lacks a well-formed source digest; no digest conflict proven"})
+            elif manifest["sha256"].lower() != claimed.lower():
                 problems.append({"code": "SOURCE_MANIFEST_DIGEST_MISMATCH", "severity": "BLOCKED",
                                  "ref_id": ref, "reason": "Indexed locator and recorded source manifest disagree"})
     for entry in steps:
@@ -236,8 +241,15 @@ def summarize_capture_readiness(
         missing = _observations(step)
         readbacks_by_step[step["step_id"]] = [r["observation"] for r in missing]
         blockers = [p for p in integrity["issues"] if
-                    p.get("step_id") == step["step_id"] or
-                    p.get("ref_id") in step["evidence_refs"]]
+                    (p.get("step_id") is None and p.get("ref_id") is None)
+                    or p.get("step_id") == step["step_id"]
+                    or (p.get("ref_id") is not None and p["ref_id"] in step["evidence_refs"])]
+        step_readiness = ("BLOCKED" if any(p["severity"] == "BLOCKED" for p in blockers)
+                          else "UNKNOWN")
+        # This state describes evidence compatibility only, never a gameplay
+        # PASS/FAIL, successful readback, approved oracle, or runner permission.
+        for gap in missing:
+            gap["readiness_state"] = step_readiness
         if any(x["classification"] in {"UNRESOLVED", "UNSUPPORTED", "AMBIGUOUS"}
                for x in result["identity_candidates"]):
             blockers.append({"code": "IDENTITY_REVIEW_NEEDED", "severity": "UNKNOWN",
@@ -253,6 +265,7 @@ def summarize_capture_readiness(
             ],
             "independently_verified_client_dsp_identity": False,
             "missing_observations": missing,
+            "readiness_state": step_readiness,
             "missing_provenance_and_review": deepcopy(result["missing_observations_or_review"]),
             "oracle_readiness": deepcopy(result["oracle"]),
             "expected_outcome_classification": (
