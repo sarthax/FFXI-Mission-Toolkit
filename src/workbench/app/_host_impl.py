@@ -12242,6 +12242,9 @@ async def survival_guides_mark(request: Request):
 # Read-only feature testing plans; execution intentionally unavailable.
 from workbench.server_admin.feature_testing.router import router as feature_testing_router
 app.include_router(feature_testing_router)
+# Separate read-only coverage projection; no shared scenario viewer/editor changes.
+from workbench.server_admin.scenario_coverage.router import create_coverage_router
+app.include_router(create_coverage_router(templates))
 # Share host shell globals with the testing router's separate Jinja environment.
 from workbench.server_admin.feature_testing import router as _ft_router_module
 for _key in ("current_theme", "shell_context"):
