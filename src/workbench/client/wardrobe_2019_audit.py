@@ -35,13 +35,46 @@ CODE_WINDOWS = (
     ("capacity_u16_reader", 0xE8C80, 28, (CAPACITY16,), ()),
     ("capacity_packet_copy_candidate", 0xE97C0, 65,
      (CAPACITY8, CAPACITY16), (bytes((0x8D, 0x50, 0x04)), bytes((0x8D, 0x70, 0x14)))),
-    ("item_record_handler_candidate", 0xE9940, 85,
+    ("inventory_0x1e_handler", 0xE9800, 80,
+     (RECORD_BASE,), (bytes((0x8A, 0x41, 0x08)), bytes((0x8A, 0x51, 0x09)))),
+    ("inventory_0x1f_handler", 0xE9860, 90,
+     (RECORD_BASE,), (bytes((0x8A, 0x46, 0x0A)), bytes((0x8A, 0x4E, 0x0B)))),
+    ("inventory_0x20_handler", 0xE9940, 85,
      (RECORD_BASE,), (bytes((0x8A, 0x43, 0x0E)), bytes((0x8A, 0x4B, 0x0F)))),
     ("inventory_mode_dispatch_candidate", 0x1D4CA0, 34, (0x101D4DF8,),
      (bytes((0x83, 0xC0, 0xFE)), bytes((0x83, 0xF8, 0x0A)))),
     ("inventory_cache_dispatch_candidate", 0x1D4E80, 32, (0x101D4F64,),
      (bytes((0x83, 0xC0, 0xFE)), bytes((0x83, 0xF8, 0x0A)))),
 )
+
+# Original 2019 registration sequence: push handlerVA; push packet ID;
+# call registration function. A relationship is only VERIFIED once this exact
+# adjacent motif is found inside the statically identified registration block.
+PACKET_HANDLERS = (
+    (0x1C, 0xE97C0), (0x1E, 0xE9800), (0x1F, 0xE9860),
+    (0x20, 0xE9940), (0x1D, 0xE99D0), (0x26, 0xE9A10),
+)
+
+
+def _verify_packet_registration(decoded: bytes) -> list[dict]:
+    begin = 0xE85D0 - LEGACY_TEXT_RVA
+    end = 0xE8650 - LEGACY_TEXT_RVA
+    if end > len(decoded):
+        raise Pol1Error("2019 packet-registration window exceeds .text")
+    view = decoded[begin:end]
+    result = []
+    for packet, handler in PACKET_HANDLERS:
+        # Generic push imm32 / push imm8 shape, without retaining executable data.
+        motif = bytes((0x68,)) + struct.pack("<I", handler + 0x10000000)
+        motif += bytes((0x6A, packet))
+        if motif not in view:
+            raise Pol1Error(f"2019 packet registration changed for 0x{packet:02X}")
+        result.append({
+            "packet_id": f"0x{packet:02X}",
+            "handler_rva": f"0x{handler:X}",
+            "status": "VERIFIED_STATIC_REGISTRATION",
+        })
+    return result
 
 
 def _range_overlap(first: int, end: int, other_first: int, other_end: int) -> bool:
@@ -136,6 +169,7 @@ def audit_2019_wardrobe(image: bytes) -> dict:
         "decoded_sha256": result["sha256"],
         "decoded_size": result["size"],
         "code_window_evidence": _verify_code_windows(code),
+        "packet_handler_registration": _verify_packet_registration(code),
         "observed_commands": _extract_commands(image),
         "hypothetical_container_extension": legacy_layout_risk(),
         "warnings": [
@@ -143,6 +177,7 @@ def audit_2019_wardrobe(image: bytes) -> dict:
             "Two 2019 inventory mode dispatch candidates compare (mode - 2) to 10 (11 branches for modes 2..12); do not add modes 13-16 without expanding every consumer.",
             "Observed record/capacity offsets overlap a hypothetical container-13 record range.",
             "Static window patterns do not establish complete handler control flow or caller bounds.",
+            "Packet 0x20 item-attribute handler at 0xE9940 is not the 0x1F item-list handler; registration disambiguates these.",
             "Do not send container IDs 13-16 or modern-format packet 0x1C to this client.",
             "No code or packet patch is produced by this report.",
         ],
