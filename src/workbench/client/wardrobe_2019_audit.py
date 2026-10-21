@@ -37,9 +37,9 @@ CODE_WINDOWS = (
      (CAPACITY8, CAPACITY16), (bytes((0x8D, 0x50, 0x04)), bytes((0x8D, 0x70, 0x14)))),
     ("item_record_handler_candidate", 0xE9940, 85,
      (RECORD_BASE,), (bytes((0x8A, 0x43, 0x0E)), bytes((0x8A, 0x4B, 0x0F)))),
-    ("inventory_mode_dispatch_candidate", 0x1D4CA0, 28, (0x101D4DF8,),
+    ("inventory_mode_dispatch_candidate", 0x1D4CA0, 34, (0x101D4DF8,),
      (bytes((0x83, 0xC0, 0xFE)), bytes((0x83, 0xF8, 0x0A)))),
-    ("inventory_cache_dispatch_candidate", 0x1D4E80, 24, (0x101D4F64,),
+    ("inventory_cache_dispatch_candidate", 0x1D4E80, 32, (0x101D4F64,),
      (bytes((0x83, 0xC0, 0xFE)), bytes((0x83, 0xF8, 0x0A)))),
 )
 
