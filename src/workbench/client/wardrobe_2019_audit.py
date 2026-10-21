@@ -66,6 +66,22 @@ ANCHORS = {
     "inventory_cursor_pointer_reset": (
         0xE88CC, "c782604d010000000000"
     ),
+    "store_transfer_size_site0": (0x3FA1, "6880b00300"),
+    "store_transfer_size_site1": (0x40EC, "6880b00300"),
+    "store_transfer_size_site2": (0x418C, "6880b00300"),
+    "store_transfer_size_site3": (0x431B, "6880b00300"),
+    "store_transfer_size_site4": (0x43B9, "6880b00300"),
+    "store_transfer_size_site5": (0x445F, "6880b00300"),
+    "store_transfer_size_site6": (0x45B0, "6880b00300"),
+    "store_transfer_size_site7": (0x464D, "6880b00300"),
+    "store_transfer_size_site8": (0x46ED, "6880b00300"),
+    "store_transfer_size_site9": (0x478D, "6880b00300"),
+    "store_transfer_size_site10": (0x4818, "6880b00300"),
+    "manager_other_active_store_writer": (0x3FA7, "893d08da4c10"),
+    "store_pointer_secondary_restore": (0xF6D4D, "a308da4c10"),
+    "store_pointer_secondary_dispatch": (0xF7694, "893508da4c10"),
+    "store_pointer_secondary_shutdown": (0xF76ED, "893508da4c10"),
+    "store_pointer_secondary_reopen": (0xF8A55, "893508da4c10"),
 }
 
 
@@ -148,6 +164,14 @@ def inspect_2019_store_lifecycle(decoded_sites_verified: bool) -> dict:
         ),
         "per_store_zero_clear_bytes": PER_STORE_CLEAR_DWORDS * 4,
         "per_store_zero_clear_rva": "0xF711E",
+        "fixed_size_transfer_value_bytes": PER_STORE_CLEAR_DWORDS * 4,
+        "fixed_size_transfer_immediate_rvas": [
+            "0x3FA1", "0x40EC", "0x418C", "0x431B", "0x43B9",
+            "0x445F", "0x45B0", "0x464D", "0x46ED", "0x478D", "0x4818"
+        ],
+        "fixed_size_transfer_semantics_confirmed": False,
+        "candidate_file_io_callee_rva": "0x307CFF",
+        "observed_instructions_containing_store_global_address": 1045,
         "manager_slot_count_field_offset": MANAGER_SLOT_COUNT_FIELD_OFFSET,
         "manager_default_slot_count": 1,
         "manager_slot_selection_rvas": ["0xF710A", "0xF7009"],
@@ -155,8 +179,9 @@ def inspect_2019_store_lifecycle(decoded_sites_verified: bool) -> dict:
         "manager_cleanup_call_rva": "0xF700D",
         "active_store_pointer_clear_rvas": ["0xF70D6", "0xF6FE2"],
         "active_store_pointer_set_rvas": [
-            "0xF6C33", "0xF7116", "0xF7295", "0xF73E1",
-            "0xF740E", "0xF9B3C",
+            "0x3FA7", "0xF6C33", "0xF6D4D", "0xF7116",
+            "0xF7295", "0xF73E1", "0xF740E", "0xF7694",
+            "0xF76ED", "0xF8A55", "0xF9B3C",
         ],
         "post_inventory_cursor": {
             "count_offset": INVENTORY_CURSOR_COUNT_OFFSET,
@@ -165,6 +190,8 @@ def inspect_2019_store_lifecycle(decoded_sites_verified: bool) -> dict:
             "bounded_cursor_loop_rva": "0xE8890",
             "cursor_pointer_clear_rva": "0xE88CC",
         },
+        "observed_direct_global_writer_instruction_count": 15,
+        "global_writer_sites_independently_cfg_confirmed": False,
         "complete_pointer_writer_inventory": False,
         "store_object_allocation_size_proved_for_all_instances": False,
         "store_object_lifetime_proved": False,
