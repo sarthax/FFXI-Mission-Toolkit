@@ -265,7 +265,7 @@
     return parsed;
   }
 
-  const CONTEXT_PATH = /^\\/feature-testing\\/coverage\\/context\\/([A-Za-z0-9][A-Za-z0-9_-]{0,119})\\/([A-Za-z0-9][A-Za-z0-9_-]{0,119})$/;
+  const CONTEXT_PATH = /^\/feature-testing\/coverage\/context\/([A-Za-z0-9][A-Za-z0-9_-]{0,119})\/([A-Za-z0-9][A-Za-z0-9_-]{0,119})$/;
 
   // Accept only the same-origin, read-only coverage reference path; anything else is ignored.
   function contextRefPath(raw) {
