@@ -293,3 +293,87 @@ def test_ambiguous_evidence_identity_and_proposed_oracle_are_not_approved_throug
     output = project_expected_candidate(proposed)
     assert json.loads(json.dumps(output))["approved"] is False
     assert output["normative_expected"] is None and output["oracle_type"] == "unknown"
+
+
+@pytest.mark.parametrize("target", ["repeated_step", "case_copy", "nested_oracle", "case_original"])
+def test_every_duplicate_source_citation_validated_before_ref_reuse(target):
+    """Regression for CI #39617090965 lambda 8: forged duplicate URLs.
+
+    Deduplication by repo/path/commit/span is presentation-only. Every
+    occurrence must validate its *own* source URL, including repeats in a
+    different scope that resolve to an already cached source ref.
+    """
+    doc = deepcopy(examples()["run_geo_unlock"]["staging"])
+    case = doc["cases"][0]
+    primary = deepcopy(case["source_refs"][0])
+    assert case["steps"][0]["source_refs"][0] == primary
+    if target == "repeated_step":
+        citation = case["steps"][0]["source_refs"][0]
+    elif target == "case_copy":
+        case["source_refs"].append(deepcopy(primary))
+        citation = case["source_refs"][-1]
+    elif target == "nested_oracle":
+        citation = case["oracle"]["source_refs"][0]
+    else:
+        citation = case["source_refs"][0]
+    citation["url"] = "https://github.com/sarthax/darkstar-to-valhalla/blob/WRONG"
+    with pytest.raises(ValueError, match="URL conflicts"):
+        project_domain_case(doc, "RG-01")
+
+
+def test_consistent_duplicate_citations_reuse_ref_without_source_promotion():
+    doc = deepcopy(examples()["run_geo_unlock"]["staging"])
+    case = doc["cases"][0]
+    copied = deepcopy(case["source_refs"][0])
+    case["source_refs"].append(copied)
+    projected = project_domain_case(doc, "RG-01")
+    assert len(projected["sources"]) == 2
+    assert projected["case_source_ref_ids"][0] == projected["case_source_ref_ids"][-1]
+    assert projected["source_refs_original"].count(copied) >= 2
+    assert all(src["sha256"] is None for src in projected["sources"])
+    assert projected["canonical_import_allowed"] is False
+    assert projected["execution_enabled"] is False
+    assert all(req["execution_gate"] == "blocked" for req in projected["step_requirements"])
+
+
+@pytest.mark.parametrize("changes", [
+    {"capability": "unassigned", "operation_class": "unknown",
+     "execution_gate": "ready"},
+    {"capability": "unassigned", "operation_class": "unknown",
+     "execution_gate": "approved"},
+    {"capability": "unassigned", "operation_class": "unknown",
+     "required_permissions": ["sql_execute"]},
+    {"capability": "gm_action_candidate", "operation_class": "mutating",
+     "required_permissions": ["operator_approval"]},
+])
+def test_optional_v2_staging_hints_cannot_gain_runtime_authority(changes):
+    doc = deepcopy(examples()["run_geo_unlock"]["staging"])
+    req = {
+        "step_id": "RG-01-S01", "capability": "unassigned",
+        "operation_class": "unknown", "required_permissions": [],
+        "required_readbacks": [], "approval_required": True,
+        "execution_gate": "blocked",
+    }
+    req.update(changes)
+    doc["cases"][0]["contract_v2"] = {
+        "contract_version": 2, "step_requirements": [req],
+    }
+    with pytest.raises(ValueError):
+        project_domain_case(doc, "RG-01")
+
+
+def test_blocked_unknown_capability_hint_never_changes_projection_authority():
+    doc = deepcopy(examples()["run_geo_unlock"]["staging"])
+    doc["cases"][0]["contract_v2"] = {
+        "contract_version": 2, "step_requirements": [{
+            "step_id": "RG-01-S01", "capability": "unassigned",
+            "operation_class": "unknown", "required_permissions": [],
+            "required_readbacks": [], "approval_required": True,
+            "execution_gate": "blocked",
+        }],
+    }
+    result = project_domain_case(doc, "RG-01")
+    assert result["canonical_import_allowed"] is False
+    assert result["oracles"] == [] and result["parameters"] == []
+    assert result["independent_verification"] == "NOT_ESTABLISHED"
+    assert all(req["execution_gate"] == "blocked" for req in result["step_requirements"])
