@@ -68,9 +68,11 @@ def scenario_presentation(spec: dict | None, reevaluation: dict | None = None) -
                                        "observed": None, "observed_available": False})
                 continue
             observed_field = definition.get("observed")
+            status = outcome.get("status") if outcome else None
+            status = status if status in ("PASS", "FAIL", "BLOCKED") else "UNKNOWN"
             assertion_rows.append({
                 "id": assertion_id,
-                "status": outcome.get("status", "UNKNOWN") if outcome else "UNKNOWN",
+                "status": status,
                 "reason": outcome.get("reason", "Not evaluated") if outcome else "Not evaluated",
                 "operation": definition.get("operation"),
                 "observed_field": observed_field,
@@ -82,7 +84,7 @@ def scenario_presentation(spec: dict | None, reevaluation: dict | None = None) -
         states = {a["status"] for a in assertion_rows}
         verdict = ("FAIL" if "FAIL" in states else
                    "BLOCKED" if "BLOCKED" in states else
-                   "UNKNOWN" if not states or "UNKNOWN" in states else "PASS")
+                   "PASS" if states == {"PASS"} else "UNKNOWN")
         evidence_refs = entry.get("evidence_refs", [])
         evidence_refs = evidence_refs if isinstance(evidence_refs, list) else []
         provenance = [{
