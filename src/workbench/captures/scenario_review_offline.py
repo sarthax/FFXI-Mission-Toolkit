@@ -48,6 +48,25 @@ def render_review_html(draft: dict, *, readiness: dict | None = None) -> str:
                {x["step_id"] for x in draft["steps"]}):
         raise ValueError("readiness summary does not match the indexed capture draft")
     readiness_by_step = {s["step_id"]: s for s in readiness["readiness_steps"]}
+    if (readiness.get("approved_for_execution") is not False
+            or readiness.get("scenario_developer_handoff", {}).get("automatic_import") is not False
+            or readiness.get("scenario_developer_handoff", {}).get("save_allowed") is not False
+            or readiness.get("contract_v2_alignment", {}).get("automatic_import") is not False
+            or readiness.get("contract_v2_alignment", {}).get("execution_enabled") is not False
+            or any(x.get("normative_expected") is not None or x.get("verdict") != "UNKNOWN"
+                   or x.get("execution_enabled") is not False
+                   or x.get("independently_verified_client_dsp_identity") is not False
+                   or x.get("evidence_refs") != next(
+                       z["evidence_refs"] for z in draft["steps"] if z["step_id"] == x["step_id"])
+                   or x.get("oracle_readiness", {}).get("normative_expected") is not None
+                   or any(b.get("source_identity_verified") is not False
+                          for b in x.get("identity_matches", []))
+                   or any(not set(m.get("evidence_refs", [])).issubset(set(x["evidence_refs"]))
+                          for m in x.get("missing_observations", []))
+                   for x in readiness["readiness_steps"])):
+        raise ValueError("unsafe readiness summary cannot be displayed or exported")
+    if len(json.dumps(readiness, ensure_ascii=True).encode("utf-8")) > 4_000_000:
+        raise ValueError("readiness advisory too large for offline export")
     if len(json.dumps(bundle, ensure_ascii=True).encode("utf-8")) > 4_000_000:
         raise ValueError("review export too large; reduce indexed row caps")
     ui = []
@@ -168,13 +187,16 @@ a pinned DSP source:file:line oracle, preconditions, cleanup and readbacks.
 The exported JSON is <strong>not</strong> a validatable or savable canonical
 scenario, and must never be sent to a runner or import endpoint unchanged.</p>
 <p><button id='export'>Export design-only review JSON</button>
+<button id='export-advisory'>Export separate readiness sidecar (no automatic import)</button>
 <span id='status' role='status' aria-live='polite'></span></p>
 </section><footer>All reviewer changes remain in this page until exported manually.
 Original indexed observations and hashes are preserved separately from all reviewer decisions.</footer>
 <script id='bundle' type='application/json'>DATA_PLACEHOLDER</script>
+<script id='readiness' type='application/json'>READINESS_JSON_PLACEHOLDER</script>
 <script>
 'use strict';
 const ORIGINAL = JSON.parse(document.getElementById('bundle').textContent);
+const READINESS = JSON.parse(document.getElementById('readiness').textContent);
 function field(cls, id) {
   return [...document.querySelectorAll('.'+cls)].find(e => e.dataset.id === id)?.value ?? '';
 }
@@ -232,6 +254,30 @@ document.getElementById('export').addEventListener('click', () => {
     status.textContent='Exported design-only review. No scenario saved or executed.';
   } catch (err) {status.textContent=err.message;}
 });
+document.getElementById('export-advisory').addEventListener('click', () => {
+  const status = document.getElementById('status');
+  try {
+    // Separate advisory never alters the existing review-decision export or
+    // claims canonical spec/import/permission authority.
+    const sidecar = {
+      contract:'capture_reviewer_readiness_sidecar_v0_NONCANONICAL',
+      capture_id:ORIGINAL.capture_id,
+      capture_projection_sha256:READINESS.capture_projection_sha256,
+      original_evidence_handoff:ORIGINAL,
+      readiness_diagnostics:READINESS,
+      scenario_developer_handoff:READINESS.scenario_developer_handoff,
+      normative_expected:null,verdict:'UNKNOWN',
+      automatic_import:false,approved_for_execution:false,execution_enabled:false
+    };
+    const blob = new Blob([JSON.stringify(sidecar,null,2)],{type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url;a.download='capture-'+String(ORIGINAL.capture_id)+'-readiness-advisory-only.json';
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    status.textContent='Exported separate noncanonical readiness sidecar. No import, save or execution.';
+  } catch(err) {status.textContent=err.message;}
+});
 </script></body></html>"""
     return (markup.replace("BDD_PLACEHOLDER", "\n".join(bdd_html))
             .replace("ASSOCIATIONS_PLACEHOLDER", related_html)
@@ -242,7 +288,8 @@ document.getElementById('export').addEventListener('click', () => {
                 "contract_v2_alignment_status": readiness["contract_v2_alignment"]["status"],
                 "handoff": readiness["scenario_developer_handoff"],
             }, indent=2, sort_keys=True, ensure_ascii=True)) + "</pre>")
-            .replace("DATA_PLACEHOLDER", _json(bundle)))
+            .replace("DATA_PLACEHOLDER", _json(bundle))
+            .replace("READINESS_JSON_PLACEHOLDER", _json(readiness)))
 
 
 def main(argv: list[str] | None = None) -> None:
