@@ -41,7 +41,16 @@ def _check(draft: dict) -> None:
             or seed.get("feature_id") is not None or seed.get("case_id") is not None
             or seed.get("assertions") != [] or seed.get("observations") != []
             or not isinstance(seed.get("authoring"), dict)
-            or seed["authoring"].get("review_required") is not True):
+            or seed["authoring"].get("review_required") is not True
+            or seed["authoring"].get("state") != "reverse_capture_review_required"
+            or seed["authoring"].get("execution_policy") != "disabled"
+            or seed["authoring"].get("evidence_provenance") != "unverified_indexed_capture"
+            or not isinstance(seed.get("steps"), list)
+            or any(not isinstance(s, dict)
+                   or not str(s.get("expected", "")).startswith("UNKNOWN")
+                   or s.get("assertion_ids") != []
+                   or s.get("evidence_refs") != []
+                   for s in seed["steps"])):
         raise ValueError("canonical seed must remain incomplete and design-only")
     for step in draft["steps"]:
         if (not isinstance(step, dict) or step.get("normative_expected") is not None
