@@ -65,8 +65,10 @@ def coverage_context(source: dict, reference: str) -> dict:
         "label": source["label"], "category": source["category"],
         "source": _SOURCE, "source_pointer": expected["source_pointer"],
         "source_revision": "UNPINNED", "expected_oracle": "UNKNOWN",
-        "context_only": True, "review_required": True,
-        "auto_save_allowed": False, "execution_enabled": False,
+        "context_only": True, "design_only": True, "review_required": True,
+        "auto_populate_allowed": False, "auto_save_allowed": False,
+        "proposed_case_id": None, "assertions": [], "observations": [],
+        "capability_bindings": [], "execution_enabled": False,
         "return_url": "/feature-testing/coverage",
     }
 
@@ -262,6 +264,12 @@ def inspect_evidence_review(payload: dict) -> dict:
         for b in step["bindings"]:
             reviewed = reviewed_bindings.get(b["binding_id"])
             b["review_decision"] = reviewed["decision"] if reviewed else "PENDING"
+            # Reviewer edits are proposed candidates, never revised source values.
+            b["suggested_identity"] = (
+                str(reviewed["edited_value"])[:120]
+                if reviewed and reviewed["decision"] == "EDIT"
+                else b["identity"]
+            )
     return {
         "contract": "editor_evidence_suggestions_v1",
         "capture_id": payload["capture_id"], "projection_sha256": checksum,
