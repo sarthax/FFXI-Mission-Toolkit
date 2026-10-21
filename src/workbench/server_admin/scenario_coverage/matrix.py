@@ -127,12 +127,14 @@ def _case_row(feature: dict, case: dict, spec: dict | None, history: list[dict],
     if latest and not history_complete:
         gaps.append("Recent-history window truncated; latest evidence may be incomplete")
     gaps = list(dict.fromkeys(gaps))
-    if attest["verified"] and not gaps:
+    verified = bool(attest["verified"] and latest and revision == "MATCH"
+                    and latest["verdict"] == "PASS" and not gaps)
+    if verified:
         state = "complete"
-    elif latest:
-        state = "partial" if not (revision == "VERSION_MISMATCH" and not attest["verified"]) else "blocked"
     elif gaps:
         state = "blocked"
+    elif latest:
+        state = "partial"
     else:
         state = "untested"
     maturity = ("unwritten" if not spec else
@@ -147,7 +149,7 @@ def _case_row(feature: dict, case: dict, spec: dict | None, history: list[dict],
         "readiness": readiness, "state": state,
         "oracle": "SOURCE_VERIFIED" if attest["oracle"] else "UNKNOWN",
         "readback": "INDEPENDENT" if attest["readback"] else "UNKNOWN",
-        "independent_confidence": "VERIFIED_BY_SEPARATE_TRUSTED_SOURCE" if attest["verified"] else "UNVERIFIED",
+        "independent_confidence": "VERIFIED_BY_SEPARATE_TRUSTED_SOURCE" if verified else "UNVERIFIED",
         "version_comparison": revision,
         "recorded": ({k:v for k,v in latest.items() if k not in ("record", "all_stage_records")} if latest else None),
         "recalculated": evidence, "gaps": gaps,
