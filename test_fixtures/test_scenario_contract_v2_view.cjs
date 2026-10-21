@@ -197,3 +197,90 @@ assert.equal(richerSidecar.scenario_developer_handoff.read_only_projection
   .steps[0].canonical_step_id,null);
 assert.equal(V.project(v).execution_enabled,false);
 console.log('R7 pending C/D interface compatibility stays noncanonical and unapproved: PASS');
+
+
+// Accepted #1309 server report, not a client-side reconstruction of
+// source_associations; prove explicit CASE and STEP scopes stay independent.
+const acceptedAssociation={
+  case:{state:'EXPLICIT_CITATION_CLAIM',source_refs:['SrcOther']},
+  steps:{[sid]:{state:'EXPLICIT_CITATION_CLAIM',source_refs:['SrcOne']}},
+  independent_verification:'NOT_ESTABLISHED',
+  oracle_approval:'NOT_ESTABLISHED',
+  execution_enabled:false
+};
+const explicit=V.project(proposed,{state:'UNKNOWN',reasons:['no verified engine']},
+  acceptedAssociation);
+assert.equal(explicit.case_association.state,'EXPLICIT_CITATION_CLAIM');
+assert.deepEqual(explicit.case_association.sources.map(x=>x.ref),['SrcOther']);
+assert.equal(explicit.steps[0].association_state,'EXPLICIT_CITATION_CLAIM');
+assert.deepEqual(explicit.steps[0].sources.map(x=>x.ref),['SrcOne']);
+assert.equal(explicit.steps[0].oracle_citations[0].ref,'SrcOne');
+assert.equal(explicit.oracles[0].approved,false);
+assert.equal(explicit.bindings[1].approved,false);
+assert.equal(explicit.execution_enabled,false);
+assert.equal(explicit.unassigned_sources.length,0);
+assert.match(explicit.sources[0].attribution,/EXPLICIT STEP/);
+assert.match(explicit.sources[1].attribution,/EXPLICIT CASE/);
+assert.equal(JSON.stringify(proposed),proposalBefore);
+
+const caseOnly=V.project(proposed,null,{
+  ...acceptedAssociation,steps:{[sid]:{state:'UNKNOWN',source_refs:[]}}
+});
+assert.equal(caseOnly.case_association.state,'EXPLICIT_CITATION_CLAIM');
+assert.equal(caseOnly.steps[0].sources.length,0);
+assert.equal(caseOnly.steps[0].association_state,'UNKNOWN');
+assert.equal(caseOnly.unassigned_sources[0].ref,'SrcOne');
+
+const stepOnly=V.project(proposed,null,{
+  ...acceptedAssociation,case:{state:'UNKNOWN',source_refs:[]}
+});
+assert.equal(stepOnly.case_association.sources.length,0);
+assert.deepEqual(stepOnly.steps[0].sources.map(x=>x.ref),['SrcOne']);
+assert.equal(stepOnly.unassigned_sources[0].ref,'SrcOther');
+
+const unassignedCanonical=V.project(proposed,null,{
+  ...acceptedAssociation,case:{state:'UNKNOWN',source_refs:[]},
+  steps:{[sid]:{state:'UNKNOWN',source_refs:[]}}
+});
+assert.equal(unassignedCanonical.unassigned_sources.length,2);
+assert.equal(unassignedCanonical.steps[0].sources.length,0);
+assert.equal(unassignedCanonical.oracles[0].approved,false);
+
+// Advanced edits are provisional and MUST NOT create an explicit citation
+// without an accepted server report for the current specification.
+const provisional=V.project(proposed,null);
+assert.equal(provisional.steps[0].sources.length,0);
+assert.equal(provisional.case_association.state,'UNKNOWN');
+assert.match(provisional.association_diagnostics.join(' '),/PENDING CANONICAL VALIDATION/);
+
+// Reject a malformed/forged report rather than showing unauthorized scopes.
+for(const malformed of [
+  {...acceptedAssociation,execution_enabled:true},
+  {...acceptedAssociation,independent_verification:'VERIFIED'},
+  {...acceptedAssociation,oracle_approval:'APPROVED'}
+]) {
+  assert.equal(V.project(proposed,null,malformed).steps[0].sources.length,0);
+  assert.equal(V.project(proposed,null,malformed).case_association.state,'UNKNOWN');
+}
+const unknownSource=V.project(proposed,null,{
+  ...acceptedAssociation,
+  steps:{[sid]:{state:'EXPLICIT_CITATION_CLAIM',source_refs:['forged-source']}}
+});
+assert.equal(unknownSource.steps[0].sources.length,0);
+assert.equal(unknownSource.steps[0].association_state,'BLOCKED');
+assert.match(unknownSource.association_diagnostics.join(' '),/BLOCKED/);
+const unknownStep=V.project(proposed,null,{
+  ...acceptedAssociation,case:{state:'UNKNOWN',source_refs:[]},
+  steps:{[sid]:{state:'UNKNOWN',source_refs:[]},
+    'OBS-CAPTURE-S001':{state:'EXPLICIT_CITATION_CLAIM',source_refs:['SrcOne']}}
+});
+assert.equal(unknownStep.steps[0].sources.length,0);
+assert.equal(unknownStep.case_association.state,'UNKNOWN');
+
+const oldV2WithoutAssociations=M.clone(v);
+assert.equal(V.project(oldV2WithoutAssociations,null,{
+  case:{state:'UNKNOWN',source_refs:[]},steps:{[sid]:{state:'UNKNOWN',source_refs:[]}},
+  independent_verification:'NOT_ESTABLISHED',oracle_approval:'NOT_ESTABLISHED',
+  execution_enabled:false
+}).steps[0].association_state,'UNKNOWN');
+console.log('R7 canonical CASE/STEP association helper and fail-closed display: PASS');
