@@ -1,0 +1,2865 @@
+{
+  "artifact_type": "R5_voidwalker_domain_staging_draft_not_canonical_catalog",
+  "schema_version": 1,
+  "canonical_target": "data/testing/test_specifications.json",
+  "canonical_compatibility": "Design-level BDD and stable steps/assertions; not accepted by strict v1 validator until typed mob observations and source-bound UNKNOWN oracles are approved",
+  "integration_status": "BLOCKED_SCHEMA_OWNER_REVIEW",
+  "execution_enabled": false,
+  "source_revision": {
+    "dsp_branch": "feature/voidwalker",
+    "dsp_commit": "5fac778004364e2991df779845d7403e64a8dc23",
+    "deployed": "UNKNOWN",
+    "toolkit_base": "7835d5019f1939f3d20a402240c649b17aea6ec6"
+  },
+  "capabilities": {
+    "available": [
+      "Persisted keyitem readback (approved charids)",
+      "Generic XiHeadless snapshot, nearby_entities, inventory, engage candidates"
+    ],
+    "missing": [
+      "Mob POPPED_* runtime local-var readback",
+      "Read-only mob/claim and zone spawn visibility snapshots",
+      "Verified /heal interaction and message decoder",
+      "Known runtime deployed branch/ENABLE_VOIDWALKER status",
+      "Skill effects and source-checked drops"
+    ],
+    "safe_observe_now_substeps": [
+      "Compare held/persisted abyssite KI before any attempt",
+      "Inspect configured zone/keyitem mapping from pinned DSP without spawning",
+      "Inspect historical Toolkit validation notes without treating them as independently verified test results"
+    ]
+  },
+  "cases": [
+    {
+      "schema_version": 1,
+      "feature_id": "voidwalker",
+      "case_id": "VWK-01",
+      "name": "Clear abyssite: hint, pop, fight, tier transition",
+      "kind": "positive",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "status": "planned",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "purpose": "Verify clear abyssite: hint, pop, fight, tier transition without inferring results from a command being accepted.",
+      "rationale": "Keyitem readback exists but no fixed-query mob pop/owner state readback; /heal and combat capability not accepted",
+      "behavior": {
+        "given": [
+          "Authorized disposable character and known zone/keyitem fixture",
+          "Active server DSP revision and enabled flag established or UNKNOWN",
+          "Pre-state mob/claim and complete key-item readback"
+        ],
+        "when": [
+          "Use approved clear-abyssite fixture, rest near source-defined candidate, then defeat popped NM"
+        ],
+        "then": [
+          "Source: eligible nearest mob within four yalms is made targetable; upgrade occurs only on RNG 1/10 branch, so observed upgrade is UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Explicit owner-approved disposable character",
+        "Known expected zone/abyssite fixture from pinned DSP and client crosswalk",
+        "No spawn/claim mutation without approved cleanup"
+      ],
+      "steps": [
+        {
+          "id": "VWK-01-S01",
+          "title": "Baseline",
+          "action": "Capture approved character, zone, held/persisted keyitems, and matching mobs",
+          "expected": "Complete named fixture and before-state; else UNKNOWN",
+          "assertion_ids": [
+            "VWK-01-baseline_complete"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-01-S02",
+          "title": "Action",
+          "action": "Use approved clear-abyssite fixture, rest near source-defined candidate, then defeat popped NM",
+          "expected": "Source: eligible nearest mob within four yalms is made targetable; upgrade occurs only on RNG 1/10 branch, so observed upgrade is UNKNOWN",
+          "assertion_ids": [
+            "VWK-01-action_oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 261,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L261-L288"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 153,
+              "line_end": 177,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L153-L177"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-01-S03",
+          "title": "Independent comparison",
+          "action": "Capture client event/monster state plus authoritative KI and spawn/local-var readback",
+          "expected": "Compare to documented conditions; VWK keyitem before/after plus mob local vars, spawn/claim and kill evidence; absent authoritative capture => UNKNOWN",
+          "assertion_ids": [
+            "VWK-01-server_oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 261,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L261-L288"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 153,
+              "line_end": 177,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L153-L177"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-01-S04",
+          "title": "Cleanup",
+          "action": "Approved operator verifies no unintended live mob, claim or KI change; quarantine incomplete runs",
+          "expected": "Verified restoration or BLOCKED; no remote execution here",
+          "assertion_ids": [
+            "VWK-01-cleanup_verified"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "VWK-01-baseline_complete",
+          "expected": "Verified zone, complete KI set and authoritative target mob state or UNKNOWN",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ]
+        },
+        {
+          "id": "VWK-01-action_oracle",
+          "expected": "Source: eligible nearest mob within four yalms is made targetable; upgrade occurs only on RNG 1/10 branch, so observed upgrade is UNKNOWN",
+          "oracle_state": "SOURCE_CONDITIONAL_UNVERIFIED_RUNTIME",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 261,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L261-L288"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 153,
+              "line_end": 177,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L153-L177"
+            }
+          ]
+        },
+        {
+          "id": "VWK-01-server_oracle",
+          "expected": "Conditionally source-matching and complete server/client observations or UNKNOWN",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 261,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L261-L288"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 153,
+              "line_end": 177,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L153-L177"
+            }
+          ]
+        },
+        {
+          "id": "VWK-01-cleanup_verified",
+          "expected": "Independent absence of leftover unintended effects, else BLOCKED",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 35,
+          "line_end": 65,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 100,
+          "line_end": 130,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 292,
+          "line_end": 334,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 261,
+          "line_end": 288,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L261-L288"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 153,
+          "line_end": 177,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L153-L177"
+        }
+      ],
+      "required_readback": {
+        "available": [
+          "/api/supervisor/test-character-keyitems (persisted chars.keyitems; approved characters)",
+          "/api/supervisor/test-character-vars (named char_vars only, not mob local vars)"
+        ],
+        "missing": [
+          "Fixed approved mob spawn/status/claim and three POPPED_* local-var readback",
+          "Client heal/hint, combat and drop event evidence with completeness",
+          "Zone-to-abyssite and client-ID crosswalk verification"
+        ],
+        "table": "chars.keyitems + runtime mob local-vars (not DB char_vars)",
+        "evidence": "VWK keyitem before/after plus mob local vars, spawn/claim and kill evidence"
+      },
+      "xiheadless": {
+        "candidate": [
+          "snapshot",
+          "nearby_entities",
+          "move_to",
+          "engage",
+          "wait_for_event",
+          "inventory",
+          "key_items observation candidate"
+        ],
+        "missing": [
+          "Accepted rest/heal interaction and hint capture",
+          "Runtime authoritative mob local vars",
+          "Per-combat effect/drop structured evidence"
+        ],
+        "acceptance": "UNKNOWN"
+      },
+      "mutation": {
+        "type": "client_rest/combat_or_operator_fixture",
+        "enabled": false,
+        "owner_approval_required": true,
+        "cleanup": "verify despawn and keyitem baseline; isolate spawned mob; quarantine if incomplete"
+      },
+      "blocking_gaps": [
+        "Keyitem readback exists but no fixed-query mob pop/owner state readback; /heal and combat capability not accepted",
+        "Deployment revision and ENABLE_VOIDWALKER runtime setting UNKNOWN",
+        "Mob local-vars/claim authoritative readback not available"
+      ],
+      "provenance": {
+        "dsp_branch": "feature/voidwalker",
+        "dsp_commit": "5fac778004364e2991df779845d7403e64a8dc23",
+        "deployed": "UNKNOWN",
+        "toolkit_revision": "7835d5019f1939f3d20a402240c649b17aea6ec6"
+      }
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "voidwalker",
+      "case_id": "VWK-02",
+      "name": "Colorful/black progression in a second zone",
+      "kind": "positive",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "status": "planned",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "purpose": "Verify colorful/black progression in a second zone without inferring results from a command being accepted.",
+      "rationale": "Second-zone navmesh spots and tier readiness unverified, no automatic keyitem grant allowed",
+      "behavior": {
+        "given": [
+          "Authorized disposable character and known zone/keyitem fixture",
+          "Active server DSP revision and enabled flag established or UNKNOWN",
+          "Pre-state mob/claim and complete key-item readback"
+        ],
+        "when": [
+          "Use separately approved colorful/black keyitem and zone fixture; invoke actual /heal and fight"
+        ],
+        "then": [
+          "Source uses zone-specific mob mapping; black/colored KI may be consumed on pop. Specific second-zone outcome UNKNOWN without deployed data/config"
+        ]
+      },
+      "preconditions": [
+        "Explicit owner-approved disposable character",
+        "Known expected zone/abyssite fixture from pinned DSP and client crosswalk",
+        "No spawn/claim mutation without approved cleanup"
+      ],
+      "steps": [
+        {
+          "id": "VWK-02-S01",
+          "title": "Baseline",
+          "action": "Capture approved character, zone, held/persisted keyitems, and matching mobs",
+          "expected": "Complete named fixture and before-state; else UNKNOWN",
+          "assertion_ids": [
+            "VWK-02-baseline_complete"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-02-S02",
+          "title": "Action",
+          "action": "Use separately approved colorful/black keyitem and zone fixture; invoke actual /heal and fight",
+          "expected": "Source uses zone-specific mob mapping; black/colored KI may be consumed on pop. Specific second-zone outcome UNKNOWN without deployed data/config",
+          "assertion_ids": [
+            "VWK-02-action_oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 153,
+              "line_end": 177,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L153-L177"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-02-S03",
+          "title": "Independent comparison",
+          "action": "Capture client event/monster state plus authoritative KI and spawn/local-var readback",
+          "expected": "Compare to documented conditions; Zone-aware KI set, targeted mob identity, mutation before/after; absent authoritative capture => UNKNOWN",
+          "assertion_ids": [
+            "VWK-02-server_oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 153,
+              "line_end": 177,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L153-L177"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-02-S04",
+          "title": "Cleanup",
+          "action": "Approved operator verifies no unintended live mob, claim or KI change; quarantine incomplete runs",
+          "expected": "Verified restoration or BLOCKED; no remote execution here",
+          "assertion_ids": [
+            "VWK-02-cleanup_verified"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "VWK-02-baseline_complete",
+          "expected": "Verified zone, complete KI set and authoritative target mob state or UNKNOWN",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ]
+        },
+        {
+          "id": "VWK-02-action_oracle",
+          "expected": "Source uses zone-specific mob mapping; black/colored KI may be consumed on pop. Specific second-zone outcome UNKNOWN without deployed data/config",
+          "oracle_state": "SOURCE_CONDITIONAL_UNVERIFIED_RUNTIME",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 153,
+              "line_end": 177,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L153-L177"
+            }
+          ]
+        },
+        {
+          "id": "VWK-02-server_oracle",
+          "expected": "Conditionally source-matching and complete server/client observations or UNKNOWN",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 153,
+              "line_end": 177,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L153-L177"
+            }
+          ]
+        },
+        {
+          "id": "VWK-02-cleanup_verified",
+          "expected": "Independent absence of leftover unintended effects, else BLOCKED",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 100,
+          "line_end": 130,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 292,
+          "line_end": 334,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker_data.lua",
+          "line_start": 1,
+          "line_end": 48,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 153,
+          "line_end": 177,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L153-L177"
+        }
+      ],
+      "required_readback": {
+        "available": [
+          "/api/supervisor/test-character-keyitems (persisted chars.keyitems; approved characters)",
+          "/api/supervisor/test-character-vars (named char_vars only, not mob local vars)"
+        ],
+        "missing": [
+          "Fixed approved mob spawn/status/claim and three POPPED_* local-var readback",
+          "Client heal/hint, combat and drop event evidence with completeness",
+          "Zone-to-abyssite and client-ID crosswalk verification"
+        ],
+        "table": "chars.keyitems + runtime mob local-vars (not DB char_vars)",
+        "evidence": "Zone-aware KI set, targeted mob identity, mutation before/after"
+      },
+      "xiheadless": {
+        "candidate": [
+          "snapshot",
+          "nearby_entities",
+          "move_to",
+          "engage",
+          "wait_for_event",
+          "inventory",
+          "key_items observation candidate"
+        ],
+        "missing": [
+          "Accepted rest/heal interaction and hint capture",
+          "Runtime authoritative mob local vars",
+          "Per-combat effect/drop structured evidence"
+        ],
+        "acceptance": "UNKNOWN"
+      },
+      "mutation": {
+        "type": "client_rest/combat_or_operator_fixture",
+        "enabled": false,
+        "owner_approval_required": true,
+        "cleanup": "verify despawn and keyitem baseline; isolate spawned mob; quarantine if incomplete"
+      },
+      "blocking_gaps": [
+        "Second-zone navmesh spots and tier readiness unverified, no automatic keyitem grant allowed",
+        "Deployment revision and ENABLE_VOIDWALKER runtime setting UNKNOWN",
+        "Mob local-vars/claim authoritative readback not available"
+      ],
+      "provenance": {
+        "dsp_branch": "feature/voidwalker",
+        "dsp_commit": "5fac778004364e2991df779845d7403e64a8dc23",
+        "deployed": "UNKNOWN",
+        "toolkit_revision": "7835d5019f1939f3d20a402240c649b17aea6ec6"
+      }
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "voidwalker",
+      "case_id": "VWK-03",
+      "name": "No abyssite prevents pop",
+      "kind": "negative",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "status": "planned",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "purpose": "Verify no abyssite prevents pop without inferring results from a command being accepted.",
+      "rationale": "Server mob readback absent; no-abyssite fixture and /heal action not accepted",
+      "behavior": {
+        "given": [
+          "Authorized disposable character and known zone/keyitem fixture",
+          "Active server DSP revision and enabled flag established or UNKNOWN",
+          "Pre-state mob/claim and complete key-item readback"
+        ],
+        "when": [
+          "Confirm no eligible abyssite in persisted and held KI set, then /heal in a reviewed zone"
+        ],
+        "then": [
+          "Source: onHealing returns immediately when eligible abyssites array empty; no target NM may be attributed to this action"
+        ]
+      },
+      "preconditions": [
+        "Explicit owner-approved disposable character",
+        "Known expected zone/abyssite fixture from pinned DSP and client crosswalk",
+        "No spawn/claim mutation without approved cleanup"
+      ],
+      "steps": [
+        {
+          "id": "VWK-03-S01",
+          "title": "Baseline",
+          "action": "Capture approved character, zone, held/persisted keyitems, and matching mobs",
+          "expected": "Complete named fixture and before-state; else UNKNOWN",
+          "assertion_ids": [
+            "VWK-03-baseline_complete"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-03-S02",
+          "title": "Action",
+          "action": "Confirm no eligible abyssite in persisted and held KI set, then /heal in a reviewed zone",
+          "expected": "Source: onHealing returns immediately when eligible abyssites array empty; no target NM may be attributed to this action",
+          "assertion_ids": [
+            "VWK-03-action_oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-03-S03",
+          "title": "Independent comparison",
+          "action": "Capture client event/monster state plus authoritative KI and spawn/local-var readback",
+          "expected": "Compare to documented conditions; Held/persisted KI before/after, per-mob spawned/claimed state; absent authoritative capture => UNKNOWN",
+          "assertion_ids": [
+            "VWK-03-server_oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-03-S04",
+          "title": "Cleanup",
+          "action": "Approved operator verifies no unintended live mob, claim or KI change; quarantine incomplete runs",
+          "expected": "Verified restoration or BLOCKED; no remote execution here",
+          "assertion_ids": [
+            "VWK-03-cleanup_verified"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "VWK-03-baseline_complete",
+          "expected": "Verified zone, complete KI set and authoritative target mob state or UNKNOWN",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ]
+        },
+        {
+          "id": "VWK-03-action_oracle",
+          "expected": "Source: onHealing returns immediately when eligible abyssites array empty; no target NM may be attributed to this action",
+          "oracle_state": "SOURCE_CONDITIONAL_UNVERIFIED_RUNTIME",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            }
+          ]
+        },
+        {
+          "id": "VWK-03-server_oracle",
+          "expected": "Conditionally source-matching and complete server/client observations or UNKNOWN",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            }
+          ]
+        },
+        {
+          "id": "VWK-03-cleanup_verified",
+          "expected": "Independent absence of leftover unintended effects, else BLOCKED",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 35,
+          "line_end": 65,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 292,
+          "line_end": 334,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+        }
+      ],
+      "required_readback": {
+        "available": [
+          "/api/supervisor/test-character-keyitems (persisted chars.keyitems; approved characters)",
+          "/api/supervisor/test-character-vars (named char_vars only, not mob local vars)"
+        ],
+        "missing": [
+          "Fixed approved mob spawn/status/claim and three POPPED_* local-var readback",
+          "Client heal/hint, combat and drop event evidence with completeness",
+          "Zone-to-abyssite and client-ID crosswalk verification"
+        ],
+        "table": "chars.keyitems + runtime mob local-vars (not DB char_vars)",
+        "evidence": "Held/persisted KI before/after, per-mob spawned/claimed state"
+      },
+      "xiheadless": {
+        "candidate": [
+          "snapshot",
+          "nearby_entities",
+          "move_to",
+          "engage",
+          "wait_for_event",
+          "inventory",
+          "key_items observation candidate"
+        ],
+        "missing": [
+          "Accepted rest/heal interaction and hint capture",
+          "Runtime authoritative mob local vars",
+          "Per-combat effect/drop structured evidence"
+        ],
+        "acceptance": "UNKNOWN"
+      },
+      "mutation": {
+        "type": "client_rest/combat_or_operator_fixture",
+        "enabled": false,
+        "owner_approval_required": true,
+        "cleanup": "verify despawn and keyitem baseline; isolate spawned mob; quarantine if incomplete"
+      },
+      "blocking_gaps": [
+        "Server mob readback absent; no-abyssite fixture and /heal action not accepted",
+        "Deployment revision and ENABLE_VOIDWALKER runtime setting UNKNOWN",
+        "Mob local-vars/claim authoritative readback not available"
+      ],
+      "provenance": {
+        "dsp_branch": "feature/voidwalker",
+        "dsp_commit": "5fac778004364e2991df779845d7403e64a8dc23",
+        "deployed": "UNKNOWN",
+        "toolkit_revision": "7835d5019f1939f3d20a402240c649b17aea6ec6"
+      }
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "voidwalker",
+      "case_id": "VWK-04",
+      "name": "Wrong zone or tier does not trigger target NM",
+      "kind": "negative",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "status": "planned",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "purpose": "Verify wrong zone or tier does not trigger target nm without inferring results from a command being accepted.",
+      "rationale": "Requires zone-specific authoritative mob/claim/visibility readback and verified mapping",
+      "behavior": {
+        "given": [
+          "Authorized disposable character and known zone/keyitem fixture",
+          "Active server DSP revision and enabled flag established or UNKNOWN",
+          "Pre-state mob/claim and complete key-item readback"
+        ],
+        "when": [
+          "Choose a source-mapped zone and a keyitem not mapped to the target in that zone"
+        ],
+        "then": [
+          "Source filters candidate mobs by zone and keyitem mapping; specific no-pop observed state UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Explicit owner-approved disposable character",
+        "Known expected zone/abyssite fixture from pinned DSP and client crosswalk",
+        "No spawn/claim mutation without approved cleanup"
+      ],
+      "steps": [
+        {
+          "id": "VWK-04-S01",
+          "title": "Baseline",
+          "action": "Capture approved character, zone, held/persisted keyitems, and matching mobs",
+          "expected": "Complete named fixture and before-state; else UNKNOWN",
+          "assertion_ids": [
+            "VWK-04-baseline_complete"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-04-S02",
+          "title": "Action",
+          "action": "Choose a source-mapped zone and a keyitem not mapped to the target in that zone",
+          "expected": "Source filters candidate mobs by zone and keyitem mapping; specific no-pop observed state UNKNOWN",
+          "assertion_ids": [
+            "VWK-04-action_oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-04-S03",
+          "title": "Independent comparison",
+          "action": "Capture client event/monster state plus authoritative KI and spawn/local-var readback",
+          "expected": "Compare to documented conditions; Zone, eligible KI mapping, mob identity/status before/after; absent authoritative capture => UNKNOWN",
+          "assertion_ids": [
+            "VWK-04-server_oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-04-S04",
+          "title": "Cleanup",
+          "action": "Approved operator verifies no unintended live mob, claim or KI change; quarantine incomplete runs",
+          "expected": "Verified restoration or BLOCKED; no remote execution here",
+          "assertion_ids": [
+            "VWK-04-cleanup_verified"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "VWK-04-baseline_complete",
+          "expected": "Verified zone, complete KI set and authoritative target mob state or UNKNOWN",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ]
+        },
+        {
+          "id": "VWK-04-action_oracle",
+          "expected": "Source filters candidate mobs by zone and keyitem mapping; specific no-pop observed state UNKNOWN",
+          "oracle_state": "SOURCE_CONDITIONAL_UNVERIFIED_RUNTIME",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ]
+        },
+        {
+          "id": "VWK-04-server_oracle",
+          "expected": "Conditionally source-matching and complete server/client observations or UNKNOWN",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ]
+        },
+        {
+          "id": "VWK-04-cleanup_verified",
+          "expected": "Independent absence of leftover unintended effects, else BLOCKED",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 100,
+          "line_end": 130,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 292,
+          "line_end": 334,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker_data.lua",
+          "line_start": 1,
+          "line_end": 48,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+        }
+      ],
+      "required_readback": {
+        "available": [
+          "/api/supervisor/test-character-keyitems (persisted chars.keyitems; approved characters)",
+          "/api/supervisor/test-character-vars (named char_vars only, not mob local vars)"
+        ],
+        "missing": [
+          "Fixed approved mob spawn/status/claim and three POPPED_* local-var readback",
+          "Client heal/hint, combat and drop event evidence with completeness",
+          "Zone-to-abyssite and client-ID crosswalk verification"
+        ],
+        "table": "chars.keyitems + runtime mob local-vars (not DB char_vars)",
+        "evidence": "Zone, eligible KI mapping, mob identity/status before/after"
+      },
+      "xiheadless": {
+        "candidate": [
+          "snapshot",
+          "nearby_entities",
+          "move_to",
+          "engage",
+          "wait_for_event",
+          "inventory",
+          "key_items observation candidate"
+        ],
+        "missing": [
+          "Accepted rest/heal interaction and hint capture",
+          "Runtime authoritative mob local vars",
+          "Per-combat effect/drop structured evidence"
+        ],
+        "acceptance": "UNKNOWN"
+      },
+      "mutation": {
+        "type": "client_rest/combat_or_operator_fixture",
+        "enabled": false,
+        "owner_approval_required": true,
+        "cleanup": "verify despawn and keyitem baseline; isolate spawned mob; quarantine if incomplete"
+      },
+      "blocking_gaps": [
+        "Requires zone-specific authoritative mob/claim/visibility readback and verified mapping",
+        "Deployment revision and ENABLE_VOIDWALKER runtime setting UNKNOWN",
+        "Mob local-vars/claim authoritative readback not available"
+      ],
+      "provenance": {
+        "dsp_branch": "feature/voidwalker",
+        "dsp_commit": "5fac778004364e2991df779845d7403e64a8dc23",
+        "deployed": "UNKNOWN",
+        "toolkit_revision": "7835d5019f1939f3d20a402240c649b17aea6ec6"
+      }
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "voidwalker",
+      "case_id": "VWK-05",
+      "name": "Repeat pop cannot duplicate the same NM",
+      "kind": "negative",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "status": "planned",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "purpose": "Verify repeat pop cannot duplicate the same nm without inferring results from a command being accepted.",
+      "rationale": "No local-var readback; no source-backed global cooldown guarantee",
+      "behavior": {
+        "given": [
+          "Authorized disposable character and known zone/keyitem fixture",
+          "Active server DSP revision and enabled flag established or UNKNOWN",
+          "Pre-state mob/claim and complete key-item readback"
+        ],
+        "when": [
+          "Use a monitored already-popped NM; /heal again without resetting it"
+        ],
+        "then": [
+          "Source skips candidates where POPPED_BY is nonzero; another candidate can still pop, so blanket no-NM or cooldown claims are UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Explicit owner-approved disposable character",
+        "Known expected zone/abyssite fixture from pinned DSP and client crosswalk",
+        "No spawn/claim mutation without approved cleanup"
+      ],
+      "steps": [
+        {
+          "id": "VWK-05-S01",
+          "title": "Baseline",
+          "action": "Capture approved character, zone, held/persisted keyitems, and matching mobs",
+          "expected": "Complete named fixture and before-state; else UNKNOWN",
+          "assertion_ids": [
+            "VWK-05-baseline_complete"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-05-S02",
+          "title": "Action",
+          "action": "Use a monitored already-popped NM; /heal again without resetting it",
+          "expected": "Source skips candidates where POPPED_BY is nonzero; another candidate can still pop, so blanket no-NM or cooldown claims are UNKNOWN",
+          "assertion_ids": [
+            "VWK-05-action_oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-05-S03",
+          "title": "Independent comparison",
+          "action": "Capture client event/monster state plus authoritative KI and spawn/local-var readback",
+          "expected": "Compare to documented conditions; POPPED_BY/POPPED_AT local vars and distinct mob counts before/after; absent authoritative capture => UNKNOWN",
+          "assertion_ids": [
+            "VWK-05-server_oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-05-S04",
+          "title": "Cleanup",
+          "action": "Approved operator verifies no unintended live mob, claim or KI change; quarantine incomplete runs",
+          "expected": "Verified restoration or BLOCKED; no remote execution here",
+          "assertion_ids": [
+            "VWK-05-cleanup_verified"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "VWK-05-baseline_complete",
+          "expected": "Verified zone, complete KI set and authoritative target mob state or UNKNOWN",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ]
+        },
+        {
+          "id": "VWK-05-action_oracle",
+          "expected": "Source skips candidates where POPPED_BY is nonzero; another candidate can still pop, so blanket no-NM or cooldown claims are UNKNOWN",
+          "oracle_state": "SOURCE_CONDITIONAL_UNVERIFIED_RUNTIME",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            }
+          ]
+        },
+        {
+          "id": "VWK-05-server_oracle",
+          "expected": "Conditionally source-matching and complete server/client observations or UNKNOWN",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 100,
+              "line_end": 130,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 292,
+              "line_end": 334,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            }
+          ]
+        },
+        {
+          "id": "VWK-05-cleanup_verified",
+          "expected": "Independent absence of leftover unintended effects, else BLOCKED",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 100,
+          "line_end": 130,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L100-L130"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 292,
+          "line_end": 334,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L292-L334"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 180,
+          "line_end": 192,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+        }
+      ],
+      "required_readback": {
+        "available": [
+          "/api/supervisor/test-character-keyitems (persisted chars.keyitems; approved characters)",
+          "/api/supervisor/test-character-vars (named char_vars only, not mob local vars)"
+        ],
+        "missing": [
+          "Fixed approved mob spawn/status/claim and three POPPED_* local-var readback",
+          "Client heal/hint, combat and drop event evidence with completeness",
+          "Zone-to-abyssite and client-ID crosswalk verification"
+        ],
+        "table": "chars.keyitems + runtime mob local-vars (not DB char_vars)",
+        "evidence": "POPPED_BY/POPPED_AT local vars and distinct mob counts before/after"
+      },
+      "xiheadless": {
+        "candidate": [
+          "snapshot",
+          "nearby_entities",
+          "move_to",
+          "engage",
+          "wait_for_event",
+          "inventory",
+          "key_items observation candidate"
+        ],
+        "missing": [
+          "Accepted rest/heal interaction and hint capture",
+          "Runtime authoritative mob local vars",
+          "Per-combat effect/drop structured evidence"
+        ],
+        "acceptance": "UNKNOWN"
+      },
+      "mutation": {
+        "type": "client_rest/combat_or_operator_fixture",
+        "enabled": false,
+        "owner_approval_required": true,
+        "cleanup": "verify despawn and keyitem baseline; isolate spawned mob; quarantine if incomplete"
+      },
+      "blocking_gaps": [
+        "No local-var readback; no source-backed global cooldown guarantee",
+        "Deployment revision and ENABLE_VOIDWALKER runtime setting UNKNOWN",
+        "Mob local-vars/claim authoritative readback not available"
+      ],
+      "provenance": {
+        "dsp_branch": "feature/voidwalker",
+        "dsp_commit": "5fac778004364e2991df779845d7403e64a8dc23",
+        "deployed": "UNKNOWN",
+        "toolkit_revision": "7835d5019f1939f3d20a402240c649b17aea6ec6"
+      }
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "voidwalker",
+      "case_id": "VWK-06",
+      "name": "Death, disengage and zoning clear encounter state",
+      "kind": "negative",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "status": "planned",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "purpose": "Verify death, disengage and zoning clear encounter state without inferring results from a command being accepted.",
+      "rationale": "Zoning cleanup and death path not equivalent to disengage; authoritative mob readback missing",
+      "behavior": {
+        "given": [
+          "Authorized disposable character and known zone/keyitem fixture",
+          "Active server DSP revision and enabled flag established or UNKNOWN",
+          "Pre-state mob/claim and complete key-item readback"
+        ],
+        "when": [
+          "Observe authorized encounter teardown via individual death/disengage/despawn paths and separately zone"
+        ],
+        "then": [
+          "Source explicitly resets mob local vars on disengage/despawn and may reposition on despawn; zoning cleanup remains UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Explicit owner-approved disposable character",
+        "Known expected zone/abyssite fixture from pinned DSP and client crosswalk",
+        "No spawn/claim mutation without approved cleanup"
+      ],
+      "steps": [
+        {
+          "id": "VWK-06-S01",
+          "title": "Baseline",
+          "action": "Capture approved character, zone, held/persisted keyitems, and matching mobs",
+          "expected": "Complete named fixture and before-state; else UNKNOWN",
+          "assertion_ids": [
+            "VWK-06-baseline_complete"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-06-S02",
+          "title": "Action",
+          "action": "Observe authorized encounter teardown via individual death/disengage/despawn paths and separately zone",
+          "expected": "Source explicitly resets mob local vars on disengage/despawn and may reposition on despawn; zoning cleanup remains UNKNOWN",
+          "assertion_ids": [
+            "VWK-06-action_oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 261,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L261-L288"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-06-S03",
+          "title": "Independent comparison",
+          "action": "Capture client event/monster state plus authoritative KI and spawn/local-var readback",
+          "expected": "Compare to documented conditions; Server local vars, status, zone and mob spawn slot before/after; absent authoritative capture => UNKNOWN",
+          "assertion_ids": [
+            "VWK-06-server_oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 261,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L261-L288"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-06-S04",
+          "title": "Cleanup",
+          "action": "Approved operator verifies no unintended live mob, claim or KI change; quarantine incomplete runs",
+          "expected": "Verified restoration or BLOCKED; no remote execution here",
+          "assertion_ids": [
+            "VWK-06-cleanup_verified"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "VWK-06-baseline_complete",
+          "expected": "Verified zone, complete KI set and authoritative target mob state or UNKNOWN",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ]
+        },
+        {
+          "id": "VWK-06-action_oracle",
+          "expected": "Source explicitly resets mob local vars on disengage/despawn and may reposition on despawn; zoning cleanup remains UNKNOWN",
+          "oracle_state": "SOURCE_CONDITIONAL_UNVERIFIED_RUNTIME",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 261,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L261-L288"
+            }
+          ]
+        },
+        {
+          "id": "VWK-06-server_oracle",
+          "expected": "Conditionally source-matching and complete server/client observations or UNKNOWN",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 261,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L261-L288"
+            }
+          ]
+        },
+        {
+          "id": "VWK-06-cleanup_verified",
+          "expected": "Independent absence of leftover unintended effects, else BLOCKED",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 238,
+          "line_end": 259,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 180,
+          "line_end": 192,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 261,
+          "line_end": 288,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L261-L288"
+        }
+      ],
+      "required_readback": {
+        "available": [
+          "/api/supervisor/test-character-keyitems (persisted chars.keyitems; approved characters)",
+          "/api/supervisor/test-character-vars (named char_vars only, not mob local vars)"
+        ],
+        "missing": [
+          "Fixed approved mob spawn/status/claim and three POPPED_* local-var readback",
+          "Client heal/hint, combat and drop event evidence with completeness",
+          "Zone-to-abyssite and client-ID crosswalk verification"
+        ],
+        "table": "chars.keyitems + runtime mob local-vars (not DB char_vars)",
+        "evidence": "Server local vars, status, zone and mob spawn slot before/after"
+      },
+      "xiheadless": {
+        "candidate": [
+          "snapshot",
+          "nearby_entities",
+          "move_to",
+          "engage",
+          "wait_for_event",
+          "inventory",
+          "key_items observation candidate"
+        ],
+        "missing": [
+          "Accepted rest/heal interaction and hint capture",
+          "Runtime authoritative mob local vars",
+          "Per-combat effect/drop structured evidence"
+        ],
+        "acceptance": "UNKNOWN"
+      },
+      "mutation": {
+        "type": "client_rest/combat_or_operator_fixture",
+        "enabled": false,
+        "owner_approval_required": true,
+        "cleanup": "verify despawn and keyitem baseline; isolate spawned mob; quarantine if incomplete"
+      },
+      "blocking_gaps": [
+        "Zoning cleanup and death path not equivalent to disengage; authoritative mob readback missing",
+        "Deployment revision and ENABLE_VOIDWALKER runtime setting UNKNOWN",
+        "Mob local-vars/claim authoritative readback not available"
+      ],
+      "provenance": {
+        "dsp_branch": "feature/voidwalker",
+        "dsp_commit": "5fac778004364e2991df779845d7403e64a8dc23",
+        "deployed": "UNKNOWN",
+        "toolkit_revision": "7835d5019f1939f3d20a402240c649b17aea6ec6"
+      }
+    },
+    {
+      "schema_version": 1,
+      "feature_id": "voidwalker",
+      "case_id": "VWK-07",
+      "name": "Skill effects and rewards match server definitions",
+      "kind": "positive",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "status": "planned",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "purpose": "Verify skill effects and rewards match server definitions without inferring results from a command being accepted.",
+      "rationale": "Backlog records unported/guessed skill effects and drops; do not promote prior manual OK statuses to verified oracle",
+      "behavior": {
+        "given": [
+          "Authorized disposable character and known zone/keyitem fixture",
+          "Active server DSP revision and enabled flag established or UNKNOWN",
+          "Pre-state mob/claim and complete key-item readback"
+        ],
+        "when": [
+          "Inspect source-linked mob skill list and drop row for an explicitly chosen supported NM before combat"
+        ],
+        "then": [
+          "UNKNOWN: generic mobskilldiag only exposes diagnostics; per-skill effects and rewards lack fully reviewed oracle"
+        ]
+      },
+      "preconditions": [
+        "Explicit owner-approved disposable character",
+        "Known expected zone/abyssite fixture from pinned DSP and client crosswalk",
+        "No spawn/claim mutation without approved cleanup"
+      ],
+      "steps": [
+        {
+          "id": "VWK-07-S01",
+          "title": "Baseline",
+          "action": "Capture approved character, zone, held/persisted keyitems, and matching mobs",
+          "expected": "Complete named fixture and before-state; else UNKNOWN",
+          "assertion_ids": [
+            "VWK-07-baseline_complete"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-07-S02",
+          "title": "Action",
+          "action": "Inspect source-linked mob skill list and drop row for an explicitly chosen supported NM before combat",
+          "expected": "UNKNOWN: generic mobskilldiag only exposes diagnostics; per-skill effects and rewards lack fully reviewed oracle",
+          "assertion_ids": [
+            "VWK-07-action_oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/commands/mobskilldiag.lua",
+              "line_start": 8,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/commands/mobskilldiag.lua#L8-L25"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 261,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L261-L288"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-07-S03",
+          "title": "Independent comparison",
+          "action": "Capture client event/monster state plus authoritative KI and spawn/local-var readback",
+          "expected": "Compare to documented conditions; Mob skill events, actual effect/TP/HP, full drop rows and server item changes; absent authoritative capture => UNKNOWN",
+          "assertion_ids": [
+            "VWK-07-server_oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/commands/mobskilldiag.lua",
+              "line_start": 8,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/commands/mobskilldiag.lua#L8-L25"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 261,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L261-L288"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VWK-07-S04",
+          "title": "Cleanup",
+          "action": "Approved operator verifies no unintended live mob, claim or KI change; quarantine incomplete runs",
+          "expected": "Verified restoration or BLOCKED; no remote execution here",
+          "assertion_ids": [
+            "VWK-07-cleanup_verified"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            }
+          ],
+          "required_client_observations": [
+            "session",
+            "key_items",
+            "zone",
+            "client_event_timeline",
+            "nearby_entities"
+          ],
+          "required_authoritative_observations": [
+            "chars.keyitems",
+            "mob local vars POPPED_BY, POPPED_WITH, POPPED_AT",
+            "spawn/claim/status from approved fixed readback"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "VWK-07-baseline_complete",
+          "expected": "Verified zone, complete KI set and authoritative target mob state or UNKNOWN",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 35,
+              "line_end": 65,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L35-L65"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            }
+          ]
+        },
+        {
+          "id": "VWK-07-action_oracle",
+          "expected": "UNKNOWN: generic mobskilldiag only exposes diagnostics; per-skill effects and rewards lack fully reviewed oracle",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/commands/mobskilldiag.lua",
+              "line_start": 8,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/commands/mobskilldiag.lua#L8-L25"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 261,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L261-L288"
+            }
+          ]
+        },
+        {
+          "id": "VWK-07-server_oracle",
+          "expected": "Conditionally source-matching and complete server/client observations or UNKNOWN",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/commands/mobskilldiag.lua",
+              "line_start": 8,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/commands/mobskilldiag.lua#L8-L25"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker_data.lua",
+              "line_start": 1,
+              "line_end": 48,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 261,
+              "line_end": 288,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L261-L288"
+            }
+          ]
+        },
+        {
+          "id": "VWK-07-cleanup_verified",
+          "expected": "Independent absence of leftover unintended effects, else BLOCKED",
+          "oracle_state": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 180,
+              "line_end": 192,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L180-L192"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+              "path": "scripts/globals/voidwalker.lua",
+              "line_start": 238,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L238-L259"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/commands/mobskilldiag.lua",
+          "line_start": 8,
+          "line_end": 25,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/commands/mobskilldiag.lua#L8-L25"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker_data.lua",
+          "line_start": 1,
+          "line_end": 48,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker_data.lua#L1-L48"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 261,
+          "line_end": 288,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/5fac778004364e2991df779845d7403e64a8dc23/scripts/globals/voidwalker.lua#L261-L288"
+        }
+      ],
+      "required_readback": {
+        "available": [
+          "/api/supervisor/test-character-keyitems (persisted chars.keyitems; approved characters)",
+          "/api/supervisor/test-character-vars (named char_vars only, not mob local vars)"
+        ],
+        "missing": [
+          "Fixed approved mob spawn/status/claim and three POPPED_* local-var readback",
+          "Client heal/hint, combat and drop event evidence with completeness",
+          "Zone-to-abyssite and client-ID crosswalk verification"
+        ],
+        "table": "chars.keyitems + runtime mob local-vars (not DB char_vars)",
+        "evidence": "Mob skill events, actual effect/TP/HP, full drop rows and server item changes"
+      },
+      "xiheadless": {
+        "candidate": [
+          "snapshot",
+          "nearby_entities",
+          "move_to",
+          "engage",
+          "wait_for_event",
+          "inventory",
+          "key_items observation candidate"
+        ],
+        "missing": [
+          "Accepted rest/heal interaction and hint capture",
+          "Runtime authoritative mob local vars",
+          "Per-combat effect/drop structured evidence"
+        ],
+        "acceptance": "UNKNOWN"
+      },
+      "mutation": {
+        "type": "client_rest/combat_or_operator_fixture",
+        "enabled": false,
+        "owner_approval_required": true,
+        "cleanup": "verify despawn and keyitem baseline; isolate spawned mob; quarantine if incomplete"
+      },
+      "blocking_gaps": [
+        "Backlog records unported/guessed skill effects and drops; do not promote prior manual OK statuses to verified oracle",
+        "Deployment revision and ENABLE_VOIDWALKER runtime setting UNKNOWN",
+        "Mob local-vars/claim authoritative readback not available"
+      ],
+      "provenance": {
+        "dsp_branch": "feature/voidwalker",
+        "dsp_commit": "5fac778004364e2991df779845d7403e64a8dc23",
+        "deployed": "UNKNOWN",
+        "toolkit_revision": "7835d5019f1939f3d20a402240c649b17aea6ec6"
+      }
+    }
+  ]
+}
