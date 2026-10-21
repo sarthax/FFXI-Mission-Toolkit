@@ -67,6 +67,7 @@ def test_dashboard_tabs_filter_runs_and_bound_pages(monkeypatch):
     assert view["total_runs"] == 1 and view["page"] == 1
     assert [item["run_id"] for item in view["runs"]] == ["run-a"]
     assert router.dashboard_view(tab="unknown")["tab"] == "runs"
+    assert router.dashboard_view(tab="setup")["tab"] == "guide"
     assert router.dashboard_view(tab="catalog")["tab"] == "catalog"
     assert router.dashboard_view(feature="moghancement", verdict="FAIL")["runs"] == []
 

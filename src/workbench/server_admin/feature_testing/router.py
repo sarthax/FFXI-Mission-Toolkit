@@ -320,6 +320,8 @@ def execution_jobs(request: Request, x_test_operator_token: str | None = Header(
 def dashboard_view(*, tab: str = "runs", feature: str = "", verdict: str = "",
                    query: str = "", page: int = 1) -> dict:
     """Build a bounded view without altering the append-only evidence store."""
+    # "setup" is the name users see for the guide tab; accept it as an alias.
+    tab = {"setup": "guide"}.get(tab, tab)
     tab = tab if tab in {"runs", "catalog", "guide", "builder"} else "runs"
     verdict = verdict.upper()
     if verdict not in {"PASS", "FAIL", "BLOCKED", "SKIPPED"}:
