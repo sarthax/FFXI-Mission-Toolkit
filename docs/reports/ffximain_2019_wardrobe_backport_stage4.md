@@ -254,6 +254,15 @@ The read-only `workbench.client.wardrobe_2019_command_ui.inspect_2019_command_ui
 Six new synthetic negative/positive tests reject changed command IDs/names, misdirected handler pointers, altered helper call displacements, tampered mode getters/selectors and changed jump targets or globals. The dedicated cross-platform CI workflow has been extended to include the new source and test files.
 
 **Remaining UI work:** Independently recover construction of `0x1061E5D0..DC` mode-object pointers, the old UI container-object pointer setup and teardown, all menu entry gates/labels and outgoing item/equipment operations. Only then assess whether separate-sidecar storage and safe versioned packets could be connected to a new UI mode. No installable Wardrobe DLL follows from this slice.
+## 2019 UI object update and cleanup ownership boundary
+
+Read-only inspection of the original SHA-verified 2019 POL1-decoded `.text` independently traced **13 contiguous UI-related pointer globals** `0x10621FBC..0x10621FEC`, spaced at 4 bytes. A selected update path in the client at RVA `0x159826..0x1598DC` loads each global and calls helper `0x212A00`; the first two are used without the same inline null guard, while the other eleven have an inline non-null test before the call.
+
+The corresponding teardown sequence at `.text` RVAs `0x160200..0x160380` (13 blocks, each `0x20` bytes) reads each global, conditionally calls a cleanup helper at `0x212670`, calls the common free routine at `0x3077A0`, then clears the same global pointer. **These addresses are original code observations**, not evidence that the globals are themselves character-inventory records or that they are live for every session.
+
+`workbench.client.wardrobe_2019_ui_objects.inspect_2019_ui_object_lifecycle` independently checks each selected update and cleanup block, all call targets and matching global addresses. It returns metadata-only per-object matches and an explicit NO-GO for appending UI objects in place; it is not a constructor/allocator patch. Four synthetic regression tests check all 13 sequences, mutation rejection for update/teardown targets and pointer-clear instructions, and invalid/truncated input. The parent exact-original-build audit requires the selected lifecycle windows to match.
+
+**Design significance:** Wardrobe 5–8 support would require a reviewed UI-object construction/update/cleanup path for each new mode and handling of the existing UI object aliases. The hypothetical sidecar remains strictly separate from this UI lifecycle. A blanket loop/count increment or copied initializer cannot be justified by these selected sites alone.
 ## Go/no-go and next implementation slice
 
 **GO:** Further read-only mapping, server/version compatibility planning, synthetic bounds tests, and standalone feature staging on a separate branch.
