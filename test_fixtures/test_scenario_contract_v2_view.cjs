@@ -294,3 +294,61 @@ assert.equal(V.project(oldV2WithoutAssociations,null,{
   execution_enabled:false
 }).steps[0].association_state,'UNKNOWN');
 console.log('R7 canonical CASE/STEP association helper and fail-closed display: PASS');
+
+
+// Exercise the ACTUAL Scenario Developer read-only DOM render function in
+// synthetic Node using a minimal fake DOM. Pure model tests and "node --check"
+// cannot detect runtime errors such as forgotten '+' between label and rows.
+const fs=require('node:fs'),vm=require('node:vm');
+const editorSource=fs.readFileSync(require('node:path').join(
+  __dirname,'../gui/static/scenario_developer.js'),'utf8');
+const renderStart=editorSource.indexOf('  function renderContractV2(');
+const renderEnd=editorSource.indexOf('  function renderPreview(',renderStart);
+assert.ok(renderStart>=0 && renderEnd>renderStart,
+  'Expected existing single-editor v2 rendering function');
+const renderSource=editorSource.slice(renderStart,renderEnd);
+function fakeNode(tag,text='') {
+  return {tag,text,children:[],dataset:{},open:false,
+    append(child){this.children.push(child);},
+    replaceChildren(){this.children=[];},
+    querySelectorAll(){return [];}};
+}
+function fakeRender(draft,report) {
+  const host=fakeNode('section');
+  const context={
+    spec:draft,V,
+    $:key=>key==='sd-contract-v2'?host:null,
+    el:tag=>fakeNode(tag),
+    staticText:(parent,tag,value)=>{
+      const node=fakeNode(tag,String(value));
+      parent.append(node);
+      return node;
+    }
+  };
+  vm.runInNewContext(renderSource+
+    '\nrenderContractV2(null,spec,report);',context);
+  const lines=[];
+  const walk=node=>{
+    if(node.text)lines.push(node.text);
+    for(const child of node.children)walk(child);
+  };
+  walk(host);
+  return lines.join('\n');
+}
+const explicitMarkup=fakeRender(proposed,acceptedAssociation);
+assert.match(explicitMarkup,/Explicit CASE-level citations — EXPLICIT_CITATION_CLAIM/);
+assert.match(explicitMarkup,/Canonical direct STEP citations — EXPLICIT_CITATION_CLAIM:/);
+assert.match(explicitMarkup,/Synthetic.lua:1–3/);
+assert.match(explicitMarkup,/Other.lua:7–8/);
+assert.match(explicitMarkup,/NOT INDEPENDENTLY REHASHED/);
+assert.match(explicitMarkup,/NOT step attribution or approval/i);
+assert.match(explicitMarkup,/execution: BLOCKED/);
+const orphanMarkup=fakeRender(proposed,null);
+assert.match(orphanMarkup,/STEP citations — UNKNOWN: UNKNOWN \/ UNASSIGNED/);
+assert.match(orphanMarkup,/PENDING CANONICAL VALIDATION/);
+const rejectedMarkup=fakeRender(proposed,{
+  ...acceptedAssociation,execution_enabled:true
+});
+assert.match(rejectedMarkup,/BLOCKED: stale or invalid canonical/);
+assert.doesNotMatch(rejectedMarkup,/Canonical direct STEP citations — EXPLICIT_CITATION_CLAIM/);
+console.log('R7 actual editor DOM citation render smoke: PASS');
