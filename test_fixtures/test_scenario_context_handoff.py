@@ -344,3 +344,42 @@ def test_editor_evidence_bounds_match_accepted_offline_reviewer():
     assert "4_000_000" in producer
     assert "file.size>4_500_000" in js
     assert "maximum 4.5 MB" in page
+
+
+def test_unicode_draft_save_roundtrip_revision_and_ascii_storage_limit(monkeypatch,tmp_path):
+    """V1 SQLite saves ASCII-escaped JSON (32 KiB), not request UTF-8 bytes."""
+    from test_scenario_guided_catalog_workspace import synthetic_spec
+    from workbench.server_admin.feature_testing.spec_drafts import save_draft,get_drafts
+    from workbench.server_admin.scenario_authoring.editor_router import validate_editor_spec
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_DRAFTS_DB",str(tmp_path/"unicode_v1.sqlite"))
+    spec=synthetic_spec()
+    spec["case_id"]="SYNTH-UNICODE-PROVENANCE"
+    spec["rationale"]="Reviewed source: 染め物 • 观察 🏮; oracle UNKNOWN"
+    spec["steps"][0]["confidence_note"]="記録された観察 • 🏮; source digest not rehashed"
+    view=validate_editor_spec(spec)["canonical_specification"]
+    result=save_draft(view,0)
+    assert result["revision"]==1 and not result["execution_enabled"]
+    restored=get_drafts()[0]["specification"]
+    assert restored["rationale"]==spec["rationale"]
+    assert restored["steps"][0]["confidence_note"]==spec["steps"][0]["confidence_note"]
+    restored["steps"][0]["title"]="Unicode revision: 再確認"
+    assert save_draft(validate_editor_spec(restored)["canonical_specification"],1)["revision"]==2
+    with pytest.raises(ValueError,match="revision conflict"):
+        save_draft(restored,1)
+
+    oversized=deepcopy(spec)
+    step=deepcopy(spec["steps"][0])
+    for i in range(60):
+        item=deepcopy(step)
+        item["id"]=f"SYNTH-UNICODE-{i:03d}"
+        item["confidence_note"]="界"*120
+        if i==0: oversized["steps"]=[]
+        oversized["steps"].append(item)
+    # The v1 canonical spec itself is legal, yet SQLite's ASCII-escaped form
+    # exceeds 32 KiB. No silent note truncation or partial revision is allowed.
+    from workbench.server_admin.feature_testing.test_specifications import validate_spec
+    validate_spec(oversized)
+    assert len(json.dumps(oversized,sort_keys=True,separators=(",",":")).encode("utf-8"))>32768
+    with pytest.raises(ValueError,match="32KiB"):
+        save_draft(oversized,0)
+    assert get_drafts()[0]["revision"]==2
