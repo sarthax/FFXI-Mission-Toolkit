@@ -231,7 +231,9 @@
           if (!['ACCEPT','EDIT'].includes(candidate.review_decision) ||
               candidate.classification === 'UNSUPPORTED')
             throw Error('Unsupported, rejected or pending source identity cannot be included');
-          included.push(candidate.kind+' '+candidate.identity+
+          included.push(candidate.kind+' source='+candidate.identity+
+            (candidate.suggested_identity && candidate.suggested_identity!==candidate.identity ?
+              ' reviewer-proposal='+candidate.suggested_identity : '')+
             ' ['+candidate.classification+' / UNVERIFIED; source '+candidate.binding_id+']');
         }
       }
