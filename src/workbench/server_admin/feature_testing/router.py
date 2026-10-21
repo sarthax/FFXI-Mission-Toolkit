@@ -250,7 +250,10 @@ def test_specification_api(feature_id: str, case_id: str):
 @router.get("/builder/plan")
 def test_builder_plan(account: str = "", charid: int = 0, supervisor_port: int = 8420):
     from .test_builder import build_plan
-    return build_plan(account, charid, supervisor_port)
+    try:
+        return build_plan(account, charid, supervisor_port)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 
