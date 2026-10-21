@@ -113,10 +113,12 @@
     if (!choice || !['item','keyitem','npc','mob','zone','gm'].includes(choice.kind) ||
         typeof choice.name !== 'string' || typeof choice.source_path !== 'string' ||
         !choice.source_path || !choice.name ||
-        (choice.kind !== 'gm' && !Number.isSafeInteger(choice.id)))
+        (choice.kind !== 'gm' && (!Number.isSafeInteger(choice.id) || choice.id < 0)))
       throw Error('Invalid catalog candidate; choose a returned source entry');
-    if (choice.binding_verified !== false || choice.execution_enabled !== false)
-      throw Error('Catalog candidate must be explicitly unverified and non-executable');
+    if (choice.binding_verified !== false || choice.execution_enabled !== false ||
+        choice.operator_review_required !== true ||
+        choice.identity_status !== 'unreconciled_source_candidate')
+      throw Error('Catalog candidate must be unverified, review-required and non-executable');
     const identity = choice.kind === 'gm' ? choice.name : String(choice.id) + ' (' + choice.name + ')';
     const duplicate = choice.duplicate_id_in_results ? '; DUPLICATE ID — ambiguous' : '';
     const note = '[UNVERIFIED catalog candidate] ' + choice.kind + ': ' + identity +
