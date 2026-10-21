@@ -40,6 +40,12 @@ The `darkstar-to-valhalla` server audit documented on Toolkit main likewise iden
 
 `workbench.client.wardrobe_2019_audit.audit_2019_wardrobe(image)` compares the exact source hash, decoded-code hash, four command records, and nine short decoded opcode anchors. It emits **only scalar/boolean JSON metadata**, never executable bytes, patched output or raw packet buffers. If the SHA-256 does not match the exact 2019 input, it returns `UNKNOWN_BUILD_FINGERPRINT` and makes no version-specific claims. The checks corroborate **known static anchors**, not all paths or runtime execution. Its test suite uses synthetic bytes only and runs on Windows and Linux.
 
+## Synthetic bounds oracle added
+
+The Stage 4 module also provides a **pure offline address validator** for the original 13-container layout. For a container `c` and slot `s`, it returns `0x9860 + (c * 81 + s) * 44` **only** when `0 <= c <= 12` and `0 <= s <= 80`; every other value returns no address. Booleans and non-integer numeric values fail closed. This models the storage stride seen in the 2019 decoded code without dereferencing process memory.
+
+`inspect_2019_item_packet_location` uses only the observed **static packet payload field offsets** (0x1E: container +0x08 / slot +0x09; 0x1F: +0x0A / +0x0B; 0x20: +0x0E / +0x0F). It refuses unsupported packet IDs, truncated buffers and container IDs 13–16/255 and slot 81/255. **This is a synthetic test oracle, not a live parser, not a packet filter and not a client modification.** No malformed packets were sent to the client or server. If handlers use additional packet framing or translations, those must be independently verified before applying this model.
+
 ## Go/no-go and next implementation slice
 
 **GO:** Further read-only mapping, server/version compatibility planning, synthetic bounds tests, and standalone feature staging on a separate branch.
