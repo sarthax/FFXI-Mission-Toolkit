@@ -193,6 +193,19 @@ def test_source_cited_oracle_requires_pinned_normative_source():
         validate_spec(spec)
 
 
+
+
+def test_capture_only_sources_can_never_become_normative_expected_oracle():
+    """Even a plausible captured PASS is not independent normative source."""
+    spec = synthetic()
+    pinned_source(spec)
+    spec["contract_v2"]["sources"][0]["classification"] = "capture_observation"
+    oracle = spec["contract_v2"]["oracles"][0]
+    oracle.update(oracle_type="source_rule", confidence="candidate",
+                  source_refs=["synthetic-source-1"])
+    with pytest.raises(ValueError, match="normative code source"):
+        validate_spec(spec)
+
 def test_unknown_oracle_refuses_verified_confidence_or_attached_sources():
     spec = synthetic()
     spec["contract_v2"]["oracles"][0]["confidence"] = "source_cited"
