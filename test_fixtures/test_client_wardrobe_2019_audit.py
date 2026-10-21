@@ -22,10 +22,10 @@ from workbench.client.wardrobe_2019_audit import (
 
 def synthetic_commands():
     data_rva = FIRST_WARDROBE_COMMAND_RVA - 0x80
-    data = bytearray(b"\\x00" * 512)
+    data = bytearray(b"\x00" * 512)
     for i, (name, command_id) in enumerate(EXPECTED_COMMAND_IDS.items()):
         at = 0x80 + i * RECORD_BYTES
-        data[at:at + 16] = name.encode("ascii").ljust(16, b"\\x00")
+        data[at:at + 16] = name.encode("ascii").ljust(16, b"\x00")
         struct.pack_into("<H", data, at + 0x14, command_id)
     return data, data_rva
 
