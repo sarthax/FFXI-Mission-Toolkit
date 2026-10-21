@@ -485,15 +485,32 @@
         '. Return to the Coverage Matrix and request a fresh declared intent; nothing was created.';
     }
   }
-  $('sd-context-use').addEventListener('click',()=>{
+  let coverageBeginPending=false;
+  $('sd-context-use').addEventListener('click',async()=>{
+    if(coverageBeginPending)return;
+    coverageBeginPending=true;$('sd-context-use').disabled=true;
     try {
       if (!coverageContext)throw Error('Resolve and inspect the Coverage Matrix context first');
-      installIncompleteDraft(M.fromContext(coverageContext,options.features.map(f=>f.id)),
-        'Created design-only authoring context from declared source case '+coverageContext.behavior_ref+'.',
-        'coverage:'+coverageContext.feature_id+'/'+coverageContext.behavior_ref);
-      setSourceDetail(coverageContext.feature_id,coverageContext.behavior_ref);
-      $('sd-context-note').textContent='Manually opened draft from declared intent. No assertions or expected outcomes were imported.';
+      const ref=new URLSearchParams(window.location.search).get('context_ref');
+      if(!M.contextRefPath(ref))throw Error('Original bounded source reference missing');
+      const original=coverageContext;
+      // The source revision is unpinned; require a new owner-endpoint lookup
+      // instead of silently applying a previously inspected description.
+      const latest=await call(ref,'GET');
+      const checked=await call('/scenario-developer/handoff/coverage/inspect','POST',
+        {context_ref:ref,source:latest});
+      if(M.coverageContextChanged(original,checked))
+        throw Error('Declared coverage intent changed during review; reopen the Coverage Matrix and inspect it again');
+      installIncompleteDraft(M.fromContext(checked,options.features.map(f=>f.id)),
+        'Created design-only authoring context from declared source case '+checked.behavior_ref+'.',
+        'coverage:'+checked.feature_id+'/'+checked.behavior_ref);
+      setSourceDetail(checked.feature_id,checked.behavior_ref);
+      $('sd-context-note').textContent='Manually opened draft from rechecked declared intent. No assertions or expected outcomes were imported.';
     }catch(e){show('Coverage context not applied: '+e.message);}
+    finally {
+      coverageBeginPending=false;
+      $('sd-context-use').disabled=Boolean(activeHandoff);
+    }
   });
   function renderEvidenceSuggestions(result) {
     const root=$('sd-evidence-suggestions');root.replaceChildren();
