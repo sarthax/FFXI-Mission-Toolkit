@@ -11,6 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from workbench.client.pol1_unpack import Pol1Error
 from workbench.client.wardrobe_2019_audit import (
     CODE_WINDOWS,
+    PACKET_HANDLERS,
+    _verify_packet_registration,
     LEGACY_TEXT_RVA,
     _extract_commands,
     _verify_code_windows,
@@ -93,6 +95,30 @@ class TestLegacyWardrobeAudit(unittest.TestCase):
         decoded[first_rva - LEGACY_TEXT_RVA] = 255
         with self.assertRaisesRegex(Pol1Error, "capacity_u8_reader"):
             _verify_code_windows(bytes(decoded))
+
+
+    def test_exact_packet_registration_pairs_and_negative_case(self):
+        blob = bytearray(0xE8650 - LEGACY_TEXT_RVA)
+        at = 0xE85D0 - LEGACY_TEXT_RVA
+        for packet, handler_rva in PACKET_HANDLERS:
+            motif = bytes((0x68,)) + struct.pack(
+                "<I", handler_rva + 0x10000000
+            ) + bytes((0x6A, packet))
+            blob[at:at + len(motif)] = motif
+            at += len(motif) + 1
+        evidence = _verify_packet_registration(bytes(blob))
+        self.assertEqual(len(evidence), 6)
+        self.assertEqual(
+            [(x["packet_id"], x["handler_rva"]) for x in evidence],
+            [("0x1C", "0xE97C0"), ("0x1E", "0xE9800"),
+             ("0x1F", "0xE9860"), ("0x20", "0xE9940"),
+             ("0x1D", "0xE99D0"), ("0x26", "0xE9A10")]
+        )
+        self.assertTrue(all(x["status"] == "VERIFIED_STATIC_REGISTRATION"
+                            for x in evidence))
+        blob[0xE85D0 - LEGACY_TEXT_RVA] = 0x00
+        with self.assertRaisesRegex(Pol1Error, "registration changed for 0x1C"):
+            _verify_packet_registration(bytes(blob))
 
     def test_original_file_hash_guard_and_no_io(self):
         with self.assertRaisesRegex(Pol1Error, "exact-size"):
