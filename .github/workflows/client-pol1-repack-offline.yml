@@ -1,0 +1,74 @@
+name: POL1 Repack Synthetic (Offline)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/client-pol1-repack-offline.yml'
+      - 'src/workbench/client/pol1_repack_experiment.py'
+      - 'src/workbench/client/pol1_unpack.py'
+      - 'src/workbench/client/cli/pol1_repack_report.py'
+      - 'test_fixtures/test_client_pol1_repack_experiment.py'
+      - 'test_fixtures/test_client_pol1_unpack.py'
+      - 'src/workbench/client/wardrobe_2019_audit.py'
+      - 'src/workbench/client/wardrobe_2019_allocator.py'
+      - 'test_fixtures/test_client_wardrobe_2019_allocator.py'
+      - 'src/workbench/client/wardrobe_bank_contract.py'
+      - 'test_fixtures/test_client_wardrobe_bank_contract.py'
+      - 'src/workbench/client/cli/wardrobe_2019_report.py'
+      - 'test_fixtures/test_client_wardrobe_2019_audit.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/client-pol1-repack-offline.yml'
+      - 'src/workbench/client/pol1_repack_experiment.py'
+      - 'src/workbench/client/pol1_unpack.py'
+      - 'src/workbench/client/cli/pol1_repack_report.py'
+      - 'test_fixtures/test_client_pol1_repack_experiment.py'
+      - 'test_fixtures/test_client_pol1_unpack.py'
+      - 'src/workbench/client/wardrobe_2019_audit.py'
+      - 'src/workbench/client/wardrobe_2019_allocator.py'
+      - 'test_fixtures/test_client_wardrobe_2019_allocator.py'
+      - 'src/workbench/client/wardrobe_bank_contract.py'
+      - 'test_fixtures/test_client_wardrobe_bank_contract.py'
+      - 'src/workbench/client/cli/wardrobe_2019_report.py'
+      - 'test_fixtures/test_client_wardrobe_2019_audit.py'
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-pol1:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Original POL1 unpack fixture
+        env:
+          PYTHONPATH: src
+        run: python test_fixtures/test_client_pol1_unpack.py
+      - name: Synthetic POL1 repack, capacity, suffix and hash-gate fixtures
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s test_fixtures -p test_client_pol1_repack_experiment.py -v
+
+      - name: Synthetic 2019 inventory boundary and command-table audit
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s test_fixtures -p test_client_wardrobe_2019_audit.py -v
+
+      - name: Synthetic 2019 storage allocator and context-switch audit
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s test_fixtures -p test_client_wardrobe_2019_allocator.py -v
+
+      - name: Synthetic login-time wardrobe bank translation and safety gates
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s test_fixtures -p test_client_wardrobe_bank_contract.py -v
