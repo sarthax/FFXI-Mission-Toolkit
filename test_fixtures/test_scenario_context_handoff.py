@@ -204,3 +204,34 @@ def test_editor_route_and_controls_do_not_dispatch():
     assert "reviewed" in html.lower() and "no draft is automatically" in html.lower()
     for forbidden in ("/builder/launch","send_gm_command","/itemedit/batch/apply"):
         assert forbidden not in js
+
+
+def test_explicit_manual_completion_preview_save_reopen_edit(monkeypatch, tmp_path):
+    """Handoff alone cannot save; after human-authored synthetic obligations it can."""
+    from test_scenario_guided_catalog_workspace import synthetic_spec
+    from workbench.server_admin.feature_testing.spec_drafts import get_drafts, save_draft
+    from workbench.server_admin.scenario_authoring.editor_router import validate_editor_spec
+    inspected=inspect_evidence_review(reviewed_fixture())
+    # Synthetic author supplies an already supported canonical assertion/observation
+    # manually. This is NOT derived from the indexed capture.
+    spec=synthetic_spec()
+    spec["case_id"]="SYNTH-HANDOFF-MANUAL-01"
+    spec["rationale"]="UNVERIFIED indexed capture 1 projection "+inspected["projection_sha256"]
+    spec["steps"][0]["confidence_note"]="OBSERVED only; original index not authenticated; "+inspected["projection_sha256"]
+    spec["steps"][0]["expected"]="UNKNOWN — user must still establish source-backed oracle"
+    spec["authoring"]["blocking_gaps"].append(
+        "Indexed capture provenance is not independent proof of expected behavior"
+    )
+    view=validate_editor_spec(spec)
+    assert view["reader_view"]["independent_verification"]=="NOT_ESTABLISHED"
+    assert view["reader_view"]["steps"][0]["status"]=="UNKNOWN"
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_DRAFTS_DB",str(tmp_path/"draft.sqlite"))
+    saved=save_draft(view["canonical_specification"],0)
+    assert saved["revision"]==1 and saved["execution_enabled"] is False
+    loaded=get_drafts()[0]["specification"]
+    assert loaded["rationale"]==spec["rationale"]
+    assert loaded["steps"][0]["confidence_note"]==spec["steps"][0]["confidence_note"]
+    loaded["steps"][0]["title"]="Edited human-authored synthetic observation"
+    saved2=save_draft(validate_editor_spec(loaded)["canonical_specification"],1)
+    assert saved2["revision"]==2
+    assert get_drafts()[0]["specification"]["steps"][0]["title"]==loaded["steps"][0]["title"]
