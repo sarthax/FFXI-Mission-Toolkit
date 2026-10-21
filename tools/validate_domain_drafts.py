@@ -92,7 +92,15 @@ def validate_domain(name, doc, meta):
         steps = c.get("steps")
         check(isinstance(steps, list) and len(steps) == 4,
               f"{cid}: missing/reordered steps")
-        asserted = {a["id"] for a in c.get("assertions", [])}
+        declared_assertions = c.get("assertions", [])
+        check(isinstance(declared_assertions, list) and
+              all(isinstance(a, dict) and isinstance(a.get("id"), str) and
+                  bool(a["id"]) for a in declared_assertions),
+              f"{cid}: invalid assertion IDs")
+        assertion_ids = [a["id"] for a in declared_assertions]
+        check(len(set(assertion_ids)) == len(assertion_ids),
+              f"{cid}: duplicate staged assertion ID")
+        asserted = set(assertion_ids)
         for i, s in enumerate(steps, 1):
             sid = f"{cid}-S{i:02d}"
             check(s.get("id") == sid and isinstance(s.get("expected"), str) and
