@@ -265,7 +265,14 @@ the full unchanged `original_evidence_handoff` (including source-row
 hashes, locators, parser metadata and review decisions), read-only
 `readiness_diagnostics`, capture projection checksum and a manual
 Scenario Developer pointer. The existing **Export design-only review JSON**
-is untouched and retains its original replay validation/format. There is
+is untouched and retains its original replay validation/format. The
+sidecar stores two **distinct** tooling digests,
+`indexed_observation_projection_sha256` and
+`original_handoff_projection_sha256`, because those digests cover different
+projections; neither authenticates capture bytes. `review_decisions`
+is collected separately from the immutable `original_evidence_handoff`,
+so explicit ACCEPT/EDIT/REJECT notes accompany the diagnostic without
+rewriting any source value or silently applying it. There is
 no automatic import, save, assertion creation or execution. The readiness
 display rejects mismatched capture IDs/projections, changed source refs,
 source-verified identity flags, promoted normative expectations, execution
