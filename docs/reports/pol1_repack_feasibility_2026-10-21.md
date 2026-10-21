@@ -1,6 +1,6 @@
 # POL1 repacking feasibility — experimental code path (2026-10-21)
 
-**Status:** 12 focused synthetic tests (including 191 independently decoded randomized streams) and the original POL1 unpack fixture passed on **both Windows and Linux** in GitHub Actions workflow run `39631931548` at code commit `6837500c110e94968d3243c002d5888fe4a4c833`. **Retail repack loadability and packed-size fit UNKNOWN.** This is an experimental, read-only research workstream, not a production client patcher.
+**Status:** The local operator verified both exact-build archives and measured **NO FIT at depths 16/64/128** (largest shortfalls: 697 B in 2021 and 675 B in 2026 at depth 128). These local measurements were forwarded by the owner and are not independently replayed in this GitHub session. New deeper/lazy compression research is experimental; **retail loader compatibility remains UNKNOWN.** This is an experimental, read-only research workstream, not a production client patcher.
 
 **Related:** [FFXI Client Patch Feasibility Audit (draft PR #1301)](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1301), [Wardrobe 5–8 research plan](wardrobe5-8_container_expansion_research_plan.md), and local handoffs HANDOFF_wardrobe5-8_decode.md / XREF_SUMMARY.md.
 
@@ -22,12 +22,12 @@ External technical background (not verification for our clients): [FFXI POL1 unp
 
 ## 2. Reference geometry from prior research
 
-| DLL revision | Decoded .text bytes | POL1 raw bytes | Ratio |
-|---|---:|---:|---:|
-| 30210706_0 | 3,272,270 | 1,967,464 | ~60% |
-| 30261006_0 | 3,307,054 | 1,989,368 | ~60% |
+| DLL revision | Decoded .text bytes | Prior recorded POL1 section virtual size | Locally measured POL1 raw size | Original compressed stream consumed |
+|---|---:|---:|---:|---:|
+| 30210706_0 | 3,272,270 | 1,967,464 | 1,967,616 | 1,967,230 |
+| 30261006_0 | 3,307,054 | 1,989,368 | 1,989,632 | 1,989,125 |
 
-These numbers were previously recorded in the Toolkit's retail fetch and binary comparison report; these DLLs were **not** accessed in this experiment.
+The decoded and virtual-size columns came from the prior Toolkit binary comparison; the raw-size and consumed-stream columns were forwarded from the local operator's verified read-only runs. Virtual versus raw section sizing explains differences of 152 bytes (2021) and 264 bytes (2026); independently reconfirm the PE section header fields if these sizes are later used in a writer. No retail DLL bytes were uploaded into the GitHub branch.
 
 A candidate compressed stream exceeding the original consumed stream is an in-place **STOP**, even when the overall POL1 raw section has apparently free bytes. A stream that fits this stricter boundary is **not** proof of successful loading.
 
@@ -135,4 +135,34 @@ The output also exposes `pol1_raw_section_isolated`, `entrypoint_in_pol1`, and `
 
 **CI provenance:** Dedicated Windows and Linux POL1 tests passed with 12 methods at commit `6837500c110e94968d3243c002d5888fe4a4c833`. The subsequent all-depth comparison and raw-section isolation changes brought the focused suite to **14 synthetic methods**; Windows and Linux jobs both passed in POL1 run `39644369389` at code commit `c52905a2f1bbaa7f5742455d3ec4f69944f9a230`. The broad Workbench regression for that commit was still in progress at the time of verification. Earlier broad Workbench runs may be canceled on superseded commits; do not mistake them for completed approvals.
 
-The original 2021/2026 DLL bytes remain unavailable to this GitHub session. Actual compressed-stream consumption, retail repacked fit, and loader acceptance remain UNKNOWN.
+The original 2021/2026 DLL bytes remain unavailable to this GitHub session. Original consumed-stream lengths and NO-FIT results at depths 16/64/128 were recorded from the local operator; stronger compressor fit and loader acceptance remain UNKNOWN.
+
+## 8. Exact-build local evidence and deeper compression follow-up (2026-10-21)
+
+**Evidence status:** owner forwarded output from a local agent working with exact SHA-256-verified 2021 `30210706_0` and 2026 `30261006_0` files at Toolkit code commit `e9be7fb`. The agent confirmed no modifications to DLLs or repo; elapsed time ~11.8s and 13.1s on Linux/Python 3.13; these are reported observations and were posted verbatim to PR #1303. This GitHub-only session has not independently rerun the archives.
+
+| Metric | 2021 | 2026 |
+|---|---:|---:|
+| Original stream consumed | 1,967,230 | 1,989,125 |
+| POL1 raw suffix protected | 386 | 507 |
+| Entry-point offset in POL1 | 1,967,232 | 1,989,136 |
+| Depth 16 candidate / headroom | 1,980,554 / −13,324 | 2,002,606 / −13,481 |
+| Depth 64 candidate / headroom | 1,969,588 / −2,358 | 1,991,495 / −2,370 |
+| Depth 128 candidate / headroom | 1,967,927 / **−697** | 1,989,800 / **−675** |
+
+**Current decision: NO-GO** for the existing depth-16/64/128 greedy compressor and for DLL write-back. No candidate fit the original consumed stream; in-memory candidate verification was consequently not attempted on those retail binaries. Decoded hashes reportedly agreed with earlier `pol1_report` JSONs.
+
+### New bounded compression experiment
+
+The Python encoder now supports `--search-depth` values `16`, `64`, `128`, `256`, `512`, and `1024`, plus optional `--lazy-match` with a single-byte lookahead. These alternatives are not guaranteed to improve size or runtime. The CLI preserves the prior baseline `--compare-depths` mode and adds `--compare-improved`, evaluating **five** configurations: greedy 256/512/1024 and lazy 128/256. Each candidate still goes through original-stream, PE-overlap, entry-point, and protected-suffix checks. No DLL write-back exists.
+
+**Local read-only follow-up** (use the two previously verified archive paths; run each build separately):
+
+~~~powershell
+py -3.11 -m workbench.client.cli.pol1_repack_report $old --expected-sha256 1ded20ac5df1b168220992365b63cfe7596af17326acf0e02f90a5a8388446ba --compare-improved
+py -3.11 -m workbench.client.cli.pol1_repack_report $new --expected-sha256 042884888eea4fadac183e520f2ae9f8c4fa267860e685048e1880efd358e872 --compare-improved
+~~~
+
+Run this on the newer PR head only after checking its CI. These deeper searches can be materially slower; record wall time and memory use when possible, and distinguish `FITS_ORIGINAL_STREAM_BUDGET` from actually validated loader acceptance. A first fit is **GO for subsequent independent loader research only**, not authorization to patch or install a retail DLL.
+
+**Next gate:** if no configuration fits, investigate bounded two-step parsing, match-cost-aware parsing or byte-size optimization as a separate testable encoder algorithm. Do not take space from the loader suffix, enlarge sections, or bypass integrity controls merely to recover the missing ~700 bytes.
