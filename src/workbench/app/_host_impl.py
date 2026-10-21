@@ -4437,7 +4437,16 @@ def feature_trace_page(
     depth: int = 3,
     direction: str = "both",
     mode: str = "",
+    trail: str = "",
 ):
+    from workbench.devtools.features.trace_investigation import (
+        breadcrumb_links, encode_trail, parse_trail, trail_for_next_root,
+    )
+
+    # Read-only navigation trail. A previous URL selection is not proof of a
+    # semantic relationship, shared identity or source-backed causal path.
+    previous_roots = parse_trail(trail)
+    trail_from_url = encode_trail(previous_roots)
     depth = max(0, min(depth, 8))
     if direction not in {"out", "in", "both"}:
         direction = "both"
@@ -4530,12 +4539,19 @@ def feature_trace_page(
     catalog_con.close()
     relationship_sections = present_relationships(result["edges"]) if result else []
     dossier = build_dossier(result) if result else None
+    # Keep the same history when toggling modes for a root, append this root
+    # only when the user actually follows a node/provider relationship link.
+    trail_for_links = trail_for_next_root(previous_roots, result["root"]) if result else trail_from_url
+    trace_breadcrumbs = breadcrumb_links(previous_roots) if result else []
     return templates.TemplateResponse(request, "feature_trace.html", {
         "request": request,
         "q": q,
         "depth": depth,
         "direction": direction,
         "selected_mode": selected_mode,
+        "trail_from_url": trail_from_url,
+        "trail_for_links": trail_for_links,
+        "trace_breadcrumbs": trace_breadcrumbs,
         "result": result,
         "matches": matches,
         "error": error,
