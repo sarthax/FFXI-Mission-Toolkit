@@ -9,6 +9,7 @@ on:
       - "gui/templates/scenario_developer.html"
       - "src/workbench/server_admin/scenario_authoring/editor_router.py"
       - "test_fixtures/test_scenario_readiness_editor_attachment.py"
+      - "test_fixtures/test_scenario_readiness_editor_attachment.cjs"
       - "test_fixtures/test_capture_readiness_viewer.py"
       - "test_fixtures/test_capture_readiness_viewer.cjs"
       - "docs/workbench/R7_OPTIONAL_CAPTURE_READINESS_VIEWER_1313.md"
@@ -43,7 +44,10 @@ jobs:
           set -euo pipefail
           python -m pytest -q test_fixtures/test_capture_readiness_viewer.py test_fixtures/test_capture_readiness_summary.py test_fixtures/test_scenario_readiness_editor_attachment.py
       - name: Check attached editor syntax
-        run: node --check gui/static/scenario_developer.js
+        run: |
+          node --check gui/static/scenario_developer.js
+          node --check test_fixtures/test_scenario_readiness_editor_attachment.cjs
+          node test_fixtures/test_scenario_readiness_editor_attachment.cjs
       - name: Independently run DOM and model safety suite
         run: |
           set -euo pipefail
