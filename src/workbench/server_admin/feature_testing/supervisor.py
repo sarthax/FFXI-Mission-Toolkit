@@ -15,6 +15,8 @@ from workbench.server_admin.feature_testing.results import recent_results, resul
 from .log_diagnostics import read_log
 from .service_health import service_health
 from .database_diagnostics import char_vars_snapshot, inventory_snapshot, key_items_snapshot
+from .bounded_inventory import inventory_snapshot_v2
+from .bounded_progression import progression_snapshot
 from .source_diagnostics import search_source
 from .failure_diagnostics import failure_summary
 from .investigation_dossier import investigation_dossier
@@ -128,6 +130,21 @@ def test_character_inventory(charid: int, authorization: str | None = Header(def
 
 
 
+
+
+@router.get("/test-character-inventory-v2", operation_id="supervisor_test_character_inventory_v2")
+def test_character_inventory_v2(charid: int, location: int, cursor: int = 0, limit: int = 100,
+                                authorization: str | None = Header(default=None)):
+    """Paginated persisted DB rows only; never a live inventory or complete client agreement."""
+    _authorize(authorization)
+    try:
+        return inventory_snapshot_v2(charid, location, cursor, limit)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
 @router.get("/test-character-keyitems", operation_id="supervisor_test_character_keyitems")
 def test_character_keyitems(charid: int, authorization: str | None = Header(default=None)):
     _authorize(authorization)
@@ -145,6 +162,19 @@ def test_character_vars(charid: int, names: str, authorization: str | None = Hea
     _authorize(authorization)
     try:
         return char_vars_snapshot(charid, [n.strip() for n in names.split(",") if n.strip()])
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.get("/test-character-progression", operation_id="supervisor_test_character_progression")
+def test_character_progression(charid: int, names: str, include_keyitems: bool = True,
+                               authorization: str | None = Header(default=None)):
+    """Named variables and persisted KI bitmap; jobs/quests/currency deliberately unsupported."""
+    _authorize(authorization)
+    try:
+        return progression_snapshot(charid, [name.strip() for name in names.split(",")], include_keyitems)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:

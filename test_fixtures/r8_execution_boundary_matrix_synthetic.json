@@ -1,0 +1,60 @@
+{
+  "fixture_kind": "R8_OFFLINE_BOUNDARY_MATRIX_NONCANONICAL",
+  "synthetic": true,
+  "not_an_execution_protocol": true,
+  "not_an_importer_report": true,
+  "runtime_dispatch_allowed": false,
+  "description": "Existing interface acceptance gates for reviewed but UNAPPROVED Toolkit <-> XIHeadless cross-project execution. These are expected behaviors, not observed gameplay or candidate protocol messages.",
+  "vectors": [
+    {
+      "id": "supervised_observation_reported_pass",
+      "expected": "UNKNOWN",
+      "fact": "Toolkit can re-evaluate synthetic MOG-09 values to PASS, but does not independently authenticate an XIHeadless supervised run or source byte provenance."
+    },
+    {
+      "id": "missing_preconditions",
+      "expected": "BLOCKED",
+      "fact": "Absent local operator, character allowlist and supervisor configuration fail the current MOG-09 preflight, even for its verified runner."
+    },
+    {
+      "id": "missing_authoritative_readback",
+      "expected": "BLOCKED",
+      "fact": "An absent client/server Mog Safe readback leaves canonical assertions blocked despite runner-reported PASS."
+    },
+    {
+      "id": "cancellation",
+      "expected": "UNKNOWN",
+      "fact": "A task cancellation or acknowledgment is not a terminal canonical assertion verdict or Toolkit importer report."
+    },
+    {
+      "id": "partial_evidence",
+      "expected": "BLOCKED",
+      "fact": "Partially reported MOG-09 observations cannot satisfy all existing assertions."
+    },
+    {
+      "id": "conflicting_attempt_ids",
+      "expected": "BLOCKED",
+      "fact": "Toolkit v1 report does not model distinct operation/attempt IDs; duplicate run_id/case_id/stage within a report is rejected."
+    },
+    {
+      "id": "unsupported_mutation",
+      "expected": "BLOCKED",
+      "fact": "No generic verified runner may be assigned to INV-OBS-01 or the 73 design-only staged cases; no GM mutation permission is implied."
+    },
+    {
+      "id": "stale_source_revision",
+      "expected": "BLOCKED",
+      "fact": "Canonical optional-v2 metadata compatibility blocks a declared source revision mismatch against separately supplied revisions."
+    },
+    {
+      "id": "repeated_evidence_import",
+      "expected": "NOT_IMPLEMENTED",
+      "fact": "Importer v1 uses insert-only SQLite keys and does not provide idempotent replay or attempt-aware conflict reconciliation; #1202 owns it."
+    },
+    {
+      "id": "command_acceptance_only",
+      "expected": "UNKNOWN",
+      "fact": "McpResult Accepted has accepted=true with completed omitted; status is not a gameplay PASS or importable Toolkit report."
+    }
+  ]
+}

@@ -8,7 +8,7 @@ Canonical optional Contract v2 #1285, unified editor #1283, evidence readiness #
 
 All **73** staged cases have `execution_status=design_only`, `runner=unassigned`, `verdict=NOT_RUN`. The matrix classifies **5 observe-now**, **2 needs-readback**, **57 needs-mutation**, **9 needs-deploy**. Only `MOG-09` and `INV-OBS-01` are historical entries in the separate v1 executable catalog; a prior narrow MOG-09 runner is not a new gameplay verdict for staged data.
 
-## Offline GitHub verification (merged in PR #1305; main push verified)
+## Offline GitHub verification (proposed in draft PR #1305)
 
 The merged pre-R7 workflow fails after automatic deletion of old `spec/*` branches; do not work around it by recreating stale branch names.
 
@@ -16,7 +16,7 @@ The merged pre-R7 workflow fails after automatic deletion of old `spec/*` branch
 - **`staged-pr`:** manual `workflow_dispatch` only, for *future* revised domain source PRs after review of a new head snapshot. Fetches `refs/pull/<number>/head` as **data only**. The observed SHA must match the reviewed matrix; missing/deleted/moved refs fail with explicit errors. No fallback to deleted `spec/*`, main, or untrusted source code.
 - **In both modes:** synthetic negative tests, fail-closed `contract_v2`/source URL/sha256/permission/readback validation, source-aware 73-case assertions and untouched canonical catalog checks. The workflow does not contact DSP, an XIHeadless runner, client, GM, SQL, or packet services.
 
-**Observed real post-merge run:** [R6/R7 Domain Readiness Validation #39684273477](https://github.com/sarthax/FFXI-Mission-Toolkit/actions/runs/39684273477) ran on GitHub Actions event `push`, branch `main`, exact #1305 merge SHA `986f781ed1fe61000b2ca62552018061441b7522` and succeeded with 41 synthetic tests: `mode=integrated-main`, `total=73`, `matrix=CONSISTENT_WITH_PINNED_PR_HEADS`, `source_provenance=PINNED_PR_BLOBS_MATCH_INTEGRATED_HISTORY`, `source_authenticity=NOT_ATTESTED`, `deployed_revision=UNKNOWN`. **This is not an independently observed `workflow_dispatch` run or a gameplay verdict.** For future manual validation use **Actions → R6/R7 Domain Readiness Validation (Offline) → Run workflow → branch main → validation_mode integrated-main**. Use `staged-pr` only with still-available PRs and a newly reviewed matrix pinning their exact source HEADs. Never treat deleted old refs or failed staging as a successful integrated-main check.
+After #1305 is reviewed and owner-authorized merged, inspect the actual Actions run at that exact SHA and record its passed jobs. For manual verification in GitHub: **Actions → R6/R7 Domain Readiness Validation (Offline) → Run workflow → branch main → validation_mode integrated-main**. For advanced future staging, select `staged-pr` only if the PRs still exist and a new reviewed matrix explicitly pins their current heads. Never interpret expected failure on deleted old PR refs as successful integrated validation.
 
 ## Confidence vocabulary and acceptance gaps
 
@@ -47,4 +47,8 @@ Record every local acceptance separately with owner/operator approval, original 
 - [Distinct R6 capability backlog](R6_DOMAIN_OBSERVATION_CAPABILITY_BACKLOG_1197.md)
 - [Active workbench roadmap](ROADMAP_CURRENT.md)
 - [Scenario & evidence roadmap](SCENARIO_EVIDENCE_WORKBENCH_ROADMAP.md)
-- [Merged R7 post-merge validator #1305](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1305) — [verified `push` workflow run](https://github.com/sarthax/FFXI-Mission-Toolkit/actions/runs/39684273477)
+- [R7 postmerge validator draft #1305](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1305)
+
+## Archived 2026-10-21 integrated-main validation evidence (#1314)
+
+Following merger of #1305, GitHub Actions [main push #39684273477](https://github.com/sarthax/FFXI-Mission-Toolkit/actions/runs/39684273477) ran at exact SHA `986f781ed1fe61000b2ca62552018061441b7522`. It reported 41 passing synthetic tests, 73 staged design-only cases, pinned merged PR blob consistency, `source_authenticity=NOT_ATTESTED` and `deployed_revision=UNKNOWN`. This was a `push` event, **not** a manually observed `workflow_dispatch` execution. `integrated-main` uses in-tree checked-in drafts; `staged-pr` is only for future independently reviewed available PR references. Never restore deleted `spec/*` branches, count these as live gameplay passes, or treat the historical SHA as today's main.

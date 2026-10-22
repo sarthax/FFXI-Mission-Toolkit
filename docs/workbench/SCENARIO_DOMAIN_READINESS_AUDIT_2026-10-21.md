@@ -1,6 +1,6 @@
 # R5 — Nine-domain scenario readiness and capability gap audit (73 records)
 
-> **R7 integrated status correction (updated after 2026-10-21 release-foundation merge):** All nine draft domain PRs and the authoritative #1292 matrix are merged, originally at `main@972ff6fa`. References below to open/draft/proposed R6 matrix or domain PRs are historical audit-time language only. The 73 cases remain design-only, NOT_RUN and non-executable; source/deployment authenticity and gameplay acceptance remain UNKNOWN. [Merged #1305](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1305) now validates integrated main data; its genuine [main push #39684273477](https://github.com/sarthax/FFXI-Mission-Toolkit/actions/runs/39684273477) passed at `986f781e`. For current status use the [R7 release baseline](R7_RELEASE_BASELINE_2026-10-21.md), not the historical draft queue below.
+> **R7 integrated status correction (2026-10-21):** All nine draft domain PRs and the authoritative #1292 matrix are merged into `main@972ff6fa`; references below to an *open*, *draft*, *proposed* R6 matrix/PR are historical audit-time language only. These 73 cases are still design-only, NOT_RUN, non-executable, with source/deployment authenticity and gameplay outcomes UNKNOWN. For current CI and ownership see [R7 release baseline](R7_RELEASE_BASELINE_2026-10-21.md) and draft [#1305](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1305).
 
 **Audit date:** 2026-10-21 · **Toolkit main:** `e9ae790d0d8259a508ec767c71f06fdf49a893e5` · Parent [#1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197). **Execution:** NOT RUN. **Source:** nine independent open, draft domain PRs. **Not a catalog import.**
 
@@ -169,3 +169,7 @@ The full machine-readable matrix includes **all missing readback strings and per
 4. For every proposed GAP ticket require isolated unit fixtures, owner-approved bounded API contracts, negative evidence, source pin drift tests and post-run cleanup; review source IDs/citations before producing executable assertions.
 
 **This audit records feasibility, not gameplay test results; neither source presence nor green CI implies deployed DSP acceptance.**
+
+## Historical 2026-10-21 R7 validator status clarification
+
+All nine domain draft PRs and the single #1292 matrix were integrated by `main@972ff6fa`; audit-era words such as *open* or *draft* describe historical source collection, not present PR state. #1305's merged integrated-main validator succeeded on a real [main push run #39684273477](https://github.com/sarthax/FFXI-Mission-Toolkit/actions/runs/39684273477) at `986f781e`; 73 cases remain design-only `NOT_RUN`, and DSP source authenticity, installed revision and gameplay outcomes remain unverified. Later release/roadmap documentation supersedes this historical audit.
