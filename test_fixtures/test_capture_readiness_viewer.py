@@ -18,9 +18,11 @@ from workbench.server_admin.scenario_authoring.context_handoff import (
 )
 
 
-def pair():
+def pair(mutate=None):
     connection, draft = fixture()
     try:
+        if mutate is not None:
+            mutate(draft)
         # No application DB writes or gameplay; only the synthetic in-memory
         # captured dataset created by the preexisting acceptance fixture.
         original = manual_editor_handoff(draft)
@@ -188,6 +190,43 @@ def test_missing_parser_and_blocked_source_claims_are_not_promoted():
         altered["readiness_diagnostics"]["source_integrity"]["state"]=forged
         with pytest.raises(ValueError):
             inspect_paired_readiness(review,altered)
+
+
+def test_recomputable_missing_parser_is_unknown_and_not_an_attestation():
+    def missing_parser(draft):
+        ref = draft["steps"][0]["evidence_refs"][0]
+        loc = next(x for x in draft["evidence_map"][ref]["source"]["references"]
+                   if isinstance(x.get("source_manifest"), dict))
+        loc["source_manifest"]["parser_version"] = None
+    review, sidecar = pair(missing_parser)
+    output = inspect_paired_readiness(review, sidecar)
+    assert output["source_compatibility_state"] == "UNKNOWN"
+    assert output["original_capture_authenticated"] is False
+    problems = output["source_provenance_issues"]
+    assert any(x["code"] == "PARSER_REVISION_UNPINNED" for x in problems)
+    assert any(locator["parser_support"] == "MISSING_PARSER_IDENTITY_OR_VERSION"
+               for step in output["steps"]
+               for evidence in step["indexed_evidence_provenance"]
+               for locator in evidence["source_file_claims"])
+
+
+def test_recomputable_conflicting_manifest_is_blocked_not_gameplay_fail():
+    def conflict(draft):
+        ref = draft["steps"][0]["evidence_refs"][0]
+        loc = next(x for x in draft["evidence_map"][ref]["source"]["references"]
+                   if isinstance(x.get("source_manifest"), dict)
+                   and isinstance(x.get("source_sha256"), str))
+        loc["source_manifest"]["sha256"] = (
+            "a"*64 if loc["source_sha256"].lower() != "a"*64 else "b"*64)
+    review, sidecar = pair(conflict)
+    output = inspect_paired_readiness(review, sidecar)
+    assert output["source_compatibility_state"] == "BLOCKED"
+    assert any(x["code"] == "SOURCE_MANIFEST_DIGEST_MISMATCH"
+               and x["severity"] == "BLOCKED"
+               for x in output["source_provenance_issues"])
+    assert output["verdict"] == "UNKNOWN"
+    assert all(step["verdict"] == "UNKNOWN" for step in output["steps"])
+    assert output["approved_for_execution"] is False
 
 
 def test_legacy_editor_inputs_are_not_changed_and_noncanonical_is_rejected():
