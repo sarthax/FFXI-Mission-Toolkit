@@ -15,6 +15,7 @@ from workbench.server_admin.feature_testing.results import recent_results, resul
 from .log_diagnostics import read_log
 from .service_health import service_health
 from .database_diagnostics import char_vars_snapshot, inventory_snapshot, key_items_snapshot
+from .bounded_inventory import inventory_snapshot_v2
 from .source_diagnostics import search_source
 from .failure_diagnostics import failure_summary
 from .investigation_dossier import investigation_dossier
@@ -126,6 +127,21 @@ def test_character_inventory(charid: int, authorization: str | None = Header(def
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
+
+
+
+
+@router.get("/test-character-inventory-v2", operation_id="supervisor_test_character_inventory_v2")
+def test_character_inventory_v2(charid: int, location: int, cursor: int = 0, limit: int = 100,
+                                authorization: str | None = Header(default=None)):
+    """Paginated persisted DB rows only; never a live inventory or complete client agreement."""
+    _authorize(authorization)
+    try:
+        return inventory_snapshot_v2(charid, location, cursor, limit)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.get("/test-character-keyitems", operation_id="supervisor_test_character_keyitems")
