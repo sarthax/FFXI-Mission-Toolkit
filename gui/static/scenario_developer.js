@@ -686,6 +686,11 @@
       setSourceDetail(null,null);
     }catch(e){show('Evidence suggestions not applied: '+e.message);}
   });
+  // Separate, operator-selected, noncanonical advisory. Never touches spec,
+  // activeHandoff, evidenceSuggestions, revision, save or execution code.
+  window.ScenarioReadinessViewer.mount($('sd-readiness-viewer'),async(review,sidecar)=>{
+    return call('/scenario-developer/handoff/readiness/inspect','POST',{review,sidecar});
+  });
   (async()=> {
     try{
       options=await call('/scenario-developer/options');
