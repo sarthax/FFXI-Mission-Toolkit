@@ -122,8 +122,20 @@ def test_observation_review_accept_does_not_approve_oracle():
     }
     review["step_decisions"] = [candidate]
     sidecar["review_decisions"]["steps"] = [deepcopy(candidate)]
+    binding_id = step["bindings"][0]["binding_id"]
+    binding_choice = {"binding_id": binding_id, "decision": "ACCEPT",
+                      "note": "SYNTHETIC reviewed identity label, unverified"}
+    review["binding_decisions"] = [binding_choice]
+    sidecar["review_decisions"]["bindings"] = [deepcopy(binding_choice)]
+    unmodified_original = deepcopy(review["observed_handoff"])
     out = inspect_paired_readiness(review, sidecar)
+    assert review["observed_handoff"] == unmodified_original
     assert out["steps"][0]["reviewer_step_decision_original"] == step.get("review", {"decision": "PENDING"})
+    assert out["steps"][0]["reviewer_step_decision_selected"] == candidate
+    observed_binding = next(b for b in out["steps"][0]["identity_confidence"]
+                            if b["binding_id"] == binding_id)
+    assert observed_binding["review_decision_selected"] == binding_choice
+    assert observed_binding["source_identity_verified"] is False
     assert out["steps"][0]["oracle_approval_state"] == "UNAPPROVED"
     assert out["verdict"] == "UNKNOWN"
     assert out["approved_for_execution"] is False
@@ -140,6 +152,8 @@ def test_distinct_hashes_and_changed_selected_original_are_refused():
         lambda r, s: s["original_evidence_handoff"].update(capture_id=-20),
         lambda r, s: s["review_decisions"].update(steps=[{
             "step_id":"OBS-S001","decision":"ACCEPT","note":"FORGED"}]),
+        lambda r, s: s["review_decisions"].update(bindings=[{
+            "binding_id":"FORGED_ID","decision":"ACCEPT","note":"FORGED"}]),
     ):
         a,b=deepcopy(review),deepcopy(sidecar)
         mutate(a,b)

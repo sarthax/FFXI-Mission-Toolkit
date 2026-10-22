@@ -116,6 +116,11 @@ def inspect_paired_readiness(review: dict, sidecar: dict) -> dict:
             or projection["approved_for_execution"] is not False
             or projection["execution_enabled"] is not False):
         raise ValueError("Readiness producer cannot grant source/execution trust")
+    # These selected decisions are verified by the existing original-review
+    # inspector and exact sidecar comparison. They are display choices only;
+    # never overwrite the indexed capture's ORIGINAL PENDING/ACCEPT record.
+    selected_steps = {item["step_id"]: item for item in review["step_decisions"]}
+    selected_bindings = {item["binding_id"]: item for item in review["binding_decisions"]}
     output_steps = []
     for row in projection["steps"]:
         if (row["canonical_step_id"] is not None
@@ -133,7 +138,15 @@ def inspect_paired_readiness(review: dict, sidecar: dict) -> dict:
                     or gap["permission_granted"] is not False
                     or gap["capability_registered"] is not False):
                 raise ValueError("Missing readback was elevated to a verified capability")
-        output_steps.append(deepcopy(row))
+        display_row = deepcopy(row)
+        # Explicitly distinguish "reviewer chose ACCEPT in this export" from
+        # original indexed reviewer decision and oracle authorization.
+        display_row["reviewer_step_decision_selected"] = deepcopy(
+            selected_steps.get(row["step_id"]))
+        for binding in display_row["identity_confidence"]:
+            binding["review_decision_selected"] = deepcopy(
+                selected_bindings.get(binding["binding_id"]))
+        output_steps.append(display_row)
     return {
         "contract": _VIEW,
         "capture_id": review["capture_id"],

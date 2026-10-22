@@ -71,7 +71,11 @@ The new `gui/static/scenario_readiness_viewer.js` exports:
   `inspect(reviewJson,sidecarJson)` backed by the Python verifier; the
   module has no built-in network/endpoint, local draft or runner access.
   Selection-generation guards discard stale file-read or inspection results
-  after either selector changes.
+  after either selector changes. The returned mount handle also provides
+  `dispose()`: Agent B must call it on New/Open/Fork/Clone/route teardown
+  to invalidate all in-flight responses and clear a previously accepted
+  advisory. A disposed viewer cannot re-enable its inspection button or
+  resurrect a stale response.
 - `ScenarioReadinessViewer.verify(model)`: Fails closed if untrusted result
   claims canonical step mapping, source authentication, approved oracle,
   execution or import. This is defense-in-depth; only the backend verifier
@@ -126,39 +130,111 @@ instance), then record reviewable evidence and owner-approved oracle/source
 associations. These steps are **not done** and are not part of #1313.
 
 
-## Editor attachment candidate — Agent B (#1313)
-A dependent draft branch `feature/r7-readiness-editor-attachment-1313` mounts the
-existing evidence-owned `ScenarioReadinessViewer` in a separate, operator-opened
-Scenario Developer panel with two explicit local JSON selectors. The host callback
-POSTs only to `/scenario-developer/handoff/readiness/inspect`, invoking
-`inspect_paired_readiness` with a bounded same-origin, localhost-only,
-`X-Requested-With: toolkit-ui`, JSON-only request. It never calls the
-canonical `/handoff/evidence/inspect` importer and never passes readiness
-results into canonical specification state, drafts, source mappings or execution.
+## Current-head security hardening and precise review labels
 
-The independent viewer's file-change generation guard rejects results from
-stale selections. Existing New/Fork/Clone/Open guards, revision controls,
-Guided/Advanced editing, v1 compatibility and local draft saving are not
-modified. This is a proposed UI attachment, **not yet independently approved,
-merged, browser-accepted or physically authenticated**.
+The read-only verifier preserves the original indexed capture records and now
+**separately** exposes:
 
-### B20 — Local opt-in acceptance handoff (NOT EXECUTED)
-After independent Agent A review and owner approval, the local operator should:
-1. Open Scenario Developer; exercise existing B01–B19 first without modifying
-   their ongoing acceptance agent's environment.
-2. Open the optional readiness panel, select original reviewed-decision JSON
-   and separately exported sidecar from the same reviewer state, and inspect.
-3. Confirm capture identity, indexed source refs, filename, span/time,
-   parser and digest claims, candidate identities, unapproved oracles and
-   conditional job/mob readback gaps render as advisory UNKNOWN/BLOCKED.
-4. Swap a file during inspection; verify stale results disappear.
-5. Try mismatched capture IDs, different digests, cross-capture refs,
-   duplicate rows and forged approval or oracle claims; verify rejection.
-6. Confirm no CASE/STEP canonical mapping is inferred; UNASSIGNED remains.
-7. Confirm no save, import, permission grant, execution or scenario mutation,
-   including after New, Fork, Clone, Open and Guided/Advanced changes.
-8. Confirm ordinary review-decision import still works, and sidecars remain
-   rejected by that canonical importer.
+- `steps[].reviewer_step_decision_original` and
+  `identity_confidence[].review_decision_original`: the immutable indexed
+  observation's originally recorded review decisions.
+- `steps[].reviewer_step_decision_selected` and
+  `identity_confidence[].review_decision_selected`: choices explicitly
+  entered by the operator in the selected `offline_capture_review_decisions`
+  JSON, validated by the accepted reviewer inspector and exactly matched
+  against the separately selected readiness sidecar's `review_decisions`.
+  These fields are **not** a replay or mutation of the original capture,
+  and are `null` when that particular item has no selected decision.
 
-No real-client/capture/decoder/DSP claims are established by CI or these
-synthetic fixtures. B20 is an operator-only acceptance task, not a completed test.
+The UI must label both categories separately; do not treat ACCEPT/EDIT
+human observation review as canonical source authentication, identity
+verification, expected oracle approval or gameplay PASS.
+
+The standalone renderer now also refuses *nested* bogus trust claims:
+`source_identity_verified=true`, missing readback with
+`permission_granted=true`/`capability_registered=true`/VERIFIED status,
+duplicate/cross-capture source refs, non-array canonical source refs,
+`indexed_digests_rehashed=true`, or an independently claimed decoder version.
+The server-side full-producer-recomputation remains the **decisive** check;
+client checks are defense in depth and are not sufficient by themselves.
+
+## Local B20 operator acceptance checklist (NOT RUN)
+
+These steps are **blocked** until Agent B's independently reviewed
+Scenario Developer route/template attachment is merged. The test operator
+must preserve original files and write down the observed on-screen result
+for each exact test; no live DSP or gameplay operation is required.
+
+1. Navigate to Scenario Developer with an existing unsaved design draft.
+   Opt into the *separate* Capture Readiness panel; confirm it initially
+   shows **no accepted evidence** and that no file, network request, save,
+   or test execution starts without user selection.
+2. Select the original **reviewed-decision JSON** and its **separate
+   readiness-sidecar JSON** from the same offline Evidence Reviewer. Press
+   **Inspect selected pair**. Confirm original capture ID, table/row/source
+   IDs, file locator/offset/time basis, and **two differently scoped indexed
+   projection SHA-256s** are shown, with clear **not physically attested**
+   disclaimers. Neither digest is a source-byte authentication signature.
+3. Confirm original indexed step and binding decisions appear separately
+   from selected reviewer decisions. A reviewed ACCEPT/EDIT only certifies a
+   human's review *choice*, not an authenticated identity, source-backed
+   oracle, normative expected result or gameplay PASS.
+4. Confirm all identity candidates (EXACT, INFERRED, AMBIGUOUS,
+   UNRESOLVED/UNSUPPORTED where present) retain original uncertainty,
+   including no selected canonical identity for AMBIGUOUS. Show
+   `canonical_step_id=null`, unassigned source-step scope, UNAPPROVED
+   oracle, missing observations and blocked execution.
+5. Confirm index-local parser name/version, digest *claims*, no decoder
+   attestation, and SOURCE_UNKNOWN warnings display as declarations. With
+   synthetic missing parser metadata, report **UNKNOWN**; with conflicting
+   well-formed recorded digests, report **BLOCKED**. Neither means
+   gameplay PASS or FAIL.
+6. Confirm all relevant client/server inventory, furnishings, quest, key
+   items, instance/NPC, plus **CONDITIONAL job/mob-state** readbacks display
+   as NOT_INDEPENDENTLY_OBSERVED, with permissions and capability
+   registration false.
+7. Select mismatched captures, changed original step/row identity,
+   cross-capture refs, duplicate evidence refs, modified SHA in either
+   scope, forged selected reviewer decision, physically verified source,
+   approved oracle, changed parser/decoder declaration or any grant of
+   execution. Every case must **refuse accepted pairing**, show a neutral
+   reason, clear the prior result, and leave the current scenario unchanged.
+8. While a large selected pair is being read/verified, change **either**
+   selected file or enter another editor state (New/Open/Fork/Clone/Advanced).
+   The old async response must not reappear or overwrite newer content.
+   Reinspection after changed files requires a fresh explicit click.
+9. Attempt to provide a readiness sidecar to the **existing
+   `/handoff/evidence/inspect` reviewed-decision importer**. It must still
+   reject it; a valid pair-inspection result must never become canonical
+   spec JSON, an auto-save payload, an assertion, a canonical CASE/STEP
+   association, or a runtime permission.
+10. Reopen/reload the Scenario Developer after inspecting a pair. Confirm
+    no advisory is silently persisted, selected, trusted, imported, or
+    executable; existing legacy v1 and canonical Contract v2 editing,
+    revisioned draft save, and all operator/dirty-state guards still work.
+
+The integration reviewer must verify the **actual** callback is a local-only
+same-origin JSON POST that calls `inspect_paired_readiness` and catches
+malformed/oversized inputs without stack traces. The previous
+`/handoff/evidence/inspect` path must remain unchanged. Inspecting a
+synthetic fixture in CI is **not** successful B20 acceptance or real
+capture/client/server attestation. Record B20 as NOT RUN until the owner
+performs and signs off these steps.
+
+
+## Agent B #1318 integrated editor consumer (pending independent review)
+
+A dependent editor-owned draft adds a separate optional readiness panel and
+`/scenario-developer/handoff/readiness/inspect` POST. This route calls the
+unchanged strict pair verifier only; it does not reuse canonical reviewed
+Evidence import, publish an approved source association or write a scenario.
+Localhost, same origin, required UI header and bounded two-file JSON envelope
+are enforced; non-finite JSON returns HTTP 422 without leaking stack traces.
+The frontend disposes pending viewer inspection when a scenario is replaced
+or the editor page exits, clearing retained advisory results. Source/parser
+claims remain unverified, noncanonical attributions UNASSIGNED, missing
+readbacks UNKNOWN/BLOCKED and oracle approval forbidden.
+
+This is not B20 local acceptance. Requires combined current-head Python,
+Node DOM, editor, Workbench and Src Layout checks, independent Agent A review,
+and explicit merge authorization. Do not interrupt B01–B19 local agent.

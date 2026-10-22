@@ -42,7 +42,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m pytest -q test_fixtures/test_capture_readiness_viewer.py test_fixtures/test_capture_readiness_summary.py test_fixtures/test_scenario_readiness_editor_attachment.py
-      - name: Check attached editor script syntax
+      - name: Check attached editor syntax
         run: node --check gui/static/scenario_developer.js
       - name: Independently run DOM and model safety suite
         run: |

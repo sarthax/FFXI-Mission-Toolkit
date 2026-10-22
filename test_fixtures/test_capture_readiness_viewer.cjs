@@ -51,6 +51,18 @@ assert.match(plainText(root),/BLOCKED/);
 assert.match(plainText(root),/mob_state/);
 assert.match(plainText(root),/ACCEPT/);
 assert.equal(JSON.stringify([unknown,blocked]),original);
+const selected=structuredClone(unknown);
+selected.steps[0].reviewer_step_decision_selected={
+  decision:'ACCEPT',note:'Observation only; expected oracle remains UNAPPROVED'
+};
+selected.steps[0].identity_confidence[0].review_decision_selected={
+  decision:'ACCEPT',note:'Identity label chosen but unverified'
+};
+V.render(root,selected);
+assert.match(plainText(root),/Selected reviewed-decision export CHOICE \(not an oracle\): ACCEPT/);
+assert.match(plainText(root),/selected reviewer CHOICE ACCEPT/);
+assert.match(plainText(root),/UNAPPROVED/);
+assert.equal(V.verify(selected).execution_enabled,false);
 for(const [field,value] of [
   ['execution_enabled',true],['approved_for_execution',true],
   ['original_capture_authenticated',true],['parser_decoder_authenticated',true],
@@ -67,6 +79,25 @@ for(const [field,value] of [
 ]){
   const bad=structuredClone(unknown);bad.steps[0][field]=value;
   assert.throws(()=>V.render(root,bad),/attempted canonical or oracle/);
+}
+
+for(const mutate of [
+  m=>{m.steps[0].original_evidence_refs.push(m.steps[0].original_evidence_refs[0]);},
+  m=>{m.steps[0].indexed_evidence_provenance[0].capture_id=999;},
+  m=>{m.steps[0].canonical_source_association.source_refs='forged-ref';},
+  m=>{m.steps[0].identity_confidence[0].source_identity_verified=true;},
+  m=>{m.steps[0].missing_readbacks[0].permission_granted=true;},
+  m=>{m.steps[0].missing_readbacks[0].status='VERIFIED';},
+]){
+  const bad=structuredClone(unknown);mutate(bad);
+  assert.throws(()=>V.verify(bad),/attempted/);
+}
+for(const mutate of [
+  m=>{m.steps[0].indexed_evidence_provenance[0].source_file_claims[0].indexed_digests_rehashed=true;},
+  m=>{m.steps[0].indexed_evidence_provenance[0].source_file_claims[0].decoder_version='FORGED';},
+]){
+  const bad=structuredClone(blocked);mutate(bad);
+  assert.throws(()=>V.verify(bad),/attempted source/);
 }
 
 async function run(){
@@ -101,6 +132,23 @@ async function run(){
   wait(bad);await final;
   assert.equal(view.output.children.length,0);
   assert.match(view.status.textContent,/Pair NOT accepted/);
+  // Agent B must dispose when navigating New/Open/Fork/Clone. Even a
+  // successful old response must never resurrect a closed advisory panel.
+  const closedHost=new Element('main');
+  let complete=null;
+  const closed=V.mount(closedHost,()=>new Promise(resolve=>{complete=resolve;}));
+  closed.review.files=[file('{"original":true}')];
+  closed.advisory.files=[file('{"advisory":true}')];
+  const pending=closed.inspectButton.dispatch('click');
+  await Promise.resolve();await Promise.resolve();await Promise.resolve();
+  assert.equal(typeof complete,'function');
+  closed.dispose();
+  complete(unknown);await pending;
+  assert.equal(closed.output.children.length,0);
+  assert.equal(closed.inspectButton.disabled,true);
+  assert.match(closed.status.textContent,/Viewer closed/);
+  await closed.inspectButton.dispatch('click');
+  assert.equal(closed.output.children.length,0);
   // No save/import/GM controls are provided by this module.
   assert.doesNotMatch(plainText(host),/Save design-only draft|Execute test|Send GM/);
   console.log('R7 independent read-only readiness panel, two-file guard and stale-selection DOM: PASS');
