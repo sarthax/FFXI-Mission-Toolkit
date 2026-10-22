@@ -1,7 +1,7 @@
 /* Guided Scenario Developer: canonical draft JSON only. Never dispatches gameplay actions. */
 (function () {
   'use strict';
-  const M = window.ScenarioGuidedModel;
+  const M = window.ScenarioGuidedModel, V = window.ScenarioContractV2View;
   const $ = id => document.getElementById(id);
   let spec = M.fresh(), mode = 'guided', options = {features: [], observations: [], operations: []};
   let drafts = [], baseline = null, sourceDetail = null;
@@ -200,6 +200,7 @@
   }
   function diagnostics() {
     updateRevision();
+    renderContractV2(null);
     const problems=M.referenceIssues(spec);
     if(problems.length)show('Local reference warnings (validate on server):\n'+problems.join('\n'));
   }
@@ -218,7 +219,86 @@
   function staticText(parent,tag,value){
     const x=el(tag,'',value);parent.append(x);return x;
   }
-  function renderPreview(view, reader) {
+  // The existing editor owns all draft mutations; this panel is display-only.
+  // Show only explicit canonical source relationships. No client-side verification.
+  function renderContractV2(compatibility, draft=spec, associationReport=null) {
+    const host=$('sd-contract-v2');
+    if(!host || !V)return;
+    const open=new Set([...host.querySelectorAll('details[open]')].map(d=>d.dataset.key));
+    host.replaceChildren();
+    let projection;
+    try{projection=V.project(draft,compatibility,associationReport);}
+    catch(e){staticText(host,'p','Optional metadata cannot be projected; canonical validation required: '+e.message);return;}
+    if(!projection.present){staticText(host,'p',projection.message);return;}
+    if(!projection.valid){staticText(host,'p',projection.message);return;}
+    const detail=(key,title)=>{
+      const d=el('details');d.dataset.key=key;d.open=open.has(key);
+      staticText(d,'summary',title);host.append(d);return d;
+    };
+    staticText(host,'p',projection.message);
+    staticText(host,'p','Compatibility: '+projection.compatibility.state+
+      ' · NON-EXECUTABLE · independent verification NOT ESTABLISHED');
+    for(const reason of projection.compatibility.reasons)staticText(host,'p','Compatibility reason: '+reason);
+    for(const diagnostic of projection.association_diagnostics)
+      staticText(host,'p','Source association diagnostic: '+diagnostic);
+    const caseScope=detail('case-citations','Explicit CASE-level citations — '+projection.case_association.state);
+    if(!projection.case_association.sources.length)
+      staticText(caseScope,'p','UNKNOWN / UNASSIGNED — declared registry entries are not case citations');
+    for(const src of projection.case_association.sources){
+      staticText(caseScope,'p',src.ref+' · '+src.repository+'/'+src.path+':'+src.line_range+
+        ' · revision '+src.revision+' · SHA-256 '+src.digest+
+        ' · '+src.digest_state+' · citation claim ONLY; not authenticated');
+    }
+    const pins=detail('fingerprints','Engine and base-spec fingerprint claims');
+    for(const [key,v] of Object.entries(projection.fingerprint_claims))
+      staticText(pins,'p',key+': '+(v===null?'UNKNOWN':String(v))+' (declared only)');
+    const cases=detail('sources','Declared source registry and explicit scopes ('+projection.sources.length+')');
+    if(!projection.sources.length)staticText(cases,'p','UNKNOWN — no pinned source records');
+    for(const src of projection.sources) {
+      const d=el('div','sd-preview-step');
+      staticText(d,'strong',src.ref+' — '+src.classification);
+      staticText(d,'p',src.repository+'/'+src.path+':'+src.line_range);
+      staticText(d,'p','Revision: '+src.revision+' · SHA-256: '+src.digest);
+      staticText(d,'p',src.digest_state+' · '+src.attribution);cases.append(d);
+    }
+    const unassigned=detail('unassigned','UNASSIGNED declared sources ('+projection.unassigned_sources.length+')');
+    if(!projection.unassigned_sources.length)staticText(unassigned,'p','No unassigned source records');
+    for(const src of projection.unassigned_sources)
+      staticText(unassigned,'p',src.ref+' · '+src.repository+'/'+src.path+':'+src.line_range+
+        ' · '+src.digest_state+' · NO EXPLICIT CASE/STEP CITATION');
+    const bindings=detail('bindings','Typed identity candidates ('+projection.bindings.length+')');
+    if(!projection.bindings.length)staticText(bindings,'p','No canonical v2 parameters declared');
+    for(const b of projection.bindings) {
+      const d=el('div','sd-preview-step');
+      staticText(d,'strong',b.name+' — '+b.kind+' / '+b.state);
+      staticText(d,'p','Identity: '+b.identity+' · namespace: '+b.namespace+' · zone: '+b.zone_id);
+      staticText(d,'p',b.claim+' · '+b.attribution);
+      staticText(d,'p','Source refs: '+(b.sources.map(x=>x.ref).join(', ')||'NONE'));
+      bindings.append(d);
+    }
+    const oracles=detail('oracles','Oracle claims / expected-value candidates ('+projection.oracles.length+')');
+    if(!projection.oracles.length)staticText(oracles,'p','UNKNOWN — no accepted oracle metadata');
+    for(const o of projection.oracles) {
+      staticText(oracles,'p',o.assertion_id+': '+o.type+' / '+o.confidence+' — '+o.state+
+        '; source refs: '+(o.sources.map(x=>x.ref).join(', ')||'NONE'));
+    }
+    for(const step of projection.steps) {
+      const d=detail('step:'+step.id,'Step '+step.id+' — '+step.attribution);
+      staticText(d,'p','Canonical direct STEP citations — '+step.association_state+': '+
+        (step.sources.map(x=>x.repository+'/'+x.path+':'+x.line_range).join(' | ')||'UNKNOWN / UNASSIGNED'));
+      staticText(d,'p','Oracle-linked expected-value candidate sources (NOT step attribution or approval): '+
+        (step.oracle_citations.map(x=>x.repository+'/'+x.path+':'+x.line_range).join(' | ')||'NONE'));
+      staticText(d,'p','Candidate capability: '+step.capability+'; operation class: '+step.operation_class);
+      staticText(d,'p','Required permissions (NOT GRANTED): '+
+        (step.permissions.join(', ')||'NONE DECLARED')+
+        '; operator approval required: '+String(step.approval_required));
+      staticText(d,'p','Missing client/server readbacks: '+(step.readbacks.join(', ')||'NONE DECLARED'));
+      staticText(d,'p',step.readback_state+'; execution: '+step.execution_gate);
+    }
+  }
+
+  function renderPreview(view, reader, compatibility, associationReport) {
+    renderContractV2(compatibility,spec,associationReport);
     const root=$('sd-preview');root.replaceChildren();root.hidden=false;
     staticText(root,'h2',view.title+' — Scenario detail preview');
     staticText(root,'p',view.purpose);
@@ -261,6 +341,7 @@
   }
 
   function renderIncompletePreview() {
+    renderContractV2(null);
     // A planning preview is not canonical acceptance; it never runs the
     // assertions, reads a capture or promotes a proposed expectation.
     const root=$('sd-preview');root.replaceChildren();root.hidden=false;
@@ -302,7 +383,7 @@
     const result=await call('/scenario-developer/validate','POST',{specification:input});
     if(generation!==editorGeneration || JSON.stringify(current())!==JSON.stringify(input))
       throw Error('Preview is stale: editor changed while validating. Validate the current draft again.');
-    renderPreview(result.preview,result.reader_view);
+    renderPreview(result.preview,result.reader_view,result.contract_v2_compatibility,result.contract_v2_source_attribution);
     show('Canonical validation accepted — DESIGN_ONLY, unreviewed, not executable.\n'+
       result.warnings.join('\n'));
     return result;
@@ -317,6 +398,12 @@
   }
   $('sd-guided').addEventListener('click',()=>switchMode('guided'));
   $('sd-advanced').addEventListener('click',()=>switchMode('advanced'));
+  $('sd-advanced-json').addEventListener('input',()=>{
+    // Unapplied Advanced edits are *displayed as provisional*, not silently
+    // copied to spec, validated, saved, or promoted into verified metadata.
+    try{renderContractV2(null,M.parseAdvanced($('sd-advanced-json').value));}
+    catch(e){$('sd-contract-v2').textContent='Advanced JSON pending canonical validation: '+e.message;}
+  });
   $('sd-apply-json').addEventListener('click',()=>switchMode('guided'));
   $('sd-new').addEventListener('click',()=>{
     try {
@@ -389,7 +476,9 @@
       if(generation!==editorGeneration || Number($('sd-revision').value)!==rev ||
           JSON.stringify(current())!==JSON.stringify(input))
         throw Error('Draft changed while validating. Review the edits and save again.');
-      renderPreview(validated.preview,validated.reader_view);
+      renderPreview(validated.preview,validated.reader_view,validated.contract_v2_compatibility,validated.contract_v2_source_attribution);
+      if(validated.contract_v2_compatibility?.state==='BLOCKED')
+        throw Error('Contract v2 source/base-spec fingerprint conflict: '+validated.contract_v2_compatibility.reasons.join('; ')+'. Reconcile metadata in Advanced JSON; never silently repin.');
       const toSave=M.clone(validated.canonical_specification);
       if(toSave.feature_id!==input.feature_id||toSave.case_id!==input.case_id)
         throw Error('Canonical validation returned an unexpected draft identity');
@@ -688,15 +777,13 @@
       setSourceDetail(null,null);
     }catch(e){show('Evidence suggestions not applied: '+e.message);}
   });
-  // Separate, operator-selected, noncanonical advisory. Never touches spec,
-  // activeHandoff, evidenceSuggestions, revision, save or execution code.
+  // This advisory remains separate from canonical evidence import and draft state.
   function resetReadinessViewer() {
     if(readinessViewer)readinessViewer.dispose();
     readinessViewer=window.ScenarioReadinessViewer.mount($('sd-readiness-viewer'),async(review,sidecar)=>{
       return call('/scenario-developer/handoff/readiness/inspect','POST',{review,sidecar});
     });
   }
-  // A pending advisory must never survive navigation away from the editor.
   window.addEventListener('pagehide',()=>{
     if(readinessViewer)readinessViewer.dispose();
     readinessViewer=null;
