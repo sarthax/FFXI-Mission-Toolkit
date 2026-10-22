@@ -1,5 +1,19 @@
 # Current Workbench Roadmap
 
+## 2026-10-22 — R8 Adaptive Scenario Intelligence (planned; issue #1325)
+
+**Goal:** As Toolkit, DSP, client and XIHeadless features evolve, automatically *suggest* source-linked scenario additions/revisions in the existing Scenario Developer, including failure-to-regression proposals. This is a roadmap workstream, **not shipped agent-accessible writing or automatic gameplay execution**. [Tracked design and acceptance: #1325](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1325).
+
+| Stage | Delivery | Gate |
+| --- | --- | --- |
+| ASI-1 / #1200 | Read-only existing canonical case catalog, coverage-gap and Feature Trace/Git change-impact inspection; mark 73 staged designs as design-only | No fabricated runnable status, bounded read-only calls |
+| ASI-2 | Narrow Toolkit-owned MCP/agent tools for scenario list/get, revision/digest, preflight, evidence summary, change impact and validation; **proposal-only** versioned draft edits with expected base revision/idempotency | No direct canonical write, no arbitrary filesystem/SQL, audit and stale-revision conflict detection |
+| ASI-3 / #1302 | Scenario Developer review of AI suggestions with diffs, citations, duplicates, safe negative cases and explicit accept/reject | Human-reviewed canonical promotion; oracle/permission authority remains separate #1198 |
+| ASI-4 / #1202 | Event-driven failure-to-regression drafting from provenance-bearing, attempt-aware evidence and UNKNOWN/BLOCKED states | Missing observations never become FAIL/PASS; no silent importer migration |
+| ASI-5 / #1255 | Optional reviewed, supervised replay and iteration after approved shared XIHeadless protocol | Blocked by XIHeadless #105/#110/#47/#49 and Toolkit #1201/#1202/#1198, operator leases/cancel/cleanup and local acceptance |
+
+**Ownership:** Toolkit owns canonical script/scenario definitions, versioned revisions and reviewed proposal promotion. XIHeadless MCP owns approved execution, task status/cancel and observed operation evidence. Agents may read and propose scripts/scenarios; they must not silently overwrite approved versions, change expected results to manufacture PASS, grant permissions, or start gameplay. Maintain one canonical catalog and editor. Synthetic offline proposal validation can start before runtime bridge approval. **Related ongoing releases:** capture viewer #1315/#1318 and browser B20; Advanced editor #1323; documentation #1314; selected-job observation #1324. Their tests/PRs are independent of #1325.
+
 ## 2026-10-22 — R7 integrated, browser-accepted subset / R8 offline candidates (latest release checkpoint)
 
 **Verified GitHub main:** `9e1f8371c57231f9bb3fa35999cf111c663d8da6` (merged [#1319](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1319) Scenario Developer host-page Jinja repair). R7 source-level integration includes **#1305** integrated-main CI, **#1306** roadmap, **#1309** canonical CASE/STEP associations, **#1308** NONCANONICAL evidence-readiness projection, **#1310** bounded inventory, **#1307** Scenario Developer, **#1311** bounded persisted progression and **#1319** HTTP host-page fix. These are merged code/docs, *not a claim of runtime or gameplay acceptance*. The real [main-push domain validation #39684273477](https://github.com/sarthax/FFXI-Mission-Toolkit/actions/runs/39684273477) passed at #1305 merge `986f781e` (41 synthetic tests), **not** an independently repeated post-#1319 gameplay or deployment check.
