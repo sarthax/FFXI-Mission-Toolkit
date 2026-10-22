@@ -1,0 +1,803 @@
+{
+  "contract": "scenario_evidence_summary_v0_DESIGN_ONLY_NONCANONICAL",
+  "synthetic": true,
+  "not_an_mcp_wire_protocol": true,
+  "not_a_canonical_importer_report": true,
+  "not_authenticated_physical_source": true,
+  "canonical_mutation_allowed": false,
+  "auto_oracle_approval_allowed": false,
+  "automatic_execution_allowed": false,
+  "fixture_note": "All names, IDs, digests, values, sources and revisions are synthetic labels, never real capture evidence.",
+  "examples": [
+    {
+      "id": "complete-observed-mismatch",
+      "synthetic": true,
+      "scenario": {
+        "feature_id": "SYNTHETIC_FEATURE",
+        "case_id": "SYNTHETIC_CASE",
+        "canonical_schema_version": 1,
+        "base_revision": "synthetic-revision-1",
+        "base_digest_claim": "synthetic:spec-sha256-r1",
+        "catalog_state": "DESIGN_ONLY"
+      },
+      "attempt": {
+        "run_id": "synthetic-run-complete-observed-mismatch",
+        "attempt_id": "synthetic-attempt-complete-observed-mismatch",
+        "operation_ids": [
+          "synthetic-operation-complete-observed-mismatch"
+        ],
+        "evidence_digest_claim": "synthetic:evidence-complete-observed-mismatch",
+        "reconciliation": "FIRST_SEEN"
+      },
+      "lifecycle": {
+        "state": "COMPLETED",
+        "terminal_recorded": true,
+        "observation_completeness": "COMPLETE",
+        "cleanup_status": "SYNTHETIC_REPORTED_COMPLETE"
+      },
+      "provenance": {
+        "original_source_ref": "synthetic://capture/complete-observed-mismatch",
+        "capture_id": "synthetic-capture-complete-observed-mismatch",
+        "source_revision_claim": "synthetic:dsp-rev-a",
+        "deployment_revision_claim": null,
+        "decoder_revision_claim": "synthetic:decoder-v1",
+        "source_bytes_authenticated": false,
+        "decoder_authenticated": false,
+        "source_identity_verified": false,
+        "source_revision_assessment": "UNVERIFIED_CLAIM",
+        "original_evidence_retained": true
+      },
+      "evidence": {
+        "observed_facts": [
+          {
+            "source_ref": "synthetic://capture/complete-observed-mismatch",
+            "observer": "CLIENT",
+            "observation": "synthetic flag = 1",
+            "authentication": "UNVERIFIED"
+          },
+          {
+            "source_ref": "synthetic://capture/complete-observed-mismatch",
+            "observer": "SERVER",
+            "observation": "synthetic persisted flag = 0",
+            "authentication": "UNVERIFIED"
+          }
+        ],
+        "candidate_interpretations": [
+          {
+            "text": "This difference may describe a regression",
+            "status": "UNAPPROVED_HYPOTHESIS"
+          }
+        ],
+        "approved_oracles": [],
+        "missing_observations": [],
+        "conflicting_observations": [],
+        "reported_comparison": "MISMATCH",
+        "reported_gameplay_verdict": "FAIL",
+        "authoritative_gameplay_verdict": "UNKNOWN",
+        "independent_authority": "NOT_ESTABLISHED"
+      },
+      "triage": {
+        "expected_evidence_state": "UNKNOWN",
+        "proposal_disposition": "DRAFT_UNTRUSTED",
+        "rationale": "Complete synthetic observation reports a mismatch, but no authenticated oracle exists",
+        "proposal": {
+          "contract": "scenario_revision_proposal_v0_UNTRUSTED_DESIGN",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1",
+          "idempotency_identity": {
+            "run_id": "synthetic-run-complete-observed-mismatch",
+            "attempt_id": "synthetic-attempt-complete-observed-mismatch",
+            "evidence_digest_claim": "synthetic:evidence-complete-observed-mismatch"
+          },
+          "status": "DRAFT_UNTRUSTED",
+          "rationale": "Complete synthetic observation reports a mismatch, but no authenticated oracle exists",
+          "proposed_changes": [
+            {
+              "kind": "REVIEW_NEGATIVE_CASE",
+              "before": null,
+              "after": "Suggest a synthetic negative assertion for review; do not alter approved expected values"
+            }
+          ],
+          "evidence_refs": [
+            "synthetic://capture/complete-observed-mismatch"
+          ],
+          "required_reviews": [
+            "HUMAN_REVIEW",
+            "ORACLE_PROVENANCE",
+            "SOURCE_REVISION"
+          ],
+          "canonical_write_allowed": false,
+          "execution_allowed": false,
+          "permission_grants_allowed": false
+        }
+      }
+    },
+    {
+      "id": "missing-server-readback",
+      "synthetic": true,
+      "scenario": {
+        "feature_id": "SYNTHETIC_FEATURE",
+        "case_id": "SYNTHETIC_CASE",
+        "canonical_schema_version": 1,
+        "base_revision": "synthetic-revision-1",
+        "base_digest_claim": "synthetic:spec-sha256-r1",
+        "catalog_state": "DESIGN_ONLY"
+      },
+      "attempt": {
+        "run_id": "synthetic-run-missing-server-readback",
+        "attempt_id": "synthetic-attempt-missing-server-readback",
+        "operation_ids": [
+          "synthetic-operation-missing-server-readback"
+        ],
+        "evidence_digest_claim": "synthetic:evidence-missing-server-readback",
+        "reconciliation": "FIRST_SEEN"
+      },
+      "lifecycle": {
+        "state": "COMPLETED",
+        "terminal_recorded": true,
+        "observation_completeness": "COMPLETE",
+        "cleanup_status": "SYNTHETIC_REPORTED_COMPLETE"
+      },
+      "provenance": {
+        "original_source_ref": "synthetic://capture/missing-server-readback",
+        "capture_id": "synthetic-capture-missing-server-readback",
+        "source_revision_claim": "synthetic:dsp-rev-a",
+        "deployment_revision_claim": null,
+        "decoder_revision_claim": "synthetic:decoder-v1",
+        "source_bytes_authenticated": false,
+        "decoder_authenticated": false,
+        "source_identity_verified": false,
+        "source_revision_assessment": "UNVERIFIED_CLAIM",
+        "original_evidence_retained": true
+      },
+      "evidence": {
+        "observed_facts": [
+          {
+            "source_ref": "synthetic://capture/missing-server-readback",
+            "observer": "CLIENT",
+            "observation": "client synthetic inventory = 2",
+            "authentication": "UNVERIFIED"
+          }
+        ],
+        "candidate_interpretations": [
+          {
+            "text": "This difference may describe a regression",
+            "status": "UNAPPROVED_HYPOTHESIS"
+          }
+        ],
+        "approved_oracles": [],
+        "missing_observations": [
+          {
+            "observer": "SERVER",
+            "capability": "READ_ONLY_PERSISTED_STATE",
+            "reason": "NOT_INDEPENDENTLY_OBSERVED",
+            "permission_granted": false
+          }
+        ],
+        "conflicting_observations": [],
+        "reported_comparison": "NOT_EVALUATED",
+        "reported_gameplay_verdict": null,
+        "authoritative_gameplay_verdict": "UNKNOWN",
+        "independent_authority": "NOT_ESTABLISHED"
+      },
+      "triage": {
+        "expected_evidence_state": "BLOCKED",
+        "proposal_disposition": "DRAFT_UNTRUSTED",
+        "rationale": "Server-side readback absent; propose instrumentation only",
+        "proposal": {
+          "contract": "scenario_revision_proposal_v0_UNTRUSTED_DESIGN",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1",
+          "idempotency_identity": {
+            "run_id": "synthetic-run-missing-server-readback",
+            "attempt_id": "synthetic-attempt-missing-server-readback",
+            "evidence_digest_claim": "synthetic:evidence-missing-server-readback"
+          },
+          "status": "DRAFT_UNTRUSTED",
+          "rationale": "Server-side readback absent; propose instrumentation only",
+          "proposed_changes": [
+            {
+              "kind": "REQUEST_READBACK",
+              "before": null,
+              "after": "Add a separately authorized read-only persisted-state observation prerequisite"
+            }
+          ],
+          "evidence_refs": [
+            "synthetic://capture/missing-server-readback"
+          ],
+          "required_reviews": [
+            "HUMAN_REVIEW",
+            "ORACLE_PROVENANCE",
+            "SOURCE_REVISION"
+          ],
+          "canonical_write_allowed": false,
+          "execution_allowed": false,
+          "permission_grants_allowed": false
+        }
+      }
+    },
+    {
+      "id": "stale-capture",
+      "synthetic": true,
+      "scenario": {
+        "feature_id": "SYNTHETIC_FEATURE",
+        "case_id": "SYNTHETIC_CASE",
+        "canonical_schema_version": 1,
+        "base_revision": "synthetic-revision-1",
+        "base_digest_claim": "synthetic:spec-sha256-r1",
+        "catalog_state": "DESIGN_ONLY"
+      },
+      "attempt": {
+        "run_id": "synthetic-run-stale-capture",
+        "attempt_id": "synthetic-attempt-stale-capture",
+        "operation_ids": [
+          "synthetic-operation-stale-capture"
+        ],
+        "evidence_digest_claim": "synthetic:evidence-stale-capture",
+        "reconciliation": "FIRST_SEEN"
+      },
+      "lifecycle": {
+        "state": "COMPLETED",
+        "terminal_recorded": true,
+        "observation_completeness": "COMPLETE",
+        "cleanup_status": "SYNTHETIC_REPORTED_COMPLETE"
+      },
+      "provenance": {
+        "original_source_ref": "synthetic://capture/stale-capture",
+        "capture_id": "synthetic-capture-stale-capture",
+        "source_revision_claim": "synthetic:dsp-rev-old",
+        "deployment_revision_claim": null,
+        "decoder_revision_claim": "synthetic:decoder-v1",
+        "source_bytes_authenticated": false,
+        "decoder_authenticated": false,
+        "source_identity_verified": false,
+        "source_revision_assessment": "STALE",
+        "original_evidence_retained": true
+      },
+      "evidence": {
+        "observed_facts": [
+          {
+            "source_ref": "synthetic://capture/stale-capture",
+            "observer": "CLIENT",
+            "observation": "synthetic flag = 1",
+            "authentication": "UNVERIFIED"
+          }
+        ],
+        "candidate_interpretations": [
+          {
+            "text": "This difference may describe a regression",
+            "status": "UNAPPROVED_HYPOTHESIS"
+          }
+        ],
+        "approved_oracles": [],
+        "missing_observations": [],
+        "conflicting_observations": [],
+        "reported_comparison": "NOT_EVALUATED",
+        "reported_gameplay_verdict": null,
+        "authoritative_gameplay_verdict": "UNKNOWN",
+        "independent_authority": "NOT_ESTABLISHED"
+      },
+      "triage": {
+        "expected_evidence_state": "BLOCKED",
+        "proposal_disposition": "REQUIRE_FRESH_EVIDENCE",
+        "rationale": "Capture revision is stale relative to the selected scenario source claim",
+        "proposal": {
+          "contract": "scenario_revision_proposal_v0_UNTRUSTED_DESIGN",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1",
+          "idempotency_identity": {
+            "run_id": "synthetic-run-stale-capture",
+            "attempt_id": "synthetic-attempt-stale-capture",
+            "evidence_digest_claim": "synthetic:evidence-stale-capture"
+          },
+          "status": "REQUIRE_FRESH_EVIDENCE",
+          "rationale": "Capture revision is stale relative to the selected scenario source claim",
+          "proposed_changes": [
+            {
+              "kind": "REFRESH_EVIDENCE",
+              "before": null,
+              "after": "Re-observe using a separately pinned source/deployment snapshot"
+            }
+          ],
+          "evidence_refs": [
+            "synthetic://capture/stale-capture"
+          ],
+          "required_reviews": [
+            "HUMAN_REVIEW",
+            "ORACLE_PROVENANCE",
+            "SOURCE_REVISION"
+          ],
+          "canonical_write_allowed": false,
+          "execution_allowed": false,
+          "permission_grants_allowed": false
+        }
+      }
+    },
+    {
+      "id": "conflicting-revisions",
+      "synthetic": true,
+      "scenario": {
+        "feature_id": "SYNTHETIC_FEATURE",
+        "case_id": "SYNTHETIC_CASE",
+        "canonical_schema_version": 1,
+        "base_revision": "synthetic-revision-1",
+        "base_digest_claim": "synthetic:spec-sha256-r1",
+        "catalog_state": "DESIGN_ONLY"
+      },
+      "attempt": {
+        "run_id": "synthetic-run-conflicting-revisions",
+        "attempt_id": "synthetic-attempt-conflicting-revisions",
+        "operation_ids": [
+          "synthetic-operation-conflicting-revisions"
+        ],
+        "evidence_digest_claim": "synthetic:evidence-conflicting-revisions",
+        "reconciliation": "FIRST_SEEN"
+      },
+      "lifecycle": {
+        "state": "COMPLETED",
+        "terminal_recorded": true,
+        "observation_completeness": "COMPLETE",
+        "cleanup_status": "SYNTHETIC_REPORTED_COMPLETE"
+      },
+      "provenance": {
+        "original_source_ref": "synthetic://capture/conflicting-revisions",
+        "capture_id": "synthetic-capture-conflicting-revisions",
+        "source_revision_claim": "synthetic:dsp-rev-a",
+        "deployment_revision_claim": null,
+        "decoder_revision_claim": "synthetic:decoder-v1",
+        "source_bytes_authenticated": false,
+        "decoder_authenticated": false,
+        "source_identity_verified": false,
+        "source_revision_assessment": "CONFLICT",
+        "original_evidence_retained": true
+      },
+      "evidence": {
+        "observed_facts": [
+          {
+            "source_ref": "synthetic://capture/conflicting-revisions",
+            "observer": "CLIENT",
+            "observation": "synthetic flag = 1",
+            "authentication": "UNVERIFIED"
+          }
+        ],
+        "candidate_interpretations": [
+          {
+            "text": "This difference may describe a regression",
+            "status": "UNAPPROVED_HYPOTHESIS"
+          }
+        ],
+        "approved_oracles": [],
+        "missing_observations": [],
+        "conflicting_observations": [
+          {
+            "left_revision": "synthetic:dsp-rev-a",
+            "right_revision": "synthetic:dsp-rev-b",
+            "reason": "REVISION_CONFLICT"
+          }
+        ],
+        "reported_comparison": "NOT_EVALUATED",
+        "reported_gameplay_verdict": null,
+        "authoritative_gameplay_verdict": "UNKNOWN",
+        "independent_authority": "NOT_ESTABLISHED"
+      },
+      "triage": {
+        "expected_evidence_state": "BLOCKED",
+        "proposal_disposition": "REFUSE_UNTIL_RECONCILED",
+        "rationale": "Two evidence sources claim different source revisions",
+        "proposal": {
+          "contract": "scenario_revision_proposal_v0_UNTRUSTED_DESIGN",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1",
+          "idempotency_identity": {
+            "run_id": "synthetic-run-conflicting-revisions",
+            "attempt_id": "synthetic-attempt-conflicting-revisions",
+            "evidence_digest_claim": "synthetic:evidence-conflicting-revisions"
+          },
+          "status": "REFUSE_UNTIL_RECONCILED",
+          "rationale": "Two evidence sources claim different source revisions",
+          "proposed_changes": [],
+          "evidence_refs": [
+            "synthetic://capture/conflicting-revisions"
+          ],
+          "required_reviews": [
+            "HUMAN_REVIEW",
+            "ORACLE_PROVENANCE",
+            "SOURCE_REVISION"
+          ],
+          "canonical_write_allowed": false,
+          "execution_allowed": false,
+          "permission_grants_allowed": false
+        }
+      }
+    },
+    {
+      "id": "exact-duplicate-attempt",
+      "synthetic": true,
+      "scenario": {
+        "feature_id": "SYNTHETIC_FEATURE",
+        "case_id": "SYNTHETIC_CASE",
+        "canonical_schema_version": 1,
+        "base_revision": "synthetic-revision-1",
+        "base_digest_claim": "synthetic:spec-sha256-r1",
+        "catalog_state": "DESIGN_ONLY"
+      },
+      "attempt": {
+        "run_id": "synthetic-run-complete-observed-mismatch",
+        "attempt_id": "synthetic-attempt-complete-observed-mismatch",
+        "operation_ids": [
+          "synthetic-operation-exact-duplicate-attempt"
+        ],
+        "evidence_digest_claim": "synthetic:evidence-complete-observed-mismatch",
+        "reconciliation": "EXACT_REPLAY"
+      },
+      "lifecycle": {
+        "state": "COMPLETED",
+        "terminal_recorded": true,
+        "observation_completeness": "COMPLETE",
+        "cleanup_status": "SYNTHETIC_REPORTED_COMPLETE"
+      },
+      "provenance": {
+        "original_source_ref": "synthetic://capture/complete-observed-mismatch",
+        "capture_id": "synthetic-capture-complete-observed-mismatch",
+        "source_revision_claim": "synthetic:dsp-rev-a",
+        "deployment_revision_claim": null,
+        "decoder_revision_claim": "synthetic:decoder-v1",
+        "source_bytes_authenticated": false,
+        "decoder_authenticated": false,
+        "source_identity_verified": false,
+        "source_revision_assessment": "UNVERIFIED_CLAIM",
+        "original_evidence_retained": true
+      },
+      "evidence": {
+        "observed_facts": [
+          {
+            "source_ref": "synthetic://capture/complete-observed-mismatch",
+            "observer": "CLIENT",
+            "observation": "synthetic flag = 1",
+            "authentication": "UNVERIFIED"
+          },
+          {
+            "source_ref": "synthetic://capture/complete-observed-mismatch",
+            "observer": "SERVER",
+            "observation": "synthetic persisted flag = 0",
+            "authentication": "UNVERIFIED"
+          }
+        ],
+        "candidate_interpretations": [
+          {
+            "text": "This difference may describe a regression",
+            "status": "UNAPPROVED_HYPOTHESIS"
+          }
+        ],
+        "approved_oracles": [],
+        "missing_observations": [],
+        "conflicting_observations": [],
+        "reported_comparison": "MISMATCH",
+        "reported_gameplay_verdict": "FAIL",
+        "authoritative_gameplay_verdict": "UNKNOWN",
+        "independent_authority": "NOT_ESTABLISHED"
+      },
+      "triage": {
+        "expected_evidence_state": "UNKNOWN",
+        "proposal_disposition": "NO_CHANGE",
+        "rationale": "Exact repeat of the first attempt is idempotent; no new proposal",
+        "proposal": {
+          "contract": "scenario_revision_proposal_v0_UNTRUSTED_DESIGN",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1",
+          "idempotency_identity": {
+            "run_id": "synthetic-run-complete-observed-mismatch",
+            "attempt_id": "synthetic-attempt-complete-observed-mismatch",
+            "evidence_digest_claim": "synthetic:evidence-complete-observed-mismatch"
+          },
+          "status": "NO_CHANGE",
+          "rationale": "Exact repeat of the first attempt is idempotent; no new proposal",
+          "proposed_changes": [],
+          "evidence_refs": [
+            "synthetic://capture/complete-observed-mismatch"
+          ],
+          "required_reviews": [
+            "HUMAN_REVIEW",
+            "ORACLE_PROVENANCE",
+            "SOURCE_REVISION"
+          ],
+          "canonical_write_allowed": false,
+          "execution_allowed": false,
+          "permission_grants_allowed": false
+        }
+      }
+    },
+    {
+      "id": "unauthenticated-source-identity",
+      "synthetic": true,
+      "scenario": {
+        "feature_id": "SYNTHETIC_FEATURE",
+        "case_id": "SYNTHETIC_CASE",
+        "canonical_schema_version": 1,
+        "base_revision": "synthetic-revision-1",
+        "base_digest_claim": "synthetic:spec-sha256-r1",
+        "catalog_state": "DESIGN_ONLY"
+      },
+      "attempt": {
+        "run_id": "synthetic-run-unauthenticated-source-identity",
+        "attempt_id": "synthetic-attempt-unauthenticated-source-identity",
+        "operation_ids": [
+          "synthetic-operation-unauthenticated-source-identity"
+        ],
+        "evidence_digest_claim": "synthetic:evidence-unauthenticated-source-identity",
+        "reconciliation": "FIRST_SEEN"
+      },
+      "lifecycle": {
+        "state": "COMPLETED",
+        "terminal_recorded": true,
+        "observation_completeness": "COMPLETE",
+        "cleanup_status": "SYNTHETIC_REPORTED_COMPLETE"
+      },
+      "provenance": {
+        "original_source_ref": "synthetic://capture/unauthenticated-source-identity",
+        "capture_id": "synthetic-capture-unauthenticated-source-identity",
+        "source_revision_claim": null,
+        "deployment_revision_claim": null,
+        "decoder_revision_claim": null,
+        "source_bytes_authenticated": false,
+        "decoder_authenticated": false,
+        "source_identity_verified": false,
+        "source_revision_assessment": "UNAUTHENTICATED_IDENTITY",
+        "original_evidence_retained": true
+      },
+      "evidence": {
+        "observed_facts": [
+          {
+            "source_ref": "synthetic://capture/unauthenticated-source-identity",
+            "observer": "CLIENT",
+            "observation": "synthetic flag = 1",
+            "authentication": "UNVERIFIED"
+          }
+        ],
+        "candidate_interpretations": [
+          {
+            "text": "This difference may describe a regression",
+            "status": "UNAPPROVED_HYPOTHESIS"
+          }
+        ],
+        "approved_oracles": [],
+        "missing_observations": [],
+        "conflicting_observations": [],
+        "reported_comparison": "NOT_EVALUATED",
+        "reported_gameplay_verdict": null,
+        "authoritative_gameplay_verdict": "UNKNOWN",
+        "independent_authority": "NOT_ESTABLISHED"
+      },
+      "triage": {
+        "expected_evidence_state": "BLOCKED",
+        "proposal_disposition": "DRAFT_UNTRUSTED",
+        "rationale": "Decoder and source identity declarations are unauthenticated; only suggest provenance checks",
+        "proposal": {
+          "contract": "scenario_revision_proposal_v0_UNTRUSTED_DESIGN",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1",
+          "idempotency_identity": {
+            "run_id": "synthetic-run-unauthenticated-source-identity",
+            "attempt_id": "synthetic-attempt-unauthenticated-source-identity",
+            "evidence_digest_claim": "synthetic:evidence-unauthenticated-source-identity"
+          },
+          "status": "DRAFT_UNTRUSTED",
+          "rationale": "Decoder and source identity declarations are unauthenticated; only suggest provenance checks",
+          "proposed_changes": [
+            {
+              "kind": "REQUEST_PROVENANCE",
+              "before": null,
+              "after": "Request separately verified capture bytes, decoder identity and source crosswalk"
+            }
+          ],
+          "evidence_refs": [
+            "synthetic://capture/unauthenticated-source-identity"
+          ],
+          "required_reviews": [
+            "HUMAN_REVIEW",
+            "ORACLE_PROVENANCE",
+            "SOURCE_REVISION"
+          ],
+          "canonical_write_allowed": false,
+          "execution_allowed": false,
+          "permission_grants_allowed": false
+        }
+      }
+    },
+    {
+      "id": "incomplete-cancelled-execution",
+      "synthetic": true,
+      "scenario": {
+        "feature_id": "SYNTHETIC_FEATURE",
+        "case_id": "SYNTHETIC_CASE",
+        "canonical_schema_version": 1,
+        "base_revision": "synthetic-revision-1",
+        "base_digest_claim": "synthetic:spec-sha256-r1",
+        "catalog_state": "DESIGN_ONLY"
+      },
+      "attempt": {
+        "run_id": "synthetic-run-incomplete-cancelled-execution",
+        "attempt_id": "synthetic-attempt-incomplete-cancelled-execution",
+        "operation_ids": [
+          "synthetic-operation-incomplete-cancelled-execution"
+        ],
+        "evidence_digest_claim": "synthetic:evidence-incomplete-cancelled-execution",
+        "reconciliation": "FIRST_SEEN"
+      },
+      "lifecycle": {
+        "state": "CANCELLED",
+        "terminal_recorded": true,
+        "observation_completeness": "PARTIAL",
+        "cleanup_status": "UNKNOWN"
+      },
+      "provenance": {
+        "original_source_ref": "synthetic://capture/incomplete-cancelled-execution",
+        "capture_id": "synthetic-capture-incomplete-cancelled-execution",
+        "source_revision_claim": "synthetic:dsp-rev-a",
+        "deployment_revision_claim": null,
+        "decoder_revision_claim": "synthetic:decoder-v1",
+        "source_bytes_authenticated": false,
+        "decoder_authenticated": false,
+        "source_identity_verified": false,
+        "source_revision_assessment": "UNVERIFIED_CLAIM",
+        "original_evidence_retained": true
+      },
+      "evidence": {
+        "observed_facts": [
+          {
+            "source_ref": "synthetic://capture/incomplete-cancelled-execution",
+            "observer": "CLIENT",
+            "observation": "synthetic flag = 1",
+            "authentication": "UNVERIFIED"
+          }
+        ],
+        "candidate_interpretations": [
+          {
+            "text": "This difference may describe a regression",
+            "status": "UNAPPROVED_HYPOTHESIS"
+          }
+        ],
+        "approved_oracles": [],
+        "missing_observations": [
+          {
+            "observer": "CLIENT",
+            "capability": "FINAL_RESULT",
+            "reason": "CANCELLED_BEFORE_OBSERVATION",
+            "permission_granted": false
+          }
+        ],
+        "conflicting_observations": [],
+        "reported_comparison": "NOT_EVALUATED",
+        "reported_gameplay_verdict": null,
+        "authoritative_gameplay_verdict": "UNKNOWN",
+        "independent_authority": "NOT_ESTABLISHED"
+      },
+      "triage": {
+        "expected_evidence_state": "UNKNOWN",
+        "proposal_disposition": "DRAFT_UNTRUSTED",
+        "rationale": "Cancelled partial execution cannot receive terminal gameplay PASS or FAIL",
+        "proposal": {
+          "contract": "scenario_revision_proposal_v0_UNTRUSTED_DESIGN",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1",
+          "idempotency_identity": {
+            "run_id": "synthetic-run-incomplete-cancelled-execution",
+            "attempt_id": "synthetic-attempt-incomplete-cancelled-execution",
+            "evidence_digest_claim": "synthetic:evidence-incomplete-cancelled-execution"
+          },
+          "status": "DRAFT_UNTRUSTED",
+          "rationale": "Cancelled partial execution cannot receive terminal gameplay PASS or FAIL",
+          "proposed_changes": [
+            {
+              "kind": "REVIEW_CANCELLATION_COVERAGE",
+              "before": null,
+              "after": "Draft cancellation/cleanup instrumentation, not a gameplay verdict"
+            }
+          ],
+          "evidence_refs": [
+            "synthetic://capture/incomplete-cancelled-execution"
+          ],
+          "required_reviews": [
+            "HUMAN_REVIEW",
+            "ORACLE_PROVENANCE",
+            "SOURCE_REVISION"
+          ],
+          "canonical_write_allowed": false,
+          "execution_allowed": false,
+          "permission_grants_allowed": false
+        }
+      }
+    },
+    {
+      "id": "conflicting-duplicate-attempt",
+      "synthetic": true,
+      "scenario": {
+        "feature_id": "SYNTHETIC_FEATURE",
+        "case_id": "SYNTHETIC_CASE",
+        "canonical_schema_version": 1,
+        "base_revision": "synthetic-revision-1",
+        "base_digest_claim": "synthetic:spec-sha256-r1",
+        "catalog_state": "DESIGN_ONLY"
+      },
+      "attempt": {
+        "run_id": "synthetic-run-complete-observed-mismatch",
+        "attempt_id": "synthetic-attempt-complete-observed-mismatch",
+        "operation_ids": [
+          "synthetic-operation-conflicting-duplicate-attempt"
+        ],
+        "evidence_digest_claim": "synthetic:evidence-conflicting-duplicate-attempt",
+        "reconciliation": "IDENTITY_DIGEST_CONFLICT"
+      },
+      "lifecycle": {
+        "state": "COMPLETED",
+        "terminal_recorded": true,
+        "observation_completeness": "COMPLETE",
+        "cleanup_status": "SYNTHETIC_REPORTED_COMPLETE"
+      },
+      "provenance": {
+        "original_source_ref": "synthetic://capture/conflicting-duplicate-attempt",
+        "capture_id": "synthetic-capture-conflicting-duplicate-attempt",
+        "source_revision_claim": "synthetic:dsp-rev-a",
+        "deployment_revision_claim": null,
+        "decoder_revision_claim": "synthetic:decoder-v1",
+        "source_bytes_authenticated": false,
+        "decoder_authenticated": false,
+        "source_identity_verified": false,
+        "source_revision_assessment": "UNVERIFIED_CLAIM",
+        "original_evidence_retained": true
+      },
+      "evidence": {
+        "observed_facts": [
+          {
+            "source_ref": "synthetic://capture/conflicting-duplicate-attempt",
+            "observer": "CLIENT",
+            "observation": "synthetic flag = 1",
+            "authentication": "UNVERIFIED"
+          }
+        ],
+        "candidate_interpretations": [
+          {
+            "text": "This difference may describe a regression",
+            "status": "UNAPPROVED_HYPOTHESIS"
+          }
+        ],
+        "approved_oracles": [],
+        "missing_observations": [],
+        "conflicting_observations": [],
+        "reported_comparison": "NOT_EVALUATED",
+        "reported_gameplay_verdict": null,
+        "authoritative_gameplay_verdict": "UNKNOWN",
+        "independent_authority": "NOT_ESTABLISHED"
+      },
+      "triage": {
+        "expected_evidence_state": "BLOCKED",
+        "proposal_disposition": "REFUSE_UNTIL_RECONCILED",
+        "rationale": "Same run/attempt key with different evidence digest must be a conflict",
+        "proposal": {
+          "contract": "scenario_revision_proposal_v0_UNTRUSTED_DESIGN",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1",
+          "idempotency_identity": {
+            "run_id": "synthetic-run-complete-observed-mismatch",
+            "attempt_id": "synthetic-attempt-complete-observed-mismatch",
+            "evidence_digest_claim": "synthetic:evidence-conflicting-duplicate-attempt"
+          },
+          "status": "REFUSE_UNTIL_RECONCILED",
+          "rationale": "Same run/attempt key with different evidence digest must be a conflict",
+          "proposed_changes": [],
+          "evidence_refs": [
+            "synthetic://capture/conflicting-duplicate-attempt"
+          ],
+          "required_reviews": [
+            "HUMAN_REVIEW",
+            "ORACLE_PROVENANCE",
+            "SOURCE_REVISION"
+          ],
+          "canonical_write_allowed": false,
+          "execution_allowed": false,
+          "permission_grants_allowed": false
+        }
+      }
+    }
+  ]
+}
