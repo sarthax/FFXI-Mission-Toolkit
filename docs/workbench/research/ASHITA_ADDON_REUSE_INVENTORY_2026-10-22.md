@@ -71,6 +71,39 @@ The directory is a curated guide, not a canonical installed-addon manifest, code
 
 The guide additionally covers AH/inventory, progression and objective timers, multi-window UX, accessibility, macros, pets and language support. These have entries in the structured CSV and can be filtered by domain, project, evidence level and priority. Most are **not** source-reviewed.
 
+## Additional source checks: Metrics, tTimers and older PartyBuffs
+
+These supplements were reviewed **after** the first CSV cut. **Metrics** and **tTimers** now have `CodeRead` confidence in the CSV (**5 CodeRead; 6 RepoMetadata; 64 GuideOnly; no README-only rows**). This does *not* mean every file in either addon or their dependency chain was reviewed. PartyBuffs retains `GuideOnly` for the v4 entry because the **specific source examined was a v3 implementation**, not confirmed as the guide's linked v4 release.
+
+### Metrics: source-projected combat attribution, not only DPS
+
+Public source: [RaraProjects/metrics](https://github.com/RaraProjects/metrics) (reviewed under repository default branch `Release`): [`metrics.lua`](https://github.com/RaraProjects/metrics/blob/Release/metrics.lua), [`packets/_parser.lua`](https://github.com/RaraProjects/metrics/blob/Release/packets/_parser.lua), [`handlers/_handler.lua`](https://github.com/RaraProjects/metrics/blob/Release/handlers/_handler.lua), [`handlers/melee.lua`](https://github.com/RaraProjects/metrics/blob/Release/handlers/melee.lua), [`handlers/tp_action.lua`](https://github.com/RaraProjects/metrics/blob/Release/handlers/tp_action.lua).
+
+Verified design details:
+- Incoming `0x028` is decoded into **every target and nested result**, including bitfield count, action category, message and optional additional/spikes effects. This is particularly relevant to Headless #204: do not assume Chains' first-target-only display parser covers full melee/WS metrics.
+- Offense/defense classification checks party/alliance affiliates, pets and owners, and whether a mob is hitting party/pets; missed/mitigated attacks are not naively counted as damage, and additional effects remain separate from the base melee strike.
+- WS parsing separates damage, drains, debuff-only messages and per-skillchain opener/closer metric counters. **Damage credited to a skillchain may be tracked separately**, so aggregators must avoid adding both the base action's total and additional chain damage twice.
+- Incoming packet route has **duplicate packet checking** and zoning refresh, while some output views group targets by *name* rather than unique instance. For reproducible Toolkit encounter oracles, retain **server ID + zone + capture source/sequence** and preserve original evidence. Local name-based grouping may be useful for UI, not authoritative mob identity.
+- The parse “active timer” described in the README auto-pauses after inactive periods. It is a user-facing DPS perspective, not necessarily the wall-clock combat interval. Headless [#208](https://github.com/sarthax/xiheadless-dsp/issues/208) should keep explicit encounter boundary and coverage semantics. Future accepted dashboard can display both **active-time DPS** and **wall-clock DPS** only when labeled, with no inferred nonzero duration.
+
+**Recommendation:** Import design *categories and oracle-test cases*, not the Lua or a parallel packet recorder. First validate full 0x028 result attribution and same packet deduplication with sanitized fixtures. Code/source reviewed, **not** actual Metrics runtime or DSP compatibility.
+
+### tTimers: estimated timings with clear provenance
+
+Public source: [ThornyFFXI/tTimers](https://github.com/ThornyFFXI/tTimers) (GitHub metadata **MIT**); reviewed [`actionpacket.lua`](https://github.com/ThornyFFXI/tTimers/blob/main/actionpacket.lua) and [`callbacks.lua`](https://github.com/ThornyFFXI/tTimers/blob/main/callbacks.lua). The repository also contains separate `trackers/buff`, `trackers/debuff`, and `durations/` modules not yet fully audited.
+
+- It has an independent incoming action-bitfield parser and separate buff/debuff timer trackers; these **demonstrate an event→timer UX pattern**, not authoritative DSP recast/duration values.
+- Its callbacks include **custom operator timers** and local-wall-clock calculations. Keep manually scheduled timer state distinct from server-observed buff state; **predicted expiry never proves a status was removed**.
+- The standalone tTimers parser extracts action categories/results and optional effects; do not mix its specialized packed-id assumptions with Headless's validated command packet schema without bit/fixture comparison.
+
+**Recommendation:** The Toolkit status timeline should show `observed_on`, `predicted_expiry`, `observed_off` and `unknown/stale` as distinct UI states. Headless role policy must not automatically recast or cleanse based on client-predicted time alone.
+
+### PartyBuffs: corroboration is Ashita v3-only
+
+Public reference: [ProjectTako/ffxi-addons/partybuffs/ashita/partybuffs.lua](https://github.com/ProjectTako/ffxi-addons/blob/master/partybuffs/ashita/partybuffs.lua). The inspected source uses older `ashita.register_event('incoming_packet')` (Ashita **v3** surface), recognizes incoming `0x076`, and combines lower status bytes with high-bit masks in party member records; it also shows client-local party distance.
+
+This reinforces the hypothesis behind pending Headless [#206 / PR #207](https://github.com/sarthax/xiheadless-dsp/pull/207), but **does not establish v4 callback compatibility, DSP sends 0x076, the same offsets on Valhalla, or that absent packets mean no buffs**. It is not license clearance for Lua or bundled icons. Local DSP source and capture approval remain decisive.
+
 ## Safety, licensing and version caveats
 
 - **Publicly visible source is not automatic reuse permission.** The Chains repository does not advertise a clear repository-wide SPDX license in the metadata inspected. Its `skills.lua` contains an Ivaar copyright/redistribution header; that does not settle the license of every surrounding file or later fork change. Inspect each artifact before copying anything. **Original C# behavior/data models, source attribution and public protocol facts are preferred.**
