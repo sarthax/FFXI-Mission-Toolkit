@@ -9,7 +9,7 @@ class Cursor:
     def fetchall(self):
         return [{"varname": "Flag", "value": 0}]
     def fetchone(self):
-        return {"keyitems": bytes(896)}
+        return {"charid": 9} if "SELECT charid FROM chars" in self.query else {"keyitems": bytes(896)}
     def close(self):
         pass
 
@@ -63,3 +63,22 @@ def test_missing_character_keyitems_is_not_empty_bitmap(monkeypatch):
     assert report["keyitems"]["status"] == "UNKNOWN_CHARACTER"
     assert report["supported_fields_complete"] is False
     assert report["complete"] is False
+
+
+def test_missing_character_without_keyitems_never_claims_complete(monkeypatch):
+    class MissingCharacter(Cursor):
+        def fetchone(self):
+            return None
+    monkeypatch.setattr(mod, "_approved_connection", lambda charid: (Conn(), MissingCharacter()))
+    result = mod.progression_snapshot(9, ["Flag"], include_keyitems=False)
+    assert result["status"] == "UNKNOWN_CHARACTER"
+    assert result["complete"] is False
+    assert result["supported_fields_complete"] is False
+    assert result["keyitems"]["status"] == "NOT_REQUESTED"
+
+def test_valid_character_without_keyitems_has_scoped_completeness(monkeypatch):
+    monkeypatch.setattr(mod, "_approved_connection", lambda charid: (Conn(), Cursor()))
+    result = mod.progression_snapshot(9, ["Flag"], include_keyitems=False)
+    assert result["supported_fields_complete"] is True
+    assert result["complete"] is False
+    assert result["keyitems"]["status"] == "NOT_REQUESTED"
