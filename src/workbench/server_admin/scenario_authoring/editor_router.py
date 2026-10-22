@@ -15,6 +15,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from .context_handoff import coverage_context, inspect_evidence_review
+from workbench.captures.scenario_readiness_viewer import inspect_paired_readiness
 from workbench.runtime.paths import GUI_ROOT
 from workbench.runtime.legacy_settings import get_dsp_root
 from workbench.server_admin.scenario_authoring.catalog_adapter import (
@@ -228,6 +229,39 @@ def inspect_evidence_handoff(request: Request, body: EvidenceReviewRequest):
         return inspect_evidence_review(body.review)
     except (ValueError, KeyError, TypeError, OverflowError) as exc:
         raise HTTPException(422, "Unsupported, missing, modified or incompatible evidence review: " + str(exc)) from exc
+
+
+class PairedReadinessRequest(BaseModel):
+    review: dict
+    sidecar: dict
+
+
+@router.post("/handoff/readiness/inspect", include_in_schema=False)
+def inspect_readiness_handoff(request: Request, body: PairedReadinessRequest):
+    """Separate local-only, read-only verifier; never use canonical importer."""
+    if not request.client or request.client.host not in ("127.0.0.1", "::1"):
+        raise HTTPException(403, "Capture readiness inspection is local-only")
+    origin = request.headers.get("origin")
+    if origin and origin != str(request.base_url).rstrip("/"):
+        raise HTTPException(403, "Cross-origin capture inspection refused")
+    if request.headers.get("x-requested-with") != "toolkit-ui":
+        raise HTTPException(403, "Local editor request required")
+    if request.headers.get("content-type", "").split(";")[0].strip().lower() != "application/json":
+        raise HTTPException(415, "Capture readiness requires JSON")
+    try:
+        size = int(request.headers.get("content-length", "0") or "0")
+    except ValueError:
+        raise HTTPException(400, "Invalid payload size") from None
+    # Two separate files, each bounded by the verifier to 4.5 MB; bound
+    # the complete wire envelope independently, including Unicode encoding.
+    encoded = json.dumps({"review": body.review, "sidecar": body.sidecar},
+                         ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    if size > 9_100_000 or len(encoded) > 9_100_000:
+        raise HTTPException(413, "Selected capture pair too large")
+    try:
+        return inspect_paired_readiness(body.review, body.sidecar)
+    except (ValueError, KeyError, TypeError, OverflowError) as exc:
+        raise HTTPException(422, "Capture readiness pair rejected: " + str(exc)) from exc
 
 
 @router.get("/seed/{feature_id}/{case_id}", include_in_schema=False)
