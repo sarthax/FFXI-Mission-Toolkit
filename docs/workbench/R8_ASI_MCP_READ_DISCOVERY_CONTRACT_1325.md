@@ -185,7 +185,66 @@ pytest test checks the envelope and **denied runtime authority**,
 source/ref scope, status classification, stable paging bounds,
 forbidden fields, oversized payloads and stale revision conflicts.
 
-## 6. Ownership/milestones; not merged by this contract
+## 6. Concurrent ASI contract ownership — explicit nonduplication decision
+
+This read envelope and method inventory must **not** fork the concurrent
+proposal, evidence or capability schemas. At this design checkpoint:
+
+- **Agent B [#1328](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1328)**
+  owns `scenario_revision_proposal_preview_v1_NONCANONICAL`,
+  proposal ID/idempotency, selected baseline `base.revision`,
+  `base.spec_digest_claim`, bounded before/after change paths,
+  duplicate detection and the untrusted preview UI. A proposal's
+  `scenario.feature_id+case_id` may refer to a published catalog
+  identity, but the canonical catalog's
+  `local_definition_sha256` is **not** the same as Agent B's saved
+  draft revision and is never a reviewer acceptance token.
+  `feature_trace_refs`, `source_refs`, failure and coverage IDs in a
+  proposal are opaque evidence **claims** until a reviewed resolver
+  independently validates them. Discovery supplies read-only metadata,
+  **never** `scenario_propose_revision`, auto-save, reviewed promotion
+  or oracle modifications.
+- **Agent D [#1329](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1329)**
+  owns `scenario_evidence_summary_v0_DESIGN_ONLY_NONCANONICAL`
+  with separate run/attempt IDs, imported/reported observations,
+  competing or missing readbacks, approved versus candidate oracle,
+  source revision, cleanup/terminal and replay/conflict semantics.
+  The proposed `supervisor_scenario_evidence_summary` is **only a
+  future bearer-authenticated, capped Gateway index/wrapper** over a
+  separately accepted Agent D projector; it does **not** define
+  an alternative full evidence schema, authoritative verdict or
+  Headless v2 import. Agent D's own `scenario_evidence_summary`
+  is a provisional conceptual tool name, **not registered**. Use the
+  gateway's stricter **10-record / 64-KiB** cap even if a downstream
+  read model allows a larger query. If #1329 is unmerged or unavailable,
+  return `UNKNOWN` rather than fabricated zero or facts.
+- **Agent E [#1327](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1327)**
+  owns the **proposed** observation provider inventory. Canonical
+  `observations[]` labels (`db_bag`, `db_safe`,
+  `client_safe`, etc.) are not provider IDs. A later,
+  reviewed, **versioned static crosswalk** must map exact
+  canonical `feature_id+case_id+required_observation_id` to a
+  candidate provider descriptor ID. Do not rename existing catalog
+  IDs, infer a provider from matching strings, silently map SQL
+  persisted snapshots to client-observed capability, or promote
+  `SOURCE_INTEGRATED`/`PR_ONLY` to deployed/approved
+  `READY`. Until a provider is independently confirmed
+  deployed and authorized with compatible scope, preflight remains
+  UNKNOWN/BLOCKED and not executable. Only Agent E may finalize
+  descriptor/enum vocabulary; Agent C owns canonical observation
+  label mapping in a separate reviewed contract after #1327.
+- **Agent A** releases each PR independently with exact-head CI,
+  no overlapping edits and explicit owner merge authorization.
+  No one derives a canonical source step association or
+  Headless execution permission from these read/proposal/evidence
+  design documents.
+
+These interfaces deliberately remain **a thin discovery envelope**
+over current Toolkit-owned canonical objects and separately reviewed
+noncanonical projections. They do not create a competing
+`xi-test-execution` lifecycle or change the canonical v1/v2 schema.
+
+## 7. Ownership/milestones; not merged by this contract
 
 1. **ASI-1 / #1322 (#1200):** Agent C final release review,
    owner-authorized merge of GET-only catalog/preflight. Until merged,
