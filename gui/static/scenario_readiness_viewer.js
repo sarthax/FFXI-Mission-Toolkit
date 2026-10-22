@@ -24,18 +24,40 @@
        model.approved_for_execution!==false||model.execution_enabled!==false||
        model.canonical_step_associations!=='UNASSIGNED'||
        model.scenario_specification!==null||model.normative_expected!==null||
-       model.verdict!=='UNKNOWN'||!Array.isArray(model.steps)||
+       model.verdict!=='UNKNOWN'||!Array.isArray(model.steps)||!model.steps.length||
        !['UNKNOWN','BLOCKED'].includes(model.source_compatibility_state))
       throw Error('Untrusted readiness result cannot be displayed as accepted alignment');
     for(const step of model.steps) {
       if(step.canonical_step_id!==null ||
         step.canonical_source_association?.state!=='UNASSIGNED_REQUIRES_INDEPENDENT_CANONICAL_CROSSWALK'||
         step.canonical_source_association?.scope!==null||
-        arr(step.canonical_source_association?.source_refs).length||
+        !Array.isArray(step.canonical_source_association?.source_refs)||
+        step.canonical_source_association.source_refs.length||
         step.oracle_approval_state!=='UNAPPROVED'||step.normative_expected!==null||
         step.verdict!=='UNKNOWN'||step.execution_enabled!==false||
-        !['UNKNOWN','BLOCKED'].includes(step.readiness_state))
+        !['UNKNOWN','BLOCKED'].includes(step.readiness_state)||
+        !Array.isArray(step.original_evidence_refs)||
+        !Array.isArray(step.indexed_evidence_provenance)||
+        !Array.isArray(step.identity_confidence)||
+        !Array.isArray(step.missing_readbacks))
         throw Error('Readiness step attempted canonical or oracle promotion');
+      const refs=step.original_evidence_refs;
+      if(refs.length!==new Set(refs).size||
+         refs.length!==step.indexed_evidence_provenance.length||
+         step.indexed_evidence_provenance.some((source,i)=>
+           source.evidence_ref!==refs[i]||
+           source.capture_id!==model.capture_id||
+           source.independent_source_authentication!==false||
+           !Array.isArray(source.source_file_claims)||
+           source.source_file_claims.some(loc=>
+             loc.indexed_digests_rehashed!==false||
+             loc.decoder_version!==null||
+             loc.decoder_version_status!=='NOT_INDEPENDENTLY_ATTESTED'))||
+         step.identity_confidence.some(binding=>binding.source_identity_verified!==false)||
+         step.missing_readbacks.some(gap=>
+           gap.status!=='NOT_INDEPENDENTLY_OBSERVED'||
+           gap.permission_granted!==false||gap.capability_registered!==false))
+        throw Error('Readiness step attempted source, identity or readback verification');
     }
     return model;
   }
@@ -55,9 +77,12 @@
       const card=node('article');
       card.append(node('h4','Captured observation '+step.step_id+' · '+step.readiness_state));
       line(card,'Original observation: '+step.observed_summary_original);
-      line(card,'Original reviewer step decision (observation only): '+
+      line(card,'Original indexed step review (observation only): '+
         string(step.reviewer_step_decision_original?.decision)+
         ' · '+string(step.reviewer_step_decision_original?.note));
+      line(card,'Selected reviewed-decision export CHOICE (not an oracle): '+
+        string(step.reviewer_step_decision_selected?.decision)+
+        ' · '+string(step.reviewer_step_decision_selected?.note));
       line(card,'Canonical step association: UNASSIGNED; capture step is NOT a canonical step.');
       line(card,'Original evidence: '+arr(step.original_evidence_refs).map(string).join(', '));
       for(const source of arr(step.indexed_evidence_provenance)) {
@@ -85,7 +110,8 @@
       for(const b of arr(step.identity_confidence))
         line(card,'Identity '+string(b.binding_id)+' ('+string(b.capture_identity_kind)+
           ') OBSERVED '+string(b.observed_value)+' · '+string(b.classification)+
-          ' · reviewer '+string(b.review_decision_original?.decision)+
+          ' · original reviewer '+string(b.review_decision_original?.decision)+
+          ' · selected reviewer CHOICE '+string(b.review_decision_selected?.decision)+
           ' · VERIFIED: NO; canonical identity UNASSIGNED');
       line(card,'Source-backed expected candidate, NOT approved: '+string(step.expected_candidate));
       line(card,'Oracle approval: UNAPPROVED · normative expected: UNKNOWN · execution DISABLED');
