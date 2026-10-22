@@ -61,7 +61,7 @@ Imported/recalculated PASS is not independently verified proof.
 </details>
 <details class="sd-block" id="sd-readiness-handoff">
 <summary>Optional paired capture readiness — read-only advisory (not an import)</summary>
-<p class="sd-warning">Choose the original reviewed-decision JSON and its separate matching readiness sidecar. Matching digests establish internal JSON consistency only, not capture authenticity, canonical CASE/STEP association, oracle approval or permission to execute. This panel never edits or saves the scenario draft.</p>
+<p class="sd-warning">Choose original reviewed-decision JSON and a separate matching readiness sidecar. Internal JSON digests do not authenticate captures, source bytes, or parser versions; all canonical associations remain UNASSIGNED, and no draft is saved or executed.</p>
 <div id="sd-readiness-viewer" aria-live="polite"></div>
 </details>
 <p class="sd-muted">Each selected evidence step and each of its candidate identities needs an explicit inclusion/exclusion choice. Imported references survive as unverified source notes in the existing canonical draft only after you explicitly accept suggestions and save. Required observations, assertions, source-backed expectations, preconditions and cleanup must still be authored manually.</p>
@@ -141,6 +141,11 @@ Imported/recalculated PASS is not independently verified proof.
 <label class="sd-field">Specification JSON<textarea id="sd-advanced-json" class="sd-json" spellcheck="false" maxlength="32768"></textarea></label>
 <button type="button" id="sd-apply-json">Apply JSON to Guided</button>
 </section>
+<section class="sd-block" aria-label="Optional canonical Contract v2 authoring context">
+<h2>Contract v2 source, identity and capability readiness (read-only)</h2>
+<p class="sd-muted">Claims only: metadata is not independently authenticated. Direct CASE and STEP citations require explicit canonical contract_v2.source_associations validated by source_attribution_report; oracle-linked citations are separate expected-value candidates and never establish source-to-step attribution. This panel does not approve, save or execute.</p>
+<div id="sd-contract-v2" aria-live="polite">Legacy v1 — no contract_v2 metadata.</div>
+</section>
 <div class="sd-block">
 <h2>Validate, preview and save</h2>
 <div class="sd-bar">
@@ -160,6 +165,7 @@ Imported/recalculated PASS is not independently verified proof.
 </div>
 </section>
 <script src="/static/scenario_guided_model.js"></script>
+<script src="/static/scenario_contract_v2_view.js"></script>
 <script src="/static/scenario_readiness_viewer.js"></script>
 <script src="/static/scenario_developer.js"></script>
 {% endblock %}
