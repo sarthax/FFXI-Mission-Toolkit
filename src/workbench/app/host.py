@@ -17,8 +17,13 @@ exec(compile(_IMPL_FILE.read_text(encoding="utf-8"), str(_IMPL_FILE), "exec"), g
 
 # Isolated manual design surface. Kept out of the Feature Testing reader/router
 # (owned by #1260), and intentionally excluded from the restricted MCP supervisor.
+from workbench.server_admin.scenario_authoring import editor_router as _scenario_editor_module
 from workbench.server_admin.scenario_authoring.editor_router import router as scenario_developer_router
 app.include_router(scenario_developer_router)
+# Share host shell globals with the editor router's separate Jinja environment.
+for _key in ("current_theme", "shell_context"):
+    if _key in templates.env.globals:
+        _scenario_editor_module.templates.env.globals[_key] = templates.env.globals[_key]
 
 
 
