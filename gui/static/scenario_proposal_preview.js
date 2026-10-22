@@ -111,7 +111,7 @@
       missing_observations:proposal.missing_observations,
       execution_dependencies:proposal.execution_dependencies,
       expected_candidates:proposal.expected_candidates,blockers,
-      source_authenticated:false,base_revision_authenticated:false,
+      source_authenticated:false,base_revision_authenticated:false,canonical_schema_validated:false,
       canonical_case_step_approval:'UNASSIGNED',normative_expected:null,
       reviewer_action_enabled:false,save_allowed:false,
       approved_expected:false,execution_enabled:false};
@@ -132,6 +132,7 @@
     line(root,'Case '+view.scenario.feature_id+'/'+view.scenario.case_id+
       ' · operator-declared baseline revision '+view.base_revision);
     line(root,'Spec digest CLAIM '+(view.base_digest_claim||'UNKNOWN / NOT VERIFIED'));
+    line(root,'Baseline schema/revision NOT independently validated; supplied local JSON is not a persisted draft record.');
     line(root,'Reason: '+view.reason);
     line(root,'Before / after are proposals only, NOT saved changes:');
     for(const c of view.changes) {
