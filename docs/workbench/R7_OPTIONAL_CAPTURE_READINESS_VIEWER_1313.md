@@ -71,7 +71,11 @@ The new `gui/static/scenario_readiness_viewer.js` exports:
   `inspect(reviewJson,sidecarJson)` backed by the Python verifier; the
   module has no built-in network/endpoint, local draft or runner access.
   Selection-generation guards discard stale file-read or inspection results
-  after either selector changes.
+  after either selector changes. The returned mount handle also provides
+  `dispose()`: Agent B must call it on New/Open/Fork/Clone/route teardown
+  to invalidate all in-flight responses and clear a previously accepted
+  advisory. A disposed viewer cannot re-enable its inspection button or
+  resurrect a stale response.
 - `ScenarioReadinessViewer.verify(model)`: Fails closed if untrusted result
   claims canonical step mapping, source authentication, approved oracle,
   execution or import. This is defense-in-depth; only the backend verifier
