@@ -22,6 +22,9 @@ from workbench.server_admin.scenario_authoring.catalog_adapter import (
     CatalogUnavailable, search_catalog,
 )
 from workbench.server_admin.feature_testing.scenario_presentation import scenario_presentation
+from workbench.server_admin.feature_testing.scenario_contract_v2 import (
+    compatibility_report, source_attribution_report,
+)
 from workbench.server_admin.feature_testing.router import load_test_catalog
 from workbench.server_admin.feature_testing.spec_drafts import _validate_draft
 from workbench.server_admin.feature_testing.test_specifications import (
@@ -125,7 +128,15 @@ def validate_editor_spec(payload: dict) -> dict:
         "catalog_identity": "UNRESOLVED",
         "reader_view": scenario_presentation(spec),
     }
+    # This read-only canonical report never fabricates runtime/source observations.
+    # Legacy v1 has no v2 namespace or new UI requirements.
+    v2_report = compatibility_report(spec) if "contract_v2" in spec else None
+    # Agent C's merged canonical report is the sole authority for descriptive
+    # CASE/STEP scope. Never infer from oracle, parameter or capture step IDs.
+    attribution = source_attribution_report(spec) if "contract_v2" in spec else None
     return {"valid": True, "canonical_specification": spec, "preview": preview,
+            "contract_v2_compatibility": v2_report,
+            "contract_v2_source_attribution": attribution,
             "reader_view": preview["reader_view"],
             "execution_enabled": False, "operator_review_required": True,
             "warnings": (["Assertions without step coverage: " + ", ".join(uncovered)] if uncovered else [])
@@ -238,7 +249,7 @@ class PairedReadinessRequest(BaseModel):
 
 @router.post("/handoff/readiness/inspect", include_in_schema=False)
 def inspect_readiness_handoff(request: Request, body: PairedReadinessRequest):
-    """Separate local-only, read-only verifier; never use canonical importer."""
+    """Strict local-only noncanonical pair inspection, never canonical import."""
     if not request.client or request.client.host not in ("127.0.0.1", "::1"):
         raise HTTPException(403, "Capture readiness inspection is local-only")
     origin = request.headers.get("origin")
@@ -252,8 +263,6 @@ def inspect_readiness_handoff(request: Request, body: PairedReadinessRequest):
         size = int(request.headers.get("content-length", "0") or "0")
     except ValueError:
         raise HTTPException(400, "Invalid payload size") from None
-    # Two separate files, each bounded by the verifier to 4.5 MB; bound
-    # the complete wire envelope independently, including Unicode encoding.
     try:
         encoded = json.dumps({"review": body.review, "sidecar": body.sidecar},
                              ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
