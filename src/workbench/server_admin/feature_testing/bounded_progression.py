@@ -20,6 +20,13 @@ def progression_snapshot(charid: int, names: list[str], include_keyitems: bool =
         return {**result, "configured": False, "status": "UNAVAILABLE", "complete": False, "vars": {}}
     conn, cursor = opened
     try:
+        cursor.execute("SELECT charid FROM chars WHERE charid = %s", (charid,))
+        character_row = cursor.fetchone()
+        if character_row is None:
+            conn.rollback()
+            return {**result, "configured": True, "status": "UNKNOWN_CHARACTER",
+                    "complete": False, "supported_fields_complete": False, "vars": {},
+                    "keyitems": {"status": "UNKNOWN_CHARACTER" if include_keyitems else "NOT_REQUESTED"}}
         marks = ",".join(["%s"] * len(names))
         cursor.execute(f"SELECT varname, value FROM char_vars WHERE charid = %s AND varname IN ({marks})",
                        (charid, *names))
