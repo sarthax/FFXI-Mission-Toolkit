@@ -13,12 +13,57 @@
       "execution_status": "design_only",
       "purpose": "UNKNOWN — enter a source-backed purpose",
       "rationale": "Synthetic draft example; no gameplay fact established",
-      "steps": [],
-      "observations": [],
-      "assertions": [],
-      "contract_v2": {
-        "contract_version": 2,
-        "source_associations": []
+      "steps": [
+        {
+          "id": "SYNTH-EDITOR-01-S01",
+          "title": "Inspect desired observation",
+          "intent": "observation",
+          "expected": "UNKNOWN — source oracle required",
+          "assertion_ids": [
+            "bag_observed"
+          ],
+          "evidence_refs": [
+            "client_bag"
+          ],
+          "confidence_note": "Synthetic only; not verified"
+        }
+      ],
+      "observations": [
+        "client_bag"
+      ],
+      "assertions": [
+        {
+          "id": "bag_observed",
+          "operation": "nonempty",
+          "observed": "client_bag",
+          "expected": null
+        }
+      ],
+      "preconditions": [
+        "Synthetic observation context only"
+      ],
+      "cleanup": [
+        "No mutation; no execution"
+      ],
+      "behavior": {
+        "given": [
+          "Synthetic fixture, source identities unresolved"
+        ],
+        "when": [
+          "Operator reviews source requirements"
+        ],
+        "then": [
+          "UNKNOWN — independent oracle required"
+        ]
+      },
+      "authoring": {
+        "state": "draft",
+        "execution_policy": "read_only",
+        "evidence_provenance": "synthetic_not_a_run",
+        "blocking_gaps": [
+          "No independently source-backed oracle"
+        ],
+        "review_required": true
       }
     }
   },
