@@ -2,7 +2,7 @@
 
 **Recorded:** 2026-10-22  
 **Status:** Source-informed research inventory; **not runtime, legal, protocol or gameplay acceptance**  
-**Structured source:** [ashita_addon_reuse_inventory_2026-10-22.csv](ashita_addon_reuse_inventory_2026-10-22.csv) — **75 records** across Ashita plugins, addons, forks, an external app, grouped guide items and excluded cases. 75 records do **not** represent 75 source-reviewed implementations or 75 integration requests.
+**Structured source:** [ashita_addon_reuse_inventory_2026-10-22.csv](ashita_addon_reuse_inventory_2026-10-22.csv) — **78 records** across Ashita plugins, addons, forks, an external app, grouped guide items and excluded cases. 78 records do **not** represent 78 source-reviewed implementations or 75 integration requests.
 
 ## Why this exists and what's different
 
@@ -73,7 +73,7 @@ The guide additionally covers AH/inventory, progression and objective timers, mu
 
 ## Additional source checks: Metrics, tTimers and older PartyBuffs
 
-These supplements were reviewed **after** the first CSV cut. **Metrics** and **tTimers** now have `CodeRead` confidence in the CSV (**5 CodeRead; 6 RepoMetadata; 64 GuideOnly; no README-only rows**). This does *not* mean every file in either addon or their dependency chain was reviewed. PartyBuffs retains `GuideOnly` for the v4 entry because the **specific source examined was a v3 implementation**, not confirmed as the guide's linked v4 release.
+These supplements were reviewed **after** the first CSV cut. **Metrics** and **tTimers** now have `CodeRead` confidence in the CSV (**8 CodeRead; 6 RepoMetadata; 64 GuideOnly; no README-only rows**). This does *not* mean every file in either addon or their dependency chain was reviewed. PartyBuffs retains `GuideOnly` for the v4 entry because the **specific source examined was a v3 implementation**, not confirmed as the guide's linked v4 release.
 
 ### Metrics: source-projected combat attribution, not only DPS
 
@@ -104,6 +104,17 @@ Public reference: [ProjectTako/ffxi-addons/partybuffs/ashita/partybuffs.lua](htt
 
 This reinforces the hypothesis behind pending Headless [#206 / PR #207](https://github.com/sarthax/xiheadless-dsp/pull/207), but **does not establish v4 callback compatibility, DSP sends 0x076, the same offsets on Valhalla, or that absent packets mean no buffs**. It is not license clearance for Lua or bundled icons. Local DSP source and capture approval remain decisive.
 
+## 2026-10-22 follow-up — COR, AutoBot-Ashita and all-job party behaviors
+
+Expanded the CSV from 75 to **78** records after reviewing three new public sources (now **8 CodeRead**, 6 RepoMetadata, 64 GuideOnly). This is an addon-reuse inventory, not proof of runtime correctness. The detailed 22-job matrix belongs to [XIHeadless audit #212 / draft PR #213](https://github.com/sarthax/xiheadless-dsp/pull/213) to avoid parallel ownership of the same gameplay implementation.
+
+- **[Buckfutt AutoBot-Ashita](https://github.com/Buckfutt/AutoBot-Ashita):** public MIT-licensed Ashita v4 automation framework with modules for independent jobs, automatic WS, skillchain resonance and a Trust set/summon manager. Audited [`jobs/COR.lua`](https://github.com/Buckfutt/AutoBot-Ashita/blob/main/addons/autobot/jobs/COR.lua) (mainly a generic ability list), [`modules/skillchains.lua`](https://github.com/Buckfutt/AutoBot-Ashita/blob/main/addons/autobot/modules/skillchains.lua) (some trust weapon skills via ability-style packets), and [`modules/trusts.lua`](https://github.com/Buckfutt/AutoBot-Ashita/blob/main/addons/autobot/modules/trusts.lua) (summon/release/retry/monitor). **Trust summons and maintenance do not implement the server-side NPC's role AI.** The repository ships a movement DLL, which was not inspected or executed.
+- **[professorpalmer AshitaRoller4](https://github.com/professorpalmer/ashitaroller4):** Ashita v4 COR main/subjob support (main two rolls vs sub one), optional roll-profile presets, Double-Up, lucky/unlucky and bust policies, Snake Eye, Fold, Crooked Cards and recast checks, status-derived roll maintenance. Audited [`ashitaroller.lua`](https://github.com/professorpalmer/ashitaroller4/blob/main/ashitaroller.lua) and README. **Do not import its hardcoded buff IDs, JA recasts or strategy as DSP authority.** These are version-specific reference hypotheses requiring real packet+server confirmation.
+- **[ChrisTitusTech RollTracker](https://github.com/ChrisTitusTech/ashita-ffxi/tree/main/addons/RollTracker):** read-only human-facing roll representation and lucky/unlucky/value data. Used only to cross-check what a Headless roll-observation panel might show. Observing a roll name/number is not proof every party member has a buff, or that an action succeeded.
+- **[XIHeadless source audit](https://github.com/sarthax/xiheadless-dsp/pull/213):** all 22 jobs already have individual *leveling* Brains, and `Game/PartyRoles.cs` classifies COR as DPS with Support eligibility. `Routines/JobKits.cs` already invokes PhantomRoll and enables generic COR ranged mode, but doesn't include a confirmed allied COR roll rotation. Aged `CorBrain` prose claims no ranged loop; this contradicts current generic `JobKits` configuration and must be reconciled with live evidence, not inferred away.
+- **[Ashita community addon directory](https://git.ashitaxi.com/addons?page=4&sort=moststars):** requested supplemental source, but page 4 couldn't be retrieved through the accessible browser at this review. No invented page-4 entries added; GitHub source repositories above were independently inspected.
+
+**Suggested cross-project sequence:** (1) verify Headless #205/207 observed 0x028/0x076 against DSP; (2) add *read-only* COR roll-type/number/bust and ally buff evidence; (3) produce a pure roll-maintenance/advice policy with UNKNOWN/provenance; (4) integrate opt-in decisions under existing #51/#132 action/lease gates; (5) compare support outcomes using #208/#209 and Toolkit differential testing. Retail Trust AI, Valhalla pet-Lua companions, and leased headless players must be separate evidence categories; Headless trust dependency [#53](https://github.com/sarthax/xiheadless-dsp/issues/53) owns retail-style summon enablement.
 ## Safety, licensing and version caveats
 
 - **Publicly visible source is not automatic reuse permission.** The Chains repository does not advertise a clear repository-wide SPDX license in the metadata inspected. Its `skills.lua` contains an Ivaar copyright/redistribution header; that does not settle the license of every surrounding file or later fork change. Inspect each artifact before copying anything. **Original C# behavior/data models, source attribution and public protocol facts are preferred.**
