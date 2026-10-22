@@ -59,6 +59,11 @@ Imported/recalculated PASS is not independently verified proof.
 <button type="button" id="sd-evidence-use" disabled>Use explicitly confirmed observations in incomplete design-only draft</button>
 <p id="sd-evidence-return" class="sd-muted"><strong>Return to the Evidence Reviewer:</strong> use your browser's Back control if you navigated here from the reviewer, or reopen the original local Evidence Reviewer HTML file. The exported JSON contains no safe return URL; no local path is guessed.</p>
 </details>
+<details class="sd-block" id="sd-readiness-handoff">
+<summary>Optional paired capture readiness — read-only advisory (not an import)</summary>
+<p class="sd-warning">Choose the original reviewed-decision JSON and its separate matching readiness sidecar. Matching digests establish internal JSON consistency only, not capture authenticity, canonical CASE/STEP association, oracle approval or permission to execute. This panel never edits or saves the scenario draft.</p>
+<div id="sd-readiness-viewer" aria-live="polite"></div>
+</details>
 <p class="sd-muted">Each selected evidence step and each of its candidate identities needs an explicit inclusion/exclusion choice. Imported references survive as unverified source notes in the existing canonical draft only after you explicitly accept suggestions and save. Required observations, assertions, source-backed expectations, preconditions and cleanup must still be authored manually.</p>
 </section>
 <section class="wb-panel">
@@ -155,5 +160,6 @@ Imported/recalculated PASS is not independently verified proof.
 </div>
 </section>
 <script src="/static/scenario_guided_model.js"></script>
+<script src="/static/scenario_readiness_viewer.js"></script>
 <script src="/static/scenario_developer.js"></script>
 {% endblock %}
