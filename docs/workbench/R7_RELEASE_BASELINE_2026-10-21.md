@@ -1,7 +1,7 @@
 # R7 release baseline and acceptance-gap ledger — 2026-10-21
 
 **Parent:** [Toolkit #1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197)  
-**Verified integrated Git baseline:** `main@972ff6fa4337cb5d29a3c8c3eb68c73245f24bb9` (merge of #1291; all nine R6 staged domains integrated).  
+**Verified R6 integration baseline:** `main@972ff6fa4337cb5d29a3c8c3eb68c73245f24bb9` (merge of #1291; all nine R6 staged domains integrated). **Updated R7 foundations:** `main@db8b06abab7cd5f7b0908109184453b30ae3b112` includes #1305, #1306, #1309 and #1308; R6 source-history baseline retained below for reproducibility.
 **Mode:** remote/GitHub-only read-only assessment. **This is not a gameplay acceptance report.**
 
 ## R6 merged deliverables (source-level / offline)
@@ -14,12 +14,12 @@
 
 ## CI correction and reproducible offline verification
 
-The pre-merge validator fetched `refs/heads/spec/*`; those branches were automatically deleted after merge, so it cannot be the main release gate. [Draft PR #1305](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1305) adds explicit, mutually exclusive modes to `.github/workflows/r6-domain-specification-validation.yml`:
+The pre-merge validator fetched `refs/heads/spec/*`; those branches were automatically deleted after merge and cannot be the main release gate. [Merged PR #1305](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1305), merge commit `986f781ed1fe61000b2ca62552018061441b7522`, implemented two mutually exclusive modes in `.github/workflows/r6-domain-specification-validation.yml`:
 
 1. **`integrated-main` (default for pull requests and scoped pushes to main; also workflow_dispatch)**: check out full Git history, read nine checked-in `data/testing/domain_drafts/*.json` and the single matrix **from the same checked-out tree**, verify exact integrated JSON bytes match the matrix's original merged PR commit blobs and that each PR head is an ancestor of checked-out HEAD; run all old 73-case structural/source/UNKNOWN/non-promotion gates and negative fixtures. No remote `spec/*` lookup or silent branch fallback.
 2. **`staged-pr` (explicit workflow_dispatch only)**: fetch only the manifest's `refs/pull/<number>/head` JSON, record observed head SHAs, and fail closed if they differ from the reviewed matrix pins or cases. This is for a **future reviewed staging snapshot**; it does not silently substitute merged-main data.
 
-The exact workflow validation command after #1305 lands is:
+The reproducible integrated-main validation commands now in the merged workflow are:
 
 ```shell
 python -m pytest -q test_fixtures/test_domain_draft_validator.py
@@ -34,11 +34,14 @@ python tools/validate_domain_drafts.py \
 
 **Important:** source file:line links, repository commit SHA and historical blob integrity verify *claimed source snapshot continuity*, not DSP source-byte authenticity, installed deployment, runtime config or gameplay truth. No GitHub CI verdict here establishes a client/server-observed game PASS.
 
+**Actual post-merge main CI (verified):** [GitHub Actions #39684273477](https://github.com/sarthax/FFXI-Mission-Toolkit/actions/runs/39684273477), event `push` on `main`, head `986f781ed1fe61000b2ca62552018061441b7522`, completed SUCCESS: 41 synthetic tests, 73 domain designs, lane distribution 5/2/57/9 and historical merged PR blobs matching checked-in JSON. The output expressly reports `source_authenticity=NOT_ATTESTED` and `deployed_revision=UNKNOWN`. Manual `workflow_dispatch` is available but was **not** used for this cited run. #1309 canonical source associations and #1308 noncanonical evidence-readiness projection are merged through `db8b06ab`; Agent B's #1307 editor consumer and Agent E's #1310/#1311 observation implementations remain separately tracked pending review, integration and operator acceptance.
+
+
 ## R7 active development ownership and boundaries
 
 | Owner | Approved domain boundary | Tracking | Coordination |
 |---|---|---|---|
-| Agent A | CI, roadmap, baseline, read-only integration trace; no executor changes | #1197, draft #1305 | Validate first; no merge without owner/independent review |
+| Agent A | CI, roadmap, baseline, read-only integration trace; no executor changes | #1197, merged #1305/#1306 | Verify main-push offline CI, coordinate remaining PRs; no merges without owner/eligible review |
 | Agent B | Guided/Advanced Scenario Developer UI, per-step provenance and readiness presentation, editor models | #1302, #1261 | **Consumes** canonical optional Contract v2; does not modify its validator/schema |
 | Agent C | Canonical Contract v2 validator, source-to-step attribution and compatibility/adapters | #1259, #1302 | Schema authority; communicate agreed field model to B and D before changing shapes |
 | Agent D | Offline Evidence Reviewer, readiness-to-authoring projection, immutable source/review provenance | #1262, #1198, #1202 | Does not rewrite B's editor, C's canonical schema, or packet decoder |
