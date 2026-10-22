@@ -44,9 +44,9 @@ def progression_snapshot(charid: int, names: list[str], include_keyitems: bool =
                 decoded = decode_keyitems(raw)
                 keyitems = {**decoded, "status": "COMPLETE" if decoded["blob_bytes"] == decoded["expected_bytes"] else "INCOMPLETE"}
         conn.rollback()
-    except Exception:
+    except Exception as exc:
         conn.rollback()
-        raise
+        raise RuntimeError("progression observation unavailable (database read failed)") from exc
     finally:
         cursor.close()
         conn.close()
