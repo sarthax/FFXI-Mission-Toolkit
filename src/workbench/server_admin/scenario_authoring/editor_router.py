@@ -254,8 +254,11 @@ def inspect_readiness_handoff(request: Request, body: PairedReadinessRequest):
         raise HTTPException(400, "Invalid payload size") from None
     # Two separate files, each bounded by the verifier to 4.5 MB; bound
     # the complete wire envelope independently, including Unicode encoding.
-    encoded = json.dumps({"review": body.review, "sidecar": body.sidecar},
-                         ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    try:
+        encoded = json.dumps({"review": body.review, "sidecar": body.sidecar},
+                             ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    except (ValueError, TypeError, OverflowError) as exc:
+        raise HTTPException(422, "Invalid capture readiness JSON: non-finite or unsupported value") from exc
     if size > 9_100_000 or len(encoded) > 9_100_000:
         raise HTTPException(413, "Selected capture pair too large")
     try:
