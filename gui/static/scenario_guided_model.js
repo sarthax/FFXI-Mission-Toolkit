@@ -156,6 +156,13 @@
     return 'Loaded revision ' + revision + (dirty ? ' · unsaved changes' : ' · no changes');
   }
 
+  // Inspect the Advanced buffer without replacing the canonical editor state.
+  // Invalid JSON is itself unsaved text, never equivalent to the saved baseline.
+  function advancedRevisionIndicator(baseline, raw, revision) {
+    try { return revisionIndicator(baseline, parseAdvanced(raw), revision); }
+    catch (_error) { return 'Advanced JSON invalid — unsaved text; correct before saving'; }
+  }
+
   function emptyHandoffDraft() {
     return {
       schema_version: 1, feature_id:'', case_id:'', name:'',
@@ -340,5 +347,5 @@
     return draftFromCoverage(ctx);
   }
 
-  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, emptyHandoffDraft, draftFromCoverage, draftFromEvidence, handoffReplacementIssue, replacementConfirmationReason, saveResponseDisposition, coverageContextChanged, referenceIssues, parseAdvanced, contextRefPath, fromContext};
+  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, advancedRevisionIndicator, emptyHandoffDraft, draftFromCoverage, draftFromEvidence, handoffReplacementIssue, replacementConfirmationReason, saveResponseDisposition, coverageContextChanged, referenceIssues, parseAdvanced, contextRefPath, fromContext};
 });
