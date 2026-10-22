@@ -15,7 +15,6 @@ import json
 from .scenario_identity_readiness import _observation_digest
 from .scenario_readiness_summary import summarize_capture_readiness
 from .scenario_review_workflow import _check
-from .scenario_handoff import _digest
 from workbench.server_admin.scenario_authoring.context_handoff import inspect_evidence_review
 
 _REVIEW = "offline_capture_review_decisions_v1_NONCANONICAL"
@@ -35,7 +34,7 @@ def _limited_document(value: object, name: str) -> dict:
     if not isinstance(value, dict):
         raise ValueError(name + " must be a selected JSON object")
     try:
-        length = len(json.dumps(value, ensure_ascii=True, separators=(",", ":")))
+        length = len(json.dumps(value, ensure_ascii=True, allow_nan=False, separators=(",", ":")))
     except (ValueError, TypeError, OverflowError) as exc:
         raise ValueError(name + " is not serializable JSON") from exc
     if length > _MAX_BYTES:
