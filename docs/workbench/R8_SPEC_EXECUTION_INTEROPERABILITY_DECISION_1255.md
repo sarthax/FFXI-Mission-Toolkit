@@ -156,3 +156,84 @@ action, no actual cross-repo serialized status/transport on Toolkit,
 no independent source hashes, no deployment attestations, no real idempotent
 import, no gameplay observation or accepted local browser outcome. Do not
 close #1255 or #1197 based solely on these offline tests.
+
+
+## 6. Cross-repository protocol decision for review — ADOPT/AMEND existing #105 draft
+
+**Decision status: PROPOSED for named reviewers, not APPROVED.** Retain
+`xi-test-execution/1.0.0-draft.1` from [Headless #105](https://github.com/sarthax/xiheadless-dsp/issues/105#issuecomment-6304992825).
+Do not create a second Toolkit wire schema or equate its protocol version
+with Toolkit catalog `schema_version:1`, Headless operation evidence
+`schema_version:1/2`, or the proposed #111 manifest schema version.
+Incompatible major versions, unsupported core enums and missing required
+identity/provenance MUST fail closed; a namespaced optional extension requires
+reviewed version-policy approval. Toolkit #1316 remains **offline** regardless
+of decisions reached on #105.
+
+### 6.1 Exact compatibility and responsibility table
+
+| Concern | Reusable actual source / draft #105 mapping | Proposed review decision and owner | Current classification |
+| --- | --- | --- | --- |
+| Scenario identity/version | Toolkit `feature_id,case_id`, `schema_version:1`, canonical v2 source-attribution and v1 assertions. #105 `test_definition.{feature_id,case_id,stage,definition_revision,definition_digest,scenario_id,scenario_digest,oracle_ids[]}` | **Adopt distinct identities**, pins/digests; do not derive Headless action JSON from authored steps. Toolkit #1200 + Headless #105 | Existing catalog; cross-repo mapping BLOCKED |
+| Character/zone/environment | Toolkit MOG-09 `execution_preflight` checks approved disposable char, local runner/DLL, token, results DB; #105 `prerequisites.environment_id,environment_profile_revision,required_roles[],capabilities[]` | Explicit operator/runtime verified zone, role, character lease, environment and capability truth; no fabricated IDs. #1200, #47, local owner | Synthetic/partial, requires local testing |
+| Resource ownership/leases | Headless `BotTaskLifecycle` and existing char pool; #105 role `slot_id` and per-role cleanup | Keep lease owner/token local, expose sanitized anonymous slot and independently observed release; no auto-reuse if incomplete. #47/#112 + pool owners | Implementation/acceptance BLOCKED |
+| Operator permission | Toolkit `execute_mog09(approved=True)` restricted local path; #105 `prerequisites.authorization_ref`, `requested_by=local_authorized_controller` | Operator grant and task capability/operation-class must be checked independently before admission; a doc reference is not authorization itself. #1200/#1201 | Current MOG-09 only |
+| Supported steps | Headless `ScenarioTaskTools.Start` validates Headless array, supports **only `wait_ms`** with empty expectations | Restrict R8 future adapter to independently accepted operation subset; no automatic conversion from Toolkit narrative/step `intent` or all staged domains. #47 then #1255 | wait-only code; reviewed general execution BLOCKED |
+| Assertion/oracle | Toolkit v1 assertion IDs and evaluator + v2 candidate `oracles[].source_refs`; #105 proposed `result_bundle.assertions[]` per-oracle revision, observation kind, origin, authority | Oracle **approval and independent client/server readback** separate from operation evidence. Candidate is not normative. #1198, #47 | Existing synthetic evaluation; gameplay authority UNKNOWN |
+| Request/admission/task | Headless `McpResult.{ok,accepted,completed?,outcome,operation_id}`; proposed `request_id` is RPC, `run_id` campaign, `execution_id` per admitted attempt, `operation_id` lifecycle task; v1 action `OperationId` scoped separately | Approve B1 identifiers, no aliases; refusal has no invented operation. Lifecycle completion never PASS. #105, #1201 | Existing MCP semantics; cross-repo mapping BLOCKED |
+| Cancel/timeout/restart | Headless `running/completed/failed/cancelled/abandoned` + journal interruptions; proposed cancel-response `request_accepted`, `observed_state` | ACK not terminal; timeout/journal absent ⇒ UNKNOWN/INTERRUPTED and no unsafe automatic re-dispatch, cleanup separate. #112/#47, #1201 | Lifecycle code exists; local acceptance BLOCKED |
+| Operation evidence | #44 opt-in `ScenarioEvidenceV2` nesting PascalCase v1 operation + optional caller-supplied `sha256-json-v1` before/after | Link immutable per-operation evidence by ID and reviewed digest; never project envelope directly to Toolkit importer. #44/#105/#1202 | Code exists; transport bridge BLOCKED |
+| Artifact manifest | #111 proposed local `manifest_schema_version:1`, sanitized relative paths, `sha256-bytes-v1`, complete/partial/quarantined states | **Select a separate local sanitized manifest reference**, no duplicate artifact model. Missing/expired/quarantined artifact ⇒ no verified PASS. #111/#55, security | UNAPPROVED / NOT IMPLEMENTED |
+| Attempt/replay/partial | #105 `idempotency_key`, `execution_id`, positive `attempt`; Headless same-session lifecycle keys; Toolkit v1 SQLite unique key `(run_id,case_id,stage)` | Approve durable digest-bound admission/replay policy: identical key+digest safe replay only if durable proof; changed digest conflict, unknown after restart no auto-repeat. #112 + #1202 | NOT IMPLEMENTED cross-repo |
+| Client/server revisions | Toolkit v1 importer requires 40-hex DSP/Headless/Toolkit commits; #44 accepts null or 40/64-hex; source/deployment claims vs actual bytes distinct | Carry actual pins and optional binary hash/dirty status with unknown reasons. **Never fabricate 40-hex SHA to satisfy v1 import**. #1198/#1202 + local DSP owner | Partial fields; deployed provenance UNKNOWN |
+| Final verdict | Toolkit evaluator `PASS/FAIL/BLOCKED`; importer storage `PASS/FAIL/BLOCKED/SKIPPED`, *not* UNKNOWN; #105 proposed four assertion verdicts and independently separate lifecycle task state | Preserve UNKNOWN first-class in a **version-aware holding/report path** owned by #1202; compatible terminal audited rows may later project to v1. No `UNKNOWN→SKIPPED` and no PASS from admission/`Verified`/hash. #1198/#1202 | v1 current; R8 projection BLOCKED |
+
+The table maps existing fields and **proposed #105 field names**, not an
+approved JSON schema. Production caller identity, authorization, real source
+hashes and lease tokens remain in trusted local machinery; never include raw
+account identifiers, credentials or mutable server commands in transport.
+
+### 6.2 Disposition of the ten R8 acceptance vectors
+
+| Fixture (in noncanonical matrix) | Coverage today | Missing acceptance gate |
+| --- | --- | --- |
+| `supervised_observation_reported_pass` | Existing MOG-09 normalized evaluator computes PASS on **supplied synthetic** values; evidence_auth=false | #47 accepted execution, independent readbacks, #1198 normative oracle, real DSP/client |
+| `missing_preconditions` | Existing MOG-09 `preflight` fails without configuration | #1200 versioned/role/zone/lease checks; local grant validation |
+| `missing_authoritative_readback` | Current Python evaluator blocks absent rows | Independent DSP and client source, completeness/freshness, local test |
+| `cancellation` | Synthetic MCP accepted/acknowledged envelope rejected by importer v1 | #47/#112 terminal state, stop/navigation/lease cleanup, local cancellation |
+| `partial_evidence` | Missing MOG-09 fields produce BLOCKED | #111 manifest and #1202 durable partial/terminal reconciliation |
+| `conflicting_attempt_ids` | Current v1 rejects duplicate report identity or extra attempt fields | #105 identity/attempt semantics + #1202 digest-aware conflict |
+| `unsupported_mutation` | INV-OBS-01 cannot be elevated to verified runner | #47 safety/movement resource controls, explicit permission acceptance; 73 staged cases remain NOT_RUN |
+| `stale_source_revision` | Canonical v2 compatibility detects contradictory claims | Independent deployed source/client/build attestation, local run |
+| `repeated_evidence_import` | Same JSON parses but second v1 SQLite insert is not idempotent | #1202 version-aware immutable evidence ledger and replay rule |
+| `command_acceptance_only` | `accepted=true` without `completed` is rejected as importer report; empty observations BLOCKED | #105/#47 actual task terminal assertion evidence, #1198 verified authority |
+
+**Do not claim these are ten Headless conformance executions**: they are
+ten offline Toolkit boundary vectors and existing test regressions. The
+`supervised_observation_reported_pass` case is deliberately marked
+`UNKNOWN` as an R8 *authority claim* even though the existing evaluator
+reports PASS for the provided values. This distinction prevents false
+promotion of an unauthenticated runner assertion.
+
+### 6.3 Named decisions to record on XIHeadless #105 (not presumed)
+
+Request **approve/amend/reject** for the *existing* eight #105 review gates:
+B1 version and distinct IDs; B2 UNKNOWN holding vs strict v1 projection;
+B3 oracle and independent observation authority; B4 lifecycle/cancel ACK;
+B5 per-role cleanup/lease verification; B6 durable request-digest
+idempotency and retry; B7 #111 out-of-band sanitized manifest digest/reference
+vs operation `sha256-json-v1`; B8 operator preflight and actual revisions.
+Record coordinator, Headless #47/#112/#111/#55 owners and Toolkit
+#1197/#1200/#1201/#1198/#1202 owners as applicable; the draft only becomes
+approved when those named reviewers document their decisions.
+
+**Smallest next code assignment after protocol sign-off:**
+Headless #110 + mirrored Toolkit test reviewer should validate the **same
+versioned, immutable synthetic fixture bytes** using existing test runners,
+with file digest and both exact-head CI URLs, no runtime calls. In parallel
+the next *Toolkit-owned* feature slice is #1200: read-only feature/case,
+spec fingerprint, review/oracle coverage, required roles/zone and
+`SUPPORTED/UNKNOWN/BLOCKED` preflight preview; keep
+`execution_enabled=false` and no submit button. Only after #47/#49 local
+acceptance should #1201 and then #1255 wire supervised scenario execution;
+#1202 owns the versioned idempotent import adapter.
