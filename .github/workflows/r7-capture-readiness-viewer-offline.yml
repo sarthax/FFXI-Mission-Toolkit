@@ -5,6 +5,10 @@ on:
     paths:
       - "src/workbench/captures/scenario_readiness_viewer.py"
       - "gui/static/scenario_readiness_viewer.js"
+      - "gui/static/scenario_developer.js"
+      - "gui/templates/scenario_developer.html"
+      - "src/workbench/server_admin/scenario_authoring/editor_router.py"
+      - "test_fixtures/test_scenario_readiness_editor_attachment.py"
       - "test_fixtures/test_capture_readiness_viewer.py"
       - "test_fixtures/test_capture_readiness_viewer.cjs"
       - "docs/workbench/R7_OPTIONAL_CAPTURE_READINESS_VIEWER_1313.md"
@@ -37,7 +41,9 @@ jobs:
           PYTHONPATH: "src:test_fixtures:."
         run: |
           set -euo pipefail
-          python -m pytest -q test_fixtures/test_capture_readiness_viewer.py test_fixtures/test_capture_readiness_summary.py
+          python -m pytest -q test_fixtures/test_capture_readiness_viewer.py test_fixtures/test_capture_readiness_summary.py test_fixtures/test_scenario_readiness_editor_attachment.py
+      - name: Check attached editor script syntax
+        run: node --check gui/static/scenario_developer.js
       - name: Independently run DOM and model safety suite
         run: |
           set -euo pipefail
