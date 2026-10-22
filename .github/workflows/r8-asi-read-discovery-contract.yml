@@ -1,0 +1,30 @@
+name: R8 ASI MCP Read Discovery Contract (Offline)
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r8-asi-read-discovery-contract.yml"
+      - "docs/workbench/R8_ASI_MCP_READ_DISCOVERY_CONTRACT_1325.md"
+      - "test_fixtures/r8_asi_read_discovery_contract_synthetic.json"
+      - "test_fixtures/test_r8_asi_mcp_read_discovery_contract.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-read-discovery-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test-only dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Validate all synthetic read responses and negative mutations
+        env:
+          PYTHONPATH: "src:."
+        run: |
+          python -m pytest -q test_fixtures/test_r8_asi_mcp_read_discovery_contract.py
