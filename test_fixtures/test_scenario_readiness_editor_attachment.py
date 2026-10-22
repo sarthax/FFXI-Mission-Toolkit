@@ -63,3 +63,15 @@ def test_route_refuses_cross_capture_tampered_digest_and_forged_approval():
         with pytest.raises(HTTPException) as err:
             inspect_readiness_handoff(request(), PairedReadinessRequest(review=review, sidecar=changed))
         assert err.value.status_code == 422
+
+
+@pytest.mark.parametrize("section", ["review", "sidecar"])
+@pytest.mark.parametrize("nonfinite", [float("nan"), float("inf"), -float("inf")])
+def test_nonfinite_paired_json_returns_controlled_422(section, nonfinite):
+    review, sidecar = pair()
+    target = review if section == "review" else sidecar
+    target["injected_nonfinite"] = nonfinite
+    with pytest.raises(HTTPException) as err:
+        inspect_readiness_handoff(request(), PairedReadinessRequest(review=review, sidecar=sidecar))
+    assert err.value.status_code == 422
+    assert "Invalid capture readiness JSON" in err.value.detail
