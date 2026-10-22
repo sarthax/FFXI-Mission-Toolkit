@@ -93,6 +93,20 @@ def scenario_preflight(feature_id: str, case_id: str):
     return preflight(feature_id, case_id)
 
 
+@router.get("/r8/catalog")
+def r8_scenario_catalog_api():
+    """Published declarations only; never includes staged cases as runners."""
+    from .r8_catalog_preflight import catalog_preview
+    return catalog_preview()
+
+
+@router.get("/r8/preflight/{feature_id}/{case_id}")
+def r8_scenario_preflight_api(feature_id: str, case_id: str):
+    """Advisory GET; no MCP submission, operator action or database access."""
+    from .r8_catalog_preflight import preflight_preview
+    return preflight_preview(feature_id, case_id)
+
+
 @router.get("/catalog/{feature_id}/{case_id}")
 def scenario_api(feature_id: str, case_id: str):
     return scenario_detail(feature_id, case_id)
