@@ -36,7 +36,7 @@ jobs:
         with:
           node-version: "22"
       - name: Install existing project and pytest
-        run: python -m pip install --disable-pip-version-check -e . pytest fastapi starlette
+        run: python -m pip install --disable-pip-version-check -e . pytest fastapi starlette jinja2 httpx
       - name: Paired-capture integrity and existing readiness nonpromotion tests
         env:
           PYTHONPATH: "src:test_fixtures:."
