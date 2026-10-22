@@ -4,6 +4,7 @@ from collections import Counter
 import json
 from pathlib import Path
 import re
+import subprocess
 
 LANES = {"observe-now", "needs-readback", "needs-mutation", "needs-deploy"}
 SHA = re.compile(r"[0-9a-f]{40}")
@@ -296,19 +297,100 @@ def validate_reconciled_matrix(matrix, manifest, snapshot, observed_heads):
             "deployed_revision": "UNKNOWN"}
 
 
+
+def verify_integrated_history(matrix, manifest, snapshot, read_pinned_blob, is_merged_ancestor):
+    """Fail closed if integrated draft bytes differ from their recorded merged PR heads.
+
+    This mode does NOT fetch deleted branches or accept a synthetic head map.
+    Pinned PR commits must be reachable ancestors of the checked-out Git HEAD,
+    and their exact staged file bytes must match the corresponding working tree
+    file. A later intentional edit requires a new reviewed source snapshot.
+    """
+    refs = (matrix.get("source") or {}).get("domain_pr_head_snapshot")
+    domains = manifest.get("domains")
+    check(isinstance(domains, list) and bool(domains),
+          "integrated-main: expected nonempty domain manifests")
+    check(isinstance(refs, list) and len(refs) == len(domains),
+          "integrated-main: historical PR head pin count mismatch")
+    pins = {r.get("domain"): r for r in refs if isinstance(r, dict)}
+    check(len(pins) == len(refs), "integrated-main: duplicate/invalid domain pin")
+    observed = {}
+    for meta in domains:
+        name = meta["name"]
+        check(isinstance(name, str) and re.fullmatch(r"[a-z_]+", name) is not None,
+              "integrated-main: unsafe domain path")
+        pin = pins.get(name)
+        check(isinstance(pin, dict) and pin.get("pr") == meta["pr"] and
+              pin.get("source_revision") == meta["sha"] and
+              pin.get("case_count") == meta["cases"],
+              f"{name}: integrated matrix head metadata mismatch")
+        sha = pin.get("head_sha")
+        check(isinstance(sha, str) and SHA.fullmatch(sha) is not None,
+              f"{name}: invalid historical PR head")
+        check(is_merged_ancestor(sha),
+              f"{name}: PINNED_PR_HEAD_NOT_IN_INTEGRATED_HISTORY: {sha}")
+        relative = f"data/testing/domain_drafts/{name}.json"
+        actual = Path(snapshot) / f"{name}.json"
+        check(actual.is_file() and not actual.is_symlink(),
+              f"{name}: integrated draft missing or symbolic link")
+        try:
+            historical = read_pinned_blob(sha, relative)
+        except (OSError, subprocess.CalledProcessError) as exc:
+            raise ValidationError(f"{name}: PINNED_PR_BLOB_UNAVAILABLE: {sha}") from exc
+        check(isinstance(historical, bytes) and actual.read_bytes() == historical,
+              f"{name}: INTEGRATED_DRAFT_DIFFERS_FROM_PINNED_PR_HEAD")
+        observed[name] = sha
+    return observed
+
+
+def _git_integrated_reader(repo_root):
+    """Read-only git access: argument arrays, pinned 40-hex SHA, known paths."""
+    root = Path(repo_root).resolve()
+
+    def is_merged_ancestor(sha):
+        result = subprocess.run(["git", "merge-base", "--is-ancestor", sha, "HEAD"],
+                                cwd=root, check=False, capture_output=True)
+        return result.returncode == 0
+
+    def read_pinned_blob(sha, path):
+        return subprocess.run(["git", "show", f"{sha}:{path}"],
+                              cwd=root, check=True, capture_output=True).stdout
+
+    return read_pinned_blob, is_merged_ancestor
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--snapshot-root", required=True, type=Path)
     p.add_argument("--manifest", required=True, type=Path)
     p.add_argument("--catalog", required=True, type=Path)
     p.add_argument("--matrix", required=True, type=Path)
-    p.add_argument("--observed-heads", required=True, type=Path)
+    p.add_argument("--mode", choices=("integrated-main", "staged-pr"), required=True,
+                   help="Explicit source mode; never fall back to deleted branches")
+    p.add_argument("--repo-root", type=Path, default=Path("."),
+                   help="Git checkout whose HEAD contains historical merged source commits")
+    p.add_argument("--observed-heads", type=Path,
+                   help="Mandatory fetched PR head map in staged-pr mode only")
     args = p.parse_args()
     manifest = load(args.manifest)
+    matrix = load(args.matrix)
     base = validate_snapshot(args.snapshot_root, manifest, load(args.catalog))
-    concord = validate_reconciled_matrix(load(args.matrix), manifest,
-                                          args.snapshot_root, load(args.observed_heads))
-    print(json.dumps({**base, **concord}, indent=2, sort_keys=True))
+    if args.mode == "integrated-main":
+        check(args.observed_heads is None,
+              "integrated-main: external observed heads cannot substitute for Git history")
+        reader, ancestor = _git_integrated_reader(args.repo_root)
+        observed = verify_integrated_history(matrix, manifest, args.snapshot_root,
+                                             reader, ancestor)
+    else:
+        check(args.observed_heads is not None,
+              "staged-pr: explicit observed heads are mandatory, no integrated fallback")
+        observed = load(args.observed_heads)
+    concord = validate_reconciled_matrix(matrix, manifest, args.snapshot_root, observed)
+    print(json.dumps({**base, **concord, "mode": args.mode,
+                      "source_provenance": ("PINNED_PR_BLOBS_MATCH_INTEGRATED_HISTORY"
+                                            if args.mode == "integrated-main"
+                                            else "EXPLICIT_FETCHED_PR_HEADS")},
+                     indent=2, sort_keys=True))
 
 
 if __name__ == "__main__":
