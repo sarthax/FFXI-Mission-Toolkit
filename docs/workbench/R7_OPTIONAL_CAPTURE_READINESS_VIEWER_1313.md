@@ -124,3 +124,41 @@ commit/revision and client DAT namespaces, source file SHA-256, before/after
 authoritative readbacks (inventory/furnishings/jobs/quests/key items/NPC/mob/
 instance), then record reviewable evidence and owner-approved oracle/source
 associations. These steps are **not done** and are not part of #1313.
+
+
+## Editor attachment candidate — Agent B (#1313)
+A dependent draft branch `feature/r7-readiness-editor-attachment-1313` mounts the
+existing evidence-owned `ScenarioReadinessViewer` in a separate, operator-opened
+Scenario Developer panel with two explicit local JSON selectors. The host callback
+POSTs only to `/scenario-developer/handoff/readiness/inspect`, invoking
+`inspect_paired_readiness` with a bounded same-origin, localhost-only,
+`X-Requested-With: toolkit-ui`, JSON-only request. It never calls the
+canonical `/handoff/evidence/inspect` importer and never passes readiness
+results into canonical specification state, drafts, source mappings or execution.
+
+The independent viewer's file-change generation guard rejects results from
+stale selections. Existing New/Fork/Clone/Open guards, revision controls,
+Guided/Advanced editing, v1 compatibility and local draft saving are not
+modified. This is a proposed UI attachment, **not yet independently approved,
+merged, browser-accepted or physically authenticated**.
+
+### B20 — Local opt-in acceptance handoff (NOT EXECUTED)
+After independent Agent A review and owner approval, the local operator should:
+1. Open Scenario Developer; exercise existing B01–B19 first without modifying
+   their ongoing acceptance agent's environment.
+2. Open the optional readiness panel, select original reviewed-decision JSON
+   and separately exported sidecar from the same reviewer state, and inspect.
+3. Confirm capture identity, indexed source refs, filename, span/time,
+   parser and digest claims, candidate identities, unapproved oracles and
+   conditional job/mob readback gaps render as advisory UNKNOWN/BLOCKED.
+4. Swap a file during inspection; verify stale results disappear.
+5. Try mismatched capture IDs, different digests, cross-capture refs,
+   duplicate rows and forged approval or oracle claims; verify rejection.
+6. Confirm no CASE/STEP canonical mapping is inferred; UNASSIGNED remains.
+7. Confirm no save, import, permission grant, execution or scenario mutation,
+   including after New, Fork, Clone, Open and Guided/Advanced changes.
+8. Confirm ordinary review-decision import still works, and sidecars remain
+   rejected by that canonical importer.
+
+No real-client/capture/decoder/DSP claims are established by CI or these
+synthetic fixtures. B20 is an operator-only acceptance task, not a completed test.
