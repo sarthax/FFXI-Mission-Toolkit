@@ -1,7 +1,7 @@
 # R7 #1295 — Bounded persisted inventory v2 (draft)
 
 Endpoint: `GET /api/supervisor/test-character-inventory-v2?charid=...&location=1&cursor=0&limit=100`.
-Existing supervisor bearer token and disposable-character allowlist are mandatory. Location is restricted to 0 inventory, 1 Mog Safe and 10 Mog Safe 2. Database credentials must have SELECT-only char_inventory permission; connection remains 127.0.0.1, read-only transaction.
+Existing supervisor bearer token and disposable-character allowlist are mandatory. Location is restricted to 0 inventory, 1 Mog Safe and 10 Mog Safe 2. The dedicated supervisor DB principal must have SELECT-only privileges on **both `chars` and `char_inventory`**: the former distinguishes nonexistent characters from an authorized empty container. Do not assume either grant is deployed; verify effective privileges during local acceptance. DB connections target 127.0.0.1 and are read-only. The HTTP supervisor listener must be bound to loopback by deployment configuration; this route uses bearer authorization and does not independently establish an HTTP client-origin restriction.
 
 Rows are ordered by slot, with itemId, quantity and opaque base64 extra bytes; absent extra differs from zero bytes. No augment or installed-furnishing flags are inferred: both are UNKNOWN/UNSUPPORTED until independently source-backed. Scope, UTC query timestamp, source kind and unauthenticated source-revision UNKNOWN are explicit. No claims of runtime memory or client agreement.
 
