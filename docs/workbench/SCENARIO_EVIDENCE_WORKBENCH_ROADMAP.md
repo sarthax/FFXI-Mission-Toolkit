@@ -1,5 +1,17 @@
 # Scenario & Evidence Workbench — bidirectional testing roadmap
 
+## 2026-10-22 — source-integrated R7; R8 offline architecture under review
+
+**Current merged baseline:** `main@282a4ff1bdf776b48bc006b1337bfe1c74944fbc` after #1311. #1305/#1306/#1309/#1308/#1310/#1307/#1311 are merged. The Scenario Developer now consumes canonical explicit CASE/STEP *citation claims*; source registry, identity references and oracle-linked expected-value candidate citations remain separate and not authenticated. Bounded read-only supervisor inventory and var/KI subset exist at source level with restricted character/SQL scope; job, quest, currency, client agreement and installed furnishing state remain unsupported or UNKNOWN. **No automatic runnable-scenario promotion**: 73 merged drafts are still design-only/NOT_RUN, lanes 5/2/57/9.
+
+**Release blocking operator evidence:** local browser [#1302 acceptance report](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1302#issuecomment-6343419660) reports `GET /scenario-developer` **HTTP 500** (`current_theme` missing Jinja template global). **B01–B19 BLOCKED, not PASS or skipped**. B20 separately BLOCKED pending optional #1313 viewer. A code-render correction, true host/browser acceptance, source/DSP deployment attestation and independent client/server readback remain future distinct gates.
+
+**R7 viewer candidate #1315:** exact-head offline verifier+standalone read-only DOM widget, 21 Python tests and a real Node fake-DOM smoke **PASS**, recomputes both indexed projection digest scopes and refuses forged review/sidecar/oracle/identity/execution states. It is **NOT** yet mounted into the Scenario Developer or exposed via a dedicated accepted pair-inspect route; #1313 remains OPEN. The physical capture, decoder/version and source hashes remain unverified.
+
+**R8 candidate #1316:** offline-only interoperability proposal, 10 synthetic boundary vectors / **72 combined regression tests PASS** at its then-current SHA. No runnable assertion, XIHeadless bridge, additional importer schema or live action was introduced. External [XIHeadless #105](https://github.com/sarthax/xiheadless-dsp/issues/105) draft still requires approved submit/status/cancel/evidence and attempt identity before #1255/#1200/#1201/#1202 runtime integration. Separate owner review, branch reconciliation and exact-head CI are required for #1315/#1316; neither is authorized for merge.
+
+The older 2026-10-21 section below is retained as a dated historical snapshot and is **superseded by this checkpoint** where release or acceptance status differs.
+
 Status: R7 ACTIVE / source-level integrated R6; runtime acceptance OPEN. Parent: [Toolkit #1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197). Existing related work: #1198 (oracle provenance), #1200 (catalog/preflight), #1201 (run controls), #1202 (import), #1207 (coverage), #1208 (guided authoring), #1249–#1254 (domain expansion), #1255 (spec-driven runner); XiHeadless #42/#47/#49/#105/#107/#122/#123/#126.
 
 ## R7 delivery status and dependency gates — 2026-10-21
