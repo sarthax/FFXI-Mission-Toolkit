@@ -206,6 +206,7 @@
   function switchMode(target) {
     try {current();}
     catch(err){show('Cannot switch mode: '+err.message);return;}
+    if(mode!==target)resetReadinessViewer();
     mode=target;
     $('sd-guided-panel').hidden=target!=='guided';
     $('sd-advanced-panel').hidden=target!=='advanced';
