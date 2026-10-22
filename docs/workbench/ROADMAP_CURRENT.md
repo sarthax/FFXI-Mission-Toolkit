@@ -1,5 +1,13 @@
 # Current Workbench Roadmap
 
+## 2026-10-22 — Cross-project testing/release checkpoint (GitHub-verified; local work unknown)
+
+- **Toolkit main** at the time of this audit: `6f901db9ceb28ef6dfafea906c51babefc2b2b54`. Merged #1316 offline R8 interoperability and #1321 R7 observation closeout. Both are foundational/offline, **not** gameplay execution or acceptance.
+- **In-review Toolkit candidates:** #1315 verifier `2046e0c9` and stacked #1318 editor attachment `60db8475` (both draft/unmerged, separate authorization and final reviewed-head gates); #1314 historical docs `47f8d1d4`; #1323 Advanced JSON state synchronization `8063c746`; #1324 selected-job persisted readback `f75ef2ff`. Local B20 pending post-merge. ASI issue #1325 / roadmap PR #1326 remains planning-only.
+- **XIHeadless main at audit:** `e5e80350711d5d2ec814c893a17c63baf3ef98a9`. Recent merged pool/multibot/lifecycle and supervision PRs include #180, #181, #185, #190, #195, #196 and #198. Open development includes #201 pool recovery, #202 healer observability, #203 research, #205 typed combat observations, and issue #206 party-effects observations. Shared Toolkit–Headless protocol #105 and conformance #110 still open; do not treat admission as scenario PASS or infer a general runner exists.
+- **DarkStar/Valhalla publication caveat:** remote `feature/mog-house-2f-patio` and `feature/mog-house-gardening` are not ahead of its main (stale), while `feature/chocobo-raising-core` remains 2 ahead / 9 behind. No remote branch/PR was identified with *chocobo racing* in its name. This audit cannot detect uncommitted or unpushed local changes, nor prove racing was finished. Distinguish racing from raising and verify local worktrees, reflog and remotes before cleanup.
+- **Release management:** no unsolicited merger of active drafts; refresh exact-head CI and reviews after integration, and obtain owner approval. This section records a GitHub checkpoint, not an installed client/server attestation.
+
 ## 2026-10-22 — R8 Adaptive Scenario Intelligence (planned; issue #1325)
 
 **Goal:** As Toolkit, DSP, client and XIHeadless features evolve, automatically *suggest* source-linked scenario additions/revisions in the existing Scenario Developer, including failure-to-regression proposals. This is a roadmap workstream, **not shipped agent-accessible writing or automatic gameplay execution**. [Tracked design and acceptance: #1325](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1325).
