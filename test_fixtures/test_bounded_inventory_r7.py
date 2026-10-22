@@ -125,3 +125,45 @@ def test_select_privilege_failure_rolls_back_and_closes(monkeypatch):
     with pytest.raises(RuntimeError, match="inventory observation unavailable"):
         mod.inventory_snapshot_v2(7, 1)
     assert calls == ["rollback", "cursor_close", "connection_close"]
+
+
+def test_http_supervisor_token_and_character_scope_without_database(monkeypatch):
+    """Exercise the real route/bearer and existing approved-character guard.
+
+    No DB connection is made: approved disposable id with no configured DB is
+    unavailable, rather than an empty COMPLETE snapshot.
+    """
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from workbench.server_admin.feature_testing import supervisor
+
+    app = FastAPI()
+    app.include_router(supervisor.router)
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TOKEN", "s" * 40)
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS", "7")
+    for key in ("MISSION_TOOLKIT_SUPERVISOR_DB_USER",
+                "MISSION_TOOLKIT_SUPERVISOR_DB_PASSWORD",
+                "MISSION_TOOLKIT_SUPERVISOR_DB_NAME"):
+        monkeypatch.delenv(key, raising=False)
+
+    url = "/api/supervisor/test-character-inventory-v2"
+    client = TestClient(app)
+    params = {"charid": 7, "location": 1, "cursor": 0, "limit": 100}
+    assert client.get(url, params=params).status_code == 403
+    assert client.get(url, params=params,
+                      headers={"Authorization": "Bearer wrong"}).status_code == 403
+
+    auth = {"Authorization": "Bearer " + "s" * 40}
+    denied = client.get(url, params={**params, "charid": 8}, headers=auth)
+    assert denied.status_code == 400
+    assert "not approved" in denied.json()["detail"]
+
+    approved_unavailable = client.get(url, params=params, headers=auth)
+    assert approved_unavailable.status_code == 200
+    data = approved_unavailable.json()
+    assert data["status"] == "UNAVAILABLE" and data["complete"] is False
+    assert data["items"] == [] and data["total_rows"] is None
+    assert data["execution_enabled"] is False
+    for overrides in ({"location": 9}, {"cursor": -1}, {"limit": 101}):
+        response = client.get(url, params={**params, **overrides}, headers=auth)
+        assert response.status_code == 400
