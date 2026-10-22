@@ -141,8 +141,9 @@
     section.append(node('label','Original reviewed-decision JSON'),review,
       node('label','Separate readiness sidecar JSON'),advisory,inspectButton,status,output);
     container.replaceChildren(section);
-    let generation=0,pending=false;
+    let generation=0,pending=false,closed=false;
     function invalidate() {
+      if(closed)return;
       generation++;
       output.replaceChildren();
       status.textContent='Selection changed. Reinspect the two current files; no draft was modified.';
@@ -150,7 +151,7 @@
     review.addEventListener('change',invalidate);
     advisory.addEventListener('change',invalidate);
     inspectButton.addEventListener('click',async()=>{
-      if(pending)return;
+      if(closed||pending)return;
       const stamp=++generation,a=review.files?.[0],b=advisory.files?.[0];
       output.replaceChildren();
       try{
@@ -172,9 +173,19 @@
           status.textContent='Pair NOT accepted: '+string(error.message)+
             '. No evidence imported; preserve original files.';
         }
-      }finally{pending=false;inspectButton.disabled=false;}
+      }finally{
+        pending=false;
+        if(!closed)inspectButton.disabled=false;
+      }
     });
-    return {review,advisory,inspectButton,status,output};
+    function dispose(){
+      closed=true;
+      generation++;
+      output.replaceChildren();
+      inspectButton.disabled=true;
+      status.textContent='Viewer closed. No retained readiness evidence or draft changes.';
+    }
+    return {review,advisory,inspectButton,status,output,dispose};
   }
   return {verify,render,mount};
 });
