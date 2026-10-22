@@ -22,6 +22,8 @@ _OBSERVATIONS = {
         ("client_dialog", "client_dialog_readback", "Confirm the recorded dialog/event independently from the client", "REQUIRED_CANDIDATE"),
         ("server_event_state", "server_event_state_readback", "Read the NPC event handler branch and persisted state independently", "REQUIRED_CANDIDATE"),
         ("npc_state", "server_npc_state_readback", "Check authoritative NPC existence, phase, despawn and interaction state", "CONDITIONAL"),
+        ("mob_state", "server_mob_state_readback", "Check authoritative mob claim, target, HP and despawn when the event involves a mob", "CONDITIONAL"),
+        ("job_state", "server_job_state_readback", "Check server job/subjob/level and ability prerequisites when the event depends on job state", "CONDITIONAL"),
         ("quest_variables", "server_quest_variable_readback", "Read quest or mission variables before and after a relevant handler branch", "CONDITIONAL"),
         ("instance_state", "server_instance_state_readback", "Inspect instance identity, owner, phase and timer when relevant", "CONDITIONAL"),
         ("temporary_items", "client_temporary_item_readback", "Inspect temporary-item state when an event depends on a battlefield or instance item", "CONDITIONAL"),
@@ -29,6 +31,7 @@ _OBSERVATIONS = {
     "capture_eventview": (
         ("client_dialog", "client_dialog_readback", "Reconcile EventView MesNum against the local typed client event/dialog index", "REQUIRED_CANDIDATE"),
         ("server_event_state", "server_event_state_readback", "Observe the authoritative event/CSID handler result", "REQUIRED_CANDIDATE"),
+        ("job_state", "server_job_state_readback", "Read authoritative main/subjob and job prerequisite state if the handler uses it", "CONDITIONAL"),
         ("quest_variables", "server_quest_variable_readback", "Read quest/mission variables when referenced by the scripted branch", "CONDITIONAL"),
         ("instance_state", "server_instance_state_readback", "Read instance phase when the captured event was instanced", "CONDITIONAL"),
         ("temporary_items", "client_temporary_item_readback", "Read temporary-item state if the scripted event uses it", "CONDITIONAL"),
@@ -88,6 +91,10 @@ def _integrity(draft: dict, expected_projection: str | None,
                     or not manifest.get("parser_version")):
                 problems.append({"code": "PARSER_REVISION_UNPINNED", "severity": "UNKNOWN",
                                  "ref_id": ref, "reason": "Parser name/version or recognized manifest missing"})
+            elif manifest.get("ingest_status") != "RECOGNIZED":
+                problems.append({"code": "PARSER_OR_CAPTURE_INGEST_UNRECOGNIZED",
+                                 "severity": "UNKNOWN", "ref_id": ref,
+                                 "reason": "Parser/version/capture ingest is not recognized by the indexed source manifest; no semantic decoder attestation"})
             if not isinstance(claimed, str) or not _SHA256.fullmatch(claimed):
                 problems.append({"code": "SOURCE_DIGEST_UNPINNED", "severity": "UNKNOWN",
                                  "ref_id": ref, "reason": "No well-formed indexed source digest"})
@@ -211,8 +218,82 @@ def _v2_hints(draft: dict, checked: dict, readbacks_by_step: dict) -> dict:
 
 
 
+def _indexed_provenance(evidence_map: dict, refs: list[str], issues: list[dict],
+                        capture_id: object) -> list[dict]:
+    """Only indexed locator/manifest *claims*, no file rehash or decoder proof.
+
+    Keep physical capture file identity separate from its parsed row. An
+    ingest parser version is NOT an independently established packet decoder.
+    No raw payload is copied into this authoring-facing projection.
+    """
+    output = []
+    # A repeated ref within one observation step is not a second captured event.
+    # Do not silently deduplicate or render it as independently corroborating.
+    if len(refs) != len(set(refs)):
+        raise ValueError("duplicate source capture references within authoring step")
+    for ref in refs:
+        if ref not in evidence_map:
+            raise ValueError("unknown original capture evidence reference")
+        original = evidence_map[ref]
+        if original["capture_id"] != capture_id:
+            raise ValueError("cross-capture evidence reference requires separate reviewed capture")
+        source = original["source"]
+        locators = []
+        for candidate in source["references"]:
+            manifest = candidate.get("source_manifest")
+            manifest = manifest if isinstance(manifest, dict) else {}
+            locators.append({
+                "source_filename": candidate.get("filename"),
+                "locator_basis": candidate.get("locator_basis"),
+                "source_span": {
+                    "start_line": candidate.get("start_line"),
+                    "end_line": candidate.get("end_line"),
+                    "start_offset": candidate.get("start_offset"),
+                    "end_offset": candidate.get("end_offset"),
+                },
+                "locator_sha256_claim": candidate.get("source_sha256"),
+                "manifest_sha256_claim": manifest.get("sha256"),
+                "parser_name_claim": manifest.get("parser_name"),
+                "parser_version_claim": manifest.get("parser_version"),
+                "ingest_status_claim": manifest.get("ingest_status"),
+                "parser_support": (
+                    "MISSING_PARSER_IDENTITY_OR_VERSION"
+                    if not manifest.get("parser_name") or not manifest.get("parser_version")
+                    else "INDEXED_RECOGNIZED_NOT_INDEPENDENTLY_VALIDATED"
+                    if manifest.get("ingest_status") == "RECOGNIZED"
+                    else "UNRECOGNIZED_OR_UNSUPPORTED"
+                ),
+                "decoder_version": None,
+                "decoder_version_status": "NOT_INDEPENDENTLY_ATTESTED",
+                "indexed_digests_rehashed": False,
+            })
+        output.append({
+            "evidence_ref": ref,
+            "capture_id": original["capture_id"],
+            "source_table": original["table"],
+            "original_row_key": deepcopy(original["row_key"]),
+            "record_class": original["record_class"],
+            "native_timestamp": deepcopy(original["native_timestamp"]),
+            "time_basis": original["time_basis"],
+            "source_locator_status": source["status"],
+            "capture_file_locator_state": (
+                "INDEXED_FILENAME_CLAIM_NOT_AUTHENTICATED"
+                if any(isinstance(x.get("source_filename"), str) and x["source_filename"]
+                       for x in locators)
+                else "NO_INDEXED_CAPTURE_FILE_LOCATOR"
+            ),
+            "source_file_claims": locators,
+            "provenance_issues": deepcopy([
+                p for p in issues if p.get("ref_id") == ref
+            ]),
+            "independent_source_authentication": False,
+        })
+    return output
+
+
 def _typed_authoring_projection(
     capture_id: object, digest: str, rows: list[dict], integrity: dict,
+    evidence_map: dict,
 ) -> dict:
     """Stable authoring *advice*; never a spec, assertion or verified v2 field.
 
@@ -252,8 +333,18 @@ def _typed_authoring_projection(
         oracle = row["oracle_readiness"]
         steps.append({
             "step_id": row["step_id"],
+            # This is a CAPTURE observation step, not a canonical v1 scenario
+            # step or Agent C's optional explicit case/step source association.
+            "canonical_step_id": None,
+            "canonical_source_association": {
+                "state": "UNASSIGNED_REQUIRES_INDEPENDENT_CANONICAL_CROSSWALK",
+                "scope": None, "source_refs": [],
+            },
             "observed_summary_original": row["observed_summary"],
+            "reviewer_step_decision_original": deepcopy(row["reviewer_step_decision_original"]),
             "original_evidence_refs": deepcopy(row["evidence_refs"]),
+            "indexed_evidence_provenance": _indexed_provenance(
+                evidence_map, row["evidence_refs"], integrity["issues"], capture_id),
             "identity_confidence": identities,
             "missing_readbacks": deepcopy(row["missing_observations"]),
             "readiness_state": row["readiness_state"],
@@ -328,6 +419,7 @@ def summarize_capture_readiness(
         rows.append({
             "step_id": step["step_id"],
             "observed_summary": step["observed_summary"],
+            "reviewer_step_decision_original": deepcopy(result["reviewer_step_decision"]),
             "evidence_refs": deepcopy(step["evidence_refs"]),
             "identity_matches": deepcopy(result["identity_candidates"]),
             "source_record_exact_not_verified": [
@@ -374,7 +466,7 @@ def summarize_capture_readiness(
             "payload_kind": "NONCANONICAL_DIAGNOSTIC_ADVISORY",
             "read_only_projection": _typed_authoring_projection(
                 draft["capture_id"], assessment["capture_projection_sha256"],
-                rows, integrity,
+                rows, integrity, draft["evidence_map"],
             ),
             "automatic_import": False, "save_allowed": False,
             "execution_enabled": False,

@@ -1,0 +1,249 @@
+{
+  "fixture_contract": "r7_readiness_authoring_display_examples_v1_SYNTHETIC_ONLY",
+  "purpose": "Standalone typed display-model examples for Agent B; NOT a reviewed capture, editor import, canonical contract_v2 or executable assertion",
+  "samples": [
+    {
+      "name": "unlocated_capture_unknown",
+      "read_only_projection": {
+        "contract": "capture_readiness_authoring_projection_v1_NONCANONICAL",
+        "capture_id": 1,
+        "indexed_capture_projection_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "physical_source_authenticated": false,
+        "source_compatibility_state": "UNKNOWN",
+        "source_provenance_issues": [
+          {
+            "code": "SOURCE_LOCATOR_UNRESOLVED",
+            "severity": "UNKNOWN",
+            "ref_id": "capture-row:SYNTHETIC_UNLOCATED"
+          }
+        ],
+        "contract_v2_adoption": "BLOCKED_PENDING_ACCEPTED_CONTRACT_AND_REVIEW",
+        "automatic_import": false,
+        "save_allowed": false,
+        "approved_for_execution": false,
+        "execution_enabled": false,
+        "normative_expected": null,
+        "verdict": "UNKNOWN",
+        "steps": [
+          {
+            "step_id": "OBS-S001",
+            "canonical_step_id": null,
+            "canonical_source_association": {
+              "state": "UNASSIGNED_REQUIRES_INDEPENDENT_CANONICAL_CROSSWALK",
+              "scope": null,
+              "source_refs": []
+            },
+            "original_evidence_refs": [
+              "capture-row:SYNTHETIC_UNLOCATED"
+            ],
+            "indexed_evidence_provenance": [
+              {
+                "evidence_ref": "capture-row:SYNTHETIC_UNLOCATED",
+                "capture_id": 1,
+                "source_table": "capture_events",
+                "original_row_key": {
+                  "seq": 1
+                },
+                "record_class": "PARSED_CAPTURE_RECORD",
+                "native_timestamp": null,
+                "time_basis": "NO_TIMESTAMP",
+                "source_locator_status": "UNRESOLVED",
+                "capture_file_locator_state": "NO_INDEXED_CAPTURE_FILE_LOCATOR",
+                "source_file_claims": [],
+                "provenance_issues": [
+                  {
+                    "code": "SOURCE_LOCATOR_UNRESOLVED",
+                    "severity": "UNKNOWN",
+                    "ref_id": "capture-row:SYNTHETIC_UNLOCATED"
+                  }
+                ],
+                "independent_source_authentication": false
+              }
+            ],
+            "observed_summary_original": "SYNTHETIC observed interaction; no server result confirmed",
+            "identity_confidence": [
+              {
+                "binding_id": "synthetic-binding",
+                "capture_identity_kind": "npc",
+                "observed_value": 9001,
+                "classification": "AMBIGUOUS",
+                "proposed_v2_binding_state": "ambiguous",
+                "identity_candidate": null,
+                "namespace_candidate": null,
+                "zone_id_candidate": null,
+                "source_record_correlation": false,
+                "source_identity_verified": false,
+                "source_candidates_original": [],
+                "original_evidence_refs": [
+                  "capture-row:SYNTHETIC_UNLOCATED"
+                ],
+                "review_decision_original": {
+                  "decision": "PENDING",
+                  "edited_value": null,
+                  "note": null
+                }
+              }
+            ],
+            "missing_readbacks": [
+              {
+                "observation": "job_state",
+                "expected_observation_type": "job_state",
+                "importance": "CONDITIONAL",
+                "status": "NOT_INDEPENDENTLY_OBSERVED",
+                "reason_for_gap": "No independent server job-state readback",
+                "evidence_refs": [
+                  "capture-row:SYNTHETIC_UNLOCATED"
+                ],
+                "suggested_read_only_capability": "server_job_state_readback",
+                "how_to_obtain": "Authorized server read-only inspection",
+                "review_required": true,
+                "capability_registered": false,
+                "permission_granted": false,
+                "readiness_state": "UNKNOWN"
+              }
+            ],
+            "readiness_state": "UNKNOWN",
+            "provenance_issues": [],
+            "expected_candidate": null,
+            "independent_source_claim": null,
+            "oracle_readiness": "UNKNOWN",
+            "oracle_approval_state": "UNAPPROVED",
+            "normative_expected": null,
+            "verdict": "UNKNOWN",
+            "execution_enabled": false,
+            "reviewer_step_decision_original": {
+              "decision": "PENDING"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "conflicting_indexed_digest_blocked",
+      "read_only_projection": {
+        "contract": "capture_readiness_authoring_projection_v1_NONCANONICAL",
+        "capture_id": 2,
+        "indexed_capture_projection_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "physical_source_authenticated": false,
+        "source_compatibility_state": "BLOCKED",
+        "source_provenance_issues": [
+          {
+            "code": "SOURCE_MANIFEST_DIGEST_MISMATCH",
+            "severity": "BLOCKED",
+            "ref_id": "capture-row:SYNTHETIC_CONFLICT"
+          }
+        ],
+        "contract_v2_adoption": "BLOCKED_PENDING_ACCEPTED_CONTRACT_AND_REVIEW",
+        "automatic_import": false,
+        "save_allowed": false,
+        "approved_for_execution": false,
+        "execution_enabled": false,
+        "normative_expected": null,
+        "verdict": "UNKNOWN",
+        "steps": [
+          {
+            "step_id": "OBS-S002",
+            "canonical_step_id": null,
+            "canonical_source_association": {
+              "state": "UNASSIGNED_REQUIRES_INDEPENDENT_CANONICAL_CROSSWALK",
+              "scope": null,
+              "source_refs": []
+            },
+            "original_evidence_refs": [
+              "capture-row:SYNTHETIC_CONFLICT"
+            ],
+            "indexed_evidence_provenance": [
+              {
+                "evidence_ref": "capture-row:SYNTHETIC_CONFLICT",
+                "capture_id": 2,
+                "source_table": "capture_events",
+                "original_row_key": {
+                  "seq": 2
+                },
+                "record_class": "PARSED_CAPTURE_RECORD",
+                "native_timestamp": "SYNTHETIC_SOURCE_CLOCK",
+                "time_basis": "SOURCE_NATIVE_UNVERIFIED",
+                "source_locator_status": "UNVERIFIED_SOURCE",
+                "capture_file_locator_state": "INDEXED_FILENAME_CLAIM_NOT_AUTHENTICATED",
+                "source_file_claims": [
+                  {
+                    "source_filename": "SYNTHETIC_ONLY.log",
+                    "locator_basis": "line",
+                    "source_span": {
+                      "start_line": 2,
+                      "end_line": 2,
+                      "start_offset": null,
+                      "end_offset": null
+                    },
+                    "locator_sha256_claim": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "manifest_sha256_claim": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                    "parser_name_claim": "synthetic fixture",
+                    "parser_version_claim": "99-future",
+                    "ingest_status_claim": "UNRECOGNIZED",
+                    "parser_support": "UNRECOGNIZED_OR_UNSUPPORTED",
+                    "decoder_version": null,
+                    "decoder_version_status": "NOT_INDEPENDENTLY_ATTESTED",
+                    "indexed_digests_rehashed": false
+                  }
+                ],
+                "provenance_issues": [
+                  {
+                    "code": "SOURCE_MANIFEST_DIGEST_MISMATCH",
+                    "severity": "BLOCKED",
+                    "ref_id": "capture-row:SYNTHETIC_CONFLICT"
+                  }
+                ],
+                "independent_source_authentication": false
+              }
+            ],
+            "observed_summary_original": "SYNTHETIC client event candidate only",
+            "identity_confidence": [],
+            "missing_readbacks": [
+              {
+                "observation": "mob_state",
+                "expected_observation_type": "mob_state",
+                "importance": "CONDITIONAL",
+                "status": "NOT_INDEPENDENTLY_OBSERVED",
+                "reason_for_gap": "No independent server mob-state readback",
+                "evidence_refs": [
+                  "capture-row:SYNTHETIC_CONFLICT"
+                ],
+                "suggested_read_only_capability": "server_mob_state_readback",
+                "how_to_obtain": "Authorized server read-only inspection",
+                "review_required": true,
+                "capability_registered": false,
+                "permission_granted": false,
+                "readiness_state": "BLOCKED"
+              }
+            ],
+            "readiness_state": "BLOCKED",
+            "provenance_issues": [
+              {
+                "code": "SOURCE_MANIFEST_DIGEST_MISMATCH",
+                "severity": "BLOCKED",
+                "ref_id": "capture-row:SYNTHETIC_CONFLICT"
+              }
+            ],
+            "expected_candidate": "SYNTHETIC_SOURCE_BACKED_CANDIDATE_ONLY",
+            "independent_source_claim": {
+              "path": "scripts/zones/SYNTHETIC_ZONE/npcs/SYNTHETIC_ONLY.lua",
+              "line": 1,
+              "dsp_commit": "cccccccccccccccccccccccccccccccccccccccc",
+              "file_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+            },
+            "oracle_readiness": "SOURCE_CANDIDATE_REVIEW_REQUIRED",
+            "oracle_approval_state": "UNAPPROVED",
+            "normative_expected": null,
+            "verdict": "UNKNOWN",
+            "execution_enabled": false,
+            "reviewer_step_decision_original": {
+              "decision": "ACCEPT",
+              "edited_title": null,
+              "note": "SYNTHETIC capture interpretation reviewed; oracle not independently approved"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

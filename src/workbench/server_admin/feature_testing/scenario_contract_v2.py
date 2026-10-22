@@ -33,6 +33,9 @@ _REPOSITORY = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 _READBACK = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.: -]{0,119}\Z")
 _FIELDS = frozenset({"contract_version", "sources", "parameters", "oracles",
                      "step_requirements", "fingerprints"})
+# Explicit case/step source attribution is an OPTIONAL metadata-only extension.
+# Existing Contract v2 objects without this key retain exactly their old shape.
+_OPTIONAL_FIELDS = frozenset({"source_associations"})
 
 
 def _object(value: object, keys: set[str] | frozenset[str], label: str) -> dict:
@@ -205,6 +208,46 @@ def _validate_requirements(items: object, steps: set[str]) -> None:
             raise ValueError("unknown action safety requires operator review")
 
 
+def _validate_source_associations(
+    items: object, sources: dict[str, dict], steps: set[str],
+) -> None:
+    """Validate explicit case/step *citations*, not evidence or oracle approval.
+
+    A source declaration by itself never implies a relationship to a step.
+    Repeated target rows and source revisions at one scoped target are
+    ambiguous; require one explicit, unambiguous author-reviewed association.
+    """
+    seen_targets = set()
+    for association in _list(items, 100, "source associations"):
+        _object(association, {"scope", "target_id", "source_refs"},
+                "source association")
+        scope, target_id = association["scope"], association["target_id"]
+        if scope == "case":
+            if target_id is not None:
+                raise ValueError("case source association must use null target_id")
+        elif scope == "step":
+            if not isinstance(target_id, str) or target_id not in steps:
+                raise ValueError("source association references unknown step")
+        else:
+            raise ValueError("unsupported source association scope")
+        target = (scope, target_id)
+        if target in seen_targets:
+            raise ValueError("duplicate or ambiguous source association target")
+        seen_targets.add(target)
+        refs = _unique_refs(association["source_refs"], set(sources),
+                            "association")
+        if not refs:
+            raise ValueError("empty source association leaves provenance unknown")
+        file_pins = {}
+        for ref in refs:
+            src = sources[ref]
+            location = (src["repository"], src["path"])
+            pins = (src["revision"], src["sha256"])
+            if location in file_pins and file_pins[location] != pins:
+                raise ValueError("conflicting source revisions or digests for associated file")
+            file_pins[location] = pins
+
+
 def base_spec_sha256(spec: dict) -> str:
     """Deterministic fingerprint of *v1* spec fields, omitting recursive v2."""
     if not isinstance(spec, dict):
@@ -219,7 +262,9 @@ def validate_contract_v2(spec: dict) -> None:
     value = spec.get("contract_v2")
     if value is None:
         raise ValueError("null v2 namespace is unsupported; omit it for v1")
-    _object(value, _FIELDS, "contract")
+    if (not isinstance(value, dict) or not _FIELDS.issubset(value) or
+            set(value) - (_FIELDS | _OPTIONAL_FIELDS)):
+        raise ValueError("invalid v2 contract fields")
     if type(value["contract_version"]) is not int or value["contract_version"] != 2:
         raise ValueError("unsupported v2 metadata contract version")
     sources = _validate_sources(value["sources"])
@@ -227,15 +272,48 @@ def validate_contract_v2(spec: dict) -> None:
     _validate_oracles(value["oracles"], sources, {
         item["id"] for item in spec["assertions"]
     })
-    _validate_requirements(value["step_requirements"], {
-        item["id"] for item in spec.get("steps", [])
-    })
+    steps = {item["id"] for item in spec.get("steps", [])}
+    _validate_requirements(value["step_requirements"], steps)
+    if "source_associations" in value:
+        _validate_source_associations(value["source_associations"], sources, steps)
     fingerprints = _object(value["fingerprints"], {
         "base_spec_sha256", "dsp_commit", "headless_commit", "toolkit_commit"
     }, "fingerprints")
     _sha(fingerprints["base_spec_sha256"], 64, "base specification SHA-256")
     for name in ("dsp_commit", "headless_commit", "toolkit_commit"):
         _sha(fingerprints[name], 40, name)
+
+
+def source_attribution_report(spec: dict) -> dict:
+    """Pure read-only explicit association display; absent link is UNKNOWN.
+
+    Source declarations, staged citations and oracle/parameter links never
+    automatically become per-step source attribution. No trust or execution
+    permissions are granted by this report.
+    """
+    from .test_specifications import validate_spec
+
+    validate_spec(spec)
+    meta = spec.get("contract_v2") or {}
+    associations = meta.get("source_associations", [])
+    by_step = {
+        step["id"]: {"state": "UNKNOWN", "source_refs": []}
+        for step in spec.get("steps", [])
+    }
+    case = {"state": "UNKNOWN", "source_refs": []}
+    for association in associations:
+        item = {"state": "EXPLICIT_CITATION_CLAIM",
+                "source_refs": list(association["source_refs"])}
+        if association["scope"] == "case":
+            case = item
+        else:
+            by_step[association["target_id"]] = item
+    return {
+        "case": case, "steps": by_step,
+        "independent_verification": "NOT_ESTABLISHED",
+        "execution_enabled": False,
+        "oracle_approval": "NOT_ESTABLISHED",
+    }
 
 
 def compatibility_report(

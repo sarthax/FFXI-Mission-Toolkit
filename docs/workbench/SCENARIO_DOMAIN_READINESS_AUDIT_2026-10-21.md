@@ -1,5 +1,7 @@
 # R5 — Nine-domain scenario readiness and capability gap audit (73 records)
 
+> **R7 integrated status correction (2026-10-21):** All nine draft domain PRs and the authoritative #1292 matrix are merged into `main@972ff6fa`; references below to an *open*, *draft*, *proposed* R6 matrix/PR are historical audit-time language only. These 73 cases are still design-only, NOT_RUN, non-executable, with source/deployment authenticity and gameplay outcomes UNKNOWN. For current CI and ownership see [R7 release baseline](R7_RELEASE_BASELINE_2026-10-21.md) and draft [#1305](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1305).
+
 **Audit date:** 2026-10-21 · **Toolkit main:** `e9ae790d0d8259a508ec767c71f06fdf49a893e5` · Parent [#1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197). **Execution:** NOT RUN. **Source:** nine independent open, draft domain PRs. **Not a catalog import.**
 
 
