@@ -1,4 +1,4 @@
-# R7 #1296 — Bounded persisted progression readback (draft)
+# R7 #1296 — Merged bounded persisted progression readback
 
 Authenticated `GET /api/supervisor/test-character-progression?charid=...&names=Flag,Other&include_keyitems=true` uses the existing supervisor bearer token, test-character allowlist, loopback MySQL configuration and read-only transaction. Only 1–50 unique syntactically restricted variable names can be requested; query placeholders prevent SQL input.
 
@@ -14,4 +14,4 @@ Both key-item-enabled and variable-only requests perform a fixed parameterized `
 ## Offline failure coverage and later integration
 Synthetic tests cover nonexistent characters both with and without KI, valid absent named vars and present zero, NULL/truncated KI bitmap, unauthorized IDs and rejected invalid names, and a denied SELECT with rollback/connection close. Database read failures are reported through a sanitized unavailable error (supervisor HTTP 503), not as an absent gameplay value. The minimum dedicated loopback principal requires SELECT on `chars` and `char_vars`; deployed effective grants are UNKNOWN pending local owner acceptance. Confirm existing bearer authentication separately at the supervisor route; these unit tests mock the approved connection rather than proving production bearer setup.
 
-After #1310 is approved and merged by the owner, reconcile this branch with the then-current `main` without force-pushing, preserve both `test-character-inventory-v2` and `test-character-progression` routes, and require new-head focused tests, Workbench and Src Layout. Do not treat prior green jobs as proof for the future reconciled head. No actual deployed DSP revision, live character, client agreement, job, quest or currency is verified here.
+**Merged integration:** PR #1310 and #1311 are integrated into `main`; the shared supervisor retains both `test-character-inventory-v2` and `test-character-progression`. Exact-head CI is evidence of offline contract tests, not proof of deployed grants, running DSP revision, client agreement or supported job/quest/currency values. For follow-on readback priorities and operator acceptance, see `R7_OBSERVATION_CLOSEOUT_AND_NEXT_READBACK_2026-10-22.md`. #1296 remains open for missing progression fields.
