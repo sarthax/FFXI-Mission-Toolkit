@@ -1,5 +1,7 @@
 # R7 release baseline and acceptance-gap ledger — 2026-10-21
 
+**R7/R8 status reconciliation (2026-10-22, current main):** GitHub source integration includes #1305/#1306/#1308/#1309, Scenario Developer #1307 and host fix #1319, bounded inventory #1310, progression #1311, offline interoperability #1316, R7 documentation #1320/#1321. The local B01–B19 browser report is limited to its observed run; a later `/scenario-developer` HTTP 200 is not a repeat of that suite. B20 local acceptance remains pending optional capture viewer #1315/#1318 (both unmerged). XIHeadless #105 general execution protocol is proposed, not authorized. Persisted readback != live DSP/client state, and 73 staged cases remain design-only NOT_RUN. The historical CI evidence below preserves original dates and SHAs; use the current roadmap for newer status.
+
 **Parent:** [Toolkit #1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197)  
 **Verified integrated Git baseline:** `main@972ff6fa4337cb5d29a3c8c3eb68c73245f24bb9` (merge of #1291; all nine R6 staged domains integrated).  
 **Mode:** remote/GitHub-only read-only assessment. **This is not a gameplay acceptance report.**
