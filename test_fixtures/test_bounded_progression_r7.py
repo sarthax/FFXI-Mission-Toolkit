@@ -121,3 +121,33 @@ def test_select_permission_failure_closes_read_only_connection(monkeypatch):
     with pytest.raises(RuntimeError, match="progression observation unavailable"):
         mod.progression_snapshot(9, ["Flag"])
     assert calls == ["select", "rollback", "cursor_close", "connection_close"]
+
+
+def test_inventory_and_progression_routes_coexist_and_reject_bad_bearer(monkeypatch):
+    """Actual router registration and auth guard, without connecting to a database."""
+    from fastapi import HTTPException
+    from workbench.server_admin.feature_testing import supervisor
+
+    routes = {route.path: route for route in supervisor.router.routes}
+    inv = "/api/supervisor/test-character-inventory-v2"
+    prog = "/api/supervisor/test-character-progression"
+    assert inv in routes and prog in routes
+    assert routes[inv].methods == {"GET"}
+    assert routes[prog].methods == {"GET"}
+    assert routes[inv].operation_id == "supervisor_test_character_inventory_v2"
+    assert routes[prog].operation_id == "supervisor_test_character_progression"
+
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TOKEN", "a" * 40)
+    def must_not_read(*args, **kwargs):
+        raise AssertionError("authentication must fail before any database read")
+    monkeypatch.setattr(supervisor, "inventory_snapshot_v2", must_not_read)
+    monkeypatch.setattr(supervisor, "progression_snapshot", must_not_read)
+
+    for invoke in (
+        lambda auth: supervisor.test_character_inventory_v2(charid=9, location=1, authorization=auth),
+        lambda auth: supervisor.test_character_progression(charid=9, names="Flag", authorization=auth),
+    ):
+        for bearer in (None, "Bearer wrong"):
+            with pytest.raises(HTTPException) as e:
+                invoke(bearer)
+            assert e.value.status_code == 403
