@@ -124,3 +124,95 @@ commit/revision and client DAT namespaces, source file SHA-256, before/after
 authoritative readbacks (inventory/furnishings/jobs/quests/key items/NPC/mob/
 instance), then record reviewable evidence and owner-approved oracle/source
 associations. These steps are **not done** and are not part of #1313.
+
+
+## Current-head security hardening and precise review labels
+
+The read-only verifier preserves the original indexed capture records and now
+**separately** exposes:
+
+- `steps[].reviewer_step_decision_original` and
+  `identity_confidence[].review_decision_original`: the immutable indexed
+  observation's originally recorded review decisions.
+- `steps[].reviewer_step_decision_selected` and
+  `identity_confidence[].review_decision_selected`: choices explicitly
+  entered by the operator in the selected `offline_capture_review_decisions`
+  JSON, validated by the accepted reviewer inspector and exactly matched
+  against the separately selected readiness sidecar's `review_decisions`.
+  These fields are **not** a replay or mutation of the original capture,
+  and are `null` when that particular item has no selected decision.
+
+The UI must label both categories separately; do not treat ACCEPT/EDIT
+human observation review as canonical source authentication, identity
+verification, expected oracle approval or gameplay PASS.
+
+The standalone renderer now also refuses *nested* bogus trust claims:
+`source_identity_verified=true`, missing readback with
+`permission_granted=true`/`capability_registered=true`/VERIFIED status,
+duplicate/cross-capture source refs, non-array canonical source refs,
+`indexed_digests_rehashed=true`, or an independently claimed decoder version.
+The server-side full-producer-recomputation remains the **decisive** check;
+client checks are defense in depth and are not sufficient by themselves.
+
+## Local B20 operator acceptance checklist (NOT RUN)
+
+These steps are **blocked** until Agent B's independently reviewed
+Scenario Developer route/template attachment is merged. The test operator
+must preserve original files and write down the observed on-screen result
+for each exact test; no live DSP or gameplay operation is required.
+
+1. Navigate to Scenario Developer with an existing unsaved design draft.
+   Opt into the *separate* Capture Readiness panel; confirm it initially
+   shows **no accepted evidence** and that no file, network request, save,
+   or test execution starts without user selection.
+2. Select the original **reviewed-decision JSON** and its **separate
+   readiness-sidecar JSON** from the same offline Evidence Reviewer. Press
+   **Inspect selected pair**. Confirm original capture ID, table/row/source
+   IDs, file locator/offset/time basis, and **two differently scoped indexed
+   projection SHA-256s** are shown, with clear **not physically attested**
+   disclaimers. Neither digest is a source-byte authentication signature.
+3. Confirm original indexed step and binding decisions appear separately
+   from selected reviewer decisions. A reviewed ACCEPT/EDIT only certifies a
+   human's review *choice*, not an authenticated identity, source-backed
+   oracle, normative expected result or gameplay PASS.
+4. Confirm all identity candidates (EXACT, INFERRED, AMBIGUOUS,
+   UNRESOLVED/UNSUPPORTED where present) retain original uncertainty,
+   including no selected canonical identity for AMBIGUOUS. Show
+   `canonical_step_id=null`, unassigned source-step scope, UNAPPROVED
+   oracle, missing observations and blocked execution.
+5. Confirm index-local parser name/version, digest *claims*, no decoder
+   attestation, and SOURCE_UNKNOWN warnings display as declarations. With
+   synthetic missing parser metadata, report **UNKNOWN**; with conflicting
+   well-formed recorded digests, report **BLOCKED**. Neither means
+   gameplay PASS or FAIL.
+6. Confirm all relevant client/server inventory, furnishings, quest, key
+   items, instance/NPC, plus **CONDITIONAL job/mob-state** readbacks display
+   as NOT_INDEPENDENTLY_OBSERVED, with permissions and capability
+   registration false.
+7. Select mismatched captures, changed original step/row identity,
+   cross-capture refs, duplicate evidence refs, modified SHA in either
+   scope, forged selected reviewer decision, physically verified source,
+   approved oracle, changed parser/decoder declaration or any grant of
+   execution. Every case must **refuse accepted pairing**, show a neutral
+   reason, clear the prior result, and leave the current scenario unchanged.
+8. While a large selected pair is being read/verified, change **either**
+   selected file or enter another editor state (New/Open/Fork/Clone/Advanced).
+   The old async response must not reappear or overwrite newer content.
+   Reinspection after changed files requires a fresh explicit click.
+9. Attempt to provide a readiness sidecar to the **existing
+   `/handoff/evidence/inspect` reviewed-decision importer**. It must still
+   reject it; a valid pair-inspection result must never become canonical
+   spec JSON, an auto-save payload, an assertion, a canonical CASE/STEP
+   association, or a runtime permission.
+10. Reopen/reload the Scenario Developer after inspecting a pair. Confirm
+    no advisory is silently persisted, selected, trusted, imported, or
+    executable; existing legacy v1 and canonical Contract v2 editing,
+    revisioned draft save, and all operator/dirty-state guards still work.
+
+The integration reviewer must verify the **actual** callback is a local-only
+same-origin JSON POST that calls `inspect_paired_readiness` and catches
+malformed/oversized inputs without stack traces. The previous
+`/handoff/evidence/inspect` path must remain unchanged. Inspecting a
+synthetic fixture in CI is **not** successful B20 acceptance or real
+capture/client/server attestation. Record B20 as NOT RUN until the owner
+performs and signs off these steps.
