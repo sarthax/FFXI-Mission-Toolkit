@@ -132,6 +132,23 @@ async function run(){
   wait(bad);await final;
   assert.equal(view.output.children.length,0);
   assert.match(view.status.textContent,/Pair NOT accepted/);
+  // Agent B must dispose when navigating New/Open/Fork/Clone. Even a
+  // successful old response must never resurrect a closed advisory panel.
+  const closedHost=new Element('main');
+  let complete=null;
+  const closed=V.mount(closedHost,()=>new Promise(resolve=>{complete=resolve;}));
+  closed.review.files=[file('{"original":true}')];
+  closed.advisory.files=[file('{"advisory":true}')];
+  const pending=closed.inspectButton.dispatch('click');
+  await Promise.resolve();await Promise.resolve();await Promise.resolve();
+  assert.equal(typeof complete,'function');
+  closed.dispose();
+  complete(unknown);await pending;
+  assert.equal(closed.output.children.length,0);
+  assert.equal(closed.inspectButton.disabled,true);
+  assert.match(closed.status.textContent,/Viewer closed/);
+  await closed.inspectButton.dispatch('click');
+  assert.equal(closed.output.children.length,0);
   // No save/import/GM controls are provided by this module.
   assert.doesNotMatch(plainText(host),/Save design-only draft|Execute test|Send GM/);
   console.log('R7 independent read-only readiness panel, two-file guard and stale-selection DOM: PASS');
