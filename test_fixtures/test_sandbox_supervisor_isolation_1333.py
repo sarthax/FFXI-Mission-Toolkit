@@ -131,6 +131,19 @@ def test_partial_sandbox_settings_fail_closed(isolated, monkeypatch, tmp_path):
     assert settings.sandbox_execution_check()["ok"] is False
 
 
+def test_sandbox_drafts_can_be_authorized_without_supervisor_execution(isolated, tmp_path):
+    cfg = settings._empty()
+    cfg.update(enabled=True)
+    cfg["tokens"]["operator"] = "d" * 40  # synthetic sandbox-owned UI token
+    settings._save(cfg)
+    settings.apply_to_environ(cfg)
+    assert settings.sandbox_operator_check()["ok"] is True
+    assert settings.ui_mode_active()
+    authorize_operator("d" * 40)  # authorization for drafts, NOT execution
+    assert settings.sandbox_execution_check()["ok"] is False
+    assert preflight("moghancement", "MOG-09")["ready_for_operator_review"] is False
+
+
 def test_explicit_sandbox_config_matches_and_does_not_promote_execution(isolated, tmp_path):
     root = _headless(tmp_path)
     cfg = _valid_sandbox_settings(isolated, root)
@@ -158,7 +171,12 @@ def test_wrong_sandbox_credential_or_allowlist_blocks(isolated, tmp_path, monkey
     assert settings.sandbox_execution_check()["ok"] is False
     assert preflight("moghancement", "MOG-09")["ready_for_operator_review"] is False
     assert settings.status()["ready_to_run"] is False
-    with pytest.raises(PermissionError, match="Isolated"):
+    if field == "MISSION_TOOLKIT_TEST_OPERATOR_TOKEN":
+        with pytest.raises(PermissionError, match="Isolated"):
+            authorize_operator(cfg["tokens"]["operator"])
+    else:
+        # Draft-only operator authorization must be independent of
+        # unavailable supervisor execution credentials.
         authorize_operator(cfg["tokens"]["operator"])
 
 
