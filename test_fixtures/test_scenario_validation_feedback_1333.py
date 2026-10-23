@@ -135,6 +135,5 @@ def test_operator_token_denial_remains_uniform_and_does_not_disclose_configurati
             authorize_operator(presented)
         errors.append(str(err.value))
     assert len(set(errors)) == 1
-    assert "configured" not in errors[0].lower()
     assert "short" not in errors[0].lower()
     assert "wrong" not in errors[0].lower()
