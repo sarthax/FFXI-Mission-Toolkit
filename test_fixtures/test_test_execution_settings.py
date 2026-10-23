@@ -35,7 +35,8 @@ def test_enable_generates_distinct_long_tokens_and_env(env):
     t = st["tokens"]
     assert len(t["operator"]) >= 32 and len(t["supervisor"]) >= 32 and t["operator"] != t["supervisor"]
     assert os.environ["MISSION_TOOLKIT_TEST_OPERATOR_TOKEN"] == t["operator"]
-    assert not s.ui_mode_active()  # generated tokens alone do not authorize sandbox execution
+    assert s.ui_mode_active()  # sandbox-owned token can authorize draft UI
+    assert not s.sandbox_execution_check()["ok"]  # no runner/supervisor is authorized
     s.update(headless_root=_checkout(env), charids="17",
              db={"user": "synthetic_ro", "password": "synthetic_only", "name": "synthetic_db"})
     assert s.ui_mode_active()
@@ -82,8 +83,8 @@ def test_ui_auth_requires_same_origin_headers(env):
         base_url = "http://127.0.0.1:8420/"
         def __init__(self, h): self.headers = h
     same_origin = Req({"sec-fetch-site": "same-origin", "x-requested-with": "toolkit-ui"})
-    with pytest.raises(HTTPException):
-        _operator_auth(same_origin, "")
+    _operator_auth(same_origin, "")  # draft-only sandbox operator auth
+    assert not s.sandbox_execution_check()["ok"]
     root = _checkout(env)
     s.update(headless_root=root, charids="17",
              db={"user": "synthetic_ro", "password": "synthetic_only", "name": "synthetic_db"})
