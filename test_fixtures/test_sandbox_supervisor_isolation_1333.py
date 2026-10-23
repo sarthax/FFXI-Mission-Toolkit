@@ -333,11 +333,26 @@ def test_explicit_empty_test_dir_never_falls_back_to_production(
     (production / "settings.json").write_text(original, encoding="utf-8")
     monkeypatch.setenv("LOCALAPPDATA", str(local))
     monkeypatch.setenv("MISSION_TOOLKIT_TEST_DATA_DIR", selected)
+    # All inherited supervisor inputs appear production-ready. Explicitly
+    # empty test-data-dir must still block both readiness and run dispatch.
+    fake_headless = _headless(tmp_path)
+    _shell(monkeypatch, production, fake_headless)
     assert settings.sandbox_operator_check()["isolated"] is True
     assert settings.sandbox_operator_check()["ok"] is False
     assert settings.load()["account"] == ""
     assert settings.load()["charids"] == []
+    pre = preflight("moghancement", "MOG-09")
+    assert next(x for x in pre["checks"] if x["id"] == "sandbox_isolation")["ok"] is False
+    assert pre["ready_for_operator_review"] is False
     assert settings.status()["ready_to_run"] is False
+    with pytest.raises(PermissionError):
+        authorize_operator("p" * 40)
+    with mock.patch("workbench.server_admin.feature_testing.execution_cli.subprocess.run") as run:
+        with pytest.raises(ValueError, match="sandbox_isolation"):
+            execute_mog09(account="synthetic_account", charid=17,
+                          out_dir=production / "artifacts" / "unwanted",
+                          supervisor="http://127.0.0.1:8420", approved=True)
+        run.assert_not_called()
     assert settings.apply_to_environ({"enabled": True}) == []
     assert not (production / "artifacts").exists()
     with pytest.raises(ValueError, match="safe for writes"):
