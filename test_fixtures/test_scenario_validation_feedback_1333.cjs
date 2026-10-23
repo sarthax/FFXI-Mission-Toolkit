@@ -71,7 +71,7 @@ state.failRead=false;
 state.draft=original;
 context.editorGeneration=4;
 assert.equal(isCurrent(3,original),false,'replaced draft blocks stale reply');
-assert.match(editorSource,/catch\(e\)\{\s*if\(!validationRequestCurrent\(generation,input\)\)/,
+assert.match(editorSource,/catch\(e\)\{\s*if\(generation!==editorGeneration \|\| !validationRequestCurrent\(generation,input\)\)/,
   'rejected Validate responses must check original identity before surfacing errors');
 assert.match(editorSource,/const isCurrent=submitted!==null &&\s*validationRequestCurrent\(generation,submitted,submittedRevision\)/,
   'rejected Save responses must check generation, contents and revision');
