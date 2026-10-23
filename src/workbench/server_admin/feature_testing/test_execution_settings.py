@@ -12,6 +12,7 @@ import os
 import re
 import secrets
 import subprocess
+import tempfile
 from pathlib import Path
 
 _REPO = Path(__file__).resolve().parents[4]
@@ -79,6 +80,26 @@ def _save(settings: dict) -> None:
         scope, _ = _sandbox_directory_check()
         if (scope["isolated"] and not scope["ok"]) or path.is_symlink():
             raise ValueError("Isolated settings location is not safe for writes")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        # Never follow a predictable .tmp symlink into production files.
+        # NamedTemporaryFile uses an exclusive, unpredictable file in the
+        # validated sandbox directory, and defaults to private permissions.
+        temp_name = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                    mode="w", encoding="utf-8", dir=path.parent,
+                    prefix=".settings-", suffix=".tmp", delete=False) as tmp:
+                temp_name = tmp.name
+                json.dump(settings, tmp, indent=1)
+            if path.is_symlink():
+                raise ValueError("Isolated settings location is not safe for writes")
+            os.replace(temp_name, path)
+            temp_name = None
+        finally:
+            if temp_name is not None:
+                Path(temp_name).unlink(missing_ok=True)
+        return
+    # The existing non-isolated production write path is unchanged.
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(settings, indent=1), encoding="utf-8")
@@ -154,8 +175,10 @@ def _sandbox_directory_check() -> tuple[dict, Path | None]:
                  "reason": "Not in an explicit test sandbox"}, None)
     root = Path(selected)
     default = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "MissionToolkit" / "test_execution"
-    if (not root.is_absolute() or root.is_symlink()
-            or root.resolve() == default.resolve()):
+    if (not root.is_absolute() or any(part.is_symlink() for part in (root, *root.parents))
+            or root.resolve() == default.resolve()
+            or root.resolve().is_relative_to(default.resolve())
+            or root.resolve().is_relative_to(_REPO.resolve())):
         return ({"isolated": True, "ok": False,
                  "reason": "Sandbox directory must be an absolute, separate non-symlink directory"}, None)
     return ({"isolated": True, "ok": True,
