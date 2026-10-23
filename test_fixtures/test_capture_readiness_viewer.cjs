@@ -131,7 +131,7 @@ async function testB20Diagnostics(){
     assert.equal(view.status.textContent,
       'Pair NOT accepted: '+c.reason+'. No evidence imported; preserve original files.');
     assert.doesNotMatch(view.status.textContent,
-      /UNTERMINATED_PRIVATE_MARKER|SECRET_MARKER|SyntaxError|Unterminated string|position \\d+|Evidence cannot claim execution/);
+      /UNTERMINATED_PRIVATE_MARKER|SECRET_MARKER|SyntaxError|Unterminated string|position \d+|Evidence cannot claim execution/);
     assert.equal(view.inspectButton.disabled,false,'B20 '+c.caseId+' recovers button');
     // Changing either selection clears stale failure and permits a fresh,
     // separately backend-inspected pair; this spy is not backend acceptance.
