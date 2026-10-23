@@ -220,3 +220,21 @@ malformed/oversized inputs without stack traces. The previous
 synthetic fixture in CI is **not** successful B20 acceptance or real
 capture/client/server attestation. Record B20 as NOT RUN until the owner
 performs and signs off these steps.
+
+
+## Agent B #1318 integrated editor consumer (pending independent review)
+
+A dependent editor-owned draft adds a separate optional readiness panel and
+`/scenario-developer/handoff/readiness/inspect` POST. This route calls the
+unchanged strict pair verifier only; it does not reuse canonical reviewed
+Evidence import, publish an approved source association or write a scenario.
+Localhost, same origin, required UI header and bounded two-file JSON envelope
+are enforced; non-finite JSON returns HTTP 422 without leaking stack traces.
+The frontend disposes pending viewer inspection when a scenario is replaced
+or the editor page exits, clearing retained advisory results. Source/parser
+claims remain unverified, noncanonical attributions UNASSIGNED, missing
+readbacks UNKNOWN/BLOCKED and oracle approval forbidden.
+
+This is not B20 local acceptance. Requires combined current-head Python,
+Node DOM, editor, Workbench and Src Layout checks, independent Agent A review,
+and explicit merge authorization. Do not interrupt B01–B19 local agent.
