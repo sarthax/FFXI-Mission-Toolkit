@@ -203,13 +203,14 @@ class EvidenceSummaryDesignContractTests(unittest.TestCase):
                     "automatic_execution_allowed"):
             self.assertFalse(DATA[key])
 
-    def test_all_eight_deterministic_failure_vectors(self):
+    def test_all_ten_deterministic_failure_vectors(self):
         self.assertEqual(len(CASES), len(DATA["examples"]))
         self.assertEqual(set(CASES), {
             "complete-observed-mismatch", "missing-server-readback",
             "stale-capture", "conflicting-revisions", "exact-duplicate-attempt",
             "unauthenticated-source-identity", "incomplete-cancelled-execution",
             "conflicting-duplicate-attempt",
+            "running-partial-observation", "terminal-with-incomplete-readback",
         })
         for v in DATA["examples"]:
             with self.subTest(v=v["id"]):
@@ -233,6 +234,18 @@ class EvidenceSummaryDesignContractTests(unittest.TestCase):
         self.assertEqual(cancelled["lifecycle"]["state"], "CANCELLED")
         self.assertEqual(classify(cancelled)[0], "UNKNOWN")
         self.assertFalse(cancelled["lifecycle"]["observation_completeness"] == "COMPLETE")
+        running = CASES["running-partial-observation"]
+        partial_terminal = CASES["terminal-with-incomplete-readback"]
+        self.assertEqual(running["lifecycle"]["state"], "RUNNING")
+        self.assertFalse(running["lifecycle"]["terminal_recorded"])
+        self.assertTrue(partial_terminal["lifecycle"]["terminal_recorded"])
+        self.assertEqual(partial_terminal["lifecycle"]["state"], "COMPLETED")
+        self.assertEqual(partial_terminal["lifecycle"]["observation_completeness"], "PARTIAL")
+        self.assertEqual(partial_terminal["lifecycle"]["cleanup_status"], "UNKNOWN")
+        self.assertEqual(classify(running)[0], "UNKNOWN")
+        self.assertEqual(classify(partial_terminal)[0], "UNKNOWN")
+        self.assertNotEqual(running["evidence_reference"]["ref_id"],
+                            partial_terminal["evidence_reference"]["ref_id"])
 
     def test_duplicate_replay_is_noop_but_conflicting_identity_blocks(self):
         original = CASES["complete-observed-mismatch"]
@@ -247,6 +260,9 @@ class EvidenceSummaryDesignContractTests(unittest.TestCase):
                          ("BLOCKED", "REFUSE_UNTIL_RECONCILED"))
         self.assertEqual(original["evidence_reference"]["ref_id"],
                          same["evidence_reference"]["ref_id"])
+        self.assertEqual(original["evidence"]["observed_facts"],
+                         same["evidence"]["observed_facts"])
+        self.assertEqual(original["evidence_reference"], same["evidence_reference"])
         self.assertNotEqual(original["evidence_reference"]["ref_id"],
                             conflict["evidence_reference"]["ref_id"])
 
@@ -303,6 +319,8 @@ class EvidenceSummaryDesignContractTests(unittest.TestCase):
                 "CLEANUP_CANCELLATION_DIAGNOSTIC"
             ],
             "conflicting-duplicate-attempt": [],
+            "running-partial-observation": ["MISSING_OBSERVER_REQUIREMENT"],
+            "terminal-with-incomplete-readback": ["MISSING_OBSERVER_REQUIREMENT"],
         }
         for name, kinds in expected.items():
             with self.subTest(case=name):
