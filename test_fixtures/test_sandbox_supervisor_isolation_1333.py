@@ -127,7 +127,13 @@ def test_linked_prod_settings_inside_sandbox_are_rejected(isolated, monkeypatch,
     _shell(monkeypatch, isolated, root)
     assert settings.sandbox_operator_check()["ok"] is False
     assert settings.sandbox_execution_check()["ok"] is False
+    assert settings.load()["tokens"]["operator"] == ""  # never read linked production JSON
+    assert settings.status()["charids"] == []  # never disclose production allowlist
     assert preflight("moghancement", "MOG-09")["ready_for_operator_review"] is False
+    before = (external / "settings.json").read_bytes()
+    with pytest.raises(ValueError, match="safe for writes"):
+        settings.set_enabled(True)
+    assert (external / "settings.json").read_bytes() == before
     with pytest.raises(PermissionError):
         authorize_operator("p" * 40)
 
@@ -247,6 +253,8 @@ def test_sandbox_cannot_select_default_production_settings_directory(monkeypatch
     monkeypatch.setenv("MISSION_TOOLKIT_TEST_DATA_DIR", str(local / "MissionToolkit" / "test_execution"))
     state = settings.sandbox_execution_check()
     assert state["isolated"] and not state["ok"]
+    with pytest.raises(ValueError, match="safe for writes"):
+        settings.set_enabled(True)
 
 
 def test_builder_template_never_advertises_inherited_preflight_as_launch_authority():
