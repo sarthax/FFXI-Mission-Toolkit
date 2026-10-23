@@ -10,6 +10,18 @@
     const currentRevision = Number($('sd-revision').value) || 0;
     $('sd-revision-state').textContent = M.revisionIndicator(baseline,spec,currentRevision);
   }
+  function updateAdvancedRevision() {
+    if(mode!=='advanced')return; // hidden scripted events must not change Guided state
+    $('sd-revision-state').textContent=M.advancedRevisionIndicator(
+      baseline,$('sd-advanced-json').value,Number($('sd-revision').value)||0);
+  }
+  // Only after a confirmed replacement; never from render(): it would
+  // overwrite uncommitted Advanced JSON text before discard confirmation.
+  function syncAdvancedAfterReplacement() {
+    $('sd-advanced-json').value=JSON.stringify(spec,null,2);
+    $('sd-guided').setAttribute('aria-pressed','true');
+    $('sd-advanced').setAttribute('aria-pressed','false');
+  }
   function renderCatalogSteps() {
     const select = $('sd-catalog-step'), selected = select.value;
     select.replaceChildren();
@@ -213,8 +225,10 @@
     $('sd-advanced-panel').hidden=target!=='advanced';
     $('sd-guided').setAttribute('aria-pressed',String(target==='guided'));
     $('sd-advanced').setAttribute('aria-pressed',String(target==='advanced'));
-    if(target==='advanced')$('sd-advanced-json').value=JSON.stringify(spec,null,2);
-    else render();
+    if(target==='advanced'){
+      $('sd-advanced-json').value=JSON.stringify(spec,null,2);
+      updateAdvancedRevision();
+    }else render();
   }
   function staticText(parent,tag,value){
     const x=el(tag,'',value);parent.append(x);return x;
@@ -412,7 +426,7 @@
       activeHandoff=null;spec=M.fresh();mode='guided';baseline=null;setSourceDetail(null,null);$('sd-revision').value=0;
       $('sd-context-use').disabled=!coverageContext;
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
-      render();show('Created a synthetic, design-only canonical draft.');
+      syncAdvancedAfterReplacement();render();show('Created a synthetic, design-only canonical draft.');
     }catch(e){show('New scenario refused: '+e.message);}
   });
   $('sd-fork').addEventListener('click',async()=>{
@@ -431,7 +445,7 @@
       editorGeneration++;resetReadinessViewer();
       activeHandoff=null;spec=draft;mode='guided';baseline=null;setSourceDetail(feature,caseId);
       $('sd-revision').value=0;$('sd-advanced-panel').hidden=true;
-      $('sd-guided-panel').hidden=false;render();
+      $('sd-guided-panel').hidden=false;syncAdvancedAfterReplacement();render();
       show('Copied as DESIGN_ONLY with a new synthetic case ID. Original published case unchanged.');
     }catch(e){show('Fork refused: '+e.message);}
     finally{forkPending=false;$('sd-fork').disabled=false;}
@@ -443,7 +457,7 @@
       editorGeneration++;resetReadinessViewer();
       activeHandoff=null;spec=draft;mode='guided';baseline=null;$('sd-revision').value=0;
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
-      render();show('Cloned into a new draft case ID. Rename it if a COPY already exists; source identities still require review.');
+      syncAdvancedAfterReplacement();render();show('Cloned into a new draft case ID. Rename it if a COPY already exists; source identities still require review.');
     } catch(e){show('Clone refused: '+e.message);}
   });
   $('sd-add-assertion').addEventListener('click',()=>{
@@ -526,7 +540,7 @@
       $('sd-revision').value=d.revision;baseline=M.clone(spec);
       setSourceDetail(null,null);
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
-      render();show('Opened '+d.case_id+' revision '+d.revision+' (design only). Edit and save with this expected revision; an external update will cause a revision conflict.');
+      syncAdvancedAfterReplacement();render();show('Opened '+d.case_id+' revision '+d.revision+' (design only). Edit and save with this expected revision; an external update will cause a revision conflict.');
     }catch(e){show('Open draft refused: '+e.message);}
   });
   function paintCandidates(result) {
@@ -575,10 +589,7 @@
                     'sd-preconditions','sd-cleanup','sd-gaps']) {
     $(id).addEventListener('input',()=>{if(mode==='guided'){readGuidedFields();updateRevision();}});
   }
-  $('sd-advanced-json').addEventListener('input',()=>{
-    if(mode==='advanced')$('sd-revision-state').textContent=
-      'Advanced JSON has unsaved edits — validate before saving (design only)';
-  });
+  $('sd-advanced-json').addEventListener('input',updateAdvancedRevision);
   let coverageContext = null, evidenceSuggestions = null, activeHandoff = null;
   function installIncompleteDraft(draft, feedback, key) {
     if(savePending)throw Error('A draft save is in progress; handoff cannot replace the editor');
@@ -595,7 +606,7 @@
     $('sd-guided').setAttribute('aria-pressed','true');
     $('sd-advanced').setAttribute('aria-pressed','false');
     $('sd-preview').hidden=true;
-    render();renderIncompletePreview();
+    syncAdvancedAfterReplacement();render();renderIncompletePreview();
     show(feedback+' This draft is intentionally INCOMPLETE and cannot be validated or saved until you supply real observations, assertions, preconditions, cleanup and a new case ID. Nothing was executed.');
   }
   async function resolveCoverageContext() {

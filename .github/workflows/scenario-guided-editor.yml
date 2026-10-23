@@ -11,6 +11,7 @@ on:
       - "test_fixtures/test_scenario_contract_authoring.py"
       - "test_fixtures/test_scenario_contract_v2_view.cjs"
       - "test_fixtures/test_scenario_guided_*"
+      - "test_fixtures/test_scenario_advanced_state.cjs"
       - "test_fixtures/test_scenario_context_handoff.py"
       - "src/workbench/server_admin/scenario_authoring/context_handoff.py"
       - ".github/workflows/scenario-guided-editor.yml"
@@ -41,6 +42,7 @@ jobs:
       - name: Run browser-independent Guided/Advanced model tests
         run: |
           node test_fixtures/test_scenario_guided_model.cjs
+          node test_fixtures/test_scenario_advanced_state.cjs
           node test_fixtures/test_scenario_contract_v2_view.cjs
       - name: Check browser module syntax
         run: |

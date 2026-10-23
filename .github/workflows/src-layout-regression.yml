@@ -5,6 +5,8 @@ on:
     paths:
       - "pyproject.toml"
       - "src/workbench/**"
+      - "gui/static/scenario_developer.js"
+      - "gui/static/scenario_guided_model.js"
       - "llm_client.py"
       - "llm_db_tools.py"
       - "llm_log.py"
