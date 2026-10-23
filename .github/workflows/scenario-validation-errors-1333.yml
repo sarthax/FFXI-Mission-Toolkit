@@ -1,0 +1,32 @@
+name: Scenario Field Validation Feedback (Offline)
+on:
+  pull_request:
+    paths:
+      - "src/workbench/server_admin/scenario_authoring/editor_router.py"
+      - "src/workbench/server_admin/scenario_authoring/validation_feedback.py"
+      - "gui/static/scenario_validation_feedback.js"
+      - "gui/static/scenario_developer.js"
+      - "gui/templates/scenario_developer.html"
+      - "test_fixtures/test_scenario_validation_feedback_1333.py"
+      - "test_fixtures/test_scenario_validation_feedback_1333.cjs"
+      - ".github/workflows/scenario-validation-errors-1333.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  field-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install offline tests
+        run: python -m pip install --disable-pip-version-check -r requirements.txt pytest httpx
+      - name: Execute canonical rejection and field diagnostics
+        env:
+          PYTHONPATH: "src:."
+        run: python -m pytest -q test_fixtures/test_scenario_validation_feedback_1333.py
+      - name: Exercise no-mutation validation summary in fake DOM
+        run: node test_fixtures/test_scenario_validation_feedback_1333.cjs
