@@ -62,7 +62,7 @@
 <section class="wb-panel ft-card">
 <h2>Run a test</h2>
 <div class="ft-status {{ 'ft-ok' if builder_preflight.ready_for_operator_review else 'ft-bad' }}">
-{% if builder_preflight.ready_for_operator_review %}<strong>Ready to run.</strong> All prerequisites were found.
+{% if builder_preflight.ready_for_operator_review %}<strong>Prerequisites detected — operator approval still required.</strong> This is not execution authorization.
 {% else %}<strong>Not ready yet.</strong> Fix the items below on the <a href="/feature-testing?tab=guide">Setup page</a>, then come back.{% endif %}
 <details {% if not builder_preflight.ready_for_operator_review %}open{% endif %}><summary>Prerequisite checklist</summary>
 <ul class="ft-checks">{% for check in builder_preflight.checks %}<li class="{{ 'ft-ok' if check.ok else 'ft-bad' }}">{{ '✓' if check.ok else '✗' }} {{ check.detail }}</li>{% endfor %}</ul></details>
