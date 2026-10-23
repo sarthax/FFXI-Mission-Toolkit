@@ -75,6 +75,10 @@ def load() -> dict:
 
 def _save(settings: dict) -> None:
     path = settings_path()
+    if "MISSION_TOOLKIT_TEST_DATA_DIR" in os.environ:
+        scope, _ = _sandbox_directory_check()
+        if (scope["isolated"] and not scope["ok"]) or path.is_symlink():
+            raise ValueError("Isolated settings location is not safe for writes")
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(settings, indent=1), encoding="utf-8")
