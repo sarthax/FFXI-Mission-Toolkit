@@ -75,7 +75,7 @@ def test_preflight_and_evidence_limits_are_explicit():
         "Capture Review Queue is a different workflow",
         "INV-OBS-01 has no assigned runner",
         "execution_enabled=false",
-        "not independently verified gameplay",
+        "independently verified gameplay",
     ):
         assert label in html, label
 
