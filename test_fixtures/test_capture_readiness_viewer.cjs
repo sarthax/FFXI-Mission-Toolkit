@@ -100,7 +100,75 @@ for(const mutate of [
   assert.throws(()=>V.verify(bad),/attempted source/);
 }
 
+// B20 06, 09, 10: synth-only UI tests. inspect is a spy, never an HTTP
+// request or an oracle; backend strict pairing is tested separately in Python.
+async function testB20Diagnostics(){
+  const id=unknown.capture_id;
+  const goodReview={capture_id:id,observed_handoff:{capture_id:id}};
+  const goodSidecar={contract:'SYNTHETIC_SIDE_CAR_ONLY'};
+  const file=txt=>({size:Buffer.byteLength(txt),text:async()=>txt});
+  const cases=[
+    {caseId:'09',review:'{\"capture_id\":\"UNTERMINATED_PRIVATE_MARKER',
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original reviewed-decision file is not valid JSON'},
+    {caseId:'10',review:JSON.stringify(goodReview),
+      sidecar:'{\"SECRET_MARKER\":\"UNTERMINATED_PRIVATE_MARKER',
+      reason:'Readiness sidecar file is not valid JSON'},
+    {caseId:'06',review:JSON.stringify({...goodReview,capture_id:id+1}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity mismatch'}
+  ];
+  for(const c of cases){
+    let calls=0;
+    const view=V.mount(new Element('main'),async()=>{calls++;return unknown;});
+    view.review.files=[file(c.review)];
+    view.advisory.files=[file(c.sidecar)];
+    view.review.dispatch('change');
+    view.advisory.dispatch('change');
+    await view.inspectButton.dispatch('click');
+    assert.equal(calls,0,'B20 '+c.caseId+' must not invoke inspector/POST');
+    assert.equal(view.output.children.length,0,'B20 '+c.caseId+' no accepted output');
+    assert.equal(view.status.textContent,
+      'Pair NOT accepted: '+c.reason+'. No evidence imported; preserve original files.');
+    assert.doesNotMatch(view.status.textContent,
+      /UNTERMINATED_PRIVATE_MARKER|SECRET_MARKER|SyntaxError|Unterminated string|position \\d+|Evidence cannot claim execution/);
+    assert.equal(view.inspectButton.disabled,false,'B20 '+c.caseId+' recovers button');
+    // Changing either selection clears stale failure and permits a fresh,
+    // separately backend-inspected pair; this spy is not backend acceptance.
+    view.review.files=[file(JSON.stringify(goodReview))];
+    view.advisory.files=[file(JSON.stringify(goodSidecar))];
+    view.review.dispatch('change');
+    view.advisory.dispatch('change');
+    assert.equal(view.output.children.length,0);
+    assert.match(view.status.textContent,/Selection changed/);
+    await view.inspectButton.dispatch('click');
+    assert.equal(calls,1,'B20 '+c.caseId+' valid-looking input reaches inspector once');
+    assert.equal(view.output.children.length,1);
+    assert.match(view.status.textContent,/UNVERIFIED READ-ONLY advisory/);
+    view.dispose();
+    assert.equal(view.output.children.length,0);
+    assert.equal(view.inspectButton.disabled,true);
+    await view.inspectButton.dispatch('click');
+    assert.equal(calls,1,'B20 '+c.caseId+' closed viewer must not inspect');
+  }
+  // A wrong sidecar identity and forged authority must still go to the
+  // authoritative verifier and fail; the local diagnostic is not a validator.
+  let rejected=0;
+  const view=V.mount(new Element('main'),async()=>{
+    rejected++;throw Error('Capture readiness pair rejected: authoritative mismatch');
+  });
+  view.review.files=[file(JSON.stringify(goodReview))];
+  view.advisory.files=[file(JSON.stringify({...goodSidecar,capture_id:id+1,
+    approved_for_execution:true}))];
+  await view.inspectButton.dispatch('click');
+  assert.equal(rejected,1);
+  assert.equal(view.output.children.length,0);
+  assert.match(view.status.textContent,/authoritative mismatch/);
+  console.log('R7 B20 synthetic 06/09/10 bounded diagnostics, no early POST and recovery: PASS');
+}
+
 async function run(){
+  await testB20Diagnostics();
   const host=new Element('main');
   let wait=null;
   const view=V.mount(host,()=>new Promise(resolve=>{wait=resolve;}));
