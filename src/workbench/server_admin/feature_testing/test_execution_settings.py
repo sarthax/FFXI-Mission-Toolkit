@@ -115,9 +115,77 @@ def apply_to_environ(settings: dict | None = None) -> list[str]:
     return sorted(_APPLIED)
 
 
+# Explicit per-process sandbox isolation is distinct from the ordinary Setup-tab
+# environment precedence: an isolated data directory must never silently borrow
+# shell supervisor authorization, regardless of UI or runner entry point.
+_SANDBOX_EXECUTION_KEYS = (
+    "MISSION_TOOLKIT_TEST_HEADLESS_ROOT",
+    "MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS",
+    "MISSION_TOOLKIT_SUPERVISOR_TOKEN",
+    "MISSION_TOOLKIT_TEST_OPERATOR_TOKEN",
+    "MISSION_TOOLKIT_SUPERVISOR_DB_USER",
+    "MISSION_TOOLKIT_SUPERVISOR_DB_PASSWORD",
+    "MISSION_TOOLKIT_SUPERVISOR_DB_NAME",
+    "MISSION_TOOLKIT_SUPERVISOR_DB_PORT",
+)
+_SANDBOX_STORAGE_KEYS = (
+    "MISSION_TOOLKIT_TEST_RESULTS_DB",
+    "MISSION_TOOLKIT_TEST_DRAFTS_DB",
+    "MISSION_TOOLKIT_TEST_JOBS_DB",
+    "MISSION_TOOLKIT_TEST_ARTIFACTS_ROOT",
+)
+
+
+def sandbox_execution_check() -> dict:
+    """Fail-closed supervisor provenance check for an explicitly isolated data dir.
+
+    Outside MISSION_TOOLKIT_TEST_DATA_DIR, production shell-over-file behavior
+    remains unchanged. This does NOT authenticate the deployed DSP/headless
+    source or grant permission to run; it only rejects an unrelated environment.
+    No secrets or allowlist values are returned to UI or logs.
+    """
+    selected = os.environ.get("MISSION_TOOLKIT_TEST_DATA_DIR", "").strip()
+    if not selected:
+        return {"isolated": False, "ok": True, "reason": "Not in an explicit test sandbox"}
+    root = Path(selected)
+    default = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "MissionToolkit" / "test_execution"
+    if (not root.is_absolute() or root.is_symlink()
+            or root.resolve() == default.resolve()):
+        return {"isolated": True, "ok": False,
+                "reason": "Sandbox directory must be an absolute, separate non-symlink directory"}
+    settings = load()  # load() never migrates legacy production settings in isolation
+    if settings.get("enabled") is not True:
+        return {"isolated": True, "ok": False,
+                "reason": "Isolated supervisor setup is not explicitly enabled in this sandbox"}
+    expected = _env_values(settings)
+    for key in _SANDBOX_EXECUTION_KEYS:
+        value = expected.get(key, "")
+        if not value or os.environ.get(key, "") != value:
+            return {"isolated": True, "ok": False,
+                    "reason": "Isolated supervisor configuration is missing or overridden by unrelated environment variables"}
+    if (len(settings["tokens"]["operator"]) < 32
+            or len(settings["tokens"]["supervisor"]) < 32
+            or not settings["charids"]):
+        return {"isolated": True, "ok": False,
+                "reason": "Isolated supervisor tokens or disposable-character approval are incomplete"}
+    for key in _SANDBOX_STORAGE_KEYS:
+        value = os.environ.get(key, "")
+        if not value:
+            return {"isolated": True, "ok": False,
+                    "reason": "Isolated test storage is not configured"}
+        path = Path(value)
+        if (not path.is_absolute() or path.is_symlink()
+                or not path.resolve().is_relative_to(root.resolve())):
+            return {"isolated": True, "ok": False,
+                    "reason": "Test storage must remain within the isolated data directory"}
+    return {"isolated": True, "ok": True, "reason": "Explicit isolated supervisor setup matches this sandbox"}
+
+
 def ui_mode_active() -> bool:
     """True when the operator opted in through the Setup tab (no pasted token needed from the page)."""
-    return bool(load()["enabled"]) and bool(os.environ.get("MISSION_TOOLKIT_TEST_OPERATOR_TOKEN"))
+    return (bool(load()["enabled"])
+            and bool(os.environ.get("MISSION_TOOLKIT_TEST_OPERATOR_TOKEN"))
+            and sandbox_execution_check()["ok"])
 
 
 def _git(root: Path, *args: str) -> str:
@@ -217,7 +285,9 @@ def status() -> dict:
     from .execution_preflight import preflight
     settings = load()
     roots = detect_headless_roots()
-    chosen = os.environ.get("MISSION_TOOLKIT_TEST_HEADLESS_ROOT", "") or settings["headless_root"]
+    isolation = sandbox_execution_check()
+    chosen = (settings["headless_root"] if isolation["isolated"]
+              else os.environ.get("MISSION_TOOLKIT_TEST_HEADLESS_ROOT", "") or settings["headless_root"])
     db_ready = bool(os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_USER")
                     and os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_PASSWORD")
                     and os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_NAME"))
@@ -231,14 +301,20 @@ def status() -> dict:
         except ImportError:
             driver = False
     pre = preflight("moghancement", "MOG-09")
+    if isolation["isolated"] and not isolation["ok"]:
+        db_ready = False
     steps = [
+        {"id": "sandbox_isolation", "ok": isolation["ok"],
+         "title": "Isolated supervisor configuration",
+         "fix": isolation["reason"]},
         {"id": "enabled", "ok": settings["enabled"], "title": "Test execution turned on",
          "fix": "Press \"Turn on test execution\" below. Tokens are generated for you."},
         {"id": "checkout", "ok": bool(chosen),
          "title": "XiHeadless checkout chosen", "fix": "Pick a detected checkout from the list. None listed? Build XiHeadless first (see the guide)."},
         {"id": "dll", "ok": bool(chosen) and (Path(chosen) / "bin" / "mcp" / "XiHeadless.dll").is_file(),
          "title": "XiHeadless is built (bin/mcp/XiHeadless.dll)", "fix": "Build XiHeadless into bin/mcp from a clean commit, then reload this page."},
-        {"id": "characters", "ok": bool(os.environ.get("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS")),
+        {"id": "characters", "ok": bool(settings["charids"]) and isolation["ok"] if isolation["isolated"]
+         else bool(os.environ.get("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS")),
          "title": "Disposable test character approved", "fix": "Enter the character ID of a throwaway test account (never a real character)."},
         {"id": "database", "ok": db_ready and driver,
          "title": "Server database readable (read-only login)",
