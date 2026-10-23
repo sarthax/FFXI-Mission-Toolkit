@@ -151,7 +151,7 @@ Imported/recalculated PASS is not independently verified proof.
 <div class="sd-bar">
 <button type="button" id="sd-preview-incomplete">Preview provisional draft (no validation or execution)</button>
 <button type="button" id="sd-validate">Validate and preview (no execution)</button>
-<label class="sd-field">Operator token (only for saving to existing local draft store)<input type="password" id="sd-token" autocomplete="off"></label>
+<label class="sd-field">Operator token (only for saving to existing local draft store)<input type="password" id="sd-token" autocomplete="off"><small class="sd-muted">Configured privately in the local Toolkit process (32+ characters). Missing configuration, short or incorrect tokens intentionally share one generic denial; validation previews need no token.</small></label>
 <label class="sd-field">Expected draft revision<input type="number" id="sd-revision" value="0" min="0" step="1" readonly></label>
 <p id="sd-revision-state" class="sd-revision" role="status">New unsaved design draft · revision 0</p>
 <button type="button" id="sd-save">Save design-only draft</button>
