@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "src/workbench/server_admin/scenario_authoring/**"
+      - "gui/static/scenario_developer.js"
+      - "gui/static/scenario_guided_model.js"
       - "test_fixtures/test_scenario_authoring_catalog.py"
       - ".github/workflows/scenario-authoring-catalog.yml"
   workflow_dispatch:
