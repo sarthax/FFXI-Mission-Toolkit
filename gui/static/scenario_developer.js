@@ -407,7 +407,7 @@
     try{result=await call('/scenario-developer/validate','POST',{specification:input});}
     catch(e){
       if(uiRequest!==validationUiRequest || generation!==editorGeneration ||
-         !validationRequestCurrent(generation,input))return; // obsolete response; do not throw to outer UI handler
+         !validationRequestCurrent(generation,input))return; // Preview is stale: no UI mutation or outer catch dispatch
       throw e;
     }
     if(uiRequest!==validationUiRequest || generation!==editorGeneration ||
