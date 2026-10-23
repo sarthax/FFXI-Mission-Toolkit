@@ -7,7 +7,7 @@
   "canonical_mutation_allowed": false,
   "auto_oracle_approval_allowed": false,
   "automatic_execution_allowed": false,
-  "fixture_note": "All names, IDs, digests, values, sources and revisions are synthetic labels, never real capture evidence.",
+  "fixture_note": "All names, IDs, digests, values, sources and revisions are synthetic labels, never real capture evidence. Two additional states distinguish nonterminal partial execution from terminal receipt with partial evidence.",
   "examples": [
     {
       "id": "complete-observed-mismatch",
@@ -1077,6 +1077,288 @@
           "pointer_claim": "synthetic://capture/conflicting-duplicate-attempt",
           "digest_claim": "synthetic:evidence-conflicting-duplicate-attempt",
           "capture_id": "synthetic-capture-conflicting-duplicate-attempt",
+          "timestamp_basis": "UNKNOWN",
+          "source_revision_claim": "synthetic:dsp-rev-a"
+        },
+        "authority": {
+          "physical_capture_authenticated": false,
+          "decoder_authenticated": false,
+          "independent_verification": "NOT_ESTABLISHED",
+          "oracle_approval": "NOT_ESTABLISHED",
+          "canonical_association": "UNASSIGNED",
+          "importer_authority": false
+        }
+      }
+    },
+    {
+      "id": "running-partial-observation",
+      "synthetic": true,
+      "scenario": {
+        "feature_id": "SYNTHETIC_FEATURE",
+        "case_id": "SYNTHETIC_CASE",
+        "canonical_schema_version": 1,
+        "base_revision": "synthetic-revision-1",
+        "base_digest_claim": "synthetic:spec-sha256-r1",
+        "catalog_state": "DESIGN_ONLY"
+      },
+      "attempt": {
+        "run_id": "synthetic-run-running-partial-observation",
+        "attempt_id": "synthetic-attempt-running-partial-observation",
+        "operation_ids": [
+          "synthetic-operation-running-partial-observation"
+        ],
+        "evidence_digest_claim": "synthetic:evidence-running-partial-observation",
+        "reconciliation": "FIRST_SEEN"
+      },
+      "lifecycle": {
+        "state": "RUNNING",
+        "terminal_recorded": false,
+        "observation_completeness": "PARTIAL",
+        "cleanup_status": "UNKNOWN"
+      },
+      "provenance": {
+        "original_source_ref": "synthetic://capture/running-partial-observation",
+        "capture_id": "synthetic-capture-running-partial-observation",
+        "source_revision_claim": "synthetic:dsp-rev-a",
+        "deployment_revision_claim": null,
+        "decoder_revision_claim": "synthetic:decoder-v1",
+        "source_bytes_authenticated": false,
+        "decoder_authenticated": false,
+        "source_identity_verified": false,
+        "source_revision_assessment": "UNVERIFIED_CLAIM",
+        "original_evidence_retained": true
+      },
+      "evidence": {
+        "observed_facts": [
+          {
+            "source_ref": "synthetic://capture/running-partial-observation",
+            "observer": "CLIENT",
+            "observation": "synthetic partial observation received",
+            "authentication": "UNVERIFIED"
+          }
+        ],
+        "candidate_interpretations": [
+          {
+            "text": "This difference may describe a regression",
+            "status": "UNAPPROVED_HYPOTHESIS"
+          }
+        ],
+        "approved_oracles": [],
+        "missing_observations": [
+          {
+            "observer": "SERVER",
+            "capability": "READ_ONLY_PERSISTED_STATE",
+            "reason": "NOT_INDEPENDENTLY_OBSERVED",
+            "permission_granted": false
+          }
+        ],
+        "conflicting_observations": [],
+        "reported_comparison": "NOT_EVALUATED",
+        "reported_gameplay_verdict": null,
+        "authoritative_gameplay_verdict": "UNKNOWN",
+        "independent_authority": "NOT_ESTABLISHED"
+      },
+      "triage": {
+        "expected_evidence_state": "UNKNOWN",
+        "proposal_disposition": "DRAFT_UNTRUSTED",
+        "rationale": "Running action reported only partial synthetic evidence; terminal and cleanup remain UNKNOWN",
+        "proposal": {
+          "contract": "scenario_revision_proposal_v0_UNTRUSTED_DESIGN",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1",
+          "idempotency_identity": {
+            "run_id": "synthetic-run-running-partial-observation",
+            "attempt_id": "synthetic-attempt-running-partial-observation",
+            "evidence_digest_claim": "synthetic:evidence-running-partial-observation"
+          },
+          "status": "DRAFT_UNTRUSTED",
+          "rationale": "Running action reported only partial synthetic evidence; terminal and cleanup remain UNKNOWN",
+          "proposed_changes": [
+            {
+              "kind": "REQUEST_READBACK",
+              "before": null,
+              "after": "For later review, require separately authorized complete terminal and persisted readback; no gameplay verdict or execution"
+            }
+          ],
+          "evidence_refs": [
+            "evidence:synthetic:running-partial-observation"
+          ],
+          "required_reviews": [
+            "HUMAN_REVIEW",
+            "ORACLE_PROVENANCE",
+            "SOURCE_REVISION"
+          ],
+          "canonical_write_allowed": false,
+          "execution_allowed": false,
+          "permission_grants_allowed": false,
+          "proposal_recommendation_kinds": [
+            "MISSING_OBSERVER_REQUIREMENT"
+          ],
+          "proposal_id": "SYNTHETIC-PROPOSAL-running-partial-observation"
+        }
+      },
+      "evidence_reference": {
+        "contract": "scenario_evidence_ref_v0_NONCANONICAL",
+        "ref_id": "evidence:synthetic:running-partial-observation",
+        "scenario": {
+          "feature_id": "SYNTHETIC_FEATURE",
+          "case_id": "SYNTHETIC_CASE",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1"
+        },
+        "attempt": {
+          "run_id": "synthetic-run-running-partial-observation",
+          "attempt_id": "synthetic-attempt-running-partial-observation",
+          "operation_ids": [
+            "synthetic-operation-running-partial-observation"
+          ]
+        },
+        "artifact": {
+          "kind": "SYNTHETIC_FIXTURE",
+          "pointer_claim": "synthetic://capture/running-partial-observation",
+          "digest_claim": "synthetic:evidence-running-partial-observation",
+          "capture_id": "synthetic-capture-running-partial-observation",
+          "timestamp_basis": "UNKNOWN",
+          "source_revision_claim": "synthetic:dsp-rev-a"
+        },
+        "authority": {
+          "physical_capture_authenticated": false,
+          "decoder_authenticated": false,
+          "independent_verification": "NOT_ESTABLISHED",
+          "oracle_approval": "NOT_ESTABLISHED",
+          "canonical_association": "UNASSIGNED",
+          "importer_authority": false
+        }
+      }
+    },
+    {
+      "id": "terminal-with-incomplete-readback",
+      "synthetic": true,
+      "scenario": {
+        "feature_id": "SYNTHETIC_FEATURE",
+        "case_id": "SYNTHETIC_CASE",
+        "canonical_schema_version": 1,
+        "base_revision": "synthetic-revision-1",
+        "base_digest_claim": "synthetic:spec-sha256-r1",
+        "catalog_state": "DESIGN_ONLY"
+      },
+      "attempt": {
+        "run_id": "synthetic-run-terminal-with-incomplete-readback",
+        "attempt_id": "synthetic-attempt-terminal-with-incomplete-readback",
+        "operation_ids": [
+          "synthetic-operation-terminal-with-incomplete-readback"
+        ],
+        "evidence_digest_claim": "synthetic:evidence-terminal-with-incomplete-readback",
+        "reconciliation": "FIRST_SEEN"
+      },
+      "lifecycle": {
+        "state": "COMPLETED",
+        "terminal_recorded": true,
+        "observation_completeness": "PARTIAL",
+        "cleanup_status": "UNKNOWN"
+      },
+      "provenance": {
+        "original_source_ref": "synthetic://capture/terminal-with-incomplete-readback",
+        "capture_id": "synthetic-capture-terminal-with-incomplete-readback",
+        "source_revision_claim": "synthetic:dsp-rev-a",
+        "deployment_revision_claim": null,
+        "decoder_revision_claim": "synthetic:decoder-v1",
+        "source_bytes_authenticated": false,
+        "decoder_authenticated": false,
+        "source_identity_verified": false,
+        "source_revision_assessment": "UNVERIFIED_CLAIM",
+        "original_evidence_retained": true
+      },
+      "evidence": {
+        "observed_facts": [
+          {
+            "source_ref": "synthetic://capture/terminal-with-incomplete-readback",
+            "observer": "CLIENT",
+            "observation": "synthetic partial observation received",
+            "authentication": "UNVERIFIED"
+          }
+        ],
+        "candidate_interpretations": [
+          {
+            "text": "This difference may describe a regression",
+            "status": "UNAPPROVED_HYPOTHESIS"
+          }
+        ],
+        "approved_oracles": [],
+        "missing_observations": [
+          {
+            "observer": "SERVER",
+            "capability": "READ_ONLY_PERSISTED_STATE",
+            "reason": "NOT_INDEPENDENTLY_OBSERVED",
+            "permission_granted": false
+          }
+        ],
+        "conflicting_observations": [],
+        "reported_comparison": "NOT_EVALUATED",
+        "reported_gameplay_verdict": null,
+        "authoritative_gameplay_verdict": "UNKNOWN",
+        "independent_authority": "NOT_ESTABLISHED"
+      },
+      "triage": {
+        "expected_evidence_state": "UNKNOWN",
+        "proposal_disposition": "DRAFT_UNTRUSTED",
+        "rationale": "Task terminal receipt exists but essential synthetic persisted readback is missing; gameplay remains UNKNOWN",
+        "proposal": {
+          "contract": "scenario_revision_proposal_v0_UNTRUSTED_DESIGN",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1",
+          "idempotency_identity": {
+            "run_id": "synthetic-run-terminal-with-incomplete-readback",
+            "attempt_id": "synthetic-attempt-terminal-with-incomplete-readback",
+            "evidence_digest_claim": "synthetic:evidence-terminal-with-incomplete-readback"
+          },
+          "status": "DRAFT_UNTRUSTED",
+          "rationale": "Task terminal receipt exists but essential synthetic persisted readback is missing; gameplay remains UNKNOWN",
+          "proposed_changes": [
+            {
+              "kind": "REQUEST_READBACK",
+              "before": null,
+              "after": "For later review, require separately authorized complete terminal and persisted readback; no gameplay verdict or execution"
+            }
+          ],
+          "evidence_refs": [
+            "evidence:synthetic:terminal-with-incomplete-readback"
+          ],
+          "required_reviews": [
+            "HUMAN_REVIEW",
+            "ORACLE_PROVENANCE",
+            "SOURCE_REVISION"
+          ],
+          "canonical_write_allowed": false,
+          "execution_allowed": false,
+          "permission_grants_allowed": false,
+          "proposal_recommendation_kinds": [
+            "MISSING_OBSERVER_REQUIREMENT"
+          ],
+          "proposal_id": "SYNTHETIC-PROPOSAL-terminal-with-incomplete-readback"
+        }
+      },
+      "evidence_reference": {
+        "contract": "scenario_evidence_ref_v0_NONCANONICAL",
+        "ref_id": "evidence:synthetic:terminal-with-incomplete-readback",
+        "scenario": {
+          "feature_id": "SYNTHETIC_FEATURE",
+          "case_id": "SYNTHETIC_CASE",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1"
+        },
+        "attempt": {
+          "run_id": "synthetic-run-terminal-with-incomplete-readback",
+          "attempt_id": "synthetic-attempt-terminal-with-incomplete-readback",
+          "operation_ids": [
+            "synthetic-operation-terminal-with-incomplete-readback"
+          ]
+        },
+        "artifact": {
+          "kind": "SYNTHETIC_FIXTURE",
+          "pointer_claim": "synthetic://capture/terminal-with-incomplete-readback",
+          "digest_claim": "synthetic:evidence-terminal-with-incomplete-readback",
+          "capture_id": "synthetic-capture-terminal-with-incomplete-readback",
           "timestamp_basis": "UNKNOWN",
           "source_revision_claim": "synthetic:dsp-rev-a"
         },
