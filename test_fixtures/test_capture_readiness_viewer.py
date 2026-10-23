@@ -257,3 +257,12 @@ def test_legacy_editor_inputs_are_not_changed_and_noncanonical_is_rejected():
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
+
+
+def test_sorted_key_export_from_reviewer_page_is_still_accepted():
+    """The offline reviewer embeds its handoff with sort_keys=True; that export must verify."""
+    review, sidecar = pair()
+    srt = lambda value: json.loads(json.dumps(value, sort_keys=True))
+    sidecar["original_evidence_handoff"] = srt(sidecar["original_evidence_handoff"])
+    review["observed_handoff"] = srt(review["observed_handoff"])
+    assert inspect_paired_readiness(review, sidecar)
