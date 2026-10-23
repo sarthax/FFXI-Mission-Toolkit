@@ -189,7 +189,7 @@ def _sandbox_directory_check() -> tuple[dict, Path | None]:
                  "reason": "Sandbox directory must not contain surrounding whitespace"}, None)
     root = Path(raw)
     default = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "MissionToolkit" / "test_execution"
-    if (not root.is_absolute() or not root.is_dir()
+    if (not root.is_absolute() or (root.exists() and not root.is_dir())
             or any(part.is_symlink() for part in (root, *root.parents))
             or root.resolve() == default.resolve()
             or root.resolve().is_relative_to(default.resolve())
