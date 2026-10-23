@@ -186,10 +186,10 @@ async function run() {
   get('sd-purpose').value='unchanged between two validations';
   const identicalOld=click('sd-validate');
   const identicalNew=click('sd-validate');
-  assert.equal(requests.length,13);
-  settle(12,422,invalid('newer identical-input error'));await identicalNew;
+  assert.equal(requests.length,12);
+  settle(11,422,invalid('newer identical-input error'));await identicalNew;
   const identicalNewUi=ui();
-  settle(11,200,valid('older identical-input success'));await identicalOld;
+  settle(10,200,valid('older identical-input success'));await identicalOld;
   assert.deepEqual(ui(),identicalNewUi,
     'old successful response for SAME INPUT must not clear later current errors');
 
@@ -197,15 +197,15 @@ async function run() {
   // simulate a later 403 from that already in-flight Save after newer Validate.
   get('sd-purpose').value='in-flight scratch save';
   const inFlightSave=click('sd-save');
-  assert.equal(requests.length,14);
-  settle(13,200,{...valid('save preview'),
-    canonical_specification:requests[13].request.specification});
+  assert.equal(requests.length,13);
+  settle(12,200,{...valid('save preview'),
+    canonical_specification:requests[12].request.specification});
   for(let n=0;n<8;n++)await Promise.resolve();
   assert.equal(draftRequests.length,1,'only one synthetic draft POST was queued');
   get('sd-purpose').value='current result after save dispatch';
   const newerValidation=click('sd-validate');
-  assert.equal(requests.length,15);
-  settle(14,422,invalid('new current error'));await newerValidation;
+  assert.equal(requests.length,14);
+  settle(13,422,invalid('new current error'));await newerValidation;
   const beforeDelayedSave=ui();
   draftRequests[0].resolve({ok:false,status:403,
     json:async()=>({detail:'Operator permission denied'})});
@@ -217,12 +217,12 @@ async function run() {
 
   // Invalid Advanced buffer is not parsed/replaced by a delayed old 422.
   await click('sd-advanced');
-  const advancedBefore=JSON.stringify({...requests[14].request.specification,purpose:'source-only'});
+  const advancedBefore=JSON.stringify({...requests[13].request.specification,purpose:'source-only'});
   get('sd-advanced-json').value=advancedBefore;
   const advancedReq=click('sd-validate');
   const bad='{broken : [';
   get('sd-advanced-json').value=bad;
-  settle(15,422,invalid('old Advanced 422'));await advancedReq;
+  settle(14,422,invalid('old Advanced 422'));await advancedReq;
   assert.equal(get('sd-advanced-json').value,bad,'invalid Advanced bytes preserved');
   assert.equal(get('sd-revision').value,'0','unsaved draft revision preserved');
   assert.equal(network.some(x=>x.path.includes('/launch')),false);
