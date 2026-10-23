@@ -209,3 +209,12 @@ def test_sandbox_cannot_select_default_production_settings_directory(monkeypatch
     monkeypatch.setenv("MISSION_TOOLKIT_TEST_DATA_DIR", str(local / "MissionToolkit" / "test_execution"))
     state = settings.sandbox_execution_check()
     assert state["isolated"] and not state["ok"]
+
+
+def test_builder_template_never_advertises_inherited_preflight_as_launch_authority():
+    template = (Path(__file__).resolve().parents[1] / "gui" / "templates" /
+                "feature_testing.html").read_text(encoding="utf-8")
+    assert "Prerequisites detected — operator approval still required" in template
+    assert '{% if not builder_preflight.ready_for_operator_review %}disabled' in template
+    assert 'aria-disabled="true"' in template
+    assert 'id="ft-run-approval"' in template
