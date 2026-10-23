@@ -1,6 +1,6 @@
 # R5 — Nine-domain scenario readiness and capability gap audit (73 records)
 
-> **Historical audit preserved:** 73 staged cases are design-only/NOT_RUN; R7 read-only database endpoints and R8 offline interop do not grant execution. Capture viewer #1315/#1318 and B20 local acceptance remain outstanding; XIHeadless #105 generalized execution protocol remains unapproved. Use [current roadmap](ROADMAP_CURRENT.md) for the latest source-level integration status.
+> **Historical audit preserved:** 73 staged cases are design-only/NOT_RUN; R7 read-only database endpoints and R8 offline interop do not grant execution. Capture viewer #1315/#1318 is now merged/source-integrated, while **B20 local browser acceptance remains outstanding**; XIHeadless #105 generalized execution protocol remains unapproved. Use [current roadmap](ROADMAP_CURRENT.md) for the latest source-level integration status.
 
 > **R7 integrated status correction (2026-10-21):** All nine draft domain PRs and the authoritative #1292 matrix are merged into `main@972ff6fa`; references below to an *open*, *draft*, *proposed* R6 matrix/PR are historical audit-time language only. These 73 cases are still design-only, NOT_RUN, non-executable, with source/deployment authenticity and gameplay outcomes UNKNOWN. For current CI and ownership see [R7 release baseline](R7_RELEASE_BASELINE_2026-10-21.md) and draft [#1305](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1305).
 
