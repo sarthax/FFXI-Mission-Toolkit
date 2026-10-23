@@ -20,6 +20,7 @@ assert.equal(view.save_allowed,false);
 assert.equal(view.approved_expected,false);
 assert.equal(view.normative_expected,null);
 assert.equal(view.reviewer_action_enabled,false);
+assert.equal(view.review_status,'REQUIRE_FRESH_EVIDENCE');
 assert.equal(view.canonical_case_step_approval,'UNASSIGNED');
 assert.equal(view.source_authenticated,false);
 assert.equal(view.canonical_schema_validated,false);
@@ -56,8 +57,19 @@ const noSources=deep(proposal);noSources.source_refs=[];noSources.feature_trace_
 const missing=P.check(baseline,noSources);
 assert.match(missing.blockers.join(' | '),/no independently referenced source/);
 assert.match(missing.blockers.join(' | '),/no Feature Trace citations/);
+assert.equal(missing.review_status,'REQUIRE_FRESH_EVIDENCE');
 const duplicates=deep(proposal);duplicates.duplicate_scenario_ids=['SYNTH-OTHER-CASE'];
 assert.match(P.check(baseline,duplicates).blockers.join(' | '),/DUPLICATE_CANDIDATE/);
+assert.equal(P.check(baseline,duplicates).review_status,'REFUSE_UNTIL_RECONCILED');
+const independentlyClaimed=deep(proposal);
+independentlyClaimed.missing_observations=[];
+independentlyClaimed.execution_dependencies=[];
+const matchingClaimedBaseline=deep(baseline);
+matchingClaimedBaseline.spec_digest_claim='a'.repeat(64);
+independentlyClaimed.base.spec_digest_claim='a'.repeat(64);
+assert.equal(P.check(matchingClaimedBaseline,independentlyClaimed).review_status,'DRAFT_UNTRUSTED');
+assert.equal(P.check(matchingClaimedBaseline,independentlyClaimed).approved_expected,false);
+assert.equal(P.check(matchingClaimedBaseline,independentlyClaimed).save_allowed,false);
 
 class Element {
   constructor(tag){this.tagName=tag;this.children=[];this.textContent='';this.listeners={};
@@ -77,6 +89,7 @@ assert.match(printed(parent),/Source declarations/);
 assert.match(printed(parent),/Feature Trace claims/);
 assert.match(printed(parent),/Missing observations/);
 assert.match(printed(parent),/NOT APPROVED/);
+assert.match(printed(parent),/Review status \(advisory, NOT approved\): REQUIRE_FRESH_EVIDENCE/);
 assert.match(printed(parent),/NOT independently validated/);
 assert.doesNotMatch(printed(parent),/Save design-only draft|Execute test|Accept proposal/);
 const attack=deep(proposal);attack.reason='<script>FORGED_HTML</script>';
