@@ -114,6 +114,24 @@ def test_isolated_launch_refuses_inherited_prod_before_any_subprocess(isolated, 
     assert not out.exists()
 
 
+def test_linked_prod_settings_inside_sandbox_are_rejected(isolated, monkeypatch, tmp_path):
+    root = _headless(tmp_path)
+    external = tmp_path / "production-localappdata" / "MissionToolkit" / "test_execution"
+    external.mkdir(parents=True)
+    (external / "settings.json").write_text(json.dumps({
+        "enabled": True, "tokens": {"operator": "p" * 40, "supervisor": "v" * 40},
+        "headless_root": str(root), "charids": [23],
+        "db": {"user": "synthetic", "password": "synthetic", "name": "fake", "port": 3306}
+    }), encoding="utf-8")
+    (isolated / "settings.json").symlink_to(external / "settings.json")
+    _shell(monkeypatch, isolated, root)
+    assert settings.sandbox_operator_check()["ok"] is False
+    assert settings.sandbox_execution_check()["ok"] is False
+    assert preflight("moghancement", "MOG-09")["ready_for_operator_review"] is False
+    with pytest.raises(PermissionError):
+        authorize_operator("p" * 40)
+
+
 def test_partial_sandbox_settings_fail_closed(isolated, monkeypatch, tmp_path):
     root = _headless(tmp_path)
     _shell(monkeypatch, isolated, root)
