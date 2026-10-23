@@ -31,6 +31,10 @@ def _db_path() -> Path:
 
 
 def authorize_operator(token: str | None) -> None:
+    from .test_execution_settings import sandbox_execution_check
+    isolation = sandbox_execution_check()
+    if not isolation["ok"]:
+        raise PermissionError("Isolated supervisor setup not authorized")
     expected = os.environ.get("MISSION_TOOLKIT_TEST_OPERATOR_TOKEN", "")
     if len(expected) < 32 or not token or not hmac.compare_digest(token, expected):
         raise PermissionError("Operator execution not configured or unauthorized")
