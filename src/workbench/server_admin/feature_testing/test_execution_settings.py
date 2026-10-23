@@ -12,6 +12,7 @@ import os
 import re
 import secrets
 import subprocess
+import tempfile
 from pathlib import Path
 
 _REPO = Path(__file__).resolve().parents[4]
@@ -52,6 +53,12 @@ def _empty() -> dict:
 def load() -> dict:
     if "MISSION_TOOLKIT_TEST_DATA_DIR" not in os.environ:
         _migrate_legacy()
+    else:
+        # Guard the read itself, not just execution: Setup/status must never
+        # disclose a linked/default production settings file in a sandbox.
+        scope, _ = _sandbox_directory_check()
+        if (scope["isolated"] and not scope["ok"]) or settings_path().is_symlink():
+            return _empty()
     merged = _empty()
     try:
         raw = json.loads(settings_path().read_text(encoding="utf-8"))
@@ -69,6 +76,30 @@ def load() -> dict:
 
 def _save(settings: dict) -> None:
     path = settings_path()
+    if "MISSION_TOOLKIT_TEST_DATA_DIR" in os.environ:
+        scope, _ = _sandbox_directory_check()
+        if (scope["isolated"] and not scope["ok"]) or path.is_symlink():
+            raise ValueError("Isolated settings location is not safe for writes")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        # Never follow a predictable .tmp symlink into production files.
+        # NamedTemporaryFile uses an exclusive, unpredictable file in the
+        # validated sandbox directory, and defaults to private permissions.
+        temp_name = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                    mode="w", encoding="utf-8", dir=path.parent,
+                    prefix=".settings-", suffix=".tmp", delete=False) as tmp:
+                temp_name = tmp.name
+                json.dump(settings, tmp, indent=1)
+            if path.is_symlink():
+                raise ValueError("Isolated settings location is not safe for writes")
+            os.replace(temp_name, path)
+            temp_name = None
+        finally:
+            if temp_name is not None:
+                Path(temp_name).unlink(missing_ok=True)
+        return
+    # The existing non-isolated production write path is unchanged.
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(settings, indent=1), encoding="utf-8")
@@ -105,6 +136,10 @@ def apply_to_environ(settings: dict | None = None) -> list[str]:
     for key in list(_APPLIED):               # forget stale file-supplied values first
         os.environ.pop(key, None)
     _APPLIED.clear()
+    if "MISSION_TOOLKIT_TEST_DATA_DIR" in os.environ:
+        scope, _ = _sandbox_directory_check()
+        if not scope["ok"] or settings_path().is_symlink():
+            return []  # never create artifacts for invalid sandbox paths
     if not settings["enabled"]:
         return []
     (data_dir() / "artifacts").mkdir(parents=True, exist_ok=True)
@@ -115,9 +150,150 @@ def apply_to_environ(settings: dict | None = None) -> list[str]:
     return sorted(_APPLIED)
 
 
+# Explicit per-process sandbox isolation is distinct from the ordinary Setup-tab
+# environment precedence: an isolated data directory must never silently borrow
+# shell supervisor authorization, regardless of UI or runner entry point.
+_SANDBOX_EXECUTION_KEYS = (
+    "MISSION_TOOLKIT_TEST_HEADLESS_ROOT",
+    "MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS",
+    "MISSION_TOOLKIT_SUPERVISOR_TOKEN",
+    "MISSION_TOOLKIT_TEST_OPERATOR_TOKEN",
+    "MISSION_TOOLKIT_SUPERVISOR_DB_USER",
+    "MISSION_TOOLKIT_SUPERVISOR_DB_PASSWORD",
+    "MISSION_TOOLKIT_SUPERVISOR_DB_NAME",
+    "MISSION_TOOLKIT_SUPERVISOR_DB_PORT",
+)
+_SANDBOX_STORAGE_KEYS = (
+    "MISSION_TOOLKIT_TEST_RESULTS_DB",
+    "MISSION_TOOLKIT_TEST_DRAFTS_DB",
+    "MISSION_TOOLKIT_TEST_JOBS_DB",
+    "MISSION_TOOLKIT_TEST_ARTIFACTS_ROOT",
+)
+
+
+def _sandbox_directory_check() -> tuple[dict, Path | None]:
+    """Scope decision used by operator UI and stricter launch preflight."""
+    if "MISSION_TOOLKIT_TEST_DATA_DIR" not in os.environ:
+        return ({"isolated": False, "ok": True,
+                 "reason": "Not in an explicit test sandbox"}, None)
+    raw = os.environ["MISSION_TOOLKIT_TEST_DATA_DIR"]
+    selected = raw.strip()
+    if not selected:
+        return ({"isolated": True, "ok": False,
+                 "reason": "Explicit sandbox directory must not be empty"}, None)
+    if raw != selected:
+        # data_dir() intentionally uses the unmodified environment value.
+        # Reject a padded value before ANY settings file read/write, so that
+        # path validation and file operations always address the same root.
+        return ({"isolated": True, "ok": False,
+                 "reason": "Sandbox directory must not contain surrounding whitespace"}, None)
+    root = Path(raw)
+    default = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "MissionToolkit" / "test_execution"
+    if (not root.is_absolute() or (root.exists() and not root.is_dir())
+            or any(part.is_symlink() for part in (root, *root.parents))
+            or root.resolve() == default.resolve()
+            or root.resolve().is_relative_to(default.resolve())
+            or root.resolve().is_relative_to(_REPO.resolve())):
+        return ({"isolated": True, "ok": False,
+                 "reason": "Sandbox directory must be an absolute, separate non-symlink directory"}, None)
+    return ({"isolated": True, "ok": True,
+             "reason": "Explicit sandbox selected"}, root)
+
+
+def _sandbox_local_path(key: str, root: Path) -> bool:
+    value = os.environ.get(key, "")
+    if not value:
+        return False
+    path = Path(value)
+    return (path.is_absolute() and not path.is_symlink()
+            and path.resolve().is_relative_to(root.resolve()))
+
+
+def sandbox_operator_check() -> dict:
+    """Guard operator/draft authorization with sandbox-OWNED token and storage.
+
+    A draft-only sandbox does not need to configure supervisor, characters, or
+    readback DB to review drafts. It may never use an inherited production
+    operator token or a shared drafts/jobs file.
+    """
+    isolation, root = _sandbox_directory_check()
+    if not isolation["isolated"] or not isolation["ok"]:
+        return isolation
+    sandbox_file = settings_path()
+    if sandbox_file.is_symlink():
+        return {"isolated": True, "ok": False,
+                "reason": "Isolated supervisor settings must not be a linked external file"}
+    settings = load()  # never migrate the production settings file in isolation
+    if settings.get("enabled") is not True:
+        return {"isolated": True, "ok": False,
+                "reason": "Isolated operator setup is not explicitly enabled in this sandbox"}
+    tokens = settings.get("tokens")
+    token = tokens.get("operator") if isinstance(tokens, dict) else None
+    if (not isinstance(token, str) or len(token) < 32
+            or os.environ.get("MISSION_TOOLKIT_TEST_OPERATOR_TOKEN", "") != token):
+        return {"isolated": True, "ok": False,
+                "reason": "Isolated operator token is missing or overridden by unrelated environment variables"}
+    if not all(_sandbox_local_path(k, root) for k in (
+            "MISSION_TOOLKIT_TEST_DRAFTS_DB", "MISSION_TOOLKIT_TEST_JOBS_DB")):
+        return {"isolated": True, "ok": False,
+                "reason": "Isolated operator draft/job storage is missing or outside this sandbox"}
+    return {"isolated": True, "ok": True,
+            "reason": "Explicit sandbox operator token and storage match"}
+
+
+def sandbox_execution_check() -> dict:
+    """Fail-closed supervisor provenance check for explicitly isolated runs.
+
+    Ordinary production shell-over-settings precedence remains unchanged.
+    Unlike the draft-only operator gate, *execution* requires the sandbox-own
+    supervisor token, runner, allowlist, readback configuration and storage.
+    Neither check authenticates DSP/client evidence or authorizes a runner.
+    No secrets or allowlisted identities are returned to the UI.
+    """
+    isolation = sandbox_operator_check()
+    if not isolation["isolated"] or not isolation["ok"]:
+        return isolation
+    root = Path(os.environ["MISSION_TOOLKIT_TEST_DATA_DIR"].strip())
+    settings = load()
+    try:
+        if (not isinstance(settings.get("charids"), list)
+                or not isinstance(settings.get("headless_root"), str)
+                or not isinstance(settings.get("tokens"), dict)
+                or any(not isinstance(settings["tokens"].get(k), str)
+                       for k in ("operator", "supervisor"))
+                or not isinstance(settings.get("db"), dict)):
+            raise ValueError("malformed isolated settings")
+        expected = _env_values(settings)
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return {"isolated": True, "ok": False,
+                "reason": "Isolated supervisor configuration is incomplete or invalid"}
+    for key in _SANDBOX_EXECUTION_KEYS:
+        value = expected.get(key, "")
+        if not value or os.environ.get(key, "") != value:
+            return {"isolated": True, "ok": False,
+                    "reason": "Isolated supervisor configuration is missing or overridden by unrelated environment variables"}
+    try:
+        charids = parse_charids(settings["charids"])
+    except ValueError:
+        charids = []
+    if (len(settings["tokens"]["operator"]) < 32
+            or len(settings["tokens"]["supervisor"]) < 32
+            or settings["tokens"]["operator"] == settings["tokens"]["supervisor"]
+            or not charids or charids != settings["charids"]):
+        return {"isolated": True, "ok": False,
+                "reason": "Isolated supervisor tokens or disposable-character approval are incomplete"}
+    if not all(_sandbox_local_path(key, root) for key in _SANDBOX_STORAGE_KEYS):
+        return {"isolated": True, "ok": False,
+                "reason": "Test storage must remain within the isolated data directory"}
+    return {"isolated": True, "ok": True,
+            "reason": "Explicit isolated supervisor setup matches this sandbox"}
+
+
 def ui_mode_active() -> bool:
     """True when the operator opted in through the Setup tab (no pasted token needed from the page)."""
-    return bool(load()["enabled"]) and bool(os.environ.get("MISSION_TOOLKIT_TEST_OPERATOR_TOKEN"))
+    return (bool(load()["enabled"])
+            and bool(os.environ.get("MISSION_TOOLKIT_TEST_OPERATOR_TOKEN"))
+            and sandbox_operator_check()["ok"])
 
 
 def _git(root: Path, *args: str) -> str:
@@ -217,7 +393,11 @@ def status() -> dict:
     from .execution_preflight import preflight
     settings = load()
     roots = detect_headless_roots()
-    chosen = os.environ.get("MISSION_TOOLKIT_TEST_HEADLESS_ROOT", "") or settings["headless_root"]
+    isolation = sandbox_execution_check()
+    chosen = (settings["headless_root"] if isolation["isolated"]
+              else os.environ.get("MISSION_TOOLKIT_TEST_HEADLESS_ROOT", "") or settings["headless_root"])
+    if not isinstance(chosen, str):
+        chosen = ""  # invalid sandbox JSON must never crash Setup/status
     db_ready = bool(os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_USER")
                     and os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_PASSWORD")
                     and os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_NAME"))
@@ -231,20 +411,28 @@ def status() -> dict:
         except ImportError:
             driver = False
     pre = preflight("moghancement", "MOG-09")
-    steps = [
+    if isolation["isolated"] and not isolation["ok"]:
+        db_ready = False
+    steps = []
+    if isolation["isolated"]:
+        steps.append({"id": "sandbox_isolation", "ok": isolation["ok"],
+                      "title": "Isolated supervisor configuration",
+                      "fix": isolation["reason"]})
+    steps.extend([
         {"id": "enabled", "ok": settings["enabled"], "title": "Test execution turned on",
          "fix": "Press \"Turn on test execution\" below. Tokens are generated for you."},
         {"id": "checkout", "ok": bool(chosen),
          "title": "XiHeadless checkout chosen", "fix": "Pick a detected checkout from the list. None listed? Build XiHeadless first (see the guide)."},
         {"id": "dll", "ok": bool(chosen) and (Path(chosen) / "bin" / "mcp" / "XiHeadless.dll").is_file(),
          "title": "XiHeadless is built (bin/mcp/XiHeadless.dll)", "fix": "Build XiHeadless into bin/mcp from a clean commit, then reload this page."},
-        {"id": "characters", "ok": bool(os.environ.get("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS")),
+        {"id": "characters", "ok": bool(settings["charids"]) and isolation["ok"] if isolation["isolated"]
+         else bool(os.environ.get("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS")),
          "title": "Disposable test character approved", "fix": "Enter the character ID of a throwaway test account (never a real character)."},
         {"id": "database", "ok": db_ready and driver,
          "title": "Server database readable (read-only login)",
          "fix": "Enter the read-only database login. Without it a run cannot compare the client against saved data and will be BLOCKED." if driver
                 else "No MySQL driver is installed in the Toolkit environment."},
-    ]
+    ])
     return {"enabled": settings["enabled"], "steps": steps, "headless_roots": roots,
             "selected_root": chosen, "charids": settings["charids"], "account": settings["account"],
             "db": {"user": settings["db"]["user"], "name": settings["db"]["name"],
