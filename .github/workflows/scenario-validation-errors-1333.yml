@@ -9,6 +9,7 @@ on:
       - "gui/templates/scenario_developer.html"
       - "test_fixtures/test_scenario_validation_feedback_1333.py"
       - "test_fixtures/test_scenario_validation_feedback_1333.cjs"
+      - "test_fixtures/test_scenario_validation_async_1362.cjs"
       - ".github/workflows/scenario-validation-errors-1333.yml"
   workflow_dispatch:
 permissions:
@@ -30,3 +31,5 @@ jobs:
         run: python -m pytest -q test_fixtures/test_scenario_validation_feedback_1333.py
       - name: Exercise no-mutation validation summary in fake DOM
         run: node test_fixtures/test_scenario_validation_feedback_1333.cjs
+      - name: Exercise actual out-of-order editor click callbacks (synthetic)
+        run: node test_fixtures/test_scenario_validation_async_1362.cjs
