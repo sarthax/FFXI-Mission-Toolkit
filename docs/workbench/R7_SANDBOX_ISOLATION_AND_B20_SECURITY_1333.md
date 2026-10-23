@@ -22,10 +22,10 @@ No `MISSION_TOOLKIT_TEST_DATA_DIR`: preserve ordinary shell environment preceden
 
 **When `MISSION_TOOLKIT_TEST_DATA_DIR` is explicitly configured:**
 
-- The selected sandbox path must be absolute, nonsymlink and different from the default production Settings directory.
+- An **explicitly present but empty/whitespace** `MISSION_TOOLKIT_TEST_DATA_DIR` is INVALID and fails closed; absence of the variable alone selects normal production discovery. The selected path must be absolute, have no symlinked ancestor, and must not be within the default production Settings directory or repository checkout.
 - The sandbox **own** `settings.json` must explicitly set `enabled=true`; missing, invalid or partial settings fail closed, without migrating or reading production `settings.json`.
 - The effective token **values**, selected checkout, disposable character allowlist and supervisor database connection fields must **match the enabled sandbox settings**. A production process environment override (even a valid production token) is reported as **untrusted configuration**, not accepted execution authority. Never show token/allowlist/DB password in errors.
-- Results, drafts, jobs DB and artifacts root must stay **within the sandbox data dir** (resolved path, rejecting symlink path and escape). Redirecting only the draft/results DB paths does not establish supervisor isolation.
+- Results, drafts, jobs DB and artifacts root must stay **within the sandbox data dir** (resolved path, rejecting symlink path and escape). A predictable pre-existing `settings.tmp` symlink is never used for sandbox writes: settings use a randomly named private temporary file followed by an atomic replace. Invalid sandbox root or linked settings are rejected **before read, write or artifact creation**. Redirecting only the draft/results DB paths does not establish supervisor isolation.
 - **Two scopes, no authority transfer:** sandbox operator/draft access requires its own enabled Setup file, matching long operator token and sandbox-local draft/job storage (never production token); it does **not** require configured gameplay supervisor/DB. Separately, execution preflight requires the full sandbox-owned supervisor/runner/character/DB credentials and all four storage paths; a draft-only sandbox stays execution-BLOCKED. Build & Run uses the latter. The direct fixed MOG-09 launch reruns that preflight before spawning any subprocess. Neither draft UI authorization nor passing preflight grants actual execution.
 - The label for ready prerequisite checks is explicitly advisory: **"Prerequisites detected — operator approval still required."** The Launch control is disabled while prerequisites are blocked; the server independently enforces preflight even if clients bypass the UI. It does not claim an authorized execution.
 - Existing `execution_enabled=false` and `launch_implemented=false` advisory fields remain unchanged. Independent operator launch confirmation, loopback, origin and bearer/character checks remain mandatory.
@@ -43,20 +43,99 @@ This is a **settings/provenance gate**, not an installed DSP/client/decoder atte
 - Wrong supervisor/operator token, character allowlist, or DB password overrides ⇒ BLOCKED, even when a correct sandbox token was previously configured.
 - Results/drafts/jobs/artifact paths escaping the isolated directory ⇒ BLOCKED.
 - No explicit `MISSION_TOOLKIT_TEST_DATA_DIR`: existing normal environment precedence remains, with existing operator token checks and advisory `execution_enabled=false`.
-- Explicit isolated path equaling production default Settings directory refused.
+- Explicit isolated path equaling or nested under production default Settings directory, inside the repository checkout, or with a symlink ancestor refused. An explicitly empty or whitespace-only test-data variable must never fall back to production settings or create artifacts. Linked `settings.json` and predictable `settings.tmp` symlink cannot overwrite production bytes.
 
 The focused CI workflow additionally reruns preexisting test execution settings, preflight/CLI and operator-jobs fixture suites. No real supervisor token, production allowlist, actual character ID, database or source capture is present in fixtures.
 
-## 4. B20 isolation prerequisites — **operator checklist, NOT RUN**
+## 4. B20 isolation prerequisites — **owner-local browser testing, NOT RUN**
 
-Before the separately authorized local B20 capture viewer acceptance:
+**B20 is capture-review/sidecar UI acceptance only, NOT a supervised gameplay or
+headless execution campaign. Local operator must NOT supply any usable launch
+credentials or click a Launch/Submit Run control.** The only permissible source
+content is disposable, synthetic JSON fixture data that contains no character
+account, production DB, actual packet, or connected game identity.
 
-1. **Dedicated sandbox process**: choose a fresh absolute test data directory outside both Git/source and the production default `%LOCALAPPDATA%/MissionToolkit/test_execution`. Start Toolkit with `MISSION_TOOLKIT_TEST_DATA_DIR` set **before** any import of the feature-testing router, and record the isolated process/port.
-2. **Scrub inherited secrets**: use a clean process environment without production `MISSION_TOOLKIT_SUPERVISOR_*` and `MISSION_TOOLKIT_TEST_OPERATOR_TOKEN`; do not copy production settings into the sandbox or echo tokens in acceptance notes. Redirect jobs, drafts, results and artifacts into the isolated tree.
-3. **Negative readiness control**: with *no sandbox `settings.json`*, visit Setup and Build & Run and confirm sandbox isolation unavailable, no **"Ready to run"**, and token-only operator job/launch APIs fail. Repeat with malformed/partial configuration and intentionally wrong *synthetic* credentials. Do **not** click Launch.
-4. **Positive configuration proof (only if needed for a separately authorized execution acceptance)**: create new isolated synthetic/disposable configuration and verify only safe prerequisite labels appear. A preflight-ready state **never** constitutes execution or gameplay authority; require separate owner approval, authorized runner character and monitored local testing.
-5. **B20 paired viewer**: in the editor opt-in capture panel choose original reviewed JSON and matching noncanonical sidecar; test valid pair, mismatched capture/review decisions/digest, duplicate refs, forged oracle and identity approval, UNKNOWN/BLOCKED, canonical association UNASSIGNED, stale selection disposal across editor navigation. Verify no sidecar canonical import/save or execution path. Avoid real capture credentials.
-6. **Record evidence separately**: log exact Toolkit commit and CI, sandbox configuration *paths only*, local browser version, operator-approved outcome and specific failed assertions. Do not interpret CI-only green as B20 complete, capture byte/decoder authenticity, independent source/client/DSP proof, or approved gameplay oracle.
+### Preparation — independent clean process, safe fixtures
+
+1. Start a **fresh Toolkit process** with an explicitly set nonempty absolute
+   `MISSION_TOOLKIT_TEST_DATA_DIR` in a new temporary directory outside
+   the source tree and production `%LOCALAPPDATA%/MissionToolkit/test_execution`.
+   No path symlink or ancestor symlink; no linked `settings.json` or
+   `settings.tmp`. Set the variable **before importing** the Feature Testing
+   router. Record only the Toolkit Git SHA, isolated directory pathname and
+   distinct loopback port; keep any optional token secret.
+2. Launch with an **environment allowlist**, not a copy of the production process
+   environment. Explicitly clear `MISSION_TOOLKIT_SUPERVISOR_*`,
+   `MISSION_TOOLKIT_TEST_OPERATOR_TOKEN`,
+   `MISSION_TOOLKIT_TEST_HEADLESS_ROOT`, and DB credentials/addresses. Never
+   use real account/character allowlists, production operator or supervisor
+   tokens, working Headless checkout/DLL, or live server connection strings.
+   If the unrelated Toolbox supervisor service is online, it must not be
+   selected or invoked by this sandbox.
+3. Use **synthetic disposable source-review JSON** only. Maintain the original
+   reviewed-export fixture and intentionally noncanonical readiness sidecar as
+   separately selected operator files, each with synthetic capture IDs/source
+   references. Do not mount any production DB, real source captures or secrets.
+   If a draft-only UI operator token is needed for local navigation, generate
+   a distinct synthetic sandbox-only token; it **must not** configure supervisor
+   execution readiness, approval characters, runner binary or readback DB.
+
+### Negative gate — required before any B20 reviewer clicks
+
+4. With the sandbox supervisor `settings.json` **absent**, confirm Setup,
+   Build & Run and `/preflight/moghancement/MOG-09` show
+   `sandbox_isolation.ok=false`,
+   `ready_for_operator_review=false`, `execution_enabled=false`, and the
+   Launch button disabled. Repeat with malformed/partial synthetic setup,
+   explicitly empty `MISSION_TOOLKIT_TEST_DATA_DIR` in a *separate*
+   disposable process, synthetic wrong token/allowlist, and linked settings.
+   A test must not return saved production identities, credentials or
+   character IDs. **Never submit** the launch endpoint, even as an attempted
+   negative: only inspect declarative controls and, when specifically permitted,
+   purely mocked local tests.
+5. Establish a **clean initial state**: record zero new queued/running jobs and
+   zero new result rows (using isolated synthetic storage only), no live
+   headless process/worker attached to the sandbox, no outbound client or
+   database connection, and no generated game-capture artifact. Verify this
+   without querying the production DB or live supervisor.
+
+### B20 browser matrix — inspection only
+
+6. Load matching original reviewed export plus optional noncanonical sidecar;
+   confirm read-only annotations, original-vs-selected reviewer choices, both
+   independently recomputed JSON projection digests, `UNKNOWN/BLOCKED`,
+   canonical association `UNASSIGNED`, and explicit unauthenticated
+   physical-source/parser/decoder status. Negative variants must reject
+   mismatched capture IDs, duplicate/foreign refs, altered reviews, forged
+   identity/oracle approvals, and mismatched digest/projection scopes.
+7. Navigate New/Open/Fork/Clone, Advanced/Guided and away from the panel
+   while selected files are pending; verify generation cancellation, stale
+   readback disposal, safe text-only rendering, no stale selected source
+   carry-over and no implicit import/save/approval. Capture each expected
+   versus observed UI result with exact commit, browser and fixture IDs.
+   These checks cannot prove physical client/decoder authenticity or any
+   gameplay oracle and are **not** runner tests.
+
+### Postcondition and cleanup — observable, not assumed
+
+8. Close the sandbox browser/server, confirm the dedicated process and any
+   synthetic child processes have terminated, and ensure zero pending or
+   newly queued/running test jobs. Confirm synthetic results/import records
+   remain unchanged and no fresh runner artifacts were generated.
+   Stop only the sandbox process: **never kill shared production services**.
+9. Remove **only the recorded disposable sandbox directory** after verifying
+   its canonical resolved path is still within the designated scratch root.
+   Do not delete any production settings, shared DB, external symlink target
+   or source checkout. If an unexpected file, process, job or external write is
+   found, **stop and mark B20 BLOCKED** rather than claiming cleanup.
+10. Record a signed-off operator acceptance matrix (pass/fail/blocked/not-run,
+    screenshots or redacted logs, negative-test results, sandbox teardown
+    evidence, exact Toolkit SHA and browser version) in #1313/#1333.
+    GitHub CI establishes **synthetic code regression behavior only**: it
+    cannot prove browser interaction, process isolation at runtime, no actual
+    external writes, source bytes, deployed client/DSP identity or successful
+    cleanup. **Do not mark B20 complete until the authorized local
+    operator verifies and records every applicable precondition.**
 
 ## 5. #1329 / #1330 / #1327 evidence compatibility
 
