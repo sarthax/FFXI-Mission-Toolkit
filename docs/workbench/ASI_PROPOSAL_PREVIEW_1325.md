@@ -79,3 +79,57 @@ persistence, ASI-3 promotion, ASI-4 failure importer or ASI-5 execution.
 No source bytes, deployed revision, headless protocol, independent oracle
 or physical capture evidence has been authenticated. B20 is unrelated and
 remains local operator only after #1315/#1318 integration merge.
+
+## Reviewed coordination with Agent C #1330 and Agent D #1329
+
+Agent C [#1328 interface review](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1328#issuecomment-6353449160)
+accepted the detached UI shape as **compatible, not authoritative**.
+The actual R8 catalog proposal's `local_definition_sha256` is a *local
+serialization checksum*, not `base.revision`, `spec_digest_claim`,
+a persisted-draft revision, or approved source authentication. Do not map
+one to the other implicitly. A future editor attachment must explicitly
+validate selected baseline identity and revision with the existing
+authoritative draft editor (only when authorized), without modifying its
+save/revision handling.
+
+Agent D's [#1329 evidence design](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1329)
+has **separate** `scenario_evidence_summary_v0_DESIGN_ONLY_NONCANONICAL`
+attempt/lifecycle/source/cleanup/fact/interpretation details and
+`scenario_revision_proposal_v0_UNTRUSTED_DESIGN` typed proposal semantics.
+This UI does not parse or impersonate those wire formats. Existing
+`failure_evidence_refs` are opaque claims until a future reviewed
+resolver binds attempt ID, digest, source revision, readback completeness,
+reported verdict and independent authority. A source ref cannot
+silently imply canonical CASE/STEP citation; a reported FAIL is not
+an independently approved gameplay FAIL.
+
+The preview now **derives** a non-authoritative `review_status` from
+bounded proposal warnings:
+- `REFUSE_UNTIL_RECONCILED`: possible duplicate scenario IDs requiring
+  explicit human reconciliation;
+- `REQUIRE_FRESH_EVIDENCE`: missing readbacks/dependencies/source/trace
+  refs or selected baseline digest claim;
+- `DRAFT_UNTRUSTED`: no *listed* blocker in the selected claims, but
+  still not an approved, authenticated, or executable proposal.
+
+This is an **advisory triage state**, not a human review event or
+approval from Agent D's evidence projector. `NO_CHANGE` isn't
+emitted by this preview: an unchanged text proposal fails closed.
+All states keep `approved_expected=false`, `save_allowed=false` and
+`execution_enabled=false`, including when the selected inputs
+superficially match.
+
+### Next gated milestone — not in this PR
+
+1. Agent C #1322's published read catalog and Agent A/owner acceptance
+   must land before integrating against the catalog/preflight.
+2. Agent D #1329 remains a design contract, not a runtime evidence source.
+   A reviewed, independently authorized evidence resolver and #1202
+   replay handling are prerequisites for displaying authenticated attempt
+   metadata rather than raw claimed strings.
+3. After the #1315 → #1318 capture-viewer stack and separate #1323
+   Advanced-editor fix integrate, attach the *existing* preview UI to the
+   existing Scenario Developer with explicit operator opt-in and lifecycle
+   disposal, without an apply/save path. Recheck dirty-state guards,
+   navigation cancellation, Contract v2 citations and exact-current-head
+   CI. Do not open a parallel editor, MCP proxy or canonical schema.
