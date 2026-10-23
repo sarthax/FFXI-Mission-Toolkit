@@ -136,6 +136,10 @@ def apply_to_environ(settings: dict | None = None) -> list[str]:
     for key in list(_APPLIED):               # forget stale file-supplied values first
         os.environ.pop(key, None)
     _APPLIED.clear()
+    if "MISSION_TOOLKIT_TEST_DATA_DIR" in os.environ:
+        scope, _ = _sandbox_directory_check()
+        if not scope["ok"] or settings_path().is_symlink():
+            return []  # never create artifacts for invalid sandbox paths
     if not settings["enabled"]:
         return []
     (data_dir() / "artifacts").mkdir(parents=True, exist_ok=True)
@@ -169,10 +173,13 @@ _SANDBOX_STORAGE_KEYS = (
 
 def _sandbox_directory_check() -> tuple[dict, Path | None]:
     """Scope decision used by operator UI and stricter launch preflight."""
-    selected = os.environ.get("MISSION_TOOLKIT_TEST_DATA_DIR", "").strip()
-    if not selected:
+    if "MISSION_TOOLKIT_TEST_DATA_DIR" not in os.environ:
         return ({"isolated": False, "ok": True,
                  "reason": "Not in an explicit test sandbox"}, None)
+    selected = os.environ["MISSION_TOOLKIT_TEST_DATA_DIR"].strip()
+    if not selected:
+        return ({"isolated": True, "ok": False,
+                 "reason": "Explicit sandbox directory must not be empty"}, None)
     root = Path(selected)
     default = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "MissionToolkit" / "test_execution"
     if (not root.is_absolute() or any(part.is_symlink() for part in (root, *root.parents))
