@@ -3,22 +3,77 @@
 {% block page_archetype %}dashboard{% endblock %}
 {% block page_class %}validation-dashboard-page{% endblock %}
 {% block page_heading %}Validation{% endblock %}
-{% block page_status %}<span class="wb-readonly-badge">Read only</span>{% endblock %}
-{% block page_actions %}<a class="chip" href="/validation/runs">Browse all runs</a>{% endblock %}
-{% block page_help %}Read-only canonical ValidationRun / ValidationResult history. Validation dimensions remain independent.{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Navigation · no automatic execution</span>{% endblock %}
+{% block page_actions %}<a class="chip" href="/feature-testing?tab=catalog">Scenario Catalog</a><a class="chip" href="/validation/runs">Canonical runs</a>{% endblock %}
+{% block page_help %}Start with a scenario, prepare a design-only draft, inspect advisory prerequisites, review offline captures, or inspect recorded results. These are separate evidence and history systems; browsing does not authorize execution or approve an oracle.{% endblock %}
 {% block page_body %}
+<style>
+.validation-entry-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:.85rem;margin:.8rem 0 1.2rem}
+.validation-entry{border:1px solid var(--wb-border,#777);border-radius:.5rem;padding:.9rem;min-width:0}
+.validation-entry h3{margin:.15rem 0 .5rem}
+.validation-entry p{margin:.35rem 0 .7rem;line-height:1.45}
+.validation-entry a{display:inline-block;margin:.15rem .5rem .15rem 0;overflow-wrap:anywhere}
+.validation-entry small{display:block;opacity:.85;margin:.35rem 0;line-height:1.4}
+.validation-entry code{overflow-wrap:anywhere}
+</style>
+<section class="wb-panel" aria-labelledby="validation-workflows-heading">
+<h2 id="validation-workflows-heading">Choose a validation workflow</h2>
+<p>These tools have different data sources and approval requirements. A published scenario, saved design, indexed capture, or recorded verdict does not by itself establish independently verified gameplay.</p>
+<div class="validation-entry-grid" aria-label="Validation entry points">
+<article class="validation-entry" data-validation-entry="catalog">
+<h3>Scenario Catalog</h3>
+<p>Browse feature-testing cases and their recorded design status. Published specifications and planning-only domain cases are not interchangeable.</p>
+<a href="/feature-testing?tab=catalog">Browse scenario catalog</a>
+<small>The R8 canonical catalog API is a separate release candidate (#1322), not an installed gateway on this main revision.</small>
+</article>
+<article class="validation-entry" data-validation-entry="developer">
+<h3>Scenario Developer</h3>
+<p>Create, reopen and validate design-only drafts in the existing editor. Saving a draft does not publish it as runnable or approve its expectations.</p>
+<a href="/scenario-developer">Open Scenario Developer</a>
+<small>Review unsaved changes before leaving the editor; a full unsaved-work navigation guard is tracked separately in #1333.</small>
+</article>
+<article class="validation-entry" data-validation-entry="preflight">
+<h3>Scenario Preflight</h3>
+<p>Inspect a published case and its prerequisites before considering any local operator action. Missing observers, source revisions, approved oracles and permissions can leave requirements UNKNOWN, BLOCKED or UNSUPPORTED.</p>
+<a href="/feature-testing/scenario/moghancement/MOG-09">MOG-09 scenario detail</a>
+<a href="/feature-testing/preflight/moghancement/MOG-09">Current MOG-09 preflight JSON</a>
+<small>The existing preflight may inspect configured local prerequisites. It is not the separate R8 pure advisory preview, and neither page authorizes execution.</small>
+</article>
+<article class="validation-entry" data-validation-entry="evidence">
+<h3>Evidence Reviewer (offline)</h3>
+<p>Review an indexed capture as a standalone local HTML report. The reviewer is not a hosted Toolkit page and cannot attest original capture bytes or authorize an oracle.</p>
+<a href="/captures">Find indexed captures</a>
+<small>Operator-generated report: <code>python -m workbench.captures.scenario_review_offline --database &lt;capture-index.sqlite&gt; --capture-id &lt;id&gt; --output &lt;review.html&gt;</code>. The in-app Capture Review Queue is a different workflow.</small>
+</article>
+<article class="validation-entry" data-validation-entry="results">
+<h3>Results and history</h3>
+<p>Inspect imported Feature Testing evidence or canonical ValidationRun / ValidationResult history. They are distinct stores and neither is independent proof of a gameplay PASS.</p>
+<a href="/feature-testing?tab=runs">Imported test history</a>
+<a href="/validation/runs">Canonical validation history</a>
+<small>An empty or unconfigured history must not be interpreted as a verified successful run.</small>
+</article>
+</div>
+</section>
 
-{% if error %}<div class="wb-error">{{ error }}</div>{% endif %}
+<section class="wb-panel" aria-labelledby="validation-readiness-heading">
+<h2 id="validation-readiness-heading">Readiness and authorization</h2>
+<p><strong>Design-only is not runnable.</strong> MOG-09 has a separately restricted fixed local-operator observation path; INV-OBS-01 has no assigned runner, and staged domain designs must not be promoted through navigation. R8 advisory preflight, once released, remains NOT_AUTHORIZED with <code>execution_enabled=false</code>, even when declared prerequisites match.</p>
+</section>
 
-{% if not error %}
+<section class="wb-panel" aria-labelledby="validation-canonical-heading">
+<h2 id="validation-canonical-heading">Canonical validation run history</h2>
+<p>This section reads the existing <code>workbench.db</code> ValidationRun / ValidationResult records. It does not contain Scenario Developer drafts, standalone capture reviews or Feature Testing's separately imported history.</p>
+{% if error %}
+<div class="wb-error" role="status"><strong>Canonical history unavailable:</strong> {{ error }}</div>
+<p>The database/setup problem above only affects this history view. You can still navigate to the other workflows; their own data sources and permissions are checked separately.</p>
+{% else %}
 <div class="stats">
   <div class="stat"><div class="n">{{ runs|length }}</div><div class="l">Recent runs shown</div></div>
   <div class="stat"><div class="n">{{ status_counts.get('VERIFIED', 0) }}</div><div class="l">Verified runs</div></div>
   <div class="stat"><div class="n">{{ status_counts.get('FAILED', 0) }}</div><div class="l">Failed runs</div></div>
   <div class="stat"><div class="n">{{ total_results }}</div><div class="l">Validation results</div></div>
 </div>
-
-<div class="dense-toolbar" style="margin:8px 0 5px"><strong>Recent runs</strong><span class="sp"></span><span class="chip">{{ runs|length }}</span></div>
+<div class="dense-toolbar" style="margin:8px 0 5px"><strong>Recent canonical runs</strong><span class="sp"></span><span class="chip">{{ runs|length }}</span></div>
 {% if runs %}
 <div class="table-wrap"><table>
 <thead><tr><th>Run</th><th>Status</th><th>Feature</th><th>Source → Target</th><th>Finished</th></tr></thead>
@@ -34,9 +89,8 @@
 {% endfor %}
 </tbody></table></div>
 {% else %}
-<div class="wb-empty">No validation runs are recorded.</div>
+<div class="wb-empty">No canonical validation runs are recorded for the available database.</div>
 {% endif %}
-
-
 {% endif %}
+</section>
 {% endblock %}
