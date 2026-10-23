@@ -375,7 +375,10 @@ class EnableRequest(BaseModel):
 def setup_enable(request: Request, payload: EnableRequest):
     _setup_guard(request)
     from . import test_execution_settings as setup
-    setup.set_enabled(payload.enabled)
+    try:
+        setup.set_enabled(payload.enabled)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
     return setup.status()
 
 
