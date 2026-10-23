@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+from fastapi import HTTPException
 
 from workbench.server_admin.feature_testing import test_execution_settings as settings
 from workbench.server_admin.feature_testing.execution_preflight import preflight
@@ -136,6 +137,31 @@ def test_linked_prod_settings_inside_sandbox_are_rejected(isolated, monkeypatch,
     assert (external / "settings.json").read_bytes() == before
     with pytest.raises(PermissionError):
         authorize_operator("p" * 40)
+
+
+def test_http_launch_refuses_inherited_token_before_job_enqueue(
+        isolated, monkeypatch, tmp_path):
+    from workbench.server_admin.feature_testing.router import (
+        LaunchRequest, launch_test
+    )
+    root = _headless(tmp_path)
+    _shell(monkeypatch, isolated, root)
+    req = mock.Mock()
+    req.client.host = "127.0.0.1"
+    req.base_url = "http://127.0.0.1:8420/"
+    req.headers = {"sec-fetch-site": "same-origin",
+                   "x-requested-with": "toolkit-ui"}
+    request = LaunchRequest(
+        account="synthetic_account", charid=17, supervisor_port=8420,
+        approval=True,
+    )
+    with mock.patch(
+            "workbench.server_admin.feature_testing.execution_jobs.enqueue"
+    ) as enqueue:
+        with pytest.raises(HTTPException) as rejected:
+            launch_test(req, request, x_test_operator_token="p" * 40)
+        assert rejected.value.status_code == 403
+        enqueue.assert_not_called()
 
 
 def test_predictable_temporary_symlink_cannot_overwrite_external_file(isolated, tmp_path):
