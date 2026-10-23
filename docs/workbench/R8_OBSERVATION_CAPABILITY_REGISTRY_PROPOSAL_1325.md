@@ -97,3 +97,29 @@ Examples of safe **candidate mapping, not proof of availability**:
 - Reuse Agent C's `R8 Read-Only Catalog Preflight` test idioms after schema owner agreement, rather than creating a competing R8 shared contract.
 
 **No new shared endpoint, runtime adapter or synthetic schema fixtures are added by this proposal.** Agent C must review the design before any implementation PR; #1324 release is independently gated under #1296. Source-only readiness is not deployed readiness or scenario execution permission.
+
+## Agent C coordination decision — reviewed proposal boundary (2026-10-22)
+
+Agent C's [#1327 discussion](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1327) and separate [#1330 discovery contract](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1330) agree on the **direction**, not yet a merged common registry schema:
+
+1. **Two namespaces.** Keep exact canonical observation labels (for example `db_bag`, `db_safe`, `client_key_items`) unchanged inside published scenario specs. Independently version provider capability IDs such as `toolkit.persisted.inventory` and `toolkit.persisted.mog_safe`. Never use similarity matching, ID aliases or default fallbacks.
+2. **Ownership.** Agent E owns provider descriptors and provider-specific limits/auth/uncertainty; Agent C owns the future **reviewed versioned crosswalk** after #1322 and #1327 receive separate accepted reviews. No shared router, canonical validation, preflight code or MCP schema modifications in #1327.
+3. **Exact crosswalk key, not capability grant.** Future crosswalk entries are selected by exact `(feature_id, case_id, required_observation_id)`. Their **identity** and declarative provider candidate never authenticate DSP deployment, effective grants, correct character/location, snapshot timing, independent oracle, or client evidence.
+4. **Status axes stay distinct.** A source-integrated provider that has never been tried is `SOURCE_INTEGRATED / deployment UNKNOWN / readback NOT_EVALUATED`, not AVAILABLE. `PR_ONLY` stays excluded from any current-main provider satisfaction. Explicit `NOT_IMPLEMENTED` or unsupported observation remains `UNSUPPORTED`, and absent/unreviewed crosswalk remains `UNKNOWN`; preflight may BLOCK unsupported required observations but may not transform them into a claimed PASS, and aggregate readiness never becomes execution authorization.
+5. **Static mapping illustration — not registered in code:**
+
+   | Exact canonical key (published scenario only) | Candidate provider | Static interpretation |
+   | --- | --- | --- |
+   | `moghancement/MOG-09/db_bag` | `toolkit.persisted.inventory` | CANDIDATE_ONLY; deployment, timing and oracle authority UNKNOWN |
+   | `moghancement/MOG-09/db_safe` | `toolkit.persisted.mog_safe` | CANDIDATE_ONLY for location 1 only; Safe 2 is separate |
+   | `inventory_observation/INV-OBS-01/db_bag` | `toolkit.persisted.inventory` | CANDIDATE_ONLY; no runner or execution promotion |
+   | `inventory_observation/INV-OBS-01/db_safe` | `toolkit.persisted.mog_safe` | CANDIDATE_ONLY; no client agreement |
+   | `moghancement/MOG-09/client_key_items` | NONE | Cannot be fulfilled by persisted bitmap |
+   | `moghancement/MOG-09/stored_furnishings` | NONE | Presence in Safe is not evidence of installed/effect state |
+   | `moghancement/MOG-09/gm_aura` | NONE | No server-side approved GM observation provider |
+
+   Unknown or unmapped exact IDs remain unresolved, not mapped to a generic substitute. A published case with multiple requirements cannot claim completeness merely because one candidate provider has source code.
+
+6. **Future conformance test matrix (pending contract approval):** exact-key positive candidates, wrong-case ID, wrong source type, Safe/Safe2 location mismatch, PR-only provider, absent crosswalk, unavailable deployment, unauthorized character, denied SELECT grant, short key-item bitmap, partial offset page, stale timestamp, duplicate mapping, injected authority claims and no-execution assertion. Each must keep `execution_status=NOT_AUTHORIZED` / `execution_enabled=false`; tests are synthetic metadata only.
+
+This is a negotiated **design boundary**, not independent Agent C sign-off on implementation. #1330 describes proposed bounded bearer-protected read discovery endpoints separately; do not register new observation routes or MCP tools from either draft without explicit design ownership and later approval.
