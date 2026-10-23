@@ -99,7 +99,7 @@
             }
           ],
           "evidence_refs": [
-            "synthetic://capture/complete-observed-mismatch"
+            "evidence:synthetic:complete-observed-mismatch"
           ],
           "required_reviews": [
             "HUMAN_REVIEW",
@@ -108,7 +108,45 @@
           ],
           "canonical_write_allowed": false,
           "execution_allowed": false,
-          "permission_grants_allowed": false
+          "permission_grants_allowed": false,
+          "proposal_recommendation_kinds": [
+            "MINIMAL_REPRODUCER",
+            "NEGATIVE_BOUNDARY_CASE"
+          ],
+          "proposal_id": "SYNTHETIC-PROPOSAL-complete-observed-mismatch"
+        }
+      },
+      "evidence_reference": {
+        "contract": "scenario_evidence_ref_v0_NONCANONICAL",
+        "ref_id": "evidence:synthetic:complete-observed-mismatch",
+        "scenario": {
+          "feature_id": "SYNTHETIC_FEATURE",
+          "case_id": "SYNTHETIC_CASE",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1"
+        },
+        "attempt": {
+          "run_id": "synthetic-run-complete-observed-mismatch",
+          "attempt_id": "synthetic-attempt-complete-observed-mismatch",
+          "operation_ids": [
+            "synthetic-operation-complete-observed-mismatch"
+          ]
+        },
+        "artifact": {
+          "kind": "SYNTHETIC_FIXTURE",
+          "pointer_claim": "synthetic://capture/complete-observed-mismatch",
+          "digest_claim": "synthetic:evidence-complete-observed-mismatch",
+          "capture_id": "synthetic-capture-complete-observed-mismatch",
+          "timestamp_basis": "UNKNOWN",
+          "source_revision_claim": "synthetic:dsp-rev-a"
+        },
+        "authority": {
+          "physical_capture_authenticated": false,
+          "decoder_authenticated": false,
+          "independent_verification": "NOT_ESTABLISHED",
+          "oracle_approval": "NOT_ESTABLISHED",
+          "canonical_association": "UNASSIGNED",
+          "importer_authority": false
         }
       }
     },
@@ -203,7 +241,7 @@
             }
           ],
           "evidence_refs": [
-            "synthetic://capture/missing-server-readback"
+            "evidence:synthetic:missing-server-readback"
           ],
           "required_reviews": [
             "HUMAN_REVIEW",
@@ -212,7 +250,44 @@
           ],
           "canonical_write_allowed": false,
           "execution_allowed": false,
-          "permission_grants_allowed": false
+          "permission_grants_allowed": false,
+          "proposal_recommendation_kinds": [
+            "MISSING_OBSERVER_REQUIREMENT"
+          ],
+          "proposal_id": "SYNTHETIC-PROPOSAL-missing-server-readback"
+        }
+      },
+      "evidence_reference": {
+        "contract": "scenario_evidence_ref_v0_NONCANONICAL",
+        "ref_id": "evidence:synthetic:missing-server-readback",
+        "scenario": {
+          "feature_id": "SYNTHETIC_FEATURE",
+          "case_id": "SYNTHETIC_CASE",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1"
+        },
+        "attempt": {
+          "run_id": "synthetic-run-missing-server-readback",
+          "attempt_id": "synthetic-attempt-missing-server-readback",
+          "operation_ids": [
+            "synthetic-operation-missing-server-readback"
+          ]
+        },
+        "artifact": {
+          "kind": "SYNTHETIC_FIXTURE",
+          "pointer_claim": "synthetic://capture/missing-server-readback",
+          "digest_claim": "synthetic:evidence-missing-server-readback",
+          "capture_id": "synthetic-capture-missing-server-readback",
+          "timestamp_basis": "UNKNOWN",
+          "source_revision_claim": "synthetic:dsp-rev-a"
+        },
+        "authority": {
+          "physical_capture_authenticated": false,
+          "decoder_authenticated": false,
+          "independent_verification": "NOT_ESTABLISHED",
+          "oracle_approval": "NOT_ESTABLISHED",
+          "canonical_association": "UNASSIGNED",
+          "importer_authority": false
         }
       }
     },
@@ -300,7 +375,7 @@
             }
           ],
           "evidence_refs": [
-            "synthetic://capture/stale-capture"
+            "evidence:synthetic:stale-capture"
           ],
           "required_reviews": [
             "HUMAN_REVIEW",
@@ -309,7 +384,44 @@
           ],
           "canonical_write_allowed": false,
           "execution_allowed": false,
-          "permission_grants_allowed": false
+          "permission_grants_allowed": false,
+          "proposal_recommendation_kinds": [
+            "SOURCE_ASSOCIATION_REVIEW"
+          ],
+          "proposal_id": "SYNTHETIC-PROPOSAL-stale-capture"
+        }
+      },
+      "evidence_reference": {
+        "contract": "scenario_evidence_ref_v0_NONCANONICAL",
+        "ref_id": "evidence:synthetic:stale-capture",
+        "scenario": {
+          "feature_id": "SYNTHETIC_FEATURE",
+          "case_id": "SYNTHETIC_CASE",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1"
+        },
+        "attempt": {
+          "run_id": "synthetic-run-stale-capture",
+          "attempt_id": "synthetic-attempt-stale-capture",
+          "operation_ids": [
+            "synthetic-operation-stale-capture"
+          ]
+        },
+        "artifact": {
+          "kind": "SYNTHETIC_FIXTURE",
+          "pointer_claim": "synthetic://capture/stale-capture",
+          "digest_claim": "synthetic:evidence-stale-capture",
+          "capture_id": "synthetic-capture-stale-capture",
+          "timestamp_basis": "UNKNOWN",
+          "source_revision_claim": "synthetic:dsp-rev-old"
+        },
+        "authority": {
+          "physical_capture_authenticated": false,
+          "decoder_authenticated": false,
+          "independent_verification": "NOT_ESTABLISHED",
+          "oracle_approval": "NOT_ESTABLISHED",
+          "canonical_association": "UNASSIGNED",
+          "importer_authority": false
         }
       }
     },
@@ -397,7 +509,7 @@
           "rationale": "Two evidence sources claim different source revisions",
           "proposed_changes": [],
           "evidence_refs": [
-            "synthetic://capture/conflicting-revisions"
+            "evidence:synthetic:conflicting-revisions"
           ],
           "required_reviews": [
             "HUMAN_REVIEW",
@@ -406,7 +518,42 @@
           ],
           "canonical_write_allowed": false,
           "execution_allowed": false,
-          "permission_grants_allowed": false
+          "permission_grants_allowed": false,
+          "proposal_recommendation_kinds": [],
+          "proposal_id": null
+        }
+      },
+      "evidence_reference": {
+        "contract": "scenario_evidence_ref_v0_NONCANONICAL",
+        "ref_id": "evidence:synthetic:conflicting-revisions",
+        "scenario": {
+          "feature_id": "SYNTHETIC_FEATURE",
+          "case_id": "SYNTHETIC_CASE",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1"
+        },
+        "attempt": {
+          "run_id": "synthetic-run-conflicting-revisions",
+          "attempt_id": "synthetic-attempt-conflicting-revisions",
+          "operation_ids": [
+            "synthetic-operation-conflicting-revisions"
+          ]
+        },
+        "artifact": {
+          "kind": "SYNTHETIC_FIXTURE",
+          "pointer_claim": "synthetic://capture/conflicting-revisions",
+          "digest_claim": "synthetic:evidence-conflicting-revisions",
+          "capture_id": "synthetic-capture-conflicting-revisions",
+          "timestamp_basis": "UNKNOWN",
+          "source_revision_claim": "synthetic:dsp-rev-a"
+        },
+        "authority": {
+          "physical_capture_authenticated": false,
+          "decoder_authenticated": false,
+          "independent_verification": "NOT_ESTABLISHED",
+          "oracle_approval": "NOT_ESTABLISHED",
+          "canonical_association": "UNASSIGNED",
+          "importer_authority": false
         }
       }
     },
@@ -494,7 +641,7 @@
           "rationale": "Exact repeat of the first attempt is idempotent; no new proposal",
           "proposed_changes": [],
           "evidence_refs": [
-            "synthetic://capture/complete-observed-mismatch"
+            "evidence:synthetic:complete-observed-mismatch"
           ],
           "required_reviews": [
             "HUMAN_REVIEW",
@@ -503,7 +650,42 @@
           ],
           "canonical_write_allowed": false,
           "execution_allowed": false,
-          "permission_grants_allowed": false
+          "permission_grants_allowed": false,
+          "proposal_recommendation_kinds": [],
+          "proposal_id": null
+        }
+      },
+      "evidence_reference": {
+        "contract": "scenario_evidence_ref_v0_NONCANONICAL",
+        "ref_id": "evidence:synthetic:complete-observed-mismatch",
+        "scenario": {
+          "feature_id": "SYNTHETIC_FEATURE",
+          "case_id": "SYNTHETIC_CASE",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1"
+        },
+        "attempt": {
+          "run_id": "synthetic-run-complete-observed-mismatch",
+          "attempt_id": "synthetic-attempt-complete-observed-mismatch",
+          "operation_ids": [
+            "synthetic-operation-exact-duplicate-attempt"
+          ]
+        },
+        "artifact": {
+          "kind": "SYNTHETIC_FIXTURE",
+          "pointer_claim": "synthetic://capture/complete-observed-mismatch",
+          "digest_claim": "synthetic:evidence-complete-observed-mismatch",
+          "capture_id": "synthetic-capture-complete-observed-mismatch",
+          "timestamp_basis": "UNKNOWN",
+          "source_revision_claim": "synthetic:dsp-rev-a"
+        },
+        "authority": {
+          "physical_capture_authenticated": false,
+          "decoder_authenticated": false,
+          "independent_verification": "NOT_ESTABLISHED",
+          "oracle_approval": "NOT_ESTABLISHED",
+          "canonical_association": "UNASSIGNED",
+          "importer_authority": false
         }
       }
     },
@@ -591,7 +773,7 @@
             }
           ],
           "evidence_refs": [
-            "synthetic://capture/unauthenticated-source-identity"
+            "evidence:synthetic:unauthenticated-source-identity"
           ],
           "required_reviews": [
             "HUMAN_REVIEW",
@@ -600,7 +782,44 @@
           ],
           "canonical_write_allowed": false,
           "execution_allowed": false,
-          "permission_grants_allowed": false
+          "permission_grants_allowed": false,
+          "proposal_recommendation_kinds": [
+            "SOURCE_IDENTITY_ATTESTATION_REQUEST"
+          ],
+          "proposal_id": "SYNTHETIC-PROPOSAL-unauthenticated-source-identity"
+        }
+      },
+      "evidence_reference": {
+        "contract": "scenario_evidence_ref_v0_NONCANONICAL",
+        "ref_id": "evidence:synthetic:unauthenticated-source-identity",
+        "scenario": {
+          "feature_id": "SYNTHETIC_FEATURE",
+          "case_id": "SYNTHETIC_CASE",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1"
+        },
+        "attempt": {
+          "run_id": "synthetic-run-unauthenticated-source-identity",
+          "attempt_id": "synthetic-attempt-unauthenticated-source-identity",
+          "operation_ids": [
+            "synthetic-operation-unauthenticated-source-identity"
+          ]
+        },
+        "artifact": {
+          "kind": "SYNTHETIC_FIXTURE",
+          "pointer_claim": "synthetic://capture/unauthenticated-source-identity",
+          "digest_claim": "synthetic:evidence-unauthenticated-source-identity",
+          "capture_id": "synthetic-capture-unauthenticated-source-identity",
+          "timestamp_basis": "UNKNOWN",
+          "source_revision_claim": null
+        },
+        "authority": {
+          "physical_capture_authenticated": false,
+          "decoder_authenticated": false,
+          "independent_verification": "NOT_ESTABLISHED",
+          "oracle_approval": "NOT_ESTABLISHED",
+          "canonical_association": "UNASSIGNED",
+          "importer_authority": false
         }
       }
     },
@@ -695,7 +914,7 @@
             }
           ],
           "evidence_refs": [
-            "synthetic://capture/incomplete-cancelled-execution"
+            "evidence:synthetic:incomplete-cancelled-execution"
           ],
           "required_reviews": [
             "HUMAN_REVIEW",
@@ -704,7 +923,44 @@
           ],
           "canonical_write_allowed": false,
           "execution_allowed": false,
-          "permission_grants_allowed": false
+          "permission_grants_allowed": false,
+          "proposal_recommendation_kinds": [
+            "CLEANUP_CANCELLATION_DIAGNOSTIC"
+          ],
+          "proposal_id": "SYNTHETIC-PROPOSAL-incomplete-cancelled-execution"
+        }
+      },
+      "evidence_reference": {
+        "contract": "scenario_evidence_ref_v0_NONCANONICAL",
+        "ref_id": "evidence:synthetic:incomplete-cancelled-execution",
+        "scenario": {
+          "feature_id": "SYNTHETIC_FEATURE",
+          "case_id": "SYNTHETIC_CASE",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1"
+        },
+        "attempt": {
+          "run_id": "synthetic-run-incomplete-cancelled-execution",
+          "attempt_id": "synthetic-attempt-incomplete-cancelled-execution",
+          "operation_ids": [
+            "synthetic-operation-incomplete-cancelled-execution"
+          ]
+        },
+        "artifact": {
+          "kind": "SYNTHETIC_FIXTURE",
+          "pointer_claim": "synthetic://capture/incomplete-cancelled-execution",
+          "digest_claim": "synthetic:evidence-incomplete-cancelled-execution",
+          "capture_id": "synthetic-capture-incomplete-cancelled-execution",
+          "timestamp_basis": "UNKNOWN",
+          "source_revision_claim": "synthetic:dsp-rev-a"
+        },
+        "authority": {
+          "physical_capture_authenticated": false,
+          "decoder_authenticated": false,
+          "independent_verification": "NOT_ESTABLISHED",
+          "oracle_approval": "NOT_ESTABLISHED",
+          "canonical_association": "UNASSIGNED",
+          "importer_authority": false
         }
       }
     },
@@ -786,7 +1042,7 @@
           "rationale": "Same run/attempt key with different evidence digest must be a conflict",
           "proposed_changes": [],
           "evidence_refs": [
-            "synthetic://capture/conflicting-duplicate-attempt"
+            "evidence:synthetic:conflicting-duplicate-attempt"
           ],
           "required_reviews": [
             "HUMAN_REVIEW",
@@ -795,9 +1051,46 @@
           ],
           "canonical_write_allowed": false,
           "execution_allowed": false,
-          "permission_grants_allowed": false
+          "permission_grants_allowed": false,
+          "proposal_recommendation_kinds": [],
+          "proposal_id": null
+        }
+      },
+      "evidence_reference": {
+        "contract": "scenario_evidence_ref_v0_NONCANONICAL",
+        "ref_id": "evidence:synthetic:conflicting-duplicate-attempt",
+        "scenario": {
+          "feature_id": "SYNTHETIC_FEATURE",
+          "case_id": "SYNTHETIC_CASE",
+          "base_revision": "synthetic-revision-1",
+          "base_digest_claim": "synthetic:spec-sha256-r1"
+        },
+        "attempt": {
+          "run_id": "synthetic-run-complete-observed-mismatch",
+          "attempt_id": "synthetic-attempt-complete-observed-mismatch",
+          "operation_ids": [
+            "synthetic-operation-conflicting-duplicate-attempt"
+          ]
+        },
+        "artifact": {
+          "kind": "SYNTHETIC_FIXTURE",
+          "pointer_claim": "synthetic://capture/conflicting-duplicate-attempt",
+          "digest_claim": "synthetic:evidence-conflicting-duplicate-attempt",
+          "capture_id": "synthetic-capture-conflicting-duplicate-attempt",
+          "timestamp_basis": "UNKNOWN",
+          "source_revision_claim": "synthetic:dsp-rev-a"
+        },
+        "authority": {
+          "physical_capture_authenticated": false,
+          "decoder_authenticated": false,
+          "independent_verification": "NOT_ESTABLISHED",
+          "oracle_approval": "NOT_ESTABLISHED",
+          "canonical_association": "UNASSIGNED",
+          "importer_authority": false
         }
       }
     }
-  ]
+  ],
+  "reference_contract": "scenario_evidence_ref_v0_NONCANONICAL",
+  "reference_usage": "Single immutable pointer claim, no inline raw observation duplication; #1330 returns at most 10 redacted refs, #1328 consumes ref_id strings only; no automatic B proposal conversion."
 }
