@@ -28,7 +28,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install offline fixture dependencies
-        run: python -m pip install --disable-pip-version-check -e . pytest fastapi starlette httpx pymysql
+        run: python -m pip install --disable-pip-version-check -e . pytest fastapi starlette httpx pymysql jinja2
       - name: Isolated sandbox and existing supervisor execution regressions
         env:
           PYTHONPATH: "src:test_fixtures:."
