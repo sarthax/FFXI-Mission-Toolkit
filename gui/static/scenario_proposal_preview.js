@@ -98,9 +98,17 @@
       blockers.push('UNAPPROVED: expected outcomes are candidates only');
     if(input.spec_digest_claim===null)
       blockers.push('UNKNOWN: saved spec digest was not supplied');
+    // Derived advisory triage only; never an operator approval or #1329
+    // producer verdict. Conflicting duplicates take priority over gaps.
+    const review_status=proposal.duplicate_scenario_ids.length
+      ? 'REFUSE_UNTIL_RECONCILED'
+      : (proposal.missing_observations.length || proposal.execution_dependencies.length
+         || !proposal.source_refs.length || !proposal.feature_trace_refs.length
+         || input.spec_digest_claim===null)
+        ? 'REQUIRE_FRESH_EVIDENCE' : 'DRAFT_UNTRUSTED';
     // Deliberately return only a human-readable advisory, not a canonical spec
     // or a patch function that could be imported/saved.
-    return {contract:CONTRACT,proposal_id:proposal.proposal_id,
+    return {contract:CONTRACT,proposal_id:proposal.proposal_id,review_status,
       idempotency_key:proposal.idempotency_key,scenario:proposal.scenario,
       base_revision:input.revision,base_digest_claim:input.spec_digest_claim,
       reason:proposal.reason,changes:proposal.changes,
@@ -125,7 +133,8 @@
   function render(host,view){
     if(!view||view.contract!==CONTRACT||view.save_allowed!==false||
        view.execution_enabled!==false||view.approved_expected!==false||
-       view.reviewer_action_enabled!==false||view.normative_expected!==null)
+       view.reviewer_action_enabled!==false||view.normative_expected!==null||
+       !['DRAFT_UNTRUSTED','REQUIRE_FRESH_EVIDENCE','REFUSE_UNTIL_RECONCILED'].includes(view.review_status))
       throw Error('Untrusted proposal cannot become an approved editor state');
     const root=el('section');
     root.append(el('h3','Untrusted candidate '+view.proposal_id+' — READ ONLY / NOT APPROVED'));
@@ -133,6 +142,7 @@
       ' · operator-declared baseline revision '+view.base_revision);
     line(root,'Spec digest CLAIM '+(view.base_digest_claim||'UNKNOWN / NOT VERIFIED'));
     line(root,'Baseline schema/revision NOT independently validated; supplied local JSON is not a persisted draft record.');
+    line(root,'Review status (advisory, NOT approved): '+view.review_status);
     line(root,'Reason: '+view.reason);
     line(root,'Before / after are proposals only, NOT saved changes:');
     for(const c of view.changes) {
