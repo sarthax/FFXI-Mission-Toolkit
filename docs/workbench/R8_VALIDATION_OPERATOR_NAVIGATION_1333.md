@@ -18,7 +18,7 @@ scenario contract, importer, execution capability or source of authority.
 
 ### #1322 mapping, not duplicated
 
-PR #1322, when independently reviewed and owner-authorized for merge, adds
+PR #1322 defines the separately reviewed, owner-gated R8 metadata endpoints:
 `GET /feature-testing/r8/catalog` and
 `GET /feature-testing/r8/preflight/{feature_id}/{case_id}`.
 Those are **JSON-only**, canonical-v1/optional-v2 based, read-only *advisory*
@@ -27,7 +27,8 @@ INV-OBS-01, planning-only Gardening/other staged cases and explicit
 UNKNOWN/BLOCKED requirements, but do **not** implement a user-facing landing
 page, solve the Validation DB setup, or supply a general runner, approved
 oracle, deployed source attestation, or task admission. This independent
-navigation PR deliberately avoids linking to unmerged R8 URLs.
+navigation PR deliberately avoids coupling to R8 JSON URLs, whether or
+not #1322 has merged. A deployed JSON route is not a Bearer-protected MCP gateway.
 
 ### User-visible limitations and follow-ups
 
