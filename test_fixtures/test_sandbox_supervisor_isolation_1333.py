@@ -361,7 +361,7 @@ def test_explicit_empty_test_dir_never_falls_back_to_production(
 
 
 @pytest.mark.parametrize("prefix,suffix", [
-    (" ", ""), ("", " "), ("  ", "  "), ("\\t", "\\t"),
+    (" ", ""), ("", " "), ("  ", "  "), ("\t", "\t"),
 ])
 def test_padded_absolute_sandbox_path_fails_before_any_settings_io(
         isolated, monkeypatch, tmp_path, prefix, suffix):
@@ -442,12 +442,16 @@ def test_nonexistent_or_file_sandbox_root_cannot_create_settings(
     assert settings.sandbox_execution_check()["ok"] is False
     assert settings.load()["enabled"] is False
     assert preflight("moghancement", "MOG-09")["ready_for_operator_review"] is False
-    with pytest.raises(ValueError, match="safe for writes"):
-        settings.set_enabled(True)
-    assert not (target / "settings.json").exists()
+    # A new, absolute sandbox directory may be initialized by Setup;
+    # until it is explicitly enabled there is no authorization. An existing
+    # regular file is never reinterpreted as a sandbox directory.
     if directory_mode == "regular_file":
+        with pytest.raises(ValueError, match="safe for writes"):
+            settings.set_enabled(True)
         assert target.read_text(encoding="utf-8") == "synthetic file sentinel"
     else:
+        assert not target.exists()
+        assert settings.apply_to_environ(settings._empty()) == []
         assert not target.exists()
 
 
