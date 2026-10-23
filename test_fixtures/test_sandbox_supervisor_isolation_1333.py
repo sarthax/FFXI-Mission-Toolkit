@@ -138,6 +138,51 @@ def test_linked_prod_settings_inside_sandbox_are_rejected(isolated, monkeypatch,
         authorize_operator("p" * 40)
 
 
+def test_predictable_temporary_symlink_cannot_overwrite_external_file(isolated, tmp_path):
+    # An attacker-controlled legacy settings.tmp is never followed by sandbox
+    # writes. The production/default writer is deliberately not exercised.
+    outside = tmp_path / "outside-sandbox-settings.json"
+    outside.write_text("synthetic original production sentinel", encoding="utf-8")
+    (isolated / "settings.tmp").symlink_to(outside)
+    cfg = settings._empty()
+    cfg["enabled"] = True
+    settings._save(cfg)
+    assert outside.read_text(encoding="utf-8") == "synthetic original production sentinel"
+    assert (isolated / "settings.tmp").is_symlink()
+    assert (isolated / "settings.json").is_file()
+    assert settings.load()["enabled"] is True
+    assert list(isolated.glob(".settings-*.tmp")) == []
+
+
+def test_symlinked_parent_of_selected_sandbox_rejected_without_writes(
+        tmp_path, monkeypatch):
+    outside = tmp_path / "external-parent"
+    outside.mkdir()
+    alias = tmp_path / "linked-parent"
+    alias.symlink_to(outside, target_is_directory=True)
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "production-localappdata"))
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_DATA_DIR", str(alias / "sandbox"))
+    assert settings.sandbox_operator_check()["ok"] is False
+    assert settings.sandbox_execution_check()["ok"] is False
+    assert settings.load()["enabled"] is False
+    with pytest.raises(ValueError, match="safe for writes"):
+        settings.set_enabled(True)
+    assert not (outside / "sandbox").exists()
+
+
+def test_sandbox_inside_repo_or_production_settings_root_is_rejected(tmp_path, monkeypatch):
+    prod_root = tmp_path / "local-app" / "MissionToolkit" / "test_execution"
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "local-app"))
+    for selected in (prod_root / "synthetic-child",
+                     settings._REPO / "test_fixtures" / "unwanted-sandbox"):
+        with monkeypatch.context() as m:
+            m.setenv("MISSION_TOOLKIT_TEST_DATA_DIR", str(selected))
+            assert settings.sandbox_execution_check()["ok"] is False
+            with pytest.raises(ValueError, match="safe for writes"):
+                settings.set_enabled(True)
+            assert not (selected / "settings.json").exists()
+
+
 def test_partial_sandbox_settings_fail_closed(isolated, monkeypatch, tmp_path):
     root = _headless(tmp_path)
     _shell(monkeypatch, isolated, root)
