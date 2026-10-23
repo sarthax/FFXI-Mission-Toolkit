@@ -14,7 +14,10 @@
     "Only MOG-09 and INV-OBS-01 are grounded in published canonical data; fixture_only/SYNTH-CASE-1 and all SYNTH refs are strictly simulated examples, never registered runners.",
     "All 64-digit a/b/c digest strings are artificial syntax placeholders, not hashes of canonical files, signed artifacts or deployed/source bytes.",
     "credential, scope, cursor_condition and data-size values are symbolic test facts, not usable bearer credentials or actual signed cursors.",
-    "These vectors exercise a bounded pure review model, not an installed /api/supervisor gateway or independent proof of source/oracle/status."
+    "These vectors exercise a bounded pure review model, not an installed /api/supervisor gateway or independent proof of source/oracle/status.",
+    "Published rows now contain EXACTLY the two source-grounded keys; synthetic_v2_probe is isolated and NEVER included in a public-like list/get/sources/preflight/read model.",
+    "All four per-case GETs require the same symbolic publication_snapshot_id and exact local digest. Real catalog publication snapshots, auth middleware, HMAC cursor and rendered byte budgets are NOT implemented or authenticated by this model.",
+    "The in-process isolated probe vectors P05,P13,N21,N26,N27 are evaluated only with project_isolated_v2_probe; ordinary project_synthetic rejects the fictitious case as unpublished."
   ],
   "published_fixture_rows": [
     {
@@ -42,26 +45,6 @@
         "steps": {}
       },
       "real_id_from_published_spec": true
-    },
-    {
-      "feature_id": "fixture_only",
-      "case_id": "SYNTH-CASE-1",
-      "schema_version": 1,
-      "contract_version": 2,
-      "local_definition_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-      "runner_classification": "UNASSIGNED_DESIGN_ONLY",
-      "source_claims": {
-        "case": [
-          "synthetic_case_ref"
-        ],
-        "steps": {
-          "SYNTH_STEP_1": [
-            "synthetic_step_ref"
-          ],
-          "SYNTH_STEP_2": []
-        }
-      },
-      "real_id_from_published_spec": false
     }
   ],
   "vectors": [
@@ -75,7 +58,7 @@
         "http_status": 200,
         "status": "OK",
         "reason": "published_declarations_only",
-        "published_count": 3
+        "published_count": 2
       }
     },
     {
@@ -100,7 +83,9 @@
       "operation": "supervisor_scenario_get",
       "request": {
         "feature_id": "moghancement",
-        "case_id": "MOG-09"
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {},
       "expect": {
@@ -115,7 +100,9 @@
       "operation": "supervisor_scenario_revision",
       "request": {
         "feature_id": "moghancement",
-        "case_id": "MOG-09"
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {},
       "expect": {
@@ -130,7 +117,9 @@
       "operation": "supervisor_scenario_sources",
       "request": {
         "feature_id": "fixture_only",
-        "case_id": "SYNTH-CASE-1"
+        "case_id": "SYNTH-CASE-1",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
       },
       "context": {},
       "expect": {
@@ -146,7 +135,8 @@
           ],
           "SYNTH_STEP_2": []
         }
-      }
+      },
+      "mode": "ISOLATED_SYNTHETIC_V2_PROBE"
     },
     {
       "id": "P06",
@@ -154,7 +144,9 @@
       "operation": "supervisor_scenario_sources",
       "request": {
         "feature_id": "moghancement",
-        "case_id": "MOG-09"
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {},
       "expect": {
@@ -171,7 +163,9 @@
       "operation": "supervisor_scenario_preflight",
       "request": {
         "feature_id": "moghancement",
-        "case_id": "MOG-09"
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {},
       "expect": {
@@ -186,7 +180,9 @@
       "operation": "supervisor_scenario_preflight",
       "request": {
         "feature_id": "inventory_observation",
-        "case_id": "INV-OBS-01"
+        "case_id": "INV-OBS-01",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
       },
       "context": {},
       "expect": {
@@ -201,7 +197,9 @@
       "operation": "supervisor_scenario_get",
       "request": {
         "feature_id": "gardening",
-        "case_id": "SYNTH-NOT-PUBLISHED"
+        "case_id": "SYNTH-NOT-PUBLISHED",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {},
       "expect": {
@@ -216,7 +214,9 @@
       "operation": "supervisor_scenario_revision",
       "request": {
         "feature_id": "moghancement",
-        "case_id": "MOG-09"
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {
         "source_authority": "UNKNOWN"
@@ -252,7 +252,8 @@
       "request": {
         "feature_id": "moghancement",
         "case_id": "MOG-09",
-        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "publication_snapshot_id": "synthetic-publication-v1"
       },
       "context": {},
       "expect": {
@@ -268,14 +269,16 @@
       "request": {
         "feature_id": "fixture_only",
         "case_id": "SYNTH-CASE-1",
-        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "publication_snapshot_id": "synthetic-publication-v1"
       },
       "context": {},
       "expect": {
         "http_status": 200,
         "status": "OK",
         "reason": "metadata_only"
-      }
+      },
+      "mode": "ISOLATED_SYNTHETIC_V2_PROBE"
     },
     {
       "id": "N01",
@@ -283,7 +286,9 @@
       "operation": "supervisor_scenario_get",
       "request": {
         "feature_id": "moghancement",
-        "case_id": "MOG-09"
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {
         "auth": "MISSING"
@@ -300,7 +305,9 @@
       "operation": "supervisor_scenario_get",
       "request": {
         "feature_id": "nonexistent",
-        "case_id": "SYNTH-UNKNOWN"
+        "case_id": "SYNTH-UNKNOWN",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {
         "auth": "MISSING"
@@ -317,7 +324,9 @@
       "operation": "supervisor_scenario_get",
       "request": {
         "feature_id": "../secrets",
-        "case_id": "bad??"
+        "case_id": "bad??",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {
         "auth": "INVALID"
@@ -334,7 +343,9 @@
       "operation": "supervisor_scenario_get",
       "request": {
         "feature_id": "../secrets",
-        "case_id": "bad??"
+        "case_id": "bad??",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {},
       "expect": {
@@ -349,7 +360,9 @@
       "operation": "supervisor_scenario_get",
       "request": {
         "feature_id": "moghancement",
-        "case_id": "MOG-09"
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {
         "scope": "CROSS_ACTOR"
@@ -399,7 +412,7 @@
         "cursor_condition": "FORGED"
       },
       "expect": {
-        "http_status": 200,
+        "http_status": 409,
         "status": "BLOCKED",
         "reason": "cursor_invalid"
       }
@@ -415,7 +428,7 @@
         "cursor_condition": "OTHER_ACTOR"
       },
       "expect": {
-        "http_status": 200,
+        "http_status": 409,
         "status": "BLOCKED",
         "reason": "cursor_invalid"
       }
@@ -432,7 +445,7 @@
         "cursor_condition": "WRONG_FILTER"
       },
       "expect": {
-        "http_status": 200,
+        "http_status": 409,
         "status": "BLOCKED",
         "reason": "cursor_invalid"
       }
@@ -448,7 +461,7 @@
         "cursor_condition": "STALE_SNAPSHOT"
       },
       "expect": {
-        "http_status": 200,
+        "http_status": 409,
         "status": "BLOCKED",
         "reason": "cursor_invalid"
       }
@@ -460,7 +473,8 @@
       "request": {
         "feature_id": "moghancement",
         "case_id": "MOG-09",
-        "expected_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        "expected_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "publication_snapshot_id": "synthetic-publication-v1"
       },
       "context": {},
       "expect": {
@@ -476,7 +490,8 @@
       "request": {
         "feature_id": "moghancement",
         "case_id": "MOG-09",
-        "expected_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        "expected_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "publication_snapshot_id": "synthetic-publication-v1"
       },
       "context": {},
       "expect": {
@@ -492,7 +507,9 @@
       "request": {
         "feature_id": "fixture_only",
         "case_id": "SYNTH-CASE-1",
-        "contract_version": 3
+        "contract_version": 3,
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
       },
       "context": {},
       "expect": {
@@ -508,7 +525,9 @@
       "request": {
         "feature_id": "fixture_only",
         "case_id": "SYNTH-CASE-1",
-        "step_source_ref": "synthetic_case_ref"
+        "step_source_ref": "synthetic_case_ref",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
       },
       "context": {},
       "expect": {
@@ -524,7 +543,9 @@
       "request": {
         "feature_id": "moghancement",
         "case_id": "MOG-09",
-        "oracle_approval": "APPROVED"
+        "oracle_approval": "APPROVED",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {},
       "expect": {
@@ -540,7 +561,9 @@
       "request": {
         "feature_id": "moghancement",
         "case_id": "MOG-09",
-        "proposal_id": "synthetic-proposal"
+        "proposal_id": "synthetic-proposal",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {},
       "expect": {
@@ -556,7 +579,9 @@
       "request": {
         "feature_id": "moghancement",
         "case_id": "MOG-09",
-        "execute_now": true
+        "execute_now": true,
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {},
       "expect": {
@@ -600,7 +625,9 @@
       "operation": "supervisor_scenario_sources",
       "request": {
         "feature_id": "fixture_only",
-        "case_id": "SYNTH-CASE-1"
+        "case_id": "SYNTH-CASE-1",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
       },
       "context": {
         "source_authority": "STALE"
@@ -609,7 +636,8 @@
         "http_status": 200,
         "status": "BLOCKED",
         "reason": "source_stale"
-      }
+      },
+      "mode": "ISOLATED_SYNTHETIC_V2_PROBE"
     },
     {
       "id": "N22",
@@ -617,7 +645,9 @@
       "operation": "supervisor_scenario_preflight",
       "request": {
         "feature_id": "moghancement",
-        "case_id": "MOG-09"
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {
         "observer_state": "PR_ONLY"
@@ -634,7 +664,9 @@
       "operation": "supervisor_scenario_preflight",
       "request": {
         "feature_id": "moghancement",
-        "case_id": "MOG-09"
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {
         "observer_state": "NOT_IMPLEMENTED"
@@ -654,7 +686,7 @@
         "response_bytes": 65537
       },
       "expect": {
-        "http_status": 200,
+        "http_status": 413,
         "status": "BLOCKED",
         "reason": "budget_exceeded"
       }
@@ -665,13 +697,15 @@
       "operation": "supervisor_scenario_get",
       "request": {
         "feature_id": "moghancement",
-        "case_id": "MOG-09"
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {
         "spec_bytes": 32769
       },
       "expect": {
-        "http_status": 200,
+        "http_status": 413,
         "status": "BLOCKED",
         "reason": "budget_exceeded"
       }
@@ -682,16 +716,19 @@
       "operation": "supervisor_scenario_sources",
       "request": {
         "feature_id": "fixture_only",
-        "case_id": "SYNTH-CASE-1"
+        "case_id": "SYNTH-CASE-1",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
       },
       "context": {
         "source_count": 51
       },
       "expect": {
-        "http_status": 200,
+        "http_status": 413,
         "status": "BLOCKED",
         "reason": "budget_exceeded"
-      }
+      },
+      "mode": "ISOLATED_SYNTHETIC_V2_PROBE"
     },
     {
       "id": "N27",
@@ -699,7 +736,9 @@
       "operation": "supervisor_scenario_sources",
       "request": {
         "feature_id": "fixture_only",
-        "case_id": "SYNTH-CASE-1"
+        "case_id": "SYNTH-CASE-1",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
       },
       "context": {
         "source_authority": "UNVERIFIED"
@@ -717,15 +756,18 @@
           ],
           "SYNTH_STEP_2": []
         }
-      }
+      },
+      "mode": "ISOLATED_SYNTHETIC_V2_PROBE"
     },
     {
       "id": "N28",
-      "group": "wrong_case_cursor",
+      "group": "unpublished_fictional_identity_no_cursor",
       "operation": "supervisor_scenario_get",
       "request": {
         "feature_id": "fixture_only",
-        "case_id": "SYNTH-CASE-2"
+        "case_id": "SYNTH-CASE-2",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
       },
       "context": {},
       "expect": {
@@ -741,7 +783,9 @@
       "request": {
         "feature_id": "moghancement",
         "case_id": "MOG-09",
-        "charid": 1000
+        "charid": 1000,
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {},
       "expect": {
@@ -757,7 +801,9 @@
       "request": {
         "feature_id": "moghancement",
         "case_id": "MOG-09",
-        "lease_claimed": true
+        "lease_claimed": true,
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {},
       "expect": {
@@ -773,7 +819,9 @@
       "request": {
         "feature_id": "fixture_only",
         "case_id": "SYNTH-CASE-1",
-        "execute_now": true
+        "execute_now": true,
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
       },
       "context": {
         "auth": "INVALID"
@@ -790,7 +838,9 @@
       "operation": "supervisor_scenario_get",
       "request": {
         "feature_id": "moghancement",
-        "case_id": "MOG-☃"
+        "case_id": "MOG-☃",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "context": {},
       "expect": {
@@ -806,14 +856,316 @@
       "request": {
         "feature_id": "moghancement",
         "case_id": "MOG-09",
-        "expected_sha256": "/etc/passwd"
+        "expected_sha256": "/etc/passwd",
+        "publication_snapshot_id": "synthetic-publication-v1"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_digest"
+      }
+    },
+    {
+      "id": "N34",
+      "group": "synthetic_probed_id_not_published_get",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-1",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
       },
       "context": {},
       "expect": {
         "http_status": 200,
+        "status": "UNSUPPORTED",
+        "reason": "not_published"
+      }
+    },
+    {
+      "id": "N35",
+      "group": "synthetic_probed_id_not_published_sources",
+      "operation": "supervisor_scenario_sources",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-1",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "UNSUPPORTED",
+        "reason": "not_published"
+      }
+    },
+    {
+      "id": "N36",
+      "group": "synthetic_probed_id_not_published_preflight",
+      "operation": "supervisor_scenario_preflight",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-1",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "UNSUPPORTED",
+        "reason": "not_published"
+      }
+    },
+    {
+      "id": "N37",
+      "group": "authorized_malformed_matched_route_limit",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": "abc"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
         "status": "BLOCKED",
-        "reason": "revision_conflict"
+        "reason": "invalid_page_limit"
+      }
+    },
+    {
+      "id": "N38",
+      "group": "unauthenticated_malformed_matched_route_limit",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": "abc"
+      },
+      "context": {
+        "auth": "MISSING"
+      },
+      "expect": {
+        "http_status": 403,
+        "status": "BLOCKED",
+        "reason": "unauthorized"
+      }
+    },
+    {
+      "id": "N39",
+      "group": "missing_required_publication_snapshot",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_snapshot"
+      }
+    },
+    {
+      "id": "N40",
+      "group": "malformed_publication_snapshot",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "../snap",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_snapshot"
+      }
+    },
+    {
+      "id": "N41",
+      "group": "catalog_changed_after_get_list",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "publication_snapshot_state": "STALE"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "stale_publication"
+      }
+    },
+    {
+      "id": "N42",
+      "group": "source_associations_after_catalog_change",
+      "operation": "supervisor_scenario_sources",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "publication_snapshot_state": "STALE"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "stale_publication"
+      }
+    },
+    {
+      "id": "N43",
+      "group": "preflight_after_catalog_change",
+      "operation": "supervisor_scenario_preflight",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "publication_snapshot_state": "STALE"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "stale_publication"
+      }
+    },
+    {
+      "id": "N44",
+      "group": "revision_after_catalog_change",
+      "operation": "supervisor_scenario_revision",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "publication_snapshot_state": "STALE"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "stale_publication"
+      }
+    },
+    {
+      "id": "N45",
+      "group": "cursor_expired",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 2,
+        "cursor": "synthetic-cursor"
+      },
+      "context": {
+        "cursor_condition": "EXPIRED"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N46",
+      "group": "cursor_key_rotated",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 2,
+        "cursor": "synthetic-cursor"
+      },
+      "context": {
+        "cursor_condition": "ROTATED_KEY"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N47",
+      "group": "cursor_replayed_at_other_limit",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 1,
+        "cursor": "synthetic-cursor"
+      },
+      "context": {
+        "cursor_condition": "CHANGED_LIMIT"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N48",
+      "group": "missing_case_digest_in_pinned_snapshot",
+      "operation": "supervisor_scenario_preflight",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_digest"
+      }
+    },
+    {
+      "id": "N49",
+      "group": "twentyfive_item_page_byte_overflow",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 25
+      },
+      "context": {
+        "response_bytes": 65537
+      },
+      "expect": {
+        "http_status": 413,
+        "status": "BLOCKED",
+        "reason": "budget_exceeded"
       }
     }
-  ]
+  ],
+  "synthetic_v2_probe": {
+    "feature_id": "fixture_only",
+    "case_id": "SYNTH-CASE-1",
+    "schema_version": 1,
+    "contract_version": 2,
+    "local_definition_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "runner_classification": "UNASSIGNED_DESIGN_ONLY",
+    "source_claims": {
+      "case": [
+        "synthetic_case_ref"
+      ],
+      "steps": {
+        "SYNTH_STEP_1": [
+          "synthetic_step_ref"
+        ],
+        "SYNTH_STEP_2": []
+      }
+    },
+    "real_id_from_published_spec": false,
+    "synthetic_only": true,
+    "never_published": true
+  },
+  "publication_snapshot_fixture": {
+    "id": "synthetic-publication-v1",
+    "kind": "SYNTHETIC_IN_MEMORY_ONLY",
+    "digest_authority": "LOCAL_SERIALIZATION_ONLY",
+    "immutable_snapshot_simulated_only": true
+  }
 }
