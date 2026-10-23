@@ -1,0 +1,45 @@
+name: ASI Proposal Preview (Synthetic Only)
+on:
+  pull_request:
+    paths:
+      - "gui/static/scenario_proposal_preview.js"
+      - "test_fixtures/test_asi_proposal_preview.cjs"
+      - "test_fixtures/asi_proposal_preview_synthetic.json"
+      - "docs/workbench/ASI_PROPOSAL_PREVIEW_1325.md"
+      - ".github/workflows/asi-proposal-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  noncanonical-preview-and-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Read-only proposal contract and fake DOM selection/cancellation
+        run: |
+          set -euo pipefail
+          node --check gui/static/scenario_proposal_preview.js
+          node --check test_fixtures/test_asi_proposal_preview.cjs
+          node test_fixtures/test_asi_proposal_preview.cjs
+      - name: Existing Guided and Contract v2 DOM safety regressions
+        run: |
+          set -euo pipefail
+          node test_fixtures/test_scenario_guided_model.cjs
+          node test_fixtures/test_scenario_contract_v2_view.cjs
+      - name: Install existing Python test dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt pytest httpx
+      - name: Existing Guided editor and src-layout scoped regressions
+        env:
+          PYTHONPATH: "src:."
+        run: |
+          set -euo pipefail
+          python -m pytest -q test_fixtures/test_scenario_guided_editor.py test_fixtures/test_scenario_contract_authoring.py test_fixtures/test_src_layout_package.py
