@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install offline template dependencies
-        run: python -m pip install --disable-pip-version-check -e . pytest
+        run: python -m pip install --disable-pip-version-check -e . pytest jinja2 markupsafe
       - name: Render missing-DB and synthetic-history navigation fixtures
         env:
           PYTHONPATH: "src:test_fixtures:."
