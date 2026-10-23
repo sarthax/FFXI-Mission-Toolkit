@@ -52,6 +52,12 @@ def _empty() -> dict:
 def load() -> dict:
     if "MISSION_TOOLKIT_TEST_DATA_DIR" not in os.environ:
         _migrate_legacy()
+    else:
+        # Guard the read itself, not just execution: Setup/status must never
+        # disclose a linked/default production settings file in a sandbox.
+        scope, _ = _sandbox_directory_check()
+        if (scope["isolated"] and not scope["ok"]) or settings_path().is_symlink():
+            return _empty()
     merged = _empty()
     try:
         raw = json.loads(settings_path().read_text(encoding="utf-8"))
