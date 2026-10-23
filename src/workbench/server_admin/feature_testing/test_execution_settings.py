@@ -174,9 +174,14 @@ def sandbox_execution_check() -> dict:
         if not value or os.environ.get(key, "") != value:
             return {"isolated": True, "ok": False,
                     "reason": "Isolated supervisor configuration is missing or overridden by unrelated environment variables"}
+    try:
+        charids = parse_charids(settings["charids"])
+    except ValueError:
+        charids = []
     if (len(settings["tokens"]["operator"]) < 32
             or len(settings["tokens"]["supervisor"]) < 32
-            or not settings["charids"]):
+            or settings["tokens"]["operator"] == settings["tokens"]["supervisor"]
+            or not charids or charids != settings["charids"]):
         return {"isolated": True, "ok": False,
                 "reason": "Isolated supervisor tokens or disposable-character approval are incomplete"}
     for key in _SANDBOX_STORAGE_KEYS:
