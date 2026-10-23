@@ -64,7 +64,8 @@
         throw Error('Invalid draft origin or initial snapshot');
       origin=nextOrigin;
       starting=clone(snapshot);
-      return refresh();
+      // Do not read Guided fields until the caller has rendered this document.
+      return undefined;
     }
     function dispose(){
       if(disposed)return;
