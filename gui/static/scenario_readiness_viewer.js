@@ -127,6 +127,25 @@
     return root;
   }
 
+  // Selected local JSON is untrusted. Do not expose engine-specific parse
+  // offsets, source fragments or raw SyntaxError text to the operator.
+  function parseSelectedJson(raw, label) {
+    try {return JSON.parse(raw);}
+    catch(error) {
+      if(error instanceof SyntaxError)throw Error(label+' is not valid JSON');
+      throw error;
+    }
+  }
+  // Diagnostic only: the backend independently checks the full original
+  // review, sidecar, both digests and every authorization/provenance gate.
+  function checkOriginalCaptureIdentity(reviewFile) {
+    const original=reviewFile?.observed_handoff;
+    if(Number.isSafeInteger(reviewFile?.capture_id)&&reviewFile.capture_id>0&&
+       Number.isSafeInteger(original?.capture_id)&&original.capture_id>0&&
+       reviewFile.capture_id!==original.capture_id)
+      throw Error('Original review capture identity mismatch');
+  }
+
   function mount(container, inspect) {
     if(typeof inspect!=='function')throw Error('A trusted read-only pair inspector must be supplied');
     const section=node('section');
@@ -162,7 +181,10 @@
         const [original,sidecar]=await Promise.all([a.text(),b.text()]);
         if(stamp!==generation||review.files?.[0]!==a||advisory.files?.[0]!==b)
           throw Error('Selected files changed during inspection');
-        const model=await inspect(JSON.parse(original),JSON.parse(sidecar));
+        const reviewFile=parseSelectedJson(original,'Original reviewed-decision file');
+        const sidecarFile=parseSelectedJson(sidecar,'Readiness sidecar file');
+        checkOriginalCaptureIdentity(reviewFile);
+        const model=await inspect(reviewFile,sidecarFile);
         if(stamp!==generation||review.files?.[0]!==a||advisory.files?.[0]!==b)
           throw Error('Selected files changed during inspection');
         render(output,model);
