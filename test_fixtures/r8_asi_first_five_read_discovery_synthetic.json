@@ -228,6 +228,56 @@
       }
     },
     {
+      "id": "P11",
+      "group": "valid_scoped_cursor",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "cursor": "synthetic-cursor",
+        "limit": 2
+      },
+      "context": {
+        "cursor_condition": "VERIFIED_SCOPE_AND_SNAPSHOT"
+      },
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "published_declarations_only",
+        "published_count": 2
+      }
+    },
+    {
+      "id": "P12",
+      "group": "exact_local_digest",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "metadata_only"
+      }
+    },
+    {
+      "id": "P13",
+      "group": "synthetic_v2_case_details",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "metadata_only"
+      }
+    },
+    {
       "id": "N01",
       "group": "missing_bearer_known",
       "operation": "supervisor_scenario_get",
@@ -732,6 +782,37 @@
         "http_status": 403,
         "status": "BLOCKED",
         "reason": "unauthorized"
+      }
+    },
+    {
+      "id": "N32",
+      "group": "nonascii_identity",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-☃"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_identity"
+      }
+    },
+    {
+      "id": "N33",
+      "group": "invalid_local_digest_format",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "expected_sha256": "/etc/passwd"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "BLOCKED",
+        "reason": "revision_conflict"
       }
     }
   ]
