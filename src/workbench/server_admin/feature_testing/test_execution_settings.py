@@ -348,6 +348,8 @@ def status() -> dict:
     isolation = sandbox_execution_check()
     chosen = (settings["headless_root"] if isolation["isolated"]
               else os.environ.get("MISSION_TOOLKIT_TEST_HEADLESS_ROOT", "") or settings["headless_root"])
+    if not isinstance(chosen, str):
+        chosen = ""  # invalid sandbox JSON must never crash Setup/status
     db_ready = bool(os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_USER")
                     and os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_PASSWORD")
                     and os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_NAME"))
@@ -363,10 +365,12 @@ def status() -> dict:
     pre = preflight("moghancement", "MOG-09")
     if isolation["isolated"] and not isolation["ok"]:
         db_ready = False
-    steps = [
-        {"id": "sandbox_isolation", "ok": isolation["ok"],
-         "title": "Isolated supervisor configuration",
-         "fix": isolation["reason"]},
+    steps = []
+    if isolation["isolated"]:
+        steps.append({"id": "sandbox_isolation", "ok": isolation["ok"],
+                      "title": "Isolated supervisor configuration",
+                      "fix": isolation["reason"]})
+    steps.extend([
         {"id": "enabled", "ok": settings["enabled"], "title": "Test execution turned on",
          "fix": "Press \"Turn on test execution\" below. Tokens are generated for you."},
         {"id": "checkout", "ok": bool(chosen),
@@ -380,7 +384,7 @@ def status() -> dict:
          "title": "Server database readable (read-only login)",
          "fix": "Enter the read-only database login. Without it a run cannot compare the client against saved data and will be BLOCKED." if driver
                 else "No MySQL driver is installed in the Toolkit environment."},
-    ]
+    ])
     return {"enabled": settings["enabled"], "steps": steps, "headless_roots": roots,
             "selected_root": chosen, "charids": settings["charids"], "account": settings["account"],
             "db": {"user": settings["db"]["user"], "name": settings["db"]["name"],
