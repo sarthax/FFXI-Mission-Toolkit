@@ -143,10 +143,11 @@ def test_partial_sandbox_settings_fail_closed(isolated, monkeypatch, tmp_path):
     assert preflight("moghancement", "MOG-09")["ready_for_operator_review"] is False
     # Deliberately malformed settings must not crash the readiness route.
     (isolated / "settings.json").write_text(
-        json.dumps({"enabled": True, "charids": 17, "tokens": {"operator": 5}}),
+        json.dumps({"enabled": True, "charids": 17, "headless_root": 123, "tokens": {"operator": 5}}),
         encoding="utf-8",
     )
     assert settings.sandbox_execution_check()["ok"] is False
+    assert settings.status()["ready_to_run"] is False
 
 
 def test_sandbox_drafts_can_be_authorized_without_supervisor_execution(isolated, tmp_path):
