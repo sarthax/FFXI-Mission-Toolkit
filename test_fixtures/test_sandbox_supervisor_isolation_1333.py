@@ -162,6 +162,24 @@ def test_wrong_sandbox_credential_or_allowlist_blocks(isolated, tmp_path, monkey
         authorize_operator(cfg["tokens"]["operator"])
 
 
+def test_tampered_disposable_allowlist_and_reused_tokens_block(isolated, tmp_path):
+    root = _headless(tmp_path)
+    cfg = _valid_sandbox_settings(isolated, root)
+    for invalid in ([0], [23, 23], ["23"], [-1]):
+        bad = dict(cfg)
+        bad["charids"] = invalid
+        settings._save(bad)
+        # Test-only direct JSON changes cannot elevate the old environment.
+        assert settings.sandbox_execution_check()["ok"] is False
+    bad = dict(cfg)
+    bad["charids"] = [23]
+    bad["tokens"] = dict(cfg["tokens"])
+    bad["tokens"]["supervisor"] = bad["tokens"]["operator"]
+    settings._save(bad)
+    assert settings.sandbox_execution_check()["ok"] is False
+    assert preflight("moghancement", "MOG-09")["ready_for_operator_review"] is False
+
+
 def test_shared_results_or_artifacts_path_blocks(isolated, tmp_path, monkeypatch):
     root = _headless(tmp_path)
     _valid_sandbox_settings(isolated, root)
