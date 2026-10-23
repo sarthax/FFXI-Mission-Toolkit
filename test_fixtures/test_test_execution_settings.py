@@ -35,6 +35,9 @@ def test_enable_generates_distinct_long_tokens_and_env(env):
     t = st["tokens"]
     assert len(t["operator"]) >= 32 and len(t["supervisor"]) >= 32 and t["operator"] != t["supervisor"]
     assert os.environ["MISSION_TOOLKIT_TEST_OPERATOR_TOKEN"] == t["operator"]
+    assert not s.ui_mode_active()  # generated tokens alone do not authorize sandbox execution
+    s.update(headless_root=_checkout(env), charids="17",
+             db={"user": "synthetic_ro", "password": "synthetic_only", "name": "synthetic_db"})
     assert s.ui_mode_active()
     s.set_enabled(False)
     assert "MISSION_TOOLKIT_TEST_OPERATOR_TOKEN" not in os.environ and not s.ui_mode_active()
