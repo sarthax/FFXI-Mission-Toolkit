@@ -42,4 +42,5 @@ jobs:
         run: |
           python -m compileall -q src/workbench/server_admin/feature_testing/test_execution_settings.py src/workbench/server_admin/feature_testing/execution_preflight.py src/workbench/server_admin/feature_testing/execution_jobs.py
           grep -q 'sandbox_isolation' src/workbench/server_admin/feature_testing/execution_preflight.py
-          grep -q 'sandbox_execution_check' src/workbench/server_admin/feature_testing/execution_jobs.py
+          grep -q 'sandbox_operator_check' src/workbench/server_admin/feature_testing/execution_jobs.py
+          grep -q 'sandbox_execution_check' src/workbench/server_admin/feature_testing/execution_preflight.py
