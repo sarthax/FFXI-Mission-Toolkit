@@ -24,6 +24,20 @@ _RESULT_DEFAULTS = {          # created under the data folder automatically; nob
 }
 
 
+def _is_link(path: Path) -> bool:
+    """True for symlinks AND Windows directory junctions / other reparse points.
+
+    Path.is_symlink() is False for NTFS junctions on Python < 3.12, which would
+    let an "isolated" data directory silently redirect writes elsewhere.
+    """
+    if path.is_symlink():
+        return True
+    try:
+        return bool(getattr(path.lstat(), "st_file_attributes", 0) & 0x400)  # FILE_ATTRIBUTE_REPARSE_POINT
+    except OSError:
+        return False
+
+
 def data_dir() -> Path:
     configured = os.environ.get("MISSION_TOOLKIT_TEST_DATA_DIR", "")
     if configured:
@@ -57,7 +71,7 @@ def load() -> dict:
         # Guard the read itself, not just execution: Setup/status must never
         # disclose a linked/default production settings file in a sandbox.
         scope, _ = _sandbox_directory_check()
-        if (scope["isolated"] and not scope["ok"]) or settings_path().is_symlink():
+        if (scope["isolated"] and not scope["ok"]) or _is_link(settings_path()):
             return _empty()
     merged = _empty()
     try:
@@ -78,7 +92,7 @@ def _save(settings: dict) -> None:
     path = settings_path()
     if "MISSION_TOOLKIT_TEST_DATA_DIR" in os.environ:
         scope, _ = _sandbox_directory_check()
-        if (scope["isolated"] and not scope["ok"]) or path.is_symlink():
+        if (scope["isolated"] and not scope["ok"]) or _is_link(path):
             raise ValueError("Isolated settings location is not safe for writes")
         path.parent.mkdir(parents=True, exist_ok=True)
         # Never follow a predictable .tmp symlink into production files.
@@ -91,7 +105,7 @@ def _save(settings: dict) -> None:
                     prefix=".settings-", suffix=".tmp", delete=False) as tmp:
                 temp_name = tmp.name
                 json.dump(settings, tmp, indent=1)
-            if path.is_symlink():
+            if _is_link(path):
                 raise ValueError("Isolated settings location is not safe for writes")
             os.replace(temp_name, path)
             temp_name = None
@@ -138,7 +152,7 @@ def apply_to_environ(settings: dict | None = None) -> list[str]:
     _APPLIED.clear()
     if "MISSION_TOOLKIT_TEST_DATA_DIR" in os.environ:
         scope, _ = _sandbox_directory_check()
-        if not scope["ok"] or settings_path().is_symlink():
+        if not scope["ok"] or _is_link(settings_path()):
             return []  # never create artifacts for invalid sandbox paths
     if not settings["enabled"]:
         return []
@@ -190,7 +204,7 @@ def _sandbox_directory_check() -> tuple[dict, Path | None]:
     root = Path(raw)
     default = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "MissionToolkit" / "test_execution"
     if (not root.is_absolute() or (root.exists() and not root.is_dir())
-            or any(part.is_symlink() for part in (root, *root.parents))
+            or any(_is_link(part) for part in (root, *root.parents))
             or root.resolve() == default.resolve()
             or root.resolve().is_relative_to(default.resolve())
             or root.resolve().is_relative_to(_REPO.resolve())):
@@ -205,7 +219,7 @@ def _sandbox_local_path(key: str, root: Path) -> bool:
     if not value:
         return False
     path = Path(value)
-    return (path.is_absolute() and not path.is_symlink()
+    return (path.is_absolute() and not _is_link(path)
             and path.resolve().is_relative_to(root.resolve()))
 
 
@@ -220,7 +234,7 @@ def sandbox_operator_check() -> dict:
     if not isolation["isolated"] or not isolation["ok"]:
         return isolation
     sandbox_file = settings_path()
-    if sandbox_file.is_symlink():
+    if _is_link(sandbox_file):
         return {"isolated": True, "ok": False,
                 "reason": "Isolated supervisor settings must not be a linked external file"}
     settings = load()  # never migrate the production settings file in isolation

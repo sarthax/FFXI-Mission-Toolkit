@@ -492,3 +492,27 @@ def test_builder_template_never_advertises_inherited_preflight_as_launch_authori
     assert '{% if not builder_preflight.ready_for_operator_review %}disabled' in template
     assert 'aria-disabled="true"' in template
     assert 'id="ft-run-approval"' in template
+
+
+def test_directory_junction_sandbox_is_rejected(tmp_path, monkeypatch):
+    """NTFS junctions are not symlinks to Path.is_symlink(); they must still be refused."""
+    import os, subprocess
+    from workbench.server_admin.feature_testing import test_execution_settings as settings
+    if os.name != "nt":
+        import pytest
+        pytest.skip("directory junctions are Windows-specific")
+    target, link = tmp_path / "external", tmp_path / "junction"
+    target.mkdir()
+    made = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(target)], capture_output=True)
+    if made.returncode:
+        import pytest
+        pytest.skip("could not create junction")
+    for candidate in (link, link / "child"):
+        monkeypatch.setenv("MISSION_TOOLKIT_TEST_DATA_DIR", str(candidate))
+        assert settings._sandbox_directory_check()[0]["ok"] is False
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_DATA_DIR", str(link))
+    try:
+        settings._save({"enabled": False})
+    except ValueError:
+        pass
+    assert list(target.iterdir()) == []
