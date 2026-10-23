@@ -60,6 +60,7 @@ const win={
 vm.runInNewContext(read('scenario_validation_feedback.js'),{window:win,document});
 const feedback=win.ScenarioValidationFeedback;
 const requests=[];
+const draftRequests=[]; // synthetic POST interception; never contacts a server
 const network=[];
 function fetch(path,options={}) {
   network.push({path,method:options.method||'GET'});
@@ -71,6 +72,8 @@ function fetch(path,options={}) {
     })});
   if(path==='/scenario-developer/validate')
     return new Promise(resolve=>requests.push({resolve,path,request:JSON.parse(options.body)}));
+  if(path==='/feature-testing/builder/drafts' && options.method==='POST')
+    return new Promise(resolve=>draftRequests.push({resolve,path,request:JSON.parse(options.body)}));
   throw Error('UNEXPECTED network call: '+path);
 }
 const context={window:win,document,fetch,URLSearchParams,console,Set,Error};
@@ -165,8 +168,8 @@ async function run() {
   settle(6,422,invalid('stale S1 preflight'));await save;
   assert.deepEqual(ui(),validError,'stale Save must not clear newer validation');
   assert.equal(get('sd-save').disabled,false,'Save controls restored');
-  assert.equal(network.some(x=>x.path==='/feature-testing/builder/drafts'),false,
-    'superseded preflight MUST NOT persist anything');
+  assert.equal(draftRequests.length,0,
+    'superseded preflight MUST NOT dispatch a draft write');
 
   // Save rejected after a new successful Validate preserves the preview/status.
   get('sd-purpose').value='Save S2';
@@ -178,14 +181,48 @@ async function run() {
   settle(8,422,invalid('old Save 422'));await save2;
   assert.deepEqual(ui(),afterValidate,'stale Save must not clear later preview');
 
+  // Even with identical draft snapshots, newest response owns the screen.
+  // A generation/content-only check cannot protect this case by itself.
+  get('sd-purpose').value='unchanged between two validations';
+  const identicalOld=click('sd-validate');
+  const identicalNew=click('sd-validate');
+  assert.equal(requests.length,13);
+  settle(12,422,invalid('newer identical-input error'));await identicalNew;
+  const identicalNewUi=ui();
+  settle(11,200,valid('older identical-input success'));await identicalOld;
+  assert.deepEqual(ui(),identicalNewUi,
+    'old successful response for SAME INPUT must not clear later current errors');
+
+  // Save preflight was authorized for a synthetic-only draft store request;
+  // simulate a later 403 from that already in-flight Save after newer Validate.
+  get('sd-purpose').value='in-flight scratch save';
+  const inFlightSave=click('sd-save');
+  assert.equal(requests.length,14);
+  settle(13,200,{...valid('save preview'),
+    canonical_specification:requests[13].request.specification});
+  for(let n=0;n<8;n++)await Promise.resolve();
+  assert.equal(draftRequests.length,1,'only one synthetic draft POST was queued');
+  get('sd-purpose').value='current result after save dispatch';
+  const newerValidation=click('sd-validate');
+  assert.equal(requests.length,15);
+  settle(14,422,invalid('new current error'));await newerValidation;
+  const beforeDelayedSave=ui();
+  draftRequests[0].resolve({ok:false,status:403,
+    json:async()=>({detail:'Operator permission denied'})});
+  await inFlightSave;
+  assert.deepEqual(ui(),beforeDelayedSave,
+    'delayed rejected draft POST must not erase newer validation UI');
+  assert.equal(get('sd-save').disabled,false,'Save finally always releases controls');
+  assert.equal(draftRequests.length,1,'no duplicate synthetic draft Save');
+
   // Invalid Advanced buffer is not parsed/replaced by a delayed old 422.
   await click('sd-advanced');
-  const advancedBefore=JSON.stringify({...requests[9].request.specification,purpose:'source-only'});
+  const advancedBefore=JSON.stringify({...requests[14].request.specification,purpose:'source-only'});
   get('sd-advanced-json').value=advancedBefore;
   const advancedReq=click('sd-validate');
   const bad='{broken : [';
   get('sd-advanced-json').value=bad;
-  settle(10,422,invalid('old Advanced 422'));await advancedReq;
+  settle(15,422,invalid('old Advanced 422'));await advancedReq;
   assert.equal(get('sd-advanced-json').value,bad,'invalid Advanced bytes preserved');
   assert.equal(get('sd-revision').value,'0','unsaved draft revision preserved');
   assert.equal(network.some(x=>x.path.includes('/launch')),false);
