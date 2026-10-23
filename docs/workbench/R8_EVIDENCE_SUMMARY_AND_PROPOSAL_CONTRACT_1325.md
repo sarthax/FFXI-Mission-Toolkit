@@ -28,18 +28,18 @@ Authority must be attributed **per assertion and per observation**. Do not colla
 
 ## 2. Proposed read interface — not shipped
 
-Provisional name: `scenario_evidence_summary` (Agent C should first reconcile existing supervisor/MCP conventions). Bounded, read-only, explicitly authorized, scope-limited API:
+The detailed read model in this document is **Agent D-owned**, not a second MCP gateway. Agent C #1330 has proposed the existing bearer-protected `supervisor_scenario_evidence_summary` as a bounded **index/wrapper**; its `toolkit-r8-scenario-discovery/1` envelope is the gateway presentation surface (not approved or deployed). The illustrative downstream `scenario_evidence_summary` notation below describes the D-owned projector concept, **not** another proposed tool registration or network endpoint. Bounded, read-only and scope-limited:
 
 ```text
 scenario_evidence_summary(
   feature_id, case_id, spec_revision_or_digest,
   run_id? = null, attempt_id? = null,
   include_observation_summaries = true,
-  page_size = 25, cursor? = null
+  page_size = 10, cursor? = null
 ) -> scenario_evidence_summary_v0_DESIGN_ONLY_NONCANONICAL
 ```
 
-**Proposed limits (require owner review):** allowlisted catalog identities only; default 25 and maximum 100 summaries/page; maximum 25 observations per attempt; up to 4 KiB per sanitized human-facing excerpt; stable ordering by immutable attempt timestamp plus attempt ID; pagination cursor bound to query filters, dataset revision and authorization scope; fail closed on stale cursor. Redact account/character secrets, local full paths, tokens, packet payloads, private source content and arbitrary client bytes. Return explicit truncation and `next_cursor` rather than silently suppressing evidence. No external URLs fetched, arbitrary repository reads, shell, SQL, packet, GM, runtime control or dynamic plugin dispatch.
+**Cross-agent reconciled gateway limits (still PROPOSED, not enforced by this design-only PR):** obey Agent C #1330: maximum **10 redacted evidence records per discovery response**, **65,536 UTF-8 bytes total**, maximum **500 characters per human-facing summary** and a **25-item hard maximum for general scenario discovery**. The detailed D-owned projector must be bounded independently, and any larger raw/long-form observation record stays outside the MCP response, behind future separately approved access. Stable ordering by immutable attempt timestamp plus attempt ID; pagination cursor bound to query filters, dataset revision and authorization scope; fail closed on stale cursor. The wrapper must return `availability=NOT_CONFIGURED`, `record_count=null`, `recent=[]`, `status=UNKNOWN` rather than interpreting an unavailable evidence store as zero historical runs. Redact account/character secrets, local full paths, tokens, packet payloads, private source content and arbitrary client bytes. Return explicit truncation and `next_cursor` rather than silently suppressing evidence. No external URLs fetched, arbitrary repository reads, shell, SQL, packet, GM, runtime control or dynamic plugin dispatch.
 
 For every attempt, project:
 
@@ -58,6 +58,57 @@ A rendered summary must always display independent authority status next to any 
 `test_fixtures/r8_evidence_summary_vectors_synthetic.json` supplies eight complete **synthetic** records under `scenario_evidence_summary_v0_DESIGN_ONLY_NONCANONICAL`. Its `scenario`, `attempt`, `lifecycle`, `provenance`, `evidence`, and `triage` members are the design shape, **not an approved wire format**. All source names/digests/IDs are conspicuously synthetic; their `source_bytes_authenticated`, `decoder_authenticated` and `source_identity_verified` fields are false. All `approved_oracles` arrays are empty. The tests explicitly refuse untrusted promotion.
 
 An actual future version must add strict schema typing, checked timestamps and domains, redaction, source/ref indexes, immutable storage lookup and per-assertion reviewer authority. Do not introduce those by loosening the existing v1 importer or #1313 viewer contract.
+
+## 2A. Shared evidence-reference handoff: one pointer, four consumers
+
+**Proposed reference identity** (not an approved shared wire schema): `scenario_evidence_ref_v0_NONCANONICAL`. The fixture adds **one compact pointer claim per attempt** under `evidence_reference`; it does **not** embed another result record. Every `observed_fact` still points to its *original* capture/source entry, and no capture step becomes a canonical CASE/STEP association. Consumers display the shared `ref_id` as a **string**, never treat the string as independent authentication, and never use it as an executable locator or user-supplied file path.
+
+```json
+{
+  "contract": "scenario_evidence_ref_v0_NONCANONICAL",
+  "ref_id": "evidence:synthetic:missing-server-readback",
+  "scenario": {
+    "feature_id": "SYNTHETIC_FEATURE",
+    "case_id": "SYNTHETIC_CASE",
+    "base_revision": "synthetic-revision-1",
+    "base_digest_claim": "synthetic:spec-sha256-r1"
+  },
+  "attempt": {
+    "run_id": "synthetic-run-missing-server-readback",
+    "attempt_id": "synthetic-attempt-missing-server-readback",
+    "operation_ids": ["synthetic-operation-missing-server-readback"]
+  },
+  "artifact": {
+    "kind": "SYNTHETIC_FIXTURE",
+    "pointer_claim": "synthetic://capture/missing-server-readback",
+    "digest_claim": "synthetic:evidence-missing-server-readback",
+    "capture_id": "synthetic-capture-missing-server-readback",
+    "timestamp_basis": "UNKNOWN",
+    "source_revision_claim": "synthetic:dsp-rev-a"
+  },
+  "authority": {
+    "physical_capture_authenticated": false,
+    "decoder_authenticated": false,
+    "independent_verification": "NOT_ESTABLISHED",
+    "oracle_approval": "NOT_ESTABLISHED",
+    "canonical_association": "UNASSIGNED",
+    "importer_authority": false
+  }
+}
+```
+
+**Ownership/shape translation, without duplicating records:**
+
+| Consumer | Authorized interpretation of the shared pointer | Must not do |
+|---|---|---|
+| **D / #1329** | Own the detailed summary, original capture/provenance claims, attempts, conflicts, observed facts and human-review diagnostics. `evidence_reference` points to one immutable retained record *claim*; identical replay reuses the same ID; conflicting attempt/digest has a separate ID, linked by the same attempt key. | Authenticate the physical source by SHA claim; assert an approved oracle; publish canonical associations |
+| **C / #1330** | Return a **maximum 10-item sanitized index**, under existing proposed `supervisor_scenario_evidence_summary` + `toolkit-r8-scenario-discovery/1` response. A future reviewed extension may present only `ref_id`, limited attempt/completeness/conflict state and a short redacted excerpt. Missing store ⇒ UNKNOWN. | Copy the full D schema into `data.recent[]`, create a competing evidence schema, claim PASS authority, read arbitrary source paths or grant a capability |
+| **E / #1327** | Relate `missing_observations[].capability` (scenario observation *requirement*) to separately reviewed provider descriptors by an explicit versioned mapping. Agent E's provisional `toolkit.persisted.*` IDs remain descriptors, **not registered/readback available** claims. | Substitute a persisted DB observation for client proof, infer effective SELECT grants from source code or convert `PR_ONLY` / `NOT_IMPLEMENTED` into `AVAILABLE` |
+| **B / #1328** | Accept `evidence_reference.ref_id` **as a string** in `failure_evidence_refs[]` (proposed future mapping). Independent B preview contract stays `scenario_revision_proposal_preview_v1_NONCANONICAL`, requires operator-selected canonical baseline and digest/revision declarations, and permits text-only `/name`, `/purpose`, `/rationale` 1–12 changes. | Inline D evidence objects into B's strict preview, automatically transform D suggestions into edits, propose `steps`/`assertions`/`runner`/`contract_v2` mutations, save/apply/grant/execute |
+
+**Critical version boundary:** D's conceptual `scenario_revision_proposal_v0_UNTRUSTED_DESIGN` **is not the same JSON contract** as B's `scenario_revision_proposal_preview_v1_NONCANONICAL`. No automatic adapter is approved. A future separately reviewed, human-invoked mapping may produce a new B *text-only* artifact using `failure_evidence_refs=[ref_id]`, pinned `base.revision` and `spec_digest_claim`, exact before-text, allowed paths and all fields demanded by B. Preserve D's original raw references privately; a sanitized `ref_id` is not permission to dereference arbitrary local files. Source and oracle review are separate.
+
+**Namespace and idempotency:** `ref_id` is an opaque stable ID issued only by the future trusted evidence index (all IDs here begin `evidence:synthetic:`). Never derive a real ID from a caller-controlled path alone. `run_id`, `attempt_id`, `operation_ids[]` and scenario revision are separate fields; the digest is a claimed value, not a signature. Exact retry of identical immutable tuple references the *same* `ref_id`. Same run/attempt with conflicting digests creates an explicit pair of competing reference IDs and BLOCKED reconciliation, never an overwrite or PASS. #1202 owns persistent identity, atomic replay and partial→terminal ordering after XIHeadless #105 agreement; no import is implemented here.
 
 ## 3. Proposed untrusted failure-to-scenario artifact
 
@@ -100,6 +151,18 @@ The following rules are **design behavior for human review**, not a production g
 
 `test_fixtures/test_r8_evidence_summary_contract.py` runs stdlib `unittest` over the synthetic matrix, validates deterministic triage, exact replay versus conflicting digest, refuses fabricated authority, permission upgrades and canonical mutations. It intentionally **does not call Toolkit's existing importer, server, browser, MCP or client**.
 
+### Failure-to-regression recommendation categories (advisory only)
+
+The fixture's `proposal_recommendation_kinds[]` is a bounded, deterministic *review queue*, not a JSON Patch, canonical scenario or an executable plan. An AI can propose questions and evidence requirements, not authorize a run:
+
+- **`MINIMAL_REPRODUCER`** — preserve exact feature/case revision, attempt and the smallest observed step sequence; propose a *description* of a supervised future reproduction, with expected oracle still UNAPPROVED. For a reported mismatch this may be paired with **`NEGATIVE_BOUNDARY_CASE`**, e.g. compare unchanged/zero versus changed values only after a reviewed independent expectation. No direct creation of `steps[]` or assertions.
+- **`MISSING_OBSERVER_REQUIREMENT`** — specify the missing client/server or persisted readback requirement and why it matters, but do not claim that Agent E's provider is deployed, granted or available. A missing observer is BLOCKED, not FAIL.
+- **`SOURCE_ASSOCIATION_REVIEW`** — request a new independently pinned source crosswalk for stale capture/deployment revisions. Never rewrite existing canonical Contract v2 associations or infer capture step IDs are canonical.
+- **`SOURCE_IDENTITY_ATTESTATION_REQUEST`** — request source-byte/decoder and identity corroboration without claiming success from indexed digests or an operator ACCEPT of observation text.
+- **`CLEANUP_CANCELLATION_DIAGNOSTIC`** — request independently observed terminal, lease-release and cleanup state; cancellation acknowledgement and partial observation remain UNKNOWN. No supervised run can be requested by this record.
+
+Exact replay ⇒ `NO_CHANGE` and **no new proposal**. Conflicting revisions/attempt digests ⇒ `REFUSE_UNTIL_RECONCILED`, **no patch**; a human can investigate the conflict externally. Suggestions never alter approved expected values to manufacture PASS, nor do they claim that a reported FAIL has been authenticated. This design intentionally creates **no automatic conversion** into Agent B's strict preview, canonical importer or feature-testing runner.
+
 ## 5. Ownership and acceptance handoff
 
 - **#1325 Agent C:** reconcile the provisional read tool name with existing MCP supervisor conventions and #1200 read-only catalog/preflight; reuse existing spec digest/revision and source citations, enforce pagination/scope/redaction. New design-only contract is not an executable implementation.
@@ -112,5 +175,7 @@ The following rules are **design behavior for human review**, not a production g
 ### Exit gates (future, not claimed complete)
 
 Contract/protocol owners sign off typed schema + backward-compatibility; independently replayed duplicate/conflict/missing terminal cases; real authenticated source/decoder/deployment checks and approved oracle lineage; bounded output redaction; reviewed UI and API authorization; version-aware non-mutating import migration; approved local acceptance. Until those gates, **design only, no production MCP registration or autonomous scenario authoring**.
+
+**Latest release dependency:** #1315 has merged into main; #1318 remains a separately reviewed draft integration. This design does not modify either implementation or claim local B20 acceptance.
 
 **Could not verify here:** real captures/original source bytes, installed decoder, DSP/client identities, supervised runs, actual importer migration, local B20 acceptance, execution cleanup or independently approved gameplay oracles. All fixture evidence is synthetic.
