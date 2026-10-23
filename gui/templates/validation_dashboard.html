@@ -24,7 +24,7 @@
 <h3>Scenario Catalog</h3>
 <p>Browse feature-testing cases and their recorded design status. Published specifications and planning-only domain cases are not interchangeable.</p>
 <a href="/feature-testing?tab=catalog">Browse scenario catalog</a>
-<small>The R8 canonical catalog API is a separate release candidate (#1322), not an installed gateway on this main revision.</small>
+<small>Canonical R8 scenario metadata is defined by #1322. This human-facing catalog is distinct from the R8 JSON API, which is not an authenticated supervisor/MCP gateway.</small>
 </article>
 <article class="validation-entry" data-validation-entry="developer">
 <h3>Scenario Developer</h3>
@@ -57,7 +57,7 @@
 
 <section class="wb-panel" aria-labelledby="validation-readiness-heading">
 <h2 id="validation-readiness-heading">Readiness and authorization</h2>
-<p><strong>Design-only is not runnable.</strong> MOG-09 has a separately restricted fixed local-operator observation path; INV-OBS-01 has no assigned runner, and staged domain designs must not be promoted through navigation. R8 advisory preflight, once released, remains NOT_AUTHORIZED with <code>execution_enabled=false</code>, even when declared prerequisites match.</p>
+<p><strong>Design-only is not runnable.</strong> MOG-09 has a separately restricted fixed local-operator observation path; INV-OBS-01 has no assigned runner, and staged domain designs must not be promoted through navigation. The R8 advisory preflight defined by #1322 remains NOT_AUTHORIZED with <code>execution_enabled=false</code>, even when declared prerequisites match.</p>
 </section>
 
 <section class="wb-panel" aria-labelledby="validation-canonical-heading">
