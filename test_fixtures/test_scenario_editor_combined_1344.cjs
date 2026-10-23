@@ -101,6 +101,9 @@ assert.match(editor,/const Feedback = window\.ScenarioValidationFeedback/);
 assert.match(editor,/draftGuard=window\.ScenarioDraftGuard\.create\(/);
 assert.match(editor,/if\(Feedback\)Feedback\.show\(e\.validationErrors\)/);
 assert.match(editor,/if\(Feedback\)Feedback\.clear\(\)/);
+assert.match(editor,/function validationRequestCurrent\(generation, snapshot, revision=null\)/);
+assert.match(editor,/validationRequestCurrent\(generation,submitted,submittedRevision\)/);
+assert.match(editor,/if\(isCurrent && Array\.isArray\(e\.validationErrors\)\)Feedback\.show/);
 assert.match(editor,/if\(path==='\/scenario-developer\/validate' && detail &&/);
 assert.match(editor,/finally \{savePending=false;\$\('sd-save'\)\.disabled=false;draftGuard\.refresh\(\);\}/,
  'validation-feedback Save catch must not erase draft-guard Save finally');

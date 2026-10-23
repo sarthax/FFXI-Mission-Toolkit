@@ -40,3 +40,41 @@ assert.equal(fields.get('sd-purpose').attributes['aria-invalid'],undefined);
 assert.equal(fields.get('sd-purpose').value,'unchanged draft content');
 assert.equal(f.show(null),false);
 console.log('validation feedback fake-DOM PASS');
+
+
+// Verify that the *actual editor* stale-response guard is executable,
+// not merely a presentation-only mock. No DOM/network/browser is used.
+const editorSource=fs.readFileSync(path.join(__dirname,'../gui/static/scenario_developer.js'),'utf8');
+const guard=editorSource.match(/(function validationRequestCurrent\([\s\S]*?\n  \})\n  async function validatePreview\(/);
+assert.ok(guard,'editor must keep an explicit stale-response check');
+const state={
+  editorGeneration:3,
+  draft:{purpose:'Original',behavior:{given:['known']}},
+  revision:2,
+  failRead:false
+};
+const context={
+  editorGeneration:state.editorGeneration,
+  current:()=>{if(state.failRead)throw Error('Invalid Advanced JSON');return state.draft;},
+  $:id=>{assert.equal(id,'sd-revision');return {value:String(state.revision)};}
+};
+const isCurrent=vm.runInNewContext('('+guard[1]+')',context);
+const original={purpose:'Original',behavior:{given:['known']}};
+assert.equal(isCurrent(3,original),true);
+assert.equal(isCurrent(3,original,2),true);
+assert.equal(isCurrent(3,original,1),false,'revision mismatch blocks stale Save feedback');
+state.draft={purpose:'Modified',behavior:{given:['known']}};
+assert.equal(isCurrent(3,original),false,'new Guided edit blocks stale Validate feedback');
+state.failRead=true;
+assert.equal(isCurrent(3,original),false,'invalid Advanced buffer is never overwritten');
+state.failRead=false;
+state.draft=original;
+context.editorGeneration=4;
+assert.equal(isCurrent(3,original),false,'replaced draft blocks stale reply');
+assert.match(editorSource,/catch\(e\)\{\s*if\(generation!==editorGeneration \|\| !validationRequestCurrent\(generation,input\)\)/,
+  'rejected Validate responses must check original identity before surfacing errors');
+assert.match(editorSource,/const isCurrent=submitted!==null &&\s*validationRequestCurrent\(generation,submitted,submittedRevision\)/,
+  'rejected Save responses must check generation, contents and revision');
+assert.match(editorSource,/if\(isCurrent && Array\.isArray\(e\.validationErrors\)\)Feedback\.show/,
+  'stale field errors must not paint another draft');
+console.log('validation feedback stale-response guard PASS');
