@@ -136,27 +136,73 @@ _SANDBOX_STORAGE_KEYS = (
 )
 
 
-def sandbox_execution_check() -> dict:
-    """Fail-closed supervisor provenance check for an explicitly isolated data dir.
-
-    Outside MISSION_TOOLKIT_TEST_DATA_DIR, production shell-over-file behavior
-    remains unchanged. This does NOT authenticate the deployed DSP/headless
-    source or grant permission to run; it only rejects an unrelated environment.
-    No secrets or allowlist values are returned to UI or logs.
-    """
+def _sandbox_directory_check() -> tuple[dict, Path | None]:
+    """Scope decision used by operator UI and stricter launch preflight."""
     selected = os.environ.get("MISSION_TOOLKIT_TEST_DATA_DIR", "").strip()
     if not selected:
-        return {"isolated": False, "ok": True, "reason": "Not in an explicit test sandbox"}
+        return ({"isolated": False, "ok": True,
+                 "reason": "Not in an explicit test sandbox"}, None)
     root = Path(selected)
     default = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "MissionToolkit" / "test_execution"
     if (not root.is_absolute() or root.is_symlink()
             or root.resolve() == default.resolve()):
-        return {"isolated": True, "ok": False,
-                "reason": "Sandbox directory must be an absolute, separate non-symlink directory"}
-    settings = load()  # load() never migrates legacy production settings in isolation
+        return ({"isolated": True, "ok": False,
+                 "reason": "Sandbox directory must be an absolute, separate non-symlink directory"}, None)
+    return ({"isolated": True, "ok": True,
+             "reason": "Explicit sandbox selected"}, root)
+
+
+def _sandbox_local_path(key: str, root: Path) -> bool:
+    value = os.environ.get(key, "")
+    if not value:
+        return False
+    path = Path(value)
+    return (path.is_absolute() and not path.is_symlink()
+            and path.resolve().is_relative_to(root.resolve()))
+
+
+def sandbox_operator_check() -> dict:
+    """Guard operator/draft authorization with sandbox-OWNED token and storage.
+
+    A draft-only sandbox does not need to configure supervisor, characters, or
+    readback DB to review drafts. It may never use an inherited production
+    operator token or a shared drafts/jobs file.
+    """
+    isolation, root = _sandbox_directory_check()
+    if not isolation["isolated"] or not isolation["ok"]:
+        return isolation
+    settings = load()  # never migrate the production settings file in isolation
     if settings.get("enabled") is not True:
         return {"isolated": True, "ok": False,
-                "reason": "Isolated supervisor setup is not explicitly enabled in this sandbox"}
+                "reason": "Isolated operator setup is not explicitly enabled in this sandbox"}
+    tokens = settings.get("tokens")
+    token = tokens.get("operator") if isinstance(tokens, dict) else None
+    if (not isinstance(token, str) or len(token) < 32
+            or os.environ.get("MISSION_TOOLKIT_TEST_OPERATOR_TOKEN", "") != token):
+        return {"isolated": True, "ok": False,
+                "reason": "Isolated operator token is missing or overridden by unrelated environment variables"}
+    if not all(_sandbox_local_path(k, root) for k in (
+            "MISSION_TOOLKIT_TEST_DRAFTS_DB", "MISSION_TOOLKIT_TEST_JOBS_DB")):
+        return {"isolated": True, "ok": False,
+                "reason": "Isolated operator draft/job storage is missing or outside this sandbox"}
+    return {"isolated": True, "ok": True,
+            "reason": "Explicit sandbox operator token and storage match"}
+
+
+def sandbox_execution_check() -> dict:
+    """Fail-closed supervisor provenance check for explicitly isolated runs.
+
+    Ordinary production shell-over-settings precedence remains unchanged.
+    Unlike the draft-only operator gate, *execution* requires the sandbox-own
+    supervisor token, runner, allowlist, readback configuration and storage.
+    Neither check authenticates DSP/client evidence or authorizes a runner.
+    No secrets or allowlisted identities are returned to the UI.
+    """
+    isolation = sandbox_operator_check()
+    if not isolation["isolated"] or not isolation["ok"]:
+        return isolation
+    root = Path(os.environ["MISSION_TOOLKIT_TEST_DATA_DIR"].strip())
+    settings = load()
     try:
         if (not isinstance(settings.get("charids"), list)
                 or not isinstance(settings.get("headless_root"), str)
@@ -184,24 +230,18 @@ def sandbox_execution_check() -> dict:
             or not charids or charids != settings["charids"]):
         return {"isolated": True, "ok": False,
                 "reason": "Isolated supervisor tokens or disposable-character approval are incomplete"}
-    for key in _SANDBOX_STORAGE_KEYS:
-        value = os.environ.get(key, "")
-        if not value:
-            return {"isolated": True, "ok": False,
-                    "reason": "Isolated test storage is not configured"}
-        path = Path(value)
-        if (not path.is_absolute() or path.is_symlink()
-                or not path.resolve().is_relative_to(root.resolve())):
-            return {"isolated": True, "ok": False,
-                    "reason": "Test storage must remain within the isolated data directory"}
-    return {"isolated": True, "ok": True, "reason": "Explicit isolated supervisor setup matches this sandbox"}
+    if not all(_sandbox_local_path(key, root) for key in _SANDBOX_STORAGE_KEYS):
+        return {"isolated": True, "ok": False,
+                "reason": "Test storage must remain within the isolated data directory"}
+    return {"isolated": True, "ok": True,
+            "reason": "Explicit isolated supervisor setup matches this sandbox"}
 
 
 def ui_mode_active() -> bool:
     """True when the operator opted in through the Setup tab (no pasted token needed from the page)."""
     return (bool(load()["enabled"])
             and bool(os.environ.get("MISSION_TOOLKIT_TEST_OPERATOR_TOKEN"))
-            and sandbox_execution_check()["ok"])
+            and sandbox_operator_check()["ok"])
 
 
 def _git(root: Path, *args: str) -> str:
