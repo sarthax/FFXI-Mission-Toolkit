@@ -186,3 +186,55 @@ def test_route_invalid_character_vs_db_error_classification(monkeypatch):
     with pytest.raises(HTTPException) as exc:
         supervisor.test_character_selected_jobs(7, authorization=token)
     assert exc.value.status_code == 503
+
+
+@pytest.mark.parametrize("failure_at", ["SET TRANSACTION READ ONLY", "START TRANSACTION"])
+def test_real_connection_helper_cleans_up_on_transaction_setup_failure(monkeypatch, failure_at):
+    """The actual shared helper must not leak a cursor/socket before it returns."""
+    from workbench.server_admin.feature_testing import database_diagnostics as db
+
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS", "7")
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DB_USER", "synthetic")
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DB_PASSWORD", "synthetic")
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DB_NAME", "synthetic")
+    connection = Connection()
+
+    class SetupFailCursor(Cursor):
+        def execute(self, sql, args=None):
+            if sql == failure_at:
+                raise PermissionError("synthetic transaction privilege failure")
+            assert sql in ("SET TRANSACTION READ ONLY", "START TRANSACTION")
+
+    cursor = SetupFailCursor()
+    monkeypatch.setattr(db, "_open", lambda user, password, database, port: (connection, cursor))
+    # Import in selected_jobs resolves the actual function; its _open global
+    # remains patchable without a real DB driver or socket.
+    with pytest.raises(RuntimeError, match="database connection failed") as error:
+        jobs.selected_jobs_snapshot(7)
+    assert "privilege failure" not in str(error.value)
+    assert connection.rolled_back and connection.closed and cursor.closed
+
+
+def test_real_helper_closes_socket_even_if_rollback_fails(monkeypatch):
+    """Best effort cleanup must preserve the original setup error."""
+    from workbench.server_admin.feature_testing import database_diagnostics as db
+
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS", "7")
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DB_USER", "synthetic")
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DB_PASSWORD", "synthetic")
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DB_NAME", "synthetic")
+
+    class BadRollback(Connection):
+        def rollback(self):
+            raise RuntimeError("cleanup rollback failure")
+
+    class BadSetup(Cursor):
+        def execute(self, sql, args=None):
+            raise PermissionError("original setup permission failure")
+
+    connection, cursor = BadRollback(), BadSetup()
+    monkeypatch.setattr(db, "_open", lambda user, password, database, port: (connection, cursor))
+    with pytest.raises(RuntimeError, match="database connection failed") as error:
+        jobs.selected_jobs_snapshot(7)
+    assert isinstance(error.value.__cause__, PermissionError)
+    assert connection.closed and cursor.closed
