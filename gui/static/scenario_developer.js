@@ -389,6 +389,9 @@
     }
     return value;
   }
+  // Only the latest Validate/Save request owns preview, status and field errors.
+  // A stale response must be a complete UI no-op, including clear/hide/show.
+  let validationUiRequest = 0;
   // A failed asynchronous validation must not paint errors on another draft
   // or on Guided/Advanced edits made after the request was sent.
   function validationRequestCurrent(generation, snapshot, revision=null) {
@@ -397,17 +400,17 @@
     try{return JSON.stringify(current())===JSON.stringify(snapshot);}
     catch(e){return false;} // Invalid Advanced JSON is preserved, never repaired.
   }
-  async function validatePreview() {
+  async function validatePreview(uiRequest) {
     const generation=editorGeneration, input=M.clone(current());
     let result;
     try{result=await call('/scenario-developer/validate','POST',{specification:input});}
     catch(e){
-      if(generation!==editorGeneration || !validationRequestCurrent(generation,input))
-        throw Error('Preview is stale: editor changed while validating. Validate the current draft again.');
+      if(uiRequest!==validationUiRequest || generation!==editorGeneration ||
+         !validationRequestCurrent(generation,input))return; // obsolete response; do not throw to outer UI handler
       throw e;
     }
-    if(generation!==editorGeneration || !validationRequestCurrent(generation,input))
-      throw Error('Preview is stale: editor changed while validating. Validate the current draft again.');
+    if(uiRequest!==validationUiRequest || generation!==editorGeneration ||
+       !validationRequestCurrent(generation,input))return; // obsolete success must not overwrite a newer preview
     if(Feedback)Feedback.clear();
     renderPreview(result.preview,result.reader_view,result.contract_v2_compatibility,result.contract_v2_source_attribution);
     show('Canonical validation accepted — DESIGN_ONLY, unreviewed, not executable.\n'+
@@ -484,15 +487,20 @@
   });
   $('sd-feature').addEventListener('change',diagnostics);
   $('sd-observations').addEventListener('change',()=>{readGuidedFields();renderSteps();diagnostics();});
-  $('sd-validate').addEventListener('click',async()=>{try{await validatePreview();}
+  $('sd-validate').addEventListener('click',async()=>{
+    const uiRequest=++validationUiRequest;
+    try{await validatePreview(uiRequest);}
     catch(e){
+      if(uiRequest!==validationUiRequest)return; // previous request cannot hide/clear newer UI
       $('sd-preview').hidden=true;
       if(Feedback)Feedback.show(e.validationErrors);
       show('Canonical validation rejected: '+e.message+'\n'+M.referenceIssues(spec).join('\n'));
-    }});
+    }
+  });
   let savePending=false;
   $('sd-save').addEventListener('click',async()=>{
     if(savePending)return;
+    const uiRequest=++validationUiRequest;
     savePending=true;$('sd-save').disabled=true;
     const generation=editorGeneration;
     let submitted=null, submittedRevision=null;
@@ -505,8 +513,9 @@
       submitted=input;submittedRevision=rev;
       if(!Number.isInteger(rev)||rev<0)throw Error('Invalid expected revision');
       const validated=await call('/scenario-developer/validate','POST',{specification:input});
-      if(!validationRequestCurrent(generation,input,rev))
-        throw Error('Draft changed while validating. Review the edits and save again.');
+      if(uiRequest!==validationUiRequest || !validationRequestCurrent(generation,input,rev))
+        return; // superseded preflight must not dispatch a draft Save or change newer UI
+      if(Feedback)Feedback.clear();
       renderPreview(validated.preview,validated.reader_view,validated.contract_v2_compatibility,validated.contract_v2_source_attribution);
       if(validated.contract_v2_compatibility?.state==='BLOCKED')
         throw Error('Contract v2 source/base-spec fingerprint conflict: '+validated.contract_v2_compatibility.reasons.join('; ')+'. Reconcile metadata in Advanced JSON; never silently repin.');
@@ -522,26 +531,26 @@
       const disposition=M.saveResponseDisposition(toSave,latest,saved,
         generation!==editorGeneration);
       if(!disposition.apply_revision) {
-        show('Saved '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
-          ', but '+disposition.reason+'; reopen saved draft before the next save.');
+        if(uiRequest===validationUiRequest)
+          show('Saved '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
+            ', but '+disposition.reason+'; reopen saved draft before the next save.');
         return;
       }
       $('sd-revision').value=saved.revision;
       baseline=M.clone(toSave);updateRevision();
-      show('Saved DESIGN_ONLY '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
-        (disposition.unsaved_edits?
-          '. Newer editor changes remain UNSAVED; review before the next revision.':
-          '. NOT reviewed or executable.'));
+      if(uiRequest===validationUiRequest)
+        show('Saved DESIGN_ONLY '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
+          (disposition.unsaved_edits?
+            '. Newer editor changes remain UNSAVED; review before the next revision.':
+            '. NOT reviewed or executable.'));
     }catch(e){
       const isCurrent=submitted!==null &&
         validationRequestCurrent(generation,submitted,submittedRevision);
-      if(Feedback){
-        if(isCurrent && Array.isArray(e.validationErrors))Feedback.show(e.validationErrors);
-        else Feedback.clear();
-      }
-      show(!isCurrent && submitted!==null
-        ? 'Draft NOT saved: editor changed while validating; stale validation feedback discarded.'
-        : 'Draft NOT saved / revision may require refresh: '+e.message);
+      if(uiRequest!==validationUiRequest || (submitted!==null && !isCurrent))
+        return; // do not erase newer Validate results or another draft's status
+      if(Feedback && isCurrent && Array.isArray(e.validationErrors))
+        Feedback.show(e.validationErrors);
+      show('Draft NOT saved / revision may require refresh: '+e.message);
     }
     finally {savePending=false;$('sd-save').disabled=false;}
   });
