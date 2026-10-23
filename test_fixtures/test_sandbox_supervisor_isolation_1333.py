@@ -235,6 +235,7 @@ def test_production_shell_precedence_unmodified_without_test_data_dir(isolated, 
     pre = preflight("moghancement", "MOG-09")
     assert pre["ready_for_operator_review"] is True
     assert not any(x["id"] == "sandbox_isolation" for x in pre["checks"])
+    assert not any(x["id"] == "sandbox_isolation" for x in settings.status()["steps"])
     assert pre["execution_enabled"] is False
     authorize_operator("p" * 40)
 
