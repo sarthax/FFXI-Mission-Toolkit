@@ -55,7 +55,7 @@ A rendered summary must always display independent authority status next to any 
 
 ### Minimal read-only envelope and example representation
 
-`test_fixtures/r8_evidence_summary_vectors_synthetic.json` supplies eight complete **synthetic** records under `scenario_evidence_summary_v0_DESIGN_ONLY_NONCANONICAL`. Its `scenario`, `attempt`, `lifecycle`, `provenance`, `evidence`, and `triage` members are the design shape, **not an approved wire format**. All source names/digests/IDs are conspicuously synthetic; their `source_bytes_authenticated`, `decoder_authenticated` and `source_identity_verified` fields are false. All `approved_oracles` arrays are empty. The tests explicitly refuse untrusted promotion.
+`test_fixtures/r8_evidence_summary_vectors_synthetic.json` supplies ten complete **synthetic** records under `scenario_evidence_summary_v0_DESIGN_ONLY_NONCANONICAL`. Its `scenario`, `attempt`, `lifecycle`, `provenance`, `evidence`, and `triage` members are the design shape, **not an approved wire format**. All source names/digests/IDs are conspicuously synthetic; their `source_bytes_authenticated`, `decoder_authenticated` and `source_identity_verified` fields are false. All `approved_oracles` arrays are empty. The tests explicitly refuse untrusted promotion.
 
 An actual future version must add strict schema typing, checked timestamps and domains, redaction, source/ref indexes, immutable storage lookup and per-assertion reviewer authority. Do not introduce those by loosening the existing v1 importer or #1313 viewer contract.
 
@@ -148,6 +148,8 @@ The following rules are **design behavior for human review**, not a production g
 | `unauthenticated-source-identity` | BLOCKED | DRAFT_UNTRUSTED | Provenance/crosswalk review |
 | `incomplete-cancelled-execution` | UNKNOWN | DRAFT_UNTRUSTED | Cancellation and cleanup observation |
 | `conflicting-duplicate-attempt` | BLOCKED | REFUSE_UNTIL_RECONCILED | Conflict, never overwrite |
+| `running-partial-observation` | UNKNOWN, nonterminal task | DRAFT_UNTRUSTED | Additional terminal/observer prerequisite only |
+| `terminal-with-incomplete-readback` | UNKNOWN, terminal task but incomplete observation | DRAFT_UNTRUSTED | Readback/completeness requirement, cleanup remains UNKNOWN |
 
 `test_fixtures/test_r8_evidence_summary_contract.py` runs stdlib `unittest` over the synthetic matrix, validates deterministic triage, exact replay versus conflicting digest, refuses fabricated authority, permission upgrades and canonical mutations. It intentionally **does not call Toolkit's existing importer, server, browser, MCP or client**.
 
@@ -176,6 +178,6 @@ Exact replay ⇒ `NO_CHANGE` and **no new proposal**. Conflicting revisions/atte
 
 Contract/protocol owners sign off typed schema + backward-compatibility; independently replayed duplicate/conflict/missing terminal cases; real authenticated source/decoder/deployment checks and approved oracle lineage; bounded output redaction; reviewed UI and API authorization; version-aware non-mutating import migration; approved local acceptance. Until those gates, **design only, no production MCP registration or autonomous scenario authoring**.
 
-**Latest release dependency:** #1315 has merged into main; #1318 remains a separately reviewed draft integration. This design does not modify either implementation or claim local B20 acceptance.
+**Latest release dependency:** Both #1315 (paired verifier) and #1318 (editor attachment) are now merged into main following protected review; this design does not modify either implementation, claim physical-source attestation, or call the local B20 operator acceptance complete. This design does not modify either implementation or claim local B20 acceptance.
 
 **Could not verify here:** real captures/original source bytes, installed decoder, DSP/client identities, supervised runs, actual importer migration, local B20 acceptance, execution cleanup or independently approved gameplay oracles. All fixture evidence is synthetic.
