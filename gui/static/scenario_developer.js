@@ -402,11 +402,11 @@
     let result;
     try{result=await call('/scenario-developer/validate','POST',{specification:input});}
     catch(e){
-      if(!validationRequestCurrent(generation,input))
+      if(generation!==editorGeneration || !validationRequestCurrent(generation,input))
         throw Error('Preview is stale: editor changed while validating. Validate the current draft again.');
       throw e;
     }
-    if(!validationRequestCurrent(generation,input))
+    if(generation!==editorGeneration || !validationRequestCurrent(generation,input))
       throw Error('Preview is stale: editor changed while validating. Validate the current draft again.');
     if(Feedback)Feedback.clear();
     renderPreview(result.preview,result.reader_view,result.contract_v2_compatibility,result.contract_v2_source_attribution);
