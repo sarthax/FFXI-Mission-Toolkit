@@ -68,7 +68,7 @@ def test_recorded_rows_keep_existing_canonical_run_details_link():
 def test_preflight_and_evidence_limits_are_explicit():
     html = landing()
     for label in (
-        "R8 canonical catalog API is a separate release candidate",
+        "Canonical R8 scenario metadata is defined by #1322",
         "It is not the separate R8 pure advisory preview",
         "UNKNOWN, BLOCKED or UNSUPPORTED",
         "Evidence Reviewer (offline)",
@@ -76,6 +76,7 @@ def test_preflight_and_evidence_limits_are_explicit():
         "Capture Review Queue is a different workflow",
         "INV-OBS-01 has no assigned runner",
         "execution_enabled=false",
+        "is not an authenticated supervisor/MCP gateway",
         "independently verified gameplay",
     ):
         assert label in html, label
