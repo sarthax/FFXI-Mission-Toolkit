@@ -27,6 +27,8 @@
 .sd-picker-results article{border:1px solid var(--wb-border,#999);border-radius:.5rem;padding:.6rem}
 .sd-picker-results button{margin-top:.3rem}
 .sd-revision{font-weight:700}
+.sd-work-state{font-weight:700;display:inline-block;padding:.35rem .65rem;border:1px solid var(--wb-border,#999);border-radius:.35rem}
+.sd-work-state[data-state="unsaved"]{border-width:2px}
 
 @media(max-width:690px){.sd-pair{grid-template-columns:1fr}}
 </style>
@@ -74,6 +76,8 @@ Imported/recalculated PASS is not independently verified proof.
 <button type="button" id="sd-fork">Fork as design-only</button>
 <button type="button" id="sd-clone">Clone current draft (new case ID)</button>
 </div>
+<p class="sd-work-state" id="sd-work-state" role="status" aria-live="polite" data-state="pristine">PRISTINE · new design (not saved)</p>
+<p class="sd-muted">A modified new, forked or saved draft triggers one browser warning on reload, Back, or ordinary page navigation. Some browsers suppress unload warnings until user interaction. Saving requires an operator token and confirmed revision.</p>
 <nav class="sd-bar" aria-label="Editing mode">
 <button type="button" id="sd-guided" aria-pressed="true">Guided</button>
 <button type="button" id="sd-advanced" aria-pressed="false">Advanced JSON</button>
@@ -167,5 +171,6 @@ Imported/recalculated PASS is not independently verified proof.
 <script src="/static/scenario_guided_model.js"></script>
 <script src="/static/scenario_contract_v2_view.js"></script>
 <script src="/static/scenario_readiness_viewer.js"></script>
+<script src="/static/scenario_draft_guard.js"></script>
 <script src="/static/scenario_developer.js"></script>
 {% endblock %}

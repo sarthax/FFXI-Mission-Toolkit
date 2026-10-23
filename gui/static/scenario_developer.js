@@ -6,12 +6,15 @@
   let spec = M.fresh(), mode = 'guided', options = {features: [], observations: [], operations: []};
   let drafts = [], baseline = null, sourceDetail = null;
   let readinessViewer = null;
+  let draftGuard = null, editorReady = false;
   function updateRevision() {
     const currentRevision = Number($('sd-revision').value) || 0;
+    if(draftGuard){draftGuard.refresh();return;}
     $('sd-revision-state').textContent = M.revisionIndicator(baseline,spec,currentRevision);
   }
   function updateAdvancedRevision() {
     if(mode!=='advanced')return; // hidden scripted events must not change Guided state
+    if(draftGuard){draftGuard.refresh();return;}
     $('sd-revision-state').textContent=M.advancedRevisionIndicator(
       baseline,$('sd-advanced-json').value,Number($('sd-revision').value)||0);
   }
@@ -423,7 +426,7 @@
     try {
       if(!confirmDocumentReplacement('New scenario'))return;
       editorGeneration++;resetReadinessViewer();
-      activeHandoff=null;spec=M.fresh();mode='guided';baseline=null;setSourceDetail(null,null);$('sd-revision').value=0;
+      activeHandoff=null;spec=M.fresh();mode='guided';baseline=null;draftGuard.start('new',spec);setSourceDetail(null,null);$('sd-revision').value=0;
       $('sd-context-use').disabled=!coverageContext;
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
       syncAdvancedAfterReplacement();render();show('Created a synthetic, design-only canonical draft.');
@@ -443,7 +446,7 @@
       const draft=M.forkPublished(x.specification);
       if(!confirmDocumentReplacement('Fork published case'))return;
       editorGeneration++;resetReadinessViewer();
-      activeHandoff=null;spec=draft;mode='guided';baseline=null;setSourceDetail(feature,caseId);
+      activeHandoff=null;spec=draft;mode='guided';baseline=null;draftGuard.start('fork',spec);setSourceDetail(feature,caseId);
       $('sd-revision').value=0;$('sd-advanced-panel').hidden=true;
       $('sd-guided-panel').hidden=false;syncAdvancedAfterReplacement();render();
       show('Copied as DESIGN_ONLY with a new synthetic case ID. Original published case unchanged.');
@@ -455,7 +458,7 @@
       const draft=M.cloneDraft(current());
       if(!confirmDocumentReplacement('Clone current draft'))return;
       editorGeneration++;resetReadinessViewer();
-      activeHandoff=null;spec=draft;mode='guided';baseline=null;$('sd-revision').value=0;
+      activeHandoff=null;spec=draft;mode='guided';baseline=null;draftGuard.start('clone',spec);$('sd-revision').value=0;
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
       syncAdvancedAfterReplacement();render();show('Cloned into a new draft case ID. Rename it if a COPY already exists; source identities still require review.');
     } catch(e){show('Clone refused: '+e.message);}
@@ -516,7 +519,7 @@
           '. Newer editor changes remain UNSAVED; review before the next revision.':
           '. NOT reviewed or executable.'));
     }catch(e){show('Draft NOT saved / revision may require refresh: '+e.message);}
-    finally {savePending=false;$('sd-save').disabled=false;}
+    finally {savePending=false;$('sd-save').disabled=false;draftGuard.refresh();}
   });
   $('sd-load-drafts').addEventListener('click',async()=>{
     try {
@@ -537,7 +540,7 @@
       if(!confirmDocumentReplacement('Open saved draft'))return;
       editorGeneration++;resetReadinessViewer();
       activeHandoff=null;spec=loaded;mode='guided';
-      $('sd-revision').value=d.revision;baseline=M.clone(spec);
+      $('sd-revision').value=d.revision;baseline=M.clone(spec);draftGuard.start('saved',spec);
       setSourceDetail(null,null);
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
       syncAdvancedAfterReplacement();render();show('Opened '+d.case_id+' revision '+d.revision+' (design only). Edit and save with this expected revision; an external update will cause a revision conflict.');
@@ -601,7 +604,7 @@
     if (issue) throw Error(issue);
     editorGeneration++;resetReadinessViewer();
     activeHandoff=key;
-    spec=draft;mode='guided';baseline=null;$('sd-revision').value=0;
+    spec=draft;mode='guided';baseline=null;draftGuard.start('handoff',spec);$('sd-revision').value=0;
     $('sd-guided-panel').hidden=false;$('sd-advanced-panel').hidden=true;
     $('sd-guided').setAttribute('aria-pressed','true');
     $('sd-advanced').setAttribute('aria-pressed','false');
@@ -800,12 +803,30 @@
     readinessViewer=null;
   });
   resetReadinessViewer();
+  draftGuard=window.ScenarioDraftGuard.create({
+    win:window,
+    getCurrent:()=>{
+      // Never parse Advanced JSON into the canonical draft just to check dirty.
+      if(mode==='advanced')return M.parseAdvanced($('sd-advanced-json').value);
+      if(editorReady)readGuidedFields();
+      return spec;
+    },
+    getBaseline:()=>baseline,
+    getRevision:()=>Number($('sd-revision').value)||0,
+    isSavePending:()=>savePending,
+    onStatus:state=>{
+      $('sd-revision-state').textContent=state.detail;
+      $('sd-work-state').textContent=state.banner;
+      $('sd-work-state').dataset.state=state.state;
+    }
+  });
+  draftGuard.start('new',spec);
   (async()=> {
     try{
       options=await call('/scenario-developer/options');
       $('sd-catalog').textContent='Catalog identity: '+options.catalog_status+' — '+options.catalog_note;
-      render();
+      render();editorReady=true;draftGuard.refresh();
       await resolveCoverageContext();
-    }catch(e){render();show('Canonical catalog options unavailable: '+e.message+'; saving requires server validation.');}
+    }catch(e){render();editorReady=true;draftGuard.refresh();show('Canonical catalog options unavailable: '+e.message+'; saving requires server validation.');}
   })();
 })();
