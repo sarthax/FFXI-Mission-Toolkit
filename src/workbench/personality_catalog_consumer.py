@@ -49,7 +49,7 @@ def _require(value: bool, message: str) -> None:
 
 def _blob_hash(raw: bytes) -> str:
     return hashlib.sha1(
-        b"blob " + str(len(raw)).encode("ascii") + b"\\0" + raw
+        b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw
     ).hexdigest()
 
 
