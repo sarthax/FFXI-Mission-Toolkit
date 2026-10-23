@@ -6,6 +6,7 @@ on:
       - "src/workbench/server_admin/feature_testing/test_execution_settings.py"
       - "src/workbench/server_admin/feature_testing/execution_preflight.py"
       - "src/workbench/server_admin/feature_testing/execution_jobs.py"
+      - "src/workbench/server_admin/feature_testing/router.py"
       - "gui/templates/feature_testing.html"
       - "test_fixtures/test_sandbox_supervisor_isolation_1333.py"
       - "test_fixtures/test_test_execution_settings.py"
