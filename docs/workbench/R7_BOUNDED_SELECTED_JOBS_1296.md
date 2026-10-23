@@ -31,3 +31,7 @@ Focused `R7 Bounded Selected Jobs Offline` workflow executes `test_fixtures/test
 3. Check authorized char vs unauthorized/unknown; valid 0 vs missing/NULL fields; stale/unavailable schema; source revision UNKNOWN versus independently attested. Record timestamp and save/restart boundary.
 4. Capture matching character/client job IDs and levels from a separately authorized observation with known timing and source; if incomparable, classify UNKNOWN/NOT_COMPARABLE, never claim a live gameplay PASS.
 5. No packet, GM, local DSP query, database mutation, XiHeadless runtime or scenario promotion is authorized by this draft. Keep #1296 OPEN for full quest/job unlock/currency coverage.
+
+### Database setup failure cleanup hardening
+
+The shared Toolkit `_approved_connection` path now closes its cursor and connection when either the read-only transaction declaration or transaction start fails; rollback failure does not prevent best-effort close. The existing `_open` driver variants also close a newly established connection if cursor creation fails. Synthetic failure-injection tests exercise these conditions; neither the failure nor the database credentials are placed in the HTTP response. These are **shared read-only helper safeguards**; they do not add privileges or establish effective deployment grants. Production MySQL/DSP connection behavior remains operator acceptance, not GitHub CI proof.
