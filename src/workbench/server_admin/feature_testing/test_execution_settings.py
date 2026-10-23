@@ -171,6 +171,10 @@ def sandbox_operator_check() -> dict:
     isolation, root = _sandbox_directory_check()
     if not isolation["isolated"] or not isolation["ok"]:
         return isolation
+    sandbox_file = settings_path()
+    if sandbox_file.is_symlink():
+        return {"isolated": True, "ok": False,
+                "reason": "Isolated supervisor settings must not be a linked external file"}
     settings = load()  # never migrate the production settings file in isolation
     if settings.get("enabled") is not True:
         return {"isolated": True, "ok": False,
