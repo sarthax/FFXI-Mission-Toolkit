@@ -157,7 +157,18 @@ def sandbox_execution_check() -> dict:
     if settings.get("enabled") is not True:
         return {"isolated": True, "ok": False,
                 "reason": "Isolated supervisor setup is not explicitly enabled in this sandbox"}
-    expected = _env_values(settings)
+    try:
+        if (not isinstance(settings.get("charids"), list)
+                or not isinstance(settings.get("headless_root"), str)
+                or not isinstance(settings.get("tokens"), dict)
+                or any(not isinstance(settings["tokens"].get(k), str)
+                       for k in ("operator", "supervisor"))
+                or not isinstance(settings.get("db"), dict)):
+            raise ValueError("malformed isolated settings")
+        expected = _env_values(settings)
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return {"isolated": True, "ok": False,
+                "reason": "Isolated supervisor configuration is incomplete or invalid"}
     for key in _SANDBOX_EXECUTION_KEYS:
         value = expected.get(key, "")
         if not value or os.environ.get(key, "") != value:
