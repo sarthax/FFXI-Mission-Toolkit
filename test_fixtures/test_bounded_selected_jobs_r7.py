@@ -238,3 +238,24 @@ def test_real_helper_closes_socket_even_if_rollback_fails(monkeypatch):
         jobs.selected_jobs_snapshot(7)
     assert isinstance(error.value.__cause__, PermissionError)
     assert connection.closed and cursor.closed
+
+
+def test_connection_helper_closes_socket_on_cursor_creation_failure(monkeypatch):
+    """Driver connection succeeds but cursor creation fails before _open returns."""
+    import sys
+    import types
+    from workbench.server_admin.feature_testing import database_diagnostics as db
+
+    connection = Connection()
+
+    def fail_cursor(**kwargs):
+        raise PermissionError("synthetic cursor initialization failure")
+
+    connection.cursor = fail_cursor
+    driver = types.ModuleType("pymysql")
+    driver.cursors = types.SimpleNamespace(DictCursor=object())
+    driver.connect = lambda **kwargs: connection
+    monkeypatch.setitem(sys.modules, "pymysql", driver)
+    with pytest.raises(PermissionError, match="cursor initialization failure"):
+        db._open("synthetic", "synthetic", "synthetic", 3306)
+    assert connection.closed
