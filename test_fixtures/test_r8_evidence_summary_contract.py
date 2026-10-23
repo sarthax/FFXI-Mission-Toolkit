@@ -21,6 +21,13 @@ ALLOWED_DISPOSITIONS = {
 }
 NONCANONICAL = "scenario_evidence_summary_v0_DESIGN_ONLY_NONCANONICAL"
 PROPOSAL = "scenario_revision_proposal_v0_UNTRUSTED_DESIGN"
+REFERENCE = "scenario_evidence_ref_v0_NONCANONICAL"
+SUGGESTION_KINDS = {
+    "MINIMAL_REPRODUCER", "NEGATIVE_BOUNDARY_CASE",
+    "MISSING_OBSERVER_REQUIREMENT", "SOURCE_ASSOCIATION_REVIEW",
+    "SOURCE_IDENTITY_ATTESTATION_REQUEST",
+    "CLEANUP_CANCELLATION_DIAGNOSTIC",
+}
 
 
 def classify(v: dict) -> tuple[str, str]:
@@ -64,7 +71,55 @@ def preview_idempotency_key(v: dict) -> str:
     ).hexdigest()
 
 
+def validate_evidence_reference(v: dict) -> None:
+    """A single noncanonical pointer claim, not a second evidence record."""
+    ref = v["evidence_reference"]
+    original = v["provenance"]
+    attempt = v["attempt"]
+    scenario = v["scenario"]
+    assert set(ref) == {"contract", "ref_id", "scenario", "attempt", "artifact", "authority"}
+    assert ref["contract"] == REFERENCE
+    assert isinstance(ref["ref_id"], str)
+    assert ref["ref_id"].startswith("evidence:synthetic:")
+    assert len(ref["ref_id"]) <= 120
+    assert ref["ref_id"].isascii() and all(32 < ord(ch) < 127 for ch in ref["ref_id"])
+    assert set(ref["scenario"]) == {
+        "feature_id", "case_id", "base_revision", "base_digest_claim"
+    }
+    assert ref["scenario"] == {
+        key: scenario[key] for key in ref["scenario"]
+    }
+    assert set(ref["attempt"]) == {"run_id", "attempt_id", "operation_ids"}
+    assert ref["attempt"] == {
+        "run_id": attempt["run_id"],
+        "attempt_id": attempt["attempt_id"],
+        "operation_ids": attempt["operation_ids"],
+    }
+    assert set(ref["artifact"]) == {
+        "kind", "pointer_claim", "digest_claim", "capture_id",
+        "timestamp_basis", "source_revision_claim"
+    }
+    assert ref["artifact"] == {
+        "kind": "SYNTHETIC_FIXTURE",
+        "pointer_claim": original["original_source_ref"],
+        "digest_claim": attempt["evidence_digest_claim"],
+        "capture_id": original["capture_id"],
+        "timestamp_basis": "UNKNOWN",
+        "source_revision_claim": original["source_revision_claim"],
+    }
+    assert ref["authority"] == {
+        "physical_capture_authenticated": False,
+        "decoder_authenticated": False,
+        "independent_verification": "NOT_ESTABLISHED",
+        "oracle_approval": "NOT_ESTABLISHED",
+        "canonical_association": "UNASSIGNED",
+        "importer_authority": False,
+    }
+    assert v["triage"]["proposal"]["evidence_refs"] == [ref["ref_id"]]
+
+
 def validate_design_vector(v: dict) -> None:
+    validate_evidence_reference(v)
     assert v["synthetic"] is True
     assert v["scenario"]["catalog_state"] == "DESIGN_ONLY"
     assert v["scenario"]["canonical_schema_version"] == 1
@@ -99,6 +154,14 @@ def validate_design_vector(v: dict) -> None:
     proposal = v["triage"]["proposal"]
     assert proposal["contract"] == PROPOSAL
     assert proposal["status"] in ALLOWED_DISPOSITIONS
+    suggestions = proposal["proposal_recommendation_kinds"]
+    assert isinstance(suggestions, list)
+    assert len(suggestions) == len(set(suggestions))
+    assert set(suggestions) <= SUGGESTION_KINDS
+    if proposal["status"] in {"NO_CHANGE", "REFUSE_UNTIL_RECONCILED"}:
+        assert suggestions == [] and proposal["proposal_id"] is None
+    else:
+        assert suggestions and proposal["proposal_id"] == "SYNTHETIC-PROPOSAL-" + v["id"]
     assert proposal["status"] == v["triage"]["proposal_disposition"]
     assert proposal["base_revision"] == v["scenario"]["base_revision"]
     assert proposal["base_digest_claim"] == v["scenario"]["base_digest_claim"]
@@ -130,6 +193,8 @@ def validate_design_vector(v: dict) -> None:
 class EvidenceSummaryDesignContractTests(unittest.TestCase):
     def test_envelope_is_not_an_importer_or_execution_contract(self):
         self.assertEqual(DATA["contract"], NONCANONICAL)
+        self.assertEqual(DATA["reference_contract"], REFERENCE)
+        self.assertIn("no automatic B proposal conversion", DATA["reference_usage"])
         self.assertTrue(DATA["synthetic"])
         for key in ("not_an_mcp_wire_protocol", "not_a_canonical_importer_report",
                     "not_authenticated_physical_source"):
@@ -180,6 +245,74 @@ class EvidenceSummaryDesignContractTests(unittest.TestCase):
         self.assertEqual(same["triage"]["proposal_disposition"], "NO_CHANGE")
         self.assertEqual(classify(conflict),
                          ("BLOCKED", "REFUSE_UNTIL_RECONCILED"))
+        self.assertEqual(original["evidence_reference"]["ref_id"],
+                         same["evidence_reference"]["ref_id"])
+        self.assertNotEqual(original["evidence_reference"]["ref_id"],
+                            conflict["evidence_reference"]["ref_id"])
+
+    def test_cross_agent_ref_is_an_opaque_pointer_not_a_duplicate_record(self):
+        for v in DATA["examples"]:
+            with self.subTest(case=v["id"]):
+                ref = v["evidence_reference"]
+                self.assertNotIn("observed_facts", ref)
+                self.assertNotIn("approved_oracles", ref)
+                self.assertNotIn("capability_id", ref)
+                self.assertNotIn("canonical_step_id", ref)
+                self.assertEqual(v["triage"]["proposal"]["evidence_refs"],
+                                 [ref["ref_id"]])
+                self.assertFalse(v["triage"]["proposal"]["execution_allowed"])
+                self.assertFalse(v["triage"]["proposal"]["canonical_write_allowed"])
+
+    def test_reference_tampering_and_authority_promotion_rejected(self):
+        original = CASES["complete-observed-mismatch"]
+        mutations = [
+            ("artifact", "digest_claim", "fabricated"),
+            ("artifact", "pointer_claim", "synthetic://capture/some-other-file"),
+            ("artifact", "source_revision_claim", "invented-new-revision"),
+            ("attempt", "run_id", "other-run"),
+            ("scenario", "case_id", "other-case"),
+            ("authority", "oracle_approval", "APPROVED"),
+            ("authority", "physical_capture_authenticated", True),
+            ("authority", "canonical_association", "EXACT_STEP"),
+            ("authority", "importer_authority", True),
+        ]
+        for section, key, value in mutations:
+            with self.subTest(section=section, field=key):
+                v = deepcopy(original)
+                v["evidence_reference"][section][key] = value
+                with self.assertRaises(AssertionError):
+                    validate_design_vector(v)
+        v = deepcopy(original)
+        v["triage"]["proposal"]["evidence_refs"] = ["evref:unrelated"]
+        with self.assertRaises(AssertionError):
+            validate_design_vector(v)
+
+    def test_failure_to_regression_kinds_are_only_untrusted_review_suggestions(self):
+        expected = {
+            "complete-observed-mismatch": [
+                "MINIMAL_REPRODUCER", "NEGATIVE_BOUNDARY_CASE"
+            ],
+            "missing-server-readback": ["MISSING_OBSERVER_REQUIREMENT"],
+            "stale-capture": ["SOURCE_ASSOCIATION_REVIEW"],
+            "conflicting-revisions": [],
+            "exact-duplicate-attempt": [],
+            "unauthenticated-source-identity": [
+                "SOURCE_IDENTITY_ATTESTATION_REQUEST"
+            ],
+            "incomplete-cancelled-execution": [
+                "CLEANUP_CANCELLATION_DIAGNOSTIC"
+            ],
+            "conflicting-duplicate-attempt": [],
+        }
+        for name, kinds in expected.items():
+            with self.subTest(case=name):
+                self.assertEqual(
+                    CASES[name]["triage"]["proposal"]["proposal_recommendation_kinds"],
+                    kinds,
+                )
+                self.assertFalse(
+                    CASES[name]["triage"]["proposal"]["execution_allowed"]
+                )
 
     def test_forged_trust_and_permissions_rejected_by_design_validation(self):
         original = CASES["missing-server-readback"]
