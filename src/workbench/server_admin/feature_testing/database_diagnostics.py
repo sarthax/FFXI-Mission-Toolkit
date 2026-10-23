@@ -128,11 +128,25 @@ def _open(user, password, database, port):
                                database=database, connect_timeout=2, read_timeout=2,
                                write_timeout=2, autocommit=False,
                                cursorclass=pymysql.cursors.DictCursor)
-        return conn, conn.cursor()
+        try:
+            return conn, conn.cursor()
+        except Exception:
+            try:
+                conn.close()
+            except Exception:
+                pass
+            raise
     try:
         import mysql.connector
     except ImportError as exc:
         raise RuntimeError("no MySQL driver installed (PyMySQL or mysql-connector-python)") from exc
     conn = mysql.connector.connect(host="127.0.0.1", port=port, user=user, password=password,
                                    database=database, connection_timeout=2, autocommit=False)
-    return conn, conn.cursor(dictionary=True)
+    try:
+        return conn, conn.cursor(dictionary=True)
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        raise
