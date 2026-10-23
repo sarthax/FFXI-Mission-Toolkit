@@ -572,7 +572,7 @@
         "run_id": "synthetic-run-complete-observed-mismatch",
         "attempt_id": "synthetic-attempt-complete-observed-mismatch",
         "operation_ids": [
-          "synthetic-operation-exact-duplicate-attempt"
+          "synthetic-operation-complete-observed-mismatch"
         ],
         "evidence_digest_claim": "synthetic:evidence-complete-observed-mismatch",
         "reconciliation": "EXACT_REPLAY"
@@ -668,7 +668,7 @@
           "run_id": "synthetic-run-complete-observed-mismatch",
           "attempt_id": "synthetic-attempt-complete-observed-mismatch",
           "operation_ids": [
-            "synthetic-operation-exact-duplicate-attempt"
+            "synthetic-operation-complete-observed-mismatch"
           ]
         },
         "artifact": {
@@ -979,7 +979,7 @@
         "run_id": "synthetic-run-complete-observed-mismatch",
         "attempt_id": "synthetic-attempt-complete-observed-mismatch",
         "operation_ids": [
-          "synthetic-operation-conflicting-duplicate-attempt"
+          "synthetic-operation-complete-observed-mismatch"
         ],
         "evidence_digest_claim": "synthetic:evidence-conflicting-duplicate-attempt",
         "reconciliation": "IDENTITY_DIGEST_CONFLICT"
@@ -1069,7 +1069,7 @@
           "run_id": "synthetic-run-complete-observed-mismatch",
           "attempt_id": "synthetic-attempt-complete-observed-mismatch",
           "operation_ids": [
-            "synthetic-operation-conflicting-duplicate-attempt"
+            "synthetic-operation-complete-observed-mismatch"
           ]
         },
         "artifact": {
