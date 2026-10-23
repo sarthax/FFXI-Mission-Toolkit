@@ -360,6 +360,117 @@ def test_explicit_empty_test_dir_never_falls_back_to_production(
     assert (production / "settings.json").read_text(encoding="utf-8") == original
 
 
+@pytest.mark.parametrize("prefix,suffix", [
+    (" ", ""), ("", " "), ("  ", "  "), ("\\t", "\\t"),
+])
+def test_padded_absolute_sandbox_path_fails_before_any_settings_io(
+        isolated, monkeypatch, tmp_path, prefix, suffix):
+    # Agent A's second P0 finding: validation used .strip(), but data_dir()
+    # used the raw env string. Reject both before file reads and writes.
+    # Use a complete, inherited, synthetic production-like environment so
+    # legacy preflight would otherwise be ready.
+    root = _headless(tmp_path)
+    prod = tmp_path / "production-localappdata" / "MissionToolkit" / "test_execution"
+    prod.mkdir(parents=True, exist_ok=True)
+    sentinel = prod / "settings.json"
+    original = json.dumps({
+        "enabled": True, "account": "synthetic-production-account",
+        "charids": [17], "headless_root": str(root),
+        "tokens": {"operator": "p" * 40, "supervisor": "v" * 40},
+    })
+    sentinel.write_text(original, encoding="utf-8")
+    _shell(monkeypatch, isolated, root)
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_DATA_DIR",
+                       prefix + str(isolated) + suffix)
+    scope, selected = settings._sandbox_directory_check()
+    assert scope["isolated"] is True and scope["ok"] is False
+    assert selected is None
+    assert "whitespace" in scope["reason"]
+    assert settings.load()["charids"] == []
+    assert settings.load()["account"] == ""
+    assert settings.sandbox_operator_check()["ok"] is False
+    assert settings.sandbox_execution_check()["ok"] is False
+    pre = preflight("moghancement", "MOG-09")
+    assert pre["ready_for_operator_review"] is False
+    assert pre["execution_enabled"] is False
+    assert settings.status()["ready_to_run"] is False
+    assert settings.status()["charids"] == []
+    with pytest.raises(PermissionError):
+        authorize_operator("p" * 40)
+    # Both setup mutation paths must stop before creating settings.tmp or
+    # directory trees corresponding to the unvalidated raw path.
+    with pytest.raises(ValueError, match="safe for writes"):
+        settings.set_enabled(True)
+    with pytest.raises(ValueError, match="safe for writes"):
+        settings.update(account="synthetic_test")
+    assert settings.apply_to_environ({"enabled": True}) == []
+    with mock.patch("workbench.server_admin.feature_testing.execution_cli.subprocess.run") as run:
+        with pytest.raises(ValueError, match="sandbox_isolation"):
+            execute_mog09(account="synthetic_account", charid=17,
+                          out_dir=isolated / "artifacts" / "unwanted",
+                          supervisor="http://127.0.0.1:8420", approved=True)
+        run.assert_not_called()
+    from workbench.server_admin.feature_testing.router import LaunchRequest, launch_test
+    req = mock.Mock()
+    req.client.host = "127.0.0.1"
+    req.base_url = "http://127.0.0.1:8420/"
+    req.headers = {"sec-fetch-site": "same-origin",
+                   "x-requested-with": "toolkit-ui"}
+    with mock.patch("workbench.server_admin.feature_testing.execution_jobs.enqueue") as enqueue:
+        with pytest.raises(HTTPException) as rejected:
+            launch_test(req, LaunchRequest(account="synthetic_account", charid=17,
+                                         supervisor_port=8420, approval=True),
+                        x_test_operator_token="p" * 40)
+        assert rejected.value.status_code == 403
+        enqueue.assert_not_called()
+    assert sentinel.read_text(encoding="utf-8") == original
+    assert sorted(isolated.iterdir()) == []  # no artifact/settings/temp files
+    assert not (prod / "artifacts").exists()
+
+
+@pytest.mark.parametrize("directory_mode", ["absent", "regular_file"])
+def test_nonexistent_or_file_sandbox_root_cannot_create_settings(
+        isolated, monkeypatch, tmp_path, directory_mode):
+    root = _headless(tmp_path)
+    _shell(monkeypatch, isolated, root)
+    target = tmp_path / ("not-yet-created" if directory_mode == "absent"
+                         else "file-instead-of-sandbox")
+    if directory_mode == "regular_file":
+        target.write_text("synthetic file sentinel", encoding="utf-8")
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_DATA_DIR", str(target))
+    assert settings.sandbox_operator_check()["ok"] is False
+    assert settings.sandbox_execution_check()["ok"] is False
+    assert settings.load()["enabled"] is False
+    assert preflight("moghancement", "MOG-09")["ready_for_operator_review"] is False
+    with pytest.raises(ValueError, match="safe for writes"):
+        settings.set_enabled(True)
+    assert not (target / "settings.json").exists()
+    if directory_mode == "regular_file":
+        assert target.read_text(encoding="utf-8") == "synthetic file sentinel"
+    else:
+        assert not target.exists()
+
+
+def test_internal_spaces_in_existing_absolute_sandbox_remain_valid(
+        isolated, monkeypatch, tmp_path):
+    # Reject surrounding whitespace, NOT a legitimate directory name
+    # containing spaces. Validated and used path must be identical.
+    named = tmp_path / "synthetic sandbox with spaces"
+    named.mkdir()
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_DATA_DIR", str(named))
+    assert settings._sandbox_directory_check()[1] == settings.data_dir()
+    cfg = settings._empty()
+    cfg["enabled"] = True
+    cfg["tokens"]["operator"] = "d" * 40
+    settings._save(cfg)
+    settings.apply_to_environ(cfg)
+    assert settings.settings_path() == named / "settings.json"
+    assert settings.sandbox_operator_check()["ok"] is True
+    assert settings.sandbox_execution_check()["ok"] is False
+    assert settings.load()["tokens"]["operator"] == "d" * 40
+    assert not (isolated / "settings.json").exists()
+
+
 def test_sandbox_cannot_select_default_production_settings_directory(monkeypatch, tmp_path):
     local = tmp_path / "localappdata"
     monkeypatch.setenv("LOCALAPPDATA", str(local))
