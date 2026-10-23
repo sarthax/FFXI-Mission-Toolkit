@@ -1,5 +1,7 @@
 # R7 GitHub CI and acceptance guide — 2026-10-21
 
+**R7/R8 status reconciliation (2026-10-22, current main):** GitHub source integration includes #1305/#1306/#1308/#1309, Scenario Developer #1307 and host fix #1319, bounded inventory #1310, progression #1311, offline interoperability #1316, R7 documentation #1320/#1321. The local B01–B19 browser report is limited to its observed run; a later `/scenario-developer` HTTP 200 is not a repeat of that suite. Capture viewer #1315 and Scenario Developer attachment #1318 are merged/source-integrated; **B20 local operator acceptance remains pending / NOT RUN**. XIHeadless #105 general execution protocol is proposed, not authorized. Persisted readback != live DSP/client state, and 73 staged cases remain design-only NOT_RUN. The historical CI evidence below preserves original dates and SHAs; use the current roadmap for newer status.
+
 **Scope:** release/operator guide for [#1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197). Baseline `main@972ff6fa4337cb5d29a3c8c3eb68c73245f24bb9`. No local gameplay, GM, DB-write, packet-send or XIHeadless local-agent work is authorized by this guide.
 
 ## What merged in R6
@@ -48,3 +50,7 @@ Record every local acceptance separately with owner/operator approval, original 
 - [Active workbench roadmap](ROADMAP_CURRENT.md)
 - [Scenario & evidence roadmap](SCENARIO_EVIDENCE_WORKBENCH_ROADMAP.md)
 - [R7 postmerge validator draft #1305](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1305)
+
+## Archived 2026-10-21 integrated-main validation evidence (#1314)
+
+Following merger of #1305, GitHub Actions [main push #39684273477](https://github.com/sarthax/FFXI-Mission-Toolkit/actions/runs/39684273477) ran at exact SHA `986f781ed1fe61000b2ca62552018061441b7522`. It reported 41 passing synthetic tests, 73 staged design-only cases, pinned merged PR blob consistency, `source_authenticity=NOT_ATTESTED` and `deployed_revision=UNKNOWN`. This was a `push` event, **not** a manually observed `workflow_dispatch` execution. `integrated-main` uses in-tree checked-in drafts; `staged-pr` is only for future independently reviewed available PR references. Never restore deleted `spec/*` branches, count these as live gameplay passes, or treat the historical SHA as today's main.

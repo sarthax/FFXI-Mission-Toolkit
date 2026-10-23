@@ -1,5 +1,7 @@
 # R7 release baseline and acceptance-gap ledger — 2026-10-21
 
+**R7/R8 status reconciliation (2026-10-22, current main):** GitHub source integration includes #1305/#1306/#1308/#1309, Scenario Developer #1307 and host fix #1319, bounded inventory #1310, progression #1311, offline interoperability #1316, R7 documentation #1320/#1321. The local B01–B19 browser report is limited to its observed run; a later `/scenario-developer` HTTP 200 is not a repeat of that suite. Capture viewer #1315 and Scenario Developer attachment #1318 are merged/source-integrated; **B20 local operator acceptance remains pending / NOT RUN**. XIHeadless #105 general execution protocol is proposed, not authorized. Persisted readback != live DSP/client state, and 73 staged cases remain design-only NOT_RUN. The historical CI evidence below preserves original dates and SHAs; use the current roadmap for newer status.
+
 **Parent:** [Toolkit #1197](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1197)  
 **Verified integrated Git baseline:** `main@972ff6fa4337cb5d29a3c8c3eb68c73245f24bb9` (merge of #1291; all nine R6 staged domains integrated).  
 **Mode:** remote/GitHub-only read-only assessment. **This is not a gameplay acceptance report.**
@@ -62,3 +64,7 @@ python tools/validate_domain_drafts.py \
 - Mark a narrow issue complete only when its *full listed acceptance* is evidenced, not merely because a design-only PR was merged. Keep #1197, #1198, #1202, #1259, #1261, #1262 and #1295–#1300 open until their own runtime/coverage/implementation gates are satisfied.
 - The old R6 branch-source fix #1304 is closed; retain its history, but supersede the branch-fetch assumption with integrated-main CI after this draft is independently reviewed and merged. Branch deletion is a separate authorized hygiene operation, not part of this PR.
 - No local XIHeadless-DSP agent work is assigned from this coordination plan.
+
+## Historical release-foundation validation checkpoint (2026-10-21)
+
+The original R6 integration baseline was `972ff6fa4337cb5d29a3c8c3eb68c73245f24bb9`, while the later R7 foundation checkpoint `db8b06abab7cd5f7b0908109184453b30ae3b112` included merged #1305/#1306/#1309/#1308. Integrated-main CI [run #39684273477](https://github.com/sarthax/FFXI-Mission-Toolkit/actions/runs/39684273477) passed on main push at merge commit `986f781ed1fe61000b2ca62552018061441b7522`, running 41 synthetic checks across 73 design-only cases. These immutable historical hashes are **not** current main or independently attested deployed source; no gameplay acceptance is claimed. See current roadmap for the newer R7/R8 release status.
