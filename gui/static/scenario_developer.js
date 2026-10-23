@@ -400,7 +400,8 @@
     try{return JSON.stringify(current())===JSON.stringify(snapshot);}
     catch(e){return false;} // Invalid Advanced JSON is preserved, never repaired.
   }
-  async function validatePreview(uiRequest) {
+  async function validatePreview() {
+    const uiRequest=validationUiRequest;
     const generation=editorGeneration, input=M.clone(current());
     let result;
     try{result=await call('/scenario-developer/validate','POST',{specification:input});}
@@ -489,7 +490,7 @@
   $('sd-observations').addEventListener('change',()=>{readGuidedFields();renderSteps();diagnostics();});
   $('sd-validate').addEventListener('click',async()=>{
     const uiRequest=++validationUiRequest;
-    try{await validatePreview(uiRequest);}
+    try{await validatePreview();}
     catch(e){
       if(uiRequest!==validationUiRequest)return; // previous request cannot hide/clear newer UI
       $('sd-preview').hidden=true;
