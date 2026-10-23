@@ -119,3 +119,22 @@ def test_advisory_diagnostics_have_no_execution_or_db_side_effects(monkeypatch):
     issues = field_errors(s, "invalid purpose")
     assert issues and all(set(x) == {"field", "control_id", "message", "required"} for x in issues)
     assert field_errors(s, "invalid purpose") == issues
+
+
+def test_operator_token_denial_remains_uniform_and_does_not_disclose_configuration(monkeypatch):
+    from workbench.server_admin.feature_testing.execution_jobs import authorize_operator
+
+    errors = []
+    for configured, presented in ((None, None), ("too-short", "too-short"),
+                                  ("s" * 40, "wrong")):
+        if configured is None:
+            monkeypatch.delenv("MISSION_TOOLKIT_TEST_OPERATOR_TOKEN", raising=False)
+        else:
+            monkeypatch.setenv("MISSION_TOOLKIT_TEST_OPERATOR_TOKEN", configured)
+        with pytest.raises(PermissionError) as err:
+            authorize_operator(presented)
+        errors.append(str(err.value))
+    assert len(set(errors)) == 1
+    assert "configured" not in errors[0].lower()
+    assert "short" not in errors[0].lower()
+    assert "wrong" not in errors[0].lower()
