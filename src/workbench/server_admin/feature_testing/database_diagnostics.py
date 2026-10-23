@@ -21,8 +21,19 @@ def _approved_connection(charid: int):
     if not 1 <= port <= 65535:
         raise ValueError("invalid database port")
     conn, cursor = _open(user, password, database, port)
-    cursor.execute("SET TRANSACTION READ ONLY")
-    cursor.execute("START TRANSACTION")
+    try:
+        cursor.execute("SET TRANSACTION READ ONLY")
+        cursor.execute("START TRANSACTION")
+    except Exception:
+        # Setup can fail after opening the socket: never leak a cursor or
+        # connection, and preserve the original database error for the
+        # caller to classify or sanitize.
+        for cleanup in (conn.rollback, cursor.close, conn.close):
+            try:
+                cleanup()
+            except Exception:
+                pass
+        raise
     return conn, cursor
 
 
