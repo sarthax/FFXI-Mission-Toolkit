@@ -1,0 +1,164 @@
+{
+  "fixture_kind": "TOOLKIT_R8_READONLY_PREFLIGHT_NONCANONICAL",
+  "synthetic": true,
+  "runtime_dispatch_allowed": false,
+  "fixture_version": 1,
+  "cases": [
+    {
+      "id": "published_legacy",
+      "feature_id": "moghancement",
+      "scenario_id": "MOG-09",
+      "claims": {},
+      "expected": "BLOCKED",
+      "check": "published_identity",
+      "check_state": "DECLARED"
+    },
+    {
+      "id": "unknown_scenario",
+      "feature_id": "gardening",
+      "scenario_id": "GARD-01",
+      "claims": {},
+      "expected": "BLOCKED",
+      "check": "published_identity",
+      "check_state": "BLOCKED"
+    },
+    {
+      "id": "missing_version",
+      "feature_id": "moghancement",
+      "scenario_id": "MOG-09",
+      "claims": {},
+      "expected": "BLOCKED",
+      "check": "scenario_version",
+      "check_state": "UNKNOWN"
+    },
+    {
+      "id": "unsupported_version",
+      "feature_id": "moghancement",
+      "scenario_id": "MOG-09",
+      "claims": {
+        "schema_version": 2
+      },
+      "expected": "BLOCKED",
+      "check": "scenario_version",
+      "check_state": "BLOCKED"
+    },
+    {
+      "id": "unsupported_runner",
+      "feature_id": "inventory_observation",
+      "scenario_id": "INV-OBS-01",
+      "claims": {
+        "schema_version": 1
+      },
+      "expected": "BLOCKED",
+      "check": "runner",
+      "check_state": "BLOCKED"
+    },
+    {
+      "id": "missing_deployment",
+      "feature_id": "moghancement",
+      "scenario_id": "MOG-09",
+      "claims": {
+        "schema_version": 1
+      },
+      "expected": "BLOCKED",
+      "check": "deployment_identity",
+      "check_state": "UNKNOWN"
+    },
+    {
+      "id": "missing_observation",
+      "feature_id": "moghancement",
+      "scenario_id": "MOG-09",
+      "claims": {
+        "observation_capabilities": [
+          "session"
+        ]
+      },
+      "expected": "BLOCKED",
+      "check": "observation_capabilities",
+      "check_state": "BLOCKED"
+    },
+    {
+      "id": "missing_oracle",
+      "feature_id": "moghancement",
+      "scenario_id": "MOG-09",
+      "claims": {
+        "oracle_ids": [
+          "expected_character"
+        ]
+      },
+      "expected": "BLOCKED",
+      "check": "oracle_authority",
+      "check_state": "BLOCKED"
+    },
+    {
+      "id": "unsupported_mutation",
+      "feature_id": "moghancement",
+      "scenario_id": "MOG-09",
+      "claims": {
+        "mutation_requested": true
+      },
+      "expected": "BLOCKED",
+      "check": "mutation",
+      "check_state": "BLOCKED"
+    },
+    {
+      "id": "incomplete_attribution",
+      "feature_id": "moghancement",
+      "scenario_id": "MOG-09",
+      "claims": {
+        "source_attribution_confirmed": true
+      },
+      "expected": "BLOCKED",
+      "check": "source_attribution",
+      "check_state": "BLOCKED"
+    },
+    {
+      "id": "missing_authorization",
+      "feature_id": "moghancement",
+      "scenario_id": "MOG-09",
+      "claims": {},
+      "expected": "BLOCKED",
+      "check": "authorization",
+      "check_state": "UNKNOWN"
+    },
+    {
+      "id": "unverified_claims",
+      "feature_id": "moghancement",
+      "scenario_id": "MOG-09",
+      "claims": {
+        "schema_version": 1,
+        "authorization_claimed": true,
+        "character_zone_claimed": true,
+        "lease_claimed": true,
+        "observation_capabilities": [
+          "session",
+          "stored_furnishings",
+          "gm_active_ki",
+          "gm_aura",
+          "client_bag",
+          "db_bag",
+          "client_safe",
+          "db_safe",
+          "client_key_items"
+        ],
+        "oracle_ids": [
+          "expected_character",
+          "safe_contains_furnishing",
+          "empty_layout_ki",
+          "zero_aura",
+          "bag_matches_persisted",
+          "safe_matches_persisted"
+        ],
+        "deployed_commits": {
+          "dsp_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "headless_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "toolkit_commit": "cccccccccccccccccccccccccccccccccccccccc"
+        },
+        "source_attribution_confirmed": true
+      },
+      "expected": "BLOCKED",
+      "check": "oracle_authority",
+      "check_state": "DECLARED"
+    }
+  ]
+}
