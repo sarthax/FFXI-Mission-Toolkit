@@ -292,6 +292,33 @@ def test_production_shell_precedence_unmodified_without_test_data_dir(isolated, 
     authorize_operator("p" * 40)
 
 
+@pytest.mark.parametrize("selected", ["", "  "])
+def test_explicit_empty_test_dir_never_falls_back_to_production(
+        tmp_path, monkeypatch, selected):
+    local = tmp_path / "production-localappdata"
+    production = local / "MissionToolkit" / "test_execution"
+    production.mkdir(parents=True)
+    original = json.dumps({
+        "enabled": True,
+        "account": "synthetic-production-should-not-appear",
+        "charids": [17],
+        "tokens": {"operator": "p" * 40, "supervisor": "v" * 40}
+    })
+    (production / "settings.json").write_text(original, encoding="utf-8")
+    monkeypatch.setenv("LOCALAPPDATA", str(local))
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_DATA_DIR", selected)
+    assert settings.sandbox_operator_check()["isolated"] is True
+    assert settings.sandbox_operator_check()["ok"] is False
+    assert settings.load()["account"] == ""
+    assert settings.load()["charids"] == []
+    assert settings.status()["ready_to_run"] is False
+    assert settings.apply_to_environ({"enabled": True}) == []
+    assert not (production / "artifacts").exists()
+    with pytest.raises(ValueError, match="safe for writes"):
+        settings.set_enabled(True)
+    assert (production / "settings.json").read_text(encoding="utf-8") == original
+
+
 def test_sandbox_cannot_select_default_production_settings_directory(monkeypatch, tmp_path):
     local = tmp_path / "localappdata"
     monkeypatch.setenv("LOCALAPPDATA", str(local))
