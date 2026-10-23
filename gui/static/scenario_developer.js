@@ -5,6 +5,7 @@
   const $ = id => document.getElementById(id);
   let spec = M.fresh(), mode = 'guided', options = {features: [], observations: [], operations: []};
   let drafts = [], baseline = null, sourceDetail = null;
+  let readinessViewer = null;
   function updateRevision() {
     const currentRevision = Number($('sd-revision').value) || 0;
     $('sd-revision-state').textContent = M.revisionIndicator(baseline,spec,currentRevision);
@@ -14,8 +15,8 @@
     $('sd-revision-state').textContent=M.advancedRevisionIndicator(
       baseline,$('sd-advanced-json').value,Number($('sd-revision').value)||0);
   }
-  // Only call AFTER the operator accepts a document replacement; never in
-  // render(), because that could overwrite unsaved Advanced JSON input.
+  // Only after a confirmed replacement; never from render(): it would
+  // overwrite uncommitted Advanced JSON text before discard confirmation.
   function syncAdvancedAfterReplacement() {
     $('sd-advanced-json').value=JSON.stringify(spec,null,2);
     $('sd-guided').setAttribute('aria-pressed','true');
@@ -218,6 +219,7 @@
   function switchMode(target) {
     try {current();}
     catch(err){show('Cannot switch mode: '+err.message);return;}
+    if(mode!==target)resetReadinessViewer();
     mode=target;
     $('sd-guided-panel').hidden=target!=='guided';
     $('sd-advanced-panel').hidden=target!=='advanced';
@@ -420,7 +422,7 @@
   $('sd-new').addEventListener('click',()=>{
     try {
       if(!confirmDocumentReplacement('New scenario'))return;
-      editorGeneration++;
+      editorGeneration++;resetReadinessViewer();
       activeHandoff=null;spec=M.fresh();mode='guided';baseline=null;setSourceDetail(null,null);$('sd-revision').value=0;
       $('sd-context-use').disabled=!coverageContext;
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
@@ -440,7 +442,7 @@
         throw Error('Editor changed while loading the published case; retry');
       const draft=M.forkPublished(x.specification);
       if(!confirmDocumentReplacement('Fork published case'))return;
-      editorGeneration++;
+      editorGeneration++;resetReadinessViewer();
       activeHandoff=null;spec=draft;mode='guided';baseline=null;setSourceDetail(feature,caseId);
       $('sd-revision').value=0;$('sd-advanced-panel').hidden=true;
       $('sd-guided-panel').hidden=false;syncAdvancedAfterReplacement();render();
@@ -452,7 +454,7 @@
     try {
       const draft=M.cloneDraft(current());
       if(!confirmDocumentReplacement('Clone current draft'))return;
-      editorGeneration++;
+      editorGeneration++;resetReadinessViewer();
       activeHandoff=null;spec=draft;mode='guided';baseline=null;$('sd-revision').value=0;
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
       syncAdvancedAfterReplacement();render();show('Cloned into a new draft case ID. Rename it if a COPY already exists; source identities still require review.');
@@ -533,7 +535,7 @@
     try{
       const loaded=M.parseAdvanced(JSON.stringify(d.specification));
       if(!confirmDocumentReplacement('Open saved draft'))return;
-      editorGeneration++;
+      editorGeneration++;resetReadinessViewer();
       activeHandoff=null;spec=loaded;mode='guided';
       $('sd-revision').value=d.revision;baseline=M.clone(spec);
       setSourceDetail(null,null);
@@ -597,7 +599,7 @@
     current();
     const issue=M.handoffReplacementIssue(spec,baseline,Number($('sd-revision').value),activeHandoff);
     if (issue) throw Error(issue);
-    editorGeneration++;
+    editorGeneration++;resetReadinessViewer();
     activeHandoff=key;
     spec=draft;mode='guided';baseline=null;$('sd-revision').value=0;
     $('sd-guided-panel').hidden=false;$('sd-advanced-panel').hidden=true;
@@ -786,6 +788,18 @@
       setSourceDetail(null,null);
     }catch(e){show('Evidence suggestions not applied: '+e.message);}
   });
+  // This advisory remains separate from canonical evidence import and draft state.
+  function resetReadinessViewer() {
+    if(readinessViewer)readinessViewer.dispose();
+    readinessViewer=window.ScenarioReadinessViewer.mount($('sd-readiness-viewer'),async(review,sidecar)=>{
+      return call('/scenario-developer/handoff/readiness/inspect','POST',{review,sidecar});
+    });
+  }
+  window.addEventListener('pagehide',()=>{
+    if(readinessViewer)readinessViewer.dispose();
+    readinessViewer=null;
+  });
+  resetReadinessViewer();
   (async()=> {
     try{
       options=await call('/scenario-developer/options');
