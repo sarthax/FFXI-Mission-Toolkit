@@ -474,7 +474,7 @@
     catch(e){
       $('sd-preview').hidden=true;
       if(Feedback)Feedback.show(e.validationErrors);
-      show('Canonical validation rejected: '+e.message+'\\n'+M.referenceIssues(spec).join('\\n'));
+      show('Canonical validation rejected: '+e.message+'\n'+M.referenceIssues(spec).join('\n'));
     }});
   let savePending=false;
   $('sd-save').addEventListener('click',async()=>{
