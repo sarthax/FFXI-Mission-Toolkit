@@ -176,13 +176,21 @@ def _sandbox_directory_check() -> tuple[dict, Path | None]:
     if "MISSION_TOOLKIT_TEST_DATA_DIR" not in os.environ:
         return ({"isolated": False, "ok": True,
                  "reason": "Not in an explicit test sandbox"}, None)
-    selected = os.environ["MISSION_TOOLKIT_TEST_DATA_DIR"].strip()
+    raw = os.environ["MISSION_TOOLKIT_TEST_DATA_DIR"]
+    selected = raw.strip()
     if not selected:
         return ({"isolated": True, "ok": False,
                  "reason": "Explicit sandbox directory must not be empty"}, None)
-    root = Path(selected)
+    if raw != selected:
+        # data_dir() intentionally uses the unmodified environment value.
+        # Reject a padded value before ANY settings file read/write, so that
+        # path validation and file operations always address the same root.
+        return ({"isolated": True, "ok": False,
+                 "reason": "Sandbox directory must not contain surrounding whitespace"}, None)
+    root = Path(raw)
     default = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "MissionToolkit" / "test_execution"
-    if (not root.is_absolute() or any(part.is_symlink() for part in (root, *root.parents))
+    if (not root.is_absolute() or not root.is_dir()
+            or any(part.is_symlink() for part in (root, *root.parents))
             or root.resolve() == default.resolve()
             or root.resolve().is_relative_to(default.resolve())
             or root.resolve().is_relative_to(_REPO.resolve())):
