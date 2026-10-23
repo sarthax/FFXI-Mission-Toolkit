@@ -2,6 +2,7 @@
 (function () {
   'use strict';
   const M = window.ScenarioGuidedModel, V = window.ScenarioContractV2View;
+  const Feedback = window.ScenarioValidationFeedback;
   const $ = id => document.getElementById(id);
   let spec = M.fresh(), mode = 'guided', options = {features: [], observations: [], operations: []};
   let drafts = [], baseline = null, sourceDetail = null;
@@ -375,7 +376,17 @@
     const response=await fetch(path,{method:method||'GET',headers,credentials:'same-origin',
       body:body===undefined?undefined:JSON.stringify(body)});
     const value=await response.json();
-    if(!response.ok)throw Error(typeof value.detail==='string'?value.detail:'HTTP '+response.status);
+    if(!response.ok) {
+      const detail=value.detail;
+      const error=new Error(typeof detail==='string'?detail:
+        (detail && typeof detail.message==='string'?detail.message+
+          ': '+(typeof detail.canonical_error==='string'?detail.canonical_error:'invalid fields'):
+         'HTTP '+response.status));
+      // Only the validation endpoint owns this non-authoritative advisory shape.
+      if(path==='/scenario-developer/validate' && detail &&
+         Array.isArray(detail.errors))error.validationErrors=detail.errors;
+      throw error;
+    }
     return value;
   }
   async function validatePreview() {
@@ -383,6 +394,7 @@
     const result=await call('/scenario-developer/validate','POST',{specification:input});
     if(generation!==editorGeneration || JSON.stringify(current())!==JSON.stringify(input))
       throw Error('Preview is stale: editor changed while validating. Validate the current draft again.');
+    if(Feedback)Feedback.clear();
     renderPreview(result.preview,result.reader_view,result.contract_v2_compatibility,result.contract_v2_source_attribution);
     show('Canonical validation accepted — DESIGN_ONLY, unreviewed, not executable.\n'+
       result.warnings.join('\n'));
@@ -459,7 +471,11 @@
   $('sd-feature').addEventListener('change',diagnostics);
   $('sd-observations').addEventListener('change',()=>{readGuidedFields();renderSteps();diagnostics();});
   $('sd-validate').addEventListener('click',async()=>{try{await validatePreview();}
-    catch(e){$('sd-preview').hidden=true;show('Canonical validation rejected: '+e.message+'\n'+M.referenceIssues(spec).join('\n'));}});
+    catch(e){
+      $('sd-preview').hidden=true;
+      if(Feedback)Feedback.show(e.validationErrors);
+      show('Canonical validation rejected: '+e.message+'\\n'+M.referenceIssues(spec).join('\\n'));
+    }});
   let savePending=false;
   $('sd-save').addEventListener('click',async()=>{
     if(savePending)return;
@@ -501,7 +517,8 @@
         (disposition.unsaved_edits?
           '. Newer editor changes remain UNSAVED; review before the next revision.':
           '. NOT reviewed or executable.'));
-    }catch(e){show('Draft NOT saved / revision may require refresh: '+e.message);}
+    }catch(e){if(Feedback)Feedback.show(e.validationErrors);
+      show('Draft NOT saved / revision may require refresh: '+e.message);}
     finally {savePending=false;$('sd-save').disabled=false;}
   });
   $('sd-load-drafts').addEventListener('click',async()=>{
