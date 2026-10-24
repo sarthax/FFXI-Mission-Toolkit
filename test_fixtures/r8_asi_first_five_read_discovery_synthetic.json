@@ -8,7 +8,7 @@
     "main": "fa5765da26522f3b420294e4c858dd6d01b68393",
     "catalog_pr1322": "96ba1e6c5d355367ec52440297f7558c14f2f953",
     "read_contract_pr1330": "4fbef8950293c4e92185ed35c04fe3ecc4da7dcb",
-    "planning_pr1349": "cf6864d59fcc1b9c323c2d79b278b7aa41a0b103"
+    "planning_pr1349": "d5aed3662d11999ff6d386d5b89b1e93b6ca4aa7"
   },
   "fixture_notes": [
     "Only MOG-09 and INV-OBS-01 are grounded in published canonical data; fixture_only/SYNTH-CASE-1 and all SYNTH refs are strictly simulated examples, never registered runners.",
@@ -17,7 +17,10 @@
     "These vectors exercise a bounded pure review model, not an installed /api/supervisor gateway or independent proof of source/oracle/status.",
     "Published rows now contain EXACTLY the two source-grounded keys; synthetic_v2_probe is isolated and NEVER included in a public-like list/get/sources/preflight/read model.",
     "All four per-case GETs require the same symbolic publication_snapshot_id and exact local digest. Real catalog publication snapshots, auth middleware, HMAC cursor and rendered byte budgets are NOT implemented or authenticated by this model.",
-    "The in-process isolated probe vectors P05,P13,N21,N26,N27 are evaluated only with project_isolated_v2_probe; ordinary project_synthetic rejects the fictitious case as unpublished."
+    "The in-process isolated probe vectors P05,P13,N21,N26,N27 are evaluated only with project_isolated_v2_probe; ordinary project_synthetic rejects the fictitious case as unpublished.",
+    "Wave 6 #1376: optional runner_class is bounded to FIXED_LOCAL_OPERATOR_OBSERVATION or UNASSIGNED_DESIGN_ONLY from the two published fixture rows; never source this enum from synthetic_v2_probe.",
+    "list now returns deterministic sorted (feature_id,case_id) page rows, published_count as filtered TOTAL, page_count, and an UNSIGNED synthetic-only position marker when there is a following page. P11 then P15 represent a two-page traversal; the '$SYNTH_FIRST_PAGE_CURSOR' literal is resolved only inside the offline fixture evaluation harness.",
+    "Synthetic cursor hashes encode fixture actor, filter tuple, limit, local symbolic publication ID and last key but HAVE NO HMAC, key storage, expiry, transport authentication, real UTF-8 envelope validation or proof against forged cursor generation. Actual ASGI and crypto tests remain NOT_RUN."
   ],
   "published_fixture_rows": [
     {
@@ -229,20 +232,19 @@
     },
     {
       "id": "P11",
-      "group": "valid_scoped_cursor",
+      "group": "published_page_one_with_continuation",
       "operation": "supervisor_scenario_list",
       "request": {
-        "cursor": "synthetic-cursor",
-        "limit": 2
+        "limit": 1
       },
-      "context": {
-        "cursor_condition": "VERIFIED_SCOPE_AND_SNAPSHOT"
-      },
+      "context": {},
       "expect": {
         "http_status": 200,
         "status": "OK",
         "reason": "published_declarations_only",
-        "published_count": 2
+        "published_count": 2,
+        "page_count": 1,
+        "has_more": true
       }
     },
     {
@@ -1137,6 +1139,190 @@
         "http_status": 413,
         "status": "BLOCKED",
         "reason": "budget_exceeded"
+      }
+    },
+    {
+      "id": "P14",
+      "group": "runner_fixed_operator_only",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "runner_class": "FIXED_LOCAL_OPERATOR_OBSERVATION"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "published_declarations_only",
+        "published_count": 1,
+        "page_count": 1,
+        "has_more": false
+      }
+    },
+    {
+      "id": "P15",
+      "group": "second_page_after_true_page_one",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 1,
+        "cursor": "$SYNTH_FIRST_PAGE_CURSOR"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "published_declarations_only",
+        "published_count": 2,
+        "page_count": 1,
+        "has_more": false
+      }
+    },
+    {
+      "id": "P16",
+      "group": "feature_runner_class_conjunction",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "feature_id": "inventory_observation",
+        "runner_class": "UNASSIGNED_DESIGN_ONLY",
+        "limit": 1
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "published_declarations_only",
+        "published_count": 1,
+        "page_count": 1,
+        "has_more": false
+      }
+    },
+    {
+      "id": "P17",
+      "group": "feature_runner_class_empty_conjunction",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "feature_id": "moghancement",
+        "runner_class": "UNASSIGNED_DESIGN_ONLY",
+        "limit": 1
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "published_declarations_only",
+        "published_count": 0,
+        "page_count": 0,
+        "has_more": false
+      }
+    },
+    {
+      "id": "N50",
+      "group": "invalid_runner_class",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "runner_class": "UNREVIEWED_EXECUTION_RUNNER"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_runner_class"
+      }
+    },
+    {
+      "id": "N51",
+      "group": "nonstring_runner_class",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "runner_class": [
+          "FIXED_LOCAL_OPERATOR_OBSERVATION"
+        ]
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_runner_class"
+      }
+    },
+    {
+      "id": "N52",
+      "group": "cursor_other_actor_from_real_page_one",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 1,
+        "cursor": "$SYNTH_FIRST_PAGE_CURSOR"
+      },
+      "context": {
+        "actor": "fixture_actor_b"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N53",
+      "group": "cursor_changed_runner_filter",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 1,
+        "runner_class": "UNASSIGNED_DESIGN_ONLY",
+        "cursor": "$SYNTH_FIRST_PAGE_CURSOR"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N54",
+      "group": "cursor_changed_feature_filter",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 1,
+        "feature_id": "moghancement",
+        "cursor": "$SYNTH_FIRST_PAGE_CURSOR"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N55",
+      "group": "cursor_changed_page_limit_real_first_page",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 2,
+        "cursor": "$SYNTH_FIRST_PAGE_CURSOR"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N56",
+      "group": "cursor_stale_snapshot_real_first_page",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 1,
+        "cursor": "$SYNTH_FIRST_PAGE_CURSOR"
+      },
+      "context": {
+        "publication_snapshot_state": "STALE"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
       }
     }
   ],
