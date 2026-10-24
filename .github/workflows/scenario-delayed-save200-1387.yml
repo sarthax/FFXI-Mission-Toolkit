@@ -1,0 +1,32 @@
+name: Delayed Editor Save POST200 Synthetic Regression (TEST ONLY)
+on:
+  pull_request:
+    paths:
+      - "test_fixtures/test_scenario_delayed_save200_1387.cjs"
+      - ".github/workflows/scenario-delayed-save200-1387.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: delayed-save200-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  fake-dom-post200:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact test-only PR head
+        uses: actions/checkout@v4
+      - name: Configure Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify JS syntax and immutable combined editor semantics
+        run: |
+          node --check gui/static/scenario_developer.js
+          node --check test_fixtures/test_scenario_delayed_save200_1387.cjs
+          node test_fixtures/test_scenario_unsaved_guard.cjs
+          node test_fixtures/test_scenario_validation_feedback_1333.cjs
+          node test_fixtures/test_scenario_combined_guard_1381.cjs
+      - name: Assert real combined Save click with late successful POST200
+        run: node test_fixtures/test_scenario_delayed_save200_1387.cjs
