@@ -373,6 +373,39 @@ class FirstFiveConformanceFixtureTests(unittest.TestCase):
                 self.assertNotIn("next_cursor", result)
         self.assertEqual(project_synthetic(v["N07"])["http_status"], 400)
         self.assertEqual(project_synthetic(v["N37"])["http_status"], 400)
+        self.assertEqual(project_synthetic(v["N50"])["reason"], "invalid_runner_class")
+        self.assertEqual(project_synthetic(v["N51"])["http_status"], 400)
+        # The positive path walks *actual* simulated rows, not just counts or
+        # a symbolic cursor_condition. This is still NOT an HMAC/HTTP test.
+        first = project_synthetic(v["P11"])
+        second = evaluate_fixture(v["P15"])
+        self.assertTrue(first["next_cursor"].startswith("SIM_UNSIGNED_"))
+        self.assertEqual(first["page_count"], 1)
+        self.assertEqual(second["page_count"], 1)
+        self.assertNotIn("next_cursor", second)
+        seen = [(r["feature_id"], r["case_id"])
+                for page in (first, second) for r in page["rows"]]
+        self.assertEqual(seen, sorted(ROWS))
+        self.assertEqual(len(seen), len(set(seen)))
+        self.assertEqual(first["published_count"], 2)
+        self.assertEqual(second["published_count"], 2)
+        self.assertEqual(evaluate_fixture(v["P14"])["rows"][0]["runner_class"],
+                         "FIXED_LOCAL_OPERATOR_OBSERVATION")
+        self.assertEqual(evaluate_fixture(v["P16"])["rows"][0]["case_id"],
+                         "INV-OBS-01")
+        empty = evaluate_fixture(v["P17"])
+        self.assertEqual(empty["published_count"], 0)
+        self.assertEqual(empty["rows"], [])
+        self.assertNotIn("next_cursor", empty)
+        # Marker generated against one exact actor/filter/limit/snapshot
+        # cannot be used to silently restart a different page.
+        for key in ("N52", "N53", "N54", "N55", "N56"):
+            with self.subTest(id=key):
+                refused = evaluate_fixture(v[key])
+                self.assertEqual(refused["http_status"], 409)
+                self.assertEqual(refused["reason"], "cursor_invalid")
+                self.assertNotIn("rows", refused)
+                self.assertNotIn("next_cursor", refused)
 
     def test_proposal_oracle_and_execution_fields_are_not_read_inputs(self):
         v = {x["id"]: x for x in FIXTURE["vectors"]}
