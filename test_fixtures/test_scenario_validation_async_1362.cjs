@@ -50,13 +50,35 @@ const document={
   createElement:tag=>new Element(tag),
   createTextNode:value=>({textContent:String(value)})
 };
+// The standalone E branch has no Agent B guard file. When history-preserved
+// #1335+#1337 integration adds it, load the REAL guard (not a no-op stub) and
+// exercise its unsaved/pending/unload contract alongside the deferred callbacks.
+const lifecycle=new Map();
 const win={
   document,location:{search:''},confirm:()=>true,
-  addEventListener(){},removeEventListener(){},
+  addEventListener(type,fn){
+    const handlers=lifecycle.get(type)||[];
+    handlers.push(fn);lifecycle.set(type,handlers);
+  },
+  removeEventListener(type,fn){
+    lifecycle.set(type,(lifecycle.get(type)||[]).filter(x=>x!==fn));
+  },
   ScenarioGuidedModel:require('../gui/static/scenario_guided_model.js'),
   ScenarioContractV2View:require('../gui/static/scenario_contract_v2_view.js'),
   ScenarioReadinessViewer:{mount:()=>({dispose(){}})}
 };
+const guardPath=path.join(__dirname,'../gui/static/scenario_draft_guard.js');
+const combinedGuardPresent=fs.existsSync(guardPath);
+if(combinedGuardPresent) {
+  win.ScenarioDraftGuard=require(guardPath);
+  assert.equal(typeof win.ScenarioDraftGuard.create,'function',
+    'combined editor must use real draft-guard implementation');
+}
+function beforeUnloadAttempt() {
+  const e={prevented:false,returnValue:undefined,preventDefault(){this.prevented=true;}};
+  for(const fn of lifecycle.get('beforeunload')||[])fn(e);
+  return e;
+}
 vm.runInNewContext(read('scenario_validation_feedback.js'),{window:win,document});
 const feedback=win.ScenarioValidationFeedback;
 const requests=[];
@@ -120,6 +142,12 @@ async function run() {
   // Complete startup options request before the first synthetic interaction.
   for(let i=0;i<8;i++)await Promise.resolve();
   assert.ok((get('sd-feature').options||[]).length>0,'editor initialized');
+  if(combinedGuardPresent) {
+    assert.equal((lifecycle.get('beforeunload')||[]).length,1,
+      'combined editor must register exactly one native unsaved-work listener');
+    assert.equal(get('sd-work-state').dataset.state,'pristine',
+      'real guard starts with a pristine unsaved-by-default design');
+  }
 
   // Two actual clicks, two independent fetch promises. V2 422 settles first.
   get('sd-purpose').value='synthetic V1';
@@ -161,6 +189,10 @@ async function run() {
   get('sd-purpose').value='synthetic Save S1';
   const save=click('sd-save');
   assert.equal(get('sd-save').disabled,true,'Save pending');
+  if(combinedGuardPresent) {
+    assert.equal(beforeUnloadAttempt().prevented,true,
+      'real guard protects in-flight Save against unload');
+  }
   get('sd-purpose').value='newer Validate V2';
   const current=click('sd-validate');
   settle(7,422,invalid('newer V2 422'));await current;
@@ -168,6 +200,12 @@ async function run() {
   settle(6,422,invalid('stale S1 preflight'));await save;
   assert.deepEqual(ui(),validError,'stale Save must not clear newer validation');
   assert.equal(get('sd-save').disabled,false,'Save controls restored');
+  if(combinedGuardPresent) {
+    assert.equal(get('sd-work-state').dataset.state,'unsaved',
+      'failed Save remains dirty with real ScenarioDraftGuard');
+    assert.equal(beforeUnloadAttempt().prevented,true,
+      'failed Save retains native unsaved-work protection');
+  }
   assert.equal(draftRequests.length,0,
     'superseded preflight MUST NOT dispatch a draft write');
 
@@ -225,7 +263,18 @@ async function run() {
   settle(14,422,invalid('old Advanced 422'));await advancedReq;
   assert.equal(get('sd-advanced-json').value,bad,'invalid Advanced bytes preserved');
   assert.equal(get('sd-revision').value,'0','unsaved draft revision preserved');
+  if(combinedGuardPresent) {
+    assert.equal(get('sd-work-state').dataset.state,'unsaved',
+      'invalid Advanced JSON cannot clear dirty guard state');
+    assert.equal(beforeUnloadAttempt().prevented,true,
+      'native unload guard must survive out-of-order validation and invalid JSON');
+    assert.equal((lifecycle.get('beforeunload')||[]).length,1,
+      'Validate/Save callbacks must not register duplicate native unload listeners');
+  }
   assert.equal(network.some(x=>x.path.includes('/launch')),false);
   console.log('#1362 actual click handlers with deferred V2-before-V1 Validate, Save, preview and invalid Advanced: PASS');
+  console.log(combinedGuardPresent
+    ? '#1378 combined REAL ScenarioDraftGuard pending/invalid/unload coverage: PASS'
+    : '#1378 E-only fixture: ScenarioDraftGuard absent, combined guard checks NOT_RUN');
 }
 run().catch(e=>{console.error(e);process.exitCode=1;});
