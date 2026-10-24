@@ -17,6 +17,7 @@ from .service_health import service_health
 from .database_diagnostics import char_vars_snapshot, inventory_snapshot, key_items_snapshot
 from .bounded_inventory import inventory_snapshot_v2
 from .bounded_progression import progression_snapshot
+from .bounded_selected_jobs import selected_jobs_snapshot
 from .source_diagnostics import search_source
 from .failure_diagnostics import failure_summary
 from .investigation_dossier import investigation_dossier
@@ -175,6 +176,19 @@ def test_character_progression(charid: int, names: str, include_keyitems: bool =
     _authorize(authorization)
     try:
         return progression_snapshot(charid, [name.strip() for name in names.split(",")], include_keyitems)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+
+@router.get("/test-character-selected-jobs", operation_id="supervisor_test_character_selected_jobs")
+def test_character_selected_jobs(charid: int, authorization: str | None = Header(default=None)):
+    """Bounded SELECT-only persisted job IDs/levels; never live status or unlocked-job proof."""
+    _authorize(authorization)
+    try:
+        return selected_jobs_snapshot(charid)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
