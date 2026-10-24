@@ -1,0 +1,43 @@
+name: Scenario Combined Guard Rehearsal (TEST ONLY)
+on:
+  pull_request:
+    paths:
+      - "gui/static/scenario_developer.js"
+      - "gui/templates/scenario_developer.html"
+      - "gui/static/scenario_draft_guard.js"
+      - "gui/static/scenario_validation_feedback.js"
+      - "test_fixtures/test_scenario_combined_guard_1381.cjs"
+      - "test_fixtures/test_scenario_validation_async_1362.cjs"
+      - "test_fixtures/test_scenario_context_handoff.py"
+      - ".github/workflows/scenario-combined-rehearsal-1381.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rehearsal-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install synthetic test dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt pytest httpx
+      - name: Run REAL ScenarioDraftGuard against E deferred-click callbacks
+        run: |
+          node --check gui/static/scenario_developer.js
+          node test_fixtures/test_scenario_unsaved_guard.cjs
+          node test_fixtures/test_scenario_validation_feedback_1333.cjs
+          node test_fixtures/test_scenario_combined_guard_1381.cjs
+      - name: Verify handoff/editor canonical contract in merged tree
+        env:
+          PYTHONPATH: "src:."
+        run: |
+          python -m pytest -q \
+            test_fixtures/test_scenario_context_handoff.py \
+            test_fixtures/test_scenario_guided_editor.py \
+            test_fixtures/test_scenario_validation_feedback_1333.py
