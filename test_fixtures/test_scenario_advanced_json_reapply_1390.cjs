@@ -72,8 +72,8 @@ function exercise(label, transform) {
   else assert.deepEqual(actual.contract_v2,expected,label + ': edited metadata replaces original');
   return actual;
 }
-exercise('remove existing contract_v2', x => { delete x.contract_v2; });
 exercise('replace existing contract_v2', x => { x.contract_v2 = {marker:'NEW_METADATA'}; });
+exercise('remove existing contract_v2', x => { delete x.contract_v2; });
 console.log('EV16 SOURCE-HANDLER REHEARSAL: 2 cases PASS (remove and replace contract_v2).');
 console.log('REPORTED P3 NOT REPRODUCED in isolated current-main Apply handler; this is NOT real browser acceptance.');
 console.log('NOT_RUN: real page DOM, advanced field render, server validation, Save, browser EV16 and combined PR stack.');
