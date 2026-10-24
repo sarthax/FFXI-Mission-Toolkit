@@ -68,3 +68,11 @@ Capture 824 (Windurst, Pulonono, initial egg trade, 2022-01-14) decoded:
 - csid 761 (no trade params) and 10008 appear after; 748 (rejection) not in this capture (see 'Trade Egg - Rejected' capture 825).
 - Open: no visible S>C start packet for csid 742 after the 745 finish in the decode (start likely a startEvent from onEventFinish; recheck ordering with seq), and the S>C update replies (0x05B updateEvent responses) are not yet decoded.
 Next: decode capture 825 (rejection 748) and the care-plan menu option values against LSB onEventUpdateVCSTrainer before building P1.
+
+## Retail decode: trade, rejection, menu replies (2026-10-24, captures 824/825)
+Packets: C>S 0x036 trade, S>C 0x034 event start, S>C 0x05C event update (8 x u32 @0x04), C>S 0x05B (result u32@8, update flag@0x0E, csid u16@0x12). Rows duplicate in capture_raw_packets (case-variant opcode); dedupe on seq.
+- Trade accept: S>C start csid 745 -> S>C 05C `(0, 3, 0,0,0,0,0,0)` (p1 = raising location, 3 = Windurst; LSB `updateEvent(0, raisingLocation[zone], 0..)`) -> C>S 05B 252 upd1 -> C>S 05B 252 upd0 (finish).
+- Rejection (wrong item): S>C start csid 748 `(0,0,0,0,3,..)` -> C>S 05B 244 upd1 -> S>C 05C `(0,0,0,0,2,1,0,0)` (p4 = stage, p5 = 1; LSB PRESENT_CHOCOBO_APPEARANCE=244 -> updateEvent(0,0,0,0,saved.stage,1,0,0)) -> finish 244.
+- Main menu 742: option = low byte command (LSB `bit.band(option,0xFF)`, arg = option>>8). Observed commands 208,214,215,241,243,244,246?,248,250,251,46; replies e.g. 248 -> `(248,1,0,0,1,0,0,0)` or `(248,5242886,..,2,1)`, 241 -> `(4545,96,0,0,1,4,0,0)`, 251 -> `(251,0,460551,65536,..)`, 244 -> `(0,0,0xFFFFFFFF,0,1,1,0,0)`. LSB command table and reply shapes agree where checked; full per-command reply values not yet diffed.
+Verdict: LSB's trade/rejection/option protocol matches retail for the commands decoded.
+Scope note for P1: the trainer flow depends on LSB event_vm (1180 lines), event_playout, model, choco_data, constants, names, whistle, retirement (~7.2k lines Lua, modern LSB utils). It is a port, not a patch. Proposed split: P1a intro + egg trade + rejection + chocobo creation (needs choco_data/model/constants subset and newChocobo); P1b main menu VM and care plan.
