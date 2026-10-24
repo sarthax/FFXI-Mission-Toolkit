@@ -7,11 +7,15 @@ import os
 import re
 
 
+class DisallowedTestCharacter(ValueError):
+    """Only an invalid caller-supplied character scope merits HTTP 400."""
+
+
 def _approved_connection(charid: int):
     """Validate the approved-character allowlist and DB settings; return (conn, cursor) or None if unconfigured."""
     allowed = {int(s.strip()) for s in os.environ.get("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS", "").split(",") if s.strip().isdigit()}
     if not isinstance(charid, int) or charid <= 0 or charid not in allowed:
-        raise ValueError("character not approved for supervisor diagnostics")
+        raise DisallowedTestCharacter("character not approved for supervisor diagnostics")
     user = os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_USER")
     password = os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_PASSWORD")
     database = os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_NAME")
