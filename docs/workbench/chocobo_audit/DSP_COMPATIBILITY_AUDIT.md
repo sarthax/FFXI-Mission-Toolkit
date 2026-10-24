@@ -58,3 +58,13 @@ Not yet verified: walk csids (298-300/304, 554-556/560, 810-812/816) and debug c
 - DSP 0x05B (`packet_system.cpp` SmallPacket0x05B): Result=u32@0x08, EventID=u16@0x12, update flag=byte@0x0E. Update -> OnEventUpdate(csid,Result); finish -> OnEventFinish. `m_event.Option != 0` overrides Result (server-set option); LSB trade handling `option == 252` arrives via Result unless Option override is set.
 - DSP has `player:updateEvent` (lua_baseentity.cpp:3440); arg count/semantics vs LSB's onEventUpdateVCSTrainer usage still to compare.
 - Next: capture a retail raising session (Hantileon menu + egg trade) before building P1; do not invent option values.
+
+## Retail option protocol from ingested captures (2026-10-24)
+User supplied 37 public captures (D:\Claude\Playthrough Captures\Chocobo Raising); ingested as content_type=unclassified, capture_id 792-828, 1.37M raw packets in capture_raw_packets (opcode strings are mixed-case '0X05B'/'0x05B': use upper()).
+Capture 824 (Windurst, Pulonono, initial egg trade, 2022-01-14) decoded:
+- S>C 0x034 csid 741 (intro, params 0,65372159,13408674,4095,4,...) -> C>S 05B result 0 upd 0 (finish).
+- Player trades egg: C>S 0x036 (64 B, one item) -> S>C 0x034 csid 745 (trade csid) -> C>S 05B result 252 upd 1 (update) -> C>S 05B result 252 upd 0 (finish). Confirms LSB `csid==tradeCSID and option==252`.
+- Main menu csid 742: ~27 C>S 05B upd 1 updates with option values 208,214,215,243,244,46,248,250,251, ending upd 0 result 215. Menu navigation = update packets; finish carries last option.
+- csid 761 (no trade params) and 10008 appear after; 748 (rejection) not in this capture (see 'Trade Egg - Rejected' capture 825).
+- Open: no visible S>C start packet for csid 742 after the 745 finish in the decode (start likely a startEvent from onEventFinish; recheck ordering with seq), and the S>C update replies (0x05B updateEvent responses) are not yet decoded.
+Next: decode capture 825 (rejection 748) and the care-plan menu option values against LSB onEventUpdateVCSTrainer before building P1.

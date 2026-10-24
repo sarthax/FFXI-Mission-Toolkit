@@ -94,7 +94,8 @@
    "harness": "headless per-step 0x032/0x034 capture",
    "state": "partial",
    "evidence": [
-    "runtime: 2026-10-19 xiheadless-dsp PR#59 (feature/chocobo-diagnostics) on dsp-branches main server, xitest01 vs Symphonic Curator (zone 230, csid 30034): in 0x034 params [0,65535,1,15,0,0,0,0]; out 0x05B mode=1 option=1 sent; event stayed active (stillActive=true); event_select closed it. NOT shown: server-side onEventUpdate receipt/m_event.Option behaviour (no server log read)."
+    "runtime: 2026-10-19 xiheadless-dsp PR#59 (feature/chocobo-diagnostics) on dsp-branches main server, xitest01 vs Symphonic Curator (zone 230, csid 30034): in 0x034 params [0,65535,1,15,0,0,0,0]; out 0x05B mode=1 option=1 sent; event stayed active (stillActive=true); event_select closed it. NOT shown: server-side onEventUpdate receipt/m_event.Option behaviour (no server log read).",
+    "captures: 2026-10-24 capture 824 (retail Windurst Pulonono): egg trade 0x036 -> csid 745 -> C>S 05B update result 252 then finish 252; main menu csid 742 sends update options (208,214,215,243,244,248,250,251,46) and finishes with last option. Matches LSB option==252."
    ]
   },
   {
