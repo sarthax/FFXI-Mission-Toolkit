@@ -104,8 +104,19 @@ for(const mutate of [
 // request or an oracle; backend strict pairing is tested separately in Python.
 async function testB20Diagnostics(){
   const id=unknown.capture_id;
-  const goodReview={capture_id:id,observed_handoff:{capture_id:id}};
-  const goodSidecar={contract:'SYNTHETIC_SIDE_CAR_ONLY'};
+  // Match the structural fields of an offline review export, not just a
+  // generic two-ID object. All data remain SYNTHETIC; no real capture or API.
+  const goodReview={
+    contract:'offline_capture_review_decisions_v1_NONCANONICAL',
+    capture_id:id,capture_projection_sha256:'a'.repeat(64),
+    observed_handoff:{capture_id:id,review_status:'MANUAL_AUTHORING_REQUIRED'},
+    step_decisions:[],binding_decisions:[],
+    review_status:'MANUAL_AUTHORING_REQUIRED',normative_expected:null,
+    verdict:'UNKNOWN',execution_enabled:false,approved_for_execution:false
+  };
+  const goodSidecar={contract:'capture_reviewer_readiness_sidecar_v0_NONCANONICAL',
+    capture_id:id,automatic_import:false,approved_for_execution:false,
+    execution_enabled:false};
   const file=txt=>({size:Buffer.byteLength(txt),text:async()=>txt});
   const cases=[
     {caseId:'09',review:'{\"capture_id\":\"UNTERMINATED_PRIVATE_MARKER',
@@ -114,9 +125,34 @@ async function testB20Diagnostics(){
     {caseId:'10',review:JSON.stringify(goodReview),
       sidecar:'{\"SECRET_MARKER\":\"UNTERMINATED_PRIVATE_MARKER',
       reason:'Readiness sidecar file is not valid JSON'},
-    {caseId:'06',review:JSON.stringify({...goodReview,capture_id:id+1}),
+    // B20 06 variants: Python's generic 422 also covers IDs which are
+    // non-integer, zero, missing or negative. The old valid-positive gate
+    // never displayed an identity-specific reason for those cases.
+    {caseId:'06-positive-mismatch',review:JSON.stringify({...goodReview,capture_id:id+1}),
       sidecar:JSON.stringify(goodSidecar),
-      reason:'Original review capture identity mismatch'}
+      reason:'Original review capture identity mismatch'},
+    {caseId:'06-string',review:JSON.stringify({...goodReview,capture_id:String(id+1)}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity invalid or mismatched'},
+    {caseId:'06-zero',review:JSON.stringify({...goodReview,capture_id:0}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity invalid or mismatched'},
+    {caseId:'06-negative',review:JSON.stringify({...goodReview,capture_id:-1}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity invalid or mismatched'},
+    {caseId:'06-null',review:JSON.stringify({...goodReview,capture_id:null}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity invalid or mismatched'},
+    {caseId:'06-boolean',review:JSON.stringify({...goodReview,capture_id:true}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity invalid or mismatched'},
+    {caseId:'06-absent',review:JSON.stringify({...goodReview,capture_id:undefined}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity invalid or mismatched'},
+    {caseId:'06-embedded-invalid',review:JSON.stringify({...goodReview,
+      observed_handoff:{...goodReview.observed_handoff,capture_id:'cross-capture'}}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity invalid or mismatched'}
   ];
   for(const c of cases){
     let calls=0;
@@ -164,7 +200,22 @@ async function testB20Diagnostics(){
   assert.equal(rejected,1);
   assert.equal(view.output.children.length,0);
   assert.match(view.status.textContent,/authoritative mismatch/);
-  console.log('R7 B20 synthetic 06/09/10 bounded diagnostics, no early POST and recovery: PASS');
+  // Do not relabel real privilege/approval violations as identity problems
+  // when both review IDs are valid and matching: the backend must decide.
+  const reviewWithForgedGrant={...goodReview,approved_for_execution:true};
+  let authorityCalls=0;
+  const authority=V.mount(new Element('main'),async()=>{
+    authorityCalls++;
+    throw Error('Evidence cannot claim execution, approval or normative outcomes');
+  });
+  authority.review.files=[file(JSON.stringify(reviewWithForgedGrant))];
+  authority.advisory.files=[file(JSON.stringify(goodSidecar))];
+  await authority.inspectButton.dispatch('click');
+  assert.equal(authorityCalls,1);
+  assert.match(authority.status.textContent,/Evidence cannot claim execution/);
+  assert.doesNotMatch(authority.status.textContent,/capture identity/);
+  assert.equal(authority.output.children.length,0);
+  console.log('R7 B20 synthetic 06 identity shape variants and 09/10 safe JSON: PASS');
 }
 
 async function run(){
