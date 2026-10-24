@@ -44,3 +44,11 @@ A: exdata + Lua accessors. D: bindings + char-delete cleanup. F: mountutils equi
 
 ## Risks
 Client-generation csid drift (see CLAUDE.md); live DB is MyISAM (no cascade); API aliasing (`getCharVar`/`getVar`, `messageName`/`messageSpecial`; `getTrade`, `isInEvent`, `hasCompletedQuest`, `registerCylindricalTriggerArea` absent); LSB approximations in its own README should not be treated as retail truth.
+
+## Trainer CSID verification (2026-10-24, client pull same session)
+Source: `mission_toolkit.py` events.yml, per-trainer entity event list (zones 230/234/241).
+LSB `xi.chocoboRaising.csidTable` ids (intro, main, trade, rejection, chicks, debug) all exist on the trainer's own entity in this client:
+- Hantileon (230): 817, 823, 826, 831, 852 present (also 821,822,824,825,827,829,830).
+- Zopago (234): 508, 509, 512, 515, 542 present (also 510, 511, 513).
+- Pulonono (241): 741, 742, 745, 748, 766 present (also 743, 744, 746).
+Not yet verified: walk csids (298-300/304, 554-556/560, 810-812/816) and debug csids (862/551/773); option protocol (trade option 252).
