@@ -9,9 +9,10 @@
       "steps": "addItemExData(2312,{bytes}); saveItemExData; relog; item:getExData()",
       "expected": "24 bytes identical",
       "harness": "headless: inventory 0x020 extdata readout",
-      "state": "untested",
+      "state": "passed",
       "evidence": [
-        "runtime(partial): 2026-10-19 item_extdata readout verified live (13 bag items, 0x020 extdata @0x11 = 24 zero bytes for vanilla items). Round-trip NOT run: addItemExData needs the chocobo-raising-core C++ build, not in the running server. State stays untested."
+        "runtime(partial): 2026-10-19 item_extdata readout verified live (13 bag items, 0x020 extdata @0x11 = 24 zero bytes for vanilla items). Round-trip NOT run: addItemExData needs the chocobo-raising-core C++ build, not in the running server. State stays untested.",
+        "runtime: 2026-10-24 xitest03 headless, chocobo commit b16a391408. addItemExData bytes == char_inventory.extra == 0x020 readout; plain item identical after relog; chocobo_egg initially corrupted (bytes 17,23) by signature re-encode on load, fixed in b16a391408, then byte-identical after relog."
       ]
     },
     {
@@ -31,8 +32,10 @@
       "steps": "setChocoboRaisingInfo(t); relog; getChocoboRaisingInfo()",
       "expected": "all 29 fields equal; none -> nil",
       "harness": "headless relogin + lua probe",
-      "state": "untested",
-      "evidence": []
+      "state": "passed",
+      "evidence": [
+        "runtime: 2026-10-24 setChocoboRaisingInfo failed on MariaDB 12.3 (FROM_UNIXTIME(0)); fixed in 0fa8cee06a; then all 29 fields + created identical before/after relog."
+      ]
     },
     {
       "id": "P0-USERDATA-ROUNDTRIP",
@@ -41,8 +44,10 @@
       "steps": "setChocoboUserData / registerChocobo; relog; getChocoboUserData/getFieldChocobo",
       "expected": "values equal",
       "harness": "headless relogin + lua probe",
-      "state": "untested",
-      "evidence": []
+      "state": "passed",
+      "evidence": [
+        "runtime: 2026-10-24 setChocoboUserData/registerChocobo persisted char_pet.chocobo_user_data (41960000A5A5...), getChocoboUserData/getFieldChocobo identical after relog."
+      ]
     },
     {
       "id": "P0-CHAR-DELETE",
@@ -61,8 +66,10 @@
       "steps": "apply up.sql, down.sql, up.sql on a backup DB",
       "expected": "no errors; schema matches sql/char_chocobos.sql",
       "harness": "SQL dry-run",
-      "state": "untested",
-      "evidence": []
+      "state": "passed",
+      "evidence": [
+        "runtime: 2026-10-24 up/down/up/up on a scratch DB with no errors; columns match sql/char_chocobos.sql (30). up.sql also applied to live dspdb_fresh after a char_pet backup."
+      ]
     },
     {
       "id": "P1-EGG-TRADE",
