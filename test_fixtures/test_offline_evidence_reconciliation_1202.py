@@ -190,7 +190,10 @@ def test_unknown_core_field_and_unserializable_payload_are_blocked():
     bad = receipt()
     bad["evidence"] = {"not_json": set([1])}
     assert ledger.ingest(bad)["status"] == "BLOCKED"
-    large = receipt(evidence={"text": "x" * 40000})
+    with pytest.raises(ValueError, match="offline limit"):
+        canonical_evidence_digest({"text": "x" * 40000})
+    large = receipt()
+    large["evidence"] = {"text": "x" * 40000}
     assert ledger.ingest(large)["status"] == "BLOCKED"
 
 
