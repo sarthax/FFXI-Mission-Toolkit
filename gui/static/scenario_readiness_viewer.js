@@ -140,9 +140,17 @@
   // review, sidecar, both digests and every authorization/provenance gate.
   function checkOriginalCaptureIdentity(reviewFile) {
     const original=reviewFile?.observed_handoff;
-    if(Number.isSafeInteger(reviewFile?.capture_id)&&reviewFile.capture_id>0&&
-       Number.isSafeInteger(original?.capture_id)&&original.capture_id>0&&
-       reviewFile.capture_id!==original.capture_id)
+    // Do not constrain this diagnostic to two *valid* IDs. The authoritative
+    // Python inspector combines an invalid/non-integer/zero envelope ID with
+    // approval errors under one generic 422; B20 06 must identify that input
+    // problem before any read-only inspector POST. Never coerce or echo IDs.
+    if(!reviewFile||typeof reviewFile!=='object'||Array.isArray(reviewFile)||
+       !original||typeof original!=='object'||Array.isArray(original))
+      return; // Let the strict server report unsupported envelope/shape.
+    const valid=id=>Number.isSafeInteger(id)&&id>0;
+    if(!valid(reviewFile.capture_id)||!valid(original.capture_id))
+      throw Error('Original review capture identity invalid or mismatched');
+    if(reviewFile.capture_id!==original.capture_id)
       throw Error('Original review capture identity mismatch');
   }
 
