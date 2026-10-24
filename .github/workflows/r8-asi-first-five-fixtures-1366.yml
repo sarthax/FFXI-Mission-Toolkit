@@ -27,5 +27,5 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Run exactly 7 unittest methods and 62 synthetic vector subcases
+      - name: Run exactly 7 unittest methods and 73 synthetic vector subcases (17P/56N)
         run: python -m unittest -v test_fixtures/test_r8_asi_first_five_read_discovery.py
