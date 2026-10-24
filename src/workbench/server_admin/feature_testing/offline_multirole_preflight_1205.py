@@ -104,6 +104,8 @@ def _definition(value: Any) -> tuple[dict, bytes]:
         _ident(check["oracle_id"])
         if not set(needed).issubset(role_by_id):
             _fail("checkpoint references unknown role")
+        if cid in role_by_id:
+            _fail("role and checkpoint ids must not collide")
         if cid in checkpoint_by_id:
             _fail("duplicate checkpoint")
         checkpoint_by_id[cid] = dependencies
