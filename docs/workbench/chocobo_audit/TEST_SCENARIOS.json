@@ -1,117 +1,121 @@
 {
-  "slice": "chocobo-raising-core",
-  "note": "Scenarios are planned. state stays 'untested' until runtime:, test: or capture: evidence is linked.",
-  "scenarios": [
-    {
-      "id": "P0-EXDATA-ROUNDTRIP",
-      "phase": "P0",
-      "title": "Exdata survives save/relog",
-      "steps": "addItemExData(2312,{bytes}); saveItemExData; relog; item:getExData()",
-      "expected": "24 bytes identical",
-      "harness": "headless: inventory 0x020 extdata readout",
-      "state": "passed",
-      "evidence": [
-        "runtime(partial): 2026-10-19 item_extdata readout verified live (13 bag items, 0x020 extdata @0x11 = 24 zero bytes for vanilla items). Round-trip NOT run: addItemExData needs the chocobo-raising-core C++ build, not in the running server. State stays untested.",
-        "runtime: 2026-10-24 xitest03 headless, chocobo commit b16a391408. addItemExData bytes == char_inventory.extra == 0x020 readout; plain item identical after relog; chocobo_egg initially corrupted (bytes 17,23) by signature re-encode on load, fixed in b16a391408, then byte-identical after relog."
-      ]
-    },
-    {
-      "id": "P0-EXDATA-MOVE",
-      "phase": "P0",
-      "title": "Exdata survives move/trade",
-      "steps": "move item between bags, trade to NPC",
-      "expected": "bytes unchanged (source-level only so far)",
-      "harness": "headless trade + inventory",
-      "state": "untested",
-      "evidence": []
-    },
-    {
-      "id": "P0-RAISING-ROUNDTRIP",
-      "phase": "P0",
-      "title": "char_chocobos round-trip",
-      "steps": "setChocoboRaisingInfo(t); relog; getChocoboRaisingInfo()",
-      "expected": "all 29 fields equal; none -> nil",
-      "harness": "headless relogin + lua probe",
-      "state": "passed",
-      "evidence": [
-        "runtime: 2026-10-24 setChocoboRaisingInfo failed on MariaDB 12.3 (FROM_UNIXTIME(0)); fixed in 0fa8cee06a; then all 29 fields + created identical before/after relog."
-      ]
-    },
-    {
-      "id": "P0-USERDATA-ROUNDTRIP",
-      "phase": "P0",
-      "title": "chocobo_user_data blob round-trip",
-      "steps": "setChocoboUserData / registerChocobo; relog; getChocoboUserData/getFieldChocobo",
-      "expected": "values equal",
-      "harness": "headless relogin + lua probe",
-      "state": "passed",
-      "evidence": [
-        "runtime: 2026-10-24 setChocoboUserData/registerChocobo persisted char_pet.chocobo_user_data (41960000A5A5...), getChocoboUserData/getFieldChocobo identical after relog."
-      ]
-    },
-    {
-      "id": "P0-CHAR-DELETE",
-      "phase": "P0",
-      "title": "Character delete cleans char_chocobos",
-      "steps": "create raised row, delete char",
-      "expected": "row removed",
-      "harness": "SQL check",
-      "state": "untested",
-      "evidence": []
-    },
-    {
-      "id": "P0-MIGRATION",
-      "phase": "P0",
-      "title": "up/down/up idempotent",
-      "steps": "apply up.sql, down.sql, up.sql on a backup DB",
-      "expected": "no errors; schema matches sql/char_chocobos.sql",
-      "harness": "SQL dry-run",
-      "state": "passed",
-      "evidence": [
-        "runtime: 2026-10-24 up/down/up/up on a scratch DB with no errors; columns match sql/char_chocobos.sql (30). up.sql also applied to live dspdb_fresh after a char_pet backup."
-      ]
-    },
-    {
-      "id": "P1-EGG-TRADE",
-      "phase": "P1",
-      "title": "Trade egg to trainer starts raising",
-      "steps": "trade egg 2312 to trainer, finish event with option",
-      "expected": "chick row created",
-      "harness": "headless event update with option",
-      "state": "untested",
-      "evidence": []
-    },
-    {
-      "id": "P1-OPTION-PROTOCOL",
-      "phase": "P1",
-      "title": "Mid-event option update",
-      "steps": "send update with option during event",
-      "expected": "server receives option; compare m_event.Option behaviour",
-      "harness": "headless per-step 0x032/0x034 capture",
-      "state": "partial",
-      "evidence": [
-        "runtime: 2026-10-19 xiheadless-dsp PR#59 (feature/chocobo-diagnostics) on dsp-branches main server, xitest01 vs Symphonic Curator (zone 230, csid 30034): in 0x034 params [0,65535,1,15,0,0,0,0]; out 0x05B mode=1 option=1 sent; event stayed active (stillActive=true); event_select closed it. NOT shown: server-side onEventUpdate receipt/m_event.Option behaviour (no server log read)."
-      ]
-    },
-    {
-      "id": "P3-MOUNT-LAYOUT",
-      "phase": "P3",
-      "title": "Registered chocobo mount model",
-      "steps": "mount with registered chocobo; read 0x00D",
-      "expected": "model matches capture; ChocoboCustomProperties layout confirmed",
-      "harness": "capture + headless mount readout",
-      "state": "untested",
-      "evidence": []
-    },
-    {
-      "id": "P3-WHISTLE-REGRESSION",
-      "phase": "P3",
-      "title": "Rental whistle unchanged",
-      "steps": "use rental whistle without registered chocobo",
-      "expected": "normal rental mount",
-      "harness": "headless item use",
-      "state": "untested",
-      "evidence": []
-    }
-  ]
+ "slice": "chocobo-raising-core",
+ "note": "Scenarios are planned. state stays 'untested' until runtime:, test: or capture: evidence is linked. | 2026-10-24: none->nil getter passed; see TEST_PLAN in dsp slice.",
+ "scenarios": [
+  {
+   "id": "P0-EXDATA-ROUNDTRIP",
+   "phase": "P0",
+   "title": "Exdata survives save/relog",
+   "steps": "addItemExData(2312,{bytes}); saveItemExData; relog; item:getExData()",
+   "expected": "24 bytes identical",
+   "harness": "headless: inventory 0x020 extdata readout",
+   "state": "passed",
+   "evidence": [
+    "runtime(partial): 2026-10-19 item_extdata readout verified live (13 bag items, 0x020 extdata @0x11 = 24 zero bytes for vanilla items). Round-trip NOT run: addItemExData needs the chocobo-raising-core C++ build, not in the running server. State stays untested.",
+    "runtime: 2026-10-24 xitest03 headless, chocobo commit b16a391408. addItemExData bytes == char_inventory.extra == 0x020 readout; plain item identical after relog; chocobo_egg initially corrupted (bytes 17,23) by signature re-encode on load, fixed in b16a391408, then byte-identical after relog."
+   ]
+  },
+  {
+   "id": "P0-EXDATA-MOVE",
+   "phase": "P0",
+   "title": "Exdata survives move/trade",
+   "steps": "move item between bags, trade to NPC",
+   "expected": "bytes unchanged (source-level only so far)",
+   "harness": "headless trade + inventory",
+   "state": "passed",
+   "evidence": [
+    "runtime: 2026-10-24 xitest03 headless move_to_container (bag->container 5) + relog: 24 extdata bytes unchanged. Player-to-player trade (new trade_player_* headless tools): all 24 bytes carried for plain item 4112 and inscribable 180. chocobo_egg (2312) is ITEM_FLAG_EX (0x4000): 0x034 player trade refuses it by design; egg moves only via NPC trade (0x036). Slice tag slice/chocobo-raising-core-v1."
+   ]
+  },
+  {
+   "id": "P0-RAISING-ROUNDTRIP",
+   "phase": "P0",
+   "title": "char_chocobos round-trip",
+   "steps": "setChocoboRaisingInfo(t); relog; getChocoboRaisingInfo()",
+   "expected": "all 29 fields equal; none -> nil",
+   "harness": "headless relogin + lua probe",
+   "state": "passed",
+   "evidence": [
+    "runtime: 2026-10-24 setChocoboRaisingInfo failed on MariaDB 12.3 (FROM_UNIXTIME(0)); fixed in 0fa8cee06a; then all 29 fields + created identical before/after relog."
+   ]
+  },
+  {
+   "id": "P0-USERDATA-ROUNDTRIP",
+   "phase": "P0",
+   "title": "chocobo_user_data blob round-trip",
+   "steps": "setChocoboUserData / registerChocobo; relog; getChocoboUserData/getFieldChocobo",
+   "expected": "values equal",
+   "harness": "headless relogin + lua probe",
+   "state": "passed",
+   "evidence": [
+    "runtime: 2026-10-24 setChocoboUserData/registerChocobo persisted char_pet.chocobo_user_data (41960000A5A5...), getChocoboUserData/getFieldChocobo identical after relog."
+   ]
+  },
+  {
+   "id": "P0-CHAR-DELETE",
+   "phase": "P0",
+   "title": "Character delete cleans char_chocobos",
+   "steps": "create raised row, delete char",
+   "expected": "row removed",
+   "harness": "SQL check",
+   "state": "passed",
+   "evidence": [
+    "runtime: 2026-10-24 throwaway lobby char deleted; lobby.cpp removes char_chocobos row after chars delete (affected rows==1)."
+   ]
+  },
+  {
+   "id": "P0-MIGRATION",
+   "phase": "P0",
+   "title": "up/down/up idempotent",
+   "steps": "apply up.sql, down.sql, up.sql on a backup DB",
+   "expected": "no errors; schema matches sql/char_chocobos.sql",
+   "harness": "SQL dry-run",
+   "state": "passed",
+   "evidence": [
+    "runtime: 2026-10-24 up/down/up/up on a scratch DB with no errors; columns match sql/char_chocobos.sql (30). up.sql also applied to live dspdb_fresh after a char_pet backup."
+   ]
+  },
+  {
+   "id": "P1-EGG-TRADE",
+   "phase": "P1",
+   "title": "Trade egg to trainer starts raising",
+   "steps": "trade egg 2312 to trainer, finish event with option",
+   "expected": "chick row created",
+   "harness": "headless event update with option",
+   "state": "untested",
+   "evidence": []
+  },
+  {
+   "id": "P1-OPTION-PROTOCOL",
+   "phase": "P1",
+   "title": "Mid-event option update",
+   "steps": "send update with option during event",
+   "expected": "server receives option; compare m_event.Option behaviour",
+   "harness": "headless per-step 0x032/0x034 capture",
+   "state": "partial",
+   "evidence": [
+    "runtime: 2026-10-19 xiheadless-dsp PR#59 (feature/chocobo-diagnostics) on dsp-branches main server, xitest01 vs Symphonic Curator (zone 230, csid 30034): in 0x034 params [0,65535,1,15,0,0,0,0]; out 0x05B mode=1 option=1 sent; event stayed active (stillActive=true); event_select closed it. NOT shown: server-side onEventUpdate receipt/m_event.Option behaviour (no server log read)."
+   ]
+  },
+  {
+   "id": "P3-MOUNT-LAYOUT",
+   "phase": "P3",
+   "title": "Registered chocobo mount model",
+   "steps": "mount with registered chocobo; read 0x00D",
+   "expected": "model matches capture; ChocoboCustomProperties layout confirmed",
+   "harness": "capture + headless mount readout",
+   "state": "untested",
+   "evidence": []
+  },
+  {
+   "id": "P3-WHISTLE-REGRESSION",
+   "phase": "P3",
+   "title": "Rental whistle unchanged",
+   "steps": "use rental whistle without registered chocobo",
+   "expected": "normal rental mount",
+   "harness": "headless item use",
+   "state": "untested",
+   "evidence": []
+  }
+ ]
 }
