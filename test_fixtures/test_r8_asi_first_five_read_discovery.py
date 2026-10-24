@@ -7,6 +7,7 @@ filesystem mutations, provider, browser, credentials or gameplay calls.
 from __future__ import annotations
 
 from copy import deepcopy
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -17,7 +18,7 @@ FIXTURE = json.loads(Path(__file__).with_name(
 ).read_text(encoding="utf-8"))
 
 OPERATIONS = {
-    "supervisor_scenario_list": {"feature_id", "limit", "cursor"},
+    "supervisor_scenario_list": {"feature_id", "runner_class", "limit", "cursor"},
     "supervisor_scenario_get": {
         "feature_id", "case_id", "publication_snapshot_id", "expected_sha256"},
     "supervisor_scenario_revision": {
@@ -47,11 +48,65 @@ ROWS = {
 # Never part of ROWS, not a publishable catalog entry; test-only v2 example.
 PROBE = FIXTURE["synthetic_v2_probe"]
 PUBLICATION = FIXTURE["publication_snapshot_fixture"]["id"]
+RUNNER_CLASSES = frozenset(row["runner_classification"] for row in ROWS.values())
+
+
+def _synthetic_cursor(last_key: tuple[str, str], *, feature: str | None,
+                      runner: str | None, limit: int, actor: str) -> str:
+    """Unsigned deterministic *test-only* position marker; NOT an HMAC."""
+    payload = json.dumps({
+        "simulation_only": True, "snapshot": PUBLICATION,
+        "feature": feature, "runner_class": runner, "limit": limit,
+        "actor": actor, "last_key": last_key,
+    }, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return "SIM_UNSIGNED_" + hashlib.sha256(payload.encode("ascii")).hexdigest()
+
+
+def _page_rows(matches: list[dict], limit: int, req: dict, ctx: dict) -> dict:
+    """Positive multi-page simulation, without authentication or real serialization."""
+    actor = ctx.get("actor", "fixture_actor_a")
+    if not isinstance(actor, str) or not IDENTITY.fullmatch(actor):
+        return _result(403, "BLOCKED", "unauthorized")
+    start = 0
+    cursor = req.get("cursor")
+    if cursor is not None:
+        if (not isinstance(cursor, str) or not CURSOR.fullmatch(cursor) or
+                ctx.get("cursor_condition", "VERIFIED_SCOPE_AND_SNAPSHOT")
+                != "VERIFIED_SCOPE_AND_SNAPSHOT" or
+                ctx.get("publication_snapshot_state") == "STALE"):
+            return _result(409, "BLOCKED", "cursor_invalid")
+        for i, entry in enumerate(matches[:-1]):
+            expected = _synthetic_cursor(
+                (entry["feature_id"], entry["case_id"]),
+                feature=req.get("feature_id"), runner=req.get("runner_class"),
+                limit=limit, actor=actor)
+            if cursor == expected:
+                start = i + 1
+                break
+        else:
+            return _result(409, "BLOCKED", "cursor_invalid")
+    page = matches[start:start + limit]
+    more = start + len(page) < len(matches)
+    rows = [{
+        "feature_id": r["feature_id"], "case_id": r["case_id"],
+        "runner_class": r["runner_classification"],
+        "local_definition_sha256": r["local_definition_sha256"]
+    } for r in page]
+    extras = {"rows": rows, "page_count": len(rows),
+              "has_more": more, "publication_snapshot_id": PUBLICATION}
+    if more:
+        last = page[-1]
+        extras["next_cursor"] = _synthetic_cursor(
+            (last["feature_id"], last["case_id"]),
+            feature=req.get("feature_id"), runner=req.get("runner_class"),
+            limit=limit, actor=actor)
+    return _result(200, "OK", "published_declarations_only",
+                   published_count=len(matches), **extras)
 
 
 def _result(http_status: int, status: str, reason: str, **fields: object) -> dict:
     """All answers have fixed non-executing, non-approving authority."""
-    return {
+    result = {
         "http_status": http_status,
         "status": status,
         "reason": reason,
@@ -62,6 +117,12 @@ def _result(http_status: int, status: str, reason: str, **fields: object) -> dic
         "step_source_refs": fields.get("step_source_refs", {}),
         "disclosed": http_status != 403,
     }
+    if status == "OK" and reason == "published_declarations_only":
+        for key in ("rows", "page_count", "has_more", "publication_snapshot_id",
+                    "next_cursor"):
+            if key in fields:
+                result[key] = fields[key]
+    return result
 
 
 def project_synthetic(vector: dict) -> dict:
@@ -93,10 +154,13 @@ def project_synthetic(vector: dict) -> dict:
         limit = req.get("limit", 20)
         if type(limit) is not int or not (1 <= limit <= 25):
             return _result(400, "BLOCKED", "invalid_page_limit")
+        runner = req.get("runner_class")
+        if runner is not None and (
+                not isinstance(runner, str) or runner not in RUNNER_CLASSES):
+            return _result(400, "BLOCKED", "invalid_runner_class")
         if req.get("cursor") is not None and (
                 not isinstance(req["cursor"], str) or
-                not CURSOR.fullmatch(req["cursor"]) or
-                ctx.get("cursor_condition") != "VERIFIED_SCOPE_AND_SNAPSHOT"):
+                not CURSOR.fullmatch(req["cursor"])):
             return _result(409, "BLOCKED", "cursor_invalid")
 
     # Explicitly *simulated* counts, NOT actual encoder or size-policy proof.
@@ -108,10 +172,12 @@ def project_synthetic(vector: dict) -> dict:
         return _result(200, "BLOCKED", "source_stale")
 
     if op == "supervisor_scenario_list":
-        matches = [row for row in ROWS.values()
-                   if req.get("feature_id") in (None, row["feature_id"])]
-        return _result(200, "OK", "published_declarations_only",
-                       published_count=min(len(matches), req.get("limit", 20)))
+        matches = sorted(
+            (row for row in ROWS.values()
+             if req.get("feature_id") in (None, row["feature_id"])
+             and req.get("runner_class") in (None, row["runner_classification"])),
+            key=lambda row: (row["feature_id"], row["case_id"]))
+        return _page_rows(matches, req.get("limit", 20), req, ctx)
 
     # Every per-case read must be tied to the same symbolic publication.
     # Real immutable snapshot construction and atomic lookup NOT implemented.
@@ -173,10 +239,18 @@ def project_isolated_v2_probe(vector: dict) -> dict:
 
 
 def evaluate_fixture(vector: dict) -> dict:
-    """Only the local harness can access isolated v2 source-claim examples."""
+    """Only test harness resolves a real prior-page synthetic marker."""
     if vector.get("mode") == "ISOLATED_SYNTHETIC_V2_PROBE":
         return project_isolated_v2_probe(vector)
-    return project_synthetic(vector)
+    if vector["request"].get("cursor") != "$SYNTH_FIRST_PAGE_CURSOR":
+        return project_synthetic(vector)
+    first = project_synthetic({
+        "operation": "supervisor_scenario_list",
+        "request": {"limit": 1}, "context": {"actor": "fixture_actor_a"}})
+    assert first["next_cursor"].startswith("SIM_UNSIGNED_")
+    example = deepcopy(vector)
+    example["request"]["cursor"] = first["next_cursor"]
+    return project_synthetic(example)
 
 
 class FirstFiveConformanceFixtureTests(unittest.TestCase):
@@ -224,13 +298,13 @@ class FirstFiveConformanceFixtureTests(unittest.TestCase):
 
     def test_all_review_vectors_match_explicit_status_and_never_grant_authority(self):
         vectors = FIXTURE["vectors"]
-        expected_ids = {f"P{i:02d}" for i in range(1, 14)} | {
-            f"N{i:02d}" for i in range(1, 50)}
-        self.assertEqual(len(vectors), 62)
+        expected_ids = {f"P{i:02d}" for i in range(1, 18)} | {
+            f"N{i:02d}" for i in range(1, 57)}
+        self.assertEqual(len(vectors), 73)
         self.assertEqual({v["id"] for v in vectors}, expected_ids)
         self.assertEqual(len({v["id"] for v in vectors}), len(vectors))
-        self.assertEqual(sum(v["id"].startswith("P") for v in vectors), 13)
-        self.assertEqual(sum(v["id"].startswith("N") for v in vectors), 49)
+        self.assertEqual(sum(v["id"].startswith("P") for v in vectors), 17)
+        self.assertEqual(sum(v["id"].startswith("N") for v in vectors), 56)
         self.assertEqual({v["id"] for v in vectors if "mode" in v},
                          {"P05", "P13", "N21", "N26", "N27"})
         for v in vectors:
@@ -242,8 +316,17 @@ class FirstFiveConformanceFixtureTests(unittest.TestCase):
                 self.assertFalse(out["specification_released"])
                 self.assertNotIn(out["status"], {"READY", "EXECUTED", "APPROVED"})
                 for forbidden in ("task_id", "operation_id", "mutable_specification",
-                                  "oracle_expected", "next_cursor", "rows"):
+                                  "oracle_expected"):
                     self.assertNotIn(forbidden, out)
+                if out["status"] != "OK" or v["operation"] != "supervisor_scenario_list":
+                    self.assertNotIn("next_cursor", out)
+                    self.assertNotIn("rows", out)
+                else:
+                    self.assertEqual(out["page_count"], len(out["rows"]))
+                    self.assertLessEqual(out["page_count"], v["request"].get("limit", 20))
+                    self.assertEqual(out["has_more"], "next_cursor" in out)
+                    self.assertTrue(all((row["feature_id"], row["case_id"]) in ROWS
+                                        for row in out["rows"]))
                 self.assertEqual(out["disclosed"], out["http_status"] != 403)
                 if out["http_status"] == 403:
                     self.assertIsNone(out["published_count"])
