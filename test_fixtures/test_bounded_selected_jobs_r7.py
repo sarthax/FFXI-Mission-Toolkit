@@ -382,4 +382,6 @@ def test_invalid_configured_db_port_is_unavailable_not_user_input_400(monkeypatc
         supervisor.test_character_selected_jobs(7, authorization="Bearer " + "z" * 40)
     assert caught.value.status_code == 503
     assert caught.value.detail == "selected-jobs observation unavailable (database connection failed)"
-    assert port not in caught.value.detail
+    assert "invalid database port" not in caught.value.detail
+    assert "invalid literal" not in caught.value.detail
+    assert "synthetic" not in caught.value.detail
