@@ -1,0 +1,31 @@
+name: R8 ASI First-Five Synthetic Conformance
+
+on:
+  pull_request:
+    paths:
+      - "docs/workbench/R8_ASI_FIRST_FIVE_READ_DISCOVERY_MATRIX_1353.md"
+      - "test_fixtures/r8_asi_first_five_read_discovery_synthetic.json"
+      - "test_fixtures/test_r8_asi_first_five_read_discovery.py"
+      - ".github/workflows/r8-asi-first-five-fixtures-1366.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r8-asi-first-five-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-fixture-conformance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run exactly 7 unittest methods and 73 synthetic vector subcases (17P/56N)
+        run: python -m unittest -v test_fixtures/test_r8_asi_first_five_read_discovery.py
