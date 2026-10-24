@@ -1,0 +1,22 @@
+name: EV16 Advanced JSON Reapply (test only)
+on:
+  push:
+    branches:
+      - codex/1390-ev16-advanced-json-reapply-testonly
+  pull_request:
+    paths:
+      - test_fixtures/test_scenario_advanced_json_reapply_1390.cjs
+      - .github/workflows/scenario-advanced-json-reapply-1390.yml
+      - gui/static/scenario_developer.js
+      - gui/static/scenario_guided_model.js
+  workflow_dispatch:
+jobs:
+  synthetic-source-handler:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Rehearse actual Advanced JSON Apply handler using synthetic fake DOM
+        run: node test_fixtures/test_scenario_advanced_json_reapply_1390.cjs
