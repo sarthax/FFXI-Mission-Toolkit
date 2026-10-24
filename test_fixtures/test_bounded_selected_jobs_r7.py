@@ -116,7 +116,8 @@ def test_db_unconfigured_reports_unavailable(monkeypatch):
 
 def test_disallowed_character_rejected(monkeypatch):
     def reject(charid):
-        raise ValueError("character not approved for supervisor diagnostics")
+        from workbench.server_admin.feature_testing.database_diagnostics import DisallowedTestCharacter
+        raise DisallowedTestCharacter("character not approved for supervisor diagnostics")
     monkeypatch.setattr(jobs, "_approved_connection", reject)
     with pytest.raises(ValueError, match="not approved"):
         jobs.selected_jobs_snapshot(100)
@@ -259,3 +260,126 @@ def test_connection_helper_closes_socket_on_cursor_creation_failure(monkeypatch)
     with pytest.raises(PermissionError, match="cursor initialization failure"):
         db._open("synthetic", "synthetic", "synthetic", 3306)
     assert connection.closed
+
+
+
+@pytest.mark.parametrize("broken", [
+    ("rollback",), ("cursor_close",), ("connection_close",),
+    ("rollback", "cursor_close"), ("rollback", "connection_close"),
+    ("cursor_close", "connection_close"),
+    ("rollback", "cursor_close", "connection_close"),
+])
+def test_all_cleanup_paths_attempted_even_if_prior_steps_throw(monkeypatch, broken):
+    """SYNTHETIC driver faults must never short-circuit later cleanup."""
+    events = []
+
+    class FaultConnection(Connection):
+        def rollback(self):
+            events.append("rollback")
+            self.rolled_back = True
+            if "rollback" in broken:
+                raise PermissionError("synthetic rollback password should never surface")
+
+        def close(self):
+            events.append("connection_close")
+            self.closed = True
+            if "connection_close" in broken:
+                raise OSError("synthetic socket close username should never surface")
+
+    class FaultCursor(Cursor):
+        def close(self):
+            events.append("cursor_close")
+            self.closed = True
+            if "cursor_close" in broken:
+                raise ValueError("synthetic cursor close detail should never surface")
+
+    conn, cursor = FaultConnection(), FaultCursor()
+    monkeypatch.setattr(jobs, "_approved_connection", lambda charid: (conn, cursor))
+
+    with pytest.raises(RuntimeError, match="database cleanup failed") as caught:
+        jobs.selected_jobs_snapshot(7)
+
+    assert events == ["rollback", "cursor_close", "connection_close"]
+    assert conn.rolled_back and cursor.closed and conn.closed
+    assert cursor.statements and len(cursor.statements) == 2
+    for secret in ("password", "username", "cursor close detail"):
+        assert secret not in str(caught.value)
+    assert type(caught.value.__cause__) in (PermissionError, ValueError, OSError)
+
+
+@pytest.mark.parametrize("query_error", [
+    ValueError("synthetic DB_PASSWORD in SELECT error"),
+    TypeError("synthetic unsupported driver packet"),
+    OSError("synthetic SELECT socket error"),
+    PermissionError("synthetic schema permission denied"),
+])
+def test_unexpected_select_driver_errors_cannot_escape_raw_to_route(monkeypatch, query_error):
+    """SYNTHETIC error from SELECT must remain HTTP 503 with best-effort cleanup."""
+    from workbench.server_admin.feature_testing import supervisor
+    conn, cursor = Connection(), Cursor(error=query_error)
+    monkeypatch.setattr(jobs, "_approved_connection", lambda charid: (conn, cursor))
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TOKEN", "z" * 40)
+    with pytest.raises(HTTPException) as caught:
+        supervisor.test_character_selected_jobs(7, authorization="Bearer " + "z" * 40)
+    assert caught.value.status_code == 503
+    assert caught.value.detail == "selected-jobs observation unavailable (database SELECT/schema failed)"
+    assert "synthetic" not in caught.value.detail
+    assert conn.rolled_back and cursor.closed and conn.closed
+
+
+def test_select_error_keeps_priority_over_all_cleanup_exceptions(monkeypatch):
+    """SYNTHETIC SELECT error remains primary even when every finalizer raises."""
+    events = []
+
+    class FaultConnection(Connection):
+        def rollback(self):
+            events.append("rollback")
+            raise RuntimeError("synthetic rollback password")
+
+        def close(self):
+            events.append("connection_close")
+            self.closed = True
+            raise RuntimeError("synthetic connection close user")
+
+    class FaultCursor(Cursor):
+        def execute(self, sql, args):
+            super().execute(sql, args)
+
+        def close(self):
+            events.append("cursor_close")
+            self.closed = True
+            raise RuntimeError("synthetic cursor close")
+
+    select_error = TypeError("synthetic SELECT secret")
+    conn, cursor = FaultConnection(), FaultCursor(error=select_error)
+    monkeypatch.setattr(jobs, "_approved_connection", lambda charid: (conn, cursor))
+    with pytest.raises(RuntimeError, match="database SELECT/schema failed") as caught:
+        jobs.selected_jobs_snapshot(7)
+    assert caught.value.__cause__ is select_error
+    assert events == ["rollback", "cursor_close", "connection_close"]
+    assert conn.closed and cursor.closed
+    assert "secret" not in str(caught.value)
+
+
+@pytest.mark.parametrize("port", ["invalid", "0", "65536", " "])
+def test_invalid_configured_db_port_is_unavailable_not_user_input_400(monkeypatch, port):
+    """SYNTHETIC environment misconfiguration must not leak parser/port detail."""
+    from workbench.server_admin.feature_testing import database_diagnostics as db
+    from workbench.server_admin.feature_testing import supervisor
+
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS", "7")
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DB_USER", "synthetic")
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DB_PASSWORD", "synthetic")
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DB_NAME", "synthetic")
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DB_PORT", port)
+    monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TOKEN", "z" * 40)
+
+    def no_connection(*_args):
+        raise AssertionError("invalid port must be rejected before opening socket")
+
+    monkeypatch.setattr(db, "_open", no_connection)
+    with pytest.raises(HTTPException) as caught:
+        supervisor.test_character_selected_jobs(7, authorization="Bearer " + "z" * 40)
+    assert caught.value.status_code == 503
+    assert caught.value.detail == "selected-jobs observation unavailable (database connection failed)"
+    assert port not in caught.value.detail
