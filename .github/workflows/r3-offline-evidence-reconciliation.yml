@@ -1,0 +1,32 @@
+name: R3 Offline Evidence Reconciliation
+
+on:
+  pull_request:
+    paths:
+      - "src/workbench/server_admin/feature_testing/offline_evidence_reconciliation.py"
+      - "test_fixtures/test_offline_evidence_reconciliation_1202.py"
+      - "test_fixtures/test_feature_testing_importer.py"
+      - "docs/workbench/R3_OFFLINE_EVIDENCE_RECONCILIATION_1202.md"
+      - ".github/workflows/r3-offline-evidence-reconciliation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-offline-reconciliation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install package and pytest
+        run: python -m pip install --disable-pip-version-check -e . pytest
+      - name: Offline attempt state, conflict, atomicity, and v1 importer compatibility
+        env:
+          PYTHONPATH: "src:."
+        run: |
+          set -euo pipefail
+          python -m pytest -q test_fixtures/test_offline_evidence_reconciliation_1202.py test_fixtures/test_feature_testing_importer.py
