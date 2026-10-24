@@ -52,3 +52,9 @@ LSB `xi.chocoboRaising.csidTable` ids (intro, main, trade, rejection, chicks, de
 - Zopago (234): 508, 509, 512, 515, 542 present (also 510, 511, 513).
 - Pulonono (241): 741, 742, 745, 748, 766 present (also 743, 744, 746).
 Not yet verified: walk csids (298-300/304, 554-556/560, 810-812/816) and debug csids (862/551/773); option protocol (trade option 252).
+
+## Option protocol evidence (2026-10-24)
+- Captures: grep of D:\Claude\Playthrough Captures for Hantileon/Zopago/Pulonono hits only npclogger position tables (Sunbreeze, Periqia). NO capture of the raising menu exists, so retail option values are unverified.
+- DSP 0x05B (`packet_system.cpp` SmallPacket0x05B): Result=u32@0x08, EventID=u16@0x12, update flag=byte@0x0E. Update -> OnEventUpdate(csid,Result); finish -> OnEventFinish. `m_event.Option != 0` overrides Result (server-set option); LSB trade handling `option == 252` arrives via Result unless Option override is set.
+- DSP has `player:updateEvent` (lua_baseentity.cpp:3440); arg count/semantics vs LSB's onEventUpdateVCSTrainer usage still to compare.
+- Next: capture a retail raising session (Hantileon menu + egg trade) before building P1; do not invent option values.
