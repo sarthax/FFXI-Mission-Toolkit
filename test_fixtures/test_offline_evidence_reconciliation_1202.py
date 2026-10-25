@@ -219,7 +219,7 @@ def _overdeep_synthetic_evidence(levels=1200):
 @pytest.mark.parametrize("depth", [80, 1200])
 def test_nested_json_depth_is_fail_closed_without_recursion_escape(depth):
     overdeep = _overdeep_synthetic_evidence(depth)
-    with pytest.raises(ValueError, match="nesting exceeds limit"):
+    with pytest.raises(ValueError, match="not bounded JSON"):
         canonical_evidence_digest(overdeep)
     ledger = OfflineEvidenceLedger()
     prior = receipt()
