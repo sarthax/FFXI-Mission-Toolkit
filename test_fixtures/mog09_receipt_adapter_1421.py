@@ -13,9 +13,13 @@ def project(sample: dict | None) -> dict:
         return {"status": "SOURCE_NOT_FOUND", "verdict": "UNKNOWN", "task_lifecycle": None,
                 "independent_oracle": "NOT_ESTABLISHED", "steps": [], "reason": "SOURCE_NOT_FOUND"}
     assertions = sample.get("assertions")
-    if not isinstance(assertions, list) or len(assertions) != 6:
+    if not isinstance(assertions, list) or len(assertions) != 6 or any(not isinstance(a, dict) for a in assertions):
         return {"status": "INCOMPLETE", "verdict": "UNKNOWN", "task_lifecycle": None,
                 "independent_oracle": "NOT_ESTABLISHED", "steps": [], "reason": "SIX_ASSERTIONS_NOT_AVAILABLE"}
+    source_path = sample.get("source_path")
+    if not isinstance(source_path, str) or not source_path.strip() or source_path.startswith("/") or ".." in source_path.split("/") or "\\\\" in source_path:
+        return {"status": "INCOMPLETE", "verdict": "UNKNOWN", "task_lifecycle": None,
+                "independent_oracle": "NOT_ESTABLISHED", "steps": [], "reason": "SOURCE_POINTER_MISSING_OR_UNSAFE"}
     steps = []
     for n, a in enumerate(assertions, 1):
         ok = a.get("runner_ok")
@@ -25,7 +29,7 @@ def project(sample: dict | None) -> dict:
             "runner_reported_ok": ok if isinstance(ok, bool) else None,
             "local_comparison": "MATCH" if ok is True else ("MISMATCH" if ok is False else "UNKNOWN"),
             "independent_oracle": "NOT_ESTABLISHED",
-            "source_pointer": f"{sample.get('source_path')}#/results/0/evidence/assertions/{n-1}"
+            "source_pointer": f"{source_path}#/results/0/evidence/assertions/{n-1}"
         })
     raw = sample.get("runner_verdict")
     return {
@@ -51,7 +55,7 @@ def project_fixture(path: Path = INPUT) -> list[dict]:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (ValueError, OSError):
         return [project(None)]
-    if data.get("status") != "DERIVED_FROM_UNREVIEWED_1420_SANITIZED_REPORTS":
+    if not isinstance(data, dict) or data.get("status") != "DERIVED_FROM_UNREVIEWED_1420_SANITIZED_REPORTS" or not isinstance(data.get("cases"), list) or any(not isinstance(s, dict) for s in data["cases"]):
         return [project(None)]
     return [project(s) for s in data.get("cases", [])] or [project(None)]
 
