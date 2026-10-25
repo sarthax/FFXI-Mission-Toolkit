@@ -235,9 +235,23 @@ class Walk:
         e = q(f"select energy from char_chocobos where charid={CHAR}")[0][0]
         check("walk refused when short of energy", e == 10, e)
 
+class Watch:
+    # option 12530 (cmd 242 arg 48): costs 3-4 energy, hands over the held item (pebble 17296) and clears it
+    def seed(self):
+        seed(4, 30); q(f"update char_chocobos set energy=100, held_item=17296 where charid={CHAR}")
+        q(f"delete from char_inventory where charid={CHAR} and itemid=17296")
+    def run(self, b):
+        b.tool("event_update", option=12530); time.sleep(1)
+        b.tool("event_select", selection=0); time.sleep(2)
+        e, h = q(f"select energy, held_item from char_chocobos where charid={CHAR}")[0]
+        n = q(f"select coalesce(sum(quantity),0) from char_inventory where charid={CHAR} and itemid=17296")[0][0]
+        check("watch over cost 3-4", 96 <= e <= 97, e)
+        check("held item cleared", h == 0, h)
+        check("item handed over", n == 1, n)
+
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "watch": Watch}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)
