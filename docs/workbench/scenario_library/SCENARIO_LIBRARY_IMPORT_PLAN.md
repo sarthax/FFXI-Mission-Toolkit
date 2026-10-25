@@ -16,8 +16,8 @@ Draft-only. Never auto-publish; owner approval is required per scenario.
 5. SL-ASLT-001 Leujaoam entry
 6. SL-ITEM-001 item possession (needs G-01)
 7. SL-KI-001 key item (needs G-01)
-8. SL-QUEST-ZONFOBUN (item reward 16387)
-9. SL-QUEST-ARDEA (key item SHARP_GRAY_STONE)
+8. SL-MSN-WOTG-01..05 (WoTG missions 1-5 sample; replaces the earlier Zon-Fobun slot per owner direction)
+9. SL-MSN-WOTG-06..10 (WoTG missions 6-10 sample; replaces the earlier Ardea slot)
 10. SL-ZONE-002 zone_to
 
 ## Proposed next issues

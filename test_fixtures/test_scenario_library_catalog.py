@@ -18,8 +18,8 @@ class ScenarioLibraryCatalogTest(unittest.TestCase):
         cls.items = cls.cat["scenarios"]
 
     def test_counts_and_flags(self):
-        self.assertTrue(25 <= len(self.items) <= 40)
-        self.assertTrue(10 <= sum(s["tier"] == "characterized" for s in self.items) <= 15)
+        self.assertTrue(25 <= len(self.items) <= 70)
+        self.assertTrue(10 <= sum(s["tier"] == "characterized" for s in self.items) <= 25)
         self.assertEqual(self.cat["status"], "DRAFT")
         self.assertFalse(self.cat["execution_validated"])
 
@@ -49,6 +49,20 @@ class ScenarioLibraryCatalogTest(unittest.TestCase):
             if s["id"].startswith("SL-QUEST-"):
                 self.assertTrue(any("scripts/zones/" in p for p in s["provenance"]), s["id"])
                 self.assertTrue(re.match(r"^dsp-branches@main:[0-9a-f]{10}", s["provenance"][0]), s["id"])
+
+    def test_wotg_one_to_ten_present_and_lsb_pinned(self):
+        ids = {s["id"] for s in self.items}
+        for n in range(1, 11):
+            self.assertIn("SL-MSN-WOTG-%02d" % n, ids)
+        for s in self.items:
+            if s["id"].startswith("SL-MSN-"):
+                self.assertTrue(re.match(r"^LandSandBoat landsandboat-latest@[0-9a-f]{10}: scripts/missions/", s["provenance"][0]), s["id"])
+                self.assertIn("client_generation_caveat", s)
+
+    def test_no_invented_entity_ids_in_mission_scenarios(self):
+        for s in self.items:
+            if s["id"].startswith("SL-MSN-") and "xiheadless" in s:
+                self.assertTrue(str(s["xiheadless"]["typed_ids"]["npc_entity_ids"]).startswith("UNRESOLVED"), s["id"])
 
     def test_probes_kept_separate(self):
         for p in self.cat["failure_injection_probes"]:

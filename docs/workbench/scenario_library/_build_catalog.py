@@ -177,6 +177,55 @@ for key in ex:
                               "npc_list": npc and {"id": npc[0], "pos": npc[1:]}},
              "verification_flags": flags}))
 
+# --- LSB mission scenarios (nation rank 1-2 starters + WoTG 1-10). Source: lsb_mission_extract.json
+mx = json.load(open(os.path.join(HERE, "lsb_mission_extract.json"), encoding="utf-8"))
+LSB = mx["source"]
+NATIONS = {"sandoria": ("SD", "San d'Oria", 0), "bastok": ("BA", "Bastok", 1), "windurst": ("WI", "Windurst", 2)}
+
+
+def mission(path, v):
+    kind = path.split("/")[0]
+    base = os.path.basename(path)[:-4]
+    num = base.split("_")[0]
+    adm = next((h for h in v["header"] if h.startswith("!addmission")), None)
+    pos = [h for h in v["header"] if "!pos" in h]
+    if kind == "wotg":
+        sid = "SL-MSN-WOTG-%02d" % int(num)
+        dom, where = "missions-wotg", "Wings of the Goddess mission %d" % int(num)
+    else:
+        sid = "SL-MSN-%s-%s" % (NATIONS[kind][0], num.replace("_", "") if False else base.split("_")[0] + base.split("_")[1])
+        dom, where = "missions-nation", "%s rank mission %s" % (NATIONS[kind][1], base)
+    setup = ["GM setup per script header: %s (availability of GM commands via the headless `say` action is UNVERIFIED)" % adm
+             if adm else "no !addmission line in script header; derive setup from script check() blocks"]
+    setup += ["positions from script header (LSB coordinates, not re-verified): " + "; ".join(pos[:4])] if pos else []
+    action = {"native_action": "talk_npc / walk_to / event_update / event_finish per script section",
+              "params": {"npc_names_from_script": v["npcs"], "csids_in_script": v["events"], "event_finish_csids": v["event_finish_ids"]},
+              "typed_ids": {"zones": v["zones"], "npc_entity_ids": "UNRESOLVED: no entity id is asserted; resolve names to ids per target server (never invented)",
+                            "key_items": v["key_items"]},
+              "expected_state": {"event_active": True, "mission_status_progress": v["mission_status_sets"], "next_mission": v["next_mission"]},
+              "readback_collector": "event_active/event_id via scenario expectations; mission status and key items have NO scenario readback (gaps G-01/G-02)",
+              "oracle_rule": "Equals on event fields only; mission progress unobservable today",
+              "setup": setup,
+              "interpretation": interp("event opens with the scripted csid; mission transition itself is UNOBSERVABLE so at most partial")}
+    tier = "characterized" if kind == "wotg" else "candidate"
+    return cand(sid, dom, v["title"],
+        "Character with %s active (script check(): current mission and mission status)." % where,
+        "Character performs the scripted section (see source_facts.npcs/events).",
+        "Scripted events fire%s; mission advances to %s." % (" and key items %s are granted" % ", ".join(v["key_items"][:3]) if v["key_items"] else "", v["next_mission"] or "the next section/mission"),
+        ["%s: scripts/missions/%s" % (LSB, path)], "medium", ["source-supported"], "partial" if tier == "characterized" else "unknown",
+        tier=tier, action=action if tier == "characterized" else None,
+        extra={"source_facts": {k: v[k] for k in ("zones", "npcs", "events", "event_finish_ids", "key_items", "mission_status_sets", "header", "next_mission")},
+               "server_coverage": ("LSB only. Not present in DSP main (no scripts/missions/wotg); Valhalla support unknown" if kind == "wotg"
+                                   else "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified"),
+               "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"})
+
+
+for path, v in mx["files"].items():
+    kind = path.split("/")[0]
+    base = os.path.basename(path)
+    if kind == "wotg" or (kind in NATIONS and base[:3] in ("1_1", "1_2", "1_3", "2_1", "2_2")):
+        C.append(mission(path, v))
+
 PROBES = [
     {"id": "SL-PROBE-A06", "kind": "failure-injection",
      "source": "pr7 A06-* (probe, probe2/3, bind, stalled, jitter, temp-block, cancel x5, wrong-floor)",

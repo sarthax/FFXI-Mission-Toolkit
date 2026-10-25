@@ -31,6 +31,7 @@ L += ["", "## Headless asset revalidation", "",
       "Missions (getCurrentMission), status effects, doors/switches/teleports, Feature Trace and Behavior Inspector outputs, "
       "packet captures. These have no candidates; see the gap report.", "",
       "## Provenance notes", "",
+      "Mission facts (WoTG 1-10 and nation rank 1-2 starters, 82 mission files extracted) come from LandSandBoat `landsandboat-latest@5f77448970` via `_extract_missions.py` -> `lsb_mission_extract.json`. DSP main has no WoTG mission scripts, so those are LSB-sourced and design-only for DSP/Valhalla. Nation-quest starters are the 19 DSP NPC scripts above. LSB csids are LSB client generation: verify before execution.", "",
       "DSP quest facts come from `dsp-branches` main `febdc00209` scripts and `sql/npc_list.sql` (19 NPC scripts, "
       "`dsp_source_extract.json`). npc_list ids were checked against the script zone with the id>>12 rule only; the client-id "
       "offset is NOT verified (project caveat)."]
@@ -86,7 +87,7 @@ w("SCENARIO_LIBRARY_IMPORT_PLAN.md", [
     "1. SL-MOG-009 (already runnable)", "2. SL-NPC-001 Argus event", "3. SL-ZONE-001 settle",
     "4. SL-PARTY-001 party formation (recorded pass)", "5. SL-ASLT-001 Leujaoam entry",
     "6. SL-ITEM-001 item possession (needs G-01)", "7. SL-KI-001 key item (needs G-01)",
-    "8. SL-QUEST-ZONFOBUN (item reward 16387)", "9. SL-QUEST-ARDEA (key item SHARP_GRAY_STONE)",
+    "8. SL-MSN-WOTG-01..05 (WoTG missions 1-5 sample; replaces the earlier Zon-Fobun slot per owner direction)", "9. SL-MSN-WOTG-06..10 (WoTG missions 6-10 sample; replaces the earlier Ardea slot)",
     "10. SL-ZONE-002 zone_to", "",
     "## Proposed next issues", "",
     "- Item/key-item expectation and oracle in XiHeadless",
