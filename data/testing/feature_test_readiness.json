@@ -1251,6 +1251,63 @@
             "run_live_output"
           ],
           "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-B1",
+          "kind": "positive",
+          "title": "Finbarr sells the Honeymoon ticket (3500 gil, plan byte, signature) (scenario breed_ticket)",
+          "status": "passed_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-B2",
+          "kind": "positive",
+          "title": "Finbarr date: trade ticket + both chococards, egg laid, wait, then bred egg handed over (scenario breed_date)",
+          "status": "passed_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-B3",
+          "kind": "positive",
+          "title": "Bred egg at the trainer keeps dna/ability and gets +8 plan stat (Hantileon) (scenario breed_hatch)",
+          "status": "passed_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
         }
       ],
       "gaps": [

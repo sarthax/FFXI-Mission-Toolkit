@@ -391,9 +391,92 @@ class Whistle:
         q(f"delete from char_vars where charid={CHAR} and varname in ('ChocoboWhistleProg','ChocoboWhistleHidingWalk')")
         q(f"delete from char_inventory where charid={CHAR} and itemid=15533")
 
+def give(itemid, extra=None):
+    """Insert an inventory item (before login: the server reads inventory at login) with optional exdata bytes."""
+    slot = q(f"select coalesce(max(slot),0)+1 from char_inventory where charid={CHAR} and location=0")[0][0]
+    c = db.cursor()
+    c.execute("insert into char_inventory (charid,location,slot,itemid,quantity,bazaar,signature,extra) values (%s,0,%s,%s,1,0,'',%s)",
+              (CHAR, slot, itemid, bytes(extra) if extra else bytes(24)))
+
+BREED_VARS = "('ChocoBreedEggItem','ChocoBreedEggGenes','ChocoBreedEggReady')"
+FINBARR = 17776821
+
+def card(sire, dna, ability=0, rcp=0):
+    word = dna[0] + dna[1] * 8 + dna[2] * 64 + ability * 512
+    return [10, 10, 10, rcp] + list(word.to_bytes(4, "little")) + [0] * 16
+
+class BreedTicket:
+    # Finbarr event 10108 menu: option 1 (Gourmet) buys the 3500 gil ticket with plan byte 1 and signature "PlanA". LSB-only.
+    notrainer = True; pos = "!pos -50 8.2 98 244"
+    def seed(self):
+        seed(4, 30); q(f"update chars set pos_zone=244 where charid={CHAR}")
+        q(f"delete from char_inventory where charid={CHAR} and itemid in (2344,2339,2342,2317,2318,2319)")
+        q(f"delete from char_vars where charid={CHAR} and varname in {BREED_VARS}")
+        q(f"update char_inventory set quantity=5000 where charid={CHAR} and itemid=65535 and location=0")
+    def run(self, b):
+        r = b.tool("talk_to_npc", npcId=FINBARR)
+        check("Finbarr starts menu event 10108", r.get("eventId") == 10108, r); time.sleep(2)
+        b.tool("event_select", selection=1); time.sleep(3)
+        ex = q(f"select extra from char_inventory where charid={CHAR} and itemid=2344")
+        got = bytes(ex[0][0]).hex(" ").upper() if ex else ""
+        check("ticket 2344 with plan 1 and an encoded PlanA signature", bool(ex) and bytes(ex[0][0])[0] == 1 and any(bytes(ex[0][0])[12:24]), got)  # signature is the encoded name, not ASCII
+        gil = q(f"select quantity from char_inventory where charid={CHAR} and itemid=65535 and location=0")[0][0]
+        check("3500 gil charged", gil == 1500, gil)
+    def done(self):
+        q(f"delete from char_inventory where charid={CHAR} and itemid=2344")
+
+class BreedDate:
+    # trade ticket + both cards: the date plays (10102), the egg is laid for the next JST midnight; once due, Finbarr hands over a bred egg
+    notrainer = True; pos = "!pos -50 8.2 98 244"
+    def seed(self):
+        seed(4, 30); q(f"update chars set pos_zone=244 where charid={CHAR}")
+        q(f"delete from char_inventory where charid={CHAR} and itemid in (2344,2339,2342,2317,2318,2319)")
+        q(f"delete from char_vars where charid={CHAR} and varname in {BREED_VARS}")
+        give(2344, [2] + [0] * 11 + list(b"PlanB") + [0] * 7)
+        give(2339, card([1, 1, 1], [1, 1, 1], 5, 64)); give(2342, card([1, 1, 1], [1, 1, 1], 5, 64))
+    def v(self, n):
+        r = q(f"select value from char_vars where charid={CHAR} and varname='{n}'"); return r[0][0] if r else 0
+    def run(self, b):
+        r = b.tool("trade_npc", npcId=FINBARR, items=[{"itemId": 2344, "qty": 1}, {"itemId": 2339, "qty": 1}, {"itemId": 2342, "qty": 1}]); time.sleep(2)
+        check("trade accepted", r.get("ok") is True, r)
+        b.tool("event_select", selection=0); time.sleep(3)
+        check("egg pending: Sports plan lays item 2318", self.v("ChocoBreedEggItem") == 2318, self.v("ChocoBreedEggItem"))
+        check("ticket and cards consumed", q(f"select count(*) from char_inventory where charid={CHAR} and itemid in (2344,2339,2342)")[0][0] == 0)
+        # parents are all dna 1 (plan 2 = Sports): offspring genes are 1 unless a 5% mutation hit
+        g = self.v("ChocoBreedEggGenes")
+        check("gene word has plan 1 (Sports) in bits 14-15", (g >> 14) & 3 == 1, hex(g))
+        r = b.tool("talk_to_npc", npcId=FINBARR)
+        check("before midnight Finbarr says wait (10105)", r.get("eventId") == 10105, r); time.sleep(2); b.tool("event_select", selection=0); time.sleep(1)
+        q(f"update char_vars set value=1 where charid={CHAR} and varname='ChocoBreedEggReady'")
+        r = b.tool("talk_to_npc", npcId=FINBARR)
+        check("when due Finbarr lays the egg (10107)", r.get("eventId") == 10107, r); time.sleep(2)
+        b.tool("event_select", selection=0); time.sleep(3)
+        ex = q(f"select extra from char_inventory where charid={CHAR} and itemid=2318")
+        check("bred egg 2318 received with IsBred bit", bool(ex) and ex[0][0][3] & 0x80 == 0x80, ex)
+        check("pending egg cleared", self.v("ChocoBreedEggItem") == 0)
+    def done(self):
+        q(f"delete from char_inventory where charid={CHAR} and itemid in (2344,2339,2342,2318)")
+        q(f"delete from char_vars where charid={CHAR} and varname in {BREED_VARS}")
+
+class BreedHatch:
+    notrainer = True
+    # a bred egg (dna 2,2,2, ability 5, Gourmet) handed to the trainer: the chocobo keeps the genes and ability, strength gets the +8 plan seed
+    def seed(self):
+        q(f"delete from char_chocobos where charid={CHAR}")
+        q(f"delete from char_inventory where charid={CHAR} and itemid in (2319)")
+        give(2319, list((2 + 16 + 128 + 5 * 512 + (1 << 31)).to_bytes(4, "little")) + [0] * 20)
+        q(f"update chars set pos_zone={ZONE},pos_x=129,pos_y=-6.35,pos_z=-117 where charid={CHAR}")
+    def run(self, b):
+        r = b.tool("trade_npc", npcId=NPC, items=[{"itemId": 2319, "qty": 1}]); time.sleep(2)
+        b.tool("event_select", selection=252); time.sleep(3)
+        row = q(f"select allele1,allele2,allele3,ability1,strength from char_chocobos where charid={CHAR}")
+        check("bred genes, ability and +8 strength kept", bool(row) and row[0] == (2, 2, 2, 5, 8), row)
+    def done(self):
+        q(f"delete from char_chocobos where charid={CHAR}")
+
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_hatch": BreedHatch}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)

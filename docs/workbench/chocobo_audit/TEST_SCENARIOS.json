@@ -276,6 +276,42 @@
    "evidence": [
     "runtime: 2026-10-25 xitest04 headless run_live.py whistle PASS: growth starts quest at SEARCH, wrong/right walk length, handkerchief key item 809, Hantileon scene 830 + option 222 gives whistle 15533 (LSB-decoded shapes, no capture)."
    ]
+  },
+  {
+   "id": "P4-CHO-B1",
+   "phase": "P4",
+   "title": "Finbarr sells the Honeymoon ticket (3500 gil, plan byte, signature) (scenario breed_ticket)",
+   "steps": "run_live.py breed_ticket",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py breed_ticket",
+   "state": "passed",
+   "evidence": [
+    "runtime: 2026-10-25 xitest04 headless run_live.py breed_ticket PASS: ticket 2344 with plan 1 and encoded signature, 3500 gil charged (LSB-only shapes, no capture)."
+   ]
+  },
+  {
+   "id": "P4-CHO-B2",
+   "phase": "P4",
+   "title": "Finbarr date: trade ticket + both chococards, egg laid, wait, then bred egg handed over (scenario breed_date)",
+   "steps": "run_live.py breed_date",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py breed_date",
+   "state": "passed",
+   "evidence": [
+    "runtime: 2026-10-25 xitest04 headless run_live.py breed_date PASS: date consumes items, genes carry plan, 10105 wait, 10107 egg with IsBred bit (LSB-only shapes, no capture)."
+   ]
+  },
+  {
+   "id": "P4-CHO-B3",
+   "phase": "P4",
+   "title": "Bred egg at the trainer keeps dna/ability and gets +8 plan stat (Hantileon) (scenario breed_hatch)",
+   "steps": "run_live.py breed_hatch",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py breed_hatch",
+   "state": "passed",
+   "evidence": [
+    "runtime: 2026-10-25 xitest04 headless run_live.py breed_hatch PASS: chocobo row has bred alleles, ability 5, strength 8 (LSB-only shapes, no capture)."
+   ]
   }
  ]
 }
