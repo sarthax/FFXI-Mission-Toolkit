@@ -27,6 +27,28 @@ _KEYS = frozenset({
 _PROVENANCE = frozenset({
     "observer", "original_ref", "source_authenticated", "oracle_approved",
 })
+_MAX_JSON_DEPTH = 64
+
+
+def _check_json_nesting(value: object, *, max_depth: int = _MAX_JSON_DEPTH) -> None:
+    """Reject overdeep caller data before JSON encoding or recursive deepcopy.
+
+    Explicit stack avoids Python's recursion limit even for hostile inputs.
+    json.dumps still rejects non-JSON values and cyclic references.
+    """
+    stack = [(value, 0)]
+    seen: set[int] = set()
+    while stack:
+        current, depth = stack.pop()
+        if depth > max_depth:
+            raise ValueError("offline JSON nesting exceeds limit")
+        if isinstance(current, (dict, list, tuple)):
+            identifier = id(current)
+            if identifier in seen:
+                continue
+            seen.add(identifier)
+            values = current.values() if isinstance(current, dict) else current
+            stack.extend((item, depth + 1) for item in values)
 
 
 def canonical_evidence_digest(evidence: dict) -> str:
@@ -34,9 +56,10 @@ def canonical_evidence_digest(evidence: dict) -> str:
     if not isinstance(evidence, dict):
         raise ValueError("evidence must be a JSON object")
     try:
+        _check_json_nesting(evidence)
         data = json.dumps(evidence, sort_keys=True, separators=(",", ":"),
                           ensure_ascii=True, allow_nan=False).encode("utf-8")
-    except (TypeError, ValueError, OverflowError) as exc:
+    except (TypeError, ValueError, OverflowError, RecursionError) as exc:
         raise ValueError("evidence is not bounded JSON") from exc
     if len(data) > 32768:
         raise ValueError("evidence exceeds offline limit")
@@ -87,12 +110,18 @@ def _validate(receipt: object) -> dict:
     if canonical_evidence_digest(receipt["evidence"]) != claimed:
         raise ValueError("evidence digest mismatch")
     try:
+        # A receipt adds one level around already bounded evidence. Recheck
+        # the full object separately so future fields cannot bypass the cap.
+        _check_json_nesting(receipt, max_depth=_MAX_JSON_DEPTH + 1)
         raw = json.dumps(receipt, sort_keys=True, allow_nan=False).encode("utf-8")
-    except (TypeError, ValueError, OverflowError) as exc:
+    except (TypeError, ValueError, OverflowError, RecursionError) as exc:
         raise ValueError("receipt is not JSON") from exc
     if len(raw) > 65536:
         raise ValueError("offline receipt exceeds limit")
-    return deepcopy(receipt)
+    try:
+        return deepcopy(receipt)
+    except RecursionError as exc:
+        raise ValueError("receipt nesting exceeds offline limit") from exc
 
 
 def _blocked(reason: str) -> dict:
@@ -156,7 +185,7 @@ class OfflineEvidenceLedger:
             for raw in receipts:
                 try:
                     receipt = _validate(raw)
-                except (ValueError, TypeError, KeyError) as exc:
+                except (ValueError, TypeError, KeyError, RecursionError) as exc:
                     return {"status": "BLOCKED", "reason": str(exc), "results": []}
                 verdict = _apply(staged, receipt)
                 if verdict["status"] == "BLOCKED":
