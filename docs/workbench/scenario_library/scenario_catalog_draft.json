@@ -1,0 +1,1611 @@
+{
+ "catalog_schema_version": "scenario-library-draft/1",
+ "status": "DRAFT",
+ "execution_validated": false,
+ "generated_from": {
+  "dsp": "dsp-branches@main:febdc00209",
+  "headless": "FFXI-Tools/headless-research/b-pr170 (read-only)",
+  "toolkit": "origin/main 7bb970af"
+ },
+ "scenarios": [
+  {
+   "id": "SL-PARTY-001",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "characterized",
+   "domain": "parties",
+   "title": "Leader invites member; party forms (Bastok Markets)",
+   "readable": {
+    "given": "Two headless characters in Bastok Markets (zone 235).",
+    "when": "Leader invites the member id; member accepts.",
+    "then": "Leader and member each report party_members_gt 0."
+   },
+   "provenance": [
+    "headless b-pr170 scenarios/scenario_party_leader.json",
+    "docs/evidence/pr7-acceptance-2026-10-19/A11-1-leader-member-{leader,member}/results.json"
+   ],
+   "confidence": "high",
+   "evidence_class": [
+    "previously-executed",
+    "source-supported"
+   ],
+   "support_status": "supported",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "xiheadless": {
+    "native_action": "invite / accept_invite",
+    "params": {
+     "invite": 21830
+    },
+    "typed_ids": {
+     "invite": "character id taken verbatim from scenario file"
+    },
+    "expected_state": {
+     "zone": 235,
+     "in_zone": true,
+     "party_members_gt": 0
+    },
+    "readback_collector": "scenario expectation party_members_gt (party_status MCP tool as cross-check)",
+    "oracle_rule": "GreaterThan(party_members_gt, 0)",
+    "setup": [
+     "two seeded characters in zone 235",
+     "leader and member run concurrently"
+    ],
+    "interpretation": {
+     "PASS": "All expectations observed by readback: party_members_gt > 0 on both sides",
+     "FAIL": "A readback was obtained and contradicts an expectation",
+     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
+     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
+    }
+   },
+   "recorded_outcome": "A11-1 leader results passed=2 failed=0; member results passed=2 failed=0 (pr7 evidence 2026-10-19). Server build provenance not re-verified here."
+  },
+  {
+   "id": "SL-NPC-001",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "characterized",
+   "domain": "npc-interaction",
+   "title": "Talk to Argus starts an event (Port Bastok)",
+   "readable": {
+    "given": "Character in zone 236 with NPCs visible.",
+    "when": "Character talks to NPC 17743873.",
+    "then": "An event becomes active."
+   },
+   "provenance": [
+    "headless scenarios/scenario_npc_event.json"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "supported",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "xiheadless": {
+    "native_action": "talk_npc",
+    "params": {
+     "talk_npc": 17743873
+    },
+    "typed_ids": {
+     "talk_npc": "npc entity id from scenario file"
+    },
+    "expected_state": {
+     "in_zone": true,
+     "zone": 236,
+     "entities_gt": 3,
+     "event_active": true
+    },
+    "readback_collector": "scenario expectation event_active",
+    "oracle_rule": "Equals(event_active, true)",
+    "setup": [
+     "character in zone 236"
+    ],
+    "interpretation": {
+     "PASS": "All expectations observed by readback: event_active true after talk_npc",
+     "FAIL": "A readback was obtained and contradicts an expectation",
+     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
+     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
+    }
+   },
+   "recorded_outcome": "scenario file exists; no recorded results.json located in this pass",
+   "note": "id resolves to zone 236 by the id>>12 rule"
+  },
+  {
+   "id": "SL-ASLT-001",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "characterized",
+   "domain": "instanced-content",
+   "title": "Leujaoam Sanctum entry via Runic Seal (Caedarva Mire)",
+   "readable": {
+    "given": "Character in zone 79 (Caedarva Mire).",
+    "when": "Talk to Runic Seal 17101270, update(0), finish(4).",
+    "then": "Event 0x8C fires with captured parameters, then character is in zone 69."
+   },
+   "provenance": [
+    "headless scenarios/scenario_leujaoam_entry.json (expectation values labelled capture-derived in the file)"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "capture-observed",
+    "source-supported"
+   ],
+   "support_status": "partial",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "xiheadless": {
+    "native_action": "talk_npc + walk_to + update + finish",
+    "params": {
+     "talk_npc": 17101270,
+     "update": 0,
+     "finish": 4
+    },
+    "typed_ids": {
+     "talk_npc": "npc entity id",
+     "event_id": 140,
+     "zone_in": 79,
+     "zone_out": 69
+    },
+    "expected_state": {
+     "event_id": 140,
+     "event_form_34": 1,
+     "event_param0": 1,
+     "event_param1": 4294967292,
+     "event_param2": 0,
+     "event_param3": 50,
+     "zone": 69
+    },
+    "readback_collector": "scenario expectations event_id/event_param*/zone",
+    "oracle_rule": "Equals on each field",
+    "setup": [
+     "Assault rank/imprimatur prerequisites NOT characterized in discovery",
+     "instance capacity free"
+    ],
+    "interpretation": {
+     "PASS": "All expectations observed by readback: event fields then zone == 69",
+     "FAIL": "A readback was obtained and contradicts an expectation",
+     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
+     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
+    }
+   },
+   "recorded_outcome": "no recorded result located; sibling files leujaoam_dbg/leujaoam_full not triaged for outcome"
+  },
+  {
+   "id": "SL-ZONE-001",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "characterized",
+   "domain": "zone-transitions",
+   "title": "Character settles in a zone and sees entities",
+   "readable": {
+    "given": "Logged-in character.",
+    "when": "Wait for settle.",
+    "then": "in_zone true, max_hp_gt 0, entities_gt N."
+   },
+   "provenance": [
+    "pr7 evidence 'settle' step (passes in most A06 runs)",
+    "scenarios/scenario_idle235.json"
+   ],
+   "confidence": "high",
+   "evidence_class": [
+    "previously-executed"
+   ],
+   "support_status": "supported",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "xiheadless": {
+    "native_action": "wait_ms (+ expectation only)",
+    "params": {
+     "wait_ms": 3000
+    },
+    "typed_ids": {
+     "zone": "zone id"
+    },
+    "expected_state": {
+     "in_zone": true,
+     "max_hp_gt": 0,
+     "entities_gt": 0
+    },
+    "readback_collector": "scenario expectations",
+    "oracle_rule": "Equals/GreaterThan",
+    "setup": [
+     "character online"
+    ],
+    "interpretation": {
+     "PASS": "All expectations observed by readback: in_zone true and entities visible",
+     "FAIL": "A readback was obtained and contradicts an expectation",
+     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
+     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
+    }
+   },
+   "recorded_outcome": "'settle' step pass=true across A06 probe runs"
+  },
+  {
+   "id": "SL-ZONE-002",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "zone-transitions",
+   "title": "Zone-to command changes zone",
+   "readable": {
+    "given": "Character in zone A.",
+    "when": "MCP zone_to targets zone B.",
+    "then": "zone == B and in_zone."
+   },
+   "provenance": [
+    "MCP tool zone_to (name only; parameters not read in discovery)",
+    "docs/evidence/pr67-stop-logout-zone-20261019/"
+   ],
+   "confidence": "low",
+   "evidence_class": [
+    "unverified"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "note": "design-only; zone_to is an MCP tool, not a scenario action"
+  },
+  {
+   "id": "SL-COMBAT-001",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "combat",
+   "title": "kill_all clears nearby mobs",
+   "readable": {
+    "given": "Character near mobs.",
+    "when": "kill_all action.",
+    "then": "Nearby mob count falls; hpp expectation observable."
+   },
+   "provenance": [
+    "ScenarioActionSchema.Known includes kill_all"
+   ],
+   "confidence": "low",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "note": "design-only; no recorded scenario using kill_all located"
+  },
+  {
+   "id": "SL-COMBAT-002",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "combat",
+   "title": "rest_hp restores hpp",
+   "readable": {
+    "given": "Damaged character.",
+    "when": "rest_hp action.",
+    "then": "hpp rises."
+   },
+   "provenance": [
+    "ScenarioActionSchema.Known includes rest_hp; expectation key hpp exists"
+   ],
+   "confidence": "low",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "note": "design-only"
+  },
+  {
+   "id": "SL-DIAG-001",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "dialog-csid",
+   "title": "sweep_npcs enumerates NPC events in a zone",
+   "readable": {
+    "given": "Character in zone 235.",
+    "when": "sweep_npcs.",
+    "then": "Each NPC either starts an event or none."
+   },
+   "provenance": [
+    "headless scenarios/scenario_sweep.json"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "partial",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "note": "outcome not located; sweep is exploratory, not a pass/fail oracle"
+  },
+  {
+   "id": "SL-MOG-009",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "characterized",
+   "domain": "inventory",
+   "title": "MOG-09 Toolkit catalog scenario",
+   "readable": {
+    "given": "Per Toolkit catalog entry.",
+    "when": "Per Toolkit runner.",
+    "then": "Per Toolkit oracle."
+   },
+   "provenance": [
+    "data/testing/test_specifications.json (MOG-09)",
+    "execution_preflight.SUPPORTED"
+   ],
+   "confidence": "high",
+   "evidence_class": [
+    "previously-executed",
+    "locally-validated"
+   ],
+   "support_status": "supported",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "xiheadless": {
+    "native_action": "Toolkit built-in runner (not XIHeadless scenario schema)",
+    "params": {},
+    "typed_ids": {},
+    "expected_state": "see catalog entry",
+    "readback_collector": "Toolkit observation operations (equals/nonempty/same_rows/all_zero)",
+    "oracle_rule": "Toolkit assertion ids",
+    "setup": [
+     "see MOG-09 catalog entry"
+    ],
+    "interpretation": {
+     "PASS": "All expectations observed by readback: catalog assertions",
+     "FAIL": "A readback was obtained and contradicts an expectation",
+     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
+     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
+    }
+   },
+   "note": "spec contents not duplicated here; reference only"
+  },
+  {
+   "id": "SL-INV-001",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "inventory",
+   "title": "INV-OBS-01 inventory observation spec",
+   "readable": {
+    "given": "Per catalog.",
+    "when": "Observe inventory.",
+    "then": "Per catalog."
+   },
+   "provenance": [
+    "data/testing/test_specifications.json (INV-OBS-01)"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "partial",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "note": "not runnable (execution_preflight.SUPPORTED lists only MOG-09)"
+  },
+  {
+   "id": "SL-ITEM-001",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "characterized",
+   "domain": "inventory",
+   "title": "Item possession after trade or quest reward",
+   "readable": {
+    "given": "Character with empty slot.",
+    "when": "Complete a reward step.",
+    "then": "container_items shows the item id."
+   },
+   "provenance": [
+    "MCP tools inventory, container_items, trade_npc, use_item (names only)",
+    "no item expectation exists in ScenarioExpectationSchema"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "partial",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "xiheadless": {
+    "native_action": "MCP inventory / container_items (outside scenario schema)",
+    "params": {
+     "item_id": "from addItem in the NPC script, e.g. 16387 for Zon-Fobun"
+    },
+    "typed_ids": {
+     "item_id": "item id from the DSP script"
+    },
+    "expected_state": {
+     "item_present": true
+    },
+    "readback_collector": "container_items tool",
+    "oracle_rule": "none in ScenarioOracle (gap G-01)",
+    "setup": [
+     "empty slot"
+    ],
+    "interpretation": {
+     "PASS": "All expectations observed by readback: item id present in container",
+     "FAIL": "A readback was obtained and contradicts an expectation",
+     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
+     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
+    }
+   }
+  },
+  {
+   "id": "SL-KI-001",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "characterized",
+   "domain": "key-items",
+   "title": "Key item granted by NPC",
+   "readable": {
+    "given": "Character without key item.",
+    "when": "Complete the NPC step.",
+    "then": "key_items lists the key item."
+   },
+   "provenance": [
+    "MCP tool key_items",
+    "DSP scripts use addKeyItem(tpz.ki.NAME)",
+    "memory note: key item ids drift ~90% LSB vs Topaz; resolve via id_bridge"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "partial",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "xiheadless": {
+    "native_action": "MCP key_items (outside scenario schema)",
+    "params": {
+     "key_item": "name only"
+    },
+    "typed_ids": {
+     "key_item_id": "NOT asserted: resolve with id_bridge.py in an execution session"
+    },
+    "expected_state": {
+     "key_item_present": true
+    },
+    "readback_collector": "key_items tool",
+    "oracle_rule": "none in ScenarioOracle (gap G-01)",
+    "setup": [
+     "character lacks key item"
+    ],
+    "interpretation": {
+     "PASS": "All expectations observed by readback: key item listed",
+     "FAIL": "A readback was obtained and contradicts an expectation",
+     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
+     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
+    }
+   }
+  },
+  {
+   "id": "SL-QUEST-ARDEA",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "characterized",
+   "domain": "missions-quests",
+   "title": "Ardea: ROCK_RACKETTER",
+   "readable": {
+    "given": "Character in Bastok Markets with quest ROCK_RACKETTER in a start-eligible state.",
+    "when": "Character talks to Ardea.",
+    "then": "NPC event fires (script csids 0x0105, 0x104, 264, 265); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Bastok_Markets/npcs/Ardea.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "partial",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "xiheadless": {
+    "native_action": "talk_npc",
+    "params": {
+     "talk_npc": 17739794
+    },
+    "typed_ids": {
+     "talk_npc": "npc_list id (zone check passed)",
+     "zone": 235,
+     "csids_in_script": [
+      "0x0105",
+      "0x104",
+      "264",
+      "265"
+     ]
+    },
+    "expected_state": {
+     "zone": 235,
+     "event_active": true
+    },
+    "readback_collector": "scenario expectation event_active; quest stage NOT readable (gap G-02)",
+    "oracle_rule": "Equals(event_active, true)",
+    "setup": [
+     "character in zone 235 near NPC at (-197.963,-6.000,-69.026)",
+     "quest prerequisites per script (not characterized)",
+     "npc_list id vs client id offset unverified (verify with dat-extractor)"
+    ],
+    "interpretation": {
+     "PASS": "All expectations observed by readback: event_active true after talk_npc; quest state change is unobservable today, so at most partial",
+     "FAIL": "A readback was obtained and contradicts an expectation",
+     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
+     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
+    }
+   },
+   "source_facts": {
+    "quests": [
+     "ROCK_RACKETTER"
+    ],
+    "keyitems": [
+     "SHARP_GRAY_STONE"
+    ],
+    "addItem": [],
+    "vars": [
+     "ChasingQuotas_Progress",
+     "rockracketeer_sold"
+    ],
+    "npc_list": {
+     "id": 17739794,
+     "pos": [
+      "-197.963",
+      "-6.000",
+      "-69.026"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-AQUILLINA",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-quests",
+   "title": "Aquillina: A_FLASH_IN_THE_PAN",
+   "readable": {
+    "given": "Character in Bastok Markets with quest A_FLASH_IN_THE_PAN in a start-eligible state.",
+    "when": "Character talks to Aquillina.",
+    "then": "NPC event fires (script csids 0x0074, 0x00d9, 0x00da, 0x00db); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Bastok_Markets/npcs/Aquillina.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "quests": [
+     "A_FLASH_IN_THE_PAN"
+    ],
+    "keyitems": [],
+    "addItem": [],
+    "vars": [
+     "FlashInThePan"
+    ],
+    "npc_list": {
+     "id": 17739784,
+     "pos": [
+      "-98.884",
+      "-4.809",
+      "-79.000"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-BRYGID",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-quests",
+   "title": "Brygid: BRYGID_THE_STYLIST/BRYGID_THE_STYLIST_RETURNS",
+   "readable": {
+    "given": "Character in Bastok Markets with quest BRYGID_THE_STYLIST/BRYGID_THE_STYLIST_RETURNS in a start-eligible state.",
+    "when": "Character talks to Brygid.",
+    "then": "NPC event fires (script csids 0x0077, 0x0136, 0x0137, 380); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Bastok_Markets/npcs/Brygid.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "quests": [
+     "BRYGID_THE_STYLIST",
+     "BRYGID_THE_STYLIST_RETURNS",
+     "RIDING_ON_THE_CLOUDS"
+    ],
+    "keyitems": [
+     "SMILING_STONE"
+    ],
+    "addItem": [
+     "12720",
+     "14400"
+    ],
+    "vars": [
+     "BrygidGetBody",
+     "BrygidGetLegs",
+     "BrygidWantsSubligar",
+     "ridingOnTheClouds_2"
+    ],
+    "npc_list": {
+     "id": 17739813,
+     "pos": [
+      "-90.197",
+      "-4.302",
+      "-108.509"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-DEGENHARD",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "characterized",
+   "domain": "missions-quests",
+   "title": "Degenhard: THE_BARE_BONES",
+   "readable": {
+    "given": "Character in Bastok Markets with quest THE_BARE_BONES in a start-eligible state.",
+    "when": "Character talks to Degenhard.",
+    "then": "NPC event fires (script csids 0x00ff, 0x0100, 0x0102, 0x0156); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Bastok_Markets/npcs/Degenhard.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "partial",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "xiheadless": {
+    "native_action": "talk_npc",
+    "params": {
+     "talk_npc": 17739842
+    },
+    "typed_ids": {
+     "talk_npc": "npc_list id (zone check passed)",
+     "zone": 235,
+     "csids_in_script": [
+      "0x00ff",
+      "0x0100",
+      "0x0102",
+      "0x0156"
+     ]
+    },
+    "expected_state": {
+     "zone": 235,
+     "event_active": true
+    },
+    "readback_collector": "scenario expectation event_active; quest stage NOT readable (gap G-02)",
+    "oracle_rule": "Equals(event_active, true)",
+    "setup": [
+     "character in zone 235 near NPC at (-173.975,1.999,-136.313)",
+     "quest prerequisites per script (not characterized)",
+     "npc_list id vs client id offset unverified (verify with dat-extractor)"
+    ],
+    "interpretation": {
+     "PASS": "All expectations observed by readback: event_active true after talk_npc; quest state change is unobservable today, so at most partial",
+     "FAIL": "A readback was obtained and contradicts an expectation",
+     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
+     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
+    }
+   },
+   "source_facts": {
+    "quests": [
+     "THE_BARE_BONES"
+    ],
+    "keyitems": [
+     "0x188"
+    ],
+    "addItem": [],
+    "vars": [
+     "BeatAroundTheBushin"
+    ],
+    "npc_list": {
+     "id": 17739842,
+     "pos": [
+      "-173.975",
+      "1.999",
+      "-136.313"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-ZONFOBUN",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "characterized",
+   "domain": "missions-quests",
+   "title": "Zon-Fobun: THE_CURSE_COLLECTOR",
+   "readable": {
+    "given": "Character in Bastok Markets with quest THE_CURSE_COLLECTOR in a start-eligible state.",
+    "when": "Character talks to Zon-Fobun.",
+    "then": "NPC event fires (script csids 0x00fa, 0x00fb, 0x00fc); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Bastok_Markets/npcs/Zon-Fobun.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "partial",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "xiheadless": {
+    "native_action": "talk_npc",
+    "params": {
+     "talk_npc": 17739841
+    },
+    "typed_ids": {
+     "talk_npc": "npc_list id (zone check passed)",
+     "zone": 235,
+     "csids_in_script": [
+      "0x00fa",
+      "0x00fb",
+      "0x00fc"
+     ]
+    },
+    "expected_state": {
+     "zone": 235,
+     "event_active": true
+    },
+    "readback_collector": "scenario expectation event_active; quest stage NOT readable (gap G-02)",
+    "oracle_rule": "Equals(event_active, true)",
+    "setup": [
+     "character in zone 235 near NPC at (-240.333,-2.000,65.133)",
+     "quest prerequisites per script (not characterized)",
+     "npc_list id vs client id offset unverified (verify with dat-extractor)"
+    ],
+    "interpretation": {
+     "PASS": "All expectations observed by readback: event_active true after talk_npc; quest state change is unobservable today, so at most partial",
+     "FAIL": "A readback was obtained and contradicts an expectation",
+     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
+     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
+    }
+   },
+   "source_facts": {
+    "quests": [
+     "THE_CURSE_COLLECTOR"
+    ],
+    "keyitems": [
+     "CURSEPAPER"
+    ],
+    "addItem": [
+     "16387"
+    ],
+    "vars": [
+     "cCollectCurse",
+     "cCollectSilence"
+    ],
+    "npc_list": {
+     "id": 17739841,
+     "pos": [
+      "-240.333",
+      "-2.000",
+      "65.133"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-POWHATAN",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-quests",
+   "title": "Powhatan: GUEST_OF_HAUTEUR/WELCOME_TO_BASTOK",
+   "readable": {
+    "given": "Character in Port Bastok with quest GUEST_OF_HAUTEUR/WELCOME_TO_BASTOK in a start-eligible state.",
+    "when": "Character talks to Powhatan.",
+    "then": "NPC event fires (script csids 0x32, 0x33, 0x35, 0x37); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Port_Bastok/npcs/Powhatan.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "quests": [
+     "GUEST_OF_HAUTEUR",
+     "WELCOME_TO_BASTOK"
+    ],
+    "keyitems": [
+     "LETTERS_FROM_DOMIEN"
+    ],
+    "addItem": [
+     "12300",
+     "16565"
+    ],
+    "vars": [
+     "GuestofHauteur_Event",
+     "WelcomeToBastok_Event",
+     "WelcometoBastok_Event"
+    ],
+    "npc_list": {
+     "id": 17743886,
+     "pos": [
+      "-152.135",
+      "-7.480",
+      "19.014"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-EVI",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-quests",
+   "title": "Evi: PAST_PERFECT",
+   "readable": {
+    "given": "Character in Port Bastok with quest PAST_PERFECT in a start-eligible state.",
+    "when": "Character talks to Evi.",
+    "then": "NPC event fires (script csids 0x0015, 0x0068, 0x0082, 0x0083); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Port_Bastok/npcs/Evi.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "quests": [
+     "PAST_PERFECT"
+    ],
+    "keyitems": [
+     "TATTERED_MISSION_ORDERS"
+    ],
+    "addItem": [
+     "12560"
+    ],
+    "vars": [
+     "PastPerfectVar"
+    ],
+    "npc_list": {
+     "id": 17743903,
+     "pos": [
+      "-4.656",
+      "-2.101",
+      "1.664"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-VALAHMOLKO",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-quests",
+   "title": "Valah Molkot: A_LADY_S_HEART",
+   "readable": {
+    "given": "Character in Port Bastok with quest A_LADY_S_HEART in a start-eligible state.",
+    "when": "Character talks to Valah_Molkot.",
+    "then": "NPC event fires (script csids 0x00a0); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Port_Bastok/npcs/Valah_Molkot.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "quests": [
+     "A_LADY_S_HEART"
+    ],
+    "keyitems": [],
+    "addItem": [],
+    "vars": [],
+    "npc_list": {
+     "id": 17743942,
+     "pos": [
+      "59.852",
+      "8.499",
+      "-221.670"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-TALIB",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-quests",
+   "title": "Talib: BEAUTY_AND_THE_GALKA/SHADY_BUSINESS",
+   "readable": {
+    "given": "Character in Port Bastok with quest BEAUTY_AND_THE_GALKA/SHADY_BUSINESS in a start-eligible state.",
+    "when": "Character talks to Talib.",
+    "then": "NPC event fires (script csids 0x0002, 0x0003, 0x0004, 0x005a); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Port_Bastok/npcs/Talib.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "quests": [
+     "BEAUTY_AND_THE_GALKA",
+     "SHADY_BUSINESS"
+    ],
+    "keyitems": [
+     "PALBOROUGH_MINES_LOGS"
+    ],
+    "addItem": [],
+    "vars": [
+     "BeautyAndTheGalkaDenied"
+    ],
+    "npc_list": {
+     "id": 17743880,
+     "pos": [
+      "-101.133",
+      "4.649",
+      "28.803"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-BABENN",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-quests",
+   "title": "Babenn: RIDING_ON_THE_CLOUDS/THE_ELEVENTH_S_HOUR",
+   "readable": {
+    "given": "Character in Bastok Mines with quest RIDING_ON_THE_CLOUDS/THE_ELEVENTH_S_HOUR in a start-eligible state.",
+    "when": "Character talks to Babenn.",
+    "then": "NPC event fires (script csids 0x0028, 0x002d); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Bastok_Mines/npcs/Babenn.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "quests": [
+     "RIDING_ON_THE_CLOUDS",
+     "THE_ELEVENTH_S_HOUR"
+    ],
+    "keyitems": [
+     "OLD_TOOLBOX",
+     "SMILING_STONE"
+    ],
+    "addItem": [
+     "16629"
+    ],
+    "vars": [
+     "EleventhsHour",
+     "ridingOnTheClouds_2"
+    ],
+    "npc_list": {
+     "id": 17735718,
+     "pos": [
+      "73.458",
+      "-0.047",
+      "34.724"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-ELKI",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-quests",
+   "title": "Elki: HEARTS_OF_MYTHRIL/THE_ELEVENTH_S_HOUR",
+   "readable": {
+    "given": "Character in Bastok Mines with quest HEARTS_OF_MYTHRIL/THE_ELEVENTH_S_HOUR in a start-eligible state.",
+    "when": "Character talks to Elki.",
+    "then": "NPC event fires (script csids 0x001f, 0x0029, 0x002a, 0x002b); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Bastok_Mines/npcs/Elki.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "quests": [
+     "HEARTS_OF_MYTHRIL",
+     "THE_ELEVENTH_S_HOUR"
+    ],
+    "keyitems": [
+     "0x17",
+     "0x18"
+    ],
+    "addItem": [
+     "12840"
+    ],
+    "vars": [
+     "EleventhsHour",
+     "HeartsOfMythril"
+    ],
+    "npc_list": {
+     "id": 17735703,
+     "pos": [
+      "-17.087",
+      "-0.050",
+      "52.745"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-ROSEL",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-quests",
+   "title": "Rosel: FLYERS_FOR_REGINE/ROSEL_THE_ARMORER",
+   "readable": {
+    "given": "Character in Southern San dOria with quest FLYERS_FOR_REGINE/ROSEL_THE_ARMORER in a start-eligible state.",
+    "when": "Character talks to Rosel.",
+    "then": "NPC event fires (script csids 0x020b, 0x020c, 0x020f); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Southern_San_dOria/npcs/Rosel.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "quests": [
+     "FLYERS_FOR_REGINE",
+     "ROSEL_THE_ARMORER"
+    ],
+    "keyitems": [
+     "RECEIPT_FOR_THE_PRINCE"
+    ],
+    "addItem": [],
+    "vars": [
+     "FFR",
+     "RefuseRoselTheArmorerQuest",
+     "tradeRosel"
+    ],
+    "npc_list": {
+     "id": 17719386,
+     "pos": [
+      "69.895",
+      "0.000",
+      "41.073"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-RAIMBROY",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-quests",
+   "title": "Raimbroy: FLYERS_FOR_REGINE/THE_SWEETEST_THINGS",
+   "readable": {
+    "given": "Character in Southern San dOria with quest FLYERS_FOR_REGINE/THE_SWEETEST_THINGS in a start-eligible state.",
+    "when": "Character talks to Raimbroy.",
+    "then": "NPC event fires (script csids 0x020a, 0x0214, 0x0215, 0x0216); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Southern_San_dOria/npcs/Raimbroy.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "quests": [
+     "FLYERS_FOR_REGINE",
+     "THE_SWEETEST_THINGS"
+    ],
+    "keyitems": [],
+    "addItem": [],
+    "vars": [
+     "theSweetestThings"
+    ],
+    "npc_list": {
+     "id": 17719314,
+     "pos": [
+      "-140.928",
+      "-2.999",
+      "34.684"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-PAOUALA",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "characterized",
+   "domain": "missions-quests",
+   "title": "Paouala: SLEEPLESS_NIGHTS",
+   "readable": {
+    "given": "Character in Southern San dOria with quest SLEEPLESS_NIGHTS in a start-eligible state.",
+    "when": "Character talks to Paouala.",
+    "then": "NPC event fires (script csids 0x0051, 0x0052, 0x0053, 0x0054); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Southern_San_dOria/npcs/Paouala.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "partial",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "xiheadless": {
+    "native_action": "talk_npc",
+    "params": {
+     "talk_npc": 17719497
+    },
+    "typed_ids": {
+     "talk_npc": "npc_list id (zone check passed)",
+     "zone": 230,
+     "csids_in_script": [
+      "0x0051",
+      "0x0052",
+      "0x0053",
+      "0x0054",
+      "0x0055"
+     ]
+    },
+    "expected_state": {
+     "zone": 230,
+     "event_active": true
+    },
+    "readback_collector": "scenario expectation event_active; quest stage NOT readable (gap G-02)",
+    "oracle_rule": "Equals(event_active, true)",
+    "setup": [
+     "character in zone 230 near NPC at (157.125,-6.750,18.888)",
+     "quest prerequisites per script (not characterized)",
+     "npc_list id vs client id offset unverified (verify with dat-extractor)"
+    ],
+    "interpretation": {
+     "PASS": "All expectations observed by readback: event_active true after talk_npc; quest state change is unobservable today, so at most partial",
+     "FAIL": "A readback was obtained and contradicts an expectation",
+     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
+     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
+    }
+   },
+   "source_facts": {
+    "quests": [
+     "SLEEPLESS_NIGHTS"
+    ],
+    "keyitems": [],
+    "addItem": [],
+    "vars": [],
+    "npc_list": {
+     "id": 17719497,
+     "pos": [
+      "157.125",
+      "-6.750",
+      "18.888"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-CHAMAMA",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-quests",
+   "title": "Chamama: INSPECTOR_S_GADGET/IN_A_PICKLE",
+   "readable": {
+    "given": "Character in Windurst Waters with quest INSPECTOR_S_GADGET/IN_A_PICKLE in a start-eligible state.",
+    "when": "Character talks to Chamama.",
+    "then": "NPC event fires (script csids 0x0227, 0x0228, 0x0229, 0x028b); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Windurst_Waters/npcs/Chamama.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "quests": [
+     "INSPECTOR_S_GADGET",
+     "IN_A_PICKLE",
+     "THE_PROMISE"
+    ],
+    "keyitems": [
+     "FAKE_MOUSTACHE",
+     "INVISIBLE_MAN_STICKER"
+    ],
+    "addItem": [
+     "12505"
+    ],
+    "vars": [
+     "QuestInAPickle_var",
+     "ThePromise"
+    ],
+    "npc_list": {
+     "id": 17752151,
+     "pos": [
+      "-70.244",
+      "-3.800",
+      "-4.439"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-OHBIRUDOHB",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-quests",
+   "title": "Ohbiru-Dohbiru: FOOD_FOR_THOUGHT/OVERNIGHT_DELIVERY",
+   "readable": {
+    "given": "Character in Windurst Waters with quest FOOD_FOR_THOUGHT/OVERNIGHT_DELIVERY in a start-eligible state.",
+    "when": "Character talks to Ohbiru-Dohbiru.",
+    "then": "NPC event fires (script csids 0x0134, 0x0135, 0x013c, 0x013d); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Windurst_Waters/npcs/Ohbiru-Dohbiru.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "quests": [
+     "FOOD_FOR_THOUGHT",
+     "OVERNIGHT_DELIVERY",
+     "SAY_IT_WITH_FLOWERS",
+     "TORAIMARAI_TURMOIL",
+     "WATER_WAY_TO_GO"
+    ],
+    "keyitems": [
+     "267"
+    ],
+    "addItem": [
+     "504",
+     "941",
+     "948",
+     "949",
+     "956",
+     "957",
+     "958"
+    ],
+    "vars": [
+     "FLOWER_PROGRESS",
+     "Kenapa_Food_var",
+     "Kerutoto_Food_var",
+     "MEMORIES_OF_A_MAIDEN_Status",
+     "Ohbiru_Food_var",
+     "ohbiru_dohbiru_talk"
+    ],
+    "npc_list": {
+     "id": 17752109,
+     "pos": [
+      "22.704",
+      "-5.377",
+      "-195.018"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-ANGELICA",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "characterized",
+   "domain": "missions-quests",
+   "title": "Angelica: A_POSE_BY_ANY_OTHER_NAME",
+   "readable": {
+    "given": "Character in Windurst Waters with quest A_POSE_BY_ANY_OTHER_NAME in a start-eligible state.",
+    "when": "Character talks to Angelica.",
+    "then": "NPC event fires (script csids 0x0056, 0x0057, 0x0058, 0x0059); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Windurst_Waters/npcs/Angelica.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "partial",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "xiheadless": {
+    "native_action": "talk_npc",
+    "params": {
+     "talk_npc": 17752153
+    },
+    "typed_ids": {
+     "talk_npc": "npc_list id (zone check passed)",
+     "zone": 238,
+     "csids_in_script": [
+      "0x0056",
+      "0x0057",
+      "0x0058",
+      "0x0059",
+      "0x005c",
+      "0x005d",
+      "0x0060",
+      "0x0065",
+      "0x0066"
+     ]
+    },
+    "expected_state": {
+     "zone": 238,
+     "event_active": true
+    },
+    "readback_collector": "scenario expectation event_active; quest stage NOT readable (gap G-02)",
+    "oracle_rule": "Equals(event_active, true)",
+    "setup": [
+     "character in zone 238 near NPC at (-64.619,-9.250,-8.853)",
+     "quest prerequisites per script (not characterized)",
+     "npc_list id vs client id offset unverified (verify with dat-extractor)"
+    ],
+    "interpretation": {
+     "PASS": "All expectations observed by readback: event_active true after talk_npc; quest state change is unobservable today, so at most partial",
+     "FAIL": "A readback was obtained and contradicts an expectation",
+     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
+     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
+    }
+   },
+   "source_facts": {
+    "quests": [
+     "A_POSE_BY_ANY_OTHER_NAME"
+    ],
+    "keyitems": [
+     "ANGELICAS_AUTOGRAPH"
+    ],
+    "addItem": [
+     "206"
+    ],
+    "vars": [
+     "QuestAPoseByOtherName_equip",
+     "QuestAPoseByOtherName_prog",
+     "QuestAPoseByOtherName_time"
+    ],
+    "npc_list": {
+     "id": 17752153,
+     "pos": [
+      "-64.619",
+      "-9.250",
+      "-8.853"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-KUROIDOMOI",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-quests",
+   "title": "Kuroido-Moido: MAKING_AMENDS/MAKING_AMENS",
+   "readable": {
+    "given": "Character in Port Windurst with quest MAKING_AMENDS/MAKING_AMENS in a start-eligible state.",
+    "when": "Character talks to Kuroido-Moido.",
+    "then": "NPC event fires (script csids 0x00e1, 0x00e2, 0x0105, 0x010a); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Port_Windurst/npcs/Kuroido-Moido.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "quests": [
+     "MAKING_AMENDS",
+     "MAKING_AMENS",
+     "WONDER_WANDS"
+    ],
+    "keyitems": [
+     "128",
+     "BROKEN_WAND"
+    ],
+    "addItem": [],
+    "vars": [
+     "ASA_Status"
+    ],
+    "npc_list": {
+     "id": 17760267,
+     "pos": [
+      "-130.950",
+      "-4.000",
+      "143.997"
+     ]
+    }
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-QUEST-KOPUROPOPU",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-quests",
+   "title": "Kopuro-Popuro: A_GREETING_CARDIAN/LEGENDARY_PLAN_B",
+   "readable": {
+    "given": "Character in Windurst Woods with quest A_GREETING_CARDIAN/LEGENDARY_PLAN_B in a start-eligible state.",
+    "when": "Character talks to Kopuro-Popuro.",
+    "then": "NPC event fires (script csids 0x0114, 0x011d, 0x0120, 0x0124); quest/key item/reward effects per script."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Windurst_Woods/npcs/Kopuro-Popuro.lua",
+    "dsp-branches@main:febdc00209: sql/npc_list.sql"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "quests": [
+     "A_GREETING_CARDIAN",
+     "LEGENDARY_PLAN_B",
+     "THE_ALL_NEW_C_2000",
+     "THE_ALL_NEW_C_3000"
+    ],
+    "keyitems": [],
+    "addItem": [
+     "12749"
+    ],
+    "vars": [
+     "AGreetingCardian_Event"
+    ],
+    "npc_list": {
+     "id": 17764374,
+     "pos": [
+      "-0.037",
+      "-3.749",
+      "-22.589"
+     ]
+    }
+   },
+   "verification_flags": []
+  }
+ ],
+ "failure_injection_probes": [
+  {
+   "id": "SL-PROBE-A06",
+   "kind": "failure-injection",
+   "source": "pr7 A06-* (probe, probe2/3, bind, stalled, jitter, temp-block, cancel x5, wrong-floor)",
+   "note": "route/walk robustness probes; failures there are injected or exploratory, NOT expected-fail library scenarios",
+   "recorded": "mixed pass/fail; one run failed at scenario load (walk_to shape)"
+  },
+  {
+   "id": "SL-PROBE-A11-2",
+   "kind": "failure-injection",
+   "source": "pr7 A11-2-invite-absent-{leader,member}",
+   "note": "invite with absent counterpart; each side 1 pass 1 fail"
+  }
+ ]
+}
