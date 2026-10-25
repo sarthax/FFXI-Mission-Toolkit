@@ -3,6 +3,8 @@
   'use strict';
   const M = window.ScenarioGuidedModel, V = window.ScenarioContractV2View;
   const Feedback = window.ScenarioValidationFeedback;
+  const L = window.ScenarioLabels || {observation:String,observationHint:()=>'',operation:String,
+    operationHint:()=>'',groupOf:()=>'Other',sentence:()=>'',noExpected:()=>false,groups:()=>[]};
   const $ = id => document.getElementById(id);
   let spec = M.fresh(), mode = 'guided', options = {features: [], observations: [], operations: []};
   let drafts = [], baseline = null, sourceDetail = null;
@@ -70,7 +72,8 @@
     select.multiple = true; select.size = Math.min(6, Math.max(3, values.length));
     const choices = [...new Set([...values, ...(selected || [])])];
     for (const name of choices) {
-      const o = el('option', '', name + (values.includes(name) ? '' : ' — UNKNOWN reference'));
+      const o = el('option', '', L.observation(name) + (values.includes(name) ? '' : ' — UNKNOWN reference'));
+      o.title = L.observationHint(name);
       o.value = name; o.selected = (selected || []).includes(name); select.append(o);
     }
     return select;
@@ -81,8 +84,8 @@
     const host = $('sd-assertions'); host.replaceChildren();
     spec.assertions.forEach((row, i) => {
       const card = el('article','sd-card');
-      const h = el('header'); h.append(el('strong','', 'Assertion ' + (i+1) + ' · not verified'));
-      const remove = el('button', '', 'Remove assertion'); remove.type = 'button';
+      const h = el('header'); h.append(el('strong','', 'Check ' + (i+1) + ' · not yet run'));
+      const remove = el('button', '', 'Remove this check'); remove.type = 'button';
       remove.addEventListener('click', () => {
         spec.assertions.splice(i,1); renderAssertions(); renderSteps(); diagnostics();
       }); h.append(remove); card.append(h);
@@ -90,27 +93,30 @@
       const id = input(row.id,64); id.addEventListener('input', () => {
         row.id = id.value; renderSteps(); diagnostics();
       });
-      grid.append(field('Stable assertion ID', id));
+      grid.append(field('Check name (short ID, used to link it to a step)', id));
       const op = el('select');
       for (const value of new Set([...options.operations, row.operation])) {
-        const o = el('option','',value);o.value=value;o.selected=value===row.operation;op.append(o);
+        const o = el('option','',L.operation(value));o.value=value;o.title=L.operationHint(value);o.selected=value===row.operation;op.append(o);
       }
-      op.addEventListener('change', () => {row.operation=op.value;diagnostics();});
-      grid.append(field('Canonical operation',op));
+      const summary = el('p','sd-muted');
+      const refresh = () => {summary.textContent=L.sentence(row);expected.disabled=L.noExpected(row.operation);};
+      op.addEventListener('change', () => {row.operation=op.value;refresh();diagnostics();});
+      const opField=field('Must be (how to compare)',op);
       const observed = el('select');
       for (const value of new Set([...options.observations,row.observed])) {
-        const o = el('option','',value);o.value=value;o.selected=value===row.observed;observed.append(o);
+        const o = el('option','',L.observation(value));o.value=value;o.title=L.observationHint(value);o.selected=value===row.observed;observed.append(o);
       }
-      observed.addEventListener('change', () => {row.observed=observed.value;diagnostics();});
-      grid.append(field('Observed field',observed));
+      observed.addEventListener('change', () => {row.observed=observed.value;refresh();diagnostics();});
+      grid.append(field('What to look at',observed));grid.append(opField);
       const expected = input(JSON.stringify(row.expected),500);
       expected.addEventListener('change', () => {
         try {row.expected=JSON.parse(expected.value);expected.setCustomValidity('');}
-        catch (e) {expected.setCustomValidity('Enter JSON: string, integer, list or null');}
-        diagnostics();
+        catch (e) {expected.setCustomValidity('Enter a value like "text", 3, [1,2] or null');}
+        refresh();diagnostics();
       });
-      grid.append(field('Expected contract (JSON literal or quoted reference)',expected));
-      card.append(grid);host.append(card);
+      grid.append(field('Expected value ("text", 3, [1,2] or null; unused by is-not-empty / all-zeros)',expected));
+      refresh();
+      card.append(grid,summary);host.append(card);
     });
   }
 
@@ -196,9 +202,14 @@
       const opt=el('option','','UNRESOLVED: '+spec.feature_id);opt.value=spec.feature_id;opt.selected=true;feature.append(opt);
     }
     const obs=$('sd-observations');obs.replaceChildren();
-    for(const name of new Set([...options.observations,...spec.observations])) {
-      const opt=el('option','',name+(options.observations.includes(name)?'':' — unsupported'));
-      opt.value=name;opt.selected=spec.observations.includes(name);obs.append(opt);
+    const names=[...new Set([...options.observations,...spec.observations])];
+    const rank=n=>{const i=L.groups().indexOf(L.groupOf(n));return i<0?99:i;};
+    names.sort((x,y)=>rank(x)-rank(y));
+    for(const name of names) {
+      const opt=el('option','',L.observation(name)+(options.observations.includes(name)?'':' — unsupported'));
+      opt.value=name;opt.title=L.groupOf(name)+' — '+L.observationHint(name);opt.selected=spec.observations.includes(name);
+      opt.dataset.search=(L.observation(name)+' '+name+' '+L.observationHint(name)+' '+L.groupOf(name)).toLowerCase();
+      obs.append(opt);
     }
     renderAssertions();renderSteps();diagnostics();updateRevision();
   }
@@ -523,6 +534,12 @@
   });
   $('sd-feature').addEventListener('change',diagnostics);
   $('sd-observations').addEventListener('change',()=>{readGuidedFields();renderSteps();diagnostics();});
+  const obsFilter=$('sd-observation-filter');
+  if(obsFilter&&obsFilter.addEventListener)obsFilter.addEventListener('input',()=>{
+    const q=obsFilter.value.trim().toLowerCase();
+    for(const o of $('sd-observations').querySelectorAll('option'))
+      o.hidden=!!q&&!o.selected&&!(o.dataset.search||'').includes(q);
+  });
   $('sd-validate').addEventListener('click',async()=>{
     const uiRequest=++validationUiRequest;
     try{await validatePreview();}

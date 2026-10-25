@@ -144,11 +144,12 @@ Imported/recalculated PASS is not independently verified proof.
 <p><strong>Assertion</strong> = one rule about an observation, e.g. &ldquo;<code>db_bag</code> must be non-empty&rdquo;. Observations only name <em>what to look at</em>; an assertion says <em>what it should be</em>.</p>
 <p><strong>How to build one:</strong> (1) pick the observations you need below &rarr; (2) optionally add an assertion in the next section &rarr; (3) in each step under &ldquo;Ordered scenario steps&rdquo;, open <em>Technical provenance&hellip;</em> and link the observations and assertions that step uses. Picking an observation does nothing visible by itself; it makes it available to link to a step.</p>
 </div>
+<label class="sd-field">Filter the list <input type="search" id="sd-observation-filter" placeholder="e.g. bag, key item, database" autocomplete="off"></label>
 <label class="sd-field">Observations this scenario needs (Ctrl/&#8984;+click to pick several or to untick)<select id="sd-observations" multiple size="10"></select></label>
-<details><summary>Assertions &mdash; rules about what an observation should equal (optional for a first draft)</summary>
-<p class="sd-muted">Click <em>Add assertion</em>, name it, pick the observation it checks and an operation, and type the expected value as JSON (e.g. <code>"abc"</code>, <code>3</code>, <code>[1,2]</code>, or <code>null</code> if not yet known). Then link it to a step.</p>
+<details><summary>Checks (assertions) &mdash; what each observation should be (optional for a first draft)</summary>
+<p class="sd-muted">Click <em>Add check</em>. Each check reads as a sentence: <em>&ldquo;Check that [what to look at] [must be&hellip;] [expected value]&rdquo;</em>, shown live under the check. Then link it to a step.</p>
 <div id="sd-assertions" aria-label="Assertion definitions"></div>
-<button type="button" id="sd-add-assertion">Add assertion</button>
+<button type="button" id="sd-add-assertion">Add check</button>
 </details>
 </div>
 <div class="sd-block">
@@ -205,6 +206,7 @@ Imported/recalculated PASS is not independently verified proof.
 <script src="/static/scenario_readiness_viewer.js"></script>
 <script src="/static/scenario_draft_guard.js"></script>
 <script src="/static/scenario_validation_feedback.js"></script>
+<script src="/static/scenario_labels.js"></script>
 <script src="/static/scenario_developer.js"></script>
 <script src="/static/scenario_typed_steps.js"></script>
 {% endblock %}
