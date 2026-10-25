@@ -1,0 +1,303 @@
+{
+  "schema": "mog09-sanitized-projection-input/1",
+  "status": "DERIVED_FROM_UNREVIEWED_1420_SANITIZED_REPORTS",
+  "cases": [
+    {
+      "sample_id": "fail_obs-20261021T025326Z",
+      "source_pr": 1420,
+      "source_head": "a2a21a706d09e2eea0bb660f991db9d43d4266a1",
+      "source_path": "docs/workbench/results_evidence_handoff/samples/fail_obs-20261021T025326Z/report.json",
+      "case_id": "MOG-09",
+      "runner_verdict": "FAIL",
+      "report_sha256_verified": false,
+      "spec_revision": null,
+      "runner_authentication": "NOT_ESTABLISHED",
+      "task_lifecycle": "COMPLETED",
+      "task_lifecycle_source": "sanitized job_lifecycle_row.json",
+      "assertions": [
+        {
+          "index": 1,
+          "name": "session established for expected character",
+          "runner_ok": true,
+          "expected": 21833,
+          "observed": "<redacted-test-character-id>"
+        },
+        {
+          "index": 2,
+          "name": "precondition: Safe holds furnishings with nonzero aura (stored, not installed)",
+          "runner_ok": true,
+          "expected": ">=1",
+          "observed": [
+            3
+          ]
+        },
+        {
+          "index": 3,
+          "name": "active KI equals oracle for empty layout",
+          "runner_ok": true,
+          "expected": 0,
+          "observed": 0
+        },
+        {
+          "index": 4,
+          "name": "aura breakdown all zero",
+          "runner_ok": true,
+          "expected": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "observed": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "index": 5,
+          "name": "client bag equals persisted char_inventory location 0",
+          "runner_ok": false,
+          "expected": {
+            "side": "persisted char_inventory",
+            "row_count": 0,
+            "rows_present": false
+          },
+          "observed": {
+            "side": "client inventory observation",
+            "row_count": 8,
+            "rows_present": true
+          }
+        },
+        {
+          "index": 6,
+          "name": "client Mog Safe equals persisted char_inventory location 1",
+          "runner_ok": false,
+          "expected": {
+            "side": "persisted char_inventory",
+            "row_count": 0,
+            "rows_present": false
+          },
+          "observed": {
+            "side": "client inventory observation",
+            "row_count": 1,
+            "rows_present": true
+          }
+        }
+      ],
+      "observations": {
+        "persisted_row_count": 0,
+        "persistence_polls": 4
+      }
+    },
+    {
+      "sample_id": "pass_obs-20261019T065856Z",
+      "source_pr": 1420,
+      "source_head": "a2a21a706d09e2eea0bb660f991db9d43d4266a1",
+      "source_path": "docs/workbench/results_evidence_handoff/samples/pass_obs-20261019T065856Z/report.json",
+      "case_id": "MOG-09",
+      "runner_verdict": "PASS",
+      "report_sha256_verified": false,
+      "spec_revision": null,
+      "runner_authentication": "NOT_ESTABLISHED",
+      "task_lifecycle": null,
+      "task_lifecycle_source": null,
+      "assertions": [
+        {
+          "index": 1,
+          "name": "session established for expected character",
+          "runner_ok": true,
+          "expected": 21836,
+          "observed": "<redacted-test-character-id>"
+        },
+        {
+          "index": 2,
+          "name": "precondition: Safe holds furnishings with nonzero aura (stored, not installed)",
+          "runner_ok": true,
+          "expected": ">=1",
+          "observed": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            216
+          ]
+        },
+        {
+          "index": 3,
+          "name": "active KI equals oracle for empty layout",
+          "runner_ok": true,
+          "expected": 0,
+          "observed": 0
+        },
+        {
+          "index": 4,
+          "name": "aura breakdown all zero",
+          "runner_ok": true,
+          "expected": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "observed": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "index": 5,
+          "name": "client bag equals persisted char_inventory location 0",
+          "runner_ok": true,
+          "expected": {
+            "side": "persisted char_inventory",
+            "row_count": 9,
+            "rows_present": true
+          },
+          "observed": {
+            "side": "client inventory observation",
+            "row_count": 9,
+            "rows_present": true
+          }
+        },
+        {
+          "index": 6,
+          "name": "client Mog Safe equals persisted char_inventory location 1",
+          "runner_ok": true,
+          "expected": {
+            "side": "persisted char_inventory",
+            "row_count": 18,
+            "rows_present": true
+          },
+          "observed": {
+            "side": "client inventory observation",
+            "row_count": 18,
+            "rows_present": true
+          }
+        }
+      ],
+      "observations": {
+        "persisted_row_count": 27,
+        "persistence_polls": 1
+      }
+    },
+    {
+      "sample_id": "pass_obs-20261021T040036Z",
+      "source_pr": 1420,
+      "source_head": "a2a21a706d09e2eea0bb660f991db9d43d4266a1",
+      "source_path": "docs/workbench/results_evidence_handoff/samples/pass_obs-20261021T040036Z/report.json",
+      "case_id": "MOG-09",
+      "runner_verdict": "PASS",
+      "report_sha256_verified": false,
+      "spec_revision": null,
+      "runner_authentication": "NOT_ESTABLISHED",
+      "task_lifecycle": null,
+      "task_lifecycle_source": null,
+      "assertions": [
+        {
+          "index": 1,
+          "name": "session established for expected character",
+          "runner_ok": true,
+          "expected": 21833,
+          "observed": "<redacted-test-character-id>"
+        },
+        {
+          "index": 2,
+          "name": "precondition: Safe holds furnishings with nonzero aura (stored, not installed)",
+          "runner_ok": true,
+          "expected": ">=1",
+          "observed": [
+            3
+          ]
+        },
+        {
+          "index": 3,
+          "name": "active KI equals oracle for empty layout",
+          "runner_ok": true,
+          "expected": 0,
+          "observed": 0
+        },
+        {
+          "index": 4,
+          "name": "aura breakdown all zero",
+          "runner_ok": true,
+          "expected": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "observed": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "index": 5,
+          "name": "client bag equals persisted char_inventory location 0",
+          "runner_ok": true,
+          "expected": {
+            "side": "persisted char_inventory",
+            "row_count": 8,
+            "rows_present": true
+          },
+          "observed": {
+            "side": "client inventory observation",
+            "row_count": 8,
+            "rows_present": true
+          }
+        },
+        {
+          "index": 6,
+          "name": "client Mog Safe equals persisted char_inventory location 1",
+          "runner_ok": true,
+          "expected": {
+            "side": "persisted char_inventory",
+            "row_count": 1,
+            "rows_present": true
+          },
+          "observed": {
+            "side": "client inventory observation",
+            "row_count": 1,
+            "rows_present": true
+          }
+        }
+      ],
+      "observations": {
+        "persisted_row_count": 9,
+        "persistence_polls": 1
+      }
+    }
+  ]
+}
