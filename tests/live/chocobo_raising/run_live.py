@@ -51,10 +51,11 @@ def session(scenario):
         scenario_seed = scenario.seed
         scenario_seed()
         b = McpBot(a[0], a[1], a[2], tag="live"); b.start(); time.sleep(3)
-        b.gm(POS, settle=8); b.tool("event_trace", clear=True); time.sleep(4)
-        r = b.tool("talk_to_npc", npcId=NPC)
-        check("trainer event starts", r.get("started") is True, r)
-        time.sleep(2); b.tool("event_trace", clear=True)
+        b.gm(getattr(scenario, "pos", POS), settle=8); b.tool("event_trace", clear=True); time.sleep(4)
+        if not getattr(scenario, "notrainer", False):
+            r = b.tool("talk_to_npc", npcId=NPC)
+            check("trainer event starts", r.get("started") is True, r)
+            time.sleep(2); b.tool("event_trace", clear=True)
         scenario.run(b)
         errs = [l for l in open(MAPLOG, errors="replace").read()[log0:].splitlines() if "[Error]" in l and ("choco" in l.lower() or "luautils" in l)]
         check("no Lua/chocobo errors in map log", not errs, errs[:2])
@@ -249,9 +250,64 @@ class Watch:
         check("held item cleared", h == 0, h)
         check("item handed over", n == 1, n)
 
+class Chick:
+    # short walks (cmd 242 arg 42) until a lost chick turns up (var owner/location), then guessing Cahaurme (San d'Oria owner 2, option 1)
+    VAR = "ChocoboRaisingLostChick"
+    def getvar(self):
+        r = q(f"select value from char_vars where charid={CHAR} and varname='{self.VAR}'")
+        return r[0][0] if r else 0
+    def seed(self):
+        seed(4, 30); q(f"delete from char_vars where charid={CHAR} and varname='{self.VAR}'")
+        q(f"update char_chocobos set walk_progress=0 where charid={CHAR}")
+    def run(self, b):
+        found = 0
+        for i in range(25):
+            q(f"update char_chocobos set energy=100, held_item=0 where charid={CHAR}")
+            b.tool("talk_to_npc", npcId=NPC); time.sleep(2)
+            b.tool("event_update", option=10994); time.sleep(1)
+            b.tool("event_select", selection=0); time.sleep(2)
+            v = self.getvar()
+            if v & 0xF:
+                found = v; break
+        check("lost chick found on a short walk", found != 0, f"tries={i + 1} var={found}")
+        check("chick owner/location valid", (found & 0xF) in range(1, 9) and (found >> 6) & 3 == LOC, hex(found))
+        # guessing needs a San d'Oria chick: force owner 2 (Cahaurme), location 1
+        if LOC == 1:
+            for owner, expect in ((2, 1), (3, 2)):
+                q(f"replace into char_vars (charid,varname,value) values ({CHAR},'{self.VAR}',{owner | (1 << 4) | (1 << 6)})")
+                b.tool("event_update", option=250); time.sleep(2); b.gm("!pos 55.7 -8.6 -27 230", settle=6); time.sleep(2)
+                r = b.tool("talk_to_npc", npcId=17719300)
+                check(f"owner event starts (chick owner {owner})", r.get("started") is True, r)
+                time.sleep(1); b.tool("event_update", option=1); time.sleep(1)
+                b.tool("event_select", selection=0); time.sleep(2)
+                v = self.getvar()
+                check(f"guess result {'returned' if expect == 1 else 'wrong owner'}", (v >> 16) & 3 == expect, hex(v))
+    def done(self):
+        q(f"delete from char_vars where charid={CHAR} and varname='{self.VAR}'")
+
+class ChickGuess:
+    # no trainer talk: Cahaurme (San d'Oria owner 2, guess option 1) with a seeded chick; GUESS_OWNER=2 right, 3 wrong
+    notrainer = True; pos = "!pos 55.7 -8.6 -27 230"
+    OWNER = int(os.environ.get("GUESS_OWNER", "2")); VAR = "ChocoboRaisingLostChick"
+    def seed(self):
+        seed(4, 30)
+        q(f"update chars set pos_zone=230 where charid={CHAR}")
+        q(f"replace into char_vars (charid,varname,value) values ({CHAR},'{self.VAR}',{self.OWNER | (1 << 4) | (1 << 6)})")
+    def run(self, b):
+        r = b.tool("talk_to_npc", npcId=17719300)
+        check("owner event starts", r.get("started") is True, r)
+        time.sleep(1); b.tool("event_update", option=1); time.sleep(1)
+        b.tool("event_select", selection=0); time.sleep(2)
+        v = q(f"select value from char_vars where charid={CHAR} and varname='{self.VAR}'")[0][0]
+        expect = 1 if self.OWNER == 2 else 2
+        check("guess result", (v >> 16) & 3 == expect, hex(v))
+        check("solved bit only when right", ((v >> 18) & 1) == (1 if expect == 1 else 0), hex(v))
+    def done(self):
+        q(f"delete from char_vars where charid={CHAR} and varname='{self.VAR}'")
+
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "watch": Watch}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_guess": ChickGuess, "watch": Watch}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)
