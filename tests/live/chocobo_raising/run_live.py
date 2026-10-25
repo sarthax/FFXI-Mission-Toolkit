@@ -61,6 +61,7 @@ def session(scenario):
     finally:
         try: b.close(); crashed = b.p.returncode != 0
         except Exception: pass
+        getattr(scenario, "done", lambda: None)()
         pool.release(a, crashed)
 
 def size_masked(h):
@@ -132,6 +133,47 @@ class Chococard:
         check("chocobo kept", q(f"select count(*) from char_chocobos where charid={CHAR}")[0][0] == 1)
         q(f"delete from char_inventory where charid={CHAR} and itemid=2342")
 
+class ChococardBroke(Chococard):
+    # under 300 gil: no card, no charge, chocobo kept
+    def seed(self):
+        super().seed(); q(f"update char_inventory set quantity=299 where charid={CHAR} and itemid=65535 and location=0")
+    def run(self, b):
+        b.tool("event_update", option=239); time.sleep(2)
+        b.tool("event_select", selection=0); time.sleep(2)
+        check("no chococard when short of gil", q(f"select count(*) from char_inventory where charid={CHAR} and itemid in (2339,2342)")[0][0] == 0)
+        gil = q(f"select quantity from char_inventory where charid={CHAR} and itemid=65535 and location=0")[0][0]
+        check("no gil charged", gil == 299, gil)
+
+class ChococardFullBag(Chococard):
+    # no free slot: no card, no charge (capacity set to the used slot count; restored afterwards)
+    def seed(self):
+        super().seed()
+        self.cap = q(f"select inventory from char_storage where charid={CHAR}")[0][0]
+        used = q(f"select count(*) from char_inventory where charid={CHAR} and location=0")[0][0]
+        q(f"update char_storage set inventory={used - 1} where charid={CHAR}")   # row 0 is gil, which takes no slot
+    def run(self, b):
+        b.tool("event_update", option=239); time.sleep(2)
+        b.tool("event_select", selection=0); time.sleep(2)
+        check("no chococard with a full bag", q(f"select count(*) from char_inventory where charid={CHAR} and itemid in (2339,2342)")[0][0] == 0)
+        gil = q(f"select quantity from char_inventory where charid={CHAR} and itemid=65535 and location=0")[0][0]
+        check("no gil charged with a full bag", gil == 1000, gil)
+    def done(self):
+        q(f"update char_storage set inventory={self.cap} where charid={CHAR}")
+
+class ChococardMale(Chococard):
+    # male bird: item 2339 (exdata bytes for a male card have no capture yet, so only the item/charge are asserted)
+    def seed(self):
+        super().seed(); q(f"update char_chocobos set sex=0 where charid={CHAR}")
+    def run(self, b):
+        b.tool("event_update", option=239); time.sleep(2)
+        b.tool("event_select", selection=0); time.sleep(2)
+        rows = q(f"select itemid, extra from char_inventory where charid={CHAR} and itemid in (2339,2342)")
+        check("male bird gets chococard 2339", [r[0] for r in rows] == [2339], rows and [r[0] for r in rows])
+        if rows: print("INFO male card exdata", bytes(rows[0][1]).hex(" ").upper())
+        gil = q(f"select quantity from char_inventory where charid={CHAR} and itemid=65535 and location=0")[0][0]
+        check("300 gil charged", gil == 700, gil)
+        q(f"delete from char_inventory where charid={CHAR} and itemid=2339")
+
 class Feed:
     # trade 2 gysahl greens (4545), option 241: hunger up, greens consumed (capture: reply (10, glow, 0,0,1,rank,0,0))
     def seed(self):
@@ -176,7 +218,7 @@ class CarePlan:
 
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"feed": Feed, "menu": Menu, "careplan": CarePlan}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)
