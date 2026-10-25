@@ -529,6 +529,27 @@
     spec.assertions.push({id,operation:'nonempty',observed:spec.observations[0]||'client_bag',expected:null});
     renderAssertions();renderSteps();diagnostics();
   });
+  const ST=window.ScenarioStepTemplates;
+  const tplSelect=$('sd-template');
+  if(ST&&tplSelect&&tplSelect.append){
+    for(const t of ST.list()){const o=el('option','',t.label);o.value=t.key;o.dataset.subject=t.subject;tplSelect.append(o);}
+    const syncSubject=()=>{
+      const sel=tplSelect.selectedOptions&&tplSelect.selectedOptions[0];
+      const subj=sel?sel.dataset.subject:'';
+      $('sd-template-subject-label').hidden=!subj;
+      if(subj)$('sd-template-subject-label').firstChild.textContent=subj+' (optional)';
+    };
+    tplSelect.addEventListener('change',syncSubject);syncSubject();
+    $('sd-add-template').addEventListener('click',()=>{
+      try{
+        readGuidedFields();
+        const before=spec.steps.length;
+        spec=ST.apply(spec,tplSelect.value,$('sd-template-subject').value);
+        render();
+        show('Added step '+(before+1)+' from template with its checks. Review the wording; nothing was run.');
+      }catch(e){show('Template refused: '+e.message);}
+    });
+  }
   $('sd-add-step').addEventListener('click',()=>{
     readGuidedFields();spec=M.addStep(spec);renderSteps();diagnostics();
   });

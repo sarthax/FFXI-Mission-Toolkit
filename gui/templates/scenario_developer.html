@@ -156,7 +156,13 @@ Imported/recalculated PASS is not independently verified proof.
 <h2>Ordered scenario steps</h2>
 <p class="sd-muted">A step is one thing the tester does or checks, in order. Fill in its ID, title and expected outcome. To tie a step to the checks above, open <em>Technical provenance&hellip;</em> inside the step and pick its observations and assertions. If you do not know the expected result yet, write UNKNOWN rather than guessing.</p>
 <ol id="sd-steps" aria-label="Scenario steps"></ol>
-<button type="button" id="sd-add-step">Add step</button>
+<div class="sd-bar" id="sd-template-bar">
+<label class="sd-field">Add a step from a template<select id="sd-template"></select></label>
+<label class="sd-field" id="sd-template-subject-label">Item name (optional)<input id="sd-template-subject" maxlength="80" placeholder="e.g. Bronze Sword"></label>
+<button type="button" id="sd-add-template">Add step from template</button>
+<button type="button" id="sd-add-step">Add blank step</button>
+</div>
+<p class="sd-muted">Templates add a step <em>and</em> the checks it needs. &ldquo;Tester adds&hellip; / removes&hellip;&rdquo; steps are written instructions for a person; nothing here performs the action. The checks compare what the game client shows with what the database saved.</p>
 </div>
 </section>
 <section id="sd-advanced-panel" class="sd-block" hidden aria-label="Advanced JSON">
@@ -207,6 +213,7 @@ Imported/recalculated PASS is not independently verified proof.
 <script src="/static/scenario_draft_guard.js"></script>
 <script src="/static/scenario_validation_feedback.js"></script>
 <script src="/static/scenario_labels.js"></script>
+<script src="/static/scenario_step_templates.js"></script>
 <script src="/static/scenario_developer.js"></script>
 <script src="/static/scenario_typed_steps.js"></script>
 {% endblock %}
