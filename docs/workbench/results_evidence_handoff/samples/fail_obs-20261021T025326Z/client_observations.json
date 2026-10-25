@@ -1,0 +1,159 @@
+{
+ "snapshot": {
+  "name": "Routhu",
+  "id": 21833,
+  "zone": 106,
+  "inZone": true,
+  "x": 633.01,
+  "y": -1.398,
+  "z": 316,
+  "hp": 60,
+  "maxHp": 60,
+  "mp": 77,
+  "maxMp": 77,
+  "tp": 0,
+  "mainHandEquipped": false,
+  "gil": 10,
+  "mainJob": 3,
+  "mainLevel": 20,
+  "subJob": 0,
+  "subLevel": 0,
+  "engaged": false,
+  "serverStatus": 0,
+  "dead": false,
+  "moving": false,
+  "eventActive": false,
+  "eventId": 0,
+  "partyMembers": 0
+ },
+ "key_items": [
+  385
+ ],
+ "bag": [
+  {
+   "slot": 0,
+   "itemId": 65535,
+   "qty": 10
+  },
+  {
+   "slot": 1,
+   "itemId": 12637,
+   "qty": 1
+  },
+  {
+   "slot": 2,
+   "itemId": 12758,
+   "qty": 1
+  },
+  {
+   "slot": 3,
+   "itemId": 12888,
+   "qty": 1
+  },
+  {
+   "slot": 4,
+   "itemId": 13009,
+   "qty": 1
+  },
+  {
+   "slot": 5,
+   "itemId": 16534,
+   "qty": 1
+  },
+  {
+   "slot": 6,
+   "itemId": 536,
+   "qty": 1
+  },
+  {
+   "slot": 8,
+   "itemId": 4112,
+   "qty": 1
+  }
+ ],
+ "inventory_tool": [
+  {
+   "slot": 0,
+   "itemId": 65535,
+   "qty": 10
+  },
+  {
+   "slot": 1,
+   "itemId": 12637,
+   "qty": 1
+  },
+  {
+   "slot": 2,
+   "itemId": 12758,
+   "qty": 1
+  },
+  {
+   "slot": 3,
+   "itemId": 12888,
+   "qty": 1
+  },
+  {
+   "slot": 4,
+   "itemId": 13009,
+   "qty": 1
+  },
+  {
+   "slot": 5,
+   "itemId": 16534,
+   "qty": 1
+  },
+  {
+   "slot": 6,
+   "itemId": 536,
+   "qty": 1
+  },
+  {
+   "slot": 8,
+   "itemId": 4112,
+   "qty": 1
+  }
+ ],
+ "safe": [
+  {
+   "slot": 1,
+   "itemId": 3,
+   "qty": 1
+  }
+ ],
+ "safe2": [],
+ "party": {
+  "members": 0,
+  "invitePending": false,
+  "inviter": ""
+ },
+ "capabilities": {
+  "backend": "xiheadless-dsp",
+  "protocol": "dsp",
+  "supports": [
+   "snapshot",
+   "movement",
+   "combat",
+   "magic",
+   "chat",
+   "events",
+   "zoning",
+   "party",
+   "inventory",
+   "trade",
+   "wait_for_event",
+   "resources",
+   "goal_persistence"
+  ],
+  "unsupported": [
+   "wardrobes",
+   "auction_house",
+   "synthesis"
+  ]
+ },
+ "gm_info": [
+  "Moghancement: active key item 0 (nation 0)",
+  "Aura  fire 0  ice 0  wind 0  earth 0  lightning 0  water 0  light 0  dark 0",
+  "Held furniture key items:",
+  "Mods (non-zero): none"
+ ]
+}
