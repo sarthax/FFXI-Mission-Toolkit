@@ -39,13 +39,24 @@
 Displayed authoring labels cannot promote a draft to reviewed or executable. No GM command, packet, SQL write, or headless action can be dispatched here.
 Imported/recalculated PASS is not independently verified proof.
 </div>
+<section class="wb-panel" id="sd-howto" aria-label="How this page works">
+<h2>How this page works</h2>
+<ol>
+<li><strong>Start</strong> &mdash; click <em>New synthetic scenario</em>, or pick a published case and click <em>Fork</em> to copy it.</li>
+<li><strong>Describe it</strong> &mdash; give it an ID and title, say why it exists, and write the Given / When / Then in plain sentences.</li>
+<li><strong>Say what to check</strong> &mdash; pick the observations (what gets looked at) and, optionally, assertions (what each should equal), then link them to a step.</li>
+<li><strong>Validate, then Save</strong> &mdash; Validate checks the draft is well formed. Saving needs the operator token.</li>
+</ol>
+<p class="sd-muted"><strong>Nothing here runs the game or changes any data.</strong> A draft is a written test plan that a person reviews later. Given / When / Then are notes for that reviewer; they are not code and are never executed.</p>
+</section>
 <p id="sd-context-note" class="sd-warning" role="status" hidden></p>
 <section class="wb-panel" id="sd-handoff" aria-label="Source context authoring intake">
-<h2>Continue from Coverage Matrix or Evidence Reviewer</h2>
+<h2>Optional: start from a Coverage Matrix test or an Evidence Reviewer file</h2>
+<p class="sd-muted">Skip this if you are starting from scratch. Use the Start buttons below instead.</p>
 <p class="sd-warning">Source context is PROVISIONAL. A read-only review is not a requirement, approved identity, executable command, expected oracle or independent proof. No draft is automatically created or saved.</p>
-<details id="sd-coverage-handoff" open>
+<details id="sd-coverage-handoff">
 <summary>Coverage Matrix — source-declared behavior reference</summary>
-<p id="sd-context-feedback" role="status">No Coverage Matrix reference supplied. Open a declared test intent from the Matrix to pass its exact context URL.</p>
+<p id="sd-context-feedback" role="status">Nothing to import yet. To start from the Coverage Matrix, open a test there and follow its link to this page. Otherwise just use New or Fork below.</p>
 <div id="sd-context-detail"></div>
 <button type="button" id="sd-context-use" disabled>Begin authoring from this reviewed context (one explicit action)</button>
 <a href="/feature-testing/coverage" id="sd-return-coverage">Return to Coverage Matrix</a>
@@ -66,15 +77,16 @@ Imported/recalculated PASS is not independently verified proof.
 <p class="sd-warning">Choose original reviewed-decision JSON and a separate matching readiness sidecar. Internal JSON digests do not authenticate captures, source bytes, or parser versions; all canonical associations remain UNASSIGNED, and no draft is saved or executed.</p>
 <div id="sd-readiness-viewer" aria-live="polite"></div>
 </details>
-<p class="sd-muted">Each selected evidence step and each of its candidate identities needs an explicit inclusion/exclusion choice. Imported references survive as unverified source notes in the existing canonical draft only after you explicitly accept suggestions and save. Required observations, assertions, source-backed expectations, preconditions and cleanup must still be authored manually.</p>
+<p class="sd-muted">(Only applies to imports.) Each selected evidence step and each of its candidate identities needs an explicit inclusion/exclusion choice. Imported references survive as unverified source notes in the existing canonical draft only after you explicitly accept suggestions and save. Required observations, assertions, source-backed expectations, preconditions and cleanup must still be authored manually.</p>
 </section>
 <section class="wb-panel">
+<h2>Start</h2>
 <div class="sd-bar">
 <button type="button" id="sd-new">New synthetic scenario</button>
-<label class="sd-field" for="sd-seed-select">Fork published case
-<select id="sd-seed-select"><option value="">Choose a canonical case</option><option value="moghancement/MOG-09">MOG-09</option><option value="inventory_observation/INV-OBS-01">INV-OBS-01</option></select></label>
-<button type="button" id="sd-fork">Fork as design-only</button>
-<button type="button" id="sd-clone">Clone current draft (new case ID)</button>
+<label class="sd-field" for="sd-seed-select">Copy an existing case to edit
+<select id="sd-seed-select"><option value="">Choose a published case&hellip;</option><option value="moghancement/MOG-09">MOG-09</option><option value="inventory_observation/INV-OBS-01">INV-OBS-01</option></select></label>
+<button type="button" id="sd-fork">Fork (copy as design-only)</button>
+<button type="button" id="sd-clone">Clone this draft under a new ID</button>
 </div>
 <p class="sd-work-state" id="sd-work-state" role="status" aria-live="polite" data-state="pristine">PRISTINE · new design (not saved)</p>
 <p class="sd-muted">A modified new, forked or saved draft triggers one browser warning on reload, Back, or ordinary page navigation. Some browsers suppress unload warnings until user interaction. Saving requires an operator token and confirmed revision.</p>
@@ -86,29 +98,31 @@ Imported/recalculated PASS is not independently verified proof.
 <div class="sd-block">
 <h2>Identity and purpose</h2>
 <div class="sd-grid">
-<label class="sd-field">Feature/domain<select id="sd-feature" required></select></label>
-<label class="sd-field">Stable case ID<input id="sd-case" maxlength="120" required></label>
+<label class="sd-field">Feature area<select id="sd-feature" required></select></label>
+<label class="sd-field">Case ID (short unique code, e.g. MOG-10)<input id="sd-case" maxlength="120" required></label>
 <label class="sd-field">Scenario title<input id="sd-title" maxlength="120" required></label>
 <label class="sd-field">Purpose (required in Guided mode)<textarea id="sd-purpose" maxlength="1000" rows="3" required></textarea></label>
 <label class="sd-field">Rationale (required in Guided mode)<textarea id="sd-rationale" maxlength="1000" rows="3" required></textarea></label>
 </div>
 </div>
 <div class="sd-block">
-<h2>Given / When / Then</h2>
-<p class="sd-muted">One statement per line; these are claims for human review, not commands.</p>
+<h2>Given / When / Then &mdash; the story in plain words</h2>
+<p class="sd-muted">Write what a tester would set up, do and expect, one short sentence per line. <strong>These are notes for the human reviewer. They are not executed and do not drive any check.</strong> The actual checks come from observations and assertions further down.</p>
+<p class="sd-muted"><em>Example:</em> Given &ldquo;Player has 1 flowerpot in the Mog House&rdquo; &middot; When &ldquo;Player plants a seed&rdquo; &middot; Then &ldquo;The pot shows a seedling&rdquo;.</p>
 <div class="sd-grid">
-<label class="sd-field">Given (required)<textarea id="sd-given" rows="5" required></textarea></label>
-<label class="sd-field">When (required)<textarea id="sd-when" rows="5" required></textarea></label>
-<label class="sd-field">Then (required)<textarea id="sd-then" rows="5" required></textarea></label>
+<label class="sd-field">Given &mdash; starting situation (required)<textarea id="sd-given" rows="5" required></textarea></label>
+<label class="sd-field">When &mdash; what the tester does (required)<textarea id="sd-when" rows="5" required></textarea></label>
+<label class="sd-field">Then &mdash; what should happen (required)<textarea id="sd-then" rows="5" required></textarea></label>
 </div>
 <div class="sd-grid">
-<label class="sd-field">Preconditions<textarea id="sd-preconditions" rows="3"></textarea></label>
-<label class="sd-field">Cleanup expectations<textarea id="sd-cleanup" rows="3"></textarea></label>
-<label class="sd-field">Unresolved proof / blocking gaps<textarea id="sd-gaps" rows="3"></textarea></label>
+<label class="sd-field">Preconditions &mdash; setup needed first<textarea id="sd-preconditions" rows="3"></textarea></label>
+<label class="sd-field">Cleanup &mdash; how to undo the test<textarea id="sd-cleanup" rows="3"></textarea></label>
+<label class="sd-field">Open questions / things not yet known<textarea id="sd-gaps" rows="3"></textarea></label>
 </div>
 </div>
-<div class="sd-block">
-<h2>Catalog lookup — read-only source candidates</h2>
+<details class="sd-block">
+<summary><strong>Optional: look up NPCs, items, mobs, zones in the source data</strong></summary>
+<p class="sd-muted">Only for attaching a reference note to a step. Not needed for a basic draft.</p>
 <p id="sd-catalog" class="sd-warning">Catalog candidates are NOT verified identities. A matching name/ID, including a GM diagnostic, does not authorize any action. Missing checkout or ambiguous IDs remain blockers.</p>
 <div class="sd-grid">
 <label class="sd-field">Catalog type<select id="sd-catalog-kind">
@@ -122,19 +136,24 @@ Imported/recalculated PASS is not independently verified proof.
 <p id="sd-catalog-feedback" role="status" aria-live="polite"></p>
 <div id="sd-catalog-results" class="sd-picker-results" aria-label="Source candidates"></div>
 <p class="sd-muted">Selecting records only adds an unverified source note to the canonical step and an outstanding reconciliation gap. No source-derived client/zone binding is approved here. Reopen the draft to inspect the note under Technical provenance.</p>
-</div>
+</details>
 <div class="sd-block">
-<h2>Observations and assertion contracts</h2>
-<p class="sd-warning">Observation names are from the canonical validator. Values and source identities are not presumed present. No external catalog binding is verified.</p>
-<label class="sd-field">Required observation types (Ctrl/⌘+click for multiple)<select id="sd-observations" multiple size="10"></select></label>
-<details><summary>Technical assertion definitions and supported operations</summary>
+<h2>What should be checked? Observations and assertions</h2>
+<div class="sd-muted">
+<p><strong>Observation</strong> = a piece of game state someone will look at while testing. Names starting with <code>client_</code> are what the game client shows; <code>db_</code> are what the saved server database holds; <code>gm_</code> are GM diagnostic read-outs. Comparing client against db is how mismatches get found.</p>
+<p><strong>Assertion</strong> = one rule about an observation, e.g. &ldquo;<code>db_bag</code> must be non-empty&rdquo;. Observations only name <em>what to look at</em>; an assertion says <em>what it should be</em>.</p>
+<p><strong>How to build one:</strong> (1) pick the observations you need below &rarr; (2) optionally add an assertion in the next section &rarr; (3) in each step under &ldquo;Ordered scenario steps&rdquo;, open <em>Technical provenance&hellip;</em> and link the observations and assertions that step uses. Picking an observation does nothing visible by itself; it makes it available to link to a step.</p>
+</div>
+<label class="sd-field">Observations this scenario needs (Ctrl/&#8984;+click to pick several or to untick)<select id="sd-observations" multiple size="10"></select></label>
+<details><summary>Assertions &mdash; rules about what an observation should equal (optional for a first draft)</summary>
+<p class="sd-muted">Click <em>Add assertion</em>, name it, pick the observation it checks and an operation, and type the expected value as JSON (e.g. <code>"abc"</code>, <code>3</code>, <code>[1,2]</code>, or <code>null</code> if not yet known). Then link it to a step.</p>
 <div id="sd-assertions" aria-label="Assertion definitions"></div>
 <button type="button" id="sd-add-assertion">Add assertion</button>
 </details>
 </div>
 <div class="sd-block">
 <h2>Ordered scenario steps</h2>
-<p class="sd-muted">Move steps without changing their IDs. Every step must bind known assertion IDs and known observation names. Expected outcomes that lack a source oracle must say UNKNOWN.</p>
+<p class="sd-muted">A step is one thing the tester does or checks, in order. Fill in its ID, title and expected outcome. To tie a step to the checks above, open <em>Technical provenance&hellip;</em> inside the step and pick its observations and assertions. If you do not know the expected result yet, write UNKNOWN rather than guessing.</p>
 <ol id="sd-steps" aria-label="Scenario steps"></ol>
 <button type="button" id="sd-add-step">Add step</button>
 </div>
@@ -145,25 +164,26 @@ Imported/recalculated PASS is not independently verified proof.
 <label class="sd-field">Specification JSON<textarea id="sd-advanced-json" class="sd-json" spellcheck="false" maxlength="32768"></textarea></label>
 <button type="button" id="sd-apply-json">Apply JSON to Guided</button>
 </section>
-<section class="sd-block" aria-label="Optional canonical Contract v2 authoring context">
-<h2>Contract v2 source, identity and capability readiness (read-only)</h2>
+<details class="sd-block" aria-label="Optional canonical Contract v2 authoring context">
+<summary><strong>Advanced (read-only): Contract v2 source and identity details</strong></summary>
 <p class="sd-muted">Claims only: metadata is not independently authenticated. Direct CASE and STEP citations require explicit canonical contract_v2.source_associations validated by source_attribution_report; oracle-linked citations are separate expected-value candidates and never establish source-to-step attribution. This panel does not approve, save or execute.</p>
 <div id="sd-contract-v2" aria-live="polite">Legacy v1 — no contract_v2 metadata.</div>
-</section>
+</details>
 <section class="sd-block" id="sd-typed-steps" aria-label="Typed step builder">
 <h2>Typed step builder — native Headless draft steps</h2>
 <p class="sd-muted">Pick a reviewed step type, fill in typed values and copy valid native Headless <code>do</code> / <code>expect</code> JSON. Values are checked by the Toolkit's typed action library. This does not edit or save the scenario draft above and does not run anything.</p>
 <div id="sd-typed-root" aria-live="polite">Loading the typed step library&hellip;</div>
 </section>
 <div class="sd-block">
-<h2>Validate, preview and save</h2>
+<h2>Validate, then save</h2>
+<p class="sd-muted">1. <strong>Validate</strong> to find missing or invalid fields (no token needed). 2. Enter the operator token and <strong>Save</strong> to keep the draft. Neither step runs anything.</p>
 <div class="sd-bar">
-<button type="button" id="sd-preview-incomplete">Preview provisional draft (no validation or execution)</button>
-<button type="button" id="sd-validate">Validate and preview (no execution)</button>
-<label class="sd-field">Operator token (only for saving to existing local draft store)<input type="password" id="sd-token" autocomplete="off"><small class="sd-muted">Configured privately in the local Toolkit process (32+ characters). Missing configuration, short or incorrect tokens intentionally share one generic denial; validation previews need no token.</small></label>
-<label class="sd-field">Expected draft revision<input type="number" id="sd-revision" value="0" min="0" step="1" readonly></label>
+<button type="button" id="sd-preview-incomplete">Quick preview (skips checks)</button>
+<button type="button" id="sd-validate">Validate</button>
+<label class="sd-field">Operator token (needed only to Save)<input type="password" id="sd-token" autocomplete="off"><small class="sd-muted">Configured privately in the local Toolkit process (32+ characters). Missing configuration, short or incorrect tokens intentionally share one generic denial; validation previews need no token.</small></label>
+<label class="sd-field">Draft version (set automatically)<input type="number" id="sd-revision" value="0" min="0" step="1" readonly></label>
 <p id="sd-revision-state" class="sd-revision" role="status">New unsaved design draft · revision 0</p>
-<button type="button" id="sd-save">Save design-only draft</button>
+<button type="button" id="sd-save">Save draft</button>
 <button type="button" id="sd-load-drafts">List local drafts</button>
 <label class="sd-field">Saved drafts<select id="sd-drafts"><option value="">No draft selected</option></select></label>
 <button type="button" id="sd-open-draft">Open selected draft</button>

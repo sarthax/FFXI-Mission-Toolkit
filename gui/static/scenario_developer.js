@@ -22,6 +22,7 @@
   // Only after a confirmed replacement; never from render(): it would
   // overwrite uncommitted Advanced JSON text before discard confirmation.
   function syncAdvancedAfterReplacement() {
+    if(typeof Feedback!=='undefined'&&Feedback)Feedback.clear();
     $('sd-advanced-json').value=JSON.stringify(spec,null,2);
     $('sd-guided').setAttribute('aria-pressed','true');
     $('sd-advanced').setAttribute('aria-pressed','false');
@@ -118,7 +119,7 @@
     spec.steps.forEach((step, i) => {
       const li = el('li','sd-card');
       const header=el('header');
-      header.append(el('strong','', 'Step ' + (i+1) + ' · UNKNOWN (no independent observation)'));
+      header.append(el('strong','', 'Step ' + (i+1) + ' · expected result not yet source-backed'));
       const toolbar=el('div','sd-controls');
       for (const [label, offset] of [['↑ Up',-1], ['↓ Down',1]]) {
         const b=el('button','',label);b.type='button';
@@ -149,9 +150,9 @@
         const opt=el('option','','UNSUPPORTED: '+step.intent);opt.value=step.intent;opt.selected=true;intent.append(opt);
       }
       intent.addEventListener('change',()=>{step.intent=intent.value;diagnostics();});
-      grid.append(field('Read-only step intent',intent));
+      grid.append(field('What kind of step (all are read-only)',intent));
       const technical=el('details');
-      staticText(technical,'summary','Technical provenance, assertion and observation bindings');
+      staticText(technical,'summary','Link observations and assertions to this step (technical)');
       const confidence=textarea(step.confidence_note);
       confidence.addEventListener('input',()=>{step.confidence_note=confidence.value;diagnostics();});
       technical.append(field('Evidence limitations and unverified catalog candidates',confidence));
