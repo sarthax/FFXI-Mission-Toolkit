@@ -330,9 +330,34 @@ class ChickClerk:
     def done(self):
         q(f"delete from char_vars where charid={CHAR} and varname='ChocoboRaisingLostChick'")
 
+class Story:
+    # care action 50 (option 13042) then story 4 (option 1074, impatient -> gallop). LSB-guess numbers: needs discernment 64, 25% learn.
+    def seed(self):
+        seed(4, 30); q(f"update char_chocobos set energy=100, discernment=10, ability1=0, ability2=0 where charid={CHAR}")
+    def tell(self, b):
+        b.tool("talk_to_npc", npcId=NPC); time.sleep(2)
+        b.tool("event_update", option=13042); time.sleep(1)
+        b.tool("event_update", option=1074); time.sleep(1)
+        b.tool("event_select", selection=0); time.sleep(2)
+        return q(f"select energy, discernment, ability1 from char_chocobos where charid={CHAR}")[0]
+    def run(self, b):
+        b.gm("!addkeyitem 837", settle=3)
+        e, d, a = self.tell(b)
+        check("story costs 11-14 energy", 86 <= e <= 89 or e > 89, (e, d, a))  # a refund can follow a lucky learn
+        check("discernment +1 per telling, no ability below 64", d == 11 and a == 0, (e, d, a))
+        q(f"update char_chocobos set discernment=200 where charid={CHAR}")
+        for i in range(40):
+            q(f"update char_chocobos set energy=100 where charid={CHAR}")
+            b.gm("!addkeyitem 837", settle=2)
+            e, d, a = self.tell(b)
+            if a == 1: break
+        check("gallop learned within 40 tellings (25% each)", a == 1, f"tries={i + 1} discernment={d}")
+    def done(self):
+        q(f"update char_chocobos set discernment=10, ability1=0, ability2=0 where charid={CHAR}")
+
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)
