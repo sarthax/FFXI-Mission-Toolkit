@@ -6,9 +6,7 @@ import subprocess
 
 REPO = r"D:\Claude\dsp-branches"
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dsp_mission_extract.json")
-ZONE_IDS = {"Southern_San_dOria": 230, "Northern_San_dOria": 231, "Bastok_Mines": 234, "Bastok_Markets": 235,
-            "Port_Bastok": 236, "Metalworks": 237, "Windurst_Waters": 238, "Windurst_Walls": 239,
-            "Port_Windurst": 240, "Windurst_Woods": 241}
+ZONE_IDS = {}
 # nation index, mission number, DSP constant (scripts/globals/missions.lua on main)
 MISSIONS = [
     (0, 0, "SMASH_THE_ORCISH_SCOUTS"), (0, 1, "BAT_HUNT"), (0, 2, "SAVE_THE_CHILDREN"), (0, 3, "THE_RESCUE_DRILL"), (0, 4, "THE_DAVOI_REPORT"),
@@ -23,6 +21,8 @@ def git(*a):
 
 commit = git("rev-parse", "--short=10", "main").strip()
 npc_sql = git("show", "main:sql/npc_list.sql")
+for zm in re.finditer(r"INSERT INTO `zone_settings` VALUES \((\d+),\d+,'[^']*',\d+,'([^']*)'", git("show", "main:sql/zone_settings.sql")):
+    ZONE_IDS[zm.group(2)] = int(zm.group(1))
 rows = {}
 for m in re.finditer(r"VALUES \((\d+),'([^']*)','([^']*)',(-?\d+),(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)", npc_sql):
     rows.setdefault(m.group(2), []).append((int(m.group(1)), m.group(5), m.group(6), m.group(7)))

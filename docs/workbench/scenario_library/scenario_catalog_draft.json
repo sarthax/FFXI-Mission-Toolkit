@@ -1848,7 +1848,14 @@
        "ANCIENT_SANDORIAN_BOOK"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17555929,
+       "pos": [
+        "1.000",
+        "-1.419",
+        "-103.608"
+       ]
+      }
      },
      {
       "npc": "Grilau",
@@ -1960,9 +1967,7 @@
      }
     ]
    },
-   "verification_flags": [
-    "npc_list id unresolved for: Tombstone"
-   ]
+   "verification_flags": []
   },
   {
    "id": "SL-MSN-SD-3",
@@ -2002,7 +2007,14 @@
        "ORCISH_HUT_KEY"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17350950,
+       "pos": [
+        "-165.357",
+        "-11.672",
+        "77.771"
+       ]
+      }
      },
      {
       "npc": "Arnau",
@@ -2026,9 +2038,7 @@
      }
     ]
    },
-   "verification_flags": [
-    "npc_list id unresolved for: Hut_Door"
-   ]
+   "verification_flags": []
   },
   {
    "id": "SL-MSN-SD-4",
@@ -2069,7 +2079,14 @@
       ],
       "keyitems": [],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17195610,
+       "pos": [
+        "-363.415",
+        "39.707",
+        "267.721"
+       ]
+      }
      },
      {
       "npc": "Deaufrain",
@@ -2080,7 +2097,14 @@
       ],
       "keyitems": [],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17195609,
+       "pos": [
+        "-307.019",
+        "27.690",
+        "341.550"
+       ]
+      }
      },
      {
       "npc": "Equesobillot",
@@ -2091,7 +2115,14 @@
       ],
       "keyitems": [],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17195608,
+       "pos": [
+        "-286.485",
+        "9.307",
+        "287.821"
+       ]
+      }
      },
      {
       "npc": "Galaihaurat",
@@ -2102,7 +2133,14 @@
       ],
       "keyitems": [],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17195615,
+       "pos": [
+        "-481.196",
+        "-7.028",
+        "220.547"
+       ]
+      }
      },
      {
       "npc": "Laurisse",
@@ -2113,7 +2151,14 @@
       ],
       "keyitems": [],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17195613,
+       "pos": [
+        "-291.755",
+        "28.276",
+        "141.193"
+       ]
+      }
      },
      {
       "npc": "Narvecaint",
@@ -2123,7 +2168,14 @@
       ],
       "keyitems": [],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17195614,
+       "pos": [
+        "-261.936",
+        "23.144",
+        "127.610"
+       ]
+      }
      },
      {
       "npc": "Vicorpasse",
@@ -2137,7 +2189,14 @@
        "RESCUE_TRAINING_CERTIFICATE"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17195616,
+       "pos": [
+        "-344.964",
+        "37.226",
+        "265.018"
+       ]
+      }
      },
      {
       "npc": "Yaucevouchat",
@@ -2147,7 +2206,14 @@
       ],
       "keyitems": [],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17195611,
+       "pos": [
+        "-315.844",
+        "40.037",
+        "184.484"
+       ]
+      }
      },
      {
       "npc": "Ruillont",
@@ -2158,13 +2224,18 @@
       ],
       "keyitems": [],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17568170,
+       "pos": [
+        "-69.850",
+        "1.388",
+        "610.809"
+       ]
+      }
      }
     ]
    },
-   "verification_flags": [
-    "npc_list id unresolved for: Augevinne, Deaufrain, Equesobillot, Galaihaurat, Laurisse, Narvecaint, Vicorpasse, Yaucevouchat, Ruillont"
-   ]
+   "verification_flags": []
   },
   {
    "id": "SL-MSN-SD-5",
@@ -2205,7 +2276,14 @@
        "SOUTH_BLOCK_CODE"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17388006,
+       "pos": [
+        "294.086",
+        "0.032",
+        "-28.232"
+       ]
+      }
      },
      {
       "npc": "Zantaviat",
@@ -2225,7 +2303,14 @@
        "TEMPLE_KNIGHTS_DAVOI_REPORT"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17388005,
+       "pos": [
+        "211.852",
+        "-0.457",
+        "-9.230"
+       ]
+      }
      },
      {
       "npc": "_6fc",
@@ -2252,9 +2337,7 @@
      }
     ]
    },
-   "verification_flags": [
-    "npc_list id unresolved for: !, Zantaviat"
-   ]
+   "verification_flags": []
   },
   {
    "id": "SL-MSN-BA-1",
@@ -2499,13 +2582,18 @@
        "ZERUHN_REPORT"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17481821,
+       "pos": [
+        "-60.925",
+        "8.471",
+        "-333.294"
+       ]
+      }
      }
     ]
    },
-   "verification_flags": [
-    "npc_list id unresolved for: Makarim"
-   ]
+   "verification_flags": []
   },
   {
    "id": "SL-MSN-BA-2",
@@ -3045,7 +3133,14 @@
       ],
       "keyitems": [],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17253037,
+       "pos": [
+        "378.574",
+        "-13.249",
+        "98.102"
+       ]
+      }
      },
      {
       "npc": "_5c5",
@@ -3055,7 +3150,14 @@
       ],
       "keyitems": [],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17563875,
+       "pos": [
+        "420.000",
+        "-1.660",
+        "-30.375"
+       ]
+      }
      },
      {
       "npc": "_5cp",
@@ -3068,7 +3170,14 @@
        "CRACKED_MANA_ORBS"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17563867,
+       "pos": [
+        "464.506",
+        "-3.508",
+        "100.004"
+       ]
+      }
      },
      {
       "npc": "_5cq",
@@ -3081,7 +3190,14 @@
        "CRACKED_MANA_ORBS"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17563868,
+       "pos": [
+        "406.511",
+        "-3.024",
+        "59.987"
+       ]
+      }
      },
      {
       "npc": "_5cr",
@@ -3094,7 +3210,14 @@
        "CRACKED_MANA_ORBS"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17563869,
+       "pos": [
+        "464.500",
+        "-3.519",
+        "20.000"
+       ]
+      }
      },
      {
       "npc": "_5cs",
@@ -3107,7 +3230,14 @@
        "CRACKED_MANA_ORBS"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17563870,
+       "pos": [
+        "295.501",
+        "-3.522",
+        "19.995"
+       ]
+      }
      },
      {
       "npc": "_5ct",
@@ -3120,7 +3250,14 @@
        "CRACKED_MANA_ORBS"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17563871,
+       "pos": [
+        "353.497",
+        "-3.003",
+        "60.001"
+       ]
+      }
      },
      {
       "npc": "_5cu",
@@ -3133,7 +3270,14 @@
        "CRACKED_MANA_ORBS"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17563872,
+       "pos": [
+        "295.501",
+        "-3.491",
+        "100.011"
+       ]
+      }
      },
      {
       "npc": "Hakkuru-Rinkuru",
@@ -3274,9 +3418,7 @@
      }
     ]
    },
-   "verification_flags": [
-    "npc_list id unresolved for: Sama_Gohjima, _5c5, _5cp, _5cq, _5cr, _5cs, _5ct, _5cu"
-   ]
+   "verification_flags": []
   },
   {
    "id": "SL-MSN-WI-2",
@@ -3320,7 +3462,14 @@
        "SOUTHEASTERN_STAR_CHARM"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17253033,
+       "pos": [
+        "262.275",
+        "-17.249",
+        "-459.613"
+       ]
+      }
      },
      {
       "npc": "_5e9",
@@ -3332,7 +3481,14 @@
        "SOUTHEASTERN_STAR_CHARM"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17572248,
+       "pos": [
+        "590.393",
+        "-1.555",
+        "-660.020"
+       ]
+      }
      },
      {
       "npc": "_5ee",
@@ -3345,7 +3501,14 @@
        "FIRST_GLOWING_MANA_ORB"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17572249,
+       "pos": [
+        "541.980",
+        "-3.265",
+        "-617.991"
+       ]
+      }
      },
      {
       "npc": "_5ef",
@@ -3358,7 +3521,14 @@
        "SECOND_GLOWING_MANA_ORB"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17572250,
+       "pos": [
+        "500.005",
+        "-3.254",
+        "-572.998"
+       ]
+      }
      },
      {
       "npc": "_5eg",
@@ -3371,7 +3541,14 @@
        "THIRD_GLOWING_MANA_ORB"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17572251,
+       "pos": [
+        "458.005",
+        "-3.271",
+        "-618.008"
+       ]
+      }
      },
      {
       "npc": "_5eh",
@@ -3384,7 +3561,14 @@
        "FOURTH_GLOWING_MANA_ORB"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17572252,
+       "pos": [
+        "457.995",
+        "-3.293",
+        "-701.998"
+       ]
+      }
      },
      {
       "npc": "_5ei",
@@ -3397,7 +3581,14 @@
        "FIFTH_GLOWING_MANA_ORB"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17572253,
+       "pos": [
+        "499.996",
+        "-3.314",
+        "-747.005"
+       ]
+      }
      },
      {
       "npc": "_5ej",
@@ -3410,7 +3601,14 @@
        "SIXTH_GLOWING_MANA_ORB"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17572254,
+       "pos": [
+        "542.020",
+        "-3.293",
+        "-702.004"
+       ]
+      }
      },
      {
       "npc": "Janshura-Rashura",
@@ -3572,9 +3770,7 @@
      }
     ]
    },
-   "verification_flags": [
-    "npc_list id unresolved for: Pore-Ohre, _5e9, _5ee, _5ef, _5eg, _5eh, _5ei, _5ej"
-   ]
+   "verification_flags": []
   },
   {
    "id": "SL-MSN-WI-3",
@@ -3608,11 +3804,11 @@
    "xiheadless": {
     "native_action": "talk_npc",
     "params": {
-     "talk_npc": 17760269
+     "talk_npc": 17371590
     },
     "typed_ids": {
-     "talk_npc": "npc_list id for Janshura-Rashura (zone-resolved)",
-     "zone": 240,
+     "talk_npc": "npc_list id for Ghoo_Pakya (zone-resolved)",
+     "zone": 145,
      "csids_in_scripts": [
       "0x002d",
       "0x002e",
@@ -3708,8 +3904,8 @@
       "WHISPER_OF_TREMORS"
      ],
      "other_script_npcs": [
-      "Ghoo_Pakya",
       "Laa_Mozi",
+      "Janshura-Rashura",
       "Zokima-Rokima",
       "Leepe-Hoppe",
       "Mokyokyo",
@@ -3718,13 +3914,13 @@
      ]
     },
     "expected_state": {
-     "zone": 240,
+     "zone": 145,
      "event_active": true
     },
     "readback_collector": "scenario expectation event_active; mission status and key items have NO scenario readback (gaps G-01/G-02)",
     "oracle_rule": "Equals(event_active, true)",
     "setup": [
-     "character in zone 240 near Janshura-Rashura at (-230.626,-8.400,184.050)",
+     "character in zone 145 near Ghoo_Pakya at (-138.978,0.011,144.346)",
      "mission state precondition per script (current mission + status) NOT characterized",
      "npc_list id vs client id offset still to be checked with dat-extractor"
     ],
@@ -3751,7 +3947,14 @@
        "FOOD_OFFERINGS"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17371590,
+       "pos": [
+        "-138.978",
+        "0.011",
+        "144.346"
+       ]
+      }
      },
      {
       "npc": "Laa_Mozi",
@@ -3767,7 +3970,14 @@
        "FOOD_OFFERINGS"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17371589,
+       "pos": [
+        "-21.616",
+        "0.293",
+        "145.313"
+       ]
+      }
      },
      {
       "npc": "Janshura-Rashura",
@@ -3963,9 +4173,7 @@
      }
     ]
    },
-   "verification_flags": [
-    "npc_list id unresolved for: Ghoo_Pakya, Laa_Mozi"
-   ]
+   "verification_flags": []
   },
   {
    "id": "SL-MSN-WI-4",
@@ -4006,7 +4214,14 @@
       ],
       "keyitems": [],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17563876,
+       "pos": [
+        "-15.875",
+        "-2.174",
+        "20.025"
+       ]
+      }
      },
      {
       "npc": "Fossil_Rock",
@@ -4016,7 +4231,14 @@
        "LAPIS_CORAL"
       ],
       "mission_status_sets": [],
-      "npc_list": null
+      "npc_list": {
+       "id": 17588737,
+       "pos": [
+        "39.739",
+        "19.024",
+        "211.796"
+       ]
+      }
      },
      {
       "npc": "_6n2",
@@ -4143,9 +4365,7 @@
      }
     ]
    },
-   "verification_flags": [
-    "npc_list id unresolved for: _5ca, Fossil_Rock"
-   ]
+   "verification_flags": []
   },
   {
    "id": "SL-MSN-WI-5",

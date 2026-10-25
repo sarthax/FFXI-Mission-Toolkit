@@ -129,7 +129,7 @@
    "npcs": [
     {
      "zone_dir": "King_Ranperres_Tomb",
-     "zone_id": null,
+     "zone_id": 190,
      "npc": "Tombstone",
      "path": "scripts/zones/King_Ranperres_Tomb/npcs/Tombstone.lua",
      "startEvent": [
@@ -142,7 +142,14 @@
       "ANCIENT_SANDORIAN_BOOK"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17555929,
+      "pos": [
+       "1.000",
+       "-1.419",
+       "-103.608"
+      ]
+     }
     },
     {
      "zone_dir": "Northern_San_dOria",
@@ -267,7 +274,7 @@
    "npcs": [
     {
      "zone_dir": "Ghelsba_Outpost",
-     "zone_id": null,
+     "zone_id": 140,
      "npc": "Hut_Door",
      "path": "scripts/zones/Ghelsba_Outpost/npcs/Hut_Door.lua",
      "startEvent": [
@@ -278,7 +285,14 @@
       "ORCISH_HUT_KEY"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17350950,
+      "pos": [
+       "-165.357",
+       "-11.672",
+       "77.771"
+      ]
+     }
     },
     {
      "zone_dir": "Northern_San_dOria",
@@ -311,7 +325,7 @@
    "npcs": [
     {
      "zone_dir": "La_Theine_Plateau",
-     "zone_id": null,
+     "zone_id": 102,
      "npc": "Augevinne",
      "path": "scripts/zones/La_Theine_Plateau/npcs/Augevinne.lua",
      "startEvent": [
@@ -319,11 +333,18 @@
      ],
      "keyitems": [],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17195610,
+      "pos": [
+       "-363.415",
+       "39.707",
+       "267.721"
+      ]
+     }
     },
     {
      "zone_dir": "La_Theine_Plateau",
-     "zone_id": null,
+     "zone_id": 102,
      "npc": "Deaufrain",
      "path": "scripts/zones/La_Theine_Plateau/npcs/Deaufrain.lua",
      "startEvent": [
@@ -332,11 +353,18 @@
      ],
      "keyitems": [],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17195609,
+      "pos": [
+       "-307.019",
+       "27.690",
+       "341.550"
+      ]
+     }
     },
     {
      "zone_dir": "La_Theine_Plateau",
-     "zone_id": null,
+     "zone_id": 102,
      "npc": "Equesobillot",
      "path": "scripts/zones/La_Theine_Plateau/npcs/Equesobillot.lua",
      "startEvent": [
@@ -345,11 +373,18 @@
      ],
      "keyitems": [],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17195608,
+      "pos": [
+       "-286.485",
+       "9.307",
+       "287.821"
+      ]
+     }
     },
     {
      "zone_dir": "La_Theine_Plateau",
-     "zone_id": null,
+     "zone_id": 102,
      "npc": "Galaihaurat",
      "path": "scripts/zones/La_Theine_Plateau/npcs/Galaihaurat.lua",
      "startEvent": [
@@ -358,11 +393,18 @@
      ],
      "keyitems": [],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17195615,
+      "pos": [
+       "-481.196",
+       "-7.028",
+       "220.547"
+      ]
+     }
     },
     {
      "zone_dir": "La_Theine_Plateau",
-     "zone_id": null,
+     "zone_id": 102,
      "npc": "Laurisse",
      "path": "scripts/zones/La_Theine_Plateau/npcs/Laurisse.lua",
      "startEvent": [
@@ -371,11 +413,18 @@
      ],
      "keyitems": [],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17195613,
+      "pos": [
+       "-291.755",
+       "28.276",
+       "141.193"
+      ]
+     }
     },
     {
      "zone_dir": "La_Theine_Plateau",
-     "zone_id": null,
+     "zone_id": 102,
      "npc": "Narvecaint",
      "path": "scripts/zones/La_Theine_Plateau/npcs/Narvecaint.lua",
      "startEvent": [
@@ -383,11 +432,18 @@
      ],
      "keyitems": [],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17195614,
+      "pos": [
+       "-261.936",
+       "23.144",
+       "127.610"
+      ]
+     }
     },
     {
      "zone_dir": "La_Theine_Plateau",
-     "zone_id": null,
+     "zone_id": 102,
      "npc": "Vicorpasse",
      "path": "scripts/zones/La_Theine_Plateau/npcs/Vicorpasse.lua",
      "startEvent": [
@@ -399,11 +455,18 @@
       "RESCUE_TRAINING_CERTIFICATE"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17195616,
+      "pos": [
+       "-344.964",
+       "37.226",
+       "265.018"
+      ]
+     }
     },
     {
      "zone_dir": "La_Theine_Plateau",
-     "zone_id": null,
+     "zone_id": 102,
      "npc": "Yaucevouchat",
      "path": "scripts/zones/La_Theine_Plateau/npcs/Yaucevouchat.lua",
      "startEvent": [
@@ -411,11 +474,18 @@
      ],
      "keyitems": [],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17195611,
+      "pos": [
+       "-315.844",
+       "40.037",
+       "184.484"
+      ]
+     }
     },
     {
      "zone_dir": "Ordelles_Caves",
-     "zone_id": null,
+     "zone_id": 193,
      "npc": "Ruillont",
      "path": "scripts/zones/Ordelles_Caves/npcs/Ruillont.lua",
      "startEvent": [
@@ -424,7 +494,14 @@
      ],
      "keyitems": [],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17568170,
+      "pos": [
+       "-69.850",
+       "1.388",
+       "610.809"
+      ]
+     }
     }
    ]
   },
@@ -435,7 +512,7 @@
    "npcs": [
     {
      "zone_dir": "Davoi",
-     "zone_id": null,
+     "zone_id": 149,
      "npc": "!",
      "path": "scripts/zones/Davoi/npcs/!.lua",
      "startEvent": [],
@@ -446,11 +523,18 @@
       "SOUTH_BLOCK_CODE"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17388006,
+      "pos": [
+       "294.086",
+       "0.032",
+       "-28.232"
+      ]
+     }
     },
     {
      "zone_dir": "Davoi",
-     "zone_id": null,
+     "zone_id": 149,
      "npc": "Zantaviat",
      "path": "scripts/zones/Davoi/npcs/Zantaviat.lua",
      "startEvent": [
@@ -468,7 +552,14 @@
       "TEMPLE_KNIGHTS_DAVOI_REPORT"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17388005,
+      "pos": [
+       "211.852",
+       "-0.457",
+       "-9.230"
+      ]
+     }
     },
     {
      "zone_dir": "Northern_San_dOria",
@@ -647,7 +738,7 @@
     },
     {
      "zone_dir": "Zeruhn_Mines",
-     "zone_id": null,
+     "zone_id": 172,
      "npc": "Makarim",
      "path": "scripts/zones/Zeruhn_Mines/npcs/Makarim.lua",
      "startEvent": [
@@ -658,7 +749,14 @@
       "ZERUHN_REPORT"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17481821,
+      "pos": [
+       "-60.925",
+       "8.471",
+       "-333.294"
+      ]
+     }
     }
    ]
   },
@@ -1091,7 +1189,7 @@
    "npcs": [
     {
      "zone_dir": "East_Sarutabaruta",
-     "zone_id": null,
+     "zone_id": 116,
      "npc": "Sama_Gohjima",
      "path": "scripts/zones/East_Sarutabaruta/npcs/Sama_Gohjima.lua",
      "startEvent": [
@@ -1099,11 +1197,18 @@
      ],
      "keyitems": [],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17253037,
+      "pos": [
+       "378.574",
+       "-13.249",
+       "98.102"
+      ]
+     }
     },
     {
      "zone_dir": "Inner_Horutoto_Ruins",
-     "zone_id": null,
+     "zone_id": 192,
      "npc": "_5c5",
      "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5c5.lua",
      "startEvent": [
@@ -1111,11 +1216,18 @@
      ],
      "keyitems": [],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17563875,
+      "pos": [
+       "420.000",
+       "-1.660",
+       "-30.375"
+      ]
+     }
     },
     {
      "zone_dir": "Inner_Horutoto_Ruins",
-     "zone_id": null,
+     "zone_id": 192,
      "npc": "_5cp",
      "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5cp.lua",
      "startEvent": [
@@ -1126,11 +1238,18 @@
       "CRACKED_MANA_ORBS"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17563867,
+      "pos": [
+       "464.506",
+       "-3.508",
+       "100.004"
+      ]
+     }
     },
     {
      "zone_dir": "Inner_Horutoto_Ruins",
-     "zone_id": null,
+     "zone_id": 192,
      "npc": "_5cq",
      "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5cq.lua",
      "startEvent": [
@@ -1141,11 +1260,18 @@
       "CRACKED_MANA_ORBS"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17563868,
+      "pos": [
+       "406.511",
+       "-3.024",
+       "59.987"
+      ]
+     }
     },
     {
      "zone_dir": "Inner_Horutoto_Ruins",
-     "zone_id": null,
+     "zone_id": 192,
      "npc": "_5cr",
      "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5cr.lua",
      "startEvent": [
@@ -1156,11 +1282,18 @@
       "CRACKED_MANA_ORBS"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17563869,
+      "pos": [
+       "464.500",
+       "-3.519",
+       "20.000"
+      ]
+     }
     },
     {
      "zone_dir": "Inner_Horutoto_Ruins",
-     "zone_id": null,
+     "zone_id": 192,
      "npc": "_5cs",
      "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5cs.lua",
      "startEvent": [
@@ -1171,11 +1304,18 @@
       "CRACKED_MANA_ORBS"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17563870,
+      "pos": [
+       "295.501",
+       "-3.522",
+       "19.995"
+      ]
+     }
     },
     {
      "zone_dir": "Inner_Horutoto_Ruins",
-     "zone_id": null,
+     "zone_id": 192,
      "npc": "_5ct",
      "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5ct.lua",
      "startEvent": [
@@ -1186,11 +1326,18 @@
       "CRACKED_MANA_ORBS"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17563871,
+      "pos": [
+       "353.497",
+       "-3.003",
+       "60.001"
+      ]
+     }
     },
     {
      "zone_dir": "Inner_Horutoto_Ruins",
-     "zone_id": null,
+     "zone_id": 192,
      "npc": "_5cu",
      "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5cu.lua",
      "startEvent": [
@@ -1201,7 +1348,14 @@
       "CRACKED_MANA_ORBS"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17563872,
+      "pos": [
+       "295.501",
+       "-3.491",
+       "100.011"
+      ]
+     }
     },
     {
      "zone_dir": "Port_Windurst",
@@ -1359,7 +1513,7 @@
    "npcs": [
     {
      "zone_dir": "East_Sarutabaruta",
-     "zone_id": null,
+     "zone_id": 116,
      "npc": "Pore-Ohre",
      "path": "scripts/zones/East_Sarutabaruta/npcs/Pore-Ohre.lua",
      "startEvent": [
@@ -1370,11 +1524,18 @@
       "SOUTHEASTERN_STAR_CHARM"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17253033,
+      "pos": [
+       "262.275",
+       "-17.249",
+       "-459.613"
+      ]
+     }
     },
     {
      "zone_dir": "Outer_Horutoto_Ruins",
-     "zone_id": null,
+     "zone_id": 194,
      "npc": "_5e9",
      "path": "scripts/zones/Outer_Horutoto_Ruins/npcs/_5e9.lua",
      "startEvent": [
@@ -1384,11 +1545,18 @@
       "SOUTHEASTERN_STAR_CHARM"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17572248,
+      "pos": [
+       "590.393",
+       "-1.555",
+       "-660.020"
+      ]
+     }
     },
     {
      "zone_dir": "Outer_Horutoto_Ruins",
-     "zone_id": null,
+     "zone_id": 194,
      "npc": "_5ee",
      "path": "scripts/zones/Outer_Horutoto_Ruins/npcs/_5ee.lua",
      "startEvent": [
@@ -1399,11 +1567,18 @@
       "FIRST_GLOWING_MANA_ORB"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17572249,
+      "pos": [
+       "541.980",
+       "-3.265",
+       "-617.991"
+      ]
+     }
     },
     {
      "zone_dir": "Outer_Horutoto_Ruins",
-     "zone_id": null,
+     "zone_id": 194,
      "npc": "_5ef",
      "path": "scripts/zones/Outer_Horutoto_Ruins/npcs/_5ef.lua",
      "startEvent": [
@@ -1414,11 +1589,18 @@
       "SECOND_GLOWING_MANA_ORB"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17572250,
+      "pos": [
+       "500.005",
+       "-3.254",
+       "-572.998"
+      ]
+     }
     },
     {
      "zone_dir": "Outer_Horutoto_Ruins",
-     "zone_id": null,
+     "zone_id": 194,
      "npc": "_5eg",
      "path": "scripts/zones/Outer_Horutoto_Ruins/npcs/_5eg.lua",
      "startEvent": [
@@ -1429,11 +1611,18 @@
       "THIRD_GLOWING_MANA_ORB"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17572251,
+      "pos": [
+       "458.005",
+       "-3.271",
+       "-618.008"
+      ]
+     }
     },
     {
      "zone_dir": "Outer_Horutoto_Ruins",
-     "zone_id": null,
+     "zone_id": 194,
      "npc": "_5eh",
      "path": "scripts/zones/Outer_Horutoto_Ruins/npcs/_5eh.lua",
      "startEvent": [
@@ -1444,11 +1633,18 @@
       "FOURTH_GLOWING_MANA_ORB"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17572252,
+      "pos": [
+       "457.995",
+       "-3.293",
+       "-701.998"
+      ]
+     }
     },
     {
      "zone_dir": "Outer_Horutoto_Ruins",
-     "zone_id": null,
+     "zone_id": 194,
      "npc": "_5ei",
      "path": "scripts/zones/Outer_Horutoto_Ruins/npcs/_5ei.lua",
      "startEvent": [
@@ -1459,11 +1655,18 @@
       "FIFTH_GLOWING_MANA_ORB"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17572253,
+      "pos": [
+       "499.996",
+       "-3.314",
+       "-747.005"
+      ]
+     }
     },
     {
      "zone_dir": "Outer_Horutoto_Ruins",
-     "zone_id": null,
+     "zone_id": 194,
      "npc": "_5ej",
      "path": "scripts/zones/Outer_Horutoto_Ruins/npcs/_5ej.lua",
      "startEvent": [
@@ -1474,7 +1677,14 @@
       "SIXTH_GLOWING_MANA_ORB"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17572254,
+      "pos": [
+       "542.020",
+       "-3.293",
+       "-702.004"
+      ]
+     }
     },
     {
      "zone_dir": "Port_Windurst",
@@ -1653,7 +1863,7 @@
    "npcs": [
     {
      "zone_dir": "Giddeus",
-     "zone_id": null,
+     "zone_id": 145,
      "npc": "Ghoo_Pakya",
      "path": "scripts/zones/Giddeus/npcs/Ghoo_Pakya.lua",
      "startEvent": [
@@ -1667,11 +1877,18 @@
       "FOOD_OFFERINGS"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17371590,
+      "pos": [
+       "-138.978",
+       "0.011",
+       "144.346"
+      ]
+     }
     },
     {
      "zone_dir": "Giddeus",
-     "zone_id": null,
+     "zone_id": 145,
      "npc": "Laa_Mozi",
      "path": "scripts/zones/Giddeus/npcs/Laa_Mozi.lua",
      "startEvent": [
@@ -1685,7 +1902,14 @@
       "FOOD_OFFERINGS"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17371589,
+      "pos": [
+       "-21.616",
+       "0.293",
+       "145.313"
+      ]
+     }
     },
     {
      "zone_dir": "Port_Windurst",
@@ -1900,7 +2124,7 @@
    "npcs": [
     {
      "zone_dir": "Inner_Horutoto_Ruins",
-     "zone_id": null,
+     "zone_id": 192,
      "npc": "_5ca",
      "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5ca.lua",
      "startEvent": [
@@ -1909,11 +2133,18 @@
      ],
      "keyitems": [],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17563876,
+      "pos": [
+       "-15.875",
+       "-2.174",
+       "20.025"
+      ]
+     }
     },
     {
      "zone_dir": "Maze_of_Shakhrami",
-     "zone_id": null,
+     "zone_id": 198,
      "npc": "Fossil_Rock",
      "path": "scripts/zones/Maze_of_Shakhrami/npcs/Fossil_Rock.lua",
      "startEvent": [],
@@ -1921,7 +2152,14 @@
       "LAPIS_CORAL"
      ],
      "mission_status_sets": [],
-     "npc_list": null
+     "npc_list": {
+      "id": 17588737,
+      "pos": [
+       "39.739",
+       "19.024",
+       "211.796"
+      ]
+     }
     },
     {
      "zone_dir": "Windurst_Walls",
