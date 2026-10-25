@@ -1,0 +1,20 @@
+name: Scenario Results V2 Offline 1408
+on:
+  pull_request:
+    paths:
+      - "test_fixtures/scenario_results_v2_1408.json"
+      - "test_fixtures/test_scenario_results_v2_1408.py"
+      - "docs/workbench/RESULTS_VIEW_MODEL_1408.md"
+      - ".github/workflows/scenario-results-v2-1408.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fixture-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python test_fixtures/test_scenario_results_v2_1408.py
