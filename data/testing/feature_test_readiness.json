@@ -1237,7 +1237,7 @@
           "id": "CHO-H1",
           "kind": "positive",
           "title": "Chocobo Whistle quest: Hantileon, search walk, handkerchief, whistle (scenario whistle)",
-          "status": "planned_2026-10-25",
+          "status": "passed_live_2026-10-25",
           "run_mode": "live_headless_manual",
           "evidence_required": [
             "headless_event_or_snapshot",

@@ -272,8 +272,10 @@
    "steps": "run_live.py whistle",
    "expected": "scenario PASS in run_live output",
    "harness": "headless: tests/live/chocobo_raising/run_live.py whistle",
-   "state": "untested",
-   "evidence": []
+   "state": "passed",
+   "evidence": [
+    "runtime: 2026-10-25 xitest04 headless run_live.py whistle PASS: growth starts quest at SEARCH, wrong/right walk length, handkerchief key item 809, Hantileon scene 830 + option 222 gives whistle 15533 (LSB-decoded shapes, no capture)."
+   ]
   }
  ]
 }

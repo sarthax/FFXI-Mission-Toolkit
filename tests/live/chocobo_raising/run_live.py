@@ -355,9 +355,45 @@ class Story:
     def done(self):
         q(f"update char_chocobos set discernment=10, ability1=0, ability2=0 where charid={CHAR}")
 
+class Whistle:
+    # Chocobo Whistle quest (Hantileon only: San d'Oria raiser, so the quest starts at SEARCH). Growth to adult 1 starts it,
+    # walks search (command 88, arg = walk length), the wrong length answers "not here", the right one gives the Handkerchief,
+    # Hantileon scene 830 + option 222 hands over the whistle (item 15533). All reply shapes are LSB, no capture.
+    VARS = ("ChocoboWhistleProg", "ChocoboWhistleHidingWalk")
+    def seed(self):
+        seed(3, 30); q(f"update char_chocobos set energy=100, held_item=0, created=created where charid={CHAR}")   # adolescent, old enough to grow up
+        q(f"delete from char_vars where charid={CHAR} and varname in ('ChocoboWhistleProg','ChocoboWhistleHidingWalk')")
+        q(f"delete from char_inventory where charid={CHAR} and itemid=15533")
+    def prog(self):
+        r = q(f"select value from char_vars where charid={CHAR} and varname='ChocoboWhistleProg'")
+        return r[0][0] if r else 0
+    def walk(self, b, opt, search):
+        q(f"update char_chocobos set energy=100, created=created where charid={CHAR}")
+        b.tool("talk_to_npc", npcId=NPC); time.sleep(2)
+        b.tool("event_update", option=opt); time.sleep(1)
+        if search is not None:
+            b.tool("event_update", option=88 + 256 * search); time.sleep(1)
+        b.tool("event_select", selection=0); time.sleep(2)
+    def run(self, b):
+        check("growth to adult 1 starts the quest at SEARCH (2)", self.prog() == 2, (self.prog(), q(f"select stage,last_update_age,unix_timestamp()-unix_timestamp(created) from char_chocobos where charid={CHAR}")))
+        q(f"insert into char_vars (charid,varname,value) values ({CHAR},'ChocoboWhistleHidingWalk',1) on duplicate key update value=1")
+        self.walk(b, 11506, 3)   # long walk, handkerchief hides on the short one
+        check("wrong walk length finds nothing", self.prog() == 2 and not b.tool("key_items", id=809).get("owned", False), self.prog())
+        self.walk(b, 10994, 1)   # short walk
+        check("right walk length finds the Handkerchief (FOUND 3)", self.prog() == 3, self.prog())
+        check("Handkerchief key item 809 held", b.tool("key_items", id=809).get("owned") is True, b.tool("key_items", id=809))
+        r = b.tool("talk_to_npc", npcId=NPC)
+        check("Hantileon starts scene 830", r.get("eventId") == 830, r); time.sleep(2)
+        b.tool("event_select", selection=222); time.sleep(3)
+        n = q(f"select coalesce(sum(quantity),0) from char_inventory where charid={CHAR} and itemid=15533")[0][0]
+        check("quest DONE (4) and whistle handed over", self.prog() == 4 and n == 1, (self.prog(), n))
+    def done(self):
+        q(f"delete from char_vars where charid={CHAR} and varname in ('ChocoboWhistleProg','ChocoboWhistleHidingWalk')")
+        q(f"delete from char_inventory where charid={CHAR} and itemid=15533")
+
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)
