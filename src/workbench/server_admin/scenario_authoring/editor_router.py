@@ -15,6 +15,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from .context_handoff import coverage_context, inspect_evidence_review
+from .validation_feedback import field_errors
 from workbench.captures.scenario_readiness_viewer import inspect_paired_readiness
 from workbench.runtime.paths import GUI_ROOT
 from workbench.runtime.legacy_settings import get_dsp_root
@@ -313,4 +314,9 @@ def validate(request: Request, body: ValidationRequest):
     try:
         return validate_editor_spec(body.specification)
     except ValueError as exc:
-        raise HTTPException(422, str(exc)) from exc
+        # Canonical validation still rejects the unmodified specification.
+        # Detailed errors are display-only and never written to the draft.
+        detail = {"message": "Canonical scenario validation rejected",
+                  "canonical_error": str(exc),
+                  "errors": field_errors(body.specification, str(exc))}
+        raise HTTPException(422, detail) from exc

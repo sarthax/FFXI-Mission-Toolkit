@@ -2,6 +2,7 @@
 (function () {
   'use strict';
   const M = window.ScenarioGuidedModel, V = window.ScenarioContractV2View;
+  const Feedback = window.ScenarioValidationFeedback;
   const $ = id => document.getElementById(id);
   let spec = M.fresh(), mode = 'guided', options = {features: [], observations: [], operations: []};
   let drafts = [], baseline = null, sourceDetail = null;
@@ -392,14 +393,43 @@
     const response=await fetch(path,{method:method||'GET',headers,credentials:'same-origin',
       body:body===undefined?undefined:JSON.stringify(body)});
     const value=await response.json();
-    if(!response.ok)throw Error(typeof value.detail==='string'?value.detail:'HTTP '+response.status);
+    if(!response.ok) {
+      const detail=value.detail;
+      const error=new Error(typeof detail==='string'?detail:
+        (detail && typeof detail.message==='string'?detail.message+
+          ': '+(typeof detail.canonical_error==='string'?detail.canonical_error:'invalid fields'):
+         'HTTP '+response.status));
+      // Only the validation endpoint owns this non-authoritative advisory shape.
+      if(path==='/scenario-developer/validate' && detail &&
+         Array.isArray(detail.errors))error.validationErrors=detail.errors;
+      throw error;
+    }
     return value;
   }
+  // Only the latest Validate/Save request owns preview, status and field errors.
+  // A stale response must be a complete UI no-op, including clear/hide/show.
+  let validationUiRequest = 0;
+  // A failed asynchronous validation must not paint errors on another draft
+  // or on Guided/Advanced edits made after the request was sent.
+  function validationRequestCurrent(generation, snapshot, revision=null) {
+    if(generation!==editorGeneration ||
+       (revision!==null && Number($('sd-revision').value)!==revision))return false;
+    try{return JSON.stringify(current())===JSON.stringify(snapshot);}
+    catch(e){return false;} // Invalid Advanced JSON is preserved, never repaired.
+  }
   async function validatePreview() {
+    const uiRequest=validationUiRequest;
     const generation=editorGeneration, input=M.clone(current());
-    const result=await call('/scenario-developer/validate','POST',{specification:input});
-    if(generation!==editorGeneration || JSON.stringify(current())!==JSON.stringify(input))
-      throw Error('Preview is stale: editor changed while validating. Validate the current draft again.');
+    let result;
+    try{result=await call('/scenario-developer/validate','POST',{specification:input});}
+    catch(e){
+      if(uiRequest!==validationUiRequest || generation!==editorGeneration ||
+         !validationRequestCurrent(generation,input))return; // Preview is stale: no UI mutation or outer catch dispatch
+      throw e;
+    }
+    if(uiRequest!==validationUiRequest || generation!==editorGeneration ||
+       !validationRequestCurrent(generation,input))return; // obsolete success must not overwrite a newer preview
+    if(Feedback)Feedback.clear();
     renderPreview(result.preview,result.reader_view,result.contract_v2_compatibility,result.contract_v2_source_attribution);
     show('Canonical validation accepted — DESIGN_ONLY, unreviewed, not executable.\n'+
       result.warnings.join('\n'));
@@ -475,24 +505,35 @@
   });
   $('sd-feature').addEventListener('change',diagnostics);
   $('sd-observations').addEventListener('change',()=>{readGuidedFields();renderSteps();diagnostics();});
-  $('sd-validate').addEventListener('click',async()=>{try{await validatePreview();}
-    catch(e){$('sd-preview').hidden=true;show('Canonical validation rejected: '+e.message+'\n'+M.referenceIssues(spec).join('\n'));}});
+  $('sd-validate').addEventListener('click',async()=>{
+    const uiRequest=++validationUiRequest;
+    try{await validatePreview();}
+    catch(e){
+      if(uiRequest!==validationUiRequest)return; // previous request cannot hide/clear newer UI
+      $('sd-preview').hidden=true;
+      if(Feedback)Feedback.show(e.validationErrors);
+      show('Canonical validation rejected: '+e.message+'\n'+M.referenceIssues(spec).join('\n'));
+    }
+  });
   let savePending=false;
   $('sd-save').addEventListener('click',async()=>{
     if(savePending)return;
+    const uiRequest=++validationUiRequest;
     savePending=true;$('sd-save').disabled=true;
     const generation=editorGeneration;
+    let submitted=null, submittedRevision=null;
     try {
       if(!$('sd-token').value)throw Error('Enter a local operator token; a preview never grants save permission');
       // Keep an immutable copy of exactly what the operator asked to save.
       // The validation round-trip is async, and Guided/Advanced may be edited
       // while either response is in flight.
       const input=M.clone(current()),rev=Number($('sd-revision').value);
+      submitted=input;submittedRevision=rev;
       if(!Number.isInteger(rev)||rev<0)throw Error('Invalid expected revision');
       const validated=await call('/scenario-developer/validate','POST',{specification:input});
-      if(generation!==editorGeneration || Number($('sd-revision').value)!==rev ||
-          JSON.stringify(current())!==JSON.stringify(input))
-        throw Error('Draft changed while validating. Review the edits and save again.');
+      if(uiRequest!==validationUiRequest || !validationRequestCurrent(generation,input,rev))
+        return; // superseded preflight must not dispatch a draft Save or change newer UI
+      if(Feedback)Feedback.clear();
       renderPreview(validated.preview,validated.reader_view,validated.contract_v2_compatibility,validated.contract_v2_source_attribution);
       if(validated.contract_v2_compatibility?.state==='BLOCKED')
         throw Error('Contract v2 source/base-spec fingerprint conflict: '+validated.contract_v2_compatibility.reasons.join('; ')+'. Reconcile metadata in Advanced JSON; never silently repin.');
@@ -508,17 +549,27 @@
       const disposition=M.saveResponseDisposition(toSave,latest,saved,
         generation!==editorGeneration);
       if(!disposition.apply_revision) {
-        show('Saved '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
-          ', but '+disposition.reason+'; reopen saved draft before the next save.');
+        if(uiRequest===validationUiRequest)
+          show('Saved '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
+            ', but '+disposition.reason+'; reopen saved draft before the next save.');
         return;
       }
       $('sd-revision').value=saved.revision;
       baseline=M.clone(toSave);updateRevision();
-      show('Saved DESIGN_ONLY '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
-        (disposition.unsaved_edits?
-          '. Newer editor changes remain UNSAVED; review before the next revision.':
-          '. NOT reviewed or executable.'));
-    }catch(e){show('Draft NOT saved / revision may require refresh: '+e.message);}
+      if(uiRequest===validationUiRequest)
+        show('Saved DESIGN_ONLY '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
+          (disposition.unsaved_edits?
+            '. Newer editor changes remain UNSAVED; review before the next revision.':
+            '. NOT reviewed or executable.'));
+    }catch(e){
+      const isCurrent=submitted!==null &&
+        validationRequestCurrent(generation,submitted,submittedRevision);
+      if(uiRequest!==validationUiRequest || (submitted!==null && !isCurrent))
+        return; // do not erase newer Validate results or another draft's status
+      if(Feedback && isCurrent && Array.isArray(e.validationErrors))
+        Feedback.show(e.validationErrors);
+      show('Draft NOT saved / revision may require refresh: '+e.message);
+    }
     finally {savePending=false;$('sd-save').disabled=false;draftGuard.refresh();}
   });
   $('sd-load-drafts').addEventListener('click',async()=>{

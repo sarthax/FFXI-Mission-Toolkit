@@ -408,10 +408,23 @@ def test_agent_a_discard_review_guard_all_editor_replacement_paths():
     assert "const generation=editorGeneration" in js
     assert "const input=M.clone(current())" in js
     assert "M.saveResponseDisposition(toSave,latest,saved" in js
-    preview=js[js.index("  async function validatePreview()"):js.index("  let editorGeneration=",js.index("  async function validatePreview()"))]
-    assert "const generation=editorGeneration, input=M.clone(current())" in preview
-    assert "generation!==editorGeneration" in preview
-    assert "Preview is stale" in preview
+    # Behavioral safety, not the spelling/placement of validatePreview().
+    # Run the real editor click handlers in a synthetic, network-free Node VM:
+    # V2-before-V1 422/200, identical snapshots, stale Save and invalid
+    # Advanced buffers must not erase newer UI or alter draft revisions.
+    from pathlib import Path
+    import shutil
+    import subprocess
+    node=shutil.which("node")
+    if node is None:
+        pytest.skip("Node is unavailable; run Scenario Field Validation CI for the editor callback contract")
+    root=Path(__file__).resolve().parents[1]
+    fixture=root/"test_fixtures/test_scenario_validation_async_1362.cjs"
+    actual=subprocess.run([node,str(fixture)],cwd=root,text=True,
+                          capture_output=True,timeout=25,check=False)
+    assert actual.returncode==0, actual.stdout+"\\n"+actual.stderr
+    assert "#1362 actual click handlers" in actual.stdout
+    assert ": PASS" in actual.stdout
     assert "if(!disposition.apply_revision)" in js
     assert "if(savePending)throw Error" in js[js.index("function installIncompleteDraft"):
                                                js.index("async function resolveCoverageContext")]
