@@ -1,0 +1,21 @@
+name: MOG09 Receipt Projection Offline 1421
+on:
+  pull_request:
+    paths:
+      - "test_fixtures/mog09_receipt_adapter_1421.py"
+      - "test_fixtures/mog09_receipt_projection_1421.json"
+      - "test_fixtures/test_mog09_receipt_adapter_1421.py"
+      - "docs/workbench/MOG09_RECEIPT_PROJECTION_1421.md"
+      - ".github/workflows/mog09-receipt-projection-1421.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  projection:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python test_fixtures/test_mog09_receipt_adapter_1421.py
