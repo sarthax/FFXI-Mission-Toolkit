@@ -89,9 +89,30 @@ class Retirement:
             cols = ",".join(self.row); vals = ",".join("%s" for _ in self.row)
             c = db.cursor(); c.execute(f"insert into char_chocobos ({cols}) values ({vals})", list(self.row.values()))
 
+class Chococard:
+    # option 239 at the trainer: 300 gil -> chococard (F) 2342 with the capture's exdata; the chocobo stays
+    def seed(self):
+        seed(4, 3)
+        q(f"update char_chocobos set first_name='EirSkd',last_name='O8T18',sex=1,color=0,strength=56,endurance=48,discernment=8,"
+          f"receptivity=11,allele1=0,allele2=1,allele3=2,ability1=0,ability2=0,personality=4,weather_preference=0,appearance=0 where charid={CHAR}")
+        q(f"delete from char_inventory where charid={CHAR} and itemid in (2339,2342)")
+        q(f"update char_inventory set quantity=1000 where charid={CHAR} and itemid=65535 and location=0")
+    def run(self, b):
+        b.tool("event_update", option=239); time.sleep(2)
+        b.tool("event_select", selection=0); time.sleep(2)
+        ex = q(f"select extra from char_inventory where charid={CHAR} and itemid=2342")
+        got = bytes(ex[0][0]).hex(" ").upper() if ex else ""
+        want = "38 30 08 0B 88 00 08 11 00 00 00 00 4F 6B 77 2F 9A 25 9E 90 00 00 00 00"
+        mask = lambda h: h.split(" ")[:7] + [f"{int(h.split(' ')[7],16) & 0xF1:02X}"] + h.split(" ")[8:]
+        check("chococard 2342 exdata matches capture", bool(got) and mask(got) == mask(want), got)
+        gil = q(f"select quantity from char_inventory where charid={CHAR} and itemid=65535 and location=0")[0][0]
+        check("300 gil charged", gil == 700, gil)
+        check("chocobo kept", q(f"select count(*) from char_chocobos where charid={CHAR}")[0][0] == 1)
+        q(f"delete from char_inventory where charid={CHAR} and itemid=2342")
+
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)
