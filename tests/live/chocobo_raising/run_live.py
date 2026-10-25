@@ -305,9 +305,34 @@ class ChickGuess:
     def done(self):
         q(f"delete from char_vars where charid={CHAR} and varname='{self.VAR}'")
 
+class ChickReport:
+    # trainer report (Hantileon, csid 852) once a search has ended: opens with the report event, finishing clears the result bits
+    VAR = "ChocoboRaisingLostChick"
+    def seed(self):
+        seed(4, 30); q(f"replace into char_vars (charid,varname,value) values ({CHAR},'{self.VAR}',{1 << 16})")
+    def run(self, b):
+        r = b.tool("event_trace"); time.sleep(1)
+        b.tool("event_select", selection=0); time.sleep(2)
+        v = q(f"select value from char_vars where charid={CHAR} and varname='{self.VAR}'")
+        check("report event 852 shown and result cleared", TRAINER == "hantileon" and (not v or (v[0][0] >> 16) & 3 == 0), v)
+    def done(self):
+        q(f"delete from char_vars where charid={CHAR} and varname='{self.VAR}'")
+
+class ChickClerk:
+    # San d'Oria clerk Arvilauge (csid 846) opens, with and without a clue
+    notrainer = True; pos = "!pos -13.2 1.4 -91 230"
+    def seed(self):
+        seed(4, 30); q(f"update chars set pos_zone=230 where charid={CHAR}")
+        q(f"replace into char_vars (charid,varname,value) values ({CHAR},'ChocoboRaisingLostChick',{2 | (1 << 4) | (1 << 6) | (1 << 8 + 4)})")
+    def run(self, b):
+        r = b.tool("talk_to_npc", npcId=17719599)
+        check("clerk event 846 starts", r.get("started") is True and r.get("eventId") == 846, r)
+    def done(self):
+        q(f"delete from char_vars where charid={CHAR} and varname='ChocoboRaisingLostChick'")
+
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_guess": ChickGuess, "watch": Watch}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)
