@@ -1,6 +1,6 @@
 {
  "slice": "chocobo-raising-core",
- "note": "Scenarios are planned. state stays 'untested' until runtime:, test: or capture: evidence is linked. | 2026-10-24: none->nil getter passed; see TEST_PLAN in dsp slice. | 2026-10-25: slices 2-8 live scenarios added (run_live.py, 3 trainers); see TEST_PLAN trainer matrix.",
+ "note": "Scenarios are planned. state stays 'untested' until runtime:, test: or capture: evidence is linked. | 2026-10-24: none->nil getter passed; see TEST_PLAN in dsp slice. | 2026-10-25: slices 2-8 live scenarios added (run_live.py, 3 trainers); see TEST_PLAN trainer matrix. | 2026-10-25: slices 1-3 scenarios (walk, watch, chick*, story, whistle) registered.",
  "scenarios": [
   {
    "id": "P0-EXDATA-ROUNDTRIP",
@@ -192,6 +192,86 @@
    "steps": "use rental whistle without registered chocobo",
    "expected": "normal rental mount",
    "harness": "headless item use",
+   "state": "untested",
+   "evidence": []
+  },
+  {
+   "id": "P4-CHO-W1",
+   "phase": "P4",
+   "title": "Walk care action with meeting data (scenario walk)",
+   "steps": "run_live.py walk",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py walk",
+   "state": "passed",
+   "evidence": []
+  },
+  {
+   "id": "P4-CHO-WO1",
+   "phase": "P4",
+   "title": "Watch Over care action (scenario watch)",
+   "steps": "run_live.py watch",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py watch",
+   "state": "passed",
+   "evidence": []
+  },
+  {
+   "id": "P4-CHO-L1",
+   "phase": "P4",
+   "title": "Lost Chick found on a walk (scenario chick)",
+   "steps": "run_live.py chick",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py chick",
+   "state": "passed",
+   "evidence": []
+  },
+  {
+   "id": "P4-CHO-L2",
+   "phase": "P4",
+   "title": "Lost Chick owner right/wrong guess (Cahaurme) (scenario chick_guess)",
+   "steps": "run_live.py chick_guess",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py chick_guess",
+   "state": "passed",
+   "evidence": []
+  },
+  {
+   "id": "P4-CHO-L3",
+   "phase": "P4",
+   "title": "Arvilauge stable clerk review 846 (scenario chick_clerk)",
+   "steps": "run_live.py chick_clerk",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py chick_clerk",
+   "state": "passed",
+   "evidence": []
+  },
+  {
+   "id": "P4-CHO-L4",
+   "phase": "P4",
+   "title": "Hantileon lost-chick report 852 (scenario chick_report)",
+   "steps": "run_live.py chick_report",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py chick_report",
+   "state": "passed",
+   "evidence": []
+  },
+  {
+   "id": "P4-CHO-S1",
+   "phase": "P4",
+   "title": "Tell a story: cost, discernment, learn gallop; LSB-guess values (scenario story)",
+   "steps": "run_live.py story",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py story",
+   "state": "passed",
+   "evidence": []
+  },
+  {
+   "id": "P4-CHO-H1",
+   "phase": "P4",
+   "title": "Chocobo Whistle quest: Hantileon, search walk, handkerchief, whistle (scenario whistle)",
+   "steps": "run_live.py whistle",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py whistle",
    "state": "untested",
    "evidence": []
   }

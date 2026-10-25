@@ -1099,6 +1099,158 @@
             "run_live_output"
           ],
           "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-W1",
+          "kind": "positive",
+          "title": "Walk care action with meeting data (scenario walk)",
+          "status": "passed_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-WO1",
+          "kind": "positive",
+          "title": "Watch Over care action (scenario watch)",
+          "status": "passed_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-L1",
+          "kind": "positive",
+          "title": "Lost Chick found on a walk (scenario chick)",
+          "status": "passed_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-L2",
+          "kind": "positive",
+          "title": "Lost Chick owner right/wrong guess (Cahaurme) (scenario chick_guess)",
+          "status": "passed_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-L3",
+          "kind": "positive",
+          "title": "Arvilauge stable clerk review 846 (scenario chick_clerk)",
+          "status": "passed_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-L4",
+          "kind": "positive",
+          "title": "Hantileon lost-chick report 852 (scenario chick_report)",
+          "status": "passed_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-S1",
+          "kind": "positive",
+          "title": "Tell a story: cost, discernment, learn gallop; LSB-guess values (scenario story)",
+          "status": "passed_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-H1",
+          "kind": "positive",
+          "title": "Chocobo Whistle quest: Hantileon, search walk, handkerchief, whistle (scenario whistle)",
+          "status": "planned_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
         }
       ],
       "gaps": [
