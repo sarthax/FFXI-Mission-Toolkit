@@ -19,7 +19,7 @@
           "index": 1,
           "name": "session established for expected character",
           "runner_ok": true,
-          "expected": 21833,
+          "expected": <redacted-test-character-id>,
           "observed": "<redacted-test-character-id>"
         },
         {
@@ -116,7 +116,7 @@
           "index": 1,
           "name": "session established for expected character",
           "runner_ok": true,
-          "expected": 21836,
+          "expected": <redacted-test-character-id>,
           "observed": "<redacted-test-character-id>"
         },
         {
@@ -219,7 +219,7 @@
           "index": 1,
           "name": "session established for expected character",
           "runner_ok": true,
-          "expected": 21833,
+          "expected": <redacted-test-character-id>,
           "observed": "<redacted-test-character-id>"
         },
         {
