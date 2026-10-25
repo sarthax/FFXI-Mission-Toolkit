@@ -60,7 +60,9 @@ class Day:
             b.tool("event_update", option=opt); time.sleep(0.7)
         b.tool("event_select", selection=0); time.sleep(3)
         stage = q(f"select stage from char_chocobos where charid={CHAR}")[0][0]
-        want = 2 if self.days < 30 else 4
+        # seed() makes the bird days-1 days old; thresholds are DSP daysToChick..daysToAdult4 (4,19,29,43,64,129)
+        elapsed = self.days - 1
+        want = 1 + sum(elapsed >= t for t in (4, 19, 29, 43, 64, 129))
         check(f"{self.days} days -> stage {want}", stage == want, f"stage={stage}")
 
 class Retirement:
