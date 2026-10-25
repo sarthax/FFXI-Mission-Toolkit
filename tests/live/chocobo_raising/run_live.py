@@ -216,9 +216,28 @@ class CarePlan:
         plan = q(f"select care_plan from char_chocobos where charid={CHAR}")[0][0]
         check("care plan slot 0 = 0x51", (plan >> 24) & 0xFF == 0x51, hex(plan))
 
+class Walk:
+    # options 10994/11250/11506 (cmd 242, arg 42/43/44): energy drops by the captured cost, walk refused when short of energy
+    COSTS = {10994: (23, 30), 11250: (31, 40), 11506: (38, 48)}
+    def seed(self): seed(4, 30); q(f"update char_chocobos set energy=100, held_item=0 where charid={CHAR}")
+    def run(self, b):
+        for opt, (lo, hi) in self.COSTS.items():
+            q(f"update char_chocobos set energy=100, held_item=0 where charid={CHAR}")
+            b.tool("talk_to_npc", npcId=NPC); time.sleep(2)
+            r = b.tool("event_update", option=opt); time.sleep(1)
+            b.tool("event_select", selection=0); time.sleep(2)
+            e = q(f"select energy from char_chocobos where charid={CHAR}")[0][0]
+            check(f"walk {opt} cost {lo}-{hi}", lo <= 100 - e <= hi, f"energy={e} reply={r}")
+        q(f"update char_chocobos set energy=10 where charid={CHAR}")
+        b.tool("talk_to_npc", npcId=NPC); time.sleep(2)
+        b.tool("event_update", option=10994); time.sleep(1)
+        b.tool("event_select", selection=0); time.sleep(2)
+        e = q(f"select energy from char_chocobos where charid={CHAR}")[0][0]
+        check("walk refused when short of energy", e == 10, e)
+
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)
