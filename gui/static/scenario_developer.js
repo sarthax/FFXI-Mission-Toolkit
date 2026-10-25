@@ -2,13 +2,29 @@
 (function () {
   'use strict';
   const M = window.ScenarioGuidedModel, V = window.ScenarioContractV2View;
+  const Feedback = window.ScenarioValidationFeedback;
   const $ = id => document.getElementById(id);
   let spec = M.fresh(), mode = 'guided', options = {features: [], observations: [], operations: []};
   let drafts = [], baseline = null, sourceDetail = null;
   let readinessViewer = null;
+  let draftGuard = null, editorReady = false;
   function updateRevision() {
     const currentRevision = Number($('sd-revision').value) || 0;
+    if(draftGuard){draftGuard.refresh();return;}
     $('sd-revision-state').textContent = M.revisionIndicator(baseline,spec,currentRevision);
+  }
+  function updateAdvancedRevision() {
+    if(mode!=='advanced')return; // hidden scripted events must not change Guided state
+    if(draftGuard){draftGuard.refresh();return;}
+    $('sd-revision-state').textContent=M.advancedRevisionIndicator(
+      baseline,$('sd-advanced-json').value,Number($('sd-revision').value)||0);
+  }
+  // Only after a confirmed replacement; never from render(): it would
+  // overwrite uncommitted Advanced JSON text before discard confirmation.
+  function syncAdvancedAfterReplacement() {
+    $('sd-advanced-json').value=JSON.stringify(spec,null,2);
+    $('sd-guided').setAttribute('aria-pressed','true');
+    $('sd-advanced').setAttribute('aria-pressed','false');
   }
   function renderCatalogSteps() {
     const select = $('sd-catalog-step'), selected = select.value;
@@ -213,8 +229,10 @@
     $('sd-advanced-panel').hidden=target!=='advanced';
     $('sd-guided').setAttribute('aria-pressed',String(target==='guided'));
     $('sd-advanced').setAttribute('aria-pressed',String(target==='advanced'));
-    if(target==='advanced')$('sd-advanced-json').value=JSON.stringify(spec,null,2);
-    else render();
+    if(target==='advanced'){
+      $('sd-advanced-json').value=JSON.stringify(spec,null,2);
+      updateAdvancedRevision();
+    }else render();
   }
   function staticText(parent,tag,value){
     const x=el(tag,'',value);parent.append(x);return x;
@@ -375,14 +393,43 @@
     const response=await fetch(path,{method:method||'GET',headers,credentials:'same-origin',
       body:body===undefined?undefined:JSON.stringify(body)});
     const value=await response.json();
-    if(!response.ok)throw Error(typeof value.detail==='string'?value.detail:'HTTP '+response.status);
+    if(!response.ok) {
+      const detail=value.detail;
+      const error=new Error(typeof detail==='string'?detail:
+        (detail && typeof detail.message==='string'?detail.message+
+          ': '+(typeof detail.canonical_error==='string'?detail.canonical_error:'invalid fields'):
+         'HTTP '+response.status));
+      // Only the validation endpoint owns this non-authoritative advisory shape.
+      if(path==='/scenario-developer/validate' && detail &&
+         Array.isArray(detail.errors))error.validationErrors=detail.errors;
+      throw error;
+    }
     return value;
   }
+  // Only the latest Validate/Save request owns preview, status and field errors.
+  // A stale response must be a complete UI no-op, including clear/hide/show.
+  let validationUiRequest = 0;
+  // A failed asynchronous validation must not paint errors on another draft
+  // or on Guided/Advanced edits made after the request was sent.
+  function validationRequestCurrent(generation, snapshot, revision=null) {
+    if(generation!==editorGeneration ||
+       (revision!==null && Number($('sd-revision').value)!==revision))return false;
+    try{return JSON.stringify(current())===JSON.stringify(snapshot);}
+    catch(e){return false;} // Invalid Advanced JSON is preserved, never repaired.
+  }
   async function validatePreview() {
+    const uiRequest=validationUiRequest;
     const generation=editorGeneration, input=M.clone(current());
-    const result=await call('/scenario-developer/validate','POST',{specification:input});
-    if(generation!==editorGeneration || JSON.stringify(current())!==JSON.stringify(input))
-      throw Error('Preview is stale: editor changed while validating. Validate the current draft again.');
+    let result;
+    try{result=await call('/scenario-developer/validate','POST',{specification:input});}
+    catch(e){
+      if(uiRequest!==validationUiRequest || generation!==editorGeneration ||
+         !validationRequestCurrent(generation,input))return; // Preview is stale: no UI mutation or outer catch dispatch
+      throw e;
+    }
+    if(uiRequest!==validationUiRequest || generation!==editorGeneration ||
+       !validationRequestCurrent(generation,input))return; // obsolete success must not overwrite a newer preview
+    if(Feedback)Feedback.clear();
     renderPreview(result.preview,result.reader_view,result.contract_v2_compatibility,result.contract_v2_source_attribution);
     show('Canonical validation accepted — DESIGN_ONLY, unreviewed, not executable.\n'+
       result.warnings.join('\n'));
@@ -409,10 +456,10 @@
     try {
       if(!confirmDocumentReplacement('New scenario'))return;
       editorGeneration++;resetReadinessViewer();
-      activeHandoff=null;spec=M.fresh();mode='guided';baseline=null;setSourceDetail(null,null);$('sd-revision').value=0;
+      activeHandoff=null;spec=M.fresh();mode='guided';baseline=null;draftGuard.start('new',spec);setSourceDetail(null,null);$('sd-revision').value=0;
       $('sd-context-use').disabled=!coverageContext;
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
-      render();show('Created a synthetic, design-only canonical draft.');
+      syncAdvancedAfterReplacement();render();show('Created a synthetic, design-only canonical draft.');
     }catch(e){show('New scenario refused: '+e.message);}
   });
   $('sd-fork').addEventListener('click',async()=>{
@@ -429,9 +476,9 @@
       const draft=M.forkPublished(x.specification);
       if(!confirmDocumentReplacement('Fork published case'))return;
       editorGeneration++;resetReadinessViewer();
-      activeHandoff=null;spec=draft;mode='guided';baseline=null;setSourceDetail(feature,caseId);
+      activeHandoff=null;spec=draft;mode='guided';baseline=null;draftGuard.start('fork',spec);setSourceDetail(feature,caseId);
       $('sd-revision').value=0;$('sd-advanced-panel').hidden=true;
-      $('sd-guided-panel').hidden=false;render();
+      $('sd-guided-panel').hidden=false;syncAdvancedAfterReplacement();render();
       show('Copied as DESIGN_ONLY with a new synthetic case ID. Original published case unchanged.');
     }catch(e){show('Fork refused: '+e.message);}
     finally{forkPending=false;$('sd-fork').disabled=false;}
@@ -441,9 +488,9 @@
       const draft=M.cloneDraft(current());
       if(!confirmDocumentReplacement('Clone current draft'))return;
       editorGeneration++;resetReadinessViewer();
-      activeHandoff=null;spec=draft;mode='guided';baseline=null;$('sd-revision').value=0;
+      activeHandoff=null;spec=draft;mode='guided';baseline=null;draftGuard.start('clone',spec);$('sd-revision').value=0;
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
-      render();show('Cloned into a new draft case ID. Rename it if a COPY already exists; source identities still require review.');
+      syncAdvancedAfterReplacement();render();show('Cloned into a new draft case ID. Rename it if a COPY already exists; source identities still require review.');
     } catch(e){show('Clone refused: '+e.message);}
   });
   $('sd-add-assertion').addEventListener('click',()=>{
@@ -458,24 +505,35 @@
   });
   $('sd-feature').addEventListener('change',diagnostics);
   $('sd-observations').addEventListener('change',()=>{readGuidedFields();renderSteps();diagnostics();});
-  $('sd-validate').addEventListener('click',async()=>{try{await validatePreview();}
-    catch(e){$('sd-preview').hidden=true;show('Canonical validation rejected: '+e.message+'\n'+M.referenceIssues(spec).join('\n'));}});
+  $('sd-validate').addEventListener('click',async()=>{
+    const uiRequest=++validationUiRequest;
+    try{await validatePreview();}
+    catch(e){
+      if(uiRequest!==validationUiRequest)return; // previous request cannot hide/clear newer UI
+      $('sd-preview').hidden=true;
+      if(Feedback)Feedback.show(e.validationErrors);
+      show('Canonical validation rejected: '+e.message+'\n'+M.referenceIssues(spec).join('\n'));
+    }
+  });
   let savePending=false;
   $('sd-save').addEventListener('click',async()=>{
     if(savePending)return;
+    const uiRequest=++validationUiRequest;
     savePending=true;$('sd-save').disabled=true;
     const generation=editorGeneration;
+    let submitted=null, submittedRevision=null;
     try {
       if(!$('sd-token').value)throw Error('Enter a local operator token; a preview never grants save permission');
       // Keep an immutable copy of exactly what the operator asked to save.
       // The validation round-trip is async, and Guided/Advanced may be edited
       // while either response is in flight.
       const input=M.clone(current()),rev=Number($('sd-revision').value);
+      submitted=input;submittedRevision=rev;
       if(!Number.isInteger(rev)||rev<0)throw Error('Invalid expected revision');
       const validated=await call('/scenario-developer/validate','POST',{specification:input});
-      if(generation!==editorGeneration || Number($('sd-revision').value)!==rev ||
-          JSON.stringify(current())!==JSON.stringify(input))
-        throw Error('Draft changed while validating. Review the edits and save again.');
+      if(uiRequest!==validationUiRequest || !validationRequestCurrent(generation,input,rev))
+        return; // superseded preflight must not dispatch a draft Save or change newer UI
+      if(Feedback)Feedback.clear();
       renderPreview(validated.preview,validated.reader_view,validated.contract_v2_compatibility,validated.contract_v2_source_attribution);
       if(validated.contract_v2_compatibility?.state==='BLOCKED')
         throw Error('Contract v2 source/base-spec fingerprint conflict: '+validated.contract_v2_compatibility.reasons.join('; ')+'. Reconcile metadata in Advanced JSON; never silently repin.');
@@ -491,18 +549,28 @@
       const disposition=M.saveResponseDisposition(toSave,latest,saved,
         generation!==editorGeneration);
       if(!disposition.apply_revision) {
-        show('Saved '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
-          ', but '+disposition.reason+'; reopen saved draft before the next save.');
+        if(uiRequest===validationUiRequest)
+          show('Saved '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
+            ', but '+disposition.reason+'; reopen saved draft before the next save.');
         return;
       }
       $('sd-revision').value=saved.revision;
       baseline=M.clone(toSave);updateRevision();
-      show('Saved DESIGN_ONLY '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
-        (disposition.unsaved_edits?
-          '. Newer editor changes remain UNSAVED; review before the next revision.':
-          '. NOT reviewed or executable.'));
-    }catch(e){show('Draft NOT saved / revision may require refresh: '+e.message);}
-    finally {savePending=false;$('sd-save').disabled=false;}
+      if(uiRequest===validationUiRequest)
+        show('Saved DESIGN_ONLY '+saved.feature_id+'/'+saved.case_id+' revision '+saved.revision+
+          (disposition.unsaved_edits?
+            '. Newer editor changes remain UNSAVED; review before the next revision.':
+            '. NOT reviewed or executable.'));
+    }catch(e){
+      const isCurrent=submitted!==null &&
+        validationRequestCurrent(generation,submitted,submittedRevision);
+      if(uiRequest!==validationUiRequest || (submitted!==null && !isCurrent))
+        return; // do not erase newer Validate results or another draft's status
+      if(Feedback && isCurrent && Array.isArray(e.validationErrors))
+        Feedback.show(e.validationErrors);
+      show('Draft NOT saved / revision may require refresh: '+e.message);
+    }
+    finally {savePending=false;$('sd-save').disabled=false;draftGuard.refresh();}
   });
   $('sd-load-drafts').addEventListener('click',async()=>{
     try {
@@ -523,10 +591,10 @@
       if(!confirmDocumentReplacement('Open saved draft'))return;
       editorGeneration++;resetReadinessViewer();
       activeHandoff=null;spec=loaded;mode='guided';
-      $('sd-revision').value=d.revision;baseline=M.clone(spec);
+      $('sd-revision').value=d.revision;baseline=M.clone(spec);draftGuard.start('saved',spec);
       setSourceDetail(null,null);
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
-      render();show('Opened '+d.case_id+' revision '+d.revision+' (design only). Edit and save with this expected revision; an external update will cause a revision conflict.');
+      syncAdvancedAfterReplacement();render();show('Opened '+d.case_id+' revision '+d.revision+' (design only). Edit and save with this expected revision; an external update will cause a revision conflict.');
     }catch(e){show('Open draft refused: '+e.message);}
   });
   function paintCandidates(result) {
@@ -575,10 +643,7 @@
                     'sd-preconditions','sd-cleanup','sd-gaps']) {
     $(id).addEventListener('input',()=>{if(mode==='guided'){readGuidedFields();updateRevision();}});
   }
-  $('sd-advanced-json').addEventListener('input',()=>{
-    if(mode==='advanced')$('sd-revision-state').textContent=
-      'Advanced JSON has unsaved edits — validate before saving (design only)';
-  });
+  $('sd-advanced-json').addEventListener('input',updateAdvancedRevision);
   let coverageContext = null, evidenceSuggestions = null, activeHandoff = null;
   function installIncompleteDraft(draft, feedback, key) {
     if(savePending)throw Error('A draft save is in progress; handoff cannot replace the editor');
@@ -590,12 +655,12 @@
     if (issue) throw Error(issue);
     editorGeneration++;resetReadinessViewer();
     activeHandoff=key;
-    spec=draft;mode='guided';baseline=null;$('sd-revision').value=0;
+    spec=draft;mode='guided';baseline=null;draftGuard.start('handoff',spec);$('sd-revision').value=0;
     $('sd-guided-panel').hidden=false;$('sd-advanced-panel').hidden=true;
     $('sd-guided').setAttribute('aria-pressed','true');
     $('sd-advanced').setAttribute('aria-pressed','false');
     $('sd-preview').hidden=true;
-    render();renderIncompletePreview();
+    syncAdvancedAfterReplacement();render();renderIncompletePreview();
     show(feedback+' This draft is intentionally INCOMPLETE and cannot be validated or saved until you supply real observations, assertions, preconditions, cleanup and a new case ID. Nothing was executed.');
   }
   async function resolveCoverageContext() {
@@ -789,12 +854,30 @@
     readinessViewer=null;
   });
   resetReadinessViewer();
+  draftGuard=window.ScenarioDraftGuard.create({
+    win:window,
+    getCurrent:()=>{
+      // Never parse Advanced JSON into the canonical draft just to check dirty.
+      if(mode==='advanced')return M.parseAdvanced($('sd-advanced-json').value);
+      if(editorReady)readGuidedFields();
+      return spec;
+    },
+    getBaseline:()=>baseline,
+    getRevision:()=>Number($('sd-revision').value)||0,
+    isSavePending:()=>savePending,
+    onStatus:state=>{
+      $('sd-revision-state').textContent=state.detail;
+      $('sd-work-state').textContent=state.banner;
+      $('sd-work-state').dataset.state=state.state;
+    }
+  });
+  draftGuard.start('new',spec);
   (async()=> {
     try{
       options=await call('/scenario-developer/options');
       $('sd-catalog').textContent='Catalog identity: '+options.catalog_status+' — '+options.catalog_note;
-      render();
+      render();editorReady=true;draftGuard.refresh();
       await resolveCoverageContext();
-    }catch(e){render();show('Canonical catalog options unavailable: '+e.message+'; saving requires server validation.');}
+    }catch(e){render();editorReady=true;draftGuard.refresh();show('Canonical catalog options unavailable: '+e.message+'; saving requires server validation.');}
   })();
 })();

@@ -27,6 +27,8 @@
 .sd-picker-results article{border:1px solid var(--wb-border,#999);border-radius:.5rem;padding:.6rem}
 .sd-picker-results button{margin-top:.3rem}
 .sd-revision{font-weight:700}
+.sd-work-state{font-weight:700;display:inline-block;padding:.35rem .65rem;border:1px solid var(--wb-border,#999);border-radius:.35rem}
+.sd-work-state[data-state="unsaved"]{border-width:2px}
 
 @media(max-width:690px){.sd-pair{grid-template-columns:1fr}}
 </style>
@@ -74,6 +76,8 @@ Imported/recalculated PASS is not independently verified proof.
 <button type="button" id="sd-fork">Fork as design-only</button>
 <button type="button" id="sd-clone">Clone current draft (new case ID)</button>
 </div>
+<p class="sd-work-state" id="sd-work-state" role="status" aria-live="polite" data-state="pristine">PRISTINE · new design (not saved)</p>
+<p class="sd-muted">A modified new, forked or saved draft triggers one browser warning on reload, Back, or ordinary page navigation. Some browsers suppress unload warnings until user interaction. Saving requires an operator token and confirmed revision.</p>
 <nav class="sd-bar" aria-label="Editing mode">
 <button type="button" id="sd-guided" aria-pressed="true">Guided</button>
 <button type="button" id="sd-advanced" aria-pressed="false">Advanced JSON</button>
@@ -85,17 +89,17 @@ Imported/recalculated PASS is not independently verified proof.
 <label class="sd-field">Feature/domain<select id="sd-feature" required></select></label>
 <label class="sd-field">Stable case ID<input id="sd-case" maxlength="120" required></label>
 <label class="sd-field">Scenario title<input id="sd-title" maxlength="120" required></label>
-<label class="sd-field">Purpose<textarea id="sd-purpose" maxlength="1000" rows="3"></textarea></label>
-<label class="sd-field">Rationale<textarea id="sd-rationale" maxlength="1000" rows="3"></textarea></label>
+<label class="sd-field">Purpose (required in Guided mode)<textarea id="sd-purpose" maxlength="1000" rows="3" required></textarea></label>
+<label class="sd-field">Rationale (required in Guided mode)<textarea id="sd-rationale" maxlength="1000" rows="3" required></textarea></label>
 </div>
 </div>
 <div class="sd-block">
 <h2>Given / When / Then</h2>
 <p class="sd-muted">One statement per line; these are claims for human review, not commands.</p>
 <div class="sd-grid">
-<label class="sd-field">Given<textarea id="sd-given" rows="5"></textarea></label>
-<label class="sd-field">When<textarea id="sd-when" rows="5"></textarea></label>
-<label class="sd-field">Then<textarea id="sd-then" rows="5"></textarea></label>
+<label class="sd-field">Given (required)<textarea id="sd-given" rows="5" required></textarea></label>
+<label class="sd-field">When (required)<textarea id="sd-when" rows="5" required></textarea></label>
+<label class="sd-field">Then (required)<textarea id="sd-then" rows="5" required></textarea></label>
 </div>
 <div class="sd-grid">
 <label class="sd-field">Preconditions<textarea id="sd-preconditions" rows="3"></textarea></label>
@@ -151,7 +155,7 @@ Imported/recalculated PASS is not independently verified proof.
 <div class="sd-bar">
 <button type="button" id="sd-preview-incomplete">Preview provisional draft (no validation or execution)</button>
 <button type="button" id="sd-validate">Validate and preview (no execution)</button>
-<label class="sd-field">Operator token (only for saving to existing local draft store)<input type="password" id="sd-token" autocomplete="off"></label>
+<label class="sd-field">Operator token (only for saving to existing local draft store)<input type="password" id="sd-token" autocomplete="off"><small class="sd-muted">Configured privately in the local Toolkit process (32+ characters). Missing configuration, short or incorrect tokens intentionally share one generic denial; validation previews need no token.</small></label>
 <label class="sd-field">Expected draft revision<input type="number" id="sd-revision" value="0" min="0" step="1" readonly></label>
 <p id="sd-revision-state" class="sd-revision" role="status">New unsaved design draft · revision 0</p>
 <button type="button" id="sd-save">Save design-only draft</button>
@@ -161,11 +165,14 @@ Imported/recalculated PASS is not independently verified proof.
 </div>
 <p class="sd-muted">Saving uses the existing operator-authorized, revision-checked <code>/feature-testing/builder/drafts</code> endpoint. It cannot overwrite published specifications or enable any runner.</p>
 <p id="sd-result" class="sd-result" role="status" aria-live="polite">No validation performed.</p>
+<section id="sd-validation-summary" class="sd-warning" role="alert" aria-label="Validation field errors" hidden></section>
 <section id="sd-preview" class="sd-block" aria-label="Read-only scenario preview" hidden></section>
 </div>
 </section>
 <script src="/static/scenario_guided_model.js"></script>
 <script src="/static/scenario_contract_v2_view.js"></script>
 <script src="/static/scenario_readiness_viewer.js"></script>
+<script src="/static/scenario_draft_guard.js"></script>
+<script src="/static/scenario_validation_feedback.js"></script>
 <script src="/static/scenario_developer.js"></script>
 {% endblock %}
