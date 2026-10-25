@@ -46,3 +46,11 @@ python scripts/import_chocobo_audit.py "D:\\temp\\chocobo-dsp-inventory.json" --
 ```
 
 The second command is a **preview**, not approval. Review the inventory with a human or local agent and add exact references to relevant code paths, packet traces and runtime results before promotion. Once verified, run `--apply` on a feature branch and inspect its diff. Do not run `--apply` on mere source inventories to claim validation.
+
+## Live test status (2026-10-25)
+
+Live headless scenarios run from `tests/live/chocobo_raising/run_live.py` and are logged in `docs/workbench/chocobo_audit/TEST_SCENARIOS.json` (P1-DAY-PROGRESSION, P1-FEEDING, P1-CARE-PLAN, P1-TRAINER-MENU, P2-RETIREMENT, P2-CHOCOCARD) and in the staged `data/testing/domain_drafts/chocobo_raising.json` (CHO-D1..P1).
+
+- Usage: set `TRAINER` (pulonono, hantileon, zopago) and `ACCOUNT` (xitest03..08), then run the scenario name (day_report [days], retirement, chococard, feed, menu, careplan).
+- All scenarios pass on all three trainers; day_report 6/65/130 only on Pulonono.
+- The canonical `data/testing/test_specifications.json` is untouched: the staged draft is blocked on schema-owner review (#1259).

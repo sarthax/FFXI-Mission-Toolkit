@@ -2552,14 +2552,26 @@
       "also": [
         [
           "day_report",
-          "40"
+          "30"
+        ],
+        [
+          "day_report",
+          "65"
+        ],
+        [
+          "day_report",
+          "130"
         ]
       ],
-      "asserts": [
-        "6 days -> stage 2",
-        "40 days -> stage 4"
+      "trainers": [
+        "pulonono",
+        "hantileon",
+        "zopago"
       ],
-      "status": "passing 2026-10-24"
+      "asserts": [
+        "N days -> stage derived from DSP thresholds 4/19/29/43/64/129 (6 -> 2, 30 -> 4, 65 -> 6, 130 -> 7)"
+      ],
+      "status": "passing 2026-10-25 (6/30/65/130 on pulonono; 30 on all 3 trainers)"
     },
     {
       "case_id": "CHO-R1",
@@ -2567,12 +2579,92 @@
       "args": [
         "retirement"
       ],
+      "trainers": [
+        "pulonono",
+        "hantileon",
+        "zopago"
+      ],
       "asserts": [
         "card 2313 received",
         "yellow plaque 309 received",
-        "chocobo row deleted"
+        "chocobo row deleted",
+        "card exdata matches capture bytes",
+        "card size nibble = owner race"
       ],
-      "status": "passing 2026-10-24"
+      "status": "passing 2026-10-25 (3 trainers)"
+    },
+    {
+      "case_id": "CHO-C1",
+      "script": "tests/live/chocobo_raising/run_live.py",
+      "args": [
+        "chococard"
+      ],
+      "trainers": [
+        "pulonono",
+        "hantileon",
+        "zopago"
+      ],
+      "asserts": [
+        "chococard 2342 exdata matches capture",
+        "chococard size nibble = owner race",
+        "300 gil charged",
+        "chocobo kept"
+      ],
+      "status": "passing 2026-10-25 (3 trainers)"
+    },
+    {
+      "case_id": "CHO-F1",
+      "script": "tests/live/chocobo_raising/run_live.py",
+      "args": [
+        "feed"
+      ],
+      "trainers": [
+        "pulonono",
+        "hantileon",
+        "zopago"
+      ],
+      "asserts": [
+        "feeding raised hunger",
+        "gysahl consumed"
+      ],
+      "status": "passing 2026-10-25 (3 trainers); glow/rank reply values not traced"
+    },
+    {
+      "case_id": "CHO-M1",
+      "script": "tests/live/chocobo_raising/run_live.py",
+      "args": [
+        "menu"
+      ],
+      "trainers": [
+        "pulonono",
+        "hantileon",
+        "zopago"
+      ],
+      "asserts": [
+        "options 208,252,214,244,500,251,63220,250,215 accepted",
+        "no Lua/chocobo errors in map log"
+      ],
+      "status": "passing 2026-10-25 (3 trainers); reply bytes not traced, options 250 and 215 end the event"
+    },
+    {
+      "case_id": "CHO-P1",
+      "script": "tests/live/chocobo_raising/run_live.py",
+      "args": [
+        "careplan"
+      ],
+      "trainers": [
+        "pulonono",
+        "hantileon",
+        "zopago"
+      ],
+      "asserts": [
+        "care plan slot 0 = 0x51"
+      ],
+      "status": "passing 2026-10-25 (3 trainers)"
     }
-  ]
+  ],
+  "live_script_env": {
+    "TRAINER": "pulonono|hantileon|zopago",
+    "ACCOUNT": "xitest03..xitest08 (one pool account per parallel stream)"
+  }
 }
