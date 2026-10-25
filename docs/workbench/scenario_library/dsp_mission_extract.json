@@ -1,0 +1,2101 @@
+{
+ "source": "dsp-branches@main:febdc00209",
+ "missions": {
+  "0_0_SMASH_THE_ORCISH_SCOUTS": {
+   "nation": 0,
+   "number": 0,
+   "constant": "SMASH_THE_ORCISH_SCOUTS",
+   "npcs": [
+    {
+     "zone_dir": "Northern_San_dOria",
+     "zone_id": 231,
+     "npc": "Grilau",
+     "path": "scripts/zones/Northern_San_dOria/npcs/Grilau.lua",
+     "startEvent": [
+      "0x0034",
+      "0x03e8",
+      "0x03e9",
+      "0x03ea",
+      "0x03eb",
+      "0x03f0",
+      "0x03f1",
+      "0x03f2",
+      "0x03f3",
+      "0x03f5",
+      "0x03fc",
+      "0x03ff",
+      "0x0406",
+      "0x0409",
+      "0x040b",
+      "0x040d",
+      "0x040f",
+      "0x0413"
+     ],
+     "keyitems": [
+      "ANCIENT_SANDORIAN_BOOK"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17723426,
+      "pos": [
+       "-241.987",
+       "7.999",
+       "57.887"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Southern_San_dOria",
+     "zone_id": 230,
+     "npc": "Ambrotien",
+     "path": "scripts/zones/Southern_San_dOria/npcs/Ambrotien.lua",
+     "startEvent": [
+      "0x003e",
+      "0x040a",
+      "0x040c",
+      "0x040e",
+      "0x0410",
+      "0x0414",
+      "0x07d0",
+      "0x07d1",
+      "0x07d2",
+      "0x07d3",
+      "0x07d8",
+      "0x07d9",
+      "0x07da",
+      "0x07db",
+      "0x07dd",
+      "0x07e4",
+      "0x07e7",
+      "0x07ee"
+     ],
+     "keyitems": [
+      "ANCIENT_SANDORIAN_BOOK"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17719394,
+      "pos": [
+       "93.419",
+       "0.999",
+       "-57.347"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Southern_San_dOria",
+     "zone_id": 230,
+     "npc": "Endracion",
+     "path": "scripts/zones/Southern_San_dOria/npcs/Endracion.lua",
+     "startEvent": [
+      "0x003d",
+      "0x03F3",
+      "0x03e8",
+      "0x03e9",
+      "0x03ea",
+      "0x03eb",
+      "0x03f0",
+      "0x03f1",
+      "0x03f2",
+      "0x03f5",
+      "0x03fc",
+      "0x03ff",
+      "0x0406",
+      "0x0409",
+      "0x040b",
+      "0x040d",
+      "0x040f",
+      "0x0413"
+     ],
+     "keyitems": [
+      "ANCIENT_SANDORIAN_BOOK"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17719393,
+      "pos": [
+       "-112.817",
+       "0.999",
+       "-37.190"
+      ]
+     }
+    }
+   ]
+  },
+  "0_1_BAT_HUNT": {
+   "nation": 0,
+   "number": 1,
+   "constant": "BAT_HUNT",
+   "npcs": [
+    {
+     "zone_dir": "King_Ranperres_Tomb",
+     "zone_id": null,
+     "npc": "Tombstone",
+     "path": "scripts/zones/King_Ranperres_Tomb/npcs/Tombstone.lua",
+     "startEvent": [
+      "0x0002",
+      "0x0003",
+      "0x0004",
+      "0x0008"
+     ],
+     "keyitems": [
+      "ANCIENT_SANDORIAN_BOOK"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Northern_San_dOria",
+     "zone_id": 231,
+     "npc": "Grilau",
+     "path": "scripts/zones/Northern_San_dOria/npcs/Grilau.lua",
+     "startEvent": [
+      "0x0034",
+      "0x03e8",
+      "0x03e9",
+      "0x03ea",
+      "0x03eb",
+      "0x03f0",
+      "0x03f1",
+      "0x03f2",
+      "0x03f3",
+      "0x03f5",
+      "0x03fc",
+      "0x03ff",
+      "0x0406",
+      "0x0409",
+      "0x040b",
+      "0x040d",
+      "0x040f",
+      "0x0413"
+     ],
+     "keyitems": [
+      "ANCIENT_SANDORIAN_BOOK"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17723426,
+      "pos": [
+       "-241.987",
+       "7.999",
+       "57.887"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Southern_San_dOria",
+     "zone_id": 230,
+     "npc": "Ambrotien",
+     "path": "scripts/zones/Southern_San_dOria/npcs/Ambrotien.lua",
+     "startEvent": [
+      "0x003e",
+      "0x040a",
+      "0x040c",
+      "0x040e",
+      "0x0410",
+      "0x0414",
+      "0x07d0",
+      "0x07d1",
+      "0x07d2",
+      "0x07d3",
+      "0x07d8",
+      "0x07d9",
+      "0x07da",
+      "0x07db",
+      "0x07dd",
+      "0x07e4",
+      "0x07e7",
+      "0x07ee"
+     ],
+     "keyitems": [
+      "ANCIENT_SANDORIAN_BOOK"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17719394,
+      "pos": [
+       "93.419",
+       "0.999",
+       "-57.347"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Southern_San_dOria",
+     "zone_id": 230,
+     "npc": "Endracion",
+     "path": "scripts/zones/Southern_San_dOria/npcs/Endracion.lua",
+     "startEvent": [
+      "0x003d",
+      "0x03F3",
+      "0x03e8",
+      "0x03e9",
+      "0x03ea",
+      "0x03eb",
+      "0x03f0",
+      "0x03f1",
+      "0x03f2",
+      "0x03f5",
+      "0x03fc",
+      "0x03ff",
+      "0x0406",
+      "0x0409",
+      "0x040b",
+      "0x040d",
+      "0x040f",
+      "0x0413"
+     ],
+     "keyitems": [
+      "ANCIENT_SANDORIAN_BOOK"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17719393,
+      "pos": [
+       "-112.817",
+       "0.999",
+       "-37.190"
+      ]
+     }
+    }
+   ]
+  },
+  "0_2_SAVE_THE_CHILDREN": {
+   "nation": 0,
+   "number": 2,
+   "constant": "SAVE_THE_CHILDREN",
+   "npcs": [
+    {
+     "zone_dir": "Ghelsba_Outpost",
+     "zone_id": null,
+     "npc": "Hut_Door",
+     "path": "scripts/zones/Ghelsba_Outpost/npcs/Hut_Door.lua",
+     "startEvent": [
+      "0x0003",
+      "0x0037"
+     ],
+     "keyitems": [
+      "ORCISH_HUT_KEY"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Northern_San_dOria",
+     "zone_id": 231,
+     "npc": "Arnau",
+     "path": "scripts/zones/Northern_San_dOria/npcs/Arnau.lua",
+     "startEvent": [
+      "0x0014",
+      "0x0033",
+      "0x02b5",
+      "0x02b6"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17723406,
+      "pos": [
+       "149.892",
+       "-0.601",
+       "141.873"
+      ]
+     }
+    }
+   ]
+  },
+  "0_3_THE_RESCUE_DRILL": {
+   "nation": 0,
+   "number": 3,
+   "constant": "THE_RESCUE_DRILL",
+   "npcs": [
+    {
+     "zone_dir": "La_Theine_Plateau",
+     "zone_id": null,
+     "npc": "Augevinne",
+     "path": "scripts/zones/La_Theine_Plateau/npcs/Augevinne.lua",
+     "startEvent": [
+      "0x0067"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "La_Theine_Plateau",
+     "zone_id": null,
+     "npc": "Deaufrain",
+     "path": "scripts/zones/La_Theine_Plateau/npcs/Deaufrain.lua",
+     "startEvent": [
+      "0x0066",
+      "0x0071"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "La_Theine_Plateau",
+     "zone_id": null,
+     "npc": "Equesobillot",
+     "path": "scripts/zones/La_Theine_Plateau/npcs/Equesobillot.lua",
+     "startEvent": [
+      "0x0065",
+      "0x0070"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "La_Theine_Plateau",
+     "zone_id": null,
+     "npc": "Galaihaurat",
+     "path": "scripts/zones/La_Theine_Plateau/npcs/Galaihaurat.lua",
+     "startEvent": [
+      "0x006e",
+      "0x0072"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "La_Theine_Plateau",
+     "zone_id": null,
+     "npc": "Laurisse",
+     "path": "scripts/zones/La_Theine_Plateau/npcs/Laurisse.lua",
+     "startEvent": [
+      "0x006a",
+      "0x006d"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "La_Theine_Plateau",
+     "zone_id": null,
+     "npc": "Narvecaint",
+     "path": "scripts/zones/La_Theine_Plateau/npcs/Narvecaint.lua",
+     "startEvent": [
+      "0x006b"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "La_Theine_Plateau",
+     "zone_id": null,
+     "npc": "Vicorpasse",
+     "path": "scripts/zones/La_Theine_Plateau/npcs/Vicorpasse.lua",
+     "startEvent": [
+      "0x0005",
+      "0x006c",
+      "0x0073"
+     ],
+     "keyitems": [
+      "RESCUE_TRAINING_CERTIFICATE"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "La_Theine_Plateau",
+     "zone_id": null,
+     "npc": "Yaucevouchat",
+     "path": "scripts/zones/La_Theine_Plateau/npcs/Yaucevouchat.lua",
+     "startEvent": [
+      "0x0068"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Ordelles_Caves",
+     "zone_id": null,
+     "npc": "Ruillont",
+     "path": "scripts/zones/Ordelles_Caves/npcs/Ruillont.lua",
+     "startEvent": [
+      "0x0001",
+      "0x0002"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": null
+    }
+   ]
+  },
+  "0_4_THE_DAVOI_REPORT": {
+   "nation": 0,
+   "number": 4,
+   "constant": "THE_DAVOI_REPORT",
+   "npcs": [
+    {
+     "zone_dir": "Davoi",
+     "zone_id": null,
+     "npc": "!",
+     "path": "scripts/zones/Davoi/npcs/!.lua",
+     "startEvent": [],
+     "keyitems": [
+      "EAST_BLOCK_CODE",
+      "LOST_DOCUMENT",
+      "NORTH_BLOCK_CODE",
+      "SOUTH_BLOCK_CODE"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Davoi",
+     "zone_id": null,
+     "npc": "Zantaviat",
+     "path": "scripts/zones/Davoi/npcs/Zantaviat.lua",
+     "startEvent": [
+      "0x0064",
+      "0x0065",
+      "0x0066",
+      "0x0068",
+      "0x0069"
+     ],
+     "keyitems": [
+      "EAST_BLOCK_CODE",
+      "LOST_DOCUMENT",
+      "NORTH_BLOCK_CODE",
+      "SOUTH_BLOCK_CODE",
+      "TEMPLE_KNIGHTS_DAVOI_REPORT"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Northern_San_dOria",
+     "zone_id": 231,
+     "npc": "_6fc",
+     "path": "scripts/zones/Northern_San_dOria/npcs/_6fc.lua",
+     "startEvent": [
+      "0x0007",
+      "0x0008",
+      "0x0009",
+      "0x02b7"
+     ],
+     "keyitems": [
+      "ANCIENT_SANDORIAN_TABLET",
+      "TEMPLE_KNIGHTS_DAVOI_REPORT"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17723548,
+      "pos": [
+       "130.327",
+       "-13.002",
+       "122.323"
+      ]
+     }
+    }
+   ]
+  },
+  "1_0_THE_ZERUHN_REPORT": {
+   "nation": 1,
+   "number": 0,
+   "constant": "THE_ZERUHN_REPORT",
+   "npcs": [
+    {
+     "zone_dir": "Bastok_Markets",
+     "zone_id": 235,
+     "npc": "Cleades",
+     "path": "scripts/zones/Bastok_Markets/npcs/Cleades.lua",
+     "startEvent": [
+      "0x03E8",
+      "0x03E9",
+      "0x03EA",
+      "0x03ED",
+      "0x03EE",
+      "0x03F0",
+      "0x03F2",
+      "0x03eb"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17739827,
+      "pos": [
+       "-361.905",
+       "-10.019",
+       "-169.127"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Bastok_Mines",
+     "zone_id": 234,
+     "npc": "Rashid",
+     "path": "scripts/zones/Bastok_Mines/npcs/Rashid.lua",
+     "startEvent": [
+      "0x03E8",
+      "0x03E9",
+      "0x03EA",
+      "0x03ED",
+      "0x03EE",
+      "0x03F0",
+      "0x03F2",
+      "0x03eb"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17735686,
+      "pos": [
+       "-8.444",
+       "-1.000",
+       "-123.575"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Metalworks",
+     "zone_id": 237,
+     "npc": "Malduc",
+     "path": "scripts/zones/Metalworks/npcs/Malduc.lua",
+     "startEvent": [
+      "0x03E8",
+      "0x03E9",
+      "0x03EA",
+      "0x03ED",
+      "0x03EE",
+      "0x03F0",
+      "0x03F2",
+      "0x03eb"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17748017,
+      "pos": [
+       "66.200",
+       "-13.999",
+       "4.426"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Metalworks",
+     "zone_id": 237,
+     "npc": "Naji",
+     "path": "scripts/zones/Metalworks/npcs/Naji.lua",
+     "startEvent": [
+      "0x02C6",
+      "0x02bc",
+      "0x02c7",
+      "0x02c9",
+      "0x02ca",
+      "0x02d0",
+      "0x02d1",
+      "0x02d2",
+      "0x02ee",
+      "0x02f9",
+      "0x02fa"
+     ],
+     "keyitems": [
+      "BURNT_SEAL",
+      "C_L_REPORTS",
+      "KINDRED_REPORT",
+      "LETTER_TO_THE_CONSULS_BASTOK",
+      "MESSAGE_TO_JEUNO_BASTOK",
+      "NEW_FEIYIN_SEAL",
+      "SMILING_STONE",
+      "YASINS_SWORD",
+      "ZERUHN_REPORT"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17748013,
+      "pos": [
+       "66.865",
+       "-13.999",
+       "-4.562"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Port_Bastok",
+     "zone_id": 236,
+     "npc": "Argus",
+     "path": "scripts/zones/Port_Bastok/npcs/Argus.lua",
+     "startEvent": [
+      "0x03E8",
+      "0x03E9",
+      "0x03EA",
+      "0x03ED",
+      "0x03EE",
+      "0x03F0",
+      "0x03F2",
+      "0x03eb"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17743873,
+      "pos": [
+       "132.157",
+       "8.496",
+       "-2.187"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Zeruhn_Mines",
+     "zone_id": null,
+     "npc": "Makarim",
+     "path": "scripts/zones/Zeruhn_Mines/npcs/Makarim.lua",
+     "startEvent": [
+      "0x0068",
+      "0x0079"
+     ],
+     "keyitems": [
+      "ZERUHN_REPORT"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    }
+   ]
+  },
+  "1_1_GEOLOGICAL_SURVEY": {
+   "nation": 1,
+   "number": 1,
+   "constant": "GEOLOGICAL_SURVEY",
+   "npcs": [
+    {
+     "zone_dir": "Metalworks",
+     "zone_id": 237,
+     "npc": "Cid",
+     "path": "scripts/zones/Metalworks/npcs/Cid.lua",
+     "startEvent": [
+      "0x01f4",
+      "0x01f6",
+      "0x01f7",
+      "0x01f8",
+      "0x01f9",
+      "0x01fa",
+      "0x01fb",
+      "0x01fc",
+      "0x01fd",
+      "0x02f8",
+      "0x02fb",
+      "0x02fc",
+      "0x034D",
+      "0x034F",
+      "0x0351",
+      "0x0352",
+      "0x0354",
+      "0x0355",
+      "0x0356",
+      "0x0357",
+      "0x0358",
+      "0x0359",
+      "0x037A",
+      "0x037C",
+      "0x0381"
+     ],
+     "keyitems": [
+      "BLUE_ACIDITY_TESTER",
+      "C_L_REPORTS",
+      "LETTERS_FROM_ULMIA_AND_PRISHE",
+      "RED_ACIDITY_TESTER",
+      "UNFINISHED_LETTER"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17748011,
+      "pos": [
+       "-12.598",
+       "-10.988",
+       "2.430"
+      ]
+     }
+    }
+   ]
+  },
+  "1_2_FETICHISM": {
+   "nation": 1,
+   "number": 2,
+   "constant": "FETICHISM",
+   "npcs": [
+    {
+     "zone_dir": "Bastok_Markets",
+     "zone_id": 235,
+     "npc": "Cleades",
+     "path": "scripts/zones/Bastok_Markets/npcs/Cleades.lua",
+     "startEvent": [
+      "0x03E8",
+      "0x03E9",
+      "0x03EA",
+      "0x03ED",
+      "0x03EE",
+      "0x03F0",
+      "0x03F2",
+      "0x03eb"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17739827,
+      "pos": [
+       "-361.905",
+       "-10.019",
+       "-169.127"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Bastok_Markets",
+     "zone_id": 235,
+     "npc": "Lamepaue",
+     "path": "scripts/zones/Bastok_Markets/npcs/Lamepaue.lua",
+     "startEvent": [
+      "0x000C",
+      "0x0012",
+      "0x00B9",
+      "0x00F3",
+      "0x0102",
+      "0x0146",
+      "0x0149",
+      "0x014C",
+      "0x014E",
+      "0x0156",
+      "0x0192",
+      "0x0193",
+      "0x0194",
+      "0x0195",
+      "0x0196",
+      "0x019B",
+      "0x01B2",
+      "0x01B5",
+      "0x01B7",
+      "0x01B9",
+      "0x01DB",
+      "0x01DD",
+      "0x01DF",
+      "0x01E1",
+      "0x01E3",
+      "0x01E5",
+      "0x01EA",
+      "0x03F0",
+      "0x03F2"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17739872,
+      "pos": [
+       "-172.136",
+       "-4.000",
+       "-69.632"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Bastok_Mines",
+     "zone_id": 234,
+     "npc": "Rashid",
+     "path": "scripts/zones/Bastok_Mines/npcs/Rashid.lua",
+     "startEvent": [
+      "0x03E8",
+      "0x03E9",
+      "0x03EA",
+      "0x03ED",
+      "0x03EE",
+      "0x03F0",
+      "0x03F2",
+      "0x03eb"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17735686,
+      "pos": [
+       "-8.444",
+       "-1.000",
+       "-123.575"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Metalworks",
+     "zone_id": 237,
+     "npc": "Malduc",
+     "path": "scripts/zones/Metalworks/npcs/Malduc.lua",
+     "startEvent": [
+      "0x03E8",
+      "0x03E9",
+      "0x03EA",
+      "0x03ED",
+      "0x03EE",
+      "0x03F0",
+      "0x03F2",
+      "0x03eb"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17748017,
+      "pos": [
+       "66.200",
+       "-13.999",
+       "4.426"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Port_Bastok",
+     "zone_id": 236,
+     "npc": "Argus",
+     "path": "scripts/zones/Port_Bastok/npcs/Argus.lua",
+     "startEvent": [
+      "0x03E8",
+      "0x03E9",
+      "0x03EA",
+      "0x03ED",
+      "0x03EE",
+      "0x03F0",
+      "0x03F2",
+      "0x03eb"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17743873,
+      "pos": [
+       "132.157",
+       "8.496",
+       "-2.187"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Port_Bastok",
+     "zone_id": 236,
+     "npc": "Dalba",
+     "path": "scripts/zones/Port_Bastok/npcs/Dalba.lua",
+     "startEvent": [
+      "0x0002",
+      "0x0034",
+      "0x0037",
+      "0x0085",
+      "0x0088",
+      "0x00B9",
+      "0x00BA",
+      "0x00E7",
+      "0x00E8",
+      "0x00E9",
+      "0x00EA",
+      "0x00F0",
+      "0x00F1",
+      "0x00F2",
+      "0x00F5",
+      "0x00F6",
+      "0x00FA",
+      "0x0100",
+      "0x0102",
+      "0x0104",
+      "0x0105",
+      "0x0107",
+      "0x0108",
+      "0x010E",
+      "0x0110",
+      "0x0112",
+      "0x0113",
+      "0x011E",
+      "0x0121",
+      "0x0122",
+      "0x0128",
+      "0x0131",
+      "0x0132",
+      "0x0133",
+      "0x0135",
+      "0x03F0",
+      "0x03F2",
+      "0x7549"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17744016,
+      "pos": [
+       "-174.101",
+       "-6.000",
+       "-19.611"
+      ]
+     }
+    }
+   ]
+  },
+  "1_3_THE_CRYSTAL_LINE": {
+   "nation": 1,
+   "number": 3,
+   "constant": "THE_CRYSTAL_LINE",
+   "npcs": [
+    {
+     "zone_dir": "Metalworks",
+     "zone_id": 237,
+     "npc": "Ayame",
+     "path": "scripts/zones/Metalworks/npcs/Ayame.lua",
+     "startEvent": [
+      "0x02bd",
+      "0x02c8",
+      "0x02ec",
+      "0x02ed",
+      "0x03a7"
+     ],
+     "keyitems": [
+      "C_L_REPORTS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17748015,
+      "pos": [
+       "133.972",
+       "-18.983",
+       "33.288"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Metalworks",
+     "zone_id": 237,
+     "npc": "Cid",
+     "path": "scripts/zones/Metalworks/npcs/Cid.lua",
+     "startEvent": [
+      "0x01f4",
+      "0x01f6",
+      "0x01f7",
+      "0x01f8",
+      "0x01f9",
+      "0x01fa",
+      "0x01fb",
+      "0x01fc",
+      "0x01fd",
+      "0x02f8",
+      "0x02fb",
+      "0x02fc",
+      "0x034D",
+      "0x034F",
+      "0x0351",
+      "0x0352",
+      "0x0354",
+      "0x0355",
+      "0x0356",
+      "0x0357",
+      "0x0358",
+      "0x0359",
+      "0x037A",
+      "0x037C",
+      "0x0381"
+     ],
+     "keyitems": [
+      "BLUE_ACIDITY_TESTER",
+      "C_L_REPORTS",
+      "LETTERS_FROM_ULMIA_AND_PRISHE",
+      "RED_ACIDITY_TESTER",
+      "UNFINISHED_LETTER"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17748011,
+      "pos": [
+       "-12.598",
+       "-10.988",
+       "2.430"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Metalworks",
+     "zone_id": 237,
+     "npc": "Naji",
+     "path": "scripts/zones/Metalworks/npcs/Naji.lua",
+     "startEvent": [
+      "0x02C6",
+      "0x02bc",
+      "0x02c7",
+      "0x02c9",
+      "0x02ca",
+      "0x02d0",
+      "0x02d1",
+      "0x02d2",
+      "0x02ee",
+      "0x02f9",
+      "0x02fa"
+     ],
+     "keyitems": [
+      "BURNT_SEAL",
+      "C_L_REPORTS",
+      "KINDRED_REPORT",
+      "LETTER_TO_THE_CONSULS_BASTOK",
+      "MESSAGE_TO_JEUNO_BASTOK",
+      "NEW_FEIYIN_SEAL",
+      "SMILING_STONE",
+      "YASINS_SWORD",
+      "ZERUHN_REPORT"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17748013,
+      "pos": [
+       "66.865",
+       "-13.999",
+       "-4.562"
+      ]
+     }
+    }
+   ]
+  },
+  "1_4_WADING_BEASTS": {
+   "nation": 1,
+   "number": 4,
+   "constant": "WADING_BEASTS",
+   "npcs": [
+    {
+     "zone_dir": "Metalworks",
+     "zone_id": 237,
+     "npc": "Alois",
+     "path": "scripts/zones/Metalworks/npcs/Alois.lua",
+     "startEvent": [
+      "0x0172",
+      "0x0174",
+      "0x0175",
+      "0x0305",
+      "0x0306",
+      "0x0307",
+      "0x0308"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17747997,
+      "pos": [
+       "97.738",
+       "-20.170",
+       "14.640"
+      ]
+     }
+    }
+   ]
+  },
+  "2_0_THE_HORUTOTO_RUINS_EXPERIMENT": {
+   "nation": 2,
+   "number": 0,
+   "constant": "THE_HORUTOTO_RUINS_EXPERIMENT",
+   "npcs": [
+    {
+     "zone_dir": "East_Sarutabaruta",
+     "zone_id": null,
+     "npc": "Sama_Gohjima",
+     "path": "scripts/zones/East_Sarutabaruta/npcs/Sama_Gohjima.lua",
+     "startEvent": [
+      "0x002b"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Inner_Horutoto_Ruins",
+     "zone_id": null,
+     "npc": "_5c5",
+     "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5c5.lua",
+     "startEvent": [
+      "0x002A"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Inner_Horutoto_Ruins",
+     "zone_id": null,
+     "npc": "_5cp",
+     "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5cp.lua",
+     "startEvent": [
+      "0x0030",
+      "0x0031"
+     ],
+     "keyitems": [
+      "CRACKED_MANA_ORBS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Inner_Horutoto_Ruins",
+     "zone_id": null,
+     "npc": "_5cq",
+     "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5cq.lua",
+     "startEvent": [
+      "0x0032",
+      "0x0033"
+     ],
+     "keyitems": [
+      "CRACKED_MANA_ORBS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Inner_Horutoto_Ruins",
+     "zone_id": null,
+     "npc": "_5cr",
+     "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5cr.lua",
+     "startEvent": [
+      "0x0034",
+      "0x0035"
+     ],
+     "keyitems": [
+      "CRACKED_MANA_ORBS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Inner_Horutoto_Ruins",
+     "zone_id": null,
+     "npc": "_5cs",
+     "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5cs.lua",
+     "startEvent": [
+      "0x0036",
+      "0x0037"
+     ],
+     "keyitems": [
+      "CRACKED_MANA_ORBS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Inner_Horutoto_Ruins",
+     "zone_id": null,
+     "npc": "_5ct",
+     "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5ct.lua",
+     "startEvent": [
+      "0x0038",
+      "0x0039"
+     ],
+     "keyitems": [
+      "CRACKED_MANA_ORBS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Inner_Horutoto_Ruins",
+     "zone_id": null,
+     "npc": "_5cu",
+     "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5cu.lua",
+     "startEvent": [
+      "0x003a",
+      "0x003b"
+     ],
+     "keyitems": [
+      "CRACKED_MANA_ORBS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Port_Windurst",
+     "zone_id": 240,
+     "npc": "Hakkuru-Rinkuru",
+     "path": "scripts/zones/Port_Windurst/npcs/Hakkuru-Rinkuru.lua",
+     "startEvent": [
+      "0x005a",
+      "0x005b",
+      "0x005e",
+      "0x0093",
+      "0x00e0",
+      "0x0103",
+      "0x0104",
+      "0x0109",
+      "0x010b",
+      "0x0112",
+      "0x0113",
+      "0x0115",
+      "0x0116",
+      "0x01C8",
+      "0x01C9"
+     ],
+     "keyitems": [
+      "SOUTHWESTERN_STAR_CHARM"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17760266,
+      "pos": [
+       "-133.714",
+       "-4.000",
+       "147.398"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Port_Windurst",
+     "zone_id": 240,
+     "npc": "Janshura-Rashura",
+     "path": "scripts/zones/Port_Windurst/npcs/Janshura-Rashura.lua",
+     "startEvent": [
+      "0x0047",
+      "0x004c",
+      "0x004e",
+      "0x0053",
+      "0x0068",
+      "0x006d",
+      "0x00a3"
+     ],
+     "keyitems": [
+      "MESSAGE_TO_JEUNO_WINDURST",
+      "STAR_CRESTED_SUMMONS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17760269,
+      "pos": [
+       "-230.626",
+       "-8.400",
+       "184.050"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Windurst_Walls",
+     "zone_id": 239,
+     "npc": "Zokima-Rokima",
+     "path": "scripts/zones/Windurst_Walls/npcs/Zokima-Rokima.lua",
+     "startEvent": [
+      "0x0057",
+      "0x005b",
+      "0x005d",
+      "0x0060",
+      "0x006a",
+      "0x006f",
+      "0x0096"
+     ],
+     "keyitems": [
+      "MESSAGE_TO_JEUNO_WINDURST",
+      "STAR_CRESTED_SUMMONS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17756171,
+      "pos": [
+       "0.000",
+       "-16.749",
+       "127.000"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Windurst_Waters",
+     "zone_id": 238,
+     "npc": "Mokyokyo",
+     "path": "scripts/zones/Windurst_Waters/npcs/Mokyokyo.lua",
+     "startEvent": [
+      "0x0067",
+      "0x006d",
+      "0x006f",
+      "0x0076",
+      "0x0082",
+      "0x0083",
+      "0x00e8"
+     ],
+     "keyitems": [
+      "MESSAGE_TO_JEUNO_WINDURST",
+      "STAR_CRESTED_SUMMONS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17752076,
+      "pos": [
+       "-55.997",
+       "-5.398",
+       "230.367"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Windurst_Woods",
+     "zone_id": 241,
+     "npc": "Rakoh_Buuma",
+     "path": "scripts/zones/Windurst_Woods/npcs/Rakoh_Buuma.lua",
+     "startEvent": [
+      "0x0069",
+      "0x0070",
+      "0x0072",
+      "0x0079",
+      "0x0084",
+      "0x0095",
+      "0x00C5"
+     ],
+     "keyitems": [
+      "MESSAGE_TO_JEUNO_WINDURST",
+      "STAR_CRESTED_SUMMONS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17764368,
+      "pos": [
+       "110.462",
+       "-5.398",
+       "-24.050"
+      ]
+     }
+    }
+   ]
+  },
+  "2_1_THE_HEART_OF_THE_MATTER": {
+   "nation": 2,
+   "number": 1,
+   "constant": "THE_HEART_OF_THE_MATTER",
+   "npcs": [
+    {
+     "zone_dir": "East_Sarutabaruta",
+     "zone_id": null,
+     "npc": "Pore-Ohre",
+     "path": "scripts/zones/East_Sarutabaruta/npcs/Pore-Ohre.lua",
+     "startEvent": [
+      "0x002e",
+      "0x002f"
+     ],
+     "keyitems": [
+      "SOUTHEASTERN_STAR_CHARM"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Outer_Horutoto_Ruins",
+     "zone_id": null,
+     "npc": "_5e9",
+     "path": "scripts/zones/Outer_Horutoto_Ruins/npcs/_5e9.lua",
+     "startEvent": [
+      "0x002c"
+     ],
+     "keyitems": [
+      "SOUTHEASTERN_STAR_CHARM"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Outer_Horutoto_Ruins",
+     "zone_id": null,
+     "npc": "_5ee",
+     "path": "scripts/zones/Outer_Horutoto_Ruins/npcs/_5ee.lua",
+     "startEvent": [
+      "0x002e"
+     ],
+     "keyitems": [
+      "FIRST_DARK_MANA_ORB",
+      "FIRST_GLOWING_MANA_ORB"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Outer_Horutoto_Ruins",
+     "zone_id": null,
+     "npc": "_5ef",
+     "path": "scripts/zones/Outer_Horutoto_Ruins/npcs/_5ef.lua",
+     "startEvent": [
+      "0x002f"
+     ],
+     "keyitems": [
+      "SECOND_DARK_MANA_ORB",
+      "SECOND_GLOWING_MANA_ORB"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Outer_Horutoto_Ruins",
+     "zone_id": null,
+     "npc": "_5eg",
+     "path": "scripts/zones/Outer_Horutoto_Ruins/npcs/_5eg.lua",
+     "startEvent": [
+      "0x0030"
+     ],
+     "keyitems": [
+      "THIRD_DARK_MANA_ORB",
+      "THIRD_GLOWING_MANA_ORB"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Outer_Horutoto_Ruins",
+     "zone_id": null,
+     "npc": "_5eh",
+     "path": "scripts/zones/Outer_Horutoto_Ruins/npcs/_5eh.lua",
+     "startEvent": [
+      "0x0031"
+     ],
+     "keyitems": [
+      "FOURTH_DARK_MANA_ORB",
+      "FOURTH_GLOWING_MANA_ORB"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Outer_Horutoto_Ruins",
+     "zone_id": null,
+     "npc": "_5ei",
+     "path": "scripts/zones/Outer_Horutoto_Ruins/npcs/_5ei.lua",
+     "startEvent": [
+      "0x0032"
+     ],
+     "keyitems": [
+      "FIFTH_DARK_MANA_ORB",
+      "FIFTH_GLOWING_MANA_ORB"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Outer_Horutoto_Ruins",
+     "zone_id": null,
+     "npc": "_5ej",
+     "path": "scripts/zones/Outer_Horutoto_Ruins/npcs/_5ej.lua",
+     "startEvent": [
+      "0x0033"
+     ],
+     "keyitems": [
+      "SIXTH_DARK_MANA_ORB",
+      "SIXTH_GLOWING_MANA_ORB"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Port_Windurst",
+     "zone_id": 240,
+     "npc": "Janshura-Rashura",
+     "path": "scripts/zones/Port_Windurst/npcs/Janshura-Rashura.lua",
+     "startEvent": [
+      "0x0047",
+      "0x004c",
+      "0x004e",
+      "0x0053",
+      "0x0068",
+      "0x006d",
+      "0x00a3"
+     ],
+     "keyitems": [
+      "MESSAGE_TO_JEUNO_WINDURST",
+      "STAR_CRESTED_SUMMONS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17760269,
+      "pos": [
+       "-230.626",
+       "-8.400",
+       "184.050"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Windurst_Walls",
+     "zone_id": 239,
+     "npc": "Zokima-Rokima",
+     "path": "scripts/zones/Windurst_Walls/npcs/Zokima-Rokima.lua",
+     "startEvent": [
+      "0x0057",
+      "0x005b",
+      "0x005d",
+      "0x0060",
+      "0x006a",
+      "0x006f",
+      "0x0096"
+     ],
+     "keyitems": [
+      "MESSAGE_TO_JEUNO_WINDURST",
+      "STAR_CRESTED_SUMMONS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17756171,
+      "pos": [
+       "0.000",
+       "-16.749",
+       "127.000"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Windurst_Waters",
+     "zone_id": 238,
+     "npc": "Mokyokyo",
+     "path": "scripts/zones/Windurst_Waters/npcs/Mokyokyo.lua",
+     "startEvent": [
+      "0x0067",
+      "0x006d",
+      "0x006f",
+      "0x0076",
+      "0x0082",
+      "0x0083",
+      "0x00e8"
+     ],
+     "keyitems": [
+      "MESSAGE_TO_JEUNO_WINDURST",
+      "STAR_CRESTED_SUMMONS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17752076,
+      "pos": [
+       "-55.997",
+       "-5.398",
+       "230.367"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Windurst_Woods",
+     "zone_id": 241,
+     "npc": "Apururu",
+     "path": "scripts/zones/Windurst_Woods/npcs/Apururu.lua",
+     "startEvent": [
+      "0x0089",
+      "0x008a",
+      "0x008f",
+      "0x0091",
+      "0x0112",
+      "0x013F",
+      "0x0140",
+      "0x0145",
+      "0x014A",
+      "0x0188",
+      "0x0189",
+      "0x018d",
+      "0x018e",
+      "0x024C",
+      "0x024D",
+      "0x024E",
+      "0x0250",
+      "0x0259",
+      "0x0261",
+      "0x026B",
+      "0x026C",
+      "0x026D"
+     ],
+     "keyitems": [
+      "FIFTH_DARK_MANA_ORB",
+      "FIFTH_GLOWING_MANA_ORB",
+      "FIRST_DARK_MANA_ORB",
+      "FIRST_GLOWING_MANA_ORB",
+      "FOURTH_DARK_MANA_ORB",
+      "FOURTH_GLOWING_MANA_ORB",
+      "LETTER_FROM_ZONPAZIPPA",
+      "MANUSTERY_RING",
+      "SECOND_DARK_MANA_ORB",
+      "SECOND_GLOWING_MANA_ORB",
+      "SIXTH_DARK_MANA_ORB",
+      "SIXTH_GLOWING_MANA_ORB",
+      "THIRD_DARK_MANA_ORB",
+      "THIRD_GLOWING_MANA_ORB",
+      "TWO_OF_SWORDS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17764372,
+      "pos": [
+       "-12.093",
+       "-2.750",
+       "15.935"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Windurst_Woods",
+     "zone_id": 241,
+     "npc": "Rakoh_Buuma",
+     "path": "scripts/zones/Windurst_Woods/npcs/Rakoh_Buuma.lua",
+     "startEvent": [
+      "0x0069",
+      "0x0070",
+      "0x0072",
+      "0x0079",
+      "0x0084",
+      "0x0095",
+      "0x00C5"
+     ],
+     "keyitems": [
+      "MESSAGE_TO_JEUNO_WINDURST",
+      "STAR_CRESTED_SUMMONS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17764368,
+      "pos": [
+       "110.462",
+       "-5.398",
+       "-24.050"
+      ]
+     }
+    }
+   ]
+  },
+  "2_2_THE_PRICE_OF_PEACE": {
+   "nation": 2,
+   "number": 2,
+   "constant": "THE_PRICE_OF_PEACE",
+   "npcs": [
+    {
+     "zone_dir": "Giddeus",
+     "zone_id": null,
+     "npc": "Ghoo_Pakya",
+     "path": "scripts/zones/Giddeus/npcs/Ghoo_Pakya.lua",
+     "startEvent": [
+      "0x0031",
+      "0x0032",
+      "0x0033",
+      "0x0034"
+     ],
+     "keyitems": [
+      "DRINK_OFFERINGS",
+      "FOOD_OFFERINGS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Giddeus",
+     "zone_id": null,
+     "npc": "Laa_Mozi",
+     "path": "scripts/zones/Giddeus/npcs/Laa_Mozi.lua",
+     "startEvent": [
+      "0x002d",
+      "0x002e",
+      "0x002f",
+      "0x0030"
+     ],
+     "keyitems": [
+      "DRINK_OFFERINGS",
+      "FOOD_OFFERINGS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Port_Windurst",
+     "zone_id": 240,
+     "npc": "Janshura-Rashura",
+     "path": "scripts/zones/Port_Windurst/npcs/Janshura-Rashura.lua",
+     "startEvent": [
+      "0x0047",
+      "0x004c",
+      "0x004e",
+      "0x0053",
+      "0x0068",
+      "0x006d",
+      "0x00a3"
+     ],
+     "keyitems": [
+      "MESSAGE_TO_JEUNO_WINDURST",
+      "STAR_CRESTED_SUMMONS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17760269,
+      "pos": [
+       "-230.626",
+       "-8.400",
+       "184.050"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Windurst_Walls",
+     "zone_id": 239,
+     "npc": "Zokima-Rokima",
+     "path": "scripts/zones/Windurst_Walls/npcs/Zokima-Rokima.lua",
+     "startEvent": [
+      "0x0057",
+      "0x005b",
+      "0x005d",
+      "0x0060",
+      "0x006a",
+      "0x006f",
+      "0x0096"
+     ],
+     "keyitems": [
+      "MESSAGE_TO_JEUNO_WINDURST",
+      "STAR_CRESTED_SUMMONS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17756171,
+      "pos": [
+       "0.000",
+       "-16.749",
+       "127.000"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Windurst_Waters",
+     "zone_id": 238,
+     "npc": "Leepe-Hoppe",
+     "path": "scripts/zones/Windurst_Waters/npcs/Leepe-Hoppe.lua",
+     "startEvent": [
+      "140",
+      "142",
+      "311",
+      "345",
+      "734",
+      "735",
+      "739",
+      "742",
+      "842",
+      "843",
+      "844",
+      "845",
+      "846",
+      "847",
+      "848",
+      "850"
+     ],
+     "keyitems": [
+      "BOOK_OF_THE_GODS",
+      "DARK_MANA_ORB",
+      "DRINK_OFFERINGS",
+      "FOOD_OFFERINGS",
+      "MOON_BAUBLE",
+      "WHISPER_OF_FLAMES",
+      "WHISPER_OF_FROST",
+      "WHISPER_OF_GALES",
+      "WHISPER_OF_STORMS",
+      "WHISPER_OF_THE_MOON",
+      "WHISPER_OF_TIDES",
+      "WHISPER_OF_TREMORS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17752112,
+      "pos": [
+       "11.432",
+       "-9.749",
+       "-197.475"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Windurst_Waters",
+     "zone_id": 238,
+     "npc": "Mokyokyo",
+     "path": "scripts/zones/Windurst_Waters/npcs/Mokyokyo.lua",
+     "startEvent": [
+      "0x0067",
+      "0x006d",
+      "0x006f",
+      "0x0076",
+      "0x0082",
+      "0x0083",
+      "0x00e8"
+     ],
+     "keyitems": [
+      "MESSAGE_TO_JEUNO_WINDURST",
+      "STAR_CRESTED_SUMMONS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17752076,
+      "pos": [
+       "-55.997",
+       "-5.398",
+       "230.367"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Windurst_Waters",
+     "zone_id": 238,
+     "npc": "Ohbiru-Dohbiru",
+     "path": "scripts/zones/Windurst_Waters/npcs/Ohbiru-Dohbiru.lua",
+     "startEvent": [
+      "0x0134",
+      "0x0135",
+      "0x013c",
+      "0x013d",
+      "0x0142",
+      "0x0144",
+      "0x0145",
+      "0x0146",
+      "0x0158",
+      "0x015f",
+      "0x0160",
+      "0x0161",
+      "0x0162",
+      "0x0163",
+      "0x0164",
+      "0x0204",
+      "0x0205",
+      "0x0206",
+      "0x0311",
+      "0x0312",
+      "0x0317",
+      "0x031b",
+      "0x0368",
+      "0x8f",
+      "0x90"
+     ],
+     "keyitems": [
+      "267"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17752109,
+      "pos": [
+       "22.704",
+       "-5.377",
+       "-195.018"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Windurst_Woods",
+     "zone_id": 241,
+     "npc": "Rakoh_Buuma",
+     "path": "scripts/zones/Windurst_Woods/npcs/Rakoh_Buuma.lua",
+     "startEvent": [
+      "0x0069",
+      "0x0070",
+      "0x0072",
+      "0x0079",
+      "0x0084",
+      "0x0095",
+      "0x00C5"
+     ],
+     "keyitems": [
+      "MESSAGE_TO_JEUNO_WINDURST",
+      "STAR_CRESTED_SUMMONS"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17764368,
+      "pos": [
+       "110.462",
+       "-5.398",
+       "-24.050"
+      ]
+     }
+    }
+   ]
+  },
+  "2_3_LOST_FOR_WORDS": {
+   "nation": 2,
+   "number": 3,
+   "constant": "LOST_FOR_WORDS",
+   "npcs": [
+    {
+     "zone_dir": "Inner_Horutoto_Ruins",
+     "zone_id": null,
+     "npc": "_5ca",
+     "path": "scripts/zones/Inner_Horutoto_Ruins/npcs/_5ca.lua",
+     "startEvent": [
+      "0x002c",
+      "0x002e"
+     ],
+     "keyitems": [],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Maze_of_Shakhrami",
+     "zone_id": null,
+     "npc": "Fossil_Rock",
+     "path": "scripts/zones/Maze_of_Shakhrami/npcs/Fossil_Rock.lua",
+     "startEvent": [],
+     "keyitems": [
+      "LAPIS_CORAL"
+     ],
+     "mission_status_sets": [],
+     "npc_list": null
+    },
+    {
+     "zone_dir": "Windurst_Walls",
+     "zone_id": 239,
+     "npc": "_6n2",
+     "path": "scripts/zones/Windurst_Walls/npcs/_6n2.lua",
+     "startEvent": [
+      "0x0120",
+      "0x0121",
+      "0x0151",
+      "0x0180",
+      "0x0181",
+      "0x0182",
+      "0x0183",
+      "0x0192",
+      "0x0193",
+      "0x019d",
+      "0x019f"
+     ],
+     "keyitems": [
+      "CARBUNCLES_TEAR",
+      "JOKER_CARD",
+      "OLD_RING"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17756175,
+      "pos": [
+       "-26.000",
+       "-14.498",
+       "262.994"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Windurst_Waters",
+     "zone_id": 238,
+     "npc": "Tosuka-Porika",
+     "path": "scripts/zones/Windurst_Waters/npcs/Tosuka-Porika.lua",
+     "startEvent": [
+      "0x0037",
+      "0x00a0",
+      "0x00a1",
+      "0x00a8",
+      "0x0172",
+      "0x0183",
+      "0x0184",
+      "0x0193",
+      "0x0196",
+      "0x019c",
+      "0x02cb",
+      "0x02cc",
+      "0x02d4",
+      "0x0321",
+      "0x036B"
+     ],
+     "keyitems": [
+      "149",
+      "AURASTERY_RING",
+      "OPTISTERY_RING",
+      "RHINOSTERY_RING"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17752080,
+      "pos": [
+       "-28.663",
+       "-5.250",
+       "104.426"
+      ]
+     }
+    },
+    {
+     "zone_dir": "Windurst_Woods",
+     "zone_id": 241,
+     "npc": "Nanaa_Mihgo",
+     "path": "scripts/zones/Windurst_Woods/npcs/Nanaa_Mihgo.lua",
+     "startEvent": [
+      "0x004c",
+      "0x0050",
+      "0x0051",
+      "0x0052",
+      "0x0058",
+      "0x0059",
+      "0x005D",
+      "0x005E",
+      "0x005F",
+      "0x0062",
+      "0x0063",
+      "0x00a5",
+      "0x00a6",
+      "0x00a9",
+      "0x00aa",
+      "0x01ee",
+      "0x01f0",
+      "0x01f1",
+      "0x01f2",
+      "0x01f7",
+      "0x01f8",
+      "0x01f9",
+      "0x01fc",
+      "0x0200",
+      "0x0204",
+      "0x0205",
+      "0x0256",
+      "0x02dc"
+     ],
+     "keyitems": [
+      "CAT_BURGLARS_NOTE",
+      "FIRST_FORGED_ENVELOPE",
+      "FIRST_SIGNED_FORGED_ENVELOPE",
+      "GANG_WHEREABOUTS_NOTE",
+      "HIDEOUT_KEY",
+      "LAPIS_CORAL",
+      "LAPIS_MONOCLE",
+      "LETTER_FROM_THE_TENSHODO",
+      "SECOND_FORGED_ENVELOPE",
+      "SECOND_SIGNED_FORGED_ENVELOPE",
+      "SHARP_GRAY_STONE"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17764367,
+      "pos": [
+       "26.965",
+       "1.999",
+       "-34.939"
+      ]
+     }
+    }
+   ]
+  },
+  "2_4_A_TESTING_TIME": {
+   "nation": 2,
+   "number": 4,
+   "constant": "A_TESTING_TIME",
+   "npcs": [
+    {
+     "zone_dir": "Windurst_Waters",
+     "zone_id": 238,
+     "npc": "Moreno-Toeno",
+     "path": "scripts/zones/Windurst_Waters/npcs/Moreno-Toeno.lua",
+     "startEvent": [
+      "0x00B6",
+      "0x00B7",
+      "0x00CA",
+      "0x00CC",
+      "0x01b5",
+      "0x01b6",
+      "0x01b7",
+      "0x01b8",
+      "0x01b9",
+      "0x01bc",
+      "0x01d5",
+      "0x02AF",
+      "0x02F0",
+      "0x02F1",
+      "0x02F6"
+     ],
+     "keyitems": [
+      "CREATURE_COUNTER_MAGIC_DOLL",
+      "STAR_SEEKER"
+     ],
+     "mission_status_sets": [],
+     "npc_list": {
+      "id": 17752117,
+      "pos": [
+       "168.465",
+       "-1.250",
+       "156.888"
+      ]
+     }
+    }
+   ]
+  }
+ }
+}

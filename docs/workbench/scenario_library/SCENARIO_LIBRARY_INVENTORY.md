@@ -3,7 +3,7 @@
 Coordinator: #1348. Machine-readable source of truth: `scenario_catalog_draft.json` (schema `scenario-library-draft/1`).
 Evidence labels: source-supported, capture-observed, previously-executed, locally-validated, unverified.
 
-Totals: 56 candidates, 22 characterized, 2 failure-injection probe groups (kept separate).
+Totals: 46 candidates, 15 characterized, 2 failure-injection probe groups (kept separate).
 
 | ID | Domain | Tier | Support | Confidence | Evidence | Title |
 |---|---|---|---|---|---|---|
@@ -38,31 +38,21 @@ Totals: 56 candidates, 22 characterized, 2 failure-injection probe groups (kept 
 | SL-QUEST-ANGELICA | missions-quests | characterized | partial | medium | source-supported | Angelica: A_POSE_BY_ANY_OTHER_NAME |
 | SL-QUEST-KUROIDOMOI | missions-quests | candidate | unknown | medium | source-supported | Kuroido-Moido: MAKING_AMENDS/MAKING_AMENS |
 | SL-QUEST-KOPUROPOPU | missions-quests | candidate | unknown | medium | source-supported | Kopuro-Popuro: A_GREETING_CARDIAN/LEGENDARY_PLAN_B |
-| SL-MSN-BA-11 | missions-nation | candidate | unknown | medium | source-supported | The Zeruhn Report |
-| SL-MSN-BA-12 | missions-nation | candidate | unknown | medium | source-supported | A Geological Survey |
-| SL-MSN-BA-13 | missions-nation | candidate | unknown | medium | source-supported | Fetichism |
-| SL-MSN-BA-21 | missions-nation | candidate | unknown | medium | source-supported | The Crystal Line |
-| SL-MSN-BA-22 | missions-nation | candidate | unknown | medium | source-supported | Wading Beasts |
-| SL-MSN-SD-11 | missions-nation | candidate | unknown | medium | source-supported | Smash the Orcish Scouts |
-| SL-MSN-SD-12 | missions-nation | candidate | unknown | medium | source-supported | Bat Hunt |
-| SL-MSN-SD-13 | missions-nation | candidate | unknown | medium | source-supported | Save the Children |
-| SL-MSN-SD-21 | missions-nation | candidate | unknown | medium | source-supported | The Rescue Drill |
-| SL-MSN-SD-22 | missions-nation | candidate | unknown | medium | source-supported | The Davoi Report |
-| SL-MSN-WI-11 | missions-nation | candidate | unknown | medium | source-supported | The Horutoto Ruins Experiment |
-| SL-MSN-WI-12 | missions-nation | candidate | unknown | medium | source-supported | The Heart of the Matter |
-| SL-MSN-WI-13 | missions-nation | candidate | unknown | medium | source-supported | The Price of Peace |
-| SL-MSN-WI-21 | missions-nation | candidate | unknown | medium | source-supported | Lost for Words |
-| SL-MSN-WI-22 | missions-nation | candidate | unknown | medium | source-supported | A Testing Time |
-| SL-MSN-WOTG-01 | missions-wotg | characterized | partial | medium | source-supported | Cavernous Maws |
-| SL-MSN-WOTG-02 | missions-wotg | characterized | partial | medium | source-supported | Back to the Beginning |
-| SL-MSN-WOTG-03 | missions-wotg | characterized | partial | medium | source-supported | Cait Sith |
-| SL-MSN-WOTG-04 | missions-wotg | characterized | partial | medium | source-supported | The Queen of the Dance |
-| SL-MSN-WOTG-05 | missions-wotg | characterized | partial | medium | source-supported | While the Cat is Away |
-| SL-MSN-WOTG-06 | missions-wotg | characterized | partial | medium | source-supported | A Timeswept Butterfly |
-| SL-MSN-WOTG-07 | missions-wotg | characterized | partial | medium | source-supported | Purple, The New Black |
-| SL-MSN-WOTG-08 | missions-wotg | characterized | partial | medium | source-supported | In the Name of the Father |
-| SL-MSN-WOTG-09 | missions-wotg | characterized | partial | medium | source-supported | Dancers in Distress |
-| SL-MSN-WOTG-10 | missions-wotg | characterized | partial | medium | source-supported | Daughter of a Knight |
+| SL-MSN-SD-1 | missions-nation | characterized | partial | medium | source-supported | San d'Oria mission 1: Smash The Orcish Scouts |
+| SL-MSN-SD-2 | missions-nation | candidate | unknown | low | source-supported | San d'Oria mission 2: Bat Hunt |
+| SL-MSN-SD-3 | missions-nation | candidate | unknown | low | source-supported | San d'Oria mission 3: Save The Children |
+| SL-MSN-SD-4 | missions-nation | candidate | unknown | low | source-supported | San d'Oria mission 4: The Rescue Drill |
+| SL-MSN-SD-5 | missions-nation | candidate | unknown | low | source-supported | San d'Oria mission 5: The Davoi Report |
+| SL-MSN-BA-1 | missions-nation | characterized | partial | medium | source-supported | Bastok mission 1: The Zeruhn Report |
+| SL-MSN-BA-2 | missions-nation | candidate | unknown | low | source-supported | Bastok mission 2: Geological Survey |
+| SL-MSN-BA-3 | missions-nation | candidate | unknown | low | source-supported | Bastok mission 3: Fetichism |
+| SL-MSN-BA-4 | missions-nation | candidate | unknown | low | source-supported | Bastok mission 4: The Crystal Line |
+| SL-MSN-BA-5 | missions-nation | candidate | unknown | low | source-supported | Bastok mission 5: Wading Beasts |
+| SL-MSN-WI-1 | missions-nation | candidate | unknown | low | source-supported | Windurst mission 1: The Horutoto Ruins Experiment |
+| SL-MSN-WI-2 | missions-nation | candidate | unknown | low | source-supported | Windurst mission 2: The Heart Of The Matter |
+| SL-MSN-WI-3 | missions-nation | characterized | partial | medium | source-supported | Windurst mission 3: The Price Of Peace |
+| SL-MSN-WI-4 | missions-nation | candidate | unknown | low | source-supported | Windurst mission 4: Lost For Words |
+| SL-MSN-WI-5 | missions-nation | candidate | unknown | low | source-supported | Windurst mission 5: A Testing Time |
 
 ## Headless asset revalidation
 
@@ -74,6 +64,6 @@ Missions (getCurrentMission), status effects, doors/switches/teleports, Feature 
 
 ## Provenance notes
 
-Mission facts (WoTG 1-10 and nation rank 1-2 starters, 82 mission files extracted) come from LandSandBoat `landsandboat-latest@5f77448970` via `_extract_missions.py` -> `lsb_mission_extract.json`. DSP main has no WoTG mission scripts, so those are LSB-sourced and design-only for DSP/Valhalla. Nation-quest starters are the 19 DSP NPC scripts above. LSB csids are LSB client generation: verify before execution.
+Nation mission facts (rank 1-2, 15 missions) come from DSP main `febdc00209` NPC scripts via `_extract_dsp_missions.py` -> `dsp_mission_extract.json`. Per owner direction (2026-10-24), LSB/WoTG-sourced scenarios were REMOVED: their dialog/event ids are shifted versus DSP/Valhalla and DSP has no WoTG mission scripts. WoTG is not part of this library.
 
 DSP quest facts come from `dsp-branches` main `febdc00209` scripts and `sql/npc_list.sql` (19 NPC scripts, `dsp_source_extract.json`). npc_list ids were checked against the script zone with the id>>12 rule only; the client-id offset is NOT verified (project caveat).

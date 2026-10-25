@@ -16,8 +16,8 @@ Draft-only. Never auto-publish; owner approval is required per scenario.
 5. SL-ASLT-001 Leujaoam entry
 6. SL-ITEM-001 item possession (needs G-01)
 7. SL-KI-001 key item (needs G-01)
-8. SL-MSN-WOTG-01..05 (WoTG missions 1-5 sample; replaces the earlier Zon-Fobun slot per owner direction)
-9. SL-MSN-WOTG-06..10 (WoTG missions 6-10 sample; replaces the earlier Ardea slot)
+8. SL-MSN-SD-1, SL-MSN-BA-1, SL-MSN-WI-1 (nation rank 1 mission starters from DSP)
+9. SL-MSN-WI-3 (Price of Peace, widest NPC chain) and the remaining rank 1-2 nation missions
 10. SL-ZONE-002 zone_to
 
 ## Proposed next issues

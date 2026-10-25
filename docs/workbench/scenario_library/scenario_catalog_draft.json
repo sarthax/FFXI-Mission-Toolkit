@@ -1593,1319 +1593,22 @@
    "verification_flags": []
   },
   {
-   "id": "SL-MSN-BA-11",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "candidate",
-   "domain": "missions-nation",
-   "title": "The Zeruhn Report",
-   "readable": {
-    "given": "Character with Bastok rank mission 1_1_The_Zeruhn_Report active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items ZERUHN_REPORT are granted; mission advances to the next section/mission."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/bastok/1_1_The_Zeruhn_Report.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "unknown",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "source_facts": {
-    "zones": [
-     "BASTOK_MARKETS",
-     "BASTOK_MINES",
-     "METALWORKS",
-     "PORT_BASTOK",
-     "ZERUHN_MINES"
-    ],
-    "npcs": [
-     "Argus",
-     "Cleades",
-     "Malduc",
-     "Rashid"
-    ],
-    "events": [
-     120,
-     121,
-     710,
-     1000
-    ],
-    "event_finish_ids": [
-     121,
-     710
-    ],
-    "key_items": [
-     "ZERUHN_REPORT"
-    ],
-    "mission_status_sets": [],
-    "header": [
-     "!addmission 1 0",
-     "Argus   : !pos 132.157 7.496 -2.187 236",
-     "Cleades : !pos -358 -10 -168 235",
-     "Malduc  : !pos 66.200 -14.999 4.426 237",
-     "Rashid  : !pos -8.444 -2 -123.575 234",
-     "Makarim : !pos -58 8 -333 172",
-     "Naji    : !pos 64 -14 -4 237"
-    ],
-    "next_mission": null
-   },
-   "server_coverage": "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-BA-12",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "candidate",
-   "domain": "missions-nation",
-   "title": "A Geological Survey",
-   "readable": {
-    "given": "Character with Bastok rank mission 1_2_A_Geological_Survey active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items BLUE_ACIDITY_TESTER, RED_ACIDITY_TESTER are granted; mission advances to the next section/mission."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/bastok/1_2_A_Geological_Survey.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "unknown",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "source_facts": {
-    "zones": [
-     "BASTOK_MARKETS",
-     "BASTOK_MINES",
-     "DANGRUF_WADI",
-     "METALWORKS",
-     "PORT_BASTOK"
-    ],
-    "npcs": [
-     "Argus",
-     "Cleades",
-     "Malduc",
-     "Rashid"
-    ],
-    "events": [
-     502,
-     503,
-     504
-    ],
-    "event_finish_ids": [
-     10,
-     11,
-     12,
-     503,
-     504
-    ],
-    "key_items": [
-     "BLUE_ACIDITY_TESTER",
-     "RED_ACIDITY_TESTER"
-    ],
-    "mission_status_sets": [],
-    "header": [
-     "!addmission 1 1",
-     "Argus   : !pos 132.157 7.496 -2.187 236",
-     "Cleades : !pos -358 -10 -168 235",
-     "Malduc  : !pos 66.200 -14.999 4.426 237",
-     "Rashid  : !pos -8.444 -2 -123.575 234",
-     "Cid     : !pos -12 -12 1 237"
-    ],
-    "next_mission": null
-   },
-   "server_coverage": "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-BA-13",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "candidate",
-   "domain": "missions-nation",
-   "title": "Fetichism",
-   "readable": {
-    "given": "Character with Bastok rank mission 1_3_Fetichism active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire; mission advances to the next section/mission."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/bastok/1_3_Fetichism.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "unknown",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "source_facts": {
-    "zones": [
-     "BASTOK_MARKETS",
-     "BASTOK_MINES",
-     "METALWORKS",
-     "PORT_BASTOK"
-    ],
-    "npcs": [],
-    "events": [
-     1005,
-     1008
-    ],
-    "event_finish_ids": [],
-    "key_items": [],
-    "mission_status_sets": [],
-    "header": [
-     "!addmission 1 2",
-     "Argus   : !pos 132.157 7.496 -2.187 236",
-     "Cleades : !pos -358 -10 -168 235",
-     "Malduc  : !pos 66.200 -14.999 4.426 237",
-     "Rashid  : !pos -8.444 -2 -123.575 234"
-    ],
-    "next_mission": null
-   },
-   "server_coverage": "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-BA-21",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "candidate",
-   "domain": "missions-nation",
-   "title": "The Crystal Line",
-   "readable": {
-    "given": "Character with Bastok rank mission 2_1_The_Crystal_Line active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items C_L_REPORT are granted; mission advances to the next section/mission."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/bastok/2_1_The_Crystal_Line.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "unknown",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "source_facts": {
-    "zones": [
-     "BASTOK_MARKETS",
-     "BASTOK_MINES",
-     "METALWORKS",
-     "PORT_BASTOK"
-    ],
-    "npcs": [
-     "Argus",
-     "Cleades",
-     "Malduc",
-     "Rashid"
-    ],
-    "events": [
-     502,
-     505,
-     506,
-     711,
-     712
-    ],
-    "event_finish_ids": [
-     505,
-     506,
-     712
-    ],
-    "key_items": [
-     "C_L_REPORT"
-    ],
-    "mission_status_sets": [
-     "1"
-    ],
-    "header": [
-     "!addmission 1 3",
-     "Argus   : !pos 132.157 7.496 -2.187 236",
-     "Cleades : !pos -358 -10 -168 235",
-     "Malduc  : !pos 66.200 -14.999 4.426 237",
-     "Rashid  : !pos -8.444 -2 -123.575 234",
-     "Cid     : !pos -12 -12 1 237",
-     "Naji    : !pos 64 -14 -4 237",
-     "Ayame   : !pos 133 -19 34 237"
-    ],
-    "next_mission": null
-   },
-   "server_coverage": "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-BA-22",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "candidate",
-   "domain": "missions-nation",
-   "title": "Wading Beasts",
-   "readable": {
-    "given": "Character with Bastok rank mission 2_2_Wading_Beasts active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire; mission advances to the next section/mission."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/bastok/2_2_Wading_Beasts.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "unknown",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "source_facts": {
-    "zones": [
-     "BASTOK_MARKETS",
-     "BASTOK_MINES",
-     "METALWORKS",
-     "PORT_BASTOK"
-    ],
-    "npcs": [
-     "Argus",
-     "Cleades",
-     "Malduc",
-     "Rashid"
-    ],
-    "events": [
-     372,
-     373
-    ],
-    "event_finish_ids": [
-     372,
-     373
-    ],
-    "key_items": [],
-    "mission_status_sets": [],
-    "header": [
-     "!addmission 1 4",
-     "Argus   : !pos 132.157 7.496 -2.187 236",
-     "Cleades : !pos -358 -10 -168 235",
-     "Malduc  : !pos 66.200 -14.999 4.426 237",
-     "Rashid  : !pos -8.444 -2 -123.575 234",
-     "Alois   : !pos 96 -20 14 237"
-    ],
-    "next_mission": null
-   },
-   "server_coverage": "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-SD-11",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "candidate",
-   "domain": "missions-nation",
-   "title": "Smash the Orcish Scouts",
-   "readable": {
-    "given": "Character with San d'Oria rank mission 1_1_Smash_the_Orcish_Scouts active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire; mission advances to the next section/mission."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/sandoria/1_1_Smash_the_Orcish_Scouts.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "unknown",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "source_facts": {
-    "zones": [
-     "NORTHERN_SAN_DORIA",
-     "SOUTHERN_SAN_DORIA"
-    ],
-    "npcs": [
-     "Ambrotien",
-     "Endracion",
-     "Grilau"
-    ],
-    "events": [
-     1000,
-     2000
-    ],
-    "event_finish_ids": [],
-    "key_items": [],
-    "mission_status_sets": [],
-    "header": [
-     "!addmission 0 0",
-     "Ambrotien  : !pos 93.419 -0.001 -57.347 230",
-     "Grilau     : !pos -241.987 6.999 57.887 231",
-     "Endracion  : !pos -110 1 -34 230"
-    ],
-    "next_mission": null
-   },
-   "server_coverage": "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-SD-12",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "candidate",
-   "domain": "missions-nation",
-   "title": "Bat Hunt",
-   "readable": {
-    "given": "Character with San d'Oria rank mission 1_2_Bat_Hunt active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire; mission advances to the next section/mission."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/sandoria/1_2_Bat_Hunt.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "unknown",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "source_facts": {
-    "zones": [
-     "KING_RANPERRES_TOMB",
-     "NORTHERN_SAN_DORIA",
-     "SOUTHERN_SAN_DORIA"
-    ],
-    "npcs": [
-     "Ambrotien",
-     "Endracion",
-     "Grilau"
-    ],
-    "events": [
-     4,
-     1021,
-     1022,
-     2021,
-     2022
-    ],
-    "event_finish_ids": [
-     4
-    ],
-    "key_items": [],
-    "mission_status_sets": [
-     "2"
-    ],
-    "header": [
-     "!addmission 0 1",
-     "Ambrotien  : !pos 93.419 -0.001 -57.347 230",
-     "Grilau     : !pos -241.987 6.999 57.887 231",
-     "Endracion  : !pos -110 1 -34 230",
-     "Tombstone  : !pos 1 0.1 -101 190"
-    ],
-    "next_mission": null
-   },
-   "server_coverage": "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-SD-13",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "candidate",
-   "domain": "missions-nation",
-   "title": "Save the Children",
-   "readable": {
-    "given": "Character with San d'Oria rank mission 1_3_Save_the_Children active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items ORCISH_HUT_KEY are granted; mission advances to the next section/mission."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/sandoria/1_3_Save_the_Children.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "unknown",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "source_facts": {
-    "zones": [
-     "GHELSBA_OUTPOST",
-     "NORTHERN_SAN_DORIA",
-     "SOUTHERN_SAN_DORIA"
-    ],
-    "npcs": [],
-    "events": [
-     3,
-     55,
-     693,
-     694,
-     1025,
-     2025
-    ],
-    "event_finish_ids": [
-     3,
-     55,
-     693,
-     694,
-     32001
-    ],
-    "key_items": [
-     "ORCISH_HUT_KEY"
-    ],
-    "mission_status_sets": [
-     "1",
-     "2",
-     "3",
-     "4"
-    ],
-    "header": [
-     "!addmission 0 2",
-     "Ambrotien  : !pos 93.419 -0.001 -57.347 230",
-     "Grilau     : !pos -241.987 6.999 57.887 231",
-     "Endracion  : !pos -110 1 -34 230",
-     "Arnau      : !pos 148 0 139 231",
-     "Hut_Door   : !pos -165.357 -11.672 77.771 140"
-    ],
-    "next_mission": null
-   },
-   "server_coverage": "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-SD-21",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "candidate",
-   "domain": "missions-nation",
-   "title": "The Rescue Drill",
-   "readable": {
-    "given": "Character with San d'Oria rank mission 2_1_The_Rescue_Drill active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items RESCUE_TRAINING_CERTIFICATE are granted; mission advances to the next section/mission."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/sandoria/2_1_The_Rescue_Drill.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "unknown",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "source_facts": {
-    "zones": [
-     "LA_THEINE_PLATEAU",
-     "NORTHERN_SAN_DORIA",
-     "ORDELLES_CAVES",
-     "SOUTHERN_SAN_DORIA"
-    ],
-    "npcs": [
-     "Galaihaurat"
-    ],
-    "events": [
-     1,
-     2,
-     5,
-     101,
-     102,
-     103,
-     104,
-     106,
-     107,
-     108,
-     109,
-     110,
-     112,
-     113,
-     114,
-     115,
-     1005,
-     2005
-    ],
-    "event_finish_ids": [
-     1,
-     2,
-     101,
-     102,
-     106,
-     107,
-     108,
-     110,
-     112,
-     113,
-     114,
-     115,
-     1005,
-     2005
-    ],
-    "key_items": [
-     "RESCUE_TRAINING_CERTIFICATE"
-    ],
-    "mission_status_sets": [
-     "10",
-     "11",
-     "2",
-     "3",
-     "4",
-     "5",
-     "6",
-     "7",
-     "8",
-     "9"
-    ],
-    "header": [
-     "!addmission 0 3",
-     "Ambrotien    : !pos 93.419 -0.001 -57.347 230",
-     "Grilau       : !pos -241.987 6.999 57.887 231",
-     "Endracion    : !pos -110 1 -34 230",
-     "Augevinne    : !pos -361 39 266 102",
-     "Deaufrain    : !pos -304 28 339 102",
-     "Equesobillot : !pos -287 9 284 102",
-     "Galaihaurat  : !pos -482 -7 222 102",
-     "Laurisse     : !pos -292 28 143 102",
-     "Narvecaint   : !pos -263 22 129 102"
-    ],
-    "next_mission": null
-   },
-   "server_coverage": "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-SD-22",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "candidate",
-   "domain": "missions-nation",
-   "title": "The Davoi Report",
-   "readable": {
-    "given": "Character with San d'Oria rank mission 2_2_The_Davoi_Report active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items LOST_DOCUMENT, TEMPLE_KNIGHTS_DAVOI_REPORT are granted; mission advances to the next section/mission."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/sandoria/2_2_The_Davoi_Report.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "unknown",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "source_facts": {
-    "zones": [
-     "DAVOI",
-     "NORTHERN_SAN_DORIA",
-     "SOUTHERN_SAN_DORIA"
-    ],
-    "npcs": [],
-    "events": [
-     100,
-     104,
-     695,
-     1006,
-     1028,
-     2006,
-     2028
-    ],
-    "event_finish_ids": [
-     100,
-     104,
-     695,
-     1006,
-     2006
-    ],
-    "key_items": [
-     "LOST_DOCUMENT",
-     "TEMPLE_KNIGHTS_DAVOI_REPORT"
-    ],
-    "mission_status_sets": [
-     "1",
-     "2",
-     "3"
-    ],
-    "header": [
-     "!addmission 0 4",
-     "Ambrotien      : !pos 93.419 -0.001 -57.347 230",
-     "Grilau         : !pos -241.987 6.999 57.887 231",
-     "Endracion      : !pos -110 1 -34 230",
-     "Zantaviat      : !pos 215 0.1 -10 149",
-     "'!'            : !pos 211 2 -104 149",
-     "Papal Chambers : !pos 131 -11 122 231"
-    ],
-    "next_mission": null
-   },
-   "server_coverage": "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-WI-11",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "candidate",
-   "domain": "missions-nation",
-   "title": "The Horutoto Ruins Experiment",
-   "readable": {
-    "given": "Character with Windurst rank mission 1_1_The_Horutoto_Ruins_Experiment active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items CRACKED_MANA_ORB are granted; mission advances to the next section/mission."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/windurst/1_1_The_Horutoto_Ruins_Experiment.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "unknown",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "source_facts": {
-    "zones": [
-     "EAST_SARUTABARUTA",
-     "INNER_HORUTOTO_RUINS",
-     "PORT_WINDURST",
-     "WINDURST_WALLS",
-     "WINDURST_WATERS",
-     "WINDURST_WOODS"
-    ],
-    "npcs": [
-     "Dagoza-Beruza",
-     "Hakkuru-Rinkuru",
-     "Janshura-Rashura",
-     "Keo-Koruo",
-     "Kuroido-Moido",
-     "Miiri-Wohri",
-     "Mokyokyo",
-     "Nine_of_Clubs",
-     "Pakke-Pokke",
-     "Panna-Donna",
-     "Puo_Rhen",
-     "Rakoh_Buuma",
-     "Sama_Gohjima",
-     "Sola_Jaab",
-     "Ten_of_Clubs",
-     "Ten_of_Hearts",
-     "Tih_Pikeh",
-     "Zokima-Rokima",
-     "_5c5"
-    ],
-    "events": [
-     42,
-     53,
-     83,
-     86,
-     87,
-     88,
-     89,
-     90,
-     91,
-     92,
-     94,
-     96,
-     98,
-     99,
-     100,
-     101,
-     102,
-     103,
-     104,
-     105,
-     115,
-     118,
-     121,
-     122,
-     123,
-     124,
-     125,
-     126,
-     127,
-     128,
-     129,
-     130,
-     131
-    ],
-    "event_finish_ids": [
-     42,
-     90,
-     94
-    ],
-    "key_items": [
-     "CRACKED_MANA_ORB"
-    ],
-    "mission_status_sets": [
-     "1",
-     "2",
-     "3",
-     "4"
-    ],
-    "header": [
-     "!addmission 2 0",
-     "Rakoh Buuma      : !pos 106 -5 -23 241",
-     "Mokyokyo         : !pos -55 -8 227 238",
-     "Janshura-Rashura : !pos -227 -8 184 240",
-     "Zokima-Rokima    : !pos 0 -16 124 239",
-     "Hakkuru-Rinkuru  : !pos -111 -4 101 240",
-     "Sama Gohjima     : !pos 377 -13 98 116",
-     "_5c5 (Gate)      : !pos 419 0 -27 192",
-     "_5cp (Gizmo #1)  : !pos 464 -3 100 192",
-     "_5cq (Gizmo #2)  : !pos 406 -3 59 192"
-    ],
-    "next_mission": null
-   },
-   "server_coverage": "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-WI-12",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "candidate",
-   "domain": "missions-nation",
-   "title": "The Heart of the Matter",
-   "readable": {
-    "given": "Character with Windurst rank mission 1_2_The_Heart_of_the_Matter active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items FIFTH_DARK_MANA_ORB, FIFTH_GLOWING_MANA_ORB, FIRST_DARK_MANA_ORB are granted; mission advances to the next section/mission."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/windurst/1_2_The_Heart_of_the_Matter.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "unknown",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "source_facts": {
-    "zones": [
-     "EAST_SARUTABARUTA",
-     "OUTER_HORUTOTO_RUINS",
-     "PORT_WINDURST",
-     "WINDURST_WALLS",
-     "WINDURST_WATERS",
-     "WINDURST_WOODS"
-    ],
-    "npcs": [
-     "Apururu",
-     "Chawo_Shipeynyo",
-     "Dagoza-Beruza",
-     "Janshura-Rashura",
-     "Keo-Koruo",
-     "Miiri-Wohri",
-     "Mokyokyo",
-     "Nine_of_Clubs",
-     "Pakke-Pokke",
-     "Panna-Donna",
-     "Pore-Ohre",
-     "Puo_Rhen",
-     "Quh_Berhuja",
-     "Rakoh_Buuma",
-     "Sola_Jaab",
-     "Ten_of_Clubs",
-     "Ten_of_Hearts",
-     "Tih_Pikeh",
-     "Zokima-Rokima"
-    ],
-    "events": [
-     44,
-     46,
-     47,
-     74,
-     79,
-     80,
-     104,
-     105,
-     106,
-     107,
-     108,
-     109,
-     110,
-     112,
-     113,
-     114,
-     117,
-     118,
-     119,
-     131,
-     132,
-     133,
-     134,
-     135,
-     136,
-     137,
-     138,
-     143,
-     144,
-     145
-    ],
-    "event_finish_ids": [
-     44,
-     46,
-     48,
-     137,
-     143,
-     145
-    ],
-    "key_items": [
-     "FIFTH_DARK_MANA_ORB",
-     "FIFTH_GLOWING_MANA_ORB",
-     "FIRST_DARK_MANA_ORB",
-     "FIRST_GLOWING_MANA_ORB",
-     "FOURTH_DARK_MANA_ORB",
-     "FOURTH_GLOWING_MANA_ORB",
-     "SECOND_DARK_MANA_ORB",
-     "SECOND_GLOWING_MANA_ORB",
-     "SIXTH_DARK_MANA_ORB",
-     "SIXTH_GLOWING_MANA_ORB",
-     "SOUTHEASTERN_STAR_CHARM",
-     "THIRD_DARK_MANA_ORB",
-     "THIRD_GLOWING_MANA_ORB"
-    ],
-    "mission_status_sets": [
-     "1",
-     "2",
-     "3",
-     "4",
-     "5",
-     "6"
-    ],
-    "header": [
-     "!addmission 2 1",
-     "Rakoh Buuma      : !pos 106 -5 -23 241",
-     "Mokyokyo         : !pos -55 -8 227 238",
-     "Janshura-Rashura : !pos -227 -8 184 240",
-     "Zokima-Rokima    : !pos 0 -16 124 239",
-     "Apururu          : !pos -11 -2 13 241",
-     "Pore-Ohre        : !pos 261 -17 -458 116",
-     "Outer Horu. Ruin : !pos 466 0 -660 194",
-     "_5e9 - Gate      : !pos 584 0 -660 194"
-    ],
-    "next_mission": null
-   },
-   "server_coverage": "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-WI-13",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "candidate",
-   "domain": "missions-nation",
-   "title": "The Price of Peace",
-   "readable": {
-    "given": "Character with Windurst rank mission 1_3_The_Price_of_Peace active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items DRINK_OFFERING, FOOD_OFFERING are granted; mission advances to the next section/mission."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/windurst/1_3_The_Price_of_Peace.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "unknown",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "source_facts": {
-    "zones": [
-     "GIDDEUS",
-     "PORT_WINDURST",
-     "WINDURST_WALLS",
-     "WINDURST_WATERS",
-     "WINDURST_WOODS"
-    ],
-    "npcs": [
-     "Chawo_Shipeynyo",
-     "Dagoza-Beruza",
-     "Ghoo_Pakya",
-     "Janshura-Rashura",
-     "Kenapa-Keppa",
-     "Keo-Koruo",
-     "Laa_Mozi",
-     "Leepe-Hoppe",
-     "Miiri-Wohri",
-     "Mokyokyo",
-     "Nine_of_Clubs",
-     "Ohbiru-Dohbiru",
-     "Pakke-Pokke",
-     "Panna-Donna",
-     "Puo_Rhen",
-     "Rakoh_Buuma",
-     "Sola_Jaab",
-     "Ten_of_Clubs",
-     "Ten_of_Hearts",
-     "Tih_Pikeh",
-     "Zokima-Rokima"
-    ],
-    "events": [
-     45,
-     48,
-     49,
-     52,
-     110,
-     111,
-     112,
-     113,
-     114,
-     115,
-     116,
-     117,
-     118,
-     119,
-     120,
-     131,
-     136,
-     137,
-     138,
-     139,
-     140,
-     142,
-     143,
-     144,
-     145,
-     146,
-     147,
-     148,
-     150,
-     151,
-     152,
-     153,
-     154,
-     157,
-     158
-    ],
-    "event_finish_ids": [
-     114,
-     116,
-     140,
-     146,
-     148,
-     154
-    ],
-    "key_items": [
-     "DRINK_OFFERING",
-     "FOOD_OFFERING"
-    ],
-    "mission_status_sets": [
-     "1",
-     "2",
-     "3",
-     "4"
-    ],
-    "header": [
-     "!addmission 2 2",
-     "Rakoh Buuma      : !pos 106 -5 -23 241",
-     "Mokyokyo         : !pos -55 -8 227 238",
-     "Janshura-Rashura : !pos -227 -8 184 240",
-     "Zokima-Rokima    : !pos 0 -16 124 239",
-     "Leepe-Hoppe      : !pos 13 -9 -197 238",
-     "Ohbiru-Dohbiru   : !pos 23 -5 -193 238",
-     "Laa Mozi         : !pos -22 0 148 145",
-     "Ghoo Pakya       : !pos -139 0 147 145"
-    ],
-    "next_mission": null
-   },
-   "server_coverage": "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-WI-21",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "candidate",
-   "domain": "missions-nation",
-   "title": "Lost for Words",
-   "readable": {
-    "given": "Character with Windurst rank mission 2_1_Lost_for_Words active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items HIDEOUT_KEY, LAPIS_CORAL, LAPIS_MONOCLE are granted; mission advances to the next section/mission."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/windurst/2_1_Lost_for_Words.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "unknown",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "source_facts": {
-    "zones": [
-     "INNER_HORUTOTO_RUINS",
-     "MAZE_OF_SHAKHRAMI",
-     "PORT_WINDURST",
-     "WINDURST_WALLS",
-     "WINDURST_WATERS",
-     "WINDURST_WOODS"
-    ],
-    "npcs": [
-     "Aora-Uora",
-     "Bopa_Greso",
-     "Cha_Lebagta",
-     "Chawo_Shipeynyo",
-     "Dagoza-Beruza",
-     "Furakku-Norakku",
-     "Janshura-Rashura",
-     "Keo-Koruo",
-     "Kotan-Moritan",
-     "Miiri-Wohri",
-     "Mokyokyo",
-     "Nanaa_Mihgo",
-     "Nine_of_Clubs",
-     "Pakke-Pokke",
-     "Panna-Donna",
-     "Puo_Rhen",
-     "Rakoh_Buuma",
-     "Sola_Jaab",
-     "Ten_of_Clubs",
-     "Ten_of_Hearts",
-     "Tih_Pikeh",
-     "Tosuka-Porika",
-     "Zokima-Rokima",
-     "_5ca"
-    ],
-    "events": [
-     46,
-     74,
-     80,
-     81,
-     88,
-     94,
-     114,
-     115,
-     116,
-     117,
-     118,
-     119,
-     120,
-     121,
-     122,
-     123,
-     124,
-     125,
-     156,
-     157,
-     158,
-     159,
-     160,
-     161,
-     162,
-     163,
-     164,
-     165,
-     166,
-     167,
-     168,
-     169,
-     170,
-     171,
-     172,
-     173,
-     174,
-     175,
-     329,
-     337
-    ],
-    "event_finish_ids": [
-     46,
-     160,
-     163,
-     164,
-     165,
-     168,
-     169,
-     337
-    ],
-    "key_items": [
-     "HIDEOUT_KEY",
-     "LAPIS_CORAL",
-     "LAPIS_MONOCLE"
-    ],
-    "mission_status_sets": [
-     "1",
-     "2",
-     "3",
-     "4",
-     "5",
-     "6",
-     "7"
-    ],
-    "header": [
-     "!addmission 2 3",
-     "Rakoh Buuma       : !pos 106 -5 -23 241",
-     "Mokyokyo          : !pos -55 -8 227 238",
-     "Janshura-Rashura  : !pos -227 -8 184 240",
-     "Zokima-Rokima     : !pos 0 -16 124 239",
-     "Tosuka-Porika     : !pos -26 -6 103 238",
-     "Nanaa Mihgo       : !pos 62 -4 240 241",
-     "Fossil Rocks      : !pos 17 18 184 198",
-     "Mahogany Door     : !pos -11 0 20 192",
-     "House of the Hero : !pos -26 -13 260 239"
-    ],
-    "next_mission": null
-   },
-   "server_coverage": "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-WI-22",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "candidate",
-   "domain": "missions-nation",
-   "title": "A Testing Time",
-   "readable": {
-    "given": "Character with Windurst rank mission 2_2_A_Testing_Time active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items CREATURE_COUNTER_MAGIC_DOLL are granted; mission advances to the next section/mission."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/windurst/2_2_A_Testing_Time.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "unknown",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "source_facts": {
-    "zones": [
-     "BUBURIMU_PENINSULA",
-     "PORT_WINDURST",
-     "TAHRONGI_CANYON",
-     "WINDURST_WALLS",
-     "WINDURST_WATERS",
-     "WINDURST_WOODS"
-    ],
-    "npcs": [
-     "Akkeke",
-     "Chawo_Shipeynyo",
-     "Chomoro-Kyotoro",
-     "Dagoza-Beruza",
-     "Foi-Mui",
-     "Fuepepe",
-     "Janshura-Rashura",
-     "Keo-Koruo",
-     "Kirarara",
-     "Koko_Lihzeh",
-     "Mashuu-Ajuu",
-     "Miiri-Wohri",
-     "Mimomo",
-     "Mokyokyo",
-     "Moreno-Toeno",
-     "Nine_of_Clubs",
-     "Pakke-Pokke",
-     "Paku-Nakku",
-     "Panna-Donna",
-     "Pechiru-Mashiru",
-     "Puo_Rhen",
-     "Rakoh_Buuma",
-     "Rukuku",
-     "Sola_Jaab",
-     "Tauwawa",
-     "Ten_of_Clubs",
-     "Ten_of_Hearts",
-     "Tih_Pikeh",
-     "Zokima-Rokima"
-    ],
-    "events": [
-     127,
-     128,
-     129,
-     130,
-     133,
-     134,
-     135,
-     136,
-     177,
-     178,
-     179,
-     180,
-     181,
-     182,
-     183,
-     185,
-     186,
-     187,
-     188,
-     189,
-     190,
-     191,
-     192,
-     193,
-     194,
-     195,
-     196,
-     202,
-     203,
-     204,
-     438,
-     473,
-     474,
-     475,
-     476,
-     687
-    ],
-    "event_finish_ids": [
-     687
-    ],
-    "key_items": [
-     "CREATURE_COUNTER_MAGIC_DOLL"
-    ],
-    "mission_status_sets": [
-     "0",
-     "1",
-     "2"
-    ],
-    "header": [
-     "!addmission 2 4",
-     "Rakoh Buuma      - !pos 106 -5 -23 241",
-     "Mokyokyo         - !pos -55 -8 227 238",
-     "Janshura-Rashura - !pos -227 -8 184 240",
-     "Zokima-Rokima    - !pos 0 -16 124 239",
-     "Moreno-Toeno - !pos 169 -1.25 159 238"
-    ],
-    "next_mission": null
-   },
-   "server_coverage": "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-WOTG-01",
+   "id": "SL-MSN-SD-1",
    "schema_version": "scenario-library-draft/1",
    "status": "draft",
    "tier": "characterized",
-   "domain": "missions-wotg",
-   "title": "Cavernous Maws",
+   "domain": "missions-nation",
+   "title": "San d'Oria mission 1: Smash The Orcish Scouts",
    "readable": {
-    "given": "Character with Wings of the Goddess mission 1 active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items PURE_WHITE_FEATHER are granted; mission advances to xi.mission.log_id.WOTG, xi.mission.id.wotg.BACK_TO_THE_BEGINNING."
+    "given": "Character on San d'Oria mission SMASH_THE_ORCISH_SCOUTS (area 0, mission 0) in a start-eligible state.",
+    "when": "Character interacts with the scripted NPCs (Grilau, Ambrotien, Endracion).",
+    "then": "Scripted events fire (csids 0x0034, 0x003d, 0x003e, 0x03F3, 0x03e8, 0x03e9); key items ANCIENT_SANDORIAN_BOOK."
    },
    "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/wotg/01_Cavernous_Maws.lua"
+    "dsp-branches@main:febdc00209: scripts/zones/Northern_San_dOria/npcs/Grilau.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Southern_San_dOria/npcs/Ambrotien.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Southern_San_dOria/npcs/Endracion.lua",
+    "dsp-branches@main:febdc00209: scripts/globals/missions.lua"
    ],
    "confidence": "medium",
    "evidence_class": [
@@ -2916,803 +1619,663 @@
    "execution_validated": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
-    "native_action": "talk_npc / walk_to / event_update / event_finish per script section",
+    "native_action": "talk_npc",
     "params": {
-     "npc_names_from_script": [],
-     "csids_in_script": [
-      500
-     ],
-     "event_finish_csids": [
-      500
-     ]
+     "talk_npc": 17723426
     },
     "typed_ids": {
-     "zones": [
-      "BATALLIA_DOWNS",
-      "ROLANBERRY_FIELDS",
-      "SAUROMUGUE_CHAMPAIGN"
+     "talk_npc": "npc_list id for Grilau (zone-resolved)",
+     "zone": 231,
+     "csids_in_scripts": [
+      "0x0034",
+      "0x003d",
+      "0x003e",
+      "0x03F3",
+      "0x03e8",
+      "0x03e9",
+      "0x03ea",
+      "0x03eb",
+      "0x03f0",
+      "0x03f1",
+      "0x03f2",
+      "0x03f3",
+      "0x03f5",
+      "0x03fc",
+      "0x03ff",
+      "0x0406",
+      "0x0409",
+      "0x040a",
+      "0x040b",
+      "0x040c",
+      "0x040d",
+      "0x040e",
+      "0x040f",
+      "0x0410",
+      "0x0413",
+      "0x0414",
+      "0x07d0",
+      "0x07d1",
+      "0x07d2",
+      "0x07d3",
+      "0x07d8",
+      "0x07d9",
+      "0x07da",
+      "0x07db",
+      "0x07dd",
+      "0x07e4",
+      "0x07e7",
+      "0x07ee"
      ],
-     "npc_entity_ids": "UNRESOLVED: no entity id is asserted; resolve names to ids per target server (never invented)",
      "key_items": [
-      "PURE_WHITE_FEATHER"
+      "ANCIENT_SANDORIAN_BOOK"
+     ],
+     "other_script_npcs": [
+      "Ambrotien",
+      "Endracion"
      ]
     },
     "expected_state": {
-     "event_active": true,
-     "mission_status_progress": [],
-     "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.BACK_TO_THE_BEGINNING"
+     "zone": 231,
+     "event_active": true
     },
-    "readback_collector": "event_active/event_id via scenario expectations; mission status and key items have NO scenario readback (gaps G-01/G-02)",
-    "oracle_rule": "Equals on event fields only; mission progress unobservable today",
+    "readback_collector": "scenario expectation event_active; mission status and key items have NO scenario readback (gaps G-01/G-02)",
+    "oracle_rule": "Equals(event_active, true)",
     "setup": [
-     "GM setup per script header: !addmission 5 0 (availability of GM commands via the headless `say` action is UNVERIFIED)",
-     "positions from script header (LSB coordinates, not re-verified): Batallia Downs       : !pos -48 0.1 435 105; Rolanberry Fields    : !pos -198 8 361 110; Sauromugue Champaign : !pos 369 8 -227 120"
+     "character in zone 231 near Grilau at (-241.987,7.999,57.887)",
+     "mission state precondition per script (current mission + status) NOT characterized",
+     "npc_list id vs client id offset still to be checked with dat-extractor"
     ],
     "interpretation": {
-     "PASS": "All expectations observed by readback: event opens with the scripted csid; mission transition itself is UNOBSERVABLE so at most partial",
+     "PASS": "All expectations observed by readback: event_active after talk_npc; mission advance unobservable today, so at most partial",
      "FAIL": "A readback was obtained and contradicts an expectation",
      "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
      "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
     }
    },
    "source_facts": {
-    "zones": [
-     "BATALLIA_DOWNS",
-     "ROLANBERRY_FIELDS",
-     "SAUROMUGUE_CHAMPAIGN"
-    ],
-    "npcs": [],
-    "events": [
-     500
-    ],
-    "event_finish_ids": [
-     500
-    ],
-    "key_items": [
-     "PURE_WHITE_FEATHER"
-    ],
-    "mission_status_sets": [],
-    "header": [
-     "!addmission 5 0",
-     "Batallia Downs       : !pos -48 0.1 435 105",
-     "Rolanberry Fields    : !pos -198 8 361 110",
-     "Sauromugue Champaign : !pos 369 8 -227 120"
-    ],
-    "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.BACK_TO_THE_BEGINNING"
-   },
-   "server_coverage": "LSB only. Not present in DSP main (no scripts/missions/wotg); Valhalla support unknown",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-WOTG-02",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "characterized",
-   "domain": "missions-wotg",
-   "title": "Back to the Beginning",
-   "readable": {
-    "given": "Character with Wings of the Goddess mission 2 active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items LIGHTSWORM are granted; mission advances to xi.mission.log_id.WOTG, xi.mission.id.wotg.CAIT_SITH."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/wotg/02_Back_to_the_Beginning.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "partial",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "xiheadless": {
-    "native_action": "talk_npc / walk_to / event_update / event_finish per script section",
-    "params": {
-     "npc_names_from_script": [],
-     "csids_in_script": [],
-     "event_finish_csids": []
-    },
-    "typed_ids": {
-     "zones": [
-      "BATALLIA_DOWNS",
-      "BATALLIA_DOWNS_S",
-      "ROLANBERRY_FIELDS",
-      "ROLANBERRY_FIELDS_S",
-      "SAUROMUGUE_CHAMPAIGN",
-      "SAUROMUGUE_CHAMPAIGN_S"
-     ],
-     "npc_entity_ids": "UNRESOLVED: no entity id is asserted; resolve names to ids per target server (never invented)",
-     "key_items": [
-      "LIGHTSWORM"
-     ]
-    },
-    "expected_state": {
-     "event_active": true,
-     "mission_status_progress": [],
-     "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.CAIT_SITH"
-    },
-    "readback_collector": "event_active/event_id via scenario expectations; mission status and key items have NO scenario readback (gaps G-01/G-02)",
-    "oracle_rule": "Equals on event fields only; mission progress unobservable today",
-    "setup": [
-     "GM setup per script header: !addmission 5 1 (availability of GM commands via the headless `say` action is UNVERIFIED)",
-     "positions from script header (LSB coordinates, not re-verified): Batallia Downs           : !pos -48 0.1 435 105; Rolanberry Fields        : !pos -198 8 361 110; Sauromugue Champaign     : !pos 369 8 -227 120; Batallia Downs [S]       : !pos -48 0 435 84"
-    ],
-    "interpretation": {
-     "PASS": "All expectations observed by readback: event opens with the scripted csid; mission transition itself is UNOBSERVABLE so at most partial",
-     "FAIL": "A readback was obtained and contradicts an expectation",
-     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
-     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
-    }
-   },
-   "source_facts": {
-    "zones": [
-     "BATALLIA_DOWNS",
-     "BATALLIA_DOWNS_S",
-     "ROLANBERRY_FIELDS",
-     "ROLANBERRY_FIELDS_S",
-     "SAUROMUGUE_CHAMPAIGN",
-     "SAUROMUGUE_CHAMPAIGN_S"
-    ],
-    "npcs": [],
-    "events": [],
-    "event_finish_ids": [],
-    "key_items": [
-     "LIGHTSWORM"
-    ],
-    "mission_status_sets": [],
-    "header": [
-     "!addmission 5 1",
-     "Batallia Downs           : !pos -48 0.1 435 105",
-     "Rolanberry Fields        : !pos -198 8 361 110",
-     "Sauromugue Champaign     : !pos 369 8 -227 120",
-     "Batallia Downs [S]       : !pos -48 0 435 84",
-     "Rolanberry Fields [S]    : !pos -198 8 360 91"
-    ],
-    "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.CAIT_SITH"
-   },
-   "server_coverage": "LSB only. Not present in DSP main (no scripts/missions/wotg); Valhalla support unknown",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-WOTG-03",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "characterized",
-   "domain": "missions-wotg",
-   "title": "Cait Sith",
-   "readable": {
-    "given": "Character with Wings of the Goddess mission 3 active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items LIGHTSWORM are granted; mission advances to xi.mission.log_id.WOTG, xi.mission.id.wotg.THE_QUEEN_OF_THE_DANCE."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/wotg/03_Cait_Sith.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "partial",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "xiheadless": {
-    "native_action": "talk_npc / walk_to / event_update / event_finish per script section",
-    "params": {
-     "npc_names_from_script": [],
-     "csids_in_script": [],
-     "event_finish_csids": [
-      67
-     ]
-    },
-    "typed_ids": {
-     "zones": [
-      "SOUTHERN_SAN_DORIA_S"
-     ],
-     "npc_entity_ids": "UNRESOLVED: no entity id is asserted; resolve names to ids per target server (never invented)",
-     "key_items": [
-      "LIGHTSWORM"
-     ]
-    },
-    "expected_state": {
-     "event_active": true,
-     "mission_status_progress": [],
-     "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.THE_QUEEN_OF_THE_DANCE"
-    },
-    "readback_collector": "event_active/event_id via scenario expectations; mission status and key items have NO scenario readback (gaps G-01/G-02)",
-    "oracle_rule": "Equals on event fields only; mission progress unobservable today",
-    "setup": [
-     "GM setup per script header: !addmission 5 2 (availability of GM commands via the headless `say` action is UNVERIFIED)"
-    ],
-    "interpretation": {
-     "PASS": "All expectations observed by readback: event opens with the scripted csid; mission transition itself is UNOBSERVABLE so at most partial",
-     "FAIL": "A readback was obtained and contradicts an expectation",
-     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
-     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
-    }
-   },
-   "source_facts": {
-    "zones": [
-     "SOUTHERN_SAN_DORIA_S"
-    ],
-    "npcs": [],
-    "events": [],
-    "event_finish_ids": [
-     67
-    ],
-    "key_items": [
-     "LIGHTSWORM"
-    ],
-    "mission_status_sets": [],
-    "header": [
-     "!addmission 5 2"
-    ],
-    "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.THE_QUEEN_OF_THE_DANCE"
-   },
-   "server_coverage": "LSB only. Not present in DSP main (no scripts/missions/wotg); Valhalla support unknown",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-WOTG-04",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "characterized",
-   "domain": "missions-wotg",
-   "title": "The Queen of the Dance",
-   "readable": {
-    "given": "Character with Wings of the Goddess mission 4 active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items MAYAKOV_SHOW_TICKET are granted; mission advances to xi.mission.log_id.WOTG, xi.mission.id.wotg.WHILE_THE_CAT_IS_AWAY."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/wotg/04_The_Queen_of_the_Dance.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "partial",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "xiheadless": {
-    "native_action": "talk_npc / walk_to / event_update / event_finish per script section",
-    "params": {
-     "npc_names_from_script": [
-      "Lion_Springs",
-      "Turlough"
-     ],
-     "csids_in_script": [
-      68,
-      69,
-      70,
-      10172
-     ],
-     "event_finish_csids": [
-      68,
-      70,
-      152,
-      153,
-      10172
-     ]
-    },
-    "typed_ids": {
-     "zones": [
-      "SOUTHERN_SAN_DORIA_S",
-      "UPPER_JEUNO"
-     ],
-     "npc_entity_ids": "UNRESOLVED: no entity id is asserted; resolve names to ids per target server (never invented)",
-     "key_items": [
-      "MAYAKOV_SHOW_TICKET"
-     ]
-    },
-    "expected_state": {
-     "event_active": true,
-     "mission_status_progress": [
-      "1",
-      "2",
-      "3",
-      "4"
-     ],
-     "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.WHILE_THE_CAT_IS_AWAY"
-    },
-    "readback_collector": "event_active/event_id via scenario expectations; mission status and key items have NO scenario readback (gaps G-01/G-02)",
-    "oracle_rule": "Equals on event fields only; mission progress unobservable today",
-    "setup": [
-     "GM setup per script header: !addmission 5 3 (availability of GM commands via the headless `say` action is UNVERIFIED)",
-     "positions from script header (LSB coordinates, not re-verified): Lion Springs Door : !pos 96 0 106 80; Turlough          : !pos -58.697 0.000 103.553 244"
-    ],
-    "interpretation": {
-     "PASS": "All expectations observed by readback: event opens with the scripted csid; mission transition itself is UNOBSERVABLE so at most partial",
-     "FAIL": "A readback was obtained and contradicts an expectation",
-     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
-     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
-    }
-   },
-   "source_facts": {
-    "zones": [
-     "SOUTHERN_SAN_DORIA_S",
-     "UPPER_JEUNO"
-    ],
     "npcs": [
-     "Lion_Springs",
-     "Turlough"
-    ],
-    "events": [
-     68,
-     69,
-     70,
-     10172
-    ],
-    "event_finish_ids": [
-     68,
-     70,
-     152,
-     153,
-     10172
-    ],
-    "key_items": [
-     "MAYAKOV_SHOW_TICKET"
-    ],
-    "mission_status_sets": [
-     "1",
-     "2",
-     "3",
-     "4"
-    ],
-    "header": [
-     "!addmission 5 3",
-     "Lion Springs Door : !pos 96 0 106 80",
-     "Turlough          : !pos -58.697 0.000 103.553 244"
-    ],
-    "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.WHILE_THE_CAT_IS_AWAY"
+     {
+      "npc": "Grilau",
+      "zone_dir": "Northern_San_dOria",
+      "startEvent": [
+       "0x0034",
+       "0x03e8",
+       "0x03e9",
+       "0x03ea",
+       "0x03eb",
+       "0x03f0",
+       "0x03f1",
+       "0x03f2",
+       "0x03f3",
+       "0x03f5",
+       "0x03fc",
+       "0x03ff",
+       "0x0406",
+       "0x0409",
+       "0x040b",
+       "0x040d",
+       "0x040f",
+       "0x0413"
+      ],
+      "keyitems": [
+       "ANCIENT_SANDORIAN_BOOK"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17723426,
+       "pos": [
+        "-241.987",
+        "7.999",
+        "57.887"
+       ]
+      }
+     },
+     {
+      "npc": "Ambrotien",
+      "zone_dir": "Southern_San_dOria",
+      "startEvent": [
+       "0x003e",
+       "0x040a",
+       "0x040c",
+       "0x040e",
+       "0x0410",
+       "0x0414",
+       "0x07d0",
+       "0x07d1",
+       "0x07d2",
+       "0x07d3",
+       "0x07d8",
+       "0x07d9",
+       "0x07da",
+       "0x07db",
+       "0x07dd",
+       "0x07e4",
+       "0x07e7",
+       "0x07ee"
+      ],
+      "keyitems": [
+       "ANCIENT_SANDORIAN_BOOK"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17719394,
+       "pos": [
+        "93.419",
+        "0.999",
+        "-57.347"
+       ]
+      }
+     },
+     {
+      "npc": "Endracion",
+      "zone_dir": "Southern_San_dOria",
+      "startEvent": [
+       "0x003d",
+       "0x03F3",
+       "0x03e8",
+       "0x03e9",
+       "0x03ea",
+       "0x03eb",
+       "0x03f0",
+       "0x03f1",
+       "0x03f2",
+       "0x03f5",
+       "0x03fc",
+       "0x03ff",
+       "0x0406",
+       "0x0409",
+       "0x040b",
+       "0x040d",
+       "0x040f",
+       "0x0413"
+      ],
+      "keyitems": [
+       "ANCIENT_SANDORIAN_BOOK"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17719393,
+       "pos": [
+        "-112.817",
+        "0.999",
+        "-37.190"
+       ]
+      }
+     }
+    ]
    },
-   "server_coverage": "LSB only. Not present in DSP main (no scripts/missions/wotg); Valhalla support unknown",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
+   "verification_flags": []
   },
   {
-   "id": "SL-MSN-WOTG-05",
+   "id": "SL-MSN-SD-2",
    "schema_version": "scenario-library-draft/1",
    "status": "draft",
-   "tier": "characterized",
-   "domain": "missions-wotg",
-   "title": "While the Cat is Away",
+   "tier": "candidate",
+   "domain": "missions-nation",
+   "title": "San d'Oria mission 2: Bat Hunt",
    "readable": {
-    "given": "Character with Wings of the Goddess mission 5 active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire; mission advances to xi.mission.log_id.WOTG, xi.mission.id.wotg.A_TIMESWEPT_BUTTERFLY."
+    "given": "Character on San d'Oria mission BAT_HUNT (area 0, mission 1) in a start-eligible state.",
+    "when": "Character interacts with the scripted NPCs (Tombstone, Grilau, Ambrotien, Endracion).",
+    "then": "Scripted events fire (csids 0x0002, 0x0003, 0x0004, 0x0008, 0x0034, 0x003d); key items ANCIENT_SANDORIAN_BOOK."
    },
    "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/wotg/05_While_the_Cat_is_Away.lua"
+    "dsp-branches@main:febdc00209: scripts/zones/King_Ranperres_Tomb/npcs/Tombstone.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Northern_San_dOria/npcs/Grilau.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Southern_San_dOria/npcs/Ambrotien.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Southern_San_dOria/npcs/Endracion.lua",
+    "dsp-branches@main:febdc00209: scripts/globals/missions.lua"
    ],
-   "confidence": "medium",
+   "confidence": "low",
    "evidence_class": [
     "source-supported"
    ],
-   "support_status": "partial",
+   "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
    "safety": "read-only observation; no execution performed in discovery",
-   "xiheadless": {
-    "native_action": "talk_npc / walk_to / event_update / event_finish per script section",
-    "params": {
-     "npc_names_from_script": [],
-     "csids_in_script": [],
-     "event_finish_csids": [
-      7
-     ]
-    },
-    "typed_ids": {
-     "zones": [
-      "EAST_RONFAURE_S"
-     ],
-     "npc_entity_ids": "UNRESOLVED: no entity id is asserted; resolve names to ids per target server (never invented)",
-     "key_items": []
-    },
-    "expected_state": {
-     "event_active": true,
-     "mission_status_progress": [],
-     "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.A_TIMESWEPT_BUTTERFLY"
-    },
-    "readback_collector": "event_active/event_id via scenario expectations; mission status and key items have NO scenario readback (gaps G-01/G-02)",
-    "oracle_rule": "Equals on event fields only; mission progress unobservable today",
-    "setup": [
-     "GM setup per script header: !addmission 5 4 (availability of GM commands via the headless `say` action is UNVERIFIED)"
-    ],
-    "interpretation": {
-     "PASS": "All expectations observed by readback: event opens with the scripted csid; mission transition itself is UNOBSERVABLE so at most partial",
-     "FAIL": "A readback was obtained and contradicts an expectation",
-     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
-     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
-    }
-   },
    "source_facts": {
-    "zones": [
-     "EAST_RONFAURE_S"
-    ],
-    "npcs": [],
-    "events": [],
-    "event_finish_ids": [
-     7
-    ],
-    "key_items": [],
-    "mission_status_sets": [],
-    "header": [
-     "!addmission 5 4"
-    ],
-    "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.A_TIMESWEPT_BUTTERFLY"
-   },
-   "server_coverage": "LSB only. Not present in DSP main (no scripts/missions/wotg); Valhalla support unknown",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-WOTG-06",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "characterized",
-   "domain": "missions-wotg",
-   "title": "A Timeswept Butterfly",
-   "readable": {
-    "given": "Character with Wings of the Goddess mission 6 active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire; mission advances to xi.mission.log_id.WOTG, xi.mission.id.wotg.PURPLE_THE_NEW_BLACK."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/wotg/06_A_Timeswept_Butterfly.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "partial",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "xiheadless": {
-    "native_action": "talk_npc / walk_to / event_update / event_finish per script section",
-    "params": {
-     "npc_names_from_script": [],
-     "csids_in_script": [],
-     "event_finish_csids": [
-      1
-     ]
-    },
-    "typed_ids": {
-     "zones": [
-      "LA_VAULE_S"
-     ],
-     "npc_entity_ids": "UNRESOLVED: no entity id is asserted; resolve names to ids per target server (never invented)",
-     "key_items": []
-    },
-    "expected_state": {
-     "event_active": true,
-     "mission_status_progress": [],
-     "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.PURPLE_THE_NEW_BLACK"
-    },
-    "readback_collector": "event_active/event_id via scenario expectations; mission status and key items have NO scenario readback (gaps G-01/G-02)",
-    "oracle_rule": "Equals on event fields only; mission progress unobservable today",
-    "setup": [
-     "GM setup per script header: !addmission 5 5 (availability of GM commands via the headless `say` action is UNVERIFIED)"
-    ],
-    "interpretation": {
-     "PASS": "All expectations observed by readback: event opens with the scripted csid; mission transition itself is UNOBSERVABLE so at most partial",
-     "FAIL": "A readback was obtained and contradicts an expectation",
-     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
-     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
-    }
-   },
-   "source_facts": {
-    "zones": [
-     "LA_VAULE_S"
-    ],
-    "npcs": [],
-    "events": [],
-    "event_finish_ids": [
-     1
-    ],
-    "key_items": [],
-    "mission_status_sets": [],
-    "header": [
-     "!addmission 5 5"
-    ],
-    "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.PURPLE_THE_NEW_BLACK"
-   },
-   "server_coverage": "LSB only. Not present in DSP main (no scripts/missions/wotg); Valhalla support unknown",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-WOTG-07",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "characterized",
-   "domain": "missions-wotg",
-   "title": "Purple, The New Black",
-   "readable": {
-    "given": "Character with Wings of the Goddess mission 7 active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire; mission advances to xi.mission.log_id.WOTG, xi.mission.id.wotg.IN_THE_NAME_OF_THE_FATHER."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/wotg/07_Purple_The_New_Black.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "partial",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "xiheadless": {
-    "native_action": "talk_npc / walk_to / event_update / event_finish per script section",
-    "params": {
-     "npc_names_from_script": [
-      "_2d1"
-     ],
-     "csids_in_script": [
-      2
-     ],
-     "event_finish_csids": [
-      2,
-      6,
-      32001
-     ]
-    },
-    "typed_ids": {
-     "zones": [
-      "LA_VAULE_S"
-     ],
-     "npc_entity_ids": "UNRESOLVED: no entity id is asserted; resolve names to ids per target server (never invented)",
-     "key_items": []
-    },
-    "expected_state": {
-     "event_active": true,
-     "mission_status_progress": [
-      "1",
-      "2"
-     ],
-     "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.IN_THE_NAME_OF_THE_FATHER"
-    },
-    "readback_collector": "event_active/event_id via scenario expectations; mission status and key items have NO scenario readback (gaps G-01/G-02)",
-    "oracle_rule": "Equals on event fields only; mission progress unobservable today",
-    "setup": [
-     "GM setup per script header: !addmission 5 6 (availability of GM commands via the headless `say` action is UNVERIFIED)",
-     "positions from script header (LSB coordinates, not re-verified): _2d1 (Reinforced Gateway) : !pos -114.386 -3.599 -179.804 85"
-    ],
-    "interpretation": {
-     "PASS": "All expectations observed by readback: event opens with the scripted csid; mission transition itself is UNOBSERVABLE so at most partial",
-     "FAIL": "A readback was obtained and contradicts an expectation",
-     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
-     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
-    }
-   },
-   "source_facts": {
-    "zones": [
-     "LA_VAULE_S"
-    ],
     "npcs": [
-     "_2d1"
-    ],
-    "events": [
-     2
-    ],
-    "event_finish_ids": [
-     2,
-     6,
-     32001
-    ],
-    "key_items": [],
-    "mission_status_sets": [
-     "1",
-     "2"
-    ],
-    "header": [
-     "!addmission 5 6",
-     "_2d1 (Reinforced Gateway) : !pos -114.386 -3.599 -179.804 85"
-    ],
-    "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.IN_THE_NAME_OF_THE_FATHER"
+     {
+      "npc": "Tombstone",
+      "zone_dir": "King_Ranperres_Tomb",
+      "startEvent": [
+       "0x0002",
+       "0x0003",
+       "0x0004",
+       "0x0008"
+      ],
+      "keyitems": [
+       "ANCIENT_SANDORIAN_BOOK"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Grilau",
+      "zone_dir": "Northern_San_dOria",
+      "startEvent": [
+       "0x0034",
+       "0x03e8",
+       "0x03e9",
+       "0x03ea",
+       "0x03eb",
+       "0x03f0",
+       "0x03f1",
+       "0x03f2",
+       "0x03f3",
+       "0x03f5",
+       "0x03fc",
+       "0x03ff",
+       "0x0406",
+       "0x0409",
+       "0x040b",
+       "0x040d",
+       "0x040f",
+       "0x0413"
+      ],
+      "keyitems": [
+       "ANCIENT_SANDORIAN_BOOK"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17723426,
+       "pos": [
+        "-241.987",
+        "7.999",
+        "57.887"
+       ]
+      }
+     },
+     {
+      "npc": "Ambrotien",
+      "zone_dir": "Southern_San_dOria",
+      "startEvent": [
+       "0x003e",
+       "0x040a",
+       "0x040c",
+       "0x040e",
+       "0x0410",
+       "0x0414",
+       "0x07d0",
+       "0x07d1",
+       "0x07d2",
+       "0x07d3",
+       "0x07d8",
+       "0x07d9",
+       "0x07da",
+       "0x07db",
+       "0x07dd",
+       "0x07e4",
+       "0x07e7",
+       "0x07ee"
+      ],
+      "keyitems": [
+       "ANCIENT_SANDORIAN_BOOK"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17719394,
+       "pos": [
+        "93.419",
+        "0.999",
+        "-57.347"
+       ]
+      }
+     },
+     {
+      "npc": "Endracion",
+      "zone_dir": "Southern_San_dOria",
+      "startEvent": [
+       "0x003d",
+       "0x03F3",
+       "0x03e8",
+       "0x03e9",
+       "0x03ea",
+       "0x03eb",
+       "0x03f0",
+       "0x03f1",
+       "0x03f2",
+       "0x03f5",
+       "0x03fc",
+       "0x03ff",
+       "0x0406",
+       "0x0409",
+       "0x040b",
+       "0x040d",
+       "0x040f",
+       "0x0413"
+      ],
+      "keyitems": [
+       "ANCIENT_SANDORIAN_BOOK"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17719393,
+       "pos": [
+        "-112.817",
+        "0.999",
+        "-37.190"
+       ]
+      }
+     }
+    ]
    },
-   "server_coverage": "LSB only. Not present in DSP main (no scripts/missions/wotg); Valhalla support unknown",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
+   "verification_flags": [
+    "npc_list id unresolved for: Tombstone"
+   ]
   },
   {
-   "id": "SL-MSN-WOTG-08",
+   "id": "SL-MSN-SD-3",
    "schema_version": "scenario-library-draft/1",
    "status": "draft",
-   "tier": "characterized",
-   "domain": "missions-wotg",
-   "title": "In the Name of the Father",
+   "tier": "candidate",
+   "domain": "missions-nation",
+   "title": "San d'Oria mission 3: Save The Children",
    "readable": {
-    "given": "Character with Wings of the Goddess mission 8 active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire; mission advances to xi.mission.log_id.WOTG, xi.mission.id.wotg.DANCERS_IN_DISTRESS."
+    "given": "Character on San d'Oria mission SAVE_THE_CHILDREN (area 0, mission 2) in a start-eligible state.",
+    "when": "Character interacts with the scripted NPCs (Hut_Door, Arnau).",
+    "then": "Scripted events fire (csids 0x0003, 0x0014, 0x0033, 0x0037, 0x02b5, 0x02b6); key items ORCISH_HUT_KEY."
    },
    "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/wotg/08_In_the_Name_of_the_Father.lua"
+    "dsp-branches@main:febdc00209: scripts/zones/Ghelsba_Outpost/npcs/Hut_Door.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Northern_San_dOria/npcs/Arnau.lua",
+    "dsp-branches@main:febdc00209: scripts/globals/missions.lua"
    ],
-   "confidence": "medium",
+   "confidence": "low",
    "evidence_class": [
     "source-supported"
    ],
-   "support_status": "partial",
+   "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
    "safety": "read-only observation; no execution performed in discovery",
-   "xiheadless": {
-    "native_action": "talk_npc / walk_to / event_update / event_finish per script section",
-    "params": {
-     "npc_names_from_script": [],
-     "csids_in_script": [
-      85
-     ],
-     "event_finish_csids": [
-      85
-     ]
-    },
-    "typed_ids": {
-     "zones": [
-      "SOUTHERN_SAN_DORIA_S"
-     ],
-     "npc_entity_ids": "UNRESOLVED: no entity id is asserted; resolve names to ids per target server (never invented)",
-     "key_items": []
-    },
-    "expected_state": {
-     "event_active": true,
-     "mission_status_progress": [],
-     "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.DANCERS_IN_DISTRESS"
-    },
-    "readback_collector": "event_active/event_id via scenario expectations; mission status and key items have NO scenario readback (gaps G-01/G-02)",
-    "oracle_rule": "Equals on event fields only; mission progress unobservable today",
-    "setup": [
-     "GM setup per script header: !addmission 5 7 (availability of GM commands via the headless `say` action is UNVERIFIED)",
-     "positions from script header (LSB coordinates, not re-verified): Lion Springs Door  : !pos 96 0 106 80"
-    ],
-    "interpretation": {
-     "PASS": "All expectations observed by readback: event opens with the scripted csid; mission transition itself is UNOBSERVABLE so at most partial",
-     "FAIL": "A readback was obtained and contradicts an expectation",
-     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
-     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
-    }
-   },
    "source_facts": {
-    "zones": [
-     "SOUTHERN_SAN_DORIA_S"
-    ],
-    "npcs": [],
-    "events": [
-     85
-    ],
-    "event_finish_ids": [
-     85
-    ],
-    "key_items": [],
-    "mission_status_sets": [],
-    "header": [
-     "!addmission 5 7",
-     "Lion Springs Door  : !pos 96 0 106 80"
-    ],
-    "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.DANCERS_IN_DISTRESS"
-   },
-   "server_coverage": "LSB only. Not present in DSP main (no scripts/missions/wotg); Valhalla support unknown",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
-  },
-  {
-   "id": "SL-MSN-WOTG-09",
-   "schema_version": "scenario-library-draft/1",
-   "status": "draft",
-   "tier": "characterized",
-   "domain": "missions-wotg",
-   "title": "Dancers in Distress",
-   "readable": {
-    "given": "Character with Wings of the Goddess mission 9 active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire; mission advances to xi.mission.log_id.WOTG, xi.mission.id.wotg.DAUGHTER_OF_A_KNIGHT."
-   },
-   "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/wotg/09_Dancers_in_Distress.lua"
-   ],
-   "confidence": "medium",
-   "evidence_class": [
-    "source-supported"
-   ],
-   "support_status": "partial",
-   "owner": "unassigned (discovery draft)",
-   "execution_validated": false,
-   "safety": "read-only observation; no execution performed in discovery",
-   "xiheadless": {
-    "native_action": "talk_npc / walk_to / event_update / event_finish per script section",
-    "params": {
-     "npc_names_from_script": [
-      "Lion_Springs"
-     ],
-     "csids_in_script": [
-      2,
-      3,
-      86
-     ],
-     "event_finish_csids": [
-      2,
-      3,
-      86
-     ]
-    },
-    "typed_ids": {
-     "zones": [
-      "JUGNER_FOREST_S",
-      "SOUTHERN_SAN_DORIA_S"
-     ],
-     "npc_entity_ids": "UNRESOLVED: no entity id is asserted; resolve names to ids per target server (never invented)",
-     "key_items": []
-    },
-    "expected_state": {
-     "event_active": true,
-     "mission_status_progress": [
-      "1",
-      "2"
-     ],
-     "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.DAUGHTER_OF_A_KNIGHT"
-    },
-    "readback_collector": "event_active/event_id via scenario expectations; mission status and key items have NO scenario readback (gaps G-01/G-02)",
-    "oracle_rule": "Equals on event fields only; mission progress unobservable today",
-    "setup": [
-     "GM setup per script header: !addmission 5 8 (availability of GM commands via the headless `say` action is UNVERIFIED)",
-     "positions from script header (LSB coordinates, not re-verified): Raustigne          : !pos 3.979 -1.999 44.456 80; Elegant_Footprints : !pos 46.387 0.117 318.210 82"
-    ],
-    "interpretation": {
-     "PASS": "All expectations observed by readback: event opens with the scripted csid; mission transition itself is UNOBSERVABLE so at most partial",
-     "FAIL": "A readback was obtained and contradicts an expectation",
-     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
-     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
-    }
-   },
-   "source_facts": {
-    "zones": [
-     "JUGNER_FOREST_S",
-     "SOUTHERN_SAN_DORIA_S"
-    ],
     "npcs": [
-     "Lion_Springs"
-    ],
-    "events": [
-     2,
-     3,
-     86
-    ],
-    "event_finish_ids": [
-     2,
-     3,
-     86
-    ],
-    "key_items": [],
-    "mission_status_sets": [
-     "1",
-     "2"
-    ],
-    "header": [
-     "!addmission 5 8",
-     "Raustigne          : !pos 3.979 -1.999 44.456 80",
-     "Elegant_Footprints : !pos 46.387 0.117 318.210 82"
-    ],
-    "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.DAUGHTER_OF_A_KNIGHT"
+     {
+      "npc": "Hut_Door",
+      "zone_dir": "Ghelsba_Outpost",
+      "startEvent": [
+       "0x0003",
+       "0x0037"
+      ],
+      "keyitems": [
+       "ORCISH_HUT_KEY"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Arnau",
+      "zone_dir": "Northern_San_dOria",
+      "startEvent": [
+       "0x0014",
+       "0x0033",
+       "0x02b5",
+       "0x02b6"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17723406,
+       "pos": [
+        "149.892",
+        "-0.601",
+        "141.873"
+       ]
+      }
+     }
+    ]
    },
-   "server_coverage": "LSB only. Not present in DSP main (no scripts/missions/wotg); Valhalla support unknown",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
+   "verification_flags": [
+    "npc_list id unresolved for: Hut_Door"
+   ]
   },
   {
-   "id": "SL-MSN-WOTG-10",
+   "id": "SL-MSN-SD-4",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-nation",
+   "title": "San d'Oria mission 4: The Rescue Drill",
+   "readable": {
+    "given": "Character on San d'Oria mission THE_RESCUE_DRILL (area 0, mission 3) in a start-eligible state.",
+    "when": "Character interacts with the scripted NPCs (Augevinne, Deaufrain, Equesobillot, Galaihaurat).",
+    "then": "Scripted events fire (csids 0x0001, 0x0002, 0x0005, 0x0065, 0x0066, 0x0067); key items RESCUE_TRAINING_CERTIFICATE."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/La_Theine_Plateau/npcs/Augevinne.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/La_Theine_Plateau/npcs/Deaufrain.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/La_Theine_Plateau/npcs/Equesobillot.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/La_Theine_Plateau/npcs/Galaihaurat.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/La_Theine_Plateau/npcs/Laurisse.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/La_Theine_Plateau/npcs/Narvecaint.lua",
+    "dsp-branches@main:febdc00209: scripts/globals/missions.lua"
+   ],
+   "confidence": "low",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "npcs": [
+     {
+      "npc": "Augevinne",
+      "zone_dir": "La_Theine_Plateau",
+      "startEvent": [
+       "0x0067"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Deaufrain",
+      "zone_dir": "La_Theine_Plateau",
+      "startEvent": [
+       "0x0066",
+       "0x0071"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Equesobillot",
+      "zone_dir": "La_Theine_Plateau",
+      "startEvent": [
+       "0x0065",
+       "0x0070"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Galaihaurat",
+      "zone_dir": "La_Theine_Plateau",
+      "startEvent": [
+       "0x006e",
+       "0x0072"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Laurisse",
+      "zone_dir": "La_Theine_Plateau",
+      "startEvent": [
+       "0x006a",
+       "0x006d"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Narvecaint",
+      "zone_dir": "La_Theine_Plateau",
+      "startEvent": [
+       "0x006b"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Vicorpasse",
+      "zone_dir": "La_Theine_Plateau",
+      "startEvent": [
+       "0x0005",
+       "0x006c",
+       "0x0073"
+      ],
+      "keyitems": [
+       "RESCUE_TRAINING_CERTIFICATE"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Yaucevouchat",
+      "zone_dir": "La_Theine_Plateau",
+      "startEvent": [
+       "0x0068"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Ruillont",
+      "zone_dir": "Ordelles_Caves",
+      "startEvent": [
+       "0x0001",
+       "0x0002"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": null
+     }
+    ]
+   },
+   "verification_flags": [
+    "npc_list id unresolved for: Augevinne, Deaufrain, Equesobillot, Galaihaurat, Laurisse, Narvecaint, Vicorpasse, Yaucevouchat, Ruillont"
+   ]
+  },
+  {
+   "id": "SL-MSN-SD-5",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-nation",
+   "title": "San d'Oria mission 5: The Davoi Report",
+   "readable": {
+    "given": "Character on San d'Oria mission THE_DAVOI_REPORT (area 0, mission 4) in a start-eligible state.",
+    "when": "Character interacts with the scripted NPCs (!, Zantaviat, _6fc).",
+    "then": "Scripted events fire (csids 0x0007, 0x0008, 0x0009, 0x0064, 0x0065, 0x0066); key items ANCIENT_SANDORIAN_TABLET, EAST_BLOCK_CODE, LOST_DOCUMENT."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Davoi/npcs/!.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Davoi/npcs/Zantaviat.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Northern_San_dOria/npcs/_6fc.lua",
+    "dsp-branches@main:febdc00209: scripts/globals/missions.lua"
+   ],
+   "confidence": "low",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "npcs": [
+     {
+      "npc": "!",
+      "zone_dir": "Davoi",
+      "startEvent": [],
+      "keyitems": [
+       "EAST_BLOCK_CODE",
+       "LOST_DOCUMENT",
+       "NORTH_BLOCK_CODE",
+       "SOUTH_BLOCK_CODE"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Zantaviat",
+      "zone_dir": "Davoi",
+      "startEvent": [
+       "0x0064",
+       "0x0065",
+       "0x0066",
+       "0x0068",
+       "0x0069"
+      ],
+      "keyitems": [
+       "EAST_BLOCK_CODE",
+       "LOST_DOCUMENT",
+       "NORTH_BLOCK_CODE",
+       "SOUTH_BLOCK_CODE",
+       "TEMPLE_KNIGHTS_DAVOI_REPORT"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_6fc",
+      "zone_dir": "Northern_San_dOria",
+      "startEvent": [
+       "0x0007",
+       "0x0008",
+       "0x0009",
+       "0x02b7"
+      ],
+      "keyitems": [
+       "ANCIENT_SANDORIAN_TABLET",
+       "TEMPLE_KNIGHTS_DAVOI_REPORT"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17723548,
+       "pos": [
+        "130.327",
+        "-13.002",
+        "122.323"
+       ]
+      }
+     }
+    ]
+   },
+   "verification_flags": [
+    "npc_list id unresolved for: !, Zantaviat"
+   ]
+  },
+  {
+   "id": "SL-MSN-BA-1",
    "schema_version": "scenario-library-draft/1",
    "status": "draft",
    "tier": "characterized",
-   "domain": "missions-wotg",
-   "title": "Daughter of a Knight",
+   "domain": "missions-nation",
+   "title": "Bastok mission 1: The Zeruhn Report",
    "readable": {
-    "given": "Character with Wings of the Goddess mission 10 active (script check(): current mission and mission status).",
-    "when": "Character performs the scripted section (see source_facts.npcs/events).",
-    "then": "Scripted events fire and key items BOTTLE_OF_TREANT_TONIC, CERNUNNOS_RESIN are granted; mission advances to xi.mission.log_id.WOTG, xi.mission.id.wotg.A_SPOONFUL_OF_SUGAR."
+    "given": "Character on Bastok mission THE_ZERUHN_REPORT (area 1, mission 0) in a start-eligible state.",
+    "when": "Character interacts with the scripted NPCs (Cleades, Rashid, Malduc, Naji).",
+    "then": "Scripted events fire (csids 0x0068, 0x0079, 0x02C6, 0x02bc, 0x02c7, 0x02c9); key items BURNT_SEAL, C_L_REPORTS, KINDRED_REPORT."
    },
    "provenance": [
-    "LandSandBoat landsandboat-latest@5f77448970: scripts/missions/wotg/10_Daughter_of_a_Knight.lua"
+    "dsp-branches@main:febdc00209: scripts/zones/Bastok_Markets/npcs/Cleades.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Bastok_Mines/npcs/Rashid.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Metalworks/npcs/Malduc.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Metalworks/npcs/Naji.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Port_Bastok/npcs/Argus.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Zeruhn_Mines/npcs/Makarim.lua",
+    "dsp-branches@main:febdc00209: scripts/globals/missions.lua"
    ],
    "confidence": "medium",
    "evidence_class": [
@@ -3723,118 +2286,1930 @@
    "execution_validated": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
-    "native_action": "talk_npc / walk_to / event_update / event_finish per script section",
+    "native_action": "talk_npc",
     "params": {
-     "npc_names_from_script": [],
-     "csids_in_script": [
-      33,
-      34,
-      935,
-      936,
-      937,
-      938,
-      939,
-      940,
-      941
-     ],
-     "event_finish_csids": [
-      33,
-      34,
-      935,
-      936,
-      937,
-      939,
-      940,
-      941
-     ]
+     "talk_npc": 17739827
     },
     "typed_ids": {
-     "zones": [
-      "JUGNER_FOREST",
-      "JUGNER_FOREST_S",
-      "SOUTHERN_SAN_DORIA"
+     "talk_npc": "npc_list id for Cleades (zone-resolved)",
+     "zone": 235,
+     "csids_in_scripts": [
+      "0x0068",
+      "0x0079",
+      "0x02C6",
+      "0x02bc",
+      "0x02c7",
+      "0x02c9",
+      "0x02ca",
+      "0x02d0",
+      "0x02d1",
+      "0x02d2",
+      "0x02ee",
+      "0x02f9",
+      "0x02fa",
+      "0x03E8",
+      "0x03E9",
+      "0x03EA",
+      "0x03ED",
+      "0x03EE",
+      "0x03F0",
+      "0x03F2",
+      "0x03eb"
      ],
-     "npc_entity_ids": "UNRESOLVED: no entity id is asserted; resolve names to ids per target server (never invented)",
      "key_items": [
-      "BOTTLE_OF_TREANT_TONIC",
-      "CERNUNNOS_RESIN"
+      "BURNT_SEAL",
+      "C_L_REPORTS",
+      "KINDRED_REPORT",
+      "LETTER_TO_THE_CONSULS_BASTOK",
+      "MESSAGE_TO_JEUNO_BASTOK",
+      "NEW_FEIYIN_SEAL",
+      "SMILING_STONE",
+      "YASINS_SWORD",
+      "ZERUHN_REPORT"
+     ],
+     "other_script_npcs": [
+      "Rashid",
+      "Malduc",
+      "Naji",
+      "Argus",
+      "Makarim"
      ]
     },
     "expected_state": {
-     "event_active": true,
-     "mission_status_progress": [
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-      "6"
-     ],
-     "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.A_SPOONFUL_OF_SUGAR"
+     "zone": 235,
+     "event_active": true
     },
-    "readback_collector": "event_active/event_id via scenario expectations; mission status and key items have NO scenario readback (gaps G-01/G-02)",
-    "oracle_rule": "Equals on event fields only; mission progress unobservable today",
+    "readback_collector": "scenario expectation event_active; mission status and key items have NO scenario readback (gaps G-01/G-02)",
+    "oracle_rule": "Equals(event_active, true)",
     "setup": [
-     "GM setup per script header: !addmission 5 9 (availability of GM commands via the headless `say` action is UNVERIFIED)",
-     "positions from script header (LSB coordinates, not re-verified): Amaura                     : !pos -84.367 -6.949 91.148 230; Humus-rich Earth (past)    : !pos -510.535 7.568 289.283 82; Humus-rich Earth (present) : !pos -510.535 7.568 289.283 104"
+     "character in zone 235 near Cleades at (-361.905,-10.019,-169.127)",
+     "mission state precondition per script (current mission + status) NOT characterized",
+     "npc_list id vs client id offset still to be checked with dat-extractor"
     ],
     "interpretation": {
-     "PASS": "All expectations observed by readback: event opens with the scripted csid; mission transition itself is UNOBSERVABLE so at most partial",
+     "PASS": "All expectations observed by readback: event_active after talk_npc; mission advance unobservable today, so at most partial",
      "FAIL": "A readback was obtained and contradicts an expectation",
      "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
      "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
     }
    },
    "source_facts": {
-    "zones": [
-     "JUGNER_FOREST",
-     "JUGNER_FOREST_S",
-     "SOUTHERN_SAN_DORIA"
-    ],
-    "npcs": [],
-    "events": [
-     33,
-     34,
-     935,
-     936,
-     937,
-     938,
-     939,
-     940,
-     941
-    ],
-    "event_finish_ids": [
-     33,
-     34,
-     935,
-     936,
-     937,
-     939,
-     940,
-     941
-    ],
-    "key_items": [
-     "BOTTLE_OF_TREANT_TONIC",
-     "CERNUNNOS_RESIN"
-    ],
-    "mission_status_sets": [
-     "1",
-     "2",
-     "3",
-     "4",
-     "5",
-     "6"
-    ],
-    "header": [
-     "!addmission 5 9",
-     "Amaura                     : !pos -84.367 -6.949 91.148 230",
-     "Humus-rich Earth (past)    : !pos -510.535 7.568 289.283 82",
-     "Humus-rich Earth (present) : !pos -510.535 7.568 289.283 104"
-    ],
-    "next_mission": "xi.mission.log_id.WOTG, xi.mission.id.wotg.A_SPOONFUL_OF_SUGAR"
+    "npcs": [
+     {
+      "npc": "Cleades",
+      "zone_dir": "Bastok_Markets",
+      "startEvent": [
+       "0x03E8",
+       "0x03E9",
+       "0x03EA",
+       "0x03ED",
+       "0x03EE",
+       "0x03F0",
+       "0x03F2",
+       "0x03eb"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17739827,
+       "pos": [
+        "-361.905",
+        "-10.019",
+        "-169.127"
+       ]
+      }
+     },
+     {
+      "npc": "Rashid",
+      "zone_dir": "Bastok_Mines",
+      "startEvent": [
+       "0x03E8",
+       "0x03E9",
+       "0x03EA",
+       "0x03ED",
+       "0x03EE",
+       "0x03F0",
+       "0x03F2",
+       "0x03eb"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17735686,
+       "pos": [
+        "-8.444",
+        "-1.000",
+        "-123.575"
+       ]
+      }
+     },
+     {
+      "npc": "Malduc",
+      "zone_dir": "Metalworks",
+      "startEvent": [
+       "0x03E8",
+       "0x03E9",
+       "0x03EA",
+       "0x03ED",
+       "0x03EE",
+       "0x03F0",
+       "0x03F2",
+       "0x03eb"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17748017,
+       "pos": [
+        "66.200",
+        "-13.999",
+        "4.426"
+       ]
+      }
+     },
+     {
+      "npc": "Naji",
+      "zone_dir": "Metalworks",
+      "startEvent": [
+       "0x02C6",
+       "0x02bc",
+       "0x02c7",
+       "0x02c9",
+       "0x02ca",
+       "0x02d0",
+       "0x02d1",
+       "0x02d2",
+       "0x02ee",
+       "0x02f9",
+       "0x02fa"
+      ],
+      "keyitems": [
+       "BURNT_SEAL",
+       "C_L_REPORTS",
+       "KINDRED_REPORT",
+       "LETTER_TO_THE_CONSULS_BASTOK",
+       "MESSAGE_TO_JEUNO_BASTOK",
+       "NEW_FEIYIN_SEAL",
+       "SMILING_STONE",
+       "YASINS_SWORD",
+       "ZERUHN_REPORT"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17748013,
+       "pos": [
+        "66.865",
+        "-13.999",
+        "-4.562"
+       ]
+      }
+     },
+     {
+      "npc": "Argus",
+      "zone_dir": "Port_Bastok",
+      "startEvent": [
+       "0x03E8",
+       "0x03E9",
+       "0x03EA",
+       "0x03ED",
+       "0x03EE",
+       "0x03F0",
+       "0x03F2",
+       "0x03eb"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17743873,
+       "pos": [
+        "132.157",
+        "8.496",
+        "-2.187"
+       ]
+      }
+     },
+     {
+      "npc": "Makarim",
+      "zone_dir": "Zeruhn_Mines",
+      "startEvent": [
+       "0x0068",
+       "0x0079"
+      ],
+      "keyitems": [
+       "ZERUHN_REPORT"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     }
+    ]
    },
-   "server_coverage": "LSB only. Not present in DSP main (no scripts/missions/wotg); Valhalla support unknown",
-   "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"
+   "verification_flags": [
+    "npc_list id unresolved for: Makarim"
+   ]
+  },
+  {
+   "id": "SL-MSN-BA-2",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-nation",
+   "title": "Bastok mission 2: Geological Survey",
+   "readable": {
+    "given": "Character on Bastok mission GEOLOGICAL_SURVEY (area 1, mission 1) in a start-eligible state.",
+    "when": "Character interacts with the scripted NPCs (Cid).",
+    "then": "Scripted events fire (csids 0x01f4, 0x01f6, 0x01f7, 0x01f8, 0x01f9, 0x01fa); key items BLUE_ACIDITY_TESTER, C_L_REPORTS, LETTERS_FROM_ULMIA_AND_PRISHE."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Metalworks/npcs/Cid.lua",
+    "dsp-branches@main:febdc00209: scripts/globals/missions.lua"
+   ],
+   "confidence": "low",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "npcs": [
+     {
+      "npc": "Cid",
+      "zone_dir": "Metalworks",
+      "startEvent": [
+       "0x01f4",
+       "0x01f6",
+       "0x01f7",
+       "0x01f8",
+       "0x01f9",
+       "0x01fa",
+       "0x01fb",
+       "0x01fc",
+       "0x01fd",
+       "0x02f8",
+       "0x02fb",
+       "0x02fc",
+       "0x034D",
+       "0x034F",
+       "0x0351",
+       "0x0352",
+       "0x0354",
+       "0x0355",
+       "0x0356",
+       "0x0357",
+       "0x0358",
+       "0x0359",
+       "0x037A",
+       "0x037C",
+       "0x0381"
+      ],
+      "keyitems": [
+       "BLUE_ACIDITY_TESTER",
+       "C_L_REPORTS",
+       "LETTERS_FROM_ULMIA_AND_PRISHE",
+       "RED_ACIDITY_TESTER",
+       "UNFINISHED_LETTER"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17748011,
+       "pos": [
+        "-12.598",
+        "-10.988",
+        "2.430"
+       ]
+      }
+     }
+    ]
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-MSN-BA-3",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-nation",
+   "title": "Bastok mission 3: Fetichism",
+   "readable": {
+    "given": "Character on Bastok mission FETICHISM (area 1, mission 2) in a start-eligible state.",
+    "when": "Character interacts with the scripted NPCs (Cleades, Lamepaue, Rashid, Malduc).",
+    "then": "Scripted events fire (csids 0x0002, 0x000C, 0x0012, 0x0034, 0x0037, 0x0085)."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Bastok_Markets/npcs/Cleades.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Bastok_Markets/npcs/Lamepaue.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Bastok_Mines/npcs/Rashid.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Metalworks/npcs/Malduc.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Port_Bastok/npcs/Argus.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Port_Bastok/npcs/Dalba.lua",
+    "dsp-branches@main:febdc00209: scripts/globals/missions.lua"
+   ],
+   "confidence": "low",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "npcs": [
+     {
+      "npc": "Cleades",
+      "zone_dir": "Bastok_Markets",
+      "startEvent": [
+       "0x03E8",
+       "0x03E9",
+       "0x03EA",
+       "0x03ED",
+       "0x03EE",
+       "0x03F0",
+       "0x03F2",
+       "0x03eb"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17739827,
+       "pos": [
+        "-361.905",
+        "-10.019",
+        "-169.127"
+       ]
+      }
+     },
+     {
+      "npc": "Lamepaue",
+      "zone_dir": "Bastok_Markets",
+      "startEvent": [
+       "0x000C",
+       "0x0012",
+       "0x00B9",
+       "0x00F3",
+       "0x0102",
+       "0x0146",
+       "0x0149",
+       "0x014C",
+       "0x014E",
+       "0x0156",
+       "0x0192",
+       "0x0193",
+       "0x0194",
+       "0x0195",
+       "0x0196",
+       "0x019B",
+       "0x01B2",
+       "0x01B5",
+       "0x01B7",
+       "0x01B9",
+       "0x01DB",
+       "0x01DD",
+       "0x01DF",
+       "0x01E1",
+       "0x01E3",
+       "0x01E5",
+       "0x01EA",
+       "0x03F0",
+       "0x03F2"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17739872,
+       "pos": [
+        "-172.136",
+        "-4.000",
+        "-69.632"
+       ]
+      }
+     },
+     {
+      "npc": "Rashid",
+      "zone_dir": "Bastok_Mines",
+      "startEvent": [
+       "0x03E8",
+       "0x03E9",
+       "0x03EA",
+       "0x03ED",
+       "0x03EE",
+       "0x03F0",
+       "0x03F2",
+       "0x03eb"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17735686,
+       "pos": [
+        "-8.444",
+        "-1.000",
+        "-123.575"
+       ]
+      }
+     },
+     {
+      "npc": "Malduc",
+      "zone_dir": "Metalworks",
+      "startEvent": [
+       "0x03E8",
+       "0x03E9",
+       "0x03EA",
+       "0x03ED",
+       "0x03EE",
+       "0x03F0",
+       "0x03F2",
+       "0x03eb"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17748017,
+       "pos": [
+        "66.200",
+        "-13.999",
+        "4.426"
+       ]
+      }
+     },
+     {
+      "npc": "Argus",
+      "zone_dir": "Port_Bastok",
+      "startEvent": [
+       "0x03E8",
+       "0x03E9",
+       "0x03EA",
+       "0x03ED",
+       "0x03EE",
+       "0x03F0",
+       "0x03F2",
+       "0x03eb"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17743873,
+       "pos": [
+        "132.157",
+        "8.496",
+        "-2.187"
+       ]
+      }
+     },
+     {
+      "npc": "Dalba",
+      "zone_dir": "Port_Bastok",
+      "startEvent": [
+       "0x0002",
+       "0x0034",
+       "0x0037",
+       "0x0085",
+       "0x0088",
+       "0x00B9",
+       "0x00BA",
+       "0x00E7",
+       "0x00E8",
+       "0x00E9",
+       "0x00EA",
+       "0x00F0",
+       "0x00F1",
+       "0x00F2",
+       "0x00F5",
+       "0x00F6",
+       "0x00FA",
+       "0x0100",
+       "0x0102",
+       "0x0104",
+       "0x0105",
+       "0x0107",
+       "0x0108",
+       "0x010E",
+       "0x0110",
+       "0x0112",
+       "0x0113",
+       "0x011E",
+       "0x0121",
+       "0x0122",
+       "0x0128",
+       "0x0131",
+       "0x0132",
+       "0x0133",
+       "0x0135",
+       "0x03F0",
+       "0x03F2",
+       "0x7549"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17744016,
+       "pos": [
+        "-174.101",
+        "-6.000",
+        "-19.611"
+       ]
+      }
+     }
+    ]
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-MSN-BA-4",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-nation",
+   "title": "Bastok mission 4: The Crystal Line",
+   "readable": {
+    "given": "Character on Bastok mission THE_CRYSTAL_LINE (area 1, mission 3) in a start-eligible state.",
+    "when": "Character interacts with the scripted NPCs (Ayame, Cid, Naji).",
+    "then": "Scripted events fire (csids 0x01f4, 0x01f6, 0x01f7, 0x01f8, 0x01f9, 0x01fa); key items BLUE_ACIDITY_TESTER, BURNT_SEAL, C_L_REPORTS."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Metalworks/npcs/Ayame.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Metalworks/npcs/Cid.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Metalworks/npcs/Naji.lua",
+    "dsp-branches@main:febdc00209: scripts/globals/missions.lua"
+   ],
+   "confidence": "low",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "npcs": [
+     {
+      "npc": "Ayame",
+      "zone_dir": "Metalworks",
+      "startEvent": [
+       "0x02bd",
+       "0x02c8",
+       "0x02ec",
+       "0x02ed",
+       "0x03a7"
+      ],
+      "keyitems": [
+       "C_L_REPORTS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17748015,
+       "pos": [
+        "133.972",
+        "-18.983",
+        "33.288"
+       ]
+      }
+     },
+     {
+      "npc": "Cid",
+      "zone_dir": "Metalworks",
+      "startEvent": [
+       "0x01f4",
+       "0x01f6",
+       "0x01f7",
+       "0x01f8",
+       "0x01f9",
+       "0x01fa",
+       "0x01fb",
+       "0x01fc",
+       "0x01fd",
+       "0x02f8",
+       "0x02fb",
+       "0x02fc",
+       "0x034D",
+       "0x034F",
+       "0x0351",
+       "0x0352",
+       "0x0354",
+       "0x0355",
+       "0x0356",
+       "0x0357",
+       "0x0358",
+       "0x0359",
+       "0x037A",
+       "0x037C",
+       "0x0381"
+      ],
+      "keyitems": [
+       "BLUE_ACIDITY_TESTER",
+       "C_L_REPORTS",
+       "LETTERS_FROM_ULMIA_AND_PRISHE",
+       "RED_ACIDITY_TESTER",
+       "UNFINISHED_LETTER"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17748011,
+       "pos": [
+        "-12.598",
+        "-10.988",
+        "2.430"
+       ]
+      }
+     },
+     {
+      "npc": "Naji",
+      "zone_dir": "Metalworks",
+      "startEvent": [
+       "0x02C6",
+       "0x02bc",
+       "0x02c7",
+       "0x02c9",
+       "0x02ca",
+       "0x02d0",
+       "0x02d1",
+       "0x02d2",
+       "0x02ee",
+       "0x02f9",
+       "0x02fa"
+      ],
+      "keyitems": [
+       "BURNT_SEAL",
+       "C_L_REPORTS",
+       "KINDRED_REPORT",
+       "LETTER_TO_THE_CONSULS_BASTOK",
+       "MESSAGE_TO_JEUNO_BASTOK",
+       "NEW_FEIYIN_SEAL",
+       "SMILING_STONE",
+       "YASINS_SWORD",
+       "ZERUHN_REPORT"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17748013,
+       "pos": [
+        "66.865",
+        "-13.999",
+        "-4.562"
+       ]
+      }
+     }
+    ]
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-MSN-BA-5",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-nation",
+   "title": "Bastok mission 5: Wading Beasts",
+   "readable": {
+    "given": "Character on Bastok mission WADING_BEASTS (area 1, mission 4) in a start-eligible state.",
+    "when": "Character interacts with the scripted NPCs (Alois).",
+    "then": "Scripted events fire (csids 0x0172, 0x0174, 0x0175, 0x0305, 0x0306, 0x0307)."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Metalworks/npcs/Alois.lua",
+    "dsp-branches@main:febdc00209: scripts/globals/missions.lua"
+   ],
+   "confidence": "low",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "npcs": [
+     {
+      "npc": "Alois",
+      "zone_dir": "Metalworks",
+      "startEvent": [
+       "0x0172",
+       "0x0174",
+       "0x0175",
+       "0x0305",
+       "0x0306",
+       "0x0307",
+       "0x0308"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17747997,
+       "pos": [
+        "97.738",
+        "-20.170",
+        "14.640"
+       ]
+      }
+     }
+    ]
+   },
+   "verification_flags": []
+  },
+  {
+   "id": "SL-MSN-WI-1",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-nation",
+   "title": "Windurst mission 1: The Horutoto Ruins Experiment",
+   "readable": {
+    "given": "Character on Windurst mission THE_HORUTOTO_RUINS_EXPERIMENT (area 2, mission 0) in a start-eligible state.",
+    "when": "Character interacts with the scripted NPCs (Sama_Gohjima, _5c5, _5cp, _5cq).",
+    "then": "Scripted events fire (csids 0x002A, 0x002b, 0x0030, 0x0031, 0x0032, 0x0033); key items CRACKED_MANA_ORBS, MESSAGE_TO_JEUNO_WINDURST, SOUTHWESTERN_STAR_CHARM."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/East_Sarutabaruta/npcs/Sama_Gohjima.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Inner_Horutoto_Ruins/npcs/_5c5.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Inner_Horutoto_Ruins/npcs/_5cp.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Inner_Horutoto_Ruins/npcs/_5cq.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Inner_Horutoto_Ruins/npcs/_5cr.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Inner_Horutoto_Ruins/npcs/_5cs.lua",
+    "dsp-branches@main:febdc00209: scripts/globals/missions.lua"
+   ],
+   "confidence": "low",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "npcs": [
+     {
+      "npc": "Sama_Gohjima",
+      "zone_dir": "East_Sarutabaruta",
+      "startEvent": [
+       "0x002b"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_5c5",
+      "zone_dir": "Inner_Horutoto_Ruins",
+      "startEvent": [
+       "0x002A"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_5cp",
+      "zone_dir": "Inner_Horutoto_Ruins",
+      "startEvent": [
+       "0x0030",
+       "0x0031"
+      ],
+      "keyitems": [
+       "CRACKED_MANA_ORBS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_5cq",
+      "zone_dir": "Inner_Horutoto_Ruins",
+      "startEvent": [
+       "0x0032",
+       "0x0033"
+      ],
+      "keyitems": [
+       "CRACKED_MANA_ORBS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_5cr",
+      "zone_dir": "Inner_Horutoto_Ruins",
+      "startEvent": [
+       "0x0034",
+       "0x0035"
+      ],
+      "keyitems": [
+       "CRACKED_MANA_ORBS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_5cs",
+      "zone_dir": "Inner_Horutoto_Ruins",
+      "startEvent": [
+       "0x0036",
+       "0x0037"
+      ],
+      "keyitems": [
+       "CRACKED_MANA_ORBS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_5ct",
+      "zone_dir": "Inner_Horutoto_Ruins",
+      "startEvent": [
+       "0x0038",
+       "0x0039"
+      ],
+      "keyitems": [
+       "CRACKED_MANA_ORBS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_5cu",
+      "zone_dir": "Inner_Horutoto_Ruins",
+      "startEvent": [
+       "0x003a",
+       "0x003b"
+      ],
+      "keyitems": [
+       "CRACKED_MANA_ORBS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Hakkuru-Rinkuru",
+      "zone_dir": "Port_Windurst",
+      "startEvent": [
+       "0x005a",
+       "0x005b",
+       "0x005e",
+       "0x0093",
+       "0x00e0",
+       "0x0103",
+       "0x0104",
+       "0x0109",
+       "0x010b",
+       "0x0112",
+       "0x0113",
+       "0x0115",
+       "0x0116",
+       "0x01C8",
+       "0x01C9"
+      ],
+      "keyitems": [
+       "SOUTHWESTERN_STAR_CHARM"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17760266,
+       "pos": [
+        "-133.714",
+        "-4.000",
+        "147.398"
+       ]
+      }
+     },
+     {
+      "npc": "Janshura-Rashura",
+      "zone_dir": "Port_Windurst",
+      "startEvent": [
+       "0x0047",
+       "0x004c",
+       "0x004e",
+       "0x0053",
+       "0x0068",
+       "0x006d",
+       "0x00a3"
+      ],
+      "keyitems": [
+       "MESSAGE_TO_JEUNO_WINDURST",
+       "STAR_CRESTED_SUMMONS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17760269,
+       "pos": [
+        "-230.626",
+        "-8.400",
+        "184.050"
+       ]
+      }
+     },
+     {
+      "npc": "Zokima-Rokima",
+      "zone_dir": "Windurst_Walls",
+      "startEvent": [
+       "0x0057",
+       "0x005b",
+       "0x005d",
+       "0x0060",
+       "0x006a",
+       "0x006f",
+       "0x0096"
+      ],
+      "keyitems": [
+       "MESSAGE_TO_JEUNO_WINDURST",
+       "STAR_CRESTED_SUMMONS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17756171,
+       "pos": [
+        "0.000",
+        "-16.749",
+        "127.000"
+       ]
+      }
+     },
+     {
+      "npc": "Mokyokyo",
+      "zone_dir": "Windurst_Waters",
+      "startEvent": [
+       "0x0067",
+       "0x006d",
+       "0x006f",
+       "0x0076",
+       "0x0082",
+       "0x0083",
+       "0x00e8"
+      ],
+      "keyitems": [
+       "MESSAGE_TO_JEUNO_WINDURST",
+       "STAR_CRESTED_SUMMONS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17752076,
+       "pos": [
+        "-55.997",
+        "-5.398",
+        "230.367"
+       ]
+      }
+     },
+     {
+      "npc": "Rakoh_Buuma",
+      "zone_dir": "Windurst_Woods",
+      "startEvent": [
+       "0x0069",
+       "0x0070",
+       "0x0072",
+       "0x0079",
+       "0x0084",
+       "0x0095",
+       "0x00C5"
+      ],
+      "keyitems": [
+       "MESSAGE_TO_JEUNO_WINDURST",
+       "STAR_CRESTED_SUMMONS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17764368,
+       "pos": [
+        "110.462",
+        "-5.398",
+        "-24.050"
+       ]
+      }
+     }
+    ]
+   },
+   "verification_flags": [
+    "npc_list id unresolved for: Sama_Gohjima, _5c5, _5cp, _5cq, _5cr, _5cs, _5ct, _5cu"
+   ]
+  },
+  {
+   "id": "SL-MSN-WI-2",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-nation",
+   "title": "Windurst mission 2: The Heart Of The Matter",
+   "readable": {
+    "given": "Character on Windurst mission THE_HEART_OF_THE_MATTER (area 2, mission 1) in a start-eligible state.",
+    "when": "Character interacts with the scripted NPCs (Pore-Ohre, _5e9, _5ee, _5ef).",
+    "then": "Scripted events fire (csids 0x002c, 0x002e, 0x002f, 0x0030, 0x0031, 0x0032); key items FIFTH_DARK_MANA_ORB, FIFTH_GLOWING_MANA_ORB, FIRST_DARK_MANA_ORB."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/East_Sarutabaruta/npcs/Pore-Ohre.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Outer_Horutoto_Ruins/npcs/_5e9.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Outer_Horutoto_Ruins/npcs/_5ee.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Outer_Horutoto_Ruins/npcs/_5ef.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Outer_Horutoto_Ruins/npcs/_5eg.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Outer_Horutoto_Ruins/npcs/_5eh.lua",
+    "dsp-branches@main:febdc00209: scripts/globals/missions.lua"
+   ],
+   "confidence": "low",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "npcs": [
+     {
+      "npc": "Pore-Ohre",
+      "zone_dir": "East_Sarutabaruta",
+      "startEvent": [
+       "0x002e",
+       "0x002f"
+      ],
+      "keyitems": [
+       "SOUTHEASTERN_STAR_CHARM"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_5e9",
+      "zone_dir": "Outer_Horutoto_Ruins",
+      "startEvent": [
+       "0x002c"
+      ],
+      "keyitems": [
+       "SOUTHEASTERN_STAR_CHARM"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_5ee",
+      "zone_dir": "Outer_Horutoto_Ruins",
+      "startEvent": [
+       "0x002e"
+      ],
+      "keyitems": [
+       "FIRST_DARK_MANA_ORB",
+       "FIRST_GLOWING_MANA_ORB"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_5ef",
+      "zone_dir": "Outer_Horutoto_Ruins",
+      "startEvent": [
+       "0x002f"
+      ],
+      "keyitems": [
+       "SECOND_DARK_MANA_ORB",
+       "SECOND_GLOWING_MANA_ORB"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_5eg",
+      "zone_dir": "Outer_Horutoto_Ruins",
+      "startEvent": [
+       "0x0030"
+      ],
+      "keyitems": [
+       "THIRD_DARK_MANA_ORB",
+       "THIRD_GLOWING_MANA_ORB"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_5eh",
+      "zone_dir": "Outer_Horutoto_Ruins",
+      "startEvent": [
+       "0x0031"
+      ],
+      "keyitems": [
+       "FOURTH_DARK_MANA_ORB",
+       "FOURTH_GLOWING_MANA_ORB"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_5ei",
+      "zone_dir": "Outer_Horutoto_Ruins",
+      "startEvent": [
+       "0x0032"
+      ],
+      "keyitems": [
+       "FIFTH_DARK_MANA_ORB",
+       "FIFTH_GLOWING_MANA_ORB"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_5ej",
+      "zone_dir": "Outer_Horutoto_Ruins",
+      "startEvent": [
+       "0x0033"
+      ],
+      "keyitems": [
+       "SIXTH_DARK_MANA_ORB",
+       "SIXTH_GLOWING_MANA_ORB"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Janshura-Rashura",
+      "zone_dir": "Port_Windurst",
+      "startEvent": [
+       "0x0047",
+       "0x004c",
+       "0x004e",
+       "0x0053",
+       "0x0068",
+       "0x006d",
+       "0x00a3"
+      ],
+      "keyitems": [
+       "MESSAGE_TO_JEUNO_WINDURST",
+       "STAR_CRESTED_SUMMONS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17760269,
+       "pos": [
+        "-230.626",
+        "-8.400",
+        "184.050"
+       ]
+      }
+     },
+     {
+      "npc": "Zokima-Rokima",
+      "zone_dir": "Windurst_Walls",
+      "startEvent": [
+       "0x0057",
+       "0x005b",
+       "0x005d",
+       "0x0060",
+       "0x006a",
+       "0x006f",
+       "0x0096"
+      ],
+      "keyitems": [
+       "MESSAGE_TO_JEUNO_WINDURST",
+       "STAR_CRESTED_SUMMONS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17756171,
+       "pos": [
+        "0.000",
+        "-16.749",
+        "127.000"
+       ]
+      }
+     },
+     {
+      "npc": "Mokyokyo",
+      "zone_dir": "Windurst_Waters",
+      "startEvent": [
+       "0x0067",
+       "0x006d",
+       "0x006f",
+       "0x0076",
+       "0x0082",
+       "0x0083",
+       "0x00e8"
+      ],
+      "keyitems": [
+       "MESSAGE_TO_JEUNO_WINDURST",
+       "STAR_CRESTED_SUMMONS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17752076,
+       "pos": [
+        "-55.997",
+        "-5.398",
+        "230.367"
+       ]
+      }
+     },
+     {
+      "npc": "Apururu",
+      "zone_dir": "Windurst_Woods",
+      "startEvent": [
+       "0x0089",
+       "0x008a",
+       "0x008f",
+       "0x0091",
+       "0x0112",
+       "0x013F",
+       "0x0140",
+       "0x0145",
+       "0x014A",
+       "0x0188",
+       "0x0189",
+       "0x018d",
+       "0x018e",
+       "0x024C",
+       "0x024D",
+       "0x024E",
+       "0x0250",
+       "0x0259",
+       "0x0261",
+       "0x026B",
+       "0x026C",
+       "0x026D"
+      ],
+      "keyitems": [
+       "FIFTH_DARK_MANA_ORB",
+       "FIFTH_GLOWING_MANA_ORB",
+       "FIRST_DARK_MANA_ORB",
+       "FIRST_GLOWING_MANA_ORB",
+       "FOURTH_DARK_MANA_ORB",
+       "FOURTH_GLOWING_MANA_ORB",
+       "LETTER_FROM_ZONPAZIPPA",
+       "MANUSTERY_RING",
+       "SECOND_DARK_MANA_ORB",
+       "SECOND_GLOWING_MANA_ORB",
+       "SIXTH_DARK_MANA_ORB",
+       "SIXTH_GLOWING_MANA_ORB",
+       "THIRD_DARK_MANA_ORB",
+       "THIRD_GLOWING_MANA_ORB",
+       "TWO_OF_SWORDS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17764372,
+       "pos": [
+        "-12.093",
+        "-2.750",
+        "15.935"
+       ]
+      }
+     },
+     {
+      "npc": "Rakoh_Buuma",
+      "zone_dir": "Windurst_Woods",
+      "startEvent": [
+       "0x0069",
+       "0x0070",
+       "0x0072",
+       "0x0079",
+       "0x0084",
+       "0x0095",
+       "0x00C5"
+      ],
+      "keyitems": [
+       "MESSAGE_TO_JEUNO_WINDURST",
+       "STAR_CRESTED_SUMMONS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17764368,
+       "pos": [
+        "110.462",
+        "-5.398",
+        "-24.050"
+       ]
+      }
+     }
+    ]
+   },
+   "verification_flags": [
+    "npc_list id unresolved for: Pore-Ohre, _5e9, _5ee, _5ef, _5eg, _5eh, _5ei, _5ej"
+   ]
+  },
+  {
+   "id": "SL-MSN-WI-3",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "characterized",
+   "domain": "missions-nation",
+   "title": "Windurst mission 3: The Price Of Peace",
+   "readable": {
+    "given": "Character on Windurst mission THE_PRICE_OF_PEACE (area 2, mission 2) in a start-eligible state.",
+    "when": "Character interacts with the scripted NPCs (Ghoo_Pakya, Laa_Mozi, Janshura-Rashura, Zokima-Rokima).",
+    "then": "Scripted events fire (csids 0x002d, 0x002e, 0x002f, 0x0030, 0x0031, 0x0032); key items 267, BOOK_OF_THE_GODS, DARK_MANA_ORB."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Giddeus/npcs/Ghoo_Pakya.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Giddeus/npcs/Laa_Mozi.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Port_Windurst/npcs/Janshura-Rashura.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Windurst_Walls/npcs/Zokima-Rokima.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Windurst_Waters/npcs/Leepe-Hoppe.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Windurst_Waters/npcs/Mokyokyo.lua",
+    "dsp-branches@main:febdc00209: scripts/globals/missions.lua"
+   ],
+   "confidence": "medium",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "partial",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "xiheadless": {
+    "native_action": "talk_npc",
+    "params": {
+     "talk_npc": 17760269
+    },
+    "typed_ids": {
+     "talk_npc": "npc_list id for Janshura-Rashura (zone-resolved)",
+     "zone": 240,
+     "csids_in_scripts": [
+      "0x002d",
+      "0x002e",
+      "0x002f",
+      "0x0030",
+      "0x0031",
+      "0x0032",
+      "0x0033",
+      "0x0034",
+      "0x0047",
+      "0x004c",
+      "0x004e",
+      "0x0053",
+      "0x0057",
+      "0x005b",
+      "0x005d",
+      "0x0060",
+      "0x0067",
+      "0x0068",
+      "0x0069",
+      "0x006a",
+      "0x006d",
+      "0x006f",
+      "0x0070",
+      "0x0072",
+      "0x0076",
+      "0x0079",
+      "0x0082",
+      "0x0083",
+      "0x0084",
+      "0x0095",
+      "0x0096",
+      "0x00C5",
+      "0x00a3",
+      "0x00e8",
+      "0x0134",
+      "0x0135",
+      "0x013c",
+      "0x013d",
+      "0x0142",
+      "0x0144",
+      "0x0145",
+      "0x0146",
+      "0x0158",
+      "0x015f",
+      "0x0160",
+      "0x0161",
+      "0x0162",
+      "0x0163",
+      "0x0164",
+      "0x0204",
+      "0x0205",
+      "0x0206",
+      "0x0311",
+      "0x0312",
+      "0x0317",
+      "0x031b",
+      "0x0368",
+      "0x8f",
+      "0x90",
+      "140",
+      "142",
+      "311",
+      "345",
+      "734",
+      "735",
+      "739",
+      "742",
+      "842",
+      "843",
+      "844",
+      "845",
+      "846",
+      "847",
+      "848",
+      "850"
+     ],
+     "key_items": [
+      "267",
+      "BOOK_OF_THE_GODS",
+      "DARK_MANA_ORB",
+      "DRINK_OFFERINGS",
+      "FOOD_OFFERINGS",
+      "MESSAGE_TO_JEUNO_WINDURST",
+      "MOON_BAUBLE",
+      "STAR_CRESTED_SUMMONS",
+      "WHISPER_OF_FLAMES",
+      "WHISPER_OF_FROST",
+      "WHISPER_OF_GALES",
+      "WHISPER_OF_STORMS",
+      "WHISPER_OF_THE_MOON",
+      "WHISPER_OF_TIDES",
+      "WHISPER_OF_TREMORS"
+     ],
+     "other_script_npcs": [
+      "Ghoo_Pakya",
+      "Laa_Mozi",
+      "Zokima-Rokima",
+      "Leepe-Hoppe",
+      "Mokyokyo",
+      "Ohbiru-Dohbiru",
+      "Rakoh_Buuma"
+     ]
+    },
+    "expected_state": {
+     "zone": 240,
+     "event_active": true
+    },
+    "readback_collector": "scenario expectation event_active; mission status and key items have NO scenario readback (gaps G-01/G-02)",
+    "oracle_rule": "Equals(event_active, true)",
+    "setup": [
+     "character in zone 240 near Janshura-Rashura at (-230.626,-8.400,184.050)",
+     "mission state precondition per script (current mission + status) NOT characterized",
+     "npc_list id vs client id offset still to be checked with dat-extractor"
+    ],
+    "interpretation": {
+     "PASS": "All expectations observed by readback: event_active after talk_npc; mission advance unobservable today, so at most partial",
+     "FAIL": "A readback was obtained and contradicts an expectation",
+     "BLOCKED": "Setup requirement unmet (character not in zone, NPC absent, server not seeded)",
+     "UNKNOWN": "Dispatch accepted but no readback/echo observed; a dispatch alone is never PASS"
+    }
+   },
+   "source_facts": {
+    "npcs": [
+     {
+      "npc": "Ghoo_Pakya",
+      "zone_dir": "Giddeus",
+      "startEvent": [
+       "0x0031",
+       "0x0032",
+       "0x0033",
+       "0x0034"
+      ],
+      "keyitems": [
+       "DRINK_OFFERINGS",
+       "FOOD_OFFERINGS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Laa_Mozi",
+      "zone_dir": "Giddeus",
+      "startEvent": [
+       "0x002d",
+       "0x002e",
+       "0x002f",
+       "0x0030"
+      ],
+      "keyitems": [
+       "DRINK_OFFERINGS",
+       "FOOD_OFFERINGS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Janshura-Rashura",
+      "zone_dir": "Port_Windurst",
+      "startEvent": [
+       "0x0047",
+       "0x004c",
+       "0x004e",
+       "0x0053",
+       "0x0068",
+       "0x006d",
+       "0x00a3"
+      ],
+      "keyitems": [
+       "MESSAGE_TO_JEUNO_WINDURST",
+       "STAR_CRESTED_SUMMONS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17760269,
+       "pos": [
+        "-230.626",
+        "-8.400",
+        "184.050"
+       ]
+      }
+     },
+     {
+      "npc": "Zokima-Rokima",
+      "zone_dir": "Windurst_Walls",
+      "startEvent": [
+       "0x0057",
+       "0x005b",
+       "0x005d",
+       "0x0060",
+       "0x006a",
+       "0x006f",
+       "0x0096"
+      ],
+      "keyitems": [
+       "MESSAGE_TO_JEUNO_WINDURST",
+       "STAR_CRESTED_SUMMONS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17756171,
+       "pos": [
+        "0.000",
+        "-16.749",
+        "127.000"
+       ]
+      }
+     },
+     {
+      "npc": "Leepe-Hoppe",
+      "zone_dir": "Windurst_Waters",
+      "startEvent": [
+       "140",
+       "142",
+       "311",
+       "345",
+       "734",
+       "735",
+       "739",
+       "742",
+       "842",
+       "843",
+       "844",
+       "845",
+       "846",
+       "847",
+       "848",
+       "850"
+      ],
+      "keyitems": [
+       "BOOK_OF_THE_GODS",
+       "DARK_MANA_ORB",
+       "DRINK_OFFERINGS",
+       "FOOD_OFFERINGS",
+       "MOON_BAUBLE",
+       "WHISPER_OF_FLAMES",
+       "WHISPER_OF_FROST",
+       "WHISPER_OF_GALES",
+       "WHISPER_OF_STORMS",
+       "WHISPER_OF_THE_MOON",
+       "WHISPER_OF_TIDES",
+       "WHISPER_OF_TREMORS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17752112,
+       "pos": [
+        "11.432",
+        "-9.749",
+        "-197.475"
+       ]
+      }
+     },
+     {
+      "npc": "Mokyokyo",
+      "zone_dir": "Windurst_Waters",
+      "startEvent": [
+       "0x0067",
+       "0x006d",
+       "0x006f",
+       "0x0076",
+       "0x0082",
+       "0x0083",
+       "0x00e8"
+      ],
+      "keyitems": [
+       "MESSAGE_TO_JEUNO_WINDURST",
+       "STAR_CRESTED_SUMMONS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17752076,
+       "pos": [
+        "-55.997",
+        "-5.398",
+        "230.367"
+       ]
+      }
+     },
+     {
+      "npc": "Ohbiru-Dohbiru",
+      "zone_dir": "Windurst_Waters",
+      "startEvent": [
+       "0x0134",
+       "0x0135",
+       "0x013c",
+       "0x013d",
+       "0x0142",
+       "0x0144",
+       "0x0145",
+       "0x0146",
+       "0x0158",
+       "0x015f",
+       "0x0160",
+       "0x0161",
+       "0x0162",
+       "0x0163",
+       "0x0164",
+       "0x0204",
+       "0x0205",
+       "0x0206",
+       "0x0311",
+       "0x0312",
+       "0x0317",
+       "0x031b",
+       "0x0368",
+       "0x8f",
+       "0x90"
+      ],
+      "keyitems": [
+       "267"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17752109,
+       "pos": [
+        "22.704",
+        "-5.377",
+        "-195.018"
+       ]
+      }
+     },
+     {
+      "npc": "Rakoh_Buuma",
+      "zone_dir": "Windurst_Woods",
+      "startEvent": [
+       "0x0069",
+       "0x0070",
+       "0x0072",
+       "0x0079",
+       "0x0084",
+       "0x0095",
+       "0x00C5"
+      ],
+      "keyitems": [
+       "MESSAGE_TO_JEUNO_WINDURST",
+       "STAR_CRESTED_SUMMONS"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17764368,
+       "pos": [
+        "110.462",
+        "-5.398",
+        "-24.050"
+       ]
+      }
+     }
+    ]
+   },
+   "verification_flags": [
+    "npc_list id unresolved for: Ghoo_Pakya, Laa_Mozi"
+   ]
+  },
+  {
+   "id": "SL-MSN-WI-4",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-nation",
+   "title": "Windurst mission 4: Lost For Words",
+   "readable": {
+    "given": "Character on Windurst mission LOST_FOR_WORDS (area 2, mission 3) in a start-eligible state.",
+    "when": "Character interacts with the scripted NPCs (_5ca, Fossil_Rock, _6n2, Tosuka-Porika).",
+    "then": "Scripted events fire (csids 0x002c, 0x002e, 0x0037, 0x004c, 0x0050, 0x0051); key items 149, AURASTERY_RING, CARBUNCLES_TEAR."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Inner_Horutoto_Ruins/npcs/_5ca.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Maze_of_Shakhrami/npcs/Fossil_Rock.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Windurst_Walls/npcs/_6n2.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Windurst_Waters/npcs/Tosuka-Porika.lua",
+    "dsp-branches@main:febdc00209: scripts/zones/Windurst_Woods/npcs/Nanaa_Mihgo.lua",
+    "dsp-branches@main:febdc00209: scripts/globals/missions.lua"
+   ],
+   "confidence": "low",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "npcs": [
+     {
+      "npc": "_5ca",
+      "zone_dir": "Inner_Horutoto_Ruins",
+      "startEvent": [
+       "0x002c",
+       "0x002e"
+      ],
+      "keyitems": [],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "Fossil_Rock",
+      "zone_dir": "Maze_of_Shakhrami",
+      "startEvent": [],
+      "keyitems": [
+       "LAPIS_CORAL"
+      ],
+      "mission_status_sets": [],
+      "npc_list": null
+     },
+     {
+      "npc": "_6n2",
+      "zone_dir": "Windurst_Walls",
+      "startEvent": [
+       "0x0120",
+       "0x0121",
+       "0x0151",
+       "0x0180",
+       "0x0181",
+       "0x0182",
+       "0x0183",
+       "0x0192",
+       "0x0193",
+       "0x019d",
+       "0x019f"
+      ],
+      "keyitems": [
+       "CARBUNCLES_TEAR",
+       "JOKER_CARD",
+       "OLD_RING"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17756175,
+       "pos": [
+        "-26.000",
+        "-14.498",
+        "262.994"
+       ]
+      }
+     },
+     {
+      "npc": "Tosuka-Porika",
+      "zone_dir": "Windurst_Waters",
+      "startEvent": [
+       "0x0037",
+       "0x00a0",
+       "0x00a1",
+       "0x00a8",
+       "0x0172",
+       "0x0183",
+       "0x0184",
+       "0x0193",
+       "0x0196",
+       "0x019c",
+       "0x02cb",
+       "0x02cc",
+       "0x02d4",
+       "0x0321",
+       "0x036B"
+      ],
+      "keyitems": [
+       "149",
+       "AURASTERY_RING",
+       "OPTISTERY_RING",
+       "RHINOSTERY_RING"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17752080,
+       "pos": [
+        "-28.663",
+        "-5.250",
+        "104.426"
+       ]
+      }
+     },
+     {
+      "npc": "Nanaa_Mihgo",
+      "zone_dir": "Windurst_Woods",
+      "startEvent": [
+       "0x004c",
+       "0x0050",
+       "0x0051",
+       "0x0052",
+       "0x0058",
+       "0x0059",
+       "0x005D",
+       "0x005E",
+       "0x005F",
+       "0x0062",
+       "0x0063",
+       "0x00a5",
+       "0x00a6",
+       "0x00a9",
+       "0x00aa",
+       "0x01ee",
+       "0x01f0",
+       "0x01f1",
+       "0x01f2",
+       "0x01f7",
+       "0x01f8",
+       "0x01f9",
+       "0x01fc",
+       "0x0200",
+       "0x0204",
+       "0x0205",
+       "0x0256",
+       "0x02dc"
+      ],
+      "keyitems": [
+       "CAT_BURGLARS_NOTE",
+       "FIRST_FORGED_ENVELOPE",
+       "FIRST_SIGNED_FORGED_ENVELOPE",
+       "GANG_WHEREABOUTS_NOTE",
+       "HIDEOUT_KEY",
+       "LAPIS_CORAL",
+       "LAPIS_MONOCLE",
+       "LETTER_FROM_THE_TENSHODO",
+       "SECOND_FORGED_ENVELOPE",
+       "SECOND_SIGNED_FORGED_ENVELOPE",
+       "SHARP_GRAY_STONE"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17764367,
+       "pos": [
+        "26.965",
+        "1.999",
+        "-34.939"
+       ]
+      }
+     }
+    ]
+   },
+   "verification_flags": [
+    "npc_list id unresolved for: _5ca, Fossil_Rock"
+   ]
+  },
+  {
+   "id": "SL-MSN-WI-5",
+   "schema_version": "scenario-library-draft/1",
+   "status": "draft",
+   "tier": "candidate",
+   "domain": "missions-nation",
+   "title": "Windurst mission 5: A Testing Time",
+   "readable": {
+    "given": "Character on Windurst mission A_TESTING_TIME (area 2, mission 4) in a start-eligible state.",
+    "when": "Character interacts with the scripted NPCs (Moreno-Toeno).",
+    "then": "Scripted events fire (csids 0x00B6, 0x00B7, 0x00CA, 0x00CC, 0x01b5, 0x01b6); key items CREATURE_COUNTER_MAGIC_DOLL, STAR_SEEKER."
+   },
+   "provenance": [
+    "dsp-branches@main:febdc00209: scripts/zones/Windurst_Waters/npcs/Moreno-Toeno.lua",
+    "dsp-branches@main:febdc00209: scripts/globals/missions.lua"
+   ],
+   "confidence": "low",
+   "evidence_class": [
+    "source-supported"
+   ],
+   "support_status": "unknown",
+   "owner": "unassigned (discovery draft)",
+   "execution_validated": false,
+   "safety": "read-only observation; no execution performed in discovery",
+   "source_facts": {
+    "npcs": [
+     {
+      "npc": "Moreno-Toeno",
+      "zone_dir": "Windurst_Waters",
+      "startEvent": [
+       "0x00B6",
+       "0x00B7",
+       "0x00CA",
+       "0x00CC",
+       "0x01b5",
+       "0x01b6",
+       "0x01b7",
+       "0x01b8",
+       "0x01b9",
+       "0x01bc",
+       "0x01d5",
+       "0x02AF",
+       "0x02F0",
+       "0x02F1",
+       "0x02F6"
+      ],
+      "keyitems": [
+       "CREATURE_COUNTER_MAGIC_DOLL",
+       "STAR_SEEKER"
+      ],
+      "mission_status_sets": [],
+      "npc_list": {
+       "id": 17752117,
+       "pos": [
+        "168.465",
+        "-1.250",
+        "156.888"
+       ]
+      }
+     }
+    ]
+   },
+   "verification_flags": []
   }
  ],
  "failure_injection_probes": [

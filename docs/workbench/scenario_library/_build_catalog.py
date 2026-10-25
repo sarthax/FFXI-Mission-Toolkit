@@ -177,54 +177,48 @@ for key in ex:
                               "npc_list": npc and {"id": npc[0], "pos": npc[1:]}},
              "verification_flags": flags}))
 
-# --- LSB mission scenarios (nation rank 1-2 starters + WoTG 1-10). Source: lsb_mission_extract.json
-mx = json.load(open(os.path.join(HERE, "lsb_mission_extract.json"), encoding="utf-8"))
-LSB = mx["source"]
-NATIONS = {"sandoria": ("SD", "San d'Oria", 0), "bastok": ("BA", "Bastok", 1), "windurst": ("WI", "Windurst", 2)}
+# --- DSP nation missions rank 1-2 (15). Source: dsp_mission_extract.json (DSP main, the proven server data)
+mx = json.load(open(os.path.join(HERE, "dsp_mission_extract.json"), encoding="utf-8"))
+DSRC = mx["source"]
+NATION = {0: ("SD", "San d'Oria"), 1: ("BA", "Bastok"), 2: ("WI", "Windurst")}
+CHAR_MSN = {"0_0", "1_0", "2_2"}  # fully resolvable talk targets with verified-by-zone npc ids
 
 
-def mission(path, v):
-    kind = path.split("/")[0]
-    base = os.path.basename(path)[:-4]
-    num = base.split("_")[0]
-    adm = next((h for h in v["header"] if h.startswith("!addmission")), None)
-    pos = [h for h in v["header"] if "!pos" in h]
-    if kind == "wotg":
-        sid = "SL-MSN-WOTG-%02d" % int(num)
-        dom, where = "missions-wotg", "Wings of the Goddess mission %d" % int(num)
-    else:
-        sid = "SL-MSN-%s-%s" % (NATIONS[kind][0], num.replace("_", "") if False else base.split("_")[0] + base.split("_")[1])
-        dom, where = "missions-nation", "%s rank mission %s" % (NATIONS[kind][1], base)
-    setup = ["GM setup per script header: %s (availability of GM commands via the headless `say` action is UNVERIFIED)" % adm
-             if adm else "no !addmission line in script header; derive setup from script check() blocks"]
-    setup += ["positions from script header (LSB coordinates, not re-verified): " + "; ".join(pos[:4])] if pos else []
-    action = {"native_action": "talk_npc / walk_to / event_update / event_finish per script section",
-              "params": {"npc_names_from_script": v["npcs"], "csids_in_script": v["events"], "event_finish_csids": v["event_finish_ids"]},
-              "typed_ids": {"zones": v["zones"], "npc_entity_ids": "UNRESOLVED: no entity id is asserted; resolve names to ids per target server (never invented)",
-                            "key_items": v["key_items"]},
-              "expected_state": {"event_active": True, "mission_status_progress": v["mission_status_sets"], "next_mission": v["next_mission"]},
-              "readback_collector": "event_active/event_id via scenario expectations; mission status and key items have NO scenario readback (gaps G-01/G-02)",
-              "oracle_rule": "Equals on event fields only; mission progress unobservable today",
-              "setup": setup,
-              "interpretation": interp("event opens with the scripted csid; mission transition itself is UNOBSERVABLE so at most partial")}
-    tier = "characterized" if kind == "wotg" else "candidate"
-    return cand(sid, dom, v["title"],
-        "Character with %s active (script check(): current mission and mission status)." % where,
-        "Character performs the scripted section (see source_facts.npcs/events).",
-        "Scripted events fire%s; mission advances to %s." % (" and key items %s are granted" % ", ".join(v["key_items"][:3]) if v["key_items"] else "", v["next_mission"] or "the next section/mission"),
-        ["%s: scripts/missions/%s" % (LSB, path)], "medium", ["source-supported"], "partial" if tier == "characterized" else "unknown",
-        tier=tier, action=action if tier == "characterized" else None,
-        extra={"source_facts": {k: v[k] for k in ("zones", "npcs", "events", "event_finish_ids", "key_items", "mission_status_sets", "header", "next_mission")},
-               "server_coverage": ("LSB only. Not present in DSP main (no scripts/missions/wotg); Valhalla support unknown" if kind == "wotg"
-                                   else "LSB script; DSP uses legacy missions.lua - id/csid parity NOT verified"),
-               "client_generation_caveat": "csids are LSB client-generation values; verify against the target server's client data before execution"})
+def dsp_mission(key, v):
+    pre, nm = NATION[v["nation"]]
+    sid = "SL-MSN-%s-%d" % (pre, v["number"] + 1)
+    resolved = [n for n in v["npcs"] if n["npc_list"]]
+    unresolved = [n["npc"] for n in v["npcs"] if not n["npc_list"]]
+    evs = sorted({e for n in v["npcs"] for e in n["startEvent"]})
+    kis = sorted({k for n in v["npcs"] for k in n["keyitems"]})
+    tier = "characterized" if key[:3] in CHAR_MSN and resolved else "candidate"
+    action = None
+    if tier == "characterized":
+        first = resolved[0]
+        action = {"native_action": "talk_npc", "params": {"talk_npc": first["npc_list"]["id"]},
+                  "typed_ids": {"talk_npc": "npc_list id for %s (zone-resolved)" % first["npc"], "zone": first["zone_id"],
+                                "csids_in_scripts": evs, "key_items": kis,
+                                "other_script_npcs": [n["npc"] for n in v["npcs"] if n is not first]},
+                  "expected_state": {"zone": first["zone_id"], "event_active": True},
+                  "readback_collector": "scenario expectation event_active; mission status and key items have NO scenario readback (gaps G-01/G-02)",
+                  "oracle_rule": "Equals(event_active, true)",
+                  "setup": ["character in zone %d near %s at (%s,%s,%s)" % (first["zone_id"], first["npc"], *first["npc_list"]["pos"]),
+                            "mission state precondition per script (current mission + status) NOT characterized",
+                            "npc_list id vs client id offset still to be checked with dat-extractor"],
+                  "interpretation": interp("event_active after talk_npc; mission advance unobservable today, so at most partial")}
+    return cand(sid, "missions-nation", "%s mission %d: %s" % (nm, v["number"] + 1, v["constant"].replace("_", " ").title()),
+        "Character on %s mission %s (area %d, mission %d) in a start-eligible state." % (nm, v["constant"], v["nation"], v["number"]),
+        "Character interacts with the scripted NPCs (%s)." % ", ".join(n["npc"] for n in v["npcs"][:4]),
+        "Scripted events fire (csids %s)%s." % (", ".join(evs[:6]) or "n/a", "; key items " + ", ".join(kis[:3]) if kis else ""),
+        ["%s: %s" % (DSRC, n["path"]) for n in v["npcs"][:6]] + ["%s: scripts/globals/missions.lua" % DSRC],
+        "medium" if tier == "characterized" else "low", ["source-supported"], "partial" if tier == "characterized" else "unknown",
+        tier=tier, action=action,
+        extra={"source_facts": {"npcs": [{k: n[k] for k in ("npc", "zone_dir", "startEvent", "keyitems", "mission_status_sets", "npc_list")} for n in v["npcs"]]},
+               "verification_flags": (["npc_list id unresolved for: " + ", ".join(unresolved)] if unresolved else [])})
 
 
-for path, v in mx["files"].items():
-    kind = path.split("/")[0]
-    base = os.path.basename(path)
-    if kind == "wotg" or (kind in NATIONS and base[:3] in ("1_1", "1_2", "1_3", "2_1", "2_2")):
-        C.append(mission(path, v))
+for key, v in mx["missions"].items():
+    C.append(dsp_mission(key, v))
 
 PROBES = [
     {"id": "SL-PROBE-A06", "kind": "failure-injection",

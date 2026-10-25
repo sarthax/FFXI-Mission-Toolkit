@@ -50,19 +50,16 @@ class ScenarioLibraryCatalogTest(unittest.TestCase):
                 self.assertTrue(any("scripts/zones/" in p for p in s["provenance"]), s["id"])
                 self.assertTrue(re.match(r"^dsp-branches@main:[0-9a-f]{10}", s["provenance"][0]), s["id"])
 
-    def test_wotg_one_to_ten_present_and_lsb_pinned(self):
+    def test_dsp_nation_missions_present_and_pinned(self):
         ids = {s["id"] for s in self.items}
-        for n in range(1, 11):
-            self.assertIn("SL-MSN-WOTG-%02d" % n, ids)
+        for pre in ("SD", "BA", "WI"):
+            for n in range(1, 6):
+                self.assertIn("SL-MSN-%s-%d" % (pre, n), ids)
+        self.assertFalse(any("WOTG" in i for i in ids))
         for s in self.items:
+            self.assertNotIn("LandSandBoat", " ".join(s["provenance"]), s["id"])
             if s["id"].startswith("SL-MSN-"):
-                self.assertTrue(re.match(r"^LandSandBoat landsandboat-latest@[0-9a-f]{10}: scripts/missions/", s["provenance"][0]), s["id"])
-                self.assertIn("client_generation_caveat", s)
-
-    def test_no_invented_entity_ids_in_mission_scenarios(self):
-        for s in self.items:
-            if s["id"].startswith("SL-MSN-") and "xiheadless" in s:
-                self.assertTrue(str(s["xiheadless"]["typed_ids"]["npc_entity_ids"]).startswith("UNRESOLVED"), s["id"])
+                self.assertTrue(re.match(r"^dsp-branches@main:[0-9a-f]{10}: ", s["provenance"][0]), s["id"])
 
     def test_probes_kept_separate(self):
         for p in self.cat["failure_injection_probes"]:
