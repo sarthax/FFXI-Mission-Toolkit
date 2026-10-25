@@ -240,6 +240,26 @@ def test_nested_json_depth_is_fail_closed_without_recursion_escape(depth):
     assert ledger.snapshot(prior["run_id"], prior["execution_id"], 1) == prior_snapshot
 
 
+
+def test_shared_container_alias_cannot_bypass_nesting_limit():
+    # Both occurrences are serialized by JSON. The shared inner branch first
+    # appears shallow, then beyond the depth cap through another path.
+    shared = "synthetic"
+    for _ in range(10):
+        shared = [shared]
+    deep = shared
+    for _ in range(60):
+        deep = [deep]
+    evidence = {"deep": deep, "shallow": shared}
+    with pytest.raises(ValueError, match="not bounded JSON"):
+        canonical_evidence_digest(evidence)
+    candidate = receipt()
+    candidate["evidence"] = evidence
+    ledger = OfflineEvidenceLedger()
+    assert ledger.ingest(candidate)["status"] == "BLOCKED"
+    assert ledger.snapshot(candidate["run_id"], candidate["execution_id"], 1) is None
+
+
 def test_full_receipt_json_encoder_recursion_is_blocked_atomically(monkeypatch):
     # Synthetic negative forcing the SECOND encoding path (the digest of
     # evidence already succeeded), not reliance on actual recursion limits.
