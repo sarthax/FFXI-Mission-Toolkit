@@ -25,8 +25,15 @@ def main():
     routes = json.loads((ROOT / "docs/workbench/GUI_ROUTE_MAP.json").read_text())["routes"]
     routes += json.loads((ROOT / "docs/workbench/GUI_ROUTE_MAP_AUXILIARY.json").read_text())["routes"]
     known = {r["path"] for r in routes if r["method"] == "GET"}
-    # Dynamic routers are covered by the existing Help route test.
-    dynamic = {"/synth", "/auction-house/help", "/live-client/bridge/console", "/feature-testing"}
+    # Dynamic routes are not all listed in the static GUI inventory.
+    # Keep this catalog check source-backed, not a blind route allowlist.
+    editor_router = (ROOT / "src/workbench/server_admin/scenario_authoring/editor_router.py").read_text(encoding="utf-8")
+    app_host = (ROOT / "src/workbench/app/host.py").read_text(encoding="utf-8")
+    assert 'APIRouter(prefix="/scenario-developer"' in editor_router
+    assert '@router.get("", response_class=HTMLResponse, include_in_schema=False)' in editor_router
+    assert 'from workbench.server_admin.scenario_authoring.editor_router import router as scenario_developer_router' in app_host
+    assert 'app.include_router(scenario_developer_router)' in app_host
+    dynamic = {"/synth", "/auction-house/help", "/live-client/bridge/console", "/feature-testing", "/scenario-developer"}
     assert all(f["route"] in known | dynamic for f in items), [f["route"] for f in items if f["route"] not in known | dynamic]
     assert all(f["help"].split("#", 1)[0] in known | dynamic for f in items)
     assert "client-binary" in {f["id"] for f in search_catalog(items, "binary")}
