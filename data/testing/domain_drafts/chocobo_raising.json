@@ -1837,7 +1837,7 @@
           "Exercise natural trainer NPC event/trade only after a separately reviewed implementation and client capture"
         ],
         "then": [
-          "UNKNOWN — Phase 0 explicitly excludes trainer scripts and daily model; cannot define normative event IDs, day advancement or care-plan outcomes"
+          "UNKNOWN \u00e2\u20ac\u201d Phase 0 explicitly excludes trainer scripts and daily model; cannot define normative event IDs, day advancement or care-plan outcomes"
         ]
       },
       "steps": [
@@ -1873,7 +1873,7 @@
           "id": "CHO-07-S02",
           "title": "Permission-gated future observation or action",
           "action": "Exercise natural trainer NPC event/trade only after a separately reviewed implementation and client capture",
-          "expected": "UNKNOWN — Phase 0 explicitly excludes trainer scripts and daily model; cannot define normative event IDs, day advancement or care-plan outcomes",
+          "expected": "UNKNOWN \u00e2\u20ac\u201d Phase 0 explicitly excludes trainer scripts and daily model; cannot define normative event IDs, day advancement or care-plan outcomes",
           "assertion_ids": [
             "CHO-07-action"
           ],
@@ -1955,7 +1955,7 @@
         }
       ],
       "oracle": {
-        "expectation": "UNKNOWN — Phase 0 explicitly excludes trainer scripts and daily model; cannot define normative event IDs, day advancement or care-plan outcomes",
+        "expectation": "UNKNOWN \u00e2\u20ac\u201d Phase 0 explicitly excludes trainer scripts and daily model; cannot define normative event IDs, day advancement or care-plan outcomes",
         "source_refs": [
           {
             "repository": "sarthax/darkstar-to-valhalla",
@@ -2065,7 +2065,7 @@
           "Only after separately authorized gameplay implementation, capture normal whistle mount and unmount sequence"
         ],
         "then": [
-          "UNKNOWN — Phase 0 excludes mount packet/model and whistle; declared packed property bit layout is explicitly unverified"
+          "UNKNOWN \u00e2\u20ac\u201d Phase 0 excludes mount packet/model and whistle; declared packed property bit layout is explicitly unverified"
         ]
       },
       "steps": [
@@ -2101,7 +2101,7 @@
           "id": "CHO-08-S02",
           "title": "Permission-gated future observation or action",
           "action": "Only after separately authorized gameplay implementation, capture normal whistle mount and unmount sequence",
-          "expected": "UNKNOWN — Phase 0 excludes mount packet/model and whistle; declared packed property bit layout is explicitly unverified",
+          "expected": "UNKNOWN \u00e2\u20ac\u201d Phase 0 excludes mount packet/model and whistle; declared packed property bit layout is explicitly unverified",
           "assertion_ids": [
             "CHO-08-action"
           ],
@@ -2183,7 +2183,7 @@
         }
       ],
       "oracle": {
-        "expectation": "UNKNOWN — Phase 0 excludes mount packet/model and whistle; declared packed property bit layout is explicitly unverified",
+        "expectation": "UNKNOWN \u00e2\u20ac\u201d Phase 0 excludes mount packet/model and whistle; declared packed property bit layout is explicitly unverified",
         "source_refs": [
           {
             "repository": "sarthax/darkstar-to-valhalla",
@@ -2539,6 +2539,40 @@
       ],
       "estimated_effort": "high",
       "deployed_revision": "UNKNOWN"
+    }
+  ],
+  "live_scripts": [
+    {
+      "case_id": "CHO-D1",
+      "script": "tests/live/chocobo_raising/run_live.py",
+      "args": [
+        "day_report",
+        "6"
+      ],
+      "also": [
+        [
+          "day_report",
+          "40"
+        ]
+      ],
+      "asserts": [
+        "6 days -> stage 2",
+        "40 days -> stage 4"
+      ],
+      "status": "passing 2026-10-24"
+    },
+    {
+      "case_id": "CHO-R1",
+      "script": "tests/live/chocobo_raising/run_live.py",
+      "args": [
+        "retirement"
+      ],
+      "asserts": [
+        "card 2313 received",
+        "yellow plaque 309 received",
+        "chocobo row deleted"
+      ],
+      "status": "passing 2026-10-24"
     }
   ]
 }
