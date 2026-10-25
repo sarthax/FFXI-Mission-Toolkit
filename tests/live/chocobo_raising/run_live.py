@@ -67,7 +67,10 @@ class Retirement:
     # retiring deletes the row, so keep a copy and put it back afterwards (scenarios stay order-independent)
     def seed(self):
         c = db.cursor(dictionary=True); c.execute(f"select * from char_chocobos where charid={CHAR}")
-        self.row = c.fetchone(); seed(4, 3); q(f"delete from char_vars where charid={CHAR} and varname='ChocoRetireItems'")
+        self.row = c.fetchone(); seed(4, 3)
+        q(f"update char_chocobos set first_name='EirSkd',last_name='O8T18',sex=1,color=0,strength=56,endurance=48,discernment=8,"
+          f"receptivity=11,allele1=0,allele2=1,allele3=2,ability1=0,ability2=0,personality=4,weather_preference=0,appearance=0 where charid={CHAR}")
+        q(f"delete from char_vars where charid={CHAR} and varname='ChocoRetireItems'")
     def run(self, b):
         for opt in (24672, 244, 40):          # command 96, 244, 40 (San d'Oria capture sequence)
             b.tool("event_update", option=opt); time.sleep(1)
@@ -76,6 +79,11 @@ class Retirement:
         check("VCS card 2313 received", 2313 in items, items)
         check("yellow plaque 309 received", 309 in items, items)
         check("chocobo row deleted", q(f"select count(*) from char_chocobos where charid={CHAR}")[0][0] == 0)
+        ex = q(f"select extra from char_inventory where charid={CHAR} and itemid=2313")
+        got = bytes(ex[0][0]).hex(" ").upper() if ex else ""
+        want = "38 30 08 0B 88 00 08 11 00 00 00 00 4F 6B 77 2F 9A 25 9E 90 00 00 00 00"
+        mask = lambda h: h.split(" ")[:7] + [f"{int(h.split(' ')[7],16) & 0xF1:02X}"] + h.split(" ")[8:]   # byte 7 bits 1-3 = owner jockey size
+        check("card exdata matches capture bytes", bool(got) and mask(got) == mask(want), got)
         q(f"delete from char_inventory where charid={CHAR} and itemid in (2313,309,310,311,312,313)")
         if self.row:
             cols = ",".join(self.row); vals = ",".join("%s" for _ in self.row)
