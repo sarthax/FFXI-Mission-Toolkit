@@ -8,7 +8,11 @@ spec = importlib.util.spec_from_file_location("mog_adapter", ROOT / "mog09_recei
 mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 def main():
+    data = mod.INPUT.read_text(encoding="utf-8")
+    for forbidden in ("21833", "21836"):
+        assert forbidden not in data
     cases = mod.project_fixture()
+    assert all(forbidden not in json.dumps(c) for c in cases for forbidden in ("21833", "21836"))
     assert len(cases) == 3
     by = {c["sample_id"]: c for c in cases}
     bad = by["fail_obs-20261021T025326Z"]
@@ -37,6 +41,18 @@ def main():
         assert all(s["independent_oracle"] == "NOT_ESTABLISHED" for s in case["steps"])
     assert mod.project(None)["verdict"] == "UNKNOWN"
     assert mod.project({})["verdict"] == "UNKNOWN"
+    for broken in ({"assertions":[None]*6}, {"assertions":[{}]*6},
+                   {"assertions":[{"name":"x","runner_ok":True}]*6},
+                   {"assertions":[{"name":"x","runner_ok":True}]*6,"source_path":"../unsafe"}):
+        outcome=mod.project(broken)
+        assert outcome["verdict"]=="UNKNOWN" and outcome["steps"]==[]
+        assert "None#" not in json.dumps(outcome)
+    with tempfile.TemporaryDirectory() as d:
+        for raw in ("[]", "null", "{\"status\":\"DERIVED_FROM_UNREVIEWED_1420_SANITIZED_REPORTS\",\"cases\":null}",
+                    "{\"status\":\"DERIVED_FROM_UNREVIEWED_1420_SANITIZED_REPORTS\",\"cases\":[null]}"):
+            path=Path(d)/"malformed.json";path.write_text(raw)
+            outcome=mod.project_fixture(path)
+            assert outcome[0]["verdict"]=="UNKNOWN" and outcome[0]["steps"]==[]
     with tempfile.TemporaryDirectory() as d:
         assert mod.project_fixture(Path(d)/"missing.json")[0]["verdict"]=="UNKNOWN"
     print("MOG-09 offline six-step prototype: 3 sanitized projections, missing-source refusal PASS")
