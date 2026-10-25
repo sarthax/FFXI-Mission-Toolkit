@@ -1,0 +1,255 @@
+{
+  "schema": "toolkit-offline-results-view-model-fixtures/1",
+  "status": "TEST_ONLY_NON_EXECUTABLE",
+  "cases": [
+    {
+      "id": "mog09_unavailable",
+      "fixture_kind": "SOURCE_BACKED_RUN_UNAVAILABLE",
+      "provenance_class": "UNAVAILABLE_NOT_SYNTHETIC_RUN",
+      "scenario_id": "MOG-09",
+      "scenario_revision": null,
+      "run_id": null,
+      "attempt_id": null,
+      "runner_type": null,
+      "task_lifecycle": "UNKNOWN",
+      "execution_started_at": null,
+      "source_revisions": {
+        "toolkit": null,
+        "xiheadless": null,
+        "dsp": null
+      },
+      "verdict": "UNKNOWN",
+      "steps": [],
+      "missing_evidence_reason": "ACTUAL_IMMUTABLE_RUN_ARTIFACT_NOT_RETRIEVED",
+      "comparison": "NOT_COMPARABLE"
+    },
+    {
+      "id": "contradicted",
+      "fixture_kind": "CONTRADICTED_EXPECTATION",
+      "provenance_class": "SYNTHETIC_TEST_FIXTURE",
+      "scenario_id": "synthetic:contradicted",
+      "scenario_revision": "synthetic-rev-1",
+      "run_id": null,
+      "attempt_id": null,
+      "runner_type": null,
+      "task_lifecycle": "COMPLETED",
+      "execution_started_at": null,
+      "source_revisions": {
+        "toolkit": null,
+        "xiheadless": null,
+        "dsp": null
+      },
+      "verdict": "FAIL",
+      "steps": [
+        {
+          "human_action": "Inspect a synthetic inventory flag",
+          "expected_description": "Item present",
+          "expected_typed": {
+            "kind": "string",
+            "value": "present"
+          },
+          "observed_description": "Item absent",
+          "observed_typed": {
+            "kind": "string",
+            "value": "absent"
+          },
+          "verdict": "FAIL",
+          "evidence_refs": [
+            {
+              "kind": "SYNTHETIC_RECEIPT",
+              "uri": "fixture://contradicted/observation",
+              "immutable": true
+            }
+          ],
+          "oracle_identity": "synthetic:eq-string-v1",
+          "oracle_review_state": "SYNTHETIC_TEST_ONLY",
+          "missing_evidence_reason": null
+        }
+      ],
+      "comparison": "NOT_COMPARABLE"
+    },
+    {
+      "id": "missing_readback",
+      "fixture_kind": "MISSING_READBACK",
+      "provenance_class": "SYNTHETIC_TEST_FIXTURE",
+      "scenario_id": "synthetic:missing_readback",
+      "scenario_revision": "synthetic-rev-1",
+      "run_id": null,
+      "attempt_id": null,
+      "runner_type": null,
+      "task_lifecycle": "COMPLETED",
+      "execution_started_at": null,
+      "source_revisions": {
+        "toolkit": null,
+        "xiheadless": null,
+        "dsp": null
+      },
+      "verdict": "UNKNOWN",
+      "steps": [
+        {
+          "human_action": "Inspect a synthetic observation",
+          "expected_description": "present",
+          "expected_typed": {
+            "kind": "string",
+            "value": "present"
+          },
+          "observed_description": null,
+          "observed_typed": null,
+          "verdict": "UNKNOWN",
+          "evidence_refs": [],
+          "oracle_identity": null,
+          "oracle_review_state": "UNAPPROVED",
+          "missing_evidence_reason": "NO_TRUSTWORTHY_READBACK"
+        }
+      ],
+      "comparison": "NOT_COMPARABLE"
+    },
+    {
+      "id": "preflight_block",
+      "fixture_kind": "PREFLIGHT_BLOCKED",
+      "provenance_class": "SYNTHETIC_TEST_FIXTURE",
+      "scenario_id": "synthetic:preflight_block",
+      "scenario_revision": "synthetic-rev-1",
+      "run_id": null,
+      "attempt_id": null,
+      "runner_type": null,
+      "task_lifecycle": "NOT_STARTED",
+      "execution_started_at": null,
+      "source_revisions": {
+        "toolkit": null,
+        "xiheadless": null,
+        "dsp": null
+      },
+      "verdict": "BLOCKED",
+      "steps": [
+        {
+          "human_action": "Inspect a synthetic observation",
+          "expected_description": "ready",
+          "expected_typed": {
+            "kind": "string",
+            "value": "ready"
+          },
+          "observed_description": null,
+          "observed_typed": null,
+          "verdict": "BLOCKED",
+          "evidence_refs": [],
+          "oracle_identity": null,
+          "oracle_review_state": "UNAPPROVED",
+          "missing_evidence_reason": "NO_TRUSTWORTHY_READBACK"
+        }
+      ],
+      "comparison": "NOT_COMPARABLE",
+      "missing_evidence_reason": "RUNNER_OR_ORACLE_NOT_APPROVED"
+    },
+    {
+      "id": "cancel_ack",
+      "fixture_kind": "CANCELLATION_ACK",
+      "provenance_class": "SYNTHETIC_TEST_FIXTURE",
+      "scenario_id": "synthetic:cancel_ack",
+      "scenario_revision": "synthetic-rev-1",
+      "run_id": null,
+      "attempt_id": null,
+      "runner_type": null,
+      "task_lifecycle": "CANCEL_REQUEST_ACCEPTED",
+      "execution_started_at": null,
+      "source_revisions": {
+        "toolkit": null,
+        "xiheadless": null,
+        "dsp": null
+      },
+      "verdict": "UNKNOWN",
+      "steps": [
+        {
+          "human_action": "Inspect a synthetic observation",
+          "expected_description": "cancelled",
+          "expected_typed": {
+            "kind": "string",
+            "value": "cancelled"
+          },
+          "observed_description": null,
+          "observed_typed": null,
+          "verdict": "UNKNOWN",
+          "evidence_refs": [],
+          "oracle_identity": null,
+          "oracle_review_state": "UNAPPROVED",
+          "missing_evidence_reason": "NO_TRUSTWORTHY_READBACK"
+        }
+      ],
+      "comparison": "NOT_COMPARABLE",
+      "missing_evidence_reason": "TERMINAL_TASK_STATUS_MISSING"
+    },
+    {
+      "id": "provenance_conflict",
+      "fixture_kind": "PROVENANCE_CONFLICT",
+      "provenance_class": "SYNTHETIC_TEST_FIXTURE",
+      "scenario_id": "synthetic:provenance_conflict",
+      "scenario_revision": "synthetic-rev-1",
+      "run_id": null,
+      "attempt_id": null,
+      "runner_type": null,
+      "task_lifecycle": "COMPLETED",
+      "execution_started_at": null,
+      "source_revisions": {
+        "toolkit": null,
+        "xiheadless": null,
+        "dsp": null
+      },
+      "verdict": "UNKNOWN",
+      "steps": [
+        {
+          "human_action": "Inspect a synthetic observation",
+          "expected_description": "confirmed",
+          "expected_typed": {
+            "kind": "string",
+            "value": "confirmed"
+          },
+          "observed_description": "conflicting",
+          "observed_typed": {
+            "kind": "string",
+            "value": "conflicting"
+          },
+          "verdict": "UNKNOWN",
+          "evidence_refs": [],
+          "oracle_identity": null,
+          "oracle_review_state": "UNAPPROVED",
+          "missing_evidence_reason": null
+        }
+      ],
+      "comparison": "NOT_COMPARABLE",
+      "conflicting_receipts": [
+        {
+          "run_id": "synthetic-run-A",
+          "revision": "synthetic-rev-A",
+          "digest": "synthetic-digest-A"
+        },
+        {
+          "run_id": "synthetic-run-B",
+          "revision": "synthetic-rev-B",
+          "digest": "synthetic-digest-B"
+        }
+      ],
+      "missing_evidence_reason": "CONFLICTING_IDENTITIES"
+    },
+    {
+      "id": "zero_history",
+      "fixture_kind": "ZERO_HISTORY",
+      "provenance_class": "SYNTHETIC_TEST_FIXTURE",
+      "scenario_id": null,
+      "scenario_revision": null,
+      "run_id": null,
+      "attempt_id": null,
+      "runner_type": null,
+      "task_lifecycle": "NOT_STARTED",
+      "execution_started_at": null,
+      "source_revisions": {
+        "toolkit": null,
+        "xiheadless": null,
+        "dsp": null
+      },
+      "verdict": "UNKNOWN",
+      "steps": [],
+      "missing_evidence_reason": "NO_RECORDED_RESULTS",
+      "comparison": "NOT_COMPARABLE"
+    }
+  ]
+}
