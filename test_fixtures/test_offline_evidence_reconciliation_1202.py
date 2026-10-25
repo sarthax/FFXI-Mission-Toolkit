@@ -258,10 +258,11 @@ def test_full_receipt_json_encoder_recursion_is_blocked_atomically(monkeypatch):
     assert ledger.ingest(existing)["status"] == "FIRST_SEEN"
     before = ledger.snapshot(existing["run_id"], existing["execution_id"], 1)
     valid = receipt(receipt_id="synthetic-new", evidence={"progress": "safe"})
+    second_attempt = receipt(attempt=2)
     with monkeypatch.context() as scoped:
         scoped.setattr(adapter.json, "dumps", synthetic_recursion)
         assert ledger.ingest(valid)["status"] == "BLOCKED"
-        batch = ledger.ingest_many([valid, receipt(attempt=2)])
+        batch = ledger.ingest_many([valid, second_attempt])
         assert batch["status"] == "BLOCKED"
         assert batch["results"] == []
     assert ledger.snapshot(existing["run_id"], existing["execution_id"], 1) == before
