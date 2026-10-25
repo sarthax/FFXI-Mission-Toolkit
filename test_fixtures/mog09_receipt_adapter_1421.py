@@ -17,9 +17,14 @@ def project(sample: dict | None) -> dict:
         return {"status": "INCOMPLETE", "verdict": "UNKNOWN", "task_lifecycle": None,
                 "independent_oracle": "NOT_ESTABLISHED", "steps": [], "reason": "SIX_ASSERTIONS_NOT_AVAILABLE"}
     source_path = sample.get("source_path")
-    if not isinstance(source_path, str) or not source_path.strip() or source_path.startswith("/") or ".." in source_path.split("/") or "\\\\" in source_path:
+    if not isinstance(source_path, str) or not source_path.strip() or source_path.startswith("/") or ".." in source_path.split("/") or "\\" in source_path:
         return {"status": "INCOMPLETE", "verdict": "UNKNOWN", "task_lifecycle": None,
                 "independent_oracle": "NOT_ESTABLISHED", "steps": [], "reason": "SOURCE_POINTER_MISSING_OR_UNSAFE"}
+    if any(not isinstance(a.get("name"), str) or not a["name"].strip() or
+           type(a.get("runner_ok")) is not bool or "expected" not in a or "observed" not in a
+           for a in assertions):
+        return {"status": "INCOMPLETE", "verdict": "UNKNOWN", "task_lifecycle": None,
+                "independent_oracle": "NOT_ESTABLISHED", "steps": [], "reason": "MALFORMED_ASSERTION_FIELDS"}
     steps = []
     for n, a in enumerate(assertions, 1):
         ok = a.get("runner_ok")
