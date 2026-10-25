@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "workbench.app.host",
-  "route_count": 19,
+  "route_count": 20,
   "routes": [
     {
       "method": "GET",
@@ -153,6 +153,14 @@
       "home": "Captures",
       "section": "Diagnostics",
       "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/scenario-developer",
+      "home": "Validation",
+      "section": "Scenario Developer (design-only)",
+      "role": "page",
       "disposition": "KEEP"
     }
   ]
