@@ -207,6 +207,89 @@ def test_duplicate_digest_with_different_receipt_is_not_silent_second_event():
         "operations"][first["operation_id"]]["receipts"]) == 1
 
 
+
+def _overdeep_synthetic_evidence(levels=1200):
+    # Construct iteratively; caller input itself never recurses.
+    value = "synthetic"
+    for _ in range(levels):
+        value = [value]
+    return {"nested": value}
+
+
+@pytest.mark.parametrize("depth", [80, 1200])
+def test_nested_json_depth_is_fail_closed_without_recursion_escape(depth):
+    overdeep = _overdeep_synthetic_evidence(depth)
+    with pytest.raises(ValueError, match="nesting exceeds limit"):
+        canonical_evidence_digest(overdeep)
+    ledger = OfflineEvidenceLedger()
+    prior = receipt()
+    assert ledger.ingest(prior)["status"] == "FIRST_SEEN"
+    prior_snapshot = ledger.snapshot(prior["run_id"], prior["execution_id"], 1)
+    malformed = receipt(receipt_id="synthetic-overdeep")
+    malformed["evidence"] = overdeep
+    assert ledger.ingest(malformed)["status"] == "BLOCKED"
+    assert ledger.snapshot(prior["run_id"], prior["execution_id"], 1) == prior_snapshot
+
+    # The first otherwise-acceptable receipt must not leak through a later
+    # malformed receipt in the same atomic in-memory batch.
+    next_receipt = receipt(receipt_id="synthetic-next",
+                           evidence={"reported": "next"})
+    batch = ledger.ingest_many([next_receipt, malformed])
+    assert batch["status"] == "BLOCKED"
+    assert batch["results"] == []
+    assert ledger.snapshot(prior["run_id"], prior["execution_id"], 1) == prior_snapshot
+
+
+def test_full_receipt_json_encoder_recursion_is_blocked_atomically(monkeypatch):
+    # Synthetic negative forcing the SECOND encoding path (the digest of
+    # evidence already succeeded), not reliance on actual recursion limits.
+    from workbench.server_admin.feature_testing import (
+        offline_evidence_reconciliation as adapter,
+    )
+    encoder = adapter.json.dumps
+
+    def synthetic_recursion(value, *args, **kwargs):
+        if isinstance(value, dict) and "evidence_digest" in value:
+            raise RecursionError("synthetic full-receipt encoder failure")
+        return encoder(value, *args, **kwargs)
+
+    ledger = OfflineEvidenceLedger()
+    existing = receipt()
+    assert ledger.ingest(existing)["status"] == "FIRST_SEEN"
+    before = ledger.snapshot(existing["run_id"], existing["execution_id"], 1)
+    valid = receipt(receipt_id="synthetic-new", evidence={"progress": "safe"})
+    with monkeypatch.context() as scoped:
+        scoped.setattr(adapter.json, "dumps", synthetic_recursion)
+        assert ledger.ingest(valid)["status"] == "BLOCKED"
+        batch = ledger.ingest_many([valid, receipt(attempt=2)])
+        assert batch["status"] == "BLOCKED"
+        assert batch["results"] == []
+    assert ledger.snapshot(existing["run_id"], existing["execution_id"], 1) == before
+    assert ledger.snapshot(existing["run_id"], existing["execution_id"], 2) is None
+
+
+def test_evidence_json_encoder_recursion_becomes_bounded_error(monkeypatch):
+    from workbench.server_admin.feature_testing import (
+        offline_evidence_reconciliation as adapter,
+    )
+    encoder = adapter.json.dumps
+
+    def synthetic_recursion(value, *args, **kwargs):
+        if isinstance(value, dict) and "evidence_digest" not in value:
+            raise RecursionError("synthetic evidence encoder failure")
+        return encoder(value, *args, **kwargs)
+
+    candidate = receipt()
+    ledger = OfflineEvidenceLedger()
+    with monkeypatch.context() as scoped:
+        scoped.setattr(adapter.json, "dumps", synthetic_recursion)
+        with pytest.raises(ValueError, match="not bounded JSON"):
+            canonical_evidence_digest(candidate["evidence"])
+        assert ledger.ingest(candidate)["status"] == "BLOCKED"
+        assert ledger.ingest_many([candidate])["status"] == "BLOCKED"
+    assert ledger.snapshot(candidate["run_id"], candidate["execution_id"], 1) is None
+
+
 def test_no_legacy_v1_importer_or_database_side_effect(tmp_path):
     from workbench.server_admin.feature_testing.importer import import_report
     from workbench.server_admin.feature_testing.results import recent_results
