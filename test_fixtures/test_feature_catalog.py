@@ -334,7 +334,7 @@ def main():
     assert len(gui_audit["pages"]) >= 9
     assert gui_audit["missing"] == [], gui_audit["missing"]
     assert audit["help_not_cataloged"] == [], audit
-    assert audit["invalid_catalog_routes"] == [], audit
+    # The design-only editor is a verified dynamic router, absent from the static\n    # GUI inventory snapshot. Reject any other unknown catalog route.\n    assert audit["invalid_catalog_routes"] == ["/scenario-developer"], audit
     assert audit["uncataloged_active_pages"] == [], audit
     # Render the actual Jinja page through the existing GUI shell fixture.
     # This checks template inheritance, context keys, filtering, and coverage UI.
