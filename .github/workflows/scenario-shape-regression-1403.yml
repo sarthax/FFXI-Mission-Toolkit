@@ -1,0 +1,21 @@
+name: Scenario Shape Regression 1403 (characterization)
+on:
+  pull_request:
+    paths:
+      - 'test_fixtures/scenario_shape_1403.test.cjs'
+      - '.github/workflows/scenario-shape-regression-1403.yml'
+      - 'gui/static/scenario_developer.js'
+      - 'gui/static/scenario_guided_model.js'
+  workflow_dispatch:
+jobs:
+  characterize:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run actual-source regression characterization and pending acceptance
+        run: node --test test_fixtures/scenario_shape_1403.test.cjs
