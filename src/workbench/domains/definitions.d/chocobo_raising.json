@@ -120,16 +120,13 @@
           "finding": "LSB structured egg genes / item exdata; compare DSP item serializer and trade payloads",
           "source": "src/map/items/exdata/chocobo_egg.h",
           "dsp_evidence": [
-            "source:sql/item_basic.sql:2198 (egg 2312; also 2314, 2317-2319 at 2200-2205)",
-            "source:sql/item_basic.sql:2225 (chococard M 2339), :2228 (chococard F 2342), :12191 (whistle 15533), :2252 (whistle coupon 2366)",
-            "source:src/map/items/item.h:128 (generic uint8 m_extra[0x18])",
-            "source:src/map/utils/charutils.cpp:892-894 (extra loaded from char_inventory), :1227-1237 (extra saved on insert)",
-            "source:src/map/packets/inventory_item.cpp:48 (m_extra copied into the 0x020 item packet)",
-            "source:src/map/lua/lua_item.cpp (method list: no getExData/setExData; only getID/getSubID/getFlag/getName/getMod/getAugment/...)",
-            "source:src/map/lua/lua_trade_container.cpp (method list: no per-slot item/extra accessor; getItem/getItemId/getSlotCount only)"
+            "runtime:tests/live/chocobo_raising/run_live.py retirement (card 2313 exdata == capture bytes, Pulonono/Hantileon/Zopago, 2026-10-25)",
+            "runtime:run_live.py chococard (2342 exdata == capture bytes, 3 trainers)",
+            "test:tests/test_chocobo_card_pack.py (offline packCard vs capture; Galka size 0)",
+            "source:docs/slices/chocobo-raising-core/TEST_PLAN.md (slice 7/8 evidence)"
           ],
-          "dsp_note": "Source-read only. Egg/card items exist and the generic 24-byte extra blob persists and is sent to the client, but there is no ChocoboEgg/ChocoboCard exdata struct, no Lua getExData/setExData, and no way for an NPC onTrade script to read a traded item's extra bytes. Item-to-item bit layout (DNA1-3/Ability/Plan/IsBred) cannot be applied until those accessors exist. LSB ref: src/map/items/exdata/chocobo_egg.h, chocobo_card.cpp (commit 73e01519). Not runtime tested; inventory-save paths other than insert (e.g. quantity-only UpdateItem) not audited for extra preservation on stack/move.",
-          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
+          "dsp_note": "24-byte card exdata (stat bytes, packed dna/ability/temperament/weather/gender/colour, owner-race size nibble, 6-bit signature) written via addItemExData and verified against the capture on all three trainers. Egg exdata and the egg hand-over events (843/518/751) are still unverified.",
+          "dsp_target_commit": "84380f6b1308e1d60f0a759829c288f37efcab96"
         },
         {
           "name": "Stable NPCs and event dialogue",
@@ -139,20 +136,11 @@
           "finding": "Verify NPC row, CSID, start/update/finish and client option support for Hantileon, Zopago, Pulonono",
           "source": "scripts/globals/hobbies/chocobo_raising/event_vm.lua",
           "dsp_evidence": [
-            "source:sql/npc_list.sql:1762 (Hantileon, San d'Oria, pos -2.675 -0.100 -105.287 = LSB README pos)",
-            "source:sql/npc_list.sql:27036 (Zopago, Bastok Mines, pos 51.706 0.874 -109.065 = LSB)",
-            "source:sql/npc_list.sql:29353 (Pulonono, Windurst Woods, pos 130.124 -5.350 -119.341; LSB README says -6.35 y)",
-            "source:sql/npc_list.sql:1791 (Arvilauge), :27058 (Gonija), :29375 (Kiria-Romaria), :29951 (Dabih Jajalioh), :30366 (Finbarr)",
-            "source:sql/npc_list.sql:30440 (Mapitoto only as a commented NOT_CAPTURED row; no live row)",
-            "source:sql/npc_list.sql:1779,1781,27051,27053,29372,29374,30363 (0,0,0 placeholder duplicates of the trainers in other zones)",
-            "source:scripts/zones/Southern_San_dOria/npcs/Hantileon.lua:15-36 (empty onTrade; startEvent 0x335/0x336/0x331 = 821/822/817)",
-            "source:scripts/zones/Bastok_Mines/npcs/Zopago.lua:18-29 (empty onTrade, 0x202 trade event commented out; startEvent 0x1FC = 508)",
-            "source:scripts/zones/Windurst_Woods/npcs/Pulonono.lua:12-20 (empty onTrade; startEvent 0x2E5 = 741)",
-            "source:scripts/zones/Southern_San_dOria/npcs/Arvilauge.lua, scripts/zones/Bastok_Mines/npcs/Gonija.lua (present); scripts/zones/Windurst_Woods/npcs has no Kiria-Romaria.lua",
-            "source:scripts/globals/hobbies/chocobo_raising/constants.lua (LSB csidTable intro csids 817/508/741, checked against the DSP trigger csids)"
+            "runtime:run_live.py menu (trainer events 742/823/509 start; options 208,252,214,244,500,251,63220,250,215 accepted, no Lua error, 3 trainers)",
+            "source:docs/slices/chocobo-raising-core/TEST_PLAN.md (trainer matrix 2026-10-24/25)"
           ],
-          "dsp_note": "Source-read only. All three trainers have real positioned rows and trigger scripts, and DSP's default trigger csids equal LSB's intro csids (817/508/741), which is encouraging for client-DAT CSID parity in these zones, but the other 9 csids per trainer (main 823/509/742, trade 826/512/745, rejection 831/515/748, chick, walks, watch, debug) are NOT verified against this client build; run mission_toolkit/dat-extractor per CLAUDE.md before using any. DSP's 0x335/0x336 are the unrelated Chocobo-on-the-Loose quest. onTrade/onEventUpdate/onEventFinish are stubs, so none of LSB's event_vm option protocol exists. Gaps: Kiria-Romaria script, Mapitoto NPC row (uncaptured), cross-zone 0,0,0 duplicates should be left alone (status 2/6 hidden). Pulonono SQL y -5.35 vs LSB -6.35 needs !checknav/!logpos before trusting either.",
-          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
+          "dsp_note": "Pulonono (241), Hantileon (230) and Zopago (234) events start with the expected CSIDs and the menu options are accepted. Reply bytes are not traced and hand-over cutscenes are unverified. Options 250 and 215 end the event.",
+          "dsp_target_commit": "84380f6b1308e1d60f0a759829c288f37efcab96"
         },
         {
           "name": "NPC packet sequences",
@@ -175,36 +163,30 @@
         {
           "name": "Persistent character state",
           "upstream": "upstream-implemented",
-          "dsp": "missing",
+          "dsp": "partial",
           "priority": "P0",
           "finding": "LSB char_chocobos plus char_pet.chocobo_user_data; audit DSP schema, Lua bindings and cleanup",
           "source": "sql/char_chocobos.sql",
           "dsp_evidence": [
-            "source:sql/char_pet.sql:8-18 (columns: wyvernid, automatonid, attachments, adventuringfellowid, chocoboid; no chocobo_user_data)",
-            "source:sql/ (no char_chocobos.sql; grep -li chocobo sql/*.sql shows only item/ability/pet tables)",
-            "source:src/map/lua/lua_baseentity.cpp:3515-3533 (only existing chocobo write: packs a name pair into char_pet.chocoboid)",
-            "source:src/map/utils/petutils.cpp:1194-1210 (chocoboid is read back only as a pet-name pair)",
-            "source:src/map/lua/lua_baseentity.h (no getChocoboRaisingInfo/setChocoboRaisingInfo/deleteRaisedChocobo/getChocoboUserData/setChocoboUserData/registerChocobo)",
-            "source:src/map/entities/charentity.h (no m_chocoboUserData member)"
+            "runtime:run_live.py day_report/feed/retirement (char_chocobos row seeded, updated by day and feed, deleted on retirement; read back from MariaDB)"
           ],
-          "dsp_note": "Source-read only. DSP has nothing equivalent to LSB's char_chocobos table (29 columns), char_pet.chocobo_user_data 32-byte blob, or the six bindings. Additive migration is feasible: CREATE TABLE char_chocobos and ALTER TABLE char_pet ADD COLUMN chocobo_user_data blob NULL; live DB is MyISAM (no FK/cascade) so character-deletion cleanup must be explicit in the delete-char path. See docs/workbench/chocobo_audit/PERSISTENCE_GAP_REPORT.md. Nothing was executed against the live database.",
-          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
+          "dsp_note": "char_chocobos persistence is exercised through live scenarios. Relog round trip, the char_pet blob and character-deletion cleanup are not covered by these scenarios.",
+          "dsp_target_commit": "84380f6b1308e1d60f0a759829c288f37efcab96"
         },
         {
           "name": "Daily care and progression",
           "upstream": "upstream-implemented",
-          "dsp": "missing",
+          "dsp": "partial",
           "priority": "P1",
           "finding": "LSB elapsed-day model, stage advancement, feeding, care plans and condition effects",
           "source": "scripts/globals/hobbies/chocobo_raising/model.lua",
           "dsp_evidence": [
-            "source:scripts/globals/ (no hobbies/ directory; no chocobo_raising module)",
-            "source:scripts/globals/chocobo.lua (90 lines, rental/zone-eligibility only)",
-            "source:src/map/luautils.cpp:121 (VanadielTime global exists for day arithmetic)",
-            "source:src/map/lua/luautils.cpp:103 (luaL_openlibs; scripts already use bit.band/bit.bor, e.g. scripts/globals/conquest.lua)"
+            "runtime:run_live.py day_report 6/30/65/130 -> stages 2/4/6/7 (Pulonono); day_report 30 passes on all 3 trainers",
+            "runtime:run_live.py feed (241: 2 gysahl traded, hunger 100->150, greens consumed, 3 trainers)",
+            "runtime:run_live.py careplan (0xFE 852222 -> plan byte 0x51, 3 trainers)"
           ],
-          "dsp_note": "Source-read only. No raising logic exists. LSB's model/care_plan/choco_data/condense_events/settings are ~7,233 Lua lines across the module; they are pure-Lua except for the xi.* namespace, utils.getDebugPlayerPrinter, xi.settings, getCharVar/setCharVar (DSP: getVar/setVar), and the missing C++ bindings listed in the persistence finding. A bounded API-name diff against DSP shows ~14 LSB method names absent (getChocoboRaisingInfo/setChocoboRaisingInfo/deleteRaisedChocobo/getChocoboUserData/setChocoboUserData/registerChocobo/getFieldChocobo/sendChocoboRace/registerCylindricalTriggerArea/isInEvent/hasCompletedQuest/messageName plus the char-var aliases getCharVar/setCharVar and getTrade); several have DSP aliases. Port is mostly mechanical translation plus a compatibility shim, gated on persistence.",
-          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
+          "dsp_note": "Stage progression, feeding and care-plan writes are live-verified. Walk, mandatory ADULT_3/4 cutscene content, condition effects and give-up before ADULT_1 are not covered.",
+          "dsp_target_commit": "84380f6b1308e1d60f0a759829c288f37efcab96"
         },
         {
           "name": "Personal whistle and mount",
@@ -228,17 +210,16 @@
         {
           "name": "Breeding, cards and retirement",
           "upstream": "upstream-implemented",
-          "dsp": "missing",
+          "dsp": "partial",
           "priority": "P2",
           "finding": "Validate DNA exdata, chococards, Finbarr, retirement rewards and inventory-full handling",
           "source": "scripts/globals/hobbies/chocobo_raising/breeding.lua",
           "dsp_evidence": [
-            "source:scripts/globals/ (no breeding/retirement modules)",
-            "source:scripts/zones/Upper_Jeuno/npcs/ (no Finbarr/Mapitoto scripts located; npc_list.sql:30366 Finbarr row only; :30440 Mapitoto not captured)",
-            "source:sql/item_basic.sql:2225,2228 (chococards exist as items only)"
+            "runtime:run_live.py retirement (VCS card 2313 + yellow plaque 309 received, row deleted, 3 trainers)",
+            "runtime:run_live.py chococard (option 239, 300 gil, 2342, bird kept, 3 trainers)"
           ],
-          "dsp_note": "Source-read only. Depends on egg/card exdata accessors and persistence. LSB itself carries approximations noted in its README; those must be tracked separately from DSP gaps (LSB bred eggs carry genes, bought/ISNM eggs carry none; retirement holds card/plaque for full inventory).",
-          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
+          "dsp_note": "Retirement hand-over and chococard purchase are live-verified. Breeding and egg laying are not built; the male chococard 2339 sample, insufficient-gil and full-bag paths have no evidence.",
+          "dsp_target_commit": "84380f6b1308e1d60f0a759829c288f37efcab96"
         },
         {
           "name": "Walks, stories and digging",
@@ -279,15 +260,10 @@
           "finding": "Adapt LSB client-driven suite; inspect xiheadless-dsp event, trade and mount support",
           "source": "scripts/tests/systems/chocobo_raising/client.lua",
           "dsp_evidence": [
-            "source:sarthax/xiheadless-dsp Mcp/McpBrain.cs (tools talk_to_npc, event_select, trade_npc, use_item, inventory, container_items, key_items, snapshot, logout, say, recent_chat, entity_raw)",
-            "source:sarthax/xiheadless-dsp Capabilities/Events.cs (UpdateEvent/FinishEvent/Finish builders for 0x05B; MCP exposes event_select only as a finishing answer)",
-            "source:sarthax/xiheadless-dsp Capabilities/TradeNpc.cs (0x036 NPC trade)",
-            "source:sarthax/xiheadless-dsp Game/PacketParsers.cs:446-458 (EventStart records EventParams[8] for 0x034 only; 0x033 string params dropped)",
-            "source:sarthax/xiheadless-dsp Game/PacketParsers.cs:537-543 (ItemAttr 0x020 reads qty/id/container/slot only; extdata bytes discarded)",
-            "source:sarthax/xiheadless-dsp Game/WorldState.cs:40 (IsMounted only from status icon 252)"
+            "runtime:tests/live/chocobo_raising/run_live.py scenarios day_report, retirement, chococard, feed, menu, careplan on 3 trainers (2026-10-25)"
           ],
-          "dsp_note": "Source-read only; headless client not run. Can already do trigger, finish, trade-to-NPC, use item, inventory and logout. Blockers for acceptance tests: no MCP exposure of mid-event update (0x05B Mode=1) with chosen option, no capture of received 0x034/0x032 param/EventNum sequences per step, no 0x020 extdata exposure (needed to assert egg/card genes), no mount model/subPower/ChocoboIndex readout, no explicit relogin tool (logout ends the process). Per the task rules the headless client was not modified.",
-          "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
+          "dsp_note": "Six live scenarios run on three trainers with TRAINER and ACCOUNT switches for parallel runs. Not run in CI; needs a running DSP server and the headless client.",
+          "dsp_target_commit": "84380f6b1308e1d60f0a759829c288f37efcab96"
         }
       ],
       "pipeline": [
@@ -304,8 +280,8 @@
         },
         {
           "stage": "Stable NPC and egg proof of concept",
-          "status": "blocked",
-          "summary": "Requires Phase 0 exdata accessors and character persistence, plus trainer option/CSID client validation.",
+          "status": "in-progress",
+          "summary": "Pulonono, Hantileon and Zopago events and menu options run live (3 trainers); card exdata matches the capture. Egg exdata and the hand-over events 843/518/751 are unverified.",
           "handoffs": [
             {
               "href": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
@@ -315,8 +291,8 @@
         },
         {
           "stage": "Persistence and day simulation",
-          "status": "blocked",
-          "summary": "Add char_chocobos schema and char_pet user blob with explicit MyISAM deletion cleanup; port LSB care/day model after save/load test.",
+          "status": "in-progress",
+          "summary": "char_chocobos, the day model, feeding (241) and care-plan writes are live-verified on 3 trainers. Relog round trip, the char_pet blob and deletion cleanup are not yet covered.",
           "handoffs": [
             {
               "href": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
@@ -337,8 +313,8 @@
         },
         {
           "stage": "Breeding, retirement and peripheral systems",
-          "status": "not-started",
-          "summary": "Requires working care model, genetic egg/card exdata, and reviewed Finbarr/Mapitoto NPC coverage.",
+          "status": "in-progress",
+          "summary": "Retirement hand-over (VCS card + plaque) and chococard purchase (239) are live-verified. Breeding, egg laying and Finbarr/Mapitoto coverage are not built.",
           "handoffs": [
             {
               "href": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
@@ -360,7 +336,7 @@
         {
           "stage": "Phase 0 core: exdata + persistence (feature/chocobo-raising-core)",
           "status": "in-progress",
-          "summary": "Exdata accessors, char_chocobos, chocobo_user_data and 7 bindings committed on valhalla; syntax-checked only, migration not applied. Scenarios: docs/workbench/chocobo_audit/TEST_SCENARIOS.json.",
+          "summary": "Slices 1-8 committed on valhalla (feature/chocobo-raising-core) and exercised by 6 live scenarios x 3 trainers (TEST_PLAN.md). Open: walk, ADULT_3/4 cuts, give-up flow, egg events, insufficient-gil and full-bag paths.",
           "handoffs": [
             {
               "href": "https://github.com/sarthax/darkstar-to-valhalla/issues/55",

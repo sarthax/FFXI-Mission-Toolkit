@@ -44,3 +44,35 @@ A: exdata + Lua accessors. D: bindings + char-delete cleanup. F: mountutils equi
 
 ## Risks
 Client-generation csid drift (see CLAUDE.md); live DB is MyISAM (no cascade); API aliasing (`getCharVar`/`getVar`, `messageName`/`messageSpecial`; `getTrade`, `isInEvent`, `hasCompletedQuest`, `registerCylindricalTriggerArea` absent); LSB approximations in its own README should not be treated as retail truth.
+
+## Trainer CSID verification (2026-10-24, client pull same session)
+Source: `mission_toolkit.py` events.yml, per-trainer entity event list (zones 230/234/241).
+LSB `xi.chocoboRaising.csidTable` ids (intro, main, trade, rejection, chicks, debug) all exist on the trainer's own entity in this client:
+- Hantileon (230): 817, 823, 826, 831, 852 present (also 821,822,824,825,827,829,830).
+- Zopago (234): 508, 509, 512, 515, 542 present (also 510, 511, 513).
+- Pulonono (241): 741, 742, 745, 748, 766 present (also 743, 744, 746).
+Not yet verified: walk csids (298-300/304, 554-556/560, 810-812/816) and debug csids (862/551/773); option protocol (trade option 252).
+
+## Option protocol evidence (2026-10-24)
+- Captures: grep of D:\Claude\Playthrough Captures for Hantileon/Zopago/Pulonono hits only npclogger position tables (Sunbreeze, Periqia). NO capture of the raising menu exists, so retail option values are unverified.
+- DSP 0x05B (`packet_system.cpp` SmallPacket0x05B): Result=u32@0x08, EventID=u16@0x12, update flag=byte@0x0E. Update -> OnEventUpdate(csid,Result); finish -> OnEventFinish. `m_event.Option != 0` overrides Result (server-set option); LSB trade handling `option == 252` arrives via Result unless Option override is set.
+- DSP has `player:updateEvent` (lua_baseentity.cpp:3440); arg count/semantics vs LSB's onEventUpdateVCSTrainer usage still to compare.
+- Next: capture a retail raising session (Hantileon menu + egg trade) before building P1; do not invent option values.
+
+## Retail option protocol from ingested captures (2026-10-24)
+User supplied 37 public captures (D:\Claude\Playthrough Captures\Chocobo Raising); ingested as content_type=unclassified, capture_id 792-828, 1.37M raw packets in capture_raw_packets (opcode strings are mixed-case '0X05B'/'0x05B': use upper()).
+Capture 824 (Windurst, Pulonono, initial egg trade, 2022-01-14) decoded:
+- S>C 0x034 csid 741 (intro, params 0,65372159,13408674,4095,4,...) -> C>S 05B result 0 upd 0 (finish).
+- Player trades egg: C>S 0x036 (64 B, one item) -> S>C 0x034 csid 745 (trade csid) -> C>S 05B result 252 upd 1 (update) -> C>S 05B result 252 upd 0 (finish). Confirms LSB `csid==tradeCSID and option==252`.
+- Main menu csid 742: ~27 C>S 05B upd 1 updates with option values 208,214,215,243,244,46,248,250,251, ending upd 0 result 215. Menu navigation = update packets; finish carries last option.
+- csid 761 (no trade params) and 10008 appear after; 748 (rejection) not in this capture (see 'Trade Egg - Rejected' capture 825).
+- Open: no visible S>C start packet for csid 742 after the 745 finish in the decode (start likely a startEvent from onEventFinish; recheck ordering with seq), and the S>C update replies (0x05B updateEvent responses) are not yet decoded.
+Next: decode capture 825 (rejection 748) and the care-plan menu option values against LSB onEventUpdateVCSTrainer before building P1.
+
+## Retail decode: trade, rejection, menu replies (2026-10-24, captures 824/825)
+Packets: C>S 0x036 trade, S>C 0x034 event start, S>C 0x05C event update (8 x u32 @0x04), C>S 0x05B (result u32@8, update flag@0x0E, csid u16@0x12). Rows duplicate in capture_raw_packets (case-variant opcode); dedupe on seq.
+- Trade accept: S>C start csid 745 -> S>C 05C `(0, 3, 0,0,0,0,0,0)` (p1 = raising location, 3 = Windurst; LSB `updateEvent(0, raisingLocation[zone], 0..)`) -> C>S 05B 252 upd1 -> C>S 05B 252 upd0 (finish).
+- Rejection (wrong item): S>C start csid 748 `(0,0,0,0,3,..)` -> C>S 05B 244 upd1 -> S>C 05C `(0,0,0,0,2,1,0,0)` (p4 = stage, p5 = 1; LSB PRESENT_CHOCOBO_APPEARANCE=244 -> updateEvent(0,0,0,0,saved.stage,1,0,0)) -> finish 244.
+- Main menu 742: option = low byte command (LSB `bit.band(option,0xFF)`, arg = option>>8). Observed commands 208,214,215,241,243,244,246?,248,250,251,46; replies e.g. 248 -> `(248,1,0,0,1,0,0,0)` or `(248,5242886,..,2,1)`, 241 -> `(4545,96,0,0,1,4,0,0)`, 251 -> `(251,0,460551,65536,..)`, 244 -> `(0,0,0xFFFFFFFF,0,1,1,0,0)`. LSB command table and reply shapes agree where checked; full per-command reply values not yet diffed.
+Verdict: LSB's trade/rejection/option protocol matches retail for the commands decoded.
+Scope note for P1: the trainer flow depends on LSB event_vm (1180 lines), event_playout, model, choco_data, constants, names, whistle, retirement (~7.2k lines Lua, modern LSB utils). It is a port, not a patch. Proposed split: P1a intro + egg trade + rejection + chocobo creation (needs choco_data/model/constants subset and newChocobo); P1b main menu VM and care plan.

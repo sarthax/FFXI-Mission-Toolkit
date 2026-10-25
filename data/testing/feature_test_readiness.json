@@ -965,6 +965,149 @@
       ]
     },
     {
+      "id": "chocobo_raising",
+      "name": "Chocobo Raising (trainer, life cycle, cards)",
+      "existing_gm_candidates": [],
+      "headless_candidates": [
+        "talk_to_npc",
+        "event_select",
+        "snapshot",
+        "container_items",
+        "logout"
+      ],
+      "cases": [
+        {
+          "id": "CHO-D1",
+          "kind": "positive",
+          "title": "Day report advances life stage by age (6/30/65/130 days)",
+          "status": "passed_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [
+            "Age is backdated in SQL; ADULT_3/4 scenes not inspected"
+          ],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-R1",
+          "kind": "positive",
+          "title": "Retirement hand-over: VCS card 2313 exdata, plaque 309, row deleted",
+          "status": "passed_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [
+            "Hand-over events 843/518/751 and give-up before ADULT_1 unverified"
+          ],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-C1",
+          "kind": "positive",
+          "title": "Chococard purchase (option 239): card 2342 exdata, 300 gil",
+          "status": "partial_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [
+            "Male card 2339 bytes, insufficient gil and full bag unverified"
+          ],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-F1",
+          "kind": "positive",
+          "title": "Feed gysahl greens (option 241)",
+          "status": "passed_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [
+            "Reply glow/rank values not traced"
+          ],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-M1",
+          "kind": "positive",
+          "title": "Trainer menu options accepted (208,252,214,244,500,251,63220,250,215)",
+          "status": "partial_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [
+            "S>C reply bytes not traced"
+          ],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-P1",
+          "kind": "positive",
+          "title": "Care plan update (0xFE slot 0)",
+          "status": "passed_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        }
+      ],
+      "gaps": [
+        "Run per trainer with TRAINER=pulonono|hantileon|zopago and ACCOUNT=xitest03..08; all three pass except day_report 6/65/130 (Pulonono only)",
+        "Canonical test_specifications.json entry blocked on schema-owner review (#1259)"
+      ],
+      "description": "Live headless scenarios from run_live.py; see docs/workbench/chocobo_audit/TEST_SCENARIOS.json"
+    },
+    {
       "id": "inventory_observation",
       "name": "Inventory observation (client vs persisted DSP)",
       "existing_gm_candidates": [],
