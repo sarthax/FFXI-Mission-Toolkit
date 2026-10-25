@@ -37,16 +37,18 @@ def _check_json_nesting(value: object, *, max_depth: int = _MAX_JSON_DEPTH) -> N
     json.dumps still rejects non-JSON values and cyclic references.
     """
     stack = [(value, 0)]
-    seen: set[int] = set()
+    # Track deepest visit per container: shared Python references can appear
+    # at multiple depths, while JSON encodes each occurrence independently.
+    deepest_seen: dict[int, int] = {}
     while stack:
         current, depth = stack.pop()
         if depth > max_depth:
             raise ValueError("offline JSON nesting exceeds limit")
         if isinstance(current, (dict, list, tuple)):
             identifier = id(current)
-            if identifier in seen:
+            if deepest_seen.get(identifier, -1) >= depth:
                 continue
-            seen.add(identifier)
+            deepest_seen[identifier] = depth
             values = current.values() if isinstance(current, dict) else current
             stack.extend((item, depth + 1) for item in values)
 
