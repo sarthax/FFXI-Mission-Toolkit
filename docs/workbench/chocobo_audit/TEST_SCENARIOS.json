@@ -360,6 +360,86 @@
    "evidence": [
     "runtime: 2026-10-25 xitest04 headless run_live.py gm PASS: energy, rivals meeting, wins, condition bit, age shift and var all applied via !chocobo."
    ]
+  },
+  {
+   "id": "P4-CHO-L20",
+   "phase": "P4",
+   "title": "Gonija stable clerk review 534 (scenario chick_clerk, CLERK=bastok)",
+   "steps": "run_live.py chick_clerk CLERK=bastok",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py chick_clerk CLERK=bastok",
+   "state": "passed",
+   "evidence": []
+  },
+  {
+   "id": "P4-CHO-L21",
+   "phase": "P4",
+   "title": "Kiria-Romaria stable clerk review 761 (scenario chick_clerk, CLERK=windurst)",
+   "steps": "run_live.py chick_clerk CLERK=windurst",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py chick_clerk CLERK=windurst",
+   "state": "passed",
+   "evidence": []
+  },
+  {
+   "id": "P4-CHO-L22",
+   "phase": "P4",
+   "title": "Finbarr ticket plans 2-4 (scenario breed_ticket, PLAN=2..4)",
+   "steps": "run_live.py breed_ticket PLAN=2..4",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py breed_ticket PLAN=2..4",
+   "state": "passed",
+   "evidence": []
+  },
+  {
+   "id": "P4-CHO-L23",
+   "phase": "P4",
+   "title": "Finbarr date and egg hand-over plans 2-4 (scenario breed_date, PLAN=2..4)",
+   "steps": "run_live.py breed_date PLAN=2..4",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py breed_date PLAN=2..4",
+   "state": "passed",
+   "evidence": []
+  },
+  {
+   "id": "P4-CHO-L24",
+   "phase": "P4",
+   "title": "Finbarr hand-over with a full bag keeps the egg pending (scenario breed_fullbag)",
+   "steps": "run_live.py breed_fullbag",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py breed_fullbag",
+   "state": "passed",
+   "evidence": []
+  },
+  {
+   "id": "P4-CHO-L25",
+   "phase": "P4",
+   "title": "Bred egg hatch with Zopago and Pulonono (scenario breed_hatch, TRAINER=)",
+   "steps": "run_live.py breed_hatch TRAINER=zopago|pulonono",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py breed_hatch TRAINER=zopago|pulonono",
+   "state": "passed",
+   "evidence": []
+  },
+  {
+   "id": "P4-CHO-L26",
+   "phase": "P4",
+   "title": "Chocobo naming menu 0xFF saves valid names, rejects bad index (scenario naming)",
+   "steps": "run_live.py naming",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py naming",
+   "state": "passed",
+   "evidence": []
+  },
+  {
+   "id": "P4-CHO-L27",
+   "phase": "P4",
+   "title": "Forced random name at adult 3 (scenario forced_name; flaky on first run of a batch)",
+   "steps": "run_live.py forced_name",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py forced_name",
+   "state": "partial",
+   "evidence": []
   }
  ]
 }

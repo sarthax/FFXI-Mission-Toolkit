@@ -1384,6 +1384,158 @@
             "run_live_output"
           ],
           "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-L20",
+          "kind": "positive",
+          "title": "Gonija stable clerk review 534 (scenario chick_clerk, CLERK=bastok)",
+          "status": "passed_live_2026-10-26",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-L21",
+          "kind": "positive",
+          "title": "Kiria-Romaria stable clerk review 761 (scenario chick_clerk, CLERK=windurst)",
+          "status": "passed_live_2026-10-26",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-L22",
+          "kind": "positive",
+          "title": "Finbarr ticket plans 2-4 (scenario breed_ticket, PLAN=2..4)",
+          "status": "passed_live_2026-10-26",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-L23",
+          "kind": "positive",
+          "title": "Finbarr date and egg hand-over plans 2-4 (scenario breed_date, PLAN=2..4)",
+          "status": "passed_live_2026-10-26",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-L24",
+          "kind": "positive",
+          "title": "Finbarr hand-over with a full bag keeps the egg pending (scenario breed_fullbag)",
+          "status": "passed_live_2026-10-26",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-L25",
+          "kind": "positive",
+          "title": "Bred egg hatch with Zopago and Pulonono (scenario breed_hatch, TRAINER=)",
+          "status": "passed_live_2026-10-26",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-L26",
+          "kind": "positive",
+          "title": "Chocobo naming menu 0xFF saves valid names, rejects bad index (scenario naming)",
+          "status": "passed_live_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-L27",
+          "kind": "positive",
+          "title": "Forced random name at adult 3 (scenario forced_name; flaky on first run of a batch)",
+          "status": "partial_flaky_2026-10-25",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
         }
       ],
       "gaps": [

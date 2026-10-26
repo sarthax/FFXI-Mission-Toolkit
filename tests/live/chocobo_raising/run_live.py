@@ -434,7 +434,8 @@ def card(sire, dna, ability=0, rcp=0):
     word = dna[0] + dna[1] * 8 + dna[2] * 64 + ability * 512
     return [10, 10, 10, rcp] + list(word.to_bytes(4, "little")) + [0] * 16
 
-PLAN = int(os.environ.get("PLAN", "1"))
+PLAN = int(os.environ.get("PLAN", "1")); FULLBAG = os.environ.get("FULLBAG") == "1"
+EGG = {1: 2319, 2: 2318, 3: 2318, 4: 2317}[PLAN]
 
 class BreedTicket:
     # Finbarr event 10108 menu: option 1 (Gourmet) buys the 3500 gil ticket with plan byte 1 and signature "PlanA". LSB-only.
@@ -463,7 +464,7 @@ class BreedDate:
         seed(4, 30); q(f"update chars set pos_zone=244 where charid={CHAR}")
         q(f"delete from char_inventory where charid={CHAR} and itemid in (2344,2339,2342,2317,2318,2319)")
         q(f"delete from char_vars where charid={CHAR} and varname in {BREED_VARS}")
-        give(2344, [2] + [0] * 11 + list(b"PlanB") + [0] * 7)
+        give(2344, [PLAN] + [0] * 11 + list(b"Plan" + bytes([64 + PLAN])) + [0] * 7)
         give(2339, card([1, 1, 1], [1, 1, 1], 5, 64)); give(2342, card([1, 1, 1], [1, 1, 1], 5, 64))
     def v(self, n):
         r = q(f"select value from char_vars where charid={CHAR} and varname='{n}'"); return r[0][0] if r else 0
@@ -471,22 +472,44 @@ class BreedDate:
         r = b.tool("trade_npc", npcId=FINBARR, items=[{"itemId": 2344, "qty": 1}, {"itemId": 2339, "qty": 1}, {"itemId": 2342, "qty": 1}]); time.sleep(2)
         check("trade accepted", r.get("ok") is True, r)
         b.tool("event_select", selection=0); time.sleep(3)
-        check("egg pending: Sports plan lays item 2318", self.v("ChocoBreedEggItem") == 2318, self.v("ChocoBreedEggItem"))
+        check(f"egg pending: plan {PLAN} lays item {EGG}", self.v("ChocoBreedEggItem") == EGG, self.v("ChocoBreedEggItem"))
         check("ticket and cards consumed", q(f"select count(*) from char_inventory where charid={CHAR} and itemid in (2344,2339,2342)")[0][0] == 0)
         # parents are all dna 1 (plan 2 = Sports): offspring genes are 1 unless a 5% mutation hit
         g = self.v("ChocoBreedEggGenes")
-        check("gene word has plan 1 (Sports) in bits 14-15", (g >> 14) & 3 == 1, hex(g))
+        check(f"gene word has plan {PLAN - 1} in bits 14-15", (g >> 14) & 3 == PLAN - 1, hex(g))
         r = b.tool("talk_to_npc", npcId=FINBARR)
         check("before midnight Finbarr says wait (10105)", r.get("eventId") == 10105, r); time.sleep(2); b.tool("event_select", selection=0); time.sleep(1)
         q(f"update char_vars set value=1 where charid={CHAR} and varname='ChocoBreedEggReady'")
         r = b.tool("talk_to_npc", npcId=FINBARR)
         check("when due Finbarr lays the egg (10107)", r.get("eventId") == 10107, r); time.sleep(2)
         b.tool("event_select", selection=0); time.sleep(3)
-        ex = q(f"select extra from char_inventory where charid={CHAR} and itemid=2318")
-        check("bred egg 2318 received with IsBred bit", bool(ex) and ex[0][0][3] & 0x80 == 0x80, ex)
+        ex = q(f"select extra from char_inventory where charid={CHAR} and itemid={EGG}")
+        check(f"bred egg {EGG} received with IsBred bit", bool(ex) and ex[0][0][3] & 0x80 == 0x80, ex)
         check("pending egg cleared", self.v("ChocoBreedEggItem") == 0)
     def done(self):
-        q(f"delete from char_inventory where charid={CHAR} and itemid in (2344,2339,2342,2318)")
+        q(f"delete from char_inventory where charid={CHAR} and itemid in (2344,2339,2342,2317,2318,2319,16448)")
+        q(f"delete from char_vars where charid={CHAR} and varname in {BREED_VARS}")
+
+class BreedFullBag:
+    # a bred egg is due but the bag is full: Finbarr must not lose it (egg stays pending, nothing added)
+    notrainer = True; pos = "!pos -50 8.2 98 244"
+    def seed(self):
+        seed(4, 30); q(f"update chars set pos_zone=244 where charid={CHAR}")
+        q(f"delete from char_inventory where charid={CHAR} and itemid in (2344,2339,2342,2317,2318,2319,16448)")
+        q(f"delete from char_vars where charid={CHAR} and varname in {BREED_VARS}")
+        cap = q(f"select inventory from char_storage where charid={CHAR}")[0][0]
+        used = q(f"select count(*) from char_inventory where charid={CHAR} and location=0 and itemid<>65535")[0][0]
+        for _ in range(cap - used): give(16448)
+        for n, v in (("ChocoBreedEggItem", 2319), ("ChocoBreedEggGenes", 0xa49), ("ChocoBreedEggReady", 1)):
+            q(f"replace into char_vars (charid,varname,value) values ({CHAR},'{n}',{v})")
+    def run(self, b):
+        r = b.tool("talk_to_npc", npcId=FINBARR); time.sleep(2)
+        b.tool("event_select", selection=0); time.sleep(3)
+        pend = q(f"select value from char_vars where charid={CHAR} and varname='ChocoBreedEggItem'")
+        check("full bag: egg stays pending", bool(pend) and pend[0][0] == 2319, pend)
+        check("full bag: no egg added", not q(f"select 1 from char_inventory where charid={CHAR} and itemid=2319"))
+    def done(self):
+        q(f"delete from char_inventory where charid={CHAR} and itemid in (2319,16448)")
         q(f"delete from char_vars where charid={CHAR} and varname in {BREED_VARS}")
 
 class BreedHatch:
@@ -596,7 +619,7 @@ class CareMenu:
 
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_hatch": BreedHatch, "compete": Compete, "dietmund": Dietmund, "care_menu": CareMenu, "gm": GmCommand, "naming": Naming, "forced_name": ForcedName}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_fullbag": BreedFullBag, "breed_hatch": BreedHatch, "compete": Compete, "dietmund": Dietmund, "care_menu": CareMenu, "gm": GmCommand, "naming": Naming, "forced_name": ForcedName}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)
