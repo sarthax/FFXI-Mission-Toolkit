@@ -1,6 +1,6 @@
 """Noncanonical #1409 phase-2 typed proposal guard; never dispatches game actions."""
 from __future__ import annotations
-import math, re
+import math, re, struct
 PHASE1="f784bd6f22f57e707d937bd9d63ab98bd34700db"
 NATIVE="159a5b9d4b4e43397bd509a816a7241a97511319"
 # Narrow shape-level subset verified by reading pinned native schemas; does not attest runtime.
@@ -20,9 +20,18 @@ def integer(v,low=0,high=4294967295):
     return type(v) is int and low<=v<=high
 def finite(v):
     return type(v) in (int,float) and math.isfinite(v)
+def finite_float32(v):
+    """Mirror native TryGetSingle plus float.IsFinite (not Python double finiteness)."""
+    if not finite(v):
+        return False
+    try:
+        return math.isfinite(struct.unpack("!f", struct.pack("!f", v))[0])
+    except (OverflowError, ValueError, struct.error):
+        return False
+
 def valid_action(key,value):
     if key=="walk_to":
-        if isinstance(value,list): return len(value) in (2,3) and all(finite(n) for n in value)
+        if isinstance(value,list): return len(value) in (2,3) and all(finite_float32(n) for n in value)
         if isinstance(value,dict):
             return set(value)<= {"coords","timeout_ms","stall_ms"} and "coords" in value and valid_action("walk_to",value["coords"]) and all(integer(v,1,3600000) for k,v in value.items() if k!="coords")
         return False
