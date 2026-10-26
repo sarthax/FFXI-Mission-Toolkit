@@ -217,6 +217,19 @@ class CarePlan:
         plan = q(f"select care_plan from char_chocobos where charid={CHAR}")[0][0]
         check("care plan slot 0 = 0x51", (plan >> 24) & 0xFF == 0x51, hex(plan))
 
+class Naming:
+    # option 0xFF: first index bits 8-17, last index bits 18-27 into the fixed name table (6='II', 7='IV', 30 chars max)
+    def seed(self):
+        seed(4, 30); q(f"update char_chocobos set first_name='Chocobo', last_name='Chocobo' where charid={CHAR}")
+    def run(self, b):
+        b.tool("event_update", option=0xFF | (6 << 8) | (7 << 18)); time.sleep(1)
+        b.tool("event_select", selection=0); time.sleep(2)
+        n = q(f"select first_name, last_name from char_chocobos where charid={CHAR}")[0]
+        check("name II IV saved", tuple(n) == ("II", "IV"), n)
+        b.tool("event_update", option=0xFF | (9999 << 8) | (7 << 18)); time.sleep(1)
+        n = q(f"select first_name, last_name from char_chocobos where charid={CHAR}")[0]
+        check("unknown index rejected", tuple(n) == ("II", "IV"), n)
+
 class Walk:
     # options 10994/11250/11506 (cmd 242, arg 42/43/44): energy drops by the captured cost, walk refused when short of energy
     COSTS = {10994: (23, 30), 11250: (31, 40), 11506: (38, 48)}
@@ -565,7 +578,7 @@ class CareMenu:
 
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_hatch": BreedHatch, "compete": Compete, "dietmund": Dietmund, "care_menu": CareMenu, "gm": GmCommand}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_hatch": BreedHatch, "compete": Compete, "dietmund": Dietmund, "care_menu": CareMenu, "gm": GmCommand, "naming": Naming}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)
