@@ -344,14 +344,18 @@ class ChickReport:
         q(f"delete from char_vars where charid={CHAR} and varname='{self.VAR}'")
 
 class ChickClerk:
-    # San d'Oria clerk Arvilauge (csid 846) opens, with and without a clue
-    notrainer = True; pos = "!pos -13.2 1.4 -91 230"
+    # stable clerks (CLERK=sandoria|bastok|windurst): the review event opens, with a clue seeded
+    notrainer = True
+    CL = {"sandoria": (230, 17719599, 846, "!pos -13.2 1.4 -91 230", 1),
+          "bastok": (234, 17735846, 534, "!pos 27.7 0.87 -102 234", 2),
+          "windurst": (241, 17764441, 761, "!pos 127.7 -5.25 -119 241", 3)}
+    ZN, NPCID, CSID, pos, LC = CL[os.environ.get("CLERK", "sandoria")]
     def seed(self):
-        seed(4, 30); q(f"update chars set pos_zone=230 where charid={CHAR}")
-        q(f"replace into char_vars (charid,varname,value) values ({CHAR},'ChocoboRaisingLostChick',{2 | (1 << 4) | (1 << 6) | (1 << 8 + 4)})")
+        seed(4, 30); q(f"update chars set pos_zone={self.ZN} where charid={CHAR}")
+        q(f"replace into char_vars (charid,varname,value) values ({CHAR},'ChocoboRaisingLostChick',{2 | (1 << 4) | (self.LC << 6) | (1 << 8 + 4)})")
     def run(self, b):
-        r = b.tool("talk_to_npc", npcId=17719599)
-        check("clerk event 846 starts", r.get("started") is True and r.get("eventId") == 846, r)
+        r = b.tool("talk_to_npc", npcId=self.NPCID)
+        check(f"clerk event {self.CSID} starts", r.get("started") is True and r.get("eventId") == self.CSID, r)
     def done(self):
         q(f"delete from char_vars where charid={CHAR} and varname='ChocoboRaisingLostChick'")
 
