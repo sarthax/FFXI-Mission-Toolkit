@@ -474,9 +474,61 @@ class BreedHatch:
     def done(self):
         q(f"delete from char_chocobos where charid={CHAR}")
 
+class Compete:
+    # care action 52 (option 13554): refused until the rivals are met, 27-34 energy, wins counted in walk_progress bits 12-13, key item 841 on the third win (50% chance is an LSB guess)
+    def seed(self):
+        seed(4, 30); q(f"update char_chocobos set energy=100, affection=10, walk_progress=0, created=created where charid={CHAR}")
+    def go(self, b):
+        b.tool("talk_to_npc", npcId=NPC); time.sleep(2)
+        b.tool("event_update", option=13554); time.sleep(1)
+        b.tool("event_select", selection=0); time.sleep(2)
+        return q(f"select energy, affection, walk_progress from char_chocobos where charid={CHAR}")[0]
+    def run(self, b):
+        e, a, w = self.go(b)
+        check("compete refused before the rivals are met", e >= 95 and (w >> 12) & 3 == 0, (e, a, w))  # the talk can roll a day over (small energy/affection drift)
+        q(f"update char_chocobos set walk_progress=256, energy=100, created=created where charid={CHAR}")
+        e, a, w = self.go(b)
+        check("compete costs 27-34 energy and adds affection", 64 <= e <= 73 and a >= 1, (e, a, w))
+        q(f"update char_chocobos set energy=10, created=created where charid={CHAR}")
+        e, a, w = self.go(b)
+        check("compete refused when short of energy", e == 10, (e, a, w))
+        for i in range(30):
+            q(f"update char_chocobos set energy=100, created=created where charid={CHAR}")
+            e, a, w = self.go(b)
+            if (w >> 12) & 3 == 3: break
+        check("three wins reached within 30 tries", (w >> 12) & 3 == 3, (i + 1, w))
+        check("rivals meeting count kept", (w >> 8) & 3 == 1, w)
+        k = b.tool("key_items", id=841)
+        check("third win teaches the happy story (841)", k.get("owned") is True, k)
+    def done(self):
+        q(f"update char_chocobos set walk_progress=0, affection=10, created=created where charid={CHAR}")
+
+class Dietmund:
+    # long walk (option 11506) meets Dietmund once after Save My Son is complete; sets ChocoboMetDietmund and never again
+    def seed(self):
+        seed(5, 60); q(f"update char_chocobos set receptivity=255, walk_progress=0, created=created where charid={CHAR}")
+        q(f"delete from char_vars where charid={CHAR} and varname='ChocoboMetDietmund'")
+    def walk(self, b):
+        q(f"update char_chocobos set energy=100, held_item=0, created=created where charid={CHAR}")
+        b.tool("talk_to_npc", npcId=NPC); time.sleep(2)
+        b.tool("event_update", option=11506); time.sleep(1)
+        b.tool("event_select", selection=0); time.sleep(2)
+        return q(f"select value from char_vars where charid={CHAR} and varname='ChocoboMetDietmund'")
+    def run(self, b):
+        for i in range(12):
+            if self.walk(b): break
+        check("not met before Save My Son is complete", not self.walk(b))
+        b.gm("!completequest jeuno save_my_son", settle=3)
+        for i in range(40):
+            met = self.walk(b)
+            if met: break
+        check("Dietmund met on a long walk after the quest", bool(met), i + 1)
+    def done(self):
+        q(f"delete from char_vars where charid={CHAR} and varname='ChocoboMetDietmund'")
+
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_hatch": BreedHatch}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_hatch": BreedHatch, "compete": Compete, "dietmund": Dietmund}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)

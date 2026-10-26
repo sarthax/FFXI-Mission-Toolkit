@@ -312,6 +312,30 @@
    "evidence": [
     "runtime: 2026-10-25 xitest04 headless run_live.py breed_hatch PASS: chocobo row has bred alleles, ability 5, strength 8 (LSB-only shapes, no capture)."
    ]
+  },
+  {
+   "id": "P4-CHO-C1",
+   "phase": "P4",
+   "title": "Compete with others (action 52): gated on rivals, energy cost, wins counter, third win gives key item 841 (scenario compete)",
+   "steps": "run_live.py compete",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py compete",
+   "state": "passed",
+   "evidence": [
+    "runtime: 2026-10-25 xitest04 headless run_live.py compete PASS: refused before rivals met and when short of energy, cost 27-34, wins in walk_progress bits 12-13, key item 841 on third win (LSB-only shapes, 50% win chance is an LSB guess)."
+   ]
+  },
+  {
+   "id": "P4-CHO-C2",
+   "phase": "P4",
+   "title": "Dietmund met once on a long walk after Save My Son (scenario dietmund)",
+   "steps": "run_live.py dietmund",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py dietmund",
+   "state": "passed",
+   "evidence": [
+    "runtime: 2026-10-25 xitest04 headless run_live.py dietmund PASS: not met before the quest, met after !completequest jeuno save_my_son, ChocoboMetDietmund set (LSB-only)."
+   ]
   }
  ]
 }
