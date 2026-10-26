@@ -22,6 +22,12 @@ def main():
   q=make();q.update(changes);assert "native_shape_recognized" not in m.validate(q),changes
  for val in ([float("nan"),2],[float("inf"),3],[True,3],[1],{"coords":[1,2],"timeout_ms":0}):
   assert "native_shape_recognized" not in m.validate(make("navigate_near",val,1))
+ for large in (1e40, 1e100, -1e40, -1e100):
+  for coords in ([large,2],[2,large,3],{"coords":[large,2]}, {"coords":[2,large,3],"timeout_ms":100}):
+   result=m.validate(make("navigate_near",coords,1))
+   assert result["reason"]=="INVALID_NATIVE_PARAMETER_SHAPE" and "native_shape_recognized" not in result
+ for coords in ([1.25,2.5], {"coords":[1.25,2.5,3.75],"stall_ms":100}):
+  assert m.validate(make("navigate_near",coords,1))["native_shape_recognized"]
  for bad in (None,[],{"do":{}},42):
   assert m.validate(bad)["admission"]=="BLOCKED"
  for name in ("read_inventory","read_progression"):
