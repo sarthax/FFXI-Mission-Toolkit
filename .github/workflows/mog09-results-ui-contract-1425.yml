@@ -1,0 +1,20 @@
+name: MOG09 Results UI Contract 1425 Offline
+on:
+  pull_request:
+    paths:
+      - "tools/mog09_results_ui_contract_1425.py"
+      - "test_fixtures/test_mog09_results_ui_contract_1425.py"
+      - "docs/workbench/MOG09_RESULTS_UI_CONTRACT_1425.md"
+      - ".github/workflows/mog09-results-ui-contract-1425.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python test_fixtures/test_mog09_results_ui_contract_1425.py
