@@ -434,6 +434,8 @@ def card(sire, dna, ability=0, rcp=0):
     word = dna[0] + dna[1] * 8 + dna[2] * 64 + ability * 512
     return [10, 10, 10, rcp] + list(word.to_bytes(4, "little")) + [0] * 16
 
+PLAN = int(os.environ.get("PLAN", "1"))
+
 class BreedTicket:
     # Finbarr event 10108 menu: option 1 (Gourmet) buys the 3500 gil ticket with plan byte 1 and signature "PlanA". LSB-only.
     notrainer = True; pos = "!pos -50 8.2 98 244"
@@ -445,10 +447,10 @@ class BreedTicket:
     def run(self, b):
         r = b.tool("talk_to_npc", npcId=FINBARR)
         check("Finbarr starts menu event 10108", r.get("eventId") == 10108, r); time.sleep(2)
-        b.tool("event_select", selection=1); time.sleep(3)
+        b.tool("event_select", selection=PLAN); time.sleep(3)
         ex = q(f"select extra from char_inventory where charid={CHAR} and itemid=2344")
         got = bytes(ex[0][0]).hex(" ").upper() if ex else ""
-        check("ticket 2344 with plan 1 and an encoded PlanA signature", bool(ex) and bytes(ex[0][0])[0] == 1 and any(bytes(ex[0][0])[12:24]), got)  # signature is the encoded name, not ASCII
+        check(f"ticket 2344 with plan {PLAN} and an encoded signature", bool(ex) and bytes(ex[0][0])[0] == PLAN and any(bytes(ex[0][0])[12:24]), got)  # signature is the encoded name, not ASCII
         gil = q(f"select quantity from char_inventory where charid={CHAR} and itemid=65535 and location=0")[0][0]
         check("3500 gil charged", gil == 1500, gil)
     def done(self):
