@@ -27,7 +27,7 @@ _CATEGORY_NAMES = {
         "addmission delmission checkmission completemission resetlcquest checkvar setplayervar checklocalvar setlocalvar",
     "Character": "changejob changesjob setplayerlevel givexp takexp cp setmerits hp mp tp pettp title setmentor "
         "capskill capallskills setplayermodel setplayernation cnation costume animation godmode godmode1 petgodmode "
-        "hide togglegm promote resetmercrank reset raise setflag jail pardon moghancement garden astraria",
+        "hide togglegm promote resetmercrank reset raise setflag jail pardon moghancement garden astraria chocobo resetvoidwatch",
     "Spells & Effects": "addspell delspell addallspells addeffect deleffect addallattachments addallmaps",
     "Movement & Zones": "pos goto bring zone gotoentity gotoinstid homepoint return posfix speed wallhack where "
         "logpos getid release logoff send",
