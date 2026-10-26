@@ -103,6 +103,16 @@ def _usage_params(name: str, source: str, types: str | None) -> tuple[str, list[
     return "!" + name + "".join(" {%s}" % p["label"] for p in out), out
 
 
+# Per-argument help for subcommand-style commands whose Lua has no range validation to parse (text taken from each file's own header).
+_HINT_OVERRIDES = {
+    "chocobo": [
+        "info | age | set | cond | meet | wins | var | ki | delete",
+        "age: days (negative = forward). set: field name (stage, energy, affection, strength, walk_progress...). cond: bit 0-13, 16+ pending cure. meet: trainer 1-6 (5 = rivals). wins: 0-3. var: lost, whistle, hiding, search, dietmund, egg, genes, ready. ki: key item id (837-841, 850, 809)",
+        "set: value. cond: 0 or 1. meet: 0-3. var: value (omit to read). ki: add or del",
+    ],
+}
+
+
 def catalog_commands(server_root: str | Path, *, limit: int = 512) -> list[dict]:
     """Read a configured local server checkout's scripts/commands directory."""
     if type(limit) is not int or not 1 <= limit <= 1024:
@@ -135,6 +145,8 @@ def catalog_commands(server_root: str | Path, *, limit: int = 512) -> list[dict]
         name = path.stem.lower()
         usage, plist = _usage_params(name, source, params.group(1) if params else None)
         _attach_hints(source, plist)
+        for p, h in zip(plist, _HINT_OVERRIDES.get(path.stem.lower(), [])):
+            p.setdefault("hint", h)
         records.append({
             "name": name,
             "command": "!" + name,
