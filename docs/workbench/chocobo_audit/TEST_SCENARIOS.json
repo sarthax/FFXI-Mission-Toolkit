@@ -450,6 +450,16 @@
    "harness": "headless: tests/live/chocobo_raising/run_live.py whistle_card",
    "state": "passed_live_2026-10-26",
    "evidence": []
+  },
+  {
+   "id": "P4-CHO-L29",
+   "phase": "P4",
+   "title": "Whistle recharge pricing and coupon via CLuaItem charge binding (scenarios whistle_recharge, whistle_poor, whistle_coupon, whistle_full)",
+   "steps": "run_live.py whistle_recharge|whistle_poor|whistle_coupon|whistle_full (TRAINER=hantileon)",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py whistle_recharge",
+   "state": "passed_live_2026-10-26",
+   "evidence": []
   }
  ]
 }

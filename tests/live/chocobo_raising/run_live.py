@@ -565,6 +565,48 @@ class WhistleCard:
         q(f"delete from char_vars where charid={CHAR} and varname='ChocoboWhistleProg'")
         q(f"delete from char_pet where charid={CHAR}")
 
+class WhistleRecharge:
+    # trade a whistle with 10 of 25 charges (15 used): LSB GUESS 400 gil per used charge = 6000, option 220 pays and swaps in a fresh whistle
+    notrainer = True
+    CHARGES = 10; COUPON = False; GIL = 30000; OPT = 220
+    def gil(self): return q(f"select quantity from char_inventory where charid={CHAR} and itemid=65535 and location=0")[0][0]
+    def seed(self):
+        seed(4, 30); q(f"delete from char_pet where charid={CHAR}")
+        q(f"delete from char_inventory where charid={CHAR} and itemid in (15533,2366)")
+        q(f"update char_inventory set quantity={self.GIL} where charid={CHAR} and itemid=65535 and location=0")
+        give(15533, [0, self.CHARGES] + [0] * 22)
+        if self.COUPON: give(2366)
+    def trade(self, b):
+        items = [{"itemId": 15533, "qty": 1}] + ([{"itemId": 2366, "qty": 1}] if self.COUPON else [])
+        r = b.tool("trade_npc", npcId=NPC, items=items); time.sleep(2)
+        b.tool("event_select", selection=self.OPT); time.sleep(3)
+        return r
+    def charges(self):
+        r = q(f"select extra from char_inventory where charid={CHAR} and itemid=15533")
+        return [bytes(x[0])[1] for x in r]
+    def coupons(self): return q(f"select count(*) from char_inventory where charid={CHAR} and itemid=2366")[0][0]
+    def run(self, b):
+        self.trade(b)
+        ch = self.charges()
+        if self.CHARGES == 25:
+            check("full whistle untouched", ch == [25], ch)
+            check("coupon kept", self.coupons() == 1, self.coupons())
+        elif self.COUPON:
+            check("coupon refilled the whistle", len(ch) == 1 and ch[0] != self.CHARGES, ch)
+            check("coupon consumed, no gil charged", self.coupons() == 0 and self.gil() == self.GIL, (self.coupons(), self.gil()))
+        elif self.GIL < 6000:
+            check("short of gil: whistle unchanged and returned", ch == [self.CHARGES], ch)
+            check("short of gil: nothing charged", self.gil() == self.GIL, self.gil())
+        else:
+            check("recharged whistle returned", len(ch) == 1 and ch[0] != self.CHARGES, ch)
+            check("recharge cost 6000", self.gil() == self.GIL - 6000, self.gil())
+    def done(self):
+        q(f"delete from char_inventory where charid={CHAR} and itemid in (15533,2366)")
+
+class WhistleRechargePoor(WhistleRecharge): GIL = 1000
+class WhistleCoupon(WhistleRecharge): COUPON = True
+class WhistleFull(WhistleRecharge): CHARGES = 25; COUPON = True
+
 class Compete:
     # care action 52 (option 13554): refused until the rivals are met, 27-34 energy, wins counted in walk_progress bits 12-13, key item 841 on the third win (50% chance is an LSB guess)
     def seed(self):
@@ -656,7 +698,7 @@ class CareMenu:
 
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_fullbag": BreedFullBag, "breed_hatch": BreedHatch, "whistle_card": WhistleCard, "compete": Compete, "dietmund": Dietmund, "care_menu": CareMenu, "gm": GmCommand, "naming": Naming, "forced_name": ForcedName}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_fullbag": BreedFullBag, "breed_hatch": BreedHatch, "whistle_card": WhistleCard, "whistle_recharge": WhistleRecharge, "whistle_poor": WhistleRechargePoor, "whistle_coupon": WhistleCoupon, "whistle_full": WhistleFull, "compete": Compete, "dietmund": Dietmund, "care_menu": CareMenu, "gm": GmCommand, "naming": Naming, "forced_name": ForcedName}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)

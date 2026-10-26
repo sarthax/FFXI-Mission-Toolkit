@@ -1555,6 +1555,25 @@
             "run_live_output"
           ],
           "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-L29",
+          "kind": "positive",
+          "title": "Whistle recharge via C++ charge binding: 400 gil per used charge, coupon refill free, full whistle keeps coupon, short gil refused (scenarios whistle_recharge/whistle_poor/whistle_coupon/whistle_full, hantileon)",
+          "status": "passed_live_2026-10-26",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
         }
       ],
       "gaps": [
