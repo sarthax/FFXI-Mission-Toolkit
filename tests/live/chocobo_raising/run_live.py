@@ -526,6 +526,26 @@ class Dietmund:
     def done(self):
         q(f"delete from char_vars where charid={CHAR} and varname='ChocoboMetDietmund'")
 
+class GmCommand:
+    # !chocobo GM command: field/meeting/wins/condition setters, age shift (created moves back N days), var set
+    notrainer = True
+    def seed(self):
+        seed(5, 60); q(f"update char_chocobos set walk_progress=0,conditions=0,created=created where charid={CHAR}")
+    def run(self, b):
+        g = lambda c: b.gm(c, settle=3)
+        row = lambda: q(f"select stage,energy,walk_progress,conditions,unix_timestamp(created) from char_chocobos where charid={CHAR}")[0]
+        t0 = row()[4]
+        g("!chocobo info")
+        g("!chocobo set energy 42"); check("set energy", row()[1] == 42, row())
+        g("!chocobo meet 5 1"); check("meet rivals 1", (row()[2] // 4**4) % 4 == 1, row())
+        g("!chocobo wins 2"); check("wins 2", (row()[2] >> 12) % 4 == 2, row())
+        g("!chocobo cond 3 1"); check("cond bit 3 set", row()[3] & 8 == 8, row())
+        g("!chocobo cond 3 0"); check("cond bit 3 cleared", row()[3] & 8 == 0, row())
+        g("!chocobo age 2"); check("age shifts birthday back 2 days", abs((t0 - row()[4]) - 2 * 86400) < 5, row())
+        g("!chocobo var dietmund 1"); check("var set", q(f"select value from char_vars where charid={CHAR} and varname='ChocoboMetDietmund'")[0][0] == 1)
+    def done(self):
+        q(f"delete from char_vars where charid={CHAR} and varname='ChocoboMetDietmund'")
+
 class CareMenu:
     # NEEDS a temporary line in CR.handleCareMenu: player:setVar('ChocoboCareMaskDbg', mask) (the harness cannot see 0x05C replies); not in the committed Lua
     # option 243 answers the care menu mask (captured masks): chick 0x7FFFFFEA, adolescent 0x7FFFFFC8 (C0 with rivals met), adult 0x7FFFFF88 (80 with rivals met)
@@ -545,7 +565,7 @@ class CareMenu:
 
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_hatch": BreedHatch, "compete": Compete, "dietmund": Dietmund, "care_menu": CareMenu}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_hatch": BreedHatch, "compete": Compete, "dietmund": Dietmund, "care_menu": CareMenu, "gm": GmCommand}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)

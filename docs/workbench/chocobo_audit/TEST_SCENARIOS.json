@@ -348,6 +348,18 @@
    "evidence": [
     "runtime: 2026-10-25 xitest04 headless run_live.py care_menu PASS: masks 0x7FFFFFEA/C8/C0/88/80 equal the captured server replies (Playthrough Captures/Chocobo Raising); needs a temporary debug setVar to read the mask."
    ]
+  },
+  {
+   "id": "P4-CHO-G1",
+   "phase": "P4",
+   "title": "!chocobo GM command edits state (scenario gm)",
+   "steps": "run_live.py gm",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py gm",
+   "state": "passed",
+   "evidence": [
+    "runtime: 2026-10-25 xitest04 headless run_live.py gm PASS: energy, rivals meeting, wins, condition bit, age shift and var all applied via !chocobo."
+   ]
   }
  ]
 }
