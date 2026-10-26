@@ -528,6 +528,43 @@ class BreedHatch:
     def done(self):
         q(f"delete from char_chocobos where charid={CHAR}")
 
+class WhistleCard:
+    # trade a VCS registration card to the trainer: the card menu starts (844/525/752); options 479 (register, 250 gil),
+    # 495 (chococard, 300 gil, carries the card's exdata) and 221 (replacement whistle, 20000 gil) all leave the card in the bag
+    notrainer = True
+    EV = {230: 844, 234: 525, 241: 752}
+    CARD = [101, 64, 32, 40] + list((512 + 2 * 8192 + (3 << 20) + (1 << 25)).to_bytes(4, "little")) + [0] * 4 + [0x1A, 0x5C, 0xCA, 0x0D] + [0] * 8
+    def gil(self): return q(f"select quantity from char_inventory where charid={CHAR} and itemid=65535 and location=0")[0][0]
+    def seed(self):
+        seed(4, 30); q(f"delete from char_pet where charid={CHAR}")
+        q(f"delete from char_inventory where charid={CHAR} and itemid in (2313,2339,2342,15533)")
+        q(f"delete from char_vars where charid={CHAR} and varname='ChocoboWhistleProg'")
+        q(f"insert into char_vars (charid,varname,value) values ({CHAR},'ChocoboWhistleProg',4)")
+        q(f"update char_inventory set quantity=30000 where charid={CHAR} and itemid=65535 and location=0")
+        give(2313, self.CARD)
+    def pick(self, b, opt):
+        r = b.tool("trade_npc", npcId=NPC, items=[{"itemId": 2313, "qty": 1}]); time.sleep(2)
+        b.tool("event_select", selection=opt); time.sleep(3)
+        return r
+    def run(self, b):
+        r = self.pick(b, 479)
+        check("card trade accepted", r.get("ok") is True, r)
+        blob = q(f"select chocobo_user_data from char_pet where charid={CHAR}")
+        check("chocobo registered (user data written)", bool(blob) and blob[0][0] is not None and any(bytes(blob[0][0])), blob and bytes(blob[0][0]).hex())
+        check("registration cost 250", self.gil() == 29750, self.gil())
+        self.pick(b, 495)
+        ex = q(f"select extra from char_inventory where charid={CHAR} and itemid in (2339,2342)")
+        check("chococard carries the card exdata", bool(ex) and bytes(ex[0][0])[:12] == bytes(self.CARD[:12]), ex and bytes(ex[0][0]).hex(" "))
+        check("chococard cost 300", self.gil() == 29450, self.gil())
+        self.pick(b, 221)
+        n = q(f"select coalesce(sum(quantity),0) from char_inventory where charid={CHAR} and itemid=15533")[0][0]
+        check("replacement whistle bought for 20000", n == 1 and self.gil() == 9450, (n, self.gil()))
+        check("registration card still in the bag", q(f"select count(*) from char_inventory where charid={CHAR} and itemid=2313")[0][0] == 1)
+    def done(self):
+        q(f"delete from char_inventory where charid={CHAR} and itemid in (2313,2339,2342,15533)")
+        q(f"delete from char_vars where charid={CHAR} and varname='ChocoboWhistleProg'")
+        q(f"delete from char_pet where charid={CHAR}")
+
 class Compete:
     # care action 52 (option 13554): refused until the rivals are met, 27-34 energy, wins counted in walk_progress bits 12-13, key item 841 on the third win (50% chance is an LSB guess)
     def seed(self):
@@ -619,7 +656,7 @@ class CareMenu:
 
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_fullbag": BreedFullBag, "breed_hatch": BreedHatch, "compete": Compete, "dietmund": Dietmund, "care_menu": CareMenu, "gm": GmCommand, "naming": Naming, "forced_name": ForcedName}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_fullbag": BreedFullBag, "breed_hatch": BreedHatch, "whistle_card": WhistleCard, "compete": Compete, "dietmund": Dietmund, "care_menu": CareMenu, "gm": GmCommand, "naming": Naming, "forced_name": ForcedName}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)

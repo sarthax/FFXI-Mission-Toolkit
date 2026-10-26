@@ -440,6 +440,16 @@
    "harness": "headless: tests/live/chocobo_raising/run_live.py forced_name",
    "state": "partial",
    "evidence": []
+  },
+  {
+   "id": "P4-CHO-L28",
+   "phase": "P4",
+   "title": "VCS registration card trade: register, chococard, replacement whistle (scenario whistle_card)",
+   "steps": "run_live.py whistle_card (TRAINER=hantileon|zopago|pulonono)",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py whistle_card",
+   "state": "passed_live_2026-10-26",
+   "evidence": []
   }
  ]
 }

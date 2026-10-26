@@ -1536,6 +1536,25 @@
             "run_live_output"
           ],
           "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-L28",
+          "kind": "positive",
+          "title": "VCS registration card trade: register (250), chococard (300), replacement whistle (20000), card kept (scenario whistle_card, all three trainers)",
+          "status": "passed_live_2026-10-26",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
         }
       ],
       "gaps": [
