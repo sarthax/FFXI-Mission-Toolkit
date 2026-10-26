@@ -336,6 +336,18 @@
    "evidence": [
     "runtime: 2026-10-25 xitest04 headless run_live.py dietmund PASS: not met before the quest, met after !completequest jeuno save_my_son, ChocoboMetDietmund set (LSB-only)."
    ]
+  },
+  {
+   "id": "P4-CHO-C3",
+   "phase": "P4",
+   "title": "Care menu mask (command 243) matches captured masks (scenario care_menu)",
+   "steps": "run_live.py care_menu",
+   "expected": "scenario PASS in run_live output",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py care_menu",
+   "state": "passed",
+   "evidence": [
+    "runtime: 2026-10-25 xitest04 headless run_live.py care_menu PASS: masks 0x7FFFFFEA/C8/C0/88/80 equal the captured server replies (Playthrough Captures/Chocobo Raising); needs a temporary debug setVar to read the mask."
+   ]
   }
  ]
 }
