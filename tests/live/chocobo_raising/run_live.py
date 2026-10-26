@@ -220,7 +220,7 @@ class CarePlan:
 class Naming:
     # option 0xFF: first index bits 8-17, last index bits 18-27 into the fixed name table (6='II', 7='IV', 30 chars max)
     def seed(self):
-        seed(4, 30); q(f"update char_chocobos set first_name='Chocobo', last_name='Chocobo' where charid={CHAR}")
+        seed(4, 30); q(f"update char_chocobos set first_name='Chocobo', last_name='Chocobo', created=created where charid={CHAR}")
     def run(self, b):
         b.tool("event_update", option=0xFF | (6 << 8) | (7 << 18)); time.sleep(1)
         b.tool("event_select", selection=0); time.sleep(2)
@@ -229,6 +229,18 @@ class Naming:
         b.tool("event_update", option=0xFF | (9999 << 8) | (7 << 18)); time.sleep(1)
         n = q(f"select first_name, last_name from char_chocobos where charid={CHAR}")[0]
         check("unknown index rejected", tuple(n) == ("II", "IV"), n)
+
+class ForcedName:
+    # an unnamed chocobo that grows past adult 2 is named by the trainer: random 5-8 letter first name, empty last name
+    def seed(self):
+        seed(1, 66); q(f"update char_chocobos set stage=5, last_update_age=61, created=created where charid={CHAR}"); q(f"update char_chocobos set first_name='Chocobo', last_name='Chocobo', created=created where charid={CHAR}")
+    def run(self, b):
+        for opt in (504, 246) * 20:   # record count varies with the random care days, so stop once the trainer has named it
+            b.tool("event_update", option=opt); time.sleep(0.7)
+            if opt == 246 and q(f"select first_name from char_chocobos where charid={CHAR}")[0][0] != "Chocobo": break
+        b.tool("event_select", selection=0); time.sleep(3)
+        f, l = q(f"select first_name, last_name from char_chocobos where charid={CHAR}")[0]
+        check("trainer picked a first name", f != "Chocobo" and 5 <= len(f) <= 8 and l == "", (f, l, q(f"select stage,last_update_age,created from char_chocobos where charid={CHAR}")))
 
 class Walk:
     # options 10994/11250/11506 (cmd 242, arg 42/43/44): energy drops by the captured cost, walk refused when short of energy
@@ -578,7 +590,7 @@ class CareMenu:
 
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_hatch": BreedHatch, "compete": Compete, "dietmund": Dietmund, "care_menu": CareMenu, "gm": GmCommand, "naming": Naming}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_hatch": BreedHatch, "compete": Compete, "dietmund": Dietmund, "care_menu": CareMenu, "gm": GmCommand, "naming": Naming, "forced_name": ForcedName}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)
