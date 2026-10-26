@@ -11,7 +11,7 @@ NAMES=("Verify test session identity","Confirm furnishings stored in Mog Safe",
        "Inspect active Moghancement key item","Inspect eight-element aura",
        "Compare persisted bag with client bag","Compare persisted Mog Safe with client Mog Safe")
 
-SAFE_NAME = re.compile(r"synthetic assertion [0-5]\\Z")
+SAFE_NAME = re.compile(r"synthetic assertion [0-5]\Z")
 SAFE_POINTER = "fixture://mog09/synthetic"
 
 def unknown(reason):
