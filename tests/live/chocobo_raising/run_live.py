@@ -51,7 +51,7 @@ def session(scenario):
         scenario_seed = scenario.seed
         scenario_seed()
         b = McpBot(a[0], a[1], a[2], tag="live"); b.start(); time.sleep(3)
-        b.gm(getattr(scenario, "pos", POS), settle=8); b.tool("event_trace", clear=True); time.sleep(4)
+        b.gm(getattr(scenario, "pos", POS), settle=8); b.tool("event_trace", clear=True); time.sleep(10)
         if not getattr(scenario, "notrainer", False):
             r = b.tool("talk_to_npc", npcId=NPC)
             check("trainer event starts", r.get("started") is True, r)
@@ -565,6 +565,29 @@ class WhistleCard:
         q(f"delete from char_vars where charid={CHAR} and varname='ChocoboWhistleProg'")
         q(f"delete from char_pet where charid={CHAR}")
 
+class WhistleRide(WhistleCard):
+    # register a card chocobo (Gallop+Canter card: stored speed 72, 29 min), equip the whistle (neck slot), ride it in West Ronfaure.
+    # Duration 1740 s and Mounted subpower 0x40 were read back with a temporary probe in the item script (not kept: no Lua accessor for
+    # the sent speed byte, which is registered speed / 2 + speed_mod in CBattleEntity::GetSpeed).
+    def seed(self):
+        WhistleCard.seed(self)
+        give(15533, [0, 25] + [0] * 22)
+    def run(self, b):
+        self.pick(b, 479)
+        blob = q(f"select chocobo_user_data from char_pet where charid={CHAR}")
+        check("chocobo registered", bool(blob) and blob[0][0] is not None and any(bytes(blob[0][0])), blob)
+        b.gm("!zone 100", settle=3); b.wait_until(lambda: b.tool("snapshot")["zone"] == 100 and b.tool("snapshot")["inZone"], 40); time.sleep(3)
+        b.gm("!addkeyitem 138", settle=2)
+        inv = [i for i in b.tool("inventory") if i["itemId"] == 15533]
+        check("whistle in the bag", bool(inv), inv)
+        check("whistle equips (neck slot)", b.tool("equip", itemId=15533, slot=9).get("completed") is True); time.sleep(2)
+        check("whistle use accepted", b.tool("use_item", slot=inv[0]["slot"]).get("ok") is True); time.sleep(10)
+        log = open(MAPLOG, encoding="latin-1").read()[-20000:]
+        check("no Lua/chocobo errors in map log", "chocobo_whistle.lua" not in log and "chocobo_raising" not in log)
+    def done(self):
+        WhistleCard.done(self)
+        q(f"delete from char_vars where charid={CHAR} and varname like 'Whistle%'")
+
 class WhistleRecharge:
     # trade a whistle with 10 of 25 charges (15 used): LSB GUESS 400 gil per used charge = 6000, option 220 pays and swaps in a fresh whistle
     notrainer = True
@@ -698,7 +721,7 @@ class CareMenu:
 
 if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "retirement"
-    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_fullbag": BreedFullBag, "breed_hatch": BreedHatch, "whistle_card": WhistleCard, "whistle_recharge": WhistleRecharge, "whistle_poor": WhistleRechargePoor, "whistle_coupon": WhistleCoupon, "whistle_full": WhistleFull, "compete": Compete, "dietmund": Dietmund, "care_menu": CareMenu, "gm": GmCommand, "naming": Naming, "forced_name": ForcedName}.get(name, Retirement)() if name != "retirement" else Retirement()
+    sc = Day(int(sys.argv[2]) if len(sys.argv) > 2 else 6) if name == "day_report" else Chococard() if name == "chococard" else {"chococard_broke": ChococardBroke, "chococard_fullbag": ChococardFullBag, "chococard_male": ChococardMale, "feed": Feed, "menu": Menu, "careplan": CarePlan, "walk": Walk, "chick": Chick, "chick_report": ChickReport, "chick_clerk": ChickClerk, "chick_guess": ChickGuess, "watch": Watch, "story": Story, "whistle": Whistle, "breed_ticket": BreedTicket, "breed_date": BreedDate, "breed_fullbag": BreedFullBag, "breed_hatch": BreedHatch, "whistle_card": WhistleCard, "whistle_ride": WhistleRide, "whistle_recharge": WhistleRecharge, "whistle_poor": WhistleRechargePoor, "whistle_coupon": WhistleCoupon, "whistle_full": WhistleFull, "compete": Compete, "dietmund": Dietmund, "care_menu": CareMenu, "gm": GmCommand, "naming": Naming, "forced_name": ForcedName}.get(name, Retirement)() if name != "retirement" else Retirement()
     session(sc)
     print("RESULT", "FAIL" if failures else "PASS", failures)
     sys.exit(1 if failures else 0)

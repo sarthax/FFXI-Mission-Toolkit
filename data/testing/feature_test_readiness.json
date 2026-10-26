@@ -1574,6 +1574,25 @@
             "run_live_output"
           ],
           "harness": "tests/live/chocobo_raising/run_live.py"
+        },
+        {
+          "id": "CHO-L30",
+          "kind": "positive",
+          "title": "Whistle rides with the registered chocobo: Mounted lasts minutes*60 s (29 min = 1740 s) with personal-chocobo subpower 0x40; speed byte = registered speed/2 + speed_mod (scenario whistle_ride; speed byte not read back, duration and subpower read with a temporary probe)",
+          "status": "passed_live_2026-10-26",
+          "run_mode": "live_headless_manual",
+          "evidence_required": [
+            "headless_event_or_snapshot",
+            "authoritative_server_effect"
+          ],
+          "blocking_gaps": [],
+          "negative_invariant": null,
+          "required_artifacts": [
+            "dsp_commit",
+            "headless_commit",
+            "run_live_output"
+          ],
+          "harness": "tests/live/chocobo_raising/run_live.py"
         }
       ],
       "gaps": [

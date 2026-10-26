@@ -460,6 +460,16 @@
    "harness": "headless: tests/live/chocobo_raising/run_live.py whistle_recharge",
    "state": "passed_live_2026-10-26",
    "evidence": []
+  },
+  {
+   "id": "P4-CHO-L30",
+   "phase": "P4",
+   "title": "Whistle rides with the registered chocobo speed and minutes (scenario whistle_ride)",
+   "steps": "run_live.py whistle_ride (TRAINER=hantileon; equips the whistle in the neck slot in West Ronfaure)",
+   "expected": "scenario PASS in run_live output; Mounted duration = minutes*60, subpower 0x40",
+   "harness": "headless: tests/live/chocobo_raising/run_live.py whistle_ride",
+   "state": "passed_live_2026-10-26",
+   "evidence": []
   }
  ]
 }
