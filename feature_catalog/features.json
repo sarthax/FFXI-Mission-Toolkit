@@ -32,7 +32,10 @@
       "help": "/help#help-feature-trace",
       "purpose": "Inspect Lua-backed behavior, guards, callbacks and source evidence.",
       "how_to_use": "Select a Lua-backed behavior, inspect its guard conditions, callbacks, and linked source references; follow unresolved paths back to source.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/behavior_visualizer.html"
+      ]
     },
     {
       "id": "feature-checker",
@@ -45,7 +48,10 @@
       "help": "/help#help-research-checker",
       "purpose": "Check evidence coverage and required capabilities.",
       "how_to_use": "Choose a feature or capability, inspect its required evidence and coverage gaps, and record remaining validation needs.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/feature_checker.html"
+      ]
     },
     {
       "id": "capture-browser",
@@ -244,7 +250,10 @@
       "help": "/help#help-migration-packages",
       "purpose": "Inspect migration packages and source evidence.",
       "how_to_use": "Select an existing migration package and review its sources, scope, and validation evidence before any application.",
-      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance.",
+      "source_refs": [
+        "gui/templates/packages_library.html"
+      ]
     },
     {
       "id": "wiki",
@@ -710,7 +719,10 @@
       "help": "/help#help-research-gaps",
       "purpose": "Review missing or unresolved client research evidence.",
       "how_to_use": "Filter unresolved research questions by domain, follow evidence links, and record what still needs verification.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/research_gaps.html"
+      ]
     },
     {
       "id": "dialog-browser",
@@ -788,7 +800,10 @@
       "parent_id": "capture-browser",
       "purpose": "Run structured queries against the indexed capture store.",
       "how_to_use": "Choose available capture fields and predicates, run the query and inspect matches with their capture IDs, timestamps and raw source observations. Confirm field decoding before using a result as proof of behavior.",
-      "caveat": "Only captured and indexed fields can be queried reliably."
+      "caveat": "Only captured and indexed fields can be queried reliably.",
+      "source_refs": [
+        "gui/templates/capture_query.html"
+      ]
     },
     {
       "id": "validation-runs",
@@ -932,7 +947,13 @@
       "parent_id": "capture-browser",
       "purpose": "Understand which logger and packet export formats the importer recognizes.",
       "how_to_use": "Consult Capture Format Support to confirm the accepted package structure, required metadata and parser expectations before importing. Keep unrecognized formats separate until the parser can report reliable diagnostics.",
-      "caveat": "Parsing support varies by source; unsupported records must not be silently treated as valid."
+      "caveat": "Parsing support varies by source; unsupported records must not be silently treated as valid.",
+      "source_refs": [
+        "gui/templates/capture_help.html"
+      ],
+      "test_refs": [
+        "test_fixtures/test_capture_help_support_matrix.py"
+      ]
     },
     {
       "id": "capture-paths",
@@ -946,7 +967,10 @@
       "parent_id": "capture-browser",
       "purpose": "Visualize player movement and other spatial paths recorded in captures.",
       "how_to_use": "Select a capture and zone, then inspect plotted points in time/order sequence. Check coordinate provenance and gaps before inferring a continuous route or comparing points to static zone entities.",
-      "caveat": "Sparse updates and zoning can create apparent jumps; these are observations, not navigation instructions."
+      "caveat": "Sparse updates and zoning can create apparent jumps; these are observations, not navigation instructions.",
+      "source_refs": [
+        "gui/templates/path_plot.html"
+      ]
     },
     {
       "id": "capture-import",
@@ -960,7 +984,10 @@
       "parent_id": "capture-browser",
       "purpose": "Ingest a recorded gameplay package into the Toolkit's research index.",
       "how_to_use": "Select the supported input capture, inspect the preview and parser diagnostics, then import only after confirming its origin. Review rejected or undecoded records afterward; a successful import does not imply full protocol decoding.",
-      "caveat": "Import success does not guarantee every field was decoded or semantically interpreted."
+      "caveat": "Import success does not guarantee every field was decoded or semantically interpreted.",
+      "source_refs": [
+        "gui/templates/capture_new.html"
+      ]
     },
     {
       "id": "item-health",
@@ -1032,7 +1059,10 @@
       "help": "/help#help-video-ocr",
       "purpose": "Inspect video-derived text research.",
       "how_to_use": "Select a video-derived text capture, inspect extracted text alongside source context, and confirm uncertain readings manually.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/ocr.html"
+      ]
     },
     {
       "id": "llm-research",
@@ -1045,7 +1075,10 @@
       "help": "/help#help-research-checker",
       "purpose": "Explore local LLM-assisted research with source evidence safeguards.",
       "how_to_use": "Provide a focused research question, review model-assisted findings with linked sources, and independently verify claims.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/llm.html"
+      ]
     },
     {
       "id": "capture-all-paths",
@@ -1059,7 +1092,10 @@
       "parent_id": "capture-browser",
       "purpose": "Compare recorded routes across multiple capture sessions.",
       "how_to_use": "Choose a zone and the relevant capture sessions, compare their spatial overlays and identify differences in timing, sampling or coordinate frame before inferring repeated player routes.",
-      "caveat": "Session coordinates and zone identity need reconciliation before comparing routes."
+      "caveat": "Session coordinates and zone identity need reconciliation before comparing routes.",
+      "source_refs": [
+        "gui/templates/path_plot_all.html"
+      ]
     },
     {
       "id": "capture-bulk-ingest",
@@ -1073,7 +1109,10 @@
       "parent_id": "capture-browser",
       "purpose": "Process multiple capture sources in one bounded import workflow.",
       "how_to_use": "Review the source set and bulk-ingest plan before starting a batch. After processing, inspect per-file outcomes and skipped/failed entries; preserve original capture provenance and avoid retrying blindly.",
-      "caveat": "Large imports can contain mixed formats; review error summaries rather than assuming complete coverage."
+      "caveat": "Large imports can contain mixed formats; review error summaries rather than assuming complete coverage.",
+      "source_refs": [
+        "gui/templates/capture_bulk_ingest.html"
+      ]
     },
     {
       "id": "capture-metadata-import",
@@ -1087,7 +1126,10 @@
       "parent_id": "capture-browser",
       "purpose": "Associate supplementary metadata with already captured evidence.",
       "how_to_use": "Choose metadata for the exact capture identity, inspect the join keys and import preview, then verify the resulting associations. Do not attach unmatched metadata to a similarly named recording.",
-      "caveat": "Metadata alone does not prove its corresponding packet/event occurred."
+      "caveat": "Metadata alone does not prove its corresponding packet/event occurred.",
+      "source_refs": [
+        "gui/templates/capture_metadata_import.html"
+      ]
     },
     {
       "id": "capture-review",
