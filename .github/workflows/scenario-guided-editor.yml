@@ -14,6 +14,8 @@ on:
       - "test_fixtures/test_scenario_guided_*"
       - "test_fixtures/test_scenario_advanced_state.cjs"
       - "test_fixtures/test_scenario_unsaved_guard.cjs"
+      - "test_fixtures/test_scenario_shape_focus_1403.cjs"
+      - "gui/static/scenario_validation_feedback.js"
       - "test_fixtures/test_scenario_context_handoff.py"
       - "src/workbench/server_admin/scenario_authoring/context_handoff.py"
       - ".github/workflows/scenario-guided-editor.yml"
@@ -47,6 +49,7 @@ jobs:
           node test_fixtures/test_scenario_advanced_state.cjs
           node test_fixtures/test_scenario_unsaved_guard.cjs
           node test_fixtures/test_scenario_contract_v2_view.cjs
+          node test_fixtures/test_scenario_shape_focus_1403.cjs
       - name: Check browser module syntax
         run: |
           node --check gui/static/scenario_developer.js

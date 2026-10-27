@@ -46,6 +46,9 @@
       list.append(li);
     }
     container.append(list);
+    // Keyboard and screen-reader users land on the summary, not the Validate button.
+    container.setAttribute('tabindex', '-1');
+    if (typeof container.focus === 'function') container.focus();
     return true;
   }
 
