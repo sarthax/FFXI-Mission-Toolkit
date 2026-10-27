@@ -9,6 +9,7 @@ class Element {
   append(node) { this.children.push(node); }
   replaceChildren() { this.children=[]; }
   setAttribute(name,value) { this.attributes[name]=value; }
+  getAttribute(name) { return this.attributes[name]===undefined?null:this.attributes[name]; }
   removeAttribute(name) { delete this.attributes[name]; }
 }
 const fields=new Map([['sd-validation-summary',new Element('section')],
@@ -34,7 +35,13 @@ assert.equal(fields.get('sd-given').value,'unchanged draft content');
 assert.equal(fields.get('sd-advanced-json').value,'unchanged draft content');
 assert.equal(fields.get('sd-validation-summary').children[1].children[0].children[1].textContent,
   'Enter a purpose <img src=x onerror=bad()>');
+// #1403 follow-up: each invalid field is described by its own message item.
+const items=fields.get('sd-validation-summary').children[1].children;
+assert.equal(fields.get('sd-purpose').attributes['aria-describedby'],items[0].id);
+assert.equal(fields.get('sd-given').attributes['aria-describedby'],items[1].id);
+assert.notEqual(items[0].id,items[1].id);
 f.clear();
+assert.equal(fields.get('sd-purpose').attributes['aria-describedby'],undefined);
 assert.equal(fields.get('sd-validation-summary').hidden,true);
 assert.equal(fields.get('sd-purpose').attributes['aria-invalid'],undefined);
 assert.equal(fields.get('sd-purpose').value,'unchanged draft content');
@@ -85,3 +92,11 @@ assert.match(editorSource,/if\(uiRequest!==validationUiRequest\)return; \/\/ pre
   'outer Validate catch must skip stale hide, Feedback.show(undefined) and status');
 assert.match(editorSource,/if\(uiRequest!==validationUiRequest \|\| \(submitted!==null && !isCurrent\)\)\s*return;/,
   'stale Save catch must not clear current Validate feedback');
+
+// Pre-existing aria-describedby is preserved and restored.
+fields.get('sd-purpose').setAttribute('aria-describedby','sd-help');
+f.show([{field:'purpose',control_id:'sd-purpose',message:'x',required:false}]);
+assert.match(fields.get('sd-purpose').attributes['aria-describedby'],/^sd-help sd-validation-error-0$/);
+f.clear();
+assert.equal(fields.get('sd-purpose').attributes['aria-describedby'],'sd-help');
+console.log('validation feedback aria-describedby PASS');
