@@ -49,3 +49,8 @@ assert.match(script,/addEventListener\('input',updateAdvancedRevision\)/);
 assert.match(script,/if\(mode!=='advanced'\)return/,'hidden scripted events must not override Guided state');
 assert.doesNotMatch(script,/Advanced JSON has unsaved edits — validate before saving/);
 console.log('Scenario Advanced dirty and confirmed replacement state: PASS');
+
+// A stale field-error summary must not survive a document replacement (#1403 follow-up).
+assert.equal((script.match(/editorGeneration\+\+;resetReadinessViewer\(\);clearValidationSummary\(\);/g)||[]).length,5,
+  'New/Fork/Clone/Open/Handoff must all clear the validation summary');
+console.log('Stale validation summary cleared on document replacement: PASS');
