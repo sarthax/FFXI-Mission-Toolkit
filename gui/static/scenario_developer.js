@@ -455,7 +455,7 @@
   $('sd-new').addEventListener('click',()=>{
     try {
       if(!confirmDocumentReplacement('New scenario'))return;
-      editorGeneration++;resetReadinessViewer();
+      editorGeneration++;resetReadinessViewer();clearValidationSummary();
       activeHandoff=null;spec=M.fresh();mode='guided';baseline=null;draftGuard.start('new',spec);setSourceDetail(null,null);$('sd-revision').value=0;
       $('sd-context-use').disabled=!coverageContext;
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
@@ -475,7 +475,7 @@
         throw Error('Editor changed while loading the published case; retry');
       const draft=M.forkPublished(x.specification);
       if(!confirmDocumentReplacement('Fork published case'))return;
-      editorGeneration++;resetReadinessViewer();
+      editorGeneration++;resetReadinessViewer();clearValidationSummary();
       activeHandoff=null;spec=draft;mode='guided';baseline=null;draftGuard.start('fork',spec);setSourceDetail(feature,caseId);
       $('sd-revision').value=0;$('sd-advanced-panel').hidden=true;
       $('sd-guided-panel').hidden=false;syncAdvancedAfterReplacement();render();
@@ -487,7 +487,7 @@
     try {
       const draft=M.cloneDraft(current());
       if(!confirmDocumentReplacement('Clone current draft'))return;
-      editorGeneration++;resetReadinessViewer();
+      editorGeneration++;resetReadinessViewer();clearValidationSummary();
       activeHandoff=null;spec=draft;mode='guided';baseline=null;draftGuard.start('clone',spec);$('sd-revision').value=0;
       $('sd-advanced-panel').hidden=true;$('sd-guided-panel').hidden=false;
       syncAdvancedAfterReplacement();render();show('Cloned into a new draft case ID. Rename it if a COPY already exists; source identities still require review.');
@@ -589,7 +589,7 @@
     try{
       const loaded=M.parseAdvanced(JSON.stringify(d.specification));
       if(!confirmDocumentReplacement('Open saved draft'))return;
-      editorGeneration++;resetReadinessViewer();
+      editorGeneration++;resetReadinessViewer();clearValidationSummary();
       activeHandoff=null;spec=loaded;mode='guided';
       $('sd-revision').value=d.revision;baseline=M.clone(spec);draftGuard.start('saved',spec);
       setSourceDetail(null,null);
@@ -653,7 +653,7 @@
     current();
     const issue=M.handoffReplacementIssue(spec,baseline,Number($('sd-revision').value),activeHandoff);
     if (issue) throw Error(issue);
-    editorGeneration++;resetReadinessViewer();
+    editorGeneration++;resetReadinessViewer();clearValidationSummary();
     activeHandoff=key;
     spec=draft;mode='guided';baseline=null;draftGuard.start('handoff',spec);$('sd-revision').value=0;
     $('sd-guided-panel').hidden=false;$('sd-advanced-panel').hidden=true;
@@ -843,6 +843,8 @@
     }catch(e){show('Evidence suggestions not applied: '+e.message);}
   });
   // This advisory remains separate from canonical evidence import and draft state.
+  // A field-error summary belongs to the document it was produced for.
+  function clearValidationSummary() {if(Feedback)Feedback.clear();}
   function resetReadinessViewer() {
     if(readinessViewer)readinessViewer.dispose();
     readinessViewer=window.ScenarioReadinessViewer.mount($('sd-readiness-viewer'),async(review,sidecar)=>{
