@@ -16,6 +16,30 @@ from workbench.core.services.feature_catalog_workflow_audit import (
 )
 
 
+def test_research_migration_capture_provenance_crosswalk_1179():
+    """#1179: source_refs exist on disk, test_refs only where behavior is covered, validation untouched."""
+    items = {f["id"]: f for f in load_catalog()}
+    mapped = {
+        "behavior-inspector": "behavior_visualizer", "feature-checker": "feature_checker",
+        "packages": "packages_library", "research-gaps": "research_gaps",
+        "capture-query": "capture_query", "capture-formats": "capture_help",
+        "capture-paths": "path_plot", "capture-import": "capture_new", "video-ocr": "ocr",
+        "llm-research": "llm", "capture-all-paths": "path_plot_all",
+        "capture-bulk-ingest": "capture_bulk_ingest", "capture-metadata-import": "capture_metadata_import",
+    }
+    for feature_id, template in mapped.items():
+        entry = items[feature_id]
+        assert entry["source_refs"] == [f"gui/templates/{template}.html"], feature_id
+        assert (ROOT / entry["source_refs"][0]).is_file(), feature_id
+        assert entry["validation"] == "unverified", feature_id
+        if feature_id != "capture-formats":
+            assert not entry.get("test_refs"), f"{feature_id}: no specific regression coverage verified"
+    assert items["capture-formats"]["test_refs"] == ["test_fixtures/test_capture_help_support_matrix.py"]
+    assert (ROOT / items["capture-formats"]["test_refs"][0]).is_file()
+    # Mappings stay explicit gaps where no checked-in implementation was verified.
+    assert not items["capture-zone-review"].get("source_refs")
+
+
 def main():
     items = load_catalog()
     assert len(items) >= 75
@@ -407,8 +431,10 @@ def main():
                for workspace in WORKSPACES for section in workspace["sections"])
     for page in ("help.html", "roadmap.html"):
         assert 'href="/feature-catalog"' in (ROOT / "gui/templates" / page).read_text()
+    test_research_migration_capture_provenance_crosswalk_1179()
     print("feature catalog smoke: PASS")
 
 
 if __name__ == "__main__":
     main()
+
