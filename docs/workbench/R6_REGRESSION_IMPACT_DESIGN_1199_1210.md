@@ -242,9 +242,16 @@ WP0–WP3 are remote-safe and offline (WP0's tests build a throwaway local git r
    (`ENVIRONMENT`, `FIXTURE_ABSENT`, `ORACLE_UNKNOWN`, `OTHER`)? Without it #1199's "environment failure versus
    absent fixture versus unknown oracle" cannot be mechanical.
 4. **UNKNOWN.** Is derived `NOT_ESTABLISHED` acceptable, or should the store verdict set be extended?
-5. **Trace edges.** Which existing Feature Trace providers actually link DSP source paths to Toolkit features?
-   This draft assumes some exist and cites them per edge; if none do, `INFERRED` is empty until a provider
-   exists, and that should be stated in the report.
+5. ~~Trace edges.~~ **Answered from the repo (2026-10-27):** no Feature Trace provider in the repository links DSP
+   source *file paths* to Toolkit features. The provider registry
+   (`src/workbench/devtools/features/trace_providers.py`) and its `PROVIDER_LINKS` relate database identity rows
+   (items, NPCs, mobs, groups, pools, spells, abilities, instances) and wiki/research/validation/migration records
+   by id; none carries a repository path. The only path-bearing objects are the core index tables
+   (`features`, `artifacts.path`, `functions`, `bindings`) that `_trace_impl.py` reads from an externally built index
+   database, and whether that index contains feature→file edges depends on the local index, which this session could
+   not inspect. **Consequence:** the selector takes trace links as an injected, explicit input
+   (`trace_links`: path → feature, each with the edge it came from). With none supplied, `INFERRED` is empty and
+   the report says so; filling it from the index is a later adapter, not part of WP2.
 6. **Cross-repo contracts** (xiheadless-dsp #105/#122, darkstar-to-valhalla #59): confirm they do not already fix
    the change-set or fingerprint shape before WP1 starts.
 7. **What makes a citation "new"?** Is an existing unpinned citation whose path or line range is edited treated as
@@ -253,5 +260,5 @@ WP0–WP3 are remote-safe and offline (WP0's tests build a throwaway local git r
 ## 9. Dependencies and sequencing
 
 #1210 is marked blocked by #1199, R5 catalog work and contract acceptance. WP1–WP3 only need the already-merged
-contract v2 source fields and Feature Trace, so they can start once open question 5 is answered (questions 1 and 2 are resolved);
+contract v2 source fields and Feature Trace, so they can start now (questions 1, 2 and 5 are resolved; WP0 and WP1 are in PR #1435);
 WP4 additionally waits on #1198, #1202 and questions 3–4.
