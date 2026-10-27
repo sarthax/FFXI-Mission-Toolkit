@@ -38,8 +38,58 @@
     };
   }
 
+  // Array-typed canonical fields. Absent fields default to [] (nothing is
+  // lost); present but wrong-typed fields are reported, never coerced.
+  const ARRAY_FIELDS = ['preconditions', 'observations', 'assertions', 'steps', 'cleanup'];
+  const BEHAVIOR_PHASES = ['given', 'when', 'then'];
+  const STEP_ARRAYS = ['assertion_ids', 'evidence_refs'];
+  const isObject = v => v !== null && typeof v === 'object' && !Array.isArray(v);
+
+  function shapeIssues(spec) {
+    const issues = [];
+    if (!isObject(spec)) return ['specification: must be an object'];
+    for (const key of ARRAY_FIELDS)
+      if (spec[key] !== undefined && !Array.isArray(spec[key]))
+        issues.push(key + ': must be an array');
+    if (spec.behavior !== undefined) {
+      if (!isObject(spec.behavior)) issues.push('behavior: must be an object');
+      else for (const phase of BEHAVIOR_PHASES)
+        if (spec.behavior[phase] !== undefined && !Array.isArray(spec.behavior[phase]))
+          issues.push('behavior.' + phase + ': must be an array');
+    }
+    if (spec.authoring !== undefined) {
+      if (!isObject(spec.authoring)) issues.push('authoring: must be an object');
+      else if (spec.authoring.blocking_gaps !== undefined && !Array.isArray(spec.authoring.blocking_gaps))
+        issues.push('authoring.blocking_gaps: must be an array');
+    }
+    if (Array.isArray(spec.assertions))
+      spec.assertions.forEach((a, i) => {
+        if (!isObject(a)) issues.push('assertions[' + i + ']: must be an object');
+      });
+    if (Array.isArray(spec.steps))
+      spec.steps.forEach((step, i) => {
+        if (!isObject(step)) { issues.push('steps[' + i + ']: must be an object'); return; }
+        for (const key of STEP_ARRAYS)
+          if (step[key] !== undefined && !Array.isArray(step[key]))
+            issues.push('steps[' + i + '].' + key + ': must be an array');
+      });
+    return issues;
+  }
+
+  // Fill absent array fields in place so renderers never meet undefined.
+  function withShapeDefaults(spec) {
+    for (const key of ARRAY_FIELDS) if (spec[key] === undefined) spec[key] = [];
+    if (Array.isArray(spec.steps))
+      for (const step of spec.steps)
+        for (const key of STEP_ARRAYS) if (step[key] === undefined) step[key] = [];
+    return spec;
+  }
+
   function forkPublished(original) {
     const spec = clone(original);
+    const issues = shapeIssues(spec);
+    if (issues.length) throw Error('Published case has an unsupported shape — ' + issues.join('; '));
+    withShapeDefaults(spec);
     spec.case_id = 'SYNTH-' + spec.case_id + '-DRAFT';
     spec.runner = 'unassigned';
     spec.execution_status = 'design_only';
@@ -329,7 +379,10 @@
     if (parsed.schema_version !== 1 || parsed.runner !== 'unassigned' ||
         parsed.execution_status !== 'design_only')
       throw Error('Only canonical version 1, design-only, unassigned drafts are editable');
-    return parsed;
+    const issues = shapeIssues(parsed);
+    if (issues.length)
+      throw Error('Advanced JSON has wrong-typed fields (your text was kept): ' + issues.join('; '));
+    return withShapeDefaults(parsed);
   }
 
   const CONTEXT_PATH = /^\/feature-testing\/coverage\/context\/([A-Za-z0-9][A-Za-z0-9_-]{0,119})\/([A-Za-z0-9][A-Za-z0-9_-]{0,119})$/;
@@ -347,5 +400,5 @@
     return draftFromCoverage(ctx);
   }
 
-  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, advancedRevisionIndicator, emptyHandoffDraft, draftFromCoverage, draftFromEvidence, handoffReplacementIssue, replacementConfirmationReason, saveResponseDisposition, coverageContextChanged, referenceIssues, parseAdvanced, contextRefPath, fromContext};
+  return {clone, fresh, forkPublished, addStep, moveStep, deleteStep, attachCandidate, cloneDraft, revisionIndicator, advancedRevisionIndicator, emptyHandoffDraft, draftFromCoverage, draftFromEvidence, handoffReplacementIssue, replacementConfirmationReason, saveResponseDisposition, coverageContextChanged, referenceIssues, shapeIssues, withShapeDefaults, parseAdvanced, contextRefPath, fromContext};
 });
