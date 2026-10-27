@@ -9,6 +9,8 @@ on:
       - "src/workbench/server_admin/feature_testing/scenario_contract_v2.py"
       - "test_fixtures/scenario_contract_v2_synthetic.json"
       - "test_fixtures/test_impact_selection.py"
+      - "src/workbench/server_admin/feature_testing/impact_coverage.py"
+      - "test_fixtures/test_impact_coverage.py"
       - "test_fixtures/test_impact_changeset.py"
       - ".github/workflows/r6-impact-change-set.yml"
   workflow_dispatch:
@@ -27,7 +29,7 @@ jobs:
           python-version: "3.11"
       - name: Install test dependencies
         run: python -m pip install --disable-pip-version-check -r requirements.txt pytest
-      - name: Validate change-set schema, the helper (throwaway synthetic git repos) and the impact selector
+      - name: Validate change-set schema, the helper (throwaway synthetic git repos) the impact selector and the citation-coverage report
         env:
           PYTHONPATH: "src:."
-        run: python -m pytest -q test_fixtures/test_impact_changeset.py test_fixtures/test_impact_selection.py
+        run: python -m pytest -q test_fixtures/test_impact_changeset.py test_fixtures/test_impact_selection.py test_fixtures/test_impact_coverage.py
