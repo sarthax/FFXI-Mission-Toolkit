@@ -116,7 +116,36 @@ const only = [{name: 'a', step: {do: {walk_to: [1, 2]}}}, {name: 'c', step: {exp
 assert.deepEqual(T.nativeScenario(only), [{name: 'a', do: {walk_to: [1, 2]}}, {name: 'c', expect: {zone: 231}}]);
 assert.deepEqual(Object.keys(T.nativeScenario(only)[0]), ['name', 'do'], 'no empty expect object is written');
 assert.deepEqual(Object.keys(T.nativeScenario(only)[1]), ['name', 'expect'], 'no empty do object is written');
-assert.deepEqual(JSON.parse(T.nativeJson(only)), T.nativeScenario(only));
+// ---- #1457: export form (saved drafts stay one-sided; the export satisfies XiHeadless' documented shape rules)
+assert.deepEqual(JSON.parse(T.nativeJson(only)), [{name: 'a', do: {walk_to: [1, 2]}, expect: {}}, {name: 'c', expect: {zone: 231}}]);
+assert.deepEqual(T.nativeScenario(only)[0], {name: 'a', do: {walk_to: [1, 2]}}, 'storage form is untouched by the export');
+const pairOnly = [{name: 'p', step: {do: {rest_hp: 50}, expect: {hpp: 90}}}];
+assert.deepEqual(T.exportScenario(pairOnly), T.nativeScenario(pairOnly), 'pairs export unchanged');
+// A mirror of the rules recorded in docs/workbench/SCENARIO_1411_LOCAL_VERIFICATION.md (not the real validator):
+// expect must be an object; an empty expect needs a do; every step needs a do or a non-empty expect.
+const xiShape = step => {
+  if (typeof step.expect !== 'object' || step.expect === null || Array.isArray(step.expect)) return 'expect must be object';
+  const empty = Object.keys(step.expect).length === 0;
+  if (empty && !step.do) return 'empty expect with no do asserts nothing';
+  return null;
+};
+for (const exported of [T.exportScenario(only), T.exportScenario(pairOnly)]) for (const step of exported) assert.equal(xiShape(step), null, step.name);
+assert.equal(xiShape({name: 'x', do: {walk_to: [1, 2]}}), 'expect must be object', 'the mirror rejects what the saved form would have exported');
+
+// ---- #1459: observed paths are acceptance only, per key, and never invented for unknown keys
+const parts = {
+  rest_hp: {observed_paths: {xiheadless_loader: {status: 'ACCEPTS'}, mcp_task_start: {status: 'REJECTS', reason: 'scenario_resource_actions_not_yet_supported'}}},
+  wait_ms: {observed_paths: {xiheadless_loader: {status: 'ACCEPTS'}, mcp_task_start: {status: 'ACCEPTS'}}},
+  hpp: {observed_paths: {xiheadless_loader: {status: 'ACCEPTS'}, mcp_task_start: {status: 'REJECTS', reason: 'scenario_expectations_not_yet_supported'}}},
+};
+const both = T.observedPaths({do: {rest_hp: 50}, expect: {hpp: 90}}, parts);
+assert.equal(both.loader, true); assert.equal(both.mcp, false);
+assert.deepEqual(both.mcpReasons.sort(), ['scenario_expectations_not_yet_supported', 'scenario_resource_actions_not_yet_supported']);
+assert.equal(T.observedPaths({do: {wait_ms: 100}}, parts).mcp, true);
+assert.equal(T.observedPaths({do: {made_up: 1}}, parts), null, 'an unknown key gets no label rather than a guess');
+assert.match(T.observedText(both), /MCP task start rejects \(.*scenario_expectations_not_yet_supported/);
+assert.match(T.observedText(both), /not proof the step runs/);
+assert.equal(T.observedText(null), '');
 
 // ---- Given/When/Then preview: action -> When, check -> Then, repeats -> And; nothing invented
 const E = (name, step) => ({name, step});

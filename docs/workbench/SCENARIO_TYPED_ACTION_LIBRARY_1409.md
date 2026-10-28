@@ -53,6 +53,25 @@ validated by the server's native-JSON review (`/scenario-developer/typed-import`
 and the saved step contains only the side that was filled in (no empty `do`/`expect`). A one-sided step verifies
 nothing by itself, and runner handling of one-sided steps is still unconfirmed (see the limits line shown in the UI).
 
+### Export form and observed execution paths (#1457, #1459)
+
+**Export.** XiHeadless `CheckStructure` requires `expect` to be an object, so the builder's exported JSON (Copy,
+Download, the JSON panel) writes `"expect": {}` for an action-only step. The saved draft keeps the step one-sided,
+and `validate_native_steps` still refuses a stored empty `expect`. Import reads `"expect": {}` next to a `do` back as
+action-only; an empty `expect` with no action is refused, as the runner loader refuses it. A check-only step is
+exported as is. The export's shape was checked against the rules recorded in the local verification
+(`docs/workbench/SCENARIO_1411_LOCAL_VERIFICATION.md`, PR #1456) by a mirror in the node test, not by the real validator.
+
+**Observed paths.** Each registry action and check carries `observed_paths`: whether the XiHeadless file loader and the
+MCP `task_scenario_start` path accepted that key when the local verification fed it to them (at XiHeadless
+`e5e8035071`), with the MCP rejection reason where there was one. At that commit the loader accepted all 18 keys (action-only only as
+exported), and MCP accepted only `wait_ms`: other actions are rejected as `scenario_resource_actions_not_yet_supported`,
+`invite`/`accept_invite` as `scenario_legacy_actions_not_supported`, and every check as
+`scenario_expectations_not_yet_supported`. The builder shows this beside the chosen step type and on each step. It
+is acceptance only: `execution_tested` is always false, and nothing here says the runner dispatches a key. The table is
+a snapshot and goes stale if XiHeadless changes; a test pins the keys against the library so a new key cannot be added
+without a decision about its row.
+
 ### Given / When / Then preview (#1411)
 
 Under the step list the builder shows the steps as a reading: an action is a `When`, a check is a `Then`, and a
