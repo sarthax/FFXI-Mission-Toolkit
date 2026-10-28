@@ -38,6 +38,10 @@ python -m pytest -q test_fixtures/test_bounded_inventory_r7.py
 
 Do not assume those example files apply to every change. If a workflow requires a special server/database/source checkout, keep that test explicitly under operator scope. **Do not** enable live database changes or account access merely to establish a CI PASS.
 
+## Test-maintenance policy
+
+The current test inventory and criteria for removing only proven redundancy are documented in [TEST_SUITE_RATIONALIZATION.md](TEST_SUITE_RATIONALIZATION.md). Keep distinct safety cases and source-backed protocol fixtures; do not equate large synthetic case counts with independently verified gameplay behavior. Any future test deletion must be reviewed with focused local test evidence and the exact final SHA.
+
 ## Validation status of this scheduling change
 
 No GitHub-hosted workflow should be retried while the shared Actions allowance is exhausted. The changed workflow definitions need a final YAML/event-condition sanity check and a **real ready-for-review execution** after the allowance resets. Until then: **CI NOT_RUN / hosted acceptance pending**. Repository code/tests were not modified by this workflow PR.
