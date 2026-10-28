@@ -147,7 +147,8 @@ def test_describe_spec_never_crashes_on_odd_shapes():
                 {"native_steps": {"steps": [None, {"do": {"a": 1, "b": 2}}, {"do": "no"}, {"expect": {"zone": 1}}]}}):
         out = catalog_view.describe_spec(odd)
         assert isinstance(out["steps"], list) and isinstance(out["preconditions"], list)
-    assert catalog_view.native_step_lines({"steps": [{"name": "n", "do": {"a": 1, "b": 2}}]}) == []  # exactly one key per side
+    multi = catalog_view.native_step_lines({"steps": [{"name": "n", "do": {"a": 1, "b": 2}, "expect": {"zone": 1, "hpp": 2}}]})
+    assert [l["keyword"] for l in multi] == ["When", "And", "Then", "And"]  # no key of a multi-key step is hidden
     lines = catalog_view.native_step_lines(STEPS)
     assert [l["keyword"] for l in lines] == ["When", "Then", "When", "Then"]
     assert catalog_view.native_step_lines({"steps": [{"do": {"a": 1}}, {"do": {"b": 2}}]})[1]["keyword"] == "And"

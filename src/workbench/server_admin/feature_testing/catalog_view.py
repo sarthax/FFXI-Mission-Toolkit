@@ -27,12 +27,12 @@ def native_step_lines(native_steps: object) -> list[dict]:
             continue
         for side, keyword in (("do", "When"), ("expect", "Then")):
             part = step.get(side)
-            if not isinstance(part, dict) or len(part) != 1:
+            if not isinstance(part, dict):
                 continue
-            key = next(iter(part))
-            body = _words(key) + (" " if side == "do" else " is ") + _text(part[key])
-            lines.append({"keyword": "And" if last == keyword else keyword, "text": body[:400], "step": str(step.get("name", ""))[:100]})
-            last = keyword
+            for key in part:  # a step may hold several actions or checks (#1409): each reads as its own line, in file order
+                body = _words(key) + (" " if side == "do" else " is ") + _text(part[key])
+                lines.append({"keyword": "And" if last == keyword else keyword, "text": body[:400], "step": str(step.get("name", ""))[:100]})
+                last = keyword
     return lines
 
 

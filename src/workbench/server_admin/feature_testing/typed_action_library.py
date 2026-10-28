@@ -308,21 +308,64 @@ def _template_by_pair() -> dict[tuple[str, str], str]:
             for t in _TEMPLATES if t["kind"] == "action_expectation"}
 
 
-def _side(kind: str, part: object, registry: dict[str, dict]) -> tuple[str, list[str], str | None]:
-    """Review one side (``do`` or ``expect``): returns (status, reasons, native key)."""
+# How XiHeadless e5e8035 treats several keys in one step (Brains/ScenarioBrain.cs, ScenarioExpectationSchema.cs):
+# every key in `expect` must hold (AND, order irrelevant), and the runner executes the keys of `do` in a FIXED order
+# written into its code, not in file order: walk_to, talk_npc, invite, accept_invite, wait_ms, then the "control"
+# group (engage, examine_npc, event_update, event_finish, rest_hp). The control group is dispatched by iterating a
+# dictionary built from the file, so the order inside it is the dictionary's enumeration order. That is not a stated
+# contract, so a step with two control actions is refused (open question, see the docs) and every multi-action step
+# must be written in the runner's order so that file order and execution order agree.
+RUNNER_ACTION_ORDER = ("walk_to", "talk_npc", "invite", "accept_invite", "wait_ms")
+RUNNER_CONTROL_GROUP = ("engage", "examine_npc", "event_update", "event_finish", "rest_hp")
+
+
+def _action_order_problem(keys: list[str]) -> str | None:
+    """Why a multi-action ``do`` cannot be accepted, or None. Single actions are always fine."""
+    if len(keys) < 2:
+        return None
+    controls = [k for k in keys if k in RUNNER_CONTROL_GROUP]
+    if len(controls) > 1:
+        return ("actions " + ", ".join(controls) + " belong to one runner group whose execution order is the "
+                "enumeration order of a dictionary built from the file, which is not a stated contract; "
+                "at most one of them is supported per step")
+    runner_order = [k for k in (*RUNNER_ACTION_ORDER, *RUNNER_CONTROL_GROUP) if k in keys]
+    if keys != runner_order:
+        return ("the runner executes these actions as " + " -> ".join(runner_order) + " regardless of file order; "
+                "write them in that order so the step reads the way it runs")
+    return None
+
+
+def _side(kind: str, part: object, registry: dict[str, dict]) -> tuple[str, list[str], list[str]]:
+    """Review one side (``do`` or ``expect``): returns (status, reasons, native keys in file order).
+
+    One or more keys are allowed. Every key must be reviewed and its value must pass; an invalid value outranks an
+    unsupported key. Several ``expect`` keys are all required to hold (order is irrelevant); several ``do`` keys are
+    checked by ``_action_order_problem``.
+    """
     noun = "action" if kind == "do" else "check"
     if not isinstance(part, dict):
-        return "INVALID", [f"{kind} must be an object"], None
-    if len(part) != 1:
-        return "UNSUPPORTED", [f"exactly one {noun} is supported per step"], None
-    key = next(iter(part))
-    definition = registry.get(key)
-    if definition is None:
-        return "UNSUPPORTED", [f"no reviewed {noun} {key!r}"], key
-    problem = check_param(definition["param"], part[key])
-    if problem:
-        return "INVALID", [f"{noun} {key!r}: parameter {definition['param']['name']!r} {problem}"], key
-    return "SUPPORTED", [], key
+        return "INVALID", [f"{kind} must be an object"], []
+    if not part:
+        return "UNSUPPORTED", [f"at least one {noun} is needed"], []
+    keys = list(part)
+    invalid, unsupported = [], []
+    for key in keys:
+        definition = registry.get(key)
+        if definition is None:
+            unsupported.append(f"no reviewed {noun} {key!r}")
+            continue
+        problem = check_param(definition["param"], part[key])
+        if problem:
+            invalid.append(f"{noun} {key!r}: parameter {definition['param']['name']!r} {problem}")
+    if invalid:
+        return "INVALID", invalid + unsupported, keys
+    if unsupported:
+        return "UNSUPPORTED", unsupported, keys
+    if kind == "do":
+        problem = _action_order_problem(keys)
+        if problem:
+            return "UNSUPPORTED", [problem], keys
+    return "SUPPORTED", [], keys
 
 
 def _review_one(index: int, step: object, pairs: dict[tuple[str, str], str], *, stored: bool = False) -> dict:
@@ -347,7 +390,7 @@ def _review_one(index: int, step: object, pairs: dict[tuple[str, str], str], *, 
     if "do" not in step and "expect" not in step:
         return row("UNSUPPORTED", ["needs an action (do), a check (expect), or both"], name)
     built: dict = {}
-    keys: dict[str, str] = {}
+    keys: dict[str, list[str]] = {}
     statuses, reasons = [], []
     for kind, registry in (("do", _ACTION_DEFS), ("expect", _CHECK_DEFS)):
         if kind not in step:
@@ -362,7 +405,9 @@ def _review_one(index: int, step: object, pairs: dict[tuple[str, str], str], *, 
         return row("INVALID", reasons, name)
     if "UNSUPPORTED" in statuses:
         return row("UNSUPPORTED", reasons, name)
-    built.update({"template_id": pairs.get((keys.get("do"), keys.get("expect"))),
+    single = {k: v[0] for k, v in keys.items() if len(v) == 1}
+    pair = (single.get("do"), single.get("expect")) if len(single) == len(keys) else None
+    built.update({"template_id": pairs.get(pair) if pair else None,
                   "support_tier": _HEADLESS, "native_schema_head": NATIVE_SCHEMA_HEAD,
                   "oracle_status": "UNAPPROVED", "verdict": "UNKNOWN", "execution_enabled": False})
     return row("SUPPORTED", [], name, built, built["template_id"])
@@ -371,8 +416,8 @@ def _review_one(index: int, step: object, pairs: dict[tuple[str, str], str], *, 
 def review_native_steps(steps: object) -> dict:
     """Review native scenario steps against the typed library without trusting them.
 
-    A step may have an action (``do``), a check (``expect``), or both, each holding exactly one reviewed native
-    key. Every step is reported as ``SUPPORTED`` (reviewed shape, values pass), ``UNSUPPORTED`` (well formed but
+    A step may have an action (``do``), a check (``expect``), or both, each holding one or more reviewed native
+    keys (several checks must all hold; several actions follow the runner-order rules above). Every step is reported as ``SUPPORTED`` (reviewed shape, values pass), ``UNSUPPORTED`` (well formed but
     outside what the library models) or ``INVALID`` (malformed, or a value that is rejected), with reasons.
     Nothing is accepted automatically: the result is for a human reviewer. A passing step has only had its
     *shape* checked; its source stays unreviewed, its oracle UNAPPROVED and its verdict UNKNOWN.
