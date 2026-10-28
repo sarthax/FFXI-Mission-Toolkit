@@ -84,8 +84,12 @@ def inspect_paired_readiness(review: dict, sidecar: dict) -> dict:
     # original_handoff_projection checksum against the embedded original rows.
     inspected = inspect_evidence_review(review)
     original = review["observed_handoff"]
+    # A sidecar exported for a different capture gets identity wording (IDs are never echoed); any other
+    # difference keeps the generic projection message.
+    if type(review["capture_id"]) is int and sidecar["capture_id"] != review["capture_id"]:
+        raise ValueError("Readiness sidecar capture identity mismatch: the sidecar was exported for a "
+                         "different capture than the original review")
     if (type(review["capture_id"]) is not int
-            or sidecar["capture_id"] != review["capture_id"]
             or sidecar["original_evidence_handoff"] != original
             or sidecar["original_handoff_projection_sha256"] != inspected["projection_sha256"]):
         raise ValueError("Original review capture/projection does not match readiness sidecar")
