@@ -55,6 +55,9 @@ def build_report(manifest: dict, observations: list[dict], catalog: dict,
         evidence = {"assertions": [{"oracle": o["kind"], "verdict": verdict["verdict"]}],
                     "observations": o, "evaluation": verdict,
                     "capture_provenance": "unverified_external_observation"}
+        if verdict["verdict"] == "BLOCKED":
+            # The evaluator does not say why; do not claim a more specific cause than is known.
+            evidence["reason_class"] = "OTHER"
         rows.append({**{k: manifest[k] for k in required},
                      "feature_id": feature, "case_id": o["case_id"], "stage": stage,
                      "verdict": verdict["verdict"], "evidence": evidence})

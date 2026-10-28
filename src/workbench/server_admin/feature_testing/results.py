@@ -9,8 +9,35 @@ import json
 import sqlite3
 from pathlib import Path
 
-VERDICTS = frozenset({"PASS", "FAIL", "BLOCKED", "SKIPPED"})
+# UNKNOWN: a run produced no usable determination. It is recorded explicitly, never inferred from a missing row
+# and never promoted to PASS. The column has no SQL CHECK; this set is the only gate.
+VERDICTS = frozenset({"PASS", "FAIL", "BLOCKED", "SKIPPED", "UNKNOWN"})
+# Controlled cause for BLOCKED (required on new imports) and UNKNOWN (optional): evidence["reason_class"].
+BLOCK_REASON_CLASSES = frozenset({"ENVIRONMENT", "FIXTURE_ABSENT", "ORACLE_UNKNOWN", "OTHER"})
+UNCLASSIFIED = "UNCLASSIFIED"  # read-side label for historical rows that predate reason_class
 STAGES = frozenset({"key_item", "modifier", "behavior", "mechanics", "gameplay"})
+
+
+def reason_class(record: dict) -> str | None:
+    """Controlled cause of a BLOCKED/UNKNOWN record, ``UNCLASSIFIED`` for historical rows lacking one.
+
+    Returns None for other verdicts. ``UNCLASSIFIED`` is not comparable for regression purposes.
+    """
+    if record.get("verdict") not in ("BLOCKED", "UNKNOWN"):
+        return None
+    evidence = record.get("evidence")
+    value = evidence.get("reason_class") if isinstance(evidence, dict) else None
+    return value if value in BLOCK_REASON_CLASSES else UNCLASSIFIED
+
+
+def check_reason_class(verdict: str, evidence: object) -> None:
+    """Validate ``evidence.reason_class`` when present; it only applies to BLOCKED and UNKNOWN."""
+    if not isinstance(evidence, dict) or "reason_class" not in evidence:
+        return
+    if verdict not in ("BLOCKED", "UNKNOWN"):
+        raise ValueError("reason_class only applies to BLOCKED or UNKNOWN results")
+    if evidence["reason_class"] not in BLOCK_REASON_CLASSES:
+        raise ValueError("invalid reason_class; expected one of " + ", ".join(sorted(BLOCK_REASON_CLASSES)))
 
 
 def init_db(path: str | Path) -> None:
@@ -36,6 +63,7 @@ def append_result(path: str | Path, result: dict) -> None:
     evidence = result["evidence"]
     if not isinstance(evidence, dict) or not evidence:
         raise ValueError("structured evidence required; empty run cannot pass")
+    check_reason_class(result["verdict"], evidence)
     payload = json.dumps(evidence, separators=(",", ":"), sort_keys=True)
     if len(payload) > 262144:
         raise ValueError("evidence too large")
