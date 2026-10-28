@@ -211,9 +211,33 @@ def _derive_parts() -> tuple[dict[str, dict], dict[str, dict]]:
 _ACTION_DEFS, _CHECK_DEFS = _derive_parts()
 
 
+# What the local verification observed when each native key was fed to XiHeadless' own loaders (an offline harness
+# around ScenarioFileValidation.CheckStructure and ScenarioTaskTools.Start; nothing was executed against a client).
+# This is an observation about acceptance, not about behaviour: a key the loader accepts may still not be dispatched.
+_PATHS_SOURCE = ("xiheadless-main@e5e80350711d5d2ec814c893a17c63baf3ef98a9:Brains/ScenarioFileValidation.cs"
+                 " + ScenarioTaskTools.Start, as recorded in sarthax/FFXI-Mission-Toolkit#1456")
+_MCP_RESOURCE = "scenario_resource_actions_not_yet_supported"
+_MCP_LEGACY = "scenario_legacy_actions_not_supported"
+_MCP_EXPECT = "scenario_expectations_not_yet_supported"
+_MCP_REJECTS = {"walk_to": _MCP_RESOURCE, "talk_npc": _MCP_RESOURCE, "examine_npc": _MCP_RESOURCE,
+                "event_update": _MCP_RESOURCE, "event_finish": _MCP_RESOURCE, "rest_hp": _MCP_RESOURCE,
+                "engage": _MCP_RESOURCE, "invite": _MCP_LEGACY, "accept_invite": _MCP_LEGACY,
+                **{key: _MCP_EXPECT for key in ("x_near", "event_active", "event_id", "event_param0", "zone", "hpp",
+                                                "party_members_gt", "entities_gt")}}
+
+
+def _observed_paths(native_key: str) -> dict:
+    reason = _MCP_REJECTS.get(native_key)
+    mcp = {"status": "REJECTS", "reason": reason} if reason else {"status": "ACCEPTS"}
+    return {"xiheadless_loader": {"status": "ACCEPTS",
+                                  "note": "an action-only step is accepted only when exported with an empty expect"},
+            "mcp_task_start": mcp, "source": _PATHS_SOURCE, "execution_tested": False}
+
+
 def _public_part(part: dict) -> dict:
     out = copy.deepcopy(part)
     out["param"]["constraint"] = _constraint(out["param"])
+    out["observed_paths"] = _observed_paths(out["native_key"])
     out.update({"support_tier": _HEADLESS, "execution_enabled": False})
     return out
 
@@ -317,6 +341,9 @@ def _review_one(index: int, step: object, pairs: dict[tuple[str, str], str], *, 
     if extra:  # never drop fields silently: a step the library cannot keep whole is not imported or stored
         return row("UNSUPPORTED", ["unsupported field(s): " + ", ".join(extra) +
                                    " (they cannot be kept, so the step is not accepted)"], name)
+    if not stored and step.get("expect") == {} and "do" in step:
+        # The export form of an action-only step (XiHeadless requires an expect object); it means "no check".
+        step = {k: v for k, v in step.items() if k != "expect"}
     if "do" not in step and "expect" not in step:
         return row("UNSUPPORTED", ["needs an action (do), a check (expect), or both"], name)
     built: dict = {}

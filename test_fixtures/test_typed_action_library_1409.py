@@ -239,7 +239,7 @@ def _one(step):
     ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "note": "x", "extra": 1}, "UNSUPPORTED", "extra, note"),
     ({"name": "a"}, "UNSUPPORTED", "needs an action (do), a check (expect), or both"),
     ({"name": "a", "do": {}, "expect": {"x_near": 3}}, "UNSUPPORTED", "exactly one action is supported"),
-    ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {}}, "UNSUPPORTED", "exactly one check is supported"),
+    ({"name": "a", "expect": {}}, "UNSUPPORTED", "exactly one check is supported"),  # an empty check with no action asserts nothing
     ({"name": "a", "do": {"walk_to": [1, 2], "engage": 5}, "expect": {"x_near": 3}}, "UNSUPPORTED", "exactly one action"),
     ({"name": "a", "do": {"dance": 1}, "expect": {"zone": 3}}, "UNSUPPORTED", "no reviewed action 'dance'"),
     ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"made_up": 3}}, "UNSUPPORTED", "no reviewed check 'made_up'"),
@@ -423,3 +423,37 @@ def test_stored_names_must_be_unique_and_the_limit_is_fifty():
 def test_a_stored_note_is_allowed_but_an_imported_native_step_may_not_carry_one():
     assert lib.review_native_steps([{"name": "a", "do": {"rest_hp": 5}, "note": "x"}])["steps"][0]["status"] == "UNSUPPORTED"
     assert lib.validate_native_steps(stored({"name": "a", "do": {"rest_hp": 5}, "note": "x"}))
+
+
+# --- #1457: the export form of an action-only step, and #1459: observed execution paths --------------------------
+
+def test_exported_action_only_form_is_read_back_as_action_only():
+    """XiHeadless needs `expect` to be an object, so the export writes `"expect": {}` for an action-only step.
+    Importing that export must give the same step back, with no empty side kept."""
+    review = lib.review_native_steps([{"name": "a", "do": {"walk_to": [1, 2]}, "expect": {}}])
+    row = review["steps"][0]
+    assert row["status"] == "SUPPORTED", row
+    assert "expect" not in row["step"] and row["step"]["do"] == {"walk_to": [1, 2]}
+
+
+def test_empty_expect_is_never_stored():
+    with pytest.raises(ValueError):
+        lib.validate_native_steps({"library_version": 1, "steps": [{"name": "a", "do": {"walk_to": [1, 2]}, "expect": {}}]})
+
+
+def test_observed_paths_cover_exactly_the_library_keys_and_never_claim_execution():
+    parts = lib.list_actions() + lib.list_checks()
+    assert len(parts) == 18 and len({p["native_key"] for p in parts}) == 18
+    for part in parts:
+        paths = part["observed_paths"]
+        assert paths["execution_tested"] is False
+        assert paths["xiheadless_loader"]["status"] == "ACCEPTS"
+        assert paths["source"].startswith("xiheadless-main@e5e80350711d5d2ec814c893a17c63baf3ef98a9")
+    mcp = {p["native_key"]: p["observed_paths"]["mcp_task_start"] for p in parts}
+    assert [k for k, v in mcp.items() if v["status"] == "ACCEPTS"] == ["wait_ms"]
+    assert {mcp[k]["reason"] for k in ("invite", "accept_invite")} == {"scenario_legacy_actions_not_supported"}
+    assert {mcp[k]["reason"] for k in ("x_near", "zone", "hpp")} == {"scenario_expectations_not_yet_supported"}
+    assert mcp["walk_to"]["reason"] == "scenario_resource_actions_not_yet_supported"
+    # the registry export carries the same data the UI reads
+    exported = {p["native_key"]: p["observed_paths"] for p in lib.export_registry()["actions"] + lib.export_registry()["checks"]}
+    assert exported.keys() == mcp.keys()

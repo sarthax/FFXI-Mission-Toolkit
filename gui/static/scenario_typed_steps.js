@@ -68,7 +68,35 @@
       return out;
     });
   }
-  const nativeJson = entries => JSON.stringify(nativeScenario(entries), null, 2);
+  // The export form. XiHeadless' CheckStructure requires `expect` to be an object, so an action-only step is exported
+  // with an empty one (it means "no check"); the saved draft keeps the step one-sided (#1457). A check-only step is
+  // exported as is, and an empty `expect` is never written without an action.
+  function exportScenario(entries) {
+    return nativeScenario(entries).map(step => (step.do && !step.expect ? {...step, expect: {}} : step));
+  }
+  const nativeJson = entries => JSON.stringify(exportScenario(entries), null, 2);
+
+  // What was observed when each key was fed to XiHeadless' own loaders (registry `observed_paths`). Acceptance only:
+  // nothing here says the runner executes the step (#1459).
+  function observedPaths(step, partsByKey) {
+    const keys = [];
+    if (step.do) keys.push(Object.keys(step.do)[0]);
+    if (step.expect) keys.push(Object.keys(step.expect)[0]);
+    const paths = keys.map(key => partsByKey[key] && partsByKey[key].observed_paths).filter(Boolean);
+    if (!paths.length || paths.length !== keys.length) return null;
+    const rejected = paths.filter(p => p.mcp_task_start.status !== 'ACCEPTS');
+    return {
+      loader: paths.every(p => p.xiheadless_loader.status === 'ACCEPTS'),
+      mcp: rejected.length === 0,
+      mcpReasons: [...new Set(rejected.map(p => p.mcp_task_start.reason))],
+    };
+  }
+  function observedText(summary) {
+    if (!summary) return '';
+    return 'Observed: XiHeadless file loader ' + (summary.loader ? 'accepts' : 'rejects') + ' · MCP task start ' +
+      (summary.mcp ? 'accepts' : 'rejects (' + summary.mcpReasons.join(', ') + ')') +
+      ' — acceptance only, not proof the step runs.';
+  }
 
   function describeAction(step) {
     const parts = [];
@@ -209,7 +237,7 @@
       wrap.append(doc.createTextNode(label), control);
       return wrap;
     };
-    const state = {templates: [], entries: [], built: null, request: 0, timer: null, picked: {action: null, expect: null}, review: null, shown: true, load: 0, libraryVersion: 1, singles: []};
+    const state = {templates: [], entries: [], built: null, request: 0, timer: null, picked: {action: null, expect: null}, review: null, shown: true, load: 0, libraryVersion: 1, singles: [], parts: {}};
     const inputs = {action: {}, expect: null};
     container.replaceChildren();
     const lockNote = el('p', 'sd-warning', 'Read-only while Advanced JSON is open. Switch to Guided to edit steps.');
@@ -330,6 +358,11 @@
         ', so nothing is verified by it alone (runner handling of one-sided steps is unconfirmed). ' : '') +
         'Tier ' + template.support_tier + ' — shape checked against the pinned native schema; ' +
         'it does not prove the runner dispatches it. Limit: ' + template.limitations;
+      {
+        const sides = {do: template.action && {[template.action.native_key]: 0}, expect: template.expectation && {[template.expectation.native_key]: 0}};
+        const summary = observedText(observedPaths({do: sides.do || undefined, expect: sides.expect || undefined}, state.parts));
+        if (summary) limits.textContent += ' ' + summary;
+      }
       inputs.action = template.action ? paramControls(template.action.param, 'action') : null;
       inputs.expect = template.expectation ? paramControls(template.expectation.param, 'expect') : null;
       if (inputs.action) actionBox.append(el('h4', '', 'Action: ' + template.action.native_key), inputs.action.holder);
@@ -385,6 +418,8 @@
         item.append(el('small', 'sd-muted', ' [' + entry.step.support_tier + ' · oracle ' + entry.step.oracle_status +
           ' · verdict ' + entry.step.verdict + ']'));
         for (const note of entry.provenance || []) item.append(el('div', 'sd-muted', 'Source: ' + note));
+        const observed = observedText(observedPaths(entry.step, state.parts));
+        if (observed) item.append(el('div', 'sd-muted', observed));
         const controls = el('span', 'sd-controls');
         for (const [label, act] of [['Up', () => move(index, -1)], ['Down', () => move(index, 1)], ['Remove', () => remove(index)]]) {
           const button = el('button', '', label); button.type = 'button';
@@ -510,7 +545,7 @@
     const exportRow = el('div', 'sd-controls');
     exportRow.append(copy, download);
     container.append(field('Step type', select), limits, actionBox, expectBox, field('Step name', name), status, add,
-      el('h3', '', 'Steps'), list, el('h3', '', 'Scenario preview (When / Then)'), preview, el('h3', '', 'Native Headless JSON (draft)'), output, exportRow, importBox, notSteps);
+      el('h3', '', 'Steps'), list, el('h3', '', 'Scenario preview (When / Then)'), preview, el('h3', '', 'Native Headless JSON (draft)'), el('p', 'sd-muted', 'Action-only steps are exported with "expect": {} because XiHeadless requires an expect object; the saved draft keeps them one-sided.'), output, exportRow, importBox, notSteps);
 
     // Load the draft's saved steps through the same server review used for pasted JSON, so a saved step shows
     // exactly as an imported one would. Anything that cannot be shown leaves the saved steps untouched.
@@ -550,6 +585,7 @@
     };
     return io.getLibrary().then(registry => {
       state.libraryVersion = registry.library_version;
+      for (const part of [...(registry.actions || []), ...(registry.checks || [])]) state.parts[part.native_key] = part;
       state.templates = registry.templates.filter(t => t.kind === 'action_expectation');
       const group = label => { const g = el('optgroup'); g.label = label; select.append(g); return g; };
       const pairs = group('Action and check');
@@ -595,6 +631,6 @@
       if (container) mount(container);
     });
   }
-  return {parseNumberText, composeWalkTarget, uniqueName, nativeScenario, nativeJson, describeStep, describeAction, previewLines, moveItem, parseNativeText, reviewRowText, importProvenance,
+  return {parseNumberText, composeWalkTarget, uniqueName, nativeScenario, nativeJson, describeStep, describeAction, previewLines, exportScenario, observedPaths, observedText, moveItem, parseNativeText, reviewRowText, importProvenance,
     catalogQueryProblem, catalogUrl, usableCandidate, describeCandidate, provenanceNote, mount, bridge, sameSteps};
 });
