@@ -45,6 +45,14 @@ it hash exactly as before. Drafts must still be `design_only` with an unassigned
 executable or published. Fifty maximum-size steps use about 28 KB of the 32 KiB draft cap; the existing cap still
 applies. A draft that uses the field cannot be opened by an older checkout.
 
+### Add Action Step / Add Check Step (#1411)
+
+The builder's step-type list has three groups: the reviewed action+check pairs, every reviewed action on its own
+(10) and every reviewed check on its own (8). Choosing one side shows only that side's inputs. One-sided values are
+validated by the server's native-JSON review (`/scenario-developer/typed-import`) rather than a second validator,
+and the saved step contains only the side that was filled in (no empty `do`/`expect`). A one-sided step verifies
+nothing by itself, and runner handling of one-sided steps is still unconfirmed (see the limits line shown in the UI).
+
 ### Editor wiring (#1411)
 
 The Scenario Developer editor treats the builder as a view of `spec.native_steps` (stored as
