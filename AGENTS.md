@@ -7,7 +7,7 @@ The experimental A–E coordinator, issue #1348, policy #1398, agent-letter disp
 
 - The owner/local developer or an explicitly delegated Codex session selects scoped implementation or maintenance work based on current GitHub issues/PRs and actual project priorities.
 - Check whether the local developer already owns or completed the work before editing. Use a focused isolated branch/PR and avoid creating unnecessary planning-only issues.
-- Add/run relevant offline `pytest` and workflow tests, record the actual results and unresolved verification. Existing protections and appropriate independent review still apply; no automatic merge or forced push.
+- Use **local-first CI**: run focused offline `pytest`/Node checks during draft development, and keep draft-PR GitHub-hosted test jobs skipped. Before merge, validate the exact final commit SHA with the applicable complete ready-for-review workflows or a documented local full suite; skipped, blocked or previous-SHA checks are not PASS. See `docs/workbench/CI_LOCAL_FIRST.md`. Existing protections and appropriate independent review still apply; no automatic merge or forced push.
 - GitHub PR/issue states, code and current test evidence take precedence over archived wave tables. Do not treat old coordinator comments as a dispatch.
 - Document reusable design and roadmap changes in `docs/workbench/`, keeping `ROADMAP_CURRENT.md` concise and factual.
 
