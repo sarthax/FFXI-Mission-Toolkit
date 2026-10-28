@@ -249,10 +249,14 @@ def _validate_source_associations(
 
 
 def base_spec_sha256(spec: dict) -> str:
-    """Deterministic fingerprint of *v1* spec fields, omitting recursive v2."""
+    """Deterministic fingerprint of *v1* spec fields, omitting recursive v2 and the automatable ``native_steps``.
+
+    ``native_steps`` is descriptive draft data like ``contract_v2``; editing it must not invalidate recorded v2
+    fingerprints. Specifications without it hash exactly as before.
+    """
     if not isinstance(spec, dict):
         raise ValueError("invalid scenario specification")
-    core = {key: value for key, value in spec.items() if key != "contract_v2"}
+    core = {key: value for key, value in spec.items() if key not in ("contract_v2", "native_steps")}
     raw = json.dumps(core, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 

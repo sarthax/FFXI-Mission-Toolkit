@@ -10,6 +10,9 @@ on:
       - "gui/static/scenario_guided_model.js"
       - "gui/static/scenario_contract_v2_view.js"
       - "gui/static/scenario_typed_steps.js"
+      - "test_fixtures/test_native_steps_schema_1411.py"
+      - "src/workbench/server_admin/feature_testing/scenario_contract_v2.py"
+      - "src/workbench/server_admin/feature_testing/test_specifications.py"
       - "src/workbench/server_admin/feature_testing/typed_action_library.py"
       - "test_fixtures/test_scenario_typed_steps_1411.py"
       - "test_fixtures/test_scenario_typed_steps.cjs"
@@ -46,7 +49,7 @@ jobs:
         env:
           PYTHONPATH: "src:."
         run: |
-          python -m pytest -q test_fixtures/test_scenario_guided_editor.py test_fixtures/test_scenario_guided_catalog_workspace.py test_fixtures/test_scenario_context_handoff.py test_fixtures/test_scenario_authoring_catalog.py test_fixtures/test_feature_testing_spec_drafts.py test_fixtures/test_feature_testing_specifications.py test_fixtures/test_scenario_contract_authoring.py test_fixtures/test_scenario_typed_steps_1411.py test_fixtures/test_typed_action_library_1409.py
+          python -m pytest -q test_fixtures/test_scenario_guided_editor.py test_fixtures/test_scenario_guided_catalog_workspace.py test_fixtures/test_scenario_context_handoff.py test_fixtures/test_scenario_authoring_catalog.py test_fixtures/test_feature_testing_spec_drafts.py test_fixtures/test_feature_testing_specifications.py test_fixtures/test_scenario_contract_authoring.py test_fixtures/test_scenario_typed_steps_1411.py test_fixtures/test_typed_action_library_1409.py test_fixtures/test_native_steps_schema_1411.py
       - name: Run browser-independent Guided/Advanced model tests
         run: |
           node test_fixtures/test_scenario_guided_model.cjs

@@ -108,4 +108,14 @@ assert.equal(T.reviewRowText({index: 0, name: 'n'.repeat(300), status: 'SUPPORTE
 assert.equal(T.importProvenance({index: 2, name: 'go'}), 'Imported from pasted native JSON (step 3, "go") — unreviewed source; ' +
   'shape-checked only; accepted by a human reviewer');
 
+// ---- single-sided steps (an action only, or a check only)
+assert.equal(T.describeAction({do: {walk_to: [1, 2]}}), 'walk_to [1,2]');
+assert.equal(T.describeAction({expect: {zone: 231}}), 'check zone = 231');
+assert.equal(T.describeAction({do: {rest_hp: 50}, expect: {hpp: 90}}), 'rest_hp 50, then check hpp = 90');
+const only = [{name: 'a', step: {do: {walk_to: [1, 2]}}}, {name: 'c', step: {expect: {zone: 231}}}];
+assert.deepEqual(T.nativeScenario(only), [{name: 'a', do: {walk_to: [1, 2]}}, {name: 'c', expect: {zone: 231}}]);
+assert.deepEqual(Object.keys(T.nativeScenario(only)[0]), ['name', 'do'], 'no empty expect object is written');
+assert.deepEqual(Object.keys(T.nativeScenario(only)[1]), ['name', 'expect'], 'no empty do object is written');
+assert.deepEqual(JSON.parse(T.nativeJson(only)), T.nativeScenario(only));
+
 console.log('Scenario typed step builder helpers: PASS');

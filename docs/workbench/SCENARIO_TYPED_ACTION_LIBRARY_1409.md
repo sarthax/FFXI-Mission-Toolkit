@@ -28,11 +28,28 @@ to offer a search over the existing local DSP catalog (`/scenario-developer/cata
 from, and it is never presented as verified for a particular zone or client. A hint never changes which values are
 valid.
 
+## Independent actions and checks (#1411)
+The library also lists its **10 actions** and **8 checks** separately (`list_actions()`, `list_checks()`); each was
+reviewed on its own, and the 12 templates only fix which were reviewed *as pairs*. A native step may therefore be an
+action only (`do`), a check only (`expect`), or both, each holding exactly one reviewed key. All 80 action/check
+combinations pass review; only the 10 reviewed pairs carry a `template_id`. Whether the XIHeadless runner accepts a
+single-sided step is not verified here.
+
+## Saved with a draft: `native_steps`
+A draft may carry one optional top-level field, `native_steps`: `{"library_version": 1, "steps": [...]}` with 1 to
+50 steps. `validate_native_steps()` (called from `validate_spec`) requires every stored step to be reviewed-supported,
+names to be unique with no surrounding whitespace, and allows an optional `note` (1 to 300 characters of plain text,
+for provenance). No other field is allowed, and nothing is trimmed or ignored. The field is excluded from
+`base_spec_sha256` (like `contract_v2`), so editing steps never invalidates recorded v2 fingerprints, and drafts without
+it hash exactly as before. Drafts must still be `design_only` with an unassigned runner: the field never makes a draft
+executable or published. Fifty maximum-size steps use about 28 KB of the 32 KiB draft cap; the existing cap still
+applies. A draft that uses the field cannot be opened by an older checkout.
+
 ## Reviewing native scenario JSON (#1411)
 `review_native_steps(steps)` checks pasted native scenario steps (for example from an agent or a scenario file)
 against the library without trusting them. Each step comes back as `SUPPORTED` (matches a reviewed action/check pair
 and passes its parameter checks), `UNSUPPORTED` (well formed but outside what the library models: an unknown action
-or check, no `do` or no `expect`, more than one action or check, or any extra field such as `timeout_ms`), or
+or check, neither `do` nor `expect`, more than one action or check, or any extra field such as `timeout_ms`), or
 `INVALID` (malformed, or a value the template rejects), with reasons. A step with extra fields is **never trimmed
 down** to fit; it is reported and not imported. The result is marked `UNREVIEWED_EXTERNAL_INPUT`: a passing step has
 had its shape checked and nothing else, and nothing is accepted automatically. In the Scenario Developer's builder a

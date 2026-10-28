@@ -48,14 +48,25 @@
   const clone = value => JSON.parse(JSON.stringify(value));
 
   // One native step in the shape the Headless scenario files use: a name plus do / expect maps.
+  // A step may have an action, a check, or both; a missing side is omitted, never written as an empty object.
   function nativeScenario(entries) {
-    return entries.map(entry => ({name: entry.name, do: clone(entry.step.do), expect: clone(entry.step.expect)}));
+    return entries.map(entry => {
+      const out = {name: entry.name};
+      if (entry.step.do) out.do = clone(entry.step.do);
+      if (entry.step.expect) out.expect = clone(entry.step.expect);
+      return out;
+    });
   }
   const nativeJson = entries => JSON.stringify(nativeScenario(entries), null, 2);
 
   function describeAction(step) {
-    const action = Object.keys(step.do)[0], expect = Object.keys(step.expect)[0];
-    return action + ' ' + JSON.stringify(step.do[action]) + ', then check ' + expect + ' = ' + JSON.stringify(step.expect[expect]);
+    const parts = [];
+    if (step.do) { const key = Object.keys(step.do)[0]; parts.push(key + ' ' + JSON.stringify(step.do[key])); }
+    if (step.expect) {
+      const key = Object.keys(step.expect)[0];
+      parts.push((step.do ? 'then check ' : 'check ') + key + ' = ' + JSON.stringify(step.expect[key]));
+    }
+    return parts.join(', ');
   }
   function describeStep(template, step) {
     return template.label + ' — ' + describeAction(step);
@@ -319,7 +330,7 @@
       state.entries.forEach((entry, index) => {
         const item = el('li');
         item.append(el('strong', '', entry.name), doc.createTextNode(' — ' +
-          (entry.name === entry.template.label ? describeAction(entry.step) : describeStep(entry.template, entry.step))));
+          (!entry.template || entry.name === entry.template.label ? describeAction(entry.step) : describeStep(entry.template, entry.step))));
         item.append(el('small', 'sd-muted', ' [' + entry.step.support_tier + ' · oracle ' + entry.step.oracle_status +
           ' · verdict ' + entry.step.verdict + ']'));
         for (const note of entry.provenance || []) item.append(el('div', 'sd-muted', 'Source: ' + note));
@@ -422,8 +433,8 @@
       let added = 0;
       for (const row of chosen) {
         if (state.entries.length >= MAX_STEPS) break;
-        const template = state.templates.find(t => t.id === row.template_id);
-        if (!template) continue; // the library changed since the review; nothing is guessed
+        // Reviewed pairs have a template; action-only, check-only and other combinations have none.
+        const template = row.template_id ? state.templates.find(t => t.id === row.template_id) || null : null;
         state.entries = state.entries.concat([{name: uniqueName(row.name, state.entries.map(e => e.name)), template,
           step: clone(row.step), provenance: [importProvenance(row)]}]);
         added++;

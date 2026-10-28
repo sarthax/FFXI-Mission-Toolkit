@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import copy
 import math
+import re
 import struct
 
 SCHEMA = "toolkit-typed-action-library/1"
@@ -181,6 +182,52 @@ def _public(template: dict) -> dict:
     return out
 
 
+def _derive_parts() -> tuple[dict[str, dict], dict[str, dict]]:
+    """Independent action and check definitions, derived from the reviewed templates.
+
+    Every action and every check was reviewed on its own (the guard validates them separately); the templates
+    only fix which ones were reviewed *as pairs*. A check used by two templates must carry one identical spec.
+    """
+    actions: dict[str, dict] = {}
+    checks: dict[str, dict] = {}
+    for template in _TEMPLATES:
+        if template["kind"] != "action_expectation":
+            continue
+        action, check = template["action"], template["expectation"]
+        if action["native_key"] in actions:
+            raise RuntimeError("an action must belong to exactly one reviewed template")
+        actions[action["native_key"]] = {
+            "native_key": action["native_key"], "label": template["label"], "param": action["param"],
+            "limitations": template["limitations"], "source_ref": template["source_ref"]}
+        known = checks.get(check["native_key"])
+        if known is not None and known["param"] != check["param"]:
+            raise RuntimeError("a check shared by two templates must have one parameter spec")
+        checks.setdefault(check["native_key"], {
+            "native_key": check["native_key"], "label": check["native_key"].replace("_", " "),
+            "param": check["param"], "source_ref": template["source_ref"]})
+    return actions, checks
+
+
+_ACTION_DEFS, _CHECK_DEFS = _derive_parts()
+
+
+def _public_part(part: dict) -> dict:
+    out = copy.deepcopy(part)
+    out["param"]["constraint"] = _constraint(out["param"])
+    out.update({"support_tier": _HEADLESS, "execution_enabled": False})
+    return out
+
+
+def list_actions() -> list[dict]:
+    """Every reviewed native action (10), as independent copies, in a stable order."""
+    return [_public_part(a) for a in _ACTION_DEFS.values()]
+
+
+def list_checks() -> list[dict]:
+    """Every reviewed native check (8), as independent copies, in a stable order."""
+    return [_public_part(c) for c in _CHECK_DEFS.values()]
+
+
 def list_templates() -> list[dict]:
     """Every template, in a stable order, as independent copies."""
     return [_public(t) for t in _TEMPLATES]
@@ -196,7 +243,8 @@ def get_template(template_id: str) -> dict:
 def export_registry() -> dict:
     """The full versioned registry as plain JSON-serializable data (deterministic)."""
     return {"schema": SCHEMA, "library_version": LIBRARY_VERSION, "native_schema_head": NATIVE_SCHEMA_HEAD,
-            "headless_wire_contract_approved": False, "templates": list_templates()}
+            "headless_wire_contract_approved": False, "templates": list_templates(),
+            "actions": list_actions(), "checks": list_checks()}
 
 
 def build_step(template_id: str, action_value: object, expectation_value: object) -> dict:
@@ -224,8 +272,11 @@ def build_step(template_id: str, action_value: object, expectation_value: object
 # --- reviewing native scenario JSON (e.g. written by an agent or copied from a scenario file) -------------------
 
 MAX_IMPORT_STEPS = 100
+MAX_NATIVE_STEPS = 50  # steps stored with one draft
 _MAX_NAME = 100
+_MAX_NOTE = 300
 _NATIVE_FIELDS = {"name", "do", "expect"}
+_CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 
 
 def _template_by_pair() -> dict[tuple[str, str], str]:
@@ -233,8 +284,26 @@ def _template_by_pair() -> dict[tuple[str, str], str]:
             for t in _TEMPLATES if t["kind"] == "action_expectation"}
 
 
-def _review_one(index: int, step: object, pairs: dict[tuple[str, str], str]) -> dict:
-    def row(status, reasons, name=None, template_id=None, built=None):
+def _side(kind: str, part: object, registry: dict[str, dict]) -> tuple[str, list[str], str | None]:
+    """Review one side (``do`` or ``expect``): returns (status, reasons, native key)."""
+    noun = "action" if kind == "do" else "check"
+    if not isinstance(part, dict):
+        return "INVALID", [f"{kind} must be an object"], None
+    if len(part) != 1:
+        return "UNSUPPORTED", [f"exactly one {noun} is supported per step"], None
+    key = next(iter(part))
+    definition = registry.get(key)
+    if definition is None:
+        return "UNSUPPORTED", [f"no reviewed {noun} {key!r}"], key
+    problem = check_param(definition["param"], part[key])
+    if problem:
+        return "INVALID", [f"{noun} {key!r}: parameter {definition['param']['name']!r} {problem}"], key
+    return "SUPPORTED", [], key
+
+
+def _review_one(index: int, step: object, pairs: dict[tuple[str, str], str], *, stored: bool = False) -> dict:
+    """Review one native step. ``stored=True`` is the draft field: it also allows an optional ``note``."""
+    def row(status, reasons, name=None, built=None, template_id=None):
         return {"index": index, "name": name, "status": status, "template_id": template_id,
                 "step": built, "reasons": reasons}
 
@@ -244,35 +313,42 @@ def _review_one(index: int, step: object, pairs: dict[tuple[str, str], str]) -> 
     if not isinstance(name, str) or not name.strip() or len(name.strip()) > _MAX_NAME:
         return row("INVALID", [f"name must be non-empty text of at most {_MAX_NAME} characters"])
     name = name.strip()
-    extra = sorted(str(k) for k in set(step) - _NATIVE_FIELDS)
-    if extra:  # never drop fields silently: a step the builder cannot keep whole is not imported
+    extra = sorted(str(k) for k in set(step) - _NATIVE_FIELDS - ({"note"} if stored else set()))
+    if extra:  # never drop fields silently: a step the library cannot keep whole is not imported or stored
         return row("UNSUPPORTED", ["unsupported field(s): " + ", ".join(extra) +
-                                   " (the builder cannot keep them, so the step is not imported)"], name)
-    do, expect = step.get("do"), step.get("expect")
-    if do is None or expect is None:
-        return row("UNSUPPORTED", ["needs both do and expect; the builder only models one action with one check"], name)
-    if not isinstance(do, dict) or not isinstance(expect, dict):
-        return row("INVALID", ["do and expect must each be an object"], name)
-    if len(do) != 1 or len(expect) != 1:
-        return row("UNSUPPORTED", ["exactly one action and one check are supported per step"], name)
-    action_key, expect_key = next(iter(do)), next(iter(expect))
-    template_id = pairs.get((action_key, expect_key))
-    if template_id is None:
-        return row("UNSUPPORTED", [f"no reviewed template for action {action_key!r} with check {expect_key!r}"], name)
-    try:
-        built = build_step(template_id, do[action_key], expect[expect_key])
-    except TypedStepError as exc:
-        return row("INVALID", [str(exc)], name, template_id)
-    return row("SUPPORTED", [], name, template_id, built)
+                                   " (they cannot be kept, so the step is not accepted)"], name)
+    if "do" not in step and "expect" not in step:
+        return row("UNSUPPORTED", ["needs an action (do), a check (expect), or both"], name)
+    built: dict = {}
+    keys: dict[str, str] = {}
+    statuses, reasons = [], []
+    for kind, registry in (("do", _ACTION_DEFS), ("expect", _CHECK_DEFS)):
+        if kind not in step:
+            continue
+        status, why, key = _side(kind, step[kind], registry)
+        statuses.append(status)
+        reasons += why
+        if status == "SUPPORTED":
+            keys[kind] = key
+            built[kind] = copy.deepcopy(step[kind])
+    if "INVALID" in statuses:
+        return row("INVALID", reasons, name)
+    if "UNSUPPORTED" in statuses:
+        return row("UNSUPPORTED", reasons, name)
+    built.update({"template_id": pairs.get((keys.get("do"), keys.get("expect"))),
+                  "support_tier": _HEADLESS, "native_schema_head": NATIVE_SCHEMA_HEAD,
+                  "oracle_status": "UNAPPROVED", "verdict": "UNKNOWN", "execution_enabled": False})
+    return row("SUPPORTED", [], name, built, built["template_id"])
 
 
 def review_native_steps(steps: object) -> dict:
     """Review native scenario steps against the typed library without trusting them.
 
-    Every step is reported as ``SUPPORTED`` (matches a reviewed template and passes its checks), ``UNSUPPORTED``
-    (well formed, but outside what the library models) or ``INVALID`` (malformed, or a value the template
-    rejects), with reasons. Nothing is accepted automatically: the result is for a human reviewer. A passing step
-    has only had its *shape* checked; its source stays unreviewed, its oracle UNAPPROVED and its verdict UNKNOWN.
+    A step may have an action (``do``), a check (``expect``), or both, each holding exactly one reviewed native
+    key. Every step is reported as ``SUPPORTED`` (reviewed shape, values pass), ``UNSUPPORTED`` (well formed but
+    outside what the library models) or ``INVALID`` (malformed, or a value that is rejected), with reasons.
+    Nothing is accepted automatically: the result is for a human reviewer. A passing step has only had its
+    *shape* checked; its source stays unreviewed, its oracle UNAPPROVED and its verdict UNKNOWN.
     """
     if not isinstance(steps, list) or not 1 <= len(steps) <= MAX_IMPORT_STEPS:
         raise ValueError(f"a native scenario must be an array of 1 to {MAX_IMPORT_STEPS} steps")
@@ -281,3 +357,35 @@ def review_native_steps(steps: object) -> dict:
     counts = {status: sum(1 for r in rows if r["status"] == status) for status in ("SUPPORTED", "UNSUPPORTED", "INVALID")}
     return {"schema": "toolkit-typed-native-review/1", "source_trust": "UNREVIEWED_EXTERNAL_INPUT",
             "native_schema_head": NATIVE_SCHEMA_HEAD, "steps": rows, "counts": counts}
+
+
+def validate_native_steps(value: object) -> object:
+    """Validate the ``native_steps`` field stored with a draft; returns ``value`` unchanged or raises ValueError.
+
+    Shape: ``{"library_version": 1, "steps": [...]}`` with 1 to 50 steps. Every stored step must be SUPPORTED by
+    this library (so nothing malformed or unreviewed is ever saved), have a unique name with no surrounding
+    whitespace, and may carry a short ``note`` (provenance text). Nothing is trimmed or ignored.
+    """
+    if not isinstance(value, dict) or set(value) != {"library_version", "steps"}:
+        raise ValueError("invalid native_steps: expected exactly library_version and steps")
+    if type(value["library_version"]) is not int or value["library_version"] != LIBRARY_VERSION:
+        raise ValueError("unsupported native_steps library version")
+    steps = value["steps"]
+    if not isinstance(steps, list) or not 1 <= len(steps) <= MAX_NATIVE_STEPS:
+        raise ValueError(f"native_steps must have 1 to {MAX_NATIVE_STEPS} steps")
+    pairs, names = _template_by_pair(), set()
+    for index, step in enumerate(steps):
+        result = _review_one(index, step, pairs, stored=True)
+        if result["status"] != "SUPPORTED":
+            raise ValueError(f"native_steps[{index}] is {result['status'].lower()}: " + "; ".join(result["reasons"]))
+        name = step["name"]
+        if name != name.strip():
+            raise ValueError(f"native_steps[{index}] name must not have leading or trailing whitespace")
+        if name in names:
+            raise ValueError(f"native_steps[{index}] duplicates the name {name!r}")
+        names.add(name)
+        if "note" in step:
+            note = step["note"]
+            if not isinstance(note, str) or not 1 <= len(note) <= _MAX_NOTE or _CONTROL.search(note):
+                raise ValueError(f"native_steps[{index}] note must be 1 to {_MAX_NOTE} characters of plain text")
+    return value
