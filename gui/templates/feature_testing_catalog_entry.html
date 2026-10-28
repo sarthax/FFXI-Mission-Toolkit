@@ -7,6 +7,7 @@
 <style>
 .ft-ce-table{width:100%}.ft-ce-table th,.ft-ce-table td{text-align:left;vertical-align:top;overflow-wrap:anywhere;padding:.2rem .8rem .2rem 0}
 .ft-ce-scroll{overflow-x:auto}.ft-ce-warning{border-left:3px solid currentColor;padding-left:.8rem}
+.ft-ce-form{display:flex;flex-direction:column;gap:.6rem;max-width:36rem}.ft-ce-form label{display:flex;flex-direction:column;gap:.2rem}.ft-ce-form textarea{max-width:100%}
 .ft-ce-json{white-space:pre-wrap;overflow-wrap:anywhere;max-height:24rem;overflow:auto}
 </style>
 <p><a href="/feature-testing?tab=catalog">← Test catalog</a></p>
@@ -48,6 +49,23 @@
 {% if described.cleanup %}<h4>Cleanup</h4><ul>{% for item in described.cleanup %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
 {% if described.blocking_gaps %}<h4>Open limitations</h4><ul>{% for item in described.blocking_gaps %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
 <p><strong>Execution status:</strong> {{ described.execution_status or 'not stated' }} · <strong>Runner:</strong> {{ described.runner or 'not stated' }}</p>
+<section class="ft-ce-review" id="ft-ce-review" aria-label="Review r{{ chosen.revision }}">
+<h4>Review this revision</h4>
+<p>Current state: <strong>{{ chosen_state }}</strong>. Review is a recorded decision, one step at a time. <strong>Publishing records that a reviewer accepted this revision as written; it does not make it runnable and does not show it is correct.</strong> Each step needs the operator token and the stored revision is re-checked against today&rsquo;s rules first.</p>
+{% if next_states %}
+<div class="ft-ce-form">
+<label>Operator token <input type="password" id="ce-token" autocomplete="off"></label>
+<label>Reviewer note <small>(required to publish, at most 300 characters)</small> <textarea id="ce-note" rows="2" maxlength="300"></textarea></label>
+<div>
+{% for next in next_states %}<button type="button" data-catalog-action data-feature="{{ entry.feature_id }}" data-case="{{ entry.case_id }}" data-revision="{{ chosen.revision }}" data-state="{{ next }}"{% if next == 'PUBLISHED' %} data-confirm="Publish r{{ chosen.revision }} of {{ entry.case_id }}? This records your review decision. It does not make the scenario runnable."{% elif next == 'ARCHIVED' %} data-confirm="Archive r{{ chosen.revision }}? An archived revision cannot be moved to another state."{% endif %}>{% if next == 'VALIDATED_DESIGN' %}Mark as validated (design check){% elif next == 'PUBLISHED' %}Publish (record review decision){% else %}Archive{% endif %}</button> {% endfor %}
+</div>
+<p id="ce-result" role="status" aria-live="polite"></p>
+</div>
+<script src="/static/catalog_entry_review.js" defer></script>
+{% else %}
+<p>This revision is {{ chosen_state }}; there is no further review step.</p>
+{% endif %}
+</section>
 <details><summary>Full stored specification (JSON)</summary><pre class="ft-ce-json">{{ chosen.specification|tojson(indent=2) }}</pre></details>
 </section>
 {% endif %}

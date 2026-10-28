@@ -169,3 +169,46 @@ def test_hostile_text_in_a_stored_revision_is_escaped_on_the_entry_page(store, m
     for raw in ("<script>1</script>", "<img src=x onerror=1>", "<b>pre</b>", "<i>src</i>"):
         assert raw not in html, raw
     assert "&lt;script&gt;1&lt;/script&gt;" in html and "&lt;b&gt;pre&lt;/b&gt;" in html
+
+
+# --- review controls on the entry page ---------------------------------------------------------------------------------
+
+def buttons(html):
+    import re
+    return re.findall(r'data-state="([A-Z_]+)"', html)
+
+
+def test_only_the_next_review_steps_are_offered_for_the_shown_revision(store):
+    seed()  # INV-1 r1 PUBLISHED, r2 DRAFT; GRD-1 r1 DRAFT
+    f, c = "inventory_observation", "GRD-1"
+    draft = entry(client(), case="GRD-1").text
+    assert buttons(draft) == ["VALIDATED_DESIGN", "ARCHIVED"] and "Publish (record review decision)" not in draft
+    assert "does not make it runnable and does not show it is correct" in draft and 'id="ce-token"' in draft and 'id="ce-note"' in draft
+    cat.record_state(f, c, 1, "VALIDATED_DESIGN")
+    assert buttons(entry(client(), case="GRD-1").text) == ["PUBLISHED", "ARCHIVED"]
+    cat.record_state(f, c, 1, "PUBLISHED", "ok")
+    assert buttons(entry(client(), case="GRD-1").text) == ["ARCHIVED"]
+    cat.record_state(f, c, 1, "ARCHIVED", "old")
+    done = entry(client(), case="GRD-1").text
+    assert buttons(done) == [] and "there is no further review step" in done and 'id="ce-token"' not in done
+
+
+def test_the_controls_follow_the_shown_revision_not_the_latest(store):
+    seed()
+    assert buttons(entry(client(), revision=1).text) == ["ARCHIVED"]  # r1 is PUBLISHED
+    assert buttons(entry(client(), revision=2).text) == ["VALIDATED_DESIGN", "ARCHIVED"]  # r2 is a fresh DRAFT
+
+
+def test_publish_and_archive_ask_for_confirmation_and_carry_the_revision(store):
+    seed()
+    cat.record_state("inventory_observation", "INV-1", 2, "VALIDATED_DESIGN")
+    html = entry(client(), revision=2).text
+    assert 'data-revision="2"' in html and 'data-feature="inventory_observation"' in html and 'data-case="INV-1"' in html
+    assert "Publish r2 of INV-1? This records your review decision. It does not make the scenario runnable." in html
+    assert "/static/catalog_entry_review.js" in html
+
+
+def test_allowed_next_is_the_table_the_store_enforces():
+    for state in cat.STATES:
+        assert cat.allowed_next(state) == cat._NEXT[state]
+    assert cat.allowed_next("NOT_A_STATE") == ()

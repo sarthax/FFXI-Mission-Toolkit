@@ -46,14 +46,23 @@ with the old content. A revision's review state moves forward through append-onl
    (optional tags, operator token) calls `POST /feature-testing/test-catalog/from-draft`. The server reads the stored draft, so only
    what was **saved** is added (never unsaved edits or client-sent content); it becomes the next catalog revision in the DRAFT
    state with `source = draft:<feature>/<case>@r<draft revision>`. If the draft moved on since the list was read, or its content
-   already equals the latest catalog revision, nothing is added and the message says why. Review and publishing are not in the
-   UI yet (the operator API only).
-4. Import of native XIHeadless scenario JSON into draft revisions. The earlier offline prototype (#1424) predates the typed
+   already equals the latest catalog revision, nothing is added and the message says why. Review and publishing are slice 4.
+4. **Done:** review controls on the entry page (see below).
+5. Import of native XIHeadless scenario JSON into draft revisions. The earlier offline prototype (#1424) predates the typed
    action library and is not reused as is; the importer should call `typed_action_library.review_native_steps`.
-5. Hand-off to supervised run (#1412): only a `PUBLISHED` revision with a reviewed execution contract may ever be offered,
+6. Hand-off to supervised run (#1412): only a `PUBLISHED` revision with a reviewed execution contract may ever be offered,
    after separate owner approval. Out of scope here.
 
 ## Not established
 This is storage and review bookkeeping. It does not show a scenario is correct, supported by the runner, or safe to run, and
 "published" means only "a reviewer recorded a decision". Existing built-in specifications are not copied in. The store has no
 backup, export or multi-user story beyond the SQLite file.
+
+## Review controls (slice 4)
+The entry page shows, for the revision being viewed, only the review steps it may take next (the same table the store enforces):
+*Mark as validated*, *Publish* and *Archive*. Each needs the operator token (typed on the page, not stored); publishing needs a
+reviewer note and asks for confirmation, and archiving asks too. The server re-checks the stored revision against today's rules
+before a revision advances, refuses anything out of order, and the page reloads showing the new state and the note in the review
+history. Publishing records that a reviewer accepted the revision as written; it does not make it runnable and does not show it
+is correct. The browser file only sends what the page describes (`gui/static/catalog_entry_review.js`); it adds no rule of its
+own beyond asking for the note before a publish request is sent.
