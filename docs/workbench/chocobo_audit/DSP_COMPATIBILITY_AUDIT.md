@@ -1,6 +1,6 @@
 # DSP Chocobo Raising Compatibility Audit
 
-Target: `D:\Claude\dsp-branches` @ `f2d771e0fc818cf2b2a65aea123253f5f4be438c` (tracked tree clean; untracked GIT_VER, data/).
+Target: `<local DSP checkout>` @ `f2d771e0fc818cf2b2a65aea123253f5f4be438c` (tracked tree clean; untracked GIT_VER, data/).
 Reference: LSB `scripts/globals/hobbies/chocobo_raising/` and the C++ pieces named below. LSB licensing/attribution must be preserved on any ported file.
 
 **Method: source-read only. Nothing was run in-game, no captures were replayed, no DB was touched. Therefore no finding is `validated`.**

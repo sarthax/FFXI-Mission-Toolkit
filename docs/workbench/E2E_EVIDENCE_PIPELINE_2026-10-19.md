@@ -9,7 +9,7 @@ Result: **achieved** for the deterministic path; tool server registered and a gr
 |---|---|---|
 | Toolkit `D:\Claude\mission_toolkit` | `main` fast-forwarded to `b42e0c65` (#1111); this work on `fix/supervisor-openapi-empty-paths-20261018` | untracked/modified files pre-existed (`docs/shift_report.log`, `data/assault/assault_reviews.db`, `data/root_archive/`, 4 `domains/definitions.d/*.json`) — untouched |
 | XiHeadless `...\headless-research\xiheadless-dsp` | `main` @ `1c657bc46b7297479337b86027d9c15dfcc551d4` | **dirty, owned by another agent**: `Capabilities/Inventory.cs`, `Game/PacketParsers.cs`, `Game/WorldState.cs`, `Interfaces/IInventory.cs`, `Mcp/McpBrain.cs`, `tools/scenario_runner.py`. Not modified. The built `bin/mcp/XiHeadless.dll` includes these edits (sha256 recorded in each report). |
-| DSP `D:\Claude\dsp-branches` | `main` @ `f2d771e0fc818cf2b2a65aea123253f5f4be438c` | `GIT_VER`, `data/` untracked |
+| DSP `<local DSP checkout>` | `main` @ `f2d771e0fc818cf2b2a65aea123253f5f4be438c` | `GIT_VER`, `data/` untracked |
 
 `...\xiheadless` is the upstream JasonPulse clone and `...\xiheadless-repo-audit` is a clean audit copy; neither was used.
 
@@ -22,7 +22,7 @@ Launcher + env: `D:\MissionToolkitData\start_toolkit.ps1`, `supervisor.env.ps1` 
 |---|---|
 | `/health` | 200 `gateway: ready, results_configured: true`; 403 with no token; 403 with wrong token |
 | `/service-health?service=ollama\|database\|dsp_map` | 200, `reachable: true`, `check: tcp_connect_only`; unknown name -> 400 |
-| `/log-errors?source=dsp` | 200, real redacted lines from `dsp-branches\log\map-server.log`; `headless` -> `configured:false, lines:[]` (explicit unconfigured) |
+| `/log-errors?source=dsp` | 200, real redacted lines from `<local DSP checkout>\log\map-server.log`; `headless` -> `configured:false, lines:[]` (explicit unconfigured) |
 | `/test-runs`, `/failed-assertions` | 200; empty before import, 2 runs after (no failures) |
 | `/test-character-inventory?charid=21836` | 200 with persisted rows; charid not on allowlist -> 400 |
 | `/openapi.json` | **BUG FOUND**: `paths` was `{}` (see below). Fixed; now exactly the 6 GET operations. Still served unauthenticated (spec only). |
