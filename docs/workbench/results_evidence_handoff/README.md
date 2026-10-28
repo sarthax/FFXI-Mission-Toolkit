@@ -71,7 +71,7 @@ PASS runs: same scenario, every assertion `ok`; the same limits apply. A PASS he
 | `02_run_detail_FAIL_top.jpg` | Result header: recorded FAIL, recalculated FAIL, "Steps PASS (recalculated only): 4/6", independent verification NOT_ESTABLISHED. |
 | `03_run_detail_FAIL_step5_6.jpg` | Per-step cards, expected vs observed panels for the failed steps. |
 | `04_run_detail_PASS_live_8420_halfres.jpg` | PASS run on the real 8420 instance (half resolution). |
-| `05_api_results_raw_json.jpg` | `/feature-testing/results` is raw JSON including `evidence_json` as an escaped string. |
+| _(05 removed)_ | The screenshot of `/feature-testing/results` as raw JSON was removed before merge because it showed a local data path and a test account name. The finding stands: that route returns raw JSON including `evidence_json` as an escaped string. |
 | `06_run_not_found_json_404.jpg` | Missing-data state: unknown run id returns bare `{"detail":"Run not found"}`. |
 
 These show the current screen only. They are not proof that any run was correct.
