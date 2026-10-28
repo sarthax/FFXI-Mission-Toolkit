@@ -1,6 +1,6 @@
 # Mission Toolkit — test-suite rationalization baseline
 
-**Date:** 2026-10-28. **Reference:** draft CI-budget PR #1480 (branch `chore/actions-budget-local-first-v1`). **No test cases have been removed or rewritten in this change.** Test execution and fixture-assertion changes require separate focused review and local verification.
+**Date:** 2026-10-28. **Reference:** draft CI-budget PR #1480 (branch `chore/actions-budget-local-first-v1`). **A bounded, assertion-preserving typed-route test deduplication was added to this branch; no distinct negative/security cases were removed.** Test execution and fixture-assertion changes require separate focused review and local verification.
 
 ## Baseline: distinguish files, tests and workflows
 
@@ -26,6 +26,27 @@ The repo has **36 GitHub workflow YAML files** in draft PR #1480: **33 PR-target
 Before adding a test, state (a) the concrete invariant or observed source, (b) the distinct regression it catches that nearby tests miss, (c) the smallest independent oracle, (d) whether evidence is synthetic, source-read, captured or live, and (e) the local command that runs it. Prefer parameterization and shared fixtures over copying an entire test class to vary one value. A new independent protocol or destructive-safety case is more valuable than meeting a numeric target.
 
 For removal/consolidation, first establish that two tests have the **same independent invariant and failure mode**—not just similar input. Maintain a brief old-to-new case mapping, demonstrate both focused and impacted-suite tests on the **actual commit**, and ensure no change hides a FAIL/UNKNOWN result. Never count a skipped or quota-blocked GitHub Actions check as a pass.
+
+## Completed bounded refactor — scenario typed-step routes
+
+In `test_fixtures/test_scenario_typed_steps_1411.py`, the two write endpoints (`/scenario-developer/typed-step` and `/scenario-developer/typed-import`) independently repeated the same **nonlocal client** and **cross-origin** rejection assertions. Separately, three successful routes (`typed-library`, `typed-step`, `typed-import`) duplicated the same `subprocess.Popen` and `sqlite3.connect` monkeypatch guards.
+
+The cleanup replaces duplicate setup/assertion bodies with two `pytest.mark.parametrize` tests, each with named route IDs. No request paths, expected response codes, forbidden operations or distinct boundary cases are removed:
+
+| Existing coverage | Resulting coverage |
+| --- | --- |
+| Typed step rejects nonlocal and foreign origin; typed import rejects the same | `test_typed_writes_reject_nonlocal_and_cross_origin` with separate `typed-step` and `typed-import` parameters |
+| Typed library and typed-step run without process or SQLite calls; typed import separately checks the same | `test_typed_routes_do_not_spawn_processes_or_open_database` with three independent route parameters |
+| Typed step refuses `text/plain`; import rejects >40KB payload | Preserved as distinct focused tests; not combined into a generic status-code check |
+| Catalog picker header, source-unavailable and duplicate-ID safeguards | Unchanged |
+
+The file still contains **15 named test functions** (some are parameterized), and its line count moved from **191 to 197** to keep the shared operation table and per-endpoint IDs legible. **This is duplicate setup elimination, not a reduction in logical cases or test execution time.** Local verification command:
+
+```bash
+python -m pytest -q test_fixtures/test_scenario_typed_steps_1411.py
+```
+
+**Actual execution: NOT_RUN** in this GitHub-only session; user/local agent should run it before promoting the PR. Hosted CI remains blocked by the monthly Actions allowance. Do not present the refactor as a passing test until that output is recorded.
 
 ## Bounded next review
 
