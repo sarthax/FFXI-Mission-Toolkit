@@ -187,7 +187,7 @@
       wrap.append(doc.createTextNode(label), control);
       return wrap;
     };
-    const state = {templates: [], entries: [], built: null, request: 0, timer: null, picked: {action: null, expect: null}, review: null, shown: true, load: 0, libraryVersion: 1};
+    const state = {templates: [], entries: [], built: null, request: 0, timer: null, picked: {action: null, expect: null}, review: null, shown: true, load: 0, libraryVersion: 1, singles: []};
     const inputs = {action: {}, expect: null};
     container.replaceChildren();
 
@@ -211,7 +211,8 @@
     copy.type = 'button'; copy.id = 'sd-typed-copy'; download.id = 'sd-typed-download';
     const notSteps = el('details'); notSteps.id = 'sd-typed-unsupported'; notSteps.append(el('summary', '', 'Not available as steps'));
 
-    const selected = () => state.templates.find(t => t.id === select.value);
+    // A choice is a reviewed pair (a library template) or one side alone: 'do:<action>' / 'expect:<check>'.
+    const selected = () => state.templates.find(t => t.id === select.value) || state.singles.find(t => t.id === select.value);
 
     function numberInput(param, group, key) {
       const input = el('input');
@@ -300,12 +301,14 @@
       state.built = null; add.disabled = true; state.picked = {action: null, expect: null};
       actionBox.replaceChildren(); expectBox.replaceChildren();
       if (!template) { limits.textContent = ''; return; }
-      limits.textContent = 'Tier ' + template.support_tier + ' — shape checked against the pinned native schema; ' +
+      limits.textContent = (template.single ? 'One side only: the saved step has no ' + (template.action ? 'check' : 'action') +
+        ', so nothing is verified by it alone (runner handling of one-sided steps is unconfirmed). ' : '') +
+        'Tier ' + template.support_tier + ' — shape checked against the pinned native schema; ' +
         'it does not prove the runner dispatches it. Limit: ' + template.limitations;
-      inputs.action = paramControls(template.action.param, 'action');
-      inputs.expect = paramControls(template.expectation.param, 'expect');
-      actionBox.append(el('h4', '', 'Action: ' + template.action.native_key), inputs.action.holder);
-      expectBox.append(el('h4', '', 'Check: ' + template.expectation.native_key), inputs.expect.holder);
+      inputs.action = template.action ? paramControls(template.action.param, 'action') : null;
+      inputs.expect = template.expectation ? paramControls(template.expectation.param, 'expect') : null;
+      if (inputs.action) actionBox.append(el('h4', '', 'Action: ' + template.action.native_key), inputs.action.holder);
+      if (inputs.expect) expectBox.append(el('h4', '', 'Check: ' + template.expectation.native_key), inputs.expect.holder);
       name.value = uniqueName(template.label, state.entries.map(e => e.name));
       validate();
     }
@@ -316,16 +319,29 @@
       state.timer = setTimeout(validate, 150);
     }
 
+    // One-sided steps are validated by the same server review as pasted JSON, so the rules stay in one place.
+    async function buildSingle(template, action, expectation) {
+      const part = template.action ? {do: {[template.action.native_key]: action.value}}
+        : {expect: {[template.expectation.native_key]: expectation.value}};
+      const reviewed = await io.reviewImport([{name: 'step', ...part}]);
+      if (!reviewed.ok) return reviewed;
+      const row = reviewed.review.steps[0];
+      if (row.status !== 'SUPPORTED') return {ok: false, message: (row.reasons || []).join('; ') || 'Rejected'};
+      return {ok: true, step: row.step};
+    }
+
     async function validate() {
       const template = selected();
       if (!template) return;
       const mine = ++state.request;
-      const action = inputs.action.value(), expectation = inputs.expect.value();
+      const action = inputs.action ? inputs.action.value() : {}, expectation = inputs.expect ? inputs.expect.value() : {};
       const problem = action.error || expectation.error;
       if (problem) { status.textContent = problem; return; }
       let result;
       try {
-        result = await io.buildStep({template_id: template.id, action_value: action.value, expectation_value: expectation.value});
+        result = template.single
+          ? await buildSingle(template, action, expectation)
+          : await io.buildStep({template_id: template.id, action_value: action.value, expectation_value: expectation.value});
       } catch (error) { result = {ok: false, message: 'Validation unavailable: ' + error.message}; }
       if (mine !== state.request) return; // a newer edit superseded this answer
       if (result.ok) {
@@ -373,10 +389,10 @@
       const provenance = [];
       for (const [group, part] of [['action', 'action'], ['expect', 'expectation']]) {
         const picked = state.picked[group], control = inputs[group];
-        if (picked && control && control.input && parseNumberText(control.input.value) === picked.id)
+        if (picked && control && template[part] && control.input && parseNumberText(control.input.value) === picked.id)
           provenance.push(provenanceNote(picked, template[part].param.name));
       }
-      state.entries = state.entries.concat([{name: stepName, template, step: clone(state.built), provenance}]);
+      state.entries = state.entries.concat([{name: stepName, template: template.single ? null : template, step: clone(state.built), provenance}]);
       renderSteps(); changed();
       name.value = uniqueName(template.label, state.entries.map(e => e.name));
       status.textContent = 'Added "' + stepName + '". Edit the values to add another.';
@@ -499,8 +515,24 @@
     return io.getLibrary().then(registry => {
       state.libraryVersion = registry.library_version;
       state.templates = registry.templates.filter(t => t.kind === 'action_expectation');
+      const group = label => { const g = el('optgroup'); g.label = label; select.append(g); return g; };
+      const pairs = group('Action and check');
       for (const template of state.templates) {
-        const option = el('option', '', template.label); option.value = template.id; select.append(option);
+        const option = el('option', '', template.label); option.value = template.id; pairs.append(option);
+      }
+      const only = {do: group('Add Action Step (action only)'), expect: group('Add Check Step (check only)')};
+      for (const action of registry.actions || []) {
+        state.singles.push({id: 'do:' + action.native_key, single: true, label: action.native_key.replace(/_/g, ' '),
+          action, expectation: null, support_tier: action.support_tier, limitations: action.limitations});
+      }
+      for (const check of registry.checks || []) {
+        state.singles.push({id: 'expect:' + check.native_key, single: true, label: check.label,
+          action: null, expectation: check, support_tier: check.support_tier,
+          limitations: 'A check alone observes state; it does not cause anything.'});
+      }
+      for (const single of state.singles) {
+        const option = el('option', '', single.label); option.value = single.id;
+        only[single.action ? 'do' : 'expect'].append(option);
       }
       const readbacks = registry.templates.filter(t => t.kind === 'observation');
       const unsupported = el('ul');
