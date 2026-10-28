@@ -45,6 +45,16 @@ it hash exactly as before. Drafts must still be `design_only` with an unassigned
 executable or published. Fifty maximum-size steps use about 28 KB of the 32 KiB draft cap; the existing cap still
 applies. A draft that uses the field cannot be opened by an older checkout.
 
+### Editor wiring (#1411)
+
+The Scenario Developer editor treats the builder as a view of `spec.native_steps` (stored as
+`{library_version, steps}`). Opening, forking, cloning, creating or switching back from Advanced JSON loads the
+draft's steps into the builder through the same server review used for pasted JSON; builder edits write
+`native_steps` back and count as unsaved work. If the builder cannot show a draft's steps (library unavailable,
+a step with an extra field such as `note`, a shape it does not recognise) it says so, disables adding, and the
+saved steps are left exactly as they were. In Advanced mode the JSON text is the document and the builder is
+read-only. Builder provenance notes (which catalog row filled a value) are not saved with the draft.
+
 ## Reviewing native scenario JSON (#1411)
 `review_native_steps(steps)` checks pasted native scenario steps (for example from an agent or a scenario file)
 against the library without trusting them. Each step comes back as `SUPPORTED` (matches a reviewed action/check pair

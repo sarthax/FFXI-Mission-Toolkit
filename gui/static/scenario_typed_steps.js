@@ -1,13 +1,23 @@
 /* Typed step builder (#1411): pick a reviewed template (#1409), fill typed parameters, get native Headless draft JSON.
  * Validation is done by the server through the typed action library, the single source of truth; nothing is ported
- * here. Nothing is sent to a game client or saved with the scenario draft, and no oracle or verdict is implied. */
+ * here. The editor saves the steps with the scenario draft through the bridge; nothing is sent to a game client, and no oracle or verdict is implied. */
 (function (root, factory) {
   const api = factory();
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ScenarioTypedSteps = api;
 })(typeof window !== 'undefined' ? window : this, function () {
   'use strict';
-  const MAX_STEPS = 100;
+  const MAX_STEPS = 50; // the saved native_steps cap (validate_native_steps); import review accepts up to 100 to report on
+  // The editor talks to the builder only through this bridge (get/sync); the builder announces user edits with a
+  // 'sd-typed-change' document event. get() is null while the builder cannot show the draft's steps, so the editor
+  // leaves spec.native_steps untouched rather than overwriting steps it never displayed.
+  // Key order is not meaning: compare steps with object keys sorted, so a draft saved with another order is not "changed".
+  const canon = value => Array.isArray(value) ? value.map(canon)
+    : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(k => [k, canon(value[k])])) : value;
+  const sameSteps = (a, b) => JSON.stringify(canon(a)) === JSON.stringify(canon(b));
+  const bridge = {impl: null, pending: undefined, sameSteps,
+    get() { return this.impl ? this.impl.get() : null; },
+    sync(saved) { if (this.impl) return this.impl.sync(saved); this.pending = saved || null; return Promise.resolve(); }};
   const NUMBER = /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/;
 
   // Text from an input becomes a number when it is one; anything else is passed on as text so the server rejects it
@@ -118,7 +128,7 @@
     let parsed;
     try { parsed = JSON.parse(raw); } catch (error) { return {error: 'That is not valid JSON: ' + error.message}; }
     if (!Array.isArray(parsed)) return {error: 'A native scenario is an array of steps. Wrap a single step in [ ].'};
-    if (parsed.length < 1 || parsed.length > MAX_STEPS) return {error: 'A native scenario must have 1 to ' + MAX_STEPS + ' steps.'};
+    if (parsed.length < 1 || parsed.length > 100) return {error: 'A native scenario must have 1 to 100 steps.'};
     return {steps: parsed};
   }
   function reviewRowText(row) {
@@ -177,12 +187,12 @@
       wrap.append(doc.createTextNode(label), control);
       return wrap;
     };
-    const state = {templates: [], entries: [], built: null, request: 0, timer: null, picked: {action: null, expect: null}, review: null};
+    const state = {templates: [], entries: [], built: null, request: 0, timer: null, picked: {action: null, expect: null}, review: null, shown: true, load: 0, libraryVersion: 1};
     const inputs = {action: {}, expect: null};
     container.replaceChildren();
 
     container.append(el('p', 'sd-warning',
-      'Draft native Headless steps only. They are not saved with the scenario draft, nothing is sent to a game ' +
+      'Draft native Headless steps. They are saved with the scenario draft (design only, not published); nothing is sent to a game ' +
       'client, and no oracle or verdict is implied: every step stays UNAPPROVED / UNKNOWN until something ' +
       'independent establishes the outcome.'));
     const select = el('select');
@@ -321,7 +331,7 @@
       if (result.ok) {
         state.built = result.step;
         status.textContent = 'Valid native draft step (' + result.step.support_tier + '; oracle ' + result.step.oracle_status + ').';
-        add.disabled = state.entries.length >= MAX_STEPS;
+        add.disabled = !state.shown || state.entries.length >= MAX_STEPS;
       } else status.textContent = result.message;
     }
 
@@ -352,12 +362,13 @@
         download.download = 'native-scenario-draft.json';
       }
     }
-    const move = (index, delta) => { state.entries = moveItem(state.entries, index, delta); renderSteps(); };
-    const remove = index => { state.entries = state.entries.filter((_, i) => i !== index); renderSteps(); validate(); };
+    const changed = () => { if (doc.dispatchEvent && typeof CustomEvent !== 'undefined') doc.dispatchEvent(new CustomEvent('sd-typed-change')); };
+    const move = (index, delta) => { state.entries = moveItem(state.entries, index, delta); renderSteps(); changed(); };
+    const remove = index => { state.entries = state.entries.filter((_, i) => i !== index); renderSteps(); validate(); changed(); };
 
     add.addEventListener('click', () => {
       const template = selected();
-      if (!template || !state.built || state.entries.length >= MAX_STEPS) return;
+      if (!template || !state.built || !state.shown || state.entries.length >= MAX_STEPS) return;
       const stepName = uniqueName(name.value, state.entries.map(e => e.name));
       const provenance = [];
       for (const [group, part] of [['action', 'action'], ['expect', 'expectation']]) {
@@ -366,7 +377,7 @@
           provenance.push(provenanceNote(picked, template[part].param.name));
       }
       state.entries = state.entries.concat([{name: stepName, template, step: clone(state.built), provenance}]);
-      renderSteps();
+      renderSteps(); changed();
       name.value = uniqueName(template.label, state.entries.map(e => e.name));
       status.textContent = 'Added "' + stepName + '". Edit the values to add another.';
     });
@@ -429,7 +440,7 @@
     acceptAll.addEventListener('click', () => { for (const a of accepts) a.checkbox.checked = true; syncImportButtons(); });
     importAdd.addEventListener('click', () => {
       const chosen = accepts.filter(a => a.checkbox.checked).map(a => a.row);
-      if (!chosen.length) return;
+      if (!chosen.length || !state.shown) return;
       let added = 0;
       for (const row of chosen) {
         if (state.entries.length >= MAX_STEPS) break;
@@ -439,7 +450,7 @@
           step: clone(row.step), provenance: [importProvenance(row)]}]);
         added++;
       }
-      renderSteps(); clearReview(); importText.value = '';
+      renderSteps(); changed(); clearReview(); importText.value = '';
       importNote.textContent = 'Added ' + added + ' of ' + chosen.length + ' accepted step' + (chosen.length === 1 ? '' : 's') +
         '. They are unapproved drafts; review each one.';
     });
@@ -449,7 +460,44 @@
     container.append(field('Step type', select), limits, actionBox, expectBox, field('Step name', name), status, add,
       el('h3', '', 'Steps'), list, el('h3', '', 'Native Headless JSON (draft)'), output, exportRow, importBox, notSteps);
 
+    // Load the draft's saved steps through the same server review used for pasted JSON, so a saved step shows
+    // exactly as an imported one would. Anything that cannot be shown leaves the saved steps untouched.
+    const stored = entries => ({library_version: state.libraryVersion, steps: nativeScenario(entries)});
+    const sameNative = native => sameSteps(nativeScenario(state.entries), native);
+    const impl = {
+      // {native} where native is the stored {library_version, steps} object, or null when there are no steps;
+      // a bare null means the builder is not showing the draft's steps.
+      get: () => (state.shown ? {native: state.entries.length ? stored(state.entries) : null} : null),
+      async sync(saved) {
+        const native = saved && Array.isArray(saved.steps) ? saved.steps : [];
+        if (saved && !Array.isArray(saved.steps)) { // not our shape: keep it exactly as saved, and say so
+          state.shown = false; add.disabled = true; ++state.load; state.entries = []; renderSteps();
+          status.textContent = 'This draft has native steps the builder cannot show. They are kept as saved; edit them in Advanced JSON.';
+          return;
+        }
+        if (state.shown && sameNative(native)) return;
+        const mine = ++state.load;
+        if (!native.length) { state.entries = []; state.shown = true; renderSteps(); validate(); return; }
+        state.shown = false; add.disabled = true;
+        let result;
+        try { result = await io.reviewImport(native); }
+        catch (error) { result = {ok: false, message: error.message}; }
+        if (mine !== state.load) return; // a newer draft replaced this one
+        const rows = result.ok ? result.review.steps : [];
+        if (!result.ok || rows.length !== native.length || rows.some(row => row.status !== 'SUPPORTED')) {
+          state.entries = []; renderSteps();
+          status.textContent = 'This draft has native steps the builder cannot show' + (result.ok ? '' : ' (' + result.message + ')') +
+            '. They are kept as saved; edit them in Advanced JSON.';
+          return;
+        }
+        state.entries = rows.map(row => ({name: row.name,
+          template: row.template_id ? state.templates.find(t => t.id === row.template_id) || null : null,
+          step: clone(row.step), provenance: []}));
+        state.shown = true; renderSteps(); validate();
+      },
+    };
     return io.getLibrary().then(registry => {
+      state.libraryVersion = registry.library_version;
       state.templates = registry.templates.filter(t => t.kind === 'action_expectation');
       for (const template of state.templates) {
         const option = el('option', '', template.label); option.value = template.id; select.append(option);
@@ -462,6 +510,8 @@
       }
       notSteps.append(unsupported);
       renderSteps(); renderTemplate();
+      bridge.impl = impl;
+      if (bridge.pending !== undefined) { const pending = bridge.pending; bridge.pending = undefined; impl.sync(pending); }
       return state;
     }).catch(error => { status.textContent = 'Typed step builder unavailable: ' + error.message; });
   }
@@ -473,5 +523,5 @@
     });
   }
   return {parseNumberText, composeWalkTarget, uniqueName, nativeScenario, nativeJson, describeStep, describeAction, moveItem, parseNativeText, reviewRowText, importProvenance,
-    catalogQueryProblem, catalogUrl, usableCandidate, describeCandidate, provenanceNote, mount};
+    catalogQueryProblem, catalogUrl, usableCandidate, describeCandidate, provenanceNote, mount, bridge, sameSteps};
 });

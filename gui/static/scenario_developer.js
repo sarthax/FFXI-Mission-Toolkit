@@ -168,6 +168,7 @@
   }
 
   function render() {
+    if(window.ScenarioTypedSteps&&window.ScenarioTypedSteps.bridge)window.ScenarioTypedSteps.bridge.sync(spec.native_steps);
     $('sd-case').value=spec.case_id;
     $('sd-title').value=spec.name;
     $('sd-purpose').value=spec.purpose||'';
@@ -208,6 +209,13 @@
     spec.observations=selections($('sd-observations'));
     spec.authoring=spec.authoring||{};
     spec.authoring.blocking_gaps=lineItems($('sd-gaps').value);
+    // Typed builder steps live in spec.native_steps. A null answer means the builder is not showing the draft's
+    // steps (still loading, unavailable, or unable to display them); then the saved steps are left exactly as they are.
+    const bridge=window.ScenarioTypedSteps&&window.ScenarioTypedSteps.bridge;
+    const typed=bridge&&bridge.get();
+    if(typed&&!bridge.sameSteps(typed.native,spec.native_steps||null)){
+      if(typed.native)spec.native_steps=typed.native;else delete spec.native_steps;
+    }
   }
   function current() {
     if(mode==='advanced') spec=M.parseAdvanced($('sd-advanced-json').value);
@@ -225,6 +233,8 @@
     catch(err){show('Cannot switch mode: '+err.message);return;}
     if(mode!==target)resetReadinessViewer();
     mode=target;
+    // In Advanced the JSON text is the document, so the builder is read-only until Guided returns.
+    const typedPanel=document.getElementById&&document.getElementById('sd-typed-steps');if(typedPanel)typedPanel.inert=target==='advanced';
     $('sd-guided-panel').hidden=target!=='guided';
     $('sd-advanced-panel').hidden=target!=='advanced';
     $('sd-guided').setAttribute('aria-pressed',String(target==='guided'));
@@ -879,6 +889,7 @@
     }
   });
   draftGuard.start('new',spec);
+  if(document.addEventListener)document.addEventListener('sd-typed-change',()=>{if(mode==='guided'){readGuidedFields();updateRevision();}});
   (async()=> {
     try{
       options=await call('/scenario-developer/options');
