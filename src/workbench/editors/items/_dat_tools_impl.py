@@ -1,5 +1,5 @@
 """Client-side FFXI item DAT reader/writer -- vendored from vekien/xi-tools
-(D:\\Claude\\xi-tools-vekien, src/xi/ui/items/{xi_layout,xi_parser}.py) and trimmed of its
+(<local>/xi-tools-vekien, src/xi/ui/items/{xi_layout,xi_parser}.py) and trimmed of its
 click-CLI plumbing so mission_toolkit can call it as a plain library.
 
 Why this exists: the server's item_equipment.level (etc.) is only an equip-permission

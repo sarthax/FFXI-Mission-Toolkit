@@ -6,7 +6,7 @@ from workbench.runtime.legacy_settings import get_dsp_root
 from workbench.runtime.paths import REPO_ROOT
 
 _dsp = get_dsp_root()
-ROOT = Path(sys.argv[1]) if len(sys.argv) > 1 else ((_dsp / "src" / "map") if _dsp is not None else Path("D:/Claude/dsp-master/src/map"))
+ROOT = Path(sys.argv[1]) if len(sys.argv) > 1 else ((_dsp / "src" / "map") if _dsp is not None else Path("dsp-checkout/src/map"))
 
 def parse(path, enum, prefix=''):
     s = open(path, encoding='utf-8-sig', errors='replace').read()

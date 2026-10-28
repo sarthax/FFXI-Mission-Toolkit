@@ -1,7 +1,7 @@
 """
 Topaz -> DSP Lua conversion for the backport module.
 
-Ported from D:\\Claude\\Topaz-Assault-Backport\\tools\\dsp_backport_toolkit\\convert_lua_to_dsp.py,
+Ported from <local>/Topaz-Assault-Backport\\tools\\dsp_backport_toolkit\\convert_lua_to_dsp.py,
 built during the Nyzul Isle Investigation backport package. That standalone tool remains the
 canonical source for the reasoning behind each mapping (every entry in data/dsp_namespace_map.json
 carries an "evidence" field citing the real DSP source file/line that confirmed it -- this module
@@ -30,8 +30,8 @@ def load_map() -> dict:
 
 # ---------------------------------------------------------------------------
 # Target-flavor fingerprinting -- added 2026-09-13 after an entire session's worth of DSP binding
-# work was silently checked against D:\Claude\landsandboat-reference (LandSandBoat/server, a modern
-# sol2-based fork) instead of the real production target D:\Claude\old-dsp-reference
+# work was silently checked against <local>/landsandboat-reference (LandSandBoat/server, a modern
+# sol2-based fork) instead of the real production target <local>/old-dsp-reference
 # (DarkstarProject/darkstar, 2017-vintage, Lunar-binding-library style) -- nothing in this toolkit
 # ever confirmed the configured DSP checkout actually matched what a conversion assumed. This closes
 # that gap: fingerprint the real checkout by its binding-registration style before trusting `target`.
@@ -397,8 +397,8 @@ def convert(text: str, zone_table: str | None = None, id_shape: str | None = Non
     style, applying every confirmed namespace mapping in data/dsp_namespace_map.json.
 
     target: "old_dsp_reference" (DEFAULT, and the REAL target -- Valhalla runs
-      D:\\Claude\\old-dsp-reference, DarkstarProject/darkstar 2017-vintage) or "landsandboat"
-      (D:\\Claude\\landsandboat-reference, a modern sol2-based fork this project does NOT target,
+      <local>/old-dsp-reference, DarkstarProject/darkstar 2017-vintage) or "landsandboat"
+      (<local>/landsandboat-reference, a modern sol2-based fork this project does NOT target,
       kept only for reference -- see data/dsp_namespace_map.json's _CORRECTION_NOTICE_2026-09-13).
       CRITICAL: _convert_command_shape (commandObj wrapper) and id_shape="zones_table" (the
       `zones[xi.zone.X]` wrapping-table shape) are BOTH landsandboat-only structural requirements

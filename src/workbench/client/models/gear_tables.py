@@ -1,4 +1,4 @@
-"""Python port of xi-model-viewer's GEAR_TABLES (D:\\Claude\\FFXI-Tools\\xi-model-viewer\\ui\\js\\dat\\modelids.js),
+"""Python port of xi-model-viewer's GEAR_TABLES (<local>/FFXI-Tools\\xi-model-viewer\\ui\\js\\dat\\modelids.js),
 the real (Atom0s' common_geartables.php-derived) race -> slot -> file_id group tables.
 
 CONFIRMED this session (2026-09-21) against a live Topaz-DSP DB + dat-extractor: the raw per-slot

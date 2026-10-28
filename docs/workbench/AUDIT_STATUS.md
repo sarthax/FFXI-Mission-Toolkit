@@ -1423,7 +1423,7 @@ The proof adds requirements for generic mission/quest state-machine extraction, 
 
 - `client_probe_sets/mog_wardrobe.json` now defines `feature:mog-wardrobe-5-8` and marks `/wardrobe5-8` probes as requirements; `binary_inspector.save_probe_set()` upserts the feature and requirements. Real result: `UNKNOWN_REQUIRED_CAPABILITY`.
 - DAT/Binary Inspector routes added to `GUI_ROUTE_MAP.json` (Client) so the nav link renders; `test_gui_information_architecture.py` counts routes dynamically instead of a stale hard-coded 134.
-- `D:\Claude\mission_toolkit` now runs local branch `live-audit-foundation` tracking `origin/workbench-rework/audit-foundation` (push with `git push origin HEAD:workbench-rework/audit-foundation`). `workbench.db` was built there via `workbench_connect.py`; it is untracked and not gitignored — do not commit it.
+- `<local>/mission_toolkit` now runs local branch `live-audit-foundation` tracking `origin/workbench-rework/audit-foundation` (push with `git push origin HEAD:workbench-rework/audit-foundation`). `workbench.db` was built there via `workbench_connect.py`; it is untracked and not gitignored — do not commit it.
 
 ## 2026-09-26 — Dialog drift overview (read-only)
 - Added `/dialogdrift` (Client) and `dialog_drift_overview.py`; no package/migration/apply code touched.

@@ -10,7 +10,7 @@ A passing preflight is **not** evidence of the full host running, and a PASS of 
 
 ## Safe Windows workflow for local Claude / an operator
 
-1. Use an **isolated disposable Git worktree or clone**, NOT `D:\Claude\mission_toolkit` or an existing working install. Confirm `git status` and that its root has no Toolkit database or private bridge state. Do not copy local databases, credentials, DATs, account files or capture archives into it.
+1. Use an **isolated disposable Git worktree or clone**, NOT `<local>/mission_toolkit` or an existing working install. Confirm `git status` and that its root has no Toolkit database or private bridge state. Do not copy local databases, credentials, DATs, account files or capture archives into it.
 2. Create a clean Python virtual environment and install the usual Toolkit requirements plus the legitimate, locally available compatible `xi_tinkerer` wheel. Do not check the wheel or Python environment into Git. This tool does **not** install that wheel and has no fallback stub.
 3. From the disposable checkout root, run:
    

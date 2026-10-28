@@ -7,7 +7,7 @@ Decodes the `extra` blob the way DSP's CItemUsable does:
 and compares the charge byte with item_usable.maxCharges. A row whose charges < maxCharges is what
 the client reports as "Partially depleted items cannot be put up for auction".
 
-Usage (from D:\\Claude\\mission_toolkit):
+Usage (from the repo root):
     py -3 inspect_char_charges.py                      # all chars, dspdb_fresh
     py -3 inspect_char_charges.py --char Gwendy
     py -3 inspect_char_charges.py --item 13688 --item 15841
@@ -36,7 +36,7 @@ def read_conf(path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--conf", default=r"D:\Claude\dsp-master\conf\map_darkstar.conf")
+    ap.add_argument("--conf", default="conf/map_darkstar.conf")
     ap.add_argument("--char", help="character name (default: all)")
     ap.add_argument("--item", type=int, action="append", help="restrict to item id(s)")
     args = ap.parse_args()

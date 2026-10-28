@@ -2,7 +2,7 @@
 capture (Raguza 2021-12-04, 0x020 packet for item 2313). Needs lupa and the DSP worktree; skipped otherwise."""
 import os, pathlib, pytest
 lupa = pytest.importorskip("lupa")
-SRC = pathlib.Path(os.environ.get("DSP_CHOCOBO_LUA", "D:/Claude/dsp-wt-chocobo/scripts/globals/chocobo_raising_day.lua"))
+SRC = pathlib.Path(os.environ.get("DSP_CHOCOBO_LUA", "dsp-checkout/scripts/globals/chocobo_raising_day.lua"))
 pytestmark = pytest.mark.skipif(not SRC.exists(), reason="DSP chocobo script not available")
 
 CAPTURE = "38 30 08 0B 88 00 08 11 00 00 00 00 4F 6B 77 2F 9A 25 9E 90 00 00 00 00"
