@@ -110,10 +110,18 @@ _R7 = ("toolkit-main@7bb970af4a21b5ffd4d31d4646528e33ad88b3a8:"
        "docs/workbench/R7_OBSERVATION_CLOSEOUT_AND_NEXT_READBACK_2026-10-22.md")
 
 
-def _action(tid, label, key, pname, ptype, expect_key, etype, limitation, **extra):
+def _action(tid, label, key, pname, ptype, expect_key, etype, limitation, picker=None, expect_picker=None, **extra):
+    """``picker`` / ``expect_picker`` name a catalog kind ("npc", "zone") the editor may offer as a search
+    helper for that parameter. It is a UI hint only: it never changes what values are valid."""
+    action_param = {"name": pname, "type": ptype, **extra}
+    expect_param = {"name": expect_key, "type": etype}
+    if picker:
+        action_param["picker"] = picker
+    if expect_picker:
+        expect_param["picker"] = expect_picker
     return {"id": tid, "kind": "action_expectation", "label": label, "support_tier": _HEADLESS,
-            "action": {"native_key": key, "param": {"name": pname, "type": ptype, **extra}},
-            "expectation": {"native_key": expect_key, "param": {"name": expect_key, "type": etype}},
+            "action": {"native_key": key, "param": action_param},
+            "expectation": {"native_key": expect_key, "param": expect_param},
             "source_ref": _CROSSWALK, "limitations": limitation}
 
 
@@ -128,15 +136,15 @@ _TEMPLATES = (
     _action("navigate_near", "navigate near", "walk_to", "coordinates", "walk_target", "x_near", "finite_number",
             "Headless scenario state; no independent position readback in this slice"),
     _action("talk_to_npc", "talk to npc", "talk_npc", "npc_id", "uint32", "event_active", "bool",
-            "NPC ID is unverified for a particular zone/client"),
+            "NPC ID is unverified for a particular zone/client", picker="npc"),
     _action("inspect_npc", "inspect npc", "examine_npc", "npc_id", "uint32", "event_id", "uint53",
-            "Event ID requires authenticated observed event evidence"),
+            "Event ID requires authenticated observed event evidence", picker="npc"),
     _action("advance_event", "advance event", "event_update", "event_value", "uint32", "event_param0", "uint53",
             "Event param must be captured as observation, not assumed from action"),
     _action("finish_event", "finish event", "event_finish", "event_value", "uint32", "event_active", "bool",
             "Completion request cannot establish event completion"),
     _action("wait_for_state", "wait for state", "wait_ms", "duration_ms", "int_range", "zone", "uint53",
-            "Time elapsed is not evidence of a zone transition", min=0, max=_MS_MAX),
+            "Time elapsed is not evidence of a zone transition", expect_picker="zone", min=0, max=_MS_MAX),
     _action("recover_hp", "recover hp", "rest_hp", "hp_percent", "int_range", "hpp", "uint53",
             "HP state requires observed snapshot, not dispatch success", min=1, max=100),
     _action("invite_party", "invite party", "invite", "entity_id", "uint32", "party_members_gt", "uint53",

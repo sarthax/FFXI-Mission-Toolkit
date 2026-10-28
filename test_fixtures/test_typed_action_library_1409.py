@@ -178,3 +178,19 @@ def test_export_is_deterministic_serializable_and_unaliased():
     assert json.dumps(lib.export_registry(), sort_keys=True) == first
     ids = [t["id"] for t in registry["templates"]]
     assert len(ids) == len(set(ids))
+
+
+def test_picker_hints_are_exactly_the_npc_and_zone_id_parameters():
+    """Picker hints are UI helpers for catalog lookup; they never change which values are valid."""
+    hints = {}
+    for template in lib.list_templates():
+        for part in ("action", "expectation"):
+            if template[part] and template[part]["param"].get("picker"):
+                hints[(template["id"], part)] = (template[part]["param"]["name"], template[part]["param"]["picker"])
+    assert hints == {("talk_to_npc", "action"): ("npc_id", "npc"), ("inspect_npc", "action"): ("npc_id", "npc"),
+                     ("wait_for_state", "expectation"): ("zone", "zone")}
+    for _, kind in hints.values():  # every hinted kind is one the catalog search route supports
+        assert kind in {"item", "keyitem", "npc", "mob", "zone", "gm"}
+    # a hint never changes validation: the same checks apply with or without it
+    spec = lib.get_template("talk_to_npc")["action"]["param"]
+    assert lib.check_param(spec, 7) is None and lib.check_param(spec, -1) is not None

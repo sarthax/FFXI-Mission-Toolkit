@@ -53,10 +53,12 @@
   }
   const nativeJson = entries => JSON.stringify(nativeScenario(entries), null, 2);
 
-  function describeStep(template, step) {
+  function describeAction(step) {
     const action = Object.keys(step.do)[0], expect = Object.keys(step.expect)[0];
-    return template.label + ' — ' + action + ' ' + JSON.stringify(step.do[action]) +
-      ', then check ' + expect + ' = ' + JSON.stringify(step.expect[expect]);
+    return action + ' ' + JSON.stringify(step.do[action]) + ', then check ' + expect + ' = ' + JSON.stringify(step.expect[expect]);
+  }
+  function describeStep(template, step) {
+    return template.label + ' — ' + describeAction(step);
   }
 
   function moveItem(list, index, delta) {
@@ -67,12 +69,49 @@
     return next;
   }
 
+  // ---- catalog picker helpers (pure) --------------------------------------------------------------------------------
+  // Candidates come from the existing local DSP catalog search. They are *unreconciled source candidates*: a pick fills
+  // an ID field the author can still edit, and says where the value came from; it never proves the ID is right for a
+  // particular zone or client.
+  function catalogQueryProblem(query) {
+    const q = String(query === undefined || query === null ? '' : query).trim();
+    if (q === '') return 'Type part of a name to search.';
+    if (q.length > 64) return 'Search text can be at most 64 characters.';
+    return '';
+  }
+  function catalogUrl(kind, query, limit = 12) {
+    return '/scenario-developer/catalog/search?kind=' + encodeURIComponent(kind) + '&query=' +
+      encodeURIComponent(String(query).trim()) + '&limit=' + encodeURIComponent(limit);
+  }
+  // Only well-formed rows of the requested kind are ever offered; anything else from the server is ignored.
+  function usableCandidate(candidate, kind) {
+    return !!candidate && typeof candidate === 'object' && candidate.kind === kind &&
+      Number.isSafeInteger(candidate.id) && candidate.id >= 0 &&
+      typeof candidate.name === 'string' && candidate.name.trim() !== '' && typeof candidate.source_path === 'string';
+  }
+  function describeCandidate(candidate) {
+    return candidate.name.trim().slice(0, 120) + ' (id ' + candidate.id + ')' +
+      (candidate.duplicate_id_in_results ? ' — AMBIGUOUS: this ID appears more than once' : '');
+  }
+  function provenanceNote(candidate, parameter) {
+    return parameter + ' = ' + candidate.id + ' (' + candidate.name.trim().slice(0, 120) + ') — unreconciled DSP source ' +
+      'candidate from ' + candidate.source_path + '; not verified for this zone or client';
+  }
+
   // ---- browser UI -------------------------------------------------------------------------------------------------
   const defaultIo = {
     async getLibrary() {
       const response = await fetch('/scenario-developer/typed-library');
       if (!response.ok) throw Error('The typed action library is unavailable (' + response.status + ')');
       return response.json();
+    },
+    async searchCatalog(kind, query) {
+      const response = await fetch(catalogUrl(kind, query), {headers: {'x-requested-with': 'toolkit-ui'}});
+      const body = await response.json().catch(() => ({}));
+      if (response.ok) return {ok: true, choices: Array.isArray(body.choices) ? body.choices : []};
+      const detail = body && body.detail;
+      return {ok: false, message: (typeof detail === 'string' ? detail : 'Catalog search rejected (' + response.status + ')') +
+        ' You can still enter an ID by hand.'};
     },
     async buildStep(payload) {
       const response = await fetch('/scenario-developer/typed-step', {
@@ -97,7 +136,7 @@
       wrap.append(doc.createTextNode(label), control);
       return wrap;
     };
-    const state = {templates: [], entries: [], built: null, request: 0, timer: null};
+    const state = {templates: [], entries: [], built: null, request: 0, timer: null, picked: {action: null, expect: null}};
     const inputs = {action: {}, expect: null};
     container.replaceChildren();
 
@@ -133,6 +172,49 @@
       return input;
     }
 
+    function pickerBox(param, group, input) {
+      const kindLabel = param.picker === 'zone' ? 'zone' : 'NPC';
+      const box = el('div', 'sd-muted');
+      const query = el('input'); query.type = 'text'; query.maxLength = 64; query.id = 'sd-typed-' + group + '-search';
+      const go = el('button', '', 'Search'); go.type = 'button'; go.id = 'sd-typed-' + group + '-search-go';
+      const note = el('p', 'sd-muted'); note.setAttribute('role', 'status'); note.id = 'sd-typed-' + group + '-search-note';
+      const results = el('ul'); results.id = 'sd-typed-' + group + '-results';
+      let sequence = 0;
+      async function search() {
+        const text = String(query.value).trim(), problem = catalogQueryProblem(text);
+        results.replaceChildren();
+        if (problem) { note.textContent = problem; return; }
+        const mine = ++sequence;
+        note.textContent = 'Searching the configured DSP source…';
+        let reply;
+        try { reply = await io.searchCatalog(param.picker, text); }
+        catch (error) { reply = {ok: false, message: 'Catalog search failed: ' + error.message + ' You can still enter an ID by hand.'}; }
+        if (mine !== sequence) return; // a newer search superseded this answer
+        if (!reply.ok) { note.textContent = reply.message; return; }
+        const rows = (reply.choices || []).filter(c => usableCandidate(c, param.picker)).slice(0, 20);
+        note.textContent = rows.length
+          ? rows.length + ' unverified source candidate' + (rows.length === 1 ? '' : 's') + ' (a bounded search, not a full list). ' +
+            'Pick one to fill the ID, or type your own.'
+          : 'No match in the configured DSP source. That is not proof the ' + kindLabel + ' does not exist; you can still enter an ID by hand.';
+        for (const candidate of rows) {
+          const item = el('li'), choice = el('button', '', describeCandidate(candidate));
+          choice.type = 'button'; choice.setAttribute('aria-label', 'Use ' + describeCandidate(candidate));
+          choice.addEventListener('click', () => {
+            input.value = String(candidate.id);
+            state.picked[group] = candidate;
+            note.textContent = 'Filled from the catalog: ' + provenanceNote(candidate, param.name);
+            schedule();
+          });
+          item.append(choice, el('small', 'sd-muted', ' ' + candidate.source_path));
+          results.append(item);
+        }
+      }
+      go.addEventListener('click', search);
+      query.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); search(); } });
+      box.append(field('Find a ' + kindLabel + ' in the DSP catalog (optional)', query), go, note, results);
+      return box;
+    }
+
     function paramControls(param, group) {
       const holder = el('div', 'sd-grid');
       const read = {};
@@ -154,7 +236,8 @@
         input.addEventListener('input', schedule);
       } else input = numberInput(param, group, 'value');
       holder.append(field(param.name + ' — ' + param.constraint, input));
-      return {holder, value: () => {
+      if (param.picker && io.searchCatalog) holder.append(pickerBox(param, group, input));
+      return {holder, input, value: () => {
         if (param.type === 'bool') return input.value === '' ? {error: param.name + ' is required'} : {value: input.value === 'true'};
         const parsed = parseNumberText(input.value);
         return parsed === undefined ? {error: param.name + ' is required'} : {value: parsed};
@@ -163,7 +246,7 @@
 
     function renderTemplate() {
       const template = selected();
-      state.built = null; add.disabled = true;
+      state.built = null; add.disabled = true; state.picked = {action: null, expect: null};
       actionBox.replaceChildren(); expectBox.replaceChildren();
       if (!template) { limits.textContent = ''; return; }
       limits.textContent = 'Tier ' + template.support_tier + ' — shape checked against the pinned native schema; ' +
@@ -205,9 +288,11 @@
       list.replaceChildren();
       state.entries.forEach((entry, index) => {
         const item = el('li');
-        item.append(el('strong', '', entry.name), doc.createTextNode(' — ' + describeStep(entry.template, entry.step)));
+        item.append(el('strong', '', entry.name), doc.createTextNode(' — ' +
+          (entry.name === entry.template.label ? describeAction(entry.step) : describeStep(entry.template, entry.step))));
         item.append(el('small', 'sd-muted', ' [' + entry.step.support_tier + ' · oracle ' + entry.step.oracle_status +
           ' · verdict ' + entry.step.verdict + ']'));
+        for (const note of entry.provenance || []) item.append(el('div', 'sd-muted', 'Catalog source: ' + note));
         const controls = el('span', 'sd-controls');
         for (const [label, act] of [['Up', () => move(index, -1)], ['Down', () => move(index, 1)], ['Remove', () => remove(index)]]) {
           const button = el('button', '', label); button.type = 'button';
@@ -233,7 +318,13 @@
       const template = selected();
       if (!template || !state.built || state.entries.length >= MAX_STEPS) return;
       const stepName = uniqueName(name.value, state.entries.map(e => e.name));
-      state.entries = state.entries.concat([{name: stepName, template, step: clone(state.built)}]);
+      const provenance = [];
+      for (const [group, part] of [['action', 'action'], ['expect', 'expectation']]) {
+        const picked = state.picked[group], control = inputs[group];
+        if (picked && control && control.input && parseNumberText(control.input.value) === picked.id)
+          provenance.push(provenanceNote(picked, template[part].param.name));
+      }
+      state.entries = state.entries.concat([{name: stepName, template, step: clone(state.built), provenance}]);
       renderSteps();
       name.value = uniqueName(template.label, state.entries.map(e => e.name));
       status.textContent = 'Added "' + stepName + '". Edit the values to add another.';
@@ -272,5 +363,6 @@
       if (container) mount(container);
     });
   }
-  return {parseNumberText, composeWalkTarget, uniqueName, nativeScenario, nativeJson, describeStep, moveItem, mount};
+  return {parseNumberText, composeWalkTarget, uniqueName, nativeScenario, nativeJson, describeStep, describeAction, moveItem,
+    catalogQueryProblem, catalogUrl, usableCandidate, describeCandidate, provenanceNote, mount};
 });
