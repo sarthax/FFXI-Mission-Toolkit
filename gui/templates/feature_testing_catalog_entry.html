@@ -45,6 +45,11 @@
 {% if described.steps %}{% for line in described.steps %}<p><strong>{{ line.keyword }}</strong> {{ line.text }} <small>({{ line.step }})</small></p>{% endfor %}
 <p><small>A reading of the saved native steps. It shows no result and does not mean the runner can execute them.</small></p>
 {% else %}<p>No typed steps are saved in this revision.</p>{% endif %}
+{% if chosen.execution_path_blockers %}{% set b = chosen.execution_path_blockers %}<h4 id="ft-ce-blockers">Execution path blockers</h4>
+<p><strong>MCP task start:</strong> {{ b.mcp_task_start.status }}{% if b.mcp_task_start.blocked_steps %}. These saved steps would be rejected there:{% endif %}</p>
+{% if b.mcp_task_start.blocked_steps %}<ul>{% for x in b.mcp_task_start.blocked_steps %}<li>Step {{ x.step + 1 }}{% if x.name %} “{{ x.name }}”{% endif %}: <code>{{ x.side }}.{{ x.key }}</code> <small>({{ x.reason }})</small></li>{% endfor %}</ul>{% endif %}
+<p><small>Recorded acceptance observations only; nothing was executed, and "no known blockers" does not make a step runnable.</small></p>
+{% endif %}
 {% if described.assertion_ids %}<h4>Assertions</h4><p>{{ described.assertion_ids|join(', ') }}</p>{% endif %}
 {% if described.cleanup %}<h4>Cleanup</h4><ul>{% for item in described.cleanup %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
 {% if described.blocking_gaps %}<h4>Open limitations</h4><ul>{% for item in described.blocking_gaps %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}

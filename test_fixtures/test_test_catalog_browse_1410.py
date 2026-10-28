@@ -213,3 +213,13 @@ def test_allowed_next_is_the_table_the_store_enforces():
     for state in cat.STATES:
         assert cat.allowed_next(state) == cat._NEXT[state]
     assert cat.allowed_next("NOT_A_STATE") == ()
+
+
+def test_entry_page_lists_execution_path_blockers_1412(store):
+    seed()
+    html = entry(client(), revision=2).text
+    assert 'id="ft-ce-blockers"' in html and "<strong>MCP task start:</strong> BLOCKED" in html
+    for key in ("do.walk_to", "expect.x_near", "do.rest_hp", "expect.zone"):
+        assert f"<code>{key}</code>" in html, key
+    assert "scenario_resource_actions_not_yet_supported" in html and "nothing was executed" in html
+    assert "Execution path blockers" not in entry(client(), revision=1).text  # r1 has no typed steps

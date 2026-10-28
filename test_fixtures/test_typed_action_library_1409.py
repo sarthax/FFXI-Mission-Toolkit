@@ -458,6 +458,21 @@ def test_observed_paths_cover_exactly_the_library_keys_and_never_claim_execution
     assert exported.keys() == mcp.keys()
 
 
+def test_execution_path_blockers_1412():
+    from workbench.server_admin.feature_testing import typed_action_library as lib
+    steps = [{"name": "a", "do": {"wait_ms": 10}, "expect": {}},
+             {"name": "b", "do": {"invite": 5}, "expect": {"party_members_gt": 1}}]
+    out = lib.execution_path_blockers(steps)
+    assert out["mcp_task_start"]["status"] == "BLOCKED"
+    assert {(b["step"], b["key"]) for b in out["mcp_task_start"]["blocked_steps"]} == {(1, "invite"), (1, "party_members_gt")}
+    assert out["execution_enabled"] is False
+    assert lib.execution_path_blockers([{"name": "a", "do": {"wait_ms": 1}}])["mcp_task_start"]["status"] == "NO_KNOWN_BLOCKERS"
+    import pytest
+    with pytest.raises(ValueError):
+        lib.execution_path_blockers("x")
+
+
+
 # --- several actions / several checks in one step (owner request, #1409) ---------------------------
 
 def _row(step):
