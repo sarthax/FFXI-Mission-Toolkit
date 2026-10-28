@@ -457,3 +457,17 @@ def test_observed_paths_cover_exactly_the_library_keys_and_never_claim_execution
     # the registry export carries the same data the UI reads
     exported = {p["native_key"]: p["observed_paths"] for p in lib.export_registry()["actions"] + lib.export_registry()["checks"]}
     assert exported.keys() == mcp.keys()
+
+
+def test_execution_path_blockers_1412():
+    from workbench.server_admin.feature_testing import typed_action_library as lib
+    steps = [{"name": "a", "do": {"wait_ms": 10}, "expect": {}},
+             {"name": "b", "do": {"invite": 5}, "expect": {"party_members_gt": 1}}]
+    out = lib.execution_path_blockers(steps)
+    assert out["mcp_task_start"]["status"] == "BLOCKED"
+    assert {(b["step"], b["key"]) for b in out["mcp_task_start"]["blocked_steps"]} == {(1, "invite"), (1, "party_members_gt")}
+    assert out["execution_enabled"] is False
+    assert lib.execution_path_blockers([{"name": "a", "do": {"wait_ms": 1}}])["mcp_task_start"]["status"] == "NO_KNOWN_BLOCKERS"
+    import pytest
+    with pytest.raises(ValueError):
+        lib.execution_path_blockers("x")

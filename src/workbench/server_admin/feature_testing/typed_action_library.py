@@ -416,3 +416,29 @@ def validate_native_steps(value: object) -> object:
             if not isinstance(note, str) or not 1 <= len(note) <= _MAX_NOTE or _CONTROL.search(note):
                 raise ValueError(f"native_steps[{index}] note must be 1 to {_MAX_NOTE} characters of plain text")
     return value
+
+
+def execution_path_blockers(steps: object) -> dict:
+    """Read-only unsupported-step blocker: which stored/reviewed native steps each execution path would reject.
+
+    Uses the recorded acceptance observations (``_MCP_REJECTS``); it runs nothing and proves nothing about
+    behaviour. ``mcp_task_start`` is blocked if any step uses a rejected key; the runner loader accepts every
+    reviewed key (action-only steps are exported with an empty expect). An empty ``blocked_steps`` list is
+    not authorization to run.
+    """
+    if not isinstance(steps, list):
+        raise ValueError("steps must be an array")
+    blocked = []
+    for index, step in enumerate(steps):
+        if not isinstance(step, dict):
+            raise ValueError(f"steps[{index}] must be an object")
+        for side in ("do", "expect"):
+            part = step.get(side)
+            for key in (part if isinstance(part, dict) else {}):
+                reason = _MCP_REJECTS.get(key)
+                if reason:
+                    blocked.append({"step": index, "name": step.get("name"), "side": side, "key": key, "reason": reason})
+    return {"schema": "toolkit-execution-path-blockers/1", "source": _PATHS_SOURCE, "execution_tested": False,
+            "mcp_task_start": {"status": "BLOCKED" if blocked else "NO_KNOWN_BLOCKERS", "blocked_steps": blocked},
+            "xiheadless_loader": {"status": "NO_KNOWN_BLOCKERS", "blocked_steps": []},
+            "execution_enabled": False}
