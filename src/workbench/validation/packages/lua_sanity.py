@@ -9,10 +9,15 @@ from pathlib import Path
 
 from workbench.runtime.legacy_settings import get_backport_root
 
+# luaparser can be installed yet unusable: it generates its lexer at import time against antlr4, and a mismatched
+# antlr4-python3-runtime (e.g. 4.9.x pinned by omegaconf vs the 4.13.2 luaparser needs) raises TypeError, not
+# ImportError. Treat any failure as "syntax checking unavailable" so importing the app never depends on it.
+LUAPARSER_UNAVAILABLE_REASON: str | None = None
 try:
     from luaparser import ast as lua_ast
-except ImportError:
+except Exception as _exc:  # noqa: BLE001 - deliberately broad, see above
     lua_ast = None
+    LUAPARSER_UNAVAILABLE_REASON = f"{type(_exc).__name__}: {_exc}"
 
 BARE_GLOBAL_REF_RE = re.compile(
     r"^\s*local\s+ID\s*=\s*(?:zones\[(?:xi\.zone\.|tpz\.zone\.)?)?([A-Z][A-Za-z0-9_]*)\]?\s*$",
@@ -68,8 +73,9 @@ def main() -> None:
 
     if lua_ast is None:
         print(
-            "warning: luaparser not importable -- syntax checks skipped, only the declared-vs-"
-            "referenced global check will run. `pip install luaparser` to enable full checking.",
+            f"warning: luaparser not usable ({LUAPARSER_UNAVAILABLE_REASON}) -- syntax checks skipped, only the "
+            "declared-vs-referenced global check will run. Use the project .venv (setup.bat) or "
+            "`pip install luaparser` with antlr4-python3-runtime==4.13.2 to enable full checking.",
             file=sys.stderr,
         )
 
