@@ -257,3 +257,29 @@ def test_legacy_editor_inputs_are_not_changed_and_noncanonical_is_rejected():
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
+
+
+# --- #1392: identity mismatches get explicit identity wording ---------------------------------
+
+def _reject(mutate):
+    review, sidecar = pair()
+    mutate(review, sidecar)
+    with pytest.raises(ValueError) as exc:
+        inspect_paired_readiness(review, sidecar)
+    return str(exc.value)
+
+
+def test_sidecar_capture_id_mismatch_gets_explicit_identity_wording():
+    message = _reject(lambda r, s: s.update(capture_id=s["capture_id"] + 1))
+    assert message.startswith("Readiness sidecar capture identity mismatch")
+    assert "does not match readiness sidecar" not in message  # not the generic projection message
+    # IDs are never echoed back into the message.
+    review, sidecar = pair()
+    assert str(review["capture_id"]) not in _reject(lambda r, s: s.update(capture_id=r["capture_id"] + 7)).replace("capture", "")
+
+
+def test_projection_difference_keeps_the_projection_wording():
+    message = _reject(lambda r, s: s["original_evidence_handoff"].update(capture_id=-20))
+    assert message == "Original review capture/projection does not match readiness sidecar"
+    message = _reject(lambda r, s: s.update(original_handoff_projection_sha256="0" * 64))
+    assert message == "Original review capture/projection does not match readiness sidecar"
