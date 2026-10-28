@@ -14,7 +14,7 @@
 .ft-assertions{overflow-x:auto}
 .ft-inspect{max-width:100%;overflow-wrap:anywhere}
 </style>
-<p><a href="/feature-testing?tab=runs">← Run history</a> · <a href="/feature-testing?tab=catalog">Test catalog</a></p>
+<p><a href="/feature-testing?tab=runs">← Run history</a> · <a href="/feature-testing?tab=catalog">Test catalog</a>{% if not missing %} · <a href="/feature-testing/compare?right={{ run_id|urlencode }}">Compare with another run</a>{% endif %}</p>
 {% if missing %}
 <section class="wb-panel" aria-label="Run not found">
 <h2>Run not found</h2>

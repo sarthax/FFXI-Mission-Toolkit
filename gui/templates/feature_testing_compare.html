@@ -1,0 +1,70 @@
+{% extends "workbench_page.html" %}
+{% block page_archetype %}workbench{% endblock %}
+{% block title %}Compare runs{% endblock %}
+{% block page_heading %}Compare runs{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Imported evidence · read-only</span>{% endblock %}
+{% block page_body %}
+<style>
+.ft-cmp-form{display:flex;gap:1rem;flex-wrap:wrap;align-items:end;margin:1rem 0}
+.ft-cmp-form label{display:flex;flex-direction:column;gap:.25rem;min-width:14rem;flex:1 1 14rem}
+.ft-cmp-form select,.ft-cmp-form input{max-width:100%}
+.ft-cmp-row{border:1px solid var(--border,#ccc);border-radius:8px;margin:1rem 0;padding:1rem}
+.ft-cmp-sides{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:.75rem;margin:.6rem 0}
+.ft-cmp-side{border:1px solid var(--border,#ccc);border-radius:6px;padding:.65rem;min-width:0;overflow-wrap:anywhere}
+.ft-cmp-side dl{display:grid;grid-template-columns:max-content 1fr;gap:.2rem .8rem;margin:.4rem 0 0}
+.ft-cmp-side dd{margin:0;min-width:0}
+.ft-cmp-note{border-left:3px solid currentColor;padding-left:.8rem}
+@media (max-width:520px){.ft-cmp-side dl{grid-template-columns:1fr}}
+</style>
+<p><a href="/feature-testing?tab=runs">← Run history</a></p>
+<section class="wb-panel">
+<h2>Choose two runs</h2>
+<p>The earlier run goes on the left and the later run on the right. This compares two <strong>recorded</strong> results; it does not run anything.</p>
+<form class="ft-cmp-form" method="get" action="/feature-testing/compare">
+<label>Earlier run (left)
+{% if runs %}<select name="left"><option value="">Choose a run…</option>{% for run in runs %}<option value="{{ run.run_id }}"{% if run.run_id == left %} selected{% endif %}>{{ run.run_id }} · {{ run.latest }}</option>{% endfor %}</select>
+{% else %}<input name="left" value="{{ left }}" maxlength="256">{% endif %}</label>
+<label>Later run (right)
+{% if runs %}<select name="right"><option value="">Choose a run…</option>{% for run in runs %}<option value="{{ run.run_id }}"{% if run.run_id == right %} selected{% endif %}>{{ run.run_id }} · {{ run.latest }}</option>{% endfor %}</select>
+{% else %}<input name="right" value="{{ right }}" maxlength="256">{% endif %}</label>
+<button type="submit">Compare</button>
+{% if left and right %}<a href="/feature-testing/compare?left={{ right|urlencode }}&amp;right={{ left|urlencode }}">Swap sides</a>{% endif %}
+</form>
+{% if not results_configured %}<p>No evidence database is configured. Set <code>MISSION_TOOLKIT_TEST_RESULTS_DB</code> and import a validated report.</p>
+{% elif not runs %}<p>No results imported yet, so there are no runs to compare.</p>{% endif %}
+</section>
+{% if problem %}<section class="wb-panel" role="alert"><h2>Cannot compare</h2><p>{{ problem }}</p></section>{% endif %}
+{% if comparison %}
+<section class="wb-panel" aria-label="Comparison of {{ left }} and {{ right }}">
+<h2>{{ left }} → {{ right }}</h2>
+<p class="ft-cmp-note"><strong>Not a cause.</strong> A difference between two recorded results does not show that a DSP change caused it. Results are imported, not independently verified.</p>
+<p>
+{% for name, count in comparison.transition_counts.items() %}{{ name|replace('_', ' ')|lower|capitalize }}: {{ count }}{% if not loop.last %} · {% endif %}{% endfor %}
+</p>
+{% for row in comparison.comparisons %}
+<article class="ft-cmp-row">
+<h3>{{ row.feature_id }} / {{ row.case_id }} <small>({{ row.stage }})</small></h3>
+<p><strong>{{ 'Comparable' if row.comparable else 'Not comparable' }}.</strong> {{ transition_text(row.transition) }}</p>
+{% if row.reasons %}<ul>{% for reason in row.reasons %}<li>{{ reason_text(reason) }}</li>{% endfor %}</ul>{% endif %}
+<div class="ft-cmp-sides">
+{% for label, side in (('Earlier', row.left), ('Later', row.right)) %}
+<section class="ft-cmp-side" aria-label="{{ label }} run result">
+<strong>{{ label }}</strong>
+{% if side %}
+<dl>
+<dt>Verdict</dt><dd><strong>{{ side.verdict }}</strong>{% if side.reason_class %} ({{ side.reason_class }}){% endif %}</dd>
+<dt>Run</dt><dd><a href="/feature-testing/run/{{ side.run_id|urlencode }}">{{ side.run_id }}</a></dd>
+<dt>Observed (UTC)</dt><dd>{{ side.observed_at }}</dd>
+<dt>DSP</dt><dd><code title="{{ side.dsp_commit }}">{{ side.dsp_commit[:12] }}</code></dd>
+<dt>XiHeadless</dt><dd><code title="{{ side.headless_commit }}">{{ side.headless_commit[:12] }}</code></dd>
+<dt>Toolkit</dt><dd><code title="{{ side.toolkit_commit }}">{{ side.toolkit_commit[:12] }}</code></dd>
+</dl>
+{% else %}<p>No result for this case in this run.</p>{% endif %}
+</section>
+{% endfor %}
+</div>
+</article>
+{% else %}<p>Neither run has any results to compare.</p>{% endfor %}
+</section>
+{% endif %}
+{% endblock %}
