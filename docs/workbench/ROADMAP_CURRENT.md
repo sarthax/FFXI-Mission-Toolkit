@@ -1,3 +1,5 @@
+> **Operating model update — 2026-10-27:** The A–E hourly coordinator/dispatch experiment is retired; #1348 and #1398 are closed. Historical Wave tables, claims and review queues below are **archive only**. Use normal owner-directed development and evaluate unfinished PRs individually. Prioritize an actually usable Scenario Results screen and other accepted functionality over creating planning/review issues. Preserve unresolved evidence, security, and local browser/gameplay acceptance gates; do not equate CI with product acceptance. No automatic merge is implied.
+
 # Current Workbench Roadmap
 
 ## 2026-10-22 — R7 integrated, browser-accepted subset / R8 offline candidates (latest release checkpoint)
