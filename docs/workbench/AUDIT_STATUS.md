@@ -1,3 +1,9 @@
+## 2026-10-27 — Coordinator-experiment retirement audit note
+
+- A–E coordinator experiment retired by owner; [#1348](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1348) was already closed and policy [#1398](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1398) is now closed.
+- `AGENTS.md` switched to direct scoped owner/local-agent/Codex development. Historical claims/agent reviews are retained as evidence, not mandatory dispatch, current releases, or live acceptance.
+- No technical security/privacy/gameplay acceptance is implied; original source evidence and local browser/runtime gates require separate proof. Existing audit entries below remain dated historical observations.
+
 ## 2026-09-30 — Spatial and Environment Evidence Search modules
 
 - Added Spatial & Movement and Environment & World State modules to the modular cross-capture Evidence Search workspace.
