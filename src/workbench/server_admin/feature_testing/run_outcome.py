@@ -7,6 +7,7 @@ promotes a record, and never invents a cause: a missing reason stays "no reason 
 """
 from __future__ import annotations
 
+from .run_options import shortcuts_enabled
 from .results import UNCLASSIFIED, reason_class
 
 _MAX_NOTE = 300
@@ -65,4 +66,8 @@ def describe_outcome(record: dict, job: dict | None = None) -> dict:
         out["job"] = {"status": status, "meaning": _JOB_MEANING.get(status, "an unrecognised state"),
                       "phase": job.get("phase"), "error_recorded": bool(job.get("error")),
                       "verdict_agrees": job.get("verdict") in (None, verdict)}
+        opts = job.get("run_options")
+        if isinstance(opts, dict):
+            out["run_options"] = opts
+            out["shortcuts_enabled"] = shortcuts_enabled(opts)
     return out

@@ -464,6 +464,7 @@ class LaunchRequest(BaseModel):
     charid: int
     supervisor_port: int = 8420
     approval: bool = False
+    run_options: dict | None = None  # allow-listed boolean bot switches (#1484); omitted = safe defaults
 
 
 def _operator_auth(request: Request, operator_token: str | None) -> None:
@@ -541,6 +542,13 @@ def setup_enable(request: Request, payload: EnableRequest):
     return setup.status()
 
 
+@router.get("/builder/run-options", include_in_schema=False)
+def run_options_catalog():
+    """The allow-listed run options with their safe defaults (#1484). Read-only."""
+    from .run_options import RUN_OPTIONS
+    return {"options": [{"name": n, **spec} for n, spec in RUN_OPTIONS.items()]}
+
+
 @router.post("/builder/launch", include_in_schema=False)
 def launch_test(request: Request, payload: LaunchRequest,
                 x_test_operator_token: str | None = Header(default=None)):
@@ -549,7 +557,7 @@ def launch_test(request: Request, payload: LaunchRequest,
         raise HTTPException(400, "Explicit operator confirmation required")
     from .execution_jobs import enqueue
     try:
-        job_id = enqueue(payload.account, payload.charid, payload.supervisor_port)
+        job_id = enqueue(payload.account, payload.charid, payload.supervisor_port, payload.run_options)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     return {"job_id": job_id, "status": "QUEUED", "case_id": "MOG-09"}
@@ -578,6 +586,11 @@ def execution_jobs(request: Request, x_test_operator_token: str | None = Header(
         return {"jobs": jobs()}
     except ValueError as exc:
         raise HTTPException(503, str(exc)) from exc
+
+
+def _run_option_rows() -> list[dict]:
+    from .run_options import RUN_OPTIONS
+    return [{"name": n, **spec} for n, spec in RUN_OPTIONS.items()]
 
 
 def _run_defaults() -> dict:
@@ -621,7 +634,7 @@ def dashboard_view(*, tab: str = "runs", feature: str = "", verdict: str = "",
             "features": _summaries(), "evidence_count": len(records),
             "builder_preflight": _builder_preflight(),
             "results_configured": bool(_results_db()), "execution_enabled": False,
-            "ui_mode": _ui_mode(), "run_defaults": _run_defaults()}
+            "ui_mode": _ui_mode(), "run_defaults": _run_defaults(), "run_options": _run_option_rows()}
 
 
 def _saved_catalog_view(request: Request, q: str, feature_id: str, tag: str, state: str) -> dict:

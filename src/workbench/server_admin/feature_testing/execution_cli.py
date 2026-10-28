@@ -17,13 +17,16 @@ from urllib.parse import urlparse
 from .execution_preflight import preflight
 from .importer import import_report
 from .router import _REPO
+from .run_options import env_for, resolve_run_options
 
 
 def execute_mog09(*, account: str, charid: int, out_dir: Path,
                   supervisor: str, approved: bool, timeout: int = 900,
-                  progress: Callable[[str], None] | None = None) -> dict:
+                  progress: Callable[[str], None] | None = None,
+                  run_options: dict | None = None) -> dict:
     if not approved:
         raise ValueError("explicit operator approval required")
+    options = resolve_run_options(run_options)
     if not re.fullmatch(r"[A-Za-z0-9_\-]{1,32}", account):
         raise ValueError("invalid account identifier")
     allowed = {int(item) for item in os.environ.get("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS", "").split(",")
@@ -50,6 +53,7 @@ def execute_mog09(*, account: str, charid: int, out_dir: Path,
     script = root / "tools" / "observation_runner.py"
     env = dict(os.environ)
     env["TOOLKIT_SRC"] = str(_REPO / "src")
+    env.update(env_for(options))  # allow-listed bot switches only; explicit so ambient values cannot leak in
     args = [sys.executable, str(script), "--out-dir", str(out),
             "--account", account, "--charid", str(charid), "--supervisor", supervisor]
     # No shell, no user supplied script or passthrough command arguments.
@@ -84,7 +88,8 @@ def execute_mog09(*, account: str, charid: int, out_dir: Path,
     if progress:
         progress("evidence_imported")
     return {"run_id": rows[0]["run_id"], "verdict": rows[0]["verdict"],
-            "imported_records": count, "artifacts": str(out)}
+            "imported_records": count, "artifacts": str(out),
+            "run_options": options}
 
 
 def main() -> None:

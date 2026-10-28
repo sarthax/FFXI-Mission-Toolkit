@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .execution_cli import execute_mog09
+from .run_options import from_json, resolve_run_options, to_json
 
 _LOCK = threading.Lock()
 _THREADS: dict[str, threading.Thread] = {}
@@ -51,6 +52,8 @@ def _connect() -> sqlite3.Connection:
         conn.execute("ALTER TABLE feature_test_jobs ADD COLUMN phase TEXT NOT NULL DEFAULT 'not_started'")
     if "phase_updated_at" not in existing:
         conn.execute("ALTER TABLE feature_test_jobs ADD COLUMN phase_updated_at TEXT")
+    if "run_options" not in existing:
+        conn.execute("ALTER TABLE feature_test_jobs ADD COLUMN run_options TEXT")
     return conn
 
 
@@ -64,7 +67,10 @@ def jobs(limit: int = 20) -> list[dict]:
     with _LOCK, _connect() as db:
         db.row_factory = sqlite3.Row
         rows = db.execute("SELECT * FROM feature_test_jobs ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
-    return [dict(row) for row in rows]
+    out = [dict(row) for row in rows]
+    for row in out:
+        row["run_options"] = from_json(row.get("run_options"))
+    return out
 
 
 def job_for_run(run_id: str) -> dict | None:
@@ -82,11 +88,15 @@ def job_for_run(run_id: str) -> dict | None:
     try:
         with _LOCK, _connect() as db:
             db.row_factory = sqlite3.Row
-            row = db.execute("SELECT status, phase, verdict, error FROM feature_test_jobs WHERE run_id=? "
+            row = db.execute("SELECT status, phase, verdict, error, run_options FROM feature_test_jobs WHERE run_id=? "
                              "ORDER BY created_at DESC LIMIT 1", (run_id,)).fetchone()
     except sqlite3.Error:
         return None
-    return dict(row) if row else None
+    if not row:
+        return None
+    out = dict(row)
+    out["run_options"] = from_json(out.get("run_options"))
+    return out
 
 
 def _set_phase(job_id: str, phase: str) -> None:
@@ -103,13 +113,15 @@ def _set_status(job_id: str, status: str, *, run_id=None, verdict=None, error=No
                    (status, _stamp(), run_id, verdict, error, job_id))
 
 
-def _run(job_id: str, account: str, charid: int, port: int, artifacts: Path) -> None:
+def _run(job_id: str, account: str, charid: int, port: int, artifacts: Path,
+         run_options: dict | None = None) -> None:
     _set_status(job_id, "RUNNING")
     _set_phase(job_id, "runner_invoked")
     try:
         outcome = execute_mog09(account=account, charid=charid, out_dir=artifacts,
                                 supervisor=f"http://127.0.0.1:{port}", approved=True,
-                                progress=lambda phase: _set_phase(job_id, phase))
+                                progress=lambda phase: _set_phase(job_id, phase),
+                                run_options=run_options)
     except ValueError as exc:  # pre-launch validation text is operator-safe and says what to fix
         _set_phase(job_id, "failed")
         _set_status(job_id, "ERROR", error=str(exc)[:300])
@@ -121,7 +133,8 @@ def _run(job_id: str, account: str, charid: int, port: int, artifacts: Path) -> 
         _set_status(job_id, "COMPLETED", run_id=outcome["run_id"], verdict=outcome["verdict"])
 
 
-def enqueue(account: str, charid: int, port: int) -> str:
+def enqueue(account: str, charid: int, port: int, run_options: dict | None = None) -> str:
+    options = resolve_run_options(run_options)  # reject unknown/non-bool before anything is stored
     from .test_builder import build_plan
     plan = build_plan(account, charid, port)
     if not plan["ready_for_operator_review"]:
@@ -136,10 +149,10 @@ def enqueue(account: str, charid: int, port: int) -> str:
             raise ValueError("Another test job is already active; investigate stale jobs before retrying")
         job_id = uuid.uuid4().hex
         stamp = _stamp()
-        db.execute("INSERT INTO feature_test_jobs (id, created_at, updated_at, case_id, status, account, charid) VALUES (?,?,?,?,?,?,?)",
-                   (job_id, stamp, stamp, "MOG-09", "QUEUED", account, charid))
+        db.execute("INSERT INTO feature_test_jobs (id, created_at, updated_at, case_id, status, account, charid, run_options) VALUES (?,?,?,?,?,?,?,?)",
+                   (job_id, stamp, stamp, "MOG-09", "QUEUED", account, charid, to_json(options)))
     artifacts = root / ("mog09-" + job_id)
-    thread = threading.Thread(target=_run, args=(job_id, account, charid, port, artifacts),
+    thread = threading.Thread(target=_run, args=(job_id, account, charid, port, artifacts, options),
                               name="mog09-" + job_id[:8], daemon=True)
     _THREADS[job_id] = thread
     try:

@@ -7,6 +7,7 @@
 {% if outcome.reason %}<dt>Why</dt><dd>{{ outcome.reason.text|capitalize }}{% if outcome.reason["class"] == "UNCLASSIFIED" %}{% else %} ({{ outcome.reason["class"] }}){% endif %}{% if outcome.note %} — {{ outcome.note }}{% endif %}</dd>{% endif %}
 <dt>Checks recorded</dt><dd>{{ outcome.assertion_total }}{% if outcome.assertion_total %} ({{ outcome.assertion_ok }} passing, {{ outcome.assertion_failed }} failing, {{ outcome.assertion_unclear }} unclear){% endif %}</dd>
 <dt>Runner job</dt><dd>{% if outcome.job %}{{ outcome.job.status }} — {{ outcome.job.meaning }}{% if outcome.job.phase %}; last phase: {{ outcome.job.phase }}{% endif %}{% if outcome.job.error_recorded %}; an error was recorded{% endif %}{% if not outcome.job.verdict_agrees %}; <strong>the job's verdict differs from this record</strong>{% endif %}. A finished job is not a pass: the job and the evidence verdict are separate facts.{% else %}No runner job is linked to this run, so this is imported evidence only.{% endif %}</dd>
+{% if outcome.run_options %}<dt>Bot switches</dt><dd>{% if outcome.shortcuts_enabled %}<strong>Shortcuts enabled: {{ outcome.shortcuts_enabled|join(', ') }}</strong>{% else %}No shortcuts (quick travel, GM warp, grind-here) were enabled.{% endif %} <small>({% for k, v in outcome.run_options.items() %}{{ k }}={{ 'on' if v else 'off' }}{% if not loop.last %}, {% endif %}{% endfor %})</small></dd>{% endif %}
 </dl>
 {% if outcome.warnings %}<ul class="ft-warning">{% for warning in outcome.warnings %}<li>{{ warning }}</li>{% endfor %}</ul>{% endif %}
 </section>
