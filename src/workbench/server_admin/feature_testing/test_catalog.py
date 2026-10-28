@@ -19,7 +19,7 @@ import sqlite3
 from datetime import datetime, timezone
 
 from .scenario_contract_v2 import base_spec_sha256
-from .spec_drafts import _path
+from .spec_drafts import _path, get_draft
 from .test_specifications import validate_spec
 
 STATES = ("DRAFT", "VALIDATED_DESIGN", "PUBLISHED", "ARCHIVED")
@@ -123,6 +123,33 @@ def add_revision(payload: object, *, source: str, tags: object = None, expected_
                      (feature_id, case_id, revision, "DRAFT", "", at))
     return {"feature_id": feature_id, "case_id": case_id, "revision": revision, "state": "DRAFT",
             "execution_enabled": False, "run_availability": RUN_AVAILABILITY}
+
+
+def add_from_draft(feature_id: str, case_id: str, draft_revision: int, *, tags: object = None,
+                   expected_latest: int | None = None) -> dict:
+    """Add the saved draft as the next catalog revision. The content comes from the stored draft, never from the caller.
+
+    ``draft_revision`` is the saved-draft revision the caller looked at; if the draft has moved on, nothing is added.
+    The source recorded is ``draft:<feature>/<case>@r<revision>``. A draft whose content already equals the latest
+    catalog revision is refused rather than added again.
+    """
+    _check_identity(feature_id, case_id)
+    if type(draft_revision) is not int or draft_revision < 1:
+        raise ValueError("draft_revision must be a positive integer")
+    draft = get_draft(feature_id, case_id)
+    if draft is None:
+        raise ValueError("no such saved draft")
+    if draft["revision"] != draft_revision:
+        raise ValueError("draft conflict: the saved draft changed (now revision %d); refresh the draft list" % draft["revision"])
+    serialized = json.dumps(draft["specification"], sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    digest = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+    with _db() as conn:
+        latest = conn.execute("SELECT revision, content_sha256 FROM test_catalog_revisions WHERE feature_id=? AND case_id=? "
+                              "ORDER BY revision DESC LIMIT 1", (feature_id, case_id)).fetchone()
+    if latest and latest[1] == digest:
+        raise ValueError("this saved draft is already the latest catalog revision (r%d); nothing to add" % latest[0])
+    return add_revision(draft["specification"], source=f"draft:{feature_id}/{case_id}@r{draft_revision}", tags=tags,
+                        expected_latest=(latest[0] if latest else 0) if expected_latest is None else expected_latest)
 
 
 def record_state(feature_id: str, case_id: str, revision: int, state: str, note: str = "") -> dict:

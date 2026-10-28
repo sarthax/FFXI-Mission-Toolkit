@@ -345,6 +345,28 @@ def test_catalog_add_revision(request: Request, payload: CatalogRevisionRequest,
         raise HTTPException(409 if "revision conflict" in str(exc) else 400, str(exc)) from exc
 
 
+class CatalogFromDraftRequest(BaseModel):
+    feature_id: str
+    case_id: str
+    draft_revision: int
+    tags: list[str] = []
+    expected_latest: int | None = None
+
+
+@router.post("/test-catalog/from-draft", include_in_schema=False)
+def test_catalog_from_draft(request: Request, payload: CatalogFromDraftRequest,
+                            x_test_operator_token: str | None = Header(default=None)):
+    """Add a saved draft to the catalog as its next revision (DRAFT state). Content is read from the stored draft."""
+    _operator_auth(request, x_test_operator_token)
+    from .test_catalog import add_from_draft
+    try:
+        return add_from_draft(payload.feature_id, payload.case_id, payload.draft_revision, tags=payload.tags,
+                              expected_latest=payload.expected_latest)
+    except ValueError as exc:
+        text = str(exc)
+        raise HTTPException(409 if "conflict" in text or "already the latest" in text else 400, text) from exc
+
+
 @router.post("/test-catalog/state", include_in_schema=False)
 def test_catalog_record_state(request: Request, payload: CatalogStateRequest,
                               x_test_operator_token: str | None = Header(default=None)):
