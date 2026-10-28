@@ -641,9 +641,12 @@ def catalog_entry_page(request: Request, feature_id: str, case_id: str, revision
                                                    "entry": None, "problem": problem or "No such catalog entry."})
     by_number = {r["revision"]: r for r in entry["revisions"]}
     chosen = by_number.get(revision) or by_number.get(entry["current_published_revision"]) or entry["revisions"][-1]
+    from .test_catalog import allowed_next
+    chosen_state = chosen["events"][-1]["state"] if chosen["events"] else "DRAFT"
     return templates.TemplateResponse(request=request, name="feature_testing_catalog_entry.html",
                                       context={"title": "Catalog entry", "feature_id": feature_id, "case_id": case_id,
                                                "entry": entry, "chosen": chosen, "problem": None,
+                                               "chosen_state": chosen_state, "next_states": allowed_next(chosen_state),
                                                "described": describe_spec(chosen["specification"]),
                                                "unknown_revision": bool(revision) and revision not in by_number})
 

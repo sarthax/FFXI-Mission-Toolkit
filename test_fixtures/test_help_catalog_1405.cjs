@@ -51,7 +51,8 @@ test('the Test catalog is described as design-only: saved drafts can be added, n
  assert.match(help,/Add selected saved draft to the Test catalog/);
  assert.match(help,/not unsaved edits/);
  assert.match(help,/draft-to-catalog Publish action/);
- assert.match(help,/reviewing and publishing a catalog revision is not available in the UI/);
+ assert.match(help,/publishing only records that review decision/);
+ assert.match(help,/draft-to-catalog Publish action that makes a scenario runnable/);
  const row=catalog.features.find(x=>x.id==='scenario-developer-design-only');
  assert.match(row.how_to_use,/Add to catalog/);
  assert.match(row.caveat,/PRODUCT NOT ACCEPTED/);

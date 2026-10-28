@@ -91,6 +91,11 @@ def _clean_tags(tags: object) -> list[str]:
     return sorted(cleaned)
 
 
+def allowed_next(state: str) -> tuple[str, ...]:
+    """The review steps a revision in ``state`` may take next (the same table ``record_state`` enforces)."""
+    return _NEXT.get(state, ())
+
+
 def _row_state(conn: sqlite3.Connection, feature_id: str, case_id: str, revision: int) -> str:
     row = conn.execute("SELECT state FROM test_catalog_events WHERE feature_id=? AND case_id=? AND revision=? "
                        "ORDER BY id DESC LIMIT 1", (feature_id, case_id, revision)).fetchone()
