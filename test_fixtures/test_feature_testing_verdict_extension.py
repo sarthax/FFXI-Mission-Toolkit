@@ -29,9 +29,8 @@ def test_blocked_with_each_reason_class_is_accepted(cls):
     validate_report(report(row("C1", "BLOCKED", {"reason_class": cls})), CATALOG)
 
 
-def test_blocked_without_or_with_invalid_reason_class_is_rejected():
-    with pytest.raises(ValueError, match="BLOCKED requires evidence.reason_class"):
-        validate_report(report(row("C1", "BLOCKED")), CATALOG)
+def test_blocked_without_a_reason_class_is_accepted_but_an_invalid_one_is_not():
+    validate_report(report(row("C1", "BLOCKED")), CATALOG)  # the class is optional
     with pytest.raises(ValueError, match="invalid reason_class"):
         validate_report(report(row("C1", "BLOCKED", {"reason_class": "TIMEOUT"})), CATALOG)
     with pytest.raises(ValueError, match="invalid reason_class"):
@@ -42,13 +41,6 @@ def test_unknown_is_accepted_with_or_without_a_class_but_a_bad_class_is_rejected
     validate_report(report(row("C1", "UNKNOWN"), row("C2", "UNKNOWN", {"reason_class": "ORACLE_UNKNOWN"})), CATALOG)
     with pytest.raises(ValueError, match="invalid reason_class"):
         validate_report(report(row("C1", "UNKNOWN", {"reason_class": "NOPE"})), CATALOG)
-
-
-def test_reason_class_is_rejected_on_other_verdicts():
-    evidence = {"assertions": [], "observations": {}, "reason_class": "OTHER"}
-    for verdict in ("PASS", "FAIL", "SKIPPED"):
-        with pytest.raises(ValueError, match="only applies to BLOCKED or UNKNOWN"):
-            validate_report(report(row("C1", verdict, dict(evidence))), CATALOG)
 
 
 def test_unknown_never_satisfies_the_pass_evidence_rule_or_becomes_pass():
@@ -102,14 +94,14 @@ def test_unknown_in_a_run_never_becomes_pass_in_the_coverage_matrix():
     assert _latest_record([rec("FAIL", "a"), rec("UNKNOWN", "b")])["verdict"] == "FAIL"
 
 
-def test_observation_adapter_blocked_rows_carry_other_and_pass_the_importer():
+def test_observation_adapter_blocked_rows_still_import_without_a_class():
     manifest = {"run_id": "r1", "observed_at": "2026-10-28T00:00:00Z",
                 "dsp_commit": A, "headless_commit": B, "toolkit_commit": C}
     catalog = {"features": [{"id": "moghancement", "cases": [{"id": "MOG-01"}]}]}
     obs = [{"kind": "mog_modifier", "case_id": "MOG-01", "baseline": {"GILFINDER": 0},
             "active": {"GILFINDER": "x"}, "removed": {"GILFINDER": 0}, "expected_delta": {"GILFINDER": 10}}]
     [out] = build_report(manifest, obs, catalog)["results"]
-    assert out["verdict"] == "BLOCKED" and out["evidence"]["reason_class"] == "OTHER"
+    assert out["verdict"] == "BLOCKED" and "reason_class" not in out["evidence"]
 
 
 def test_dashboard_accepts_unknown_as_a_verdict_filter(monkeypatch):

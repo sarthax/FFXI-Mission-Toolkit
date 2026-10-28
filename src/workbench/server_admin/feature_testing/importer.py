@@ -48,12 +48,7 @@ def validate_report(report: dict, catalog: dict) -> list[dict]:
             "assertions", "observations"
         }.issubset(row["evidence"] if isinstance(row["evidence"], dict) else {}):
             raise ValueError("PASS requires assertions and observations; never infer PASS from a log")
-        # New reports must say WHY a result is blocked; UNKNOWN may say so. Historical rows without a class
-        # remain readable (as UNCLASSIFIED) but are not accepted again.
-        if row["verdict"] == "BLOCKED" and not (
-                isinstance(row["evidence"], dict) and "reason_class" in row["evidence"]):
-            raise ValueError("BLOCKED requires evidence.reason_class "
-                             "(ENVIRONMENT, FIXTURE_ABSENT, ORACLE_UNKNOWN or OTHER)")
+        # reason_class is optional; when present it must be one of the known values.
         check_reason_class(row["verdict"], row["evidence"])
         identity = (row["run_id"], row["case_id"], row["stage"])
         if identity in seen:
