@@ -141,3 +141,36 @@ NOT_RUN. No authorized operator confirmed a safe environment, and Task 3 showed 
 ## Reproduction
 
 The harness (3 copied sources, `Program.cs`, `cases.tsv`) was kept outside the repo. To redo Task 3: compile those three files from `Brains/` at `e5e8035071` with `LangVersion 12`, call `ScenarioFileValidation.CheckStructure` on each case, and apply the `ScenarioTaskTools.Start` gates in the order shown there.
+
+## Runner follow-up (2026-10-28, main at `da4c4970`)
+
+Evidence only; no Toolkit or XiHeadless behavior was changed.
+
+### Offline (Toolkit side)
+
+| Command (repo root) | Result |
+|---|---|
+| `pytest test_fixtures/test_native_steps_schema_1411.py test_fixtures/test_scenario_typed_steps_1411.py test_fixtures/test_typed_action_library_1409.py` | 116 passed |
+| `pytest test_fixtures/test_scenario_typed_library_contract_1409.py test_fixtures/test_test_catalog_browse_1410.py test_fixtures/test_research_runner.py` | 16 passed |
+| `pytest test_fixtures/test_scenario_developer_host_page.py` | 1 failed: `TypeError: ord() expected string of length 1, but int found` inside the installed `antlr4` package (environment, not the repo; not investigated further) |
+
+These tests pin the Toolkit's export (`"expect": {}` for action-only steps, #1457/#1461) and the `observed_paths` table against a mirror of the loader rules recorded above. They do not run the real C# validator. Re-running the compiled `CheckStructure` against the post-#1461 export: NOT_RUN.
+
+### One live run (owner-confirmed, read-only)
+
+- Server: the already-running local DSP test server (not restarted, reset or reimported; MariaDB only read). The XiHeadless checkout at `e5e8035071` with its prebuilt `Debug/net9.0` DLL (built 02:24, after the pinned commit time), launched through its own `scripts/run_dsp.py` with the documented default test account and a pool lease.
+- Scenario (one step, written outside the repo): `do: {walk_to: [641.03, -1.398, 316.0]}`, `expect: {x_near: 641.03, radius: 1.5}`. The target is the DB start x plus 8 on the same z; it was **not** checked with `!checknav`, only run through the runner's own navmesh (`North_Gustaberg.nav` loaded).
+- Character position (zone 106), from the `chars` table before the run: `(633.03, -1.398, 316.0)`.
+- Runner result: **FAIL**. The `walk_to` action was reported `completed`, `Verified: true`, in 1319 ms, but the bot's own state stayed at `(638.8, -1.4, 316.0)` for the rest of the 40 s window: `x_near: want 641.03±1.5 got 638.8` (2.2 short of the target).
+- Character position from the `chars` table after logout: `(633.64, -3.1, 311.19)`. This is not the end-of-step position: the bot "retreated before the logout hold", so the DB readback cannot confirm 638.8 either.
+- Conclusion: the loader accepted a `walk_to` + `x_near` pair and the runner dispatched the walk and moved the character about 5.8 units toward the target. The step did **not** pass, and no independent readback confirms the final position. This is **not** a PASS for movement. Whether the stop short is a navmesh/arrival-tolerance behavior or a target that is off-mesh is unknown. Repeating with a navmesh-checked target is NOT_RUN.
+- The `x_near` default radius is 5, so a short walk (for example +3) would pass without moving. A live movement check needs a target farther than the radius from the start.
+
+## Recommendation for #1459 (invite / accept_invite and the MCP path)
+
+Evidence: at `e5e8035071` `task_scenario_start` accepts only `wait_ms` and no `expect`; `invite` and `accept_invite` are rejected as `scenario_legacy_actions_not_supported` because they are missing from `ScenarioActionDispatcher.TypedActionNames`, which is a different (and fixable) cause from the other keys' `..._not_yet_supported`. The file loader accepts all 18 keys.
+
+Proposed (owner decision):
+1. Toolkit, now: keep the `observed_paths` snapshot, and show it as "file runner: accepted / MCP task path: rejected (reason)" beside each key. Do not label any key "runnable" on the MCP path other than `wait_ms`. This is already what the builder shows; the remaining work is to make the per-key table visible in the step list as a whole, not only the chosen step.
+2. XiHeadless, separate decision: either add `invite`/`accept_invite` to `TypedActionNames` (they already have legacy handlers), or document that party actions are file-runner only. Not decided here, and not a Toolkit change.
+3. Keep `execution_tested: false` for every key. The single live observation above (`walk_to` + `x_near`, FAIL) is not enough to change it for any key.
