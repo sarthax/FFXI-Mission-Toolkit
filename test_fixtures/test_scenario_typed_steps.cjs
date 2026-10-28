@@ -118,6 +118,17 @@ assert.deepEqual(Object.keys(T.nativeScenario(only)[0]), ['name', 'do'], 'no emp
 assert.deepEqual(Object.keys(T.nativeScenario(only)[1]), ['name', 'expect'], 'no empty do object is written');
 assert.deepEqual(JSON.parse(T.nativeJson(only)), T.nativeScenario(only));
 
+// ---- Given/When/Then preview: action -> When, check -> Then, repeats -> And; nothing invented
+const E = (name, step) => ({name, step});
+assert.deepEqual(T.previewLines([]), []);
+assert.deepEqual(T.previewLines([E('a', {do: {walk_to: [1, 2]}, expect: {x_near: 4.2}})]).map(l => l.keyword + ' ' + l.text),
+  ['When walk to [1,2]', 'Then x near is 4.2']);
+assert.deepEqual(T.previewLines([E('a', {do: {rest_hp: 50}}), E('b', {do: {engage: 7}}), E('c', {expect: {hpp: 90}}), E('d', {expect: {zone: 231}})]).map(l => l.keyword),
+  ['When', 'And', 'Then', 'And']);
+assert.deepEqual(T.previewLines([E('a', {do: {rest_hp: 50}, expect: {hpp: 90}}), E('b', {do: {engage: 7}, expect: {event_active: true}})]).map(l => l.keyword),
+  ['When', 'Then', 'When', 'Then'], 'a new action after a check starts a new When');
+assert.equal(T.previewLines([E('<b>x</b>', {do: {accept_invite: true}})])[0].step, '<b>x</b>', 'names pass through as data (rendered with textContent)');
+
 // ---- editor bridge: comparison ignores key order but not content, and the bridge is inert until the builder mounts
 assert.equal(T.sameSteps({library_version: 1, steps: [{name: 'a', do: {x: 1}, expect: {y: 2}}]},
                          {steps: [{expect: {y: 2}, do: {x: 1}, name: 'a'}], library_version: 1}), true);

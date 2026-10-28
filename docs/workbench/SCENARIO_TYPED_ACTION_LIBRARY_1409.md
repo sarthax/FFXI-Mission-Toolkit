@@ -53,6 +53,14 @@ validated by the server's native-JSON review (`/scenario-developer/typed-import`
 and the saved step contains only the side that was filled in (no empty `do`/`expect`). A one-sided step verifies
 nothing by itself, and runner handling of one-sided steps is still unconfirmed (see the limits line shown in the UI).
 
+### Given / When / Then preview (#1411)
+
+Under the step list the builder shows the steps as a reading: an action is a `When`, a check is a `Then`, and a
+second action (or check) in a row is an `And`; an action after a check starts a new `When`. The wording is the
+native key with underscores as spaces plus the value, so it adds no meaning of its own. `Given` is not derived from
+the steps (it comes from the editor's Preconditions field), so the preview does not invent it. It is a rendering of
+the draft: no result, oracle or verdict is implied, and step names are shown as text only.
+
 ### Editor wiring (#1411)
 
 The Scenario Developer editor treats the builder as a view of `spec.native_steps` (stored as

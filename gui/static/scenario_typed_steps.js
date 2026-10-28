@@ -78,6 +78,27 @@
     }
     return parts.join(', ');
   }
+  // Given/When/Then reading of the saved steps. An action reads as When, a check as Then; a second action (or check)
+  // in a row reads as And. It is a rendering of the draft only: no verdict, no oracle, nothing executed.
+  // Given is not derived from the steps (it comes from the Preconditions field), so it is not invented here.
+  const words = key => key.replace(/_/g, ' ');
+  const valueText = value => typeof value === 'string' ? value : JSON.stringify(value);
+  function previewLines(entries) {
+    const lines = [];
+    let last = null;
+    for (const entry of entries) {
+      const sides = [['do', 'When'], ['expect', 'Then']];
+      for (const [side, keyword] of sides) {
+        const part = entry.step[side];
+        if (!part) continue;
+        const key = Object.keys(part)[0];
+        lines.push({keyword: last === keyword ? 'And' : keyword, step: entry.name,
+          text: side === 'do' ? words(key) + ' ' + valueText(part[key]) : words(key) + ' is ' + valueText(part[key])});
+        last = keyword;
+      }
+    }
+    return lines;
+  }
   function describeStep(template, step) {
     return template.label + ' — ' + describeAction(step);
   }
@@ -207,6 +228,7 @@
     add.type = 'button'; add.id = 'sd-typed-add'; add.disabled = true;
     const list = el('ol'); list.id = 'sd-typed-steps-list';
     const output = el('pre'); output.id = 'sd-typed-json'; output.tabIndex = 0;
+    const preview = el('div'); preview.id = 'sd-typed-preview';
     const copy = el('button', '', 'Copy JSON'), download = el('a', '', 'Download JSON');
     copy.type = 'button'; copy.id = 'sd-typed-copy'; download.id = 'sd-typed-download';
     const notSteps = el('details'); notSteps.id = 'sd-typed-unsupported'; notSteps.append(el('summary', '', 'Not available as steps'));
@@ -370,6 +392,14 @@
       });
       const text = state.entries.length ? nativeJson(state.entries) : 'No steps yet.';
       output.textContent = text;
+      preview.replaceChildren();
+      for (const line of previewLines(state.entries)) {
+        const row = el('p', 'sd-preview-line');
+        row.append(el('strong', '', line.keyword), doc.createTextNode(' ' + line.text + ' '), el('small', 'sd-muted', '(' + line.step + ')'));
+        preview.append(row);
+      }
+      if (state.entries.length) preview.append(el('p', 'sd-muted',
+        'Preview of the draft only: Given comes from the Preconditions field, and no result or verdict is implied.'));
       copy.disabled = !state.entries.length;
       download.hidden = !state.entries.length;
       if (state.entries.length) {
@@ -474,7 +504,7 @@
     const exportRow = el('div', 'sd-controls');
     exportRow.append(copy, download);
     container.append(field('Step type', select), limits, actionBox, expectBox, field('Step name', name), status, add,
-      el('h3', '', 'Steps'), list, el('h3', '', 'Native Headless JSON (draft)'), output, exportRow, importBox, notSteps);
+      el('h3', '', 'Steps'), list, el('h3', '', 'Scenario preview (When / Then)'), preview, el('h3', '', 'Native Headless JSON (draft)'), output, exportRow, importBox, notSteps);
 
     // Load the draft's saved steps through the same server review used for pasted JSON, so a saved step shows
     // exactly as an imported one would. Anything that cannot be shown leaves the saved steps untouched.
@@ -554,6 +584,6 @@
       if (container) mount(container);
     });
   }
-  return {parseNumberText, composeWalkTarget, uniqueName, nativeScenario, nativeJson, describeStep, describeAction, moveItem, parseNativeText, reviewRowText, importProvenance,
+  return {parseNumberText, composeWalkTarget, uniqueName, nativeScenario, nativeJson, describeStep, describeAction, previewLines, moveItem, parseNativeText, reviewRowText, importProvenance,
     catalogQueryProblem, catalogUrl, usableCandidate, describeCandidate, provenanceNote, mount, bridge, sameSteps};
 });
