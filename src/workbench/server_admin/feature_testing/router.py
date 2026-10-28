@@ -166,6 +166,49 @@ def run_page(request: Request, run_id: str):
                                                "outcomes": outcomes})
 
 
+def _compare_context(request: Request, left: str, right: str, **extra):
+    from .compare_wording import reason_text, transition_text
+    runs = _run_summary(_history())
+    return templates.TemplateResponse(
+        request=request, name="feature_testing_compare.html", status_code=extra.pop("status_code", 200),
+        context={"title": "Compare runs", "left": left, "right": right, "runs": runs[:100],
+                 "results_configured": bool(_results_db()), "reason_text": reason_text,
+                 "transition_text": transition_text, **extra})
+
+
+@router.get("/compare/data")
+def compare_api(left: str, right: str):
+    """The raw comparison of two stored runs (``left`` earlier, ``right`` later). Read-only."""
+    from .stored_run_comparison import compare_stored_runs
+    if not _results_db():
+        raise HTTPException(404, "No evidence database is configured")
+    try:
+        return {**compare_stored_runs(_results_db(), left, right), "execution_enabled": False}
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@router.get("/compare", response_class=HTMLResponse)
+def compare_page(request: Request, left: str = "", right: str = ""):
+    """Two recorded runs side by side: what changed, and whether the pair can be compared at all."""
+    from .stored_run_comparison import compare_stored_runs
+    left, right = left.strip(), right.strip()
+    if not left or not right:
+        return _compare_context(request, left, right, comparison=None, problem=None)
+    if not _results_db():
+        return _compare_context(request, left, right, comparison=None, status_code=404,
+                                problem="No evidence database is configured, so there is nothing to compare.")
+    if left == right:
+        return _compare_context(request, left, right, comparison=None, status_code=400,
+                                problem="Choose two different runs.")
+    try:
+        comparison = compare_stored_runs(_results_db(), left, right)
+    except ValueError as exc:
+        return _compare_context(request, left, right, comparison=None, status_code=404,
+                                problem=str(exc) if "both runs" in str(exc) else "These runs could not be compared: " + str(exc))
+    return _compare_context(request, left, right, comparison=comparison, problem=None)
+
+
 def _summaries() -> list[dict]:
     features = []
     for f in load_test_catalog()["features"]:
