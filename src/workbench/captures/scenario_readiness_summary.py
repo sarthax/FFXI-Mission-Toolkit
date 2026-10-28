@@ -70,7 +70,7 @@ def _integrity(draft: dict, expected_projection: str | None,
     if not expected_projection:
         problems.append({"code": "CAPTURE_PROJECTION_NOT_PINNED", "severity": "UNKNOWN",
                          "reason": "No independently retained projection fingerprint was supplied"})
-    for ref, row in draft["evidence_map"].items():
+    for ref, row in sorted(draft["evidence_map"].items(), key=lambda item: str(item[0])):  # JSON key order must not change output
         if not isinstance(row, dict) or row.get("ref_id") != ref:
             raise ValueError("evidence reference identity mismatch")
         source = row.get("source")
