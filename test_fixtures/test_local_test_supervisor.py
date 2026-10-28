@@ -44,6 +44,8 @@ def test_isolated_openapi_contains_only_read_only_supervisor_tools():
         "/api/supervisor/log-errors",
         "/api/supervisor/service-health",
         "/api/supervisor/test-character-inventory",
+        "/api/supervisor/test-character-inventory-v2",
+        "/api/supervisor/test-character-progression",
         "/api/supervisor/test-character-keyitems",
         "/api/supervisor/test-character-vars",
     }
@@ -53,7 +55,7 @@ def test_isolated_openapi_contains_only_read_only_supervisor_tools():
 
 def test_supervisor_log_errors_redacts_credentials(tmp_path, monkeypatch):
     file = tmp_path / "dsp.log"
-    file.write_text("INFO start\\nERROR authorization: BearerTokenExample\\nException password=letmein\\n")
+    file.write_text("INFO start\nERROR authorization: BearerTokenExample\nException password=letmein\n")
     monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DSP_LOG", str(file))
     monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TOKEN", "a" * 64)
     result = supervisor.log_errors(source="dsp", authorization="Bearer " + "a" * 64)
@@ -237,7 +239,7 @@ def test_run_evidence_rejects_malformed_stored_json(tmp_path, monkeypatch):
 def test_supervisor_source_search_scoped_and_authenticated(tmp_path, monkeypatch):
     root = tmp_path / "src"
     root.mkdir()
-    (root / "handler.py").write_text("def SaveKeyItems(): pass\\npassword = 'hidden' # SaveKeyItems\\n", encoding="utf-8")
+    (root / "handler.py").write_text("def SaveKeyItems(): pass\npassword = 'hidden' # SaveKeyItems\n", encoding="utf-8")
     (root / "secret.env").write_text("SaveKeyItems", encoding="utf-8")
     (root / "hidden.py").symlink_to(root / "handler.py")
     monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DSP_SOURCE_ROOT", str(root))

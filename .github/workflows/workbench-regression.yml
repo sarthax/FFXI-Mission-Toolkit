@@ -200,7 +200,7 @@ jobs:
           python test_fixtures/test_feature_trace_wiki_section_dossier.py
           python test_fixtures/test_wiki_trace_real_corpus_acceptance.py
           python test_fixtures/test_wiki_trace_operator_scorecard.py
-          python -m pytest -q test_fixtures/test_supervisor_investigation_dossier.py test_fixtures/test_supervisor_trace_ranking.py
+          python -m pytest -q test_fixtures/test_supervisor_investigation_dossier.py test_fixtures/test_supervisor_trace_ranking.py test_fixtures/test_local_test_supervisor.py
           python -m pytest -q test_fixtures/test_feature_testing_assertion_presets.py test_fixtures/test_feature_testing_observation_guide.py
           python test_fixtures/test_wiki_section_focus_contract.py
           python test_fixtures/test_wiki_typed_relations.py
