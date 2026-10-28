@@ -79,6 +79,9 @@
 <div class="ft-metadata"><span><strong>DSP:</strong> <code title="{{ result.dsp_commit }}">{{ result.dsp_commit[:12] }}</code></span>
 <span><strong>XiHeadless:</strong> <code title="{{ result.headless_commit }}">{{ result.headless_commit[:12] }}</code></span>
 <span><strong>Toolkit:</strong> <code title="{{ result.toolkit_commit }}">{{ result.toolkit_commit[:12] }}</code></span></div>
+<h4>Run context</h4>
+<div class="ft-metadata"><span><strong>Environment fingerprint:</strong> {% if result.evidence.get('environment_fingerprint') %}<code class="ft-inspect">{{ result.evidence.environment_fingerprint }}</code>{% else %}not recorded (Compare runs will list this as missing){% endif %}</span>
+<span><strong>Fixture context:</strong> {% if result.evidence.get('fixture_context') %}<code class="ft-inspect">{{ result.evidence.fixture_context }}</code>{% else %}not recorded (Compare runs will list this as missing){% endif %}</span></div>
 {% set observations = result.evidence.get('observations', {}) %}
 {% if observations is mapping %}
 {% set provenance = observations.get('provenance', {}) %}
