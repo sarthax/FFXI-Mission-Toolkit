@@ -1,9 +1,31 @@
 # R6 design and scoping — revision impact selection (#1210) inside regression intelligence (#1199)
 
-**Status:** DRAFT / PROPOSAL. Not implemented. Owner decisions recorded: helper script generates the change set (Q1);
-new `dsp_source` citations must pin a revision while existing ones only warn (Q2); BLOCKED results get a controlled
-`reason_class` (Q3); "no result" is NOT merely derived, the stored verdict set is extended (Q4); an edited existing
-unpinned citation counts as new (Q7). See §8. Written from a cloud (repo-only) session on
+> ## STATUS: PARKED (2026-10-28) — read this first
+>
+> The owner decided this tooling is more rigorous than testing needs right now: the priority is running tests, not
+> building comparison infrastructure. Nothing below is approved for further work. This document is kept as a record
+> of the design and of what was built; revive it only when there is real, repeated test data across server revisions
+> to justify it.
+>
+> **Built and merged (all offline, none wired to a route, screen or the test launcher):**
+> - `tools/dsp_change_set.py` + `impact_changeset.py` — change-set file between two DSP commits (WP0, WP1).
+> - `impact_selection.py` — ranks scenarios from a change set using explicit citations only (WP2).
+> - `impact_coverage.py` — how many scenario citations are pinned (WP3).
+> - Stored `UNKNOWN` verdict, and an **optional** `evidence.reason_class` on BLOCKED/UNKNOWN (WP4a, relaxed in #1440).
+> - `revision_comparison.py` — compares results across two revisions behind a comparability gate (WP4).
+>
+> **Deliberately not built, and not planned:** WP5 (rejecting new unpinned `dsp_source` citations), per-run
+> environment fingerprints, fixture recipes, and storing test-definition digests. Because those inputs do not
+> exist, `compare_revisions` reports every real pair as `NOT_COMPARABLE`; that is expected until/unless they do.
+>
+> **Superseded decisions in the text below:** the §4a pin policy is *not enforced* (citations may stay unpinned;
+> the selector simply treats them as file-level matches); `reason_class` is *optional*, not required; the
+> "must carry / importer rejects" wording in §5 and the WP4a row no longer applies.
+>
+> **Simpler path in the meantime:** record runs with exact commits, verdict and evidence (already supported) and
+> compare results side by side by `dsp_commit` in the existing run history, judging by eye.
+
+**Original status (historical):** DRAFT / PROPOSAL, never approved. Written from a cloud (repo-only) session on
 Toolkit `main`; no local data, live server, client or Headless output was inspected.
 **Parents:** #1199, #1197. **Related:** #1198 (oracle provenance), #1202 (merged offline reconciliation),
 #1211 (revision comparison; only its boundary is defined here), #1212, #1213.
