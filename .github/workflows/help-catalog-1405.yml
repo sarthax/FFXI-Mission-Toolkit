@@ -5,6 +5,7 @@ on:
       - 'gui/templates/help.html'
       - 'feature_catalog/features.json'
       - 'test_fixtures/test_help_catalog_1405.cjs'
+      - 'src/workbench/server_admin/feature_testing/typed_action_library.py'
       - '.github/workflows/help-catalog-1405.yml'
   workflow_dispatch:
 jobs:
