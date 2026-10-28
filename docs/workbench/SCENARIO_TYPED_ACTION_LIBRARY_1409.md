@@ -20,6 +20,14 @@ Headless `do` / `expect` keys, the crosswalk's source reference and stated limit
 | `check_param(spec, value)` | `None` if the value fits the spec, else a short reason |
 | `build_step(id, action_value, expectation_value)` | A native `{"do": {...}, "expect": {...}}` **draft** after validating both values; `ValueError` names the template and parameter |
 
+## Picker hints
+Parameters that are IDs in the DSP catalog carry an optional `picker` hint (`npc` on `talk_to_npc` and
+`inspect_npc` `npc_id`; `zone` on the `wait_for_state` `zone` check). The Scenario Developer's typed step builder uses it
+to offer a search over the existing local DSP catalog (`/scenario-developer/catalog/search`). Picks are
+*unreconciled source candidates*: they fill an ID field that stays editable, the step records where the value came
+from, and it is never presented as verified for a particular zone or client. A hint never changes which values are
+valid.
+
 ## What it does not establish
 - `HEADLESS_SCHEMA_ONLY` means the native key and parameter shape match the pinned XIHeadless schemas
   (`NATIVE_SCHEMA_HEAD`). It does **not** mean the runner dispatches it or that it proves anything in game.

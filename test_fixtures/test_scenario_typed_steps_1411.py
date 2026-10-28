@@ -92,3 +92,58 @@ def test_page_wires_the_builder_without_touching_the_canonical_editor():
     page = client().get("/scenario-developer")
     assert page.status_code == 200
     assert 'id="sd-typed-root"' in page.text and "/static/scenario_typed_steps.js" in page.text
+
+
+# --- #1411 pickers: the catalog search route returns what the UI relies on ---------------------
+
+@pytest.fixture()
+def fake_dsp(tmp_path, monkeypatch):
+    (tmp_path / "sql").mkdir()
+    (tmp_path / "sql" / "npc_list.sql").write_text(
+        "INSERT INTO `npc_list` VALUES (17719298,'synth_guard','Synthetic Guard',0,0,0);\n"
+        "INSERT INTO `npc_list` VALUES (17719300,'dup_a','Duplicate Id Person',0,0,0);\n"
+        "INSERT INTO `npc_list` VALUES (17719300,'dup_b','Duplicate Id Person',0,0,0);\n", encoding="utf-8")
+    (tmp_path / "sql" / "zone_settings.sql").write_text(
+        "INSERT INTO `zone_settings` VALUES (231,1,'synth_zone_a',1,'Synthetic Zone One',0);\n", encoding="utf-8")
+    monkeypatch.setattr(editor_router, "get_dsp_root", lambda: str(tmp_path))
+    return tmp_path
+
+
+def search(c, kind, query):
+    return c.get(f"/scenario-developer/catalog/search?kind={kind}&query={query}", headers={"x-requested-with": "toolkit-ui"})
+
+
+def usable(candidate, kind):  # mirrors usableCandidate() in scenario_typed_steps.js
+    return (isinstance(candidate, dict) and candidate.get("kind") == kind and type(candidate.get("id")) is int
+            and candidate["id"] >= 0 and isinstance(candidate.get("name"), str) and candidate["name"].strip() != ""
+            and isinstance(candidate.get("source_path"), str))
+
+
+def test_picker_search_returns_unverified_candidates_in_the_shape_the_ui_uses(fake_dsp):
+    for kind, query, expected_id, source in (("npc", "guard", 17719298, "sql/npc_list.sql"),
+                                              ("zone", "synthetic", 231, "sql/zone_settings.sql")):
+        body = search(client(), kind, query).json()
+        assert body["binding_verified"] is False and body["execution_enabled"] is False
+        assert body["operator_review_required"] is True
+        assert body["completeness"] == "bounded_catalog_query_not_full_inventory"
+        [candidate] = body["choices"]
+        assert usable(candidate, kind) and candidate["id"] == expected_id and candidate["source_path"] == source
+        assert candidate["identity_status"] == "unreconciled_source_candidate"
+        assert candidate["binding_verified"] is False and candidate["execution_enabled"] is False
+
+
+def test_picker_search_flags_duplicate_ids_and_does_not_hide_them(fake_dsp):
+    choices = search(client(), "npc", "person").json()["choices"]
+    assert len(choices) == 2 and all(c["id"] == 17719300 and c["duplicate_id_in_results"] for c in choices)
+
+
+def test_picker_search_with_no_source_is_unavailable_not_empty(monkeypatch):
+    monkeypatch.setattr(editor_router, "get_dsp_root", lambda: "")
+    response = search(client(), "npc", "guard")
+    assert response.status_code == 503 and "No DSP source checkout configured" in response.json()["detail"]
+
+
+def test_picker_search_is_local_only_and_needs_the_editor_header(fake_dsp):
+    assert client().get("/scenario-developer/catalog/search?kind=npc&query=guard").status_code == 403
+    assert search(client(("203.0.113.9", 5000)), "npc", "guard").status_code == 403
+    assert search(client(), "npc", "x" * 65).status_code == 422
