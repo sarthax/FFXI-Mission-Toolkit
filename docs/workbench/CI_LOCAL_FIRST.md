@@ -1,6 +1,6 @@
 # Mission Toolkit — local-first CI and hosted compute budget
 
-**Scope:** workflow scheduling and contributor policy only. The existing pytest/Node/browser-free/offline validators stay in place; this change does not turn off their contents, change the workbench application, or prove any live FFXI behavior.
+**Scope:** workflow scheduling, contributor policy, and one assertion-preserving deduplication of typed-step test setup. The existing pytest/Node/browser-free/offline validators stay in place; this change does not turn off their contents, change the workbench application, or prove any live FFXI behavior.
 
 ## During draft development
 
@@ -44,4 +44,4 @@ The current test inventory and criteria for removing only proven redundancy are 
 
 ## Validation status of this scheduling change
 
-No GitHub-hosted workflow should be retried while the shared Actions allowance is exhausted. The changed workflow definitions need a final YAML/event-condition sanity check and a **real ready-for-review execution** after the allowance resets. Until then: **CI NOT_RUN / hosted acceptance pending**. Repository code/tests were not modified by this workflow PR.
+No GitHub-hosted workflow should be retried while the shared Actions allowance is exhausted. The changed workflow definitions need a final YAML/event-condition sanity check and a **real ready-for-review execution** after the allowance resets. Until then: **CI NOT_RUN / hosted acceptance pending**. Application code was not modified; a small typed-step test-only refactor retains its security and side-effect assertions and still needs local execution.
