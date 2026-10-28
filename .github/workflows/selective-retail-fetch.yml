@@ -6,12 +6,6 @@ on:
     paths:
       - 'tools/retail_fetch/**'
       - '.github/workflows/selective-retail-fetch.yml'
-  push:
-    branches:
-      - 'feature/selective-pol-retail-fetch-20261018'
-    paths:
-      - 'tools/retail_fetch/**'
-      - '.github/workflows/selective-retail-fetch.yml'
   workflow_dispatch:
 
 permissions:
