@@ -46,3 +46,13 @@ test('typed steps and run results are described accurately and stay design-only/
  // the product is still not accepted: the banner must not be softened by the new text
  assert.match(help,/Scenario authoring product NOT ACCEPTED \/ execution BLOCKED/);
 });
+
+test('the Test catalog is described as design-only: saved drafts can be added, nothing can be published from the UI',()=>{
+ assert.match(help,/Add selected saved draft to the Test catalog/);
+ assert.match(help,/not unsaved edits/);
+ assert.match(help,/draft-to-catalog Publish action/);
+ assert.match(help,/reviewing and publishing a catalog revision is not available in the UI/);
+ const row=catalog.features.find(x=>x.id==='scenario-developer-design-only');
+ assert.match(row.how_to_use,/Add to catalog/);
+ assert.match(row.caveat,/PRODUCT NOT ACCEPTED/);
+});

@@ -42,7 +42,12 @@ with the old content. A revision's review state moves forward through append-onl
    one, else the latest; `?revision=N` picks another) including the saved typed steps as When / Then, and the full JSON. The
    page says plainly that it is design-only and that publishing does not make anything runnable. The existing built-in
    definitions follow below it, unchanged.
-3. "Add to catalog" from Scenario Developer (a saved draft becomes revision N+1; `source = draft:…`).
+3. **Done:** "Add to catalog" from Scenario Developer. Under the saved-drafts controls, *Add selected saved draft to the Test catalog*
+   (optional tags, operator token) calls `POST /feature-testing/test-catalog/from-draft`. The server reads the stored draft, so only
+   what was **saved** is added (never unsaved edits or client-sent content); it becomes the next catalog revision in the DRAFT
+   state with `source = draft:<feature>/<case>@r<draft revision>`. If the draft moved on since the list was read, or its content
+   already equals the latest catalog revision, nothing is added and the message says why. Review and publishing are not in the
+   UI yet (the operator API only).
 4. Import of native XIHeadless scenario JSON into draft revisions. The earlier offline prototype (#1424) predates the typed
    action library and is not reused as is; the importer should call `typed_action_library.review_native_steps`.
 5. Hand-off to supervised run (#1412): only a `PUBLISHED` revision with a reviewed execution contract may ever be offered,

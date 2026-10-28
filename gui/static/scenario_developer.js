@@ -896,6 +896,26 @@
     }
   });
   draftGuard.start('new',spec);
+  // Add a saved draft to the Test catalog (#1410): the server reads the stored draft, so only what was saved is added.
+  let catalogAddPending=false;
+  $('sd-add-to-catalog').addEventListener('click',async()=>{
+    if(catalogAddPending)return;
+    const out=$('sd-catalog-result');
+    const d=drafts[Number($('sd-drafts').value)];
+    if(!d){out.textContent='List the local drafts and select one first; only a saved draft can be added.';return;}
+    const tags=$('sd-catalog-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+    catalogAddPending=true;$('sd-add-to-catalog').disabled=true;
+    try{
+      const added=await call('/feature-testing/test-catalog/from-draft','POST',
+        {feature_id:d.feature_id,case_id:d.case_id,draft_revision:d.revision,tags},true);
+      out.replaceChildren(document.createTextNode('Added '+added.feature_id+'/'+added.case_id+' as catalog revision r'+added.revision+
+        ' (DRAFT, from saved draft revision '+d.revision+'). It is not reviewed or runnable. '));
+      const link=el('a','','Open the catalog entry');
+      link.href='/feature-testing/catalog-entry/'+encodeURIComponent(added.feature_id)+'/'+encodeURIComponent(added.case_id);
+      out.append(link);
+    }catch(e){out.textContent='Not added to the catalog: '+e.message;}
+    finally{catalogAddPending=false;$('sd-add-to-catalog').disabled=false;}
+  });
   if(document.addEventListener)document.addEventListener('sd-typed-change',()=>{if(mode==='guided'){readGuidedFields();updateRevision();}});
   (async()=> {
     try{

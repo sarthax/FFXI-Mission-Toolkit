@@ -218,3 +218,68 @@ def test_remote_clients_are_refused_for_reads(store, monkeypatch):
 def test_a_missing_store_is_a_503_not_a_crash(client, monkeypatch):
     monkeypatch.delenv("MISSION_TOOLKIT_TEST_DRAFTS_DB")
     assert client.get("/feature-testing/test-catalog").status_code == 503
+
+
+# --- add a saved draft to the catalog ---------------------------------------------------------------------------------
+
+from workbench.server_admin.feature_testing import spec_drafts  # noqa: E402
+
+
+def saved_draft(case="DRF-1", **over):
+    spec_drafts.save_draft(spec(case, **over), 0)
+    return spec_drafts.get_draft("inventory_observation", case)
+
+
+def test_a_saved_draft_becomes_the_next_catalog_revision_with_a_true_source(store):
+    draft = saved_draft()
+    out = cat.add_from_draft("inventory_observation", "DRF-1", draft["revision"], tags=["inventory"])
+    assert out["revision"] == 1 and out["state"] == "DRAFT" and out["run_availability"] == "UNAVAILABLE"
+    rev = cat.get_entry("inventory_observation", "DRF-1")["revisions"][0]
+    assert rev["source"] == "draft:inventory_observation/DRF-1@r1" and rev["tags"] == ["inventory"]
+    assert rev["specification"] == draft["specification"]  # the stored draft, not anything the caller sent
+    spec_drafts.save_draft(spec("DRF-1", name="Edited"), 1)
+    assert cat.add_from_draft("inventory_observation", "DRF-1", 2)["revision"] == 2
+
+
+def test_a_draft_that_moved_on_or_does_not_exist_is_not_added(store):
+    saved_draft()
+    spec_drafts.save_draft(spec("DRF-1", name="Edited"), 1)  # the draft is now revision 2
+    with pytest.raises(ValueError, match="draft conflict"):
+        cat.add_from_draft("inventory_observation", "DRF-1", 1)
+    with pytest.raises(ValueError, match="no such saved draft"):
+        cat.add_from_draft("inventory_observation", "NOPE", 1)
+    for bad in (0, -1, True, "1"):
+        with pytest.raises(ValueError):
+            cat.add_from_draft("inventory_observation", "DRF-1", bad)
+    assert cat.list_entries()["total"] == 0
+
+
+def test_the_same_saved_content_is_not_added_twice(store):
+    saved_draft()
+    cat.add_from_draft("inventory_observation", "DRF-1", 1)
+    with pytest.raises(ValueError, match="already the latest catalog revision"):
+        cat.add_from_draft("inventory_observation", "DRF-1", 1)
+    assert cat.get_entry("inventory_observation", "DRF-1")["revision_count"] == 1
+
+
+def test_a_draft_that_breaks_a_catalog_rule_is_refused(store):
+    saved_draft()
+    with pytest.raises(ValueError, match="tag"):
+        cat.add_from_draft("inventory_observation", "DRF-1", 1, tags=["Bad Tag"])
+    assert cat.list_entries()["total"] == 0
+
+
+def test_from_draft_route_needs_the_token_and_maps_errors(client):
+    saved_draft()
+    body = {"feature_id": "inventory_observation", "case_id": "DRF-1", "draft_revision": 1, "tags": ["inventory"]}
+    url = "/feature-testing/test-catalog/from-draft"
+    h = {"x-test-operator-token": TOKEN}
+    assert client.post(url, json=body).status_code in (401, 403)
+    ok = client.post(url, json=body, headers=h)
+    assert ok.status_code == 200 and ok.json()["revision"] == 1 and ok.json()["execution_enabled"] is False
+    assert client.post(url, json=body, headers=h).status_code == 409  # already the latest
+    spec_drafts.save_draft(spec("DRF-1", name="Edited"), 1)
+    assert client.post(url, json=body, headers=h).status_code == 409  # the draft moved on (now r2)
+    assert client.post(url, json={**body, "draft_revision": 2}, headers=h).json()["revision"] == 2
+    assert client.post(url, json={**body, "case_id": "NOPE"}, headers=h).status_code == 400
+    assert client.get("/feature-testing/test-catalog/inventory_observation/DRF-1").json()["revision_count"] == 2
