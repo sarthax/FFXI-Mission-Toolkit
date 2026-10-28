@@ -98,6 +98,28 @@
       'candidate from ' + candidate.source_path + '; not verified for this zone or client';
   }
 
+  // ---- native import helpers (pure) -----------------------------------------------------------------------------------
+  const MAX_IMPORT_CHARS = 30000; // the local route refuses larger bodies
+  function parseNativeText(text) {
+    const raw = String(text === undefined || text === null ? '' : text).trim();
+    if (raw === '') return {error: 'Paste native scenario JSON to review.'};
+    if (raw.length > MAX_IMPORT_CHARS) return {error: 'That is too large to review here (limit ' + MAX_IMPORT_CHARS + ' characters).'};
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch (error) { return {error: 'That is not valid JSON: ' + error.message}; }
+    if (!Array.isArray(parsed)) return {error: 'A native scenario is an array of steps. Wrap a single step in [ ].'};
+    if (parsed.length < 1 || parsed.length > MAX_STEPS) return {error: 'A native scenario must have 1 to ' + MAX_STEPS + ' steps.'};
+    return {steps: parsed};
+  }
+  function reviewRowText(row) {
+    const label = (typeof row.name === 'string' && row.name ? row.name : '(unnamed)').slice(0, 100);
+    return '#' + (row.index + 1) + ' ' + label + ' — ' + row.status +
+      (row.reasons && row.reasons.length ? ': ' + row.reasons.join('; ') : '');
+  }
+  function importProvenance(row) {
+    return 'Imported from pasted native JSON (step ' + (row.index + 1) + ', "' + String(row.name).slice(0, 100) +
+      '") — unreviewed source; shape-checked only; accepted by a human reviewer';
+  }
+
   // ---- browser UI -------------------------------------------------------------------------------------------------
   const defaultIo = {
     async getLibrary() {
@@ -112,6 +134,14 @@
       const detail = body && body.detail;
       return {ok: false, message: (typeof detail === 'string' ? detail : 'Catalog search rejected (' + response.status + ')') +
         ' You can still enter an ID by hand.'};
+    },
+    async reviewImport(steps) {
+      const response = await fetch('/scenario-developer/typed-import', {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({steps})});
+      const body = await response.json().catch(() => ({}));
+      if (response.ok) return {ok: true, review: body};
+      const detail = body && body.detail;
+      return {ok: false, message: (detail && detail.message) || (typeof detail === 'string' ? detail : 'Review rejected (' + response.status + ')')};
     },
     async buildStep(payload) {
       const response = await fetch('/scenario-developer/typed-step', {
@@ -136,7 +166,7 @@
       wrap.append(doc.createTextNode(label), control);
       return wrap;
     };
-    const state = {templates: [], entries: [], built: null, request: 0, timer: null, picked: {action: null, expect: null}};
+    const state = {templates: [], entries: [], built: null, request: 0, timer: null, picked: {action: null, expect: null}, review: null};
     const inputs = {action: {}, expect: null};
     container.replaceChildren();
 
@@ -158,7 +188,7 @@
     const output = el('pre'); output.id = 'sd-typed-json'; output.tabIndex = 0;
     const copy = el('button', '', 'Copy JSON'), download = el('a', '', 'Download JSON');
     copy.type = 'button'; copy.id = 'sd-typed-copy'; download.id = 'sd-typed-download';
-    const notSteps = el('details'); notSteps.append(el('summary', '', 'Not available as steps'));
+    const notSteps = el('details'); notSteps.id = 'sd-typed-unsupported'; notSteps.append(el('summary', '', 'Not available as steps'));
 
     const selected = () => state.templates.find(t => t.id === select.value);
 
@@ -292,7 +322,7 @@
           (entry.name === entry.template.label ? describeAction(entry.step) : describeStep(entry.template, entry.step))));
         item.append(el('small', 'sd-muted', ' [' + entry.step.support_tier + ' · oracle ' + entry.step.oracle_status +
           ' · verdict ' + entry.step.verdict + ']'));
-        for (const note of entry.provenance || []) item.append(el('div', 'sd-muted', 'Catalog source: ' + note));
+        for (const note of entry.provenance || []) item.append(el('div', 'sd-muted', 'Source: ' + note));
         const controls = el('span', 'sd-controls');
         for (const [label, act] of [['Up', () => move(index, -1)], ['Down', () => move(index, 1)], ['Remove', () => remove(index)]]) {
           const button = el('button', '', label); button.type = 'button';
@@ -335,10 +365,78 @@
     });
     select.addEventListener('change', renderTemplate);
 
+    // ---- import: pasted native JSON is reviewed, and only steps a person accepts join the list
+    const importBox = el('details'); importBox.id = 'sd-typed-import';
+    importBox.append(el('summary', '', 'Import native JSON for review (for example from an agent or a scenario file)'));
+    const importText = el('textarea'); importText.id = 'sd-typed-import-text'; importText.rows = 8;
+    importText.setAttribute('aria-label', 'Native scenario JSON');
+    const importGo = el('button', '', 'Review import'); importGo.type = 'button'; importGo.id = 'sd-typed-import-go';
+    const importNote = el('p', 'sd-muted'); importNote.id = 'sd-typed-import-note'; importNote.setAttribute('role', 'status');
+    const reviewList = el('ul'); reviewList.id = 'sd-typed-import-review';
+    const acceptAll = el('button', '', 'Select all supported'); acceptAll.type = 'button'; acceptAll.id = 'sd-typed-import-all';
+    const importAdd = el('button', '', 'Add accepted steps'); importAdd.type = 'button'; importAdd.id = 'sd-typed-import-add';
+    importAdd.disabled = true; acceptAll.disabled = true;
+    const importControls = el('div', 'sd-controls'); importControls.append(acceptAll, importAdd);
+    importBox.append(el('p', 'sd-muted', 'Imported steps come from an unreviewed source. A passing check only means the step has a reviewed ' +
+      'shape; it does not make the step correct or establish any outcome. Nothing is added until you accept it.'),
+      importText, importGo, importNote, reviewList, importControls);
+    const accepts = [];
+    function syncImportButtons() { importAdd.disabled = !accepts.some(a => a.checkbox.checked); }
+    function clearReview() {
+      state.review = null; accepts.length = 0; reviewList.replaceChildren();
+      acceptAll.disabled = true; importAdd.disabled = true;
+    }
+    importText.addEventListener('input', () => { if (state.review) { clearReview(); importNote.textContent = 'The text changed. Review it again.'; } });
+    importGo.addEventListener('click', async () => {
+      clearReview();
+      const parsed = parseNativeText(importText.value);
+      if (parsed.error) { importNote.textContent = parsed.error; return; }
+      importNote.textContent = 'Reviewing…';
+      let result;
+      try { result = await io.reviewImport(parsed.steps); }
+      catch (error) { result = {ok: false, message: 'Review unavailable: ' + error.message}; }
+      if (!result.ok) { importNote.textContent = result.message; return; }
+      state.review = result.review;
+      const counts = result.review.counts;
+      importNote.textContent = counts.SUPPORTED + ' supported, ' + counts.UNSUPPORTED + ' unsupported, ' + counts.INVALID +
+        ' invalid. Tick the steps you accept; none are accepted automatically.';
+      for (const row of result.review.steps) {
+        const item = el('li');
+        if (row.status === 'SUPPORTED') {
+          const checkbox = el('input'); checkbox.type = 'checkbox';
+          checkbox.setAttribute('aria-label', 'Accept ' + row.name);
+          checkbox.addEventListener('change', syncImportButtons);
+          item.append(checkbox, doc.createTextNode(' '));
+          accepts.push({checkbox, row});
+        }
+        item.append(el('strong', '', reviewRowText(row)));
+        if (row.status === 'SUPPORTED') item.append(el('div', 'sd-muted', describeAction(row.step)));
+        reviewList.append(item);
+      }
+      acceptAll.disabled = !accepts.length;
+    });
+    acceptAll.addEventListener('click', () => { for (const a of accepts) a.checkbox.checked = true; syncImportButtons(); });
+    importAdd.addEventListener('click', () => {
+      const chosen = accepts.filter(a => a.checkbox.checked).map(a => a.row);
+      if (!chosen.length) return;
+      let added = 0;
+      for (const row of chosen) {
+        if (state.entries.length >= MAX_STEPS) break;
+        const template = state.templates.find(t => t.id === row.template_id);
+        if (!template) continue; // the library changed since the review; nothing is guessed
+        state.entries = state.entries.concat([{name: uniqueName(row.name, state.entries.map(e => e.name)), template,
+          step: clone(row.step), provenance: [importProvenance(row)]}]);
+        added++;
+      }
+      renderSteps(); clearReview(); importText.value = '';
+      importNote.textContent = 'Added ' + added + ' of ' + chosen.length + ' accepted step' + (chosen.length === 1 ? '' : 's') +
+        '. They are unapproved drafts; review each one.';
+    });
+
     const exportRow = el('div', 'sd-controls');
     exportRow.append(copy, download);
     container.append(field('Step type', select), limits, actionBox, expectBox, field('Step name', name), status, add,
-      el('h3', '', 'Steps'), list, el('h3', '', 'Native Headless JSON (draft)'), output, exportRow, notSteps);
+      el('h3', '', 'Steps'), list, el('h3', '', 'Native Headless JSON (draft)'), output, exportRow, importBox, notSteps);
 
     return io.getLibrary().then(registry => {
       state.templates = registry.templates.filter(t => t.kind === 'action_expectation');
@@ -363,6 +461,6 @@
       if (container) mount(container);
     });
   }
-  return {parseNumberText, composeWalkTarget, uniqueName, nativeScenario, nativeJson, describeStep, describeAction, moveItem,
+  return {parseNumberText, composeWalkTarget, uniqueName, nativeScenario, nativeJson, describeStep, describeAction, moveItem, parseNativeText, reviewRowText, importProvenance,
     catalogQueryProblem, catalogUrl, usableCandidate, describeCandidate, provenanceNote, mount};
 });

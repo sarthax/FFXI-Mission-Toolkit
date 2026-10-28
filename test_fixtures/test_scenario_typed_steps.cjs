@@ -88,4 +88,24 @@ assert.equal(T.provenanceNote(good, 'npc_id'), 'npc_id = 17719298 (Synthetic Gua
 assert.equal(T.describeAction(built), 'walk_to [1,2], then check x_near = 3');
 assert.equal(T.describeStep({label: 'navigate near'}, built), 'navigate near — ' + T.describeAction(built));
 
+// ---- native import helpers
+assert.deepEqual(T.parseNativeText(''), {error: 'Paste native scenario JSON to review.'});
+assert.deepEqual(T.parseNativeText('   '), {error: 'Paste native scenario JSON to review.'});
+assert.deepEqual(T.parseNativeText(undefined), {error: 'Paste native scenario JSON to review.'});
+assert.match(T.parseNativeText('{oops').error, /^That is not valid JSON: /);
+assert.match(T.parseNativeText('{"name":"solo"}').error, /array of steps\. Wrap a single step/);
+assert.match(T.parseNativeText('"text"').error, /array of steps/);
+assert.match(T.parseNativeText('null').error, /array of steps/);
+assert.match(T.parseNativeText('[]').error, /1 to 100 steps/);
+assert.match(T.parseNativeText(JSON.stringify(Array(101).fill({}))).error, /1 to 100 steps/);
+assert.match(T.parseNativeText('[' + '"x",'.repeat(8000) + '"x"]').error, /too large/);
+assert.deepEqual(T.parseNativeText(' [{"name":"a"}] '), {steps: [{name: 'a'}]});
+assert.equal(T.parseNativeText(JSON.stringify(Array(100).fill(1))).steps.length, 100);
+assert.equal(T.reviewRowText({index: 0, name: 'go', status: 'SUPPORTED', reasons: []}), '#1 go — SUPPORTED');
+assert.equal(T.reviewRowText({index: 3, name: 'bad', status: 'INVALID', reasons: ['a', 'b']}), '#4 bad — INVALID: a; b');
+assert.equal(T.reviewRowText({index: 1, name: null, status: 'INVALID', reasons: ['name']}), '#2 (unnamed) — INVALID: name');
+assert.equal(T.reviewRowText({index: 0, name: 'n'.repeat(300), status: 'SUPPORTED', reasons: []}).length, '#1 '.length + 100 + ' — SUPPORTED'.length);
+assert.equal(T.importProvenance({index: 2, name: 'go'}), 'Imported from pasted native JSON (step 3, "go") — unreviewed source; ' +
+  'shape-checked only; accepted by a human reviewer');
+
 console.log('Scenario typed step builder helpers: PASS');

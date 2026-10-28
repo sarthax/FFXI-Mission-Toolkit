@@ -147,3 +147,44 @@ def test_picker_search_is_local_only_and_needs_the_editor_header(fake_dsp):
     assert client().get("/scenario-developer/catalog/search?kind=npc&query=guard").status_code == 403
     assert search(client(("203.0.113.9", 5000)), "npc", "guard").status_code == 403
     assert search(client(), "npc", "x" * 65).status_code == 422
+
+
+# --- native import review route ---------------------------------------------------------------
+
+def review_post(c, steps, **kwargs):
+    return c.post("/scenario-developer/typed-import", json={"steps": steps}, **kwargs)
+
+
+def test_import_review_route_reports_each_step_and_accepts_nothing():
+    steps = [{"name": "go", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}},
+             {"name": "bad", "do": {"talk_npc": -1}, "expect": {"event_active": True}},
+             {"name": "odd", "do": {"dance": 1}, "expect": {"zone": 1}}]
+    response = review_post(client(), steps)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["source_trust"] == "UNREVIEWED_EXTERNAL_INPUT"
+    assert [r["status"] for r in body["steps"]] == ["SUPPORTED", "INVALID", "UNSUPPORTED"]
+    assert body["counts"] == {"SUPPORTED": 1, "UNSUPPORTED": 1, "INVALID": 1}
+    assert body["steps"][0]["step"]["do"] == {"walk_to": [1, 2]} and body["steps"][1]["step"] is None
+
+
+@pytest.mark.parametrize("steps", [None, {}, "x", [], [None] * 101])
+def test_import_review_route_rejects_a_bad_scenario_with_a_message(steps):
+    response = review_post(client(), steps)
+    assert response.status_code == 422
+    assert "array of 1 to 100 steps" in response.json()["detail"]["message"]
+
+
+def test_import_review_route_is_local_only_same_origin_and_size_capped():
+    steps = [{"name": "go", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}}]
+    assert review_post(client(("203.0.113.9", 5000)), steps).status_code == 403
+    assert review_post(client(), steps, headers={"origin": "http://evil.example"}).status_code == 403
+    big = [{"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "pad": "x" * 40000}]
+    assert review_post(client(), big).status_code == 413
+
+
+def test_import_review_route_has_no_side_effects(monkeypatch):
+    import sqlite3, subprocess
+    monkeypatch.setattr(subprocess, "Popen", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no process")))
+    monkeypatch.setattr(sqlite3, "connect", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no database")))
+    assert review_post(client(), [{"name": "go", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}}]).status_code == 200

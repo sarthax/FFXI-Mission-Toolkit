@@ -219,3 +219,65 @@ def build_step(template_id: str, action_value: object, expectation_value: object
             "expect": {template["expectation"]["native_key"]: copy.deepcopy(expectation_value)},
             "support_tier": template["support_tier"], "native_schema_head": NATIVE_SCHEMA_HEAD,
             "oracle_status": "UNAPPROVED", "verdict": "UNKNOWN", "execution_enabled": False}
+
+
+# --- reviewing native scenario JSON (e.g. written by an agent or copied from a scenario file) -------------------
+
+MAX_IMPORT_STEPS = 100
+_MAX_NAME = 100
+_NATIVE_FIELDS = {"name", "do", "expect"}
+
+
+def _template_by_pair() -> dict[tuple[str, str], str]:
+    return {(t["action"]["native_key"], t["expectation"]["native_key"]): t["id"]
+            for t in _TEMPLATES if t["kind"] == "action_expectation"}
+
+
+def _review_one(index: int, step: object, pairs: dict[tuple[str, str], str]) -> dict:
+    def row(status, reasons, name=None, template_id=None, built=None):
+        return {"index": index, "name": name, "status": status, "template_id": template_id,
+                "step": built, "reasons": reasons}
+
+    if not isinstance(step, dict):
+        return row("INVALID", ["step is not an object"])
+    name = step.get("name")
+    if not isinstance(name, str) or not name.strip() or len(name.strip()) > _MAX_NAME:
+        return row("INVALID", [f"name must be non-empty text of at most {_MAX_NAME} characters"])
+    name = name.strip()
+    extra = sorted(str(k) for k in set(step) - _NATIVE_FIELDS)
+    if extra:  # never drop fields silently: a step the builder cannot keep whole is not imported
+        return row("UNSUPPORTED", ["unsupported field(s): " + ", ".join(extra) +
+                                   " (the builder cannot keep them, so the step is not imported)"], name)
+    do, expect = step.get("do"), step.get("expect")
+    if do is None or expect is None:
+        return row("UNSUPPORTED", ["needs both do and expect; the builder only models one action with one check"], name)
+    if not isinstance(do, dict) or not isinstance(expect, dict):
+        return row("INVALID", ["do and expect must each be an object"], name)
+    if len(do) != 1 or len(expect) != 1:
+        return row("UNSUPPORTED", ["exactly one action and one check are supported per step"], name)
+    action_key, expect_key = next(iter(do)), next(iter(expect))
+    template_id = pairs.get((action_key, expect_key))
+    if template_id is None:
+        return row("UNSUPPORTED", [f"no reviewed template for action {action_key!r} with check {expect_key!r}"], name)
+    try:
+        built = build_step(template_id, do[action_key], expect[expect_key])
+    except TypedStepError as exc:
+        return row("INVALID", [str(exc)], name, template_id)
+    return row("SUPPORTED", [], name, template_id, built)
+
+
+def review_native_steps(steps: object) -> dict:
+    """Review native scenario steps against the typed library without trusting them.
+
+    Every step is reported as ``SUPPORTED`` (matches a reviewed template and passes its checks), ``UNSUPPORTED``
+    (well formed, but outside what the library models) or ``INVALID`` (malformed, or a value the template
+    rejects), with reasons. Nothing is accepted automatically: the result is for a human reviewer. A passing step
+    has only had its *shape* checked; its source stays unreviewed, its oracle UNAPPROVED and its verdict UNKNOWN.
+    """
+    if not isinstance(steps, list) or not 1 <= len(steps) <= MAX_IMPORT_STEPS:
+        raise ValueError(f"a native scenario must be an array of 1 to {MAX_IMPORT_STEPS} steps")
+    pairs = _template_by_pair()
+    rows = [_review_one(i, step, pairs) for i, step in enumerate(steps)]
+    counts = {status: sum(1 for r in rows if r["status"] == status) for status in ("SUPPORTED", "UNSUPPORTED", "INVALID")}
+    return {"schema": "toolkit-typed-native-review/1", "source_trust": "UNREVIEWED_EXTERNAL_INPUT",
+            "native_schema_head": NATIVE_SCHEMA_HEAD, "steps": rows, "counts": counts}

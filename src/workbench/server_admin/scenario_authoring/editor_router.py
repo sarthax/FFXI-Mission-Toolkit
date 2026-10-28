@@ -169,6 +169,20 @@ def typed_step(request: Request, body: TypedStepRequest):
         raise HTTPException(422, {"message": str(exc), "part": exc.part}) from exc
 
 
+class TypedImportRequest(BaseModel):
+    steps: Any = None
+
+
+@router.post("/typed-import", include_in_schema=False)
+def typed_import(request: Request, body: TypedImportRequest):
+    """Review pasted native scenario steps against the typed library. Nothing is accepted or stored here."""
+    _local_origin(request)
+    try:
+        return typed_action_library.review_native_steps(body.steps)
+    except ValueError as exc:
+        raise HTTPException(422, {"message": str(exc)}) from exc
+
+
 @router.get("", response_class=HTMLResponse, include_in_schema=False)
 def editor_page(request: Request):
     return templates.TemplateResponse(
