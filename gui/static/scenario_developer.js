@@ -167,7 +167,14 @@
     renderCatalogSteps();
   }
 
+  // The typed builder is read-only exactly while Advanced JSON is the document, whichever path got us here.
+  function syncTypedLock() {
+    const locked=mode==='advanced';
+    const panel=document.getElementById&&document.getElementById('sd-typed-steps');if(panel)panel.inert=locked;
+    if(window.ScenarioTypedSteps&&window.ScenarioTypedSteps.bridge)window.ScenarioTypedSteps.bridge.setLocked(locked);
+  }
   function render() {
+    syncTypedLock();
     if(window.ScenarioTypedSteps&&window.ScenarioTypedSteps.bridge)window.ScenarioTypedSteps.bridge.sync(spec.native_steps);
     $('sd-case').value=spec.case_id;
     $('sd-title').value=spec.name;
@@ -234,7 +241,7 @@
     if(mode!==target)resetReadinessViewer();
     mode=target;
     // In Advanced the JSON text is the document, so the builder is read-only until Guided returns.
-    const typedPanel=document.getElementById&&document.getElementById('sd-typed-steps');if(typedPanel)typedPanel.inert=target==='advanced';
+    syncTypedLock();
     $('sd-guided-panel').hidden=target!=='guided';
     $('sd-advanced-panel').hidden=target!=='advanced';
     $('sd-guided').setAttribute('aria-pressed',String(target==='guided'));

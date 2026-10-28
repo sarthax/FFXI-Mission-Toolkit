@@ -15,7 +15,8 @@
   const canon = value => Array.isArray(value) ? value.map(canon)
     : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(k => [k, canon(value[k])])) : value;
   const sameSteps = (a, b) => JSON.stringify(canon(a)) === JSON.stringify(canon(b));
-  const bridge = {impl: null, pending: undefined, sameSteps,
+  const bridge = {impl: null, pending: undefined, locked: false, apply: null, sameSteps,
+    setLocked(flag) { this.locked = !!flag; if (this.apply) this.apply(); },
     get() { return this.impl ? this.impl.get() : null; },
     sync(saved) { if (this.impl) return this.impl.sync(saved); this.pending = saved || null; return Promise.resolve(); }};
   const NUMBER = /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/;
@@ -211,8 +212,10 @@
     const state = {templates: [], entries: [], built: null, request: 0, timer: null, picked: {action: null, expect: null}, review: null, shown: true, load: 0, libraryVersion: 1, singles: []};
     const inputs = {action: {}, expect: null};
     container.replaceChildren();
+    const lockNote = el('p', 'sd-warning', 'Read-only while Advanced JSON is open. Switch to Guided to edit steps.');
+    lockNote.id = 'sd-typed-locked'; lockNote.hidden = true;
 
-    container.append(el('p', 'sd-warning',
+    container.append(lockNote, el('p', 'sd-warning',
       'Draft native Headless steps. They are saved with the scenario draft (design only, not published); nothing is sent to a game ' +
       'client, and no oracle or verdict is implied: every step stays UNAPPROVED / UNKNOWN until something ' +
       'independent establishes the outcome.'));
@@ -369,7 +372,7 @@
       if (result.ok) {
         state.built = result.step;
         status.textContent = 'Valid native draft step (' + result.step.support_tier + '; oracle ' + result.step.oracle_status + ').';
-        add.disabled = !state.shown || state.entries.length >= MAX_STEPS;
+        add.disabled = locked() || !state.shown || state.entries.length >= MAX_STEPS;
       } else status.textContent = result.message;
     }
 
@@ -408,13 +411,16 @@
         download.download = 'native-scenario-draft.json';
       }
     }
+    // While Advanced JSON is the document the builder is read-only: handlers ignore edits (not only the browser's
+    // inert), so a scripted click cannot change steps the Advanced text does not know about (#1458).
+    const locked = () => bridge.locked;
     const changed = () => { if (doc.dispatchEvent && typeof CustomEvent !== 'undefined') doc.dispatchEvent(new CustomEvent('sd-typed-change')); };
-    const move = (index, delta) => { state.entries = moveItem(state.entries, index, delta); renderSteps(); changed(); };
-    const remove = index => { state.entries = state.entries.filter((_, i) => i !== index); renderSteps(); validate(); changed(); };
+    const move = (index, delta) => { if (locked()) return; state.entries = moveItem(state.entries, index, delta); renderSteps(); changed(); };
+    const remove = index => { if (locked()) return; state.entries = state.entries.filter((_, i) => i !== index); renderSteps(); validate(); changed(); };
 
     add.addEventListener('click', () => {
       const template = selected();
-      if (!template || !state.built || !state.shown || state.entries.length >= MAX_STEPS) return;
+      if (locked() || !template || !state.built || !state.shown || state.entries.length >= MAX_STEPS) return;
       const stepName = uniqueName(name.value, state.entries.map(e => e.name));
       const provenance = [];
       for (const [group, part] of [['action', 'action'], ['expect', 'expectation']]) {
@@ -486,7 +492,7 @@
     acceptAll.addEventListener('click', () => { for (const a of accepts) a.checkbox.checked = true; syncImportButtons(); });
     importAdd.addEventListener('click', () => {
       const chosen = accepts.filter(a => a.checkbox.checked).map(a => a.row);
-      if (!chosen.length || !state.shown) return;
+      if (locked() || !chosen.length || !state.shown) return;
       let added = 0;
       for (const row of chosen) {
         if (state.entries.length >= MAX_STEPS) break;
@@ -572,6 +578,11 @@
       }
       notSteps.append(unsupported);
       renderSteps(); renderTemplate();
+      bridge.apply = () => {
+        lockNote.hidden = !locked(); container.classList.toggle('sd-typed-locked', locked());
+        if (locked()) add.disabled = true; else validate();
+      };
+      bridge.apply();
       bridge.impl = impl;
       if (bridge.pending !== undefined) { const pending = bridge.pending; bridge.pending = undefined; impl.sync(pending); }
       return state;

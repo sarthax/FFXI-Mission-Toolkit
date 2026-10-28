@@ -137,4 +137,9 @@ assert.equal(T.sameSteps({steps: [1, 2]}, {steps: [2, 1]}), false, 'step order i
 assert.equal(T.sameSteps(null, {steps: []}), false);
 assert.equal(T.bridge.get(), null, 'before mounting there is nothing to read, so the editor leaves native_steps alone');
 
+// ---- read-only while Advanced JSON is the document (#1458): the lock lives in the bridge, not only in browser inert
+assert.equal(T.bridge.locked, false);
+T.bridge.setLocked(true); assert.equal(T.bridge.locked, true);
+T.bridge.setLocked(0); assert.equal(T.bridge.locked, false, 'any falsy value unlocks');
+
 console.log('Scenario typed step builder helpers: PASS');
