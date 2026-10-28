@@ -4,7 +4,7 @@ Evidence only. No behavior was changed. Nothing was run against a live client or
 
 - Date: 2026-10-27
 - Toolkit commit tested: `0de12ff9ce06247a0ec8ea8039517703b34f39ab` (origin/main at the time; includes #1452-#1455)
-- DSP checkout: `D:\Claude\dsp-branches` (real, as configured through a scratch settings DB)
+- DSP checkout: a real local checkout (path omitted), as configured through a scratch settings DB
 - XiHeadless checkout: `FFXI-Tools/headless-research/b-pr170` at `e5e8035071` (clean; the commit the Toolkit pins as `NATIVE_SCHEMA_HEAD`)
 
 ## Results
