@@ -127,6 +127,33 @@
     return root;
   }
 
+  // Selected local JSON is untrusted. Do not expose engine-specific parse
+  // offsets, source fragments or raw SyntaxError text to the operator.
+  function parseSelectedJson(raw, label) {
+    try {return JSON.parse(raw);}
+    catch(error) {
+      if(error instanceof SyntaxError)throw Error(label+' is not valid JSON');
+      throw error;
+    }
+  }
+  // Diagnostic only: the backend independently checks the full original
+  // review, sidecar, both digests and every authorization/provenance gate.
+  function checkOriginalCaptureIdentity(reviewFile) {
+    const original=reviewFile?.observed_handoff;
+    // Do not constrain this diagnostic to two *valid* IDs. The authoritative
+    // Python inspector combines an invalid/non-integer/zero envelope ID with
+    // approval errors under one generic 422; B20 06 must identify that input
+    // problem before any read-only inspector POST. Never coerce or echo IDs.
+    if(!reviewFile||typeof reviewFile!=='object'||Array.isArray(reviewFile)||
+       !original||typeof original!=='object'||Array.isArray(original))
+      return; // Let the strict server report unsupported envelope/shape.
+    const valid=id=>Number.isSafeInteger(id)&&id>0;
+    if(!valid(reviewFile.capture_id)||!valid(original.capture_id))
+      throw Error('Original review capture identity invalid or mismatched');
+    if(reviewFile.capture_id!==original.capture_id)
+      throw Error('Original review capture identity mismatch');
+  }
+
   function mount(container, inspect) {
     if(typeof inspect!=='function')throw Error('A trusted read-only pair inspector must be supplied');
     const section=node('section');
@@ -162,7 +189,10 @@
         const [original,sidecar]=await Promise.all([a.text(),b.text()]);
         if(stamp!==generation||review.files?.[0]!==a||advisory.files?.[0]!==b)
           throw Error('Selected files changed during inspection');
-        const model=await inspect(JSON.parse(original),JSON.parse(sidecar));
+        const reviewFile=parseSelectedJson(original,'Original reviewed-decision file');
+        const sidecarFile=parseSelectedJson(sidecar,'Readiness sidecar file');
+        checkOriginalCaptureIdentity(reviewFile);
+        const model=await inspect(reviewFile,sidecarFile);
         if(stamp!==generation||review.files?.[0]!==a||advisory.files?.[0]!==b)
           throw Error('Selected files changed during inspection');
         render(output,model);

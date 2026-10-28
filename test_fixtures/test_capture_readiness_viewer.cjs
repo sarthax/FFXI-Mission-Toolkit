@@ -100,7 +100,126 @@ for(const mutate of [
   assert.throws(()=>V.verify(bad),/attempted source/);
 }
 
+// B20 06, 09, 10: synth-only UI tests. inspect is a spy, never an HTTP
+// request or an oracle; backend strict pairing is tested separately in Python.
+async function testB20Diagnostics(){
+  const id=unknown.capture_id;
+  // Match the structural fields of an offline review export, not just a
+  // generic two-ID object. All data remain SYNTHETIC; no real capture or API.
+  const goodReview={
+    contract:'offline_capture_review_decisions_v1_NONCANONICAL',
+    capture_id:id,capture_projection_sha256:'a'.repeat(64),
+    observed_handoff:{capture_id:id,review_status:'MANUAL_AUTHORING_REQUIRED'},
+    step_decisions:[],binding_decisions:[],
+    review_status:'MANUAL_AUTHORING_REQUIRED',normative_expected:null,
+    verdict:'UNKNOWN',execution_enabled:false,approved_for_execution:false
+  };
+  const goodSidecar={contract:'capture_reviewer_readiness_sidecar_v0_NONCANONICAL',
+    capture_id:id,automatic_import:false,approved_for_execution:false,
+    execution_enabled:false};
+  const file=txt=>({size:Buffer.byteLength(txt),text:async()=>txt});
+  const cases=[
+    {caseId:'09',review:'{\"capture_id\":\"UNTERMINATED_PRIVATE_MARKER',
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original reviewed-decision file is not valid JSON'},
+    {caseId:'10',review:JSON.stringify(goodReview),
+      sidecar:'{\"SECRET_MARKER\":\"UNTERMINATED_PRIVATE_MARKER',
+      reason:'Readiness sidecar file is not valid JSON'},
+    // B20 06 variants: Python's generic 422 also covers IDs which are
+    // non-integer, zero, missing or negative. The old valid-positive gate
+    // never displayed an identity-specific reason for those cases.
+    {caseId:'06-positive-mismatch',review:JSON.stringify({...goodReview,capture_id:id+1}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity mismatch'},
+    {caseId:'06-string',review:JSON.stringify({...goodReview,capture_id:String(id+1)}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity invalid or mismatched'},
+    {caseId:'06-zero',review:JSON.stringify({...goodReview,capture_id:0}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity invalid or mismatched'},
+    {caseId:'06-negative',review:JSON.stringify({...goodReview,capture_id:-1}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity invalid or mismatched'},
+    {caseId:'06-null',review:JSON.stringify({...goodReview,capture_id:null}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity invalid or mismatched'},
+    {caseId:'06-boolean',review:JSON.stringify({...goodReview,capture_id:true}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity invalid or mismatched'},
+    {caseId:'06-absent',review:JSON.stringify({...goodReview,capture_id:undefined}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity invalid or mismatched'},
+    {caseId:'06-embedded-invalid',review:JSON.stringify({...goodReview,
+      observed_handoff:{...goodReview.observed_handoff,capture_id:'cross-capture'}}),
+      sidecar:JSON.stringify(goodSidecar),
+      reason:'Original review capture identity invalid or mismatched'}
+  ];
+  for(const c of cases){
+    let calls=0;
+    const view=V.mount(new Element('main'),async()=>{calls++;return unknown;});
+    view.review.files=[file(c.review)];
+    view.advisory.files=[file(c.sidecar)];
+    view.review.dispatch('change');
+    view.advisory.dispatch('change');
+    await view.inspectButton.dispatch('click');
+    assert.equal(calls,0,'B20 '+c.caseId+' must not invoke inspector/POST');
+    assert.equal(view.output.children.length,0,'B20 '+c.caseId+' no accepted output');
+    assert.equal(view.status.textContent,
+      'Pair NOT accepted: '+c.reason+'. No evidence imported; preserve original files.');
+    assert.doesNotMatch(view.status.textContent,
+      /UNTERMINATED_PRIVATE_MARKER|SECRET_MARKER|SyntaxError|Unterminated string|position \d+|Evidence cannot claim execution/);
+    assert.equal(view.inspectButton.disabled,false,'B20 '+c.caseId+' recovers button');
+    // Changing either selection clears stale failure and permits a fresh,
+    // separately backend-inspected pair; this spy is not backend acceptance.
+    view.review.files=[file(JSON.stringify(goodReview))];
+    view.advisory.files=[file(JSON.stringify(goodSidecar))];
+    view.review.dispatch('change');
+    view.advisory.dispatch('change');
+    assert.equal(view.output.children.length,0);
+    assert.match(view.status.textContent,/Selection changed/);
+    await view.inspectButton.dispatch('click');
+    assert.equal(calls,1,'B20 '+c.caseId+' valid-looking input reaches inspector once');
+    assert.equal(view.output.children.length,1);
+    assert.match(view.status.textContent,/UNVERIFIED READ-ONLY advisory/);
+    view.dispose();
+    assert.equal(view.output.children.length,0);
+    assert.equal(view.inspectButton.disabled,true);
+    await view.inspectButton.dispatch('click');
+    assert.equal(calls,1,'B20 '+c.caseId+' closed viewer must not inspect');
+  }
+  // A wrong sidecar identity and forged authority must still go to the
+  // authoritative verifier and fail; the local diagnostic is not a validator.
+  let rejected=0;
+  const view=V.mount(new Element('main'),async()=>{
+    rejected++;throw Error('Capture readiness pair rejected: authoritative mismatch');
+  });
+  view.review.files=[file(JSON.stringify(goodReview))];
+  view.advisory.files=[file(JSON.stringify({...goodSidecar,capture_id:id+1,
+    approved_for_execution:true}))];
+  await view.inspectButton.dispatch('click');
+  assert.equal(rejected,1);
+  assert.equal(view.output.children.length,0);
+  assert.match(view.status.textContent,/authoritative mismatch/);
+  // Do not relabel real privilege/approval violations as identity problems
+  // when both review IDs are valid and matching: the backend must decide.
+  const reviewWithForgedGrant={...goodReview,approved_for_execution:true};
+  let authorityCalls=0;
+  const authority=V.mount(new Element('main'),async()=>{
+    authorityCalls++;
+    throw Error('Evidence cannot claim execution, approval or normative outcomes');
+  });
+  authority.review.files=[file(JSON.stringify(reviewWithForgedGrant))];
+  authority.advisory.files=[file(JSON.stringify(goodSidecar))];
+  await authority.inspectButton.dispatch('click');
+  assert.equal(authorityCalls,1);
+  assert.match(authority.status.textContent,/Evidence cannot claim execution/);
+  assert.doesNotMatch(authority.status.textContent,/capture identity/);
+  assert.equal(authority.output.children.length,0);
+  console.log('R7 B20 synthetic 06 identity shape variants and 09/10 safe JSON: PASS');
+}
+
 async function run(){
+  await testB20Diagnostics();
   const host=new Element('main');
   let wait=null;
   const view=V.mount(host,()=>new Promise(resolve=>{wait=resolve;}));
