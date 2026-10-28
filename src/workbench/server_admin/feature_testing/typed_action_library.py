@@ -299,7 +299,10 @@ MAX_IMPORT_STEPS = 100
 MAX_NATIVE_STEPS = 50  # steps stored with one draft
 _MAX_NAME = 100
 _MAX_NOTE = 300
-_NATIVE_FIELDS = {"name", "do", "expect"}
+_NATIVE_FIELDS = {"name", "do", "expect", "timeout_ms"}
+# Per-step timeout_ms, as XiHeadless ScenarioFileValidation.CheckStructure (pinned e5e80350) checks it: a JSON number that
+# is an Int32, 0..3600000 ms, allowed with any action or check. Absent means the runner default (10000 ms); never inferred.
+_STEP_TIMEOUT_MAX = 3600000
 _CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 
 
@@ -341,6 +344,8 @@ def _review_one(index: int, step: object, pairs: dict[tuple[str, str], str], *, 
     if extra:  # never drop fields silently: a step the library cannot keep whole is not imported or stored
         return row("UNSUPPORTED", ["unsupported field(s): " + ", ".join(extra) +
                                    " (they cannot be kept, so the step is not accepted)"], name)
+    if "timeout_ms" in step and not (_is_int(step["timeout_ms"]) and 0 <= step["timeout_ms"] <= _STEP_TIMEOUT_MAX):
+        return row("INVALID", [f"timeout_ms must be an integer 0..{_STEP_TIMEOUT_MAX} (milliseconds)"], name)
     if not stored and step.get("expect") == {} and "do" in step:
         # The export form of an action-only step (XiHeadless requires an expect object); it means "no check".
         step = {k: v for k, v in step.items() if k != "expect"}
@@ -364,6 +369,7 @@ def _review_one(index: int, step: object, pairs: dict[tuple[str, str], str], *, 
         return row("UNSUPPORTED", reasons, name)
     built.update({"template_id": pairs.get((keys.get("do"), keys.get("expect"))),
                   "support_tier": _HEADLESS, "native_schema_head": NATIVE_SCHEMA_HEAD,
+                  **({"timeout_ms": step["timeout_ms"]} if "timeout_ms" in step else {}),
                   "oracle_status": "UNAPPROVED", "verdict": "UNKNOWN", "execution_enabled": False})
     return row("SUPPORTED", [], name, built, built["template_id"])
 
@@ -416,3 +422,22 @@ def validate_native_steps(value: object) -> object:
             if not isinstance(note, str) or not 1 <= len(note) <= _MAX_NOTE or _CONTROL.search(note):
                 raise ValueError(f"native_steps[{index}] note must be 1 to {_MAX_NOTE} characters of plain text")
     return value
+
+
+def export_native_scenario(value: object) -> list[dict]:
+    """XiHeadless scenario file content (a JSON array) for validated ``native_steps``; ``timeout_ms`` is passed unchanged.
+
+    ``note`` is provenance text and is not part of the native schema, so it is dropped; an action-only step gets the
+    empty ``expect`` object the native loader requires.
+    """
+    validate_native_steps(value)
+    out = []
+    for step in value["steps"]:
+        item: dict = {"name": step["name"]}
+        if "timeout_ms" in step:
+            item["timeout_ms"] = step["timeout_ms"]
+        if "do" in step:
+            item["do"] = copy.deepcopy(step["do"])
+        item["expect"] = copy.deepcopy(step.get("expect", {}))
+        out.append(item)
+    return out

@@ -82,22 +82,16 @@ def _shape(steps: list) -> str:
     return " > ".join(f"{keys(s.get('do'))}|{keys(s.get('expect'))}" if isinstance(s, dict) else "?" for s in steps)
 
 
-def _review(steps: list, carry_timeouts: bool) -> tuple[dict, list]:
-    """Review ``steps``; returns (review, steps actually reviewed). Timeouts are removed only in the explicit carry mode."""
-    reviewed = steps
-    if carry_timeouts:
-        reviewed = [{k: v for k, v in s.items() if k != "timeout_ms"} if isinstance(s, dict) else s for s in steps]
-    return review_native_steps(reviewed), reviewed
+def _review(steps: list) -> tuple[dict, list]:
+    """Review ``steps`` as they are; per-step ``timeout_ms`` is a permitted native_steps field and is kept."""
+    return review_native_steps(steps), steps
 
 
-def _build_spec(path: str, sha: str, repo: str, steps: list, reviewed: list, aliases: list[str],
-                carry_timeouts: bool) -> dict:
+def _build_spec(path: str, sha: str, repo: str, steps: list, reviewed: list, aliases: list[str]) -> dict:
     short = sha[:8]
     stored = []
     for index, (orig, step) in enumerate(zip(steps, reviewed), 1):
         note = f"{PurePosixPath(path).name}@{short} step {index}/{len(steps)}"
-        if carry_timeouts and "timeout_ms" in orig:
-            note += f"; source timeout_ms={orig['timeout_ms']!r} not carried as an executable field"
         stored.append({**step, "note": note[:300]})
     gaps = [
         "Imported from %s@%s:%s. Source identity only: not an approved oracle, not authenticated, not run." % (repo, short, path),
@@ -105,9 +99,6 @@ def _build_spec(path: str, sha: str, repo: str, steps: list, reviewed: list, ali
         "native expect map in each step and has no approved oracle or verdict (UNKNOWN).",
         "OWNER QUESTION (open): is this scenario a wanted catalog case, and under which feature/case id and tags?",
     ]
-    if carry_timeouts:
-        gaps.append("Per-step timeout_ms from the source is recorded in each step note only; native_steps cannot keep it. "
-                    "Owner must decide how timeouts are modelled before any run.")
     if A06_MARK in "/" + path:
         gaps.append("A06 acceptance probe path: the source set includes expected-failure / fault-injection probes. Polarity "
                     "(pass-expected vs fail-expected) is NOT classified; no verdict is assumed. OWNER QUESTION (open).")
@@ -138,7 +129,7 @@ def run_import(root: Path, *, sha: str = PINNED_SHA, repo: str = PINNED_REPO, ca
     sha = resolve_pin(root, sha)
     paths = discover(root, sha)
     report = {"schema": "toolkit-native-import-report/1", "source": {"repo": repo, "sha": sha, "files_examined": len(paths)},
-              "carry_step_timeouts": carry_timeouts, "applied": apply, "imported": [], "unchanged": [], "rejected": [],
+              "carry_step_timeouts": True, "applied": apply, "imported": [], "unchanged": [], "rejected": [],
               "deduplicated": [], "near_duplicate_shapes": []}
     parsed: dict[str, list] = {}
     for path in paths:
@@ -165,7 +156,7 @@ def run_import(root: Path, *, sha: str = PINNED_SHA, repo: str = PINNED_REPO, ca
             report["deduplicated"].append({"kept": primary, "merged_exact_duplicates": aliases, "content_sha256": digest,
                                            "reason": "identical parsed step array (names, values, timeouts); kept the "
                                                      "first path in sort order and recorded the others in the draft"})
-        review, reviewed = _review(steps, carry_timeouts)
+        review, reviewed = _review(steps)
         bad = [{"index": r["index"], "name": r["name"], "status": r["status"], "reasons": r["reasons"]}
                for r in review["steps"] if r["status"] != "SUPPORTED"]
         if bad:
@@ -179,7 +170,7 @@ def run_import(root: Path, *, sha: str = PINNED_SHA, repo: str = PINNED_REPO, ca
         seen_ids[case] = primary
         shapes.setdefault(_shape(steps), []).append(primary)
         try:
-            spec = _build_spec(primary, sha, repo, steps, reviewed, aliases, carry_timeouts)
+            spec = _build_spec(primary, sha, repo, steps, reviewed, aliases)
             test_catalog._check_spec(spec)
             if len(names := [s["name"] for s in steps]) != len(set(names)):
                 raise ValueError("duplicate step names")
@@ -219,7 +210,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--scratch-db", required=True, type=Path, help="NEW sqlite file to write drafts into (absolute path)")
     ap.add_argument("--allow-existing-db", action="store_true", help="append to an existing scratch db (still never the live data)")
     ap.add_argument("--carry-step-timeouts", action="store_true",
-                    help="record each step's timeout_ms in its note instead of rejecting the step for carrying it")
+                    help="deprecated no-op: per-step timeout_ms is always carried unchanged now")
     ap.add_argument("--dry-run", action="store_true", help="review and report only; write nothing")
     ap.add_argument("--report", type=Path, help="write the JSON report here")
     args = ap.parse_args(argv)
