@@ -28,6 +28,16 @@ to offer a search over the existing local DSP catalog (`/scenario-developer/cata
 from, and it is never presented as verified for a particular zone or client. A hint never changes which values are
 valid.
 
+## Reviewing native scenario JSON (#1411)
+`review_native_steps(steps)` checks pasted native scenario steps (for example from an agent or a scenario file)
+against the library without trusting them. Each step comes back as `SUPPORTED` (matches a reviewed action/check pair
+and passes its parameter checks), `UNSUPPORTED` (well formed but outside what the library models: an unknown action
+or check, no `do` or no `expect`, more than one action or check, or any extra field such as `timeout_ms`), or
+`INVALID` (malformed, or a value the template rejects), with reasons. A step with extra fields is **never trimmed
+down** to fit; it is reported and not imported. The result is marked `UNREVIEWED_EXTERNAL_INPUT`: a passing step has
+had its shape checked and nothing else, and nothing is accepted automatically. In the Scenario Developer's builder a
+person ticks the supported steps to accept, and each accepted step records where it came from.
+
 ## What it does not establish
 - `HEADLESS_SCHEMA_ONLY` means the native key and parameter shape match the pinned XIHeadless schemas
   (`NATIVE_SCHEMA_HEAD`). It does **not** mean the runner dispatches it or that it proves anything in game.

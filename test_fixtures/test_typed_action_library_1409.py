@@ -194,3 +194,101 @@ def test_picker_hints_are_exactly_the_npc_and_zone_id_parameters():
     # a hint never changes validation: the same checks apply with or without it
     spec = lib.get_template("talk_to_npc")["action"]["param"]
     assert lib.check_param(spec, 7) is None and lib.check_param(spec, -1) is not None
+
+
+# --- reviewing native scenario JSON -------------------------------------------------------------
+
+def _native(step):
+    return {"name": step["template_id"], "do": step["do"], "expect": step["expect"]}
+
+
+def _all_valid_native_steps():
+    steps = []
+    for template in action_templates():
+        a, e = template["action"]["param"], template["expectation"]["param"]
+        av = next(v for v in ACTION_VALUES[key(a)] if lib.check_param(a, v) is None)
+        ev = next(v for v in EXPECT_VALUES[key(e)] if lib.check_param(e, v) is None)
+        steps.append(_native(lib.build_step(template["id"], av, ev)))
+    return steps
+
+
+def test_every_template_round_trips_through_the_review():
+    native = _all_valid_native_steps()
+    review = lib.review_native_steps(native)
+    assert review["counts"] == {"SUPPORTED": 10, "UNSUPPORTED": 0, "INVALID": 0}
+    for row, step in zip(review["steps"], native):
+        assert row["status"] == "SUPPORTED" and row["reasons"] == [] and row["name"] == step["name"]
+        assert row["template_id"] == step["name"]
+        assert row["step"]["do"] == step["do"] and row["step"]["expect"] == step["expect"]
+        assert (row["step"]["oracle_status"], row["step"]["verdict"], row["step"]["execution_enabled"]) == \
+            ("UNAPPROVED", "UNKNOWN", False)
+
+
+def test_native_pairs_are_unambiguous():
+    pairs = lib._template_by_pair()
+    assert len(pairs) == len(action_templates()) == 10  # a new template must not share an action/check pair
+
+
+def _one(step):
+    return lib.review_native_steps([step])["steps"][0]
+
+
+@pytest.mark.parametrize("step,status,fragment", [
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "timeout_ms": 5000}, "UNSUPPORTED", "unsupported field(s): timeout_ms"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "note": "x", "extra": 1}, "UNSUPPORTED", "extra, note"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}}, "UNSUPPORTED", "needs both do and expect"),
+    ({"name": "a", "expect": {"x_near": 3}}, "UNSUPPORTED", "needs both do and expect"),
+    ({"name": "a", "do": {}, "expect": {"x_near": 3}}, "UNSUPPORTED", "exactly one action and one check"),
+    ({"name": "a", "do": {"walk_to": [1, 2], "engage": 5}, "expect": {"x_near": 3}}, "UNSUPPORTED", "exactly one action"),
+    ({"name": "a", "do": {"dance": 1}, "expect": {"zone": 3}}, "UNSUPPORTED", "no reviewed template for action 'dance'"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"hpp": 3}}, "UNSUPPORTED", "check 'hpp'"),
+    ({"name": "a", "do": {"talk_npc": -1}, "expect": {"event_active": True}}, "INVALID", "npc_id"),
+    ({"name": "a", "do": {"talk_npc": 1}, "expect": {"event_active": "yes"}}, "INVALID", "event_active"),
+    ({"name": "a", "do": {"walk_to": [float("nan"), 2]}, "expect": {"x_near": 3}}, "INVALID", "coordinates"),
+    ({"name": "a", "do": "walk_to", "expect": {"x_near": 3}}, "INVALID", "must each be an object"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": [1]}, "INVALID", "must each be an object"),
+    ({"do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}}, "INVALID", "name must be non-empty"),
+    ({"name": "   ", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}}, "INVALID", "name must be non-empty"),
+    ({"name": "n" * 101, "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}}, "INVALID", "at most 100"),
+    ({"name": 5, "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}}, "INVALID", "name must be non-empty"),
+    ("not an object", "INVALID", "step is not an object"),
+    (None, "INVALID", "step is not an object"),
+    ([1], "INVALID", "step is not an object"),
+])
+def test_unsupported_and_invalid_steps_are_reported_with_reasons_and_never_built(step, status, fragment):
+    row = _one(step)
+    assert row["status"] == status and row["step"] is None
+    assert any(fragment in reason for reason in row["reasons"]), row["reasons"]
+
+
+def test_a_step_with_extra_fields_is_not_imported_even_though_its_do_and_expect_are_fine():
+    row = _one({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "timeout_ms": 5000})
+    assert row["status"] == "UNSUPPORTED" and row["step"] is None  # never trimmed down to a lossy copy
+
+
+def test_names_are_trimmed_kept_as_data_and_duplicates_are_left_for_the_reviewer():
+    hostile = "  <img src=x onerror=1>  "
+    review = lib.review_native_steps([{"name": hostile, "do": {"rest_hp": 50}, "expect": {"hpp": 90}},
+                                      {"name": "same", "do": {"rest_hp": 50}, "expect": {"hpp": 90}},
+                                      {"name": "same", "do": {"rest_hp": 60}, "expect": {"hpp": 90}}])
+    assert [r["name"] for r in review["steps"]] == ["<img src=x onerror=1>", "same", "same"]
+    assert review["counts"]["SUPPORTED"] == 3
+
+
+def test_review_rejects_bad_scenarios_outright_and_does_not_mutate_its_input():
+    for bad in (None, {}, "x", 5, [], [None] * 101):
+        with pytest.raises(ValueError, match="array of 1 to 100 steps"):
+            lib.review_native_steps(bad)
+    native = _all_valid_native_steps()
+    snapshot = copy.deepcopy(native)
+    lib.review_native_steps(native)
+    assert native == snapshot
+    assert lib.review_native_steps(native[:1])["source_trust"] == "UNREVIEWED_EXTERNAL_INPUT"
+    assert len(lib.review_native_steps([native[0]] * 100)["steps"]) == 100
+
+
+def test_review_counts_add_up_and_indexes_follow_the_input():
+    review = lib.review_native_steps([{"name": "ok", "do": {"rest_hp": 5}, "expect": {"hpp": 1}}, 7,
+                                      {"name": "u", "do": {"x": 1}, "expect": {"y": 2}}])
+    assert [(r["index"], r["status"]) for r in review["steps"]] == [(0, "SUPPORTED"), (1, "INVALID"), (2, "UNSUPPORTED")]
+    assert review["counts"] == {"SUPPORTED": 1, "UNSUPPORTED": 1, "INVALID": 1}
