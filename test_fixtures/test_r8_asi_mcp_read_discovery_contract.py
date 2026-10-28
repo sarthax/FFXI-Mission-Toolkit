@@ -60,6 +60,13 @@ TOOLS = {
 KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,119}\Z")
 SHA = re.compile(r"[0-9a-f]{64}\Z")
 CURSOR = re.compile(r"[A-Za-z0-9_-]{8,256}\Z")
+# data.recent[] item schema: ref_id may contain colons (unlike KEY) and is
+# bounded identically to #1329 scenario_evidence_ref_v0_NONCANONICAL.ref_id.
+REF_ID = re.compile(r"[!-~]{1,120}\Z")
+EXCERPT = re.compile(r"[ -~]{1,200}\Z")
+RECENT_ITEM = {"ref_id", "recorded_verdict", "attempt_completeness", "excerpt"}
+RECENT_VERDICTS = {None, "PASS", "FAIL", "PARTIAL", "UNKNOWN"}
+RECENT_COMPLETENESS = {"COMPLETE", "PARTIAL", "UNKNOWN"}
 STATUS = {"OK", "UNKNOWN", "BLOCKED", "UNSUPPORTED"}
 
 
@@ -71,6 +78,19 @@ def _fail(condition: bool, detail: str) -> None:
 def _identity(value: object) -> None:
     _fail(isinstance(value, str) and KEY.fullmatch(value) is not None,
           "invalid canonical identity")
+
+
+def validate_recent_item(item: object) -> None:
+    """Test-only data.recent[] item check; NOT a production parser."""
+    _fail(isinstance(item, dict) and set(item) == RECENT_ITEM,
+          "unknown or missing recent item field")
+    _fail(isinstance(item["ref_id"], str) and
+          REF_ID.fullmatch(item["ref_id"]) is not None, "invalid ref_id")
+    _fail(item["recorded_verdict"] in RECENT_VERDICTS, "invalid recorded verdict")
+    _fail(item["attempt_completeness"] in RECENT_COMPLETENESS,
+          "invalid attempt completeness")
+    _fail(isinstance(item["excerpt"], str) and
+          EXCERPT.fullmatch(item["excerpt"]) is not None, "invalid excerpt")
 
 
 def _sha(value: object) -> None:
@@ -214,6 +234,8 @@ def validate_sample(response: dict) -> None:
             _fail(data.get("record_count") is None and not data.get("recent"),
                   "missing evidence misrepresented as zero")
         _fail(len(data.get("recent", [])) <= 10, "oversized evidence summary")
+        for item in data.get("recent", []):
+            validate_recent_item(item)
     if tool == "supervisor_scenario_change_impact":
         if not data.get("reviewed_diff_available"):
             _fail(not data.get("impacted_step_ids") and
@@ -237,8 +259,8 @@ def test_fixture_is_review_only_not_registered_mcp_or_importer():
     assert DOC["not_runtime_contract_approval"] is True
     assert DOC["not_mcp_registered"] is True
     assert DOC["not_importable_evidence"] is True
-    assert len(EXAMPLES) == 11
-    assert len(DOC["negative_mutations"]) >= 10
+    assert len(EXAMPLES) == 12
+    assert len(DOC["negative_mutations"]) >= 17
     assert set(TOOLS) == {x["tool"] for x in EXAMPLES.values()}
 
 
@@ -295,3 +317,65 @@ def test_no_production_imports_or_side_effect_capabilities_in_contract_tests():
     assert all(x.startswith("supervisor_scenario_") for x in TOOLS)
     assert all(x["authority"]["task_admission_supported"] is False
                for x in EXAMPLES.values())
+
+
+# ---- data.recent[] item schema and #1329 ref_id interop -------------------
+# Identity mapping (normative here): the #1330 envelope key
+# scenario.scenario_id is the canonical catalog case identifier for joins
+# (with feature_id). #1329 scenario.case_id carries the SAME value; joins use
+# exact string equality on (feature_id, scenario_id == case_id), no
+# normalisation. A mismatch is BLOCKED, never fuzzy-matched.
+_EVIDENCE_VECTORS = Path(__file__).with_name(
+    "r8_evidence_summary_vectors_synthetic.json")
+
+
+def _good_item(**over):
+    item = deepcopy(EXAMPLES["evidence_recent_items_synthetic"]["data"]["recent"][0])
+    item.update(over)
+    return item
+
+
+def test_recent_item_schema_accepts_good_items_with_colons():
+    for item in EXAMPLES["evidence_recent_items_synthetic"]["data"]["recent"]:
+        validate_recent_item(item)
+        assert ":" in item["ref_id"]
+    assert KEY.fullmatch(_good_item()["ref_id"]) is None  # REF_ID != KEY
+    validate_recent_item(_good_item(ref_id="a" * 120))
+
+
+@pytest.mark.parametrize("over", [
+    {"ref_id": "evidence:synthetic: x"}, {"ref_id": "evidence:\tx"},
+    {"ref_id": ""}, {"ref_id": "a" * 121}, {"ref_id": "evidence:café"},
+    {"ref_id": 5}, {"excerpt": ""}, {"excerpt": "x" * 201},
+    {"excerpt": "line\nbreak"}, {"recorded_verdict": "VERIFIED_PASS"},
+    {"attempt_completeness": "DONE"}, {"raw_path": "C:/x"},
+])
+def test_recent_item_schema_rejects_bad_items(over):
+    with pytest.raises(ValueError):
+        validate_recent_item(_good_item(**over))
+
+
+def test_recent_item_missing_field_rejected():
+    item = _good_item()
+    del item["excerpt"]
+    with pytest.raises(ValueError):
+        validate_recent_item(item)
+
+
+def test_recent_more_than_ten_items_rejected():
+    doc = deepcopy(EXAMPLES["evidence_recent_items_synthetic"])
+    doc["data"]["recent"] = [_good_item() for _ in range(11)]
+    with pytest.raises(ValueError):
+        validate_sample(doc)
+    doc["data"]["recent"] = [_good_item() for _ in range(10)]
+    validate_sample(doc)
+
+
+def test_1329_vector_ref_ids_satisfy_1330_ref_id_pattern():
+    vectors = json.loads(_EVIDENCE_VECTORS.read_text(encoding="utf-8"))
+    ids = [v["evidence_reference"]["ref_id"] for v in vectors["examples"]
+           if "evidence_reference" in v]
+    assert ids, "no #1329 evidence_reference vectors found"
+    for ref_id in ids:
+        assert REF_ID.fullmatch(ref_id), ref_id
+        validate_recent_item(_good_item(ref_id=ref_id))

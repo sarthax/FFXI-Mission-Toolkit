@@ -328,6 +328,58 @@
       }
     },
     {
+      "id": "evidence_recent_items_synthetic",
+      "classification": "RECENT_ITEMS_SCHEMA_EXAMPLE",
+      "response": {
+        "contract": "toolkit-r8-scenario-discovery/1",
+        "tool": "supervisor_scenario_evidence_summary",
+        "status": "UNKNOWN",
+        "scenario": {
+          "feature_id": "SYNTHETIC_FEATURE",
+          "scenario_id": "SYNTHETIC_CASE",
+          "schema_version": 1,
+          "contract_version": null,
+          "local_definition_sha256": null
+        },
+        "authority": {
+          "execution_status": "NOT_AUTHORIZED",
+          "execution_enabled": false,
+          "task_admission_supported": false,
+          "independent_verification": "NOT_ESTABLISHED",
+          "oracle_approval": "NOT_ESTABLISHED"
+        },
+        "data": {
+          "availability": "AVAILABLE_UNVERIFIED",
+          "record_count": 2,
+          "recent": [
+            {
+              "ref_id": "evidence:synthetic:missing-server-readback",
+              "recorded_verdict": null,
+              "attempt_completeness": "PARTIAL",
+              "excerpt": "Synthetic: server readback absent; verdict not established."
+            },
+            {
+              "ref_id": "evidence:synthetic:stale-capture",
+              "recorded_verdict": "UNKNOWN",
+              "attempt_completeness": "UNKNOWN",
+              "excerpt": "Synthetic: capture older than pinned revision."
+            }
+          ],
+          "recorded_verdict": null,
+          "independent_verification": "NOT_ESTABLISHED"
+        },
+        "pagination": {
+          "limit": 10,
+          "next_cursor": null,
+          "has_more": false
+        },
+        "unknowns": [
+          "independent_oracle_authority"
+        ],
+        "provenance": "DECLARED_OR_IMPORTED_UNVERIFIED"
+      }
+    },
+    {
       "id": "missing_evidence_not_zero",
       "classification": "MISSING_EVIDENCE",
       "response": {
@@ -543,6 +595,48 @@
       "based_on": "historical_runnable_not_authorized",
       "path": "data.observation_state",
       "value": "__TEST_GENERATE_70000_BYTES__"
+    },
+    {
+      "id": "recent_ref_id_whitespace",
+      "based_on": "evidence_recent_items_synthetic",
+      "path": "data.recent.0.ref_id",
+      "value": "evidence:synthetic: bad"
+    },
+    {
+      "id": "recent_ref_id_too_long",
+      "based_on": "evidence_recent_items_synthetic",
+      "path": "data.recent.0.ref_id",
+      "value": "evidence:synthetic:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "id": "recent_ref_id_non_ascii",
+      "based_on": "evidence_recent_items_synthetic",
+      "path": "data.recent.0.ref_id",
+      "value": "evidence:synthetic:caf\u00e9"
+    },
+    {
+      "id": "recent_ref_id_empty",
+      "based_on": "evidence_recent_items_synthetic",
+      "path": "data.recent.0.ref_id",
+      "value": ""
+    },
+    {
+      "id": "recent_excerpt_too_long",
+      "based_on": "evidence_recent_items_synthetic",
+      "path": "data.recent.0.excerpt",
+      "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+      "id": "recent_unknown_field",
+      "based_on": "evidence_recent_items_synthetic",
+      "path": "data.recent.0.raw_path",
+      "value": "C:/secret"
+    },
+    {
+      "id": "recent_bad_verdict",
+      "based_on": "evidence_recent_items_synthetic",
+      "path": "data.recent.0.recorded_verdict",
+      "value": "VERIFIED_PASS"
     }
   ]
 }
