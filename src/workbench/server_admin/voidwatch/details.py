@@ -10,12 +10,13 @@ import json
 import re
 from pathlib import Path
 
+from workbench.runtime.local_roots import dsp_root
 from workbench.runtime.paths import REPO_ROOT
 from workbench.server_admin.synth import recipes as R
 
 TRACKER = REPO_ROOT / "data" / "voidwatch" / "nm_tracker.json"
 # Extra DSP checkouts that hold Voidwatch feature work not yet in the active root. DSP-family only.
-EXTRA_DSP_ROOTS = [Path(r"D:\Claude\dsp-branches")]
+EXTRA_DSP_ROOTS = [p for p in [dsp_root()] if p]
 
 VALIDATION = REPO_ROOT / "data" / "voidwatch" / "nm_validation.json"
 AREAS = [["spawns", "Spawns"], ["model", "Model / look"], ["hp", "HP / stats"], ["skills", "Skills"], ["spells", "Spells"], ["drops", "Drops"], ["weakness", "Weakness / stagger"], ["rift", "Rift / entry"], ["ingame", "In-game test"]]

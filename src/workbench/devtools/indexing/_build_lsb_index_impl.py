@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-build_lsb_index.py -- indexes the bundled LandSandBoat/ checkout (D:\\Claude\\mission_toolkit\\
+build_lsb_index.py -- indexes the bundled LandSandBoat/ checkout (<local>/mission_toolkit\\
 LandSandBoat) as a real third data layer for ID-drift checking, alongside Topaz's own sql/ (see
 build_topaz_index.py's topaz_* tables) and the external retail-client reference (see
 build_database.py's items_external/keyitems_external).

@@ -157,7 +157,7 @@
             "source:src/map/packet_system.cpp:2631-2634 (m_event.Option overrides the client's EndPara when nonzero)",
             "source:src/map/lua/lua_baseentity.h:274-275 (tradeComplete, confirmTrade), packet_system 0x036 trade path"
           ],
-          "dsp_note": "Source-read only. The generic event start/update/finish, string-event and trade machinery match the field layout of LSB's GP_SERV_COMMAND_EVENTNUM (8 nums) and GP_CLI_COMMAND_EVENTEND, so no new packet classes appear to be required for the trainer menus; this is NOT proof that the chocobo option sequence works. Specific risks: (1) m_event.Option sticky override can swallow option values the VM reads; (2) LSB's event_playout relies on a dedicated Mode=UpdatePending flow and startEventString for naming/debug; DSP has startEventString but the name-entry reply fields were never exercised; (3) retail/capture evidence for the actual trainer sequence is absent in this repo; check D:/Claude/Playthrough Captures for chocobo raising captures first. Per CLAUDE.md, startEvent padding must follow capture evidence per csid.",
+          "dsp_note": "Source-read only. The generic event start/update/finish, string-event and trade machinery match the field layout of LSB's GP_SERV_COMMAND_EVENTNUM (8 nums) and GP_CLI_COMMAND_EVENTEND, so no new packet classes appear to be required for the trainer menus; this is NOT proof that the chocobo option sequence works. Specific risks: (1) m_event.Option sticky override can swallow option values the VM reads; (2) LSB's event_playout relies on a dedicated Mode=UpdatePending flow and startEventString for naming/debug; DSP has startEventString but the name-entry reply fields were never exercised; (3) retail/capture evidence for the actual trainer sequence is absent in this repo; check <local>/Playthrough Captures for chocobo raising captures first. Per CLAUDE.md, startEvent padding must follow capture evidence per csid.",
           "dsp_target_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c"
         },
         {
@@ -351,7 +351,7 @@
       ],
       "reference_url": "https://github.com/LandSandBoat/server/blob/base/scripts/globals/hobbies/chocobo_raising/README.md",
       "tracker_url": "https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1129",
-      "source_note": "Baseline: LSB inspected 2026-10-19; DSP target dsp-branches f2d771e0 audited 2026-10-19 by source-read only (none validated; see docs/workbench/chocobo_audit). sarthax/xiheadless-dsp is the headless client, not the DSP server."
+      "source_note": "Baseline: LSB inspected 2026-10-19; DSP target <DSP checkout> f2d771e0 audited 2026-10-19 by source-read only (none validated; see docs/workbench/chocobo_audit). sarthax/xiheadless-dsp is the headless client, not the DSP server."
     }
   }
 }

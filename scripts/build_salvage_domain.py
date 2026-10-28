@@ -1,6 +1,6 @@
 """Build data/salvage/salvage.json for the Salvage domain page.
 
-Scans three source trees (live Topaz, the DSP target in dsp-branches, the LandSandBoat reference) and the toolkit
+Scans three source trees (live Topaz, the DSP target checkout (DSP_ROOT), the LandSandBoat reference) and the toolkit
 capture DB. Everything counted here is read from a file or a DB row; anything not found is left null/"unknown"
 rather than estimated. Curated, hand-written facts live in data/salvage/curation.json.
 """
@@ -15,7 +15,10 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "salvage" / "salvage.json"
 CUR = ROOT / "data" / "salvage" / "curation.json"
 DB = ROOT / "ffxi_zone_database.db"
-TREES = {"topaz": Path("C:/topaz"), "dsp": Path("D:/Claude/dsp-branches"), "lsb": Path("D:/Claude/landsandboat-reference")}
+import os
+TREES = {"topaz": Path(os.environ.get("TOPAZ_ROOT", "C:/topaz")),
+         "dsp": Path(os.environ.get("DSP_ROOT", "dsp-checkout")),  # set DSP_ROOT to your local DSP checkout
+         "lsb": Path(os.environ.get("LSB_REFERENCE_ROOT", "landsandboat-reference"))}
 HOOKS = ["afterInstanceRegister", "onInstanceCreated", "onInstanceTimeUpdate", "onInstanceFailure", "onInstanceComplete",
          "onInstanceProgressUpdate", "onInstanceStageChange", "onInstanceLoadFailed"]
 ZONES = [  # key, folder, instance_list name stem, wiki zone name

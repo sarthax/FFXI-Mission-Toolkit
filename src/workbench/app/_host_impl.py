@@ -346,7 +346,7 @@ def rebuild_events(ffxi_path: str) -> int:
 
 
 def rebuild_lsb_index() -> str:
-    """LSB is bundled in the repo (D:\\Claude\\mission_toolkit\\LandSandBoat), no download/path
+    """LSB is bundled in the repo (<local>/mission_toolkit\\LandSandBoat), no download/path
     setting needed -- unlike the other rebuild_* functions above, this never depends on ffxi_path
     or TOPAZ_PATH being configured beyond what settings.py already resolves at import time."""
     con = get_con()

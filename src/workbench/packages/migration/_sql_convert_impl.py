@@ -9,7 +9,7 @@ build_dsp_index.py), not just a hand-diff of two dump files:
     groupid alone -- groupid is just DSP's storage-level PK), does DSP already have a DIFFERENT
     id covering the SAME real content?
 
-Added 2026-09-15 after a real incident (see D:\\Claude\\Topaz-Assault-Backport\\reports\\
+Added 2026-09-15 after a real incident (see <local>/Topaz-Assault-Backport\\reports\\
 dsp_repair_2026-09-15\\INCIDENT_REPORT.md): multiple backport passes, run at different times, each
 minted a FRESH groupid for mob_groups content that a prior pass had already backported. Every pass
 used a numeric range that was genuinely free, so check_id_collisions() alone reported "no
@@ -21,7 +21,7 @@ orphaned with zero spawns). check_content_duplication() closes that gap.
 
 Mirrors backport_lua_convert.py's design/discipline: every schema mapping in
 data/dsp_sql_schema_map.json is checked against the real CREATE TABLE in both C:\\topaz\\sql and
-D:\\Claude\\old-dsp-reference\\sql (or whatever dsp_server_path points at) -- never guessed. This
+<local>/old-dsp-reference\\sql (or whatever dsp_server_path points at) -- never guessed. This
 module does NOT try to auto-resolve a real primary-key collision (e.g. mob_groups' groupid space
 going from per-zone to server-global) -- it reports one so a human can pick a new safe id range,
 the same "flag, don't guess" discipline the Lua converter uses for anything not fully confirmed.

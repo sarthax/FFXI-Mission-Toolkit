@@ -3,7 +3,7 @@
 ## Commands executed (2026-10-18)
 | # | Command | Result |
 |---|---|---|
-| 1 | `git clone --depth 1 https://github.com/jondwillis/kuluu-ffxi` into `D:\Claude\research\kuluu` | PASS |
+| 1 | `git clone --depth 1 https://github.com/jondwillis/kuluu-ffxi` into `<local>/research\kuluu` | PASS |
 | 2 | `git submodule update --init --depth 1 vendor/server vendor/POLUtils` | PASS (first build failed without them: FAIL, then fixed) |
 | 3 | `cargo build -p kuluu-mcp` (nightly pinned) | **PASS** - `Finished dev ... in 3m 35s`; `kuluu-mcp.exe` and `kuluu-mcp-repl.exe` produced |
 | 4 | `kuluu-mcp.exe --help` | PASS (starts; exits `set either FFXI_CHAR_ID or FFXI_CHAR in .env`; no network attempted) |

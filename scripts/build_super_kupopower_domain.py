@@ -11,8 +11,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "super_kupopower"
-ITEMS = [Path(r"D:\Claude\dsp-master\sql\item_basic.sql"), Path(r"D:\Claude\dsp-wt-main\sql\item_basic.sql")]
-LSB = r"D:\Claude\DSP-LSB-Gap-Audit\evidence\lsb_snapshot\server-base\scripts\globals\mog_tablets.lua"
+import os
+ITEMS = [Path(p) / "sql" / "item_basic.sql" for p in os.environ.get("DSP_ROOTS", os.environ.get("DSP_ROOT", "")).split(os.pathsep) if p]  # DSP checkout(s)
+LSB = os.environ.get("LSB_MOG_TABLETS_LUA", "<LSB scripts/globals/mog_tablets.lua>")
 
 POWERS = [
     ("thrifty_transit", "Thrifty Transit", 1, "Outpost teleport and Survival Guide sites operate free of charge; the Explorer Moogle teleport service appears (Mhaura, Selbina, the three nations).", ["outpost teleport", "survival guide", "explorer moogle"], "zone/global"),

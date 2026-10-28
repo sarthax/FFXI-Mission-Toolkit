@@ -36,7 +36,7 @@ Exdata accessors; egg/card structs; `char_chocobos`; `chocobo_user_data`; 6 choc
 2. 0x00D mount word bit layout for personal chocobo.
 3. Whether the `m_event.Option` override breaks option-driven menus.
 4. Extra-byte preservation on item move/stack/split.
-5. Retail option sequence for trainer menus (check `D:\Claude\Playthrough Captures` first).
+5. Retail option sequence for trainer menus (check `<local>/Playthrough Captures` first).
 6. Pulonono y (-5.35 vs LSB -6.35): `!checknav`/`!logpos`.
 
 ## Required core modifications (summary)
@@ -54,13 +54,13 @@ LSB `xi.chocoboRaising.csidTable` ids (intro, main, trade, rejection, chicks, de
 Not yet verified: walk csids (298-300/304, 554-556/560, 810-812/816) and debug csids (862/551/773); option protocol (trade option 252).
 
 ## Option protocol evidence (2026-10-24)
-- Captures: grep of D:\Claude\Playthrough Captures for Hantileon/Zopago/Pulonono hits only npclogger position tables (Sunbreeze, Periqia). NO capture of the raising menu exists, so retail option values are unverified.
+- Captures: grep of <local>/Playthrough Captures for Hantileon/Zopago/Pulonono hits only npclogger position tables (Sunbreeze, Periqia). NO capture of the raising menu exists, so retail option values are unverified.
 - DSP 0x05B (`packet_system.cpp` SmallPacket0x05B): Result=u32@0x08, EventID=u16@0x12, update flag=byte@0x0E. Update -> OnEventUpdate(csid,Result); finish -> OnEventFinish. `m_event.Option != 0` overrides Result (server-set option); LSB trade handling `option == 252` arrives via Result unless Option override is set.
 - DSP has `player:updateEvent` (lua_baseentity.cpp:3440); arg count/semantics vs LSB's onEventUpdateVCSTrainer usage still to compare.
 - Next: capture a retail raising session (Hantileon menu + egg trade) before building P1; do not invent option values.
 
 ## Retail option protocol from ingested captures (2026-10-24)
-User supplied 37 public captures (D:\Claude\Playthrough Captures\Chocobo Raising); ingested as content_type=unclassified, capture_id 792-828, 1.37M raw packets in capture_raw_packets (opcode strings are mixed-case '0X05B'/'0x05B': use upper()).
+User supplied 37 public captures (<local>/Playthrough Captures\Chocobo Raising); ingested as content_type=unclassified, capture_id 792-828, 1.37M raw packets in capture_raw_packets (opcode strings are mixed-case '0X05B'/'0x05B': use upper()).
 Capture 824 (Windurst, Pulonono, initial egg trade, 2022-01-14) decoded:
 - S>C 0x034 csid 741 (intro, params 0,65372159,13408674,4095,4,...) -> C>S 05B result 0 upd 0 (finish).
 - Player trades egg: C>S 0x036 (64 B, one item) -> S>C 0x034 csid 745 (trade csid) -> C>S 05B result 252 upd 1 (update) -> C>S 05B result 252 upd 0 (finish). Confirms LSB `csid==tradeCSID and option==252`.

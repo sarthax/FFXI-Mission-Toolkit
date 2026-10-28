@@ -202,7 +202,7 @@ A concrete FFXI sample may prove a capability, but it must not define generic ar
     could start clipping into the near plane before getting close, which read as a hard zoom cap.
 
 - **2026-09-15: content-duplication checking, closing a real gap id-collision checking left open**
-  — a real incident (`D:\Claude\Topaz-Assault-Backport\reports\dsp_repair_2026-09-15\
+  — a real incident (`<local>/Topaz-Assault-Backport\reports\dsp_repair_2026-09-15\
   INCIDENT_REPORT.md`) showed multiple Topaz→DSP backport passes, run at different times, each
   minting a FRESH, genuinely-unused `groupid` for `mob_groups` content a prior pass had already
   backported. Every pass used a numeric range that was genuinely free, so the existing

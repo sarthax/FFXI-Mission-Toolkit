@@ -7,8 +7,8 @@ Exit code 0 = every assertion passed. Evidence per slice: docs/slices/chocobo-ra
 """
 import os, re, sys, time
 
-HEADLESS = os.environ.get("XIHEADLESS_DIR", "D:/Claude/FFXI-Tools/headless-research/xiheadless-dsp-chocobo")
-DSP = os.environ.get("DSP_RUN_TREE", "D:/Claude/dsp-branches")
+HEADLESS = os.environ.get("XIHEADLESS_DIR", "xiheadless-dsp-chocobo")
+DSP = os.environ.get("DSP_RUN_TREE", "dsp-checkout")
 # pool account -> charid; ACCOUNT env picks one so scenarios can run in parallel (one account per stream)
 POOL_CHARS = {"xitest03": 21831, "xitest04": 21832, "xitest05": 21833, "xitest06": 21834, "xitest07": 21836, "xitest08": 21837}
 ACCOUNT = os.environ.get("ACCOUNT", "xitest03"); CHAR = POOL_CHARS[ACCOUNT]
