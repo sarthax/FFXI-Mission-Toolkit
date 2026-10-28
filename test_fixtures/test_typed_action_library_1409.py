@@ -235,12 +235,11 @@ def _one(step):
 
 
 @pytest.mark.parametrize("step,status,fragment", [
-    ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "timeout_ms": 5000}, "UNSUPPORTED", "unsupported field(s): timeout_ms"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "timeout": 5000}, "UNSUPPORTED", "unsupported field(s): timeout"),
     ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "note": "x", "extra": 1}, "UNSUPPORTED", "extra, note"),
     ({"name": "a"}, "UNSUPPORTED", "needs an action (do), a check (expect), or both"),
-    ({"name": "a", "do": {}, "expect": {"x_near": 3}}, "UNSUPPORTED", "exactly one action is supported"),
-    ({"name": "a", "expect": {}}, "UNSUPPORTED", "exactly one check is supported"),  # an empty check with no action asserts nothing
-    ({"name": "a", "do": {"walk_to": [1, 2], "engage": 5}, "expect": {"x_near": 3}}, "UNSUPPORTED", "exactly one action"),
+    ({"name": "a", "do": {}, "expect": {"x_near": 3}}, "UNSUPPORTED", "at least one action is needed"),
+    ({"name": "a", "expect": {}}, "UNSUPPORTED", "at least one check is needed"),  # an empty check with no action asserts nothing
     ({"name": "a", "do": {"dance": 1}, "expect": {"zone": 3}}, "UNSUPPORTED", "no reviewed action 'dance'"),
     ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"made_up": 3}}, "UNSUPPORTED", "no reviewed check 'made_up'"),
     ({"name": "a", "do": {"talk_npc": -1}, "expect": {"event_active": True}}, "INVALID", "npc_id"),
@@ -263,7 +262,7 @@ def test_unsupported_and_invalid_steps_are_reported_with_reasons_and_never_built
 
 
 def test_a_step_with_extra_fields_is_not_imported_even_though_its_do_and_expect_are_fine():
-    row = _one({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "timeout_ms": 5000})
+    row = _one({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "timeout": 5000})
     assert row["status"] == "UNSUPPORTED" and row["step"] is None  # never trimmed down to a lossy copy
 
 
@@ -396,7 +395,7 @@ def test_a_malformed_stored_field_is_rejected(value, fragment):
     ({"name": "a", "expect": {"made_up": 1}}, "unsupported: no reviewed check"),
     ({"name": "a", "do": {"talk_npc": -1}}, "invalid:"),
     ({"name": "a"}, "needs an action"),
-    ({"name": "a", "do": {"walk_to": [1, 2]}, "timeout_ms": 5}, "unsupported field(s): timeout_ms"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "timeout": 5}, "unsupported field(s): timeout"),
     ({"name": "a", "do": {"walk_to": [1, 2]}, "provenance": "x"}, "unsupported field(s): provenance"),
     ({"do": {"walk_to": [1, 2]}}, "name must be non-empty"),
     ({"name": " padded ", "do": {"walk_to": [1, 2]}}, "leading or trailing whitespace"),
@@ -471,3 +470,69 @@ def test_execution_path_blockers_1412():
     import pytest
     with pytest.raises(ValueError):
         lib.execution_path_blockers("x")
+
+
+
+# --- several actions / several checks in one step (owner request, #1409) ---------------------------
+
+def _row(step):
+    return lib.review_native_steps([dict(name="m", **step)])["steps"][0]
+
+
+def test_multi_check_steps_are_supported_and_keep_every_key_in_order():
+    _, chks = _valid_values()
+    keys = list(chks)
+    expect = {k: chks[k] for k in keys}
+    row = _row({"do": {"walk_to": [1, 2]}, "expect": expect})
+    assert row["status"] == "SUPPORTED" and row["template_id"] is None
+    assert list(row["step"]["expect"]) == keys and row["step"]["expect"] == expect  # nothing dropped, order kept
+    assert _row({"expect": {"hpp": 5, "zone": 3}})["status"] == "SUPPORTED"
+
+
+def test_multi_action_steps_in_runner_order_are_supported():
+    row = _row({"do": {"walk_to": [1, 2], "talk_npc": 1, "wait_ms": 5}, "expect": {"event_active": True}})
+    assert row["status"] == "SUPPORTED" and list(row["step"]["do"]) == ["walk_to", "talk_npc", "wait_ms"]
+    assert _row({"do": {"walk_to": [1, 2], "engage": 5}})["status"] == "SUPPORTED"  # one control action is fine
+
+
+@pytest.mark.parametrize("do,fragment", [
+    ({"talk_npc": 1, "walk_to": [1, 2]}, "regardless of file order"),
+    ({"wait_ms": 5, "engage": 5, "walk_to": [1, 2]}, "regardless of file order"),
+    ({"engage": 5, "rest_hp": 10}, "at most one of them"),
+])
+def test_multi_action_order_or_control_group_conflicts_are_unsupported(do, fragment):
+    row = _row({"do": do})
+    assert row["status"] == "UNSUPPORTED" and fragment in row["reasons"][0] and row["step"] is None
+
+
+def test_multi_key_failures_name_each_problem_and_invalid_outranks_unsupported():
+    row = _row({"do": {"walk_to": [1, 2]}, "expect": {"hpp": "high", "made_up": 1}})
+    assert row["status"] == "INVALID" and any("check 'hpp'" in r for r in row["reasons"]) and any("made_up" in r for r in row["reasons"])
+    row = _row({"expect": {"zone": 3, "made_up": 1}})
+    assert row["status"] == "UNSUPPORTED" and "no reviewed check 'made_up'" in row["reasons"][0] and row["step"] is None
+    assert _row({"expect": {"zone": 3, "hpp": 5.5}})["status"] == "INVALID"  # one bad value rejects the whole step
+
+
+def test_single_key_forms_are_unchanged_and_multi_key_steps_get_no_template_id():
+    pairs = lib._template_by_pair()
+    (a, c), tid = next(iter(pairs.items()))
+    acts, chks = _valid_values()
+    assert _row({"do": {a: acts[a]}, "expect": {c: chks[c]}})["template_id"] == tid
+    assert _row({"do": {a: acts[a]}, "expect": {c: chks[c], "zone": 3}})["template_id"] is None
+
+
+def test_stored_field_accepts_multi_key_steps_unchanged_and_rejects_bad_ones():
+    step = {"name": "multi", "do": {"walk_to": [1, 2], "talk_npc": 1}, "expect": {"event_active": True, "zone": 3}}
+    value = stored(step)
+    assert lib.validate_native_steps(value) is value
+    with pytest.raises(ValueError, match="unsupported"):
+        lib.validate_native_steps(stored({"name": "bad", "do": {"engage": 5, "rest_hp": 10}}))
+    with pytest.raises(ValueError, match="invalid"):
+        lib.validate_native_steps(stored({"name": "bad", "expect": {"zone": 3, "hpp": "x"}}))
+
+
+def test_mutation_guard_a_single_key_only_implementation_would_fail_these():
+    """If _side regressed to 'exactly one key', these would flip to UNSUPPORTED; if it ignored extra keys, the dropped-key check fails."""
+    row = _row({"expect": {"hpp": 5, "zone": 3}})
+    assert row["status"] == "SUPPORTED" and set(row["step"]["expect"]) == {"hpp", "zone"}
+    assert "exactly one" not in " ".join(_row({"do": {"walk_to": [1, 2], "wait_ms": 1}})["reasons"])

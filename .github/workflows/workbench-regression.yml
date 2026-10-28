@@ -2,6 +2,7 @@ name: Workbench Regression
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - "workbench/**"
       - "src/workbench/**"
@@ -29,6 +30,7 @@ concurrency:
 
 jobs:
   core-regression:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -327,6 +329,7 @@ jobs:
 
 
   client-snapshot-gui-regression:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -351,6 +354,7 @@ jobs:
 
 
   research-session-gui-regression:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -375,6 +379,7 @@ jobs:
 
 
   dat-inspector-ux-regression:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

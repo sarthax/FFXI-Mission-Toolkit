@@ -2,6 +2,7 @@ name: R8 ASI First-Five Synthetic Conformance
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - "docs/workbench/R8_ASI_FIRST_FIVE_READ_DISCOVERY_MATRIX_1353.md"
       - "test_fixtures/r8_asi_first_five_read_discovery_synthetic.json"
@@ -18,6 +19,7 @@ concurrency:
 
 jobs:
   synthetic-fixture-conformance:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

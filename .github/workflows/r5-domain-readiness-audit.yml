@@ -2,6 +2,7 @@ name: R5 domain readiness audit
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - "docs/workbench/SCENARIO_DOMAIN_READINESS_AUDIT_2026-10-21.md"
       - "docs/workbench/SCENARIO_DOMAIN_READINESS_MATRIX_2026-10-21.json"
@@ -12,8 +13,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   readiness-matrix:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

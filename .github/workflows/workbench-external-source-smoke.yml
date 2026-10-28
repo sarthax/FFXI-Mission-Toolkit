@@ -1,17 +1,6 @@
 name: Workbench External Source Smoke
 
 on:
-  push:
-    branches:
-      - workbench-rework/audit-foundation
-    paths:
-      - "workbench/adapters/servers/**"
-      - "workbench/migrations/**"
-      - "src/workbench/devtools/server/**"
-      - "workbench_connect_server.py"
-      - "test_fixtures/test_external_lsb_pipeline.py"
-      - "test_fixtures/test_external_lsb_dsp_migration.py"
-      - ".github/workflows/workbench-external-source-smoke.yml"
   workflow_dispatch:
 
 permissions:

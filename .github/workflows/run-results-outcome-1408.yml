@@ -2,6 +2,7 @@ name: Run Results outcome states and Compare runs (Offline)
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - "src/workbench/server_admin/feature_testing/run_outcome.py"
       - "src/workbench/server_admin/feature_testing/execution_jobs.py"
@@ -30,8 +31,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   run-results-outcome:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
