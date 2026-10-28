@@ -55,7 +55,7 @@ def _lifecycle(authoring: dict, run_id: str | None, spec: dict) -> list[dict]:
         {"stage": "Validated version", "state": f"Authoring state {state}; {review}"},
         {"stage": "Selected run", "state": (f"Run {run_id}: imported results shown below" if run_id
                                            else "None selected: every outcome is UNKNOWN")},
-        {"stage": "Historical revisions", "state": "Runs pin DSP/headless/toolkit commits; a specification revision is not pinned by the importer"},
+        {"stage": "Historical revisions", "state": "Runs pin DSP/headless/toolkit commits; rows imported since #1408 also record a digest of the specification, but not its text, so an older definition cannot be shown"},
     ]
 
 
