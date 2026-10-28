@@ -1,0 +1,32 @@
+name: Test Catalog (Offline)
+
+on:
+  pull_request:
+    paths:
+      - "src/workbench/server_admin/feature_testing/test_catalog.py"
+      - "src/workbench/server_admin/feature_testing/spec_drafts.py"
+      - "src/workbench/server_admin/feature_testing/router.py"
+      - "test_fixtures/test_test_catalog_1410.py"
+      - "docs/workbench/TEST_CATALOG_1410.md"
+      - ".github/workflows/test-catalog-1410.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install offline Workbench dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt pytest httpx
+      - name: Catalog immutability, review states, search and access (synthetic specifications only)
+        env:
+          PYTHONPATH: "src:."
+        run: |
+          python -m pytest -q test_fixtures/test_test_catalog_1410.py test_fixtures/test_feature_testing_spec_drafts.py

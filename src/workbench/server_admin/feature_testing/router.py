@@ -285,6 +285,77 @@ def draft_save(request: Request, payload: DraftSaveRequest,
         raise HTTPException(400, str(exc)) from exc
 
 
+def _local_read(request: Request) -> None:
+    """Catalog reads are local-only and same-origin; they expose design-only specifications and run nothing."""
+    if not request.client or request.client.host not in ("127.0.0.1", "::1"):
+        raise HTTPException(403, "Local catalog access only")
+    origin = request.headers.get("origin")
+    if origin and origin != str(request.base_url).rstrip("/"):
+        raise HTTPException(403, "Cross-origin catalog access denied")
+
+
+class CatalogRevisionRequest(BaseModel):
+    specification: dict
+    source: str
+    tags: list[str] = []
+    expected_latest: int = 0
+
+
+class CatalogStateRequest(BaseModel):
+    feature_id: str
+    case_id: str
+    revision: int
+    state: str
+    note: str = ""
+
+
+@router.get("/test-catalog", include_in_schema=False)
+def test_catalog_list(request: Request, q: str = "", feature_id: str = "", tag: str = "", state: str = "",
+                      limit: int = 100, offset: int = 0):
+    _local_read(request)
+    from .test_catalog import list_entries
+    try:
+        return list_entries(q=q, feature_id=feature_id, tag=tag, state=state, limit=limit, offset=offset)
+    except ValueError as exc:
+        raise HTTPException(503 if "MISSION_TOOLKIT_TEST_DRAFTS_DB" in str(exc) else 400, str(exc)) from exc
+
+
+@router.get("/test-catalog/{feature_id}/{case_id}", include_in_schema=False)
+def test_catalog_entry(request: Request, feature_id: str, case_id: str):
+    _local_read(request)
+    from .test_catalog import get_entry
+    try:
+        entry = get_entry(feature_id, case_id)
+    except ValueError as exc:
+        raise HTTPException(503 if "MISSION_TOOLKIT_TEST_DRAFTS_DB" in str(exc) else 400, str(exc)) from exc
+    if entry is None:
+        raise HTTPException(404, "No such catalog entry")
+    return entry
+
+
+@router.post("/test-catalog/revisions", include_in_schema=False)
+def test_catalog_add_revision(request: Request, payload: CatalogRevisionRequest,
+                              x_test_operator_token: str | None = Header(default=None)):
+    _operator_auth(request, x_test_operator_token)
+    from .test_catalog import add_revision
+    try:
+        return add_revision(payload.specification, source=payload.source, tags=payload.tags,
+                            expected_latest=payload.expected_latest)
+    except ValueError as exc:
+        raise HTTPException(409 if "revision conflict" in str(exc) else 400, str(exc)) from exc
+
+
+@router.post("/test-catalog/state", include_in_schema=False)
+def test_catalog_record_state(request: Request, payload: CatalogStateRequest,
+                              x_test_operator_token: str | None = Header(default=None)):
+    _operator_auth(request, x_test_operator_token)
+    from .test_catalog import record_state
+    try:
+        return record_state(payload.feature_id, payload.case_id, payload.revision, payload.state, payload.note)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
 class EvaluationPreviewRequest(BaseModel):
     feature_id: str
     case_id: str
