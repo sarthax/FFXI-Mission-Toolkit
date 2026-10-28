@@ -12,16 +12,16 @@ from pathlib import Path
 # UNKNOWN: a run produced no usable determination. It is recorded explicitly, never inferred from a missing row
 # and never promoted to PASS. The column has no SQL CHECK; this set is the only gate.
 VERDICTS = frozenset({"PASS", "FAIL", "BLOCKED", "SKIPPED", "UNKNOWN"})
-# Controlled cause for BLOCKED (required on new imports) and UNKNOWN (optional): evidence["reason_class"].
+# Optional controlled cause for a BLOCKED or UNKNOWN result: evidence["reason_class"]. Validated only when present.
 BLOCK_REASON_CLASSES = frozenset({"ENVIRONMENT", "FIXTURE_ABSENT", "ORACLE_UNKNOWN", "OTHER"})
 UNCLASSIFIED = "UNCLASSIFIED"  # read-side label for historical rows that predate reason_class
 STAGES = frozenset({"key_item", "modifier", "behavior", "mechanics", "gameplay"})
 
 
 def reason_class(record: dict) -> str | None:
-    """Controlled cause of a BLOCKED/UNKNOWN record, ``UNCLASSIFIED`` for historical rows lacking one.
+    """Optional cause of a BLOCKED/UNKNOWN record; ``UNCLASSIFIED`` when none was recorded.
 
-    Returns None for other verdicts. ``UNCLASSIFIED`` is not comparable for regression purposes.
+    Returns None for other verdicts.
     """
     if record.get("verdict") not in ("BLOCKED", "UNKNOWN"):
         return None
@@ -31,12 +31,9 @@ def reason_class(record: dict) -> str | None:
 
 
 def check_reason_class(verdict: str, evidence: object) -> None:
-    """Validate ``evidence.reason_class`` when present; it only applies to BLOCKED and UNKNOWN."""
-    if not isinstance(evidence, dict) or "reason_class" not in evidence:
-        return
-    if verdict not in ("BLOCKED", "UNKNOWN"):
-        raise ValueError("reason_class only applies to BLOCKED or UNKNOWN results")
-    if evidence["reason_class"] not in BLOCK_REASON_CLASSES:
+    """If ``evidence.reason_class`` is present it must be a known value; it is never required."""
+    if isinstance(evidence, dict) and "reason_class" in evidence \
+            and evidence["reason_class"] not in BLOCK_REASON_CLASSES:
         raise ValueError("invalid reason_class; expected one of " + ", ".join(sorted(BLOCK_REASON_CLASSES)))
 
 

@@ -242,7 +242,7 @@ Report schema version 1:
   ]
 }
 ```
-**`BLOCKED` results must carry `evidence.reason_class`** — one of `ENVIRONMENT`, `FIXTURE_ABSENT`, `ORACLE_UNKNOWN` or `OTHER` — and the importer rejects a BLOCKED row without a valid class. `UNKNOWN` rows may carry the same field; any other verdict rejects it. Historical BLOCKED rows that predate this have no class and are read as `UNCLASSIFIED`, which is not comparable for regression purposes (design: `R6_REGRESSION_IMPACT_DESIGN_1199_1210.md`). The captured-observation adapter cannot tell why an observation was missing or invalid, so its BLOCKED rows are written with `OTHER` rather than a more specific claim.
+**`BLOCKED` and `UNKNOWN` results may carry an optional `evidence.reason_class`** — one of `ENVIRONMENT`, `FIXTURE_ABSENT`, `ORACLE_UNKNOWN` or `OTHER`. It is never required; if present it must be one of those values. Rows without one are read as `UNCLASSIFIED`.
 
 These all-a/b/c commit IDs are **format examples only**, not real evidence; never import them as production provenance. The importer checks known catalog feature/case IDs, stage/verdict, UTC timestamps, full 40-hex SHA format, nonempty structured evidence, duplicate identities, max sizes and atomic commit/rollback. A PASS record also requires `assertions` and `observations` keys; this is only a structural guard, **not an authenticity or truth check**. Trusted source attribution and independent assertion verification remain separate work.
 

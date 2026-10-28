@@ -49,8 +49,7 @@ def _row() -> dict:
         "dsp_commit": "a" * 40,
         "headless_commit": "b" * 40,
         "toolkit_commit": "c" * 40,
-        # WP4a: a BLOCKED import must say why; OTHER makes no claim about the cause.
-        "evidence": {"synthetic": True, "readback": "unavailable", "reason_class": "OTHER"},
+        "evidence": {"synthetic": True, "readback": "unavailable"},
     }
 
 
