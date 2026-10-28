@@ -1,7 +1,9 @@
 # R6 design and scoping — revision impact selection (#1210) inside regression intelligence (#1199)
 
-**Status:** DRAFT / PROPOSAL. Not implemented. Owner decisions recorded 2026-10-27: helper script generates the
-change set (Q1), and new `dsp_source` citations must pin a revision while existing ones only warn (Q2); see §8. Written from a cloud (repo-only) session on
+**Status:** DRAFT / PROPOSAL. Not implemented. Owner decisions recorded: helper script generates the change set (Q1);
+new `dsp_source` citations must pin a revision while existing ones only warn (Q2); BLOCKED results get a controlled
+`reason_class` (Q3); "no result" is NOT merely derived, the stored verdict set is extended (Q4); an edited existing
+unpinned citation counts as new (Q7). See §8. Written from a cloud (repo-only) session on
 Toolkit `main`; no local data, live server, client or Headless output was inspected.
 **Parents:** #1199, #1197. **Related:** #1198 (oracle provenance), #1202 (merged offline reconciliation),
 #1211 (revision comparison; only its boundary is defined here), #1212, #1213.
@@ -170,8 +172,9 @@ Definitions needed to make "new" testable (proposed; implementation detail for t
   error naming the source `ref` and the missing `revision`.
 - **Existing citation:** a `ref` already present in the saved revision. If unpinned it produces a warning in
   validation feedback ("unpinned; impact selection will treat it as file-level only"), and the save succeeds.
-- Editing an existing unpinned citation's span or path is treated as a change to it; whether that makes it "new"
-  is left as open question 7.
+- **Editing an existing unpinned citation's `path`, `line_start` or `line_end` makes it new** (owner decision, Q7):
+  the save must then pin it. Changing only unrelated fields (for example the `ref`'s association) does not. A save
+  that leaves an unpinned citation byte-identical stays warn-only.
 - The rule applies only to `dsp_source`. Other classifications are unchanged.
 - A pin is a **claim**, not authentication (consistent with the R7 decision: metadata does not authenticate bytes).
   Validation checks format only (40 lowercase hex), not that the commit exists.
@@ -196,14 +199,29 @@ the pair is reported `NOT_COMPARABLE` with the failing condition. The existing s
 `(run_id, case_id, stage)` and records revisions, so the join is possible; the test-definition digest and
 environment fingerprint are **new inputs** that do not exist yet.
 
-**Transition vocabulary** (derived at read time; the store is not changed by this design):
+**Verdict vocabulary (owner decisions Q3 and Q4).** The stored verdict set is **extended** rather than deriving
+"no result" at read time:
+
+- `verdicts` becomes `PASS, FAIL, BLOCKED, SKIPPED, UNKNOWN`. `UNKNOWN` means a run produced no usable
+  determination (oracle absent or unestablished) and is recorded explicitly, never inferred from a missing row and
+  never promoted to PASS. The verdict is validated in Python (`VERDICTS` in `results.py`, repeated in
+  `importer.py`); the SQLite column has no CHECK constraint, so this is a code and importer change with **no data
+  migration**. Existing stored rows keep their verdicts.
+- `BLOCKED` results carry a controlled `evidence.reason_class`: `ENVIRONMENT`, `FIXTURE_ABSENT`, `ORACLE_UNKNOWN`
+  or `OTHER`. New reports must supply it; the importer rejects a BLOCKED row without a valid class. Historical
+  BLOCKED rows lack it and are read as `UNCLASSIFIED`, which is **not comparable** for regression purposes.
+  `UNKNOWN` rows should use the same optional `reason_class` field when the cause is known.
+- Anything reading verdict counts (run history grouping, the results views) must tolerate the new value; that is part
+  of the implementation slice, not a silent behavior change.
+
+**Transition vocabulary** (derived at read time from the stored verdicts above):
 
 | Left → right | Reported as | Condition |
 |---|---|---|
 | PASS → FAIL | `REGRESSION_CANDIDATE` | comparable only |
 | FAIL → PASS | `FIXED_CANDIDATE` | comparable only |
-| PASS → no record / oracle unknown | `NOT_ESTABLISHED` (this is the "PASS→UNKNOWN" case) | derived; there is no stored `UNKNOWN` verdict |
-| any → BLOCKED | `ENVIRONMENT_BLOCKED`, `FIXTURE_ABSENT` or `ORACLE_UNKNOWN` | needs a controlled reason class (open question 3) |
+| PASS → UNKNOWN | `NOT_ESTABLISHED` (the "PASS→UNKNOWN" case) | the later run recorded `UNKNOWN`, or has no record for the case |
+| any → BLOCKED | `ENVIRONMENT_BLOCKED`, `FIXTURE_ABSENT`, `ORACLE_UNKNOWN` or `BLOCKED_OTHER` | from `reason_class`; `UNCLASSIFIED` is not comparable |
 | SKIPPED | `SKIPPED` | never counted as pass or fail |
 
 A changed verdict is **never** attributed to the DSP change by the selector; the report shows both revisions, the
@@ -229,7 +247,8 @@ to #1211's slice, built on this vocabulary.
 | WP2 | Selector core + fixtures | `…/impact_selection.py`, `test_fixtures/…impact…` | Issue #1210 acceptance: direct, inferred, unknown, deleted; deterministic reasons/confidence; no launch |
 | WP3 | Source-citation coverage report | same package | Counts match fixtures; shows unpinned/none |
 | WP0 | Change-set helper script (owner decision Q1) | `tools/dsp_change_set.py`, tests with a throwaway synthetic git repo | Emits a file WP1 accepts; refuses dirty/shallow checkouts; read-only git only |
-| WP4 | (#1211) Comparability gate + transitions | separate issue/PR | Needs open questions 3–4 settled |
+| WP4a | Verdict extension: `UNKNOWN` plus BLOCKED `reason_class` in `results.py`/`importer.py`, tolerant verdict-count readers | `…/results.py`, `importer.py`, tests, docs | Old rows still load; BLOCKED without class rejected for new imports; `UNKNOWN` never counted as PASS. Touches the shared evidence contract (#1198/#1202), so needs owner/coordinator sign-off before merge |
+| WP4 | (#1211) Comparability gate + transitions | separate issue/PR | Builds on WP4a |
 | WP5 | Pin policy enforcement (§4a) | canonical validator + validation feedback; needs editor-path grant | New unpinned `dsp_source` rejected; existing unpinned warned and still saves; non-`dsp_source` unchanged |
 
 WP0–WP3 are remote-safe and offline (WP0's tests build a throwaway local git repo). Each ships with a dedicated CI workflow path-filtered to its files.
@@ -238,10 +257,9 @@ WP0–WP3 are remote-safe and offline (WP0's tests build a throwaway local git r
 
 1. ~~Diff source.~~ **Resolved:** helper script in the repo (WP0, §3.2).
 2. ~~Pin policy.~~ **Resolved:** required for new `dsp_source` citations, warn-only for existing (§4a).
-3. **BLOCKED reason class.** May the evidence contract (#1198/#1202) add a controlled `reason_class`
-   (`ENVIRONMENT`, `FIXTURE_ABSENT`, `ORACLE_UNKNOWN`, `OTHER`)? Without it #1199's "environment failure versus
-   absent fixture versus unknown oracle" cannot be mechanical.
-4. **UNKNOWN.** Is derived `NOT_ESTABLISHED` acceptable, or should the store verdict set be extended?
+3. ~~BLOCKED reason class.~~ **Resolved:** yes, a controlled `reason_class` (§5).
+4. ~~UNKNOWN.~~ **Resolved:** not merely derived; the stored verdict set is extended with `UNKNOWN` (§5). The reply
+   "no" was read as declining the derived-only option; if the intent was different, correct this entry.
 5. ~~Trace edges.~~ **Answered from the repo (2026-10-27):** no Feature Trace provider in the repository links DSP
    source *file paths* to Toolkit features. The provider registry
    (`src/workbench/devtools/features/trace_providers.py`) and its `PROVIDER_LINKS` relate database identity rows
@@ -254,11 +272,11 @@ WP0–WP3 are remote-safe and offline (WP0's tests build a throwaway local git r
    the report says so; filling it from the index is a later adapter, not part of WP2.
 6. **Cross-repo contracts** (xiheadless-dsp #105/#122, darkstar-to-valhalla #59): confirm they do not already fix
    the change-set or fingerprint shape before WP1 starts.
-7. **What makes a citation "new"?** Is an existing unpinned citation whose path or line range is edited treated as
-   new (and so must then be pinned), or does it stay warn-only until removed? §4a leaves this open.
+7. ~~What makes a citation "new"?~~ **Resolved:** editing an existing unpinned citation's path or line span
+   makes it new and it must then be pinned (§4a).
 
 ## 9. Dependencies and sequencing
 
 #1210 is marked blocked by #1199, R5 catalog work and contract acceptance. WP1–WP3 only need the already-merged
 contract v2 source fields and Feature Trace, so they can start now (questions 1, 2 and 5 are resolved; WP0 and WP1 are in PR #1435);
-WP4 additionally waits on #1198, #1202 and questions 3–4.
+WP4a/WP4 additionally wait on #1198, #1202 and coordinator sign-off for the shared evidence contract (questions 3 and 4 are resolved).
