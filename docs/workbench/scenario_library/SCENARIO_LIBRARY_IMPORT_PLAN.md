@@ -3,7 +3,7 @@
 Draft-only. Never auto-publish; owner approval is required per scenario.
 
 1. **Fixture shape**: each catalog entry keeps the `xiheadless` native payload verbatim plus `provenance`, `evidence_class`, `confidence`; Toolkit fields are derived, not substituted.
-2. **Stage A**: import entries with `support_status: supported` as drafts into the drafts DB (#1410).
+2. **Stage A**: import entries with `support_status: supported` as DRAFT records only (status stays `draft`, `execution_validated=false`, `eligible_for_publish=false`) into the drafts DB (#1410). `supported` is schema/collector availability, not verification; Stage A never publishes, auto-runs or implies an approved oracle.
 3. **Stage B**: add item/key-item expectations (G-01), then import partial entries.
 4. **Stage C**: quest/mission readback (G-02), then promote quest candidates after dat-extractor verification (G-03).
 

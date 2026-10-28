@@ -41,6 +41,11 @@ def cand(sid, domain, title, given, when, then, prov, conf, ev, support, action=
          "domain": domain, "title": title, "readable": {"given": given, "when": when, "then": then},
          "provenance": prov, "confidence": conf, "evidence_class": ev, "support_status": support,
          "owner": "unassigned (discovery draft)", "execution_validated": False,
+         # 'support_status' = schema/collector availability ONLY. The gates below are all False unless evidenced;
+         # nothing in this discovery pass evidences any of them except schema compatibility of supported rows.
+         "source_schema_compatible": support == "supported",
+         "runner_result_authenticated": False, "oracle_independently_verified": False,
+         "client_id_verified": False, "eligible_for_publish": False,
          "safety": "read-only observation; no execution performed in discovery"}
     if action:
         d["xiheadless"] = action
@@ -66,7 +71,7 @@ C.append(cand("SL-PARTY-001", "parties", "Leader invites member; party forms (Ba
   extra={"recorded_outcome": "A11-1 leader results passed=2 failed=0; member results passed=2 failed=0 (pr7 evidence 2026-10-19). Server build provenance not re-verified here."}))
 C.append(cand("SL-NPC-001", "npc-interaction", "Talk to Argus starts an event (Port Bastok)",
   "Character in zone 236 with NPCs visible.", "Character talks to NPC 17743873.", "An event becomes active.",
-  ["headless scenarios/scenario_npc_event.json"], "medium", ["source-supported"], "supported", tier="characterized",
+  ["headless scenarios/scenario_npc_event.json"], "medium", ["source-supported"], "partial", tier="characterized",
   action={"native_action": "talk_npc", "params": {"talk_npc": 17743873},
           "typed_ids": {"talk_npc": "npc entity id from scenario file"},
           "expected_state": {"in_zone": True, "zone": 236, "entities_gt": 3, "event_active": True},
@@ -92,7 +97,7 @@ C.append(cand("SL-ASLT-001", "instanced-content", "Leujaoam Sanctum entry via Ru
 C.append(cand("SL-ZONE-001", "zone-transitions", "Character settles in a zone and sees entities",
   "Logged-in character.", "Wait for settle.", "in_zone true, max_hp_gt 0, entities_gt N.",
   ["pr7 evidence 'settle' step (passes in most A06 runs)", "scenarios/scenario_idle235.json"], "high",
-  ["previously-executed"], "supported", tier="characterized",
+  ["previously-executed"], "partial", tier="characterized",
   action={"native_action": "wait_ms (+ expectation only)", "params": {"wait_ms": 3000},
           "typed_ids": {"zone": "zone id"}, "expected_state": {"in_zone": True, "max_hp_gt": 0, "entities_gt": 0},
           "readback_collector": "scenario expectations", "oracle_rule": "Equals/GreaterThan",
@@ -180,6 +185,7 @@ for key in ex:
 # --- DSP nation missions rank 1-2 (15). Source: dsp_mission_extract.json (DSP main, the proven server data)
 mx = json.load(open(os.path.join(HERE, "dsp_mission_extract.json"), encoding="utf-8"))
 DSRC = mx["source"]
+assert DSRC == SRC, "dsp_mission_extract.json is not pinned to " + SRC
 NATION = {0: ("SD", "San d'Oria"), 1: ("BA", "Bastok"), 2: ("WI", "Windurst")}
 CHAR_MSN = {"0_0", "1_0", "2_2"}  # fully resolvable talk targets with verified-by-zone npc ids
 

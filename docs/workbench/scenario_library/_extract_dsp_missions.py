@@ -3,8 +3,12 @@ import json
 import os
 import re
 import subprocess
+import sys
 
-REPO = r"D:\Claude\dsp-branches"
+PIN = "febdc00209"  # immutable DSP revision this snapshot is pinned to
+REPO = os.environ.get("DSP_REPO") or (sys.argv[1] if len(sys.argv) > 1 else None)
+if not REPO:
+    sys.exit("usage: _extract_dsp_missions.py <dsp-repo-path> (or set DSP_REPO)")
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dsp_mission_extract.json")
 ZONE_IDS = {}
 # nation index, mission number, DSP constant (scripts/globals/missions.lua on main)
@@ -19,9 +23,11 @@ def git(*a):
     return subprocess.run(["git", "-C", REPO, *a], capture_output=True, text=True, encoding="utf-8", errors="replace").stdout
 
 
-commit = git("rev-parse", "--short=10", "main").strip()
-npc_sql = git("show", "main:sql/npc_list.sql")
-for zm in re.finditer(r"INSERT INTO `zone_settings` VALUES \((\d+),\d+,'[^']*',\d+,'([^']*)'", git("show", "main:sql/zone_settings.sql")):
+commit = git("rev-parse", "--short=10", PIN).strip()
+if commit != PIN:
+    sys.exit("refusing to regenerate: %s resolves to %r, expected pinned %s" % (REPO, commit, PIN))
+npc_sql = git("show", PIN + ":sql/npc_list.sql")
+for zm in re.finditer(r"INSERT INTO `zone_settings` VALUES \((\d+),\d+,'[^']*',\d+,'([^']*)'", git("show", PIN + ":sql/zone_settings.sql")):
     ZONE_IDS[zm.group(2)] = int(zm.group(1))
 rows = {}
 for m in re.finditer(r"VALUES \((\d+),'([^']*)','([^']*)',(-?\d+),(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)", npc_sql):
@@ -34,10 +40,10 @@ def zone_of(i):
 
 out = {}
 for nation, num, const in MISSIONS:
-    hits = git("grep", "-l", r"\b%s\b" % const, "main", "--", "scripts/zones").splitlines()
+    hits = git("grep", "-l", r"\b%s\b" % const, PIN, "--", "scripts/zones").splitlines()
     npcs = []
     for h in hits:
-        m = re.match(r"main:scripts/zones/([^/]+)/npcs/([^/]+)\.lua$", h)
+        m = re.match(r"%s:scripts/zones" % PIN + r"/([^/]+)/npcs/([^/]+)\.lua$", h)
         if not m:
             continue
         zdir, name = m.groups()

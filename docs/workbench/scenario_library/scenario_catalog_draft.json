@@ -32,6 +32,11 @@
    "support_status": "supported",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": true,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
     "native_action": "invite / accept_invite",
@@ -80,9 +85,14 @@
    "evidence_class": [
     "source-supported"
    ],
-   "support_status": "supported",
+   "support_status": "partial",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
     "native_action": "talk_npc",
@@ -136,6 +146,11 @@
    "support_status": "partial",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
     "native_action": "talk_npc + walk_to + update + finish",
@@ -194,9 +209,14 @@
    "evidence_class": [
     "previously-executed"
    ],
-   "support_status": "supported",
+   "support_status": "partial",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
     "native_action": "wait_ms (+ expectation only)",
@@ -248,6 +268,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "note": "design-only; zone_to is an MCP tool, not a scenario action"
   },
@@ -273,6 +298,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "note": "design-only; no recorded scenario using kill_all located"
   },
@@ -298,6 +328,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "note": "design-only"
   },
@@ -323,6 +358,11 @@
    "support_status": "partial",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "note": "outcome not located; sweep is exploratory, not a pass/fail oracle"
   },
@@ -350,6 +390,11 @@
    "support_status": "supported",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": true,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
     "native_action": "Toolkit built-in runner (not XIHeadless scenario schema)",
@@ -392,6 +437,11 @@
    "support_status": "partial",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "note": "not runnable (execution_preflight.SUPPORTED lists only MOG-09)"
   },
@@ -418,6 +468,11 @@
    "support_status": "partial",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
     "native_action": "MCP inventory / container_items (outside scenario schema)",
@@ -467,6 +522,11 @@
    "support_status": "partial",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
     "native_action": "MCP key_items (outside scenario schema)",
@@ -515,6 +575,11 @@
    "support_status": "partial",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
     "native_action": "talk_npc",
@@ -595,6 +660,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "quests": [
@@ -639,6 +709,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "quests": [
@@ -693,6 +768,11 @@
    "support_status": "partial",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
     "native_action": "talk_npc",
@@ -772,6 +852,11 @@
    "support_status": "partial",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
     "native_action": "talk_npc",
@@ -853,6 +938,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "quests": [
@@ -905,6 +995,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "quests": [
@@ -953,6 +1048,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "quests": [
@@ -995,6 +1095,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "quests": [
@@ -1042,6 +1147,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "quests": [
@@ -1093,6 +1203,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "quests": [
@@ -1144,6 +1259,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "quests": [
@@ -1193,6 +1313,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "quests": [
@@ -1238,6 +1363,11 @@
    "support_status": "partial",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
     "native_action": "talk_npc",
@@ -1314,6 +1444,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "quests": [
@@ -1366,6 +1501,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "quests": [
@@ -1429,6 +1569,11 @@
    "support_status": "partial",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
     "native_action": "talk_npc",
@@ -1517,6 +1662,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "quests": [
@@ -1566,6 +1716,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "quests": [
@@ -1617,6 +1772,11 @@
    "support_status": "partial",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
     "native_action": "talk_npc",
@@ -1832,6 +1992,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "npcs": [
@@ -1993,6 +2158,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "npcs": [
@@ -2068,6 +2238,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "npcs": [
@@ -2262,6 +2437,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "npcs": [
@@ -2367,6 +2547,11 @@
    "support_status": "partial",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
     "native_action": "talk_npc",
@@ -2618,6 +2803,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "npcs": [
@@ -2700,6 +2890,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "npcs": [
@@ -2927,6 +3122,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "npcs": [
@@ -3064,6 +3264,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "npcs": [
@@ -3122,6 +3327,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "npcs": [
@@ -3448,6 +3658,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "npcs": [
@@ -3800,6 +4015,11 @@
    "support_status": "partial",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "xiheadless": {
     "native_action": "talk_npc",
@@ -4202,6 +4422,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "npcs": [
@@ -4390,6 +4615,11 @@
    "support_status": "unknown",
    "owner": "unassigned (discovery draft)",
    "execution_validated": false,
+   "source_schema_compatible": false,
+   "runner_result_authenticated": false,
+   "oracle_independently_verified": false,
+   "client_id_verified": false,
+   "eligible_for_publish": false,
    "safety": "read-only observation; no execution performed in discovery",
    "source_facts": {
     "npcs": [

@@ -1,6 +1,7 @@
 # Scenario Library Inventory (DRAFT, not execution-validated)
 
 Coordinator: #1348. Machine-readable source of truth: `scenario_catalog_draft.json` (schema `scenario-library-draft/1`).
+**`support_status` meaning:** `supported` = a native schema action AND readback collector exist for the scenario. It does NOT mean executed, result-authenticated, oracle-approved, client-id-verified or publishable. Those are separate machine fields (`source_schema_compatible`, `runner_result_authenticated`, `oracle_independently_verified`, `client_id_verified`, `eligible_for_publish`); all except `source_schema_compatible` are false for every entry, and `execution_validated` is false everywhere.
 Evidence labels: source-supported, capture-observed, previously-executed, locally-validated, unverified.
 
 Totals: 46 candidates, 15 characterized, 2 failure-injection probe groups (kept separate).
@@ -8,9 +9,9 @@ Totals: 46 candidates, 15 characterized, 2 failure-injection probe groups (kept 
 | ID | Domain | Tier | Support | Confidence | Evidence | Title |
 |---|---|---|---|---|---|---|
 | SL-PARTY-001 | parties | characterized | supported | high | previously-executed, source-supported | Leader invites member; party forms (Bastok Markets) |
-| SL-NPC-001 | npc-interaction | characterized | supported | medium | source-supported | Talk to Argus starts an event (Port Bastok) |
+| SL-NPC-001 | npc-interaction | characterized | partial | medium | source-supported | Talk to Argus starts an event (Port Bastok) |
 | SL-ASLT-001 | instanced-content | characterized | partial | medium | capture-observed, source-supported | Leujaoam Sanctum entry via Runic Seal (Caedarva Mire) |
-| SL-ZONE-001 | zone-transitions | characterized | supported | high | previously-executed | Character settles in a zone and sees entities |
+| SL-ZONE-001 | zone-transitions | characterized | partial | high | previously-executed | Character settles in a zone and sees entities |
 | SL-ZONE-002 | zone-transitions | candidate | unknown | low | unverified | Zone-to command changes zone |
 | SL-COMBAT-001 | combat | candidate | unknown | low | source-supported | kill_all clears nearby mobs |
 | SL-COMBAT-002 | combat | candidate | unknown | low | source-supported | rest_hp restores hpp |

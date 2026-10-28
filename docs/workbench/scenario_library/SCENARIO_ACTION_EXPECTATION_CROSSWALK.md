@@ -12,10 +12,12 @@ GreaterThan: `*_gt` keys. Equals: zone, main_job, main_level, sub_job, hpp, even
 
 ## Needs vs availability
 
+Status column = native schema/collector availability only (same meaning as `support_status`); it is not execution or oracle validation.
+
 | Library need | Native action | Native expectation | MCP readback | Status |
 |---|---|---|---|---|
-| Be in zone | wait_ms | zone, in_zone | snapshot | supported |
-| NPC event opens | talk_npc | event_active, event_id, event_param* | wait_for_event | supported |
+| Be in zone (observation after wait; not a causal transition) | wait_ms | zone, in_zone | snapshot | partial |
+| NPC event opens (source-only, no recorded run) | talk_npc | event_active, event_id, event_param* | wait_for_event | partial |
 | Party forms | invite, accept_invite | party_members_gt | party_status | supported |
 | Zone transition | event finish / zone_to | zone | none | partial |
 | Item possession | trade_npc / use_item (MCP) | NONE | inventory, container_items | partial (G-01) |

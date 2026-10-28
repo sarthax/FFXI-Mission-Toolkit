@@ -14,6 +14,10 @@ def w(name, lines):
 n_char = sum(s["tier"] == "characterized" for s in S)
 L = ["# Scenario Library Inventory (DRAFT, not execution-validated)", "",
      "Coordinator: #1348. Machine-readable source of truth: `scenario_catalog_draft.json` (schema `scenario-library-draft/1`).",
+     "**`support_status` meaning:** `supported` = a native schema action AND readback collector exist for the scenario. It does NOT mean "
+     "executed, result-authenticated, oracle-approved, client-id-verified or publishable. Those are separate machine fields "
+     "(`source_schema_compatible`, `runner_result_authenticated`, `oracle_independently_verified`, `client_id_verified`, "
+     "`eligible_for_publish`); all except `source_schema_compatible` are false for every entry, and `execution_validated` is false everywhere.",
      "Evidence labels: source-supported, capture-observed, previously-executed, locally-validated, unverified.", "",
      "Totals: %d candidates, %d characterized, %d failure-injection probe groups (kept separate)." % (
          len(S), n_char, len(c["failure_injection_probes"])), "",
@@ -48,9 +52,10 @@ w("SCENARIO_ACTION_EXPECTATION_CROSSWALK.md", [
     "GreaterThan: `*_gt` keys. Equals: zone, main_job, main_level, sub_job, hpp, event_id, event_form_34, event_param0-7, "
     "x_near/z_near/radius, in_zone, event_active.", "",
     "## Needs vs availability", "",
+    "Status column = native schema/collector availability only (same meaning as `support_status`); it is not execution or oracle validation.", "",
     "| Library need | Native action | Native expectation | MCP readback | Status |", "|---|---|---|---|---|",
-    "| Be in zone | wait_ms | zone, in_zone | snapshot | supported |",
-    "| NPC event opens | talk_npc | event_active, event_id, event_param* | wait_for_event | supported |",
+    "| Be in zone (observation after wait; not a causal transition) | wait_ms | zone, in_zone | snapshot | partial |",
+    "| NPC event opens (source-only, no recorded run) | talk_npc | event_active, event_id, event_param* | wait_for_event | partial |",
     "| Party forms | invite, accept_invite | party_members_gt | party_status | supported |",
     "| Zone transition | event finish / zone_to | zone | none | partial |",
     "| Item possession | trade_npc / use_item (MCP) | NONE | inventory, container_items | partial (G-01) |",
@@ -80,7 +85,7 @@ w("SCENARIO_LIBRARY_IMPORT_PLAN.md", [
     "# Scenario Library Import Plan (DRAFT)", "",
     "Draft-only. Never auto-publish; owner approval is required per scenario.", "",
     "1. **Fixture shape**: each catalog entry keeps the `xiheadless` native payload verbatim plus `provenance`, `evidence_class`, `confidence`; Toolkit fields are derived, not substituted.",
-    "2. **Stage A**: import entries with `support_status: supported` as drafts into the drafts DB (#1410).",
+    "2. **Stage A**: import entries with `support_status: supported` as DRAFT records only (status stays `draft`, `execution_validated=false`, `eligible_for_publish=false`) into the drafts DB (#1410). `supported` is schema/collector availability, not verification; Stage A never publishes, auto-runs or implies an approved oracle.",
     "3. **Stage B**: add item/key-item expectations (G-01), then import partial entries.",
     "4. **Stage C**: quest/mission readback (G-02), then promote quest candidates after dat-extractor verification (G-03).", "",
     "## Top 10 recommended first slices", "",
