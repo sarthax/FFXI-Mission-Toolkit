@@ -28,7 +28,7 @@
 .ft-check input{min-height:auto;width:auto}
 .ft-job{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.35rem 0}
 .ft-pill{display:inline-block;padding:.1rem .6rem;border-radius:1rem;font-size:.8rem;font-weight:700;border:1px solid currentColor}
-.ft-pass{color:#2e9d4f}.ft-fail{color:#d33}.ft-blocked,.ft-interrupted{color:#c77d00}.ft-running,.ft-queued{color:#2f6fd6}
+.ft-pass{color:#2e9d4f}.ft-fail{color:#d33}.ft-blocked,.ft-interrupted{color:#c77d00}.ft-unknown{color:#6b7280}.ft-running,.ft-queued{color:#2f6fd6}
 .ft-adv>summary{cursor:pointer;list-style:revert}.ft-adv>summary h2{display:inline}
 .ft-adv details{margin:.75rem 0;padding:.5rem .75rem;border:1px solid var(--wb-border,#777);border-radius:.5rem}
 </style>
@@ -46,7 +46,7 @@
 <input type="hidden" name="tab" value="runs">
 <label for="ft-run-search">Run ID contains<input id="ft-run-search" name="query" value="{{ query_filter }}" placeholder="Search run ID"></label>
 <label for="ft-feature-filter">Feature<select id="ft-feature-filter" name="feature"><option value="">All features</option>{% for feature in features %}<option value="{{ feature.id }}" {% if feature_filter == feature.id %}selected{% endif %}>{{ feature.name }}</option>{% endfor %}</select></label>
-<label for="ft-verdict-filter">Contains verdict<select id="ft-verdict-filter" name="verdict"><option value="">All verdicts</option>{% for option in ['PASS','FAIL','BLOCKED','SKIPPED'] %}<option value="{{ option }}" {% if verdict_filter == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></label>
+<label for="ft-verdict-filter">Contains verdict<select id="ft-verdict-filter" name="verdict"><option value="">All verdicts</option>{% for option in ['PASS','FAIL','BLOCKED','SKIPPED','UNKNOWN'] %}<option value="{{ option }}" {% if verdict_filter == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></label>
 <button type="submit">Apply filters</button><a href="/feature-testing?tab=runs">Clear</a>
 </form>
 {% if runs %}

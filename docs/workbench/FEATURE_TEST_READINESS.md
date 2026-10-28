@@ -208,7 +208,7 @@ Each live execution requires (a) approved disposable environment and fixture, (b
 
 ## Durable feature test results — initial implementation
 
-`src/workbench/server_admin/feature_testing/results.py` provides an append-only SQLite local evidence store. Every result is keyed by `(run_id, case_id, stage)` and captures verdict, UTC timestamp supplied by importer, exact DSP/headless/Toolkit revisions, and structured evidence. Valid verdicts: PASS, FAIL, BLOCKED, SKIPPED. Stages distinguish key_item, modifier, behavior, mechanics and gameplay. Duplicate keys are rejected, never overwritten.
+`src/workbench/server_admin/feature_testing/results.py` provides an append-only SQLite local evidence store. Every result is keyed by `(run_id, case_id, stage)` and captures verdict, UTC timestamp supplied by importer, exact DSP/headless/Toolkit revisions, and structured evidence. Valid verdicts: PASS, FAIL, BLOCKED, SKIPPED, UNKNOWN. `UNKNOWN` means a run produced no usable determination; it is recorded explicitly (never inferred from a missing row) and is never counted or promoted as PASS. The SQLite column has no CHECK constraint, so older databases need no migration. Stages distinguish key_item, modifier, behavior, mechanics and gameplay. Duplicate keys are rejected, never overwritten.
 
 The dashboard serves **read-only** `GET /feature-testing/results` with optional `feature_id` and `case_id` filtering, and displays history on scenario pages. Set `MISSION_TOOLKIT_TEST_RESULTS_DB` to an **absolute local SQLite file path** to view records imported by a trusted local harness. With no configured file, results remain empty; the UI never fabricates green outcomes. This page has no test execution or write API.
 
@@ -242,6 +242,8 @@ Report schema version 1:
   ]
 }
 ```
+**`BLOCKED` results must carry `evidence.reason_class`** — one of `ENVIRONMENT`, `FIXTURE_ABSENT`, `ORACLE_UNKNOWN` or `OTHER` — and the importer rejects a BLOCKED row without a valid class. `UNKNOWN` rows may carry the same field; any other verdict rejects it. Historical BLOCKED rows that predate this have no class and are read as `UNCLASSIFIED`, which is not comparable for regression purposes (design: `R6_REGRESSION_IMPACT_DESIGN_1199_1210.md`). The captured-observation adapter cannot tell why an observation was missing or invalid, so its BLOCKED rows are written with `OTHER` rather than a more specific claim.
+
 These all-a/b/c commit IDs are **format examples only**, not real evidence; never import them as production provenance. The importer checks known catalog feature/case IDs, stage/verdict, UTC timestamps, full 40-hex SHA format, nonempty structured evidence, duplicate identities, max sizes and atomic commit/rollback. A PASS record also requires `assertions` and `observations` keys; this is only a structural guard, **not an authenticity or truth check**. Trusted source attribution and independent assertion verification remain separate work.
 
 Point `MISSION_TOOLKIT_TEST_RESULTS_DB` at the same SQLite file to view imported history in the Toolkit. No network write route or test execution is enabled. The report must be produced in a trusted environment; guard database access and do not include credentials, tokens or identifiable private account data.
