@@ -436,7 +436,7 @@ def dashboard_view(*, tab: str = "runs", feature: str = "", verdict: str = "",
     tab = {"setup": "guide"}.get(tab, tab)
     tab = tab if tab in {"runs", "catalog", "guide", "builder"} else "runs"
     verdict = verdict.upper()
-    if verdict not in {"PASS", "FAIL", "BLOCKED", "SKIPPED"}:
+    if verdict not in {"PASS", "FAIL", "BLOCKED", "SKIPPED", "UNKNOWN"}:
         verdict = ""
     feature = feature[:64]
     query = query.strip()[:100]
