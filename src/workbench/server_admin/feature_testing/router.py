@@ -585,9 +585,53 @@ def dashboard_view(*, tab: str = "runs", feature: str = "", verdict: str = "",
             "ui_mode": _ui_mode(), "run_defaults": _run_defaults()}
 
 
+def _saved_catalog_view(request: Request, q: str, feature_id: str, tag: str, state: str) -> dict:
+    """The saved-revisions list for the Test catalog tab: local readers only, and honest about why it may be empty."""
+    from .test_catalog import STATES, list_entries
+    view = {"q": q[:100], "feature_id": feature_id[:64], "tag": tag[:32], "state": state if state in STATES else "",
+            "states": STATES, "configured": True, "allowed": True, "entries": [], "total": 0, "error": None}
+    if not request.client or request.client.host not in ("127.0.0.1", "::1"):
+        return {**view, "allowed": False}
+    try:
+        found = list_entries(q=view["q"], feature_id=view["feature_id"], tag=view["tag"], state=view["state"], limit=50)
+    except ValueError as exc:
+        if "MISSION_TOOLKIT_TEST_DRAFTS_DB" in str(exc):
+            return {**view, "configured": False}
+        return {**view, "error": str(exc)}
+    return {**view, "entries": found["entries"], "total": found["total"]}
+
+
+@router.get("/catalog-entry/{feature_id}/{case_id}", response_class=HTMLResponse)
+def catalog_entry_page(request: Request, feature_id: str, case_id: str, revision: int = 0):
+    """One saved catalog entry: its revisions, review history and a readable view of one revision. Read-only."""
+    from .catalog_view import describe_spec
+    from .test_catalog import get_entry
+    _local_read(request)
+    problem, entry = None, None
+    try:
+        entry = get_entry(feature_id, case_id)
+    except ValueError as exc:
+        problem = ("No catalog store is configured (MISSION_TOOLKIT_TEST_DRAFTS_DB)."
+                   if "MISSION_TOOLKIT_TEST_DRAFTS_DB" in str(exc) else str(exc))
+    if entry is None:
+        return templates.TemplateResponse(request=request, name="feature_testing_catalog_entry.html", status_code=404,
+                                          context={"title": "Catalog entry", "feature_id": feature_id, "case_id": case_id,
+                                                   "entry": None, "problem": problem or "No such catalog entry."})
+    by_number = {r["revision"]: r for r in entry["revisions"]}
+    chosen = by_number.get(revision) or by_number.get(entry["current_published_revision"]) or entry["revisions"][-1]
+    return templates.TemplateResponse(request=request, name="feature_testing_catalog_entry.html",
+                                      context={"title": "Catalog entry", "feature_id": feature_id, "case_id": case_id,
+                                               "entry": entry, "chosen": chosen, "problem": None,
+                                               "described": describe_spec(chosen["specification"]),
+                                               "unknown_revision": bool(revision) and revision not in by_number})
+
+
 @router.get("", response_class=HTMLResponse)
 def dashboard(request: Request, tab: str = "runs", feature: str = "",
-              verdict: str = "", query: str = "", page: int = 1):
+              verdict: str = "", query: str = "", page: int = 1,
+              cq: str = "", cfeature: str = "", ctag: str = "", cstate: str = ""):
     view = dashboard_view(tab=tab, feature=feature, verdict=verdict, query=query, page=page)
+    if view["tab"] == "catalog":
+        view["saved_catalog"] = _saved_catalog_view(request, cq, cfeature, ctag, cstate)
     return templates.TemplateResponse(request=request, name="feature_testing.html",
                                       context={"title": "Feature Testing & Validation", **view})

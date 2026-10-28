@@ -343,7 +343,38 @@ document.getElementById('ft-evaluation-form').addEventListener('submit',async fu
 </details>
 </section>
 {% elif tab == "catalog" %}
-<section class="wb-panel"><h2>Test catalog</h2><p>Scenario plans describe acceptance criteria, sources, and current blockers. Opening a scenario does not execute it.</p>
+{% with sc = saved_catalog|default({"allowed": false}) %}
+<section class="wb-panel" id="ft-saved-catalog" aria-label="Saved scenario revisions">
+<h2>Saved scenario revisions</h2>
+<p>Design-only scenarios saved with immutable revisions and a review state. <strong>Published here means a reviewer recorded a decision; it does not make a scenario runnable.</strong> Running is unavailable from this catalog. This is separate from the <a href="/feature-catalog">Feature Catalog</a> (Toolkit capabilities) and from the built-in definitions below.</p>
+{% if not sc.allowed %}<p>The saved catalog is only shown to local readers.</p>
+{% elif not sc.configured %}<p>No catalog store is configured. It uses the local drafts file set by <code>MISSION_TOOLKIT_TEST_DRAFTS_DB</code>.</p>
+{% else %}
+<form method="get" action="/feature-testing" class="ft-filters">
+<input type="hidden" name="tab" value="catalog">
+<label>Search <input name="cq" value="{{ sc.q }}" maxlength="100" placeholder="name, purpose, case or tag"></label>
+<label>Feature <input name="cfeature" value="{{ sc.feature_id }}" maxlength="64"></label>
+<label>Tag <input name="ctag" value="{{ sc.tag }}" maxlength="32"></label>
+<label>State <select name="cstate"><option value="">Any</option>{% for st in sc.states %}<option value="{{ st }}"{% if st == sc.state %} selected{% endif %}>{{ st }}</option>{% endfor %}</select></label>
+<button type="submit">Search</button> <a href="/feature-testing?tab=catalog">Clear</a>
+</form>
+{% if sc.error %}<p role="alert">{{ sc.error }}</p>
+{% elif not sc.entries %}<p>{% if sc.q or sc.feature_id or sc.tag or sc.state %}No saved scenarios match these filters.{% else %}Nothing has been saved to the catalog yet.{% endif %}</p>
+{% else %}
+<p>{{ sc.total }} saved scenario{{ '' if sc.total == 1 else 's' }}{% if sc.total > sc.entries|length %} (showing the first {{ sc.entries|length }}){% endif %}.</p>
+<div class="ft-table-scroll"><table><thead><tr><th>Scenario</th><th>Feature</th><th>Tags</th><th>Latest revision</th><th>Published</th><th>Updated (UTC)</th></tr></thead><tbody>
+{% for e in sc.entries %}<tr>
+<td><a href="/feature-testing/catalog-entry/{{ e.feature_id|urlencode }}/{{ e.case_id|urlencode }}">{{ e.case_id }}</a>{% if e.name %}<br><small>{{ e.name }}</small>{% endif %}</td>
+<td>{{ e.feature_id }}</td><td>{{ e.tags|join(', ') if e.tags else '—' }}</td>
+<td>r{{ e.latest_revision }} · {{ e.latest_state }}</td>
+<td>{% if e.current_published_revision %}r{{ e.current_published_revision }}{% else %}None{% endif %}</td>
+<td>{{ e.updated_at[:19] }}</td></tr>{% endfor %}
+</tbody></table></div>
+{% endif %}
+{% endif %}
+</section>
+{% endwith %}
+<section class="wb-panel"><h2>Built-in test definitions</h2><p>Scenario plans describe acceptance criteria, sources, and current blockers. Opening a scenario does not execute it.</p>
 {% for feature in features %}
 <details style="padding:1rem;border:1px solid var(--wb-border,#777);margin:.75rem 0" {% if loop.first %}open{% endif %}>
 <summary><strong>{{ feature.name }}</strong> — {{ feature.cases|length }} scenarios</summary>
