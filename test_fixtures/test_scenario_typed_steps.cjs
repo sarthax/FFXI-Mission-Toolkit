@@ -118,4 +118,12 @@ assert.deepEqual(Object.keys(T.nativeScenario(only)[0]), ['name', 'do'], 'no emp
 assert.deepEqual(Object.keys(T.nativeScenario(only)[1]), ['name', 'expect'], 'no empty do object is written');
 assert.deepEqual(JSON.parse(T.nativeJson(only)), T.nativeScenario(only));
 
+// ---- editor bridge: comparison ignores key order but not content, and the bridge is inert until the builder mounts
+assert.equal(T.sameSteps({library_version: 1, steps: [{name: 'a', do: {x: 1}, expect: {y: 2}}]},
+                         {steps: [{expect: {y: 2}, do: {x: 1}, name: 'a'}], library_version: 1}), true);
+assert.equal(T.sameSteps({steps: [{name: 'a'}]}, {steps: [{name: 'b'}]}), false);
+assert.equal(T.sameSteps({steps: [1, 2]}, {steps: [2, 1]}), false, 'step order is meaning');
+assert.equal(T.sameSteps(null, {steps: []}), false);
+assert.equal(T.bridge.get(), null, 'before mounting there is nothing to read, so the editor leaves native_steps alone');
+
 console.log('Scenario typed step builder helpers: PASS');
