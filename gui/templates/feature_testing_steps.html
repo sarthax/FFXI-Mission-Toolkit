@@ -9,6 +9,12 @@
 <details class="ft-big"><summary>{% if v is mapping %}{{ v|length }} fields{% elif v is sequence and v is not string %}{{ v|length }} items{% else %}large value{% endif %}</summary><button type="button" class="ft-copy">Copy</button><pre class="ft-scroll">{{ v|tojson(indent=2) }}</pre></details>
 {%- endif -%}
 {%- endmacro %}
+{% macro sz(v) -%}
+{%- if v is mapping -%}{{ v|length }} fields
+{%- elif v is string -%}{{ v|length }} characters
+{%- elif v is sequence -%}{% if v|length == 0 %}empty (0 rows){% elif v[0] is sequence and v[0] is not string %}{{ v|length }} rows{% else %}{{ v|length }} items{% endif %}
+{%- else -%}{{ v|tojson }}{%- endif -%}
+{%- endmacro %}
 {% if scenario_view and scenario_view.available %}
 <style>
 .ft-story .ft-nav{position:sticky;top:0;z-index:2;display:flex;gap:1rem;flex-wrap:wrap;align-items:center;padding:.4rem .6rem;background:var(--bg,Canvas);border-bottom:1px solid var(--border,#aaa)}
@@ -35,6 +41,8 @@
 .ft-story .ft-lifecycle{display:flex;gap:.5rem;flex-wrap:wrap;margin:.6rem 0;padding:0;list-style:none}
 .ft-story .ft-lifecycle li{border:1px solid var(--border,#aaa);border-radius:6px;padding:.3rem .6rem;flex:1 1 11rem;min-width:0;overflow-wrap:anywhere}
 .ft-story .ft-lifecycle b{display:block}
+.ft-story .ft-compared{margin:.5rem 0;overflow-x:auto}
+.ft-story .ft-compared-table td,.ft-story .ft-compared-table th{padding:.15rem .8rem .15rem 0}
 .ft-story .ft-warning{border-left:3px solid currentColor;padding-left:.8rem}
 .ft-story .ft-meta{overflow-wrap:anywhere}
 .ft-story .ft-provenance pre{max-height:18rem;overflow:auto;overflow-wrap:anywhere;white-space:pre-wrap}
@@ -97,7 +105,7 @@
 {% if step.has_failed_assertion %}<span class="ft-kind ft-kind-failed" title="A supported observation was present and the assertion evaluated FAIL.">Assertion FAILED</span>{% endif %}
 {% if step.has_missing_observation %}<span class="ft-kind" title="No normalized observation was imported, so this is unknown, not failed.">Observation missing (not failed)</span>{% endif %}
 {% for kind in step.source_kinds %}<span class="ft-kind" title="Derived from the observation field name; runner-reported, not independently verified.">{{ kind }}</span>{% endfor %}
-<span class="ft-brief">{% for assertion in step.assertions %}{% if assertion.observed_available %}{{ assertion.id }} = {% set js = assertion.observed|tojson %}{{ js if js|length <= 40 else '(large value)' }}{% else %}{{ assertion.id }}: UNKNOWN{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}</span></summary>
+<span class="ft-brief">{% for assertion in step.assertions %}{% if assertion.observed_available %}{{ assertion.id }} = {% set js = assertion.observed|tojson %}{{ js if js|length <= 40 else sz(assertion.observed) }}{% else %}{{ assertion.id }}: UNKNOWN{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}</span></summary>
 <p class="ft-meta"><code>{{ step.id }}</code> · {{ step.intent }}</p>
 {% if step.confidence_note %}<p class="ft-warning"><strong>Evidence limitation:</strong> {{ step.confidence_note }}</p>{% endif %}
 <div class="ft-pair">
@@ -113,6 +121,19 @@
 {% else %}<p>UNKNOWN — no assertion mapping supplied.</p>{% endif %}
 </div>
 </div>
+{% if step.provenance|length > 1 %}
+<div class="ft-compared" role="group" aria-label="Values compared in step {{ step.number }}">
+<strong>Values compared</strong>
+<table class="ft-compared-table"><thead><tr><th>Source</th><th>Field</th><th>Value</th></tr></thead><tbody>
+{% for field in step.provenance %}<tr>
+<td>{% if field.source_kind == 'Server database' %}Server database (persisted){% elif field.source_kind %}{{ field.source_kind }}{% else %}Source not classified{% endif %}</td>
+<td><code>{{ field.field }}</code></td>
+<td>{% if field.available %}{{ cv(field.value) }}{% if field.value is sequence and field.value is not string and field.value|length == 0 %} <small>(empty — no rows)</small>{% endif %}{% else %}Not supplied in the imported report (UNKNOWN){% endif %}</td>
+</tr>{% endfor %}
+</tbody></table>
+<small>Both sides come from one runner report; the persisted side is as the runner read it, not independently read.</small>
+</div>
+{% endif %}
 <details class="ft-provenance"><summary>Assertion contracts and provenance for step {{ step.number }}</summary>
 <table><thead><tr><th>Assertion ID</th><th>Comparison</th><th>Expected contract / evaluated value</th><th>Observed field</th><th>Outcome</th></tr></thead>
 <tbody>{% for assertion in step.assertions %}<tr>

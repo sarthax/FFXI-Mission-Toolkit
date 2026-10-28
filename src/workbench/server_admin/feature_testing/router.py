@@ -137,7 +137,11 @@ def run_page(request: Request, run_id: str):
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     if not rows:
-        raise HTTPException(404, "Run not found")
+        # A readable page, not bare JSON: say what was looked for and where to go next.
+        return templates.TemplateResponse(request=request, name="feature_testing_run.html", status_code=404,
+                                          context={"title": "Test Run not found", "run_id": run_id, "records": [],
+                                                   "reevaluations": {}, "scenario_views": {}, "outcomes": {},
+                                                   "missing": True, "results_configured": bool(_results_db())})
     from .normalized_evidence import evaluate_imported_mog09
     reevaluations = {}
     scenario_views = {}

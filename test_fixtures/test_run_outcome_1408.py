@@ -158,3 +158,65 @@ def test_unknown_run_is_a_404_and_history_without_data_has_guidance(client, tmp_
     assert "No results imported yet." in client.get("/feature-testing?tab=runs").text  # configured but empty
     monkeypatch.delenv("MISSION_TOOLKIT_TEST_RESULTS_DB")
     assert "No evidence database configured" in client.get("/feature-testing?tab=runs").text  # not configured
+
+
+# --- recorded MOG-09 reports through the real importer and page ----------------------------------------------------
+
+from pathlib import Path  # noqa: E402
+
+RECORDED = Path(__file__).parent / "results_v2_recorded"
+CATALOG = Path(__file__).resolve().parents[1] / "data/testing/feature_test_readiness.json"
+
+
+@pytest.fixture()
+def recorded_client(tmp_path, monkeypatch):
+    from workbench.server_admin.feature_testing import importer
+    db = tmp_path / "recorded.sqlite"
+    for name in sorted(RECORDED.glob("*.report.json")):
+        assert importer.import_report(db, CATALOG, name) == 1
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_RESULTS_DB", str(db))
+    monkeypatch.delenv("MISSION_TOOLKIT_TEST_JOBS_DB", raising=False)
+    ft_router.templates.env.globals.setdefault("current_theme", lambda *a, **k: "dark")
+    ft_router.templates.env.globals.setdefault("shell_context", lambda *a, **k: {})
+    app = FastAPI()
+    app.include_router(ft_router.router)
+    return TestClient(app)
+
+
+def step_card(html, number):
+    """The HTML of one step card, from its summary to the next card."""
+    start = html.index(f"<strong>{number}. ")
+    end = html.find("<strong>%d. " % (number + 1), start)
+    return html[start:end if end != -1 else len(html)]
+
+
+def test_recorded_fail_shows_both_compared_sides_for_the_failed_steps(recorded_client):
+    html = recorded_client.get("/feature-testing/run/obs-20261021T025326Z").text
+    assert "What happened" in html and "At least one imported check did not match its expectation." in html
+    bag = step_card(html, 5)
+    assert "Values compared" in bag and "Server database (persisted)" in bag and "Client-observed" in bag
+    assert "empty — no rows" in bag  # the persisted side the old card never showed
+    assert "8 rows" in bag  # the client side, as a count rather than "(large value)"
+    safe = step_card(html, 6)
+    assert "Values compared" in safe and "Server database (persisted)" in safe
+    assert "(large value)" not in html
+
+
+def test_recorded_fail_keeps_unrelated_steps_and_the_limits(recorded_client):
+    html = recorded_client.get("/feature-testing/run/obs-20261021T025326Z").text
+    assert "Independent verification: NOT_ESTABLISHED" in html
+    assert "Steps PASS (recalculated only): 4/6" in html
+    assert "Assertion FAILED" in step_card(html, 5)
+
+
+def test_recorded_pass_is_still_only_a_recorded_verdict(recorded_client):
+    html = recorded_client.get("/feature-testing/run/obs-20261021T040036Z").text
+    assert "nothing independent has confirmed it" in html and "Independent verification: NOT_ESTABLISHED" in html
+    assert "(large value)" not in html
+
+
+def test_missing_run_is_a_readable_404_page_not_bare_json(recorded_client):
+    response = recorded_client.get("/feature-testing/run/does-not-exist")
+    assert response.status_code == 404 and "text/html" in response.headers["content-type"]
+    assert "Run not found" in response.text and "does-not-exist" in response.text
+    assert "/feature-testing?tab=runs" in response.text and '{"detail"' not in response.text
