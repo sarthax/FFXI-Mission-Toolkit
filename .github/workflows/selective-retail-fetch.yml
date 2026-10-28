@@ -2,6 +2,7 @@ name: Selective Retail Fetch Rust
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - 'tools/retail_fetch/**'
       - '.github/workflows/selective-retail-fetch.yml'
@@ -22,6 +23,7 @@ concurrency:
 
 jobs:
   rust-check:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
       matrix:

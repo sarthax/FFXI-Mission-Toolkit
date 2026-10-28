@@ -1,6 +1,7 @@
 name: R4 Typed Library Crosswalk Offline
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - "docs/workbench/SCENARIO_SUITE_TYPED_LIBRARY_1409.md"
       - "test_fixtures/scenario_suite_typed_registry_1409.json"
@@ -8,8 +9,13 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   contract:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
