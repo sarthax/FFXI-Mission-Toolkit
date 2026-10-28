@@ -2,6 +2,7 @@ name: R8 Execution Interop Boundary (Offline)
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - "docs/workbench/R8_SPEC_EXECUTION_INTEROPERABILITY_DECISION_1255.md"
       - "test_fixtures/r8_execution_boundary_matrix_synthetic.json"
@@ -17,8 +18,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   existing-contract-boundaries:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:

@@ -1,19 +1,6 @@
 name: Workbench Ancient Vows Cross-Fork
 
 on:
-  push:
-    branches:
-      - workbench-rework/audit-foundation
-    paths:
-      - "workbench/adapters/servers/**"
-      - "workbench/core/**"
-      - "workbench/migrations/**"
-      - "src/workbench/devtools/features/checker.py"
-      - "src/workbench/devtools/server/binding_index.py"
-      - "src/workbench/validation/packages/binding_index.py"
-      - "src/workbench/validation/packages/binding_audit.py"
-      - "test_fixtures/test_ancient_vows_crossfork.py"
-      - ".github/workflows/workbench-ancient-vows.yml"
   workflow_dispatch:
 
 permissions:
