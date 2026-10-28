@@ -170,7 +170,7 @@
       "help": "/help#help-feature-testing",
       "purpose": "Inspect and edit non-executable canonical scenario drafts without treating them as runnable tests.",
       "how_to_use": "Open Guided or Advanced, review field warnings, validate the canonical draft and save with a synthetic design-only operator token; review expected revision/CAS conflicts. Browse existing published definitions separately at /feature-testing?tab=catalog and prior evidence at /validation/runs.",
-      "caveat": "PRODUCT NOT ACCEPTED (#1406). No draft publish, arbitrary RUN, Headless launch/status/cancel or result import; #1403 missing-steps and malformed-cleanup render errors remain. Previous browser-control PASS is not end-to-end acceptance.",
+      "caveat": "PRODUCT NOT ACCEPTED (#1406). No draft publish, arbitrary RUN, Headless launch/status/cancel or result import; The #1403 missing-steps and malformed-cleanup crashes are fixed. Previous browser-control PASS is not end-to-end acceptance.",
       "source_refs": [
         "gui/static/scenario_developer.js",
         "gui/templates/scenario_developer.html"
