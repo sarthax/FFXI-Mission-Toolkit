@@ -2,6 +2,7 @@ name: R6/R7 Domain Readiness Validation (Offline)
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - "tools/validate_domain_drafts.py"
       - "test_fixtures/test_domain_draft_validator.py"
@@ -35,8 +36,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   domain-readiness:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:

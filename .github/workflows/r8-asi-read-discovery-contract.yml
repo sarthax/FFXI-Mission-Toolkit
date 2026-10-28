@@ -2,6 +2,7 @@ name: R8 ASI MCP Read Discovery Contract (Offline)
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - ".github/workflows/r8-asi-read-discovery-contract.yml"
       - "docs/workbench/R8_ASI_MCP_READ_DISCOVERY_CONTRACT_1325.md"
@@ -12,8 +13,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   offline-read-discovery-contract:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
