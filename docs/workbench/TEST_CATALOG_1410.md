@@ -1,7 +1,7 @@
 # Test Catalog — versioned design-only scenario revisions (#1410)
 
 **Status:** slices 1 and 2 implemented (store, review states, search, local API, and a read-only browse page). No Scenario
-Developer integration and no importer yet. Nothing here makes a scenario runnable.
+Developer integration beyond slice 3; the importer is a separate offline tool (slice 5). Nothing here makes a scenario runnable.
 
 ## What it is
 A catalog of scenario **revisions**, distinct from the global Feature Catalog (Toolkit capabilities, `/feature-catalog`)
@@ -48,8 +48,8 @@ with the old content. A revision's review state moves forward through append-onl
    state with `source = draft:<feature>/<case>@r<draft revision>`. If the draft moved on since the list was read, or its content
    already equals the latest catalog revision, nothing is added and the message says why. Review and publishing are slice 4.
 4. **Done:** review controls on the entry page (see below).
-5. Import of native XIHeadless scenario JSON into draft revisions. The earlier offline prototype (#1424) predates the typed
-   action library and is not reused as is; the importer should call `typed_action_library.review_native_steps`.
+5. **Done:** import of native XIHeadless scenario JSON into DRAFT revisions (`native_scenario_importer.py`, offline CLI, fails closed through
+   `review_native_steps`; the earlier offline prototype #1424 was not reused). See `NATIVE_SCENARIO_IMPORT_1410.md`.
 6. Hand-off to supervised run (#1412): only a `PUBLISHED` revision with a reviewed execution contract may ever be offered,
    after separate owner approval. Out of scope here.
 
