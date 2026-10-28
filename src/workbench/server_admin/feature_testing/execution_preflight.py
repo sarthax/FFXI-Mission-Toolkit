@@ -22,6 +22,11 @@ def preflight(feature_id: str, case_id: str) -> dict:
     detail = scenario_detail(feature_id, case_id)
     runner = SUPPORTED.get((feature_id, case_id))
     checks = []
+    from .test_execution_settings import sandbox_execution_check
+    isolation = sandbox_execution_check()
+    if isolation["isolated"]:
+        checks.append({"id": "sandbox_isolation", "ok": isolation["ok"],
+                       "detail": isolation["reason"]})
     if not runner:
         checks.append({"id": "runner_supported", "ok": False, "detail": "No verified deterministic runner is registered for this case"})
     else:

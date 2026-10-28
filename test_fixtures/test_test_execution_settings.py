@@ -35,6 +35,10 @@ def test_enable_generates_distinct_long_tokens_and_env(env):
     t = st["tokens"]
     assert len(t["operator"]) >= 32 and len(t["supervisor"]) >= 32 and t["operator"] != t["supervisor"]
     assert os.environ["MISSION_TOOLKIT_TEST_OPERATOR_TOKEN"] == t["operator"]
+    assert s.ui_mode_active()  # sandbox-owned token can authorize draft UI
+    assert not s.sandbox_execution_check()["ok"]  # no runner/supervisor is authorized
+    s.update(headless_root=_checkout(env), charids="17",
+             db={"user": "synthetic_ro", "password": "synthetic_only", "name": "synthetic_db"})
     assert s.ui_mode_active()
     s.set_enabled(False)
     assert "MISSION_TOOLKIT_TEST_OPERATOR_TOKEN" not in os.environ and not s.ui_mode_active()
@@ -72,11 +76,19 @@ def test_ui_auth_requires_same_origin_headers(env):
     from workbench.server_admin.feature_testing.router import _operator_auth
     s.set_enabled(True)
 
+    # Setup UI auth in an explicit sandbox must not reuse a production
+    # operator token until this sandbox has complete, matching credentials.
     class Req:
         client = mock.Mock(host="127.0.0.1")
         base_url = "http://127.0.0.1:8420/"
         def __init__(self, h): self.headers = h
-    _operator_auth(Req({"sec-fetch-site": "same-origin", "x-requested-with": "toolkit-ui"}), "")
+    same_origin = Req({"sec-fetch-site": "same-origin", "x-requested-with": "toolkit-ui"})
+    _operator_auth(same_origin, "")  # draft-only sandbox operator auth
+    assert not s.sandbox_execution_check()["ok"]
+    root = _checkout(env)
+    s.update(headless_root=root, charids="17",
+             db={"user": "synthetic_ro", "password": "synthetic_only", "name": "synthetic_db"})
+    _operator_auth(same_origin, "")  # authorized local setup, not runner execution
     for h in ({}, {"sec-fetch-site": "cross-site", "x-requested-with": "toolkit-ui"}, {"sec-fetch-site": "same-origin"}):
         with pytest.raises(HTTPException):
             _operator_auth(Req(h), None)
