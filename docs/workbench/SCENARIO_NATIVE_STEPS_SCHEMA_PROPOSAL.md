@@ -1,6 +1,7 @@
 # Saved typed steps — draft schema proposal (#1411)
 
-**Status: PROPOSAL, awaiting owner approval. No code changes are made by this document.**
+**Status: APPROVED by the owner on 2026-10-28 (all six recommendations accepted) and IMPLEMENTED. This document is kept as
+the design record; the "Outcome" section at the end says what shipped and where it differs from the proposal.**
 
 ## Why
 The owner direction (2026-10-28) is that the Toolkit owns the whole path: author a scenario, publish it, run it
@@ -79,3 +80,29 @@ extension first; they are library work, not part of this schema change.
 2. Library step model (only if Decision 1 is "independent"): action-only and check-only templates, review and import
    updated, with parity tests.
 3. Editor wiring: open, save, guard, fork and clone, Advanced JSON, with real-browser checks.
+
+## Outcome (2026-10-28)
+All six recommendations were accepted and built, in this order:
+
+| Step | Delivered by |
+|---|---|
+| Validator (`validate_native_steps`), hash exclusion, independent action-only / check-only steps | #1452 |
+| Editor wiring: open, save, unsaved-work guard, fork, clone, new, Advanced JSON | #1453 |
+| Add Action Step / Add Check Step in the builder | #1454 |
+| Given / When / Then preview | #1455 |
+| Local verification against a real DSP checkout and XiHeadless loaders (evidence only) | #1456 |
+| Builder truly read-only while Advanced JSON is open (found by the local verification) | #1460 |
+| Export writes `"expect": {}` for action-only steps; observed execution paths per key | #1461 |
+
+Where reality differs from, or adds to, the proposal:
+- **Decision 1 (independent steps):** accepted. The local verification found XiHeadless `CheckStructure` rejects an
+  action-only step unless `expect` is an object, so the **export** form writes `"expect": {}`; the **saved** draft stays
+  one-sided and the validator still refuses a stored empty `expect`. Import reads that export form back as action-only.
+- **Decision 3 (provenance `note`):** the validator accepts a stored `note`, but the builder does not write one: catalog
+  provenance ("Source: ...") is shown in the session only and is not saved with the draft. A step with a `note` made in
+  Advanced JSON is preserved byte for byte and shown as "cannot show", never rewritten.
+- **Execution:** nothing here makes a draft executable. At XiHeadless `e5e8035071` the file loader accepted all 18 native
+  keys, but the MCP task path accepted only `wait_ms` (#1459 tracks the rest), and whether the runner executes accepted
+  steps is untested (the controlled run was NOT_RUN: no authorized operator). Each key now carries `observed_paths` that say so.
+- **Not covered, still open:** publish, preflight and the supervised run (#1412, #1255); library work for the mockups'
+  checks that the reviewed vocabulary lacks; saving provenance notes.
