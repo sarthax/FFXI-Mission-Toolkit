@@ -11,6 +11,8 @@ assert.ok(template.indexOf('/static/scenario_readiness_viewer.js')<
 assert.match(script,/let readinessViewer = null/);
 assert.match(script,/readinessViewer\.dispose\(\)/);
 assert.match(script,/window\.addEventListener\('pagehide'/);
+// #1393: a back/forward-cache restore must remount the viewer so stale file selections are not shown.
+assert.match(script,/window\.addEventListener\('pageshow',event=>\{\s*if\(event\.persisted\)resetReadinessViewer\(\);/);
 assert.match(script,/if\(mode!==target\)resetReadinessViewer\(\)/);
 assert.match(script,/function resetReadinessViewer\(\)/);
 assert.match(script,/ScenarioReadinessViewer\.mount\(\$\('sd-readiness-viewer'\)/);

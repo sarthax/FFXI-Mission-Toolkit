@@ -855,6 +855,11 @@
     if(readinessViewer)readinessViewer.dispose();
     readinessViewer=null;
   });
+  // A page restored from the back/forward cache keeps its DOM, including the two file inputs, but pagehide
+  // closed the viewer. Mount a fresh one so no stale selection is shown beside a dead Inspect button.
+  window.addEventListener('pageshow',event=>{
+    if(event.persisted)resetReadinessViewer();
+  });
   resetReadinessViewer();
   draftGuard=window.ScenarioDraftGuard.create({
     win:window,
