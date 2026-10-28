@@ -49,7 +49,8 @@ def _row() -> dict:
         "dsp_commit": "a" * 40,
         "headless_commit": "b" * 40,
         "toolkit_commit": "c" * 40,
-        "evidence": {"synthetic": True, "readback": "unavailable"},
+        # WP4a: a BLOCKED import must say why; OTHER makes no claim about the cause.
+        "evidence": {"synthetic": True, "readback": "unavailable", "reason_class": "OTHER"},
     }
 
 
@@ -175,7 +176,11 @@ def test_repeated_import_is_not_idempotent_just_because_v1_validates():
     assert validate_report(report, _catalog()) == [row]
     # validate_report checks only one batch. It returns no replay decision,
     # attempt ID, evidence digest, or reconciliation key. #1202 owns replay.
-    assert "UNKNOWN" not in VERDICTS
+    # WP4a (owner decision): UNKNOWN is now a stored verdict so an unestablished result can be recorded
+    # explicitly. It is still never PASS, and a PASS row still needs assertions and observations.
+    assert "UNKNOWN" in VERDICTS
+    with pytest.raises(ValueError, match="PASS requires assertions and observations"):
+        validate_report({"schema_version": 1, "results": [{**row, "verdict": "PASS"}]}, _catalog())
     assert "attempt_id" not in row
     assert "evidence_digest" not in row
 
