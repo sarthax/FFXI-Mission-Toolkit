@@ -235,7 +235,7 @@ def _one(step):
 
 
 @pytest.mark.parametrize("step,status,fragment", [
-    ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "timeout_ms": 5000}, "UNSUPPORTED", "unsupported field(s): timeout_ms"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "timeout": 5000}, "UNSUPPORTED", "unsupported field(s): timeout"),
     ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "note": "x", "extra": 1}, "UNSUPPORTED", "extra, note"),
     ({"name": "a"}, "UNSUPPORTED", "needs an action (do), a check (expect), or both"),
     ({"name": "a", "do": {}, "expect": {"x_near": 3}}, "UNSUPPORTED", "at least one action is needed"),
@@ -262,7 +262,7 @@ def test_unsupported_and_invalid_steps_are_reported_with_reasons_and_never_built
 
 
 def test_a_step_with_extra_fields_is_not_imported_even_though_its_do_and_expect_are_fine():
-    row = _one({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "timeout_ms": 5000})
+    row = _one({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "timeout": 5000})
     assert row["status"] == "UNSUPPORTED" and row["step"] is None  # never trimmed down to a lossy copy
 
 
@@ -395,7 +395,7 @@ def test_a_malformed_stored_field_is_rejected(value, fragment):
     ({"name": "a", "expect": {"made_up": 1}}, "unsupported: no reviewed check"),
     ({"name": "a", "do": {"talk_npc": -1}}, "invalid:"),
     ({"name": "a"}, "needs an action"),
-    ({"name": "a", "do": {"walk_to": [1, 2]}, "timeout_ms": 5}, "unsupported field(s): timeout_ms"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "timeout": 5}, "unsupported field(s): timeout"),
     ({"name": "a", "do": {"walk_to": [1, 2]}, "provenance": "x"}, "unsupported field(s): provenance"),
     ({"do": {"walk_to": [1, 2]}}, "name must be non-empty"),
     ({"name": " padded ", "do": {"walk_to": [1, 2]}}, "leading or trailing whitespace"),

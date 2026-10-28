@@ -99,16 +99,21 @@ def test_two_actions_in_one_step_fail_closed(repo, store):
     assert "exactly one action" in two["steps"][0]["reasons"][0]
 
 
-def test_timeout_ms_rejects_by_default_and_is_only_carried_on_explicit_request(repo, store):
-    strict = run(repo)
-    assert any(r["path"] == "scenarios/timed.json" and "timeout_ms" in r["steps"][0]["reasons"][0] for r in strict["rejected"])
-    assert cat.get_entry(imp.FEATURE_ID, "scenarios-timed") is None
-    out = run(repo, carry_timeouts=True)
+def test_timeout_ms_is_carried_by_default_and_the_flag_is_a_no_op(repo, store):
+    out = run(repo)
     assert any(i["path"] == "scenarios/timed.json" for i in out["imported"])
     spec = cat.get_entry(imp.FEATURE_ID, "scenarios-timed")["revisions"][0]["specification"]
     step = spec["native_steps"]["steps"][0]
-    assert "timeout_ms" not in step and "source timeout_ms=5000" in step["note"]
-    assert any("timeout_ms from the source" in g for g in spec["authoring"]["blocking_gaps"])
+    assert step["timeout_ms"] == 5000 and "timeout_ms=" not in step["note"]
+    assert not any("timeout_ms" in g for g in spec["authoring"]["blocking_gaps"])
+    assert run(repo, carry_timeouts=True)["counts"]["imported"] + run(repo, carry_timeouts=True)["counts"]["unchanged"] >= 1
+
+
+def test_round_trip_import_then_export_keeps_timeout_ms_unchanged(repo, store):
+    from workbench.server_admin.feature_testing.typed_action_library import export_native_scenario
+    run(repo)
+    spec = cat.get_entry(imp.FEATURE_ID, "scenarios-timed")["revisions"][0]["specification"]
+    assert export_native_scenario(spec["native_steps"]) == WITH_TIMEOUT
 
 
 def test_exact_duplicates_are_merged_with_reasoning_and_recorded_in_the_draft(repo, store):

@@ -21,9 +21,12 @@ publish or approve anything, and does not touch a live client, server or the liv
    in sort order is kept and the others are named in the draft and the report. Same action/check *shape* with different values is
    only **reported** (`near_duplicate_shapes`), never merged.
 
-`timeout_ms` is a per-step field of the native files that `native_steps` cannot keep, so by default every step that has it is
-rejected (the library's own fail-closed rule). `--carry-step-timeouts` is an explicit opt-in that removes it before review and
-records the original value in the step's note and in the draft's gaps. Whether timeouts should be modelled is an owner decision.
+`timeout_ms` is a permitted, preserved per-step field of `native_steps` (owner decision). The rule mirrors XiHeadless
+`ScenarioFileValidation.CheckStructure` at the pinned commit: a JSON number that is an Int32 integer in 0..3600000 ms, allowed with any
+action or check; absent means the runner default (10000 ms, never inferred). It is stored, shown in the step preview as
+`(timeout N ms)` on the check line, and written unchanged by `export_native_scenario` (which drops the provenance `note` and adds the
+empty `expect` the native loader requires for action-only steps). The importer carries it by default; `--carry-step-timeouts` is kept
+only as a deprecated no-op alias. Out-of-range or non-integer values are INVALID and never trimmed.
 
 ## CLI
 ```
@@ -41,8 +44,9 @@ PYTHONPATH=src python -m workbench.server_admin.feature_testing.native_scenario_
 
 | Mode | Imported (DRAFT) | Rejected scenarios |
 |---|---|---|
-| default (strict) | 0 | 24 of 24 (all 52 steps carry `timeout_ms`) |
-| `--carry-step-timeouts` | 10 (scratch DB: 10 revisions, 10 DRAFT events) | 14 |
+| before timeout_ms support, default (strict) | 0 | 24 of 24 (all 52 steps carry `timeout_ms`) |
+| before, `--carry-step-timeouts` (timeout moved to note) | 10 | 14 |
+| now (timeout_ms preserved, default) | 10 (dry-run) | 14 |
 
 Carry-mode rejections by reason (step counts): 11 more than one check in a step; 5 more than one action; 6 both; unreviewed actions
 `say` (A06-2-bind), `patrol`, `sweep_npcs`; unreviewed check `in_zone` (4 steps); `walk_to` in `{x,y,z,timeout_ms}` object form
