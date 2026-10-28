@@ -21,7 +21,7 @@ Toolkit state at audit: branch `feature/live-client-activity-feed` @ `94b2349b`;
 | Brains | 45 files in `Brains/` (job brains, `DuoFightBrain`, `SurvivalGuideBrain`, `GmBrain`, ...) |
 | Unit-test project | **None.** No `*.Tests` project; only scenario/brain-driven live tests |
 
-Direct dependencies: DSP server (`D:\Claude\dsp-branches`, DB `dspdb_fresh`) for everything; retail client **not required**; Ashita not required; Toolkit only for telemetry display and for SQL-derived inputs (e.g. `sg_guides.json` built from `survival_guides_apply.sql`). Sibling research repos in `headless-research/`: `xiheadless` (upstream LSB), `GordianXI` (C# GUI client, protocol reference only), `headless-xi-rust` (search-server toy client).
+Direct dependencies: DSP server (`<local DSP checkout>`, DB `dspdb_fresh`) for everything; retail client **not required**; Ashita not required; Toolkit only for telemetry display and for SQL-derived inputs (e.g. `sg_guides.json` built from `survival_guides_apply.sql`). Sibling research repos in `headless-research/`: `xiheadless` (upstream LSB), `GordianXI` (C# GUI client, protocol reference only), `headless-xi-rust` (search-server toy client).
 
 ## Matrix
 
