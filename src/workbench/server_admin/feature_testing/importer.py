@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -15,6 +16,9 @@ import sqlite3
 from .results import append_result, check_reason_class
 
 _SHA = re.compile(r"^[0-9a-fA-F]{40}$")
+IMPORT_CONTEXT_KEY = "import_context"  # written only by this importer; a report may not carry it
+CONTEXT_VERSION = 1
+_CONTEXT_TEXT = ("environment_fingerprint", "fixture_context")  # optional, runner-supplied, compared for equality only
 _FIELDS = ("run_id", "case_id", "feature_id", "stage", "verdict", "observed_at",
            "dsp_commit", "headless_commit", "toolkit_commit", "evidence")
 
@@ -50,11 +54,37 @@ def validate_report(report: dict, catalog: dict) -> list[dict]:
             raise ValueError("PASS requires assertions and observations; never infer PASS from a log")
         # reason_class is optional; when present it must be one of the known values.
         check_reason_class(row["verdict"], row["evidence"])
+        evidence = row["evidence"] if isinstance(row["evidence"], dict) else {}
+        if IMPORT_CONTEXT_KEY in evidence:
+            raise ValueError(f"evidence.{IMPORT_CONTEXT_KEY} is reserved for the importer and cannot be supplied")
+        for key in _CONTEXT_TEXT:
+            if key in evidence and (not isinstance(evidence[key], str) or not evidence[key].strip()
+                                    or len(evidence[key]) > 256):
+                raise ValueError(f"evidence.{key} must be a non-empty string of at most 256 characters")
         identity = (row["run_id"], row["case_id"], row["stage"])
         if identity in seen:
             raise ValueError("duplicate result identity in report")
         seen.add(identity)
     return rows
+
+
+def _canonical(value: object) -> str:
+    return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+
+
+def import_context(row: dict, report_schema_version: int, spec: dict | None) -> dict:
+    """Facts the importer can establish itself, stored beside the report's own evidence (no schema change).
+
+    ``definition_sha256`` is the fingerprint of the published specification as it stood at import time (None when
+    there is no specification for the case); it lets a later comparison tell whether two runs tested the same
+    definition. ``record_sha256`` hashes the record exactly as imported, before this context was added, so a stored
+    row can later be checked against the report it came from. Neither says anything about the run itself.
+    """
+    from .scenario_contract_v2 import base_spec_sha256
+    return {"version": CONTEXT_VERSION,
+            "definition_sha256": base_spec_sha256(spec) if spec is not None else None,
+            "report_schema_version": report_schema_version,
+            "record_sha256": hashlib.sha256(_canonical(row).encode("utf-8")).hexdigest()}
 
 
 def import_report(db_path: str | Path, catalog_path: str | Path, report_path: str | Path) -> int:
@@ -65,6 +95,9 @@ def import_report(db_path: str | Path, catalog_path: str | Path, report_path: st
     report = json.loads(raw_path.read_text(encoding="utf-8"))
     catalog = json.loads(Path(catalog_path).read_text(encoding="utf-8"))
     rows = validate_report(report, catalog)
+    from .test_specifications import specification
+    rows = [{**row, "evidence": {**row["evidence"], IMPORT_CONTEXT_KEY: import_context(
+        row, report["schema_version"], specification(row["feature_id"], row["case_id"]))}} for row in rows]
     target = Path(db_path)
     if not target.is_absolute():
         raise ValueError("database path must be absolute")
