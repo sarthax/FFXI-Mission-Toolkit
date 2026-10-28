@@ -12,7 +12,7 @@ ACTUAL LIVE target database before applying -- a real server can have grown its 
 space further since this snapshot was taken, and this script's whole job is closing that gap.
 
 **2026-09-15 addition -- content duplication, not just id collision.** A real incident (see
-D:\\Claude\\Topaz-Assault-Backport\\reports\\dsp_repair_2026-09-15\\INCIDENT_REPORT.md) showed that
+<local>/Topaz-Assault-Backport\\reports\\dsp_repair_2026-09-15\\INCIDENT_REPORT.md) showed that
 id-collision checking alone is NOT sufficient for mob_groups: multiple backport passes each minted
 a FRESH, genuinely-unused groupid for content a prior pass had already backported, so
 check_id_collisions() reported "clear" every time while 195 live rows ended up silently pulling
@@ -28,7 +28,7 @@ separate, optional dependency since only someone actually running this live chec
 
 Usage:
     py -3 -m workbench.validation.live_db.sql_check --host <host> --user <user> --password <pw> --database <db> \
-        --package "D:\\Claude\\Topaz-Assault-Backport\\mission-packages\\nyzul_isle_investigation"
+        --package "<local>/Topaz-Assault-Backport\\mission-packages\\nyzul_isle_investigation"
 
     # Or check one table/range directly without a package directory:
     py -3 backport_sql_live_check.py --host <host> --user <user> --password <pw> --database <db> \

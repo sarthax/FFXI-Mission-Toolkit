@@ -2,7 +2,7 @@
  "generated": "2026-10-12",
  "sources": {
   "W": "https://ffxiclopedia.fandom.com/wiki/Mog-Tablet and /wiki/Category:Super_Kupowers (read 2026-10-12)",
-  "S": "D:\\Claude\\DSP-LSB-Gap-Audit\\evidence\\lsb_snapshot\\server-base\\scripts\\globals\\mog_tablets.lua",
+  "S": "<local>/DSP-LSB-Gap-Audit\\evidence\\lsb_snapshot\\server-base\\scripts\\globals\\mog_tablets.lua",
   "D": "ffxi_zone_database.db (zone ids)",
   "items": [
    "item_basic.sql",

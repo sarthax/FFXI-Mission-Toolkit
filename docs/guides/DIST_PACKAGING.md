@@ -3,10 +3,10 @@
 Working notes on what belongs in a clean release/distro copy of this toolkit vs. what's local
 generated/cached state that should be stripped (and, where possible, how to regenerate it).
 Written 2026-09-08 during CORE_AGNOSTIC_DESIGN.md phase-1 work, after confirming sizes of every
-top-level directory in the live D:\Claude\mission_toolkit checkout. Not exhaustive yet -- flagged
+top-level directory in the live <local>/mission_toolkit checkout. Not exhaustive yet -- flagged
 items need a follow-up check before being treated as settled.
 
-`D:\Claude\mission_toolkit_dist_test\mission_toolkit` is the existing designated location for
+`<local>/mission_toolkit_dist_test\mission_toolkit` is the existing designated location for
 building/testing a clean rebuild-distro copy -- it's already source-only (no DB, no LandSandBoat/
 checkout present as of 2026-09-08), which matches the "strip generated data" model below.
 
