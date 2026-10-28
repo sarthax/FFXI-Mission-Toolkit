@@ -19,7 +19,7 @@ def validate_spec(spec: dict) -> dict:
         raise ValueError("unsupported test specification version")
     required = {"schema_version", "feature_id", "case_id", "name", "runner",
                 "execution_status", "preconditions", "observations", "assertions", "cleanup"}
-    optional = {"purpose", "rationale", "behavior", "steps", "authoring", "contract_v2"}
+    optional = {"purpose", "rationale", "behavior", "steps", "authoring", "contract_v2", "native_steps"}
     if not required.issubset(spec) or set(spec) - required - optional:
         raise ValueError("unexpected test specification fields")
     for field in ("feature_id", "case_id", "name"):
@@ -106,6 +106,11 @@ def validate_spec(spec: dict) -> dict:
     if "contract_v2" in spec:
         from .scenario_contract_v2 import validate_contract_v2
         validate_contract_v2(spec)
+    # Automatable Headless steps (#1411): a reviewed, bounded list. It is design data only; it does not make a draft
+    # executable, publishable or verified, and drafts must still be design_only with an unassigned runner.
+    if "native_steps" in spec:
+        from .typed_action_library import validate_native_steps
+        validate_native_steps(spec["native_steps"])
     return spec
 
 

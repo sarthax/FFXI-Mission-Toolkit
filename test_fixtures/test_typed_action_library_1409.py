@@ -1,6 +1,7 @@
 """#1409 typed action library: parity with the merged crosswalk fixture and phase-2 guard. Offline only."""
 import copy
 import importlib.util
+import re
 import json
 from pathlib import Path
 
@@ -236,17 +237,17 @@ def _one(step):
 @pytest.mark.parametrize("step,status,fragment", [
     ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "timeout_ms": 5000}, "UNSUPPORTED", "unsupported field(s): timeout_ms"),
     ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "note": "x", "extra": 1}, "UNSUPPORTED", "extra, note"),
-    ({"name": "a", "do": {"walk_to": [1, 2]}}, "UNSUPPORTED", "needs both do and expect"),
-    ({"name": "a", "expect": {"x_near": 3}}, "UNSUPPORTED", "needs both do and expect"),
-    ({"name": "a", "do": {}, "expect": {"x_near": 3}}, "UNSUPPORTED", "exactly one action and one check"),
+    ({"name": "a"}, "UNSUPPORTED", "needs an action (do), a check (expect), or both"),
+    ({"name": "a", "do": {}, "expect": {"x_near": 3}}, "UNSUPPORTED", "exactly one action is supported"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {}}, "UNSUPPORTED", "exactly one check is supported"),
     ({"name": "a", "do": {"walk_to": [1, 2], "engage": 5}, "expect": {"x_near": 3}}, "UNSUPPORTED", "exactly one action"),
-    ({"name": "a", "do": {"dance": 1}, "expect": {"zone": 3}}, "UNSUPPORTED", "no reviewed template for action 'dance'"),
-    ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"hpp": 3}}, "UNSUPPORTED", "check 'hpp'"),
+    ({"name": "a", "do": {"dance": 1}, "expect": {"zone": 3}}, "UNSUPPORTED", "no reviewed action 'dance'"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"made_up": 3}}, "UNSUPPORTED", "no reviewed check 'made_up'"),
     ({"name": "a", "do": {"talk_npc": -1}, "expect": {"event_active": True}}, "INVALID", "npc_id"),
     ({"name": "a", "do": {"talk_npc": 1}, "expect": {"event_active": "yes"}}, "INVALID", "event_active"),
     ({"name": "a", "do": {"walk_to": [float("nan"), 2]}, "expect": {"x_near": 3}}, "INVALID", "coordinates"),
-    ({"name": "a", "do": "walk_to", "expect": {"x_near": 3}}, "INVALID", "must each be an object"),
-    ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": [1]}, "INVALID", "must each be an object"),
+    ({"name": "a", "do": "walk_to", "expect": {"x_near": 3}}, "INVALID", "do must be an object"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "expect": [1]}, "INVALID", "expect must be an object"),
     ({"do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}}, "INVALID", "name must be non-empty"),
     ({"name": "   ", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}}, "INVALID", "name must be non-empty"),
     ({"name": "n" * 101, "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}}, "INVALID", "at most 100"),
@@ -292,3 +293,133 @@ def test_review_counts_add_up_and_indexes_follow_the_input():
                                       {"name": "u", "do": {"x": 1}, "expect": {"y": 2}}])
     assert [(r["index"], r["status"]) for r in review["steps"]] == [(0, "SUPPORTED"), (1, "INVALID"), (2, "UNSUPPORTED")]
     assert review["counts"] == {"SUPPORTED": 1, "UNSUPPORTED": 1, "INVALID": 1}
+
+
+# --- independent actions and checks (decision 1 of the native_steps proposal) ---------------------
+
+def test_independent_actions_and_checks_cover_the_reviewed_native_keys():
+    actions, checks = lib.list_actions(), lib.list_checks()
+    assert len(actions) == 10 and len(checks) == 8
+    assert {a["native_key"] for a in actions} == {r["native_action"] for r in CROSSWALK if r["native_action"] != "NONE"}
+    assert {c["native_key"] for c in checks} == {r["native_expectation"] for r in CROSSWALK if r["native_expectation"] != "NONE"}
+    assert {a["native_key"] for a in actions} == {n for n, _ in guard.ROWS.values() if n}
+    assert {c["native_key"] for c in checks} == {e for _, e in guard.ROWS.values() if e}
+    assert all(a["execution_enabled"] is False and a["support_tier"] == "HEADLESS_SCHEMA_ONLY" for a in actions + checks)
+    assert all(a["param"]["constraint"] for a in actions + checks)
+
+
+def test_independent_parts_carry_the_same_specs_and_picker_hints_as_the_templates():
+    by_action = {a["native_key"]: a for a in lib.list_actions()}
+    by_check = {c["native_key"]: c for c in lib.list_checks()}
+    for template in action_templates():
+        assert by_action[template["action"]["native_key"]]["param"] == template["action"]["param"]
+        assert by_check[template["expectation"]["native_key"]]["param"] == template["expectation"]["param"]
+    assert by_action["talk_npc"]["param"]["picker"] == "npc" and by_check["zone"]["param"]["picker"] == "zone"
+
+
+def test_exports_are_unaliased_and_the_registry_lists_the_parts():
+    registry = lib.export_registry()
+    assert len(registry["actions"]) == 10 and len(registry["checks"]) == 8
+    registry["actions"][0]["param"]["type"] = "bool"
+    assert lib.list_actions()[0]["param"]["type"] != "bool"
+
+
+def _valid_values():
+    acts = {a["native_key"]: next(v for v in ACTION_VALUES[key(a["param"])] if lib.check_param(a["param"], v) is None)
+            for a in lib.list_actions()}
+    chks = {c["native_key"]: next(v for v in EXPECT_VALUES[key(c["param"])] if lib.check_param(c["param"], v) is None)
+            for c in lib.list_checks()}
+    return acts, chks
+
+
+def test_every_reviewed_action_and_check_is_accepted_alone_and_in_every_combination():
+    acts, chks = _valid_values()
+    steps = []
+    for a, av in acts.items():
+        steps.append({"name": f"do {a}", "do": {a: av}})
+    for c, cv in chks.items():
+        steps.append({"name": f"check {c}", "expect": {c: cv}})
+    review = lib.review_native_steps(steps)
+    assert review["counts"] == {"SUPPORTED": 18, "UNSUPPORTED": 0, "INVALID": 0}
+    for row in review["steps"]:  # single-sided steps carry only the side they have
+        assert ("do" in row["step"]) != ("expect" in row["step"]) and row["template_id"] is None
+    pairs = lib._template_by_pair()
+    seen = 0
+    for a, av in acts.items():
+        for c, cv in chks.items():
+            row = lib.review_native_steps([{"name": "x", "do": {a: av}, "expect": {c: cv}}])["steps"][0]
+            assert row["status"] == "SUPPORTED", (a, c)
+            assert (row["template_id"] is not None) == ((a, c) in pairs)  # only the 10 reviewed pairs get a template id
+            seen += 1
+    assert seen == 80
+
+
+def test_a_bad_value_on_either_side_is_invalid_and_names_the_side():
+    row = lib.review_native_steps([{"name": "x", "do": {"talk_npc": 1}, "expect": {"hpp": "high"}}])["steps"][0]
+    assert row["status"] == "INVALID" and "check 'hpp'" in row["reasons"][0] and "must be an integer" in row["reasons"][0]
+    row = lib.review_native_steps([{"name": "x", "do": {"rest_hp": 0}}])["steps"][0]
+    assert row["status"] == "INVALID" and "action 'rest_hp'" in row["reasons"][0] and "1..100" in row["reasons"][0]
+
+
+# --- the stored native_steps field ----------------------------------------------------------------
+
+def stored(*steps, version=1):
+    return {"library_version": version, "steps": list(steps)}
+
+
+GOOD = {"name": "talk to guide", "do": {"talk_npc": 17719298}, "expect": {"event_active": True},
+        "note": "npc_id from DSP catalog sql/npc_list.sql; not verified for this zone or client"}
+
+
+def test_a_valid_stored_field_is_accepted_unchanged_including_single_sided_steps_and_notes():
+    value = stored(GOOD, {"name": "just walk", "do": {"walk_to": [1, 2]}}, {"name": "just check", "expect": {"zone": 231}})
+    assert lib.validate_native_steps(value) is value
+    assert lib.validate_native_steps(stored({"name": "n" * 100, "do": {"rest_hp": 5}, "note": "x" * 300}))
+
+
+@pytest.mark.parametrize("value,fragment", [
+    (None, "expected exactly library_version and steps"), ([], "expected exactly"), ("x", "expected exactly"),
+    ({"steps": [GOOD]}, "expected exactly"), ({"library_version": 1, "steps": [GOOD], "extra": 1}, "expected exactly"),
+    (stored(GOOD, version=2), "unsupported native_steps library version"),
+    (stored(GOOD, version=True), "unsupported native_steps library version"),
+    (stored(GOOD, version="1"), "unsupported native_steps library version"),
+    (stored(), "1 to 50 steps"), ({"library_version": 1, "steps": "x"}, "1 to 50 steps"),
+    ({"library_version": 1, "steps": None}, "1 to 50 steps"),
+])
+def test_a_malformed_stored_field_is_rejected(value, fragment):
+    with pytest.raises(ValueError, match=re.escape(fragment)):
+        lib.validate_native_steps(value)
+
+
+@pytest.mark.parametrize("step,fragment", [
+    ({"name": "a", "do": {"dance": 1}}, "unsupported: no reviewed action"),
+    ({"name": "a", "expect": {"made_up": 1}}, "unsupported: no reviewed check"),
+    ({"name": "a", "do": {"talk_npc": -1}}, "invalid:"),
+    ({"name": "a"}, "needs an action"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "timeout_ms": 5}, "unsupported field(s): timeout_ms"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "provenance": "x"}, "unsupported field(s): provenance"),
+    ({"do": {"walk_to": [1, 2]}}, "name must be non-empty"),
+    ({"name": " padded ", "do": {"walk_to": [1, 2]}}, "leading or trailing whitespace"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "note": ""}, "note must be 1 to 300"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "note": "x" * 301}, "note must be 1 to 300"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "note": 5}, "note must be 1 to 300"),
+    ({"name": "a", "do": {"walk_to": [1, 2]}, "note": "line\nbreak"}, "note must be 1 to 300"),
+    ("not an object", "invalid: step is not an object"),
+])
+def test_an_unreviewed_or_malformed_stored_step_is_rejected_not_trimmed(step, fragment):
+    with pytest.raises(ValueError, match=re.escape(fragment)):
+        lib.validate_native_steps(stored(step))
+
+
+def test_stored_names_must_be_unique_and_the_limit_is_fifty():
+    with pytest.raises(ValueError, match="duplicates the name 'a'"):
+        lib.validate_native_steps(stored({"name": "a", "do": {"rest_hp": 5}}, {"name": "a", "do": {"rest_hp": 6}}))
+    fifty = [{"name": f"s{i}", "do": {"rest_hp": 5}} for i in range(50)]
+    assert lib.validate_native_steps(stored(*fifty))
+    with pytest.raises(ValueError, match="1 to 50 steps"):
+        lib.validate_native_steps(stored(*fifty, {"name": "s50", "do": {"rest_hp": 5}}))
+
+
+def test_a_stored_note_is_allowed_but_an_imported_native_step_may_not_carry_one():
+    assert lib.review_native_steps([{"name": "a", "do": {"rest_hp": 5}, "note": "x"}])["steps"][0]["status"] == "UNSUPPORTED"
+    assert lib.validate_native_steps(stored({"name": "a", "do": {"rest_hp": 5}, "note": "x"}))
