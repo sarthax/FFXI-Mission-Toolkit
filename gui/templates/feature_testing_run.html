@@ -15,6 +15,13 @@
 .ft-inspect{max-width:100%;overflow-wrap:anywhere}
 </style>
 <p><a href="/feature-testing?tab=runs">← Run history</a> · <a href="/feature-testing?tab=catalog">Test catalog</a></p>
+{% if missing %}
+<section class="wb-panel" aria-label="Run not found">
+<h2>Run not found</h2>
+<p>No imported result has the run ID <code>{{ run_id }}</code>.{% if not results_configured %} No evidence database is configured, so there is nothing to look in.{% else %} It may have been mistyped, or it was never imported.{% endif %}</p>
+<p><a href="/feature-testing?tab=runs">Browse the run history</a> to pick an imported run.</p>
+</section>
+{% else %}
 <section class="wb-panel">
 <h2>Recorded results ({{ records|length }})</h2>
 <p>Imported reports are not independently authenticated runtime execution. A PASS verdict reflects supplied evidence and validation, not an independent gameplay attestation.</p>
@@ -90,4 +97,5 @@
 </article>
 {% endfor %}
 </section>
+{% endif %}
 {% endblock %}
