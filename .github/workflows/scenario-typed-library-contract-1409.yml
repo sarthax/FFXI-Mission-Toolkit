@@ -5,6 +5,10 @@ on:
       - "tools/scenario_typed_library_contract_1409.py"
       - "test_fixtures/test_scenario_typed_library_contract_1409.py"
       - "docs/workbench/SCENARIO_TYPED_LIBRARY_CONTRACT_1409.md"
+      - "docs/workbench/SCENARIO_TYPED_ACTION_LIBRARY_1409.md"
+      - "src/workbench/server_admin/feature_testing/typed_action_library.py"
+      - "test_fixtures/test_typed_action_library_1409.py"
+      - "test_fixtures/scenario_suite_typed_registry_1409.json"
       - ".github/workflows/scenario-typed-library-contract-1409.yml"
   workflow_dispatch:
 permissions:
@@ -18,3 +22,16 @@ jobs:
         with:
           python-version: "3.11"
       - run: python test_fixtures/test_scenario_typed_library_contract_1409.py
+  typed-action-library:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --disable-pip-version-check -r requirements.txt pytest
+      - name: Typed action library parity with the crosswalk fixture and the phase-2 guard
+        env:
+          PYTHONPATH: "src:."
+        run: python -m pytest -q test_fixtures/test_typed_action_library_1409.py
