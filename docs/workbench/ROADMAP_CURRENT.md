@@ -1,3 +1,13 @@
+# Development status — 2026-10-27 coordinator retirement
+
+**Working model:** The A–E / Codex-helper multi-agent dispatcher experiment is retired. Coordinator [#1348](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1348) is closed and policy [#1398](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1398) retired. This document's older agent-wave references, dated assignments, PR snapshots and CI claims are **historical**, not active priorities or requirements to create additional review issues.
+
+**Current workflow:** Owner/local agent chooses concrete feature/defect work, confirms existing branches/PRs and current main, implements and tests offline, then records actual results in a focused PR. Continue using normal code/security review and local acceptance where necessary; remove duplicate planning and review-only backlog instead of multiplying coordination tasks. Never treat synthetic tests as gameplay, original MOG-09 receipts as authenticated without source attestation, or an unmerged PR as installed functionality.
+
+**Priority backlog (technical work, not A–E dispatch):** finish and verify actual Scenario Developer/Results UI against operator workflow; resolve authentic MOG-09 provenance/privacy and full source/receipt comparability; preserve auth-before-validation and safe supervisor contracts; maintain wiki/trace/capture integration with evidence provenance. Validate current code and real open issues before ranking or closing any technical work. B20 browser/security acceptance remains separate from offline CI.
+
+---
+
 # Current Workbench Roadmap
 
 ## 2026-10-22 — R7 integrated, browser-accepted subset / R8 offline candidates (latest release checkpoint)
